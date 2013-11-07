@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<ItemGroup>
+		<Filter Include="example">
+			<UniqueIdentifier>{5D8E7411-B6EF-4349-9B37-E91941BDE50A}</UniqueIdentifier>
+		</Filter>
+		<Filter Include="example\condense">
+			<UniqueIdentifier>{C2999B80-CC8D-F94E-B5C4-C85A18198913}</UniqueIdentifier>
+		</Filter>
+	</ItemGroup>
+	<ItemGroup>
+		<ClCompile Include="..\..\example\condense\condense.cpp">
+			<Filter>example\condense</Filter>
+		</ClCompile>
+	</ItemGroup>
+</Project>

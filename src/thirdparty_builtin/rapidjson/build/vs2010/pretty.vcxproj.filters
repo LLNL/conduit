@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<ItemGroup>
+		<Filter Include="example">
+			<UniqueIdentifier>{DA069CF3-387F-3B4F-AE28-A2C70FD0557C}</UniqueIdentifier>
+		</Filter>
+		<Filter Include="example\pretty">
+			<UniqueIdentifier>{55E2959D-F89C-4C40-975A-3686B52AC12D}</UniqueIdentifier>
+		</Filter>
+	</ItemGroup>
+	<ItemGroup>
+		<ClCompile Include="..\..\example\pretty\pretty.cpp">
+			<Filter>example\pretty</Filter>
+		</ClCompile>
+	</ItemGroup>
+</Project>

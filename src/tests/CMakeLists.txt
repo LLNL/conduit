@@ -1,0 +1,14 @@
+################################
+# Add our Unit Tests
+################################
+
+set(UNIT_TESTS gtest_smoke 
+               rapidjson_smoke
+               conduit_smoke
+               numpy_smoke)
+
+foreach(TEST ${UNIT_TESTS})
+    add_executable(${TEST} ${TEST}.cpp )
+    target_link_libraries(${TEST} gtest gtest_main conduit)
+    add_test( ${TEST} ${TEST} )
+endforeach()
