@@ -1,4 +1,15 @@
 
+
+
+Node
+    `Schema Mode`
+    ->Node
+    
+    Direct Mode
+        
+
+
+
 /*
 dtypes:
 

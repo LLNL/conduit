@@ -3,4 +3,7 @@
 ################################
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-add_library(conduit SHARED conduit.cpp)
+
+set(conduit_sources core.cpp ValueType.cpp)
+
+add_library(conduit SHARED ${conduit_sources})

@@ -1,3 +1,0 @@
-///
-/// file: DataArray.cpp
-///
