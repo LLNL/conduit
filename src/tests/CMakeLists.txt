@@ -6,7 +6,7 @@ set(UNIT_TESTS gtest_smoke
                rapidjson_smoke
                conduit_smoke
                numpy_smoke
-               value_type_tests)
+               type_tests)
 
 foreach(TEST ${UNIT_TESTS})
     add_executable(${TEST} ${TEST}.cpp )

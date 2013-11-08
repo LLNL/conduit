@@ -7,8 +7,8 @@
 
 
 #include <string>
-#include "core.h"
-#include "ValueType.h"
+#include "Core.h"
+#include "Type.h"
 
 
 #endif

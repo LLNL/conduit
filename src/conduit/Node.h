@@ -1,83 +1,96 @@
 ///
-/// file: DataArray.h
+/// file: Node.h
 ///
 
-#include "conduit.h"
-#include "ValueArray.h"
+
+#include "Core.h"
+#include "Type.h"
 
 namespace conduit
 {
 
-class Node : public ValueArray
+class Node
 {
 public:
     Node(); // empty node
     Node(const Node &node); // copy 
+    Node(void *data, const Node *schema);
+    Node(void *data, const BaseType *dtype);
     
-    Node(void *data, const Node *schema, bool expand);
-    
-    Node(ValueType dtype);
-    
+    Node(BaseType dtype);
     Node(uint32  data);
-    Node(uint64  data);
     Node(float64 data);
 
-    Node(bytestr       *data,bool copy=false);
-    Node(uint32_array  *data,bool copy=false);
-    Node(uint64_array  *data,bool copy=false);
-    Node(float64_array *data,bool copy=false);
-    
-    Node &operator=(const Node&);
+    Node(uint32_array  *data);
+    Node(float64_array *data);
 
-    Node &operator=(ValueType dtype); // creates empty of this type (used for creating schemas)
+    Node(const uint32_array  &data);
+    Node(const float64_array &data);
+
+    virtual  ~Node();
+  
+    void set(const &Node data);
+    void set(BaseType data);
+
+    void set(uint32 data);
+    void set(float64 data);
+
+    void set(const uint32_array  &data);
+    void set(const float64_array &data);
+    
+    Node &operator=(const Node &node);
+
+    Node &operator=(BaseType dtype);
 
     Node &operator=(uint32 data);
-    Node &operator=(uint64 data);
     Node &operator=(float64 data);
 
-
-    Node &operator=(bytestr       *data);
     Node &operator=(uint32_array  *data);
-    Node &operator=(uint64_array  *data);
     Node &operator=(float64_array *data);
 
-    Node &operator=(bytestr       &data);
     Node &operator=(uint32_array  &data);
-    Node &operator=(uint64_array  &data);
     Node &operator=(float64_array &data);
 
-        
-    
-    virtual  ~Node();
+    std::string to_schema() const;
 
+    const BaseType    &dtype() const { return *m_dtype;}
     bool              operator==(const Node &obj) const;
-
-    // TODO: we will likley need const variants of these methods
-    Node             &operator[](const std::string &path)
-                      {return fetch(path);}
+    // TODO: we will likly need const variants of these methods
                       
     Node             &fetch(const std::string &path);
-    
-    uint32           fetch_uint32(const std::string &path);
-    uint64           fetch_uint64(const std::string &path);
-    float64          fetch_float64(const std::string &path);
-    
-    bytestr         *fetch_bytestr(std::string &path);
-    uint32_array    *fetch_uint32_array(std::string &path);
-    uint64_array    *fetch_uint64_array(std::string &path);
-    float64_array   *fetch_float64_array(std::string &path);
-
     bool             has_path(const std::string &path) const;
     void             paths(std::vector<std::string> &paths,bool expand=false) const;
     
-private:    
-    // for pass though mode (1 schema n objects)
-    Node                       *m_schema;
+    Node             &operator[](const std::string &path)
+                      {return fetch(path);}
 
-    std::map<std::string,Node>  m_entries;
-    // the rest lives in ValueArray ...
+    index            to_integer() const;    
+    float64          to_real()    const;
+        
+    uint32           as_uint32()  const { return *((uint32*)element_pointer(0));}
+    float64          as_float64() const { return *((float64*)element_pointer(0));}
     
 
+    uint32_array     as_uint32_array()   { return uint32_array(element_pointer(0),m_dtype);}
+    float64_array    as_float64_array()  { return float64_array(element_pointer(0),m_dtype);}
+
+    
+private:
+    void             init(const BaseType &dtype);
+    void             init(BaseType *dtype);
+    void             cleanup(); //dalloc 
+    
+
+    index            element_index(index idx) const;
+    void            *element_pointer(index idx){return m_data[element_index(idx)]};
+    const void      *element_pointer(index idx) const {return m_data[element_index(idx)]};
+    std::map<Node*>  entries();
+
+    bool      m_alloced_data;
+    bool      m_alloced_dtype;
+    void     *m_data;
+    BaseType *m_dtype;
+    
 };
 
 };

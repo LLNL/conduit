@@ -48,11 +48,11 @@ public:
     const void *data() { return m_ptr;} const 
 
     ValueType   dtype()               const { return m_dtype;}
+
     index_t     number_of_elements()  const { return m_length;}
     index_t     element_width()       const { return m_width;}
     index_t     offset()              const { return m_offset;}
     index_t     stride()              const { return m_stride;}
-    bool        alloced()             const { return m_alloced;}  
     index_t     total_bytes()         const;
     
 

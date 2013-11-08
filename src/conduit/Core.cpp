@@ -1,9 +1,8 @@
 ///
-/// file: core.cpp
+/// file: Core.cpp
 ///
 
-
-#include <conduit.h>
+#include "Core.h"
 
 namespace conduit
 {

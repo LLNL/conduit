@@ -1,5 +1,5 @@
 ///
-/// file: conduit.h
+/// file: Core.h
 ///
 
 #ifndef __CONDUIT_CORE_H
@@ -17,7 +17,7 @@ typedef npy_uint32  uint32;
 typedef npy_uint64  uint64;
 typedef npy_float64 float64;
 
-#ifdef CONDUIT_INDEX_T_32
+#ifdef CONDUIT_INDEX_32
 typedef uint32 index_t;
 #else
 typedef uint64 index_t;
