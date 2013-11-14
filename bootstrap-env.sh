@@ -155,9 +155,8 @@ function bootstrap_python
     tar -xzf Python-$PY_VERSION.tgz
     cd Python-$PY_VERSION
     info "[Configuring Python]"
-    mkdir -p ${PY_PREFIX}/lib/
-    ./configure --enable-shared --prefix=$PY_PREFIX &> ../logs/python_configure.txt
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PY_PREFIX/lib/
+    mkdir -p ${PY_PREFIX}/lib/ z
+    ./configure --enable-shared --prefix=$PY_PREFIX LDFLAGS='-Wl,-rpath,${PY_PREFIX}/lib/ -pthread'  &> ../logs/python_configure.txt
 
     check $?
     info "[Building Python]"
