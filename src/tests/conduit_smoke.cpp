@@ -2,9 +2,11 @@
 /// file: conduit_smoke.cpp
 ///
 
+
+#include "conduit.h"
+
 #include <iostream>
 #include "gtest/gtest.h"
-#include "conduit.h"
 
 TEST(conduit_smoke_test, conduit_smoke)
 {

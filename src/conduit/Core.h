@@ -5,9 +5,8 @@
 #ifndef __CONDUIT_CORE_H
 #define __CONDUIT_CORE_H
 
-
-#include <string>
 #include "Python.h"   
+#include <string>
 #include "numpy/npy_common.h"
 
 namespace conduit
