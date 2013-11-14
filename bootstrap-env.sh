@@ -46,7 +46,7 @@ function download
     if [[ $WGET_TEST == "" ]] ; then
         curl -ksfLO $1/$2
     else
-        wget $1/$2
+        wget --no-check-certificate $1/$2
     fi
 }
 
@@ -157,6 +157,8 @@ function bootstrap_python
     info "[Configuring Python]"
     mkdir -p ${PY_PREFIX}/lib/
     ./configure --enable-shared --prefix=$PY_PREFIX &> ../logs/python_configure.txt
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PY_PREFIX/lib/
+
     check $?
     info "[Building Python]"
     make -j 4 &> ../logs/python_build.txt
@@ -190,11 +192,11 @@ function bootstrap_modules
 
 
     cd $BUILD_DIR
-    download http://pypi.python.org/packages/source/p/pip pip-1.4.1.tar.gz
-    rm -rf pip-1.4.1
-    info "[Inflating: pip-1.4.1.tar.gz]"
-    tar -xzf pip-1.4.1.tar.gz
-    cd pip-1.4.1
+    download http://pypi.python.org/packages/source/p/pip pip-1.2.1.tar.gz
+    rm -rf pip-1.2.1
+    info "[Inflating: pip-1.2.1.tar.gz]"
+    tar -xzf pip-1.2.1.tar.gz
+    cd pip-1.2.1
     info "[Building pip]"
     $PY_EXE setup.py build &> ../logs/pip_build.txt
     check $?
