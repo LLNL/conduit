@@ -9,6 +9,6 @@
 #include "Python.h"
 #include "Core.h"
 #include "Type.h"
-
+#include "Node.h"
 
 #endif
