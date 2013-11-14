@@ -6,6 +6,7 @@
 #define __CONDUIT_H
 
 
+#include "Python.h"
 #include "Core.h"
 #include "Type.h"
 

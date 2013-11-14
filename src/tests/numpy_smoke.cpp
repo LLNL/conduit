@@ -2,11 +2,13 @@
 /// file: numpy_smoke.cpp
 ///
 
-#include <iostream>
-#include "gtest/gtest.h"
 
 #include "Python.h"   
 #include "numpy/npy_common.h"
+
+
+#include <iostream>
+#include "gtest/gtest.h"
 
 
 TEST(numpy_smoke_test, numpy_smoke)

@@ -2,10 +2,11 @@
 /// file: value_type_tests.cpp
 ///
 
+#include "conduit.h"
+
 #include <iostream>
 #include "gtest/gtest.h"
 
-#include "conduit.h"
 
 using namespace conduit;
 
