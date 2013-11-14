@@ -7,6 +7,11 @@
 namespace conduit
 {
 
+// create storage for these guys
+uint32_dtype  = ValueType(BaseType::UINT32_T,1,0,0,sizeof(uint32);
+float64_dtype = ValueType(BaseType::FLOAT64_T,1,0,0,sizeof(float64));
+
+
 ///============================================
 /// BaseType
 ///============================================
@@ -56,6 +61,14 @@ BaseType::type_id_to_name(index_t dtype_id)
 /// ValueType
 ///
 ///============================================
+///============================================
+ValueType::ValueType()
+BaseType(BaseType::EMPTY_T),
+  m_num_ele(0),
+  m_offset(0),
+  m_stride(0),
+  m_ele_bytes(0)
+{}
 
 ///============================================
 ValueType::ValueType(index_t dtype_id,

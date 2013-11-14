@@ -13,9 +13,10 @@ class Node
 {
 public:
     Node(); // empty node
-    Node(const Node &node); // copy 
+    Node(const Node &node);
+    Node(void *data, const std::string &schema);
     Node(void *data, const Node *schema);
-    Node(void *data, const BaseType *dtype);
+    Node(void *data, const BaseType &dtype);
     
     Node(BaseType dtype);
     Node(uint32  data);
@@ -51,10 +52,10 @@ public:
     Node &operator=(uint32_array  &data);
     Node &operator=(float64_array &data);
 
-    std::string to_schema() const;
+    std::string schema() const;
 
     const BaseType    &dtype() const { return *m_dtype;}
-    bool              operator==(const Node &obj) const;
+    // bool              operator==(const Node &obj) const;
     // TODO: we will likly need const variants of these methods
                       
     Node             &fetch(const std::string &path);
@@ -64,7 +65,7 @@ public:
     Node             &operator[](const std::string &path)
                       {return fetch(path);}
 
-    index            to_integer() const;    
+    index_t          to_integer() const;    
     float64          to_real()    const;
         
     uint32           as_uint32()  const { return *((uint32*)element_pointer(0));}
@@ -73,23 +74,28 @@ public:
 
     uint32_array     as_uint32_array()   { return uint32_array(element_pointer(0),m_dtype);}
     float64_array    as_float64_array()  { return float64_array(element_pointer(0),m_dtype);}
+    
+//    List             as_list();
 
     
 private:
     void             init(const BaseType &dtype);
-    void             init(BaseType *dtype);
     void             cleanup(); //dalloc 
     
 
-    index            element_index(index idx) const;
-    void            *element_pointer(index idx){return m_data[element_index(idx)]};
-    const void      *element_pointer(index idx) const {return m_data[element_index(idx)]};
-    std::map<Node*>  entries();
+    // for value types
+    index_t          element_index(index_t   idx) const;
+    void            *element_pointer(index_t idx)
+                        {return m_data[element_index(idx)]};
+    const void      *element_pointer(index_t idx) const 
+                        {return m_data[element_index(idx)]};
 
-    bool      m_alloced_data;
-    bool      m_alloced_dtype;
+    // for true nodes
+    std::map<Node*> &entries();
+
+    bool      m_alloced;
     void     *m_data;
-    BaseType *m_dtype;
+    BaseType  m_dtype;
     
 };
 

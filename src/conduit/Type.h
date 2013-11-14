@@ -35,7 +35,8 @@ public:
     
     static index_t      type_name_to_id(const std::string &name);
     static std::string  type_id_to_name(index_t dtype);
-
+    
+    virtual bool        compatable(BaseType &);
     index_t             id()  const { return m_id;}    
 
 protected:
@@ -49,6 +50,7 @@ protected:
 class ValueType: public BaseType
 {
 public:
+    ValueType();
     ValueType(index_t dtype_id,
               index_t num_elements,
               index_t offset,
@@ -164,6 +166,8 @@ BaseType Type(std::vector<Node*>   obj_schemas,
 //                      index_telement_bytes=sizeof(float64));
 
 
+static ValueType uint32_dtype;
+static ValueType float64_dtype;
 
 };
 
