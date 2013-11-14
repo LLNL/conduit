@@ -36,7 +36,7 @@ public:
     static index_t      type_name_to_id(const std::string &name);
     static std::string  type_id_to_name(index_t dtype);
     
-    virtual bool        compatable(BaseType &);
+    //virtual bool        compatable(BaseType &);
     index_t             id()  const { return m_id;}    
 
 protected:
@@ -72,6 +72,27 @@ private:
      index_t   m_stride;     // bytes between start of current and start of next
      index_t   m_ele_bytes;  // bytes per element
      // TODO: future  index_t  m_endianness;
+
+};
+
+
+class uint32_array: public ValueType
+{
+    uint32_array(index_t num_elements,
+                 index_t offset,
+                 index_t stride,
+                 index_t element_bytes);
+    virtual ~uint32_array();
+
+};
+
+class float64_array: public ValueType
+{
+    float64_array(index_t num_elements,
+                  index_t offset,
+                  index_t stride,
+                  index_t element_bytes);
+    virtual ~float64_array();
 
 };
 
