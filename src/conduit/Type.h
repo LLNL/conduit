@@ -51,6 +51,7 @@ class ValueType: public BaseType
 {
 public:
     ValueType();
+    ValueType(const ValueType& type);
     ValueType(index_t dtype_id,
               index_t num_elements,
               index_t offset,
@@ -78,20 +79,24 @@ private:
 
 class uint32_array: public ValueType
 {
+public:
     uint32_array(index_t num_elements,
                  index_t offset,
                  index_t stride,
                  index_t element_bytes);
+    uint32_array(void*, ValueType& type);
     virtual ~uint32_array();
 
 };
 
 class float64_array: public ValueType
 {
+public:
     float64_array(index_t num_elements,
                   index_t offset,
                   index_t stride,
                   index_t element_bytes);
+    float64_array(void*, ValueType& type);
     virtual ~float64_array();
 
 };

@@ -82,7 +82,15 @@ ValueType::ValueType(index_t dtype_id,
   m_stride(stride),
   m_ele_bytes(element_bytes)
 {}
-              
+
+ValueType::ValueType(const ValueType& value)
+: BaseType(value.m_id),
+  m_num_ele(value.m_num_ele),
+  m_offset(value.m_offset),
+  m_stride(value.m_stride),
+  m_ele_bytes(value.m_ele_bytes)
+{}
+                
 ///============================================
 ValueType::~ValueType()
 {}
@@ -111,6 +119,12 @@ uint32_array::uint32_array(index_t num_elements,
                 element_bytes)
 {}
 
+uint32_array::uint32_array(void*, ValueType& type)
+    : ValueType(type)
+{
+
+}
+
 uint32_array::~uint32_array()
 {}
 
@@ -130,6 +144,10 @@ uint32_array::~uint32_array()
                     offset,
                     stride,
                     element_bytes)
+    {}
+    float64_array::float64_array(void*,
+                                 ValueType& type)
+        : ValueType(type)
     {}
 
     float64_array::~float64_array()

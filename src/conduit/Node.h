@@ -5,6 +5,8 @@
 
 #include "Core.h"
 #include "Type.h"
+#include <map>
+#include <string>
 
 namespace conduit
 {
@@ -14,6 +16,7 @@ class Node
 public:
     Node(); // empty node
     Node(const Node &node);
+    Node(const BaseType &dtype);
     Node(void *data, const std::string &schema);
     Node(void *data, const Node *schema);
     Node(void *data, const BaseType &dtype);
@@ -30,15 +33,21 @@ public:
 
     virtual  ~Node();
   
-    void set(const &Node data);
+    void set(const Node& data);
     void set(BaseType data);
 
     void set(uint32 data);
     void set(float64 data);
 
+    void set(const uint32_array  *data);
+    void set(const float64_array *data);
+
     void set(const uint32_array  &data);
     void set(const float64_array &data);
-    
+
+    void set(void* data, const Node* schema);
+    void set(void* data, const BaseType &dtype);
+
     Node &operator=(const Node &node);
 
     Node &operator=(BaseType dtype);
@@ -49,12 +58,12 @@ public:
     Node &operator=(uint32_array  *data);
     Node &operator=(float64_array *data);
 
-    Node &operator=(uint32_array  &data);
-    Node &operator=(float64_array &data);
+    Node &operator=(const uint32_array  &data);
+    Node &operator=(const float64_array &data);
 
     std::string schema() const;
 
-    const BaseType    &dtype() const { return *m_dtype;}
+    const BaseType    &dtype() const { return m_dtype;}
     // bool              operator==(const Node &obj) const;
     // TODO: we will likly need const variants of these methods
                       
@@ -72,8 +81,8 @@ public:
     float64          as_float64() const { return *((float64*)element_pointer(0));}
     
 
-    uint32_array     as_uint32_array()   { return uint32_array(element_pointer(0),m_dtype);}
-    float64_array    as_float64_array()  { return float64_array(element_pointer(0),m_dtype);}
+    uint32_array     as_uint32_array()   { return uint32_array(element_pointer(0),*static_cast<ValueType*>(&m_dtype));}
+    float64_array    as_float64_array()  { return float64_array(element_pointer(0),*static_cast<ValueType*>(&m_dtype));}
     
 //    List             as_list();
 
@@ -86,13 +95,14 @@ private:
     // for value types
     index_t          element_index(index_t   idx) const;
     void            *element_pointer(index_t idx)
-                        {return m_data[element_index(idx)]};
+                     {return static_cast<char*>(m_data) + element_index(idx);};
     const void      *element_pointer(index_t idx) const 
-                        {return m_data[element_index(idx)]};
+                     {return static_cast<char*>(m_data) + element_index(idx);};
 
     // for true nodes
-    std::map<Node*> &entries();
+    std::map<std::string, Node*> &entries();
 
+    std::map<std::string, Node*> m_entries;
     bool      m_alloced;
     void     *m_data;
     BaseType  m_dtype;

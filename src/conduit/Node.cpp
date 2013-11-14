@@ -28,7 +28,7 @@ Node::Node(const Node &node)
 }
 
 ///============================================
-Node::Node(void *data, const std::string &schema);
+Node::Node(void *data, const std::string &schema)
 :m_data(NULL),
  m_alloced(false),
  m_dtype()
@@ -38,7 +38,7 @@ Node::Node(void *data, const std::string &schema);
 }
 
 ///============================================
-Node::Node(void *data, const Node *schema);
+Node::Node(void *data, const Node *schema)
 :m_data(NULL),
  m_alloced(false),
  m_dtype()
@@ -93,7 +93,7 @@ Node::Node(uint32_array  *data)
 }
 
 ///============================================
-Node::Node(float64_array *data);
+Node::Node(float64_array *data)
 :m_data(NULL),
  m_alloced(false),
  m_dtype()
@@ -165,7 +165,7 @@ Node::set(float64 data)
 
 ///============================================
 void 
-Node::set(uint32_array  *data)
+Node::set(const uint32_array  *data)
 {
     // TODO check for compatible, don't always re-init
     //init(data->ptr(),data->dtype());
@@ -173,7 +173,7 @@ Node::set(uint32_array  *data)
 
 ///============================================
 void 
-Node::set(float64_array  *data)
+Node::set(const float64_array  *data)
 {
     // TODO check for compatible, don't always re-init
     //init(data->ptr(),data->dtype());
@@ -196,7 +196,15 @@ Node::set(const float64_array  &data)
     //init(data); // copy?
 }
 
+void
+Node::set(void* data, const Node* schema)
+{
+}
 
+void
+Node::set( void *data, const BaseType &dtype)
+{
+}
 
 ///============================================
 Node &
@@ -213,7 +221,7 @@ Node::operator=(const Node &node)
 Node &
 Node::operator=(BaseType dtype)
 {
-    set(dtype)
+    set(dtype);
     return *this;
 }
 
@@ -221,7 +229,7 @@ Node::operator=(BaseType dtype)
 Node &
 Node::operator=(uint32 data)
 {
-    set(data)
+    set(data);
     return *this;
 }
 
@@ -270,7 +278,7 @@ Node::operator=(const float64_array &data)
 
 ///============================================
 std::string
-Node::schema() const;
+Node::schema() const
 {
      // TODO: Imp
      return "{}\n";
@@ -279,17 +287,17 @@ Node::schema() const;
 
 
 ///============================================
-Node             
-Node::&fetch(const std::string &path)
+Node&             
+Node::fetch(const std::string &path)
 {
     // TODO: Error checking ...
     // TODO: Nested paths
-    return entries()[path];
+    return *m_entries[path];
 }
 
 ///============================================
 bool           
-Node::has_path(const std::string &path) const;
+Node::has_path(const std::string &path) const
 {
     // TODO: Imp
 }
@@ -297,7 +305,7 @@ Node::has_path(const std::string &path) const;
 
 ///============================================
 void
-Node::paths(std::vector<std::string> &paths,bool expand=false) const;
+Node::paths(std::vector<std::string> &paths,bool expand) const
 {
     // TODO: Imp
     // TODO: Nested paths
@@ -347,7 +355,7 @@ Node::cleanup()
     }   
     m_data = NULL;
     m_alloced = false;
-    m_dtype = BaseType(empty_dtype);
+    m_dtype = BaseType();
 }
     
 ///============================================
@@ -358,10 +366,10 @@ Node::element_index(index_t   idx) const
 }
 
 ///============================================
-std::map<Node*> &  
+std::map<std::string, Node*> &  
 Node::entries()
 {
-     // TODO: Imp
+   return m_entries;
 }
 
 
