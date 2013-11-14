@@ -8,8 +8,8 @@ namespace conduit
 {
 
 // create storage for these guys
-uint32_dtype  = ValueType(BaseType::UINT32_T,1,0,0,sizeof(uint32);
-float64_dtype = ValueType(BaseType::FLOAT64_T,1,0,0,sizeof(float64));
+//uint32_dtype  = ValueType(BaseType::UINT32_T,1,0,0,sizeof(uint32);
+//float64_dtype = ValueType(BaseType::FLOAT64_T,1,0,0,sizeof(float64));
 
 
 ///============================================
@@ -63,7 +63,7 @@ BaseType::type_id_to_name(index_t dtype_id)
 ///============================================
 ///============================================
 ValueType::ValueType()
-BaseType(BaseType::EMPTY_T),
+: BaseType(BaseType::EMPTY_T),
   m_num_ele(0),
   m_offset(0),
   m_stride(0),
@@ -93,6 +93,47 @@ ValueType::element_index(index_t idx) const
 {
     return m_offset + m_stride * idx;
 }
+
+///============================================
+///
+/// uint32_array
+///
+///============================================
+///============================================
+uint32_array::uint32_array(index_t num_elements,
+                           index_t offset,
+                           index_t stride,
+                           index_t element_bytes=4)
+    : ValueType(ValueType::UINT32_T,
+                num_elements,
+                offset,
+                stride,
+                element_bytes)
+{}
+
+uint32_array::~uint32_array()
+{}
+
+
+///============================================
+///
+/// float64_array
+///
+///============================================
+///============================================
+    float64_array::float64_array(index_t num_elements,
+                                 index_t offset,
+                                 index_t stride,
+                                 index_t element_bytes=8)
+        : ValueType(ValueType::FLOAT64_T,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes)
+    {}
+
+    float64_array::~float64_array()
+    {}
 
 
 ///============================================
