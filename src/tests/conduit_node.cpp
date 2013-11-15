@@ -101,7 +101,7 @@ TEST(conduit_node_simple_gen_schema_test, conduit_node)
     EXPECT_EQ(n2["g"]["b"].as_uint32(),b_val);
     EXPECT_EQ(n2["g"]["c"].as_float64(),c_val);
     
-    std::string schema3 = "{\"dtype\":\"uint32\",\"length\":\"5\"}";
+    std::string schema3 = "{\"dtype\":\"uint32\",\"length\": 5}";
     uint32 *data2 = new uint32[5];
     for (int i = 0; i < 5; i++) {
        data2[i] = i * 5;
@@ -110,6 +110,15 @@ TEST(conduit_node_simple_gen_schema_test, conduit_node)
     for (int i = 0; i < 5; i++) {
        EXPECT_EQ(n3.as_uint32_ptr()[i], i*5);
     }
+    std::string schema4 = "[\"uint32\", \"float64\", \"uint32\"]";
+    char* data3 = new char[16];
+    memcpy(&data[0],&a_val,4);
+    memcpy(&data[4],&c_val,8);
+    memcpy(&data[12],&b_val,4);
+    Node n4(data3, schema4);
+    //EXPECT_EQ(n[0].as_uint32(),a_val);
+    //EXPECT_EQ(n[1].as_float64(),c_val);
+    //EXPECT_EQ(n[2].as_uint32(),b_val);
 }
 
 

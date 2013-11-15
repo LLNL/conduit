@@ -273,6 +273,12 @@ Node::total_bytes() const
                 size += itr->second.total_bytes();
             }
             break;
+        case DataType::LIST_T:
+            for (std::vector<Node>::const_iterator itr = m_list_data.begin();
+                 itr != m_list_data.end(); ++itr) {
+                size += itr->total_bytes();
+            }
+            break;
         default:
              // error
              break;
@@ -436,46 +442,47 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
     if(jvalue.IsObject())
     {
         static const char* kTypeNames[] = { "Null", "False", "True", "Object", "Array", "String", "Number" };
-        for (rapidjson::Value::ConstMemberIterator itr = jvalue.MemberBegin(); itr != jvalue.MemberEnd(); ++itr)
-        {
-            printf("Type of member %s is %s\n", itr->name.GetString(), kTypeNames[itr->value.GetType()]);
-            std::string entry_name(itr->name.GetString());
-            if(itr->value.IsString())
+
+        if (jvalue.HasMember("dtype")) {
+            std::string dtype(jvalue["dtype"].GetString());
+            int length = jvalue["length"].GetInt();
+            delete m_dtype;
+            index_t type_id = DataType::type_name_to_id(dtype);
+            index_t size    = DataType::size_of_type_id(type_id);
+            m_dtype = new DataType(type_id, length, curr_offset,
+                                   size, size);
+            m_data = data;
+        } else {
+
+            for (rapidjson::Value::ConstMemberIterator itr = jvalue.MemberBegin(); itr != jvalue.MemberEnd(); ++itr)
             {
-                std::string dtype_name(itr->value.GetString());
-                printf("%s: %s\n", entry_name.c_str(),dtype_name.c_str());
-                // uses this paradigm
-                index_t type = DataType::type_name_to_id(dtype_name);
-                index_t size = DataType::size_of_type_id(type);
-                DataType dtype(type,1,curr_offset,size,size);
-                m_entries[entry_name] = Node(data,dtype);
-                // calc offset (currenlty wrong b/c we have to pass all params to Type
-                // dont want to look up element_size in here, type needs default settings
-                // to handle this case)
-                curr_offset += dtype.total_bytes();
-            } else if (itr->value.IsObject()) {
-
-                if (itr->value.HasMember("dtype")) {
-                    std::string dtype(itr->value["dtype"].GetString());
-                    int length = itr->value["length"].GetInt();
-                    delete m_dtype;
-                    index_t type_id = DataType::type_name_to_id(dtype);
-                    index_t size    = DataType::size_of_type_id(type_id);
-                    m_dtype = new DataType(type_id, length, curr_offset,
-                                           size, size);
-                    m_data = data;
-                } else {
-                    DataType dtype(DataType::NODE_T);
-                    Node node(dtype);
-                    node.walk_schema(data, itr->value, curr_offset);
-
-                    curr_offset += node.total_bytes();
-                    m_entries[entry_name] = node;
-                }
+                printf("Type of member %s is %s\n", itr->name.GetString(), kTypeNames[itr->value.GetType()]);
+                std::string entry_name(itr->name.GetString());
+                Node node;
+                node.walk_schema(data, itr->value, curr_offset);
+                m_entries[entry_name] = node;
+                curr_offset += node.total_bytes();
             }
         }
+    } else if (jvalue.IsArray()) {
+        delete m_dtype;
+        m_dtype = new DataType(DataType::LIST_T);
+        for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++) {
+            Node node;
+            node.walk_schema(data, jvalue[i], curr_offset);
+            curr_offset += node.total_bytes();
+            m_list_data.push_back(node);
+printf("%d\n", curr_offset);
+        }
+    } else if(jvalue.IsString()) {
+         std::string dtype_name(jvalue.GetString());
+         index_t type = DataType::type_name_to_id(dtype_name);
+         index_t size = DataType::size_of_type_id(type);
+         delete m_dtype;
+         m_dtype = new DataType(type,1,curr_offset,size,size);
+         m_data = data;
     }
-    
+ 
     ///
     /// each entry will either be:
     ///  a string that describes a dtype 
