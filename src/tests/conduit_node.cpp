@@ -77,8 +77,7 @@ TEST(conduit_node_list_test, conduit_node)
 
 }
 
-
-TEST(conduit_node_simple_schema_test, conduit_node)
+TEST(conduit_node_simple_gen_schema_test, conduit_node)
 {
     uint32   a_val  = 10;
     uint32   b_val  = 20;
@@ -111,4 +110,23 @@ TEST(conduit_node_simple_schema_test, conduit_node)
     for (int i = 0; i < 5; i++) {
        EXPECT_EQ(n3.as_uint32_ptr()[i], i*5);
     }
+}
+
+
+
+TEST(conduit_node_simple_schema_test, conduit_node)
+{
+    uint32   a_val  = 10;
+    uint32   b_val  = 20;
+    float64  c_val  = 30.0;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+    n["here"]["there"] = c_val;
+    
+    std::string res = n.schema();
+    std::cout << res;
+    
 }

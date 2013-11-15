@@ -284,8 +284,32 @@ Node::total_bytes() const
 std::string
 Node::schema() const
 {
-     // TODO: Imp
-     return "{}\n";
+    std::ostringstream oss;
+    schema(oss);
+    return oss.str();
+}
+
+
+///============================================
+void
+Node::schema(std::ostringstream &oss) const
+{
+    if(m_dtype->id() == DataType::NODE_T)
+    {
+        oss << "{";
+        std::map<std::string,Node>::const_iterator itr;
+        for(itr = m_entries.begin(); itr != m_entries.end(); ++itr)
+        {
+            oss << "\"\""<< itr->first << "\" : ";
+            oss << itr->second.schema();
+        }
+        oss << "}\n";
+    }
+    // TODO: LIST CASE
+    else // assume data value type for now
+    {
+        m_dtype->schema(oss);
+    }
 }
 
 
