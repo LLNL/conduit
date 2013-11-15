@@ -519,7 +519,6 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
             node.walk_schema(data, jvalue[i], curr_offset);
             curr_offset += node.total_bytes();
             m_list_data.push_back(node);
-printf("%d\n", curr_offset);
         }
     } else if(jvalue.IsString()) {
          std::string dtype_name(jvalue.GetString());
