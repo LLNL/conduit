@@ -25,6 +25,19 @@ DataType::DataType()
   m_ele_bytes(0)
 {}
 
+DataType::DataType(const std::string &dtype_name,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes)
+: m_id(type_name_to_id(dtype_name)),
+  m_num_ele(num_elements),
+  m_offset(offset),
+  m_stride(stride),
+  m_ele_bytes(element_bytes)
+{
+}
+
 DataType::DataType(index_t dtype_id,
                    index_t num_elements,
                    index_t offset,
@@ -163,36 +176,6 @@ DataType::size_of_type_id(index_t dtype)
 /// Helpers 
 ///============================================
  
-///============================================
-DataType Type(const std::string &dtype_name,
-              index_t num_elements,
-              index_t offset,
-              index_t stride,
-              index_t element_bytes)
-{
-    return Type(DataType::type_name_to_id(dtype_name),
-                num_elements, 
-                offset, 
-                stride, 
-                element_bytes);
-}
-
-///============================================
-DataType Type(index_t dtype_id,
-              index_t num_elements,
-              index_t offset,
-              index_t stride,
-              index_t element_bytes)
-{
-    return DataType(dtype_id,
-                     num_elements, 
-                     offset, 
-                     stride, 
-                     element_bytes);
-}
-
-
-// 
 // ///============================================
 // BaseType Type(Node *obj_schema,
 //               index_t num_entries)

@@ -35,12 +35,17 @@ public:
             
              DataType();
              DataType(index_t id);
-    DataType(const DataType& type);
-    DataType(index_t dtype_id,
-              index_t num_elements,
-              index_t offset,
-              index_t stride,
-              index_t element_bytes);
+             DataType(const DataType& type);
+             DataType(const std::string &dtype_name,
+                      index_t num_elements,
+                      index_t offset,
+                      index_t stride,
+                      index_t element_bytes);
+             DataType(index_t dtype_id,
+                      index_t num_elements,
+                      index_t offset,
+                      index_t stride,
+                      index_t element_bytes);
     virtual ~DataType();
     
     static index_t      type_name_to_id(const std::string &name);
@@ -86,28 +91,6 @@ private:
 //     std::vector<index_t>  m_num_entries;
 // 
 // };
-
-
-///============================================
-/// Construction Helpers
-///============================================
-
-DataType Type(const std::string &dtype_name);
-
-
-
-// these handles value types
-DataType Type(const std::string &dtype_name,
-              index_t num_elements,
-              index_t offset,
-              index_t stride,
-              index_t element_bytes);
-
-DataType Type(index_t dtype_id,
-              index_t num_elements,
-              index_t offset,
-              index_t stride,
-              index_t element_bytes);
 
 
 // these handle lists

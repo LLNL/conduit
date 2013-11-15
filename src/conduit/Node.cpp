@@ -330,8 +330,7 @@ Node::cleanup()
 index_t          
 Node::element_index(index_t   idx) const
 {
-    // TODO: Imp
-    return 0;
+    return m_dtype->offset() + m_dtype->stride()*idx;
 }
 
 ///============================================
@@ -377,7 +376,7 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
                 // I think we need simply have Type, with a bunch of smart constructors. 
                 // it is ok if some methods don't make sense for all types, Node already
                 // uses this paradigm
-                DataType dtype = Type(dtype_name,1,curr_offset,0,0);
+                DataType dtype(dtype_name,1,curr_offset,0,0);
                 m_entries[entry_name] = Node(data,dtype);
                 // calc offset (currenlty wrong b/c we have to pass all params to Type
                 // dont want to look up element_size in here, type needs default settings
