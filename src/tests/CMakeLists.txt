@@ -6,6 +6,7 @@ set(UNIT_TESTS gtest_smoke
                rapidjson_smoke
                conduit_smoke
                conduit_node
+               conduit_serialize
                numpy_smoke
                type_tests)
 

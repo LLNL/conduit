@@ -315,17 +315,64 @@ Node::schema(std::ostringstream &oss) const
         }
         oss << "}\n";
     }
-    // TODO: LIST CASE
+    else if(m_dtype->id() == DataType::LIST_T)
+    {
+        oss << "[";
+        std::vector<Node>::const_iterator itr;
+        bool first=true;
+        for(itr = m_list_data.begin(); itr != m_list_data.end(); ++itr)
+        {
+            if(!first)
+                oss << ",";
+            oss << (*itr).schema() << "\n";
+            first=false;
+        }
+        oss << "]\n";
+    }
     else // assume data value type for now
     {
         m_dtype->schema(oss);
     }
 }
 
+///============================================
+void
+Node::serialize(std::vector<uint8> &data) const
+{
+    data.reserve(total_bytes());
+    serialize(&data[0],0);
+}
+///============================================
+void
+Node::serialize(uint8 *data,index_t curr_offset) const
+{
+    if(m_dtype->id() == DataType::NODE_T)
+    {
+        std::map<std::string,Node>::const_iterator itr;
+        for(itr = m_entries.begin(); itr != m_entries.end(); ++itr)
+        {
+            itr->second.serialize(&data[curr_offset],curr_offset);
+            curr_offset+=itr->second.total_bytes();
+        }
+    }
+    else if(m_dtype->id() == DataType::LIST_T)
+    {
+        std::vector<Node>::const_iterator itr;
+        for(itr = m_list_data.begin(); itr != m_list_data.end(); ++itr)
+        {
+            (*itr).serialize(&data[curr_offset],curr_offset);
+            curr_offset+=(*itr).total_bytes();
+        }
+    }
+    else // assume data value type for now
+    {
+        memcpy(&data[curr_offset],m_data,total_bytes());
+    }
+}
 
 
 ///============================================
-Node&             
+Node&
 Node::fetch(const std::string &path)
 {
     // TODO: Error checking ...
