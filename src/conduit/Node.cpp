@@ -309,17 +309,64 @@ Node::schema(std::ostringstream &oss) const
         }
         oss << "}\n";
     }
-    // TODO: LIST CASE
+    else if(m_dtype->id() == DataType::LIST_T)
+    {
+        oss << "[";
+        std::vector<Node>::const_iterator itr;
+        bool first=true;
+        for(itr = m_list_data.begin(); itr != m_list_data.end(); ++itr)
+        {
+            if(!first)
+                oss << ",";
+            oss << (*itr)->.schema() << "\n";
+            first=false;
+        }
+        oss << "]\n";
+    }
     else // assume data value type for now
     {
         m_dtype->schema(oss);
     }
 }
 
+///============================================
+void
+Node::serialize(std::vector<uint8> &data) const
+{
+    data.reserve(total_bytes());
+    serialize(&data[0],0);
+}
+///============================================
+void
+Node::serialize(uint8 *data,index_t curr_offset) const
+{
+    if(m_dtype->id() == DataType::NODE_T)
+    {
+        std::map<std::string,Node>::const_iterator itr;
+        for(itr = m_entries.begin(); itr != m_entries.end(); ++itr)
+        {
+            itr->second.serialize(&data[curr_offset]);
+            curr_offset+=itr->second.total_bytes();
+        }
+    }
+    else if(m_dtype->id() == DataType::LIST_T)
+    {
+        std::vector<Node>::const_iterator itr;
+        for(itr = m_list_data.begin(); itr != m_list_data.end(); ++itr)
+        {
+            (*itr)->serialize(&data[curr_offset]);
+            curr_offset+=(*itr).total_bytes();
+        }
+    }
+    else // assume data value type for now
+    {
+        memcpy(&data[curr_offset],m_data,total_bytes());
+    }
+}
 
 
 ///============================================
-Node&             
+Node&
 Node::fetch(const std::string &path)
 {
     // TODO: Error checking ...
@@ -454,24 +501,12 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
                 // to handle this case)
                 curr_offset += dtype.total_bytes();
             } else if (itr->value.IsObject()) {
+                DataType dtype(DataType::NODE_T);
+                Node node(dtype);
+                node.walk_schema(data, itr->value, curr_offset);
 
-                if (itr->value.HasMember("dtype")) {
-                    std::string dtype(itr->value["dtype"].GetString());
-                    int length = itr->value["length"].GetInt();
-                    delete m_dtype;
-                    index_t type_id = DataType::type_name_to_id(dtype);
-                    index_t size    = DataType::size_of_type_id(type_id);
-                    m_dtype = new DataType(type_id, length, curr_offset,
-                                           size, size);
-                    m_data = data;
-                } else {
-                    DataType dtype(DataType::NODE_T);
-                    Node node(dtype);
-                    node.walk_schema(data, itr->value, curr_offset);
-
-                    curr_offset += node.total_bytes();
-                    m_entries[entry_name] = node;
-                }
+                curr_offset += node.total_bytes();
+                m_entries[entry_name] = node;
             }
         }
     }

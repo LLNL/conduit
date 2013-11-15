@@ -60,6 +60,9 @@ public:
     std::string schema() const;
     void        schema(std::ostringstream &oss) const;
 
+    void        serialize(std::vector<uint8> &data) const;
+    void        serialize(uint8 *data) const;
+
     const DataType    &dtype() const { return *m_dtype;}
     // bool              operator==(const Node &obj) const;
     // TODO: we will likly need const variants of these methods
@@ -113,7 +116,7 @@ private:
     bool      m_alloced;
     void     *m_data;
     DataType *m_dtype;
-    
+
 };
 
 template<typename TYPE>
