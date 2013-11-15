@@ -55,6 +55,22 @@ Node::Node(void *data, const BaseType &dtype)
     set(data,dtype);
 }
 
+Node::Node(const std::vector<uint32>  &data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(0)
+{
+   set(data);
+}
+
+Node::Node(const std::vector<float64>  &data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(0)
+{
+   set(data);
+}
+
 ///============================================
 Node::Node(const BaseType &dtype)
 :m_data(NULL),
@@ -278,7 +294,7 @@ Node::init(const BaseType &dtype)
 void
 Node::init(const ValueType& dtype)
 {
-   if (m_data) {
+   if (m_alloced) {
       char* data = static_cast<char*>(data);
       delete data;
    }
