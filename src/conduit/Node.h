@@ -61,7 +61,7 @@ public:
     void        schema(std::ostringstream &oss) const;
 
     void        serialize(std::vector<uint8> &data) const;
-    void        serialize(uint8 *data) const;
+    void        serialize(uint8 *data, index_t curr_offset) const;
 
     const DataType    &dtype() const { return *m_dtype;}
     // bool              operator==(const Node &obj) const;
