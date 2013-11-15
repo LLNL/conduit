@@ -7,7 +7,7 @@
 
 #include <iostream>
 #include "gtest/gtest.h"
-
+// #include "rapidjson/document.h"
 using namespace conduit;
 
 TEST(conduit_node_simple_test, conduit_node)
@@ -116,8 +116,13 @@ TEST(conduit_node_simple_schema_test, conduit_node)
     n["b"] = b_val;
     n["c"] = c_val;
     n["here"]["there"] = c_val;
-    
+
     std::string res = n.schema();
     std::cout << res;
-    
+    rapidjson::Document d;
+    d.Parse<0>(res.c_str());
+
+    EXPECT_TRUE(d.HasMember("a"));
+    EXPECT_TRUE(d.HasMember("b"));
+    EXPECT_TRUE(d.HasMember("c"));
 }

@@ -160,7 +160,7 @@ DataType::schema(std::ostringstream &oss) const
         case UINT32_T : 
         case FLOAT64_T : 
         {
-            oss << "\"" << type_id_to_name(m_id) << " \"";
+            oss << "\"" << type_id_to_name(m_id) << "\"";
             oss << ", \"length\" : " << m_num_ele;
             oss << ", \"offset\" : " << m_offset;
             oss << ", \"stride\" : " << m_stride;

@@ -16,7 +16,7 @@ namespace conduit
 Node::Node()
 :m_data(NULL),
  m_alloced(false),
- m_dtype(0)
+ m_dtype(new DataType(DataType::NODE_T))
 {}
 
 ///============================================
@@ -298,10 +298,14 @@ Node::schema(std::ostringstream &oss) const
     {
         oss << "{";
         std::map<std::string,Node>::const_iterator itr;
+        bool first=true;
         for(itr = m_entries.begin(); itr != m_entries.end(); ++itr)
         {
-            oss << "\"\""<< itr->first << "\" : ";
-            oss << itr->second.schema();
+            if(!first)
+                oss << ",";
+            oss << "\""<< itr->first << "\" : ";
+            oss << itr->second.schema() << "\n";
+            first=false;
         }
         oss << "}\n";
     }
