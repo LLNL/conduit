@@ -35,6 +35,7 @@ TEST(conduit_node_simple_test, conduit_node)
 
 
     Node n2(&bytes[0],schema);
+    std::cout << "NEWSCHEMA:\n" << n2.schema();
     Node &t = n2["a"];
     EXPECT_EQ(n2["a"].as_uint32(),a_val);
     EXPECT_EQ(n2["b"].as_uint32(),b_val);

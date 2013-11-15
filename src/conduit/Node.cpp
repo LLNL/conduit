@@ -351,7 +351,7 @@ Node::serialize(uint8 *data,index_t curr_offset) const
         std::map<std::string,Node>::const_iterator itr;
         for(itr = m_entries.begin(); itr != m_entries.end(); ++itr)
         {
-            itr->second.serialize(&data[curr_offset],curr_offset);
+            itr->second.serialize(&data[0],curr_offset);
             curr_offset+=itr->second.total_bytes();
         }
     }
@@ -360,7 +360,7 @@ Node::serialize(uint8 *data,index_t curr_offset) const
         std::vector<Node>::const_iterator itr;
         for(itr = m_list_data.begin(); itr != m_list_data.end(); ++itr)
         {
-            (*itr).serialize(&data[curr_offset],curr_offset);
+            (*itr).serialize(&data[0],curr_offset);
             curr_offset+=(*itr).total_bytes();
         }
     }
