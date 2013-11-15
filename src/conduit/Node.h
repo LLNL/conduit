@@ -19,7 +19,7 @@ class Node
 {
 public:
     Node(); // empty node
-    explicit Node(const Node &node);
+    Node(const Node &node);
     explicit Node(const DataType &dtype);
     Node(void *data, const std::string &schema);
     Node(void *data, const Node *schema);
@@ -75,7 +75,7 @@ public:
     Node             &operator[](const std::string &path)
                       {return fetch(path);}
     Node             &operator[](const index_t idx)
-                      {return *m_list_data[idx];}
+                      {return m_list_data[idx];}
 
     index_t          to_integer() const;
     float64          to_real()    const;
@@ -108,7 +108,7 @@ private:
     // for true nodes
     std::map<std::string, Node> &entries();
 
-    std::vector<Node*> m_list_data;
+    std::vector<Node> m_list_data;
     std::map<std::string, Node> m_entries;
     bool      m_alloced;
     void     *m_data;
@@ -119,8 +119,8 @@ private:
 template<typename TYPE>
 void Node::push_back(TYPE data)
 {
-   Node* node = new Node(data);
-   m_list_data.push_back(node);
+   Node *node = new Node(data);
+   m_list_data.push_back(*node);
 }
 
 };
