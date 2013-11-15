@@ -138,6 +138,44 @@ DataType::size_of_type_id(index_t dtype)
 }
 
 
+std::string 
+DataType::schema() const
+{
+    std::ostringstream oss;
+    schema(oss);
+    return oss.str();
+}
+
+void
+DataType::schema(std::ostringstream &oss) const
+{
+    oss << "{\"dtype\":";
+    switch (m_id)
+    {
+        case EMPTY_T : 
+        {
+            oss << "\"[empty]\"";
+            break;
+        }
+        case UINT32_T : 
+        case FLOAT64_T : 
+        {
+            oss << "\"" << type_id_to_name(m_id) << " \"";
+            oss << ", \"length\" : " << m_num_ele;
+            oss << ", \"offset\" : " << m_offset;
+            oss << ", \"stride\" : " << m_stride;
+            oss << ", \"element_bytes\" : " << m_ele_bytes;
+            break;
+        }
+        default : {
+            oss << "\"[unknown]\"";
+            break;
+        }
+    }
+    oss << "}";
+}
+
+
 ///============================================
 ///
 /// ListType

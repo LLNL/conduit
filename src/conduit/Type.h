@@ -7,6 +7,7 @@
 
 #include "Core.h"
 #include <vector>
+#include <sstream>
 
 namespace conduit
 {
@@ -51,6 +52,9 @@ public:
     static index_t      type_name_to_id(const std::string &name);
     static std::string  type_id_to_name(index_t dtype);
     static index_t      size_of_type_id(index_t dtype);
+    
+    std::string         schema() const;
+    void                schema(std::ostringstream &oss) const;
     
     index_t             id()  const { return m_id;}    
     index_t     total_bytes() const;

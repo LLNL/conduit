@@ -8,6 +8,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <sstream>
 
 #include "rapidjson/document.h"
 
@@ -57,6 +58,7 @@ public:
 
 
     std::string schema() const;
+    void        schema(std::ostringstream &oss) const;
 
     const DataType    &dtype() const { return *m_dtype;}
     // bool              operator==(const Node &obj) const;
