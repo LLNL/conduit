@@ -49,7 +49,7 @@ Node::Node(void *data, const Node *schema)
 }
 
 ///============================================
-Node::Node(void *data, const BaseType &dtype)
+Node::Node(void *data, const DataType &dtype)
 :m_data(NULL),
  m_alloced(false),
  m_dtype(0)
@@ -74,7 +74,7 @@ Node::Node(const std::vector<float64>  &data)
 }
 
 ///============================================
-Node::Node(const BaseType &dtype)
+Node::Node(const DataType &dtype)
 :m_data(NULL),
  m_alloced(false),
  m_dtype(0)
@@ -113,13 +113,13 @@ Node::set(const Node &node)
 {
     /// TODO
     // init calls cleanup();
-    //init(BaseType::NODE_T);
+    //init(DataType::NODE_T);
     //update(node);
 }
 
 ///============================================
 void 
-Node::set(BaseType dtype)
+Node::set(DataType dtype)
 {
     // init calls cleanup
     //init(dtype); // always
@@ -130,7 +130,7 @@ void
 Node::set(uint32 data)
 {
     // TODO check for compatible, don't always re-init
-    init(ValueType::uint32_dtype);
+    init(DataType::uint32_dtype);
     *((uint32*)m_data) = data;
 }
 
@@ -140,7 +140,7 @@ void
 Node::set(float64 data)
 {
     // TODO check for compatible, don't always re-init
-    init(ValueType::float64_dtype);
+    init(DataType::float64_dtype);
     *((float64*)m_data) = data;
 }
 
@@ -149,7 +149,7 @@ Node::set(float64 data)
 void 
 Node::set(const std::vector<uint32>  &data)
 {
-    ValueType vec_t(BaseType::UINT32_T,
+    DataType vec_t(DataType::UINT32_T,
                     (index_t)data.size(),
                     0,
                     sizeof(uint32),
@@ -162,7 +162,7 @@ Node::set(const std::vector<uint32>  &data)
 void 
 Node::set(const std::vector<float64>  &data)
 {
-    ValueType vec_t(BaseType::FLOAT64_T,
+    DataType vec_t(DataType::FLOAT64_T,
                     (index_t)data.size(),
                     0,
                     sizeof(float64),
@@ -179,7 +179,7 @@ Node::set(void* data, const Node* schema)
 }
 
 void
-Node::set( void *data, const BaseType &dtype)
+Node::set( void *data, const DataType &dtype)
 {
 }
 
@@ -196,7 +196,7 @@ Node::operator=(const Node &node)
 
 ///============================================
 Node &
-Node::operator=(BaseType dtype)
+Node::operator=(DataType dtype)
 {
     set(dtype);
     return *this;
@@ -289,12 +289,7 @@ Node::to_real() const
     
 ///============================================
 void
-Node::init(const BaseType &dtype)
-{
-}
-
-void
-Node::init(const ValueType& dtype)
+Node::init(const DataType& dtype)
 {
    if (m_alloced) {
       char* data = static_cast<char*>(data);
@@ -302,7 +297,7 @@ Node::init(const ValueType& dtype)
    }
    m_alloced = true;
    m_data = new char[dtype.number_of_elements()*dtype.element_bytes()];
-   m_dtype = new ValueType(dtype);
+   m_dtype = new DataType(dtype);
 }
 
 // TODO: Many more init cases
@@ -313,11 +308,11 @@ Node::cleanup()
 {
     if(m_alloced)
     {
-        if(m_dtype->id() == BaseType::NODE_T)
+        if(m_dtype->id() == DataType::NODE_T)
         {
             //TODO: Imp    delete entries_ptr();
         }
-        else if(m_dtype->id() == BaseType::UINT32_T)
+        else if(m_dtype->id() == DataType::UINT32_T)
         {
             uint32 *ptr=(uint32*)m_data;
             delete ptr; 
@@ -355,7 +350,7 @@ Node::walk_schema(void *data, const std::string &schema)
     // clean up before this
     m_data    = data;
     m_alloced = false;
-    m_dtype   = new BaseType(BaseType::NODE_T);
+    m_dtype   = new DataType(DataType::NODE_T);
     
     rapidjson::Document document;
     document.Parse<0>(schema.c_str());
@@ -382,7 +377,7 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
                 // I think we need simply have Type, with a bunch of smart constructors. 
                 // it is ok if some methods don't make sense for all types, Node already
                 // uses this paradigm
-                BaseType dtype = Type(dtype_name,1,curr_offset,0,0);
+                DataType dtype = Type(dtype_name,1,curr_offset,0,0);
                 m_entries[entry_name] = Node(data,dtype);
                 // calc offset (currenlty wrong b/c we have to pass all params to Type
                 // dont want to look up element_size in here, type needs default settings

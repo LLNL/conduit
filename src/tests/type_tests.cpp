@@ -12,8 +12,8 @@ using namespace conduit;
 
 TEST(value_type_test, value_type_tests)
 {
-    EXPECT_EQ(BaseType::EMPTY_T,0);
-    EXPECT_EQ(BaseType::type_id_to_name(BaseType::EMPTY_T),"[empty]");
-    EXPECT_EQ(BaseType::type_name_to_id("[empty]"),BaseType::EMPTY_T);
-    EXPECT_TRUE( (BaseType::EMPTY_T != BaseType::NODE_T) );
+    EXPECT_EQ(DataType::EMPTY_T,0);
+    EXPECT_EQ(DataType::type_id_to_name(DataType::EMPTY_T),"[empty]");
+    EXPECT_EQ(DataType::type_name_to_id("[empty]"),DataType::EMPTY_T);
+    EXPECT_TRUE( (DataType::EMPTY_T != DataType::NODE_T) );
 }

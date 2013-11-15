@@ -19,12 +19,12 @@ class Node
 public:
     Node(); // empty node
     Node(const Node &node);
-    Node(const BaseType &dtype);
+    Node(const DataType &dtype);
     Node(void *data, const std::string &schema);
     Node(void *data, const Node *schema);
-    Node(void *data, const BaseType &dtype);
+    Node(void *data, const DataType &dtype);
 
-    Node(BaseType dtype);
+    Node(DataType dtype);
     Node(uint32  data);
     Node(float64 data);
 
@@ -34,7 +34,7 @@ public:
     virtual  ~Node();
 
     void set(const Node& data);
-    void set(BaseType data);
+    void set(DataType data);
 
     void set(uint32 data);
     void set(float64 data);
@@ -43,11 +43,11 @@ public:
     void set(const std::vector<float64> &data);
 
     void set(void* data, const Node* schema);
-    void set(void* data, const BaseType &dtype);
+    void set(void* data, const DataType &dtype);
 
     Node &operator=(const Node &node);
 
-    Node &operator=(BaseType dtype);
+    Node &operator=(DataType dtype);
 
     Node &operator=(uint32 data);
     Node &operator=(float64 data);
@@ -58,7 +58,7 @@ public:
 
     std::string schema() const;
 
-    const BaseType    &dtype() const { return *m_dtype;}
+    const DataType    &dtype() const { return *m_dtype;}
     // bool              operator==(const Node &obj) const;
     // TODO: we will likly need const variants of these methods
 
@@ -89,8 +89,7 @@ public:
 
     
 private:
-    void             init(const BaseType &dtype);
-    void             init(const ValueType &dtype);
+    void             init(const DataType &dtype);
     void             cleanup(); //dalloc 
     
     void             walk_schema(void *data, const std::string &schema);
@@ -111,7 +110,7 @@ private:
     std::map<std::string, Node> m_entries;
     bool      m_alloced;
     void     *m_data;
-    BaseType *m_dtype;
+    DataType *m_dtype;
     
 };
 

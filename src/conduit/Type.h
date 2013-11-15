@@ -13,11 +13,15 @@ namespace conduit
 
 class Node;
 ///============================================
-/// BaseType
+/// DataType
 ///============================================
-class BaseType
+class DataType
 {
 public:
+
+   static DataType uint32_dtype;
+   static DataType float64_dtype;
+
     typedef enum
     {
         EMPTY_T = 0, // default
@@ -29,60 +33,39 @@ public:
         BYTESTR_T,   // bytestr (incore c-string)
     } TypeEnum;
             
-             BaseType();
-             BaseType(index_t id);
-    virtual ~BaseType();
-    
-    static index_t      type_name_to_id(const std::string &name);
-    static std::string  type_id_to_name(index_t dtype);
-    
-    index_t             id()  const { return m_id;}    
-    virtual index_t     total_bytes() const {return 0;}
-
-protected:
-    index_t  m_id;
-};
-
-///============================================
-/// ValueType
-///============================================
-
-class ValueType: public BaseType
-{
-public:
-
-   static ValueType uint32_dtype;
-   static ValueType float64_dtype;
-
-    ValueType();
-    ValueType(const ValueType& type);
-    ValueType(index_t dtype_id,
+             DataType();
+             DataType(index_t id);
+    DataType(const DataType& type);
+    DataType(index_t dtype_id,
               index_t num_elements,
               index_t offset,
               index_t stride,
               index_t element_bytes);
-              
-    virtual ~ValueType();
+    virtual ~DataType();
     
+    static index_t      type_name_to_id(const std::string &name);
+    static std::string  type_id_to_name(index_t dtype);
+    static index_t      size_of_type_id(index_t dtype);
+    
+    index_t             id()  const { return m_id;}    
+    index_t     total_bytes() const;
+
     index_t    number_of_elements()  const { return m_num_ele;}
     index_t    offset()              const { return m_offset;}
     index_t    stride()              const { return m_stride;}
     index_t    element_bytes()       const { return m_ele_bytes;}
 
-    virtual index_t  total_bytes() const {return m_ele_bytes * m_num_ele;}
-    
     index_t    element_index(index_t idx) const;
 
 private:
-     index_t   m_num_ele;    // number of entries
-     index_t   m_offset;     // bytes to start of array
-     index_t   m_stride;     // bytes between start of current and start of next
-     index_t   m_ele_bytes;  // bytes per element
-     // TODO: future  index_t  m_endianness;
+    index_t  m_id;
+    index_t   m_num_ele;    // number of entries
+    index_t   m_offset;     // bytes to start of array
+    index_t   m_stride;     // bytes between start of current and start of next
+    index_t   m_ele_bytes;  // bytes per element
+    // TODO: future  index_t  m_endianness;
 
 };
-
-
 
 ///============================================
 /// ListType
@@ -109,18 +92,18 @@ private:
 /// Construction Helpers
 ///============================================
 
-BaseType Type(const std::string &dtype_name);
+DataType Type(const std::string &dtype_name);
 
 
 
 // these handles value types
-BaseType Type(const std::string &dtype_name,
+DataType Type(const std::string &dtype_name,
               index_t num_elements,
               index_t offset,
               index_t stride,
               index_t element_bytes);
 
-BaseType Type(index_t dtype_id,
+DataType Type(index_t dtype_id,
               index_t num_elements,
               index_t offset,
               index_t stride,
