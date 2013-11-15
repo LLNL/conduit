@@ -25,7 +25,6 @@ Node::Node(const Node &node)
  m_alloced(false),
  m_dtype(0)
 {
-    printf("node address %ld\n", node.m_dtype);
     set(node);
 }
 
@@ -389,8 +388,6 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
                 index_t type = DataType::type_name_to_id(dtype_name);
                 index_t size = DataType::size_of_type_id(type);
                 DataType dtype(type,1,curr_offset,size,size);
-                Node foo(data, dtype);
-    printf("blah %ld\n", foo.m_dtype);
                 m_entries[entry_name] = Node(data,dtype);
                 // calc offset (currenlty wrong b/c we have to pass all params to Type
                 // dont want to look up element_size in here, type needs default settings
