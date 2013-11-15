@@ -63,7 +63,7 @@ public:
     index_t    element_index(index_t idx) const;
 
 private:
-    index_t  m_id;
+    index_t   m_id;
     index_t   m_num_ele;    // number of entries
     index_t   m_offset;     // bytes to start of array
     index_t   m_stride;     // bytes between start of current and start of next

@@ -426,12 +426,24 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
                 // to handle this case)
                 curr_offset += dtype.total_bytes();
             } else if (itr->value.IsObject()) {
-                DataType dtype(DataType::NODE_T);
-                Node node(dtype);
-                node.walk_schema(data, itr->value, curr_offset);
 
-                curr_offset += node.total_bytes();
-                m_entries[entry_name] = node;
+                if (itr->value.HasMember("dtype")) {
+                    std::string dtype(itr->value["dtype"].GetString());
+                    int length = itr->value["length"].GetInt();
+                    delete m_dtype;
+                    index_t type_id = DataType::type_name_to_id(dtype);
+                    index_t size    = DataType::size_of_type_id(type_id);
+                    m_dtype = new DataType(type_id, length, curr_offset,
+                                           size, size);
+                    m_data = data;
+                } else {
+                    DataType dtype(DataType::NODE_T);
+                    Node node(dtype);
+                    node.walk_schema(data, itr->value, curr_offset);
+
+                    curr_offset += node.total_bytes();
+                    m_entries[entry_name] = node;
+                }
             }
         }
     }
