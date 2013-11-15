@@ -50,6 +50,10 @@ protected:
 class ValueType: public BaseType
 {
 public:
+
+   static ValueType uint32_dtype;
+   static ValueType float64_dtype;
+
     ValueType();
     ValueType(const ValueType& type);
     ValueType(index_t dtype_id,
@@ -191,9 +195,6 @@ BaseType Type(std::vector<Node*>   obj_schemas,
 //                      index_tstride=sizeof(float64),
 //                      index_telement_bytes=sizeof(float64));
 
-
-static ValueType uint32_dtype;
-static ValueType float64_dtype;
 
 };
 

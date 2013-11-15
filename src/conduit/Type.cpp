@@ -8,8 +8,8 @@ namespace conduit
 {
 
 // create storage for these guys
-//uint32_dtype  = ValueType(BaseType::UINT32_T,1,0,0,sizeof(uint32);
-//float64_dtype = ValueType(BaseType::FLOAT64_T,1,0,0,sizeof(float64));
+ValueType ValueType::uint32_dtype(BaseType::UINT32_T,1,0,0,sizeof(uint32));
+ValueType ValueType::float64_dtype(BaseType::FLOAT64_T,1,0,0,sizeof(float64));
 
 
 ///============================================

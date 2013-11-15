@@ -63,7 +63,7 @@ public:
 
     std::string schema() const;
 
-    const BaseType    &dtype() const { return m_dtype;}
+    const BaseType    &dtype() const { return *m_dtype;}
     // bool              operator==(const Node &obj) const;
     // TODO: we will likly need const variants of these methods
                       
@@ -81,14 +81,15 @@ public:
     float64          as_float64() const { return *((float64*)element_pointer(0));}
     
 
-    uint32_array     as_uint32_array()   { return uint32_array(element_pointer(0),*static_cast<ValueType*>(&m_dtype));}
-    float64_array    as_float64_array()  { return float64_array(element_pointer(0),*static_cast<ValueType*>(&m_dtype));}
+    uint32_array     as_uint32_array()   { return uint32_array(element_pointer(0),*static_cast<ValueType*>(m_dtype));}
+    float64_array    as_float64_array()  { return float64_array(element_pointer(0),*static_cast<ValueType*>(m_dtype));}
     
 //    List             as_list();
 
     
 private:
     void             init(const BaseType &dtype);
+    void             init(const ValueType &dtype);
     void             cleanup(); //dalloc 
     
 
@@ -105,7 +106,7 @@ private:
     std::map<std::string, Node*> m_entries;
     bool      m_alloced;
     void     *m_data;
-    BaseType  m_dtype;
+    BaseType *m_dtype;
     
 };
 

@@ -15,14 +15,14 @@ namespace conduit
 Node::Node()
 :m_data(NULL),
  m_alloced(false),
- m_dtype()
+ m_dtype(0)
 {}
 
 ///============================================
 Node::Node(const Node &node)
 :m_data(NULL),
  m_alloced(false),
- m_dtype()
+ m_dtype(0)
 {
     set(node);
 }
@@ -31,7 +31,7 @@ Node::Node(const Node &node)
 Node::Node(void *data, const std::string &schema)
 :m_data(NULL),
  m_alloced(false),
- m_dtype()
+ m_dtype(0)
 {
     // walk_schema(&this);
     // set(data,this);
@@ -41,7 +41,7 @@ Node::Node(void *data, const std::string &schema)
 Node::Node(void *data, const Node *schema)
 :m_data(NULL),
  m_alloced(false),
- m_dtype()
+ m_dtype(0)
 {
     set(data,schema);
 }
@@ -50,7 +50,7 @@ Node::Node(void *data, const Node *schema)
 Node::Node(void *data, const BaseType &dtype)
 :m_data(NULL),
  m_alloced(false),
- m_dtype()
+ m_dtype(0)
 {
     set(data,dtype);
 }
@@ -59,7 +59,7 @@ Node::Node(void *data, const BaseType &dtype)
 Node::Node(const BaseType &dtype)
 :m_data(NULL),
  m_alloced(false),
- m_dtype()
+ m_dtype(0)
 {
     set(dtype);
 }
@@ -68,7 +68,7 @@ Node::Node(const BaseType &dtype)
 Node::Node(uint32  data)
 :m_data(NULL),
  m_alloced(false),
- m_dtype()
+ m_dtype(0)
 {
     set(data);
 }
@@ -77,7 +77,7 @@ Node::Node(uint32  data)
 Node::Node(float64 data)
 :m_data(NULL),
  m_alloced(false),
- m_dtype()
+ m_dtype(0)
 {
     set(data);
 }
@@ -87,7 +87,7 @@ Node::Node(float64 data)
 Node::Node(uint32_array  *data)
 :m_data(NULL),
  m_alloced(false),
- m_dtype()
+ m_dtype(0)
 {
     set(data);
 }
@@ -96,7 +96,7 @@ Node::Node(uint32_array  *data)
 Node::Node(float64_array *data)
 :m_data(NULL),
  m_alloced(false),
- m_dtype()
+ m_dtype(0)
 {
     set(data);
 }
@@ -105,7 +105,7 @@ Node::Node(float64_array *data)
 Node::Node(const uint32_array  &data)
 :m_data(NULL),
  m_alloced(false),
- m_dtype()
+ m_dtype(0)
 {
     set(data); // copy
 }
@@ -114,7 +114,7 @@ Node::Node(const uint32_array  &data)
 Node::Node(const float64_array &data)
 :m_data(NULL),
  m_alloced(false),
- m_dtype()
+ m_dtype(0)
 {
     set(data); // copy
 }
@@ -148,8 +148,8 @@ void
 Node::set(uint32 data)
 {
     // TODO check for compatible, don't always re-init
-    //init(uint32_dtype);
-    // *((uint32*)m_data) = data;
+    init(ValueType::uint32_dtype);
+    *((uint32*)m_data) = data;
 }
 
 
@@ -158,8 +158,8 @@ void
 Node::set(float64 data)
 {
     // TODO check for compatible, don't always re-init
-    //init(float64_dtype);
-    // *((float64*)m_data) = data;
+    init(ValueType::float64_dtype);
+    *((float64*)m_data) = data;
 }
 
 
@@ -331,7 +331,21 @@ Node::to_real() const
 ///============================================
 void
 Node::init(const BaseType &dtype)
-{}
+{
+}
+
+void
+Node::init(const ValueType& dtype)
+{
+   if (m_data) {
+      char* data = static_cast<char*>(data);
+      delete data;
+   }
+   m_alloced = true;
+   m_data = new char[dtype.number_of_elements()*dtype.element_bytes()];
+   m_dtype = new ValueType(dtype);
+}
+
 // TODO: Many more init cases
 
 ///============================================
@@ -340,11 +354,11 @@ Node::cleanup()
 {
     if(m_alloced)
     {
-        if(m_dtype.id() == BaseType::NODE_T)
+        if(m_dtype->id() == BaseType::NODE_T)
         {
             //TODO: Imp    delete entries_ptr();
         }
-        else if(m_dtype.id() == BaseType::UINT32_T)
+        else if(m_dtype->id() == BaseType::UINT32_T)
         {
             uint32 *ptr=(uint32*)m_data;
             delete ptr; 
@@ -355,7 +369,7 @@ Node::cleanup()
     }   
     m_data = NULL;
     m_alloced = false;
-    m_dtype = BaseType();
+    m_dtype = 0;
 }
     
 ///============================================
