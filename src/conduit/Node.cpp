@@ -292,7 +292,7 @@ Node::fetch(const std::string &path)
 {
     // TODO: Error checking ...
     // TODO: Nested paths
-    return *m_entries[path];
+    return m_entries[path];
 }
 
 ///============================================
@@ -377,10 +377,11 @@ index_t
 Node::element_index(index_t   idx) const
 {
     // TODO: Imp
+    return 0;
 }
 
 ///============================================
-std::map<std::string, Node*> &  
+std::map<std::string, Node> &  
 Node::entries()
 {
    return m_entries;

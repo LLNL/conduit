@@ -101,9 +101,9 @@ private:
                      {return static_cast<char*>(m_data) + element_index(idx);};
 
     // for true nodes
-    std::map<std::string, Node*> &entries();
+    std::map<std::string, Node> &entries();
 
-    std::map<std::string, Node*> m_entries;
+    std::map<std::string, Node> m_entries;
     bool      m_alloced;
     void     *m_data;
     BaseType *m_dtype;
