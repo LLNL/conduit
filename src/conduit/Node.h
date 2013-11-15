@@ -18,23 +18,22 @@ class Node
 {
 public:
     Node(); // empty node
-    Node(const Node &node);
-    Node(const DataType &dtype);
+    explicit Node(const Node &node);
+    explicit Node(const DataType &dtype);
     Node(void *data, const std::string &schema);
     Node(void *data, const Node *schema);
     Node(void *data, const DataType &dtype);
 
-    Node(DataType dtype);
-    Node(uint32  data);
-    Node(float64 data);
+    explicit Node(uint32  data);
+    explicit Node(float64 data);
 
-    Node(const std::vector<uint32>  &data);
-    Node(const std::vector<float64>  &data);
+    explicit Node(const std::vector<uint32>  &data);
+    explicit Node(const std::vector<float64>  &data);
 
     virtual  ~Node();
 
     void set(const Node& data);
-    void set(DataType data);
+    void set(const DataType &data);
 
     void set(uint32 data);
     void set(float64 data);
@@ -55,6 +54,7 @@ public:
     Node &operator=(const std::vector<uint32>  &data);
     Node &operator=(const std::vector<float64>  &data);
 
+    index_t total_bytes() const;
 
     std::string schema() const;
 

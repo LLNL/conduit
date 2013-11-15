@@ -120,6 +120,8 @@ Node::set(const Node &node)
             m_data = node.m_data;
             m_dtype = new DataType(*node.m_dtype);
         }
+        m_entries = node.m_entries;
+        m_list_data = node.m_list_data;
     }
     /// TODO
     // init calls cleanup();
@@ -129,8 +131,10 @@ Node::set(const Node &node)
 
 ///============================================
 void 
-Node::set(DataType dtype)
+Node::set(const DataType &dtype)
 {
+    m_dtype = new DataType(dtype);
+
     // init calls cleanup
     //init(dtype); // always
 }
@@ -246,6 +250,34 @@ Node::operator=(const std::vector<float64> &data)
 {
     set(data);
     return *this;
+}
+
+index_t
+Node::total_bytes() const
+{
+    index_t size = 0;
+    if (m_dtype == 0) {
+        return size;
+    }
+
+    switch (m_dtype->id()) {
+
+        case DataType::UINT32_T:
+        case DataType::UINT64_T:
+        case DataType::FLOAT64_T:
+            size = m_dtype->total_bytes();
+            break;
+        case DataType::NODE_T:
+            for (std::map<std::string, Node>::const_iterator itr = m_entries.begin();
+                 itr != m_entries.end(); ++itr) {
+                size += itr->second.total_bytes();
+            }
+            break;
+        default:
+             // error
+             break;
+    }
+    return size;
 }
 
 ///============================================
@@ -379,9 +411,9 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
         for (rapidjson::Value::ConstMemberIterator itr = jvalue.MemberBegin(); itr != jvalue.MemberEnd(); ++itr)
         {
             printf("Type of member %s is %s\n", itr->name.GetString(), kTypeNames[itr->value.GetType()]);
+            std::string entry_name(itr->name.GetString());
             if(itr->value.IsString())
             {
-                std::string entry_name(itr->name.GetString());
                 std::string dtype_name(itr->value.GetString());
                 printf("%s: %s\n", entry_name.c_str(),dtype_name.c_str());
                 // uses this paradigm
@@ -393,6 +425,13 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
                 // dont want to look up element_size in here, type needs default settings
                 // to handle this case)
                 curr_offset += dtype.total_bytes();
+            } else if (itr->value.IsObject()) {
+                DataType dtype(DataType::NODE_T);
+                Node node(dtype);
+                node.walk_schema(data, itr->value, curr_offset);
+
+                curr_offset += node.total_bytes();
+                m_entries[entry_name] = node;
             }
         }
     }

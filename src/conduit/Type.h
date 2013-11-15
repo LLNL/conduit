@@ -34,8 +34,8 @@ public:
     } TypeEnum;
             
              DataType();
-             DataType(index_t id);
-             DataType(const DataType& type);
+             explicit DataType(index_t id);
+             explicit DataType(const DataType& type);
              DataType(const std::string &dtype_name,
                       index_t num_elements,
                       index_t offset,
