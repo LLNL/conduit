@@ -6,6 +6,7 @@
 #include "Core.h"
 #include "Type.h"
 #include <map>
+#include <vector>
 #include <string>
 
 namespace conduit
@@ -20,30 +21,24 @@ public:
     Node(void *data, const std::string &schema);
     Node(void *data, const Node *schema);
     Node(void *data, const BaseType &dtype);
-    
+
     Node(BaseType dtype);
     Node(uint32  data);
     Node(float64 data);
 
-    Node(uint32_array  *data);
-    Node(float64_array *data);
-
-    Node(const uint32_array  &data);
-    Node(const float64_array &data);
+    Node(const std::vector<uint32>  &data);
+    Node(const std::vector<float64>  &data);
 
     virtual  ~Node();
-  
+
     void set(const Node& data);
     void set(BaseType data);
 
     void set(uint32 data);
     void set(float64 data);
 
-    void set(const uint32_array  *data);
-    void set(const float64_array *data);
-
-    void set(const uint32_array  &data);
-    void set(const float64_array &data);
+    void set(const std::vector<uint32>  &data);
+    void set(const std::vector<float64> &data);
 
     void set(void* data, const Node* schema);
     void set(void* data, const BaseType &dtype);
@@ -55,34 +50,32 @@ public:
     Node &operator=(uint32 data);
     Node &operator=(float64 data);
 
-    Node &operator=(uint32_array  *data);
-    Node &operator=(float64_array *data);
+    Node &operator=(const std::vector<uint32>  &data);
+    Node &operator=(const std::vector<float64>  &data);
 
-    Node &operator=(const uint32_array  &data);
-    Node &operator=(const float64_array &data);
 
     std::string schema() const;
 
     const BaseType    &dtype() const { return *m_dtype;}
     // bool              operator==(const Node &obj) const;
     // TODO: we will likly need const variants of these methods
-                      
+
     Node             &fetch(const std::string &path);
     bool             has_path(const std::string &path) const;
     void             paths(std::vector<std::string> &paths,bool expand=false) const;
-    
+
     Node             &operator[](const std::string &path)
                       {return fetch(path);}
 
-    index_t          to_integer() const;    
+    index_t          to_integer() const;
     float64          to_real()    const;
-        
+
     uint32           as_uint32()  const { return *((uint32*)element_pointer(0));}
     float64          as_float64() const { return *((float64*)element_pointer(0));}
-    
 
-    uint32_array     as_uint32_array()   { return uint32_array(element_pointer(0),*static_cast<ValueType*>(m_dtype));}
-    float64_array    as_float64_array()  { return float64_array(element_pointer(0),*static_cast<ValueType*>(m_dtype));}
+    uint32          *as_uint32_ptr()   { return (uint32*)element_pointer(0);}
+    float64         *as_float64_ptr()  { return (float64*)element_pointer(0);}
+    
     
 //    List             as_list();
 

@@ -84,42 +84,6 @@ Node::Node(float64 data)
 
 
 ///============================================
-Node::Node(uint32_array  *data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(0)
-{
-    set(data);
-}
-
-///============================================
-Node::Node(float64_array *data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(0)
-{
-    set(data);
-}
-
-///============================================
-Node::Node(const uint32_array  &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(0)
-{
-    set(data); // copy
-}
-
-///============================================
-Node::Node(const float64_array &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(0)
-{
-    set(data); // copy
-}
-
-///============================================
 Node::~Node()
 {
   cleanup();
@@ -165,36 +129,31 @@ Node::set(float64 data)
 
 ///============================================
 void 
-Node::set(const uint32_array  *data)
+Node::set(const std::vector<uint32>  &data)
 {
-    // TODO check for compatible, don't always re-init
-    //init(data->ptr(),data->dtype());
+    ValueType vec_t(BaseType::UINT32_T,
+                    (index_t)data.size(),
+                    0,
+                    sizeof(uint32),
+                    sizeof(uint32));
+     init(vec_t);
+     memcpy(m_data,&data[0],sizeof(uint32)*data.size());
 }
 
 ///============================================
 void 
-Node::set(const float64_array  *data)
+Node::set(const std::vector<float64>  &data)
 {
-    // TODO check for compatible, don't always re-init
-    //init(data->ptr(),data->dtype());
+    ValueType vec_t(BaseType::FLOAT64_T,
+                    (index_t)data.size(),
+                    0,
+                    sizeof(float64),
+                    sizeof(float64));
+     init(vec_t);
+     memcpy(m_data,&data[0],sizeof(float64)*data.size());
 }
 
 
-///============================================
-void 
-Node::set(const uint32_array  &data)
-{
-    // TODO check for compatible, don't always re-init
-    //init(data); // copy?
-}
-
-///============================================
-void 
-Node::set(const float64_array  &data)
-{
-    // TODO check for compatible, don't always re-init
-    //init(data); // copy?
-}
 
 void
 Node::set(void* data, const Node* schema)
@@ -241,9 +200,10 @@ Node::operator=(float64 data)
     return *this;
 }
 
+
 ///============================================
 Node &
-Node::operator=(uint32_array *data)
+Node::operator=(const std::vector<uint32> &data)
 {
     set(data);
     return *this;
@@ -251,30 +211,11 @@ Node::operator=(uint32_array *data)
 
 ///============================================
 Node &
-Node::operator=(float64_array *data)
+Node::operator=(const std::vector<float64> &data)
 {
     set(data);
     return *this;
 }
-
-
-
-///============================================
-Node &
-Node::operator=(const uint32_array &data)
-{
-    set(data);
-    return *this;
-}
-
-///============================================
-Node &
-Node::operator=(const float64_array &data)
-{
-    set(data);
-    return *this;
-}
-
 
 ///============================================
 std::string
