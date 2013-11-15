@@ -25,6 +25,7 @@ Node::Node(const Node &node)
  m_alloced(false),
  m_dtype(0)
 {
+    printf("node address %ld\n", node.m_dtype);
     set(node);
 }
 
@@ -111,6 +112,16 @@ Node::~Node()
 void 
 Node::set(const Node &node)
 {
+    if (node.m_dtype) {
+        if (node.m_alloced) {
+            init(*node.m_dtype);
+            memcpy(m_data, node.m_data, m_dtype->total_bytes());
+        } else {
+            m_alloced = false;
+            m_data = node.m_data;
+            m_dtype = new DataType(*node.m_dtype);
+        }
+    }
     /// TODO
     // init calls cleanup();
     //init(DataType::NODE_T);
@@ -181,6 +192,9 @@ Node::set(void* data, const Node* schema)
 void
 Node::set( void *data, const DataType &dtype)
 {
+    m_alloced = false;
+    m_data = data;
+    m_dtype = new DataType(dtype);
 }
 
 ///============================================
@@ -293,7 +307,7 @@ Node::init(const DataType& dtype)
 {
    if (m_alloced) {
       char* data = static_cast<char*>(data);
-      delete data;
+      delete[] data;
    }
    m_alloced = true;
    m_data = new char[dtype.number_of_elements()*dtype.element_bytes()];
@@ -371,12 +385,12 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
                 std::string entry_name(itr->name.GetString());
                 std::string dtype_name(itr->value.GetString());
                 printf("%s: %s\n", entry_name.c_str(),dtype_name.c_str());
-                // NOTE -- CYRUS
-                // BaseType is hurting us here. 
-                // I think we need simply have Type, with a bunch of smart constructors. 
-                // it is ok if some methods don't make sense for all types, Node already
                 // uses this paradigm
-                DataType dtype(dtype_name,1,curr_offset,0,0);
+                index_t type = DataType::type_name_to_id(dtype_name);
+                index_t size = DataType::size_of_type_id(type);
+                DataType dtype(type,1,curr_offset,size,size);
+                Node foo(data, dtype);
+    printf("blah %ld\n", foo.m_dtype);
                 m_entries[entry_name] = Node(data,dtype);
                 // calc offset (currenlty wrong b/c we have to pass all params to Type
                 // dont want to look up element_size in here, type needs default settings
