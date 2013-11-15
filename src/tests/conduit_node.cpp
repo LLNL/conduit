@@ -89,10 +89,10 @@ TEST(conduit_node_simple_schema_test, conduit_node)
     memcpy(&data[4],&b_val,4);
     memcpy(&data[8],&c_val,8);
 
-    std::string schema = "{\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float32\"}";
+    std::string schema = "{\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}";
     Node n(data,schema);
     
-    //EXPECT_EQ(n["a"].as_uint32(),a_val);
-    //EXPECT_EQ(n["b"].as_uint32(),b_val);
-    //EXPECT_EQ(n["c"].as_float64(),c_val);
+    EXPECT_EQ(n["a"].as_uint32(),a_val);
+    EXPECT_EQ(n["b"].as_uint32(),b_val);
+    EXPECT_EQ(n["c"].as_float64(),c_val);
 }
