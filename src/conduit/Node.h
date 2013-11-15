@@ -119,8 +119,11 @@ private:
 template<typename TYPE>
 void Node::push_back(TYPE data)
 {
-   Node *node = new Node(data);
-   m_list_data.push_back(*node);
+   if (m_dtype->id() != DataType::LIST_T) {
+       delete m_dtype;
+       m_dtype = new DataType(DataType::LIST_T);
+   }
+   m_list_data.push_back(Node(data));
 }
 
 };
