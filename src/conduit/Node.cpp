@@ -3,6 +3,7 @@
 ///
 
 #include "Node.h"
+#include "rapidjson/document.h"
 
 namespace conduit
 {
@@ -33,7 +34,8 @@ Node::Node(void *data, const std::string &schema)
  m_alloced(false),
  m_dtype(0)
 {
-    // walk_schema(&this);
+    
+    walk_schema(data,schema);
     // set(data,this);
 }
 
@@ -345,4 +347,64 @@ Node::entries()
 }
 
 
+
+///============================================
+void 
+Node::walk_schema(void *data, const std::string &schema)
+{
+    // clean up before this
+    m_data    = data;
+    m_alloced = false;
+    m_dtype   = new BaseType(BaseType::NODE_T);
+    
+    rapidjson::Document document;
+    document.Parse<0>(schema.c_str());
+    index_t current_offset = 0;
+    walk_schema(data, document,current_offset);
 }
+
+void 
+Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offset)
+{
+    if(jvalue.IsObject())
+    {
+        static const char* kTypeNames[] = { "Null", "False", "True", "Object", "Array", "String", "Number" };
+        for (rapidjson::Value::ConstMemberIterator itr = jvalue.MemberBegin(); itr != jvalue.MemberEnd(); ++itr)
+        {
+            printf("Type of member %s is %s\n", itr->name.GetString(), kTypeNames[itr->value.GetType()]);
+            if(itr->value.IsString())
+            {
+                std::string entry_name(itr->name.GetString());
+                std::string dtype_name(itr->value.GetString());
+                printf("%s: %s\n", entry_name.c_str(),dtype_name.c_str());
+                // NOTE -- CYRUS
+                // BaseType is hurting us here. 
+                // I think we need simply have Type, with a bunch of smart constructors. 
+                // it is ok if some methods don't make sense for all types, Node already
+                // uses this paradigm
+                BaseType dtype = Type(dtype_name,1,curr_offset,0,0);
+                m_entries[entry_name] = Node(data,dtype);
+                // calc offset (currenlty wrong b/c we have to pass all params to Type
+                // dont want to look up element_size in here, type needs default settings
+                // to handle this case)
+                curr_offset += dtype.total_bytes();
+            }
+        }
+    }
+    
+    ///
+    /// each entry will either be:
+    ///  a string that describes a dtype 
+    ///  "uint32", "float64"
+    ///  an object that describes a dtype
+    ///   in this case, the object will have a "dtype" key, at a min
+    ///    {"dtype":"<dtype_str>","length":<int>}
+    /// or, more complex cases:
+    ///  an object that describes a nested object
+    ///  a list of objects
+}
+
+
+
+}
+

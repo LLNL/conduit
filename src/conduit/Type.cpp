@@ -109,33 +109,33 @@ ValueType::element_index(index_t idx) const
 ///
 ///============================================
 
-///============================================
-ListType::ListType()
-: BaseType(BaseType::LIST_T)
-{}
-
-///============================================
-ListType::ListType(Node *entry_schema,
-                   index_t num_entries)
-: BaseType(BaseType::LIST_T)
-{
-    m_schemas.push_back(entry_schema);
-    m_num_entries.push_back(num_entries);
-}
-    
-///============================================
-ListType::ListType(const std::vector<Node *>   &entry_schemas,
-                   const std::vector<index_t>  &num_entries)
-: BaseType(BaseType::LIST_T)
-{
-    m_schemas = entry_schemas;
-    m_num_entries = num_entries;
-}
-
-
-///============================================
-ListType::~ListType()
-{}
+// ///============================================
+// ListType::ListType()
+// : BaseType(BaseType::LIST_T)
+// {}
+// 
+// ///============================================
+// ListType::ListType(Node *entry_schema,
+//                    index_t num_entries)
+// : BaseType(BaseType::LIST_T)
+// {
+//     m_schemas.push_back(entry_schema);
+//     m_num_entries.push_back(num_entries);
+// }
+//     
+// ///============================================
+// ListType::ListType(const std::vector<Node *>   &entry_schemas,
+//                    const std::vector<index_t>  &num_entries)
+// : BaseType(BaseType::LIST_T)
+// {
+//     m_schemas = entry_schemas;
+//     m_num_entries = num_entries;
+// }
+// 
+// 
+// ///============================================
+// ListType::~ListType()
+// {}
 
 ///============================================
 /// Helpers 
@@ -170,20 +170,20 @@ BaseType Type(index_t dtype_id,
 }
 
 
-
-///============================================
-BaseType Type(Node *obj_schema,
-              index_t num_entries)
-{
-    return ListType(obj_schema,num_entries);
-}
-
-///============================================
-BaseType Type(std::vector<Node*>   obj_schemas,
-              std::vector<index_t> num_entries)
-{    
-    return ListType(obj_schemas,num_entries);
-}
+// 
+// ///============================================
+// BaseType Type(Node *obj_schema,
+//               index_t num_entries)
+// {
+//     return ListType(obj_schema,num_entries);
+// }
+// 
+// ///============================================
+// BaseType Type(std::vector<Node*>   obj_schemas,
+//               std::vector<index_t> num_entries)
+// {    
+//     return ListType(obj_schemas,num_entries);
+// }
               
 
 

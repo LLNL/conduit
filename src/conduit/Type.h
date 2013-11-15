@@ -36,8 +36,8 @@ public:
     static index_t      type_name_to_id(const std::string &name);
     static std::string  type_id_to_name(index_t dtype);
     
-    //virtual bool        compatable(BaseType &);
     index_t             id()  const { return m_id;}    
+    virtual index_t     total_bytes() const {return 0;}
 
 protected:
     index_t  m_id;
@@ -69,6 +69,8 @@ public:
     index_t    stride()              const { return m_stride;}
     index_t    element_bytes()       const { return m_ele_bytes;}
 
+    virtual index_t  total_bytes() const {return m_ele_bytes * m_num_ele;}
+    
     index_t    element_index(index_t idx) const;
 
 private:
@@ -85,27 +87,31 @@ private:
 ///============================================
 /// ListType
 ///============================================
-// this is a strange one ...
-class ListType: public BaseType
-{
-public:
-             ListType(); // fully dynamic
-             ListType(Node *entry_schema,
-                      index_t num_entries); 
-             ListType(const std::vector<Node *>  &entry_schemas,
-                      const std::vector<index_t> &num_entries); 
-    virtual ~ListType();
-
-private:
-    std::vector<Node *>   m_schemas;
-    std::vector<index_t>  m_num_entries;
-
-};
+// this is a strange one ...// 
+// class ListType: public BaseType
+// {
+// public:
+//              ListType(); // fully dynamic
+//              ListType(Node *entry_schema,
+//                       index_t num_entries); 
+//              ListType(const std::vector<Node *>  &entry_schemas,
+//                       const std::vector<index_t> &num_entries); 
+//     virtual ~ListType();
+// 
+// private:
+//     std::vector<Node *>   m_schemas;
+//     std::vector<index_t>  m_num_entries;
+// 
+// };
 
 
 ///============================================
 /// Construction Helpers
 ///============================================
+
+BaseType Type(const std::string &dtype_name);
+
+
 
 // these handles value types
 BaseType Type(const std::string &dtype_name,
@@ -143,12 +149,12 @@ BaseType Type(index_t dtype_id,
 //               Node *obj_schema,
 //               index_tnum_entries);
 
-BaseType Type(Node    *obj_schema,
-              index_t  num_entries);
-
-BaseType Type(std::vector<Node*>   obj_schemas,
-              std::vector<index_t> num_entries);
-              
+// BaseType Type(Node    *obj_schema,
+//               index_t  num_entries);
+// 
+// BaseType Type(std::vector<Node*>   obj_schemas,
+//               std::vector<index_t> num_entries);
+//               
 
 // BaseType node_type();
 // BaseType list_type(); // implies dynamic construction

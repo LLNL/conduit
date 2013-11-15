@@ -9,6 +9,8 @@
 #include <vector>
 #include <string>
 
+#include "rapidjson/document.h"
+
 namespace conduit
 {
 
@@ -90,6 +92,9 @@ private:
     void             init(const BaseType &dtype);
     void             init(const ValueType &dtype);
     void             cleanup(); //dalloc 
+    
+    void             walk_schema(void *data, const std::string &schema);
+    void             walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offset);
     
 
     // for value types
