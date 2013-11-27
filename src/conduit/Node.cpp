@@ -164,12 +164,12 @@ void
 Node::set(const std::vector<uint32>  &data)
 {
     DataType vec_t(DataType::UINT32_T,
-                    (index_t)data.size(),
-                    0,
-                    sizeof(uint32),
-                    sizeof(uint32));
-     init(vec_t);
-     memcpy(m_data,&data[0],sizeof(uint32)*data.size());
+                   (index_t)data.size(),
+                   0,
+                   sizeof(uint32),
+                   sizeof(uint32));
+    init(vec_t);
+    memcpy(m_data,&data[0],sizeof(uint32)*data.size());
 }
 
 ///============================================
@@ -177,12 +177,12 @@ void
 Node::set(const std::vector<float64>  &data)
 {
     DataType vec_t(DataType::FLOAT64_T,
-                    (index_t)data.size(),
-                    0,
-                    sizeof(float64),
-                    sizeof(float64));
-     init(vec_t);
-     memcpy(m_data,&data[0],sizeof(float64)*data.size());
+                   (index_t)data.size(),
+                   0,
+                   sizeof(float64),
+                   sizeof(float64));
+    init(vec_t);
+    memcpy(m_data,&data[0],sizeof(float64)*data.size());
 }
 
 
@@ -414,13 +414,22 @@ Node::to_real() const
 void
 Node::init(const DataType& dtype)
 {
-   if (m_alloced) {
-      char* data = static_cast<char*>(data);
-      delete[] data;
-   }
-   m_alloced = true;
-   m_data = new char[dtype.number_of_elements()*dtype.element_bytes()];
-   m_dtype.reset(dtype);
+    if (!isCompatible(dtype) || m_data == NULL) {
+
+        cleanup();
+        switch (dtype.id()) {
+            case DataType::UINT32_T:
+            case DataType::FLOAT64_T:
+                m_data = new char[dtype.number_of_elements()*dtype.element_bytes()];
+                break;
+            case DataType::NODE_T:
+                break;
+            case DataType::LIST_T:
+                break;
+        }
+        m_alloced = true;
+        m_dtype.reset(dtype);
+    }
 }
 
 // TODO: Many more init cases
@@ -429,7 +438,7 @@ Node::init(const DataType& dtype)
 void
 Node::cleanup()
 {
-    if(m_alloced)
+    if(m_alloced && m_data)
     {
         if(m_dtype.id() == DataType::NODE_T)
         {
@@ -440,6 +449,11 @@ Node::cleanup()
             uint32 *ptr=(uint32*)m_data;
             delete ptr; 
             //TODO: delete vs delete[] ? depends on alloc
+        }
+        else if(m_dtype.id() == DataType::FLOAT64_T)
+        {
+            float64 *ptr=(float64*)m_data;
+            delete ptr; 
         }
         // TODO: etc
     
@@ -534,6 +548,13 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
     ///  a list of objects
 }
 
+bool
+Node::isCompatible(const DataType& type)
+{
+    return (type.id() == m_dtype.id() &&
+            type.element_bytes() == m_dtype.element_bytes() &&
+            type.total_bytes() == m_dtype.total_bytes());
+}
 
 
 }
