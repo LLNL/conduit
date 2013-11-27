@@ -107,6 +107,7 @@ private:
                      {return static_cast<char*>(m_data) + element_index(idx);};
     const void      *element_pointer(index_t idx) const 
                      {return static_cast<char*>(m_data) + element_index(idx);};
+    bool             isCompatible(const DataType& type);
 
     // for true nodes
     std::map<std::string, Node> &entries();
