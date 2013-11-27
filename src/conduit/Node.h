@@ -136,7 +136,7 @@ template<typename T>
 void Node::setpp(T data)
 {
    // TODO check for compatible, don't always re-init
-   init(DataType::Traits<T>::data_type);
+   init(DataType::type_id_to_datatype(DataType::Traits<T>::data_type));
    *((T*)m_data) = data;
 }
 

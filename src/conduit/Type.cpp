@@ -8,6 +8,7 @@ namespace conduit
 {
 
 // create storage for these guys
+DataType DataType::empty_dtype(DataType::EMPTY_T,1,0,0,0);
 DataType DataType::uint32_dtype(DataType::UINT32_T,1,0,0,sizeof(uint32));
 DataType DataType::float64_dtype(DataType::FLOAT64_T,1,0,0,sizeof(float64));
 
@@ -169,6 +170,21 @@ DataType::size_of_type_id(index_t dtype)
         }
     }
    return size;
+}
+
+DataType const &
+DataType::type_id_to_datatype(index_t dtype){
+   switch (dtype) {
+        case UINT32_T : {
+            return DataType::uint32_dtype;
+        }
+        case FLOAT64_T : {
+            return DataType::float64_dtype;
+        }
+        default : {
+            return DataType::empty_dtype;
+        }
+    }
 }
 
 

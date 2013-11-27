@@ -19,7 +19,7 @@ class Node;
 class DataType
 {
 public:
-
+   static DataType empty_dtype;
    static DataType uint32_dtype;
    static DataType float64_dtype;
 
@@ -63,6 +63,7 @@ public:
     static index_t      type_name_to_id(const std::string &name);
     static std::string  type_id_to_name(index_t dtype);
     static index_t      size_of_type_id(index_t dtype);
+    static DataType const  &type_id_to_datatype(index_t dtype);
     
     std::string         schema() const;
     void                schema(std::ostringstream &oss) const;
