@@ -49,6 +49,13 @@ public:
                       index_t element_bytes);
     virtual ~DataType();
     
+    void       reset(const DataType& type);
+    void       reset(index_t dtype_id,
+                     index_t num_elements,
+                     index_t offset,
+                     index_t stride,
+                     index_t element_bytes);
+
     static index_t      type_name_to_id(const std::string &name);
     static std::string  type_id_to_name(index_t dtype);
     static index_t      size_of_type_id(index_t dtype);

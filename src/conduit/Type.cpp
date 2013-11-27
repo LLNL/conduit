@@ -70,6 +70,30 @@ DataType::DataType(index_t id)
 DataType::~DataType()
 {}
 
+void
+DataType::reset(const DataType& type)
+{
+    m_id = type.m_id;
+    m_num_ele = type.m_num_ele;
+    m_offset = type.m_offset;
+    m_stride = type.m_stride;
+    m_ele_bytes = type.m_ele_bytes;
+}
+
+void
+DataType::reset(index_t dtype_id,
+                index_t num_elements,
+                index_t offset,
+                index_t stride,
+                index_t element_bytes)
+{
+    m_id = dtype_id;
+    m_num_ele = num_elements;
+    m_offset = offset;
+    m_stride = stride;
+    m_ele_bytes = element_bytes;
+}
+
 index_t     
 DataType::element_index(index_t idx) const
 {
