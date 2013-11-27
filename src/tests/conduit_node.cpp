@@ -161,3 +161,19 @@ TEST(conduit_node_simple_schema_test, conduit_node)
     EXPECT_TRUE(d.HasMember("b"));
     EXPECT_TRUE(d.HasMember("c"));
 }
+
+TEST(conduit_node_simple_setpp_test, conduit_node)
+{
+    uint32   a_val  = 10;
+    uint32   b_val  = 20;
+    float64  c_val  = 30.0;
+
+    Node n;
+    n["a"].setpp(a_val);
+    n["b"].setpp(b_val);
+    n["c"].setpp(c_val);
+    
+    EXPECT_EQ(n["a"].as_uint32(), a_val);
+    EXPECT_EQ(n["b"].as_uint32(), b_val);
+    EXPECT_EQ(n["c"].as_float64(), c_val);
+}

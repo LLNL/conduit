@@ -33,6 +33,9 @@ public:
         FLOAT64_T,   // float64 and float64_array
         BYTESTR_T,   // bytestr (incore c-string)
     } TypeEnum;
+    
+    template<typename T>
+    struct Traits { };
             
              DataType();
              explicit DataType(index_t id);
@@ -83,6 +86,20 @@ private:
     // TODO: future  index_t  m_endianness;
 
 };
+
+
+
+
+template<>
+struct DataType::Traits<conduit::uint32>{
+   static const DataType::TypeEnum data_type = UINT32_T;
+};
+
+template<>
+struct DataType::Traits<conduit::float64>{
+   static const DataType::TypeEnum data_type = FLOAT64_T;
+};
+
 
 ///============================================
 /// ListType

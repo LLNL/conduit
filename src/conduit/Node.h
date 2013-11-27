@@ -44,6 +44,9 @@ public:
 
     void set(void* data, const Node* schema);
     void set(void* data, const DataType &dtype);
+    
+    template<typename T>
+    void setpp(T data);
 
     Node &operator=(const Node &node);
 
@@ -126,6 +129,14 @@ void Node::push_back(TYPE data)
        m_dtype.reset(DataType::LIST_T);
    }
    m_list_data.push_back(Node(data));
+}
+
+template<typename T>
+void Node::setpp(T data)
+{
+   // TODO check for compatible, don't always re-init
+   init(DataType::Traits<T>::data_type);
+   *((T*)m_data) = data;
 }
 
 };
