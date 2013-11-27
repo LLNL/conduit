@@ -10,7 +10,39 @@
 // #include "rapidjson/document.h"
 using namespace conduit;
 
-TEST(conduit_node_simple_test, conduit_node)
+
+
+
+
+TEST(conduit_node_serialize_test_1, conduit_node)
+{
+
+    uint32   a_val  = 10;
+    uint32   b_val  = 20;
+    float64  c_val  = 30.0;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+
+    EXPECT_EQ(n["a"].as_uint32(),a_val);
+    EXPECT_EQ(n["b"].as_uint32(),b_val);
+
+
+    std::string schema = n.schema();
+    std::cout << "SCHEMA:\n" << schema;
+    std::vector<uint8> bytes;
+    n.serialize(bytes);
+
+    std::cout << *((uint32*)&bytes[0]) << std::endl;
+    Node n2(&bytes[0],schema);
+    EXPECT_EQ(n2["a"].as_uint32(),a_val);
+    EXPECT_EQ(n2["b"].as_uint32(),b_val);
+}
+
+
+/*
+TEST(conduit_node_serialize_test_2, conduit_node)
 {
 
     uint32   a_val  = 10;
@@ -43,4 +75,4 @@ TEST(conduit_node_simple_test, conduit_node)
     EXPECT_EQ(n2["here"]["there"].as_uint32(),a_val);
 
 }
-
+*/

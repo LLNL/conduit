@@ -339,7 +339,7 @@ Node::schema(std::ostringstream &oss) const
 void
 Node::serialize(std::vector<uint8> &data) const
 {
-    data.reserve(total_bytes());
+    data = std::vector<uint8>(total_bytes(),0);
     serialize(&data[0],0);
 }
 ///============================================

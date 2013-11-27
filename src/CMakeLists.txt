@@ -42,6 +42,11 @@ include_directories(${NUMPY_INCLUDE_DIRS})
 # add conduit as an include dir as well so units tests can use it
 include_directories(conduit)
 
+################################
+# Add doxygen
+################################
+add_subdirectory(doxy)
+
 
 ################################
 # Add the main lib
