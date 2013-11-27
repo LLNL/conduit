@@ -119,6 +119,23 @@ TEST(conduit_node_simple_gen_schema_test, conduit_node)
     EXPECT_EQ(n4[0].as_uint32(),a_val);
     EXPECT_EQ(n4[1].as_float64(),c_val);
     EXPECT_EQ(n4[2].as_uint32(),b_val);
+
+    std::string schema5 = "{\"top\":[{\"int1\":\"uint32\", \"int2\":\"uint32\"}, \"float64\", \"uint32\"], \"other\":\"float64\"}";
+    char* data4 = new char[28];
+    uint32   d_val  = 40;
+    float64  e_val  = 50.0;
+    memcpy(&data4[0],&a_val,4);
+    memcpy(&data4[4],&b_val,4);
+    memcpy(&data4[8],&c_val,8);
+    memcpy(&data4[16],&d_val,4);
+    memcpy(&data4[20],&e_val,8);
+    Node n5(data4, schema5);
+    EXPECT_EQ(n5["top"][0]["int1"].as_uint32(),a_val);
+    EXPECT_EQ(n5["top"][0]["int2"].as_uint32(),b_val);
+    EXPECT_EQ(n5["top"][1].as_float64(),c_val);
+    EXPECT_EQ(n5["top"][2].as_uint32(),d_val);
+    EXPECT_EQ(n5["other"].as_float64(),e_val);
+
 }
 
 
