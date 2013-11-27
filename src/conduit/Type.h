@@ -50,6 +50,7 @@ public:
     virtual ~DataType();
     
     void       reset(const DataType& type);
+    void       reset(index_t dtype_id);
     void       reset(index_t dtype_id,
                      index_t num_elements,
                      index_t offset,

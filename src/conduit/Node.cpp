@@ -16,14 +16,14 @@ namespace conduit
 Node::Node()
 :m_data(NULL),
  m_alloced(false),
- m_dtype(new DataType(DataType::NODE_T))
+ m_dtype(DataType::NODE_T)
 {}
 
 ///============================================
 Node::Node(const Node &node)
 :m_data(NULL),
  m_alloced(false),
- m_dtype(0)
+ m_dtype()
 {
     set(node);
 }
@@ -32,7 +32,7 @@ Node::Node(const Node &node)
 Node::Node(void *data, const std::string &schema)
 :m_data(NULL),
  m_alloced(false),
- m_dtype(0)
+ m_dtype()
 {
     
     walk_schema(data,schema);
@@ -43,7 +43,7 @@ Node::Node(void *data, const std::string &schema)
 Node::Node(void *data, const Node *schema)
 :m_data(NULL),
  m_alloced(false),
- m_dtype(0)
+ m_dtype()
 {
     set(data,schema);
 }
@@ -52,7 +52,7 @@ Node::Node(void *data, const Node *schema)
 Node::Node(void *data, const DataType &dtype)
 :m_data(NULL),
  m_alloced(false),
- m_dtype(0)
+ m_dtype()
 {
     set(data,dtype);
 }
@@ -60,7 +60,7 @@ Node::Node(void *data, const DataType &dtype)
 Node::Node(const std::vector<uint32>  &data)
 :m_data(NULL),
  m_alloced(false),
- m_dtype(0)
+ m_dtype()
 {
    set(data);
 }
@@ -68,7 +68,7 @@ Node::Node(const std::vector<uint32>  &data)
 Node::Node(const std::vector<float64>  &data)
 :m_data(NULL),
  m_alloced(false),
- m_dtype(0)
+ m_dtype()
 {
    set(data);
 }
@@ -77,7 +77,7 @@ Node::Node(const std::vector<float64>  &data)
 Node::Node(const DataType &dtype)
 :m_data(NULL),
  m_alloced(false),
- m_dtype(0)
+ m_dtype()
 {
     set(dtype);
 }
@@ -86,7 +86,7 @@ Node::Node(const DataType &dtype)
 Node::Node(uint32  data)
 :m_data(NULL),
  m_alloced(false),
- m_dtype(0)
+ m_dtype()
 {
     set(data);
 }
@@ -95,7 +95,7 @@ Node::Node(uint32  data)
 Node::Node(float64 data)
 :m_data(NULL),
  m_alloced(false),
- m_dtype(0)
+ m_dtype()
 {
     set(data);
 }
@@ -111,14 +111,14 @@ Node::~Node()
 void 
 Node::set(const Node &node)
 {
-    if (node.m_dtype) {
+    if (node.m_dtype.id() != DataType::EMPTY_T) {
         if (node.m_alloced) {
-            init(*node.m_dtype);
-            memcpy(m_data, node.m_data, m_dtype->total_bytes());
+            init(node.m_dtype);
+            memcpy(m_data, node.m_data, m_dtype.total_bytes());
         } else {
             m_alloced = false;
             m_data = node.m_data;
-            m_dtype = new DataType(*node.m_dtype);
+            m_dtype.reset(node.m_dtype);
         }
         m_entries = node.m_entries;
         m_list_data = node.m_list_data;
@@ -133,7 +133,7 @@ Node::set(const Node &node)
 void 
 Node::set(const DataType &dtype)
 {
-    m_dtype = new DataType(dtype);
+    m_dtype.reset(dtype);
 
     // init calls cleanup
     //init(dtype); // always
@@ -197,7 +197,7 @@ Node::set( void *data, const DataType &dtype)
 {
     m_alloced = false;
     m_data = data;
-    m_dtype = new DataType(dtype);
+    m_dtype.reset(dtype);
 }
 
 ///============================================
@@ -256,16 +256,13 @@ index_t
 Node::total_bytes() const
 {
     index_t size = 0;
-    if (m_dtype == 0) {
-        return size;
-    }
 
-    switch (m_dtype->id()) {
+    switch (m_dtype.id()) {
 
         case DataType::UINT32_T:
         case DataType::UINT64_T:
         case DataType::FLOAT64_T:
-            size = m_dtype->total_bytes();
+            size = m_dtype.total_bytes();
             break;
         case DataType::NODE_T:
             for (std::map<std::string, Node>::const_iterator itr = m_entries.begin();
@@ -300,7 +297,7 @@ Node::schema() const
 void
 Node::schema(std::ostringstream &oss) const
 {
-    if(m_dtype->id() == DataType::NODE_T)
+    if(m_dtype.id() == DataType::NODE_T)
     {
         oss << "{";
         std::map<std::string,Node>::const_iterator itr;
@@ -315,7 +312,7 @@ Node::schema(std::ostringstream &oss) const
         }
         oss << "}\n";
     }
-    else if(m_dtype->id() == DataType::LIST_T)
+    else if(m_dtype.id() == DataType::LIST_T)
     {
         oss << "[";
         std::vector<Node>::const_iterator itr;
@@ -331,7 +328,7 @@ Node::schema(std::ostringstream &oss) const
     }
     else // assume data value type for now
     {
-        m_dtype->schema(oss);
+        m_dtype.schema(oss);
     }
 }
 
@@ -346,7 +343,7 @@ Node::serialize(std::vector<uint8> &data) const
 void
 Node::serialize(uint8 *data,index_t curr_offset) const
 {
-    if(m_dtype->id() == DataType::NODE_T)
+    if(m_dtype.id() == DataType::NODE_T)
     {
         std::map<std::string,Node>::const_iterator itr;
         for(itr = m_entries.begin(); itr != m_entries.end(); ++itr)
@@ -355,7 +352,7 @@ Node::serialize(uint8 *data,index_t curr_offset) const
             curr_offset+=itr->second.total_bytes();
         }
     }
-    else if(m_dtype->id() == DataType::LIST_T)
+    else if(m_dtype.id() == DataType::LIST_T)
     {
         std::vector<Node>::const_iterator itr;
         for(itr = m_list_data.begin(); itr != m_list_data.end(); ++itr)
@@ -423,7 +420,7 @@ Node::init(const DataType& dtype)
    }
    m_alloced = true;
    m_data = new char[dtype.number_of_elements()*dtype.element_bytes()];
-   m_dtype = new DataType(dtype);
+   m_dtype.reset(dtype);
 }
 
 // TODO: Many more init cases
@@ -434,11 +431,11 @@ Node::cleanup()
 {
     if(m_alloced)
     {
-        if(m_dtype->id() == DataType::NODE_T)
+        if(m_dtype.id() == DataType::NODE_T)
         {
             //TODO: Imp    delete entries_ptr();
         }
-        else if(m_dtype->id() == DataType::UINT32_T)
+        else if(m_dtype.id() == DataType::UINT32_T)
         {
             uint32 *ptr=(uint32*)m_data;
             delete ptr; 
@@ -449,14 +446,13 @@ Node::cleanup()
     }   
     m_data = NULL;
     m_alloced = false;
-    m_dtype = 0;
 }
     
 ///============================================
 index_t          
 Node::element_index(index_t   idx) const
 {
-    return m_dtype->offset() + m_dtype->stride()*idx;
+    return m_dtype.offset() + m_dtype.stride()*idx;
 }
 
 ///============================================
@@ -475,7 +471,7 @@ Node::walk_schema(void *data, const std::string &schema)
     // clean up before this
     m_data    = data;
     m_alloced = false;
-    m_dtype   = new DataType(DataType::NODE_T);
+    m_dtype.reset(DataType::NODE_T);
     
     rapidjson::Document document;
     document.Parse<0>(schema.c_str());
@@ -493,11 +489,10 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
         if (jvalue.HasMember("dtype")) {
             std::string dtype(jvalue["dtype"].GetString());
             int length = jvalue["length"].GetInt();
-            delete m_dtype;
             index_t type_id = DataType::type_name_to_id(dtype);
             index_t size    = DataType::size_of_type_id(type_id);
-            m_dtype = new DataType(type_id, length, curr_offset,
-                                   size, size);
+            m_dtype.reset(type_id, length, curr_offset,
+                          size, size);
             m_data = data;
         } else {
 
@@ -512,8 +507,7 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
             }
         }
     } else if (jvalue.IsArray()) {
-        delete m_dtype;
-        m_dtype = new DataType(DataType::LIST_T);
+        m_dtype.reset(DataType::LIST_T);
         for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++) {
             Node node;
             node.walk_schema(data, jvalue[i], curr_offset);
@@ -524,8 +518,7 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
          std::string dtype_name(jvalue.GetString());
          index_t type = DataType::type_name_to_id(dtype_name);
          index_t size = DataType::size_of_type_id(type);
-         delete m_dtype;
-         m_dtype = new DataType(type,1,curr_offset,size,size);
+         m_dtype.reset(type,1,curr_offset,size,size);
          m_data = data;
     }
  

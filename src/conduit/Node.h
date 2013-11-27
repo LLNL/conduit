@@ -63,7 +63,7 @@ public:
     void        serialize(std::vector<uint8> &data) const;
     void        serialize(uint8 *data, index_t curr_offset) const;
 
-    const DataType    &dtype() const { return *m_dtype;}
+    const DataType    &dtype() const { return m_dtype;}
     // bool              operator==(const Node &obj) const;
     // TODO: we will likly need const variants of these methods
 
@@ -115,16 +115,15 @@ private:
     std::map<std::string, Node> m_entries;
     bool      m_alloced;
     void     *m_data;
-    DataType *m_dtype;
+    DataType  m_dtype;
 
 };
 
 template<typename TYPE>
 void Node::push_back(TYPE data)
 {
-   if (m_dtype->id() != DataType::LIST_T) {
-       delete m_dtype;
-       m_dtype = new DataType(DataType::LIST_T);
+   if (m_dtype.id() != DataType::LIST_T) {
+       m_dtype.reset(DataType::LIST_T);
    }
    m_list_data.push_back(Node(data));
 }

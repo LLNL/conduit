@@ -81,6 +81,16 @@ DataType::reset(const DataType& type)
 }
 
 void
+DataType::reset(index_t dtype_id)
+{
+    m_id = dtype_id;
+    m_num_ele = 0;
+    m_offset = 0;
+    m_stride = 0;
+    m_ele_bytes = 0;
+}
+
+void
 DataType::reset(index_t dtype_id,
                 index_t num_elements,
                 index_t offset,
