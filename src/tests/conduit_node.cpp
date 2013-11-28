@@ -194,7 +194,7 @@ TEST(conduit_ghost_node_simple_test, conduit_node)
     EXPECT_EQ(gb.getpp<uint32>(), b_val);
 }
 
-TEST(conduit_ghost_node_array_test, conduit_node)
+TEST(conduit_ghost_node_object_test, conduit_node)
 {
      uint32   a_val  = 10;
     uint32   b_val  = 20;
@@ -226,7 +226,6 @@ TEST(conduit_ghost_node_array_test, conduit_node)
     
     
     GhostNode g(data2, n);
-    std::cout << n.schema();
    EXPECT_EQ(g["b"].getpp<uint32>(),b_val);   
    EXPECT_EQ(g["a"].getpp<uint32>(),a_val);
    EXPECT_EQ(g["b"].getpp<uint32>(),b_val);

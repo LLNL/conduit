@@ -154,14 +154,14 @@ template<typename T>
 T Node::getpp(void) const
 {
    // TODO some kind of checking here.. is m_data valid? right type?
-   return *static_cast<T const *>(m_data);
+   return *(T const *)( ((char const *)m_data) + m_dtype.element_index(0));
 }
 
 template<typename T>
 T Node::getpp(void *data) const
 {
    // TODO some kind of checking here.. is m_data valid? right type?
-   return *static_cast<T const *>(data);
+   return *(T const *)( ((char const *)data) + m_dtype.element_index(0));
 }
 
 
