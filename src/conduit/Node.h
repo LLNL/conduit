@@ -2,6 +2,8 @@
 /// file: Node.h
 ///
 
+#ifndef conduit_node_h__
+#define conduit_node_h__
 
 #include "Core.h"
 #include "Type.h"
@@ -50,6 +52,9 @@ public:
     
     template<typename T>
     T getpp(void) const;
+    
+    template<typename T>
+    T getpp(void *data) const;
 
     Node &operator=(const Node &node);
 
@@ -100,6 +105,8 @@ public:
 
     
 private:
+   
+
     void             init(const DataType &dtype);
     void             cleanup(); //dalloc 
     
@@ -150,5 +157,15 @@ T Node::getpp(void) const
    return *static_cast<T const *>(m_data);
 }
 
+template<typename T>
+T Node::getpp(void *data) const
+{
+   // TODO some kind of checking here.. is m_data valid? right type?
+   return *static_cast<T const *>(data);
+}
 
-};
+
+}
+
+
+#endif

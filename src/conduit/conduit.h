@@ -10,5 +10,6 @@
 #include "Core.h"
 #include "Type.h"
 #include "Node.h"
+#include "GhostNode.h"
 
 #endif
