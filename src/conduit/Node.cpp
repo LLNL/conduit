@@ -145,7 +145,7 @@ Node::set(uint32 data)
 {
     // TODO check for compatible, don't always re-init
     init(DataType::uint32_dtype);
-    *((uint32*)m_data) = data;
+    *(uint32*)((char*)m_data + m_dtype.element_index(0)) = data;
 }
 
 
@@ -155,7 +155,7 @@ Node::set(float64 data)
 {
     // TODO check for compatible, don't always re-init
     init(DataType::float64_dtype);
-    *((float64*)m_data) = data;
+    *(float64*)((char*)m_data + m_dtype.element_index(0)) = data;
 }
 
 
@@ -415,7 +415,6 @@ void
 Node::init(const DataType& dtype)
 {
     if (!isCompatible(dtype) || m_data == NULL) {
-
         cleanup();
         switch (dtype.id()) {
             case DataType::UINT32_T:
@@ -512,7 +511,6 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
 
             for (rapidjson::Value::ConstMemberIterator itr = jvalue.MemberBegin(); itr != jvalue.MemberEnd(); ++itr)
             {
-                printf("Type of member %s is %s\n", itr->name.GetString(), kTypeNames[itr->value.GetType()]);
                 std::string entry_name(itr->name.GetString());
                 Node node;
                 node.walk_schema(data, itr->value, curr_offset);

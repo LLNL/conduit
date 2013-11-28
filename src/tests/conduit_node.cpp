@@ -177,3 +177,31 @@ TEST(conduit_node_simple_setpp_test, conduit_node)
     EXPECT_EQ(n["b"].as_uint32(), b_val);
     EXPECT_EQ(n["c"].as_float64(), c_val);
 }
+
+TEST(conduit_node_in_place_test, conduit_node)
+{
+    uint32   a_val  = 10;
+    uint32   b_val  = 20;
+    float64  c_val  = 30.0;
+    float64  d_val  = 40.0;
+
+    char *data = new char[16];
+    memcpy(&data[0],&a_val,4);
+    memcpy(&data[4],&b_val,4);
+    memcpy(&data[8],&c_val,8);
+    EXPECT_EQ(*(float64*)(&data[8]), c_val);
+
+    std::string schema = "{\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}";
+    Node n(data,schema);
+    n["a"] = b_val;
+    n["b"] = a_val;
+    n["c"] = d_val;
+
+    EXPECT_EQ(n["a"].as_uint32(), b_val);
+    EXPECT_EQ(n["b"].as_uint32(), a_val);
+    EXPECT_EQ(n["c"].as_float64(), d_val);
+
+    EXPECT_EQ((uint32)(data[0]), b_val);
+    EXPECT_EQ((uint32)(data[4]), a_val);
+    EXPECT_EQ(*(float64*)(&data[8]), d_val);
+}
