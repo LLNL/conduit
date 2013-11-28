@@ -47,6 +47,9 @@ public:
     
     template<typename T>
     void setpp(T data);
+    
+    template<typename T>
+    T getpp(void) const;
 
     Node &operator=(const Node &node);
 
@@ -139,5 +142,13 @@ void Node::setpp(T data)
    init(DataType::type_id_to_datatype(DataType::Traits<T>::data_type));
    *((T*)m_data) = data;
 }
+
+template<typename T>
+T Node::getpp(void) const
+{
+   // TODO some kind of checking here.. is m_data valid? right type?
+   return *static_cast<T const *>(m_data);
+}
+
 
 };
