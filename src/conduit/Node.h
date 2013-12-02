@@ -114,7 +114,10 @@ private:
                                  const rapidjson::Value &jvalue, 
                                  index_t curr_offset);
     
-
+    static void      split_path(const std::string &path,
+                                std::string &curr,
+                                std::string &next);
+    
     // for value types
     index_t          element_index(index_t   idx) const;
     void            *element_pointer(index_t idx)

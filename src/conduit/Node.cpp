@@ -4,7 +4,7 @@
 
 #include "Node.h"
 #include "rapidjson/document.h"
-
+#include <iostream>
 namespace conduit
 {
 
@@ -386,16 +386,38 @@ Node::serialize(uint8 *data,index_t curr_offset) const
 Node&
 Node::fetch(const std::string &path)
 {
-    // TODO: Error checking ...
-    // TODO: Nested paths
-    return m_entries[path];
+    std::string p_curr;
+    std::string p_next;
+    split_path(path,p_curr,p_next);
+    if(p_next.empty())
+        return entries()[p_curr];
+    else
+        return entries()[p_curr].fetch(p_next);
 }
 
 ///============================================
 bool           
 Node::has_path(const std::string &path) const
 {
-    // TODO: Imp
+    std::string p_curr;
+    std::string p_next;
+    split_path(path,p_curr,p_next);
+    const std::map<std::string,Node> &ents = entries();
+
+    if(ents.find(p_curr) == ents.end())
+    {
+        return false;
+    }
+
+    if(!p_next.empty())
+    {
+        const Node &n = ents.find(p_curr)->second;
+        return n.has_path(p_next);
+    }
+    else
+    {
+        return true;
+    }
 }
 
 
@@ -534,6 +556,7 @@ Node::walk_schema(void *data, const std::string &schema)
     walk_schema(data, document,current_offset);
 }
 
+///============================================
 void 
 Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offset)
 {
@@ -604,6 +627,29 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
     ///  a list of objects
 }
 
+///============================================
+void 
+Node::split_path(const std::string &path,
+                 std::string &curr,
+                 std::string &next)
+{
+    curr.clear();
+    next.clear();
+    std::size_t found = path.find("/");
+    if (found != std::string::npos)
+    {
+        curr = path.substr(0,found);
+        if(found != path.size()-1)
+            next = path.substr(found+1,path.size()-(found-1));
+    }
+    else
+    {
+        curr = path;
+    } 
+}
+                
+
+///============================================
 bool
 Node::compatible_storage(const DataType& type)
 {
