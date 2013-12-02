@@ -99,9 +99,6 @@ public:
 
     uint32          *as_uint32_ptr()   { return (uint32*)element_pointer(0);}
     float64         *as_float64_ptr()  { return (float64*)element_pointer(0);}
-    
-    
-//    List             as_list();
 
     
 private:
@@ -110,8 +107,12 @@ private:
     void             init(const DataType &dtype);
     void             cleanup(); //dalloc 
     
-    void             walk_schema(void *data, const std::string &schema);
-    void             walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offset);
+    void             walk_schema(void *data, 
+                                 const std::string &schema);
+
+    void             walk_schema(void *data, 
+                                 const rapidjson::Value &jvalue, 
+                                 index_t curr_offset);
     
 
     // for value types
@@ -120,18 +121,26 @@ private:
                      {return static_cast<char*>(m_data) + element_index(idx);};
     const void      *element_pointer(index_t idx) const 
                      {return static_cast<char*>(m_data) + element_index(idx);};
-    bool             isCompatible(const DataType& type);
+    bool             compatible_storage(const DataType& type);
+
+
+    void     *m_data;
+    bool      m_alloced;
+    DataType  m_dtype;
 
     // for true nodes
     std::map<std::string, Node> &entries();
+    std::vector<Node>           &list();
+
+    const std::map<std::string, Node> &entries() const;
+    const std::vector<Node>           &list() const;
+
 
     std::vector<Node> m_list_data;
     std::map<std::string, Node> m_entries;
-    bool      m_alloced;
-    void     *m_data;
-    DataType  m_dtype;
-
 };
+
+// TODO: Explicit temp inst in the c file. 
 
 template<typename TYPE>
 void Node::push_back(TYPE data)

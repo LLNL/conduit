@@ -1,3 +1,6 @@
 libs/
 build-debug/
 build-release/
+build-debug-xcode/
+build-release-xcode/
+*.tar.gz
