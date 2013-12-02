@@ -16,14 +16,16 @@ namespace conduit
 Node::Node()
 :m_data(NULL),
  m_alloced(false),
- m_dtype(DataType::NODE_T)
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL)
 {}
 
 ///============================================
 Node::Node(const Node &node)
 :m_data(NULL),
  m_alloced(false),
- m_dtype(DataType::NODE_T)
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL)
 {
     set(node);
 }
@@ -32,7 +34,8 @@ Node::Node(const Node &node)
 Node::Node(void *data, const std::string &schema)
 :m_data(NULL),
  m_alloced(false),
- m_dtype(DataType::NODE_T)
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL)
 {
     walk_schema(data,schema);
 }
@@ -41,7 +44,8 @@ Node::Node(void *data, const std::string &schema)
 Node::Node(void *data, const Node *schema)
 :m_data(NULL),
  m_alloced(false),
- m_dtype(DataType::NODE_T)
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL)
 {
     set(data,schema);
 }
@@ -50,7 +54,8 @@ Node::Node(void *data, const Node *schema)
 Node::Node(void *data, const DataType &dtype)
 :m_data(NULL),
  m_alloced(false),
- m_dtype(DataType::EMPTY_T)
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL)
 {
     set(data,dtype);
 }
@@ -58,7 +63,8 @@ Node::Node(void *data, const DataType &dtype)
 Node::Node(const std::vector<uint32>  &data)
 :m_data(NULL),
  m_alloced(false),
- m_dtype(DataType::EMPTY_T)
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL) 
 {
    set(data);
 }
@@ -66,7 +72,8 @@ Node::Node(const std::vector<uint32>  &data)
 Node::Node(const std::vector<float64>  &data)
 :m_data(NULL),
  m_alloced(false),
- m_dtype(DataType::EMPTY_T)
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL)
 {
    set(data);
 }
@@ -75,7 +82,8 @@ Node::Node(const std::vector<float64>  &data)
 Node::Node(const DataType &dtype)
 :m_data(NULL),
  m_alloced(false),
- m_dtype(DataType::EMPTY_T)
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL)
 {
     set(dtype);
 }
@@ -84,7 +92,8 @@ Node::Node(const DataType &dtype)
 Node::Node(uint32  data)
 :m_data(NULL),
  m_alloced(false),
- m_dtype(DataType::EMPTY_T)
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL)
 {
     set(data);
 }
@@ -93,7 +102,8 @@ Node::Node(uint32  data)
 Node::Node(float64 data)
 :m_data(NULL),
  m_alloced(false),
- m_dtype(DataType::EMPTY_T)
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL)
 {
     set(data);
 }
@@ -123,6 +133,7 @@ Node::set(const Node &node)
             m_data = node.m_data;
             m_dtype.reset(node.m_dtype);
         }
+                
         // TODO: Replace
         m_entries = node.m_entries;
         m_list_data = node.m_list_data;
@@ -168,7 +179,8 @@ Node::set(const std::vector<uint32>  &data)
                    (index_t)data.size(),
                    0,
                    sizeof(uint32),
-                   sizeof(uint32));
+                   sizeof(uint32),
+                   DataType::DEFAULT_ENDIAN_T);
     init(vec_t);
     memcpy(m_data,&data[0],sizeof(uint32)*data.size());
 }
@@ -181,7 +193,8 @@ Node::set(const std::vector<float64>  &data)
                    (index_t)data.size(),
                    0,
                    sizeof(float64),
-                   sizeof(float64));
+                   sizeof(float64),
+                   DataType::DEFAULT_ENDIAN_T);
     init(vec_t);
     memcpy(m_data,&data[0],sizeof(float64)*data.size());
 }
@@ -253,6 +266,7 @@ Node::operator=(const std::vector<float64> &data)
     return *this;
 }
 
+///============================================
 index_t
 Node::total_bytes() const
 {
@@ -350,6 +364,7 @@ Node::serialize(std::vector<uint8> &data) const
     data = std::vector<uint8>(total_bytes(),0);
     serialize(&data[0],0);
 }
+
 ///============================================
 void
 Node::serialize(uint8 *data,index_t curr_offset) const
@@ -386,6 +401,10 @@ Node::serialize(uint8 *data,index_t curr_offset) const
 Node&
 Node::fetch(const std::string &path)
 {
+    // fetch w/ path forces NODE_T
+    if(m_dtype.id() != DataType::NODE_T)
+        init(DataType::node_dtype);
+        
     std::string p_curr;
     std::string p_next;
     split_path(path,p_curr,p_next);
@@ -395,10 +414,27 @@ Node::fetch(const std::string &path)
         return entries()[p_curr].fetch(p_next);
 }
 
+
+///============================================
+Node&
+Node::fetch(index_t idx)
+{
+    // if(m_dtype.id() != DataType.LIST_T)
+    // {
+    // }
+    // we could also potentially support index fetch on:
+    //   NODE_T (imp-order)
+    //   ARRAY_T -- Object array, dynamic construction of node
+    return list()[idx];
+}
+
 ///============================================
 bool           
 Node::has_path(const std::string &path) const
 {
+    if(m_dtype.id() != DataType::NODE_T)
+        return false;
+
     std::string p_curr;
     std::string p_next;
     split_path(path,p_curr,p_next);
@@ -457,6 +493,7 @@ Node::init(const DataType& dtype)
             case DataType::FLOAT64_T:
                 // TODO: This implies compact storage
                 m_data = new char[dtype.number_of_elements()*dtype.element_bytes()];
+                m_alloced = true;
                 break;
             case DataType::NODE_T:
                 // TODO: alloced map
@@ -465,7 +502,6 @@ Node::init(const DataType& dtype)
                 // TODO: alloced vec
                 break;
         }
-        m_alloced = true;
         m_dtype.reset(dtype);
     }
 }
@@ -496,11 +532,11 @@ Node::cleanup()
             float64 *ptr=(float64*)m_data;
             delete ptr; 
         }
-        // TODO: etc
-    
     }   
+    
     m_data    = NULL;
     m_alloced = false;
+    m_dtype.reset(DataType::EMPTY_T);
 }
     
 ///============================================
@@ -509,6 +545,7 @@ Node::element_index(index_t   idx) const
 {
     return m_dtype.offset() + m_dtype.stride()*idx;
 }
+
 
 ///============================================
 std::map<std::string, Node> &  
@@ -578,16 +615,18 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
             index_t type_id = DataType::type_name_to_id(dtype);
             index_t size    = DataType::size_of_type_id(type_id);
             m_dtype.reset(type_id, length, curr_offset,
-                          size, size);
+                          size, size,
+                          DataType::DEFAULT_ENDIAN_T);
             m_data = data;
         }
         else
         {
             std::map<std::string, Node> &ents = entries();
-            for (rapidjson::Value::ConstMemberIterator itr = jvalue.MemberBegin(); itr != jvalue.MemberEnd(); ++itr)
+            for (rapidjson::Value::ConstMemberIterator itr = jvalue.MemberBegin(); 
+                 itr != jvalue.MemberEnd(); ++itr)
             {
                 std::string entry_name(itr->name.GetString());
-                Node node;
+                Node node(DataType::node_dtype);
                 node.walk_schema(data, itr->value, curr_offset);
                 ents[entry_name] = node;
                 curr_offset += node.total_bytes();
@@ -600,7 +639,7 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
         std::vector<Node> &lst = list();
         for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
         {
-            Node node;
+			Node node(DataType::node_dtype);
             node.walk_schema(data, jvalue[i], curr_offset);
             curr_offset += node.total_bytes();
             lst.push_back(node);
@@ -609,22 +648,12 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
     else if(jvalue.IsString())
     {
          std::string dtype_name(jvalue.GetString());
-         index_t type = DataType::type_name_to_id(dtype_name);
-         index_t size = DataType::size_of_type_id(type);
-         m_dtype.reset(type,1,curr_offset,size,size);
+         index_t dtype = DataType::type_name_to_id(dtype_name);
+         index_t size = DataType::size_of_type_id(dtype);
+         m_dtype.reset(dtype,1,curr_offset,size,size,DataType::DEFAULT_ENDIAN_T);
          m_data = data;
     }
- 
-    ///
-    /// each entry will either be:
-    ///  a string that describes a dtype 
-    ///  "uint32", "float64"
-    ///  an object that describes a dtype
-    ///   in this case, the object will have a "dtype" key, at a min
-    ///    {"dtype":"<dtype_str>","length":<int>}
-    /// or, more complex cases:
-    ///  an object that describes a nested object
-    ///  a list of objects
+
 }
 
 ///============================================

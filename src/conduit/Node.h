@@ -79,6 +79,7 @@ public:
     // TODO: we will likly need const variants of these methods
 
     Node             &fetch(const std::string &path);
+    Node             &fetch(index_t idx);
 
     template<typename TYPE>
     void             push_back(TYPE data);
@@ -88,8 +89,9 @@ public:
 
     Node             &operator[](const std::string &path)
                       {return fetch(path);}
+
     Node             &operator[](const index_t idx)
-                      {return list()[idx];}
+                      {return fetch(idx);}
 
     index_t          to_integer() const;
     float64          to_real()    const;
@@ -130,6 +132,8 @@ private:
     void     *m_data;
     bool      m_alloced;
     DataType  m_dtype;
+    // holds structure for true nodes + lists
+    void *m_obj_data;
 
     // for true nodes
     std::map<std::string, Node> &entries();
@@ -137,6 +141,7 @@ private:
 
     const std::map<std::string, Node> &entries() const;
     const std::vector<Node>           &list() const;
+
 
 
     std::vector<Node> m_list_data;
