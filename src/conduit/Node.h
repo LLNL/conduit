@@ -89,7 +89,7 @@ public:
     Node             &operator[](const std::string &path)
                       {return fetch(path);}
     Node             &operator[](const index_t idx)
-                      {return m_list_data[idx];}
+                      {return list()[idx];}
 
     index_t          to_integer() const;
     float64          to_real()    const;
@@ -151,7 +151,7 @@ void Node::push_back(TYPE data)
    if (m_dtype.id() != DataType::LIST_T) {
        m_dtype.reset(DataType::LIST_T);
    }
-   m_list_data.push_back(Node(data));
+   list().push_back(Node(data));
 }
 
 template<typename T>
