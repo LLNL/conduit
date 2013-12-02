@@ -539,6 +539,7 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
 {
     if(jvalue.IsObject())
     {
+        /*
         static const char* kTypeNames[] = { "Null", 
                                             "False", 
                                             "True", 
@@ -546,7 +547,7 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
                                             "Array", 
                                             "String", 
                                             "Number" };
-
+        */
         if (jvalue.HasMember("dtype"))
         {
             std::string dtype(jvalue["dtype"].GetString());

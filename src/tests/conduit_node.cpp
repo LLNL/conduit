@@ -196,10 +196,9 @@ TEST(conduit_ghost_node_simple_test, conduit_node)
 
 TEST(conduit_ghost_node_object_test, conduit_node)
 {
-     uint32   a_val  = 10;
+	uint32   a_val  = 10;
     uint32   b_val  = 20;
     float64  c_val  = 30.0;
-    float64  d_val  = 40.0;
 
     char *data = new char[16];
     memcpy(&data[0],&a_val,4);
