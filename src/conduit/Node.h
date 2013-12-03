@@ -6,6 +6,7 @@
 #define conduit_node_h__
 
 #include "Core.h"
+#include "Endianness.h"
 #include "Type.h"
 #include <map>
 #include <vector>

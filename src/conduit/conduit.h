@@ -8,6 +8,7 @@
 
 #include "Python.h"
 #include "Core.h"
+#include "Endianness.h"
 #include "Type.h"
 #include "Node.h"
 #include "GhostNode.h"

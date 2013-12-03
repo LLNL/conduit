@@ -180,7 +180,7 @@ Node::set(const std::vector<uint32>  &data)
                    0,
                    sizeof(uint32),
                    sizeof(uint32),
-                   DataType::DEFAULT_ENDIAN_T);
+                   Endianness::DEFAULT_T);
     init(vec_t);
     memcpy(m_data,&data[0],sizeof(uint32)*data.size());
 }
@@ -194,7 +194,7 @@ Node::set(const std::vector<float64>  &data)
                    0,
                    sizeof(float64),
                    sizeof(float64),
-                   DataType::DEFAULT_ENDIAN_T);
+                   Endianness::DEFAULT_T);
     init(vec_t);
     memcpy(m_data,&data[0],sizeof(float64)*data.size());
 }
@@ -616,7 +616,7 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
             index_t size    = DataType::size_of_type_id(type_id);
             m_dtype.reset(type_id, length, curr_offset,
                           size, size,
-                          DataType::DEFAULT_ENDIAN_T);
+                          Endianness::DEFAULT_T);
             m_data = data;
         }
         else
@@ -650,7 +650,7 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
          std::string dtype_name(jvalue.GetString());
          index_t dtype = DataType::type_name_to_id(dtype_name);
          index_t size = DataType::size_of_type_id(dtype);
-         m_dtype.reset(dtype,1,curr_offset,size,size,DataType::DEFAULT_ENDIAN_T);
+         m_dtype.reset(dtype,1,curr_offset,size,size,Endianness::DEFAULT_T);
          m_data = data;
     }
 

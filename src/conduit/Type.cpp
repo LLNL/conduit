@@ -10,17 +10,17 @@ namespace conduit
 // create storage for these common types:
 DataType DataType::empty_dtype(DataType::EMPTY_T,
                                1,0,0,0,
-                               DataType::DEFAULT_ENDIAN_T);
+                               Endianness::DEFAULT_T);
 
 DataType DataType::uint32_dtype(DataType::UINT32_T,
                                1,0,0,
                                sizeof(uint32),
-                               DataType::DEFAULT_ENDIAN_T);
+                               Endianness::DEFAULT_T);
 
 DataType DataType::float64_dtype(DataType::FLOAT64_T,
                                  1,0,0,
                                  sizeof(float64),
-                                 DataType::DEFAULT_ENDIAN_T);
+                                 Endianness::DEFAULT_T);
 
 DataType DataType::node_dtype(DataType::NODE_T);
 DataType DataType::list_dtype(DataType::LIST_T);
@@ -37,7 +37,7 @@ DataType::DataType()
   m_offset(0),
   m_stride(0),
   m_ele_bytes(0),
-  m_endianness(DataType::DEFAULT_ENDIAN_T)
+  m_endianness(Endianness::DEFAULT_T)
 {}
 
 ///============================================ 
@@ -90,7 +90,7 @@ DataType::DataType(index_t id)
   m_offset(0),
   m_stride(0),
   m_ele_bytes(0),
-  m_endianness(DataType::DEFAULT_ENDIAN_T)
+  m_endianness(Endianness::DEFAULT_T)
 {}
 
 ///============================================
@@ -118,7 +118,7 @@ DataType::reset(index_t dtype_id)
     m_offset = 0;
     m_stride = 0;
     m_ele_bytes = 0;
-    m_endianness = DataType::DEFAULT_ENDIAN_T;
+    m_endianness = Endianness::DEFAULT_T;
 }
 
 ///============================================ 
@@ -216,7 +216,8 @@ DataType::size_of_type_id(index_t dtype)
 
 ///============================================ 
 DataType const &
-DataType::type_id_to_datatype(index_t dtype){
+DataType::type_id_to_datatype(index_t dtype)
+{
    switch (dtype)
    {
         case UINT32_T : 
@@ -233,7 +234,6 @@ DataType::type_id_to_datatype(index_t dtype){
         }
     }
 }
-
 
 ///============================================ 
 std::string 
@@ -264,9 +264,23 @@ DataType::schema(std::ostringstream &oss) const
             oss << ", \"offset\" : " << m_offset;
             oss << ", \"stride\" : " << m_stride;
             oss << ", \"element_bytes\" : " << m_ele_bytes;
+
+            std::string endian_str;
+
+            if(m_endianness == Endianness::DEFAULT_T)
+            {
+                // find this machine's actual endianness
+                endian_str = Endianness::id_to_name(Endianness::machine_default());
+            }
+            else
+            {
+                endian_str = Endianness::id_to_name(m_endianness);
+            }
+            oss << ", \"endianness\" : \"" << endian_str << "\"";            
             break;
         }
-        default : {
+        default : 
+        {
             oss << "\"[unknown]\"";
             break;
         }

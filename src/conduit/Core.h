@@ -13,8 +13,8 @@ namespace conduit
 {
 
 
-typedef npy_uint8  uint8;
-
+typedef npy_uint8   uint8;
+typedef npy_uint16  uint16;
 typedef npy_uint32  uint32;
 typedef npy_uint64  uint64;
 typedef npy_float64 float64;

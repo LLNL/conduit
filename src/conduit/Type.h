@@ -6,7 +6,10 @@
 #define __CONDUIT_TYPE_H
 
 #include "Core.h"
+#include "Endianness.h"
+
 #include <vector>
+#include <string>
 #include <sstream>
 
 namespace conduit
@@ -36,15 +39,6 @@ public:
         FLOAT64_T,   // float64 and float64_array
         BYTESTR_T,   // bytestr (incore c-string)
     } TypeEnum;
-    
-
-    typedef enum
-    {
-        DEFAULT_ENDIAN_T = 0, // default
-        BIG_ENDIAN_T,
-        LITTLE_ENDIAN_T,
-    } EndianEnum;
-    
 
              DataType();
              explicit DataType(index_t id);
@@ -80,7 +74,7 @@ public:
     static std::string      type_id_to_name(index_t dtype);
     static index_t          size_of_type_id(index_t dtype);
     static DataType const  &type_id_to_datatype(index_t dtype);
-    
+       
     std::string         schema() const;
     void                schema(std::ostringstream &oss) const;
     
