@@ -60,7 +60,7 @@ public:
                       index_t endianness);
 
     virtual ~DataType();
-    
+
     void       reset(const DataType& type);
     void       reset(index_t dtype_id);
     void       reset(index_t dtype_id,
@@ -70,16 +70,21 @@ public:
                      index_t element_bytes,
                      index_t endianness);
 
-    static index_t          type_name_to_id(const std::string &name);
-    static std::string      type_id_to_name(index_t dtype);
-    static index_t          size_of_type_id(index_t dtype);
-    static DataType const  &type_id_to_datatype(index_t dtype);
+    static index_t          name_to_id(const std::string &name);
+    static std::string      id_to_name(index_t dtype);
+    
+    //static index_t          size_of_dtype(const std::string &name);
+    //static index_t          size_of_dtype(index_t dtype);
+
+    static DataType const  &default_dtype(index_t dtype_id);
+    static DataType const  &default_dtype(const std::string &name);
        
     std::string         schema() const;
     void                schema(std::ostringstream &oss) const;
     
-    index_t             id()  const { return m_id;}    
-    index_t     total_bytes() const;
+    index_t             id()    const { return m_id;}    
+    index_t     total_bytes()   const;
+    index_t     total_bytes_compact() const;
 
     index_t    number_of_elements()  const { return m_num_ele;}
     index_t    offset()              const { return m_offset;}

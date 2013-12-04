@@ -45,7 +45,7 @@ public:
     void set(const std::vector<uint32>  &data);
     void set(const std::vector<float64> &data);
 
-    void set(void* data, const Node* schema);
+    void set(void* data, const Node *schema);
     void set(void* data, const DataType &dtype);
     
     template<typename T>
@@ -64,7 +64,7 @@ public:
     Node &operator=(uint32 data);
     Node &operator=(float64 data);
 
-    Node &operator=(const std::vector<uint32>  &data);
+    Node &operator=(const std::vector<uint32>   &data);
     Node &operator=(const std::vector<float64>  &data);
 
     index_t total_bytes() const;
@@ -76,9 +76,15 @@ public:
     void        serialize(uint8 *data, index_t curr_offset) const;
 
     const DataType    &dtype() const { return m_dtype;}
-    // bool              operator==(const Node &obj) const;
-    // TODO: we will likly need const variants of these methods
 
+    // TODO:
+    // bool              operator==(const Node &n) const;
+    // bool              compare(const Node &n) const;
+    // *add entries from n to current Node (like python dict update) 
+    // void              update(const Node &n);  
+
+
+    // TODO: we will likly need const variants of these methods
     Node             &fetch(const std::string &path);
     Node             &fetch(index_t idx);
 
@@ -105,8 +111,6 @@ public:
 
     
 private:
-   
-
     void             init(const DataType &dtype);
     void             cleanup(); //dalloc 
     
@@ -122,27 +126,26 @@ private:
                                 std::string &next);
     
     // for value types
-    index_t          element_index(index_t   idx) const;
-    void            *element_pointer(index_t idx)
-                     {return static_cast<char*>(m_data) + element_index(idx);};
-    const void      *element_pointer(index_t idx) const 
-                     {return static_cast<char*>(m_data) + element_index(idx);};
     bool             compatible_storage(const DataType& type);
+
+    void            *element_pointer(index_t idx)
+                     {return static_cast<char*>(m_data) + m_dtype.element_index(idx);};
+    const void      *element_pointer(index_t idx) const 
+                     {return static_cast<char*>(m_data) + m_dtype.element_index(idx);};
 
 
     void     *m_data;
     bool      m_alloced;
     DataType  m_dtype;
-    // holds structure for true nodes + lists
-    void *m_obj_data;
+    // TODO: holds structure for true nodes + lists
+    void     *m_obj_data;
 
     // for true nodes
-    std::map<std::string, Node> &entries();
-    std::vector<Node>           &list();
+    std::map<std::string, Node>         &entries();
+    std::vector<Node>                   &list();
 
-    const std::map<std::string, Node> &entries() const;
-    const std::vector<Node>           &list() const;
-
+    const std::map<std::string, Node>   &entries() const;
+    const std::vector<Node>             &list() const;
 
 
     std::vector<Node> m_list_data;
@@ -164,7 +167,7 @@ template<typename T>
 void Node::setpp(T data)
 {
    // TODO check for compatible, don't always re-init
-   init(DataType::type_id_to_datatype(DataType::Traits<T>::data_type));
+   init(DataType::default_dtype(DataType::Traits<T>::data_type));
    *((T*)m_data) = data;
 }
 

@@ -539,13 +539,6 @@ Node::cleanup()
     m_dtype.reset(DataType::EMPTY_T);
 }
     
-///============================================
-index_t          
-Node::element_index(index_t   idx) const
-{
-    return m_dtype.offset() + m_dtype.stride()*idx;
-}
-
 
 ///============================================
 std::map<std::string, Node> &  
@@ -610,10 +603,11 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
         */
         if (jvalue.HasMember("dtype"))
         {
-            std::string dtype(jvalue["dtype"].GetString());
+            std::string dtype_name(jvalue["dtype"].GetString());
             int length = jvalue["length"].GetInt();
-            index_t type_id = DataType::type_name_to_id(dtype);
-            index_t size    = DataType::size_of_type_id(type_id);
+            const DataType df_dtype = DataType::default_dtype(dtype_name);
+            index_t type_id = df_dtype.id();
+            index_t size    = df_dtype.element_bytes();
             m_dtype.reset(type_id, length, curr_offset,
                           size, size,
                           Endianness::DEFAULT_T);
@@ -648,9 +642,9 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
     else if(jvalue.IsString())
     {
          std::string dtype_name(jvalue.GetString());
-         index_t dtype = DataType::type_name_to_id(dtype_name);
-         index_t size = DataType::size_of_type_id(dtype);
-         m_dtype.reset(dtype,1,curr_offset,size,size,Endianness::DEFAULT_T);
+         DataType df_dtype = DataType::default_dtype(dtype_name);
+         index_t size = df_dtype.element_bytes();
+         m_dtype.reset(df_dtype.id(),1,curr_offset,size,size,Endianness::DEFAULT_T);
          m_data = data;
     }
 

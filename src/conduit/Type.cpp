@@ -13,12 +13,14 @@ DataType DataType::empty_dtype(DataType::EMPTY_T,
                                Endianness::DEFAULT_T);
 
 DataType DataType::uint32_dtype(DataType::UINT32_T,
-                               1,0,0,
+                               1,0,
+                               sizeof(uint32),
                                sizeof(uint32),
                                Endianness::DEFAULT_T);
 
 DataType DataType::float64_dtype(DataType::FLOAT64_T,
-                                 1,0,0,
+                                 1,0,
+                                 sizeof(float64),
                                  sizeof(float64),
                                  Endianness::DEFAULT_T);
 
@@ -47,7 +49,7 @@ DataType::DataType(const std::string &dtype_name,
                    index_t stride,
                    index_t element_bytes,
                    index_t endianness)
-: m_id(type_name_to_id(dtype_name)),
+: m_id(name_to_id(dtype_name)),
   m_num_ele(num_elements),
   m_offset(offset),
   m_stride(stride),
@@ -149,12 +151,20 @@ DataType::element_index(index_t idx) const
 index_t
 DataType::total_bytes() const
 {
+   // non compact case
+   return m_stride * m_num_ele;
+}
+
+///============================================ 
+index_t
+DataType::total_bytes_compact() const
+{
    return m_ele_bytes * m_num_ele;
 }
 
 ///============================================     
 index_t 
-DataType::type_name_to_id(const std::string &dtype_name)
+DataType::name_to_id(const std::string &dtype_name)
 {
     if(dtype_name      == "[empty]") return EMPTY_T;
     else if(dtype_name == "Node")    return NODE_T;
@@ -167,7 +177,7 @@ DataType::type_name_to_id(const std::string &dtype_name)
 
 ///============================================
 std::string 
-DataType::type_id_to_name(index_t dtype_id)
+DataType::id_to_name(index_t dtype_id)
 {
     if(dtype_id      == EMPTY_T)   return "[empty]";
     else if(dtype_id == NODE_T)    return "Node";
@@ -178,47 +188,12 @@ DataType::type_id_to_name(index_t dtype_id)
     return "[empty]";
 }
 
-///============================================ 
-index_t
-DataType::size_of_type_id(index_t dtype)
-{
-    int size;
-    switch (dtype)
-    {
-        case EMPTY_T : 
-        {
-            size = 0;
-            break;
-        }
-        case UINT32_T : 
-        {
-            size = sizeof(uint32);
-            break;
-        }
-        case UINT64_T : 
-        {
-            size = sizeof(uint64);
-            break;
-        }
-        case FLOAT64_T : 
-        {
-            size = sizeof(float64);
-            break;
-        }
-        default : 
-        {
-            size = 0;
-            break;
-        }
-    }
-   return size;
-}
 
 ///============================================ 
 DataType const &
-DataType::type_id_to_datatype(index_t dtype)
+DataType::default_dtype(index_t dtype_id)
 {
-   switch (dtype)
+   switch (dtype_id)
    {
         case UINT32_T : 
         {
@@ -234,6 +209,15 @@ DataType::type_id_to_datatype(index_t dtype)
         }
     }
 }
+
+
+///============================================ 
+DataType const &
+DataType::default_dtype(const std::string &name)
+{
+    return default_dtype(name_to_id(name));
+}
+
 
 ///============================================ 
 std::string 
@@ -259,7 +243,7 @@ DataType::schema(std::ostringstream &oss) const
         case UINT32_T : 
         case FLOAT64_T : 
         {
-            oss << "\"" << type_id_to_name(m_id) << "\"";
+            oss << "\"" << id_to_name(m_id) << "\"";
             oss << ", \"length\" : " << m_num_ele;
             oss << ", \"offset\" : " << m_offset;
             oss << ", \"stride\" : " << m_stride;
