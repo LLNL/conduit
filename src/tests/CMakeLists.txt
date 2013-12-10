@@ -9,6 +9,7 @@ set(UNIT_TESTS gtest_smoke
                conduit_node
                conduit_serialize
                conduit_node_paths
+               conduit_ghost_node
                numpy_smoke
                type_tests)
 

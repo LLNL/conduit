@@ -21,9 +21,13 @@ namespace conduit
 class Node
 {
 public:
+    // used to return something for the "static and or locked case"
+    static Node Empty;
+    
+    
     Node(); // empty node
     Node(const Node &node);
-    explicit Node(const DataType &dtype);
+    explicit Node(const DataType &dtype,bool locked=false);
     Node(void *data, const std::string &schema);
     Node(void *data, const Node *schema);
     Node(void *data, const DataType &dtype);
@@ -47,6 +51,7 @@ public:
 
     void set(void* data, const Node *schema);
     void set(void* data, const DataType &dtype);
+
     
     template<typename T>
     void setpp(T data);
@@ -72,19 +77,27 @@ public:
     std::string schema() const;
     void        schema(std::ostringstream &oss) const;
 
-    void        serialize(std::vector<uint8> &data) const;
-    void        serialize(uint8 *data, index_t curr_offset) const;
+    void        serialize(std::vector<uint8> &data, bool compact=true) const;
+    void        serialize(uint8 *data, index_t curr_offset, bool compact=true) const;
 
     const DataType    &dtype() const { return m_dtype;}
 
     // TODO:
-    // bool              operator==(const Node &n) const;
-    // bool              compare(const Node &n) const;
     // *add entries from n to current Node (like python dict update) 
     // void              update(const Node &n);  
+    void             compare(const Node &n, Node &n_diffs) const;
+    bool             operator==(const Node &n) const;
+    
+    // these guys don't modify map structure, if a path doesn't exit
+    // they will return an Empty Locked Node (we could also throw an exception)
+    
+    Node             &get(const std::string &path);
+    Node             &get(index_t idx);
 
-
-    // TODO: we will likly need const variants of these methods
+    const Node       &get(const std::string &path) const;
+    const Node       &get(index_t idx) const;
+    
+    
     Node             &fetch(const std::string &path);
     Node             &fetch(index_t idx);
 
@@ -94,11 +107,11 @@ public:
     bool             has_path(const std::string &path) const;
     void             paths(std::vector<std::string> &paths,bool expand=false) const;
 
-    Node             &operator[](const std::string &path)
-                      {return fetch(path);}
+    Node             &operator[](const std::string &path);
+    Node             &operator[](const index_t idx);
+    const Node       &operator[](const std::string &path) const;
+    const Node       &operator[](const index_t idx) const;
 
-    Node             &operator[](const index_t idx)
-                      {return fetch(idx);}
 
     index_t          to_integer() const;
     float64          to_real()    const;
@@ -124,6 +137,9 @@ private:
     static void      split_path(const std::string &path,
                                 std::string &curr,
                                 std::string &next);
+
+    /// TODO:
+    void             enforce_lock();
     
     // for value types
     bool             compatible_storage(const DataType& type);
@@ -139,6 +155,7 @@ private:
     DataType  m_dtype;
     // TODO: holds structure for true nodes + lists
     void     *m_obj_data;
+    bool      m_locked;
 
     // for true nodes
     std::map<std::string, Node>         &entries();
@@ -166,6 +183,7 @@ void Node::push_back(TYPE data)
 template<typename T>
 void Node::setpp(T data)
 {
+   // TODO, if DataType::Traits shouldn't be private for this case
    // TODO check for compatible, don't always re-init
    init(DataType::default_dtype(DataType::Traits<T>::data_type));
    *((T*)m_data) = data;

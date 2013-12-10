@@ -9,7 +9,7 @@ namespace conduit
 
 // create storage for these common types:
 DataType DataType::empty_dtype(DataType::EMPTY_T,
-                               1,0,0,0,
+                               0,0,0,0,
                                Endianness::DEFAULT_T);
 
 DataType DataType::uint32_dtype(DataType::UINT32_T,

@@ -8,6 +8,8 @@
 namespace conduit
 {
 
+Node Node::Empty(DataType::empty_dtype,true);
+
 ///============================================
 /// Node
 ///============================================
@@ -17,7 +19,8 @@ Node::Node()
 :m_data(NULL),
  m_alloced(false),
  m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL)
+ m_obj_data(NULL),
+ m_locked(false)
 {}
 
 ///============================================
@@ -25,7 +28,8 @@ Node::Node(const Node &node)
 :m_data(NULL),
  m_alloced(false),
  m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL)
+ m_obj_data(NULL),
+ m_locked(false)
 {
     set(node);
 }
@@ -35,7 +39,8 @@ Node::Node(void *data, const std::string &schema)
 :m_data(NULL),
  m_alloced(false),
  m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL)
+ m_obj_data(NULL),
+ m_locked(false)
 {
     walk_schema(data,schema);
 }
@@ -45,7 +50,8 @@ Node::Node(void *data, const Node *schema)
 :m_data(NULL),
  m_alloced(false),
  m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL)
+ m_obj_data(NULL),
+ m_locked(false)
 {
     set(data,schema);
 }
@@ -55,7 +61,8 @@ Node::Node(void *data, const DataType &dtype)
 :m_data(NULL),
  m_alloced(false),
  m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL)
+ m_obj_data(NULL),
+ m_locked(false)
 {
     set(data,dtype);
 }
@@ -64,7 +71,8 @@ Node::Node(const std::vector<uint32>  &data)
 :m_data(NULL),
  m_alloced(false),
  m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL) 
+ m_obj_data(NULL),
+ m_locked(false)
 {
    set(data);
 }
@@ -73,17 +81,19 @@ Node::Node(const std::vector<float64>  &data)
 :m_data(NULL),
  m_alloced(false),
  m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL)
+ m_obj_data(NULL),
+ m_locked(false)
 {
    set(data);
 }
 
 ///============================================
-Node::Node(const DataType &dtype)
+Node::Node(const DataType &dtype,bool locked)
 :m_data(NULL),
  m_alloced(false),
  m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL)
+ m_obj_data(NULL),
+ m_locked(locked)
 {
     set(dtype);
 }
@@ -93,7 +103,8 @@ Node::Node(uint32  data)
 :m_data(NULL),
  m_alloced(false),
  m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL)
+ m_obj_data(NULL),
+ m_locked(false)
 {
     set(data);
 }
@@ -103,7 +114,8 @@ Node::Node(float64 data)
 :m_data(NULL),
  m_alloced(false),
  m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL)
+ m_obj_data(NULL),
+ m_locked(false)
 {
     set(data);
 }
@@ -359,15 +371,15 @@ Node::schema(std::ostringstream &oss) const
 
 ///============================================
 void
-Node::serialize(std::vector<uint8> &data) const
+Node::serialize(std::vector<uint8> &data,bool compact) const
 {
     data = std::vector<uint8>(total_bytes(),0);
-    serialize(&data[0],0);
+    serialize(&data[0],0,compact);
 }
 
 ///============================================
 void
-Node::serialize(uint8 *data,index_t curr_offset) const
+Node::serialize(uint8 *data,index_t curr_offset,bool compact) const
 {
     if(m_dtype.id() == DataType::NODE_T)
     {
@@ -396,6 +408,108 @@ Node::serialize(uint8 *data,index_t curr_offset) const
     }
 }
 
+///============================================
+void             
+Node::compare(const Node &n, Node &n_diffs) const
+{
+/// TODO: n_diffs will describe the diffs between this & n    
+}
+
+
+///============================================
+bool             
+Node::operator==(const Node &n) const
+{
+/// TODO value comparison
+    return false;
+}
+
+
+///============================================
+Node&
+Node::get(const std::string &path)
+{
+    // fetch w/ path forces NODE_T
+    if(m_dtype.id() != DataType::NODE_T)
+        return Empty;
+        
+    std::string p_curr;
+    std::string p_next;
+    split_path(path,p_curr,p_next);
+    // find p_curr with an iterator
+    std::map<std::string, Node> &ents = entries();
+    std::map<std::string, Node>::iterator itr = ents.find(p_curr);
+    // return Empty if the entry does not exist (static/locked case)
+    if(itr == ents.end())
+        return Empty;
+    
+    if(p_next.empty())
+    {
+        return itr->second;
+    }
+    else
+    {
+        return itr->second.get(p_next);
+    }
+}
+
+
+///============================================
+Node&
+Node::get(index_t idx)
+{
+    if(m_dtype.id() != DataType::LIST_T)
+    {
+        return Empty;
+    }
+    // we could also potentially support index fetch on:
+    //   NODE_T (imp-order)
+    //   ARRAY_T -- Object array, dynamic construction of node
+    return list()[idx];
+}
+
+///============================================
+const Node &
+Node::get(const std::string &path) const
+{
+    // fetch w/ path forces NODE_T
+    if(m_dtype.id() != DataType::NODE_T)
+        return Empty;
+        
+    std::string p_curr;
+    std::string p_next;
+    split_path(path,p_curr,p_next);
+    // find p_curr with an iterator
+    const std::map<std::string, Node> &ents = entries();
+    std::map<std::string, Node>::const_iterator itr = ents.find(p_curr);
+    // return Empty if the entry does not exist (static/locked case)
+    if(itr == ents.end())
+        return Empty;
+    
+    if(p_next.empty())
+    {
+        return itr->second;
+    }
+    else
+    {
+        return itr->second.get(p_next);
+    }
+}
+
+
+///============================================
+const Node &
+Node::get(index_t idx) const
+{
+    if(m_dtype.id() != DataType::LIST_T)
+    {
+        return Empty;
+    }
+    // we could also potentially support index fetch on:
+    //   NODE_T (imp-order)
+    //   ARRAY_T -- Object array, dynamic construction of node
+    return list()[idx];
+}
 
 ///============================================
 Node&
@@ -419,7 +533,7 @@ Node::fetch(const std::string &path)
 Node&
 Node::fetch(index_t idx)
 {
-    // if(m_dtype.id() != DataType.LIST_T)
+    // if(m_dtype.id() != DataType::LIST_T)
     // {
     // }
     // we could also potentially support index fetch on:
@@ -427,6 +541,43 @@ Node::fetch(index_t idx)
     //   ARRAY_T -- Object array, dynamic construction of node
     return list()[idx];
 }
+
+///============================================
+Node&
+Node::operator[](const std::string &path)
+{
+    if(!m_locked)
+        return fetch(path);
+    else
+        return get(path);
+}
+
+///============================================
+Node&
+Node::operator[](index_t idx)
+{
+    if(!m_locked)
+        return fetch(idx);
+    else
+        return get(idx);
+}
+
+/// Const variants use const get
+///============================================
+const Node&
+Node::operator[](const std::string &path) const
+{
+    return get(path);
+}
+
+///============================================
+const Node&
+Node::operator[](index_t idx) const
+{
+    return get(idx);
+}
+
+
 
 ///============================================
 bool           

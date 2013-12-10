@@ -93,10 +93,10 @@ public:
     index_t    endianness()          const { return m_endianness;}
     index_t    element_index(index_t idx) const;
 
-
-private:
     template<typename T>
     struct Traits { };
+
+private:
 
     index_t   m_id;         // for dtype enum value
     index_t   m_num_ele;    // number of entries
