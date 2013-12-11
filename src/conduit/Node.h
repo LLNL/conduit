@@ -88,6 +88,12 @@ public:
     void             compare(const Node &n, Node &n_diffs) const;
     bool             operator==(const Node &n) const;
     
+    bool             is_empty() const;
+    
+    void             lock_schema();
+    void             unlock_schema();
+    bool             schema_locked() const;
+    
     // these guys don't modify map structure, if a path doesn't exit
     // they will return an Empty Locked Node (we could also throw an exception)
     
@@ -125,7 +131,10 @@ public:
     
 private:
     void             init(const DataType &dtype);
-    void             cleanup(); //dalloc 
+    void             cleanup(); //dalloc
+    
+    void             set_lock(bool value);
+    void             enforce_lock() const;
     
     void             walk_schema(void *data, 
                                  const std::string &schema);
@@ -141,9 +150,6 @@ private:
     /// TODO:
     void             enforce_lock();
     
-    // for value types
-    bool             compatible_storage(const DataType& type);
-
     void            *element_pointer(index_t idx)
                      {return static_cast<char*>(m_data) + m_dtype.element_index(idx);};
     const void      *element_pointer(index_t idx) const 

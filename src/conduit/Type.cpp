@@ -161,6 +161,15 @@ DataType::total_bytes_compact() const
 {
    return m_ele_bytes * m_num_ele;
 }
+    
+///============================================
+bool
+DataType::compatible_storage(const DataType& dtype) const
+{
+    return ( (m_id == dtype.m_id ) &&
+             (m_ele_bytes == dtype.m_ele_bytes) &&
+             (total_bytes() == dtype.total_bytes()));
+}
 
 ///============================================     
 index_t 

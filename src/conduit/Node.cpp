@@ -216,6 +216,7 @@ Node::set(const std::vector<float64>  &data)
 void
 Node::set(void* data, const Node* schema)
 {
+    ///TODO
 }
 
 void
@@ -424,6 +425,68 @@ Node::operator==(const Node &n) const
     return false;
 }
 
+///============================================
+bool             
+Node::is_empty() const
+{
+    return  m_dtype.id() == DataType::EMPTY_T;
+}
+///============================================
+void             
+Node::lock_schema()
+{
+    set_lock(true);
+}
+
+///============================================
+void             
+Node::unlock_schema()
+{
+    set_lock(false);
+}
+
+///============================================
+void
+Node::set_lock(bool value)
+{
+    m_locked = value;
+    if(m_dtype.id() == DataType::NODE_T)
+    {
+        std::map<std::string, Node> &ents = entries();
+        for (std::map<std::string, Node>::iterator itr = ents.begin();
+             itr != ents.end(); ++itr) 
+        {
+            itr->second.set_lock(value);
+        }
+    }
+    else if(m_dtype.id() == DataType::LIST_T)
+    {
+        std::vector<Node> &lst = list();
+        for (std::vector<Node>::iterator itr = lst.begin();
+             itr != lst.end(); ++itr)
+        {
+            itr->set_lock(value);
+        }
+    }
+}
+
+///============================================
+bool
+Node::schema_locked() const
+{
+    return m_locked;
+}
+
+
+
+///============================================
+void
+Node::enforce_lock() const
+{
+    if(m_locked);
+        /// TODO: Throw Exception
+    return;
+}
 
 ///============================================
 Node&
@@ -635,7 +698,7 @@ Node::to_real() const
 void
 Node::init(const DataType& dtype)
 {
-    if (!compatible_storage(dtype) || m_data == NULL) 
+    if (!m_dtype.compatible_storage(dtype) || m_data == NULL)
     {
         cleanup();
         switch (dtype.id())
@@ -822,16 +885,6 @@ Node::split_path(const std::string &path,
     } 
 }
                 
-
-///============================================
-bool
-Node::compatible_storage(const DataType& type)
-{
-    return (type.id() == m_dtype.id() &&
-            type.element_bytes() == m_dtype.element_bytes() &&
-            type.total_bytes() == m_dtype.total_bytes());
-}
-
 
 }
 

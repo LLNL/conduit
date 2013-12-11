@@ -19,7 +19,6 @@ TEST(conduit_node_serialize_test_1, conduit_node)
 
     uint32   a_val  = 10;
     uint32   b_val  = 20;
-    float64  c_val  = 30.0;
 
     Node n;
     n["a"] = a_val;
