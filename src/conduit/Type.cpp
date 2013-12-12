@@ -55,8 +55,7 @@ DataType::DataType(const std::string &dtype_name,
   m_stride(stride),
   m_ele_bytes(element_bytes),
   m_endianness(endianness)
-{
-}
+{}
 
 ///============================================ 
 DataType::DataType(index_t dtype_id,
@@ -204,6 +203,14 @@ DataType::default_dtype(index_t dtype_id)
 {
    switch (dtype_id)
    {
+        case NODE_T : 
+        {
+            return DataType::node_dtype;
+        }
+        case LIST_T : 
+        {
+            return DataType::list_dtype;
+        }
         case UINT32_T : 
         {
             return DataType::uint32_dtype;
@@ -211,7 +218,7 @@ DataType::default_dtype(index_t dtype_id)
         case FLOAT64_T : 
         {
             return DataType::float64_dtype;
-        }
+        }    
         default : 
         {
             return DataType::empty_dtype;
