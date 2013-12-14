@@ -762,7 +762,7 @@ Node::total_bytes() const
     else if (dt_id != DataType::EMPTY_T)
     {
         //TODO: Use "total_bytes"
-        res = m_dtype.total_bytes_compact();
+        res = m_dtype.total_bytes();
     }
     return res;
 }
@@ -1300,9 +1300,7 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
                 Node node(DataType::Objects::node);
                 node.walk_schema(data, itr->value, curr_offset);
                 ents[entry_name] = node;
-                std::cout << "node.total_bytes = " << node.total_bytes() <<std::endl;
                 curr_offset += node.total_bytes();
-                std::cout << "curr_offset = " << curr_offset <<std::endl;
             }
         }
     }

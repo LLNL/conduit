@@ -44,6 +44,7 @@ public:
     class Objects
     {
     public:
+        /// TODO: const ref access via function
         static DataType empty;
         static DataType node;
         static DataType list;
@@ -52,6 +53,7 @@ public:
     class Scalars
     {
     public:
+        /// TODO: const ref access via function
         static DataType boolean;
         /* int scalars */
         static DataType int8;

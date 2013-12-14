@@ -23,6 +23,7 @@ TEST(conduit_node_simple_path, conduit_node)
 
     std::string schema = "{\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}";
     Node n(data,schema);
+    std::cout << n.schema() <<std::endl; 
     
     EXPECT_TRUE(n.has_path("a"));
     EXPECT_EQ(n.fetch("a").as_uint32(),a_val);
@@ -35,6 +36,7 @@ TEST(conduit_node_simple_path, conduit_node)
 
     std::string schema2 = "{\"g\": {\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}}";
     Node n2(data,schema2);
+    std::cout << n2.schema() <<std::endl; 
     EXPECT_TRUE(n2.has_path("g/a"));
     EXPECT_EQ(n2.fetch("g/a").as_uint32(),a_val);
     EXPECT_TRUE(n2.has_path("g/b"));

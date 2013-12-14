@@ -21,63 +21,63 @@ DataType DataType::Scalars::boolean(DataType::BOOL_T,
 /* int default dtypes */
 DataType DataType::Scalars::int8(DataType::INT8_T,
                                    1,0,
-                                   sizeof(int8),
-                                   sizeof(int8),
+                                   sizeof(conduit::int8),
+                                   sizeof(conduit::int8),
                                    Endianness::DEFAULT_T);
 
 DataType DataType::Scalars::int16(DataType::INT16_T,
                                     1,0,
-                                    sizeof(int16),
-                                    sizeof(int16),
+                                    sizeof(conduit::int16),
+                                    sizeof(conduit::int16),
                                     Endianness::DEFAULT_T);
 
 DataType DataType::Scalars::int32(DataType::INT32_T,
                                     1,0,
-                                    sizeof(int32),
-                                    sizeof(int32),
+                                    sizeof(conduit::int32),
+                                    sizeof(conduit::int32),
                                     Endianness::DEFAULT_T);
 
 DataType DataType::Scalars::int64(DataType::INT64_T,
                                     1,0,
-                                    sizeof(int64),
-                                    sizeof(int64),
+                                    sizeof(conduit::int64),
+                                    sizeof(conduit::int64),
                                     Endianness::DEFAULT_T);
 
 /* uint default dtypes */
 DataType DataType::Scalars::uint8(DataType::UINT8_T,
                                    1,0,
-                                   sizeof(uint8),
-                                   sizeof(uint8),
+                                   sizeof(conduit::uint8),
+                                   sizeof(conduit::uint8),
                                    Endianness::DEFAULT_T);
 
 DataType DataType::Scalars::uint16(DataType::UINT16_T,
                                     1,0,
-                                    sizeof(uint16),
-                                    sizeof(uint16),
+                                    sizeof(conduit::uint16),
+                                    sizeof(conduit::uint16),
                                     Endianness::DEFAULT_T);
 
 DataType DataType::Scalars::uint32(DataType::UINT32_T,
-                                    1,0,
-                                    sizeof(uint32),
-                                    sizeof(uint32),
-                                    Endianness::DEFAULT_T);
+                                       1,0,
+                                       sizeof(conduit::uint32),
+                                       sizeof(conduit::uint32),
+                                       Endianness::DEFAULT_T);
 
 DataType DataType::Scalars::uint64(DataType::UINT64_T,
                                     1,0,
-                                    sizeof(uint64),
-                                    sizeof(uint64),
+                                    sizeof(conduit::uint64),
+                                    sizeof(conduit::uint64),
                                     Endianness::DEFAULT_T);
 /* float default dtypes */
 DataType DataType::Scalars::float32(DataType::FLOAT32_T,
                                     1,0,
-                                    sizeof(float32),
-                                    sizeof(float32),
+                                    sizeof(conduit::float32),
+                                    sizeof(conduit::float32),
                                     Endianness::DEFAULT_T);
 
 DataType DataType::Scalars::float64(DataType::FLOAT64_T,
                                     1,0,
-                                    sizeof(float64),
-                                    sizeof(float64),
+                                    sizeof(conduit::float64),
+                                    sizeof(conduit::float64),
                                     Endianness::DEFAULT_T);
 
 
