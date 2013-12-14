@@ -15,7 +15,7 @@ namespace conduit {
          
          template<typename T>
          T getpp(void){
-            m_node->getpp<T>(m_data);
+            return m_node->getpp<T>(m_data);
          }
          
          GhostNode operator[](const std::string &path)
