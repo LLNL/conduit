@@ -22,23 +22,51 @@ class Node;
 class DataType
 {
 public:
-   static DataType empty_dtype;
-   static DataType uint32_dtype;
-   static DataType float64_dtype;
-   
-   static DataType node_dtype;
-   static DataType list_dtype;
-   
     typedef enum
     {
         EMPTY_T = 0, // default
         NODE_T,      // node
         LIST_T,      // list
+        BOOL_T,      // boolean
+        INT8_T,      // int8 and  int8_array
+        INT16_T,     // int16 and int16_array
+        INT32_T,     // int32 and int32_array
+        INT64_T,     // int64 and int64_array
+        UINT8_T,     // int8 and  int8_array
+        UINT16_T,    // uint16 and uint16_array
         UINT32_T,    // uint32 and uint32_array
         UINT64_T,    // uint64 and uint64_array
+        FLOAT32_T,   // float32 and float32_array
         FLOAT64_T,   // float64 and float64_array
         BYTESTR_T,   // bytestr (incore c-string)
     } TypeEnum;
+    
+    class Objects
+    {
+    public:
+        static DataType empty;
+        static DataType node;
+        static DataType list;
+    };
+    
+    class Scalars
+    {
+    public:
+        static DataType boolean;
+        /* int scalars */
+        static DataType int8;
+        static DataType int16;
+        static DataType int32;
+        static DataType int64;
+        /* uint scalars */
+        static DataType uint8;
+        static DataType uint16;
+        static DataType uint32;
+        static DataType uint64;
+        /* float scalars */
+        static DataType float32;
+        static DataType float64;
+    };
 
              DataType();
              explicit DataType(index_t id);
@@ -73,8 +101,6 @@ public:
     static index_t          name_to_id(const std::string &name);
     static std::string      id_to_name(index_t dtype);
     
-    //static index_t          size_of_dtype(const std::string &name);
-    //static index_t          size_of_dtype(index_t dtype);
 
     static DataType const  &default_dtype(index_t dtype_id);
     static DataType const  &default_dtype(const std::string &name);
@@ -82,10 +108,10 @@ public:
     std::string         schema() const;
     void                schema(std::ostringstream &oss) const;
     
-    index_t             id()    const { return m_id;}    
+    index_t     id()    const { return m_id;}    
     index_t     total_bytes()   const;
     index_t     total_bytes_compact() const;
-    bool        compatible_storage(const DataType& type) const;
+    bool        is_compatible(const DataType& type) const;
 
     index_t    number_of_elements()  const { return m_num_ele;}
     index_t    offset()              const { return m_offset;}

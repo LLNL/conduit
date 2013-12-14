@@ -8,24 +8,77 @@ namespace conduit
 {
 
 // create storage for these common types:
-DataType DataType::empty_dtype(DataType::EMPTY_T,
-                               0,0,0,0,
-                               Endianness::DEFAULT_T);
+DataType DataType::Objects::empty(DataType::EMPTY_T);
+DataType DataType::Objects::node(DataType::NODE_T);
+DataType DataType::Objects::list(DataType::LIST_T);
 
-DataType DataType::uint32_dtype(DataType::UINT32_T,
-                               1,0,
-                               sizeof(uint32),
-                               sizeof(uint32),
-                               Endianness::DEFAULT_T);
+DataType DataType::Scalars::boolean(DataType::BOOL_T,
+                                    1,0,
+                                    sizeof(bool),
+                                    sizeof(bool),
+                                    Endianness::DEFAULT_T);
 
-DataType DataType::float64_dtype(DataType::FLOAT64_T,
-                                 1,0,
-                                 sizeof(float64),
-                                 sizeof(float64),
-                                 Endianness::DEFAULT_T);
+/* int default dtypes */
+DataType DataType::Scalars::int8(DataType::INT8_T,
+                                   1,0,
+                                   sizeof(int8),
+                                   sizeof(int8),
+                                   Endianness::DEFAULT_T);
 
-DataType DataType::node_dtype(DataType::NODE_T);
-DataType DataType::list_dtype(DataType::LIST_T);
+DataType DataType::Scalars::int16(DataType::INT16_T,
+                                    1,0,
+                                    sizeof(int16),
+                                    sizeof(int16),
+                                    Endianness::DEFAULT_T);
+
+DataType DataType::Scalars::int32(DataType::INT32_T,
+                                    1,0,
+                                    sizeof(int32),
+                                    sizeof(int32),
+                                    Endianness::DEFAULT_T);
+
+DataType DataType::Scalars::int64(DataType::INT64_T,
+                                    1,0,
+                                    sizeof(int64),
+                                    sizeof(int64),
+                                    Endianness::DEFAULT_T);
+
+/* uint default dtypes */
+DataType DataType::Scalars::uint8(DataType::UINT8_T,
+                                   1,0,
+                                   sizeof(uint8),
+                                   sizeof(uint8),
+                                   Endianness::DEFAULT_T);
+
+DataType DataType::Scalars::uint16(DataType::UINT16_T,
+                                    1,0,
+                                    sizeof(uint16),
+                                    sizeof(uint16),
+                                    Endianness::DEFAULT_T);
+
+DataType DataType::Scalars::uint32(DataType::UINT32_T,
+                                    1,0,
+                                    sizeof(uint32),
+                                    sizeof(uint32),
+                                    Endianness::DEFAULT_T);
+
+DataType DataType::Scalars::uint64(DataType::UINT64_T,
+                                    1,0,
+                                    sizeof(uint64),
+                                    sizeof(uint64),
+                                    Endianness::DEFAULT_T);
+/* float default dtypes */
+DataType DataType::Scalars::float32(DataType::FLOAT32_T,
+                                    1,0,
+                                    sizeof(float32),
+                                    sizeof(float32),
+                                    Endianness::DEFAULT_T);
+
+DataType DataType::Scalars::float64(DataType::FLOAT64_T,
+                                    1,0,
+                                    sizeof(float64),
+                                    sizeof(float64),
+                                    Endianness::DEFAULT_T);
 
 
 ///============================================
@@ -163,7 +216,7 @@ DataType::total_bytes_compact() const
     
 ///============================================
 bool
-DataType::compatible_storage(const DataType& dtype) const
+DataType::is_compatible(const DataType& dtype) const
 {
     return ( (m_id == dtype.m_id ) &&
              (m_ele_bytes == dtype.m_ele_bytes) &&
@@ -177,9 +230,18 @@ DataType::name_to_id(const std::string &dtype_name)
     if(dtype_name      == "[empty]") return EMPTY_T;
     else if(dtype_name == "Node")    return NODE_T;
     else if(dtype_name == "List")    return LIST_T;
+    else if(dtype_name == "bool")    return BOOL_T;
+    else if(dtype_name == "int8")    return INT8_T;
+    else if(dtype_name == "int16")   return INT16_T;
+    else if(dtype_name == "int32")   return INT32_T;
+    else if(dtype_name == "int64")   return INT64_T;
+    else if(dtype_name == "uint8")   return UINT8_T;
+    else if(dtype_name == "uint16")  return UINT16_T;
     else if(dtype_name == "uint32")  return UINT32_T;
     else if(dtype_name == "uint64")  return UINT64_T;
+    else if(dtype_name == "float32") return FLOAT32_T;
     else if(dtype_name == "float64") return FLOAT64_T;
+    else if(dtype_name == "bytestr") return BYTESTR_T;
     return EMPTY_T;
 }
 
@@ -189,10 +251,23 @@ DataType::id_to_name(index_t dtype_id)
 {
     if(dtype_id      == EMPTY_T)   return "[empty]";
     else if(dtype_id == NODE_T)    return "Node";
+    else if(dtype_id == BOOL_T)    return "bool";
+    /* ints */
     else if(dtype_id == LIST_T)    return "List";
+    else if(dtype_id == INT8_T)    return "int8";
+    else if(dtype_id == INT16_T)   return "int16";
+    else if(dtype_id == INT32_T)   return "int32";
+    else if(dtype_id == INT64_T)   return "int64";
+    /* uints */
+    else if(dtype_id == UINT8_T)   return "uint8";
+    else if(dtype_id == UINT16_T)  return "uint16";
     else if(dtype_id == UINT32_T)  return "uint32";
     else if(dtype_id == UINT64_T)  return "uint64";
+    /* floats */
+    else if(dtype_id == FLOAT32_T) return "float32";
     else if(dtype_id == FLOAT64_T) return "float64";
+    /* strs */
+    else if(dtype_id == BYTESTR_T) return "bytestr";
     return "[empty]";
 }
 
@@ -203,25 +278,26 @@ DataType::default_dtype(index_t dtype_id)
 {
    switch (dtype_id)
    {
-        case NODE_T : 
-        {
-            return DataType::node_dtype;
-        }
-        case LIST_T : 
-        {
-            return DataType::list_dtype;
-        }
-        case UINT32_T : 
-        {
-            return DataType::uint32_dtype;
-        }
-        case FLOAT64_T : 
-        {
-            return DataType::float64_dtype;
-        }    
+        case NODE_T :  return DataType::Objects::node;
+        case LIST_T :  return DataType::Objects::list;
+        case BOOL_T :  return DataType::Scalars::boolean;
+        /* int types */
+        case INT8_T :  return DataType::Scalars::int8;
+        case INT16_T : return DataType::Scalars::int16;
+        case INT32_T : return DataType::Scalars::int32;
+        case INT64_T : return DataType::Scalars::int64;
+        /* uint types */
+        case UINT8_T :  return DataType::Scalars::uint8;
+        case UINT16_T : return DataType::Scalars::uint16;
+        case UINT32_T : return DataType::Scalars::uint32;
+        case UINT64_T : return DataType::Scalars::uint64;
+        /* float types */
+        case FLOAT32_T : return DataType::Scalars::float32;
+        case FLOAT64_T : return DataType::Scalars::float64;
+        /* no default type for bytestr */
         default : 
         {
-            return DataType::empty_dtype;
+            return DataType::Objects::empty;
         }
     }
 }

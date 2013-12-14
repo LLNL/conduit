@@ -22,37 +22,128 @@ class Node
 {
 public:
     // used to return something for the "static and or locked case"
-    static Node Empty;
+    static Node empty;
     
     
+    /* Constructors */
     Node(); // empty node
     Node(const Node &node);
-    explicit Node(const DataType &dtype,bool locked=false);
+    explicit Node(const DataType &dtype, bool locked=false);
     Node(void *data, const std::string &schema);
     Node(void *data, const Node *schema);
     Node(void *data, const DataType &dtype);
 
+
+    explicit Node(bool   data);
+    explicit Node(int8   data);
+    explicit Node(int16  data);
+    explicit Node(int32  data);
+    explicit Node(int64  data);
+
+    explicit Node(uint8   data);
+    explicit Node(uint16  data);
     explicit Node(uint32  data);
+    explicit Node(uint64  data);
+
+    explicit Node(float32 data);
     explicit Node(float64 data);
 
+    explicit Node(const std::vector<int8>  &data);
+    explicit Node(const std::vector<int16>  &data);    
+    explicit Node(const std::vector<int32>  &data);
+    explicit Node(const std::vector<int64>  &data);
+
+    explicit Node(const std::vector<uint8>  &data);
+    explicit Node(const std::vector<uint16>  &data);    
     explicit Node(const std::vector<uint32>  &data);
+    explicit Node(const std::vector<uint64>  &data);
+    
+    explicit Node(const std::vector<float32>  &data);
     explicit Node(const std::vector<float64>  &data);
+    
+    explicit Node(const std::string  &data);
 
     virtual  ~Node();
 
+    /// For each dtype:
+    ///  constructor: explicit Node({DTYPE}  data);
+    ///  assign op:  Node &operator=({DTYPE} data);
+    ///  setter: void set({DTYPE} data);
+    /// accessor: {DTYPE} as_{DTYPE};
+    
+    /* Setters */
     void set(const Node& data);
     void set(const DataType &data);
 
-    void set(uint32 data);
-    void set(float64 data);
-
-    void set(const std::vector<uint32>  &data);
-    void set(const std::vector<float64> &data);
-
+    void set(void* data, const std::string &schema);
     void set(void* data, const Node *schema);
     void set(void* data, const DataType &dtype);
 
+    void set(bool data);
     
+    void set(int8 data);
+    void set(int16 data);
+    void set(int32 data);
+    void set(int64 data);
+
+    void set(uint8 data);
+    void set(uint16 data);
+    void set(uint32 data);
+    void set(uint64 data);
+
+    void set(float32 data);
+    void set(float64 data);
+
+    void set(const std::vector<int8>   &data);
+    void set(const std::vector<int16>  &data);
+    void set(const std::vector<int32>  &data);
+    void set(const std::vector<int64>  &data);
+
+    void set(const std::vector<uint8>   &data);
+    void set(const std::vector<uint16>  &data);
+    void set(const std::vector<uint32>  &data);
+    void set(const std::vector<uint64>  &data);
+
+    void set(const std::vector<float32> &data);
+    void set(const std::vector<float64> &data);
+    
+    void set(const std::string &data);
+                
+    /* Assignment ops */
+    Node &operator=(const Node &node);
+    Node &operator=(DataType dtype);
+
+    Node &operator=(bool data);
+
+    Node &operator=(int8 data);
+    Node &operator=(int16 data);
+    Node &operator=(int32 data);
+    Node &operator=(int64 data);
+
+    Node &operator=(uint8 data);
+    Node &operator=(uint16 data);
+    Node &operator=(uint32 data);
+    Node &operator=(uint64 data);
+
+    Node &operator=(float32 data);    
+    Node &operator=(float64 data);
+
+    Node &operator=(const std::vector<int8>   &data);
+    Node &operator=(const std::vector<int16>   &data);
+    Node &operator=(const std::vector<int32>   &data);
+    Node &operator=(const std::vector<int64>   &data);
+
+    Node &operator=(const std::vector<uint8>   &data);
+    Node &operator=(const std::vector<uint16>   &data);
+    Node &operator=(const std::vector<uint32>   &data);
+    Node &operator=(const std::vector<uint64>   &data);
+
+    Node &operator=(const std::vector<float32>  &data);
+    Node &operator=(const std::vector<float64>  &data);
+
+    Node &operator=(const std::string &data);
+
+    /* Template Access (experimental) */
     template<typename T>
     void setpp(T data);
     
@@ -62,37 +153,29 @@ public:
     template<typename T>
     T getpp(void *data) const;
 
-    Node &operator=(const Node &node);
-
-    Node &operator=(DataType dtype);
-
-    Node &operator=(uint32 data);
-    Node &operator=(float64 data);
-
-    Node &operator=(const std::vector<uint32>   &data);
-    Node &operator=(const std::vector<float64>  &data);
-
+    /* Info */
     index_t total_bytes() const;
+    const DataType    &dtype() const { return m_dtype;}
 
+    /*schema access */
     std::string schema() const;
     void        schema(std::ostringstream &oss) const;
+    void        lock_schema();
+    void        unlock_schema();
+    bool        is_schema_locked() const {return m_locked;}
 
+    /* serialization */
     void        serialize(std::vector<uint8> &data, bool compact=true) const;
     void        serialize(uint8 *data, index_t curr_offset, bool compact=true) const;
 
-    const DataType    &dtype() const { return m_dtype;}
 
     // TODO:
-    // *add entries from n to current Node (like python dict update) 
+    // update() will add entries from n to current Node (like python dict update) 
     // void              update(const Node &n);  
-    void             compare(const Node &n, Node &n_diffs) const;
+    bool             compare(const Node &n, Node &cmp_results) const;
     bool             operator==(const Node &n) const;
     
     bool             is_empty() const;
-    
-    void             lock_schema();
-    void             unlock_schema();
-    bool             schema_locked() const;
     
     // these guys don't modify map structure, if a path doesn't exit
     // they will return an Empty Locked Node (we could also throw an exception)
@@ -103,7 +186,6 @@ public:
     const Node       &get(const std::string &path) const;
     const Node       &get(index_t idx) const;
     
-    
     Node             &fetch(const std::string &path);
     Node             &fetch(index_t idx);
 
@@ -113,21 +195,48 @@ public:
     bool             has_path(const std::string &path) const;
     void             paths(std::vector<std::string> &paths,bool expand=false) const;
 
+
     Node             &operator[](const std::string &path);
     Node             &operator[](const index_t idx);
     const Node       &operator[](const std::string &path) const;
     const Node       &operator[](const index_t idx) const;
 
 
-    index_t          to_integer() const;
-    float64          to_real()    const;
+    int64            to_int()   const;
+    uint64           to_uint()  const;
+    float64          to_float() const;
+    
+    std::string      to_string() const;
 
+    bool             as_bool()   const  { return *((bool*)element_pointer(0));}
+
+    int8             as_int8()   const  { return *((int8*)element_pointer(0));}
+    int16            as_int16()  const  { return *((int16*)element_pointer(0));}
+    int32            as_int32()  const  { return *((int32*)element_pointer(0));}
+    int64            as_int64()  const  { return *((int64*)element_pointer(0));}
+
+    uint8            as_uint8()   const { return *((uint8*)element_pointer(0));}
+    uint16           as_uint16()  const { return *((uint16*)element_pointer(0));}
     uint32           as_uint32()  const { return *((uint32*)element_pointer(0));}
+    uint64           as_uint64()  const { return *((uint64*)element_pointer(0));}
+
+    float32          as_float32() const { return *((float32*)element_pointer(0));}
     float64          as_float64() const { return *((float64*)element_pointer(0));}
 
-    uint32          *as_uint32_ptr()   { return (uint32*)element_pointer(0);}
-    float64         *as_float64_ptr()  { return (float64*)element_pointer(0);}
+    int8            *as_int8_ptr()    { return (int8*)element_pointer(0);}
+    int16           *as_int16_ptr()   { return (int16*)element_pointer(0);}
+    int32           *as_int32_ptr()   { return (int32*)element_pointer(0);}
+    int64           *as_int64_ptr()   { return (int64*)element_pointer(0);}
 
+    uint8           *as_uint8_ptr()    { return (uint8*)element_pointer(0);}
+    uint16          *as_uint16_ptr()   { return (uint16*)element_pointer(0);}
+    uint32          *as_uint32_ptr()   { return (uint32*)element_pointer(0);}
+    uint64          *as_uint64_ptr()   { return (uint64*)element_pointer(0);}
+        
+    float32         *as_float32_ptr()  { return (float32*)element_pointer(0);}
+    float64         *as_float64_ptr()  { return (float64*)element_pointer(0);}
+    
+    char            *as_bytestr() {return (char *)element_pointer(0);}
     
 private:
     void             init(const DataType &dtype);
@@ -147,7 +256,6 @@ private:
                                 std::string &curr,
                                 std::string &next);
 
-    /// TODO:
     void             enforce_lock();
     
     void            *element_pointer(index_t idx)

@@ -8,7 +8,7 @@
 namespace conduit
 {
 
-Node Node::Empty(DataType::empty_dtype,true);
+Node Node::empty(DataType::Objects::empty,true);
 
 ///============================================
 /// Node
@@ -97,6 +97,81 @@ Node::Node(const DataType &dtype,bool locked)
 {
     set(dtype);
 }
+
+///============================================
+/// int types
+///============================================
+
+///============================================
+Node::Node(int8  data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+    set(data);
+}
+
+///============================================
+Node::Node(int16  data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+    set(data);
+}
+    
+///============================================
+Node::Node(int32  data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+    set(data);
+}
+
+///============================================
+Node::Node(int64  data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+    set(data);
+}
+
+
+///============================================
+/// uint types
+///============================================
+
+///============================================
+Node::Node(uint8  data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+    set(data);
+}
+
+///============================================
+Node::Node(uint16  data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+    set(data);
+}
     
 ///============================================
 Node::Node(uint32  data)
@@ -108,6 +183,33 @@ Node::Node(uint32  data)
 {
     set(data);
 }
+
+///============================================
+Node::Node(uint64  data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+    set(data);
+}
+
+///============================================
+/// float types
+///============================================
+
+///============================================
+Node::Node(float32 data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+    set(data);
+}
+
 
 ///============================================
 Node::Node(float64 data)
@@ -131,7 +233,8 @@ Node::~Node()
 void 
 Node::set(const Node &node)
 {
-    if (node.m_dtype.id() != DataType::EMPTY_T)
+    enforce_lock();
+    if (!node.is_empty())
     {
         if (node.m_alloced) 
         {
@@ -156,10 +259,85 @@ Node::set(const Node &node)
 void 
 Node::set(const DataType &dtype)
 {
+    enforce_lock();
     // TODO: Is this right?
     // We need to cleanup and set the dtype w/o storage
     m_dtype.reset(dtype);
 }
+
+///============================================
+/// int types
+///============================================
+
+///============================================
+void 
+Node::set(int8 data)
+{
+    // TODO check for compatible, don't always re-init
+    // NOTE: comp check happens in init
+    init(DataType::Scalars::int8);
+    *(int8*)((char*)m_data + m_dtype.element_index(0)) = data;
+}
+
+
+///============================================
+void 
+Node::set(int16 data)
+{
+    // TODO check for compatible, don't always re-init
+    // NOTE: comp check happens in init
+    init(DataType::Scalars::int16);
+    *(int16*)((char*)m_data + m_dtype.element_index(0)) = data;
+}
+
+
+///============================================
+void 
+Node::set(int32 data)
+{
+    // TODO check for compatible, don't always re-init
+    // NOTE: comp check happens in init
+    init(DataType::Scalars::int32);
+    *(int32*)((char*)m_data + m_dtype.element_index(0)) = data;
+}
+
+
+///============================================
+void 
+Node::set(int64 data)
+{
+    // TODO check for compatible, don't always re-init
+    // NOTE: comp check happens in init
+    init(DataType::Scalars::int64);
+    *(int64*)((char*)m_data + m_dtype.element_index(0)) = data;
+}
+
+
+///============================================
+/// uint types
+///============================================
+
+///============================================
+void 
+Node::set(uint8 data)
+{
+    // TODO check for compatible, don't always re-init
+    // NOTE: comp check happens in init
+    init(DataType::Scalars::uint8);
+    *(uint8*)((char*)m_data + m_dtype.element_index(0)) = data;
+}
+
+
+///============================================
+void 
+Node::set(uint16 data)
+{
+    // TODO check for compatible, don't always re-init
+    // NOTE: comp check happens in init
+    init(DataType::Scalars::uint16);
+    *(uint16*)((char*)m_data + m_dtype.element_index(0)) = data;
+}
+
 
 ///============================================
 void 
@@ -167,8 +345,33 @@ Node::set(uint32 data)
 {
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
-    init(DataType::uint32_dtype);
+    init(DataType::Scalars::uint32);
     *(uint32*)((char*)m_data + m_dtype.element_index(0)) = data;
+}
+
+
+///============================================
+void 
+Node::set(uint64 data)
+{
+    // TODO check for compatible, don't always re-init
+    // NOTE: comp check happens in init
+    init(DataType::Scalars::uint64);
+    *(uint64*)((char*)m_data + m_dtype.element_index(0)) = data;
+}
+
+///============================================
+/// float types
+///============================================
+
+///============================================
+void 
+Node::set(float32 data)
+{
+    // TODO check for compatible, don't always re-init
+    // NOTE: comp check happens in init
+    init(DataType::Scalars::float32);
+    *(float32*)((char*)m_data + m_dtype.element_index(0)) = data;
 }
 
 
@@ -178,10 +381,102 @@ Node::set(float64 data)
 {
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
-    init(DataType::float64_dtype);
+    init(DataType::Scalars::float64);
     *(float64*)((char*)m_data + m_dtype.element_index(0)) = data;
 }
 
+///============================================
+/// uint vec types
+///============================================
+
+///============================================
+void 
+Node::set(const std::vector<int8>  &data)
+{
+    DataType vec_t(DataType::INT8_T,
+                   (index_t)data.size(),
+                   0,
+                   sizeof(int8),
+                   sizeof(int8),
+                   Endianness::DEFAULT_T);
+    init(vec_t);
+    memcpy(m_data,&data[0],sizeof(int8)*data.size());
+}
+
+///============================================
+void 
+Node::set(const std::vector<int16>  &data)
+{
+    DataType vec_t(DataType::INT16_T,
+                   (index_t)data.size(),
+                   0,
+                   sizeof(int16),
+                   sizeof(int16),
+                   Endianness::DEFAULT_T);
+    init(vec_t);
+    memcpy(m_data,&data[0],sizeof(int16)*data.size());
+}
+
+///============================================
+void 
+Node::set(const std::vector<int32>  &data)
+{
+    DataType vec_t(DataType::INT32_T,
+                   (index_t)data.size(),
+                   0,
+                   sizeof(int32),
+                   sizeof(int32),
+                   Endianness::DEFAULT_T);
+    init(vec_t);
+    memcpy(m_data,&data[0],sizeof(int32)*data.size());
+}
+
+///============================================
+void 
+Node::set(const std::vector<int64>  &data)
+{
+    DataType vec_t(DataType::INT64_T,
+                   (index_t)data.size(),
+                   0,
+                   sizeof(int64),
+                   sizeof(int64),
+                   Endianness::DEFAULT_T);
+    init(vec_t);
+    memcpy(m_data,&data[0],sizeof(int64)*data.size());
+}
+
+
+///============================================
+/// uint vec types
+///============================================
+
+///============================================
+void 
+Node::set(const std::vector<uint8>  &data)
+{
+    DataType vec_t(DataType::UINT8_T,
+                   (index_t)data.size(),
+                   0,
+                   sizeof(uint8),
+                   sizeof(uint8),
+                   Endianness::DEFAULT_T);
+    init(vec_t);
+    memcpy(m_data,&data[0],sizeof(uint8)*data.size());
+}
+
+///============================================
+void 
+Node::set(const std::vector<uint16>  &data)
+{
+    DataType vec_t(DataType::UINT16_T,
+                   (index_t)data.size(),
+                   0,
+                   sizeof(uint16),
+                   sizeof(uint16),
+                   Endianness::DEFAULT_T);
+    init(vec_t);
+    memcpy(m_data,&data[0],sizeof(uint16)*data.size());
+}
 
 ///============================================
 void 
@@ -199,6 +494,38 @@ Node::set(const std::vector<uint32>  &data)
 
 ///============================================
 void 
+Node::set(const std::vector<uint64>  &data)
+{
+    DataType vec_t(DataType::UINT64_T,
+                   (index_t)data.size(),
+                   0,
+                   sizeof(uint64),
+                   sizeof(uint64),
+                   Endianness::DEFAULT_T);
+    init(vec_t);
+    memcpy(m_data,&data[0],sizeof(uint64)*data.size());
+}
+
+///============================================
+/// float vec types
+///============================================
+
+///============================================
+void 
+Node::set(const std::vector<float32>  &data)
+{
+    DataType vec_t(DataType::FLOAT32_T,
+                   (index_t)data.size(),
+                   0,
+                   sizeof(float32),
+                   sizeof(float32),
+                   Endianness::DEFAULT_T);
+    init(vec_t);
+    memcpy(m_data,&data[0],sizeof(float32)*data.size());
+}
+
+///============================================
+void 
 Node::set(const std::vector<float64>  &data)
 {
     DataType vec_t(DataType::FLOAT64_T,
@@ -212,16 +539,28 @@ Node::set(const std::vector<float64>  &data)
 }
 
 
-
+///============================================
 void
-Node::set(void* data, const Node* schema)
+Node::set(void* data, const std::string &schema)
 {
-    ///TODO
+    walk_schema(data,schema);    
 }
 
+///============================================
+void
+Node::set(void* data, const Node *schema)
+{
+    ///TODO : Real Imp, current is a short cut 
+    std::string schema_str = schema->schema();
+    set(data,schema_str);
+}
+
+///============================================
 void
 Node::set( void *data, const DataType &dtype)
 {
+    cleanup();
+    enforce_lock();
     m_alloced = false;
     m_data    = data;
     m_dtype.reset(dtype);
@@ -247,8 +586,48 @@ Node::operator=(DataType dtype)
 }
 
 ///============================================
+/// uint types
+///============================================
+
+///============================================
+Node &
+Node::operator=(uint8 data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+Node &
+Node::operator=(float16 data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
 Node &
 Node::operator=(uint32 data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+Node &
+Node::operator=(uint64 data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+/// float types
+///============================================
+
+///============================================
+Node &
+Node::operator=(float32 data)
 {
     set(data);
     return *this;
@@ -262,10 +641,85 @@ Node::operator=(float64 data)
     return *this;
 }
 
+///============================================
+/// int vec types
+///============================================
+
+///============================================
+Node &
+Node::operator=(const std::vector<int8> &data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+Node &
+Node::operator=(const std::vector<int16> &data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+Node &
+Node::operator=(const std::vector<int32> &data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+Node &
+Node::operator=(const std::vector<int64> &data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+/// uint vec types
+///============================================
+
+///============================================
+Node &
+Node::operator=(const std::vector<uint8> &data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+Node &
+Node::operator=(const std::vector<uint16> &data)
+{
+    set(data);
+    return *this;
+}
 
 ///============================================
 Node &
 Node::operator=(const std::vector<uint32> &data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+Node &
+Node::operator=(const std::vector<uint64> &data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+/// float vec types
+///============================================
+
+///============================================
+Node &
+Node::operator=(const std::vector<float32> &data)
 {
     set(data);
     return *this;
@@ -279,44 +733,38 @@ Node::operator=(const std::vector<float64> &data)
     return *this;
 }
 
+
+
 ///============================================
 index_t
 Node::total_bytes() const
 {
-    index_t size = 0;
-    switch (m_dtype.id()) 
+    index_t res = 0;
+    index_t dt_id = m_dtype.id();
+    if(dt_id == DataType::NODE_T)
     {
-
-        case DataType::UINT32_T:
-        case DataType::UINT64_T:
-        case DataType::FLOAT64_T:
-            size = m_dtype.total_bytes();
-            break;
-        case DataType::NODE_T:
+        const std::map<std::string, Node> &ents = entries();
+        for (std::map<std::string, Node>::const_iterator itr = ents.begin();
+             itr != ents.end(); ++itr) 
         {
-            const std::map<std::string, Node> &ents = entries();
-            for (std::map<std::string, Node>::const_iterator itr = ents.begin();
-                 itr != ents.end(); ++itr) 
-            {
-                size += itr->second.total_bytes();
-            }
+            res += itr->second.total_bytes();
         }
-            break;
-        case DataType::LIST_T:
-        {
-            const std::vector<Node> &lst = list();
-            for (std::vector<Node>::const_iterator itr = lst.begin();
-                 itr != lst.end(); ++itr)
-            {
-                size += itr->total_bytes();
-            }
-        }
-            break;
-        default:
-             // error
-             break;
     }
-    return size;
+    else if(dt_id == DataType::LIST_T)
+    {
+        const std::vector<Node> &lst = list();
+        for (std::vector<Node>::const_iterator itr = lst.begin();
+             itr != lst.end(); ++itr)
+        {
+            res += itr->total_bytes();
+        }
+    }
+    else if (dt_id != DataType::EMPTY_T)
+    {
+        //TODO: Use "total_bytes"
+        res = m_dtype.total_bytes_compact();
+    }
+    return res;
 }
 
 ///============================================
@@ -410,10 +858,10 @@ Node::serialize(uint8 *data,index_t curr_offset,bool compact) const
 }
 
 ///============================================
-void             
-Node::compare(const Node &n, Node &n_diffs) const
+bool             
+Node::compare(const Node &n, Node &cmp_results) const
 {
-/// TODO: n_diffs will describe the diffs between this & n    
+/// TODO: cmp_results will describe the diffs between this & n    
 }
 
 
@@ -470,14 +918,6 @@ Node::set_lock(bool value)
     }
 }
 
-///============================================
-bool
-Node::schema_locked() const
-{
-    return m_locked;
-}
-
-
 
 ///============================================
 void
@@ -494,7 +934,7 @@ Node::get(const std::string &path)
 {
     // fetch w/ path forces NODE_T
     if(m_dtype.id() != DataType::NODE_T)
-        return Empty;
+        return empty;
         
     std::string p_curr;
     std::string p_next;
@@ -504,7 +944,7 @@ Node::get(const std::string &path)
     std::map<std::string, Node>::iterator itr = ents.find(p_curr);
     // return Empty if the entry does not exist (static/locked case)
     if(itr == ents.end())
-        return Empty;
+        return empty;
     
     if(p_next.empty())
     {
@@ -523,7 +963,7 @@ Node::get(index_t idx)
 {
     if(m_dtype.id() != DataType::LIST_T)
     {
-        return Empty;
+        return empty;
     }
     // we could also potentially support index fetch on:
     //   NODE_T (imp-order)
@@ -537,7 +977,7 @@ Node::get(const std::string &path) const
 {
     // fetch w/ path forces NODE_T
     if(m_dtype.id() != DataType::NODE_T)
-        return Empty;
+        return empty;
         
     std::string p_curr;
     std::string p_next;
@@ -547,7 +987,7 @@ Node::get(const std::string &path) const
     std::map<std::string, Node>::const_iterator itr = ents.find(p_curr);
     // return Empty if the entry does not exist (static/locked case)
     if(itr == ents.end())
-        return Empty;
+        return empty;
     
     if(p_next.empty())
     {
@@ -566,7 +1006,7 @@ Node::get(index_t idx) const
 {
     if(m_dtype.id() != DataType::LIST_T)
     {
-        return Empty;
+        return empty;
     }
     // we could also potentially support index fetch on:
     //   NODE_T (imp-order)
@@ -580,7 +1020,7 @@ Node::fetch(const std::string &path)
 {
     // fetch w/ path forces NODE_T
     if(m_dtype.id() != DataType::NODE_T)
-        init(DataType::node_dtype);
+        init(DataType::Objects::node);
         
     std::string p_curr;
     std::string p_next;
@@ -676,51 +1116,68 @@ void
 Node::paths(std::vector<std::string> &paths,bool expand) const
 {
     // TODO: Imp
-    // TODO: Nested paths
+    // TODO: expand == True, show nested paths
 }
 
 
 ///============================================
-index_t
-Node::to_integer() const
+int64
+Node::to_int() const
+{
+    // TODO: Imp
+}
+
+///============================================
+uint64
+Node::to_uint() const
 {
     // TODO: Imp
 }
 
 ///============================================
 float64
-Node::to_real() const
+Node::to_float() const
 {
     // TODO: Imp
 }
+
+///============================================
+std::string 
+Node::to_string() const
+{
+    // TODO: Imp
+}
+
     
 ///============================================
 void
 Node::init(const DataType& dtype)
 {
-    if (!m_dtype.compatible_storage(dtype) || m_data == NULL)
+    if (!m_dtype.is_compatible(dtype) || m_data == NULL)
     {
+        enforce_lock();
         cleanup();
-        switch (dtype.id())
+        index_t dt_id = dtype.id();
+        if( dt_id == DataType::NODE_T)
         {
-            case DataType::UINT32_T:
-            case DataType::FLOAT64_T:
-                // TODO: This implies compact storage
-                m_data = new char[dtype.number_of_elements()*dtype.element_bytes()];
-                m_alloced = true;
-                break;
-            case DataType::NODE_T:
-                // TODO: alloced map
-                break;
-            case DataType::LIST_T:
-                // TODO: alloced vec
-                break;
+            // TODO: alloc map
         }
+        else if(dt_id == DataType::LIST_T)
+        {
+            // TODO: alloc list
+        }
+        else if(dt_id != DataType::EMPTY_T)
+        {
+            // TODO: This implies compact storage
+            // TODO: should we just malloc / dealloc?
+            m_data = new char[dtype.number_of_elements()*dtype.element_bytes()];
+            m_alloced = true;
+        }
+
         m_dtype.reset(dtype);
     }
 }
 
-// TODO: Many more init cases
 
 ///============================================
 void
@@ -736,21 +1193,25 @@ Node::cleanup()
         {
             //TODO: Imp    delete alloced vec
         }
-        else if(m_dtype.id() == DataType::UINT32_T)
+        else if(m_dtype.id() != DataType::EMPTY_T)
         {
-            uint32 *ptr=(uint32*)m_data;
-            delete ptr; 
-        }
-        else if(m_dtype.id() == DataType::FLOAT64_T)
-        {
-            float64 *ptr=(float64*)m_data;
-            delete ptr; 
+            // scalar and array types are alloce
+            // TODO: should we just malloc / dealloc?
+            // using the char allocator (should we act
+            delete [](char*)m_data;
         }
     }   
     
+    if(m_obj_data)
+    {
+        delete [] (char*)m_data;
+    }
+ 
     m_data    = NULL;
     m_alloced = false;
     m_dtype.reset(DataType::EMPTY_T);
+    m_obj_data = NULL;
+    m_locked = false;
 }
     
 
@@ -789,7 +1250,6 @@ Node::list() const
 void 
 Node::walk_schema(void *data, const std::string &schema)
 {
-    // clean up before this
     m_data    = data;
     m_alloced = false;
     m_dtype.reset(DataType::NODE_T);
@@ -822,8 +1282,11 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
             const DataType df_dtype = DataType::default_dtype(dtype_name);
             index_t type_id = df_dtype.id();
             index_t size    = df_dtype.element_bytes();
-            m_dtype.reset(type_id, length, curr_offset,
-                          size, size,
+            m_dtype.reset(type_id,
+                          length,
+                          curr_offset,
+                          size, 
+                          size,
                           Endianness::DEFAULT_T);
             m_data = data;
         }
@@ -834,10 +1297,12 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
                  itr != jvalue.MemberEnd(); ++itr)
             {
                 std::string entry_name(itr->name.GetString());
-                Node node(DataType::node_dtype);
+                Node node(DataType::Objects::node);
                 node.walk_schema(data, itr->value, curr_offset);
                 ents[entry_name] = node;
+                std::cout << "node.total_bytes = " << node.total_bytes() <<std::endl;
                 curr_offset += node.total_bytes();
+                std::cout << "curr_offset = " << curr_offset <<std::endl;
             }
         }
     }
@@ -847,7 +1312,7 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
         std::vector<Node> &lst = list();
         for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
         {
-			Node node(DataType::node_dtype);
+			Node node(DataType::Objects::node);
             node.walk_schema(data, jvalue[i], curr_offset);
             curr_offset += node.total_bytes();
             lst.push_back(node);
@@ -884,7 +1349,13 @@ Node::split_path(const std::string &path,
         curr = path;
     } 
 }
-                
+            
+///============================================    
+void
+Node::enforce_lock()
+{
+/// TODO: Imp
+}
 
 }
 
