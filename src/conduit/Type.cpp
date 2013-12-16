@@ -8,77 +8,77 @@ namespace conduit
 {
 
 // create storage for these common types:
-DataType DataType::Objects::empty(DataType::EMPTY_T);
-DataType DataType::Objects::node(DataType::NODE_T);
-DataType DataType::Objects::list(DataType::LIST_T);
+DataType DataType::Objects::m_empty(DataType::EMPTY_T);
+DataType DataType::Objects::m_node(DataType::NODE_T);
+DataType DataType::Objects::m_list(DataType::LIST_T);
 
-DataType DataType::Scalars::boolean(DataType::BOOL_T,
-                                    1,0,
-                                    sizeof(bool),
-                                    sizeof(bool),
-                                    Endianness::DEFAULT_T);
+DataType DataType::Scalars::m_boolean(DataType::BOOL_T,
+                                      1,0,
+                                      sizeof(bool),
+                                      sizeof(bool),
+                                      Endianness::DEFAULT_T);
 
 /* int default dtypes */
-DataType DataType::Scalars::int8(DataType::INT8_T,
+DataType DataType::Scalars::m_int8(DataType::INT8_T,
                                    1,0,
                                    sizeof(conduit::int8),
                                    sizeof(conduit::int8),
                                    Endianness::DEFAULT_T);
 
-DataType DataType::Scalars::int16(DataType::INT16_T,
+DataType DataType::Scalars::m_int16(DataType::INT16_T,
                                     1,0,
                                     sizeof(conduit::int16),
                                     sizeof(conduit::int16),
                                     Endianness::DEFAULT_T);
 
-DataType DataType::Scalars::int32(DataType::INT32_T,
+DataType DataType::Scalars::m_int32(DataType::INT32_T,
                                     1,0,
                                     sizeof(conduit::int32),
                                     sizeof(conduit::int32),
                                     Endianness::DEFAULT_T);
 
-DataType DataType::Scalars::int64(DataType::INT64_T,
+DataType DataType::Scalars::m_int64(DataType::INT64_T,
                                     1,0,
                                     sizeof(conduit::int64),
                                     sizeof(conduit::int64),
                                     Endianness::DEFAULT_T);
 
 /* uint default dtypes */
-DataType DataType::Scalars::uint8(DataType::UINT8_T,
-                                   1,0,
-                                   sizeof(conduit::uint8),
-                                   sizeof(conduit::uint8),
-                                   Endianness::DEFAULT_T);
-
-DataType DataType::Scalars::uint16(DataType::UINT16_T,
+DataType DataType::Scalars::m_uint8(DataType::UINT8_T,
                                     1,0,
-                                    sizeof(conduit::uint16),
-                                    sizeof(conduit::uint16),
+                                    sizeof(conduit::uint8),
+                                    sizeof(conduit::uint8),
                                     Endianness::DEFAULT_T);
 
-DataType DataType::Scalars::uint32(DataType::UINT32_T,
-                                       1,0,
-                                       sizeof(conduit::uint32),
-                                       sizeof(conduit::uint32),
-                                       Endianness::DEFAULT_T);
+DataType DataType::Scalars::m_uint16(DataType::UINT16_T,
+                                     1,0,
+                                     sizeof(conduit::uint16),
+                                     sizeof(conduit::uint16),
+                                     Endianness::DEFAULT_T);
 
-DataType DataType::Scalars::uint64(DataType::UINT64_T,
-                                    1,0,
-                                    sizeof(conduit::uint64),
-                                    sizeof(conduit::uint64),
-                                    Endianness::DEFAULT_T);
+DataType DataType::Scalars::m_uint32(DataType::UINT32_T,
+                                     1,0,
+                                     sizeof(conduit::uint32),
+                                     sizeof(conduit::uint32),
+                                     Endianness::DEFAULT_T);
+
+DataType DataType::Scalars::m_uint64(DataType::UINT64_T,
+                                     1,0,
+                                     sizeof(conduit::uint64),
+                                     sizeof(conduit::uint64),
+                                     Endianness::DEFAULT_T);
 /* float default dtypes */
-DataType DataType::Scalars::float32(DataType::FLOAT32_T,
-                                    1,0,
-                                    sizeof(conduit::float32),
-                                    sizeof(conduit::float32),
-                                    Endianness::DEFAULT_T);
+DataType DataType::Scalars::m_float32(DataType::FLOAT32_T,
+                                      1,0,
+                                      sizeof(conduit::float32),
+                                      sizeof(conduit::float32),
+                                      Endianness::DEFAULT_T);
 
-DataType DataType::Scalars::float64(DataType::FLOAT64_T,
-                                    1,0,
-                                    sizeof(conduit::float64),
-                                    sizeof(conduit::float64),
-                                    Endianness::DEFAULT_T);
+DataType DataType::Scalars::m_float64(DataType::FLOAT64_T,
+                                     1,0,
+                                     sizeof(conduit::float64),
+                                     sizeof(conduit::float64),
+                                     Endianness::DEFAULT_T);
 
 
 ///============================================
@@ -278,26 +278,26 @@ DataType::default_dtype(index_t dtype_id)
 {
    switch (dtype_id)
    {
-        case NODE_T :  return DataType::Objects::node;
-        case LIST_T :  return DataType::Objects::list;
-        case BOOL_T :  return DataType::Scalars::boolean;
+        case NODE_T :  return DataType::Objects::node();
+        case LIST_T :  return DataType::Objects::list();
+        case BOOL_T :  return DataType::Scalars::boolean();
         /* int types */
-        case INT8_T :  return DataType::Scalars::int8;
-        case INT16_T : return DataType::Scalars::int16;
-        case INT32_T : return DataType::Scalars::int32;
-        case INT64_T : return DataType::Scalars::int64;
+        case INT8_T :  return DataType::Scalars::int8();
+        case INT16_T : return DataType::Scalars::int16();
+        case INT32_T : return DataType::Scalars::int32();
+        case INT64_T : return DataType::Scalars::int64();
         /* uint types */
-        case UINT8_T :  return DataType::Scalars::uint8;
-        case UINT16_T : return DataType::Scalars::uint16;
-        case UINT32_T : return DataType::Scalars::uint32;
-        case UINT64_T : return DataType::Scalars::uint64;
+        case UINT8_T :  return DataType::Scalars::uint8();
+        case UINT16_T : return DataType::Scalars::uint16();
+        case UINT32_T : return DataType::Scalars::uint32();
+        case UINT64_T : return DataType::Scalars::uint64();
         /* float types */
-        case FLOAT32_T : return DataType::Scalars::float32;
-        case FLOAT64_T : return DataType::Scalars::float64;
+        case FLOAT32_T : return DataType::Scalars::float32();
+        case FLOAT64_T : return DataType::Scalars::float64();
         /* no default type for bytestr */
         default : 
         {
-            return DataType::Objects::empty;
+            return DataType::Objects::empty();
         }
     }
 }
@@ -325,42 +325,40 @@ void
 DataType::schema(std::ostringstream &oss) const
 {
     oss << "{\"dtype\":";
-    switch (m_id)
+    if(m_id == EMPTY_T)
     {
-        case EMPTY_T : 
-        {
-            oss << "\"[empty]\"";
-            break;
-        }
-        case UINT32_T : 
-        case FLOAT64_T : 
-        {
-            oss << "\"" << id_to_name(m_id) << "\"";
-            oss << ", \"length\" : " << m_num_ele;
-            oss << ", \"offset\" : " << m_offset;
-            oss << ", \"stride\" : " << m_stride;
-            oss << ", \"element_bytes\" : " << m_ele_bytes;
-
-            std::string endian_str;
-
-            if(m_endianness == Endianness::DEFAULT_T)
-            {
-                // find this machine's actual endianness
-                endian_str = Endianness::id_to_name(Endianness::machine_default());
-            }
-            else
-            {
-                endian_str = Endianness::id_to_name(m_endianness);
-            }
-            oss << ", \"endianness\" : \"" << endian_str << "\"";            
-            break;
-        }
-        default : 
-        {
-            oss << "\"[unknown]\"";
-            break;
-        }
+        oss << "\"[empty]\"";
     }
+    else if(m_id == NODE_T)
+    {
+        oss << "\"[node]\"";
+    }
+    else if(m_id == LIST_T)
+    {
+        oss << "\"[list]\"";
+    }
+    else
+    {
+        oss << "\"" << id_to_name(m_id) << "\"";
+        oss << ", \"length\" : " << m_num_ele;
+        oss << ", \"offset\" : " << m_offset;
+        oss << ", \"stride\" : " << m_stride;
+        oss << ", \"element_bytes\" : " << m_ele_bytes;
+
+        std::string endian_str;
+
+        if(m_endianness == Endianness::DEFAULT_T)
+        {
+            // find this machine's actual endianness
+            endian_str = Endianness::id_to_name(Endianness::machine_default());
+        }
+        else
+        {
+            endian_str = Endianness::id_to_name(m_endianness);
+        }
+        oss << ", \"endianness\" : \"" << endian_str << "\"";            
+    }
+
     oss << "}";
 }
 

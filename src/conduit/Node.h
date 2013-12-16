@@ -20,10 +20,7 @@ namespace conduit
 
 class Node
 {
-public:
-    // used to return something for the "static and or locked case"
-    static Node empty;
-    
+public:    
     
     /* Constructors */
     Node(); // empty node
@@ -237,8 +234,14 @@ public:
     float64         *as_float64_ptr()  { return (float64*)element_pointer(0);}
     
     char            *as_bytestr() {return (char *)element_pointer(0);}
+
+    static Node     &empty() {return m_empty;}
     
 private:
+    // used to return something for the "static and or locked case"
+    static Node        m_empty;
+
+
     void             init(const DataType &dtype);
     void             cleanup(); //dalloc
     

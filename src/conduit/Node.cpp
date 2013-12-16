@@ -8,7 +8,7 @@
 namespace conduit
 {
 
-Node Node::empty(DataType::Objects::empty,true);
+Node Node::m_empty(DataType::Objects::empty(),true);
 
 ///============================================
 /// Node
@@ -275,7 +275,7 @@ Node::set(int8 data)
 {
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
-    init(DataType::Scalars::int8);
+    init(DataType::Scalars::int8());
     *(int8*)((char*)m_data + m_dtype.element_index(0)) = data;
 }
 
@@ -286,7 +286,7 @@ Node::set(int16 data)
 {
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
-    init(DataType::Scalars::int16);
+    init(DataType::Scalars::int16());
     *(int16*)((char*)m_data + m_dtype.element_index(0)) = data;
 }
 
@@ -297,7 +297,7 @@ Node::set(int32 data)
 {
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
-    init(DataType::Scalars::int32);
+    init(DataType::Scalars::int32());
     *(int32*)((char*)m_data + m_dtype.element_index(0)) = data;
 }
 
@@ -308,7 +308,7 @@ Node::set(int64 data)
 {
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
-    init(DataType::Scalars::int64);
+    init(DataType::Scalars::int64());
     *(int64*)((char*)m_data + m_dtype.element_index(0)) = data;
 }
 
@@ -323,7 +323,7 @@ Node::set(uint8 data)
 {
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
-    init(DataType::Scalars::uint8);
+    init(DataType::Scalars::uint8());
     *(uint8*)((char*)m_data + m_dtype.element_index(0)) = data;
 }
 
@@ -334,7 +334,7 @@ Node::set(uint16 data)
 {
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
-    init(DataType::Scalars::uint16);
+    init(DataType::Scalars::uint16());
     *(uint16*)((char*)m_data + m_dtype.element_index(0)) = data;
 }
 
@@ -345,7 +345,7 @@ Node::set(uint32 data)
 {
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
-    init(DataType::Scalars::uint32);
+    init(DataType::Scalars::uint32());
     *(uint32*)((char*)m_data + m_dtype.element_index(0)) = data;
 }
 
@@ -356,7 +356,7 @@ Node::set(uint64 data)
 {
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
-    init(DataType::Scalars::uint64);
+    init(DataType::Scalars::uint64());
     *(uint64*)((char*)m_data + m_dtype.element_index(0)) = data;
 }
 
@@ -370,7 +370,7 @@ Node::set(float32 data)
 {
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
-    init(DataType::Scalars::float32);
+    init(DataType::Scalars::float32());
     *(float32*)((char*)m_data + m_dtype.element_index(0)) = data;
 }
 
@@ -381,7 +381,7 @@ Node::set(float64 data)
 {
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
-    init(DataType::Scalars::float64);
+    init(DataType::Scalars::float64());
     *(float64*)((char*)m_data + m_dtype.element_index(0)) = data;
 }
 
@@ -934,7 +934,7 @@ Node::get(const std::string &path)
 {
     // fetch w/ path forces NODE_T
     if(m_dtype.id() != DataType::NODE_T)
-        return empty;
+        return empty();
         
     std::string p_curr;
     std::string p_next;
@@ -944,7 +944,7 @@ Node::get(const std::string &path)
     std::map<std::string, Node>::iterator itr = ents.find(p_curr);
     // return Empty if the entry does not exist (static/locked case)
     if(itr == ents.end())
-        return empty;
+        return empty();
     
     if(p_next.empty())
     {
@@ -963,7 +963,7 @@ Node::get(index_t idx)
 {
     if(m_dtype.id() != DataType::LIST_T)
     {
-        return empty;
+        return empty();
     }
     // we could also potentially support index fetch on:
     //   NODE_T (imp-order)
@@ -977,7 +977,7 @@ Node::get(const std::string &path) const
 {
     // fetch w/ path forces NODE_T
     if(m_dtype.id() != DataType::NODE_T)
-        return empty;
+        return empty();
         
     std::string p_curr;
     std::string p_next;
@@ -987,7 +987,7 @@ Node::get(const std::string &path) const
     std::map<std::string, Node>::const_iterator itr = ents.find(p_curr);
     // return Empty if the entry does not exist (static/locked case)
     if(itr == ents.end())
-        return empty;
+        return empty();
     
     if(p_next.empty())
     {
@@ -1006,7 +1006,7 @@ Node::get(index_t idx) const
 {
     if(m_dtype.id() != DataType::LIST_T)
     {
-        return empty;
+        return empty();
     }
     // we could also potentially support index fetch on:
     //   NODE_T (imp-order)
@@ -1020,7 +1020,7 @@ Node::fetch(const std::string &path)
 {
     // fetch w/ path forces NODE_T
     if(m_dtype.id() != DataType::NODE_T)
-        init(DataType::Objects::node);
+        init(DataType::Objects::node());
         
     std::string p_curr;
     std::string p_next;
@@ -1297,7 +1297,7 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
                  itr != jvalue.MemberEnd(); ++itr)
             {
                 std::string entry_name(itr->name.GetString());
-                Node node(DataType::Objects::node);
+                Node node(DataType::Objects::node());
                 node.walk_schema(data, itr->value, curr_offset);
                 ents[entry_name] = node;
                 curr_offset += node.total_bytes();
@@ -1310,7 +1310,7 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
         std::vector<Node> &lst = list();
         for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
         {
-			Node node(DataType::Objects::node);
+			Node node(DataType::Objects::node());
             node.walk_schema(data, jvalue[i], curr_offset);
             curr_offset += node.total_bytes();
             lst.push_back(node);

@@ -44,30 +44,49 @@ public:
     class Objects
     {
     public:
+        static const DataType &empty() {return m_empty;}
+        static const DataType &node()  {return m_node;}
+        static const DataType &list()  {return m_list;}
+    private:
         /// TODO: const ref access via function
-        static DataType empty;
-        static DataType node;
-        static DataType list;
+        static DataType m_empty;
+        static DataType m_node;
+        static DataType m_list;
     };
     
     class Scalars
-    {
+    {    
     public:
-        /// TODO: const ref access via function
-        static DataType boolean;
+        static const DataType &boolean() {return m_boolean;}
         /* int scalars */
-        static DataType int8;
-        static DataType int16;
-        static DataType int32;
-        static DataType int64;
+        static const DataType &int8()  {return m_int8;}
+        static const DataType &int16() {return m_int16;}
+        static const DataType &int32() {return m_int32;}
+        static const DataType &int64() {return m_int64;}
         /* uint scalars */
-        static DataType uint8;
-        static DataType uint16;
-        static DataType uint32;
-        static DataType uint64;
+        static const DataType &uint8()  {return m_uint8;}
+        static const DataType &uint16() {return m_uint16;}
+        static const DataType &uint32() {return m_uint32;}
+        static const DataType &uint64() {return m_int64;}
         /* float scalars */
-        static DataType float32;
-        static DataType float64;
+        static const DataType &float32() {return m_float32;}
+        static const DataType &float64() {return m_int64;}
+
+    private:
+        static DataType m_boolean;
+        /* int scalars */
+        static DataType m_int8;
+        static DataType m_int16;
+        static DataType m_int32;
+        static DataType m_int64;
+        /* uint scalars */
+        static DataType m_uint8;
+        static DataType m_uint16;
+        static DataType m_uint32;
+        static DataType m_uint64;
+        /* float scalars */
+        static DataType m_float32;
+        static DataType m_float64;
     };
 
              DataType();
