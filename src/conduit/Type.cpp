@@ -7,10 +7,19 @@
 namespace conduit
 {
 
+///============================================
+/// DataType::Objects
+///============================================
+
 // create storage for these common types:
 DataType DataType::Objects::m_empty(DataType::EMPTY_T);
 DataType DataType::Objects::m_node(DataType::NODE_T);
 DataType DataType::Objects::m_list(DataType::LIST_T);
+
+///============================================
+/// DataType::Scalars
+///============================================
+
 
 DataType DataType::Scalars::m_boolean(DataType::BOOL_T,
                                       1,0,
@@ -79,6 +88,124 @@ DataType DataType::Scalars::m_float64(DataType::FLOAT64_T,
                                      sizeof(conduit::float64),
                                      sizeof(conduit::float64),
                                      Endianness::DEFAULT_T);
+
+///============================================
+/// DataType::Arrays
+///============================================
+
+/* int array dtype helpers */
+///============================================
+DataType
+DataType::Arrays::int8(index_t num_elements,
+                       index_t offset,
+                       index_t stride,
+                       index_t element_bytes,
+                       index_t endianness)
+{
+    return DataType(INT8_T,num_elements,offset,stride,element_bytes,endianness);
+}
+
+///============================================
+DataType
+DataType::Arrays::int16(index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    return DataType(INT16_T,num_elements,offset,stride,element_bytes,endianness);
+}
+
+///============================================
+DataType 
+DataType::Arrays::int32(index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    return DataType(INT32_T,num_elements,offset,stride,element_bytes,endianness);
+}
+
+///============================================
+DataType
+DataType::Arrays::int64(index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    return DataType(INT64_T,num_elements,offset,stride,element_bytes,endianness);
+}
+
+/* uint array dtype helpers */
+///============================================
+DataType
+DataType::Arrays::uint8(index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    return DataType(UINT8_T,num_elements,offset,stride,element_bytes,endianness);
+}
+ 
+ ///============================================       
+DataType
+DataType::Arrays::uint16(index_t num_elements,
+                         index_t offset,
+                         index_t stride,
+                         index_t element_bytes,
+                         index_t endianness)
+{
+    return DataType(UINT16_T,num_elements,offset,stride,element_bytes,endianness);
+}
+
+///============================================
+DataType 
+DataType::Arrays::uint32(index_t num_elements,
+                         index_t offset,
+                         index_t stride,
+                         index_t element_bytes,
+                         index_t endianness)
+{
+    return DataType(UINT32_T,num_elements,offset,stride,element_bytes,endianness);
+}
+
+///============================================
+DataType
+DataType::Arrays::uint64(index_t num_elements,
+                         index_t offset,
+                         index_t stride,
+                         index_t element_bytes,
+                         index_t endianness)
+{
+    return DataType(UINT64_T,num_elements,offset,stride,element_bytes,endianness);
+}
+
+/* float array dtype helpers */
+///============================================
+DataType 
+DataType::Arrays::float32(index_t num_elements,
+                          index_t offset,
+                          index_t stride,
+                          index_t element_bytes,
+                          index_t endianness)
+{
+    return DataType(FLOAT32_T,num_elements,offset,stride,element_bytes,endianness);
+}
+
+///============================================
+DataType
+DataType::Arrays::float64(index_t num_elements,
+                          index_t offset,
+                          index_t stride,
+                          index_t element_bytes,
+                          index_t endianness)
+{
+    return DataType(FLOAT64_T,num_elements,offset,stride,element_bytes,endianness);
+}
+
 
 
 ///============================================

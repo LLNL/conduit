@@ -33,7 +33,8 @@ private:
                      {return static_cast<char*>(m_data) + m_dtype.element_index(idx);};
 
     void           *m_data;
-    const DataType &m_dtype;
+    // TODO: use pointer or ref?
+    DataType        m_dtype;
     
 };
 

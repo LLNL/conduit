@@ -29,6 +29,7 @@ TEST(conduit_array_stride_int8, conduit_array)
     Node n;
     n["value"].set(&data[0],arr_t);
 
+
     int8_array arr = n["value"].as_int8_array();
 
     for(int i=0;i<10;i++)
@@ -39,9 +40,25 @@ TEST(conduit_array_stride_int8, conduit_array)
     std::cout << std::endl;
 
     EXPECT_EQ(arr[5],5);
-    EXPECT_EQ(arr[9],9);   
+    EXPECT_EQ(arr[9],9);
+
     arr[1] = 100;
     EXPECT_EQ(data[2],100);
+
+// TODO: New Test Case:
+//     Node n2(&data[0],DataType::Arrays::int8(10,1));
+//     int8_array arr_2 = n2.as_int8_array();
+//     
+//     for(int i=0;i<10;i++)
+//     {
+//         // note: the cast is for proper printing to std::out
+//         std::cout << ((index_t)arr_2[i] )<< " ";
+//     }
+//     std::cout << std::endl;
+//     
+//     EXPECT_EQ(arr_2[0],0);
+//     EXPECT_EQ(arr_2[9],0);   
+
 }    
     
 
