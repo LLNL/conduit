@@ -8,6 +8,8 @@
 #include "Core.h"
 #include "Endianness.h"
 #include "Type.h"
+#include "Array.h"
+
 #include <map>
 #include <vector>
 #include <string>
@@ -220,10 +222,10 @@ public:
     float32          as_float32() const { return *((float32*)element_pointer(0));}
     float64          as_float64() const { return *((float64*)element_pointer(0));}
 
-    int8            *as_int8_ptr()    { return (int8*)element_pointer(0);}
-    int16           *as_int16_ptr()   { return (int16*)element_pointer(0);}
-    int32           *as_int32_ptr()   { return (int32*)element_pointer(0);}
-    int64           *as_int64_ptr()   { return (int64*)element_pointer(0);}
+    int8            *as_int8_ptr()     { return (int8*)element_pointer(0);}
+    int16           *as_int16_ptr()    { return (int16*)element_pointer(0);}
+    int32           *as_int32_ptr()    { return (int32*)element_pointer(0);}
+    int64           *as_int64_ptr()    { return (int64*)element_pointer(0);}
 
     uint8           *as_uint8_ptr()    { return (uint8*)element_pointer(0);}
     uint16          *as_uint16_ptr()   { return (uint16*)element_pointer(0);}
@@ -232,6 +234,20 @@ public:
         
     float32         *as_float32_ptr()  { return (float32*)element_pointer(0);}
     float64         *as_float64_ptr()  { return (float64*)element_pointer(0);}
+    
+    int8_array       as_int8_array()   { return int8_array(element_pointer(0),m_dtype);}
+    int16_array      as_int16_array()  { return int16_array(element_pointer(0),m_dtype);}
+    int32_array      as_int32_array()  { return int32_array(element_pointer(0),m_dtype);}
+    int64_array      as_int64_array()  { return int64_array(element_pointer(0),m_dtype);}
+
+    uint8_array      as_uint8_array()  { return uint8_array(element_pointer(0),m_dtype);}
+    uint16_array     as_uint16_array() { return uint16_array(element_pointer(0),m_dtype);}
+    uint32_array     as_uint32_array() { return uint32_array(element_pointer(0),m_dtype);}
+    uint64_array     as_uint64_array() { return uint64_array(element_pointer(0),m_dtype);}
+
+    float32_array    as_float32_array() { return float32_array(element_pointer(0),m_dtype);}
+    float64_array    as_float64_array() { return float64_array(element_pointer(0),m_dtype);}
+
     
     char            *as_bytestr() {return (char *)element_pointer(0);}
 

@@ -14,6 +14,8 @@ set(conduit_sources
     Type.h
     Node.cpp
     Node.h
+    Array.cpp
+    Array.h
     GhostNode.cpp
     GhostNode.h)
 

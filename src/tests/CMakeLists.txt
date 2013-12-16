@@ -8,6 +8,7 @@ set(UNIT_TESTS gtest_smoke
                conduit_endianness
                conduit_node
                conduit_serialize
+               conduit_array
                conduit_node_paths
                conduit_ghost_node
                numpy_smoke

@@ -10,6 +10,7 @@
 #include "Core.h"
 #include "Endianness.h"
 #include "Type.h"
+#include "Array.h"
 #include "Node.h"
 #include "GhostNode.h"
 
