@@ -19,7 +19,18 @@ TEST(conduit_array_stride_int8, conduit_array)
         data[i] = i/2;
     }
 
+    for(int i=1;i<20;i+=2)
+    {
+        data[i] = -i/2;
+    }
+    std::cout << "Full Data" << std::endl;
 
+    for(int i=0;i<20;i++)
+    {
+        std::cout << (int64) data[i] << " ";
+    }
+    std::cout << std::endl;
+ 
     DataType arr_t(DataType::INT8_T,
                    10,
                    0,
@@ -35,7 +46,7 @@ TEST(conduit_array_stride_int8, conduit_array)
     for(int i=0;i<10;i++)
     {
         // note: the cast is for proper printing to std::out
-        std::cout << ((index_t)arr[i] )<< " ";
+        std::cout << "value[" << i << "] = " << ((int64)arr[i] ) << std::endl;
     }
     std::cout << std::endl;
 
@@ -44,20 +55,28 @@ TEST(conduit_array_stride_int8, conduit_array)
 
     arr[1] = 100;
     EXPECT_EQ(data[2],100);
+    
+        std::cout << "Full Data" << std::endl;
 
-// TODO: New Test Case:
-//     Node n2(&data[0],DataType::Arrays::int8(10,1));
-//     int8_array arr_2 = n2.as_int8_array();
-//     
-//     for(int i=0;i<10;i++)
-//     {
-//         // note: the cast is for proper printing to std::out
-//         std::cout << ((index_t)arr_2[i] )<< " ";
-//     }
-//     std::cout << std::endl;
-//     
-//     EXPECT_EQ(arr_2[0],0);
-//     EXPECT_EQ(arr_2[9],0);   
+    for(int i=0;i<20;i++)
+    {
+        std::cout << (int64) data[i] << " ";
+    }
+    std::cout << std::endl;
+
+// TODO: These cases are failing
+    Node n2(&data[0],DataType::Arrays::int8(10,sizeof(int8),sizeof(int8)*2));
+    int8_array arr_2 = n2.as_int8_array();
+    
+    for(int i=0;i<10;i++)
+    {
+        // note: the cast is for proper printing to std::out
+        std::cout << "value[" << i << "] = " <<  ((int64)arr_2[i] ) << std::endl;
+    }
+    std::cout << std::endl;
+    
+    EXPECT_EQ(arr_2[0],0);
+    EXPECT_EQ(arr_2[9],-9);   
 
 }    
     

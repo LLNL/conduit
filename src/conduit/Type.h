@@ -94,61 +94,61 @@ public:
         /* int arrays */
         static DataType int8(index_t num_elements,
                              index_t offset = 0,
-                             index_t stride = 0,
+                             index_t stride = sizeof(conduit::int8),
                              index_t element_bytes = sizeof(conduit::int8),
                              index_t endianness = Endianness::DEFAULT_T);
         
         static DataType int16(index_t num_elements,
                               index_t offset = 0,
-                              index_t stride = 0,
+                              index_t stride = sizeof(conduit::int16),
                               index_t element_bytes = sizeof(conduit::int16),
                               index_t endianness = Endianness::DEFAULT_T);
 
         static DataType int32(index_t num_elements,
                               index_t offset = 0,
-                              index_t stride = 0,
+                              index_t stride = sizeof(conduit::int32),
                               index_t element_bytes = sizeof(conduit::int32),
                               index_t endianness = Endianness::DEFAULT_T);
 
         static DataType int64(index_t num_elements,
                               index_t offset = 0,
-                              index_t stride = 0,
+                              index_t stride = sizeof(conduit::int64),
                               index_t element_bytes = sizeof(conduit::int64),
                               index_t endianness = Endianness::DEFAULT_T);
         /* uint arrays */
         static DataType uint8(index_t num_elements,
                               index_t offset = 0,
-                              index_t stride = 0,
+                              index_t stride = sizeof(conduit::uint8),
                               index_t element_bytes = sizeof(conduit::uint8),
                               index_t endianness = Endianness::DEFAULT_T);
 
         static DataType uint16(index_t num_elements,
                                index_t offset = 0,
-                               index_t stride = 0,
+                               index_t stride = sizeof(conduit::uint16),
                                index_t element_bytes = sizeof(conduit::uint16),
                                index_t endianness = Endianness::DEFAULT_T);
 
         static DataType uint32(index_t num_elements,
                                index_t offset = 0,
-                               index_t stride = 0,
+                               index_t stride = sizeof(conduit::uint32),
                                index_t element_bytes = sizeof(conduit::uint32),
                                index_t endianness = Endianness::DEFAULT_T);
 
         static DataType uint64(index_t num_elements,
                                index_t offset = 0,
-                               index_t stride = 0,
+                               index_t stride = sizeof(conduit::uint64),
                                index_t element_bytes = sizeof(conduit::uint64),
                                index_t endianness = Endianness::DEFAULT_T);
         /* float arrays */
         static DataType float32(index_t num_elements,
                                 index_t offset = 0,
-                                index_t stride = 0,
+                                index_t stride = sizeof(conduit::float32),
                                 index_t element_bytes = sizeof(conduit::float32),
                                 index_t endianness = Endianness::DEFAULT_T);
 
         static DataType float64(index_t num_elements,
                                 index_t offset = 0,
-                                index_t stride = 0,
+                                index_t stride = sizeof(conduit::float64),
                                 index_t element_bytes = sizeof(conduit::float64),
                                 index_t endianness = Endianness::DEFAULT_T);
     };

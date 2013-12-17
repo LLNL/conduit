@@ -323,6 +323,8 @@ DataType::reset(index_t dtype_id,
 index_t     
 DataType::element_index(index_t idx) const
 {
+//     std::cout << "offset = " << m_offset 
+//               << " stride = " << m_stride << std::endl;
     return m_offset + m_stride * idx;
 }
 

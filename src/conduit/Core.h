@@ -7,6 +7,7 @@
 
 #include "Python.h"   
 #include <string>
+#include <iostream>
 #include "numpy/npy_common.h"
 
 namespace conduit
@@ -26,6 +27,7 @@ typedef npy_int64   int64;
 typedef npy_float16 float16;
 typedef npy_float32 float32;
 typedef npy_float64 float64;
+
 
 #ifdef CONDUIT_INDEX_32
 typedef uint32 index_t;

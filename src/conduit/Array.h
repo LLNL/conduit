@@ -14,7 +14,7 @@ namespace conduit
 template <class T> 
 class Array
 {
-public:
+public: 
                    Array(void *data, const DataType &dtype);
                    Array(const Array<T> &array);
     virtual       ~Array();
@@ -79,6 +79,8 @@ template <class T>
 T &
 Array<T>::operator[](index_t idx)
 { 
+    std::cout << "[" << idx << "] = idx "
+              << m_dtype.element_index(idx) << std::endl;
     // TODO: endian logic
     return (*(T*)(element_pointer(idx)));
 }
