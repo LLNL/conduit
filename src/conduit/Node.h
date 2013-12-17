@@ -60,6 +60,19 @@ public:
     explicit Node(const std::vector<float32>  &data);
     explicit Node(const std::vector<float64>  &data);
     
+    explicit Node(const int8_array  &data);
+    explicit Node(const int16_array &data);
+    explicit Node(const int32_array &data);
+    explicit Node(const int64_array &data);
+
+    explicit Node(const uint8_array  &data);
+    explicit Node(const uint16_array &data);
+    explicit Node(const uint32_array &data);
+    explicit Node(const uint64_array &data);
+
+    explicit Node(const float32_array &data);
+    explicit Node(const float64_array &data);
+    
     explicit Node(const std::string  &data);
 
     virtual  ~Node();
@@ -105,6 +118,19 @@ public:
 
     void set(const std::vector<float32> &data);
     void set(const std::vector<float64> &data);
+
+    void set(const int8_array  &data);
+    void set(const int16_array &data);
+    void set(const int32_array &data);
+    void set(const int64_array &data);
+
+    void set(const uint8_array  &data);
+    void set(const uint16_array &data);
+    void set(const uint32_array &data);
+    void set(const uint64_array &data);
+
+    void set(const float32_array &data);
+    void set(const float64_array &data);
     
     void set(const std::string &data);
                 
@@ -139,6 +165,19 @@ public:
 
     Node &operator=(const std::vector<float32>  &data);
     Node &operator=(const std::vector<float64>  &data);
+
+    Node &operator=(const int8_array  &data);
+    Node &operator=(const int16_array &data);
+    Node &operator=(const int32_array &data);
+    Node &operator=(const int64_array &data);
+
+    Node &operator=(const uint8_array  &data);
+    Node &operator=(const uint16_array &data);
+    Node &operator=(const uint32_array &data);
+    Node &operator=(const uint64_array &data);
+
+    Node &operator=(const float32_array &data);
+    Node &operator=(const float64_array &data);
 
     Node &operator=(const std::string &data);
 

@@ -23,8 +23,8 @@ public:
     T              &operator[](index_t idx);
     T              &operator[](index_t idx) const;
 
-    const DataType &dtype()    { return m_dtype;}
-    void           *data_ptr() { return m_data;}
+    const DataType &dtype()    const { return m_dtype;} 
+    void           *data_ptr() const { return m_data;}
 
 private:
     void           *element_pointer(index_t idx)
@@ -33,7 +33,6 @@ private:
                      {return static_cast<char*>(m_data) + m_dtype.element_index(idx);};
 
     void           *m_data;
-    // TODO: use pointer or ref?
     DataType        m_dtype;
     
 };

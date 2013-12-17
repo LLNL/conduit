@@ -67,6 +67,81 @@ Node::Node(void *data, const DataType &dtype)
     set(data,dtype);
 }
 
+///============================================
+/* int vec types */
+///============================================
+
+///============================================
+Node::Node(const std::vector<int8>  &data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+   set(data);
+}
+
+///============================================
+Node::Node(const std::vector<int16>  &data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+   set(data);
+}
+
+///============================================
+Node::Node(const std::vector<int32>  &data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+   set(data);
+}
+
+///============================================
+Node::Node(const std::vector<int64>  &data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+   set(data);
+}
+
+///============================================
+/* uint vec types */
+///============================================
+
+///============================================
+Node::Node(const std::vector<uint8>  &data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+   set(data);
+}
+
+///============================================
+Node::Node(const std::vector<uint16>  &data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+   set(data);
+}
+
+///============================================
 Node::Node(const std::vector<uint32>  &data)
 :m_data(NULL),
  m_alloced(false),
@@ -77,6 +152,33 @@ Node::Node(const std::vector<uint32>  &data)
    set(data);
 }
 
+///============================================
+Node::Node(const std::vector<uint64>  &data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+   set(data);
+}
+
+///============================================
+/* float vec types */
+///============================================
+
+///============================================
+Node::Node(const std::vector<float32>  &data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+   set(data);
+}
+
+///============================================
 Node::Node(const std::vector<float64>  &data)
 :m_data(NULL),
  m_alloced(false),
@@ -86,6 +188,129 @@ Node::Node(const std::vector<float64>  &data)
 {
    set(data);
 }
+
+///============================================
+/* int array types */
+///============================================
+
+///============================================
+Node::Node(const int8_array  &data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+   set(data);
+}
+
+///============================================
+Node::Node(const int16_array  &data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+   set(data);
+}
+
+///============================================
+Node::Node(const int32_array  &data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+   set(data);
+}
+
+///============================================
+Node::Node(const int64_array  &data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+   set(data);
+}
+
+///============================================
+/* uint array types */
+///============================================
+
+///============================================
+Node::Node(const uint8_array  &data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+   set(data);
+}
+
+///============================================
+Node::Node(const uint16_array  &data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+   set(data);
+}
+
+///============================================
+Node::Node(const uint32_array  &data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+   set(data);
+}
+
+///============================================
+Node::Node(const uint64_array  &data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+   set(data);
+}
+
+///============================================
+/* float arr types */
+///============================================
+
+///============================================
+Node::Node(const float32_array  &data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+   set(data);
+}
+
+///============================================
+Node::Node(const float64_array  &data)
+:m_data(NULL),
+ m_alloced(false),
+ m_dtype(DataType::EMPTY_T),
+ m_obj_data(NULL),
+ m_locked(false)
+{
+   set(data);
+}
+
 
 ///============================================
 Node::Node(const DataType &dtype,bool locked)
@@ -386,7 +611,7 @@ Node::set(float64 data)
 }
 
 ///============================================
-/// uint vec types
+/// int vec types
 ///============================================
 
 ///============================================
@@ -536,6 +761,109 @@ Node::set(const std::vector<float64>  &data)
                    Endianness::DEFAULT_T);
     init(vec_t);
     memcpy(m_data,&data[0],sizeof(float64)*data.size());
+}
+
+///============================================
+/// int array types
+///============================================
+
+///============================================
+void 
+Node::set(const int8_array  &data)
+{
+    cleanup();
+    m_dtype = data.dtype();
+    m_data  = data.data_ptr();
+}
+
+///============================================
+void 
+Node::set(const int16_array  &data)
+{
+    cleanup();
+    m_dtype = data.dtype();
+    m_data  = data.data_ptr();
+}
+
+///============================================
+void 
+Node::set(const int32_array  &data)
+{
+    cleanup();
+    m_dtype = data.dtype();
+    m_data  = data.data_ptr();
+}
+
+///============================================
+void 
+Node::set(const int64_array  &data)
+{
+    cleanup();
+    m_dtype = data.dtype();
+    m_data  = data.data_ptr();
+}
+
+
+///============================================
+/// uint array types
+///============================================
+
+///============================================
+
+void 
+Node::set(const uint8_array  &data)
+{
+    cleanup();
+    m_dtype = data.dtype();
+    m_data  = data.data_ptr();
+}
+
+///============================================
+void 
+Node::set(const uint16_array  &data)
+{
+    cleanup();
+    m_dtype = data.dtype();
+    m_data  = data.data_ptr();
+}
+
+///============================================
+void 
+Node::set(const uint32_array  &data)
+{
+    cleanup();
+    m_dtype = data.dtype();
+    m_data  = data.data_ptr();
+}
+
+///============================================
+void 
+Node::set(const uint64_array  &data)
+{
+    cleanup();
+    m_dtype = data.dtype();
+    m_data  = data.data_ptr();
+}
+///============================================
+/// float array types
+///============================================
+
+///============================================
+void 
+Node::set(const float32_array  &data)
+{
+    cleanup();
+    m_dtype = data.dtype();
+    m_data  = data.data_ptr();
+}
+
+///============================================
+void 
+Node::set(const float64_array  &data)
+{
+    cleanup();
+    m_dtype = data.dtype();
+    m_data  = data.data_ptr();
 }
 
 
@@ -733,6 +1061,97 @@ Node::operator=(const std::vector<float64> &data)
     return *this;
 }
 
+///============================================
+/// int array types
+///============================================
+
+///============================================
+Node &
+Node::operator=(const int8_array &data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+Node &
+Node::operator=(const int16_array &data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+Node &
+Node::operator=(const int32_array &data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+Node &
+Node::operator=(const int64_array &data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+/// uint vec types
+///============================================
+
+///============================================
+Node &
+Node::operator=(const uint8_array &data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+Node &
+Node::operator=(const uint16_array &data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+Node &
+Node::operator=(const uint32_array &data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+Node &
+Node::operator=(const uint64_array &data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+/// float vec types
+///============================================
+
+///============================================
+Node &
+Node::operator=(const float32_array &data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+Node &
+Node::operator=(const float64_array &data)
+{
+    set(data);
+    return *this;
+}
 
 
 ///============================================
