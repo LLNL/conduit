@@ -7,7 +7,7 @@
 
 #include <iostream>
 #include "gtest/gtest.h"
-// #include "rapidjson/document.h"
+#include "rapidjson/document.h"
 using namespace conduit;
 
 TEST(conduit_node_simple_test, conduit_node)

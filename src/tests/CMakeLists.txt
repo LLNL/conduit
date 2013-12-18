@@ -11,7 +11,7 @@ set(UNIT_TESTS gtest_smoke
                conduit_array
                conduit_node_paths
                conduit_ghost_node
-               numpy_smoke
+               #numpy_smoke
                type_tests)
 
 foreach(TEST ${UNIT_TESTS})

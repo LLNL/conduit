@@ -1,8 +1,9 @@
 #!/bin/bash
-rm -rf build-debug
+rm -rf build-debug install-debug
 mkdir build-debug
+mkdir install-debug
 cd build-debug
-cmake -DCMAKE_BUILD_TYPE=Debug ../src 
+cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install-debug ../src 
 cd ../
 # also create an xcode build for debugging on osx
 if [ "$TERM_PROGRAM" = "Apple_Terminal" ]; then

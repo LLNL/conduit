@@ -15,7 +15,6 @@
 #include <string>
 #include <sstream>
 
-#include "rapidjson/document.h"
 
 namespace conduit
 {
@@ -181,15 +180,6 @@ public:
 
     Node &operator=(const std::string &data);
 
-    /* Template Access (experimental) */
-    template<typename T>
-    void setpp(T data);
-    
-    template<typename T>
-    T getpp(void) const;
-    
-    template<typename T>
-    T getpp(void *data) const;
 
     /* Info */
     index_t total_bytes() const;
@@ -215,7 +205,7 @@ public:
     
     bool             is_empty() const;
     
-    // these guys don't modify map structure, if a path doesn't exit
+    // the `get' methods don't modify map structure, if a path doesn't exists
     // they will return an Empty Locked Node (we could also throw an exception)
     
     Node             &get(const std::string &path);
@@ -224,9 +214,12 @@ public:
     const Node       &get(const std::string &path) const;
     const Node       &get(index_t idx) const;
     
+    // the `fetch' methods do modify map structure if a path doesn't exists
     Node             &fetch(const std::string &path);
     Node             &fetch(index_t idx);
 
+    // TODO:
+    // expand delc? and avoid template?
     template<typename TYPE>
     void             push_back(TYPE data);
 
@@ -292,6 +285,16 @@ public:
 
     static Node     &empty() {return m_empty;}
     
+    /* Template Access (experimental) */
+    template<typename T>
+    void setpp(T data);
+    
+    template<typename T>
+    T getpp(void) const;
+    
+    template<typename T>
+    T getpp(void *data) const;
+    
 private:
     // used to return something for the "static and or locked case"
     static Node        m_empty;
@@ -305,11 +308,10 @@ private:
     
     void             walk_schema(void *data, 
                                  const std::string &schema);
-
-    void             walk_schema(void *data, 
-                                 const rapidjson::Value &jvalue, 
-                                 index_t curr_offset);
-    
+//     void             walk_schema(void *data, 
+//                              const rapidjson::Value &jvalue, 
+//                              index_t curr_offset);
+                                 
     static void      split_path(const std::string &path,
                                 std::string &curr,
                                 std::string &next);
@@ -341,7 +343,7 @@ private:
     std::map<std::string, Node> m_entries;
 };
 
-// TODO: Explicit temp inst in the c file. 
+// TODO: Explicit temp inst in the cpp file. 
 
 template<typename TYPE>
 void Node::push_back(TYPE data)

@@ -5,9 +5,25 @@
 #include "Node.h"
 #include "rapidjson/document.h"
 #include <iostream>
+
 namespace conduit
 {
 
+///============================================
+/// walk_schema helper
+///============================================
+
+/* use this func to avoid having to include rapidjson headers  in Node.h
+ (rapidjson::Values resolve to a complex templated type that we can't forward declare) 
+*/
+void walk_schema(Node &node,
+                 void *data, 
+                 const rapidjson::Value &jvalue, 
+                 index_t curr_offset);
+
+///============================================
+/// Node::m_empty
+///============================================
 Node Node::m_empty(DataType::Objects::empty(),true);
 
 ///============================================
@@ -927,7 +943,7 @@ Node::operator=(uint8 data)
 
 ///============================================
 Node &
-Node::operator=(float16 data)
+Node::operator=(uint16 data)
 {
     set(data);
     return *this;
@@ -1676,12 +1692,15 @@ Node::walk_schema(void *data, const std::string &schema)
     rapidjson::Document document;
     document.Parse<0>(schema.c_str());
     index_t current_offset = 0;
-    walk_schema(data, document,current_offset);
+    conduit::walk_schema(*this,data,document,current_offset);
 }
 
 ///============================================
 void 
-Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offset)
+walk_schema(Node &node, 
+            void *data,
+            const rapidjson::Value &jvalue,
+            index_t curr_offset)
 {
     if(jvalue.IsObject())
     {
@@ -1701,38 +1720,37 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
             const DataType df_dtype = DataType::default_dtype(dtype_name);
             index_t type_id = df_dtype.id();
             index_t size    = df_dtype.element_bytes();
-            m_dtype.reset(type_id,
-                          length,
-                          curr_offset,
-                          size, 
-                          size,
-                          Endianness::DEFAULT_T);
-            m_data = data;
+            // TODO: Parse endianness
+            DataType dtype(type_id,
+                           length,
+                           curr_offset,
+                           size, 
+                           size,
+                           Endianness::DEFAULT_T);
+            node.set(data,dtype);
         }
         else
         {
-            std::map<std::string, Node> &ents = entries();
             for (rapidjson::Value::ConstMemberIterator itr = jvalue.MemberBegin(); 
                  itr != jvalue.MemberEnd(); ++itr)
             {
                 std::string entry_name(itr->name.GetString());
-                Node node(DataType::Objects::node());
-                node.walk_schema(data, itr->value, curr_offset);
-                ents[entry_name] = node;
-                curr_offset += node.total_bytes();
+                Node curr_node(DataType::Objects::node());
+                walk_schema(curr_node,data, itr->value, curr_offset);
+                node[entry_name] = curr_node;
+                curr_offset += curr_node.total_bytes();
             }
         }
     }
     else if (jvalue.IsArray()) 
     {
-        m_dtype.reset(DataType::LIST_T);
-        std::vector<Node> &lst = list();
         for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
         {
-			Node node(DataType::Objects::node());
-            node.walk_schema(data, jvalue[i], curr_offset);
-            curr_offset += node.total_bytes();
-            lst.push_back(node);
+			Node curr_node(DataType::Objects::node());
+            walk_schema(curr_node,data, jvalue[i], curr_offset);
+            curr_offset += curr_node.total_bytes();
+            // this will coerce to a list
+            node.push_back(curr_node);
         }
     }
     else if(jvalue.IsString())
@@ -1740,11 +1758,12 @@ Node::walk_schema(void *data, const rapidjson::Value &jvalue, index_t curr_offse
          std::string dtype_name(jvalue.GetString());
          DataType df_dtype = DataType::default_dtype(dtype_name);
          index_t size = df_dtype.element_bytes();
-         m_dtype.reset(df_dtype.id(),1,curr_offset,size,size,Endianness::DEFAULT_T);
-         m_data = data;
+         DataType dtype(df_dtype.id(),1,curr_offset,size,size,Endianness::DEFAULT_T);
+         node.set(data,dtype);
     }
 
 }
+
 
 ///============================================
 void 
