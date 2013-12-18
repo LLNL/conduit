@@ -78,8 +78,8 @@ template <class T>
 T &
 Array<T>::operator[](index_t idx)
 { 
-    std::cout << "[" << idx << "] = idx "
-              << m_dtype.element_index(idx) << std::endl;
+    //    std::cout << "[" << idx << "] = idx "
+    //              << m_dtype.element_index(idx) << std::endl;
     // TODO: endian logic
     return (*(T*)(element_pointer(idx)));
 }
