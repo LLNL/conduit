@@ -238,7 +238,8 @@ public:
     float64          to_float() const;
     
     std::string      to_string() const;
-
+    void             to_string(std::ostringstream &oss) const;
+    
     bool             as_bool()   const  { return *((bool*)element_pointer(0));}
 
     int8             as_int8()   const  { return *((int8*)element_pointer(0));}
@@ -282,6 +283,8 @@ public:
 
     
     char            *as_bytestr() {return (char *)element_pointer(0);}
+    const char      *as_bytestr() const {return (const char *)element_pointer(0);}
+
 
     static Node     &empty() {return m_empty;}
     

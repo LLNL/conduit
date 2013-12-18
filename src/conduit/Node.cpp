@@ -1358,9 +1358,10 @@ Node::set_lock(bool value)
 void
 Node::enforce_lock() const
 {
-    if(m_locked);
+    if(m_locked)
+    {   
         /// TODO: Throw Exception
-    return;
+    }
 }
 
 ///============================================
@@ -1559,28 +1560,139 @@ Node::paths(std::vector<std::string> &paths,bool expand) const
 int64
 Node::to_int() const
 {
-    // TODO: Imp
+    switch(m_dtype.id())
+    {
+        case DataType::BOOL_T:  return (int64)as_bool();
+        /* ints */
+        case DataType::INT8_T:  return (int64)as_int8();
+        case DataType::INT16_T: return (int64)as_int16();
+        case DataType::INT32_T: return (int64)as_int32();
+        case DataType::INT64_T: return as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (int64)as_uint8();
+        case DataType::UINT16_T: return (int64)as_uint16();
+        case DataType::UINT32_T: return (int64)as_uint32();
+        case DataType::UINT64_T: return (int64)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (int64)as_float32();
+        case DataType::FLOAT64_T: return (int64)as_float64();
+    }
+    return 0;
+    
 }
 
 ///============================================
 uint64
 Node::to_uint() const
 {
-    // TODO: Imp
+    switch(m_dtype.id())
+    {
+        case DataType::BOOL_T:  return (uint64)as_bool();
+        /* ints */
+        case DataType::INT8_T:  return (uint64)as_int8();
+        case DataType::INT16_T: return (uint64)as_int16();
+        case DataType::INT32_T: return (uint64)as_int32();
+        case DataType::INT64_T: return (uint64)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (uint64)as_uint8();
+        case DataType::UINT16_T: return (uint64)as_uint16();
+        case DataType::UINT32_T: return (uint64)as_uint32();
+        case DataType::UINT64_T: return as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (uint64)as_float32();
+        case DataType::FLOAT64_T: return (uint64)as_float64();
+    }
+    return 0;
 }
 
 ///============================================
 float64
 Node::to_float() const
 {
-    // TODO: Imp
+    switch(m_dtype.id())
+    {
+        case DataType::BOOL_T:  return (float64)as_bool();
+        /* ints */
+        case DataType::INT8_T:  return (float64)as_int8();
+        case DataType::INT16_T: return (float64)as_int16();
+        case DataType::INT32_T: return (float64)as_int32();
+        case DataType::INT64_T: return (float64)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (float64)as_uint8();
+        case DataType::UINT16_T: return (float64)as_uint16();
+        case DataType::UINT32_T: return (float64)as_uint32();
+        case DataType::UINT64_T: return (float64)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (float64)as_float32();
+        case DataType::FLOAT64_T: return as_float64();
+    }
+    return 0.0;
 }
 
 ///============================================
 std::string 
 Node::to_string() const
 {
-    // TODO: Imp
+   std::ostringstream oss;
+   to_string(oss);
+   return oss.str();
+}
+
+///============================================
+void
+Node::to_string(std::ostringstream &oss) const
+{
+    switch(m_dtype.id())
+    {
+        case DataType::BOOL_T:  oss << as_bool(); break;
+        /* ints */
+        case DataType::INT8_T:  oss << (uint64) as_int8(); break;
+        case DataType::INT16_T: oss << as_int16(); break;
+        case DataType::INT32_T: oss << as_int32(); break;
+        case DataType::INT64_T: oss << as_int64(); break;
+        /* uints */
+        case DataType::UINT8_T:  oss << (uint64) as_uint8(); break;
+        case DataType::UINT16_T: oss << as_uint16(); break;
+        case DataType::UINT32_T: oss << as_uint32(); break;
+        case DataType::UINT64_T: oss << as_uint64(); break;
+        /* floats */
+        case DataType::FLOAT32_T: oss << as_float32(); break;
+        case DataType::FLOAT64_T: oss << as_float64(); break;
+        case DataType::BYTESTR_T: oss << "\"" << as_bytestr() << "\""; break;
+    }
+
+    if(m_dtype.id() == DataType::NODE_T)
+    {
+        bool first = true;
+        oss << "{" << std::endl;
+        const std::map<std::string, Node> &ents = entries();
+        for (std::map<std::string, Node>::const_iterator itr = ents.begin();
+             itr != ents.end(); ++itr) 
+        {
+            if(!first)
+                oss << ",";
+            oss << " \"" << itr->first << "\" : ";
+            itr->second.to_string(oss);
+            oss << std::endl;
+            first = false;
+        }
+        oss << "}";
+    }
+    else if(m_dtype.id() == DataType::LIST_T)
+    {
+        bool first = true;
+        oss << "[" << std::endl;
+        const std::vector<Node> &lst = list();
+        for (std::vector<Node>::const_iterator itr = lst.begin();
+             itr != lst.end(); ++itr)
+        {
+            if(!first)
+                oss << ",";
+            itr->to_string(oss);
+            first = false;
+        }
+    }
+    
 }
 
     
