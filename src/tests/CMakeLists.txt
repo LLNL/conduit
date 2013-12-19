@@ -11,6 +11,7 @@ set(UNIT_TESTS gtest_smoke
                conduit_array
                conduit_node_paths
                conduit_ghost_node
+               conduit_to_string
                #numpy_smoke
                type_tests)
 

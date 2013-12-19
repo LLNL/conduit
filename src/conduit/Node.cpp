@@ -1640,11 +1640,18 @@ Node::to_string() const
 
 ///============================================
 void
-Node::to_string(std::ostringstream &oss) const
+Node::to_string(std::ostringstream &oss, bool json_fmt) const
 {
     switch(m_dtype.id())
     {
-        case DataType::BOOL_T:  oss << as_bool(); break;
+        case DataType::BOOL_T:
+        {
+            if(as_bool())
+                oss << "true"; 
+            else
+                oss << "false"; 
+            break;
+        }
         /* ints */
         case DataType::INT8_T:  oss << (uint64) as_int8(); break;
         case DataType::INT16_T: oss << as_int16(); break;
@@ -1658,13 +1665,21 @@ Node::to_string(std::ostringstream &oss) const
         /* floats */
         case DataType::FLOAT32_T: oss << as_float32(); break;
         case DataType::FLOAT64_T: oss << as_float64(); break;
-        case DataType::BYTESTR_T: oss << "\"" << as_bytestr() << "\""; break;
+        case DataType::BYTESTR_T: 
+        {
+            if(json_fmt)
+                oss << "\"";
+            oss << as_bytestr();
+            if(json_fmt)
+                oss << "\"";
+            break;
+        }
     }
 
     if(m_dtype.id() == DataType::NODE_T)
     {
         bool first = true;
-        oss << "{" << std::endl;
+        oss << "{";
         const std::map<std::string, Node> &ents = entries();
         for (std::map<std::string, Node>::const_iterator itr = ents.begin();
              itr != ents.end(); ++itr) 
@@ -1672,11 +1687,10 @@ Node::to_string(std::ostringstream &oss) const
             if(!first)
                 oss << ",";
             oss << " \"" << itr->first << "\" : ";
-            itr->second.to_string(oss);
-            oss << std::endl;
+            itr->second.to_string(oss,true);
             first = false;
         }
-        oss << "}";
+        oss << "}\n";
     }
     else if(m_dtype.id() == DataType::LIST_T)
     {
@@ -1688,9 +1702,10 @@ Node::to_string(std::ostringstream &oss) const
         {
             if(!first)
                 oss << ",";
-            itr->to_string(oss);
+            itr->to_string(oss,true);
             first = false;
         }
+        oss << "]\n";
     }
     
 }

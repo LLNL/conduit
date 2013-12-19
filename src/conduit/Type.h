@@ -69,7 +69,7 @@ public:
         static const DataType &uint64() {return m_int64;}
         /* float scalars */
         static const DataType &float32() {return m_float32;}
-        static const DataType &float64() {return m_int64;}
+        static const DataType &float64() {return m_float64;}
 
     private:
         static DataType m_boolean;

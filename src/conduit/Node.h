@@ -238,7 +238,7 @@ public:
     float64          to_float() const;
     
     std::string      to_string() const;
-    void             to_string(std::ostringstream &oss) const;
+    void             to_string(std::ostringstream &oss,bool json_fmt=false) const;
     
     bool             as_bool()   const  { return *((bool*)element_pointer(0));}
 
