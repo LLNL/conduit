@@ -1842,19 +1842,43 @@ walk_schema(Node &node,
         */
         if (jvalue.HasMember("dtype"))
         {
-            std::string dtype_name(jvalue["dtype"].GetString());
-            int length = jvalue["length"].GetInt();
-            const DataType df_dtype = DataType::default_dtype(dtype_name);
-            index_t type_id = df_dtype.id();
-            index_t size    = df_dtype.element_bytes();
-            // TODO: Parse endianness
-            DataType dtype(type_id,
-                           length,
-                           curr_offset,
-                           size, 
-                           size,
-                           Endianness::DEFAULT_T);
-            node.set(data,dtype);
+            // if dtype is an object, we have a "list_of" case
+            const rapidjson::Value &dt_value = jvalue["dtype"];
+            if(dt_value.IsObject())
+            {
+                int length =1;
+                if(jvalue.HasMember("length"))
+                {
+                    length = jvalue["length"].GetInt();
+                }
+                // we will create `length' # of objects of obj des by dt_value
+                 
+                // TODO: we only need to parse this once, not leng # of times
+                // but this is the easiest way to start. 
+                for(int i=0;i< length;i++)
+                {
+                    Node curr_node(DataType::Objects::node());
+                    walk_schema(curr_node,data, dt_value, curr_offset);
+                    node.push_back(curr_node);
+                    curr_offset += curr_node.total_bytes();
+                }
+            }
+            else
+            {
+                std::string dtype_name(jvalue["dtype"].GetString());
+                int length = jvalue["length"].GetInt();
+                const DataType df_dtype = DataType::default_dtype(dtype_name);
+                index_t type_id = df_dtype.id();
+                index_t size    = df_dtype.element_bytes();
+                // TODO: Parse endianness
+                DataType dtype(type_id,
+                               length,
+                               curr_offset,
+                               size, 
+                               size,
+                               Endianness::DEFAULT_T);
+                node.set(data,dtype);
+            }
         }
         else
         {

@@ -9,6 +9,7 @@ set(UNIT_TESTS gtest_smoke
                conduit_node
                conduit_serialize
                conduit_array
+               conduit_list_of
                conduit_node_paths
                conduit_ghost_node
                conduit_to_string
