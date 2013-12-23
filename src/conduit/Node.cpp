@@ -1366,7 +1366,7 @@ Node::enforce_lock() const
 
 ///============================================
 Node&
-Node::get(const std::string &path)
+Node::entry(const std::string &path)
 {
     // fetch w/ path forces NODE_T
     if(m_dtype.id() != DataType::NODE_T)
@@ -1388,14 +1388,14 @@ Node::get(const std::string &path)
     }
     else
     {
-        return itr->second.get(p_next);
+        return itr->second.entry(p_next);
     }
 }
 
 
 ///============================================
 Node&
-Node::get(index_t idx)
+Node::entry(index_t idx)
 {
     if(m_dtype.id() != DataType::LIST_T)
     {
@@ -1409,7 +1409,7 @@ Node::get(index_t idx)
 
 ///============================================
 const Node &
-Node::get(const std::string &path) const
+Node::entry(const std::string &path) const
 {
     // fetch w/ path forces NODE_T
     if(m_dtype.id() != DataType::NODE_T)
@@ -1431,14 +1431,14 @@ Node::get(const std::string &path) const
     }
     else
     {
-        return itr->second.get(p_next);
+        return itr->second.entry(p_next);
     }
 }
 
 
 ///============================================
 const Node &
-Node::get(index_t idx) const
+Node::entry(index_t idx) const
 {
     if(m_dtype.id() != DataType::LIST_T)
     {
@@ -1488,7 +1488,7 @@ Node::operator[](const std::string &path)
     if(!m_locked)
         return fetch(path);
     else
-        return get(path);
+        return entry(path);
 }
 
 ///============================================
@@ -1498,7 +1498,7 @@ Node::operator[](index_t idx)
     if(!m_locked)
         return fetch(idx);
     else
-        return get(idx);
+        return entry(idx);
 }
 
 /// Const variants use const get
@@ -1506,14 +1506,14 @@ Node::operator[](index_t idx)
 const Node&
 Node::operator[](const std::string &path) const
 {
-    return get(path);
+    return entry(path);
 }
 
 ///============================================
 const Node&
 Node::operator[](index_t idx) const
 {
-    return get(idx);
+    return entry(idx);
 }
 
 

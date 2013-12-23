@@ -205,14 +205,14 @@ public:
     
     bool             is_empty() const;
     
-    // the `get' methods don't modify map structure, if a path doesn't exists
+    // the `entry' methods don't modify map structure, if a path doesn't exists
     // they will return an Empty Locked Node (we could also throw an exception)
     
-    Node             &get(const std::string &path);
-    Node             &get(index_t idx);
+    Node             &entry(const std::string &path);
+    Node             &entry(index_t idx);
 
-    const Node       &get(const std::string &path) const;
-    const Node       &get(index_t idx) const;
+    const Node       &entry(const std::string &path) const;
+    const Node       &entry(index_t idx) const;
     
     // the `fetch' methods do modify map structure if a path doesn't exists
     Node             &fetch(const std::string &path);
@@ -222,6 +222,15 @@ public:
     // expand delc? and avoid template?
     template<typename TYPE>
     void             push_back(TYPE data);
+
+    ///  Future list interface:
+    ///  index_t number_of_entries() const;
+    ///  void append({TYPES});
+    ///   (replace push_back?)
+    //// index_t path_index(const std::string &path) const;
+    ///  std::string &path(index_t idx) const;
+    ///  remove(index_t idx);
+    ///  remove(const std::string &path);
 
     bool             has_path(const std::string &path) const;
     void             paths(std::vector<std::string> &paths,bool expand=false) const;
