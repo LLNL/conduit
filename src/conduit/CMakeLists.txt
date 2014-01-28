@@ -20,7 +20,6 @@ set(conduit_sources
     Type.cpp
     Node.cpp
     Array.cpp
-    GhostNode.cpp
     )
 
 add_library(conduit SHARED ${conduit_sources} ${conduit_headers})

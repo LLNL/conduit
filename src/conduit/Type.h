@@ -205,9 +205,6 @@ public:
     index_t    endianness()          const { return m_endianness;}
     index_t    element_index(index_t idx) const;
 
-    template<typename T>
-    struct Traits { };
-
 private:
 
     index_t   m_id;         // for dtype enum value
@@ -217,20 +214,6 @@ private:
     index_t   m_ele_bytes;  // bytes per element
     index_t   m_endianness; // endianness of elements
 
-};
-
-
-
-template<>
-struct DataType::Traits<conduit::uint32>
-{
-   static const DataType::TypeEnum data_type = UINT32_T;
-};
-
-template<>
-struct DataType::Traits<conduit::float64>
-{
-   static const DataType::TypeEnum data_type = FLOAT64_T;
 };
 
 

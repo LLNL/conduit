@@ -1365,6 +1365,17 @@ Node::enforce_lock() const
 }
 
 ///============================================
+void
+Node::init_list()
+{
+    if (m_dtype.id() != DataType::LIST_T)
+    {
+        cleanup();
+        m_dtype.reset(DataType::LIST_T);
+    }
+}
+
+///============================================
 Node&
 Node::entry(const std::string &path)
 {
@@ -1555,7 +1566,59 @@ Node::paths(std::vector<std::string> &paths,bool expand) const
     // TODO: expand == True, show nested paths
 }
 
+///============================================
+index_t 
+Node::number_of_entries() const 
+{
+    // list only for now
+    if(m_dtype.id() != DataType::LIST_T)
+        return 0;
+    return list().size();
+}
 
+///============================================
+bool    
+Node::remove(index_t idx)
+{
+    if(m_dtype.id() != DataType::LIST_T)
+        return false;
+    
+    std::vector<Node>  &lst = list();
+    if(idx > lst.size())
+        return false;
+    lst.erase(lst.begin() + idx);
+    return true;
+}
+
+///============================================
+bool    
+Node::remove(const std::string &path)
+{
+    if(m_dtype.id() != DataType::NODE_T)
+        return false;
+
+    std::string p_curr;
+    std::string p_next;
+    split_path(path,p_curr,p_next);
+    std::map<std::string,Node> &ents = entries();
+
+    if(ents.find(p_curr) == ents.end())
+    {
+        return false;
+    }
+
+    if(!p_next.empty())
+    {
+        Node &n = ents.find(p_curr)->second;
+        return n.remove(p_next);
+        
+    }
+    else
+    {
+        ents.erase(p_curr);
+        return true;
+    }
+}
 ///============================================
 int64
 Node::to_int() const
@@ -1859,7 +1922,7 @@ walk_schema(Node &node,
                 {
                     Node curr_node(DataType::Objects::node());
                     walk_schema(curr_node,data, dt_value, curr_offset);
-                    node.push_back(curr_node);
+                    node.append(curr_node);
                     curr_offset += curr_node.total_bytes();
                 }
             }
@@ -1901,7 +1964,7 @@ walk_schema(Node &node,
             walk_schema(curr_node,data, jvalue[i], curr_offset);
             curr_offset += curr_node.total_bytes();
             // this will coerce to a list
-            node.push_back(curr_node);
+            node.append(curr_node);
         }
     }
     else if(jvalue.IsString())

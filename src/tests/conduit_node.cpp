@@ -61,10 +61,10 @@ TEST(conduit_node_list_test, conduit_node)
     uint32   a_val  = 10;
     uint32   b_val  = 20;
     float64  c_val  = 30.0;
-    list.push_back(a_val);
-    list.push_back(b_val);
-    list.push_back(c_val);
-    list.push_back(vec);
+    list.append(a_val);
+    list.append(b_val);
+    list.append(c_val);
+    list.append(vec);
     EXPECT_EQ(list[0].as_uint32(),a_val);
     EXPECT_EQ(list[1].as_uint32(),b_val);
     EXPECT_EQ(list[2].as_float64(),c_val);
@@ -160,22 +160,6 @@ TEST(conduit_node_simple_schema_test, conduit_node)
     EXPECT_TRUE(d.HasMember("a"));
     EXPECT_TRUE(d.HasMember("b"));
     EXPECT_TRUE(d.HasMember("c"));
-}
-
-TEST(conduit_node_simple_setpp_test, conduit_node)
-{
-    uint32   a_val  = 10;
-    uint32   b_val  = 20;
-    float64  c_val  = 30.0;
-
-    Node n;
-    n["a"].setpp(a_val);
-    n["b"].setpp(b_val);
-    n["c"].setpp(c_val);
-    
-    EXPECT_EQ(n["a"].as_uint32(), a_val);
-    EXPECT_EQ(n["b"].as_uint32(), b_val);
-    EXPECT_EQ(n["c"].as_float64(), c_val);
 }
 
 

@@ -218,24 +218,102 @@ public:
     Node             &fetch(const std::string &path);
     Node             &fetch(index_t idx);
 
-    // TODO:
-    // expand delc? and avoid template?
-    template<typename TYPE>
-    void             push_back(TYPE data);
 
-    ///  Future list interface:
-    ///  index_t number_of_entries() const;
-    ///  void append({TYPES});
-    ///   (replace push_back?)
+    void append(const Node& data)
+        {init_list(); list().push_back(Node(data));}
+    void append(Node& data) 
+        {init_list(); list().push_back(data);}
+
+    /// these will construct a node:    
+    void append(const DataType &data)
+        {init_list(); list().push_back(Node(data));}
+    void append(bool data)
+        {init_list(); list().push_back(Node(data));}        
+    void append(int8 data)
+        {init_list(); list().push_back(Node(data));}
+    void append(int16 data)
+        {init_list(); list().push_back(Node(data));}
+    void append(int32 data)
+        {init_list(); list().push_back(Node(data));}
+    void append(int64 data)
+        {init_list(); list().push_back(Node(data));}
+
+    void append(uint8 data)
+        {init_list(); list().push_back(Node(data));}
+    void append(uint16 data)
+        {init_list(); list().push_back(Node(data));}
+        
+    void append(uint32 data)
+        {init_list(); list().push_back(Node(data));}
+    void append(uint64 data)
+        {init_list(); list().push_back(Node(data));}
+    void append(float32 data)
+        {init_list(); list().push_back(Node(data));}
+    void append(float64 data)
+        {init_list(); list().push_back(Node(data));}
+
+    void append(const std::vector<int8>   &data)
+        {init_list(); list().push_back(Node(data));}
+    void append(const std::vector<int16>  &data)
+        {init_list(); list().push_back(Node(data));}
+    void append(const std::vector<int32>  &data)
+        {init_list(); list().push_back(Node(data));}
+    void append(const std::vector<int64>  &data)
+        {init_list(); list().push_back(Node(data));}
+
+    void append(const std::vector<uint8>   &data)
+        {init_list(); list().push_back(Node(data));}
+        
+    void append(const std::vector<uint16>  &data)
+        {init_list(); list().push_back(Node(data));}
+    void append(const std::vector<uint32>  &data)
+        {init_list(); list().push_back(Node(data));}
+    void append(const std::vector<uint64>  &data)
+        {init_list(); list().push_back(Node(data));}
+    void append(const std::vector<float32> &data)
+        {init_list(); list().push_back(Node(data));}
+    void append(const std::vector<float64> &data)
+        {init_list(); list().push_back(Node(data));}
+
+    void append(const int8_array  &data)
+        {init_list(); list().push_back(Node(data));}
+    void append(const int16_array &data)
+        {init_list(); list().push_back(Node(data));}
+    void append(const int32_array &data)
+        {init_list(); list().push_back(Node(data));}
+    void append(const int64_array &data)
+        {init_list(); list().push_back(Node(data));}
+
+    void append(const uint8_array  &data)
+        {init_list(); list().push_back(Node(data));}
+    void append(const uint16_array &data)
+        {init_list(); list().push_back(Node(data));}
+    void append(const uint32_array &data)
+        {init_list(); list().push_back(Node(data));}
+    void append(const uint64_array &data)
+        {init_list(); list().push_back(Node(data));}
+
+    void append(const float32_array &data)
+        {init_list(); list().push_back(Node(data));}
+    void append(const float64_array &data)
+        {init_list(); list().push_back(Node(data));}
+    
+    void append(const std::string &data)
+        {init_list(); list().push_back(Node(data));}
+
+    index_t number_of_entries() const;
+    bool    remove(index_t idx);
+    bool    remove(const std::string &path);
+
+    ///  Future map interface:    
     //// index_t path_index(const std::string &path) const;
     ///  std::string &path(index_t idx) const;
-    ///  remove(index_t idx);
-    ///  remove(const std::string &path);
-
+    
     bool             has_path(const std::string &path) const;
     void             paths(std::vector<std::string> &paths,bool expand=false) const;
 
 
+    // these support the map and list interfaces
     Node             &operator[](const std::string &path);
     Node             &operator[](const index_t idx);
     const Node       &operator[](const std::string &path) const;
@@ -297,16 +375,6 @@ public:
 
     static Node     &empty() {return m_empty;}
     
-    /* Template Access (experimental) */
-    template<typename T>
-    void setpp(T data);
-    
-    template<typename T>
-    T getpp(void) const;
-    
-    template<typename T>
-    T getpp(void *data) const;
-    
 private:
     // used to return something for the "static and or locked case"
     static Node        m_empty;
@@ -335,7 +403,8 @@ private:
     const void      *element_pointer(index_t idx) const 
                      {return static_cast<char*>(m_data) + m_dtype.element_index(idx);};
 
-
+    void              init_list();
+    
     void     *m_data;
     bool      m_alloced;
     DataType  m_dtype;
@@ -354,41 +423,6 @@ private:
     std::vector<Node> m_list_data;
     std::map<std::string, Node> m_entries;
 };
-
-// TODO: Explicit temp inst in the cpp file. 
-
-template<typename TYPE>
-void Node::push_back(TYPE data)
-{
-   if (m_dtype.id() != DataType::LIST_T) {
-       m_dtype.reset(DataType::LIST_T);
-   }
-   list().push_back(Node(data));
-}
-
-template<typename T>
-void Node::setpp(T data)
-{
-   // TODO, if DataType::Traits shouldn't be private for this case
-   // TODO check for compatible, don't always re-init
-   init(DataType::default_dtype(DataType::Traits<T>::data_type));
-   *((T*)m_data) = data;
-}
-
-template<typename T>
-T Node::getpp(void) const
-{
-   // TODO some kind of checking here.. is m_data valid? right type?
-   return *(T const *)( ((char const *)m_data) + m_dtype.element_index(0));
-}
-
-template<typename T>
-T Node::getpp(void *data) const
-{
-   // TODO some kind of checking here.. is m_data valid? right type?
-   return *(T const *)( ((char const *)data) + m_dtype.element_index(0));
-}
-
 
 }
 
