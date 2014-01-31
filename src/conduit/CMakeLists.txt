@@ -17,9 +17,9 @@ list(APPEND conduit_headers ${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h)
 set(conduit_sources
     Core.cpp
     Endianness.cpp 
-    Type.cpp
+    DataType.cpp
+    DataArray.cpp
     Node.cpp
-    Array.cpp
     )
 
 add_library(conduit SHARED ${conduit_sources} ${conduit_headers})

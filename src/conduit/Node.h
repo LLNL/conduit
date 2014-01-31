@@ -7,8 +7,8 @@
 
 #include "Core.h"
 #include "Endianness.h"
-#include "Type.h"
-#include "Array.h"
+#include "DataType.h"
+#include "DataArray.h"
 
 #include <map>
 #include <vector>
@@ -188,18 +188,21 @@ public:
     /*schema access */
     std::string schema() const;
     void        schema(std::ostringstream &oss) const;
-    void        lock_schema();
-    void        unlock_schema();
-    bool        is_schema_locked() const {return m_locked;}
-
+    
+    /// TODO: Locking needs more though before being exposed in public api (Jira CON-5)
+    /// void        lock_schema();
+    /// void        unlock_schema();
+    /// bool        is_schema_locked() const {return m_locked;}
+    
+    
     /* serialization */
     void        serialize(std::vector<uint8> &data, bool compact=true) const;
     void        serialize(uint8 *data, index_t curr_offset, bool compact=true) const;
 
 
-    // TODO:
-    // update() will add entries from n to current Node (like python dict update) 
-    // void              update(const Node &n);  
+    /// TODO:
+    /// update() will add entries from n to current Node (like python dict update) 
+    /// void              update(const Node &n);  
     bool             compare(const Node &n, Node &cmp_results) const;
     bool             operator==(const Node &n) const;
     
@@ -305,9 +308,9 @@ public:
     bool    remove(index_t idx);
     bool    remove(const std::string &path);
 
-    ///  Future map interface:    
-    //// index_t path_index(const std::string &path) const;
-    ///  std::string &path(index_t idx) const;
+    /// TODO: Future map interface
+    /// index_t path_index(const std::string &path) const;
+    /// std::string &path(index_t idx) const;
     
     bool             has_path(const std::string &path) const;
     void             paths(std::vector<std::string> &paths,bool expand=false) const;
@@ -388,10 +391,7 @@ private:
     
     void             walk_schema(void *data, 
                                  const std::string &schema);
-//     void             walk_schema(void *data, 
-//                              const rapidjson::Value &jvalue, 
-//                              index_t curr_offset);
-                                 
+
     static void      split_path(const std::string &path,
                                 std::string &curr,
                                 std::string &next);
@@ -419,8 +419,11 @@ private:
     const std::map<std::string, Node>   &entries() const;
     const std::vector<Node>             &list() const;
 
-
-    std::vector<Node> m_list_data;
+    // TODO: These are currently alloced per node, even if we have a simple node type
+    // Use m_obj_data w/ allocs in the future to reduce overhead. 
+    // The entries() & list() helper funcs already provide a single point of access
+    // so  change the storage shouldn't be very hard. 
+    std::vector<Node>           m_list_data;
     std::map<std::string, Node> m_entries;
 };
 

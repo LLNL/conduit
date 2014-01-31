@@ -1,8 +1,8 @@
 ///
-/// file: Type.cpp
+/// file: DataType.cpp
 ///
 
-#include "Type.h"
+#include "DataType.h"
 
 namespace conduit
 {

@@ -9,7 +9,7 @@ namespace conduit
 
 std::string version()
 {
-    return std::string("{vaporware}");
+    return std::string("{alpha}");
 }
 
 }

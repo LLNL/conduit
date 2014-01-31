@@ -34,7 +34,6 @@ typedef uint32 index_t;
 typedef uint64 index_t;
 #endif 
 
-// dummy function to start the lib
 std::string  version();
 
 }

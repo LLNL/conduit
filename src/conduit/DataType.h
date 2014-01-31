@@ -1,9 +1,9 @@
 ///
-/// file: Type.h
+/// file: DataType.h
 ///
 
-#ifndef __CONDUIT_TYPE_H
-#define __CONDUIT_TYPE_H
+#ifndef __CONDUIT_DATA_TYPE_H
+#define __CONDUIT_DATA_TYPE_H
 
 #include "Core.h"
 #include "Endianness.h"

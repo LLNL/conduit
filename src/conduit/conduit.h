@@ -8,8 +8,8 @@
 
 #include "Core.h"
 #include "Endianness.h"
-#include "Type.h"
-#include "Array.h"
+#include "DataType.h"
+#include "DataArray.h"
 #include "Node.h"
 
 #endif

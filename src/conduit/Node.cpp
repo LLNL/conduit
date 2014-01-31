@@ -1314,6 +1314,9 @@ Node::is_empty() const
 {
     return  m_dtype.id() == DataType::EMPTY_T;
 }
+
+/*
+TODO: Reval locking mechanics before putting in public interface
 ///============================================
 void             
 Node::lock_schema()
@@ -1327,6 +1330,7 @@ Node::unlock_schema()
 {
     set_lock(false);
 }
+*/
 
 ///============================================
 void
