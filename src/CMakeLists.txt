@@ -57,6 +57,12 @@ include_directories(${RAPIDJSON_INCLUDE_DIR})
 # include_directories(${NUMPY_INCLUDE_DIRS})
 
 
+################################
+# Setup MPI if available 
+################################
+# Search for MPI.
+include(FindMPI)
+
 
 ################################
 # Project Wide Includes
