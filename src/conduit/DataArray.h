@@ -41,6 +41,8 @@ private:
 /// DataArray
 ///============================================
 
+/// TODO: Move these to DataArray.cpp, after we figure out the right exp temp inst calls. 
+
 ///============================================
 template <class T> 
 DataArray<T>::DataArray(void *data,const DataType &dtype)
