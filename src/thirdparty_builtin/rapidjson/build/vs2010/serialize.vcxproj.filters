@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<ItemGroup>
+		<Filter Include="example">
+			<UniqueIdentifier>{FF205CFC-5BEF-9E4C-B65F-95C14DFA1C38}</UniqueIdentifier>
+		</Filter>
+		<Filter Include="example\serialize">
+			<UniqueIdentifier>{CF553E43-0E8D-0344-B4F8-D0B1ADCCB4B7}</UniqueIdentifier>
+		</Filter>
+	</ItemGroup>
+	<ItemGroup>
+		<ClCompile Include="..\..\example\serialize\serialize.cpp">
+			<Filter>example\serialize</Filter>
+		</ClCompile>
+	</ItemGroup>
+</Project>

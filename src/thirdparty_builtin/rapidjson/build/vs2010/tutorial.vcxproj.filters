@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<ItemGroup>
+		<Filter Include="example">
+			<UniqueIdentifier>{019D45BC-F334-E24A-B372-FF50459B5314}</UniqueIdentifier>
+		</Filter>
+		<Filter Include="example\tutorial">
+			<UniqueIdentifier>{BB4FAF60-1931-154D-BA31-2BCB97B08F7E}</UniqueIdentifier>
+		</Filter>
+	</ItemGroup>
+	<ItemGroup>
+		<ClCompile Include="..\..\example\tutorial\tutorial.cpp">
+			<Filter>example\tutorial</Filter>
+		</ClCompile>
+	</ItemGroup>
+</Project>
