@@ -10,7 +10,7 @@ def create_package(bundle=False):
         suffix = "git.bundle"
     output_file = "%s.%04d.%02d.%02d.%s" % (repo_name,t.year,t.month,t.day,suffix)
     if bundle:
-        cmd = "git bundle create %s master" % output_file
+        cmd = "git bundle create %s -all" % output_file
     else: # cyrus' old method
         cmd = "git archive --format=tar --prefix=%s/ HEAD > %s; " % (repo_name,output_file)
         cmd += "cd ../; tar -rf %s/%s %s/.git; cd %s; " % (repo_name,output_file,repo_name,repo_name)
