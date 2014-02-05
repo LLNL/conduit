@@ -13,7 +13,7 @@ namespace conduit
 
 // create storage for these common types:
 DataType DataType::Objects::m_empty(DataType::EMPTY_T);
-DataType DataType::Objects::m_node(DataType::NODE_T);
+DataType DataType::Objects::m_object(DataType::OBJECT_T);
 DataType DataType::Objects::m_list(DataType::LIST_T);
 
 ///============================================
@@ -357,7 +357,7 @@ index_t
 DataType::name_to_id(const std::string &dtype_name)
 {
     if(dtype_name      == "[empty]") return EMPTY_T;
-    else if(dtype_name == "Node")    return NODE_T;
+    else if(dtype_name == "Object")  return OBJECT_T;
     else if(dtype_name == "List")    return LIST_T;
     else if(dtype_name == "bool")    return BOOL_T;
     else if(dtype_name == "int8")    return INT8_T;
@@ -379,10 +379,10 @@ std::string
 DataType::id_to_name(index_t dtype_id)
 {
     if(dtype_id      == EMPTY_T)   return "[empty]";
-    else if(dtype_id == NODE_T)    return "Node";
+    else if(dtype_id == OBJECT_T)  return "Object";
+    else if(dtype_id == LIST_T)    return "List";
     else if(dtype_id == BOOL_T)    return "bool";
     /* ints */
-    else if(dtype_id == LIST_T)    return "List";
     else if(dtype_id == INT8_T)    return "int8";
     else if(dtype_id == INT16_T)   return "int16";
     else if(dtype_id == INT32_T)   return "int32";
@@ -407,7 +407,7 @@ DataType::default_dtype(index_t dtype_id)
 {
    switch (dtype_id)
    {
-        case NODE_T :  return DataType::Objects::node();
+        case OBJECT_T: return DataType::Objects::object();
         case LIST_T :  return DataType::Objects::list();
         case BOOL_T :  return DataType::Scalars::boolean();
         /* int types */
@@ -458,9 +458,9 @@ DataType::schema(std::ostringstream &oss) const
     {
         oss << "\"[empty]\"";
     }
-    else if(m_id == NODE_T)
+    else if(m_id == OBJECT_T)
     {
-        oss << "\"[node]\"";
+        oss << "\"[object]\"";
     }
     else if(m_id == LIST_T)
     {

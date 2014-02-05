@@ -13,13 +13,16 @@ namespace conduit
 /// walk_schema helper
 ///============================================
 
-/* use this func to avoid having to include rapidjson headers  in Node.h
+/* use these funcs to avoid having to include rapidjson headers  in Node.h
  (rapidjson::Values resolve to a complex templated type that we can't forward declare) 
 */
 void walk_schema(Node &node,
                  void *data, 
                  const rapidjson::Value &jvalue, 
                  index_t curr_offset);
+
+void walk_schema(Node &node, 
+                 const rapidjson::Value &jvalue);
 
 ///============================================
 /// Node::m_empty
@@ -1176,7 +1179,7 @@ Node::total_bytes() const
 {
     index_t res = 0;
     index_t dt_id = m_dtype.id();
-    if(dt_id == DataType::NODE_T)
+    if(dt_id == DataType::OBJECT_T)
     {
         const std::map<std::string, Node> &ents = entries();
         for (std::map<std::string, Node>::const_iterator itr = ents.begin();
@@ -1216,7 +1219,7 @@ Node::schema() const
 void
 Node::schema(std::ostringstream &oss) const
 {
-    if(m_dtype.id() == DataType::NODE_T)
+    if(m_dtype.id() == DataType::OBJECT_T)
     {
         oss << "{";
         std::map<std::string,Node>::const_iterator itr;
@@ -1265,7 +1268,7 @@ Node::serialize(std::vector<uint8> &data,bool compact) const
 void
 Node::serialize(uint8 *data,index_t curr_offset,bool compact) const
 {
-    if(m_dtype.id() == DataType::NODE_T)
+    if(m_dtype.id() == DataType::OBJECT_T)
     {
         std::map<std::string,Node>::const_iterator itr;
         const std::map<std::string,Node> &ent = entries();
@@ -1337,7 +1340,7 @@ void
 Node::set_lock(bool value)
 {
     m_locked = value;
-    if(m_dtype.id() == DataType::NODE_T)
+    if(m_dtype.id() == DataType::OBJECT_T)
     {
         std::map<std::string, Node> &ents = entries();
         for (std::map<std::string, Node>::iterator itr = ents.begin();
@@ -1383,8 +1386,8 @@ Node::init_list()
 Node&
 Node::entry(const std::string &path)
 {
-    // fetch w/ path forces NODE_T
-    if(m_dtype.id() != DataType::NODE_T)
+    // fetch w/ path forces OBJECT_T
+    if(m_dtype.id() != DataType::OBJECT_T)
         return empty();
         
     std::string p_curr;
@@ -1417,7 +1420,7 @@ Node::entry(index_t idx)
         return empty();
     }
     // we could also potentially support index fetch on:
-    //   NODE_T (imp-order)
+    //   OBJECT_T (imp-order)
     //   ARRAY_T -- Object array, dynamic construction of node
     return list()[idx];
 }
@@ -1426,8 +1429,8 @@ Node::entry(index_t idx)
 const Node &
 Node::entry(const std::string &path) const
 {
-    // fetch w/ path forces NODE_T
-    if(m_dtype.id() != DataType::NODE_T)
+    // fetch w/ path forces OBJECT_T
+    if(m_dtype.id() != DataType::OBJECT_T)
         return empty();
         
     std::string p_curr;
@@ -1460,7 +1463,7 @@ Node::entry(index_t idx) const
         return empty();
     }
     // we could also potentially support index fetch on:
-    //   NODE_T (imp-order)
+    //   OBJECT_T (imp-order)
     //   ARRAY_T -- Object array, dynamic construction of node
     return list()[idx];
 }
@@ -1469,9 +1472,9 @@ Node::entry(index_t idx) const
 Node&
 Node::fetch(const std::string &path)
 {
-    // fetch w/ path forces NODE_T
-    if(m_dtype.id() != DataType::NODE_T)
-        init(DataType::Objects::node());
+    // fetch w/ path forces OBJECT_T
+    if(m_dtype.id() != DataType::OBJECT_T)
+        init(DataType::Objects::object());
         
     std::string p_curr;
     std::string p_next;
@@ -1491,7 +1494,7 @@ Node::fetch(index_t idx)
     // {
     // }
     // we could also potentially support index fetch on:
-    //   NODE_T (imp-order)
+    //   OBJECT_T (imp-order)
     //   ARRAY_T -- Object array, dynamic construction of node
     return list()[idx];
 }
@@ -1537,7 +1540,7 @@ Node::operator[](index_t idx) const
 bool           
 Node::has_path(const std::string &path) const
 {
-    if(m_dtype.id() != DataType::NODE_T)
+    if(m_dtype.id() != DataType::OBJECT_T)
         return false;
 
     std::string p_curr;
@@ -1598,7 +1601,7 @@ Node::remove(index_t idx)
 bool    
 Node::remove(const std::string &path)
 {
-    if(m_dtype.id() != DataType::NODE_T)
+    if(m_dtype.id() != DataType::OBJECT_T)
         return false;
 
     std::string p_curr;
@@ -1743,7 +1746,7 @@ Node::to_string(std::ostringstream &oss, bool json_fmt) const
         }
     }
 
-    if(m_dtype.id() == DataType::NODE_T)
+    if(m_dtype.id() == DataType::OBJECT_T)
     {
         bool first = true;
         oss << "{";
@@ -1787,7 +1790,7 @@ Node::init(const DataType& dtype)
         enforce_lock();
         cleanup();
         index_t dt_id = dtype.id();
-        if( dt_id == DataType::NODE_T)
+        if( dt_id == DataType::OBJECT_T)
         {
             // TODO: alloc map
         }
@@ -1814,7 +1817,7 @@ Node::cleanup()
 {
     if(m_alloced && m_data)
     {
-        if(m_dtype.id() == DataType::NODE_T)
+        if(m_dtype.id() == DataType::OBJECT_T)
         {
             //TODO: Imp    delete alloced map
         }
@@ -1881,7 +1884,7 @@ Node::walk_schema(void *data, const std::string &schema)
 {
     m_data    = data;
     m_alloced = false;
-    m_dtype.reset(DataType::NODE_T);
+    m_dtype.reset(DataType::OBJECT_T);
     
     rapidjson::Document document;
     document.Parse<0>(schema.c_str());
@@ -1918,13 +1921,14 @@ walk_schema(Node &node,
                 {
                     length = jvalue["length"].GetInt();
                 }
+                            
                 // we will create `length' # of objects of obj des by dt_value
                  
                 // TODO: we only need to parse this once, not leng # of times
                 // but this is the easiest way to start. 
                 for(int i=0;i< length;i++)
                 {
-                    Node curr_node(DataType::Objects::node());
+                    Node curr_node(DataType::Objects::object());
                     walk_schema(curr_node,data, dt_value, curr_offset);
                     node.append(curr_node);
                     curr_offset += curr_node.total_bytes();
@@ -1932,6 +1936,7 @@ walk_schema(Node &node,
             }
             else
             {
+                // handle leaf node with explicit props
                 std::string dtype_name(jvalue["dtype"].GetString());
                 int length = jvalue["length"].GetInt();
                 const DataType df_dtype = DataType::default_dtype(dtype_name);
@@ -1949,11 +1954,12 @@ walk_schema(Node &node,
         }
         else
         {
+            // loop over all entries
             for (rapidjson::Value::ConstMemberIterator itr = jvalue.MemberBegin(); 
                  itr != jvalue.MemberEnd(); ++itr)
             {
                 std::string entry_name(itr->name.GetString());
-                Node curr_node(DataType::Objects::node());
+                Node curr_node(DataType::Objects::object());
                 walk_schema(curr_node,data, itr->value, curr_offset);
                 node[entry_name] = curr_node;
                 curr_offset += curr_node.total_bytes();
@@ -1964,7 +1970,7 @@ walk_schema(Node &node,
     {
         for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
         {
-			Node curr_node(DataType::Objects::node());
+			Node curr_node(DataType::Objects::object());
             walk_schema(curr_node,data, jvalue[i], curr_offset);
             curr_offset += curr_node.total_bytes();
             // this will coerce to a list

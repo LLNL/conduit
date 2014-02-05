@@ -81,7 +81,7 @@ public:
     ///  assign op:  Node &operator=({DTYPE} data);
     ///  setter: void set({DTYPE} data);
     /// accessor: {DTYPE} as_{DTYPE};
-    
+      
     /* Setters */
     void set(const Node& data);
     void set(const DataType &data);

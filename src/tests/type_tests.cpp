@@ -21,10 +21,10 @@ TEST(value_type_test, value_type_tests)
     EXPECT_EQ(DataType::EMPTY_T,0);
     EXPECT_EQ(DataType::id_to_name(DataType::EMPTY_T),"[empty]");
     EXPECT_EQ(DataType::name_to_id("[empty]"),DataType::EMPTY_T);
-    EXPECT_TRUE( (DataType::EMPTY_T != DataType::NODE_T) );
+    EXPECT_TRUE( (DataType::EMPTY_T != DataType::OBJECT_T) );
 
     print_dt(DataType::Objects::empty());
-    print_dt(DataType::Objects::node());
+    print_dt(DataType::Objects::object());
     print_dt(DataType::Objects::list());
     
     print_dt(DataType::Scalars::int8());

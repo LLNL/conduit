@@ -25,7 +25,7 @@ public:
     typedef enum
     {
         EMPTY_T = 0, // default
-        NODE_T,      // node
+        OBJECT_T,    // object
         LIST_T,      // list
         BOOL_T,      // boolean
         INT8_T,      // int8 and  int8_array
@@ -44,12 +44,12 @@ public:
     class Objects
     {
     public:
-        static const DataType &empty() {return m_empty;}
-        static const DataType &node()  {return m_node;}
-        static const DataType &list()  {return m_list;}
+        static const DataType &empty()  {return m_empty;}
+        static const DataType &object() {return m_object;}
+        static const DataType &list()   {return m_list;}
     private:
         static DataType m_empty;
-        static DataType m_node;
+        static DataType m_object;
         static DataType m_list;
     };
     
