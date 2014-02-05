@@ -20,6 +20,7 @@ set(conduit_sources
     DataType.cpp
     DataArray.cpp
     Node.cpp
+    Schema.cpp
     )
 
 add_library(conduit SHARED ${conduit_sources} ${conduit_headers})
