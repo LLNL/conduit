@@ -38,7 +38,7 @@ TEST(conduit_array_stride_int8, conduit_array)
                    sizeof(int8),
                    Endianness::DEFAULT_T);
     Node n;
-    n["value"].set(&data[0],arr_t);
+    n["value"].set(arr_t,&data[0]);
 
 
     int8_array arr = n["value"].as_int8_array();
@@ -65,7 +65,8 @@ TEST(conduit_array_stride_int8, conduit_array)
     std::cout << std::endl;
 
 // TODO: These cases are failing
-    Node n2(&data[0],DataType::Arrays::int8(10,sizeof(int8),sizeof(int8)*2));
+    Node n2(DataType::Arrays::int8(10,sizeof(int8),sizeof(int8)*2),
+            &data[0]);
     int8_array arr_2 = n2.as_int8_array();
     
     for(int i=0;i<10;i++)

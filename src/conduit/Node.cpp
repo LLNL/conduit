@@ -54,36 +54,37 @@ Node::Node(const Node &node)
 }
 
 ///============================================
-Node::Node(void *data, const std::string &schema)
+Node::Node(const Schema &schema)
 :m_data(NULL),
  m_alloced(false),
  m_dtype(DataType::EMPTY_T),
  m_obj_data(NULL),
  m_locked(false)
 {
-    walk_schema(data,schema);
+    walk_schema(schema.to_json());
 }
 
 ///============================================
-Node::Node(void *data, const Node *schema)
+Node::Node(const Schema &schema, void *data)
 :m_data(NULL),
  m_alloced(false),
  m_dtype(DataType::EMPTY_T),
  m_obj_data(NULL),
  m_locked(false)
 {
-    set(data,schema);
+    walk_schema(schema.to_json(),data);
 }
 
+
 ///============================================
-Node::Node(void *data, const DataType &dtype)
+Node::Node(const DataType &dtype, void *data)
 :m_data(NULL),
  m_alloced(false),
  m_dtype(DataType::EMPTY_T),
  m_obj_data(NULL),
  m_locked(false)
 {
-    set(data,dtype);
+    set(dtype,data);
 }
 
 ///============================================
@@ -888,23 +889,15 @@ Node::set(const float64_array  &data)
 
 ///============================================
 void
-Node::set(void* data, const std::string &schema)
+Node::set(const Schema & schema,void* data)
 {
-    walk_schema(data,schema);    
+    walk_schema(schema,data);    
 }
+
 
 ///============================================
 void
-Node::set(void* data, const Node *schema)
-{
-    ///TODO : Real Imp, current is a short cut 
-    std::string schema_str = schema->schema();
-    set(data,schema_str);
-}
-
-///============================================
-void
-Node::set( void *data, const DataType &dtype)
+Node::set(const DataType &dtype, void *data)
 {
     cleanup();
     enforce_lock();
@@ -1206,18 +1199,26 @@ Node::total_bytes() const
 }
 
 ///============================================
-std::string
+Schema
 Node::schema() const
 {
+    return Schema(json_schema());
+}
+
+
+///============================================
+std::string
+Node::json_schema() const
+{
     std::ostringstream oss;
-    schema(oss);
+    json_schema(oss);
     return oss.str();
 }
 
 
 ///============================================
 void
-Node::schema(std::ostringstream &oss) const
+Node::json_schema(std::ostringstream &oss) const
 {
     if(m_dtype.id() == DataType::OBJECT_T)
     {
@@ -1230,7 +1231,7 @@ Node::schema(std::ostringstream &oss) const
             if(!first)
                 oss << ",";
             oss << "\""<< itr->first << "\" : ";
-            oss << itr->second.schema() << "\n";
+            oss << itr->second.json_schema() << "\n";
             first=false;
         }
         oss << "}\n";
@@ -1245,14 +1246,14 @@ Node::schema(std::ostringstream &oss) const
         {
             if(!first)
                 oss << ",";
-            oss << (*itr).schema() << "\n";
+            oss << (*itr).json_schema() << "\n";
             first=false;
         }
         oss << "]\n";
     }
     else // assume data value type for now
     {
-        m_dtype.schema(oss);
+        m_dtype.json_schema(oss);
     }
 }
 
@@ -1877,17 +1878,27 @@ Node::list() const
 }
 
 
+///============================================
+void 
+Node::walk_schema(const Schema &schema)
+{
+    /*
+    TODO schem w/ external source
+         schem w/ no data (alloc)
+    */
+}
+
 
 ///============================================
 void 
-Node::walk_schema(void *data, const std::string &schema)
+Node::walk_schema(const Schema &schema, void *data)
 {
     m_data    = data;
     m_alloced = false;
     m_dtype.reset(DataType::OBJECT_T);
     
     rapidjson::Document document;
-    document.Parse<0>(schema.c_str());
+    document.Parse<0>(schema.to_json().c_str());
     index_t current_offset = 0;
     conduit::walk_schema(*this,data,document,current_offset);
 }
@@ -1949,7 +1960,7 @@ walk_schema(Node &node,
                                size, 
                                size,
                                Endianness::DEFAULT_T);
-                node.set(data,dtype);
+                node.set(dtype,data);
             }
         }
         else
@@ -1983,7 +1994,7 @@ walk_schema(Node &node,
          DataType df_dtype = DataType::default_dtype(dtype_name);
          index_t size = df_dtype.element_bytes();
          DataType dtype(df_dtype.id(),1,curr_offset,size,size,Endianness::DEFAULT_T);
-         node.set(data,dtype);
+         node.set(dtype,data);
     }
 
 }

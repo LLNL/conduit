@@ -25,10 +25,10 @@ TEST(conduit_list_of_simple, conduit_list_of)
     memcpy(&data[8],&a2_val,4);
     memcpy(&data[12],&b2_val,4);
     
-    std::string schema = "{\"dtype\":{\"a\":\"int32\",\"b\":\"int32\"},\"length\":2}";
+    std::string jschema = "{\"dtype\":{\"a\":\"int32\",\"b\":\"int32\"},\"length\":2}";
 
-    Node n(data,schema);
-    std::cout << n.schema() << std::endl;
+    Node n(Schema(jschema),data);
+    std::cout << n.json_schema() << std::endl;
     std::cout << n.to_string() << std::endl;
     
     std::cout <<  n[0]["a"].as_int32() << std::endl;

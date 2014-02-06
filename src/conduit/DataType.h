@@ -5,6 +5,7 @@
 #ifndef __CONDUIT_DATA_TYPE_H
 #define __CONDUIT_DATA_TYPE_H
 
+
 #include "Core.h"
 #include "Endianness.h"
 
@@ -15,6 +16,7 @@
 namespace conduit
 {
 
+class Schema;
 class Node;
 ///============================================
 /// DataType
@@ -189,9 +191,10 @@ public:
 
     static DataType const  &default_dtype(index_t dtype_id);
     static DataType const  &default_dtype(const std::string &name);
-       
-    std::string         schema() const;
-    void                schema(std::ostringstream &oss) const;
+
+    Schema              schema() const;       
+    std::string         json_schema() const;
+    void                json_schema(std::ostringstream &oss) const;
     
     index_t     id()    const { return m_id;}    
     index_t     total_bytes()   const;

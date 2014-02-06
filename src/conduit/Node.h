@@ -9,6 +9,7 @@
 #include "Endianness.h"
 #include "DataType.h"
 #include "DataArray.h"
+#include "Schema.h"
 
 #include <map>
 #include <vector>
@@ -27,11 +28,10 @@ public:
     Node(); // empty node
     Node(const Node &node);
     explicit Node(const DataType &dtype, bool locked=false);
-    Node(void *data, const std::string &schema);
-    Node(void *data, const Node *schema);
-    Node(void *data, const DataType &dtype);
-
-
+    Node(const Schema &schema);
+    Node(const Schema &schema, void *data);
+    Node(const DataType &dtype, void *data);
+    
     explicit Node(bool   data);
     explicit Node(int8   data);
     explicit Node(int16  data);
@@ -86,9 +86,8 @@ public:
     void set(const Node& data);
     void set(const DataType &data);
 
-    void set(void* data, const std::string &schema);
-    void set(void* data, const Node *schema);
-    void set(void* data, const DataType &dtype);
+    void set(const Schema &schema, void* data);
+    void set(const DataType &dtype, void* data);
 
     void set(bool data);
     
@@ -186,14 +185,15 @@ public:
     const DataType    &dtype() const { return m_dtype;}
 
     /*schema access */
-    std::string schema() const;
-    void        schema(std::ostringstream &oss) const;
+    Schema      schema() const;    
+    std::string json_schema() const;
+    void        json_schema(std::ostringstream &oss) const;
     
     /// TODO: Locking needs more though before being exposed in public api (Jira CON-5)
     /// void        lock_schema();
     /// void        unlock_schema();
     /// bool        is_schema_locked() const {return m_locked;}
-    
+   
     
     /* serialization */
     void        serialize(std::vector<uint8> &data, bool compact=true) const;
@@ -388,10 +388,12 @@ private:
     
     void             set_lock(bool value);
     void             enforce_lock() const;
-    
-    void             walk_schema(void *data, 
-                                 const std::string &schema);
 
+    void             walk_schema(const Schema &schema);
+
+    void             walk_schema(const Schema &schema,
+                                 void *data);
+   
     static void      split_path(const std::string &path,
                                 std::string &curr,
                                 std::string &next);

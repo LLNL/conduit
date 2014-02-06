@@ -3,6 +3,7 @@
 ///
 
 #include "DataType.h"
+#include "Schema.h"
 
 namespace conduit
 {
@@ -439,19 +440,25 @@ DataType::default_dtype(const std::string &name)
     return default_dtype(name_to_id(name));
 }
 
-
 ///============================================ 
-std::string 
+Schema              
 DataType::schema() const
 {
+    return Schema(json_schema());
+}
+    
+///============================================ 
+std::string 
+DataType::json_schema() const
+{
     std::ostringstream oss;
-    schema(oss);
+    json_schema(oss);
     return oss.str();
 }
 
 ///============================================ 
 void
-DataType::schema(std::ostringstream &oss) const
+DataType::json_schema(std::ostringstream &oss) const
 {
     oss << "{\"dtype\":";
     if(m_id == EMPTY_T)

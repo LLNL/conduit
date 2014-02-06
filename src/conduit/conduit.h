@@ -11,5 +11,6 @@
 #include "DataType.h"
 #include "DataArray.h"
 #include "Node.h"
+#include "Schema.h"
 
 #endif

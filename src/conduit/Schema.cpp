@@ -24,6 +24,14 @@ Schema::Schema(const Schema &schema)
 }
 
 ///============================================
+Schema::Schema(const std::string &json_schema)
+: m_json_schema("")
+{
+    set(json_schema);
+}
+
+
+///============================================
 Schema::~Schema()
 {
 
