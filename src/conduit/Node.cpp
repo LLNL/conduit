@@ -5,6 +5,11 @@
 #include "Node.h"
 #include "rapidjson/document.h"
 #include <iostream>
+#include <cstdio>
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 namespace conduit
 {
@@ -27,63 +32,75 @@ void walk_schema(Node &node,
 ///============================================
 /// Node::m_empty
 ///============================================
-Node Node::m_empty(DataType::Objects::empty(),true);
+Node Node::m_empty(DataType::Objects::empty());
 
 ///============================================
 /// Node
 ///============================================
+void
+Node::init_defaults()
+{
+    m_data = NULL;
+    m_alloced = false;
+    m_dtype = DataType(DataType::EMPTY_T);
+
+    m_mmaped    = false;
+    m_mmap_fd   = -1;
+    m_mmap_size = 0;
+}
 
 ///============================================
 Node::Node()
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
-{}
+{
+    init_defaults();
+}
 
 ///============================================
 Node::Node(const Node &node)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+    init_defaults();
     set(node);
 }
 
 ///============================================
 Node::Node(const Schema &schema)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
+
 {
+    init_defaults();
     walk_schema(schema.to_json());
 }
 
 ///============================================
-Node::Node(const Schema &schema, void *data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
+Node::Node(const Schema &schema, const std::string &stream_path, bool mmap)
+{    
+    init_defaults();
+    if(mmap)
+        conduit::Node::mmap(schema,stream_path);
+    else
+        load(schema,stream_path);
+}
+
+
+///============================================
+Node::Node(const Schema &schema, std::ifstream &ifs)
 {
+    init_defaults();
+    walk_schema(schema.to_json(),ifs);
+}
+
+
+///============================================
+Node::Node(const Schema &schema, void *data)
+{
+    init_defaults();
     walk_schema(schema.to_json(),data);
 }
 
 
 ///============================================
 Node::Node(const DataType &dtype, void *data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
-{
+{    
+    init_defaults();
     set(dtype,data);
 }
 
@@ -93,45 +110,29 @@ Node::Node(const DataType &dtype, void *data)
 
 ///============================================
 Node::Node(const std::vector<int8>  &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+   init_defaults();
    set(data);
 }
 
 ///============================================
 Node::Node(const std::vector<int16>  &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+   init_defaults();
    set(data);
 }
 
 ///============================================
 Node::Node(const std::vector<int32>  &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+   init_defaults();
    set(data);
 }
 
 ///============================================
 Node::Node(const std::vector<int64>  &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+   init_defaults();
    set(data);
 }
 
@@ -141,45 +142,29 @@ Node::Node(const std::vector<int64>  &data)
 
 ///============================================
 Node::Node(const std::vector<uint8>  &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+   init_defaults();
    set(data);
 }
 
 ///============================================
 Node::Node(const std::vector<uint16>  &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+   init_defaults();
    set(data);
 }
 
 ///============================================
 Node::Node(const std::vector<uint32>  &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+   init_defaults();
    set(data);
 }
 
 ///============================================
 Node::Node(const std::vector<uint64>  &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+   init_defaults();
    set(data);
 }
 
@@ -189,23 +174,15 @@ Node::Node(const std::vector<uint64>  &data)
 
 ///============================================
 Node::Node(const std::vector<float32>  &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+   init_defaults();
    set(data);
 }
 
 ///============================================
 Node::Node(const std::vector<float64>  &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+   init_defaults();
    set(data);
 }
 
@@ -215,45 +192,29 @@ Node::Node(const std::vector<float64>  &data)
 
 ///============================================
 Node::Node(const int8_array  &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+   init_defaults();
    set(data);
 }
 
 ///============================================
 Node::Node(const int16_array  &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+   init_defaults();
    set(data);
 }
 
 ///============================================
 Node::Node(const int32_array  &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+   init_defaults();
    set(data);
 }
 
 ///============================================
 Node::Node(const int64_array  &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+   init_defaults();
    set(data);
 }
 
@@ -263,45 +224,29 @@ Node::Node(const int64_array  &data)
 
 ///============================================
 Node::Node(const uint8_array  &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+   init_defaults();
    set(data);
 }
 
 ///============================================
 Node::Node(const uint16_array  &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+   init_defaults();
    set(data);
 }
 
 ///============================================
 Node::Node(const uint32_array  &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+   init_defaults();
    set(data);
 }
 
 ///============================================
 Node::Node(const uint64_array  &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+   init_defaults();
    set(data);
 }
 
@@ -311,35 +256,23 @@ Node::Node(const uint64_array  &data)
 
 ///============================================
 Node::Node(const float32_array  &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+   init_defaults();
    set(data);
 }
 
 ///============================================
 Node::Node(const float64_array  &data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+   init_defaults();
    set(data);
 }
 
 
 ///============================================
-Node::Node(const DataType &dtype,bool locked)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(locked)
+Node::Node(const DataType &dtype)
 {
+    init_defaults();
     set(dtype);
 }
 
@@ -349,45 +282,29 @@ Node::Node(const DataType &dtype,bool locked)
 
 ///============================================
 Node::Node(int8  data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+    init_defaults();
     set(data);
 }
 
 ///============================================
 Node::Node(int16  data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+    init_defaults();
     set(data);
 }
     
 ///============================================
 Node::Node(int32  data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+    init_defaults();
     set(data);
 }
 
 ///============================================
 Node::Node(int64  data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
-{
+{    
+    init_defaults();
     set(data);
 }
 
@@ -398,45 +315,29 @@ Node::Node(int64  data)
 
 ///============================================
 Node::Node(uint8  data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+    init_defaults();
     set(data);
 }
 
 ///============================================
 Node::Node(uint16  data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+    init_defaults();
     set(data);
 }
     
 ///============================================
 Node::Node(uint32  data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+    init_defaults();
     set(data);
 }
 
 ///============================================
 Node::Node(uint64  data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+    init_defaults();
     set(data);
 }
 
@@ -446,24 +347,16 @@ Node::Node(uint64  data)
 
 ///============================================
 Node::Node(float32 data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+    init_defaults();
     set(data);
 }
 
 
 ///============================================
 Node::Node(float64 data)
-:m_data(NULL),
- m_alloced(false),
- m_dtype(DataType::EMPTY_T),
- m_obj_data(NULL),
- m_locked(false)
 {
+    init_defaults();
     set(data);
 }
 
@@ -475,10 +368,72 @@ Node::~Node()
 }
 
 ///============================================
+void
+Node::reset()
+{
+  cleanup();
+}
+
+///============================================
+void 
+Node::load(const Schema &schema, const std::string &stream_path)
+{
+    index_t dsize = schema.total_bytes();
+
+    alloc(dsize);
+    std::ifstream ifs;
+    ifs.open(stream_path.c_str());
+    ifs.read((char *)m_data,dsize);
+    ifs.close();       
+    
+    ///
+    /// See Below
+    ///
+    m_alloced = false;
+    
+    walk_schema(schema.to_json(),m_data);
+
+    ///
+    /// TODO: Design Issue
+    ///
+    /// The bookkeeping here is not very intuitive 
+    /// The walk process may reset the node, which would free
+    /// our data before we can set it up. So for now, we wait  
+    /// to indicate ownership until after the node is fully setup
+    m_alloced = true;
+}
+
+///============================================
+void 
+Node::mmap(const Schema &schema, const std::string &stream_path)
+{
+    cleanup();
+    index_t dsize = schema.total_bytes();
+    Node::mmap(stream_path,dsize);
+
+    ///
+    /// See Below
+    ///
+    m_mmaped = false;
+    
+    walk_schema(schema.to_json(),m_data);
+
+    ///
+    /// TODO: Design Issue
+    ///
+    /// The bookkeeping here is not very intuitive 
+    /// The walk process may reset the node, which would free
+    /// our data before we can set it up. So for now, we wait  
+    /// to indicate ownership until after the node is fully setup
+    m_mmaped = true;
+}
+
+
+
+///============================================
 void 
 Node::set(const Node &node)
 {
-    enforce_lock();
     if (!node.is_empty())
     {
         if (node.m_alloced) 
@@ -490,11 +445,10 @@ Node::set(const Node &node)
         else 
         {
             m_alloced = false;
-            m_data = node.m_data;
+            m_data    = node.m_data;
             m_dtype.reset(node.m_dtype);
         }
-                
-        // TODO: Replace
+
         m_entries = node.m_entries;
         m_list_data = node.m_list_data;
     }
@@ -504,7 +458,6 @@ Node::set(const Node &node)
 void 
 Node::set(const DataType &dtype)
 {
-    enforce_lock();
     // TODO: Is this right?
     // We need to cleanup and set the dtype w/o storage
     m_dtype.reset(dtype);
@@ -900,7 +853,6 @@ void
 Node::set(const DataType &dtype, void *data)
 {
     cleanup();
-    enforce_lock();
     m_alloced = false;
     m_data    = data;
     m_dtype.reset(dtype);
@@ -956,6 +908,42 @@ Node::operator=(uint32 data)
 ///============================================
 Node &
 Node::operator=(uint64 data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+/// int types
+///============================================
+
+///============================================
+Node &
+Node::operator=(int8 data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+Node &
+Node::operator=(int16 data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+Node &
+Node::operator=(int32 data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+Node &
+Node::operator=(int64 data)
 {
     set(data);
     return *this;
@@ -1192,7 +1180,6 @@ Node::total_bytes() const
     }
     else if (dt_id != DataType::EMPTY_T)
     {
-        //TODO: Use "total_bytes"
         res = m_dtype.total_bytes();
     }
     return res;
@@ -1267,6 +1254,49 @@ Node::serialize(std::vector<uint8> &data,bool compact) const
 
 ///============================================
 void
+Node::serialize(const std::string &stream_path,
+                bool compact) const
+{
+	std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    serialize(ofs,compact);
+    ofs.close();
+}
+
+
+///============================================
+void
+Node::serialize(std::ofstream &ofs,
+                bool compact) const
+{
+    if(m_dtype.id() == DataType::OBJECT_T)
+    {
+        std::map<std::string,Node>::const_iterator itr;
+        const std::map<std::string,Node> &ent = entries();
+        for(itr = ent.begin(); itr != ent.end(); ++itr)
+        {
+            itr->second.serialize(ofs);
+        }
+    }
+    else if(m_dtype.id() == DataType::LIST_T)
+    {
+        std::vector<Node>::const_iterator itr;
+        const std::vector<Node> &lst = list();
+        for(itr = lst.begin(); itr != lst.end(); ++itr)
+        {
+            (*itr).serialize(ofs);
+        }
+    }
+    else // assume data value type for now
+    {
+        // TODO: Compact?
+        ofs.write((const char*)element_pointer(0),total_bytes());
+    }
+}
+
+
+///============================================
+void
 Node::serialize(uint8 *data,index_t curr_offset,bool compact) const
 {
     if(m_dtype.id() == DataType::OBJECT_T)
@@ -1319,58 +1349,6 @@ Node::is_empty() const
     return  m_dtype.id() == DataType::EMPTY_T;
 }
 
-/*
-TODO: Reval locking mechanics before putting in public interface
-///============================================
-void             
-Node::lock_schema()
-{
-    set_lock(true);
-}
-
-///============================================
-void             
-Node::unlock_schema()
-{
-    set_lock(false);
-}
-*/
-
-///============================================
-void
-Node::set_lock(bool value)
-{
-    m_locked = value;
-    if(m_dtype.id() == DataType::OBJECT_T)
-    {
-        std::map<std::string, Node> &ents = entries();
-        for (std::map<std::string, Node>::iterator itr = ents.begin();
-             itr != ents.end(); ++itr) 
-        {
-            itr->second.set_lock(value);
-        }
-    }
-    else if(m_dtype.id() == DataType::LIST_T)
-    {
-        std::vector<Node> &lst = list();
-        for (std::vector<Node>::iterator itr = lst.begin();
-             itr != lst.end(); ++itr)
-        {
-            itr->set_lock(value);
-        }
-    }
-}
-
-
-///============================================
-void
-Node::enforce_lock() const
-{
-    if(m_locked)
-    {   
-        /// TODO: Throw Exception
-    }
-}
 
 ///============================================
 void
@@ -1504,20 +1482,20 @@ Node::fetch(index_t idx)
 Node&
 Node::operator[](const std::string &path)
 {
-    if(!m_locked)
+    //if(!m_locked)
         return fetch(path);
-    else
-        return entry(path);
+    //else
+    //    return entry(path);
 }
 
 ///============================================
 Node&
 Node::operator[](index_t idx)
 {
-    if(!m_locked)
+    //if(!m_locked)
         return fetch(idx);
-    else
-        return entry(idx);
+    //else
+    //    return entry(idx);
 }
 
 /// Const variants use const get
@@ -1788,7 +1766,6 @@ Node::init(const DataType& dtype)
 {
     if (!m_dtype.is_compatible(dtype) || m_data == NULL)
     {
-        enforce_lock();
         cleanup();
         index_t dt_id = dtype.id();
         if( dt_id == DataType::OBJECT_T)
@@ -1803,8 +1780,7 @@ Node::init(const DataType& dtype)
         {
             // TODO: This implies compact storage
             // TODO: should we just malloc / dealloc?
-            m_data = new char[dtype.number_of_elements()*dtype.element_bytes()];
-            m_alloced = true;
+            alloc(dtype.number_of_elements()*dtype.element_bytes());
         }
 
         m_dtype.reset(dtype);
@@ -1814,37 +1790,76 @@ Node::init(const DataType& dtype)
 
 ///============================================
 void
+Node::alloc(index_t dsize)
+{
+    m_data = malloc(dsize);
+    m_alloced = true;
+    m_mmaped  = false;
+}
+
+///============================================
+void
+Node::mmap(const std::string &stream_path, index_t dsize)
+{
+    m_mmap_fd   = open(stream_path.c_str(),O_RDWR| O_CREAT);
+    m_mmap_size = dsize;
+
+    if (m_mmap_fd == -1) 
+    {
+	    // error
+	    std::ostringstream msg;
+	    msg << "<Node::mmap> failed to open: " << stream_path;
+	    throw Error(msg);
+    }
+
+    m_data = ::mmap(0, dsize, PROT_READ | PROT_WRITE, MAP_SHARED, m_mmap_fd, 0);
+
+    if (m_data == MAP_FAILED) 
+    {
+	    // error
+        // error
+	    std::ostringstream msg;
+	    msg << "<Node::mmap> MAP_FAILED" << stream_path;
+	    throw Error(msg);
+    }
+    
+    m_alloced = false;
+    m_mmaped  = true;
+}
+
+
+
+///============================================
+void
 Node::cleanup()
 {
     if(m_alloced && m_data)
     {
-        if(m_dtype.id() == DataType::OBJECT_T)
-        {
-            //TODO: Imp    delete alloced map
-        }
-        else if(m_dtype.id() == DataType::LIST_T)
-        {
-            //TODO: Imp    delete alloced vec
-        }
-        else if(m_dtype.id() != DataType::EMPTY_T)
+        if(m_dtype.id() != DataType::EMPTY_T)
         {
             // scalar and array types are alloce
             // TODO: should we just malloc / dealloc?
             // using the char allocator (should we act
-            delete [](char*)m_data;
+            free(m_data);
         }
     }   
-    
-    if(m_obj_data)
+    else if(m_mmaped && m_data)
     {
-        delete [] (char*)m_data;
+        if(munmap(m_data, m_mmap_size) == -1) 
+        {
+            // error
+        }
+        close(m_mmap_fd);
     }
- 
-    m_data    = NULL;
-    m_alloced = false;
+
+    
+    m_data      = NULL;
+    m_alloced   = false;
+    m_mmaped    = false;
+    m_mmap_fd   = 0;
+    m_mmap_size = 0;
     m_dtype.reset(DataType::EMPTY_T);
-    m_obj_data = NULL;
-    m_locked = false;
+
 }
     
 
@@ -1882,10 +1897,39 @@ Node::list() const
 void 
 Node::walk_schema(const Schema &schema)
 {
-    /*
-    TODO schem w/ external source
-         schem w/ no data (alloc)
-    */
+    m_data    = NULL;
+    m_alloced = false;
+    m_dtype.reset(DataType::OBJECT_T);
+    
+    rapidjson::Document document;
+    document.Parse<0>(schema.to_json().c_str());
+    
+    conduit::walk_schema(*this,document);
+}
+
+
+///============================================
+void 
+walk_schema(Node &node, 
+            const rapidjson::Value &jvalue)
+{
+    if (jvalue.HasMember("dtype"))
+    {
+        // if dtype is an object, we have a "list_of" case or tree node
+        const rapidjson::Value &dt_value = jvalue["dtype"];
+        if(dt_value.IsObject() && jvalue.HasMember("source"))
+        {
+            std::string path(jvalue["source"].GetString());
+            // read source
+            
+            //node = Node();
+            //walk_schema(node,data,jvalue,0);
+        }
+        else // we will alloc a data buffer that can hold all of the node data
+        {
+            // walk_schema(node,data,jvalue,0);
+        }
+    }
 }
 
 
@@ -1893,7 +1937,7 @@ Node::walk_schema(const Schema &schema)
 void 
 Node::walk_schema(const Schema &schema, void *data)
 {
-    m_data    = data;
+    m_data = data;
     m_alloced = false;
     m_dtype.reset(DataType::OBJECT_T);
     
@@ -2020,13 +2064,7 @@ Node::split_path(const std::string &path,
         curr = path;
     } 
 }
-            
-///============================================    
-void
-Node::enforce_lock()
-{
-/// TODO: Imp
-}
+
 
 }
 

@@ -40,10 +40,16 @@ public:
 
     /*Schema Access */
     std::string to_json() const { return m_json_schema;}
+    
+    index_t total_bytes() const { return m_total_bytes;}
 
 private:
-    void init_from_json(const std::string &json_schema);
+    
+    void        init_from_json(const std::string &json_schema);
+    index_t     walk_schema(const std::string &json_schema);
+    
     std::string m_json_schema;    
+    index_t     m_total_bytes;
       
 };
 

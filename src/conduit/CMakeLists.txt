@@ -16,6 +16,7 @@ list(APPEND conduit_headers ${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h)
 #
 set(conduit_sources
     Core.cpp
+    Error.cpp
     Endianness.cpp 
     DataType.cpp
     DataArray.cpp

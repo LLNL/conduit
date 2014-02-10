@@ -6,6 +6,7 @@
 #define conduit_node_h__
 
 #include "Core.h"
+#include "Error.h"
 #include "Endianness.h"
 #include "DataType.h"
 #include "DataArray.h"
@@ -14,6 +15,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <fstream>
 #include <sstream>
 
 
@@ -27,11 +29,15 @@ public:
     /* Constructors */
     Node(); // empty node
     Node(const Node &node);
-    explicit Node(const DataType &dtype, bool locked=false);
+    explicit Node(const DataType &dtype);
     Node(const Schema &schema);
     Node(const Schema &schema, void *data);
+    Node(const Schema &schema, const std::string &stream_path, bool mmap=false);    
+    // TODO: In the future, support our own IOStreams (that source bin,silo,hdf5)
+    Node(const Schema &schema, std::ifstream &ifs);
+        
     Node(const DataType &dtype, void *data);
-    
+        
     explicit Node(bool   data);
     explicit Node(int8   data);
     explicit Node(int16  data);
@@ -76,6 +82,11 @@ public:
 
     virtual  ~Node();
 
+    void reset();
+    void load(const Schema &schema, const std::string &stream_path);
+    void mmap(const Schema &schema, const std::string &stream_path);
+
+    
     /// For each dtype:
     ///  constructor: explicit Node({DTYPE}  data);
     ///  assign op:  Node &operator=({DTYPE} data);
@@ -187,18 +198,16 @@ public:
     /*schema access */
     Schema      schema() const;    
     std::string json_schema() const;
-    void        json_schema(std::ostringstream &oss) const;
-    
-    /// TODO: Locking needs more though before being exposed in public api (Jira CON-5)
-    /// void        lock_schema();
-    /// void        unlock_schema();
-    /// bool        is_schema_locked() const {return m_locked;}
-   
+    void        json_schema(std::ostringstream &oss) const;  
     
     /* serialization */
     void        serialize(std::vector<uint8> &data, bool compact=true) const;
     void        serialize(uint8 *data, index_t curr_offset, bool compact=true) const;
 
+    void        serialize(const std::string &stream_path, bool compact=true) const;
+    // In the future, support our own IOStreams (which will provide single interface 
+    // for bin,hdf,silo end-points.
+    void        serialize(std::ofstream &ofs, bool compact=true) const;
 
     /// TODO:
     /// update() will add entries from n to current Node (like python dict update) 
@@ -384,11 +393,12 @@ private:
 
 
     void             init(const DataType &dtype);
+
+    void             alloc(index_t dsize); 
+    void             mmap(const std::string &stream_path,index_t dsize);
+
     void             cleanup(); //dalloc
     
-    void             set_lock(bool value);
-    void             enforce_lock() const;
-
     void             walk_schema(const Schema &schema);
 
     void             walk_schema(const Schema &schema,
@@ -398,21 +408,26 @@ private:
                                 std::string &curr,
                                 std::string &next);
 
-    void             enforce_lock();
-    
+   
     void            *element_pointer(index_t idx)
                      {return static_cast<char*>(m_data) + m_dtype.element_index(idx);};
     const void      *element_pointer(index_t idx) const 
                      {return static_cast<char*>(m_data) + m_dtype.element_index(idx);};
 
     void              init_list();
+    void              init_defaults();
+    
     
     void     *m_data;
     bool      m_alloced;
+    bool      m_mmaped;
+    int       m_mmap_fd;
+    index_t   m_mmap_size;
+
     DataType  m_dtype;
-    // TODO: holds structure for true nodes + lists
+
+    // TODO: holds structure for objs + lists
     void     *m_obj_data;
-    bool      m_locked;
 
     // for true nodes
     std::map<std::string, Node>         &entries();

@@ -7,6 +7,7 @@
 
 
 #include "Core.h"
+#include "Error.h"
 #include "Endianness.h"
 #include "DataType.h"
 #include "DataArray.h"
