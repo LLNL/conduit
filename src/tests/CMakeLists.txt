@@ -17,12 +17,13 @@ set(UNIT_TESTS gtest_smoke
                conduit_to_string
                conduit_io_binary
                #numpy_smoke
+               libb64_smoke
                type_tests)
 
 
 foreach(TEST ${UNIT_TESTS})
     add_executable(${TEST} ${TEST}.cpp )
-    target_link_libraries(${TEST} gtest gtest_main conduit)
+    target_link_libraries(${TEST} gtest gtest_main conduit libb64)
     add_test( ${TEST} ${TEST} )
 endforeach()
 

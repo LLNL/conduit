@@ -42,6 +42,12 @@ message(STATUS "Using RapidJSON Include: ${RAPIDJSON_INCLUDE_DIR}")
 include_directories(${RAPIDJSON_INCLUDE_DIR})
 
 ################################
+# Setup and build libb64
+################################
+add_subdirectory(thirdparty_builtin/libb64-1.2.1/)
+include_directories(thirdparty_builtin/libb64-1.2.1/include/)
+
+################################
 # Setup includes for Numpy
 ################################
 # 
