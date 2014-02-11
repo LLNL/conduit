@@ -6,10 +6,20 @@
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_Config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h")
 #
-# Collect all headers
+# Specify all headers
 #            
-file(GLOB conduit_headers "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
-list(APPEND conduit_headers ${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h)
+set(conduit_headers
+    Bitwidth_Style_Types.h
+    DataArray.h
+    Endianness.h
+    Node.h
+    conduit.h
+    Core.h
+    DataType.h
+    Error.h
+    Schema.h
+    ${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h
+    )
 
 #
 # Specify all sources
@@ -24,6 +34,10 @@ set(conduit_sources
     Schema.cpp
     )
 
+#
+# Note: headers are added here so they show up in project file generators
+# (such as xcode, eclipse, etc)
+#
 add_library(conduit SHARED ${conduit_sources} ${conduit_headers})
 
 ##################################
