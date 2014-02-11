@@ -22,11 +22,11 @@ DataType DataType::Objects::m_list(DataType::LIST_T);
 ///============================================
 
 
-DataType DataType::Scalars::m_boolean(DataType::BOOL_T,
-                                      1,0,
-                                      sizeof(bool),
-                                      sizeof(bool),
-                                      Endianness::DEFAULT_T);
+DataType DataType::Scalars::m_bool8(DataType::BOOL8_T,
+                                    1,0,
+                                    sizeof(conduit::bool8),
+                                    sizeof(conduit::bool8),
+                                    Endianness::DEFAULT_T);
 
 /* int default dtypes */
 DataType DataType::Scalars::m_int8(DataType::INT8_T,
@@ -360,7 +360,7 @@ DataType::name_to_id(const std::string &dtype_name)
     if(dtype_name      == "[empty]") return EMPTY_T;
     else if(dtype_name == "Object")  return OBJECT_T;
     else if(dtype_name == "List")    return LIST_T;
-    else if(dtype_name == "bool")    return BOOL_T;
+    else if(dtype_name == "bool8")   return BOOL8_T;
     else if(dtype_name == "int8")    return INT8_T;
     else if(dtype_name == "int16")   return INT16_T;
     else if(dtype_name == "int32")   return INT32_T;
@@ -382,7 +382,7 @@ DataType::id_to_name(index_t dtype_id)
     if(dtype_id      == EMPTY_T)   return "[empty]";
     else if(dtype_id == OBJECT_T)  return "Object";
     else if(dtype_id == LIST_T)    return "List";
-    else if(dtype_id == BOOL_T)    return "bool";
+    else if(dtype_id == BOOL8_T)   return "bool8";
     /* ints */
     else if(dtype_id == INT8_T)    return "int8";
     else if(dtype_id == INT16_T)   return "int16";
@@ -410,7 +410,7 @@ DataType::default_dtype(index_t dtype_id)
    {
         case OBJECT_T: return DataType::Objects::object();
         case LIST_T :  return DataType::Objects::list();
-        case BOOL_T :  return DataType::Scalars::boolean();
+        case BOOL8_T : return DataType::Scalars::bool8();
         /* int types */
         case INT8_T :  return DataType::Scalars::int8();
         case INT16_T : return DataType::Scalars::int16();
@@ -458,7 +458,7 @@ DataType::json_schema() const
 
 ///============================================ 
 void
-DataType::json_schema(std::ostringstream &oss) const
+DataType::json_schema(std::ostringstream &oss, const std::string &value) const
 {
     oss << "{\"dtype\":";
     if(m_id == EMPTY_T)
@@ -476,10 +476,13 @@ DataType::json_schema(std::ostringstream &oss) const
     else
     {
         oss << "\"" << id_to_name(m_id) << "\"";
-        oss << ", \"length\" : " << m_num_ele;
-        oss << ", \"offset\" : " << m_offset;
-        oss << ", \"stride\" : " << m_stride;
-        oss << ", \"element_bytes\" : " << m_ele_bytes;
+        oss << ", \"length\": " << m_num_ele;
+        if(value == "")
+        {
+            oss << ", \"offset\": " << m_offset;
+            oss << ", \"stride\": " << m_stride;
+            oss << ", \"element_bytes\": " << m_ele_bytes;
+        }
 
         std::string endian_str;
 
@@ -492,7 +495,11 @@ DataType::json_schema(std::ostringstream &oss) const
         {
             endian_str = Endianness::id_to_name(m_endianness);
         }
-        oss << ", \"endianness\" : \"" << endian_str << "\"";            
+        oss << ", \"endianness\": \"" << endian_str << "\"";            
+    }
+    if(value != "")
+    {
+        oss << ", \"value\": " << value;
     }
 
     oss << "}";

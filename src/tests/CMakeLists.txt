@@ -15,6 +15,7 @@ set(UNIT_TESTS gtest_smoke
                conduit_list_of
                conduit_node_paths
                conduit_to_string
+               conduit_json
                conduit_io_binary
                #numpy_smoke
                libb64_smoke

@@ -11,7 +11,7 @@
 #include "Endianness.h"
 #include "DataType.h"
 #include "DataArray.h"
-#include "Node.h"
 #include "Schema.h"
+#include "Node.h"
 
 #endif

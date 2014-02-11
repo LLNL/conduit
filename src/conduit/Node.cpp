@@ -1611,7 +1611,7 @@ Node::to_int() const
 {
     switch(m_dtype.id())
     {
-        case DataType::BOOL_T:  return (int64)as_bool();
+        case DataType::BOOL8_T: return (int64)as_bool8();
         /* ints */
         case DataType::INT8_T:  return (int64)as_int8();
         case DataType::INT16_T: return (int64)as_int16();
@@ -1636,7 +1636,7 @@ Node::to_uint() const
 {
     switch(m_dtype.id())
     {
-        case DataType::BOOL_T:  return (uint64)as_bool();
+        case DataType::BOOL8_T: return (uint64)as_bool8();
         /* ints */
         case DataType::INT8_T:  return (uint64)as_int8();
         case DataType::INT16_T: return (uint64)as_int16();
@@ -1660,7 +1660,7 @@ Node::to_float() const
 {
     switch(m_dtype.id())
     {
-        case DataType::BOOL_T:  return (float64)as_bool();
+        case DataType::BOOL8_T: return (float64)as_bool8();
         /* ints */
         case DataType::INT8_T:  return (float64)as_int8();
         case DataType::INT16_T: return (float64)as_int16();
@@ -1688,32 +1688,37 @@ Node::to_string() const
 }
 
 ///============================================
-void
-Node::to_string(std::ostringstream &oss, bool json_fmt) const
+std::string 
+Node::to_json() const
 {
+   std::ostringstream oss;
+   to_json(oss);
+   return oss.str();
+}
+
+
+///============================================
+void
+Node::to_string(std::ostringstream &oss,bool json_fmt) const
+{
+    index_t nele = m_dtype.number_of_elements();
     switch(m_dtype.id())
     {
-        case DataType::BOOL_T:
-        {
-            if(as_bool())
-                oss << "true"; 
-            else
-                oss << "false"; 
-            break;
-        }
+        /* bool*/
+        case DataType::BOOL8_T:  as_bool8_array().to_string(oss); break;
         /* ints */
-        case DataType::INT8_T:  oss << (uint64) as_int8(); break;
-        case DataType::INT16_T: oss << as_int16(); break;
-        case DataType::INT32_T: oss << as_int32(); break;
-        case DataType::INT64_T: oss << as_int64(); break;
+        case DataType::INT8_T:  as_int8_array().to_string(oss); break;
+        case DataType::INT16_T: as_int16_array().to_string(oss); break;
+        case DataType::INT32_T: as_int32_array().to_string(oss); break;
+        case DataType::INT64_T: as_int64_array().to_string(oss); break;
         /* uints */
-        case DataType::UINT8_T:  oss << (uint64) as_uint8(); break;
-        case DataType::UINT16_T: oss << as_uint16(); break;
-        case DataType::UINT32_T: oss << as_uint32(); break;
-        case DataType::UINT64_T: oss << as_uint64(); break;
+        case DataType::UINT8_T:  as_uint8_array().to_string(oss); break;
+        case DataType::UINT16_T: as_uint16_array().to_string(oss); break;
+        case DataType::UINT32_T: as_uint32_array().to_string(oss); break;
+        case DataType::UINT64_T: as_uint64_array().to_string(oss); break;
         /* floats */
-        case DataType::FLOAT32_T: oss << as_float32(); break;
-        case DataType::FLOAT64_T: oss << as_float64(); break;
+        case DataType::FLOAT32_T: as_float32_array().to_string(oss); break;
+        case DataType::FLOAT64_T: as_float64_array().to_string(oss); break;
         case DataType::BYTESTR_T: 
         {
             if(json_fmt)
@@ -1735,7 +1740,7 @@ Node::to_string(std::ostringstream &oss, bool json_fmt) const
         {
             if(!first)
                 oss << ",";
-            oss << " \"" << itr->first << "\" : ";
+            oss << " \"" << itr->first << "\": ";
             itr->second.to_string(oss,true);
             first = false;
         }
@@ -1755,6 +1760,52 @@ Node::to_string(std::ostringstream &oss, bool json_fmt) const
             first = false;
         }
         oss << "]\n";
+    }
+    
+}
+
+///============================================
+void
+Node::to_json(std::ostringstream &oss) const
+{
+    if(m_dtype.id() == DataType::OBJECT_T)
+    {
+        oss << "{";
+        std::map<std::string,Node>::const_iterator itr;
+        const std::map<std::string, Node> &ents = entries();
+        bool first=true;
+        for(itr = ents.begin(); itr != ents.end(); ++itr)
+        {
+            if(!first)
+                oss << ",";
+            oss << "\""<< itr->first << "\" : ";
+            itr->second.to_json(oss);
+            oss << "\n";
+            first=false;
+        }
+        oss << "}\n";
+    }
+    else if(m_dtype.id() == DataType::LIST_T)
+    {
+        oss << "[";
+        std::vector<Node>::const_iterator itr;
+        const std::vector<Node> &lst = list();
+        bool first=true;
+        for(itr = lst.begin(); itr != lst.end(); ++itr)
+        {
+            if(!first)
+                oss << ",";
+            (*itr).to_json(oss);
+            oss << "\n";
+            first=false;
+        }
+        oss << "]\n";
+    }
+    else // assume leaf data type
+    {
+        std::ostringstream value_oss; 
+        to_string(value_oss);
+        m_dtype.json_schema(oss,value_oss.str());
     }
     
 }

@@ -29,7 +29,7 @@ public:
         EMPTY_T = 0, // default
         OBJECT_T,    // object
         LIST_T,      // list
-        BOOL_T,      // boolean
+        BOOL8_T,     // boolean
         INT8_T,      // int8 and  int8_array
         INT16_T,     // int16 and int16_array
         INT32_T,     // int32 and int32_array
@@ -58,7 +58,7 @@ public:
     class Scalars
     {    
     public:
-        static const DataType &boolean() {return m_boolean;}
+        static const DataType &bool8() {return m_bool8;}
         /* int scalars */
         static const DataType &int8()  {return m_int8;}
         static const DataType &int16() {return m_int16;}
@@ -74,7 +74,7 @@ public:
         static const DataType &float64() {return m_float64;}
 
     private:
-        static DataType m_boolean;
+        static DataType m_bool8;
         /* int scalars */
         static DataType m_int8;
         static DataType m_int16;
@@ -194,7 +194,8 @@ public:
 
     Schema              schema() const;       
     std::string         json_schema() const;
-    void                json_schema(std::ostringstream &oss) const;
+    void                json_schema(std::ostringstream &oss,
+                                    const std::string &value="")const;
     
     index_t     id()    const { return m_id;}    
     index_t     total_bytes()   const;

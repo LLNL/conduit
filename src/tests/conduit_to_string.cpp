@@ -26,7 +26,7 @@ TEST(conduit_node_simple_path, conduit_node)
     
     std::cout << n.to_string() << std::endl;
     
-    EXPECT_EQ(std::string("{ \"a\" : 10, \"b\" : 20, \"c\" : 30}\n"),n.to_string());
+    EXPECT_EQ(std::string("{ \"a\": 10, \"b\": 20, \"c\": 30}\n"),n.to_string());
     
 
 
@@ -35,6 +35,6 @@ TEST(conduit_node_simple_path, conduit_node)
     std::cout << n2.json_schema() <<std::endl; 
     std::cout << n2.to_string() << std::endl;
     
-    EXPECT_EQ(std::string("{ \"g\" : { \"a\" : 10, \"b\" : 20, \"c\" : 30}\n}\n"),n2.to_string());
+    EXPECT_EQ(std::string("{ \"g\": { \"a\": 10, \"b\": 20, \"c\": 30}\n}\n"),n2.to_string());
 }
 

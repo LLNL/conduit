@@ -5,6 +5,7 @@
 #define SIZEOF_CHAR 1
 #define SIZEOF_BYTE 1
 
+#define SIZEOF_BOOL         @SIZEOF_BOOLEAN@
 #define SIZEOF_SHORT        @SIZEOF_SHORT@
 #define SIZEOF_INT          @SIZEOF_INT@
 #define SIZEOF_LONG         @SIZEOF_LONG@

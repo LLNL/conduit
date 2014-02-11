@@ -2,8 +2,8 @@
 /// file: Error.h
 ///
 
-#ifndef CONDUIT_ERROR_H__
-#define CONDUIT_ERROR_H__
+#ifndef __CONDUIT_ERROR_H
+#define __CONDUIT_ERROR_H
 
 #include "Core.h"
 #include <string>

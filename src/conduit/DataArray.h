@@ -16,15 +16,24 @@ class DataArray
 {
 public: 
                     DataArray(void *data, const DataType &dtype);
+                    DataArray(const void *data, const DataType &dtype);
                     DataArray(const DataArray<T> &array);
     virtual        ~DataArray();
     DataArray<T>   &operator=(const DataArray<T> &array);
 
-    T              &operator[](index_t idx);
-    T              &operator[](index_t idx) const;
+    T              &operator[](index_t idx) {return element(idx);}
+    T              &operator[](index_t idx) const {return element(idx);}
+    
+    T              &element(index_t idx);
+    T              &element(index_t idx) const;
 
     const DataType &dtype()    const { return m_dtype;} 
     void           *data_ptr() const { return m_data;}
+
+    index_t         number_of_elements() const {return m_dtype.number_of_elements();}
+
+    std::string     to_string() const;
+    void            to_string(std:: ostringstream &oss) const;
 
 private:
     void           *element_pointer(index_t idx)
@@ -49,6 +58,14 @@ DataArray<T>::DataArray(void *data,const DataType &dtype)
 : m_data(data),
   m_dtype(dtype)
 {}
+
+///============================================
+template <class T> 
+DataArray<T>::DataArray(const void *data,const DataType &dtype)
+: m_data(const_cast<void*>(data)),
+  m_dtype(dtype)
+{}
+
 
 ///============================================ 
 template <class T> 
@@ -78,7 +95,7 @@ DataArray<T>::operator=(const DataArray<T> &array)
 ///============================================
 template <class T> 
 T &
-DataArray<T>::operator[](index_t idx)
+DataArray<T>::element(index_t idx)
 { 
     //    std::cout << "[" << idx << "] = idx "
     //              << m_dtype.element_index(idx) << std::endl;
@@ -89,13 +106,72 @@ DataArray<T>::operator[](index_t idx)
 ///============================================
 template <class T> 
 T &             
-DataArray<T>::operator[](index_t idx) const 
+DataArray<T>::element(index_t idx) const 
 { 
     // TODO: endian logic
     return (*(T*)(element_pointer(idx)));
 }
 
+///============================================
+template <class T> 
+std::string             
+DataArray<T>::to_string() const 
+{ 
+    std::ostringstream oss;
+    to_string(oss);
+    return oss.str(); 
+}
 
+///============================================
+template <class T> 
+void            
+DataArray<T>::to_string(std::ostringstream &oss) const 
+{ 
+    index_t nele = number_of_elements();
+    if(nele > 1)
+        oss << "[";
+
+    bool first=true;
+    for(index_t idx = 0; idx < nele; idx++)
+    {
+        if(!first)
+            oss << ", ";
+        switch(m_dtype.id())
+        {
+            /// TODO: This could be orged better
+            /* bool */
+            case DataType::BOOL8_T:
+            {
+                if(element(idx))
+                    oss << "true";
+                else
+                    oss << "false";
+                break;
+            } 
+            /* ints */
+            case DataType::INT8_T:  oss << (int64) element(idx); break;
+            case DataType::INT16_T: oss << (int64) element(idx); break;
+            case DataType::INT32_T: oss << (int64) element(idx); break;
+            case DataType::INT64_T: oss << (int64) element(idx); break;
+            /* uints */
+            case DataType::UINT8_T:  oss << (uint64) element(idx); break;
+            case DataType::UINT16_T: oss << (uint64) element(idx); break;
+            case DataType::UINT32_T: oss << (uint64) element(idx); break;
+            case DataType::UINT64_T: oss << (uint64) element(idx); break;
+            /* floats */
+            case DataType::FLOAT32_T: oss << (float64) element(idx); break;
+            case DataType::FLOAT64_T: oss << (float64) element(idx); break;
+            
+        }
+        first=false;
+    }
+    
+    if(nele > 1)
+        oss << "]";
+}
+
+
+typedef DataArray<bool8>    bool8_array;
 typedef DataArray<int8>     int8_array;
 typedef DataArray<int16>    int16_array;
 typedef DataArray<int32>    int32_array;

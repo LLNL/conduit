@@ -14,6 +14,8 @@ namespace conduit
 {
 
 
+typedef conduit_bool8   bool8;
+
 typedef conduit_uint8   uint8;
 typedef conduit_uint16  uint16;
 typedef conduit_uint32  uint32;

@@ -2,8 +2,8 @@
 /// file: Schema.h
 ///
 
-#ifndef CONDUIT_SCHEMA_H__
-#define CONDUIT_SCHEMA_H__
+#ifndef __CONDUIT_SCHEMA_H
+#define __CONDUIT_SCHEMA_H
 
 #include "Core.h"
 #include "Endianness.h"
