@@ -41,7 +41,7 @@ public:
         FLOAT32_T,   // float32 and float32_array
         FLOAT64_T,   // float64 and float64_array
         BYTESTR_T,   // bytestr (incore c-string)
-    } TypeEnum;
+    } TypeID;
     
     class Objects
     {
@@ -176,14 +176,14 @@ public:
 
     virtual ~DataType();
 
-    void       reset(const DataType& type);
-    void       reset(index_t dtype_id);
-    void       reset(index_t dtype_id,
-                     index_t num_elements,
-                     index_t offset,
-                     index_t stride,
-                     index_t element_bytes,
-                     index_t endianness);
+    void       set(const DataType& type);
+    void       set(index_t dtype_id);
+    void       set(index_t dtype_id,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness);
 
     static index_t          name_to_id(const std::string &name);
     static std::string      id_to_name(index_t dtype);
@@ -192,10 +192,9 @@ public:
     static DataType const  &default_dtype(index_t dtype_id);
     static DataType const  &default_dtype(const std::string &name);
 
-    Schema              schema() const;       
-    std::string         json_schema() const;
-    void                json_schema(std::ostringstream &oss,
-                                    const std::string &value="")const;
+    std::string         to_json() const;  
+    void                to_json(std::ostringstream &oss,
+                                const std::string &value="")const;
     
     index_t     id()    const { return m_id;}    
     index_t     total_bytes()   const;

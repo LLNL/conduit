@@ -9,28 +9,39 @@
 #include <string>
 #include <sstream>
 
+#define THROW_ERROR( msg )                                          \
+{                                                                   \
+    std::ostringstream oss;                                         \
+    oss << msg;                                                     \
+    throw conduit::Error( oss.str(), __FILE__, __LINE__);           \
+}                                                                   \
+
 namespace conduit
 {
 
-class Error
+class Error 
 {
 public:    
     /* Constructors */
-    Error(); // empty error msg
-    Error(const std::string &msg);
-    Error(const std::ostringstream &msg);
+    Error();
+    Error(const std::string &msg, 
+          const std::string &file,
+          index_t line);
     Error(const Error &err);
 
     /* Destructor */
     virtual  ~Error();
 
-    void        print() const;
+    void        print()   const;
     std::string message() const { return m_msg;}
 
 private:
     std::string m_msg;
-      
+    std::string m_file;
+    index_t     m_line;
+    
 };
+
 
 }
 

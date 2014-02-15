@@ -22,19 +22,19 @@ TEST(conduit_node_simple_path, conduit_node)
 
     Schema schema("{\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}");
     Node n(schema,data);
-    std::cout << n.json_schema() <<std::endl; 
+    std::cout << n.schema().to_json() <<std::endl; 
     
-    std::cout << n.to_string() << std::endl;
+    std::cout << n.to_json(true) << std::endl;
     
-    EXPECT_EQ(std::string("{ \"a\": 10, \"b\": 20, \"c\": 30}\n"),n.to_string());
+    EXPECT_EQ(std::string("{ \"a\": 10, \"b\": 20, \"c\": 30}\n"),n.to_json(true));
     
 
 
     Schema schema2("{\"g\": {\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}}");
     Node n2(schema2,data);
-    std::cout << n2.json_schema() <<std::endl; 
-    std::cout << n2.to_string() << std::endl;
+    std::cout << n2.schema().to_json() <<std::endl; 
+    std::cout << n2.to_json(true) << std::endl;
     
-    EXPECT_EQ(std::string("{ \"g\": { \"a\": 10, \"b\": 20, \"c\": 30}\n}\n"),n2.to_string());
+    EXPECT_EQ(std::string("{ \"g\": { \"a\": 10, \"b\": 20, \"c\": 30}\n}\n"),n2.to_json(true));
 }
 

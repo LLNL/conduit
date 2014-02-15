@@ -281,7 +281,7 @@ DataType::~DataType()
 
 ///============================================ 
 void
-DataType::reset(const DataType& dtype)
+DataType::set(const DataType& dtype)
 {
     m_id = dtype.m_id;
     m_num_ele = dtype.m_num_ele;
@@ -293,7 +293,7 @@ DataType::reset(const DataType& dtype)
 
 ///============================================ 
 void
-DataType::reset(index_t dtype_id)
+DataType::set(index_t dtype_id)
 {
     m_id = dtype_id;
     m_num_ele = 0;
@@ -305,12 +305,12 @@ DataType::reset(index_t dtype_id)
 
 ///============================================ 
 void
-DataType::reset(index_t dtype_id,
-                index_t num_elements,
-                index_t offset,
-                index_t stride,
-                index_t element_bytes,
-                index_t endianness)
+DataType::set(index_t dtype_id,
+              index_t num_elements,
+              index_t offset,
+              index_t stride,
+              index_t element_bytes,
+              index_t endianness)
 {
     m_id = dtype_id;
     m_num_ele = num_elements;
@@ -441,24 +441,17 @@ DataType::default_dtype(const std::string &name)
 }
 
 ///============================================ 
-Schema              
-DataType::schema() const
-{
-    return Schema(json_schema());
-}
-    
-///============================================ 
 std::string 
-DataType::json_schema() const
+DataType::to_json() const
 {
     std::ostringstream oss;
-    json_schema(oss);
+    to_json(oss);
     return oss.str();
 }
 
 ///============================================ 
 void
-DataType::json_schema(std::ostringstream &oss, const std::string &value) const
+DataType::to_json(std::ostringstream &oss, const std::string &value) const
 {
     oss << "{\"dtype\":";
     if(m_id == EMPTY_T)

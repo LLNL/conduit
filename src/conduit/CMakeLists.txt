@@ -18,6 +18,7 @@ set(conduit_headers
     DataType.h
     Error.h
     Schema.h
+    Utils.h
     ${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h
     )
 
@@ -32,6 +33,7 @@ set(conduit_sources
     DataArray.cpp
     Node.cpp
     Schema.cpp
+    Utils.cpp
     )
 
 #

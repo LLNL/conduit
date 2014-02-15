@@ -32,8 +32,8 @@ public:
 
     index_t         number_of_elements() const {return m_dtype.number_of_elements();}
 
-    std::string     to_string() const;
-    void            to_string(std:: ostringstream &oss) const;
+    std::string     to_json() const;
+    void            to_json(std:: ostringstream &oss) const;
 
 private:
     void           *element_pointer(index_t idx)
@@ -115,17 +115,17 @@ DataArray<T>::element(index_t idx) const
 ///============================================
 template <class T> 
 std::string             
-DataArray<T>::to_string() const 
+DataArray<T>::to_json() const 
 { 
     std::ostringstream oss;
-    to_string(oss);
+    to_json(oss);
     return oss.str(); 
 }
 
 ///============================================
 template <class T> 
 void            
-DataArray<T>::to_string(std::ostringstream &oss) const 
+DataArray<T>::to_json(std::ostringstream &oss) const 
 { 
     index_t nele = number_of_elements();
     if(nele > 1)

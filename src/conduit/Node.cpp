@@ -3,6 +3,7 @@
 ///
 
 #include "Node.h"
+#include "Utils.h"
 #include "rapidjson/document.h"
 #include <iostream>
 #include <cstdio>
@@ -29,10 +30,6 @@ void walk_schema(Node &node,
 void walk_schema(Node &node, 
                  const rapidjson::Value &jvalue);
 
-///============================================
-/// Node::m_empty
-///============================================
-Node Node::m_empty(DataType::Objects::empty());
 
 ///============================================
 /// Node
@@ -42,11 +39,13 @@ Node::init_defaults()
 {
     m_data = NULL;
     m_alloced = false;
-    m_dtype = DataType(DataType::EMPTY_T);
 
     m_mmaped    = false;
     m_mmap_fd   = -1;
     m_mmap_size = 0;
+
+	m_schema = new Schema(DataType::EMPTY_T);
+	m_owns_schema = true;
 }
 
 ///============================================
@@ -63,7 +62,7 @@ Node::Node(const Node &node)
 }
 
 ///============================================
-Node::Node(const Schema &schema)
+Node::Node(Schema &schema)
 
 {
     init_defaults();
@@ -71,7 +70,7 @@ Node::Node(const Schema &schema)
 }
 
 ///============================================
-Node::Node(const Schema &schema, const std::string &stream_path, bool mmap)
+Node::Node(Schema &schema, const std::string &stream_path, bool mmap)
 {    
     init_defaults();
     if(mmap)
@@ -82,7 +81,7 @@ Node::Node(const Schema &schema, const std::string &stream_path, bool mmap)
 
 
 ///============================================
-Node::Node(const Schema &schema, std::ifstream &ifs)
+Node::Node(Schema &schema, std::ifstream &ifs)
 {
     init_defaults();
     walk_schema(schema.to_json(),ifs);
@@ -90,10 +89,12 @@ Node::Node(const Schema &schema, std::ifstream &ifs)
 
 
 ///============================================
-Node::Node(const Schema &schema, void *data)
+Node::Node(Schema &schema, void *data)
 {
     init_defaults();
-    walk_schema(schema.to_json(),data);
+	std::string json_schema =schema.to_json(); 
+	std::cout << "json_schema_rc:" << json_schema << std::endl;
+	walk_schema(json_schema,data);
 }
 
 
@@ -364,23 +365,24 @@ Node::Node(float64 data)
 ///============================================
 Node::~Node()
 {
-  cleanup();
+	cleanup();
 }
 
 ///============================================
 void
 Node::reset()
 {
-  cleanup();
+	release();
+	m_schema->set(DataType::EMPTY_T);
 }
 
 ///============================================
 void 
-Node::load(const Schema &schema, const std::string &stream_path)
+Node::load(Schema &schema, const std::string &stream_path)
 {
     index_t dsize = schema.total_bytes();
 
-    alloc(dsize);
+    allocate(dsize);
     std::ifstream ifs;
     ifs.open(stream_path.c_str());
     ifs.read((char *)m_data,dsize);
@@ -405,7 +407,7 @@ Node::load(const Schema &schema, const std::string &stream_path)
 
 ///============================================
 void 
-Node::mmap(const Schema &schema, const std::string &stream_path)
+Node::mmap(Schema &schema, const std::string &stream_path)
 {
     cleanup();
     index_t dsize = schema.total_bytes();
@@ -434,19 +436,19 @@ Node::mmap(const Schema &schema, const std::string &stream_path)
 void 
 Node::set(const Node &node)
 {
-    if (!node.is_empty())
+    if (!node.dtype().id() == DataType::EMPTY_T)
     {
         if (node.m_alloced) 
         {
             // TODO: compaction?
-            init(node.m_dtype);
-            memcpy(m_data, node.m_data, m_dtype.total_bytes());
+            init(node.dtype());
+            memcpy(m_data, node.m_data, schema().total_bytes());
         }
         else 
         {
             m_alloced = false;
             m_data    = node.m_data;
-            m_dtype.reset(node.m_dtype);
+            m_schema->set(node.schema());
         }
 
         m_entries = node.m_entries;
@@ -454,14 +456,23 @@ Node::set(const Node &node)
     }
 }
 
+
 ///============================================
 void 
 Node::set(const DataType &dtype)
 {
-    // TODO: Is this right?
-    // We need to cleanup and set the dtype w/o storage
-    m_dtype.reset(dtype);
+    init(dtype);
 }
+	
+	
+///============================================
+void 
+Node::set(bool8 data)
+{
+	init(DataType::Scalars::bool8());
+	*(bool8*)((char*)m_data + schema().element_index(0)) = data;
+}
+	
 
 ///============================================
 /// int types
@@ -474,7 +485,7 @@ Node::set(int8 data)
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
     init(DataType::Scalars::int8());
-    *(int8*)((char*)m_data + m_dtype.element_index(0)) = data;
+    *(int8*)((char*)m_data + schema().element_index(0)) = data;
 }
 
 
@@ -485,7 +496,7 @@ Node::set(int16 data)
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
     init(DataType::Scalars::int16());
-    *(int16*)((char*)m_data + m_dtype.element_index(0)) = data;
+    *(int16*)((char*)m_data + schema().element_index(0)) = data;
 }
 
 
@@ -496,7 +507,7 @@ Node::set(int32 data)
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
     init(DataType::Scalars::int32());
-    *(int32*)((char*)m_data + m_dtype.element_index(0)) = data;
+    *(int32*)((char*)m_data + schema().element_index(0)) = data;
 }
 
 
@@ -507,7 +518,7 @@ Node::set(int64 data)
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
     init(DataType::Scalars::int64());
-    *(int64*)((char*)m_data + m_dtype.element_index(0)) = data;
+    *(int64*)((char*)m_data + schema().element_index(0)) = data;
 }
 
 
@@ -522,7 +533,7 @@ Node::set(uint8 data)
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
     init(DataType::Scalars::uint8());
-    *(uint8*)((char*)m_data + m_dtype.element_index(0)) = data;
+    *(uint8*)((char*)m_data + schema().element_index(0)) = data;
 }
 
 
@@ -533,7 +544,7 @@ Node::set(uint16 data)
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
     init(DataType::Scalars::uint16());
-    *(uint16*)((char*)m_data + m_dtype.element_index(0)) = data;
+    *(uint16*)((char*)m_data + schema().element_index(0)) = data;
 }
 
 
@@ -544,7 +555,7 @@ Node::set(uint32 data)
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
     init(DataType::Scalars::uint32());
-    *(uint32*)((char*)m_data + m_dtype.element_index(0)) = data;
+    *(uint32*)((char*)m_data + schema().element_index(0)) = data;
 }
 
 
@@ -555,7 +566,7 @@ Node::set(uint64 data)
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
     init(DataType::Scalars::uint64());
-    *(uint64*)((char*)m_data + m_dtype.element_index(0)) = data;
+    *(uint64*)((char*)m_data + schema().element_index(0)) = data;
 }
 
 ///============================================
@@ -569,7 +580,7 @@ Node::set(float32 data)
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
     init(DataType::Scalars::float32());
-    *(float32*)((char*)m_data + m_dtype.element_index(0)) = data;
+    *(float32*)((char*)m_data + schema().element_index(0)) = data;
 }
 
 
@@ -580,7 +591,7 @@ Node::set(float64 data)
     // TODO check for compatible, don't always re-init
     // NOTE: comp check happens in init
     init(DataType::Scalars::float64());
-    *(float64*)((char*)m_data + m_dtype.element_index(0)) = data;
+    *(float64*)((char*)m_data + schema().element_index(0)) = data;
 }
 
 ///============================================
@@ -745,8 +756,8 @@ void
 Node::set(const int8_array  &data)
 {
     cleanup();
-    m_dtype = data.dtype();
-    m_data  = data.data_ptr();
+    m_schema->set(data.dtype());
+    m_data   = data.data_ptr();
 }
 
 ///============================================
@@ -754,7 +765,7 @@ void
 Node::set(const int16_array  &data)
 {
     cleanup();
-    m_dtype = data.dtype();
+    m_schema->set(data.dtype());
     m_data  = data.data_ptr();
 }
 
@@ -763,7 +774,7 @@ void
 Node::set(const int32_array  &data)
 {
     cleanup();
-    m_dtype = data.dtype();
+    m_schema->set(data.dtype());
     m_data  = data.data_ptr();
 }
 
@@ -772,7 +783,7 @@ void
 Node::set(const int64_array  &data)
 {
     cleanup();
-    m_dtype = data.dtype();
+    m_schema->set(data.dtype());
     m_data  = data.data_ptr();
 }
 
@@ -787,7 +798,7 @@ void
 Node::set(const uint8_array  &data)
 {
     cleanup();
-    m_dtype = data.dtype();
+    m_schema->set(data.dtype());
     m_data  = data.data_ptr();
 }
 
@@ -796,7 +807,7 @@ void
 Node::set(const uint16_array  &data)
 {
     cleanup();
-    m_dtype = data.dtype();
+    m_schema->set(data.dtype());
     m_data  = data.data_ptr();
 }
 
@@ -805,7 +816,7 @@ void
 Node::set(const uint32_array  &data)
 {
     cleanup();
-    m_dtype = data.dtype();
+    m_schema->set(data.dtype());
     m_data  = data.data_ptr();
 }
 
@@ -814,7 +825,7 @@ void
 Node::set(const uint64_array  &data)
 {
     cleanup();
-    m_dtype = data.dtype();
+    m_schema->set(data.dtype());
     m_data  = data.data_ptr();
 }
 ///============================================
@@ -826,7 +837,7 @@ void
 Node::set(const float32_array  &data)
 {
     cleanup();
-    m_dtype = data.dtype();
+    m_schema->set(data.dtype());
     m_data  = data.data_ptr();
 }
 
@@ -835,27 +846,38 @@ void
 Node::set(const float64_array  &data)
 {
     cleanup();
-    m_dtype = data.dtype();
+    m_schema->set(data.dtype());
     m_data  = data.data_ptr();
 }
 
 
 ///============================================
 void
-Node::set(const Schema & schema,void* data)
+Node::set(Schema &schema,void* data)
 {
-    walk_schema(schema,data);    
+    walk_schema(schema.to_json(),data);    
 }
 
-
+///============================================
+void
+Node::set(Schema *schema_ptr)
+{
+	if(m_owns_schema)
+		delete m_schema;
+	m_owns_schema = false;
+	m_schema = schema_ptr;    
+}
+	
+	
 ///============================================
 void
 Node::set(const DataType &dtype, void *data)
 {
-    cleanup();
+    release();
     m_alloced = false;
     m_data    = data;
-    m_dtype.reset(dtype);
+    m_schema->set(dtype);
+    m_schema->set(dtype);
 }
 
 ///============================================
@@ -1155,96 +1177,6 @@ Node::operator=(const float64_array &data)
 
 
 ///============================================
-index_t
-Node::total_bytes() const
-{
-    index_t res = 0;
-    index_t dt_id = m_dtype.id();
-    if(dt_id == DataType::OBJECT_T)
-    {
-        const std::map<std::string, Node> &ents = entries();
-        for (std::map<std::string, Node>::const_iterator itr = ents.begin();
-             itr != ents.end(); ++itr) 
-        {
-            res += itr->second.total_bytes();
-        }
-    }
-    else if(dt_id == DataType::LIST_T)
-    {
-        const std::vector<Node> &lst = list();
-        for (std::vector<Node>::const_iterator itr = lst.begin();
-             itr != lst.end(); ++itr)
-        {
-            res += itr->total_bytes();
-        }
-    }
-    else if (dt_id != DataType::EMPTY_T)
-    {
-        res = m_dtype.total_bytes();
-    }
-    return res;
-}
-
-///============================================
-Schema
-Node::schema() const
-{
-    return Schema(json_schema());
-}
-
-
-///============================================
-std::string
-Node::json_schema() const
-{
-    std::ostringstream oss;
-    json_schema(oss);
-    return oss.str();
-}
-
-
-///============================================
-void
-Node::json_schema(std::ostringstream &oss) const
-{
-    if(m_dtype.id() == DataType::OBJECT_T)
-    {
-        oss << "{";
-        std::map<std::string,Node>::const_iterator itr;
-        const std::map<std::string, Node> &ents = entries();
-        bool first=true;
-        for(itr = ents.begin(); itr != ents.end(); ++itr)
-        {
-            if(!first)
-                oss << ",";
-            oss << "\""<< itr->first << "\" : ";
-            oss << itr->second.json_schema() << "\n";
-            first=false;
-        }
-        oss << "}\n";
-    }
-    else if(m_dtype.id() == DataType::LIST_T)
-    {
-        oss << "[";
-        std::vector<Node>::const_iterator itr;
-        const std::vector<Node> &lst = list();
-        bool first=true;
-        for(itr = lst.begin(); itr != lst.end(); ++itr)
-        {
-            if(!first)
-                oss << ",";
-            oss << (*itr).json_schema() << "\n";
-            first=false;
-        }
-        oss << "]\n";
-    }
-    else // assume data value type for now
-    {
-        m_dtype.json_schema(oss);
-    }
-}
-
-///============================================
 void
 Node::serialize(std::vector<uint8> &data,bool compact) const
 {
@@ -1269,7 +1201,7 @@ void
 Node::serialize(std::ofstream &ofs,
                 bool compact) const
 {
-    if(m_dtype.id() == DataType::OBJECT_T)
+    if(dtype().id() == DataType::OBJECT_T)
     {
         std::map<std::string,Node>::const_iterator itr;
         const std::map<std::string,Node> &ent = entries();
@@ -1278,7 +1210,7 @@ Node::serialize(std::ofstream &ofs,
             itr->second.serialize(ofs);
         }
     }
-    else if(m_dtype.id() == DataType::LIST_T)
+    else if(dtype().id() == DataType::LIST_T)
     {
         std::vector<Node>::const_iterator itr;
         const std::vector<Node> &lst = list();
@@ -1299,7 +1231,7 @@ Node::serialize(std::ofstream &ofs,
 void
 Node::serialize(uint8 *data,index_t curr_offset,bool compact) const
 {
-    if(m_dtype.id() == DataType::OBJECT_T)
+    if(dtype().id() == DataType::OBJECT_T)
     {
         std::map<std::string,Node>::const_iterator itr;
         const std::map<std::string,Node> &ent = entries();
@@ -1309,7 +1241,7 @@ Node::serialize(uint8 *data,index_t curr_offset,bool compact) const
             curr_offset+=itr->second.total_bytes();
         }
     }
-    else if(m_dtype.id() == DataType::LIST_T)
+    else if(dtype().id() == DataType::LIST_T)
     {
         std::vector<Node>::const_iterator itr;
         const std::vector<Node> &lst = list();
@@ -1327,66 +1259,43 @@ Node::serialize(uint8 *data,index_t curr_offset,bool compact) const
 }
 
 ///============================================
-bool             
-Node::compare(const Node &n, Node &cmp_results) const
-{
-/// TODO: cmp_results will describe the diffs between this & n    
-}
+// bool             
+// Node::compare(const Node &n, Node &cmp_results) const
+// {
+// /// TODO: cmp_results will describe the diffs between this & n    
+// }
+// 
+// 
+// ///============================================
+// bool             
+// Node::operator==(const Node &n) const
+// {
+// /// TODO value comparison
+//     return false;
+// }
 
-
-///============================================
-bool             
-Node::operator==(const Node &n) const
-{
-/// TODO value comparison
-    return false;
-}
-
-///============================================
-bool             
-Node::is_empty() const
-{
-    return  m_dtype.id() == DataType::EMPTY_T;
-}
-
-
-///============================================
-void
-Node::init_list()
-{
-    if (m_dtype.id() != DataType::LIST_T)
-    {
-        cleanup();
-        m_dtype.reset(DataType::LIST_T);
-    }
-}
 
 ///============================================
 Node&
 Node::entry(const std::string &path)
 {
-    // fetch w/ path forces OBJECT_T
-    if(m_dtype.id() != DataType::OBJECT_T)
-        return empty();
+    if(dtype().id() != DataType::OBJECT_T)
+        ;// TODO THROW_ERROR
         
     std::string p_curr;
     std::string p_next;
-    split_path(path,p_curr,p_next);
+    utils::split_path(path,p_curr,p_next);
     // find p_curr with an iterator
     std::map<std::string, Node> &ents = entries();
     std::map<std::string, Node>::iterator itr = ents.find(p_curr);
     // return Empty if the entry does not exist (static/locked case)
     if(itr == ents.end())
-        return empty();
+        ;// TODO THROW ERROR
     
     if(p_next.empty())
-    {
         return itr->second;
-    }
     else
-    {
         return itr->second.entry(p_next);
-    }
 }
 
 
@@ -1394,13 +1303,11 @@ Node::entry(const std::string &path)
 Node&
 Node::entry(index_t idx)
 {
-    if(m_dtype.id() != DataType::LIST_T)
+    if(dtype().id() != DataType::LIST_T)
     {
-        return empty();
+         // TODO THROW_ERROR
     }
-    // we could also potentially support index fetch on:
-    //   OBJECT_T (imp-order)
-    //   ARRAY_T -- Object array, dynamic construction of node
+
     return list()[idx];
 }
 
@@ -1409,27 +1316,23 @@ const Node &
 Node::entry(const std::string &path) const
 {
     // fetch w/ path forces OBJECT_T
-    if(m_dtype.id() != DataType::OBJECT_T)
-        return empty();
+    if(dtype().id() != DataType::OBJECT_T)
+        ;// TODO THROW_ERROR
         
     std::string p_curr;
     std::string p_next;
-    split_path(path,p_curr,p_next);
+    utils::split_path(path,p_curr,p_next);
     // find p_curr with an iterator
     const std::map<std::string, Node> &ents = entries();
     std::map<std::string, Node>::const_iterator itr = ents.find(p_curr);
     // return Empty if the entry does not exist (static/locked case)
     if(itr == ents.end())
-        return empty();
+        ; // TODO THROW_ERROR
     
     if(p_next.empty())
-    {
         return itr->second;
-    }
     else
-    {
         return itr->second.entry(p_next);
-    }
 }
 
 
@@ -1437,13 +1340,11 @@ Node::entry(const std::string &path) const
 const Node &
 Node::entry(index_t idx) const
 {
-    if(m_dtype.id() != DataType::LIST_T)
+    if(dtype().id() != DataType::LIST_T)
     {
-        return empty();
+        // TODO THROW_ERROR
     }
-    // we could also potentially support index fetch on:
-    //   OBJECT_T (imp-order)
-    //   ARRAY_T -- Object array, dynamic construction of node
+    
     return list()[idx];
 }
 
@@ -1452,16 +1353,28 @@ Node&
 Node::fetch(const std::string &path)
 {
     // fetch w/ path forces OBJECT_T
-    if(m_dtype.id() != DataType::OBJECT_T)
+    if(dtype().id() != DataType::OBJECT_T)
         init(DataType::Objects::object());
-        
+    
+    // todo: walk map via m_schema?
     std::string p_curr;
     std::string p_next;
-    split_path(path,p_curr,p_next);
+    utils::split_path(path,p_curr,p_next);
+
     if(p_next.empty())
-        return entries()[p_curr];
+    {
+        // if this node doesn't exist, we need to 
+        // link it to a schema
+        if(!m_schema->has_path(p_curr))
+		{
+			Schema *schema_ptr = &m_schema->fetch(p_curr);
+            entries()[p_curr].set(schema_ptr);
+		}
+        return  entries()[p_curr];
+    }
     else
         return entries()[p_curr].fetch(p_next);
+
 }
 
 
@@ -1469,12 +1382,11 @@ Node::fetch(const std::string &path)
 Node&
 Node::fetch(index_t idx)
 {
-    // if(m_dtype.id() != DataType::LIST_T)
+    // if(dtype().id() != DataType::LIST_T)
     // {
     // }
     // we could also potentially support index fetch on:
     //   OBJECT_T (imp-order)
-    //   ARRAY_T -- Object array, dynamic construction of node
     return list()[idx];
 }
 
@@ -1482,20 +1394,14 @@ Node::fetch(index_t idx)
 Node&
 Node::operator[](const std::string &path)
 {
-    //if(!m_locked)
-        return fetch(path);
-    //else
-    //    return entry(path);
+    return fetch(path);
 }
 
 ///============================================
 Node&
 Node::operator[](index_t idx)
 {
-    //if(!m_locked)
-        return fetch(idx);
-    //else
-    //    return entry(idx);
+    return fetch(idx);
 }
 
 /// Const variants use const get
@@ -1519,97 +1425,63 @@ Node::operator[](index_t idx) const
 bool           
 Node::has_path(const std::string &path) const
 {
-    if(m_dtype.id() != DataType::OBJECT_T)
-        return false;
-
-    std::string p_curr;
-    std::string p_next;
-    split_path(path,p_curr,p_next);
-    const std::map<std::string,Node> &ents = entries();
-
-    if(ents.find(p_curr) == ents.end())
-    {
-        return false;
-    }
-
-    if(!p_next.empty())
-    {
-        const Node &n = ents.find(p_curr)->second;
-        return n.has_path(p_next);
-    }
-    else
-    {
-        return true;
-    }
+    return m_schema->has_path(path);
 }
 
 
 ///============================================
 void
-Node::paths(std::vector<std::string> &paths,bool expand) const
+Node::paths(std::vector<std::string> &paths, bool walk) const
 {
-    // TODO: Imp
-    // TODO: expand == True, show nested paths
+    m_schema->paths(paths,walk);
 }
 
 ///============================================
 index_t 
 Node::number_of_entries() const 
 {
-    // list only for now
-    if(m_dtype.id() != DataType::LIST_T)
-        return 0;
-    return list().size();
+    return m_schema->number_of_entries();
 }
 
 ///============================================
-bool    
+void    
 Node::remove(index_t idx)
 {
-    if(m_dtype.id() != DataType::LIST_T)
-        return false;
-    
-    std::vector<Node>  &lst = list();
-    if(idx > lst.size())
-        return false;
-    lst.erase(lst.begin() + idx);
-    return true;
+    // schema will do check for list & a bounds check
+    m_schema->remove(idx);
+    // remove the proper list entry
+    list().erase(list().begin() + idx);
 }
 
 ///============================================
-bool    
+void
 Node::remove(const std::string &path)
 {
-    if(m_dtype.id() != DataType::OBJECT_T)
-        return false;
+    // schema will do a path check
+    m_schema->remove(path);
 
     std::string p_curr;
     std::string p_next;
-    split_path(path,p_curr,p_next);
+    utils::split_path(path,p_curr,p_next);
     std::map<std::string,Node> &ents = entries();
-
-    if(ents.find(p_curr) == ents.end())
-    {
-        return false;
-    }
 
     if(!p_next.empty())
     {
-        Node &n = ents.find(p_curr)->second;
-        return n.remove(p_next);
-        
+	    // TODO FIX
+	    //Node &n = ents.find(p_curr)->second;
+        //ents[p_curr].remove(p_next);
     }
     else
     {
         ents.erase(p_curr);
-        return true;
     }
 }
+
 ///============================================
 int64
 Node::to_int() const
 {
-    switch(m_dtype.id())
+    switch(dtype().id())
     {
         case DataType::BOOL8_T: return (int64)as_bool8();
         /* ints */
@@ -1634,7 +1506,7 @@ Node::to_int() const
 uint64
 Node::to_uint() const
 {
-    switch(m_dtype.id())
+    switch(dtype().id())
     {
         case DataType::BOOL8_T: return (uint64)as_bool8();
         /* ints */
@@ -1658,7 +1530,7 @@ Node::to_uint() const
 float64
 Node::to_float() const
 {
-    switch(m_dtype.id())
+    switch(dtype().id())
     {
         case DataType::BOOL8_T: return (float64)as_bool8();
         /* ints */
@@ -1680,95 +1552,19 @@ Node::to_float() const
 
 ///============================================
 std::string 
-Node::to_string() const
+Node::to_json(bool simple, index_t indent) const
 {
    std::ostringstream oss;
-   to_string(oss);
+   to_json(oss,simple,indent);
    return oss.str();
 }
 
 ///============================================
-std::string 
-Node::to_json() const
-{
-   std::ostringstream oss;
-   to_json(oss);
-   return oss.str();
-}
-
-
-///============================================
 void
-Node::to_string(std::ostringstream &oss,bool json_fmt) const
+Node::to_json(std::ostringstream &oss,
+              bool simple, index_t indent) const
 {
-    index_t nele = m_dtype.number_of_elements();
-    switch(m_dtype.id())
-    {
-        /* bool*/
-        case DataType::BOOL8_T:  as_bool8_array().to_string(oss); break;
-        /* ints */
-        case DataType::INT8_T:  as_int8_array().to_string(oss); break;
-        case DataType::INT16_T: as_int16_array().to_string(oss); break;
-        case DataType::INT32_T: as_int32_array().to_string(oss); break;
-        case DataType::INT64_T: as_int64_array().to_string(oss); break;
-        /* uints */
-        case DataType::UINT8_T:  as_uint8_array().to_string(oss); break;
-        case DataType::UINT16_T: as_uint16_array().to_string(oss); break;
-        case DataType::UINT32_T: as_uint32_array().to_string(oss); break;
-        case DataType::UINT64_T: as_uint64_array().to_string(oss); break;
-        /* floats */
-        case DataType::FLOAT32_T: as_float32_array().to_string(oss); break;
-        case DataType::FLOAT64_T: as_float64_array().to_string(oss); break;
-        case DataType::BYTESTR_T: 
-        {
-            if(json_fmt)
-                oss << "\"";
-            oss << as_bytestr();
-            if(json_fmt)
-                oss << "\"";
-            break;
-        }
-    }
-
-    if(m_dtype.id() == DataType::OBJECT_T)
-    {
-        bool first = true;
-        oss << "{";
-        const std::map<std::string, Node> &ents = entries();
-        for (std::map<std::string, Node>::const_iterator itr = ents.begin();
-             itr != ents.end(); ++itr) 
-        {
-            if(!first)
-                oss << ",";
-            oss << " \"" << itr->first << "\": ";
-            itr->second.to_string(oss,true);
-            first = false;
-        }
-        oss << "}\n";
-    }
-    else if(m_dtype.id() == DataType::LIST_T)
-    {
-        bool first = true;
-        oss << "[" << std::endl;
-        const std::vector<Node> &lst = list();
-        for (std::vector<Node>::const_iterator itr = lst.begin();
-             itr != lst.end(); ++itr)
-        {
-            if(!first)
-                oss << ",";
-            itr->to_string(oss,true);
-            first = false;
-        }
-        oss << "]\n";
-    }
-    
-}
-
-///============================================
-void
-Node::to_json(std::ostringstream &oss) const
-{
-    if(m_dtype.id() == DataType::OBJECT_T)
+    if(dtype().id() == DataType::OBJECT_T)
     {
         oss << "{";
         std::map<std::string,Node>::const_iterator itr;
@@ -1778,14 +1574,14 @@ Node::to_json(std::ostringstream &oss) const
         {
             if(!first)
                 oss << ",";
-            oss << "\""<< itr->first << "\" : ";
+            oss << "\""<< itr->first << "\": ";
             itr->second.to_json(oss);
             oss << "\n";
             first=false;
         }
         oss << "}\n";
     }
-    else if(m_dtype.id() == DataType::LIST_T)
+    else if(dtype().id() == DataType::LIST_T)
     {
         oss << "[";
         std::vector<Node>::const_iterator itr;
@@ -1804,8 +1600,30 @@ Node::to_json(std::ostringstream &oss) const
     else // assume leaf data type
     {
         std::ostringstream value_oss; 
-        to_string(value_oss);
-        m_dtype.json_schema(oss,value_oss.str());
+        switch(dtype().id())
+        {
+            /* bool*/
+            case DataType::BOOL8_T: as_bool8_array().to_json(value_oss); break;
+            /* ints */
+            case DataType::INT8_T:  as_int8_array().to_json(value_oss); break;
+            case DataType::INT16_T: as_int16_array().to_json(value_oss); break;
+            case DataType::INT32_T: as_int32_array().to_json(value_oss); break;
+            case DataType::INT64_T: as_int64_array().to_json(value_oss); break;
+            /* uints */
+            case DataType::UINT8_T:  as_uint8_array().to_json(value_oss); break;
+            case DataType::UINT16_T: as_uint16_array().to_json(value_oss); break;
+            case DataType::UINT32_T: as_uint32_array().to_json(value_oss); break;
+            case DataType::UINT64_T: as_uint64_array().to_json(value_oss); break;
+            /* floats */
+            case DataType::FLOAT32_T: as_float32_array().to_json(value_oss); break;
+            case DataType::FLOAT64_T: as_float64_array().to_json(value_oss); break;
+            case DataType::BYTESTR_T: oss << as_bytestr(); break;
+        }
+
+        if(simple)
+            oss << value_oss.str();
+        else
+            dtype().to_json(oss,value_oss.str());
     }
     
 }
@@ -1815,38 +1633,48 @@ Node::to_json(std::ostringstream &oss) const
 void
 Node::init(const DataType& dtype)
 {
-    if (!m_dtype.is_compatible(dtype) || m_data == NULL)
-    {
-        cleanup();
+	if(this->dtype().is_compatible(dtype))
+		return;
+	
+    if(m_data != NULL)
+	{
+		release();
         index_t dt_id = dtype.id();
-        if( dt_id == DataType::OBJECT_T)
+        if(dt_id == DataType::OBJECT_T)
         {
-            // TODO: alloc map
+            entries().clear();
         }
-        else if(dt_id == DataType::LIST_T)
+        else if(dt_id != DataType::LIST_T)
         {
-            // TODO: alloc list
+            list().clear();
         }
         else if(dt_id != DataType::EMPTY_T)
         {
-            // TODO: This implies compact storage
-            // TODO: should we just malloc / dealloc?
-            alloc(dtype.number_of_elements()*dtype.element_bytes());
+            allocate(dtype);
         }
-
-        m_dtype.reset(dtype);
+        
+        m_schema->set(dtype); 
     }
 }
 
 
 ///============================================
 void
-Node::alloc(index_t dsize)
+Node::allocate(const DataType &dtype)
 {
-    m_data = malloc(dsize);
+    // TODO: This implies compact storage
+    allocate(dtype.number_of_elements()*dtype.element_bytes());
+}
+
+///============================================
+void
+Node::allocate(index_t dsize)
+{
+    m_data    = malloc(dsize);
     m_alloced = true;
     m_mmaped  = false;
 }
+
 
 ///============================================
 void
@@ -1856,42 +1684,30 @@ Node::mmap(const std::string &stream_path, index_t dsize)
     m_mmap_size = dsize;
 
     if (m_mmap_fd == -1) 
-    {
-	    // error
-	    std::ostringstream msg;
-	    msg << "<Node::mmap> failed to open: " << stream_path;
-	    throw Error(msg);
-    }
+        THROW_ERROR("<Node::mmap> failed to open: " << stream_path);
 
     m_data = ::mmap(0, dsize, PROT_READ | PROT_WRITE, MAP_SHARED, m_mmap_fd, 0);
 
     if (m_data == MAP_FAILED) 
-    {
-	    // error
-        // error
-	    std::ostringstream msg;
-	    msg << "<Node::mmap> MAP_FAILED" << stream_path;
-	    throw Error(msg);
-    }
+        THROW_ERROR("<Node::mmap> MAP_FAILED" << stream_path);
     
     m_alloced = false;
     m_mmaped  = true;
 }
 
 
-
 ///============================================
 void
-Node::cleanup()
+Node::release()
 {
-    if(m_alloced && m_data)
+	if(m_alloced && m_data)
     {
-        if(m_dtype.id() != DataType::EMPTY_T)
-        {
-            // scalar and array types are alloce
-            // TODO: should we just malloc / dealloc?
-            // using the char allocator (should we act
+        if(dtype().id() != DataType::EMPTY_T)
+        {   
+            // clean up our storage
             free(m_data);
+            m_data = NULL;
+            m_alloced = false;
         }
     }   
     else if(m_mmaped && m_data)
@@ -1901,18 +1717,58 @@ Node::cleanup()
             // error
         }
         close(m_mmap_fd);
+        m_data      = NULL;
+        m_mmap_fd   = -1;
+        m_mmap_size = 0;
     }
+}
+	
 
-    
-    m_data      = NULL;
-    m_alloced   = false;
-    m_mmaped    = false;
-    m_mmap_fd   = 0;
-    m_mmap_size = 0;
-    m_dtype.reset(DataType::EMPTY_T);
+///============================================
+void
+Node::cleanup()
+{
+	release();
+	if(m_owns_schema)
+    {
+        if(m_schema != NULL)
+        {
+            delete m_schema;
+            m_schema = NULL;
+            m_owns_schema = false;
+        }
+    }
+    else if(m_schema != NULL)
+    {
+        m_schema->set(DataType::EMPTY_T);
+    }
+}
 
+
+///============================================
+void
+Node::init_list()
+{
+    init(DataType::Objects::list());
+}
+ 
+///============================================
+void
+Node::init_object()
+{
+    init(DataType::Objects::object());
 }
     
+///============================================
+void
+Node::list_append(const Node &node)
+{
+    init_list();
+	list().push_back(node);
+	//Node &lnode = list()[list().size()-1]
+	//m_schema->append(node.schema());
+    
+}
 
 ///============================================
 std::map<std::string, Node> &  
@@ -1950,7 +1806,7 @@ Node::walk_schema(const Schema &schema)
 {
     m_data    = NULL;
     m_alloced = false;
-    m_dtype.reset(DataType::OBJECT_T);
+    m_schema->set(DataType::OBJECT_T);
     
     rapidjson::Document document;
     document.Parse<0>(schema.to_json().c_str());
@@ -1984,13 +1840,15 @@ walk_schema(Node &node,
 }
 
 
+
+
 ///============================================
 void 
 Node::walk_schema(const Schema &schema, void *data)
 {
     m_data = data;
     m_alloced = false;
-    m_dtype.reset(DataType::OBJECT_T);
+    m_schema->set(DataType::OBJECT_T);
     
     rapidjson::Document document;
     document.Parse<0>(schema.to_json().c_str());
@@ -2045,10 +1903,18 @@ walk_schema(Node &node,
                 // handle leaf node with explicit props
                 std::string dtype_name(jvalue["dtype"].GetString());
                 int length = jvalue["length"].GetInt();
+                
+                // TODO: Parse optional values:
+                //  offset
+                //  stride
+                //  element_bytes
+                //  endianness
+                
+                //  value
+                
                 const DataType df_dtype = DataType::default_dtype(dtype_name);
                 index_t type_id = df_dtype.id();
                 index_t size    = df_dtype.element_bytes();
-                // TODO: Parse endianness
                 DataType dtype(type_id,
                                length,
                                curr_offset,
@@ -2092,28 +1958,6 @@ walk_schema(Node &node,
          node.set(dtype,data);
     }
 
-}
-
-
-///============================================
-void 
-Node::split_path(const std::string &path,
-                 std::string &curr,
-                 std::string &next)
-{
-    curr.clear();
-    next.clear();
-    std::size_t found = path.find("/");
-    if (found != std::string::npos)
-    {
-        curr = path.substr(0,found);
-        if(found != path.size()-1)
-            next = path.substr(found+1,path.size()-(found-1));
-    }
-    else
-    {
-        curr = path;
-    } 
 }
 
 

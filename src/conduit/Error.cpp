@@ -14,41 +14,43 @@ namespace conduit
 
 ///============================================
 Error::Error()
-: m_msg("<empty>")
+:m_msg(""),
+ m_file(""),
+ m_line(0)
 {}
 
 ///============================================
 Error::Error(const Error &err)
-: m_msg(err.m_msg)
+:m_msg(err.m_msg),
+ m_file(err.m_file),
+ m_line(err.m_line)
+
 {
-    print();
 }
 
 ///============================================
-Error::Error(const std::string &msg)
-: m_msg(msg)
+Error::Error(const std::string &msg,
+             const std::string &file,
+             index_t line)
+:m_msg(msg),
+ m_file(file),
+ m_line(line)
 {
-    print();
-}
-
-///============================================
-Error::Error(const std::ostringstream &oss)
-: m_msg(oss.str())
-{
-    print();
 }
 
 ///============================================
 Error::~Error()
-{
+{}
 
-}
 
 ///============================================
 void
 Error::print() const
 {
-    std::cout << "Error: "  << m_msg << std::endl;
+    std::string msg = m_msg;
+    if(msg == "")
+        msg = "<EMPTY>";
+    std::cout << "[" << m_file << ":" << m_line <<"]Error: " << msg  << std::endl;
 }
 
 }
