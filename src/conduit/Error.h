@@ -19,7 +19,7 @@
 namespace conduit
 {
 
-class Error 
+class Error : public std::exception
 {
 public:    
     /* Constructors */
@@ -30,10 +30,12 @@ public:
     Error(const Error &err);
 
     /* Destructor */
-    virtual  ~Error();
+    virtual  ~Error() throw();
 
     void        print()   const;
-    std::string message() const { return m_msg;}
+    std::string message() const;
+	void        message(std::ostringstream &oss) const;
+	virtual const char* what() const throw() { return message().c_str();}
 
 private:
     std::string m_msg;

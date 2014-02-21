@@ -39,18 +39,36 @@ Error::Error(const std::string &msg,
 }
 
 ///============================================
-Error::~Error()
+Error::~Error() throw()
 {}
 
 
 ///============================================
+std::string
+Error::message() const
+{
+	std::ostringstream oss;
+	message(oss);
+	return oss.str();
+}
+
+///============================================
+void
+	Error::message(std::ostringstream &oss) const
+{
+	std::string msg = m_msg;
+    if(msg == "")
+        msg = "<EMPTY>";
+    oss << "[" << m_file << ":" << m_line <<"]Error: " << msg;	
+}
+	
+	
+	
+///============================================
 void
 Error::print() const
 {
-    std::string msg = m_msg;
-    if(msg == "")
-        msg = "<EMPTY>";
-    std::cout << "[" << m_file << ":" << m_line <<"]Error: " << msg  << std::endl;
+	std::cout << message() << std::endl;
 }
 
 }

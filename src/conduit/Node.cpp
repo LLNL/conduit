@@ -409,7 +409,7 @@ Node::load(Schema &schema, const std::string &stream_path)
 void 
 Node::mmap(Schema &schema, const std::string &stream_path)
 {
-    cleanup();
+    reset();
     index_t dsize = schema.total_bytes();
     Node::mmap(stream_path,dsize);
 
@@ -755,7 +755,7 @@ Node::set(const std::vector<float64>  &data)
 void 
 Node::set(const int8_array  &data)
 {
-    cleanup();
+    release();
     m_schema->set(data.dtype());
     m_data   = data.data_ptr();
 }
@@ -764,7 +764,7 @@ Node::set(const int8_array  &data)
 void 
 Node::set(const int16_array  &data)
 {
-    cleanup();
+    release();
     m_schema->set(data.dtype());
     m_data  = data.data_ptr();
 }
@@ -773,7 +773,7 @@ Node::set(const int16_array  &data)
 void 
 Node::set(const int32_array  &data)
 {
-    cleanup();
+    release();
     m_schema->set(data.dtype());
     m_data  = data.data_ptr();
 }
@@ -782,7 +782,7 @@ Node::set(const int32_array  &data)
 void 
 Node::set(const int64_array  &data)
 {
-    cleanup();
+    release();
     m_schema->set(data.dtype());
     m_data  = data.data_ptr();
 }
@@ -797,7 +797,7 @@ Node::set(const int64_array  &data)
 void 
 Node::set(const uint8_array  &data)
 {
-    cleanup();
+    release();
     m_schema->set(data.dtype());
     m_data  = data.data_ptr();
 }
@@ -806,7 +806,7 @@ Node::set(const uint8_array  &data)
 void 
 Node::set(const uint16_array  &data)
 {
-    cleanup();
+    release();
     m_schema->set(data.dtype());
     m_data  = data.data_ptr();
 }
@@ -815,7 +815,7 @@ Node::set(const uint16_array  &data)
 void 
 Node::set(const uint32_array  &data)
 {
-    cleanup();
+    release();
     m_schema->set(data.dtype());
     m_data  = data.data_ptr();
 }
@@ -824,7 +824,7 @@ Node::set(const uint32_array  &data)
 void 
 Node::set(const uint64_array  &data)
 {
-    cleanup();
+    release();
     m_schema->set(data.dtype());
     m_data  = data.data_ptr();
 }
@@ -836,7 +836,7 @@ Node::set(const uint64_array  &data)
 void 
 Node::set(const float32_array  &data)
 {
-    cleanup();
+    release();
     m_schema->set(data.dtype());
     m_data  = data.data_ptr();
 }
@@ -845,7 +845,7 @@ Node::set(const float32_array  &data)
 void 
 Node::set(const float64_array  &data)
 {
-    cleanup();
+    release();
     m_schema->set(data.dtype());
     m_data  = data.data_ptr();
 }
@@ -1573,10 +1573,9 @@ Node::to_json(std::ostringstream &oss,
         for(itr = ents.begin(); itr != ents.end(); ++itr)
         {
             if(!first)
-                oss << ",";
+                oss << ", ";
             oss << "\""<< itr->first << "\": ";
-            itr->second.to_json(oss);
-            oss << "\n";
+            itr->second.to_json(oss,simple,indent);
             first=false;
         }
         oss << "}\n";
@@ -1590,9 +1589,8 @@ Node::to_json(std::ostringstream &oss,
         for(itr = lst.begin(); itr != lst.end(); ++itr)
         {
             if(!first)
-                oss << ",";
-            (*itr).to_json(oss);
-            oss << "\n";
+                oss << ", ";
+            (*itr).to_json(oss,simple,indent);
             first=false;
         }
         oss << "]\n";
@@ -1639,12 +1637,13 @@ Node::init(const DataType& dtype)
     if(m_data != NULL)
 	{
 		release();
+	}
         index_t dt_id = dtype.id();
         if(dt_id == DataType::OBJECT_T)
         {
             entries().clear();
         }
-        else if(dt_id != DataType::LIST_T)
+        else if(dt_id == DataType::LIST_T)
         {
             list().clear();
         }
@@ -1654,7 +1653,6 @@ Node::init(const DataType& dtype)
         }
         
         m_schema->set(dtype); 
-    }
 }
 
 
@@ -1700,6 +1698,9 @@ Node::mmap(const std::string &stream_path, index_t dsize)
 void
 Node::release()
 {
+	m_list_data.clear();
+	m_entries.clear();
+
 	if(m_alloced && m_data)
     {
         if(dtype().id() != DataType::EMPTY_T)
@@ -1764,9 +1765,13 @@ void
 Node::list_append(const Node &node)
 {
     init_list();
-	list().push_back(node);
-	//Node &lnode = list()[list().size()-1]
+	
+	index_t idx = list().size();
 	//m_schema->append(node.schema());
+	list().push_back(node);
+	//Schema *schema_ptr = &m_schema->fetch(idx);
+	//Node &lnode = list()[idx];
+	//lnode.set(schema_ptr);
     
 }
 
@@ -1942,7 +1947,7 @@ walk_schema(Node &node,
     {
         for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
         {
-			Node curr_node(DataType::Objects::object());
+			Node curr_node(DataType::Objects::list());
             walk_schema(curr_node,data, jvalue[i], curr_offset);
             curr_offset += curr_node.total_bytes();
             // this will coerce to a list

@@ -9,7 +9,7 @@
 #include "gtest/gtest.h"
 using namespace conduit;
 
-TEST(conduit_node_simple_path, conduit_node)
+TEST(conduit_to_string_simple, conduit_to_string)
 {
     uint32   a_val  = 10;
     uint32   b_val  = 20;
@@ -26,7 +26,7 @@ TEST(conduit_node_simple_path, conduit_node)
     
     std::cout << n.to_json(true) << std::endl;
     
-    EXPECT_EQ(std::string("{ \"a\": 10, \"b\": 20, \"c\": 30}\n"),n.to_json(true));
+    EXPECT_EQ(std::string("{\"a\": 10, \"b\": 20, \"c\": 30}\n"),n.to_json(true));
     
 
 
@@ -35,6 +35,6 @@ TEST(conduit_node_simple_path, conduit_node)
     std::cout << n2.schema().to_json() <<std::endl; 
     std::cout << n2.to_json(true) << std::endl;
     
-    EXPECT_EQ(std::string("{ \"g\": { \"a\": 10, \"b\": 20, \"c\": 30}\n}\n"),n2.to_json(true));
+    EXPECT_EQ(std::string("{\"g\": {\"a\": 10, \"b\": 20, \"c\": 30}\n}\n"),n2.to_json(true));
 }
 
