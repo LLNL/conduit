@@ -240,6 +240,10 @@ function main
         export PATH=$CMAKE_PREFIX/bin:$PATH
     fi
     
+    info "[Active CMake:" `which cmake` "]"
+    # we no longer rely on numpy for bitwidth types
+    return
+    
     check_python_install $DEST
     if [[ $? == 0 ]] ; then
         info "[Found: Python $PY_VERSION @ $DEST/$PY_VERSION/bin/python -- Skipping build]"
