@@ -221,18 +221,7 @@ public:
     
     ///
     /// Entry Access
-    ///
-    
-    
-    // the `entry' methods don't modify map structure, if a path doesn't exists
-    // they will return an Empty Locked Node (we could also throw an exception)
-    
-    Node             &entry(const std::string &path);
-    Node             &entry(index_t idx);
-
-    const Node       &entry(const std::string &path) const;
-    const Node       &entry(index_t idx) const;
-    
+    ///    
     // the `fetch' methods do modify map structure if a path doesn't exists
     Node             &fetch(const std::string &path);
     Node             &fetch(index_t idx);
@@ -240,9 +229,6 @@ public:
 
     void append(const Node &node)
         {list_append(Node(node));}
-    void append(Node &node) 
-        {list_append(node);}
-
 
     void append(const DataType &data)
         {list_append(Node(data));}
@@ -338,9 +324,6 @@ public:
     // these support the map and list interfaces
     Node             &operator[](const std::string &path);
     Node             &operator[](const index_t idx);
-    const Node       &operator[](const std::string &path) const;
-    const Node       &operator[](const index_t idx) const;
-
 
     int64            to_int()   const;
     uint64           to_uint()  const;
@@ -428,9 +411,14 @@ private:
     void             release();
 	void             set(Schema *schema_ptr);
 	
+	void             set(Schema *schema_ptr, void *data_ptr);
+	
     void             walk_schema(const Schema &schema);
 
     void             walk_schema(const Schema &schema,
+                                 void *data);
+    void             walk_schema(Node &node,
+                                 Schema *schema,
                                  void *data);
    
     void            *element_pointer(index_t idx)

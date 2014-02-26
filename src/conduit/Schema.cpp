@@ -347,8 +347,7 @@ Schema::has_path(const std::string &path) const
 void
 Schema::paths(std::vector<std::string> &paths, bool walk) const
 {
-    paths.clear();
-    // TODO: Imp
+    paths = m_obj_insert_order;
     // TODO: walk == True, show nested paths
 }
 

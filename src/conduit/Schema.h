@@ -108,6 +108,8 @@ private:
     void        walk_schema(const std::string &json_schema);
     void        walk_schema(Schema &schema,const std::string &json_schema);
 
+    DataType                      m_dtype;
+    
     // for obj and list interfaces
     std::map<std::string, Schema>         &obj_entries();
     std::vector<Schema>                   &list_entries();
@@ -119,9 +121,6 @@ private:
     std::vector<Schema>          m_list_entries;
     std::vector<std::string>     m_obj_insert_order;
     std::map<std::string,Schema> m_obj_entries;
-    
-
-
       
 };
 

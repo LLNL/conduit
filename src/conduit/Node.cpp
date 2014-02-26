@@ -868,6 +868,14 @@ Node::set(Schema *schema_ptr)
 	m_schema = schema_ptr;    
 }
 	
+///============================================
+void
+Node::set(Schema *schema_ptr,void *data)
+{
+    set(schema_ptr);
+	release();
+	m_data    = data;    
+}
 	
 ///============================================
 void
@@ -876,7 +884,6 @@ Node::set(const DataType &dtype, void *data)
     release();
     m_alloced = false;
     m_data    = data;
-    m_schema->set(dtype);
     m_schema->set(dtype);
 }
 
@@ -1277,86 +1284,15 @@ Node::serialize(uint8 *data,index_t curr_offset,bool compact) const
 
 ///============================================
 Node&
-Node::entry(const std::string &path)
-{
-    if(dtype().id() != DataType::OBJECT_T)
-        ;// TODO THROW_ERROR
-        
-    std::string p_curr;
-    std::string p_next;
-    utils::split_path(path,p_curr,p_next);
-    // find p_curr with an iterator
-    std::map<std::string, Node> &ents = entries();
-    std::map<std::string, Node>::iterator itr = ents.find(p_curr);
-    // return Empty if the entry does not exist (static/locked case)
-    if(itr == ents.end())
-        ;// TODO THROW ERROR
-    
-    if(p_next.empty())
-        return itr->second;
-    else
-        return itr->second.entry(p_next);
-}
-
-
-///============================================
-Node&
-Node::entry(index_t idx)
-{
-    if(dtype().id() != DataType::LIST_T)
-    {
-         // TODO THROW_ERROR
-    }
-
-    return list()[idx];
-}
-
-///============================================
-const Node &
-Node::entry(const std::string &path) const
-{
-    // fetch w/ path forces OBJECT_T
-    if(dtype().id() != DataType::OBJECT_T)
-        ;// TODO THROW_ERROR
-        
-    std::string p_curr;
-    std::string p_next;
-    utils::split_path(path,p_curr,p_next);
-    // find p_curr with an iterator
-    const std::map<std::string, Node> &ents = entries();
-    std::map<std::string, Node>::const_iterator itr = ents.find(p_curr);
-    // return Empty if the entry does not exist (static/locked case)
-    if(itr == ents.end())
-        ; // TODO THROW_ERROR
-    
-    if(p_next.empty())
-        return itr->second;
-    else
-        return itr->second.entry(p_next);
-}
-
-
-///============================================
-const Node &
-Node::entry(index_t idx) const
-{
-    if(dtype().id() != DataType::LIST_T)
-    {
-        // TODO THROW_ERROR
-    }
-    
-    return list()[idx];
-}
-
-///============================================
-Node&
 Node::fetch(const std::string &path)
 {
+    // TODO: schema check
+    // if locked we need to throw an exception
+
     // fetch w/ path forces OBJECT_T
     if(dtype().id() != DataType::OBJECT_T)
         init(DataType::Objects::object());
     
-    // todo: walk map via m_schema?
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
@@ -1403,22 +1339,6 @@ Node::operator[](index_t idx)
 {
     return fetch(idx);
 }
-
-/// Const variants use const get
-///============================================
-const Node&
-Node::operator[](const std::string &path) const
-{
-    return entry(path);
-}
-
-///============================================
-const Node&
-Node::operator[](index_t idx) const
-{
-    return entry(idx);
-}
-
 
 
 ///============================================
@@ -1765,14 +1685,11 @@ void
 Node::list_append(const Node &node)
 {
     init_list();
-	
 	index_t idx = list().size();
-	//m_schema->append(node.schema());
+	m_schema->append(node.schema());
 	list().push_back(node);
-	//Schema *schema_ptr = &m_schema->fetch(idx);
-	//Node &lnode = list()[idx];
-	//lnode.set(schema_ptr);
-    
+	Schema *schema_ptr = &m_schema->fetch(idx);
+	list()[idx].set(schema_ptr);
 }
 
 ///============================================
@@ -1853,12 +1770,61 @@ Node::walk_schema(const Schema &schema, void *data)
 {
     m_data = data;
     m_alloced = false;
-    m_schema->set(DataType::OBJECT_T);
+    m_schema->set(schema);
+    
+    
+    return walk_schema(*this,m_schema,data);
     
     rapidjson::Document document;
     document.Parse<0>(schema.to_json().c_str());
     index_t current_offset = 0;
     conduit::walk_schema(*this,data,document,current_offset);
+}
+
+///============================================
+void 
+Node::walk_schema(Node &node, 
+                   Schema *schema,
+                   void *data)
+{
+    // we can have an object, list, or leaf
+    
+    if(schema->dtype().id() == DataType::OBJECT_T)
+    {
+        // create children nodes linked to the schema's children
+        std::vector<std::string> schema_entries;
+        schema->paths(schema_entries);
+        std::vector<std::string>::const_iterator ent_itr;
+        
+        for(ent_itr  = schema_entries.begin();
+            ent_itr != schema_entries.end();
+            ++ent_itr)
+        {
+            std::string curr_name = *ent_itr;
+            Schema *curr_schema = &schema->fetch(curr_name);
+            // relying on stl default construction here
+            Node &curr_node = node[curr_name];
+            curr_node.set(curr_schema);
+            walk_schema(curr_node,curr_schema,data);
+        }                   
+    }
+    else if(schema->dtype().id() == DataType::LIST_T)
+    {
+        index_t num_entries = schema->number_of_entries();
+        for(index_t i=0;i<num_entries;i++)
+        {
+            Schema *curr_schema = &schema->fetch(i);
+            Node curr_node(DataType::Objects::object());
+            curr_node.set(curr_schema);
+            walk_schema(curr_node,curr_schema,data);
+            node.append(curr_node);
+        }
+    }
+    else
+    {
+        // link the current node to the schema
+        node.set(schema,data);
+    } 
 }
 
 ///============================================
@@ -1947,7 +1913,7 @@ walk_schema(Node &node,
     {
         for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
         {
-			Node curr_node(DataType::Objects::list());
+			Node curr_node(DataType::Objects::object());
             walk_schema(curr_node,data, jvalue[i], curr_offset);
             curr_offset += curr_node.total_bytes();
             // this will coerce to a list
@@ -1964,6 +1930,7 @@ walk_schema(Node &node,
     }
 
 }
+
 
 
 }
