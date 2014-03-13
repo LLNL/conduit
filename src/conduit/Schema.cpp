@@ -73,9 +73,8 @@ void
 Schema::init_defaults()
 {
     m_dtype  = DataType::Objects::empty();
-    m_obj_insert_order.clear();
-    m_obj_entries.clear();
-    m_list_entries.clear();
+    m_hierarchy_data = NULL;
+    m_delete_me = false;
 }
 
 ///============================================
@@ -86,6 +85,7 @@ Schema::init_object()
     {
         reset();
         m_dtype  = DataType::Objects::object();
+        m_hierarchy_data = new ObjHierarchy();
     }
 }
 
@@ -97,6 +97,7 @@ Schema::init_list()
     {
         reset();
         m_dtype  = DataType::Objects::list();
+        m_hierarchy_data = new ListHierarchy();
     }
 }
 
@@ -105,9 +106,28 @@ void
 Schema::set(const Schema &schema)
 {
     m_dtype             = schema.m_dtype;
-    m_obj_entries       = schema.m_obj_entries;
-    m_obj_insert_order  = schema.m_obj_insert_order;
-    m_list_entries      = schema.m_list_entries;
+    bool init_children = false;
+
+    if (dtype().id() == DataType::OBJECT_T) {
+       init_object();
+       init_children = true;
+
+       obj_map() = schema.obj_map();
+       obj_order() = schema.obj_order();
+    } else if (dtype().id() == DataType::LIST_T) {
+       init_list();
+       init_children = true;
+    }
+
+    if (init_children) {
+       std::vector<Schema*> &my_ents = children();
+       const std::vector<Schema*> &their_ents = schema.children();
+       for (index_t i = 0; i < their_ents.size(); i++) {
+           Schema* entry_schema = new Schema(*their_ents[i]);
+           my_ents.push_back(entry_schema);
+       }
+    }
+
 }
 
 
@@ -162,7 +182,7 @@ Schema::entry(index_t idx)
 {
     if(m_dtype.id() != DataType::LIST_T)
         THROW_ERROR("<Schema::entry[LIST_T]>: Schema is not LIST_T");
-    return list_entries()[idx];
+    return *children()[idx];
 }
 
 ///============================================
@@ -172,7 +192,7 @@ Schema::entry(index_t idx) const
     if(m_dtype.id() != DataType::LIST_T)
         THROW_ERROR("<Schema::entry[LIST_T]>: Schema is not LIST_T");
 
-    return list_entries()[idx];
+    return *children()[idx];
 }
 
 
@@ -183,32 +203,20 @@ Schema::entry(const std::string &path)
     // fetch w/ path forces OBJECT_T
     if(m_dtype.id() != DataType::OBJECT_T)
         THROW_ERROR("<Schema::entry[OBJECT_T]>: Schema is not OBJECT_T");
-        
+
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
-    // find p_curr with an iterator
-    std::map<std::string, Schema> &ents = obj_entries();
-    std::map<std::string, Schema>::iterator itr = ents.find(p_curr);
-    // return Empty if the entry does not exist (static/locked case)
-    if(itr == ents.end())
-    {
-        ///
-        /// Full path errors would be nice here. 
-        ///
-        THROW_ERROR("<Schema::entry[OBJECT_T]>"
-                    << "Attempt to access invalid entry:" << path);
-                      
-    }
-    
+
+    index_t idx = entry_id(p_curr);
     
     if(p_next.empty())
     {
-        return itr->second;
+        return *children()[idx];
     }
     else
     {
-        return itr->second.entry(p_next);
+        return children()[idx]->entry(p_next);
     }
 }
 
@@ -220,52 +228,70 @@ Schema::entry(const std::string &path) const
     // fetch w/ path forces OBJECT_T
     if(m_dtype.id() != DataType::OBJECT_T)
         THROW_ERROR("<Schema::entry[OBJECT_T]>: Schema is not OBJECT_T");
-        
+
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
+
+    index_t idx = entry_id(p_curr);
+    
+    if(p_next.empty())
+    {
+        return *children()[idx];
+    }
+    else
+    {
+        return children()[idx]->entry(p_next);
+    }
+}
+
+index_t
+Schema::entry_id(const std::string &path) const
+{
     // find p_curr with an iterator
-    const std::map<std::string, Schema> &ents = obj_entries();
-    std::map<std::string, Schema>::const_iterator itr = ents.find(p_curr);
+    std::map<std::string, index_t>::const_iterator itr = obj_map().find(path);
     // return Empty if the entry does not exist (static/locked case)
-    if(itr == ents.end())
+    if(itr == obj_map().end())
     {
         ///
         /// Full path errors would be nice here. 
         ///
-        THROW_ERROR("<Schema::entry[OBJECT_T]>"
+        THROW_ERROR("<Schema::entry_id[OBJECT_T]>"
                     << "Attempt to access invalid entry:" << path);
+                      
     }
-    
-    if(p_next.empty())
-        return itr->second;
-    else
-        return itr->second.entry(p_next);
-}
 
+    return itr->second;
+}
 
 ///============================================
 Schema &
 Schema::fetch(const std::string &path)
 {
     // fetch w/ path forces OBJECT_T
-    if(m_dtype.id() != DataType::OBJECT_T)
-        set(DataType::Objects::object());
+    init_object();
         
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
+
+    if (!has_path(p_curr)) {
+        Schema* my_schema = new Schema();
+        children().push_back(my_schema);
+        obj_map()[p_curr] = children().size() - 1;
+        obj_order().push_back(p_curr);
+    }
+
+    index_t idx = entry_id(p_curr);
     if(p_next.empty())
     {
-        // check if this is a new entry, if so record insert order
-        const std::map<std::string, Schema> &ents = obj_entries();
-        const std::map<std::string, Schema>::const_iterator itr = ents.find(p_curr);
-        if(itr == ents.end())
-            m_obj_insert_order.push_back(p_curr);
-        return obj_entries()[p_curr];
+        return *children()[idx];
     }
     else
-        return obj_entries()[p_curr].fetch(p_next);
+    {
+        return children()[idx]->fetch(p_next);
+    }
+
 }
 
 
@@ -273,7 +299,7 @@ Schema::fetch(const std::string &path)
 Schema &
 Schema::fetch(index_t idx)
 {
-    return list_entries()[idx];
+    return *children()[idx];
 }
 
 ///============================================
@@ -324,7 +350,7 @@ Schema::has_path(const std::string &path) const
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
-    const std::map<std::string,Schema> &ents = obj_entries();
+    const std::map<std::string,index_t> &ents = obj_map();
 
     if(ents.find(p_curr) == ents.end())
     {
@@ -333,8 +359,8 @@ Schema::has_path(const std::string &path) const
 
     if(!p_next.empty())
     {
-        const Schema &s = ents.find(p_curr)->second;
-        return s.has_path(p_next);
+        index_t idx = ents.find(p_curr)->second;
+        return children()[idx]->has_path(p_next);
     }
     else
     {
@@ -347,7 +373,7 @@ Schema::has_path(const std::string &path) const
 void
 Schema::paths(std::vector<std::string> &paths, bool walk) const
 {
-    paths = m_obj_insert_order;
+    paths = obj_order();
     // TODO: walk == True, show nested paths
 }
 
@@ -358,7 +384,7 @@ Schema::number_of_entries() const
     // LIST_T only for now, overload for OBJECT_T
     if(m_dtype.id() != DataType::LIST_T)
         return 0;
-    return list_entries().size();
+    return children().size();
 }
 
 ///============================================
@@ -368,12 +394,15 @@ Schema::remove(index_t idx)
     if(m_dtype.id() != DataType::LIST_T)
         THROW_ERROR("<Schema::remove[LIST_T]> Schema is not LIST_T");
     
-    std::vector<Schema>  &lst = list_entries();
+    std::vector<Schema*>  &lst = children();
     if(idx > lst.size())
     {
         THROW_ERROR("<Schema::remove[LIST_T]> Invalid list index:" 
                     << idx << ">" << lst.size() <<  "(list_size)");
     }
+
+    Schema* myschema = children()[idx];
+    delete myschema;
     lst.erase(lst.begin() + idx);
 }
 
@@ -387,26 +416,21 @@ Schema::remove(const std::string &path)
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
-    std::map<std::string,Schema> &ents = obj_entries();
-
-    if(ents.find(p_curr) == ents.end())
-    {
-        ///
-        /// Full path errors would be nice here
-        ///
-        THROW_ERROR("<Schema::remove[OBJECT_T]>"
-                    << "Attempt to remove non-existant entry:" << path); 
-    }
+    index_t idx = entry_id(p_curr);
+    Schema* myschema = children()[idx];
 
     if(!p_next.empty())
     {
-        Schema &s = ents.find(p_curr)->second;
-        return s.remove(p_next);
-        
+        myschema->remove(p_next);
     }
-    else
-    {
-        ents.erase(p_curr);
+
+    obj_map().erase(p_curr);
+    children().erase(children().begin() + idx);
+    obj_order().erase(obj_order().begin() + idx);
+    delete myschema;
+
+    for (index_t i = idx; i < obj_order().size(); i++) {
+        obj_map()[obj_order()[idx]]--;
     }
 }
 
@@ -416,22 +440,13 @@ Schema::total_bytes() const
 {
     index_t res = 0;
     index_t dt_id = m_dtype.id();
-    if(dt_id == DataType::OBJECT_T)
+    if(dt_id == DataType::OBJECT_T || dt_id == DataType::LIST_T)
     {
-        const std::map<std::string, Schema> &ents = obj_entries();
-        for (std::map<std::string, Schema>::const_iterator itr = ents.begin();
-             itr != ents.end(); ++itr) 
-        {
-            res += itr->second.total_bytes();
-        }
-    }
-    else if(dt_id == DataType::LIST_T)
-    {
-        const std::vector<Schema> &lst = list_entries();
-        for (std::vector<Schema>::const_iterator itr = lst.begin();
+        const std::vector<Schema*> &lst = children();
+        for (std::vector<Schema*>::const_iterator itr = lst.begin();
              itr != lst.end(); ++itr)
         {
-            res += itr->total_bytes();
+            res += (*itr)->total_bytes();
         }
     }
     else if (dt_id != DataType::EMPTY_T)
@@ -557,46 +572,26 @@ Schema::to_json() const
 void
 Schema::to_json(std::ostringstream &oss) const
 {
-    if(m_dtype.id() == DataType::OBJECT_T)
+    if(m_dtype.id() == DataType::OBJECT_T ||
+       m_dtype.id() == DataType::LIST_T)
     {
         oss << "{";
 
         std::vector<std::string>::const_iterator order_itr;
         std::map<std::string,Schema>::const_iterator ent_itr;
 
-        const std::map<std::string, Schema> &ents = obj_entries();
+        const std::map<std::string, index_t> &ents = obj_map();
 
         bool first=true;
-        for(order_itr = m_obj_insert_order.begin(); 
-            order_itr != m_obj_insert_order.end(); 
-            ++order_itr)
-        {
-            const std::string &ent_name = *order_itr;
+        for (index_t i = 0; i < children().size(); i++) {
             if(!first)
                 oss << ",";
-            oss << "\""<< ent_name << "\" : ";
-            ent_itr = ents.find(ent_name);
-            ent_itr->second.to_json(oss);
+            oss << "\""<< obj_order()[i] << "\" : ";
+            children()[i]->to_json(oss);
             oss << "\n";
             first=false;
         }
-        oss << "}\n";
-    }
-    else if(m_dtype.id() == DataType::LIST_T)
-    {
-        oss << "[";
-        std::vector<Schema>::const_iterator itr;
-        const std::vector<Schema> &lst = list_entries();
-        bool first=true;
-        for(itr = lst.begin(); itr != lst.end(); ++itr)
-        {
-            if(!first)
-                oss << ",";
-            (*itr).to_json(oss);
-            oss << "\n";
-            first=false;
-        }
-        oss << "]\n";
+
     }
     else // assume leaf data type
     {
@@ -605,32 +600,61 @@ Schema::to_json(std::ostringstream &oss) const
 }
 
 ///============================================
-std::map<std::string, Schema> &
-Schema::obj_entries()
+std::map<std::string, index_t> &
+Schema::obj_map()
 {
-    return m_obj_entries;
+    ObjHierarchy* obj_hier = static_cast<ObjHierarchy*>(m_hierarchy_data);
+    return obj_hier->obj_map;
 }
 
 ///============================================
-std::vector<Schema> &
-Schema::list_entries()
+std::vector<Schema*> &
+Schema::children()
 {
-    return m_list_entries;;
+    if (m_dtype.id() == DataType::OBJECT_T) {
+        ObjHierarchy* obj_hier = static_cast<ObjHierarchy*>(m_hierarchy_data);
+        return obj_hier->children;
+    } else {
+        ListHierarchy* list_hier = static_cast<ListHierarchy*>(m_hierarchy_data);
+        return list_hier->entries;
+    }
 }
 
 ///============================================
-const std::map<std::string, Schema> & 
-Schema::obj_entries() const
+std::vector<std::string> &
+Schema::obj_order()
 {
-    return m_obj_entries;
+    ObjHierarchy* obj_hier = static_cast<ObjHierarchy*>(m_hierarchy_data);
+    return obj_hier->obj_order;
 }
 
 ///============================================
-const std::vector<Schema> &
-Schema::list_entries() const
+const std::map<std::string, index_t> &
+Schema::obj_map() const
 {
-    return m_list_entries;
+    ObjHierarchy* obj_hier = static_cast<ObjHierarchy*>(m_hierarchy_data);
+    return obj_hier->obj_map;
+}
+
+///============================================
+const std::vector<Schema*> &
+Schema::children() const
+{
+    if (m_dtype.id() == DataType::OBJECT_T) {
+        ObjHierarchy* obj_hier = static_cast<ObjHierarchy*>(m_hierarchy_data);
+        return obj_hier->children;
+    } else {
+        ListHierarchy* list_hier = static_cast<ListHierarchy*>(m_hierarchy_data);
+        return list_hier->entries;
+    }
+}
+
+///============================================
+const std::vector<std::string> &
+Schema::obj_order() const
+{
+    ObjHierarchy* obj_hier = static_cast<ObjHierarchy*>(m_hierarchy_data);
+    return obj_hier->obj_order;
 }
 
 }
-

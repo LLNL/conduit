@@ -58,7 +58,9 @@ public:
     Schema           &entry(index_t idx);
     const Schema     &entry(const std::string &path) const;
     const Schema     &entry(index_t idx) const;
-    
+
+    index_t           entry_id(const std::string &path) const;
+
     // the `fetch' methods do modify map structure if a path doesn't exists
     Schema           &fetch(const std::string &path);
     Schema           &fetch(index_t idx);
@@ -86,13 +88,13 @@ public:
     void    remove(index_t idx);
 
     void append(const DataType &dtype)
-        {init_list(); list_entries().push_back(Schema(dtype));}
+        {init_list(); children().push_back(new Schema(dtype));}
 
     void append(const Schema &schema)
-        {init_list(); list_entries().push_back(Schema(schema));}
+        {init_list(); children().push_back(new Schema(schema));}
 
     void append(Schema &schema)
-        {init_list(); list_entries().push_back(schema);}
+        {init_list(); children().push_back(new Schema(schema));}
 
     void list_of(const Schema &schema, index_t num_elements);
 
@@ -109,18 +111,28 @@ private:
     void        walk_schema(Schema &schema,const std::string &json_schema);
 
     DataType                      m_dtype;
-    
+    void                         *m_hierarchy_data;
+    bool                          m_delete_me;
+
+    struct ObjHierarchy {
+        std::vector<Schema*> children;
+        std::vector<std::string> obj_order;
+        std::map<std::string, index_t> obj_map;
+    };
+
+    struct ListHierarchy {
+        std::vector<Schema*> entries;
+    };
+
     // for obj and list interfaces
-    std::map<std::string, Schema>         &obj_entries();
-    std::vector<Schema>                   &list_entries();
+    std::map<std::string, index_t>        &obj_map();
+    std::vector<Schema*>                  &children();
+    std::vector<std::string>              &obj_order();
 
-    const std::map<std::string, Schema>   &obj_entries() const;
-    const std::vector<Schema>             &list_entries() const;
+    const std::map<std::string, index_t>   &obj_map() const;
+    const std::vector<Schema*>             &children() const;
+    const std::vector<std::string>         &obj_order() const;
 
-    std::vector<Schema>          m_list_entries;
-    std::vector<std::string>     m_obj_insert_order;
-    std::map<std::string,Schema> m_obj_entries;
-      
 };
 
 }
