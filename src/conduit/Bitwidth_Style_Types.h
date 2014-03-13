@@ -5,6 +5,7 @@
 #ifndef __CONDUIT_BITWIDTH_STYLE_TYPES_H
 #define __CONDUIT_BITWIDTH_STYLE_TYPES_H
 
+#include <limits.h>
 #include "Conduit_Config.h"
 
 ///

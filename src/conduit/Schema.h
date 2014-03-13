@@ -117,7 +117,6 @@ private:
     const std::map<std::string, Schema>   &obj_entries() const;
     const std::vector<Schema>             &list_entries() const;
 
-    DataType                     m_dtype;    
     std::vector<Schema>          m_list_entries;
     std::vector<std::string>     m_obj_insert_order;
     std::map<std::string,Schema> m_obj_entries;
