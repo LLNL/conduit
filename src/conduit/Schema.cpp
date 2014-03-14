@@ -106,20 +106,25 @@ Schema::init_list()
 void 
 Schema::set(const Schema &schema)
 {
-    m_dtype             = schema.m_dtype;
     bool init_children = false;
-
-    if (dtype().id() == DataType::OBJECT_T) {
+	index_t dt_id = schema.m_dtype.id();
+    if (dt_id == DataType::OBJECT_T) {
        init_object();
        init_children = true;
 
        obj_map() = schema.obj_map();
        obj_order() = schema.obj_order();
-    } else if (dtype().id() == DataType::LIST_T) {
+    } else if (dt_id == DataType::LIST_T) {
        init_list();
        init_children = true;
     }
+	else 
+	{
+		m_dtype = schema.m_dtype;
+	}
 
+	
+	
     if (init_children) {
        std::vector<Schema*> &my_ents = children();
        const std::vector<Schema*> &their_ents = schema.children();
@@ -471,7 +476,7 @@ void
 Schema::walk_schema(const std::string &json_schema)
 {
     reset();
-    m_dtype.set(DataType::OBJECT_T);
+    //m_dtype.set(DataType::OBJECT_T);
     
     rapidjson::Document document;
     document.Parse<0>(json_schema.c_str());

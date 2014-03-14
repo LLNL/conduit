@@ -67,7 +67,24 @@ Node::Node(Schema &schema)
     init_defaults();
     walk_schema(schema.to_json());
 }
+	
+///============================================
+Node::Node(Schema *schema_ptr)
 
+{
+	init_defaults();
+	m_schema = schema_ptr;
+}
+	
+///============================================
+Node::Node(const Node &node, Schema *schema_ptr)
+
+{
+	init_defaults();
+	set(node,schema_ptr);
+}
+
+	
 ///============================================
 Node::Node(Schema &schema, const std::string &stream_path, bool mmap)
 {    
@@ -1310,8 +1327,8 @@ Node::fetch(const std::string &path)
     index_t idx;
     if(!m_schema->has_path(p_curr))
     {
-        Schema &schema = m_schema->fetch(p_curr);
-        Node* new_node = new Node(schema);
+        Schema *schema_ptr = &m_schema->fetch(p_curr);
+        Node *new_node = new Node(schema_ptr);
         m_children.push_back(new_node);
         idx = m_children.size() - 1;
     } else {
@@ -1499,39 +1516,40 @@ void
 Node::to_json(std::ostringstream &oss,
               bool simple, index_t indent) const
 {
-#if 0
     if(dtype().id() == DataType::OBJECT_T)
     {
         oss << "{";
-        std::map<std::string,Node>::const_iterator itr;
-        const std::map<std::string, Node> &ents = entries();
-        bool first=true;
-        for(itr = ents.begin(); itr != ents.end(); ++itr)
-        {
-            if(!first)
+		bool first=true;
+        
+		index_t nchildren = m_children.size();
+		for(index_t i=0; i < nchildren;i++)
+		{
+		    if(!first)
                 oss << ", ";
-            oss << "\""<< itr->first << "\": ";
-            itr->second.to_json(oss,simple,indent);
-            first=false;
+        	oss << "\""<< m_schema->obj_order()[i] << "\": ";
+            m_children[i]->to_json(oss,simple,indent);
+			
+		    first=false;
         }
         oss << "}\n";
     }
     else if(dtype().id() == DataType::LIST_T)
     {
         oss << "[";
-        std::vector<Node>::const_iterator itr;
-        const std::vector<Node> &lst = list();
-        bool first=true;
-        for(itr = lst.begin(); itr != lst.end(); ++itr)
-        {
-            if(!first)
+        
+		index_t nchildren = m_children.size();
+		bool first=true;
+		for(index_t i=0; i < nchildren;i++)
+		{
+			if(!first)
                 oss << ", ";
-            (*itr).to_json(oss,simple,indent);
-            first=false;
-        }
-        oss << "]\n";
-    }
-    else // assume leaf data type
+			m_children[i]->to_json(oss,simple,indent);
+			oss << "]\n";
+			first=false;
+		}
+		
+	}
+	else // assume leaf data type
     {
         std::ostringstream value_oss; 
         switch(dtype().id())
@@ -1558,8 +1576,7 @@ Node::to_json(std::ostringstream &oss,
             oss << value_oss.str();
         else
             dtype().to_json(oss,value_oss.str());
-    }
-#endif    
+    }  
 }
 
     
@@ -1702,10 +1719,9 @@ Node::list_append(const Node &node)
 {
     init_list();
     index_t idx = m_children.size();
-    m_children.push_back(new Node(node));
+	m_schema->append(node.schema());
     Schema *schema_ptr = &m_schema->fetch(idx);
-    m_children[idx]->set(schema_ptr);
-    m_schema->append(*schema_ptr);
+    m_children.push_back(new Node(node,schema_ptr));
 }
 
 ///============================================

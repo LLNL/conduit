@@ -411,8 +411,9 @@ private:
     void             cleanup();
     void             release();
     void             set(Schema *schema_ptr);
-	
+					 Node(Schema *schema_ptr);
     void             set(Schema *schema_ptr, void *data_ptr);
+	                 Node(const Node &node,Schema *schema_ptr);
 	
     void             walk_schema(const Schema &schema);
 
