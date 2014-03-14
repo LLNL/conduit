@@ -342,9 +342,9 @@ Schema::operator[](index_t idx) const
 bool           
 Schema::has_path(const std::string &path) const
 {
-	if(m_dtype.id() == DataType::EMPTY_T)
-		return false;
-	if(m_dtype.id() != DataType::OBJECT_T)
+    if(m_dtype.id() == DataType::EMPTY_T)
+        return false;
+    if(m_dtype.id() != DataType::OBJECT_T)
         THROW_ERROR("<Schema::has_path[OBJECT_T]> Schema is not OBJECT_T");
 
     std::string p_curr;

@@ -44,8 +44,7 @@ Node::init_defaults()
     m_mmap_fd   = -1;
     m_mmap_size = 0;
 
-	m_schema = new Schema(DataType::EMPTY_T);
-	m_owns_schema = true;
+    m_schema = new Schema(DataType::EMPTY_T);
 }
 
 ///============================================
@@ -436,13 +435,41 @@ Node::mmap(Schema &schema, const std::string &stream_path)
 void 
 Node::set(const Node &node)
 {
+    set(node, NULL);
+}
+
+void
+Node::set(const Node& node, Schema* schema)
+{
     if (!node.dtype().id() == DataType::EMPTY_T)
     {
+    
+        if(node.dtype().id() == DataType::OBJECT_T || 
+           node.dtype().id() == DataType::LIST_T)
+        {
+            init(node.dtype());
+
+            // If we are making a new head, copy the schema, otherwise, use
+            // the pointer we were given
+            if (schema) {
+                m_schema = schema;
+            } else {
+                m_schema = new Schema(node.schema());
+            }
+            
+            for(index_t i=0;i<node.m_children.size();i++)
+            {
+                Node *child = new Node();
+                child->set(*node.m_children[i],m_schema->children()[i]);
+                m_children.push_back(child);
+            }
+        }
+    
         if (node.m_alloced) 
         {
             // TODO: compaction?
             init(node.dtype());
-            memcpy(m_data, node.m_data, schema().total_bytes());
+            memcpy(m_data, node.m_data, m_schema->total_bytes());
         }
         else 
         {
@@ -450,12 +477,10 @@ Node::set(const Node &node)
             m_data    = node.m_data;
             m_schema->set(node.schema());
         }
-
-        m_entries = node.m_entries;
-        m_list_data = node.m_list_data;
+        // move nodes here
     }
-}
 
+}
 
 ///============================================
 void 
@@ -469,8 +494,8 @@ Node::set(const DataType &dtype)
 void 
 Node::set(bool8 data)
 {
-	init(DataType::Scalars::bool8());
-	*(bool8*)((char*)m_data + schema().element_index(0)) = data;
+    init(DataType::Scalars::bool8());
+    *(bool8*)((char*)m_data + schema().element_index(0)) = data;
 }
 	
 
@@ -862,10 +887,9 @@ Node::set(Schema &schema,void* data)
 void
 Node::set(Schema *schema_ptr)
 {
-	if(m_owns_schema)
-		delete m_schema;
-	m_owns_schema = false;
-	m_schema = schema_ptr;    
+    if(m_schema->delete_me())
+        delete m_schema;
+    m_schema = schema_ptr;    
 }
 	
 ///============================================
@@ -1208,22 +1232,13 @@ void
 Node::serialize(std::ofstream &ofs,
                 bool compact) const
 {
-    if(dtype().id() == DataType::OBJECT_T)
+    if(dtype().id() == DataType::OBJECT_T ||
+       dtype().id() == DataType::LIST_T)
     {
-        std::map<std::string,Node>::const_iterator itr;
-        const std::map<std::string,Node> &ent = entries();
-        for(itr = ent.begin(); itr != ent.end(); ++itr)
+        std::vector<Node*>::const_iterator itr;
+        for(itr = m_children.begin(); itr != m_children.end(); ++itr)
         {
-            itr->second.serialize(ofs);
-        }
-    }
-    else if(dtype().id() == DataType::LIST_T)
-    {
-        std::vector<Node>::const_iterator itr;
-        const std::vector<Node> &lst = list();
-        for(itr = lst.begin(); itr != lst.end(); ++itr)
-        {
-            (*itr).serialize(ofs);
+            (*itr)->serialize(ofs);
         }
     }
     else // assume data value type for now
@@ -1238,24 +1253,14 @@ Node::serialize(std::ofstream &ofs,
 void
 Node::serialize(uint8 *data,index_t curr_offset,bool compact) const
 {
-    if(dtype().id() == DataType::OBJECT_T)
+    if(dtype().id() == DataType::OBJECT_T ||
+       dtype().id() == DataType::LIST_T)
     {
-        std::map<std::string,Node>::const_iterator itr;
-        const std::map<std::string,Node> &ent = entries();
-        for(itr = ent.begin(); itr != ent.end(); ++itr)
+        std::vector<Node*>::const_iterator itr;
+        for(itr = m_children.begin(); itr != m_children.end(); ++itr)
         {
-            itr->second.serialize(&data[0],curr_offset);
-            curr_offset+=itr->second.total_bytes();
-        }
-    }
-    else if(dtype().id() == DataType::LIST_T)
-    {
-        std::vector<Node>::const_iterator itr;
-        const std::vector<Node> &lst = list();
-        for(itr = lst.begin(); itr != lst.end(); ++itr)
-        {
-            (*itr).serialize(&data[0],curr_offset);
-            curr_offset+=(*itr).total_bytes();
+            (*itr)->serialize(&data[0],curr_offset);
+            curr_offset+=(*itr)->total_bytes();
         }
     }
     else // assume data value type for now
@@ -1297,19 +1302,27 @@ Node::fetch(const std::string &path)
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
 
+    // if this node doesn't exist, we need to 
+    // link it to a schema
+    index_t idx;
+    if(!m_schema->has_path(p_curr))
+    {
+        Schema &schema = m_schema->fetch(p_curr);
+        Node* new_node = new Node(schema);
+        m_children.push_back(new_node);
+        idx = m_children.size() - 1;
+    } else {
+        idx = m_schema->entry_id(p_curr);
+    }
+
     if(p_next.empty())
     {
-        // if this node doesn't exist, we need to 
-        // link it to a schema
-        if(!m_schema->has_path(p_curr))
-		{
-			Schema *schema_ptr = &m_schema->fetch(p_curr);
-            entries()[p_curr].set(schema_ptr);
-		}
-        return  entries()[p_curr];
+        return  *m_children[idx];
     }
     else
-        return entries()[p_curr].fetch(p_next);
+    {
+        return m_children[idx]->fetch(p_next);
+    }
 
 }
 
@@ -1323,7 +1336,7 @@ Node::fetch(index_t idx)
     // }
     // we could also potentially support index fetch on:
     //   OBJECT_T (imp-order)
-    return list()[idx];
+    return *m_children[idx];
 }
 
 ///============================================
@@ -1370,7 +1383,7 @@ Node::remove(index_t idx)
     // schema will do check for list & a bounds check
     m_schema->remove(idx);
     // remove the proper list entry
-    list().erase(list().begin() + idx);
+    m_children.erase(m_children.begin() + idx);
 }
 
 ///============================================
@@ -1383,7 +1396,6 @@ Node::remove(const std::string &path)
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
-    std::map<std::string,Node> &ents = entries();
 
     if(!p_next.empty())
     {
@@ -1393,7 +1405,7 @@ Node::remove(const std::string &path)
     }
     else
     {
-        ents.erase(p_curr);
+        m_children.erase(m_children.begin() + m_schema->entry_id(p_curr));
     }
 }
 
@@ -1484,6 +1496,7 @@ void
 Node::to_json(std::ostringstream &oss,
               bool simple, index_t indent) const
 {
+#if 0
     if(dtype().id() == DataType::OBJECT_T)
     {
         oss << "{";
@@ -1543,7 +1556,7 @@ Node::to_json(std::ostringstream &oss,
         else
             dtype().to_json(oss,value_oss.str());
     }
-    
+#endif    
 }
 
     
@@ -1551,28 +1564,26 @@ Node::to_json(std::ostringstream &oss,
 void
 Node::init(const DataType& dtype)
 {
-	if(this->dtype().is_compatible(dtype))
-		return;
+    if(this->dtype().is_compatible(dtype))
+        return;
 	
     if(m_data != NULL)
-	{
-		release();
-	}
-        index_t dt_id = dtype.id();
-        if(dt_id == DataType::OBJECT_T)
-        {
-            entries().clear();
-        }
-        else if(dt_id == DataType::LIST_T)
-        {
-            list().clear();
-        }
-        else if(dt_id != DataType::EMPTY_T)
-        {
-            allocate(dtype);
-        }
-        
-        m_schema->set(dtype); 
+    {
+        release();
+    }
+
+    index_t dt_id = dtype.id();
+    if(dt_id == DataType::OBJECT_T ||
+       dt_id == DataType::LIST_T)
+    {
+        m_children.clear();
+    }
+    else if(dt_id != DataType::EMPTY_T)
+    {
+        allocate(dtype);
+    }
+    
+    m_schema->set(dtype); 
 }
 
 
@@ -1618,10 +1629,13 @@ Node::mmap(const std::string &stream_path, index_t dsize)
 void
 Node::release()
 {
-	m_list_data.clear();
-	m_entries.clear();
+    for (index_t i = 0; i < m_children.size(); i++) {
+        Node* node = m_children[i];
+        delete node;
+    }
+    m_children.clear();
 
-	if(m_alloced && m_data)
+    if(m_alloced && m_data)
     {
         if(dtype().id() != DataType::EMPTY_T)
         {   
@@ -1649,14 +1663,13 @@ Node::release()
 void
 Node::cleanup()
 {
-	release();
-	if(m_owns_schema)
+    release();
+    if(m_schema->delete_me())
     {
         if(m_schema != NULL)
         {
             delete m_schema;
             m_schema = NULL;
-            m_owns_schema = false;
         }
     }
     else if(m_schema != NULL)
@@ -1685,42 +1698,12 @@ void
 Node::list_append(const Node &node)
 {
     init_list();
-	index_t idx = list().size();
-	m_schema->append(node.schema());
-	list().push_back(node);
-	Schema *schema_ptr = &m_schema->fetch(idx);
-	list()[idx].set(schema_ptr);
+    index_t idx = m_children.size();
+    m_children.push_back(new Node(node));
+    Schema *schema_ptr = &m_schema->fetch(idx);
+    m_children[idx]->set(schema_ptr);
+    m_schema->append(*schema_ptr);
 }
-
-///============================================
-std::map<std::string, Node> &  
-Node::entries()
-{
-   return m_entries;
-}
-
-///============================================
-std::vector<Node> &  
-Node::list()
-{
-   return m_list_data;
-}
-
-
-///============================================
-const std::map<std::string, Node> &  
-Node::entries() const
-{
-   return m_entries;
-}
-
-///============================================
-const std::vector<Node> &  
-Node::list() const
-{
-   return m_list_data;
-}
-
 
 ///============================================
 void 

@@ -98,6 +98,7 @@ public:
       
     /* Setters */
     void set(const Node& data);
+    void set(const Node& node, Schema* schema);
     void set(const DataType& dtype);
 
     void set(Schema &schema, void* data);
@@ -409,9 +410,9 @@ private:
     void             mmap(const std::string &stream_path,index_t dsize);
     void             cleanup();
     void             release();
-	void             set(Schema *schema_ptr);
+    void             set(Schema *schema_ptr);
 	
-	void             set(Schema *schema_ptr, void *data_ptr);
+    void             set(Schema *schema_ptr, void *data_ptr);
 	
     void             walk_schema(const Schema &schema);
 
@@ -433,10 +434,7 @@ private:
     void              list_append(const Node &node);
 
     Schema              *m_schema;
-	bool                 m_owns_schema;
-    // Node                *m_parent;
-    // DataContainer       *m_data;
-    //std::vector<Node>   *m_nodes;    
+    std::vector<Node*>   m_children;    
 
     // TODO DataContainer
     void     *m_data;
@@ -447,20 +445,19 @@ private:
 
     // TODO: holds structure for objs + lists
 
-
     // for true nodes
-    std::map<std::string, Node>         &entries();
-    std::vector<Node>                   &list();
-
-    const std::map<std::string, Node>   &entries() const;
-    const std::vector<Node>             &list() const;
+//     std::map<std::string, Node>         &entries();
+//     std::vector<Node>                   &list();
+// 
+//     const std::map<std::string, Node>   &entries() const;
+//     const std::vector<Node>             &list() const;
 
     // TODO: These are currently alloced per node, even if we have a simple node type
     // Use m_obj_data w/ allocs in the future to reduce overhead. 
     // The entries() & list() helper funcs already provide a single point of access
     // so  change the storage shouldn't be very hard. 
-    std::vector<Node>           m_list_data;
-    std::map<std::string, Node> m_entries;
+//     std::vector<Node>           m_list_data;
+//     std::map<std::string, Node> m_entries;
 };
 
 }

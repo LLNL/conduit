@@ -82,6 +82,9 @@ public:
     void    paths(std::vector<std::string> &paths,bool expand=false) const;
     void    remove(const std::string &path);
 
+
+    void    set_delete_me(bool value) {m_delete_me = value;}
+    bool    delete_me() const { return m_delete_me;}
     ///
     /// List Interface
     ///
@@ -101,6 +104,16 @@ public:
     ///
     /// TODO: locking
     ///
+    //
+    // for obj and list interfaces
+    std::map<std::string, index_t>        &obj_map();
+    std::vector<Schema*>                  &children();
+    std::vector<std::string>              &obj_order();
+
+    const std::map<std::string, index_t>   &obj_map() const;
+    const std::vector<Schema*>             &children() const;
+    const std::vector<std::string>         &obj_order() const;
+
 
 private:
     void        init_defaults();
@@ -123,15 +136,6 @@ private:
     struct ListHierarchy {
         std::vector<Schema*> entries;
     };
-
-    // for obj and list interfaces
-    std::map<std::string, index_t>        &obj_map();
-    std::vector<Schema*>                  &children();
-    std::vector<std::string>              &obj_order();
-
-    const std::map<std::string, index_t>   &obj_map() const;
-    const std::vector<Schema*>             &children() const;
-    const std::vector<std::string>         &obj_order() const;
 
 };
 
