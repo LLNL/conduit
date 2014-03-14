@@ -246,7 +246,7 @@ Schema::entry(const std::string &path)
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
 
-    index_t idx = entry_id(p_curr);
+    index_t idx = entry_index(p_curr);
     
     if(p_next.empty())
     {
@@ -271,7 +271,7 @@ Schema::entry(const std::string &path) const
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
 
-    index_t idx = entry_id(p_curr);
+    index_t idx = entry_index(p_curr);
     
     if(p_next.empty())
     {
@@ -284,7 +284,7 @@ Schema::entry(const std::string &path) const
 }
 
 index_t
-Schema::entry_id(const std::string &path) const
+Schema::entry_index(const std::string &path) const
 {
     // find p_curr with an iterator
     std::map<std::string, index_t>::const_iterator itr = obj_map().find(path);
@@ -294,7 +294,7 @@ Schema::entry_id(const std::string &path) const
         ///
         /// Full path errors would be nice here. 
         ///
-        THROW_ERROR("<Schema::entry_id[OBJECT_T]>"
+        THROW_ERROR("<Schema::entry_index[OBJECT_T]>"
                     << "Attempt to access invalid entry:" << path);
                       
     }
@@ -320,7 +320,7 @@ Schema::fetch(const std::string &path)
         obj_order().push_back(p_curr);
     }
 
-    index_t idx = entry_id(p_curr);
+    index_t idx = entry_index(p_curr);
     if(p_next.empty())
     {
         return *children()[idx];
@@ -453,7 +453,7 @@ Schema::remove(const std::string &path)
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
-    index_t idx = entry_id(p_curr);
+    index_t idx = entry_index(p_curr);
     Schema* myschema = children()[idx];
 
     if(!p_next.empty())
@@ -494,17 +494,11 @@ Schema::total_bytes() const
 }
 
 
-///
-/// TODO This parsing is basically duplicated in Node,
-/// need to better define resp of the Schema and of the Node
-
 ///============================================
 void 
 Schema::walk_schema(const std::string &json_schema)
 {
     reset();
-    //m_dtype.set(DataType::OBJECT_T);
-    
     rapidjson::Document document;
     document.Parse<0>(json_schema.c_str());
     index_t curr_offset = 0;
@@ -569,10 +563,7 @@ walk_schema(Schema &schema,
                 std::string entry_name(itr->name.GetString());
 				Schema &curr_schema = schema.fetch(entry_name);
 				curr_schema.set(DataType::Objects::object());
-				//Schema curr_schema(DataType::Objects::object());
-                //schema[entry_name] = Schema(DataType::Objects::object());
                 walk_schema(curr_schema,itr->value, curr_offset);
-                //schema[entry_name] = curr_schema;
                 curr_offset += curr_schema.total_bytes();
             }
         }

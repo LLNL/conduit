@@ -110,7 +110,7 @@ Node::Node(Schema &schema, void *data)
     init_defaults();
 	std::string json_schema =schema.to_json(); 
 	std::cout << "json_schema_rc:" << json_schema << std::endl;
-	walk_schema(json_schema,data);
+	walk_schema(schema,data);
 }
 
 
@@ -468,9 +468,12 @@ Node::set(const Node& node, Schema* schema)
 
             // If we are making a new head, copy the schema, otherwise, use
             // the pointer we were given
-            if (schema) {
+            if (schema != NULL)
+            {
                 m_schema = schema;
-            } else {
+            } 
+            else 
+            {
                 m_schema = new Schema(node.schema());
             }
             
@@ -496,6 +499,11 @@ Node::set(const Node& node, Schema* schema)
                 m_schema->set(node.schema());
             }
         }
+    }
+    else
+    {
+        // if passed node is empty -- reset this.
+        reset();
     }
 
 }
@@ -525,8 +533,6 @@ Node::set(bool8 data)
 void 
 Node::set(int8 data)
 {
-    // TODO check for compatible, don't always re-init
-    // NOTE: comp check happens in init
     init(DataType::Scalars::int8());
     *(int8*)((char*)m_data + schema().element_index(0)) = data;
 }
@@ -536,8 +542,6 @@ Node::set(int8 data)
 void 
 Node::set(int16 data)
 {
-    // TODO check for compatible, don't always re-init
-    // NOTE: comp check happens in init
     init(DataType::Scalars::int16());
     *(int16*)((char*)m_data + schema().element_index(0)) = data;
 }
@@ -547,8 +551,6 @@ Node::set(int16 data)
 void 
 Node::set(int32 data)
 {
-    // TODO check for compatible, don't always re-init
-    // NOTE: comp check happens in init
     init(DataType::Scalars::int32());
     *(int32*)((char*)m_data + schema().element_index(0)) = data;
 }
@@ -558,8 +560,6 @@ Node::set(int32 data)
 void 
 Node::set(int64 data)
 {
-    // TODO check for compatible, don't always re-init
-    // NOTE: comp check happens in init
     init(DataType::Scalars::int64());
     *(int64*)((char*)m_data + schema().element_index(0)) = data;
 }
@@ -573,8 +573,6 @@ Node::set(int64 data)
 void 
 Node::set(uint8 data)
 {
-    // TODO check for compatible, don't always re-init
-    // NOTE: comp check happens in init
     init(DataType::Scalars::uint8());
     *(uint8*)((char*)m_data + schema().element_index(0)) = data;
 }
@@ -584,8 +582,6 @@ Node::set(uint8 data)
 void 
 Node::set(uint16 data)
 {
-    // TODO check for compatible, don't always re-init
-    // NOTE: comp check happens in init
     init(DataType::Scalars::uint16());
     *(uint16*)((char*)m_data + schema().element_index(0)) = data;
 }
@@ -595,8 +591,6 @@ Node::set(uint16 data)
 void 
 Node::set(uint32 data)
 {
-    // TODO check for compatible, don't always re-init
-    // NOTE: comp check happens in init
     init(DataType::Scalars::uint32());
     *(uint32*)((char*)m_data + schema().element_index(0)) = data;
 }
@@ -606,8 +600,6 @@ Node::set(uint32 data)
 void 
 Node::set(uint64 data)
 {
-    // TODO check for compatible, don't always re-init
-    // NOTE: comp check happens in init
     init(DataType::Scalars::uint64());
     *(uint64*)((char*)m_data + schema().element_index(0)) = data;
 }
@@ -620,8 +612,6 @@ Node::set(uint64 data)
 void 
 Node::set(float32 data)
 {
-    // TODO check for compatible, don't always re-init
-    // NOTE: comp check happens in init
     init(DataType::Scalars::float32());
     *(float32*)((char*)m_data + schema().element_index(0)) = data;
 }
@@ -631,8 +621,6 @@ Node::set(float32 data)
 void 
 Node::set(float64 data)
 {
-    // TODO check for compatible, don't always re-init
-    // NOTE: comp check happens in init
     init(DataType::Scalars::float64());
     *(float64*)((char*)m_data + schema().element_index(0)) = data;
 }
@@ -1309,9 +1297,6 @@ Node::serialize(uint8 *data,index_t curr_offset,bool compact) const
 Node&
 Node::fetch(const std::string &path)
 {
-    // TODO: schema check
-    // if locked we need to throw an exception
-
     // fetch w/ path forces OBJECT_T
     if(dtype().id() != DataType::OBJECT_T)
     {
@@ -1332,7 +1317,7 @@ Node::fetch(const std::string &path)
         m_children.push_back(new_node);
         idx = m_children.size() - 1;
     } else {
-        idx = m_schema->entry_id(p_curr);
+        idx = m_schema->entry_index(p_curr);
     }
 
     if(p_next.empty())
@@ -1400,9 +1385,10 @@ Node::number_of_entries() const
 void    
 Node::remove(index_t idx)
 {
-    // schema will do check for list & a bounds check
+ 
     m_schema->remove(idx);
     // remove the proper list entry
+    delete m_children[idx];
     m_children.erase(m_children.begin() + idx);
 }
 
@@ -1417,16 +1403,15 @@ Node::remove(const std::string &path)
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
 
+    index_t idx=m_schema->entry_index(p_curr);
+
     if(!p_next.empty())
     {
-	    // TODO FIX
-	    //Node &n = ents.find(p_curr)->second;
-        //ents[p_curr].remove(p_next);
+        m_children[idx]->remove(p_next);
     }
-    else
-    {
-        m_children.erase(m_children.begin() + m_schema->entry_id(p_curr));
-    }
+    
+    delete m_children[idx];
+    m_children.erase(m_children.begin() + idx);
 }
 
 ///============================================
@@ -1764,8 +1749,6 @@ walk_schema(Node &node,
 }
 
 
-
-
 ///============================================
 void 
 Node::walk_schema(const Schema &schema, void *data)
@@ -1773,14 +1756,8 @@ Node::walk_schema(const Schema &schema, void *data)
     m_data = data;
     m_alloced = false;
     m_schema->set(schema);
-	std::cout << "INTERNAL" << std::endl;
-	std::cout << m_schema->to_json() << std::endl;
+
     return walk_schema(*this,m_schema,data);
-    
-    rapidjson::Document document;
-    document.Parse<0>(schema.to_json().c_str());
-    index_t current_offset = 0;
-    conduit::walk_schema(*this,data,document,current_offset);
 }
 
 ///============================================
@@ -1828,6 +1805,10 @@ walk_schema(Node &node,
             const rapidjson::Value &jvalue,
             index_t curr_offset)
 {
+    ///
+    /// NOTE: We will need some portion of this to parse inline data.
+    ///
+    
     if(jvalue.IsObject())
     {
         /*

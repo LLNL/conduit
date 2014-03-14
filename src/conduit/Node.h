@@ -319,8 +319,6 @@ public:
     bool    has_path(const std::string &path) const;
     void    paths(std::vector<std::string> &paths,bool walk=false) const;
 
-    index_t path_index(const std::string &path) const;
-    std::string &path(index_t idx) const;
 
     // these support the map and list interfaces
     Node             &operator[](const std::string &path);

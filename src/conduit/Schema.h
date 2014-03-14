@@ -20,6 +20,8 @@ namespace conduit
 class Schema
 {
 public:    
+    friend class Node;
+
     /* Constructors */
     Schema(); // empty schema
     explicit Schema(index_t dtype_id);
@@ -59,7 +61,7 @@ public:
     const Schema     &entry(const std::string &path) const;
     const Schema     &entry(index_t idx) const;
 
-    index_t           entry_id(const std::string &path) const;
+    index_t           entry_index(const std::string &path) const;
 
     // the `fetch' methods do modify map structure if a path doesn't exists
     Schema           &fetch(const std::string &path);
@@ -105,6 +107,8 @@ public:
     /// TODO: locking
     ///
     //
+
+private:
     // for obj and list interfaces
     std::map<std::string, index_t>        &obj_map();
     std::vector<Schema*>                  &children();
@@ -115,7 +119,6 @@ public:
     const std::vector<std::string>         &obj_order() const;
 
 
-private:
     void        init_defaults();
     void        init_list();
     void        init_object();
