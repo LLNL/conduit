@@ -59,12 +59,39 @@ Schema::Schema(const std::string &json_schema)
 
 ///============================================
 Schema::~Schema()
-{}
+{reset();}
+
+///============================================
+void
+Schema::release()
+{
+    if(dtype().id() == DataType::OBJECT_T ||
+       dtype().id() == DataType::LIST_T)
+    {
+        std::vector<Schema*> chld = children();
+        for(index_t i=0;i< chld.size();i++)
+        {
+            delete chld[i];
+        }
+    }
+    
+    if(dtype().id() == DataType::OBJECT_T)
+    { 
+        ObjHierarchy *obj_hier = (ObjHierarchy *)m_hierarchy_data;
+        delete obj_hier;
+    }
+    else if(dtype().id() == DataType::LIST_T)
+    { 
+        ListHierarchy *lst_hier = (ListHierarchy *)m_hierarchy_data;
+        delete lst_hier;
+    }
+}
 
 ///============================================
 void
 Schema::reset()
 {
+    release();
     init_defaults();
 }
 

@@ -119,7 +119,8 @@ private:
     void        init_defaults();
     void        init_list();
     void        init_object();
-
+    void        release();
+    
     void        walk_schema(const std::string &json_schema);
     void        walk_schema(Schema &schema,const std::string &json_schema);
 
