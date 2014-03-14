@@ -2,6 +2,7 @@
 /// file: Schema.cpp
 ///
 
+#include <stdio.h>
 #include "Schema.h"
 #include "Error.h"
 #include "Utils.h"
@@ -145,6 +146,11 @@ void
 Schema::set(const DataType &dtype)
 {
     reset();
+    if (dtype.id() == DataType::OBJECT_T) {
+        init_object();
+    } else if (dtype.id() == DataType::LIST_T) {
+        init_list();
+    }
     m_dtype = dtype;
 }
 
@@ -336,7 +342,6 @@ Schema::operator[](index_t idx) const
 {
     return entry(idx);
 }
-
 
 ///============================================
 bool           

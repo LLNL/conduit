@@ -464,20 +464,21 @@ Node::set(const Node& node, Schema* schema)
                 m_children.push_back(child);
             }
         }
-    
-        if (node.m_alloced) 
-        {
-            // TODO: compaction?
-            init(node.dtype());
-            memcpy(m_data, node.m_data, m_schema->total_bytes());
+        else
+        { 
+            if (node.m_alloced) 
+            {
+                // TODO: compaction?
+                init(node.dtype());
+                memcpy(m_data, node.m_data, m_schema->total_bytes());
+            }
+            else 
+            {
+                m_alloced = false;
+                m_data    = node.m_data;
+                m_schema->set(node.schema());
+            }
         }
-        else 
-        {
-            m_alloced = false;
-            m_data    = node.m_data;
-            m_schema->set(node.schema());
-        }
-        // move nodes here
     }
 
 }
@@ -1296,7 +1297,9 @@ Node::fetch(const std::string &path)
 
     // fetch w/ path forces OBJECT_T
     if(dtype().id() != DataType::OBJECT_T)
+    {
         init(DataType::Objects::object());
+    }
     
     std::string p_curr;
     std::string p_next;
