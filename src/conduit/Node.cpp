@@ -1793,21 +1793,13 @@ Node::walk_schema(Node &node,
     
     if(schema->dtype().id() == DataType::OBJECT_T)
     {
-        // create children nodes linked to the schema's children
-        std::vector<std::string> schema_entries;
-        schema->paths(schema_entries);
-        std::vector<std::string>::const_iterator ent_itr;
-        
-        for(ent_itr  = schema_entries.begin();
-            ent_itr != schema_entries.end();
-            ++ent_itr)
-        {
-            std::string curr_name = *ent_itr;
-            Schema *curr_schema = &schema->fetch(curr_name);
-            // relying on stl default construction here
-            Node &curr_node = node[curr_name];
-            curr_node.set(curr_schema);
-            walk_schema(curr_node,curr_schema,data);
+		for(index_t i=0;i<m_schema->children().size();i++)
+		{
+	
+            Schema *curr_schema = &schema->fetch(m_schema->obj_order()[i]);
+			Node *curr_node = new Node(curr_schema);
+			m_children.push_back(curr_node);
+            walk_schema(*curr_node,curr_schema,data);
         }                   
     }
     else if(schema->dtype().id() == DataType::LIST_T)
@@ -1816,10 +1808,9 @@ Node::walk_schema(Node &node,
         for(index_t i=0;i<num_entries;i++)
         {
             Schema *curr_schema = &schema->fetch(i);
-            Node curr_node(DataType::Objects::object());
-            curr_node.set(curr_schema);
-            walk_schema(curr_node,curr_schema,data);
-            node.append(curr_node);
+			Node *curr_node = new Node(curr_schema);
+			m_children.push_back(curr_node);
+            walk_schema(*curr_node,curr_schema,data);
         }
     }
     else

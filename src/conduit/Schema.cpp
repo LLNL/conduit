@@ -582,16 +582,9 @@ Schema::to_json() const
 void
 Schema::to_json(std::ostringstream &oss) const
 {
-    if(m_dtype.id() == DataType::OBJECT_T ||
-       m_dtype.id() == DataType::LIST_T)
+    if(m_dtype.id() == DataType::OBJECT_T)
     {
         oss << "{";
-
-        std::vector<std::string>::const_iterator order_itr;
-        std::map<std::string,Schema>::const_iterator ent_itr;
-
-        const std::map<std::string, index_t> &ents = obj_map();
-
         bool first=true;
         for (index_t i = 0; i < children().size(); i++) {
             if(!first)
@@ -601,8 +594,21 @@ Schema::to_json(std::ostringstream &oss) const
             oss << "\n";
             first=false;
         }
-
+		oss << "}";
     }
+	else if(m_dtype.id() == DataType::LIST_T)
+	{
+		oss << "[";
+        bool first=true;
+        for (index_t i = 0; i < children().size(); i++) {
+            if(!first)
+                oss << ",";
+            children()[i]->to_json(oss);
+            oss << "\n";
+            first=false;
+        }
+		oss << "]";
+	}
     else // assume leaf data type
     {
         m_dtype.to_json(oss);
