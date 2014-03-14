@@ -540,10 +540,12 @@ walk_schema(Schema &schema,
                  itr != jvalue.MemberEnd(); ++itr)
             {
                 std::string entry_name(itr->name.GetString());
-                Schema curr_schema(DataType::Objects::object());
-                schema[entry_name] = Schema(DataType::Objects::object());
+				Schema &curr_schema = schema.fetch(entry_name);
+				curr_schema.set(DataType::Objects::object());
+				//Schema curr_schema(DataType::Objects::object());
+                //schema[entry_name] = Schema(DataType::Objects::object());
                 walk_schema(curr_schema,itr->value, curr_offset);
-                schema[entry_name] = curr_schema;
+                //schema[entry_name] = curr_schema;
                 curr_offset += curr_schema.total_bytes();
             }
         }

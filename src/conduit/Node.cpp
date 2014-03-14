@@ -1773,8 +1773,8 @@ Node::walk_schema(const Schema &schema, void *data)
     m_data = data;
     m_alloced = false;
     m_schema->set(schema);
-    
-    
+	std::cout << "INTERNAL" << std::endl;
+	std::cout << m_schema->to_json() << std::endl;
     return walk_schema(*this,m_schema,data);
     
     rapidjson::Document document;
@@ -1793,13 +1793,14 @@ Node::walk_schema(Node &node,
     
     if(schema->dtype().id() == DataType::OBJECT_T)
     {
-		for(index_t i=0;i<m_schema->children().size();i++)
+		for(index_t i=0;i<schema->children().size();i++)
 		{
 	
-            Schema *curr_schema = &schema->fetch(m_schema->obj_order()[i]);
+			std::string curr_name = schema->obj_order()[i];
+            Schema *curr_schema = &schema->fetch(curr_name);
 			Node *curr_node = new Node(curr_schema);
-			m_children.push_back(curr_node);
             walk_schema(*curr_node,curr_schema,data);
+			node.m_children.push_back(curr_node);
         }                   
     }
     else if(schema->dtype().id() == DataType::LIST_T)
@@ -1809,8 +1810,8 @@ Node::walk_schema(Node &node,
         {
             Schema *curr_schema = &schema->fetch(i);
 			Node *curr_node = new Node(curr_schema);
-			m_children.push_back(curr_node);
             walk_schema(*curr_node,curr_schema,data);
+			node.m_children.push_back(curr_node);
         }
     }
     else
