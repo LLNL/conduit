@@ -135,6 +135,7 @@ private:
     bool        m_static;
 
 
+	
     struct Schema_Object_Hierarchy 
     {
         std::vector<Schema*>            children;
