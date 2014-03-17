@@ -45,6 +45,7 @@ Node::init_defaults()
     m_mmap_size = 0;
 
     m_schema = new Schema(DataType::EMPTY_T);
+    
 }
 
 ///============================================
@@ -893,7 +894,7 @@ Node::set(Schema &schema,void* data)
 void
 Node::set(Schema *schema_ptr)
 {
-    if(m_schema->delete_me())
+    if(m_schema->is_root())
         delete m_schema;
     m_schema = schema_ptr;    
 }
@@ -1511,7 +1512,7 @@ Node::to_json(std::ostringstream &oss,
 		{
 		    if(!first)
                 oss << ", ";
-        	oss << "\""<< m_schema->obj_order()[i] << "\": ";
+        	oss << "\""<< m_schema->object_order()[i] << "\": ";
             m_children[i]->to_json(oss,simple,indent);
 			
 		    first=false;
@@ -1669,7 +1670,7 @@ void
 Node::cleanup()
 {
     release();
-    if(m_schema->delete_me())
+    if(m_schema->is_root())
     {
         if(m_schema != NULL)
         {
@@ -1773,7 +1774,7 @@ Node::walk_schema(Node &node,
 		for(index_t i=0;i<schema->children().size();i++)
 		{
 	
-			std::string curr_name = schema->obj_order()[i];
+			std::string curr_name = schema->object_order()[i];
             Schema *curr_schema = &schema->fetch(curr_name);
 			Node *curr_node = new Node(curr_schema);
             walk_schema(*curr_node,curr_schema,data);

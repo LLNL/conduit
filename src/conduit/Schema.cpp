@@ -59,7 +59,7 @@ Schema::Schema(const std::string &json_schema)
 
 ///============================================
 Schema::~Schema()
-{reset();}
+{release();}
 
 ///============================================
 void
@@ -77,13 +77,11 @@ Schema::release()
     
     if(dtype().id() == DataType::OBJECT_T)
     { 
-        ObjHierarchy *obj_hier = (ObjHierarchy *)m_hierarchy_data;
-        delete obj_hier;
+        delete object_hierarchy();
     }
     else if(dtype().id() == DataType::LIST_T)
     { 
-        ListHierarchy *lst_hier = (ListHierarchy *)m_hierarchy_data;
-        delete lst_hier;
+        delete list_hierarchy();
     }
 }
 
@@ -102,7 +100,8 @@ Schema::init_defaults()
 {
     m_dtype  = DataType::Objects::empty();
     m_hierarchy_data = NULL;
-    m_delete_me = false;
+    m_root   = false;
+    m_static = false;
 }
 
 ///============================================
@@ -113,7 +112,7 @@ Schema::init_object()
     {
         reset();
         m_dtype  = DataType::Objects::object();
-        m_hierarchy_data = new ObjHierarchy();
+        m_hierarchy_data = new Schema_Object_Hierarchy();
     }
 }
 
@@ -125,7 +124,7 @@ Schema::init_list()
     {
         reset();
         m_dtype  = DataType::Objects::list();
-        m_hierarchy_data = new ListHierarchy();
+        m_hierarchy_data = new Schema_List_Hierarchy();
     }
 }
 
@@ -135,13 +134,16 @@ Schema::set(const Schema &schema)
 {
     bool init_children = false;
 	index_t dt_id = schema.m_dtype.id();
-    if (dt_id == DataType::OBJECT_T) {
+    if (dt_id == DataType::OBJECT_T)
+    {
        init_object();
        init_children = true;
 
-       obj_map() = schema.obj_map();
-       obj_order() = schema.obj_order();
-    } else if (dt_id == DataType::LIST_T) {
+       object_map() = schema.object_map();
+       object_order() = schema.object_order();
+    } 
+    else if (dt_id == DataType::LIST_T)
+    {
        init_list();
        init_children = true;
     }
@@ -151,16 +153,16 @@ Schema::set(const Schema &schema)
 	}
 
 	
-	
-    if (init_children) {
+    if (init_children) 
+    {
        std::vector<Schema*> &my_ents = children();
        const std::vector<Schema*> &their_ents = schema.children();
-       for (index_t i = 0; i < their_ents.size(); i++) {
-           Schema* entry_schema = new Schema(*their_ents[i]);
+       for (index_t i = 0; i < their_ents.size(); i++) 
+       {
+           Schema *entry_schema = new Schema(*their_ents[i]);
            my_ents.push_back(entry_schema);
        }
     }
-
 }
 
 
@@ -287,9 +289,9 @@ index_t
 Schema::entry_index(const std::string &path) const
 {
     // find p_curr with an iterator
-    std::map<std::string, index_t>::const_iterator itr = obj_map().find(path);
+    std::map<std::string, index_t>::const_iterator itr = object_map().find(path);
     // return Empty if the entry does not exist (static/locked case)
-    if(itr == obj_map().end())
+    if(itr == object_map().end())
     {
         ///
         /// Full path errors would be nice here. 
@@ -316,8 +318,8 @@ Schema::fetch(const std::string &path)
     if (!has_path(p_curr)) {
         Schema* my_schema = new Schema();
         children().push_back(my_schema);
-        obj_map()[p_curr] = children().size() - 1;
-        obj_order().push_back(p_curr);
+        object_map()[p_curr] = children().size() - 1;
+        object_order().push_back(p_curr);
     }
 
     index_t idx = entry_index(p_curr);
@@ -387,7 +389,7 @@ Schema::has_path(const std::string &path) const
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
-    const std::map<std::string,index_t> &ents = obj_map();
+    const std::map<std::string,index_t> &ents = object_map();
 
     if(ents.find(p_curr) == ents.end())
     {
@@ -410,8 +412,8 @@ Schema::has_path(const std::string &path) const
 void
 Schema::paths(std::vector<std::string> &paths, bool walk) const
 {
-    paths = obj_order();
-    // TODO: walk == True, show nested paths
+    paths = object_order();
+    // TODO: walk == True, show nested paths?
 }
 
 ///============================================
@@ -461,13 +463,13 @@ Schema::remove(const std::string &path)
         myschema->remove(p_next);
     }
 
-    obj_map().erase(p_curr);
+    object_map().erase(p_curr);
     children().erase(children().begin() + idx);
-    obj_order().erase(obj_order().begin() + idx);
+    object_order().erase(object_order().begin() + idx);
     delete myschema;
 
-    for (index_t i = idx; i < obj_order().size(); i++) {
-        obj_map()[obj_order()[idx]]--;
+    for (index_t i = idx; i < object_order().size(); i++) {
+        object_map()[object_order()[idx]]--;
     }
 }
 
@@ -609,7 +611,7 @@ Schema::to_json(std::ostringstream &oss) const
         for (index_t i = 0; i < children().size(); i++) {
             if(!first)
                 oss << ",";
-            oss << "\""<< obj_order()[i] << "\" : ";
+            oss << "\""<< object_order()[i] << "\" : ";
             children()[i]->to_json(oss);
             oss << "\n";
             first=false;
@@ -635,62 +637,91 @@ Schema::to_json(std::ostringstream &oss) const
     }
 }
 
+
+///============================================
+Schema::Schema_Object_Hierarchy *
+Schema::object_hierarchy()
+{
+    return static_cast<Schema_Object_Hierarchy*>(m_hierarchy_data);
+}
+
+///============================================
+Schema::Schema_List_Hierarchy *
+Schema::list_hierarchy()
+{
+    return static_cast<Schema_List_Hierarchy*>(m_hierarchy_data);
+}
+
+
+///============================================
+const Schema::Schema_Object_Hierarchy *
+Schema::object_hierarchy() const 
+{
+    return static_cast<Schema_Object_Hierarchy*>(m_hierarchy_data);
+}
+
+///============================================
+const Schema::Schema_List_Hierarchy *
+Schema::list_hierarchy() const 
+{
+    return static_cast<Schema_List_Hierarchy*>(m_hierarchy_data);
+}
+
+
 ///============================================
 std::map<std::string, index_t> &
-Schema::obj_map()
+Schema::object_map()
 {
-    ObjHierarchy* obj_hier = static_cast<ObjHierarchy*>(m_hierarchy_data);
-    return obj_hier->obj_map;
+    return object_hierarchy()->object_map;
 }
 
 ///============================================
 std::vector<Schema*> &
 Schema::children()
 {
-    if (m_dtype.id() == DataType::OBJECT_T) {
-        ObjHierarchy* obj_hier = static_cast<ObjHierarchy*>(m_hierarchy_data);
-        return obj_hier->children;
-    } else {
-        ListHierarchy* list_hier = static_cast<ListHierarchy*>(m_hierarchy_data);
-        return list_hier->entries;
+    if (m_dtype.id() == DataType::OBJECT_T)
+    {
+        return object_hierarchy()->children;
+    } 
+    else 
+    {
+        return list_hierarchy()->children;
     }
 }
 
 ///============================================
 std::vector<std::string> &
-Schema::obj_order()
+Schema::object_order()
 {
-    ObjHierarchy* obj_hier = static_cast<ObjHierarchy*>(m_hierarchy_data);
-    return obj_hier->obj_order;
+    return object_hierarchy()->object_order;
 }
 
 ///============================================
 const std::map<std::string, index_t> &
-Schema::obj_map() const
+Schema::object_map() const
 {
-    ObjHierarchy* obj_hier = static_cast<ObjHierarchy*>(m_hierarchy_data);
-    return obj_hier->obj_map;
+    return object_hierarchy()->object_map;
 }
 
 ///============================================
 const std::vector<Schema*> &
 Schema::children() const
 {
-    if (m_dtype.id() == DataType::OBJECT_T) {
-        ObjHierarchy* obj_hier = static_cast<ObjHierarchy*>(m_hierarchy_data);
-        return obj_hier->children;
-    } else {
-        ListHierarchy* list_hier = static_cast<ListHierarchy*>(m_hierarchy_data);
-        return list_hier->entries;
+    if (m_dtype.id() == DataType::OBJECT_T)
+    {
+        return object_hierarchy()->children;
+    } 
+    else 
+    {
+        return list_hierarchy()->children;
     }
 }
 
 ///============================================
 const std::vector<std::string> &
-Schema::obj_order() const
+Schema::object_order() const
 {
-    ObjHierarchy* obj_hier = static_cast<ObjHierarchy*>(m_hierarchy_data);
-    return obj_hier->obj_order;
+    return object_hierarchy()->object_order;
 }
 
 }

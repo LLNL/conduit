@@ -54,7 +54,7 @@ public:
     const DataType &dtype() const {return m_dtype;}
     
     // the `entry' methods don't modify map structure, if a path doesn't exists
-    // they will return an Empty Locked Node (we could also throw an exception)
+    // they will throw an exception
     
     Schema           &entry(const std::string &path);
     Schema           &entry(index_t idx);
@@ -67,15 +67,15 @@ public:
     Schema           &fetch(const std::string &path);
     Schema           &fetch(index_t idx);
     
-    index_t    element_index(index_t idx) const {return m_dtype.element_index(idx);}
+    index_t           element_index(index_t idx) const {return m_dtype.element_index(idx);}
       
     Schema           &operator[](const std::string &path);
     Schema           &operator[](const index_t idx);
     const Schema     &operator[](const std::string &path) const;
     const Schema     &operator[](const index_t idx) const;
   
-    void    reset();
-    index_t number_of_entries() const;
+    void              reset();
+    index_t           number_of_entries() const;
 
     ///
     /// Object Interface
@@ -85,8 +85,13 @@ public:
     void    remove(const std::string &path);
 
 
-    void    set_delete_me(bool value) {m_delete_me = value;}
-    bool    delete_me() const { return m_delete_me;}
+    void    set_root(bool value) {m_root = value;}
+    bool    is_root() const { return m_root;}
+    
+    void    set_static(bool value) {m_static = value;}
+    bool    is_static() const { return m_static;}
+
+    
     ///
     /// List Interface
     ///
@@ -98,25 +103,22 @@ public:
     void append(const Schema &schema)
         {init_list(); children().push_back(new Schema(schema));}
 
-    void append(Schema &schema)
-        {init_list(); children().push_back(new Schema(schema));}
-
     void list_of(const Schema &schema, index_t num_elements);
 
     ///
-    /// TODO: locking
+    /// TODO: static case (locking)
     ///
-    //
 
 private:
     // for obj and list interfaces
-    std::map<std::string, index_t>        &obj_map();
-    std::vector<Schema*>                  &children();
-    std::vector<std::string>              &obj_order();
+    std::vector<Schema*>                   &children();
+    std::map<std::string, index_t>         &object_map();
+    std::vector<std::string>               &object_order();
 
-    const std::map<std::string, index_t>   &obj_map() const;
-    const std::vector<Schema*>             &children() const;
-    const std::vector<std::string>         &obj_order() const;
+
+    const std::vector<Schema*>             &children()  const;    
+    const std::map<std::string, index_t>   &object_map()   const;
+    const std::vector<std::string>         &object_order() const;
 
 
     void        init_defaults();
@@ -125,21 +127,31 @@ private:
     void        release();
     
     void        walk_schema(const std::string &json_schema);
-    void        walk_schema(Schema &schema,const std::string &json_schema);
+    void        walk_schema(Schema &schema, const std::string &json_schema);
 
-    DataType                      m_dtype;
-    void                         *m_hierarchy_data;
-    bool                          m_delete_me;
+    DataType    m_dtype;
+    void       *m_hierarchy_data;
+    bool        m_root;
+    bool        m_static;
 
-    struct ObjHierarchy {
+
+    struct Schema_Object_Hierarchy 
+    {
+        std::vector<Schema*>            children;
+        std::vector<std::string>        object_order;
+        std::map<std::string, index_t>  object_map;
+    };
+
+    struct Schema_List_Hierarchy 
+    {
         std::vector<Schema*> children;
-        std::vector<std::string> obj_order;
-        std::map<std::string, index_t> obj_map;
     };
 
-    struct ListHierarchy {
-        std::vector<Schema*> entries;
-    };
+    Schema_Object_Hierarchy        *object_hierarchy();
+    Schema_List_Hierarchy          *list_hierarchy();
+
+    const Schema_Object_Hierarchy  *object_hierarchy() const;
+    const Schema_List_Hierarchy    *list_hierarchy()   const;
 
 };
 
