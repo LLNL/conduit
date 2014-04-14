@@ -47,6 +47,21 @@ include_directories(${RAPIDJSON_INCLUDE_DIR})
 add_subdirectory(thirdparty_builtin/libb64-1.2.1/)
 include_directories(thirdparty_builtin/libb64-1.2.1/include/)
 
+
+################################
+# Setup and build gperftools
+################################
+add_subdirectory(thirdparty_builtin/gperftools-2.1/)
+
+add_library(gperf_tcmalloc STATIC IMPORTED)
+add_library(gperf_profiler STATIC IMPORTED)
+
+set_target_properties( gperf_tcmalloc PROPERTIES IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/thirdparty_builtin/gperftools-2.1/build/lib/libtcmalloc.a)
+set_target_properties( gperf_profiler PROPERTIES IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/thirdparty_builtin/gperftools-2.1/build/lib/libprofiler.a)
+
+add_dependencies( gperf_tcmalloc gperftools_build )
+add_dependencies( gperf_profiler gperftools_build )
+
 ################################
 # Setup includes for Numpy
 ################################

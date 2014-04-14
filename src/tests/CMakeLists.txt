@@ -24,7 +24,7 @@ set(UNIT_TESTS gtest_smoke
 
 foreach(TEST ${UNIT_TESTS})
     add_executable(${TEST} ${TEST}.cpp )
-    target_link_libraries(${TEST} gtest gtest_main conduit libb64)
+    target_link_libraries(${TEST} gtest gtest_main conduit libb64 gperf_tcmalloc gperf_profiler)
     add_test( ${TEST} ${TEST} )
 endforeach()
 
