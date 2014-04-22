@@ -2,6 +2,7 @@
 # Add our Unit Tests
 ################################
 
+
 ################################
 # Core Unit Tests
 ################################
@@ -27,6 +28,8 @@ foreach(TEST ${UNIT_TESTS})
     add_executable(${TEST} ${TEST}.cpp )
     target_link_libraries(${TEST} gtest_main gtest conduit libb64 gperftools_lib)
     add_test( ${TEST} ${TEST} )
+    # Set HEAPCHECK to local to enable explicit gpref heap checking 
+    set_property(TEST ${TEST}  PROPERTY ENVIRONMENT "HEAPCHECK=local")
 endforeach()
 
 ################################
