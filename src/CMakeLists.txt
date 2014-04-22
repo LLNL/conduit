@@ -53,14 +53,19 @@ include_directories(thirdparty_builtin/libb64-1.2.1/include/)
 ################################
 add_subdirectory(thirdparty_builtin/gperftools-2.1/)
 
-add_library(gperf_tcmalloc STATIC IMPORTED)
-add_library(gperf_profiler STATIC IMPORTED)
+add_library(gperftools_lib STATIC IMPORTED)
 
-set_target_properties( gperf_tcmalloc PROPERTIES IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/thirdparty_builtin/gperftools-2.1/build/lib/libtcmalloc.a)
-set_target_properties( gperf_profiler PROPERTIES IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/thirdparty_builtin/gperftools-2.1/build/lib/libprofiler.a)
+set_target_properties(gperftools_lib PROPERTIES IMPORTED_LOCATION 
+                      ${CMAKE_BINARY_DIR}/thirdparty_builtin/gperftools-2.1/build/lib/libtcmalloc_and_profiler.a)
 
-add_dependencies( gperf_tcmalloc gperftools_build )
-add_dependencies( gperf_profiler gperftools_build )
+add_dependencies( gperftools_lib gperftools_build )
+
+include_directories(${CMAKE_BINARY_DIR}/thirdparty_builtin/gperftools-2.1/build/include/)
+
+if(CMAKE_COMPILER_IS_GNUCXX)
+    set(CMAKE_CXX_FLAGS "-fno-omit-frame-pointer") 
+endif()
+
 
 ################################
 # Setup includes for Numpy

@@ -7,6 +7,7 @@
 ################################
 set(UNIT_TESTS gtest_smoke 
                rapidjson_smoke
+               gpref_smoke
                conduit_smoke
                conduit_endianness
                conduit_node
@@ -24,7 +25,7 @@ set(UNIT_TESTS gtest_smoke
 
 foreach(TEST ${UNIT_TESTS})
     add_executable(${TEST} ${TEST}.cpp )
-    target_link_libraries(${TEST} gtest gtest_main conduit libb64 gperf_tcmalloc gperf_profiler)
+    target_link_libraries(${TEST} gtest_main gtest conduit libb64 gperftools_lib)
     add_test( ${TEST} ${TEST} )
 endforeach()
 
