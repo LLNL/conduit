@@ -2,7 +2,7 @@
 # Conduit
 ################################
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8)
 
 project(conduit)
 
@@ -62,6 +62,9 @@ add_dependencies( gperftools_lib gperftools_build )
 
 include_directories(${CMAKE_BINARY_DIR}/thirdparty_builtin/gperftools-2.1/build/include/)
 
+#
+# Note: We only want to do this when are using gperf profiling tools, we may not want to use this in general
+#
 if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "-fno-omit-frame-pointer") 
 endif()
