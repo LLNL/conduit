@@ -12,7 +12,7 @@ using namespace conduit;
 
 void print_dt(const DataType &dtype)
 {
-    std::cout << dtype.json_schema() << std::endl;
+    std::cout << dtype.to_json() << std::endl;
 }
 
 

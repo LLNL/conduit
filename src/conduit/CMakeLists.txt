@@ -16,8 +16,10 @@ set(conduit_headers
     conduit.h
     Core.h
     DataType.h
+    DataContainer.h
     Error.h
     Schema.h
+    Utils.h
     ${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h
     )
 
@@ -30,8 +32,10 @@ set(conduit_sources
     Endianness.cpp 
     DataType.cpp
     DataArray.cpp
+    DataContainer.cpp
     Node.cpp
     Schema.cpp
+    Utils.cpp
     )
 
 #

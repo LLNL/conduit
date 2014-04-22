@@ -95,7 +95,10 @@ TEST(conduit_node_simple_gen_schema_test, conduit_node)
     EXPECT_EQ(n["b"].as_uint32(),b_val);
     EXPECT_EQ(n["c"].as_float64(),c_val);
 
-    Schema schema2("{\"g\": {\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}}");
+    std::string s2_str = "{\"g\": {\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}}";
+    std::cout << s2_str << std::endl;
+    Schema schema2(s2_str);
+    
     Node n2(schema2,data);
     EXPECT_EQ(n2["g"]["a"].as_uint32(),a_val);
     EXPECT_EQ(n2["g"]["b"].as_uint32(),b_val);
@@ -130,6 +133,8 @@ TEST(conduit_node_simple_gen_schema_test, conduit_node)
     memcpy(&data4[16],&d_val,4);
     memcpy(&data4[20],&e_val,8);
     Node n5(schema5,data4);
+    
+    std::cout << n5.schema().to_json() << std::endl;
     EXPECT_EQ(n5["top"][0]["int1"].as_uint32(),a_val);
     EXPECT_EQ(n5["top"][0]["int2"].as_uint32(),b_val);
     EXPECT_EQ(n5["top"][1].as_float64(),c_val);
@@ -152,7 +157,7 @@ TEST(conduit_node_simple_schema_test, conduit_node)
     n["c"] = c_val;
     n["here"]["there"] = c_val;
 
-    std::string res = n.json_schema();
+    std::string res = n.schema().to_json();
     std::cout << res;
     rapidjson::Document d;
     d.Parse<0>(res.c_str());

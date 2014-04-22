@@ -29,11 +29,13 @@ typedef conduit_int64   int64;
 typedef conduit_float32 float32;
 typedef conduit_float64 float64;
 
+typedef uint32 index32_t;
+typedef uint64 index64_t;
 
 #ifdef CONDUIT_INDEX_32
-typedef uint32 index_t;
+typedef index32_t index_t;
 #else
-typedef uint64 index_t;
+typedef index64_t index_t;
 #endif 
 
 std::string  version();
