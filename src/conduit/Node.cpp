@@ -1609,7 +1609,8 @@ Node::to_json(std::ostringstream &oss,
             /* floats */
             case DataType::FLOAT32_T: as_float32_array().to_json(value_oss); break;
             case DataType::FLOAT64_T: as_float64_array().to_json(value_oss); break;
-            case DataType::BYTESTR_T: oss << as_bytestr(); break;
+            /* bytestr */
+            case DataType::BYTESTR_T: value_oss << "\"" << as_bytestr() << "\""; break;
         }
 
         if(simple)
