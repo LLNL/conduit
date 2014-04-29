@@ -882,6 +882,40 @@ Node::set(const float64_array  &data)
     m_data  = data.data_ptr();
 }
 
+///============================================
+void 
+Node::set(const std::string  &data)
+{
+    release();
+    // size including the null term
+    index_t str_size_with_term = data.length()+1;
+    DataType str_t(DataType::BYTESTR_T,
+                   str_size_with_term,
+                   0,
+                   sizeof(char),
+                   sizeof(char),
+                   Endianness::DEFAULT_T);
+    init(str_t);
+    memcpy(m_data,data.c_str(),sizeof(char)*str_size_with_term);
+}
+
+///============================================
+void 
+Node::set(const char *data)
+{
+    release();
+    // size including the null term
+    index_t str_size_with_term = strlen(data)+1;
+    DataType str_t(DataType::BYTESTR_T,
+                   str_size_with_term,
+                   0,
+                   sizeof(char),
+                   sizeof(char),
+                   Endianness::DEFAULT_T);
+    init(str_t);
+    memcpy(m_data,data,sizeof(char)*str_size_with_term);
+}
+
 
 ///============================================
 void
@@ -1208,6 +1242,26 @@ Node::operator=(const float32_array &data)
 ///============================================
 Node &
 Node::operator=(const float64_array &data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+/// bytestr types
+///============================================
+
+///============================================
+Node &
+Node::operator=(const std::string &data)
+{
+    set(data);
+    return *this;
+}
+
+///============================================
+Node &
+Node::operator=(const char *data)
 {
     set(data);
     return *this;

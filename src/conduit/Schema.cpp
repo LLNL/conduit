@@ -513,6 +513,7 @@ walk_schema(Schema &schema,
             const rapidjson::Value &jvalue,
             index_t curr_offset)
 {
+    // object cases
     if(jvalue.IsObject())
     {
         if (jvalue.HasMember("dtype"))
@@ -524,6 +525,7 @@ walk_schema(Schema &schema,
                 int length =1;
                 if(jvalue.HasMember("length"))
                 {
+                    // TODO: Handle reference 
                     length = jvalue["length"].GetInt();
                 }
                 // we will create `length' # of objects of obj des by dt_value
@@ -570,6 +572,7 @@ walk_schema(Schema &schema,
             }
         }
     }
+    // List case 
     else if (jvalue.IsArray()) 
     {
         for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
@@ -581,6 +584,7 @@ walk_schema(Schema &schema,
             schema.append(curr_schema);
         }
     }
+    // Simplest case, handles "uint32", "float64", with extended type info
     else if(jvalue.IsString())
     {
          std::string dtype_name(jvalue.GetString());

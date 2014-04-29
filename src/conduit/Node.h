@@ -148,7 +148,9 @@ public:
 
     void set(const float32_array &data);
     void set(const float64_array &data);
-    
+
+    // bytestr use cases:
+    void set(const char* data);    
     void set(const std::string &data);
                 
     /* Assignment ops */
@@ -196,6 +198,8 @@ public:
     Node &operator=(const float32_array &data);
     Node &operator=(const float64_array &data);
 
+    // bytestr use cases:
+    Node &operator=(const char* data);
     Node &operator=(const std::string &data);
 
     /*schema access */
@@ -397,7 +401,7 @@ public:
     char            *as_bytestr() {return (char *)element_pointer(0);}
     const char      *as_bytestr() const {return (const char *)element_pointer(0);}
     
-    std::string      as_string() const {return std::string((char *)element_pointer(0));}
+    std::string      as_string() const {return std::string(as_bytestr());}
 
     
 private:
