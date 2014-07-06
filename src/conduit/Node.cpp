@@ -482,6 +482,7 @@ Node::set(const Node& node, Schema* schema)
             for(index_t i=0;i<node.m_children.size();i++)
             {
                 Node *child = new Node();
+                child->m_parent = this;
                 child->set(*node.m_children[i],m_schema->children()[i]);
                 m_children.push_back(child);
             }
@@ -1365,11 +1366,20 @@ Node::fetch(const std::string &path)
 
     // if this node doesn't exist, we need to 
     // link it to a schema
+    
+    // check for parent
+    if(p_curr == "..")
+    {
+        if(m_parent != NULL) // TODO: check for erro (no parent)
+           return m_parent->fetch(p_next);
+    }
+    
     index_t idx;
     if(!m_schema->has_path(p_curr))
     {
         Schema *schema_ptr = &m_schema->fetch(p_curr);
         Node *new_node = new Node(schema_ptr);
+        new_node->m_parent = this;
         m_children.push_back(new_node);
         idx = m_children.size() - 1;
     } else {
@@ -1763,7 +1773,9 @@ Node::list_append(const Node &node)
     index_t idx = m_children.size();
 	m_schema->append(node.schema());
     Schema *schema_ptr = &m_schema->fetch(idx);
-    m_children.push_back(new Node(node,schema_ptr));
+    Node *res_node = new Node(node,schema_ptr);
+    res_node->m_parent=this;
+    m_children.push_back(res_node);
 }
 
 ///============================================
@@ -1833,6 +1845,7 @@ Node::walk_schema(Node &node,
 			std::string curr_name = schema->object_order()[i];
             Schema *curr_schema = &schema->fetch(curr_name);
 			Node *curr_node = new Node(curr_schema);
+            curr_node->m_parent = &node;
             walk_schema(*curr_node,curr_schema,data);
 			node.m_children.push_back(curr_node);
         }                   
@@ -1844,6 +1857,7 @@ Node::walk_schema(Node &node,
         {
             Schema *curr_schema = &schema->fetch(i);
 			Node *curr_node = new Node(curr_schema);
+            curr_node->m_parent = &node;
             walk_schema(*curr_node,curr_schema,data);
 			node.m_children.push_back(curr_node);
         }

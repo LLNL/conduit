@@ -13,6 +13,7 @@ set(UNIT_TESTS gtest_smoke
                conduit_endianness
                conduit_bytestr
                conduit_node
+               conduit_node_parent
                conduit_serialize
                conduit_array
                conduit_list_of

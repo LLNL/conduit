@@ -100,6 +100,7 @@ Schema::init_defaults()
 {
     m_dtype  = DataType::Objects::empty();
     m_hierarchy_data = NULL;
+    m_parent = NULL;
     m_root   = false;
     m_static = false;
 }
@@ -160,6 +161,7 @@ Schema::set(const Schema &schema)
        for (index_t i = 0; i < their_ents.size(); i++) 
        {
            Schema *entry_schema = new Schema(*their_ents[i]);
+           entry_schema->m_parent = this;
            my_ents.push_back(entry_schema);
        }
     }
@@ -250,6 +252,13 @@ Schema::entry(const std::string &path)
 
     index_t idx = entry_index(p_curr);
     
+    // check for parent
+    if(p_curr == "..")
+    {
+        if(m_parent != NULL) // TODO: check for erro (no parent)
+           return m_parent->entry(p_next);
+    }
+    
     if(p_next.empty())
     {
         return *children()[idx];
@@ -272,6 +281,13 @@ Schema::entry(const std::string &path) const
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
+
+    // check for parent
+    if(p_curr == "..")
+    {
+        if(m_parent != NULL) // TODO: check for erro (no parent)
+           return m_parent->entry(p_next);
+    }
 
     index_t idx = entry_index(p_curr);
     
@@ -315,8 +331,18 @@ Schema::fetch(const std::string &path)
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
 
-    if (!has_path(p_curr)) {
+    // handle parent 
+    // check for parent
+    if(p_curr == "..")
+    {
+        if(m_parent != NULL) // TODO: check for erro (no parent)
+           return m_parent->fetch(p_next);
+    }
+    
+    if (!has_path(p_curr)) 
+    {
         Schema* my_schema = new Schema();
+        my_schema->m_parent = this;
         children().push_back(my_schema);
         object_map()[p_curr] = children().size() - 1;
         object_order().push_back(p_curr);
@@ -389,6 +415,9 @@ Schema::has_path(const std::string &path) const
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
+    
+    // handle parent case (..)
+    
     const std::map<std::string,index_t> &ents = object_map();
 
     if(ents.find(p_curr) == ents.end())

@@ -436,6 +436,7 @@ private:
     void              init_object();
     void              list_append(const Node &node);
 
+    Node                *m_parent;
     Schema              *m_schema;
     std::vector<Node*>   m_children;    
 

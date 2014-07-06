@@ -133,6 +133,8 @@ private:
     void       *m_hierarchy_data;
     bool        m_root;
     bool        m_static;
+    
+    Schema     *m_parent;
 
 
 	
