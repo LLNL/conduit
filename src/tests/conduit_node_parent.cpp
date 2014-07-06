@@ -23,6 +23,7 @@ TEST(conduit_node_parent_simple, conduit_node_parent)
     EXPECT_EQ(n["a"]["c"].as_uint32(),val2);
     Node &b = n["a/c"];
     EXPECT_EQ(b["../b"].as_uint32(),val1);
+    EXPECT_EQ(n["a/c/../b"].as_uint32(),val1);
     
 }
 
