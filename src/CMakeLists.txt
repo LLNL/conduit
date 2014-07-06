@@ -51,16 +51,16 @@ include_directories(thirdparty_builtin/libb64-1.2.1/include/)
 ################################
 # Setup and build gperftools
 ################################
-add_subdirectory(thirdparty_builtin/gperftools-2.1/)
+add_subdirectory(thirdparty_builtin/gperftools-2.2.1/)
 
 add_library(gperftools_lib STATIC IMPORTED)
 
 set_target_properties(gperftools_lib PROPERTIES IMPORTED_LOCATION 
-                      ${CMAKE_BINARY_DIR}/thirdparty_builtin/gperftools-2.1/build/lib/libtcmalloc_and_profiler.a)
+                      ${CMAKE_BINARY_DIR}/thirdparty_builtin/gperftools-2.2.1/build/lib/libtcmalloc_and_profiler.a)
 
 add_dependencies( gperftools_lib gperftools_build )
 
-include_directories(${CMAKE_BINARY_DIR}/thirdparty_builtin/gperftools-2.1/build/include/)
+include_directories(${CMAKE_BINARY_DIR}/thirdparty_builtin/gperftools-2.2.1/build/include/)
 
 #
 # Note: We only want to do this when are using gperf profiling tools, we may not want to use this in general

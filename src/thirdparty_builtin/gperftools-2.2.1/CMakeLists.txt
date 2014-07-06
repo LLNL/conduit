@@ -6,9 +6,9 @@ include(ExternalProject)
 ExternalProject_Add(
     gperftools_build
     PREFIX build
-    URL ${CMAKE_CURRENT_SOURCE_DIR}/gperftools-2.1.tar.gz
-    URL_MD5 5e5a981caf9baa9b4afe90a82dcf9882
-    CONFIGURE_COMMAND ./configure 
+    URL ${CMAKE_CURRENT_SOURCE_DIR}/gperftools-2.2.1.tar.gz
+    URL_MD5 47cbede9442764f9e8fbc403af6cacfd
+    CONFIGURE_COMMAND  CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} ./configure 
                         --enable-heap-checker     
                         --enable-heap-profiler 
                         --enable-cpu-profiler

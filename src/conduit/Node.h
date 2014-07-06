@@ -33,7 +33,7 @@ public:
     Node(Schema &schema);
     Node(Schema &schema, void *data);
     Node(Schema &schema, const std::string &stream_path, bool mmap=false);    
-    Node(Schema &schema, std::ifstream &ifs);
+    //Node(Schema &schema, std::ifstream &ifs);
     Node(const DataType &dtype, void *data);
         
     explicit Node(bool8  data);

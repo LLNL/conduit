@@ -4,8 +4,8 @@
 
 #include <iostream>
 #include "conduit.h"
-#include "google/heap-checker.h"
-#include "google/heap-profiler.h"
+#include "gperftools/heap-checker.h"
+#include "gperftools/heap-profiler.h"
 #include "gtest/gtest.h"
 
 using namespace conduit;

@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 namespace conduit
 {
@@ -98,11 +99,11 @@ Node::Node(Schema &schema, const std::string &stream_path, bool mmap)
 
 
 ///============================================
-Node::Node(Schema &schema, std::ifstream &ifs)
-{
-    init_defaults();
-    walk_schema(schema.to_json(),ifs);
-}
+// Node::Node(Schema &schema, std::ifstream &ifs)
+// {
+//     init_defaults();
+//     walk_schema(schema.to_json(),ifs);
+// }
 
 
 ///============================================
@@ -459,7 +460,7 @@ Node::set(const Node &node)
 void
 Node::set(const Node& node, Schema* schema)
 {
-    if (!node.dtype().id() == DataType::EMPTY_T)
+    if (node.dtype().id() != DataType::EMPTY_T)
     {
     
         if(node.dtype().id() == DataType::OBJECT_T || 
