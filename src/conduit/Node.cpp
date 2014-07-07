@@ -1877,7 +1877,8 @@ void
 Node::walk_schema(const std::string &json_schema,void *data)
 {
     rapidjson::Document document;
-    document.Parse<0>(json_schema.c_str());
+    std::string res = utils::json_sanitize(json_schema);
+    document.Parse<0>(res.c_str());
     index_t curr_offset = 0;
     conduit::walk_schema(this,this->m_schema,data,document,curr_offset);
 }

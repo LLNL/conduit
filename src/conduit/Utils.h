@@ -15,6 +15,8 @@ namespace utils
      void     split_path(const std::string &path,
                          std::string &curr,
                          std::string &next);
+
+     std::string json_sanitize(const std::string &json);
 }
 }
 

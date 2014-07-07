@@ -10,6 +10,7 @@ namespace conduit
 namespace utils
 {
 
+///============================================
 void     
 split_path(const std::string &path,
            std::string &curr,
@@ -28,6 +29,13 @@ split_path(const std::string &path,
     {
         curr = path;
     }
+}
+
+///============================================
+std::string
+json_sanitize(const std::string &json)
+{
+    return json;
 }
 
 
