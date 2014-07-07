@@ -61,13 +61,15 @@ TEST(conduit_list_of_path_ref, conduit_list_of)
     memcpy(&data[16],&b2_val,4);
     
     std::string jschema = "{ \"list_length\": \"uint32\", \"values\":{\"dtype\":{\"a\":\"int32\",\"b\":\"int32\"},\"length\":{\"reference\":\"../list_length\"}}}";
-	Schema sch(jschema);
-    Node n(sch,data);
+	
+    //For ref case, we will have to pass the json directly
+    //
+    Node n(jschema,data);
     std::cout << n.schema().to_json() << std::endl;
     std::cout << n.to_json() << std::endl;
-    
+
     std::cout <<  n["list_length"].as_uint32() << std::endl;
-    
+
     std::cout <<  n["values"][0]["a"].as_int32() << std::endl;
     std::cout <<  n["values"][1]["a"].as_int32() << std::endl;
 
@@ -81,5 +83,4 @@ TEST(conduit_list_of_path_ref, conduit_list_of)
     EXPECT_EQ(n["values"][0]["b"].as_int32(), b1_val);
     EXPECT_EQ(n["values"][1]["b"].as_int32(), b2_val);
 }
-
-
+    

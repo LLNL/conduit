@@ -369,6 +369,21 @@ Schema::fetch(index_t idx)
 }
 
 ///============================================
+Schema *
+Schema::fetch_pointer(const std::string &path)
+{
+    return &fetch(path);
+}
+
+///============================================
+Schema *
+Schema::fetch_pointer(index_t idx)
+{
+    return &fetch(idx);
+}
+
+
+///============================================
 Schema &
 Schema::operator[](const std::string &path)
 {
@@ -555,7 +570,14 @@ walk_schema(Schema &schema,
                 if(jvalue.HasMember("length"))
                 {
                     // TODO: Handle reference 
-                    length = jvalue["length"].GetInt();
+                    if(jvalue["length"].IsObject() && jvalue["lenght"].HasMember("reference"))
+                    {
+                        // we shouldn't get here ....
+                    }
+                    else
+                    {
+                        length = jvalue["length"].GetInt();
+                    }
                 }
                 // we will create `length' # of objects of obj des by dt_value
                  

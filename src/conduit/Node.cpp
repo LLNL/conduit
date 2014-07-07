@@ -15,23 +15,14 @@
 
 namespace conduit
 {
-
-///============================================
-/// walk_schema helper
-///============================================
-
-/* use these funcs to avoid having to include rapidjson headers  in Node.h
- (rapidjson::Values resolve to a complex templated type that we can't forward declare) 
-*/
-void walk_schema(Node &node,
-                 void *data, 
-                 const rapidjson::Value &jvalue, 
-                 index_t curr_offset);
-
-void walk_schema(Node &node, 
-                 const rapidjson::Value &jvalue);
-
-
+    
+void
+walk_schema(Node   *node,
+            Schema *schema,
+            void   *data,
+            const rapidjson::Value &jvalue,
+            index_t curr_offset);    
+    
 ///============================================
 /// Node
 ///============================================
@@ -67,26 +58,26 @@ Node::Node(Schema &schema)
 
 {
     init_defaults();
-    walk_schema(schema.to_json());
+    walk_schema(schema);
 }
-	
+    
 ///============================================
 Node::Node(Schema *schema_ptr)
 
 {
-	init_defaults();
-	m_schema = schema_ptr;
+    init_defaults();
+    m_schema = schema_ptr;
 }
-	
+    
 ///============================================
 Node::Node(const Node &node, Schema *schema_ptr)
 
 {
-	init_defaults();
-	set(node,schema_ptr);
+    init_defaults();
+    set(node,schema_ptr);
 }
 
-	
+    
 ///============================================
 Node::Node(Schema &schema, const std::string &stream_path, bool mmap)
 {    
@@ -99,20 +90,21 @@ Node::Node(Schema &schema, const std::string &stream_path, bool mmap)
 
 
 ///============================================
-// Node::Node(Schema &schema, std::ifstream &ifs)
-// {
-//     init_defaults();
-//     walk_schema(schema.to_json(),ifs);
-// }
+Node::Node(const std::string &json_schema, void *data)
+{
+    init_defaults(); 
+    std::cout << "json_schema_direct:" << json_schema << std::endl;
+    walk_schema(json_schema,data);
+}
 
 
 ///============================================
 Node::Node(Schema &schema, void *data)
 {
     init_defaults();
-	std::string json_schema =schema.to_json(); 
-	std::cout << "json_schema_rc:" << json_schema << std::endl;
-	walk_schema(schema,data);
+    std::string json_schema =schema.to_json(); 
+    std::cout << "json_schema_rc:" << json_schema << std::endl;
+    walk_schema(schema,data);
 }
 
 
@@ -383,15 +375,15 @@ Node::Node(float64 data)
 ///============================================
 Node::~Node()
 {
-	cleanup();
+    cleanup();
 }
 
 ///============================================
 void
 Node::reset()
 {
-	release();
-	m_schema->set(DataType::EMPTY_T);
+    release();
+    m_schema->set(DataType::EMPTY_T);
 }
 
 ///============================================
@@ -411,7 +403,7 @@ Node::load(Schema &schema, const std::string &stream_path)
     ///
     m_alloced = false;
     
-    walk_schema(schema.to_json(),m_data);
+    walk_schema(schema,m_data);
 
     ///
     /// TODO: Design Issue
@@ -436,7 +428,7 @@ Node::mmap(Schema &schema, const std::string &stream_path)
     ///
     m_mmaped = false;
     
-    walk_schema(schema.to_json(),m_data);
+    walk_schema(schema,m_data);
 
     ///
     /// TODO: Design Issue
@@ -517,8 +509,8 @@ Node::set(const DataType &dtype)
 {
     init(dtype);
 }
-	
-	
+    
+    
 ///============================================
 void 
 Node::set(bool8 data)
@@ -526,7 +518,7 @@ Node::set(bool8 data)
     init(DataType::Scalars::bool8());
     *(bool8*)((char*)m_data + schema().element_index(0)) = data;
 }
-	
+    
 
 ///============================================
 /// int types
@@ -923,7 +915,7 @@ Node::set(const char *data)
 void
 Node::set(Schema &schema,void* data)
 {
-    walk_schema(schema.to_json(),data);    
+    walk_schema(schema,data);    
 }
 
 ///============================================
@@ -934,16 +926,16 @@ Node::set(Schema *schema_ptr)
         delete m_schema;
     m_schema = schema_ptr;    
 }
-	
+    
 ///============================================
 void
 Node::set(Schema *schema_ptr,void *data)
 {
     set(schema_ptr);
-	release();
-	m_data    = data;    
+    release();
+    m_data    = data;    
 }
-	
+    
 ///============================================
 void
 Node::set(const DataType &dtype, void *data)
@@ -1283,7 +1275,7 @@ void
 Node::serialize(const std::string &stream_path,
                 bool compact) const
 {
-	std::ofstream ofs;
+    std::ofstream ofs;
     ofs.open(stream_path.c_str());
     serialize(ofs,compact);
     ofs.close();
@@ -1408,6 +1400,21 @@ Node::fetch(index_t idx)
     // we could also potentially support index fetch on:
     //   OBJECT_T (imp-order)
     return *m_children[idx];
+}
+
+
+///============================================
+Node *
+Node::fetch_pointer(const std::string &path)
+{
+    return &fetch(path);
+}
+
+///============================================
+Node *
+Node::fetch_pointer(index_t idx)
+{
+    return &fetch(idx);
 }
 
 ///============================================
@@ -1553,6 +1560,31 @@ Node::to_float64() const
     return 0.0;
 }
 
+
+///============================================
+index_t
+Node::to_index_t() const
+{
+    switch(dtype().id())
+    {
+        case DataType::BOOL8_T: return (index_t)as_bool8();
+        /* ints */
+        case DataType::INT8_T:  return (index_t)as_int8();
+        case DataType::INT16_T: return (index_t)as_int16();
+        case DataType::INT32_T: return (index_t)as_int32();
+        case DataType::INT64_T: return (index_t)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (index_t)as_uint8();
+        case DataType::UINT16_T: return (index_t)as_uint16();
+        case DataType::UINT32_T: return (index_t)as_uint32();
+        case DataType::UINT64_T: return (index_t)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (index_t)as_float32();
+        case DataType::FLOAT64_T: return (index_t)as_float64();
+    }
+    return 0;
+}
+
 ///============================================
 std::string 
 Node::to_json(bool simple, index_t indent) const
@@ -1570,17 +1602,17 @@ Node::to_json(std::ostringstream &oss,
     if(dtype().id() == DataType::OBJECT_T)
     {
         oss << "{";
-		bool first=true;
+        bool first=true;
         
-		index_t nchildren = m_children.size();
-		for(index_t i=0; i < nchildren;i++)
-		{
-		    if(!first)
+        index_t nchildren = m_children.size();
+        for(index_t i=0; i < nchildren;i++)
+        {
+            if(!first)
                 oss << ", ";
-        	oss << "\""<< m_schema->object_order()[i] << "\": ";
+            oss << "\""<< m_schema->object_order()[i] << "\": ";
             m_children[i]->to_json(oss,simple,indent);
-			
-		    first=false;
+            
+            first=false;
         }
         oss << "}\n";
     }
@@ -1588,19 +1620,19 @@ Node::to_json(std::ostringstream &oss,
     {
         oss << "[";
         
-		index_t nchildren = m_children.size();
-		bool first=true;
-		for(index_t i=0; i < nchildren;i++)
-		{
-			if(!first)
+        index_t nchildren = m_children.size();
+        bool first=true;
+        for(index_t i=0; i < nchildren;i++)
+        {
+            if(!first)
                 oss << ", ";
-			m_children[i]->to_json(oss,simple,indent);
-			oss << "]\n";
-			first=false;
-		}
-		
-	}
-	else // assume leaf data type
+            m_children[i]->to_json(oss,simple,indent);
+            oss << "]\n";
+            first=false;
+        }
+        
+    }
+    else // assume leaf data type
     {
         std::ostringstream value_oss; 
         switch(dtype().id())
@@ -1638,7 +1670,7 @@ Node::init(const DataType& dtype)
 {
     if(this->dtype().is_compatible(dtype))
         return;
-	
+    
     if(m_data != NULL)
     {
         release();
@@ -1729,7 +1761,7 @@ Node::release()
         m_mmap_size = 0;
     }
 }
-	
+    
 
 ///============================================
 void
@@ -1771,7 +1803,7 @@ Node::list_append(const Node &node)
 {
     init_list();
     index_t idx = m_children.size();
-	m_schema->append(node.schema());
+    m_schema->append(node.schema());
     Schema *schema_ptr = &m_schema->fetch(idx);
     Node *res_node = new Node(node,schema_ptr);
     res_node->m_parent=this;
@@ -1784,37 +1816,11 @@ Node::walk_schema(const Schema &schema)
 {
     m_data    = NULL;
     m_alloced = false;
-    m_schema->set(DataType::OBJECT_T);
-    
-    rapidjson::Document document;
-    document.Parse<0>(schema.to_json().c_str());
-    
-    conduit::walk_schema(*this,document);
-}
-
-
-///============================================
-void 
-walk_schema(Node &node, 
-            const rapidjson::Value &jvalue)
-{
-    if (jvalue.HasMember("dtype"))
-    {
-        // if dtype is an object, we have a "list_of" case or tree node
-        const rapidjson::Value &dt_value = jvalue["dtype"];
-        if(dt_value.IsObject() && jvalue.HasMember("source"))
-        {
-            std::string path(jvalue["source"].GetString());
-            // read source
-            
-            //node = Node();
-            //walk_schema(node,data,jvalue,0);
-        }
-        else // we will alloc a data buffer that can hold all of the node data
-        {
-            // walk_schema(node,data,jvalue,0);
-        }
-    }
+    m_schema->set(schema);
+    // allocate data
+    allocate(m_schema->total_bytes());
+    // call walk w/ data
+    walk_schema(this,m_schema,m_data);
 }
 
 
@@ -1822,32 +1828,29 @@ walk_schema(Node &node,
 void 
 Node::walk_schema(const Schema &schema, void *data)
 {
-    m_data = data;
-    m_alloced = false;
     m_schema->set(schema);
-
-    return walk_schema(*this,m_schema,data);
+    walk_schema(this,m_schema,data);
 }
 
 ///============================================
 void 
-Node::walk_schema(Node &node, 
-                   Schema *schema,
-                   void *data)
+Node::walk_schema(Node   *node, 
+                  Schema *schema,
+                  void   *data)
 {
     // we can have an object, list, or leaf
     
     if(schema->dtype().id() == DataType::OBJECT_T)
     {
-		for(index_t i=0;i<schema->children().size();i++)
-		{
-	
-			std::string curr_name = schema->object_order()[i];
-            Schema *curr_schema = &schema->fetch(curr_name);
-			Node *curr_node = new Node(curr_schema);
-            curr_node->m_parent = &node;
-            walk_schema(*curr_node,curr_schema,data);
-			node.m_children.push_back(curr_node);
+        for(index_t i=0;i<schema->children().size();i++)
+        {
+    
+            std::string curr_name = schema->object_order()[i];
+            Schema *curr_schema   = schema->fetch_pointer(curr_name);
+            Node *curr_node       = new Node(curr_schema);
+            curr_node->set_parent(node);
+            walk_schema(curr_node,curr_schema,data);
+            node->append(curr_node);
         }                   
     }
     else if(schema->dtype().id() == DataType::LIST_T)
@@ -1855,42 +1858,42 @@ Node::walk_schema(Node &node,
         index_t num_entries = schema->number_of_entries();
         for(index_t i=0;i<num_entries;i++)
         {
-            Schema *curr_schema = &schema->fetch(i);
-			Node *curr_node = new Node(curr_schema);
-            curr_node->m_parent = &node;
-            walk_schema(*curr_node,curr_schema,data);
-			node.m_children.push_back(curr_node);
+            Schema *curr_schema = schema->fetch_pointer(i);
+            Node *curr_node = new Node(curr_schema);
+            curr_node->set_parent(node);
+            walk_schema(curr_node,curr_schema,data);
+            node->append(curr_node);
         }
     }
     else
     {
         // link the current node to the schema
-        node.set(schema,data);
+        node->set(schema,data);
     } 
 }
 
 ///============================================
 void 
-walk_schema(Node &node, 
-            void *data,
+Node::walk_schema(const std::string &json_schema,void *data)
+{
+    rapidjson::Document document;
+    document.Parse<0>(json_schema.c_str());
+    index_t curr_offset = 0;
+    conduit::walk_schema(this,this->m_schema,data,document,curr_offset);
+}
+
+///============================================
+void 
+walk_schema(Node   *node,
+            Schema *schema,
+            void   *data,
             const rapidjson::Value &jvalue,
             index_t curr_offset)
 {
-    ///
-    /// NOTE: We will need some portion of this to parse inline data.
-    ///
-    
+    // object cases
     if(jvalue.IsObject())
     {
-        /*
-        static const char* kTypeNames[] = { "Null", 
-                                            "False", 
-                                            "True", 
-                                            "Object", 
-                                            "Array", 
-                                            "String", 
-                                            "Number" };
-        */
+
         if (jvalue.HasMember("dtype"))
         {
             // if dtype is an object, we have a "list_of" case
@@ -1900,45 +1903,51 @@ walk_schema(Node &node,
                 int length =1;
                 if(jvalue.HasMember("length"))
                 {
-                    length = jvalue["length"].GetInt();
+                    if(jvalue["length"].IsNumber())
+                    {
+                        length = jvalue["length"].GetInt();
+                    }
+                    else if(jvalue["length"].IsObject() && jvalue["length"].HasMember("reference"))
+                    {
+                        std::string ref_path = jvalue["length"]["reference"].GetString();
+                        length = node->fetch(ref_path).to_index_t();
+                    }
+                    
                 }
-                            
                 // we will create `length' # of objects of obj des by dt_value
                  
                 // TODO: we only need to parse this once, not leng # of times
-                // but this is the easiest way to start. 
+                // but this is the easiest way to start.                             
                 for(int i=0;i< length;i++)
                 {
-                    Node curr_node(DataType::Objects::object());
-                    walk_schema(curr_node,data, dt_value, curr_offset);
-                    node.append(curr_node);
-                    curr_offset += curr_node.total_bytes();
+                    schema->append();
+                    Schema *curr_schema = schema->fetch_pointer(i);
+                    Node   *curr_node   = new Node(curr_schema);
+                    curr_node->set_parent(node);
+                    walk_schema(curr_node,curr_schema,data,dt_value, curr_offset);
+                    curr_offset += curr_schema->total_bytes();
+                    node->append(curr_node);
                 }
+                
             }
             else
             {
                 // handle leaf node with explicit props
                 std::string dtype_name(jvalue["dtype"].GetString());
                 int length = jvalue["length"].GetInt();
-                
-                // TODO: Parse optional values:
-                //  offset
-                //  stride
-                //  element_bytes
-                //  endianness
-                
-                //  value
-                
                 const DataType df_dtype = DataType::default_dtype(dtype_name);
                 index_t type_id = df_dtype.id();
                 index_t size    = df_dtype.element_bytes();
+                // TODO: Parse endianness
                 DataType dtype(type_id,
                                length,
                                curr_offset,
                                size, 
                                size,
                                Endianness::DEFAULT_T);
-                node.set(dtype,data);
+                schema->set(dtype);
+                // node  needs link schema ptr 
+                node->set(schema,data);
             }
         }
         else
@@ -1948,36 +1957,44 @@ walk_schema(Node &node,
                  itr != jvalue.MemberEnd(); ++itr)
             {
                 std::string entry_name(itr->name.GetString());
-                Node curr_node(DataType::Objects::object());
-                walk_schema(curr_node,data, itr->value, curr_offset);
-                node[entry_name] = curr_node;
-                curr_offset += curr_node.total_bytes();
+                Schema *curr_schema = schema->fetch_pointer(entry_name);
+                Node *curr_node       = new Node(curr_schema);
+                curr_node->set_parent(node);
+                walk_schema(curr_node,curr_schema,data,itr->value, curr_offset);
+                curr_offset += curr_schema->total_bytes();
+                node->append(curr_node);                
             }
+            
         }
     }
+    // List case 
     else if (jvalue.IsArray()) 
     {
         for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
         {
-			Node curr_node(DataType::Objects::object());
-            walk_schema(curr_node,data, jvalue[i], curr_offset);
-            curr_offset += curr_node.total_bytes();
-            // this will coerce to a list
-            node.append(curr_node);
+            schema->append();
+            Schema *curr_schema = schema->fetch_pointer(i);
+            Node   *curr_node   = new Node(curr_schema);
+            curr_node->set_parent(node);
+            walk_schema(curr_node,curr_schema,data,jvalue[i], curr_offset);
+            curr_offset += curr_schema->total_bytes();
+            node->append(curr_node);
         }
+        
     }
+    // Simplest case, handles "uint32", "float64", with extended type info
     else if(jvalue.IsString())
     {
          std::string dtype_name(jvalue.GetString());
          DataType df_dtype = DataType::default_dtype(dtype_name);
          index_t size = df_dtype.element_bytes();
          DataType dtype(df_dtype.id(),1,curr_offset,size,size,Endianness::DEFAULT_T);
-         node.set(dtype,data);
+         schema->set(dtype);
+         
+         // node  needs link schema ptr 
+         node->set(schema,data);
     }
-
 }
-
-
 
 }
 

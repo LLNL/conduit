@@ -67,6 +67,10 @@ public:
     Schema           &fetch(const std::string &path);
     Schema           &fetch(index_t idx);
     
+    Schema           *fetch_pointer(const std::string &path);
+    Schema           *fetch_pointer(index_t idx);
+    
+    
     index_t           element_index(index_t idx) const {return m_dtype.element_index(idx);}
       
     Schema           &operator[](const std::string &path);
@@ -96,6 +100,9 @@ public:
     /// List Interface
     ///
     void    remove(index_t idx);
+
+    void append()
+        {init_list(); children().push_back(new Schema());}
 
     void append(const DataType &dtype)
         {init_list(); children().push_back(new Schema(dtype));}
