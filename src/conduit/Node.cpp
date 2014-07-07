@@ -1482,7 +1482,7 @@ Node::remove(const std::string &path)
 
 ///============================================
 int64
-Node::to_int() const
+Node::to_int64() const
 {
     switch(dtype().id())
     {
@@ -1507,7 +1507,7 @@ Node::to_int() const
 
 ///============================================
 uint64
-Node::to_uint() const
+Node::to_uint64() const
 {
     switch(dtype().id())
     {
@@ -1531,7 +1531,7 @@ Node::to_uint() const
 
 ///============================================
 float64
-Node::to_float() const
+Node::to_float64() const
 {
     switch(dtype().id())
     {

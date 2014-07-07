@@ -328,9 +328,9 @@ public:
     Node             &operator[](const std::string &path);
     Node             &operator[](const index_t idx);
 
-    int64            to_int()   const;
-    uint64           to_uint()  const;
-    float64          to_float() const;
+    int64            to_int64()   const;
+    uint64           to_uint64()  const;
+    float64          to_float64() const;
     
     std::string      to_json(bool simple=false,
                              index_t indent=0) const;
