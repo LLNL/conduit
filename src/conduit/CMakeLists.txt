@@ -17,6 +17,7 @@ set(conduit_headers
     Core.h
     DataType.h
     DataContainer.h
+    Generator.h
     Error.h
     Schema.h
     Utils.h
@@ -33,6 +34,7 @@ set(conduit_sources
     DataType.cpp
     DataArray.cpp
     DataContainer.cpp
+    Generator.cpp
     Node.cpp
     Schema.cpp
     Utils.cpp

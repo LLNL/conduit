@@ -43,6 +43,15 @@ TEST(conduit_to_json_2, conduit_json)
     n["arr"].set(DataType::Arrays::uint32(5),arr);
 
 
+    std::string pure_json = n.to_json(true);
     std::cout << n.to_json();
+    std::cout << pure_json << std::endl;
+    
+    Generator g(pure_json,"json");
+    Node n2(g);
+    
+    EXPECT_EQ(n["a"].as_uint32(),n2["a"].as_uint32());
+    EXPECT_EQ(n["b"].as_uint32(),n2["b"].as_uint32());
+    
 }
 

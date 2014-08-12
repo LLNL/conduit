@@ -11,6 +11,7 @@
 #include "DataType.h"
 #include "DataArray.h"
 #include "Schema.h"
+#include "Generator.h"
 
 #include <map>
 #include <vector>
@@ -21,21 +22,27 @@
 
 namespace conduit
 {
+    
+class Generator;
 
 class Node
 {
-public:    
-    
+public:
+
+
     /* Constructors */
     Node(); // empty node
     Node(const Node &node);
     explicit Node(const DataType &dtype);
 
+    Node(const Generator &gen);
+    
+    // convience interface:
     Node(const std::string &json_schema, void *data);
 
-    Node(Schema &schema);
-    Node(Schema &schema, void *data);
-    Node(Schema &schema, const std::string &stream_path, bool mmap=false);    
+    Node(const Schema &schema);
+    Node(const Schema &schema, void *data);
+    Node(const Schema &schema, const std::string &stream_path, bool mmap=false);    
     //Node(Schema &schema, std::ifstream &ifs);
     Node(const DataType &dtype, void *data);
         
@@ -89,8 +96,8 @@ public:
     virtual  ~Node();
 
     void reset();
-    void load(Schema &schema, const std::string &stream_path);
-    void mmap(Schema &schema, const std::string &stream_path);
+    void load(const Schema &schema, const std::string &stream_path);
+    void mmap(const Schema &schema, const std::string &stream_path);
 
     
     /// For each dtype:
@@ -104,7 +111,8 @@ public:
     void set(const Node& node, Schema* schema);
     void set(const DataType& dtype);
 
-    void set(Schema &schema, void* data);
+    void set(const Schema &schema);
+    void set(const Schema &schema, void* data);
     void set(const DataType &dtype, void* data);
 
     void set(bool8 data);
@@ -207,6 +215,8 @@ public:
 
     /*schema access */
     const Schema     &schema() const { return *m_schema;}   
+
+    Schema           *schema_pointer() {return m_schema;}   
 
     /* parent access */
     bool             has_parent() const {return m_parent != NULL;}
@@ -442,8 +452,8 @@ private:
     void             walk_schema(const Schema &schema,
                                  void *data);
 
-    void             walk_schema(const std::string &schema,
-                                 void *data);
+    // void             walk_schema(const std::string &schema,
+    //                              void *data);
 
     void             walk_schema(Node   *node,
                                  Schema *schema,

@@ -1,5 +1,5 @@
 ################################
-# Add doxygen gen
+# documentation targets
 ################################
 
 # add a target to generate API documentation with Doxygen

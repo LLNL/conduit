@@ -9,7 +9,7 @@ namespace conduit
 
 
 
-/// TODO:  use explicit temp inst to array methods out of the header file
+/// TODO:  use explicit temp inst to get array methods out of the header file
 /*
 class DataArray<int8>;
 class DataArray<int16>;

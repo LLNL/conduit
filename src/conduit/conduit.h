@@ -13,6 +13,7 @@
 #include "DataArray.h"
 #include "Schema.h"
 #include "Node.h"
+#include "Generator.h"
 #include "Utils.h"
 
 #endif
