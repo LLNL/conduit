@@ -6,7 +6,7 @@
 #
 #
 
-export PY_VERSION="2.7.5"
+export PY_VERSION="2.7.6"
 
 function info
 {
@@ -116,15 +116,15 @@ function check_cmake_install
 function build_cmake
 {
     info "================================="
-    info "Setting up CMake 2.8.12"
+    info "Setting up CMake 2.8.12.2"
     info "================================="
     info "[Target Prefix: $CMAKE_PREFIX]"
     cd $BUILD_DIR
-    download http://www.cmake.org/files/v2.8/ cmake-2.8.12.tar.gz
+    download http://www.cmake.org/files/v2.8/ cmake-2.8.12.2.tar.gz
     rm -rf cmake-2.8.12
-    info "[Inflating: cmake-2.8.12.tar.gz]"
-    tar -xzf cmake-2.8.12.tar.gz
-    cd cmake-2.8.12
+    info "[Inflating: cmake-2.8.12.2.tar.gz]"
+    tar -xzf cmake-2.8.12.2.tar.gz
+    cd cmake-2.8.12.2
     info "[Configuring CMake]"
     ./configure --prefix=$CMAKE_PREFIX &> ../logs/cmake_configure.txt
     check $?

@@ -2,8 +2,18 @@
 rm -rf build-debug install-debug
 mkdir build-debug
 mkdir install-debug
+
 cd build-debug
-cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install-debug ../src 
+export CMAKE_OPTS="$CMAKE_OPTS -DCMAKE_BUILD_TYPE=Debug"
+export CMAKE_OPTS="$CMAKE_OPTS -DCMAKE_INSTALL_PREFIX=../install-debug"
+if [ "$TERM_PROGRAM" = "Apple_Terminal" ]; then
+    export CMAKE_OPTS="$CMAKE_OPTS -DCMAKE_C_COMPILER=clang"
+    export CMAKE_OPTS="$CMAKE_OPTS -DCMAKE_CXX_COMPILER=clang++"
+fi
+
+echo "cmake $CMAKE_OPTS ../src"
+cmake  $CMAKE_OPTS \
+       ../src 
 cd ../
 # add extended builds when an argument is passed
 if [ $# -ge 1 ]; then
