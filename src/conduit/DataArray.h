@@ -33,7 +33,49 @@ public:
     index_t         number_of_elements() const {return m_dtype.number_of_elements();}
 
     std::string     to_json() const;
-    void            to_json(std:: ostringstream &oss) const;
+    void            to_json(std::ostringstream &oss) const;
+
+    void            set(const bool8 *values, index_t num_elements);
+
+    void            set(const int8  *values, index_t num_elements);
+    void            set(const int16 *values, index_t num_elements);
+    void            set(const int32 *values, index_t num_elements);
+    void            set(const int64 *values, index_t num_elements);
+
+    void            set(const uint8   *values, index_t num_elements);
+    void            set(const uint16  *values, index_t num_elements);
+    void            set(const uint32  *values, index_t num_elements);
+    void            set(const uint64  *values, index_t num_elements);
+    
+    void            set(const float32 *values, index_t num_elements);
+    void            set(const float64 *values, index_t num_elements);
+
+
+    void            set(const std::vector<bool8>   &values)  
+                        {set(&values[0],values.size());}
+    
+    void            set(const std::vector<int8>    &values)
+                        {set(&values[0],values.size());}
+    void            set(const std::vector<int16>   &values)
+                        {set(&values[0],values.size());}
+    void            set(const std::vector<int32>   &values)
+                        {set(&values[0],values.size());}
+    void            set(const std::vector<int64>   &values)
+                        {set(&values[0],values.size());}
+
+    void            set(const std::vector<uint8>   &values)
+                        {set(&values[0],values.size());}
+    void            set(const std::vector<uint16>  &values)
+                        {set(&values[0],values.size());}
+    void            set(const std::vector<uint32>  &values)
+                        {set(&values[0],values.size());}
+    void            set(const std::vector<uint64>  &values)
+                        {set(&values[0],values.size());}
+    
+    void            set(const std::vector<float32> &values)
+                        {set(&values[0],values.size());}
+    void            set(const std::vector<float64> &values)
+                        {set(&values[0],values.size());}
 
 private:
     void           *element_pointer(index_t idx)
@@ -170,6 +212,115 @@ DataArray<T>::to_json(std::ostringstream &oss) const
         oss << "]";
 }
 
+template <class T> 
+void            
+DataArray<T>::set(const bool8 *values, index_t num_elements)
+{ 
+    for(index_t i=0;i<num_elements;i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+template <class T> 
+void            
+DataArray<T>::set(const int8 *values, index_t num_elements)
+{ 
+    for(index_t i=0;i<num_elements;i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+template <class T> 
+void            
+DataArray<T>::set(const  int16 *values, index_t num_elements)
+{ 
+    for(index_t i=0;i<num_elements;i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+template <class T> 
+void            
+DataArray<T>::set(const int32 *values, index_t num_elements)
+{ 
+    for(index_t i=0;i<num_elements;i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+template <class T> 
+void            
+DataArray<T>::set(const  int64 *values, index_t num_elements)
+{ 
+    for(index_t i=0;i<num_elements;i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+template <class T> 
+void            
+DataArray<T>::set(const  uint8 *values, index_t num_elements)
+{ 
+    for(index_t i=0;i<num_elements;i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+template <class T> 
+void            
+DataArray<T>::set(const  uint16 *values, index_t num_elements)
+{ 
+    for(index_t i=0;i<num_elements;i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+template <class T> 
+void            
+DataArray<T>::set(const uint32 *values, index_t num_elements)
+{ 
+    for(index_t i=0;i<num_elements;i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+template <class T> 
+void            
+DataArray<T>::set(const uint64 *values, index_t num_elements)
+{ 
+    for(index_t i=0;i<num_elements;i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+template <class T> 
+void            
+DataArray<T>::set(const float32 *values, index_t num_elements)
+{ 
+    for(index_t i=0;i<num_elements;i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+template <class T> 
+void            
+DataArray<T>::set(const float64 *values, index_t num_elements)
+{ 
+    for(index_t i=0;i<num_elements;i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
 
 typedef DataArray<bool8>    bool8_array;
 typedef DataArray<int8>     int8_array;

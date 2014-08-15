@@ -354,6 +354,7 @@ public:
     Node             &operator[](const std::string &path);
     Node             &operator[](const index_t idx);
 
+    // TODO crs methods to all types
     int64            to_int64()   const;
     uint64           to_uint64()  const;
     float64          to_float64() const;

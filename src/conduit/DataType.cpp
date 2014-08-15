@@ -303,6 +303,7 @@ DataType::set(index_t dtype_id)
     m_endianness = Endianness::DEFAULT_T;
 }
 
+
 ///============================================ 
 void
 DataType::set(index_t dtype_id,
@@ -352,6 +353,50 @@ DataType::is_compatible(const DataType& dtype) const
              (m_ele_bytes == dtype.m_ele_bytes) &&
              (total_bytes() == dtype.total_bytes()));
 }
+///============================================
+bool
+DataType::is_number() const
+{
+    return ( is_integer() ||
+             is_float());
+}
+
+///============================================
+bool
+DataType::is_float() const
+{
+    return ( (m_id == FLOAT32_T) ||
+             (m_id == FLOAT64_T));
+}
+
+///============================================
+bool
+DataType::is_integer() const
+{
+    return ( is_signed_integer() || 
+             is_unsigned_integer());
+}
+
+///============================================
+bool
+DataType::is_signed_integer() const
+{
+    return ( (m_id == INT8_T)  ||
+             (m_id == INT16_T) ||
+             (m_id == INT32_T) ||
+             (m_id == INT64_T));
+}
+
+///============================================
+bool
+DataType::is_unsigned_integer() const
+{
+    return ( (m_id == UINT8_T)  ||
+             (m_id == UINT16_T) ||
+             (m_id == UINT32_T) ||
+             (m_id == UINT64_T));
+}
+
 
 ///============================================     
 index_t 

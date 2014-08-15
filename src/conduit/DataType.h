@@ -187,10 +187,11 @@ public:
 
     static index_t          name_to_id(const std::string &name);
     static std::string      id_to_name(index_t dtype);
-    
+
 
     static DataType const  &default_dtype(index_t dtype_id);
     static DataType const  &default_dtype(const std::string &name);
+
 
     std::string         to_json() const;  
     void                to_json(std::ostringstream &oss,
@@ -200,6 +201,13 @@ public:
     index_t     total_bytes()   const;
     index_t     total_bytes_compact() const;
     bool        is_compatible(const DataType& type) const;
+
+    bool        is_number()           const;
+    bool        is_float()            const;
+    bool        is_integer()          const;
+    bool        is_signed_integer()   const;
+    bool        is_unsigned_integer() const;
+    
 
     index_t    number_of_elements()  const { return m_num_ele;}
     index_t    offset()              const { return m_offset;}
