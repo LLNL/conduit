@@ -47,28 +47,28 @@ Error::~Error() throw()
 std::string
 Error::message() const
 {
-	std::ostringstream oss;
-	message(oss);
-	return oss.str();
+    std::ostringstream oss;
+    message(oss);
+    return oss.str();
 }
 
 ///============================================
 void
-	Error::message(std::ostringstream &oss) const
+    Error::message(std::ostringstream &oss) const
 {
-	std::string msg = m_msg;
+    std::string msg = m_msg;
     if(msg == "")
         msg = "<EMPTY>";
-    oss << "[" << m_file << ":" << m_line <<"]Error: " << msg;	
+    oss << "[" << m_file << ":" << m_line <<"]Error: " << msg;    
 }
-	
-	
-	
+    
+    
+    
 ///============================================
 void
 Error::print() const
 {
-	std::cout << message() << std::endl;
+    std::cout << message() << std::endl;
 }
 
 }

@@ -16,14 +16,7 @@
 
 namespace conduit
 {
-    
-// void
-// walk_schema(Node   *node,
-//             Schema *schema,
-//             void   *data,
-//             const rapidjson::Value &jvalue,
-//             index_t curr_offset);
-//
+
 ///============================================
 /// Node
 ///============================================
@@ -1887,135 +1880,7 @@ Node::walk_schema(Node   *node,
         node->set(schema,data);
     } 
 }
-//
-// ///============================================
-// void
-// Node::walk_schema(const std::string &json_schema,void *data)
-// {
-//     Generator g(json_schema,data);
-//     g.walk(*this);
-//
-//     return;
-//     rapidjson::Document document;
-//     std::string res = utils::json_sanitize(json_schema);
-//     document.Parse<0>(res.c_str());
-//     index_t curr_offset = 0;
-//     conduit::walk_schema(this,this->m_schema,data,document,curr_offset);
-// }
 
-// ///============================================
-// void
-// walk_schema(Node   *node,
-//             Schema *schema,
-//             void   *data,
-//             const rapidjson::Value &jvalue,
-//             index_t curr_offset)
-// {
-//     // object cases
-//     if(jvalue.IsObject())
-//     {
-//
-//         if (jvalue.HasMember("dtype"))
-//         {
-//             // if dtype is an object, we have a "list_of" case
-//             const rapidjson::Value &dt_value = jvalue["dtype"];
-//             if(dt_value.IsObject())
-//             {
-//                 int length =1;
-//                 if(jvalue.HasMember("length"))
-//                 {
-//                     if(jvalue["length"].IsNumber())
-//                     {
-//                         length = jvalue["length"].GetInt();
-//                     }
-//                     else if(jvalue["length"].IsObject() && jvalue["length"].HasMember("reference"))
-//                     {
-//                         std::string ref_path = jvalue["length"]["reference"].GetString();
-//                         length = node->fetch(ref_path).to_index_t();
-//                     }
-//
-//                 }
-//                 // we will create `length' # of objects of obj des by dt_value
-//
-//                 // TODO: we only need to parse this once, not leng # of times
-//                 // but this is the easiest way to start.
-//                 for(int i=0;i< length;i++)
-//                 {
-//                     schema->append();
-//                     Schema *curr_schema = schema->fetch_pointer(i);
-//                     Node   *curr_node   = new Node(curr_schema);
-//                     curr_node->set_parent(node);
-//                     walk_schema(curr_node,curr_schema,data,dt_value, curr_offset);
-//                     curr_offset += curr_schema->total_bytes();
-//                     node->append(curr_node);
-//                 }
-//
-//             }
-//             else
-//             {
-//                 // handle leaf node with explicit props
-//                 std::string dtype_name(jvalue["dtype"].GetString());
-//                 int length = jvalue["length"].GetInt();
-//                 const DataType df_dtype = DataType::default_dtype(dtype_name);
-//                 index_t type_id = df_dtype.id();
-//                 index_t size    = df_dtype.element_bytes();
-//                 // TODO: Parse endianness
-//                 DataType dtype(type_id,
-//                                length,
-//                                curr_offset,
-//                                size,
-//                                size,
-//                                Endianness::DEFAULT_T);
-//                 schema->set(dtype);
-//                 // node  needs link schema ptr
-//                 node->set(schema,data);
-//             }
-//         }
-//         else
-//         {
-//             // loop over all entries
-//             for (rapidjson::Value::ConstMemberIterator itr = jvalue.MemberBegin();
-//                  itr != jvalue.MemberEnd(); ++itr)
-//             {
-//                 std::string entry_name(itr->name.GetString());
-//                 Schema *curr_schema = schema->fetch_pointer(entry_name);
-//                 Node *curr_node       = new Node(curr_schema);
-//                 curr_node->set_parent(node);
-//                 walk_schema(curr_node,curr_schema,data,itr->value, curr_offset);
-//                 curr_offset += curr_schema->total_bytes();
-//                 node->append(curr_node);
-//             }
-//
-//         }
-//     }
-//     // List case
-//     else if (jvalue.IsArray())
-//     {
-//         for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
-//         {
-//             schema->append();
-//             Schema *curr_schema = schema->fetch_pointer(i);
-//             Node   *curr_node   = new Node(curr_schema);
-//             curr_node->set_parent(node);
-//             walk_schema(curr_node,curr_schema,data,jvalue[i], curr_offset);
-//             curr_offset += curr_schema->total_bytes();
-//             node->append(curr_node);
-//         }
-//
-//     }
-//     // Simplest case, handles "uint32", "float64", with extended type info
-//     else if(jvalue.IsString())
-//     {
-//          std::string dtype_name(jvalue.GetString());
-//          DataType df_dtype = DataType::default_dtype(dtype_name);
-//          index_t size = df_dtype.element_bytes();
-//          DataType dtype(df_dtype.id(),1,curr_offset,size,size,Endianness::DEFAULT_T);
-//          schema->set(dtype);
-//
-//          // node  needs link schema ptr
-//          node->set(schema,data);
-//     }
-// }
 
 }
 

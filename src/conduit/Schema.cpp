@@ -12,12 +12,6 @@
 namespace conduit
 {
 
-
-// void
-// walk_schema(Schema &schema,
-//             const rapidjson::Value &jvalue,
-//             index_t curr_offset);
-
 ///============================================
 /// Schema
 ///============================================
@@ -135,7 +129,7 @@ void
 Schema::set(const Schema &schema)
 {
     bool init_children = false;
-	index_t dt_id = schema.m_dtype.id();
+    index_t dt_id = schema.m_dtype.id();
     if (dt_id == DataType::OBJECT_T)
     {
        init_object();
@@ -149,12 +143,12 @@ Schema::set(const Schema &schema)
        init_list();
        init_children = true;
     }
-	else 
-	{
-		m_dtype = schema.m_dtype;
-	}
+    else 
+    {
+        m_dtype = schema.m_dtype;
+    }
 
-	
+    
     if (init_children) 
     {
        std::vector<Schema*> &my_ents = children();
@@ -547,110 +541,8 @@ Schema::walk_schema(const std::string &json_schema)
 {
     Generator g(json_schema);
     g.walk(*this);
-    return;
-    //
-    // reset();
-    // rapidjson::Document document;
-    // std::string res = utils::json_sanitize(json_schema);
-    // document.Parse<0>(res.c_str());
-    // index_t curr_offset = 0;
-    // conduit::walk_schema(*this,document,curr_offset);
 }
 
-// ///============================================
-// void
-// walk_schema(Schema &schema,
-//             const rapidjson::Value &jvalue,
-//             index_t curr_offset)
-// {
-//     // object cases
-//     if(jvalue.IsObject())
-//     {
-//         if (jvalue.HasMember("dtype"))
-//         {
-//             // if dtype is an object, we have a "list_of" case
-//             const rapidjson::Value &dt_value = jvalue["dtype"];
-//             if(dt_value.IsObject())
-//             {
-//                 int length =1;
-//                 if(jvalue.HasMember("length"))
-//                 {
-//                     // TODO: Handle reference
-//                     if(jvalue["length"].IsObject() && jvalue["lenght"].HasMember("reference"))
-//                     {
-//                         // we shouldn't get here ....
-//                     }
-//                     else
-//                     {
-//                         length = jvalue["length"].GetInt();
-//                     }
-//                 }
-//                 // we will create `length' # of objects of obj des by dt_value
-//
-//                 // TODO: we only need to parse this once, not leng # of times
-//                 // but this is the easiest way to start.
-//                 for(int i=0;i< length;i++)
-//                 {
-//                     Schema curr_schema(DataType::Objects::list());
-//                     walk_schema(curr_schema,dt_value, curr_offset);
-//                     schema.append(curr_schema);
-//                     curr_offset += curr_schema.total_bytes();
-//                 }
-//             }
-//             else
-//             {
-//                 // handle leaf node with explicit props
-//                 std::string dtype_name(jvalue["dtype"].GetString());
-//                 int length = jvalue["length"].GetInt();
-//                 const DataType df_dtype = DataType::default_dtype(dtype_name);
-//                 index_t type_id = df_dtype.id();
-//                 index_t size    = df_dtype.element_bytes();
-//                 // TODO: Parse endianness
-//                 DataType dtype(type_id,
-//                                length,
-//                                curr_offset,
-//                                size,
-//                                size,
-//                                Endianness::DEFAULT_T);
-//                 schema.set(dtype);
-//             }
-//         }
-//         else
-//         {
-//             // loop over all entries
-//             for (rapidjson::Value::ConstMemberIterator itr = jvalue.MemberBegin();
-//                  itr != jvalue.MemberEnd(); ++itr)
-//             {
-//                 std::string entry_name(itr->name.GetString());
-//                 Schema &curr_schema = schema.fetch(entry_name);
-//                 curr_schema.set(DataType::Objects::object());
-//                 walk_schema(curr_schema,itr->value, curr_offset);
-//                 curr_offset += curr_schema.total_bytes();
-//             }
-//         }
-//     }
-//     // List case
-//     else if (jvalue.IsArray())
-//     {
-//         for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
-//         {
-//             Schema curr_schema(DataType::Objects::list());
-//             walk_schema(curr_schema,jvalue[i], curr_offset);
-//             curr_offset += curr_schema.total_bytes();
-//             // this will coerce to a list
-//             schema.append(curr_schema);
-//         }
-//     }
-//     // Simplest case, handles "uint32", "float64", with extended type info
-//     else if(jvalue.IsString())
-//     {
-//          std::string dtype_name(jvalue.GetString());
-//          DataType df_dtype = DataType::default_dtype(dtype_name);
-//          index_t size = df_dtype.element_bytes();
-//          DataType dtype(df_dtype.id(),1,curr_offset,size,size,Endianness::DEFAULT_T);
-//          schema.set(dtype);
-//     }
-// }
 
 ///============================================
 std::string
@@ -677,11 +569,11 @@ Schema::to_json(std::ostringstream &oss) const
             oss << "\n";
             first=false;
         }
-		oss << "}";
+        oss << "}";
     }
-	else if(m_dtype.id() == DataType::LIST_T)
-	{
-		oss << "[";
+    else if(m_dtype.id() == DataType::LIST_T)
+    {
+        oss << "[";
         bool first=true;
         for (index_t i = 0; i < children().size(); i++) {
             if(!first)
@@ -690,8 +582,8 @@ Schema::to_json(std::ostringstream &oss) const
             oss << "\n";
             first=false;
         }
-		oss << "]";
-	}
+        oss << "]";
+    }
     else // assume leaf data type
     {
         m_dtype.to_json(oss);

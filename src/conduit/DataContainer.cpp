@@ -46,7 +46,7 @@ DataContainer::DataContainer(const DataContainer &container)
 ///============================================
 DataContainer::~DataContainer()
 {
-	cleanup();
+    cleanup();
 }
 
 ///============================================

@@ -144,7 +144,7 @@ private:
     Schema     *m_parent;
 
 
-	
+    
     struct Schema_Object_Hierarchy 
     {
         std::vector<Schema*>            children;

@@ -34,8 +34,8 @@ public:
 
     void        print()   const;
     std::string message() const;
-	void        message(std::ostringstream &oss) const;
-	virtual const char* what() const throw() { return message().c_str();}
+    void        message(std::ostringstream &oss) const;
+    virtual const char* what() const throw() { return message().c_str();}
 
 private:
     std::string m_msg;

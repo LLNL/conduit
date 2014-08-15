@@ -251,9 +251,8 @@ parse_leaf_dtype(const rapidjson::Value &jvalue, index_t offset, DataType &dtype
     {
         length = jvalue["length"].GetUint64();
     }
-    const DataType df_dtype = DataType::default_dtype(dtype_name);
-    index_t type_id = df_dtype.id();
-    index_t size    = df_dtype.element_bytes();
+    index_t dtype_id  = DataType::name_to_id(dtype_name);
+    index_t ele_size  = DataType::default_bytes(dtype_id);
 
     // TODO: parse offset (override offset if passed)
     
@@ -282,15 +281,15 @@ parse_leaf_dtype(const rapidjson::Value &jvalue, index_t offset, DataType &dtype
         }
         else
         {
-            length =1 ;
+            length = 1;
         }
     }
     
-    dtype_res.set(type_id,
+    dtype_res.set(dtype_id,
                   length,
                   offset,
-                  size, 
-                  size,
+                  ele_size, 
+                  ele_size,
                   endianness);
 }
 
@@ -393,16 +392,6 @@ parse_inline_value(const rapidjson::Value &jvalue,
         {
             std::cout << "ERROR" << std::endl;
             // TODO: error
-            // DataType df_dtype = DataType::default_dtype(node.dtype().id());
-            // index_t ele_size = df_dtype.element_bytes();
-            // DataType dtype(df_dtype.id(),
-            //                jvalue.Size(),
-            //                0,
-            //                ele_size,
-            //                ele_size,
-            //                Endianness::DEFAULT_T);
-            // // this will force an init
-            // node.set(dtype);
         }
         
         if(hval_type == DataType::INT64_T)
@@ -511,9 +500,14 @@ walk_schema(Schema *schema,
     else if(jvalue.IsString())
     {
          std::string dtype_name(jvalue.GetString());
-         DataType df_dtype = DataType::default_dtype(dtype_name);
-         index_t size = df_dtype.element_bytes();
-         DataType dtype(df_dtype.id(),1,curr_offset,size,size,Endianness::DEFAULT_T);
+         index_t dtype_id = DataType::name_to_id(dtype_name);
+         index_t ele_size = DataType::default_bytes(dtype_id);
+         DataType dtype(dtype_id,
+                        1,
+                        curr_offset,
+                        ele_size,
+                        ele_size,
+                        Endianness::DEFAULT_T);
          schema->set(dtype);
     }
 }
@@ -592,7 +586,7 @@ walk_schema_pure_json(Node  *node,
     else if(jvalue.IsNumber())
     {
         // use 64bit types by default ... 
-	    if(jvalue.IsInt() || jvalue.IsInt64())
+        if(jvalue.IsInt() || jvalue.IsInt64())
         {
             node->set((int64)jvalue.GetInt64());
         }
@@ -727,9 +721,15 @@ walk_schema(Node   *node,
     else if(jvalue.IsString())
     {
          std::string dtype_name(jvalue.GetString());
-         DataType df_dtype = DataType::default_dtype(dtype_name);
-         index_t size = df_dtype.element_bytes();
-         DataType dtype(df_dtype.id(),1,curr_offset,size,size,Endianness::DEFAULT_T);
+         index_t dtype_id = DataType::name_to_id(dtype_name);
+         index_t ele_size = DataType::default_bytes(dtype_id);
+         DataType dtype(dtype_id,
+                        1,
+                        curr_offset,
+                        ele_size,
+                        ele_size,
+                        Endianness::DEFAULT_T);
+
          schema->set(dtype);
          
          if(data != NULL)

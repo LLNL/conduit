@@ -192,6 +192,8 @@ public:
     static DataType const  &default_dtype(index_t dtype_id);
     static DataType const  &default_dtype(const std::string &name);
 
+    static index_t          default_bytes(index_t dtype_id);
+    static index_t          default_bytes(const std::string &name);
 
     std::string         to_json() const;  
     void                to_json(std::ostringstream &oss,

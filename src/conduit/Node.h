@@ -433,11 +433,11 @@ public:
 
     // these were private
     void             set(Schema *schema_ptr);
-					 Node(Schema *schema_ptr);
+                     Node(Schema *schema_ptr);
     void             set(Schema *schema_ptr, void *data_ptr);
     
-	                 Node(const Node &node,Schema *schema_ptr);
-	
+                     Node(const Node &node,Schema *schema_ptr);
+    
     
 private:
     void             init(const DataType &dtype);
@@ -452,9 +452,6 @@ private:
 
     void             walk_schema(const Schema &schema,
                                  void *data);
-
-    // void             walk_schema(const std::string &schema,
-    //                              void *data);
 
     void             walk_schema(Node   *node,
                                  Schema *schema,

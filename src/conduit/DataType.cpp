@@ -485,6 +485,45 @@ DataType::default_dtype(const std::string &name)
     return default_dtype(name_to_id(name));
 }
 
+
+///============================================ 
+index_t
+DataType::default_bytes(index_t dtype_id)
+{
+   switch (dtype_id)
+   {
+        case BOOL8_T : return sizeof(conduit::bool8);
+        /* int types */
+        case INT8_T :  return sizeof(conduit::int8);
+        case INT16_T : return sizeof(conduit::int16);
+        case INT32_T : return sizeof(conduit::int32);
+        case INT64_T : return sizeof(conduit::int64);
+        /* uint types */
+        case UINT8_T :  return sizeof(conduit::uint8);
+        case UINT16_T : return sizeof(conduit::uint16);
+        case UINT32_T : return sizeof(conduit::uint32);
+        case UINT64_T : return sizeof(conduit::uint64);
+        /* float types */
+        case FLOAT32_T : return sizeof(conduit::float32);
+        case FLOAT64_T : return sizeof(conduit::float64);
+        /* string types */
+        case BYTESTR_T : return 1;
+        /* no default size for obj,list, or empty */
+        default : 
+        {
+            return 0;
+        }
+    }
+}
+
+
+///============================================ 
+index_t
+DataType::default_bytes(const std::string &name)
+{
+    return default_bytes(name_to_id(name));
+}
+
 ///============================================ 
 std::string 
 DataType::to_json() const
