@@ -1296,8 +1296,9 @@ void
 Node::serialize(std::ofstream &ofs,
                 bool compact) const
 {
-    if(dtype().id() == DataType::OBJECT_T ||
-       dtype().id() == DataType::LIST_T)
+    index_t dtype_id = dtype().id();
+    if( dtype_id == DataType::OBJECT_T ||
+        dtype_id == DataType::LIST_T)
     {
         std::vector<Node*>::const_iterator itr;
         for(itr = m_children.begin(); itr != m_children.end(); ++itr)
@@ -1305,10 +1306,25 @@ Node::serialize(std::ofstream &ofs,
             (*itr)->serialize(ofs);
         }
     }
-    else // assume data value type for now
+    else if( dtype_id != DataType::EMPTY_T)
     {
-        // TODO: Compact?
-        ofs.write((const char*)element_pointer(0),total_bytes());
+        //TODO: waiting for compact_to implementation ... 
+        compact = false;
+        if(compact)
+        {
+            // copy all elements 
+            index_t c_num_bytes = total_bytes_compact();
+            uint8 *buffer = new uint8[c_num_bytes];
+            compact_elements_to(buffer);
+            ofs.write((const char*)buffer,c_num_bytes);
+            delete [] buffer;
+            
+        }
+        else // ser as is. This copies stride * num_ele bytes
+        {
+            ofs.write((const char*)element_pointer(0),
+                      total_bytes());
+        }
     }
 }
 
@@ -1327,12 +1343,133 @@ Node::serialize(uint8 *data,index_t curr_offset,bool compact) const
             curr_offset+=(*itr)->total_bytes();
         }
     }
-    else // assume data value type for now
+    else
     {
-        // TODO: Compact?
-        memcpy(&data[curr_offset],m_data,total_bytes());
+        // TODO: waiting for compact_to implementation ... 
+        compact = false;
+        if(compact)
+        {
+            // copy all elements 
+            compact_elements_to(&data[curr_offset]);
+        }
+        else // ser as is. This copies stride * num_ele bytes
+        {
+            memcpy(&data[curr_offset],
+                   m_data,
+                   total_bytes());
+        }
+       
     }
 }
+
+
+///============================================
+/// TODO: update option with set_shared?
+void
+Node::update(Node &n_src)
+{
+    // walk src and add it concents to this node
+    // OBJECT_T is the only special case here.
+    /// TODO:
+    /// arrays and non empty leafs will simply overwrite the current
+    /// node, these semantics seem sensbile, but we could revisit this
+    index_t dtype_id = n_src.dtype().id();
+    if( dtype_id == DataType::OBJECT_T)
+    {
+        std::vector<std::string> src_paths;
+        n_src.paths(src_paths);
+
+        for (std::vector<std::string>::const_iterator itr = src_paths.begin();
+             itr != src_paths.end(); ++itr)
+        {
+            std::string ent_name = *itr;
+            fetch(ent_name).update(n_src.fetch(ent_name));
+        }
+    }
+    else if(dtype_id != DataType::EMPTY_T)
+    {
+        set(n_src);
+    }
+}
+
+
+///============================================
+void
+Node::compact()
+{
+    // TODO: we can do this more efficently
+    Node n;
+    compact_to(n);
+    set(n);
+}
+
+
+///============================================
+void
+Node::compact_to(Node &n_dest) const
+{
+    n_dest.reset();
+    index_t curr_offset = 0;
+    index_t c_size = total_bytes_compact();
+    uint8 *data = (uint8*) malloc(c_size);
+    compact_to(data,curr_offset);
+    Schema c_schema;
+    m_schema->compact_to(c_schema);
+    n_dest.set(c_schema,data);
+    // give ownership of alloc to the new node. 
+    n_dest.m_alloced = true;
+}
+
+///============================================
+void
+Node::compact_to(uint8 *data, index_t curr_offset) const
+{
+    index_t dtype_id = dtype().id();
+    if(dtype_id == DataType::OBJECT_T ||
+       dtype_id == DataType::LIST_T)
+    {
+            std::vector<Node*>::const_iterator itr;
+            for(itr = m_children.begin(); itr != m_children.end(); ++itr)
+            {
+                (*itr)->compact_to(data,curr_offset);
+                curr_offset +=  (*itr)->total_bytes_compact();
+            }
+    }
+    else if(dtype_id != DataType::EMPTY_T)
+    {
+        compact_elements_to(&data[curr_offset]);
+    }
+}
+
+
+///============================================
+void
+Node::compact_elements_to(uint8 *data) const
+{
+    index_t dtype_id = dtype().id();
+    if(dtype_id == DataType::OBJECT_T ||
+       dtype_id == DataType::LIST_T ||
+       dtype_id != DataType::EMPTY_T)
+    {
+        // TODO: error
+    }
+    else
+    {
+        // copy all elements 
+        index_t num_ele   = dtype().number_of_elements();
+        index_t ele_bytes = DataType::default_bytes(dtype_id);
+        for(index_t i=0;i<num_ele;i++)
+        {
+            memcpy(data,
+                   element_pointer(i),
+                   ele_bytes);
+        }
+    }
+}
+
+
+
+
 
 ///============================================
 // bool             

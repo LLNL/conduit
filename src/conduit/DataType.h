@@ -199,6 +199,8 @@ public:
     void                to_json(std::ostringstream &oss,
                                 const std::string &value="")const;
     
+    void                compact_to(DataType &dtype) const;
+    
     index_t     id()    const { return m_id;}    
     index_t     total_bytes()   const;
     index_t     total_bytes_compact() const;

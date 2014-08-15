@@ -13,6 +13,7 @@
 namespace conduit
 {
 
+class Node;
 
 typedef conduit_bool8   bool8;
 
@@ -38,7 +39,8 @@ typedef index32_t index_t;
 typedef index64_t index_t;
 #endif 
 
-std::string  version();
+std::string  about();
+void         about(Node &);
 
 }
 

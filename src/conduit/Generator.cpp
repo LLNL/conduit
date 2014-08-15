@@ -245,52 +245,81 @@ parse_json_float64_array(const rapidjson::Value &jvalue,
 void
 parse_leaf_dtype(const rapidjson::Value &jvalue, index_t offset, DataType &dtype_res)
 {
-    std::string dtype_name(jvalue["dtype"].GetString());
-    index_t length=0;
-    if(jvalue.HasMember("length"))
+    
+    if(jvalue.IsString())
     {
-        length = jvalue["length"].GetUint64();
+        std::string dtype_name(jvalue.GetString());
+        index_t dtype_id = DataType::name_to_id(dtype_name);
+        index_t ele_size = DataType::default_bytes(dtype_id);
+        dtype_res.set(dtype_id,
+                      1,
+                      offset,
+                      ele_size,
+                      ele_size,
+                      Endianness::DEFAULT_T);
     }
-    index_t dtype_id  = DataType::name_to_id(dtype_name);
-    index_t ele_size  = DataType::default_bytes(dtype_id);
+    else if(jvalue.IsObject())
+    {
+        std::string dtype_name(jvalue["dtype"].GetString());
+        index_t length=0;
+        if(jvalue.HasMember("length"))
+        {
+            length = jvalue["length"].GetUint64();
+        }
+        index_t dtype_id  = DataType::name_to_id(dtype_name);
+        index_t ele_size  = DataType::default_bytes(dtype_id);
+        index_t stride    = ele_size;
+    
+        // TODO: parse offset (override offset if passed)
 
-    // TODO: parse offset (override offset if passed)
+        // parse stride
+        if(jvalue.HasMember("stride") && jvalue["stride"].IsNumber())
+        {
+            stride = jvalue["stride"].GetUint64();
+        }
+
+        // TODO: parse element_size
     
-    // parse endianness
-    index_t endianness = Endianness::DEFAULT_T;
-    if(jvalue.HasMember("endianess") && jvalue["endianness"].IsString())
-    {
-        std::string end_val(jvalue["endianness"].GetString());
-        if(end_val == "big")
+        // parse endianness
+        index_t endianness = Endianness::DEFAULT_T;
+        if(jvalue.HasMember("endianess") && jvalue["endianness"].IsString())
         {
-            endianness = Endianness::BIG_T;
-        }
-        else
-        {
-            endianness = Endianness::LITTLE_T;
-        }
+            std::string end_val(jvalue["endianness"].GetString());
+            if(end_val == "big")
+            {
+                endianness = Endianness::BIG_T;
+            }
+            else
+            {
+                endianness = Endianness::LITTLE_T;
+            }
         
-    }
+        }
     
-    if(length == 0)
+        if(length == 0)
+        {
+            if(jvalue.HasMember("value") &&
+               jvalue["value"].IsArray())
+            {
+                length = jvalue["value"].Size();
+            }
+            else
+            {
+                length = 1;
+            }
+        }
+    
+        dtype_res.set(dtype_id,
+                      length,
+                      offset,
+                      stride, 
+                      ele_size,
+                      endianness);
+    }
+    else
     {
-        if(jvalue.HasMember("value") &&
-           jvalue["value"].IsArray())
-        {
-            length = jvalue["value"].Size();
-        }
-        else
-        {
-            length = 1;
-        }
+        /// TODO: Error
     }
-    
-    dtype_res.set(dtype_id,
-                  length,
-                  offset,
-                  ele_size, 
-                  ele_size,
-                  endianness);
 }
 
 ///============================================
@@ -499,16 +528,9 @@ walk_schema(Schema *schema,
     // Simplest case, handles "uint32", "float64", etc
     else if(jvalue.IsString())
     {
-         std::string dtype_name(jvalue.GetString());
-         index_t dtype_id = DataType::name_to_id(dtype_name);
-         index_t ele_size = DataType::default_bytes(dtype_id);
-         DataType dtype(dtype_id,
-                        1,
-                        curr_offset,
-                        ele_size,
-                        ele_size,
-                        Endianness::DEFAULT_T);
-         schema->set(dtype);
+        DataType dtype;
+        parse_leaf_dtype(jvalue,curr_offset,dtype);
+        schema->set(dtype);
     }
 }
 
@@ -720,30 +742,22 @@ walk_schema(Node   *node,
     // Simplest case, handles "uint32", "float64", with extended type info
     else if(jvalue.IsString())
     {
-         std::string dtype_name(jvalue.GetString());
-         index_t dtype_id = DataType::name_to_id(dtype_name);
-         index_t ele_size = DataType::default_bytes(dtype_id);
-         DataType dtype(dtype_id,
-                        1,
-                        curr_offset,
-                        ele_size,
-                        ele_size,
-                        Endianness::DEFAULT_T);
-
-         schema->set(dtype);
-         
-         if(data != NULL)
-         {
+        DataType dtype;
+        parse_leaf_dtype(jvalue,curr_offset,dtype);
+        schema->set(dtype);
+        
+        if(data != NULL)
+        {
              // node needs to link schema ptr 
              node->set(schema,data);
-         }
-         else
-         {
+        }
+        else
+        {
              // sets the pointer
              node->set(schema); // properly links back to schema tree
              // we need to dynamically alloc
              node->set(dtype);  // causes an init
-         }
+        }
     }
 }
 
@@ -787,7 +801,11 @@ Generator::walk(Schema &schema) const
     schema.reset();
     rapidjson::Document document;
     std::string res = utils::json_sanitize(m_json_schema);
-    document.Parse<0>(res.c_str());
+    if(document.Parse<0>(res.c_str()).HasParseError())
+    {
+        THROW_ERROR("rapidjson parse error");
+        /// TODO: better parse error msg
+    }
     index_t curr_offset = 0;
     conduit::walk_schema(&schema,document,curr_offset);
 }
@@ -803,7 +821,11 @@ Generator::walk(Node &node) const
     {
         rapidjson::Document document;
         std::string res = utils::json_sanitize(m_json_schema);
-        document.Parse<0>(res.c_str());
+        if(document.Parse<0>(res.c_str()).HasParseError())
+        {
+            THROW_ERROR("rapidjson parse error");
+            /// TODO: better parse error msg
+        }
         conduit::walk_schema_pure_json(&node,
                                        node.schema_pointer(),
                                        document);
@@ -812,7 +834,11 @@ Generator::walk(Node &node) const
     {
         rapidjson::Document document;
         std::string res = utils::json_sanitize(m_json_schema);
-        document.Parse<0>(res.c_str());
+        if(document.Parse<0>(res.c_str()).HasParseError())
+        {
+            THROW_ERROR("rapidjson parse error");
+            /// TODO: better parse error msg
+        }
         index_t curr_offset = 0;
         conduit::walk_schema(&node,
                              node.schema_pointer(),

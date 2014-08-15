@@ -44,6 +44,7 @@ public:
     Schema &operator=(const std::string &json_schema);
    
     index_t         total_bytes() const;
+    index_t         total_bytes_compact() const;
     
     std::string     to_json() const;
     void            to_json(std::ostringstream &oss) const;
@@ -80,6 +81,8 @@ public:
   
     void              reset();
     index_t           number_of_entries() const;
+
+    void              compact_to(Schema &s_dest);
 
     ///
     /// Object Interface

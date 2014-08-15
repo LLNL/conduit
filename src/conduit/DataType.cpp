@@ -334,15 +334,16 @@ DataType::element_index(index_t idx) const
 index_t
 DataType::total_bytes() const
 {
-   // non compact case
-   return m_stride * m_num_ele;
+    // this is the memory extent
+    // non compact case
+    return m_stride * m_num_ele;
 }
 
 ///============================================ 
 index_t
 DataType::total_bytes_compact() const
 {
-   return m_ele_bytes * m_num_ele;
+    return default_bytes(m_id) * m_num_ele;
 }
     
 ///============================================
@@ -396,6 +397,21 @@ DataType::is_unsigned_integer() const
              (m_id == UINT32_T) ||
              (m_id == UINT64_T));
 }
+
+
+///============================================
+void
+DataType::compact_to(DataType &dtype) const
+{
+     index_t ele_size =  default_bytes(m_id);
+     dtype.set(m_id,
+               m_num_ele, 
+               0,    
+               ele_size,
+               ele_size,
+               m_endianness);
+}
+
 
 
 ///============================================     

@@ -225,6 +225,7 @@ public:
     
     /* Info */
     index_t           total_bytes() const { return m_schema->total_bytes();}
+    index_t           total_bytes_compact() const { return m_schema->total_bytes_compact();}
     const DataType   &dtype() const       { return m_schema->dtype();}
     
     /* serialization */
@@ -236,9 +237,15 @@ public:
     // for bin,hdf,silo end-points.
     void        serialize(std::ofstream &ofs, bool compact=true) const;
 
-    /// TODO:
+    // compact this node
+    void        compact();
+    // compact into a new node
+    void        compact_to(Node &n_dest) const;
+
     /// update() will add entries from n to current Node (like python dict update) 
-    /// void        update(const Node &n);  
+    // the input should be const, but the lack of a const fetch prevents this for now
+    void        update(Node &n_src);
+    /// TODO:
     //  bool        compare(const Node &n, Node &cmp_results) const;
     //  bool        operator==(const Node &n) const;
     
@@ -461,6 +468,11 @@ private:
                      {return static_cast<char*>(m_data) + dtype().element_index(idx);};
     const void      *element_pointer(index_t idx) const 
                      {return static_cast<char*>(m_data) + dtype().element_index(idx);};
+
+    void              compact_to(uint8 *data, index_t curr_offset) const;
+
+    // for leaf types
+    void              compact_elements_to(uint8 *data) const;
 
     /* helper */
     void              init_defaults();

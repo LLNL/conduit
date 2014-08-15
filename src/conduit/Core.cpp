@@ -3,19 +3,28 @@
 ///
 
 #include "Core.h"
+#include "Node.h"
 
 namespace conduit
 {
 
-std::string version()
+///============================================
+std::string
+about()
 {
-    return std::string("{alpha}");
+    Node n;
+    about(n);
+    return n.to_json(true,2);
 }
 
-std::string about()
+///============================================
+void
+about(Node &n)
 {
-    /// Include all relevant licenses
-    return std::string("{}");
+    n.reset();
+    n["version"] = "{alpha}";
+    
+    // TODO: include compiler info, license info, etc
 }
 
 
