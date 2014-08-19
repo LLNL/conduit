@@ -23,6 +23,8 @@ set(BASIC_TESTS gtest_smoke
                 conduit_generator
                 conduit_node_update
                 conduit_node_compact
+                conduit_node_info
+                conduit_node_iterator
                 libb64_smoke
                 type_tests)
 

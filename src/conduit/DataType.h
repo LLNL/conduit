@@ -204,6 +204,7 @@ public:
     index_t     id()    const { return m_id;}    
     index_t     total_bytes()   const;
     index_t     total_bytes_compact() const;
+    bool        is_compact() const;
     bool        is_compatible(const DataType& type) const;
 
     bool        is_number()           const;

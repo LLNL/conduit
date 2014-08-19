@@ -460,7 +460,8 @@ index_t
 Schema::number_of_entries() const 
 {
     // LIST_T only for now, overload for OBJECT_T
-    if(m_dtype.id() != DataType::LIST_T)
+    if(m_dtype.id() != DataType::LIST_T  &&
+       m_dtype.id() != DataType::OBJECT_T)
         return 0;
     return children().size();
 }

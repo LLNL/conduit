@@ -21,6 +21,7 @@ class Schema
 {
 public:    
     friend class Node;
+    friend class NodeIterator;
 
     /* Constructors */
     Schema(); // empty schema

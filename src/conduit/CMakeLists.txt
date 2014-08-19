@@ -19,6 +19,7 @@ set(conduit_headers
     DataContainer.h
     Generator.h
     Error.h
+    NodeIterator.h
     Schema.h
     Utils.h
     ${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h
@@ -36,6 +37,7 @@ set(conduit_sources
     DataContainer.cpp
     Generator.cpp
     Node.cpp
+    NodeIterator.cpp
     Schema.cpp
     Utils.cpp
     )

@@ -25,6 +25,7 @@ Node::init_defaults()
 {
     m_data = NULL;
     m_alloced = false;
+    m_alloced_size = 0;
 
     m_mmaped    = false;
     m_mmap_fd   = -1;
@@ -1308,9 +1309,15 @@ Node::serialize(std::ofstream &ofs,
     }
     else if( dtype_id != DataType::EMPTY_T)
     {
-        //TODO: waiting for compact_to implementation ... 
-        compact = false;
-        if(compact)
+        if(is_compact())
+        {
+            // ser as is. This copies stride * num_ele bytes
+            {
+                ofs.write((const char*)element_pointer(0),
+                          total_bytes());
+            }
+        }
+        else
         {
             // copy all elements 
             index_t c_num_bytes = total_bytes_compact();
@@ -1318,12 +1325,6 @@ Node::serialize(std::ofstream &ofs,
             compact_elements_to(buffer);
             ofs.write((const char*)buffer,c_num_bytes);
             delete [] buffer;
-            
-        }
-        else // ser as is. This copies stride * num_ele bytes
-        {
-            ofs.write((const char*)element_pointer(0),
-                      total_bytes());
         }
     }
 }
@@ -1345,22 +1346,136 @@ Node::serialize(uint8 *data,index_t curr_offset,bool compact) const
     }
     else
     {
-        // TODO: waiting for compact_to implementation ... 
-        compact = false;
-        if(compact)
-        {
-            // copy all elements 
-            compact_elements_to(&data[curr_offset]);
-        }
-        else // ser as is. This copies stride * num_ele bytes
+        if(is_compact())
         {
             memcpy(&data[curr_offset],
                    m_data,
                    total_bytes());
         }
+        else // ser as is. This copies stride * num_ele bytes
+        {
+            // copy all elements 
+            compact_elements_to(&data[curr_offset]);      
+        }
        
     }
 }
+
+///============================================
+NodeIterator
+Node::iterator()
+{
+    return NodeIterator(this,0);
+}
+
+///============================================
+void
+Node::info(Node &res) const
+{
+    res.reset();
+    info(res,std::string());
+
+    
+    // update summary
+    index_t tb_alloc = 0;
+    index_t tb_mmap  = 0;
+
+    // for each in mem_spaces:
+    res["total_bytes"]         = total_bytes();
+    res["total_bytes_compact"] = total_bytes_compact();
+    
+    std::vector<std::string> mchildren;
+    Node &mspaces = res["mem_spaces"];
+    
+    NodeIterator itr = mspaces.iterator();
+    
+    Node n;
+    itr.info(n);
+    std::cout << n.to_json(true) << std::endl;
+    
+    while(itr.has_next())
+    {
+        Node &mspace = itr.next();
+        std::string mtype  = mspace["type"].as_string();
+        if( mtype == "alloced")
+        {
+            tb_alloc += mspace["bytes"].to_index_t();
+        }
+        else if(mtype == "mmaped")
+        {
+            tb_mmap  += mspace["bytes"].to_index_t();
+        }
+    }
+
+    res["total_bytes_alloced"] = tb_alloc;
+    res["total_bytes_mmaped"]  = tb_mmap;
+}
+
+///============================================
+void
+Node::info(Node &res, const std::string &curr_path) const
+{
+    // extract
+    // mem_spaces:
+    //  node path, pointer, alloced, mmaped or external, bytes
+
+    if(m_data != NULL)
+    {
+        std::string ptr_key = utils::to_hex_string(m_data);
+
+        if(!res["mem_spaces"].has_path(ptr_key))
+        {
+            Node &ptr_ref = res["mem_spaces"][ptr_key];
+            ptr_ref["path"] = curr_path;
+            if(m_alloced)
+            {
+                ptr_ref["type"]  = "alloced";
+                ptr_ref["bytes"] = m_alloced_size;
+            }
+            else if(m_mmaped)
+            {
+                ptr_ref["type"]  = "mmap";
+                ptr_ref["bytes"] = m_mmap_size;
+            }
+            else
+            {
+                ptr_ref["type"]  = "external";
+            }
+        }
+    }
+    
+    index_t dtype_id = dtype().id();
+    if(dtype_id == DataType::OBJECT_T)
+    {
+        std::ostringstream oss;
+        index_t nchildren = m_children.size();
+        for(index_t i=0; i < nchildren;i++)
+        {
+            oss.str("");
+            if(curr_path == "")
+            {
+                oss << m_schema->object_order()[i];
+            }
+            else
+            {
+                oss << curr_path << "/" << m_schema->object_order()[i];
+            }
+            m_children[i]->info(res,oss.str());
+        }
+    }
+    else if(dtype_id == DataType::LIST_T)
+    {
+        std::ostringstream oss;
+        index_t nchildren = m_children.size();
+        for(index_t i=0; i < nchildren;i++)
+        {
+            oss.str("");
+            oss << curr_path << "[" << i << "]";
+            m_children[i]->info(res,oss.str());
+        }
+    }    
+}
+
 
 
 ///============================================
@@ -1851,6 +1966,7 @@ Node::allocate(index_t dsize)
 {
     m_data    = malloc(dsize);
     m_alloced = true;
+    m_alloced_size = dsize;
     m_mmaped  = false;
 }
 
@@ -1899,7 +2015,7 @@ Node::release()
     {
         if(munmap(m_data, m_mmap_size) == -1) 
         {
-            // error
+            // TODO error
         }
         close(m_mmap_fd);
         m_data      = NULL;

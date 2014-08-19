@@ -398,6 +398,16 @@ DataType::is_unsigned_integer() const
              (m_id == UINT64_T));
 }
 
+///============================================
+bool
+DataType::is_compact() const
+{
+    return ( (m_id != EMPTY_T) &&
+             (m_id != OBJECT_T) && 
+             (m_id != LIST_T) &&
+             (total_bytes() == total_bytes_compact()));
+}
+
 
 ///============================================
 void

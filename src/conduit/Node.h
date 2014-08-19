@@ -12,6 +12,7 @@
 #include "DataArray.h"
 #include "Schema.h"
 #include "Generator.h"
+#include "NodeIterator.h"
 
 #include <map>
 #include <vector>
@@ -24,11 +25,13 @@ namespace conduit
 {
     
 class Generator;
+class NodeIterator;
 
 class Node
 {
 public:
 
+    friend class NodeIterator;
 
     /* Constructors */
     Node(); // empty node
@@ -213,6 +216,7 @@ public:
     Node &operator=(const char* data);
     Node &operator=(const std::string &data);
 
+    NodeIterator     iterator();
     /*schema access */
     const Schema     &schema() const { return *m_schema;}   
 
@@ -241,6 +245,10 @@ public:
     void        compact();
     // compact into a new node
     void        compact_to(Node &n_dest) const;
+    
+    bool        is_compact() const {return dtype().is_compact();}
+
+    void        info(Node &nres) const;
 
     /// update() will add entries from n to current Node (like python dict update) 
     // the input should be const, but the lack of a const fetch prevents this for now
@@ -469,6 +477,8 @@ private:
     const void      *element_pointer(index_t idx) const 
                      {return static_cast<char*>(m_data) + dtype().element_index(idx);};
 
+    void              info(Node &res, const std::string &curr_path) const;
+
     void              compact_to(uint8 *data, index_t curr_offset) const;
 
     // for leaf types
@@ -487,6 +497,7 @@ private:
     // TODO DataContainer
     void     *m_data;
     bool      m_alloced;
+    index_t   m_alloced_size;
     bool      m_mmaped;
     int       m_mmap_fd;
     index_t   m_mmap_size;
