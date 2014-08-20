@@ -9,7 +9,7 @@
 #include "gtest/gtest.h"
 using namespace conduit;
 
-TEST(conduit_to_string_simple, conduit_to_string)
+TEST(to_string_simple_1, conduit_to_string)
 {
     uint32   a_val  = 10;
     uint32   b_val  = 20;
@@ -22,19 +22,16 @@ TEST(conduit_to_string_simple, conduit_to_string)
 
     Schema schema("{\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}");
     Node n(schema,data);
-    std::cout << n.schema().to_json() <<std::endl; 
-    
-    std::cout << n.to_json(true) << std::endl;
-    
-    EXPECT_EQ(std::string("{\"a\": 10, \"b\": 20, \"c\": 30}\n"),n.to_json(true));
+    n.schema().print();
+    n.print_detailed();
+    EXPECT_EQ(std::string("{\"a\": 10,\"b\": 20,\"c\": 30}"),n.to_json(false,0,0,"",""));
     
 
 
     Schema schema2("{\"g\": {\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}}");
     Node n2(schema2,data);
-    std::cout << n2.schema().to_json() <<std::endl; 
-    std::cout << n2.to_json(true) << std::endl;
-    
-    EXPECT_EQ(std::string("{\"g\": {\"a\": 10, \"b\": 20, \"c\": 30}\n}\n"),n2.to_json(true));
+    n2.schema().print();
+    n.print_detailed();
+    EXPECT_EQ(std::string("{\"g\": {\"a\": 10,\"b\": 20,\"c\": 30}}"),n2.to_json(false,0,0,"",""));
 }
 

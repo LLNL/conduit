@@ -50,6 +50,9 @@ public:
     std::string     to_json() const;
     void            to_json(std::ostringstream &oss) const;
     
+    void            print() const
+                    {std::cout << to_json() << std::endl;}
+
     bool            compare(const Schema &n, Node &cmp_results) const;
     bool            operator==(const Schema &n) const;
     

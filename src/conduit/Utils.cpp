@@ -152,5 +152,19 @@ json_sanitize(const std::string &json)
     return res;
 }
     
+void indent(std::ostringstream &oss,
+            index_t indent,
+            index_t depth,
+            const std::string &pad)
+{
+    for(index_t i=0;i<depth;i++)
+    {
+        for(index_t j=0;j<indent;j++)
+        {
+            oss << pad;
+        }
+    }
+}
+    
 }
 }

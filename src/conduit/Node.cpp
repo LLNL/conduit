@@ -1389,10 +1389,6 @@ Node::info(Node &res) const
     
     NodeIterator itr = mspaces.iterator();
     
-    Node n;
-    itr.info(n);
-    std::cout << n.to_json(true) << std::endl;
-    
     while(itr.has_next())
     {
         Node &mspace = itr.next();
@@ -1406,7 +1402,6 @@ Node::info(Node &res) const
             tb_mmap  += mspace["bytes"].to_index_t();
         }
     }
-
     res["total_bytes_alloced"] = tb_alloc;
     res["total_bytes_mmaped"]  = tb_mmap;
 }
@@ -1848,50 +1843,132 @@ Node::to_index_t() const
 
 ///============================================
 std::string 
-Node::to_json(bool simple, index_t indent) const
+Node::to_json(bool detailed,
+              index_t indent, 
+              index_t depth,
+              const std::string &pad,
+              const std::string &eoe) const
 {
    std::ostringstream oss;
-   to_json(oss,simple,indent);
+   to_json(oss,detailed,indent,depth,pad,eoe);
    return oss.str();
 }
+
+// ///============================================
+// void
+// Node::to_json(std::ostringstream &oss,
+//               bool detailed, index_t indent) const
+// {
+//     return to_json(oss,detailed,indent,0," ","\n");
+//     if(dtype().id() == DataType::OBJECT_T)
+//     {
+//         oss << "{";
+//         bool first=true;
+//
+//         index_t nchildren = m_children.size();
+//         for(index_t i=0; i < nchildren;i++)
+//         {
+//             if(!first)
+//                 oss << ", ";
+//             oss << "\""<< m_schema->object_order()[i] << "\": ";
+//             m_children[i]->to_json(oss,detailed,indent);
+//
+//             first=false;
+//         }
+//         oss << "}\n";
+//     }
+//     else if(dtype().id() == DataType::LIST_T)
+//     {
+//         oss << "[";
+//
+//         index_t nchildren = m_children.size();
+//         bool first=true;
+//         for(index_t i=0; i < nchildren;i++)
+//         {
+//             if(!first)
+//                 oss << ", ";
+//             m_children[i]->to_json(oss,detailed,indent);
+//             oss << "]\n";
+//             first=false;
+//         }
+//
+//     }
+//     else // assume leaf data type
+//     {
+//         std::ostringstream value_oss;
+//         switch(dtype().id())
+//         {
+//             /* bool*/
+//             case DataType::BOOL8_T: as_bool8_array().to_json(value_oss); break;
+//             /* ints */
+//             case DataType::INT8_T:  as_int8_array().to_json(value_oss); break;
+//             case DataType::INT16_T: as_int16_array().to_json(value_oss); break;
+//             case DataType::INT32_T: as_int32_array().to_json(value_oss); break;
+//             case DataType::INT64_T: as_int64_array().to_json(value_oss); break;
+//             /* uints */
+//             case DataType::UINT8_T:  as_uint8_array().to_json(value_oss); break;
+//             case DataType::UINT16_T: as_uint16_array().to_json(value_oss); break;
+//             case DataType::UINT32_T: as_uint32_array().to_json(value_oss); break;
+//             case DataType::UINT64_T: as_uint64_array().to_json(value_oss); break;
+//             /* floats */
+//             case DataType::FLOAT32_T: as_float32_array().to_json(value_oss); break;
+//             case DataType::FLOAT64_T: as_float64_array().to_json(value_oss); break;
+//             /* bytestr */
+//             case DataType::BYTESTR_T: value_oss << "\"" << as_bytestr() << "\""; break;
+//         }
+//
+//         if(!detailed)
+//             oss << value_oss.str();
+//         else
+//             dtype().to_json(oss,value_oss.str());
+//     }
+// }
 
 ///============================================
 void
 Node::to_json(std::ostringstream &oss,
-              bool simple, index_t indent) const
+              bool detailed, 
+              index_t indent, 
+              index_t depth,
+              const std::string &pad,
+              const std::string &eoe) const
 {
     if(dtype().id() == DataType::OBJECT_T)
     {
-        oss << "{";
-        bool first=true;
-        
+        oss << eoe;
+        utils::indent(oss,indent,depth,pad);
+        oss << "{" << eoe;
+    
         index_t nchildren = m_children.size();
         for(index_t i=0; i < nchildren;i++)
         {
-            if(!first)
-                oss << ", ";
+            utils::indent(oss,indent,depth+1,pad);
             oss << "\""<< m_schema->object_order()[i] << "\": ";
-            m_children[i]->to_json(oss,simple,indent);
-            
-            first=false;
+            m_children[i]->to_json(oss,detailed,indent,depth+1,pad,eoe);
+            if(i < nchildren-1)
+                oss << ",";
+            oss << eoe;
         }
-        oss << "}\n";
+        utils::indent(oss,indent,depth,pad);
+        oss << "}";
     }
     else if(dtype().id() == DataType::LIST_T)
     {
-        oss << "[";
+        oss << eoe;
+        utils::indent(oss,indent,depth,pad);
+        oss << "[" << eoe;
         
         index_t nchildren = m_children.size();
-        bool first=true;
         for(index_t i=0; i < nchildren;i++)
         {
-            if(!first)
-                oss << ", ";
-            m_children[i]->to_json(oss,simple,indent);
-            oss << "]\n";
-            first=false;
+            utils::indent(oss,indent,depth+1,pad);
+            m_children[i]->to_json(oss,detailed,indent,depth+1,pad,eoe);
+            if(i < nchildren-1)
+                oss << ",";
+            oss << eoe;
         }
-        
+        utils::indent(oss,indent,depth,pad);
+        oss << "]";      
     }
     else // assume leaf data type
     {
@@ -1917,13 +1994,12 @@ Node::to_json(std::ostringstream &oss,
             case DataType::BYTESTR_T: value_oss << "\"" << as_bytestr() << "\""; break;
         }
 
-        if(simple)
+        if(!detailed)
             oss << value_oss.str();
         else
             dtype().to_json(oss,value_oss.str());
     }  
 }
-
     
 ///============================================
 void

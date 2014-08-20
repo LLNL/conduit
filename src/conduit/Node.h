@@ -375,11 +375,59 @@ public:
     float64          to_float64() const;
     index_t          to_index_t() const;
         
-    std::string      to_json(bool simple=false,
-                             index_t indent=0) const;
-    void             to_json(std::ostringstream &oss,
-                             bool simple=false,
-                             index_t indent=0) const;
+    std::string         to_json(bool detailed=true, 
+                                index_t indent=2, 
+                                index_t depth=0,
+                                const std::string &pad=" ",
+                                const std::string &eoe="\n") const;
+
+    void                to_json(std::ostringstream &oss,
+                                bool detailed=true, 
+                                index_t indent=2, 
+                                index_t depth=0,
+                                const std::string &pad=" ",
+                                const std::string &eoe="\n") const;
+
+
+     std::string      to_pure_json(index_t indent=2) const
+                        {return to_json(false,indent);}
+
+     void             to_pure_json(std::ostringstream &oss,
+                              index_t indent=2) const 
+                        {to_json(oss,false,indent);}
+
+    std::string      to_simple_json(index_t indent=2, 
+                                    index_t depth=0,
+                                    const std::string &pad=" ",
+                                    const std::string &eoe="\n") const
+                            {return to_json(false,indent,depth,pad,eoe);}
+
+    void             to_simple_json(std::ostringstream &oss,
+                                    index_t indent=2, 
+                                    index_t depth=0,
+                                    const std::string &pad=" ",
+                                    const std::string &eoe="\n") const
+                            {to_json(oss,false,indent,depth,pad,eoe);}
+                                                                
+    std::string      to_detailed_json(index_t indent=2, 
+                                      index_t depth=0,
+                                      const std::string &pad=" ",
+                                      const std::string &eoe="\n") const
+                     {return to_json(true,indent,depth,pad,eoe);}
+
+    void             to_detailed_json(std::ostringstream &oss,
+                                      index_t indent=2, 
+                                      index_t depth=0,
+                                      const std::string &pad=" ",
+                                      const std::string &eoe="\n") const
+                     {to_json(oss,true,indent,depth,pad,eoe);}
+
+
+    void              print(bool detailed=false) const
+                        {std::cout << to_json(detailed,2) << std::endl;}
+
+    void              print_detailed() const
+                        {print(true);}
 
     bool8            as_bool8()   const { return *((bool8*)element_pointer(0));}
 
@@ -477,6 +525,7 @@ private:
     const void      *element_pointer(index_t idx) const 
                      {return static_cast<char*>(m_data) + dtype().element_index(idx);};
 
+                              
     void              info(Node &res, const std::string &curr_path) const;
 
     void              compact_to(uint8 *data, index_t curr_offset) const;

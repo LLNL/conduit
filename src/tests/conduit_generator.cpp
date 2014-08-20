@@ -83,7 +83,7 @@ TEST(conduit_generator_simple_gen_schema_test, conduit_generator)
     
     Node n5(schema5,data4);
     
-    std::cout << n5.schema().to_json() << std::endl;
+    n5.schema().print();
     EXPECT_EQ(n5["top"][0]["int1"].as_uint32(),a_val);
     EXPECT_EQ(n5["top"][0]["int2"].as_uint32(),b_val);
     EXPECT_EQ(n5["top"][1].as_float64(),c_val);

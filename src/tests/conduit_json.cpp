@@ -23,7 +23,7 @@ TEST(conduit_to_json_1, conduit_json)
     EXPECT_EQ(n["a"].as_uint32(),a_val);
     EXPECT_EQ(n["b"].as_uint32(),b_val);
 
-    std::cout << n.to_json();
+    n.print_detailed();
 }
 
 TEST(conduit_to_json_2, conduit_json)
@@ -43,9 +43,10 @@ TEST(conduit_to_json_2, conduit_json)
     n["arr"].set(DataType::Arrays::uint32(5),arr);
 
 
-    std::string pure_json = n.to_json(true);
-    std::cout << n.to_json();
-    std::cout << pure_json << std::endl;
+    std::string pure_json = n.to_json(false);
+
+    n.print_detailed();
+    n.print();
     
     Generator g(pure_json,"json");
     Node n2(g);
@@ -60,7 +61,7 @@ TEST(conduit_to_json_3, conduit_json)
     std::string pure_json ="{a:[0,1,2,3,4],b:[0.0,1.1,2.2,3.3]}";
     Generator g(pure_json,"json");
     Node n(g);
-    std::cout << n.to_json();
+    n.print_detailed();
 }
 
 
@@ -88,7 +89,7 @@ TEST(conduit_to_json_inline_array, conduit_json)
 
     std::string schema ="{dtype:uint32, length:5, value:[0,1,2,3,4]}";
     Node n(schema,arr);
-    std::cout << n.to_json() << std::endl;
+    n.print_detailed();
     
     uint32 *ptr = &arr[0];
 
@@ -101,7 +102,7 @@ TEST(conduit_to_json_inline_array, conduit_json)
     std::string schema2 ="{dtype:uint32, value:[10,20,30]}";
     Node n2(schema2,arr);
     ptr =n2.as_uint32_ptr();
-    std::cout << n2.to_json() << std::endl;
+    n2.print_detailed();
     
     EXPECT_EQ(n2.dtype().number_of_elements(),3);
     for(int i=0;i<n2.dtype().number_of_elements();i++)
@@ -112,7 +113,7 @@ TEST(conduit_to_json_inline_array, conduit_json)
     std::string schema3 ="{dtype:uint32, value:[100,200,300,400,500]}";
     Node n3(schema3,arr);
     ptr =n3.as_uint32_ptr();
-    std::cout << n3.to_json() << std::endl;
+    n3.print_detailed();
     
     EXPECT_EQ(n3.dtype().number_of_elements(),5);
     for(int i=0;i<n3.dtype().number_of_elements();i++)
@@ -123,7 +124,7 @@ TEST(conduit_to_json_inline_array, conduit_json)
     std::string schema4 ="{dtype:uint32, value:[1000,2000]}";
     Node n4(schema4,arr);
     ptr =n4.as_uint32_ptr();
-    std::cout << n4.to_json() << std::endl;
+    n4.print_detailed();
     
     EXPECT_EQ(n4.dtype().number_of_elements(),2);
     for(int i=0;i<n4.dtype().number_of_elements();i++)

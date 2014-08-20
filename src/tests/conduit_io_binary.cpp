@@ -34,8 +34,8 @@ TEST(conduit_io_binary, conduit_read_write)
    
     Node n(schema,"test_conduit.bin");
     
-    std::cout << n.schema().to_json() << std::endl;
-    std::cout << n.to_json() << std::endl;
+    n.schema().print();
+    n.print_detailed();
     
     std::cout <<  n[0]["a"].as_int32() << std::endl;
     std::cout <<  n[1]["a"].as_int32() << std::endl;
@@ -77,8 +77,8 @@ TEST(conduit_io_binary, conduit_mmap_simple)
    
     Node nmmap(schema,"test_conduit_mmap.bin",true);
     
-    std::cout << nmmap.schema().to_json() << std::endl;
-    std::cout << nmmap.to_json() << std::endl;
+    nmmap.schema().print();
+    nmmap.print_detailed();
     
     std::cout <<  nmmap[0]["a"].as_int32() << std::endl;
     std::cout <<  nmmap[1]["a"].as_int32() << std::endl;

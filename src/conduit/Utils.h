@@ -9,6 +9,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <Core.h>
 
 namespace conduit
 {
@@ -21,6 +22,7 @@ namespace utils
 
      std::string json_sanitize(const std::string &json);
      
+     
      template< typename T >
      std::string to_hex_string(T value)
      {
@@ -28,6 +30,11 @@ namespace utils
            oss << std::hex << value;
            return  oss.str();
      }
+     
+     void indent(std:: ostringstream &oss,
+                 index_t indent,
+                 index_t depth,
+                 const std::string &pad);
      
 }
 }

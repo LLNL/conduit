@@ -32,5 +32,5 @@ TEST(conduit_bytestr_basic, conduit_bytestr)
     EXPECT_EQ(strcmp(n["b"].as_bytestr(),c_tb),0);
     EXPECT_EQ(n["c"].as_string(),cpp_tc);
 
-    std::cout << n.to_json();
+    n.print_detailed();
 }
