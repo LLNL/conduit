@@ -465,34 +465,44 @@ Schema::number_of_entries() const
         return 0;
     return children().size();
 }
+
 ///============================================
 void    
-Schema::compact_to(Schema &s_dest)
+Schema::compact_to(Schema &s_dest) const
 {
-    index_t res = 0;
-    index_t dt_id = m_dtype.id();
+    s_dest.reset();
+    compact_to(s_dest,0);
+}
+
+///============================================
+void    
+Schema::compact_to(Schema &s_dest, index_t curr_offset) const
+{
+    index_t dtype_id = m_dtype.id();
     // only leaf nodes have storage, however we need 
     // to replicate the schema tree
     s_dest.set(*this);
     
-    if(dt_id == DataType::OBJECT_T || dt_id == DataType::LIST_T)
+    if(dtype_id == DataType::OBJECT_T || dtype_id == DataType::LIST_T)
     {
-        std::vector<Schema*> &src_lst = children();
+        const std::vector<Schema*> &src_lst = children();
         std::vector<Schema*> &dest_lst = s_dest.children();
         
         std::vector<Schema*>::iterator dest_itr = dest_lst.begin();
-        for (std::vector<Schema*>::iterator itr = src_lst.begin();
+        for (std::vector<Schema*>::const_iterator itr = src_lst.begin();
              itr != src_lst.end(); ++itr, dest_itr++)
         {
-            Schema  *s_src  = *itr;
-            Schema  *s_dest = *dest_itr;
-            s_src->compact_to(*s_dest);
+            Schema  *cld_src  = *itr;
+            Schema  *cld_dest = *dest_itr;
+            cld_src->compact_to(*cld_dest,curr_offset);
+            curr_offset += cld_dest->total_bytes();
         }
     }
-    else if (dt_id != DataType::EMPTY_T)
+    else if (dtype_id != DataType::EMPTY_T)
     {
         // create a compact data type
         m_dtype.compact_to(s_dest.m_dtype);
+        s_dest.m_dtype.set_offset(curr_offset);
     }
 }
 
@@ -599,43 +609,62 @@ Schema::walk_schema(const std::string &json_schema)
 
 ///============================================
 std::string
-Schema::to_json() const
+Schema::to_json(bool detailed,
+              index_t indent, 
+              index_t depth,
+              const std::string &pad,
+              const std::string &eoe) const
 {
-    std::ostringstream oss;
-    to_json(oss);
-    return oss.str();
+   std::ostringstream oss;
+   to_json(oss,detailed,indent,depth,pad,eoe);
+   return oss.str();
 }
 
 ///============================================
 void
-Schema::to_json(std::ostringstream &oss) const
+Schema::to_json(std::ostringstream &oss,
+              bool detailed, 
+              index_t indent, 
+              index_t depth,
+              const std::string &pad,
+              const std::string &eoe) const
 {
     if(m_dtype.id() == DataType::OBJECT_T)
     {
-        oss << "{";
-        bool first=true;
-        for (index_t i = 0; i < children().size(); i++) {
-            if(!first)
+        oss << eoe;
+        utils::indent(oss,indent,depth,pad);
+        oss << "{" << eoe;
+    
+        index_t nchildren = children().size();
+        for(index_t i=0; i < nchildren;i++)
+        {
+            utils::indent(oss,indent,depth+1,pad);
+            oss << "\""<< object_order()[i] << "\": ";
+            children()[i]->to_json(oss,detailed,indent,depth+1,pad,eoe);
+            if(i < nchildren-1)
                 oss << ",";
-            oss << "\""<< object_order()[i] << "\" : ";
-            children()[i]->to_json(oss);
-            oss << "\n";
-            first=false;
+            oss << eoe;
         }
+        utils::indent(oss,indent,depth,pad);
         oss << "}";
     }
     else if(m_dtype.id() == DataType::LIST_T)
     {
-        oss << "[";
-        bool first=true;
-        for (index_t i = 0; i < children().size(); i++) {
-            if(!first)
+        oss << eoe;
+        utils::indent(oss,indent,depth,pad);
+        oss << "[" << eoe;
+        
+        index_t nchildren = children().size();
+        for(index_t i=0; i < nchildren;i++)
+        {
+            utils::indent(oss,indent,depth+1,pad);
+            children()[i]->to_json(oss,detailed,indent,depth+1,pad,eoe);
+            if(i < nchildren-1)
                 oss << ",";
-            children()[i]->to_json(oss);
-            oss << "\n";
-            first=false;
+            oss << eoe;
         }
-        oss << "]";
+        utils::indent(oss,indent,depth,pad);
+        oss << "]";      
     }
     else // assume leaf data type
     {

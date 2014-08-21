@@ -47,9 +47,19 @@ public:
     index_t         total_bytes() const;
     index_t         total_bytes_compact() const;
     
-    std::string     to_json() const;
-    void            to_json(std::ostringstream &oss) const;
-    
+    std::string         to_json(bool detailed=true, 
+                                index_t indent=2, 
+                                index_t depth=0,
+                                const std::string &pad=" ",
+                                const std::string &eoe="\n") const;
+
+    void                to_json(std::ostringstream &oss,
+                                bool detailed=true, 
+                                index_t indent=2, 
+                                index_t depth=0,
+                                const std::string &pad=" ",
+                                const std::string &eoe="\n") const;
+
     void            print() const
                     {std::cout << to_json() << std::endl;}
 
@@ -86,7 +96,7 @@ public:
     void              reset();
     index_t           number_of_entries() const;
 
-    void              compact_to(Schema &s_dest);
+    void              compact_to(Schema &s_dest) const ;
 
     ///
     /// Object Interface
@@ -140,6 +150,7 @@ private:
     void        init_object();
     void        release();
     
+    void        compact_to(Schema &s_dest, index_t curr_offset) const ;
     void        walk_schema(const std::string &json_schema);
     void        walk_schema(Schema &schema, const std::string &json_schema);
 

@@ -270,7 +270,12 @@ parse_leaf_dtype(const rapidjson::Value &jvalue, index_t offset, DataType &dtype
         index_t ele_size  = DataType::default_bytes(dtype_id);
         index_t stride    = ele_size;
     
-        // TODO: parse offset (override offset if passed)
+        //  parse offset (override offset if passed)
+        if(jvalue.HasMember("offset") && jvalue["offset"].IsNumber())
+        {
+            offset = jvalue["offset"].GetUint64();
+        }
+
 
         // parse stride
         if(jvalue.HasMember("stride") && jvalue["stride"].IsNumber())

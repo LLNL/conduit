@@ -184,7 +184,7 @@ public:
                    index_t stride,
                    index_t element_bytes,
                    index_t endianness);
-
+    
     static index_t          name_to_id(const std::string &name);
     static std::string      id_to_name(index_t dtype);
 
@@ -220,6 +220,13 @@ public:
     index_t    element_bytes()       const { return m_ele_bytes;}
     index_t    endianness()          const { return m_endianness;}
     index_t    element_index(index_t idx) const;
+    
+    void       set_number_of_elements(index_t v)  { m_num_ele = v;}
+    void       set_offset(index_t v)              { m_offset = v;}
+    void       set_stride(index_t v)              { m_stride = v;}
+    void       set_element_bytes(index_t v)       { m_ele_bytes = v;}
+    void       set_endianness(index_t v)          { m_endianness = v;}
+
 
 private:
 
