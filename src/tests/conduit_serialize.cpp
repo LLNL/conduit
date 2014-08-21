@@ -1,5 +1,5 @@
 ///
-/// file: conduit_smoke.cpp
+/// file: conduit_serialize.cpp
 ///
 
 
@@ -7,14 +7,13 @@
 
 #include <iostream>
 #include "gtest/gtest.h"
-// #include "rapidjson/document.h"
 using namespace conduit;
 
 
 
 
 
-TEST(conduit_node_serialize_test_1, conduit_node)
+TEST(serialize_test_1, conduit_serialize)
 {
 
     uint32   a_val  = 10;
@@ -30,6 +29,7 @@ TEST(conduit_node_serialize_test_1, conduit_node)
 
     n.schema().print();
     std::vector<uint8> bytes;
+
     Schema s_schema;
     n.serialize(bytes);
     n.schema().compact_to(s_schema);
@@ -37,15 +37,15 @@ TEST(conduit_node_serialize_test_1, conduit_node)
     s_schema.print();
 
     std::cout << *((uint32*)&bytes[0]) << std::endl;
-    //Schema sch(jschema);
+
 	Node n2(s_schema,&bytes[0]);
     EXPECT_EQ(n2["a"].as_uint32(),a_val);
     EXPECT_EQ(n2["b"].as_uint32(),b_val);
 }
 
 
-/*
-TEST(conduit_node_serialize_test_2, conduit_node)
+
+TEST(serialize_test_2, conduit_serialize)
 {
 
     uint32   a_val  = 10;
@@ -63,19 +63,20 @@ TEST(conduit_node_serialize_test_2, conduit_node)
     EXPECT_EQ(n["c"].as_float64(),c_val);
     EXPECT_EQ(n["here"]["there"].as_uint32(),a_val);
 
-    std::string schema = n.schema();
-    std::cout << "SCHEMA:\n" << schema;
+    n.schema().print();
     std::vector<uint8> bytes;
     n.serialize(bytes);
 
-
-    Node n2(&bytes[0],schema);
-    std::cout << "NEWSCHEMA:\n" << n2.schema();
+    Schema c_schema;
+    n.schema().compact_to(c_schema);
+    Node n2(c_schema,&bytes[0]);
+    n2.schema().print();
     Node &t = n2["a"];
     EXPECT_EQ(n2["a"].as_uint32(),a_val);
     EXPECT_EQ(n2["b"].as_uint32(),b_val);
     EXPECT_EQ(n2["c"].as_float64(),c_val);
     EXPECT_EQ(n2["here"]["there"].as_uint32(),a_val);
+    EXPECT_EQ(1,n2["here"].number_of_entries());
 
 }
-*/
+

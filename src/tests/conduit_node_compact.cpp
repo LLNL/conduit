@@ -27,3 +27,36 @@ TEST(compact_1, conduit_node_compact)
     EXPECT_EQ(20,nc.total_bytes());
     EXPECT_EQ(20,nc.total_bytes_compact());
 }
+
+TEST(compact_2, conduit_node_compact)
+{
+
+    float64 vals[] = { 100.0,-100.0,200.0,-200.0,300.0,-300.0,400.0,-400.0,500.0,-500.0};
+    Generator g1("{dtype: float64, length: 5, stride: 16}",vals);
+    Generator g2("{dtype: float64, length: 5, stride: 16, offset:8}",vals);
+
+    Node n1(g1);
+    n1.print();
+
+    Node n2(g2);
+    n2.print();
+    
+    Node ninfo;
+    n1.info(ninfo);
+    ninfo.print();
+
+    Node n1c;
+    n1.compact_to(n1c);
+
+    n1c.schema().print();
+    n1c.print_detailed();
+    n1c.info(ninfo);
+    ninfo.print();
+
+    float64_array n1_arr  = n1.as_float64_array();
+    float64_array n1c_arr = n1c.as_float64_array();
+    for(index_t i=0;i<5;i++)
+    {
+        EXPECT_EQ(n1_arr[i],n1c_arr[i]);
+    }    
+}

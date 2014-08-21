@@ -1519,15 +1519,10 @@ void
 Node::compact_to(Node &n_dest) const
 {
     n_dest.reset();
-    index_t curr_offset = 0;
     index_t c_size = total_bytes_compact();
-    uint8 *data = (uint8*) malloc(c_size);
-    compact_to(data,curr_offset);
-    Schema c_schema;
-    m_schema->compact_to(c_schema);
-    n_dest.set(c_schema,data);
-    // give ownership of alloc to the new node. 
-    n_dest.m_alloced = true;
+    m_schema->compact_to(*n_dest.schema_pointer());
+    n_dest.allocate(c_size);
+    compact_to((uint8*)n_dest.m_data,0);
 }
 
 ///============================================
@@ -1559,7 +1554,7 @@ Node::compact_elements_to(uint8 *data) const
     index_t dtype_id = dtype().id();
     if(dtype_id == DataType::OBJECT_T ||
        dtype_id == DataType::LIST_T ||
-       dtype_id != DataType::EMPTY_T)
+       dtype_id == DataType::EMPTY_T)
     {
         // TODO: error
     }
