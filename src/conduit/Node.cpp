@@ -33,6 +33,7 @@ Node::init_defaults()
 
     m_schema = new Schema(DataType::EMPTY_T);
     
+    m_parent = NULL;
 }
 
 ///============================================
@@ -106,8 +107,8 @@ Node::Node(const Schema &schema, void *data)
 {
     init_defaults();
     std::string json_schema =schema.to_json(); 
-    std::cout << "json_schema_rc:" << json_schema << std::endl;
-    walk_schema(schema,data);
+    Generator g(json_schema,data);
+    g.walk(*this);
 }
 
 
@@ -1563,11 +1564,13 @@ Node::compact_elements_to(uint8 *data) const
         // copy all elements 
         index_t num_ele   = dtype().number_of_elements();
         index_t ele_bytes = DataType::default_bytes(dtype_id);
+        uint8 *data_ptr = data;
         for(index_t i=0;i<num_ele;i++)
         {
-            memcpy(data,
+            memcpy(data_ptr,
                    element_pointer(i),
                    ele_bytes);
+            data_ptr+=ele_bytes;
         }
     }
 }

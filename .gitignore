@@ -10,3 +10,4 @@ install-release/
 temp.cpp
 temp.exe
 *.pyc
+.ipynb_checkpoints

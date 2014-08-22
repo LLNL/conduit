@@ -479,23 +479,27 @@ void
 Schema::compact_to(Schema &s_dest, index_t curr_offset) const
 {
     index_t dtype_id = m_dtype.id();
-    // only leaf nodes have storage, however we need 
-    // to replicate the schema tree
-    s_dest.set(*this);
     
-    if(dtype_id == DataType::OBJECT_T || dtype_id == DataType::LIST_T)
+    if(dtype_id == DataType::OBJECT_T )
     {
-        const std::vector<Schema*> &src_lst = children();
-        std::vector<Schema*> &dest_lst = s_dest.children();
-        
-        std::vector<Schema*>::iterator dest_itr = dest_lst.begin();
-        for (std::vector<Schema*>::const_iterator itr = src_lst.begin();
-             itr != src_lst.end(); ++itr, dest_itr++)
+        index_t nchildren = children().size();
+        for(index_t i=0; i < nchildren;i++)
         {
-            Schema  *cld_src  = *itr;
-            Schema  *cld_dest = *dest_itr;
-            cld_src->compact_to(*cld_dest,curr_offset);
-            curr_offset += cld_dest->total_bytes();
+            Schema  *cld_src = children()[i];
+            Schema &cld_dest = s_dest.fetch(object_order()[i]);
+            cld_src->compact_to(cld_dest,curr_offset);
+            curr_offset += cld_dest.total_bytes();
+        }
+    }
+    else if(dtype_id == DataType::LIST_T)
+    {
+        index_t nchildren = children().size();
+        for(index_t i=0; i < nchildren ;i++)
+        {            
+            Schema  *cld_src = children()[i];
+            Schema &cld_dest = s_dest.fetch(i);
+            cld_src->compact_to(cld_dest,curr_offset);
+            curr_offset += cld_dest.total_bytes();
         }
     }
     else if (dtype_id != DataType::EMPTY_T)
