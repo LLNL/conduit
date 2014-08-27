@@ -1303,7 +1303,7 @@ Node::serialize(std::ofstream &ofs,
         dtype_id == DataType::LIST_T)
     {
         std::vector<Node*>::const_iterator itr;
-        for(itr = m_children.begin(); itr != m_children.end(); ++itr)
+        for(itr = m_children.begin(); itr < m_children.end(); ++itr)
         {
             (*itr)->serialize(ofs);
         }
@@ -1339,7 +1339,7 @@ Node::serialize(uint8 *data,index_t curr_offset,bool compact) const
        dtype().id() == DataType::LIST_T)
     {
         std::vector<Node*>::const_iterator itr;
-        for(itr = m_children.begin(); itr != m_children.end(); ++itr)
+        for(itr = m_children.begin(); itr < m_children.end(); ++itr)
         {
             (*itr)->serialize(&data[0],curr_offset);
             curr_offset+=(*itr)->total_bytes();
@@ -1491,7 +1491,7 @@ Node::update(Node &n_src)
         n_src.paths(src_paths);
 
         for (std::vector<std::string>::const_iterator itr = src_paths.begin();
-             itr != src_paths.end(); ++itr)
+             itr < src_paths.end(); ++itr)
         {
             std::string ent_name = *itr;
             fetch(ent_name).update(n_src.fetch(ent_name));
@@ -1535,7 +1535,7 @@ Node::compact_to(uint8 *data, index_t curr_offset) const
        dtype_id == DataType::LIST_T)
     {
             std::vector<Node*>::const_iterator itr;
-            for(itr = m_children.begin(); itr != m_children.end(); ++itr)
+            for(itr = m_children.begin(); itr < m_children.end(); ++itr)
             {
                 (*itr)->compact_to(data,curr_offset);
                 curr_offset +=  (*itr)->total_bytes_compact();

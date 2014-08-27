@@ -567,7 +567,7 @@ Schema::total_bytes() const
     {
         const std::vector<Schema*> &lst = children();
         for (std::vector<Schema*>::const_iterator itr = lst.begin();
-             itr != lst.end(); ++itr)
+             itr < lst.end(); ++itr)
         {
             res += (*itr)->total_bytes();
         }
@@ -589,7 +589,7 @@ Schema::total_bytes_compact() const
     {
         const std::vector<Schema*> &lst = children();
         for (std::vector<Schema*>::const_iterator itr = lst.begin();
-             itr != lst.end(); ++itr)
+             itr < lst.end(); ++itr)
         {
             res += (*itr)->total_bytes_compact();
         }
