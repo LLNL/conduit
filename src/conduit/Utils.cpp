@@ -1,3 +1,13 @@
+/*****************************************************************************
+* Copyright (c) 2014, Lawrence Livermore National Security, LLC
+* Produced at the Lawrence Livermore National Laboratory. 
+* 
+* All rights reserved.
+* 
+* This source code cannot be distributed without further review from 
+* Lawrence Livermore National Laboratory.
+*****************************************************************************/
+
 ///
 /// file: Utils.cpp
 ///
@@ -10,7 +20,7 @@ namespace conduit
 namespace utils
 {
 
-///============================================
+//============================================
 void     
 split_path(const std::string &path,
            std::string &curr,
@@ -50,7 +60,7 @@ bool check_num_char(const char v)
 }
 
 
-///============================================
+//============================================
 std::string
 json_sanitize(const std::string &json)
 {

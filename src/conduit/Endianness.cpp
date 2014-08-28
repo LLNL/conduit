@@ -1,3 +1,13 @@
+/*****************************************************************************
+* Copyright (c) 2014, Lawrence Livermore National Security, LLC
+* Produced at the Lawrence Livermore National Laboratory. 
+* 
+* All rights reserved.
+* 
+* This source code cannot be distributed without further review from 
+* Lawrence Livermore National Laboratory.
+*****************************************************************************/
+
 ///
 /// file: Endianness.cpp
 ///
@@ -7,7 +17,7 @@
 namespace conduit
 {
 
-///============================================
+//============================================
 index_t
 Endianness::machine_default()
 {
@@ -19,7 +29,7 @@ Endianness::machine_default()
         return LITTLE_T;
 }
 
-///============================================
+//============================================
 index_t
 Endianness::name_to_id(const std::string &name)
 {
@@ -31,7 +41,7 @@ Endianness::name_to_id(const std::string &name)
 
 }
 
-///============================================
+//============================================
 std::string      
 Endianness::id_to_name(index_t endianness)
 {
@@ -43,7 +53,7 @@ Endianness::id_to_name(index_t endianness)
     return res;
 };
 
-///============================================
+//============================================
 void
 Endianness::swap16(void *data)
 {
@@ -52,7 +62,7 @@ Endianness::swap16(void *data)
     ((uint8*)data)[1] = tmp;
 }
 
-///============================================
+//============================================
 void             
 Endianness::swap16(void *src,void *dest)
 {
@@ -60,7 +70,7 @@ Endianness::swap16(void *src,void *dest)
     ((uint8*)dest)[1] = ((uint8*)src)[0];
 }
     
-///============================================
+//============================================
 void
 Endianness::swap32(void *data)
 {
@@ -74,7 +84,7 @@ Endianness::swap32(void *data)
     *((uint32*)data) = swp.vdata;
 }
 
-///============================================
+//============================================
 void             
 Endianness::swap32(void *src,void *dest)
 {
@@ -85,7 +95,7 @@ Endianness::swap32(void *src,void *dest)
 }
     
 
-///============================================
+//============================================
 void
 Endianness::swap64(void *data)
 {
@@ -103,7 +113,7 @@ Endianness::swap64(void *data)
     *((uint64*)data) = swp.vdata;
 }
 
-///============================================
+//============================================
 void             
 Endianness::swap64(void *src,void *dest)
 {

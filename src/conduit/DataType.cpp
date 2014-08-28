@@ -1,3 +1,13 @@
+/*****************************************************************************
+* Copyright (c) 2014, Lawrence Livermore National Security, LLC
+* Produced at the Lawrence Livermore National Laboratory. 
+* 
+* All rights reserved.
+* 
+* This source code cannot be distributed without further review from 
+* Lawrence Livermore National Laboratory.
+*****************************************************************************/
+
 ///
 /// file: DataType.cpp
 ///
@@ -8,18 +18,18 @@
 namespace conduit
 {
 
-///============================================
+//============================================
 /// DataType::Objects
-///============================================
+//============================================
 
 // create storage for these common types:
 DataType DataType::Objects::m_empty(DataType::EMPTY_T);
 DataType DataType::Objects::m_object(DataType::OBJECT_T);
 DataType DataType::Objects::m_list(DataType::LIST_T);
 
-///============================================
+//============================================
 /// DataType::Scalars
-///============================================
+//============================================
 
 
 DataType DataType::Scalars::m_bool8(DataType::BOOL8_T,
@@ -90,12 +100,12 @@ DataType DataType::Scalars::m_float64(DataType::FLOAT64_T,
                                      sizeof(conduit::float64),
                                      Endianness::DEFAULT_T);
 
-///============================================
+//============================================
 /// DataType::Arrays
-///============================================
+//============================================
 
 /* int array dtype helpers */
-///============================================
+//============================================
 DataType
 DataType::Arrays::int8(index_t num_elements,
                        index_t offset,
@@ -106,7 +116,7 @@ DataType::Arrays::int8(index_t num_elements,
     return DataType(INT8_T,num_elements,offset,stride,element_bytes,endianness);
 }
 
-///============================================
+//============================================
 DataType
 DataType::Arrays::int16(index_t num_elements,
                         index_t offset,
@@ -117,7 +127,7 @@ DataType::Arrays::int16(index_t num_elements,
     return DataType(INT16_T,num_elements,offset,stride,element_bytes,endianness);
 }
 
-///============================================
+//============================================
 DataType 
 DataType::Arrays::int32(index_t num_elements,
                         index_t offset,
@@ -128,7 +138,7 @@ DataType::Arrays::int32(index_t num_elements,
     return DataType(INT32_T,num_elements,offset,stride,element_bytes,endianness);
 }
 
-///============================================
+//============================================
 DataType
 DataType::Arrays::int64(index_t num_elements,
                         index_t offset,
@@ -140,7 +150,7 @@ DataType::Arrays::int64(index_t num_elements,
 }
 
 /* uint array dtype helpers */
-///============================================
+//============================================
 DataType
 DataType::Arrays::uint8(index_t num_elements,
                         index_t offset,
@@ -151,7 +161,7 @@ DataType::Arrays::uint8(index_t num_elements,
     return DataType(UINT8_T,num_elements,offset,stride,element_bytes,endianness);
 }
  
- ///============================================       
+ //============================================       
 DataType
 DataType::Arrays::uint16(index_t num_elements,
                          index_t offset,
@@ -162,7 +172,7 @@ DataType::Arrays::uint16(index_t num_elements,
     return DataType(UINT16_T,num_elements,offset,stride,element_bytes,endianness);
 }
 
-///============================================
+//============================================
 DataType 
 DataType::Arrays::uint32(index_t num_elements,
                          index_t offset,
@@ -173,7 +183,7 @@ DataType::Arrays::uint32(index_t num_elements,
     return DataType(UINT32_T,num_elements,offset,stride,element_bytes,endianness);
 }
 
-///============================================
+//============================================
 DataType
 DataType::Arrays::uint64(index_t num_elements,
                          index_t offset,
@@ -185,7 +195,7 @@ DataType::Arrays::uint64(index_t num_elements,
 }
 
 /* float array dtype helpers */
-///============================================
+//============================================
 DataType 
 DataType::Arrays::float32(index_t num_elements,
                           index_t offset,
@@ -196,7 +206,7 @@ DataType::Arrays::float32(index_t num_elements,
     return DataType(FLOAT32_T,num_elements,offset,stride,element_bytes,endianness);
 }
 
-///============================================
+//============================================
 DataType
 DataType::Arrays::float64(index_t num_elements,
                           index_t offset,
@@ -209,11 +219,11 @@ DataType::Arrays::float64(index_t num_elements,
 
 
 
-///============================================
+//============================================
 /// DataType
-///============================================
+//============================================
 
-///============================================
+//============================================
 DataType::DataType()
 : m_id(DataType::EMPTY_T),
   m_num_ele(0),
@@ -223,7 +233,7 @@ DataType::DataType()
   m_endianness(Endianness::DEFAULT_T)
 {}
 
-///============================================ 
+//============================================ 
 DataType::DataType(const std::string &dtype_name,
                    index_t num_elements,
                    index_t offset,
@@ -238,7 +248,7 @@ DataType::DataType(const std::string &dtype_name,
   m_endianness(endianness)
 {}
 
-///============================================ 
+//============================================ 
 DataType::DataType(index_t dtype_id,
                    index_t num_elements,
                    index_t offset,
@@ -254,7 +264,7 @@ DataType::DataType(index_t dtype_id,
   m_endianness(endianness)
 {}
 
-///============================================ 
+//============================================ 
 DataType::DataType(const DataType& value)
 : m_id(value.m_id),
   m_num_ele(value.m_num_ele),
@@ -265,7 +275,7 @@ DataType::DataType(const DataType& value)
 {}
 
 
-///============================================
+//============================================
 DataType::DataType(index_t id)
 : m_id(id),
   m_num_ele(0),
@@ -275,11 +285,11 @@ DataType::DataType(index_t id)
   m_endianness(Endianness::DEFAULT_T)
 {}
 
-///============================================
+//============================================
 DataType::~DataType()
 {}
 
-///============================================ 
+//============================================ 
 void
 DataType::set(const DataType& dtype)
 {
@@ -291,7 +301,7 @@ DataType::set(const DataType& dtype)
     m_endianness = dtype.m_endianness;
 }
 
-///============================================ 
+//============================================ 
 void
 DataType::set(index_t dtype_id)
 {
@@ -304,7 +314,7 @@ DataType::set(index_t dtype_id)
 }
 
 
-///============================================ 
+//============================================ 
 void
 DataType::set(index_t dtype_id,
               index_t num_elements,
@@ -321,7 +331,7 @@ DataType::set(index_t dtype_id,
     m_endianness = endianness;
 }
 
-///============================================ 
+//============================================ 
 index_t     
 DataType::element_index(index_t idx) const
 {
@@ -330,7 +340,7 @@ DataType::element_index(index_t idx) const
     return m_offset + m_stride * idx;
 }
 
-///============================================ 
+//============================================ 
 index_t
 DataType::total_bytes() const
 {
@@ -339,14 +349,14 @@ DataType::total_bytes() const
     return m_stride * m_num_ele;
 }
 
-///============================================ 
+//============================================ 
 index_t
 DataType::total_bytes_compact() const
 {
     return default_bytes(m_id) * m_num_ele;
 }
     
-///============================================
+//============================================
 bool
 DataType::is_compatible(const DataType& dtype) const
 {
@@ -354,7 +364,7 @@ DataType::is_compatible(const DataType& dtype) const
              (m_ele_bytes == dtype.m_ele_bytes) &&
              (total_bytes() == dtype.total_bytes()));
 }
-///============================================
+//============================================
 bool
 DataType::is_number() const
 {
@@ -362,7 +372,7 @@ DataType::is_number() const
              is_float());
 }
 
-///============================================
+//============================================
 bool
 DataType::is_float() const
 {
@@ -370,7 +380,7 @@ DataType::is_float() const
              (m_id == FLOAT64_T));
 }
 
-///============================================
+//============================================
 bool
 DataType::is_integer() const
 {
@@ -378,7 +388,7 @@ DataType::is_integer() const
              is_unsigned_integer());
 }
 
-///============================================
+//============================================
 bool
 DataType::is_signed_integer() const
 {
@@ -388,7 +398,7 @@ DataType::is_signed_integer() const
              (m_id == INT64_T));
 }
 
-///============================================
+//============================================
 bool
 DataType::is_unsigned_integer() const
 {
@@ -398,7 +408,7 @@ DataType::is_unsigned_integer() const
              (m_id == UINT64_T));
 }
 
-///============================================
+//============================================
 bool
 DataType::is_compact() const
 {
@@ -409,7 +419,7 @@ DataType::is_compact() const
 }
 
 
-///============================================
+//============================================
 void
 DataType::compact_to(DataType &dtype) const
 {
@@ -424,7 +434,7 @@ DataType::compact_to(DataType &dtype) const
 
 
 
-///============================================     
+//============================================     
 index_t 
 DataType::name_to_id(const std::string &dtype_name)
 {
@@ -446,7 +456,7 @@ DataType::name_to_id(const std::string &dtype_name)
     return EMPTY_T;
 }
 
-///============================================
+//============================================
 std::string 
 DataType::id_to_name(index_t dtype_id)
 {
@@ -473,7 +483,7 @@ DataType::id_to_name(index_t dtype_id)
 }
 
 
-///============================================ 
+//============================================ 
 DataType const &
 DataType::default_dtype(index_t dtype_id)
 {
@@ -504,7 +514,7 @@ DataType::default_dtype(index_t dtype_id)
 }
 
 
-///============================================ 
+//============================================ 
 DataType const &
 DataType::default_dtype(const std::string &name)
 {
@@ -512,7 +522,7 @@ DataType::default_dtype(const std::string &name)
 }
 
 
-///============================================ 
+//============================================ 
 index_t
 DataType::default_bytes(index_t dtype_id)
 {
@@ -543,14 +553,14 @@ DataType::default_bytes(index_t dtype_id)
 }
 
 
-///============================================ 
+//============================================ 
 index_t
 DataType::default_bytes(const std::string &name)
 {
     return default_bytes(name_to_id(name));
 }
 
-///============================================ 
+//============================================ 
 std::string 
 DataType::to_json() const
 {
@@ -559,7 +569,7 @@ DataType::to_json() const
     return oss.str();
 }
 
-///============================================ 
+//============================================ 
 void
 DataType::to_json(std::ostringstream &oss, const std::string &value) const
 {

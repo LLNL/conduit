@@ -1,3 +1,13 @@
+/*****************************************************************************
+* Copyright (c) 2014, Lawrence Livermore National Security, LLC
+* Produced at the Lawrence Livermore National Laboratory. 
+* 
+* All rights reserved.
+* 
+* This source code cannot be distributed without further review from 
+* Lawrence Livermore National Laboratory.
+*****************************************************************************/
+
 ///
 /// file: DataContainer.cpp
 ///
@@ -14,9 +24,9 @@
 namespace conduit
 {
 
-///============================================
+//============================================
 /// DataContainer
-///============================================
+//============================================
 void
 DataContainer::init_defaults()
 {
@@ -28,13 +38,13 @@ DataContainer::init_defaults()
     m_mmap_size = 0;  
 }
 
-///============================================
+//============================================
 DataContainer::DataContainer()
 {
     init_defaults();
 }
 
-///============================================
+//============================================
 DataContainer::DataContainer(const DataContainer &container)
 {
     init_defaults();
@@ -43,13 +53,13 @@ DataContainer::DataContainer(const DataContainer &container)
     m_data = container.data_ptr();
 }
 
-///============================================
+//============================================
 DataContainer::~DataContainer()
 {
     cleanup();
 }
 
-///============================================
+//============================================
 void
 DataContainer::release()
 {
@@ -57,7 +67,7 @@ DataContainer::release()
     init_defaults();
 }
 
-///============================================
+//============================================
 void
 DataContainer::allocate(const DataType &dtype)
 {
@@ -65,7 +75,7 @@ DataContainer::allocate(const DataType &dtype)
     allocate(dtype.number_of_elements()*dtype.element_bytes());
 }
 
-///============================================
+//============================================
 void
 DataContainer::allocate(index_t dsize)
 {
@@ -76,7 +86,7 @@ DataContainer::allocate(index_t dsize)
 }
 
 
-///============================================
+//============================================
 void
 DataContainer::mmap(const std::string &stream_path, index_t dsize)
 {   
@@ -97,7 +107,7 @@ DataContainer::mmap(const std::string &stream_path, index_t dsize)
 }
 
 
-///============================================
+//============================================
 void
 DataContainer::cleanup()
 {

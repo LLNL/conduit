@@ -1,3 +1,13 @@
+/*****************************************************************************
+* Copyright (c) 2014, Lawrence Livermore National Security, LLC
+* Produced at the Lawrence Livermore National Laboratory. 
+* 
+* All rights reserved.
+* 
+* This source code cannot be distributed without further review from 
+* Lawrence Livermore National Laboratory.
+*****************************************************************************/
+
 ///
 /// file: Schema.cpp
 ///
@@ -241,7 +251,7 @@ parse_json_float64_array(const rapidjson::Value &jvalue,
     }
 }
 
-///============================================
+//============================================
 void
 parse_leaf_dtype(const rapidjson::Value &jvalue, index_t offset, DataType &dtype_res)
 {
@@ -327,7 +337,7 @@ parse_leaf_dtype(const rapidjson::Value &jvalue, index_t offset, DataType &dtype
     }
 }
 
-///============================================
+//============================================
 void
 parse_inline_leaf(const rapidjson::Value &jvalue,
                   Node &node)
@@ -412,7 +422,7 @@ parse_inline_leaf(const rapidjson::Value &jvalue,
     }
 }
 
-///============================================
+//============================================
 void
 parse_inline_value(const rapidjson::Value &jvalue,
                    Node &node)
@@ -455,7 +465,7 @@ parse_inline_value(const rapidjson::Value &jvalue,
 }
 
 
-///============================================
+//============================================
 void 
 walk_schema(Schema *schema,
             const   rapidjson::Value &jvalue,
@@ -539,7 +549,7 @@ walk_schema(Schema *schema,
     }
 }
 
-///============================================
+//============================================
 void 
 walk_schema_pure_json(Node  *node,
                       Schema *schema,
@@ -629,7 +639,7 @@ walk_schema_pure_json(Node  *node,
 }
 
 
-///============================================
+//============================================
 void 
 walk_schema(Node   *node,
             Schema *schema,
@@ -767,12 +777,12 @@ walk_schema(Node   *node,
 }
 
 
-///============================================
+//============================================
 /// Generator
-///============================================
+//============================================
 
 
-///============================================
+//============================================
 Generator::Generator(const std::string &json_schema)
 :m_json_schema(json_schema),
  m_protocol("conduit"),
@@ -780,7 +790,7 @@ Generator::Generator(const std::string &json_schema)
 {}
 
 
-///============================================
+//============================================
 Generator::Generator(const std::string &json_schema,
                      void *data)
 :m_json_schema(json_schema),
@@ -788,7 +798,7 @@ Generator::Generator(const std::string &json_schema,
  m_data_ptr(data)
 {}
 
-///============================================
+//============================================
 Generator::Generator(const std::string &json_schema,
                      const std::string &protocol,
                      void *data)
@@ -799,7 +809,7 @@ Generator::Generator(const std::string &json_schema,
 
 
 
-///============================================
+//============================================
 void 
 Generator::walk(Schema &schema) const
 {
@@ -815,7 +825,7 @@ Generator::walk(Schema &schema) const
     conduit::walk_schema(&schema,document,curr_offset);
 }
 
-///============================================
+//============================================
 void 
 Generator::walk(Node &node) const
 {

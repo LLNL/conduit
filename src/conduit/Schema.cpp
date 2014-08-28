@@ -1,3 +1,13 @@
+/*****************************************************************************
+* Copyright (c) 2014, Lawrence Livermore National Security, LLC
+* Produced at the Lawrence Livermore National Laboratory. 
+* 
+* All rights reserved.
+* 
+* This source code cannot be distributed without further review from 
+* Lawrence Livermore National Laboratory.
+*****************************************************************************/
+
 ///
 /// file: Schema.cpp
 ///
@@ -12,31 +22,31 @@
 namespace conduit
 {
 
-///============================================
+//============================================
 /// Schema
-///============================================
+//============================================
 
-///============================================
+//============================================
 Schema::Schema()
 {
     init_defaults();
 }
 
-///============================================
+//============================================
 Schema::Schema(const Schema &schema)
 {
     init_defaults();
     set(schema);
 }
 
-///============================================
+//============================================
 Schema::Schema(index_t dtype_id)
 {
     init_defaults();
     set(dtype_id);
 }
 
-///============================================
+//============================================
 Schema::Schema(const DataType &dtype)
 {
     init_defaults();
@@ -44,7 +54,7 @@ Schema::Schema(const DataType &dtype)
 }
 
 
-///============================================
+//============================================
 Schema::Schema(const std::string &json_schema)
 {
     init_defaults();
@@ -52,11 +62,11 @@ Schema::Schema(const std::string &json_schema)
 }
 
 
-///============================================
+//============================================
 Schema::~Schema()
 {release();}
 
-///============================================
+//============================================
 void
 Schema::release()
 {
@@ -80,7 +90,7 @@ Schema::release()
     }
 }
 
-///============================================
+//============================================
 void
 Schema::reset()
 {
@@ -89,7 +99,7 @@ Schema::reset()
 }
 
 
-///============================================
+//============================================
 void
 Schema::init_defaults()
 {
@@ -100,7 +110,7 @@ Schema::init_defaults()
     m_static = false;
 }
 
-///============================================
+//============================================
 void
 Schema::init_object()
 {
@@ -112,7 +122,7 @@ Schema::init_object()
     }
 }
 
-///============================================
+//============================================
 void
 Schema::init_list()
 {
@@ -124,7 +134,7 @@ Schema::init_list()
     }
 }
 
-///============================================
+//============================================
 void 
 Schema::set(const Schema &schema)
 {
@@ -163,7 +173,7 @@ Schema::set(const Schema &schema)
 }
 
 
-///============================================
+//============================================
 void 
 Schema::set(index_t dtype_id)
 {
@@ -172,7 +182,7 @@ Schema::set(index_t dtype_id)
 }
 
 
-///============================================
+//============================================
 void 
 Schema::set(const DataType &dtype)
 {
@@ -185,7 +195,7 @@ Schema::set(const DataType &dtype)
     m_dtype = dtype;
 }
 
-///============================================
+//============================================
 void 
 Schema::set(const std::string &json_schema)
 {
@@ -194,7 +204,7 @@ Schema::set(const std::string &json_schema)
 }
 
 
-///============================================
+//============================================
 Schema &
 Schema::operator=(const Schema &schema)
 {
@@ -205,7 +215,7 @@ Schema::operator=(const Schema &schema)
     return *this;
 }
 
-///============================================
+//============================================
 Schema &
 Schema::operator=(const std::string &json_schema)
 {
@@ -213,7 +223,7 @@ Schema::operator=(const std::string &json_schema)
     return *this;
 }
 
-///============================================
+//============================================
 Schema &
 Schema::entry(index_t idx)
 {
@@ -222,7 +232,7 @@ Schema::entry(index_t idx)
     return *children()[idx];
 }
 
-///============================================
+//============================================
 const Schema &
 Schema::entry(index_t idx) const
 {
@@ -233,7 +243,7 @@ Schema::entry(index_t idx) const
 }
 
 
-///============================================
+//============================================
 Schema&
 Schema::entry(const std::string &path)
 {
@@ -265,7 +275,7 @@ Schema::entry(const std::string &path)
 }
 
 
-///============================================
+//============================================
 const Schema &
 Schema::entry(const std::string &path) const
 {
@@ -315,7 +325,7 @@ Schema::entry_index(const std::string &path) const
     return itr->second;
 }
 
-///============================================
+//============================================
 Schema &
 Schema::fetch(const std::string &path)
 {
@@ -356,21 +366,21 @@ Schema::fetch(const std::string &path)
 }
 
 
-///============================================
+//============================================
 Schema &
 Schema::fetch(index_t idx)
 {
     return *children()[idx];
 }
 
-///============================================
+//============================================
 Schema *
 Schema::fetch_pointer(const std::string &path)
 {
     return &fetch(path);
 }
 
-///============================================
+//============================================
 Schema *
 Schema::fetch_pointer(index_t idx)
 {
@@ -378,7 +388,7 @@ Schema::fetch_pointer(index_t idx)
 }
 
 
-///============================================
+//============================================
 Schema &
 Schema::operator[](const std::string &path)
 {
@@ -388,7 +398,7 @@ Schema::operator[](const std::string &path)
     //    return entry(path);
 }
 
-///============================================
+//============================================
 Schema &
 Schema::operator[](index_t idx)
 {
@@ -399,21 +409,21 @@ Schema::operator[](index_t idx)
 }
 
 /// Const variants use const get
-///============================================
+//============================================
 const Schema &
 Schema::operator[](const std::string &path) const
 {
     return entry(path);
 }
 
-///============================================
+//============================================
 const Schema &
 Schema::operator[](index_t idx) const
 {
     return entry(idx);
 }
 
-///============================================
+//============================================
 bool           
 Schema::has_path(const std::string &path) const
 {
@@ -447,7 +457,7 @@ Schema::has_path(const std::string &path) const
 }
 
 
-///============================================
+//============================================
 void
 Schema::paths(std::vector<std::string> &paths, bool walk) const
 {
@@ -455,7 +465,7 @@ Schema::paths(std::vector<std::string> &paths, bool walk) const
     // TODO: walk == True, show nested paths?
 }
 
-///============================================
+//============================================
 index_t 
 Schema::number_of_entries() const 
 {
@@ -466,7 +476,7 @@ Schema::number_of_entries() const
     return children().size();
 }
 
-///============================================
+//============================================
 void    
 Schema::compact_to(Schema &s_dest) const
 {
@@ -474,7 +484,7 @@ Schema::compact_to(Schema &s_dest) const
     compact_to(s_dest,0);
 }
 
-///============================================
+//============================================
 void    
 Schema::compact_to(Schema &s_dest, index_t curr_offset) const
 {
@@ -510,7 +520,7 @@ Schema::compact_to(Schema &s_dest, index_t curr_offset) const
     }
 }
 
-///============================================
+//============================================
 void    
 Schema::remove(index_t idx)
 {
@@ -529,7 +539,7 @@ Schema::remove(index_t idx)
     lst.erase(lst.begin() + idx);
 }
 
-///============================================
+//============================================
 void    
 Schema::remove(const std::string &path)
 {
@@ -557,7 +567,7 @@ Schema::remove(const std::string &path)
     }
 }
 
-///============================================
+//============================================
 index_t
 Schema::total_bytes() const
 {
@@ -579,7 +589,7 @@ Schema::total_bytes() const
     return res;
 }
 
-///============================================
+//============================================
 index_t
 Schema::total_bytes_compact() const
 {
@@ -602,7 +612,7 @@ Schema::total_bytes_compact() const
 }
 
 
-///============================================
+//============================================
 void 
 Schema::walk_schema(const std::string &json_schema)
 {
@@ -611,7 +621,7 @@ Schema::walk_schema(const std::string &json_schema)
 }
 
 
-///============================================
+//============================================
 std::string
 Schema::to_json(bool detailed,
               index_t indent, 
@@ -624,7 +634,7 @@ Schema::to_json(bool detailed,
    return oss.str();
 }
 
-///============================================
+//============================================
 void
 Schema::to_json(std::ostringstream &oss,
               bool detailed, 
@@ -677,14 +687,14 @@ Schema::to_json(std::ostringstream &oss,
 }
 
 
-///============================================
+//============================================
 Schema::Schema_Object_Hierarchy *
 Schema::object_hierarchy()
 {
     return static_cast<Schema_Object_Hierarchy*>(m_hierarchy_data);
 }
 
-///============================================
+//============================================
 Schema::Schema_List_Hierarchy *
 Schema::list_hierarchy()
 {
@@ -692,14 +702,14 @@ Schema::list_hierarchy()
 }
 
 
-///============================================
+//============================================
 const Schema::Schema_Object_Hierarchy *
 Schema::object_hierarchy() const 
 {
     return static_cast<Schema_Object_Hierarchy*>(m_hierarchy_data);
 }
 
-///============================================
+//============================================
 const Schema::Schema_List_Hierarchy *
 Schema::list_hierarchy() const 
 {
@@ -707,14 +717,14 @@ Schema::list_hierarchy() const
 }
 
 
-///============================================
+//============================================
 std::map<std::string, index_t> &
 Schema::object_map()
 {
     return object_hierarchy()->object_map;
 }
 
-///============================================
+//============================================
 std::vector<Schema*> &
 Schema::children()
 {
@@ -728,21 +738,21 @@ Schema::children()
     }
 }
 
-///============================================
+//============================================
 std::vector<std::string> &
 Schema::object_order()
 {
     return object_hierarchy()->object_order;
 }
 
-///============================================
+//============================================
 const std::map<std::string, index_t> &
 Schema::object_map() const
 {
     return object_hierarchy()->object_map;
 }
 
-///============================================
+//============================================
 const std::vector<Schema*> &
 Schema::children() const
 {
@@ -756,7 +766,7 @@ Schema::children() const
     }
 }
 
-///============================================
+//============================================
 const std::vector<std::string> &
 Schema::object_order() const
 {

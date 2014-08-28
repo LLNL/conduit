@@ -1,3 +1,13 @@
+#############################################################################
+# Copyright (c) 2014, Lawrence Livermore National Security, LLC
+# Produced at the Lawrence Livermore National Laboratory. 
+# 
+# All rights reserved.
+# 
+# This source code cannot be distributed without further review from 
+# Lawrence Livermore National Laboratory.
+#############################################################################
+
 # - Find the NumPy libraries
 # This module finds if NumPy is installed, and sets the following variables
 # indicating where it is.
