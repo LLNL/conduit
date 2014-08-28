@@ -1,9 +1,21 @@
 #!/bin/bash
+#############################################################################
+# Copyright (c) 2014, Lawrence Livermore National Security, LLC
+# Produced at the Lawrence Livermore National Laboratory. 
+# 
+# All rights reserved.
+# 
+# This source code cannot be distributed without further review from 
+# Lawrence Livermore National Laboratory.
+#############################################################################
+
+
 #
-# bootstrap-env.sh
+# file: bootstrap-env.sh
 #
-# Takes you from zero to a Python + CMake env for conduit.
+
 #
+# Takes you from zero to a Python + CMake env for conduit on OSX and linux
 #
 
 export PY_VERSION="2.7.6"

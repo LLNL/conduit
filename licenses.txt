@@ -1,0 +1,8 @@
+
+List of software components used and their respective licenses:
+
+gpreftools: thirdparty_builtin/gperftools-2.2.1.tar.gz: gperftools-2.2.1/COPYING
+gtest: thirdparty_builtin/gtest-1.7.0/LICENSE
+libb64: thirdparty_builtin/libb64/LICENSE
+rapidjson: thirdparty_builtin/rapidjson/license.txt
+
