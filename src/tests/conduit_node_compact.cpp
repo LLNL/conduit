@@ -39,7 +39,7 @@ TEST(compact_1, conduit_node_compact)
     EXPECT_EQ(20,nc.total_bytes());
     EXPECT_EQ(20,nc.total_bytes_compact());
     // TODO: the node isn't setup correctly, this casues a crash:
-    //uint32_array n_arr  = n["vals"].as_uint32_array();
+    uint32_array n_arr  = n["vals"].as_uint32_array();
     //uint32_array nc_arr = nc["vals"].as_uint32_array();
     //EXPECT_EQ(n_arr[2],nc_arr[2]);
 }

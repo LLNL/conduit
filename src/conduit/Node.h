@@ -526,9 +526,9 @@ private:
     void             walk_schema(const Schema &schema,
                                  void *data);
 
-    void             walk_schema(Node   *node,
-                                 Schema *schema,
-                                 void   *data);
+    static void     walk_schema(Node   *node,
+                                Schema *schema,
+                                void   *data);
    
     void            *element_pointer(index_t idx)
                      {return static_cast<char*>(m_data) + dtype().element_index(idx);};

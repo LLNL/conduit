@@ -1533,8 +1533,17 @@ Node::compact_to(Node &n_dest) const
     index_t c_size = total_bytes_compact();
     m_schema->compact_to(*n_dest.schema_pointer());
     n_dest.allocate(c_size);
-    compact_to((uint8*)n_dest.m_data,0);
+    
+    uint8 *n_dest_data = (uint8*)n_dest.m_data;
+    compact_to(n_dest_data,0);
+    n_dest.m_data = NULL; // TODO evil, brian doesn't like this.
+
+    // need node structure
+    walk_schema(&n_dest,n_dest.m_schema,n_dest_data);
+
+
 }
+
 
 //============================================
 void
@@ -1551,7 +1560,7 @@ Node::compact_to(uint8 *data, index_t curr_offset) const
                 curr_offset +=  (*itr)->total_bytes_compact();
             }
     }
-    else if(dtype_id != DataType::EMPTY_T)
+    else
     {
         compact_elements_to(&data[curr_offset]);
     }
