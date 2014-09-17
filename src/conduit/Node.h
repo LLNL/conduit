@@ -174,8 +174,129 @@ public:
     void set(const float64_array &data);
 
     // bytestr use cases:
-    void set(const char* data);    
+    void set(const char* data, index_t dtype_id = DataType::BYTESTR_T);
     void set(const std::string &data);
+    
+    
+    // sets that allow the node to point to external memory
+    
+    void set_external(bool8 *data,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(conduit::bool8),
+                      index_t element_bytes = sizeof(conduit::bool8),
+                      index_t endianness = Endianness::DEFAULT_T);
+
+    void set_external(int8  *data,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(conduit::int8),
+                      index_t element_bytes = sizeof(conduit::int8),
+                      index_t endianness = Endianness::DEFAULT_T);
+    
+    void set_external(int16 *data, 
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(conduit::int16),
+                      index_t element_bytes = sizeof(conduit::int16),
+                      index_t endianness = Endianness::DEFAULT_T);
+    
+    void set_external(int32 *data,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(conduit::int16),
+                      index_t element_bytes = sizeof(conduit::int16),
+                      index_t endianness = Endianness::DEFAULT_T);
+
+    void set_external(int64 *data,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(conduit::int16),
+                      index_t element_bytes = sizeof(conduit::int16),
+                      index_t endianness = Endianness::DEFAULT_T);
+
+    void set_external(uint8  *data,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(conduit::int16),
+                      index_t element_bytes = sizeof(conduit::int16),
+                      index_t endianness = Endianness::DEFAULT_T);
+
+    void set_external(uint16 *data,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(conduit::int16),
+                      index_t element_bytes = sizeof(conduit::int16),
+                      index_t endianness = Endianness::DEFAULT_T);
+
+    void set_external(uint32 *data, 
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(conduit::int16),
+                      index_t element_bytes = sizeof(conduit::int16),
+                      index_t endianness = Endianness::DEFAULT_T);
+                      
+    void set_external(uint64 *data,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(conduit::int16),
+                      index_t element_bytes = sizeof(conduit::int16),
+                      index_t endianness = Endianness::DEFAULT_T);
+
+    void set_external(float32 *data,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(conduit::int16),
+                      index_t element_bytes = sizeof(conduit::int16),
+                      index_t endianness = Endianness::DEFAULT_T);
+
+    void set_external(float64 *data, 
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(conduit::int16),
+                      index_t element_bytes = sizeof(conduit::int16),
+                      index_t endianness = Endianness::DEFAULT_T);
+
+    void set_external(std::vector<bool8>   &data);
+    
+    void set_external(std::vector<int8>   &data);
+    void set_external(std::vector<int16>  &data);
+    void set_external(std::vector<int32>  &data);
+    void set_external(std::vector<int64>  &data);
+
+    void set_external(std::vector<uint8>   &data);
+    void set_external(std::vector<uint16>  &data);
+    void set_external(std::vector<uint32>  &data);
+    void set_external(std::vector<uint64>  &data);
+
+    void set_external(std::vector<float32> &data);
+    void set_external(std::vector<float64> &data);
+
+    void set_external(const bool8_array  &data);
+
+    void set_external(const int8_array  &data);
+    void set_external(const int16_array &data);
+    void set_external(const int32_array &data);
+    void set_external(const int64_array &data);
+
+    void set_external(const uint8_array  &data);
+    void set_external(const uint16_array &data);
+    void set_external(const uint32_array &data);
+    void set_external(const uint64_array &data);
+
+    void set_external(const float32_array &data);
+    void set_external(const float64_array &data);
+
+    // bytestr use cases:
+    void set_external(char *data, 
+                      index_t dtype_id,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(conduit::int16),
+                      index_t element_bytes = sizeof(conduit::int16),
+                      index_t endianness = Endianness::DEFAULT_T);
+    
+    
                 
     /* Assignment ops */
     Node &operator=(const Node &node);

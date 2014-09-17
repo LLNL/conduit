@@ -90,5 +90,46 @@ TEST(conduit_array_stride_int8, conduit_array)
     EXPECT_EQ(arr_2[9],-9);   
 
 }    
+
+TEST(conduit_array_stride_int8_external, conduit_array)
+{
+    std::vector<int64> data(20,0);
+
+    for(int i=0;i<20;i+=2)
+    {
+        data[i] = i/2;
+    }
+
+    for(int i=1;i<20;i+=2)
+    {
+        data[i] = -i/2;
+    }
+    std::cout << "Full Data" << std::endl;
+
+    for(int i=0;i<20;i++)
+    {
+        std::cout << (int64) data[i] << " ";
+    }
+    std::cout << std::endl;
+ 
+    Node n;
+    n["value"].set_external(data);
+
+    int64_array arr = n["value"].as_int64_array();
+
+    for(int i=0;i<20;i++)
+    {
+        // note: the cast is for proper printing to std::out
+        std::cout << "value[" << i << "] = " << arr[i] << std::endl;
+    }
+    std::cout << std::endl;
+
+    data[2]*=10;
+    data[3]*=10;
+
+    EXPECT_EQ(arr[2],10);
+    EXPECT_EQ(arr[3],-10);
+
+}    
     
 

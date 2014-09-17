@@ -103,6 +103,12 @@ public:
     class Arrays
     {    
     public:
+        static DataType bool8(index_t num_elements,
+                             index_t offset = 0,
+                             index_t stride = sizeof(conduit::bool8),
+                             index_t element_bytes = sizeof(conduit::bool8),
+                             index_t endianness = Endianness::DEFAULT_T);
+
         /* int arrays */
         static DataType int8(index_t num_elements,
                              index_t offset = 0,

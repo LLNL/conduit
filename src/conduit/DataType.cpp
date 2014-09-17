@@ -103,6 +103,15 @@ DataType DataType::Scalars::m_float64(DataType::FLOAT64_T,
 //============================================
 /// DataType::Arrays
 //============================================
+DataType
+DataType::Arrays::bool8(index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+ return DataType(BOOL8_T,num_elements,offset,stride,element_bytes,endianness);
+}
 
 /* int array dtype helpers */
 //============================================

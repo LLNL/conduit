@@ -87,6 +87,8 @@ public:
     void            set(const std::vector<float64> &values)
                         {set(&values[0],values.size());}
 
+    void            compact_elements_to(uint8 *data) const;
+
 private:
     void           *element_pointer(index_t idx)
                      {return static_cast<char*>(m_data) + m_dtype.element_index(idx);};
@@ -331,6 +333,25 @@ DataArray<T>::set(const float64 *values, index_t num_elements)
         this->element(i) = (T)values[i];
     }
 }
+
+template <class T> 
+void            
+DataArray<T>::compact_elements_to(uint8 *data) const
+{ 
+    // copy all elements 
+    index_t num_ele   = m_dtype.number_of_elements();
+    index_t ele_bytes = DataType::default_bytes(m_dtype.id());
+    uint8 *data_ptr = data;
+    for(index_t i=0;i<num_ele;i++)
+    {
+        memcpy(data_ptr,
+               element_pointer(i),
+               ele_bytes);
+        data_ptr+=ele_bytes;
+    }
+}
+
+
 
 typedef DataArray<bool8>    bool8_array;
 typedef DataArray<int8>     int8_array;
