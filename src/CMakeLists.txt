@@ -8,14 +8,10 @@
 # Lawrence Livermore National Laboratory.
 #############################################################################
 
-################################
-# Conduit
-################################
-
 cmake_minimum_required(VERSION 2.8)
 
 ################################
-# TODO: Disable in source build
+# Conduit
 ################################
 
 project(conduit)
@@ -26,6 +22,11 @@ project(conduit)
 option(ENABLE_GPREF_TOOLS "Build with google perftools" OFF)
 option(ENABLE_PYTHON      "Build Python Support"        OFF)
 option(ENABLE_MPI         "Build MPI Support"           OFF)
+
+################################
+# Set some standard cmake opts
+################################
+include(CMake/CMakeBasics.cmake)
 
 ################################
 # Checks for type sizes, etc
