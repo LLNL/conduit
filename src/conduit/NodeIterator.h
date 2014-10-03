@@ -32,7 +32,7 @@ public:
     NodeIterator(); // empty itr
     NodeIterator(Node *node,index_t idx=0);
     NodeIterator(const NodeIterator &itr);
-    virtual  ~NodeIterator();
+    ~NodeIterator();
  
     /* Assignment ops */
     NodeIterator &operator=(const NodeIterator &itr);

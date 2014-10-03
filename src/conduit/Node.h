@@ -106,7 +106,7 @@ public:
     
     explicit Node(const std::string  &data);
 
-    virtual  ~Node();
+    ~Node();
 
     void reset();
     void load(const Schema &schema, const std::string &stream_path);

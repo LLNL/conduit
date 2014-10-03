@@ -41,7 +41,7 @@ public:
     Schema(const Schema &schema);
 
     /* Destructor */
-    virtual  ~Schema();
+    ~Schema();
 
     void set(const Schema &schema); 
     void set(index_t dtype_id);

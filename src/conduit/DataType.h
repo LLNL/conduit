@@ -190,7 +190,7 @@ public:
                       index_t element_bytes,
                       index_t endianness);
 
-    virtual ~DataType();
+    ~DataType();
 
     void       set(const DataType& type);
     void       set(index_t dtype_id);

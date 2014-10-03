@@ -28,7 +28,7 @@ public:
                     DataArray(void *data, const DataType &dtype);
                     DataArray(const void *data, const DataType &dtype);
                     DataArray(const DataArray<T> &array);
-    virtual        ~DataArray();
+                   ~DataArray();
     DataArray<T>   &operator=(const DataArray<T> &array);
 
     T              &operator[](index_t idx) {return element(idx);}

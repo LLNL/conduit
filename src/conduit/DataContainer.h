@@ -41,7 +41,7 @@ public:
               DataContainer(const DataContainer &container);
 
     /* Destructor */
-    virtual  ~DataContainer();
+    ~DataContainer();
 
     /* Allocation */
     void      allocate(index_t dsize); 

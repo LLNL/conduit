@@ -40,7 +40,7 @@ public:
     Error(const Error &err);
 
     /* Destructor */
-    virtual  ~Error() throw();
+    ~Error() throw();
 
     void        print()   const;
     std::string message() const;
