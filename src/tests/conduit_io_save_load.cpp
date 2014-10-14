@@ -140,9 +140,54 @@ TEST(conduit_io_save_load, conduit_mmap_simple_2_file)
 }
 
 
+
 // TODO: Resolve the memory access pattern in this case
 // to run, remove "DISABLED_" prefix
 TEST(conduit_io_save_load, DISABLED_conduit_simple_restore)
+{
+    Node n_src;
+    Node n_dest;
+    
+    
+    std::vector<float64> v_src;
+    std::vector<float64> v_dest;
+    v_src.resize(10,0.0);
+    v_dest.resize(10,0.0);
+    
+    n_src["v"].set_external(v_src);
+    n_dest["v"].set_external(v_dest);
+    
+    for(index_t i=0;i<10;i++)
+    {
+        v_src[i] = 1.2 * (i+1);
+    }
+
+    n_src.print();
+    n_src.info().print();
+    n_src.save("test_conduit_simple_restore");
+
+    Node n_load;
+    n_load.load("test_conduit_simple_restore");
+
+    n_load.print();
+    
+
+    n_dest.update(n_load);
+
+    // this will pass
+    EXPECT_EQ(n_dest["v"].as_float64_array()[0],v_src[0]);
+    // this will fail
+    EXPECT_EQ(v_dest[0],v_src[0]);
+
+    // note that the mem setup isn't quite right, 
+    // we must have fell in to a realloc situation
+    n_dest.info().print();
+
+}
+
+// TODO: Resolve the memory access pattern in this case
+// to run, remove "DISABLED_" prefix
+TEST(conduit_io_save_load, DISABLED_conduit_simple_class_restore)
 {
     ExampleData d;
     d.alloc(10);
