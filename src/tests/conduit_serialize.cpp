@@ -81,7 +81,6 @@ TEST(serialize_test_2, conduit_serialize)
     n.schema().compact_to(c_schema);
     Node n2(c_schema,&bytes[0]);
     n2.schema().print();
-    Node &t = n2["a"];
     EXPECT_EQ(n2["a"].as_uint32(),a_val);
     EXPECT_EQ(n2["b"].as_uint32(),b_val);
     EXPECT_EQ(n2["c"].as_float64(),c_val);

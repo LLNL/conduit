@@ -1786,6 +1786,43 @@ Node::serialize(const std::string &stream_path,
     ofs.close();
 }
 
+//============================================
+void
+Node::save(const std::string &obase) const
+{
+    Node res;
+    compact_to(res);
+    std::string ofschema = obase + ".conduit_json";
+    std::string ofdata   = obase + ".conduit_bin";
+    res.schema().save(ofschema);
+    res.serialize(ofdata,true);
+}
+
+
+//============================================
+void
+Node::load(const std::string &ibase)
+{
+    Schema s;
+    std::string ifschema = ibase + ".conduit_json";
+    std::string ifdata   = ibase + ".conduit_bin";
+    s.load(ifschema);
+    load(s,ifdata);
+}
+
+
+//============================================
+void
+Node::mmap(const std::string &ibase)
+{
+    Schema s;
+    std::string ifschema = ibase + ".conduit_json";
+    std::string ifdata   = ibase + ".conduit_bin";
+    s.load(ifschema);
+    mmap(s,ifdata);
+}
+
+
 
 //============================================
 void
@@ -1966,10 +2003,20 @@ Node::info(Node &res, const std::string &curr_path) const
     }    
 }
 
+//============================================
+Node
+Node::info()const
+{
+    // NOTE: very ineff w/o move semantics
+    Node res;
+    info(res);
+    return res;
+}
+
 
 
 //============================================
-/// TODO: update option with set_shared?
+/// TODO: update option with set_external
 void
 Node::update(Node &n_src)
 {
@@ -2006,6 +2053,17 @@ Node::compact()
     Node n;
     compact_to(n);
     set(n);
+}
+
+
+//============================================
+Node
+Node::compact_to()const
+{
+    // NOTE: very ineff w/o move semantics
+    Node res;
+    compact_to(res);
+    return res;
 }
 
 

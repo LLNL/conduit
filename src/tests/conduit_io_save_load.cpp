@@ -21,8 +21,10 @@
 using namespace conduit;
 using namespace std;
 
-TEST(conduit_io_binary, conduit_read_write)
+
+TEST(conduit_io_save_load, conduit_bin_simple_2_file)
 {
+    return;
     int32   a1_val  = 10;
     int32   b1_val  = 20;
     
@@ -38,12 +40,11 @@ TEST(conduit_io_binary, conduit_read_write)
     Schema schema("{\"dtype\":{\"a\":\"int32\",\"b\":\"int32\"},\"length\":2}");
 
     Node nsrc(schema,data);
-    
-    nsrc.serialize("test_conduit.bin");
-    
-   
-    Node n(schema,"test_conduit.bin");
-    
+    nsrc.save("test_conduit_io_bin_simple_2_file");
+
+    Node n;
+    n.load("test_conduit_io_bin_simple_2_file");
+        
     n.schema().print();
     n.print_detailed();
     
@@ -58,14 +59,12 @@ TEST(conduit_io_binary, conduit_read_write)
 
     EXPECT_EQ(n[0]["b"].as_int32(), b1_val);
     EXPECT_EQ(n[1]["b"].as_int32(), b2_val);
-
-    // src in schema    
-    //Schema rschema("{\"dtype\":{\"a\":\"int32\",\"b\":\"int32\"},\"length\":2 \"source\":\"test_conduit.bin\"}");
-  
 }
 
 
-TEST(conduit_io_binary, conduit_mmap_simple)
+
+
+TEST(conduit_io_save_load, conduit_mmap_simple_2_file)
 {
     int32   a1_val  = 10;
     int32   b1_val  = 20;
@@ -83,10 +82,11 @@ TEST(conduit_io_binary, conduit_mmap_simple)
 
     Node nsrc(schema,data);
     
-    nsrc.serialize("test_conduit_mmap.bin");
+    nsrc.save("test_conduit_mmap_x2");
     
    
-    Node nmmap(schema,"test_conduit_mmap.bin",true);
+    Node nmmap;
+    nmmap.mmap("test_conduit_mmap_x2");
     
     nmmap.schema().print();
     nmmap.print_detailed();
@@ -114,5 +114,5 @@ TEST(conduit_io_binary, conduit_mmap_simple)
     Node ntest(schema,"test_conduit_mmap.bin");
     EXPECT_EQ(ntest[0]["a"].as_int32(), 100);
     EXPECT_EQ(ntest[0]["b"].as_int32(), 200);
-  
 }
+

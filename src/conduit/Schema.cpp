@@ -67,6 +67,38 @@ Schema::~Schema()
 {release();}
 
 //============================================
+void            
+Schema::save(const std::string &ofname,
+             bool detailed, 
+             index_t indent, 
+             index_t depth,
+             const std::string &pad,
+             const std::string &eoe) const
+{
+    // TODO: this is ineff, get base class rep correct?
+    std::ostringstream oss;
+    to_json(oss,detailed,indent,depth,pad,eoe);    
+
+    std::ofstream ofile;
+    ofile.open(ofname.c_str());
+    // TODO: check for open error
+    ofile << oss.str();
+    ofile.close();
+}
+
+//============================================
+void            
+Schema::load(const std::string &ifname)
+{
+    std::ostringstream oss;
+    std::ifstream ifile;
+    ifile.open(ifname.c_str());
+    // TODO: check for open error
+    std::string res((std::istreambuf_iterator<char>(ifile)), std::istreambuf_iterator<char>());
+    set(res);
+}            
+
+//============================================
 void
 Schema::release()
 {
@@ -507,6 +539,7 @@ Schema::compact_to(Schema &s_dest, index_t curr_offset) const
         for(index_t i=0; i < nchildren ;i++)
         {            
             Schema  *cld_src = children()[i];
+            s_dest.append();
             Schema &cld_dest = s_dest.fetch(i);
             cld_src->compact_to(cld_dest,curr_offset);
             curr_offset += cld_dest.total_bytes();

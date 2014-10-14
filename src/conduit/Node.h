@@ -56,7 +56,6 @@ public:
     Node(const Schema &schema);
     Node(const Schema &schema, void *data);
     Node(const Schema &schema, const std::string &stream_path, bool mmap=false);    
-    //Node(Schema &schema, std::ifstream &ifs);
     Node(const DataType &dtype, void *data);
         
     explicit Node(bool8  data);
@@ -110,7 +109,9 @@ public:
 
     void reset();
     void load(const Schema &schema, const std::string &stream_path);
+    void load(const std::string &ibase);  // dual file (schema + data)
     void mmap(const Schema &schema, const std::string &stream_path);
+    void mmap(const std::string &ibase); // dual file (schema + data)
 
     
     /// For each dtype:
@@ -368,18 +369,27 @@ public:
     void        serialize(uint8 *data, index_t curr_offset, bool compact=true) const;
 
     void        serialize(const std::string &stream_path, bool compact=true) const;
+    
     // In the future, support our own IOStreams (which will provide single interface 
     // for bin,hdf,silo end-points.
     void        serialize(std::ofstream &ofs, bool compact=true) const;
+
+    void        save(const std::string &obase) const;
+    
 
     // compact this node
     void        compact();
     // compact into a new node
     void        compact_to(Node &n_dest) const;
     
+    // this will be ineff w/o move semantics, but is very conv 
+    Node        compact_to() const;
+    
     bool        is_compact() const {return dtype().is_compact();}
 
     void        info(Node &nres) const;
+    // this will be ineff w/o move semantics, but is very conv 
+    Node        info() const;
 
     /// update() will add entries from n to current Node (like python dict update) 
     // the input should be const, but the lack of a const fetch prevents this for now
@@ -559,6 +569,7 @@ public:
 
     void              print_detailed() const
                         {print(true);}
+
 
     bool8            as_bool8()   const { return *((bool8*)element_pointer(0));}
 

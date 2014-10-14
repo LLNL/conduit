@@ -73,6 +73,15 @@ public:
     void            print() const
                     {std::cout << to_json() << std::endl;}
 
+    void            save(const std::string &ofname,
+                         bool detailed=true, 
+                         index_t indent=2, 
+                         index_t depth=0,
+                         const std::string &pad=" ",
+                         const std::string &eoe="\n") const;
+
+    void            load(const std::string &ifname);
+                         
     bool            compare(const Schema &n, Node &cmp_results) const;
     bool            operator==(const Schema &n) const;
     

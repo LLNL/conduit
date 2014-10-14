@@ -30,6 +30,7 @@ set(BASIC_TESTS gtest_smoke
                 conduit_json
                 conduit_json_sanitize
                 conduit_io_binary
+                conduit_io_save_load
                 conduit_generator
                 conduit_node_update
                 conduit_node_compact

@@ -151,3 +151,31 @@ TEST(conduit_to_json_inline_array, conduit_json)
     
 }
 
+TEST(conduit_schema_load_from_json, conduit_json)
+{
+    
+    std::string ofname = "test_conduit_schema_load_from_json.conduit_json";
+
+    uint32   a_val  = 10;
+    uint32   b_val  = 20;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+
+    EXPECT_EQ(n["a"].as_uint32(),a_val);
+    EXPECT_EQ(n["b"].as_uint32(),b_val);
+
+    n.schema().save(ofname);
+
+    Schema s_dest;    
+    s_dest.load(ofname);
+    
+    EXPECT_EQ(true,s_dest.has_path("a"));
+    EXPECT_EQ(DataType::UINT32_T,s_dest["a"].dtype().id());
+    EXPECT_EQ(true,s_dest.has_path("b"));
+    EXPECT_EQ(DataType::UINT32_T,s_dest["b"].dtype().id());
+    
+}
+
+
