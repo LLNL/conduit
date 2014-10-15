@@ -141,8 +141,6 @@ TEST(conduit_io_save_load, conduit_mmap_simple_2_file)
 
 
 
-// TODO: Resolve the memory access pattern in this case
-// to run, remove "DISABLED_" prefix
 TEST(conduit_io_save_load, conduit_simple_restore)
 {
     Node n_src;
@@ -174,19 +172,13 @@ TEST(conduit_io_save_load, conduit_simple_restore)
 
     n_dest.update(n_load);
 
-    // this will pass
     EXPECT_EQ(n_dest["v"].as_float64_array()[0],v_src[0]);
-    // this will fail
     EXPECT_EQ(v_dest[0],v_src[0]);
 
-    // note that the mem setup isn't quite right, 
-    // we must have fell in to a realloc situation
     n_dest.info().print();
 
 }
 
-// TODO: Resolve the memory access pattern in this case
-// to run, remove "DISABLED_" prefix
 TEST(conduit_io_save_load, conduit_simple_class_restore)
 {
     ExampleData d;
@@ -212,12 +204,10 @@ TEST(conduit_io_save_load, conduit_simple_class_restore)
 
     d2.n.update(nmmap);
     d2.n.print();
-    // this will fail
+
     EXPECT_EQ(d2.n["x"].as_float64_array()[1],d2.x_vals[1]);
     EXPECT_EQ(d.x_vals[1],d2.x_vals[1]);
 
-    // note that the mem setup isn't quite right, 
-    // we must have fell in to a realloc situation
     d2.n.info().print();
 
 }
