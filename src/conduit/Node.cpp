@@ -494,19 +494,31 @@ Node::set(const Node& node, Schema* schema)
             }
         }
         else
-        { 
-            if (node.m_alloced) 
+        {
+            if(this->dtype().is_compatible(node.dtype()))
             {
-                // TODO: compaction?
+                memcpy(element_pointer(0), node.element_pointer(0), m_schema->total_bytes());
+            }
+            else
+            {
                 init(node.dtype());
                 memcpy(m_data, node.m_data, m_schema->total_bytes());
             }
-            else 
-            {
-                m_alloced = false;
-                m_data    = node.m_data;
-                m_schema->set(node.schema());
-            }
+            
+//            // check if compatiable
+//            if (node.m_alloced) 
+//            {
+//                // TODO: compaction?
+//                init(node.dtype());
+//                memcpy(m_data, node.m_data, m_schema->total_bytes());
+//            }
+//            else 
+//            {
+//                // TODO: this needs to be handled by set external ...
+//                m_alloced = false;
+//                m_data    = node.m_data;
+//                m_schema->set(node.schema());
+//            }
         }
     }
     else

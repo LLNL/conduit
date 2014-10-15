@@ -143,7 +143,7 @@ TEST(conduit_io_save_load, conduit_mmap_simple_2_file)
 
 // TODO: Resolve the memory access pattern in this case
 // to run, remove "DISABLED_" prefix
-TEST(conduit_io_save_load, DISABLED_conduit_simple_restore)
+TEST(conduit_io_save_load, conduit_simple_restore)
 {
     Node n_src;
     Node n_dest;
@@ -187,7 +187,7 @@ TEST(conduit_io_save_load, DISABLED_conduit_simple_restore)
 
 // TODO: Resolve the memory access pattern in this case
 // to run, remove "DISABLED_" prefix
-TEST(conduit_io_save_load, DISABLED_conduit_simple_class_restore)
+TEST(conduit_io_save_load, conduit_simple_class_restore)
 {
     ExampleData d;
     d.alloc(10);
