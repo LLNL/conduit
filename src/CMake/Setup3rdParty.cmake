@@ -36,6 +36,13 @@ include_directories(thirdparty_builtin/libb64-1.2.1/include/)
 # Optional Features
 ################################
 
+################################
+# Documentation Packages
+################################
+
+find_package(Doxygen)
+include(CMake/FindSphinx.cmake)
+
 
 if(ENABLE_GPERFTOOLS)
     ################################

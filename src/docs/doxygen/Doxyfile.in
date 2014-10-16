@@ -8,6 +8,7 @@
 # Lawrence Livermore National Laboratory.
 #############################################################################
 
-
-INPUT = @CMAKE_CURRENT_SOURCE_DIR@/../conduit
+PROJECT_NAME  = Conduit
+PROJECT_BRIEF = "Scientific Data Exchange Library for HPC Simulations"
+INPUT = @CMAKE_CURRENT_SOURCE_DIR@/../../conduit
 GENERATE_XML = YES
