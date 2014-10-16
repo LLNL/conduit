@@ -27,7 +27,6 @@ set(conduit_headers
     conduit.h
     Core.h
     DataType.h
-    DataContainer.h
     Generator.h
     Error.h
     NodeIterator.h
@@ -45,7 +44,6 @@ set(conduit_sources
     Endianness.cpp 
     DataType.cpp
     DataArray.cpp
-    DataContainer.cpp
     Generator.cpp
     Node.cpp
     NodeIterator.cpp
