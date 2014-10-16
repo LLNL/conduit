@@ -205,57 +205,57 @@ public:
     void set_external(int32 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
-                      index_t stride = sizeof(conduit::int16),
-                      index_t element_bytes = sizeof(conduit::int16),
+                      index_t stride = sizeof(conduit::int32),
+                      index_t element_bytes = sizeof(conduit::int32),
                       index_t endianness = Endianness::DEFAULT_T);
 
     void set_external(int64 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
-                      index_t stride = sizeof(conduit::int16),
-                      index_t element_bytes = sizeof(conduit::int16),
+                      index_t stride = sizeof(conduit::int64),
+                      index_t element_bytes = sizeof(conduit::int64),
                       index_t endianness = Endianness::DEFAULT_T);
 
     void set_external(uint8  *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
-                      index_t stride = sizeof(conduit::int16),
-                      index_t element_bytes = sizeof(conduit::int16),
+                      index_t stride = sizeof(conduit::uint8),
+                      index_t element_bytes = sizeof(conduit::uint8),
                       index_t endianness = Endianness::DEFAULT_T);
 
     void set_external(uint16 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
-                      index_t stride = sizeof(conduit::int16),
-                      index_t element_bytes = sizeof(conduit::int16),
+                      index_t stride = sizeof(conduit::uint16),
+                      index_t element_bytes = sizeof(conduit::uint16),
                       index_t endianness = Endianness::DEFAULT_T);
 
     void set_external(uint32 *data, 
                       index_t num_elements = 1,
                       index_t offset = 0,
-                      index_t stride = sizeof(conduit::int16),
-                      index_t element_bytes = sizeof(conduit::int16),
+                      index_t stride = sizeof(conduit::uint32),
+                      index_t element_bytes = sizeof(conduit::uint32),
                       index_t endianness = Endianness::DEFAULT_T);
                       
     void set_external(uint64 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
-                      index_t stride = sizeof(conduit::int16),
-                      index_t element_bytes = sizeof(conduit::int16),
+                      index_t stride = sizeof(conduit::uint64),
+                      index_t element_bytes = sizeof(conduit::uint64),
                       index_t endianness = Endianness::DEFAULT_T);
 
     void set_external(float32 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
-                      index_t stride = sizeof(conduit::int16),
-                      index_t element_bytes = sizeof(conduit::int16),
+                      index_t stride = sizeof(conduit::float32),
+                      index_t element_bytes = sizeof(conduit::float32),
                       index_t endianness = Endianness::DEFAULT_T);
 
     void set_external(float64 *data, 
                       index_t num_elements = 1,
                       index_t offset = 0,
-                      index_t stride = sizeof(conduit::int16),
-                      index_t element_bytes = sizeof(conduit::int16),
+                      index_t stride = sizeof(conduit::float64),
+                      index_t element_bytes = sizeof(conduit::float64),
                       index_t endianness = Endianness::DEFAULT_T);
 
     void set_external(std::vector<bool8>   &data);

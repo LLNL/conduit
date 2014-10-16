@@ -249,6 +249,15 @@ Schema::operator=(const Schema &schema)
 
 //============================================
 Schema &
+Schema::operator=(const DataType &dtype)
+{
+    set(dtype);
+    return *this;
+}
+
+
+//============================================
+Schema &
 Schema::operator=(const std::string &json_schema)
 {
     set(json_schema);

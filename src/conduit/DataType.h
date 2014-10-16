@@ -83,6 +83,21 @@ public:
         static const DataType &float32() {return m_float32;}
         static const DataType &float64() {return m_float64;}
 
+        static DataType bool8(index_t offset) {return DataType::Arrays::bool8(1,offset);}
+        /* int scalars */
+        static DataType int8(index_t offset)  {return DataType::Arrays::int8(1,offset);}
+        static DataType int16(index_t offset) {return DataType::Arrays::int16(1,offset);}
+        static DataType int32(index_t offset) {return DataType::Arrays::int32(1,offset);}
+        static DataType int64(index_t offset) {return DataType::Arrays::int64(1,offset);}
+        /* uint scalars */
+        static DataType uint8(index_t offset)  {return DataType::Arrays::uint8(1,offset);}
+        static DataType uint16(index_t offset) {return DataType::Arrays::uint16(1,offset);}
+        static DataType uint32(index_t offset) {return DataType::Arrays::uint32(1,offset);}
+        static DataType uint64(index_t offset) {return DataType::Arrays::uint64(1,offset);}
+        /* float scalars */
+        static DataType float32(index_t offset) {return DataType::Arrays::float32(1,offset);}
+        static DataType float64(index_t offset) {return DataType::Arrays::float64(1,offset);}
+
     private:
         static DataType m_bool8;
         /* int scalars */
@@ -104,10 +119,10 @@ public:
     {    
     public:
         static DataType bool8(index_t num_elements,
-                             index_t offset = 0,
-                             index_t stride = sizeof(conduit::bool8),
-                             index_t element_bytes = sizeof(conduit::bool8),
-                             index_t endianness = Endianness::DEFAULT_T);
+                              index_t offset = 0,
+                              index_t stride = sizeof(conduit::bool8),
+                              index_t element_bytes = sizeof(conduit::bool8),
+                              index_t endianness = Endianness::DEFAULT_T);
 
         /* int arrays */
         static DataType int8(index_t num_elements,

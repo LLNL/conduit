@@ -21,7 +21,7 @@
 namespace conduit
 {
 
-template <class T> 
+template <typename T> 
 class DataArray
 {
 public: 
@@ -107,14 +107,14 @@ private:
 /// TODO: Move these to DataArray.cpp, after we figure out the right exp temp inst calls. 
 
 ///============================================
-template <class T> 
+template <typename T> 
 DataArray<T>::DataArray(void *data,const DataType &dtype)
 : m_data(data),
   m_dtype(dtype)
 {}
 
 ///============================================
-template <class T> 
+template <typename T> 
 DataArray<T>::DataArray(const void *data,const DataType &dtype)
 : m_data(const_cast<void*>(data)),
   m_dtype(dtype)
@@ -122,19 +122,19 @@ DataArray<T>::DataArray(const void *data,const DataType &dtype)
 
 
 ///============================================ 
-template <class T> 
+template <typename T> 
 DataArray<T>::DataArray(const DataArray<T> &array)
 : m_data(array.m_data),
   m_dtype(array.m_dtype)
 {}
 
 ///============================================
-template <class T> 
+template <typename T> 
 DataArray<T>::~DataArray()
 {} // all data is external
 
 ///============================================
-template <class T> 
+template <typename T> 
 DataArray<T> &
 DataArray<T>::operator=(const DataArray<T> &array)
 {
@@ -147,7 +147,7 @@ DataArray<T>::operator=(const DataArray<T> &array)
 }
 
 ///============================================
-template <class T> 
+template <typename T> 
 T &
 DataArray<T>::element(index_t idx)
 { 
@@ -158,7 +158,7 @@ DataArray<T>::element(index_t idx)
 }
 
 ///============================================
-template <class T> 
+template <typename T> 
 T &             
 DataArray<T>::element(index_t idx) const 
 { 
@@ -167,7 +167,7 @@ DataArray<T>::element(index_t idx) const
 }
 
 ///============================================
-template <class T> 
+template <typename T> 
 std::string             
 DataArray<T>::to_json() const 
 { 
@@ -177,7 +177,7 @@ DataArray<T>::to_json() const
 }
 
 ///============================================
-template <class T> 
+template <typename T> 
 void            
 DataArray<T>::to_json(std::ostringstream &oss) const 
 { 
@@ -224,7 +224,7 @@ DataArray<T>::to_json(std::ostringstream &oss) const
         oss << "]";
 }
 
-template <class T> 
+template <typename T> 
 void            
 DataArray<T>::set(const bool8 *values, index_t num_elements)
 { 
@@ -234,7 +234,7 @@ DataArray<T>::set(const bool8 *values, index_t num_elements)
     }
 }
 
-template <class T> 
+template <typename T> 
 void            
 DataArray<T>::set(const int8 *values, index_t num_elements)
 { 
@@ -244,7 +244,7 @@ DataArray<T>::set(const int8 *values, index_t num_elements)
     }
 }
 
-template <class T> 
+template <typename T> 
 void            
 DataArray<T>::set(const  int16 *values, index_t num_elements)
 { 
@@ -254,7 +254,7 @@ DataArray<T>::set(const  int16 *values, index_t num_elements)
     }
 }
 
-template <class T> 
+template <typename T> 
 void            
 DataArray<T>::set(const int32 *values, index_t num_elements)
 { 
@@ -264,7 +264,7 @@ DataArray<T>::set(const int32 *values, index_t num_elements)
     }
 }
 
-template <class T> 
+template <typename T> 
 void            
 DataArray<T>::set(const  int64 *values, index_t num_elements)
 { 
@@ -274,7 +274,7 @@ DataArray<T>::set(const  int64 *values, index_t num_elements)
     }
 }
 
-template <class T> 
+template <typename T> 
 void            
 DataArray<T>::set(const  uint8 *values, index_t num_elements)
 { 
@@ -284,7 +284,7 @@ DataArray<T>::set(const  uint8 *values, index_t num_elements)
     }
 }
 
-template <class T> 
+template <typename T> 
 void            
 DataArray<T>::set(const  uint16 *values, index_t num_elements)
 { 
@@ -294,7 +294,7 @@ DataArray<T>::set(const  uint16 *values, index_t num_elements)
     }
 }
 
-template <class T> 
+template <typename T> 
 void            
 DataArray<T>::set(const uint32 *values, index_t num_elements)
 { 
@@ -304,7 +304,7 @@ DataArray<T>::set(const uint32 *values, index_t num_elements)
     }
 }
 
-template <class T> 
+template <typename T> 
 void            
 DataArray<T>::set(const uint64 *values, index_t num_elements)
 { 
@@ -314,7 +314,7 @@ DataArray<T>::set(const uint64 *values, index_t num_elements)
     }
 }
 
-template <class T> 
+template <typename T> 
 void            
 DataArray<T>::set(const float32 *values, index_t num_elements)
 { 
@@ -324,7 +324,7 @@ DataArray<T>::set(const float32 *values, index_t num_elements)
     }
 }
 
-template <class T> 
+template <typename T> 
 void            
 DataArray<T>::set(const float64 *values, index_t num_elements)
 { 
@@ -334,7 +334,7 @@ DataArray<T>::set(const float64 *values, index_t num_elements)
     }
 }
 
-template <class T> 
+template <typename T> 
 void            
 DataArray<T>::compact_elements_to(uint8 *data) const
 { 

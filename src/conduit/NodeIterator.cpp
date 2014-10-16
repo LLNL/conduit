@@ -118,7 +118,7 @@ NodeIterator::next()
 
 //============================================
 Node &
-NodeIterator::peak_next() 
+NodeIterator::peek_next() 
 {
     index_t idx = m_index;
     if(has_next())
@@ -158,7 +158,7 @@ NodeIterator::previous()
 
 //============================================
 Node &
-NodeIterator::peak_previous() 
+NodeIterator::peek_previous() 
 {
     index_t idx = m_index;
     if(has_previous())

@@ -46,12 +46,12 @@ public:
     /* Iter Fwd Control */
     bool        has_next() const;
     Node       &next();
-    Node       &peak_next();
+    Node       &peek_next();
 
     /* Iter Rev Control */
     bool        has_previous() const;
     Node       &previous();
-    Node       &peak_previous();
+    Node       &peek_previous();
     void        to_back();
     
     void        info(Node &res) const;
