@@ -21,4 +21,4 @@ Documentation
 ~~~~~~~~~~~~~~~
 - *doxygen*: http://www.stack.nl/~dimitri/doxygen/index.html (GPL License)
 - *sphinx*: http://sphinx-doc.org/ (BSD Style License)
-
+- *breathe*: https://github.com/michaeljones/breathe (BSD Style License)
