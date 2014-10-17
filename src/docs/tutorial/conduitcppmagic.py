@@ -45,14 +45,16 @@ class ConduitCppMagics(ipym.Magics):
             print "[compiler cmd: {0:s}]".format(cmd)
         compile = self.shell.getoutput(cmd)
         # Execute the executable and return the output.
-        if line.count("echo") and len(compile) > 0:
-            print "[compiler output: {0:s}]".format(compile)
-
-        os.environ["LD_LIBRARY_PATH"] = pjoin(install_debug,"lib/");        
-        os.environ["DYLD_LIBRARY_PATH"] = pjoin(install_debug,"lib/");
-        output = self.shell.getoutput(os.path.abspath(program_filename))
-        for l in output:
-            print l
+        if line.count("echo") or len(compile) > 0:
+            print "[compiler output:]".format(compile)
+            for l in compile:
+                print l
+        if len(compile)  == 0:
+            os.environ["LD_LIBRARY_PATH"] = pjoin(install_debug,"lib/");        
+            os.environ["DYLD_LIBRARY_PATH"] = pjoin(install_debug,"lib/");
+            output = self.shell.getoutput(os.path.abspath(program_filename))
+            for l in output:
+                print l
         return
 
 def load_ipython_extension(ipython):
