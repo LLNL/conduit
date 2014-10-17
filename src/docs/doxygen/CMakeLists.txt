@@ -20,3 +20,9 @@ add_custom_target(doxygen_docs
                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                  COMMENT "Generating API documentation with Doxygen" VERBATIM)
 
+add_dependencies(docs doxygen_docs)
+
+install(CODE "execute_process(COMMAND ${CMAKE_BUILD_TOOL} doxygen_docs WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}\")")
+
+install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/html" 
+        DESTINATION docs/doxygen/)
