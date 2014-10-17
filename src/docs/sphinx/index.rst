@@ -21,12 +21,13 @@ What is Conduit?
 
 **Conduit: A Scientific Data Exchange Library for HPC Simulations**
 
-Conduit is C++ API that provides:
+Conduit provides:
 
--  A flexible way to describe complex data:
-   -  A JSON-based schema for describing hierarchical in-core data structures.
--  A sane API to access complex data:
-   -  A dynamic C++ API for rapid construction and consumption of hierarchical objects.
+-  A flexible way to describe hierarchal data:
+   A JSON-based schema for describing hierarchical in-core data structures.
+
+-  A sane API to access hierarchal data:
+   A dynamic C++ API for rapid construction and consumption of hierarchical objects.
 
 
 
@@ -44,7 +45,6 @@ Indices and tables
 ==================
 
 * :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`
 
 

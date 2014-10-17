@@ -15,6 +15,13 @@
 Developer Documentation
 ================================
 
+Source Code Repo Layout
+------------------------
+- **src/conduit**: Main library source
+- **src/tests**: Unit tests
+- **src/docs**: Documentation 
+- **src/thirdparty_builtin**:  Third party libraries we build and manage directly
+
 
 Build System Info
 -------------------
@@ -38,3 +45,8 @@ Important CMake Targets
 - **make docs**: Builds sphinx and doxygen documentation.
 
 - **make install**: Installs the conduit library, headers, and documentation to `CMAKE_INSTALL_PREFIX`
+
+Adding a Unit Test
+~~~~~~~~~~~~~~~~~~~
+- Create a test source file in *src/tests*
+- Add the test to build system by editing *src/tests/CMakeLists.txt*

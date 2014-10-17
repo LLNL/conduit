@@ -17,9 +17,9 @@ Memory Ownership Semantics
 
 The *Node* class provides two classes of functions that enable passing of data to a *Node*:
 
-- **set**: Makes a copy of the data passed into the *Node*. This may also trigger an allocation if the current data type of the *Node* is incompatible with what was passed. The *Node* assignment operators use their respective *set* variants, so they follow the same copy semantics. 
+- **set(...)**: Makes a copy of the data passed into the *Node*. This may also trigger an allocation if the current data type of the *Node* is incompatible with what was passed. The *Node* assignment operators use their respective *set* variants, so they follow the same copy semantics. 
 
-- **set_external**: Sets up the *Node* to point to the data externally. 
+- **set_external(...)**: Sets up the *Node* to point to the data externally. 
 
 .. code:: cpp
 
