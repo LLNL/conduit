@@ -13,18 +13,32 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Conduit - Scientific Data Exchange Library for HPC Simulations
-===============================================================
+Conduit
+========
 
-Contents:
+What is Conduit?
+----------------
+
+**Conduit: A Scientific Data Exchange Library for HPC Simulations**
+
+Conduit is C++ API that provides:
+
+-  A flexible way to describe complex data:
+   -  A JSON-based schema for describing hierarchical in-core data structures.
+-  A sane API to access complex data:
+   -  A dynamic C++ API for rapid construction and consumption of hierarchical objects.
+
+
+
+Conduit Documentation
+----------------------
 
 .. toctree::
-   :maxdepth: 2
-   
-   intro
-   tutorial
-   doxygen
 
+   user
+   developer
+
+   
 
 Indices and tables
 ==================

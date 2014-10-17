@@ -8,10 +8,19 @@
 .. # Lawrence Livermore National Laboratory.
 .. #############################################################################
 
-===========
-Source Docs
-===========
+.. Conduit documentation master file, created by
+   sphinx-quickstart on Thu Oct 16 11:23:46 2014.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
 
-.. for now, this shows how to pull in the doxygen index
+================================
+User Documentation
+================================
 
-.. doxygenindex::
+.. toctree::
+   :maxdepth: 2
+
+   tutorial
+   api
+   licenses
+
