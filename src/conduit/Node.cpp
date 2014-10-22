@@ -880,7 +880,7 @@ Node::set(const uint64_array  &data)
 void 
 Node::set(const float32_array  &data)
 {
-    init(DataType::Arrays::uint32(data.number_of_elements()));
+    init(DataType::Arrays::float32(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
 }
 
@@ -888,7 +888,7 @@ Node::set(const float32_array  &data)
 void 
 Node::set(const float64_array  &data)
 {
-    init(DataType::Arrays::uint64(data.number_of_elements()));
+    init(DataType::Arrays::float64(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
 }
 
@@ -1028,7 +1028,7 @@ Node::set_external(int64 *data,
                    index_t endianness)
 {
     release();
-    m_schema->set(DataType::Arrays::int32(num_elements,
+    m_schema->set(DataType::Arrays::int64(num_elements,
                                           offset,
                                           stride,
                                           element_bytes,

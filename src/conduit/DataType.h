@@ -78,7 +78,7 @@ public:
         static const DataType &uint8()  {return m_uint8;}
         static const DataType &uint16() {return m_uint16;}
         static const DataType &uint32() {return m_uint32;}
-        static const DataType &uint64() {return m_int64;}
+        static const DataType &uint64() {return m_uint64;}
         /* float scalars */
         static const DataType &float32() {return m_float32;}
         static const DataType &float64() {return m_float64;}

@@ -26,6 +26,7 @@ set(BASIC_TESTS gtest_smoke
                 conduit_array
                 conduit_list_of
                 conduit_node_paths
+                conduit_node_set
                 conduit_to_string
                 conduit_json
                 conduit_json_sanitize
