@@ -1781,20 +1781,19 @@ Node::operator=(const char *data)
 
 //============================================
 void
-Node::serialize(std::vector<uint8> &data,bool compact) const
+Node::serialize(std::vector<uint8> &data) const
 {
-    data = std::vector<uint8>(total_bytes(),0);
-    serialize(&data[0],0,compact);
+    data = std::vector<uint8>(total_bytes_compact(),0);
+    serialize(&data[0],0);
 }
 
 //============================================
 void
-Node::serialize(const std::string &stream_path,
-                bool compact) const
+Node::serialize(const std::string &stream_path) const
 {
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
-    serialize(ofs,compact);
+    serialize(ofs);
     ofs.close();
 }
 
@@ -1807,7 +1806,7 @@ Node::save(const std::string &obase) const
     std::string ofschema = obase + ".conduit_json";
     std::string ofdata   = obase + ".conduit_bin";
     res.schema().save(ofschema);
-    res.serialize(ofdata,true);
+    res.serialize(ofdata);
 }
 
 
@@ -1838,8 +1837,7 @@ Node::mmap(const std::string &ibase)
 
 //============================================
 void
-Node::serialize(std::ofstream &ofs,
-                bool compact) const
+Node::serialize(std::ofstream &ofs) const
 {
     index_t dtype_id = dtype().id();
     if( dtype_id == DataType::OBJECT_T ||
@@ -1876,7 +1874,7 @@ Node::serialize(std::ofstream &ofs,
 
 //============================================
 void
-Node::serialize(uint8 *data,index_t curr_offset,bool compact) const
+Node::serialize(uint8 *data,index_t curr_offset) const
 {
     if(dtype().id() == DataType::OBJECT_T ||
        dtype().id() == DataType::LIST_T)

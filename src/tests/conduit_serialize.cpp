@@ -89,3 +89,40 @@ TEST(serialize_test_2, conduit_serialize)
 
 }
 
+
+TEST(serialize_test_compact, conduit_serialize)
+{
+    float64 vals[] = { 100.0,-100.0,200.0,-200.0,300.0,-300.0,400.0,-400.0,500.0,-500.0};
+    Generator g("{dtype: float64, length: 5, stride: 16, offset:8}",vals);
+
+    Node n(g);
+
+
+    EXPECT_EQ(n.info()["total_bytes"].to_uint64(),80);
+    
+    std::vector<uint8> nc_bytes;
+    Schema nc_s;
+    
+    n.schema().print();
+    n.schema().compact_to(nc_s);
+    nc_s.print();
+
+    n.serialize(nc_bytes);
+    EXPECT_EQ(nc_bytes.size(),40);
+    
+    Node nc(nc_s,&nc_bytes[0]);
+
+
+    EXPECT_EQ(n.as_float64_array()[1],-200.0);
+    EXPECT_EQ(nc.as_float64_ptr()[1],-200.0);
+
+    nc.schema().print();
+    nc.print();
+    nc.info().print();
+    
+    EXPECT_EQ(nc.info()["total_bytes"].to_uint64(),40);
+    
+}
+
+
+

@@ -365,14 +365,14 @@ public:
     const DataType   &dtype() const       { return m_schema->dtype();}
     
     /* serialization */
-    void        serialize(std::vector<uint8> &data, bool compact=true) const;
-    void        serialize(uint8 *data, index_t curr_offset, bool compact=true) const;
+    void        serialize(std::vector<uint8> &data) const;
+    void        serialize(uint8 *data, index_t curr_offset) const;
 
-    void        serialize(const std::string &stream_path, bool compact=true) const;
+    void        serialize(const std::string &stream_path) const;
     
     // In the future, support our own IOStreams (which will provide single interface 
     // for bin,hdf,silo end-points.
-    void        serialize(std::ofstream &ofs, bool compact=true) const;
+    void        serialize(std::ofstream &ofs) const;
 
     void        save(const std::string &obase) const;
     
