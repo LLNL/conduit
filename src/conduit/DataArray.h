@@ -60,9 +60,6 @@ public:
     void            set(const float32 *values, index_t num_elements);
     void            set(const float64 *values, index_t num_elements);
 
-
-    void            set(const std::vector<bool8>   &values)  
-                        {set(&values[0],values.size());}
     
     void            set(const std::vector<int8>    &values)
                         {set(&values[0],values.size());}

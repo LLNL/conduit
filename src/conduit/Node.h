@@ -73,8 +73,6 @@ public:
     explicit Node(float32 data);
     explicit Node(float64 data);
 
-    explicit Node(const std::vector<bool8>  &data);
-
     explicit Node(const std::vector<int8>   &data);
     explicit Node(const std::vector<int16>  &data);    
     explicit Node(const std::vector<int32>  &data);
@@ -442,9 +440,6 @@ public:
     void append(float32 data)
         {list_append(Node(data));}
     void append(float64 data)
-        {list_append(Node(data));}
-
-    void append(const std::vector<bool8>   &data)
         {list_append(Node(data));}
 
     void append(const std::vector<int8>   &data)

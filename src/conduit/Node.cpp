@@ -1157,24 +1157,6 @@ Node::set_external(float64 *data,
                                             endianness));
     m_data  = data;
 }
-
-
-//============================================
-void 
-Node::set_external(std::vector<bool8>  &data)
-{
-    release();
-    m_schema->set(DataType::Arrays::bool8((index_t)data.size()));
-    /*
-     TODO:: BUG Why doesn't this compile? Are we ended up with a special 1-bit stl vector?
-    m_data  = &data[0];
-    // clang++ error message:
-    /Users/harrison37/Work/conduit/src/conduit/Node.cpp:1167:13: error: assigning to 'void *' from incompatible
-          type '__bit_iterator<std::__1::vector<bool, std::__1::allocator<bool> >, false>'
-        m_data  = &data[0];
-                ^ ~~~~~~~~
-    */
-}
     
 
 //============================================
