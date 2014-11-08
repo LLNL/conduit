@@ -88,3 +88,14 @@ endif()
 if(ENABLE_MPI)
     include(FindMPI)
 endif()
+
+
+################################
+# Setup Silo if available 
+################################
+# Search for Silo.
+if(ENABLE_SILO)
+    include(CMake/FindSilo.cmake)
+    include_directories(${SILO_INCLUDE_DIRS})
+endif()
+

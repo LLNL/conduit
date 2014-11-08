@@ -22,6 +22,8 @@ project(conduit)
 option(ENABLE_GPREF_TOOLS "Build with google perftools" OFF)
 option(ENABLE_PYTHON      "Build Python Support"        OFF)
 option(ENABLE_MPI         "Build MPI Support"           OFF)
+option(ENABLE_SILO        "Build Silo Support"          OFF)
+
 
 ################################
 # Set some standard cmake opts

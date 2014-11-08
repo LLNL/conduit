@@ -46,6 +46,7 @@ set(BASIC_TESTS gtest_smoke
 set(PYTHON_GPREF_TOOLS_TESTS gpref_smoke)
 set(PYTHON_TESTS numpy_smoke)
 set(MPI_TESTS conduit_mpi)
+set(SILO_TESTS silo_smoke)
 
 ################################
 # Create the necessary lib list for our unit tests
@@ -128,4 +129,14 @@ if(ENABLE_MPI AND MPI_FOUND)
     endforeach()
 else()
     message(STATUS "MPI disabled: Skipping related tests")
+endif()
+
+if(ENABLE_SILO AND SILO_FOUND)
+    message(STATUS "Silo enabled: Adding related unit tests")
+    foreach(TEST ${SILO_TESTS})
+        add_basic_test(${TEST})
+        target_link_libraries(${TEST} ${SILO_LIBRARIES})
+    endforeach()
+else()
+    message(STATUS "Silo disabled: Skipping related tests")
 endif()
