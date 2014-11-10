@@ -21,6 +21,16 @@ if [ "$TERM_PROGRAM" = "Apple_Terminal" ]; then
     export CMAKE_OPTS="$CMAKE_OPTS -DCMAKE_CXX_COMPILER=clang++"
 fi
 
+export HOST_CONFIG=../host-configs/`hostname`.cmake
+echo "Looking for host-config file: $HOST_CONFIG"
+if [[ -e  "$HOST_CONFIG" ]]; then
+    echo "FOUND: $HOST_CONFIG"
+    export CMAKE_OPTS="$CMAKE_OPTS -C $HOST_CONFIG"
+else
+    echo "MISSING: $HOST_CONFIG"
+fi
+    
+
 echo "cmake $CMAKE_OPTS ../src"
 cmake  $CMAKE_OPTS \
        ../src 

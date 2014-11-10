@@ -78,16 +78,9 @@ find_library(SZIP_LIBS NAMES sz
              NO_SYSTEM_ENVIRONMENT_PATH
              NO_CMAKE_SYSTEM_PATH)
 
-  
 
 set(SILO_LIBRARIES  ${SILO_LIBS} ${SILO_JSON_LIBS} ${HDF5_LIBS} ${SZIP_LIBS})
 set(SILO_INCLUDE_DIRS ${SILO_INCLUDE_DIR} )
-
-message(STATUS ${SILO_LIBRARIES})
-message(STATUS ${SILO_INCLUDE_DIR})
-message(STATUS ${SILO_LIBS})
-message(STATUS ${SILO_JSON_LIBS})
-message(STATUS ${SILO_INCLUDE_DIR})
 
 
 include(FindPackageHandleStandardArgs)
