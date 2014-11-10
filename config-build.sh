@@ -26,8 +26,6 @@ echo "Looking for host-config file: $HOST_CONFIG"
 if [[ -e  "$HOST_CONFIG" ]]; then
     echo "FOUND: $HOST_CONFIG"
     export CMAKE_OPTS="$CMAKE_OPTS -C $HOST_CONFIG"
-else
-    echo "MISSING: $HOST_CONFIG"
 fi
     
 
