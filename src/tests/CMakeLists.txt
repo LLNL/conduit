@@ -46,7 +46,7 @@ set(BASIC_TESTS gtest_smoke
 set(PYTHON_GPREF_TOOLS_TESTS gpref_smoke)
 set(PYTHON_TESTS numpy_smoke)
 set(MPI_TESTS conduit_mpi)
-set(SILO_TESTS silo_smoke)
+set(SILO_TESTS silo_smoke conduit_silo_smoke)
 
 ################################
 # Create the necessary lib list for our unit tests
@@ -136,6 +136,7 @@ if(ENABLE_SILO AND SILO_FOUND)
     foreach(TEST ${SILO_TESTS})
         add_basic_test(${TEST})
         target_link_libraries(${TEST} ${SILO_LIBRARIES})
+        target_link_libraries(${TEST} conduit_silo)
     endforeach()
 else()
     message(STATUS "Silo disabled: Skipping related tests")
