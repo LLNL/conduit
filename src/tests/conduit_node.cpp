@@ -206,3 +206,18 @@ TEST(conduit_node_in_place_test, conduit_node)
     EXPECT_EQ(*(float64*)(&data[8]), d_val);
 }
 
+TEST(conduit_node_remove, conduit_node)
+{
+    conduit::Generator g("{a:1,b:2,c:3}", "json");
+    conduit::Node n(g);
+    n.print();
+    EXPECT_TRUE(n.has_path("a"));
+    EXPECT_TRUE(n.has_path("b"));
+    EXPECT_TRUE(n.has_path("c"));
+    n.remove("a");
+    n.print();
+    EXPECT_FALSE(n.has_path("a"));
+    EXPECT_TRUE(n.has_path("b"));
+    EXPECT_TRUE(n.has_path("c"));
+}
+

@@ -2276,22 +2276,22 @@ Node::remove(index_t idx)
 void
 Node::remove(const std::string &path)
 {
-    // schema will do a path check
-    m_schema->remove(path);
-
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
 
     index_t idx=m_schema->entry_index(p_curr);
-
+    
     if(!p_next.empty())
     {
         m_children[idx]->remove(p_next);
     }
     
+    m_schema->remove(path);
+    
     delete m_children[idx];
     m_children.erase(m_children.begin() + idx);
+    
 }
 
 //============================================
