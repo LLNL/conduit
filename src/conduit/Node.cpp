@@ -2286,12 +2286,12 @@ Node::remove(const std::string &path)
     {
         m_children[idx]->remove(p_next);
     }
-    
-    m_schema->remove(path);
-    
-    delete m_children[idx];
-    m_children.erase(m_children.begin() + idx);
-    
+    else
+    {
+        m_schema->remove(p_curr);
+        delete m_children[idx];
+        m_children.erase(m_children.begin() + idx);
+    }
 }
 
 //============================================
