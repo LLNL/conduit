@@ -219,5 +219,15 @@ TEST(conduit_node_remove, conduit_node)
     EXPECT_FALSE(n.has_path("a"));
     EXPECT_TRUE(n.has_path("b"));
     EXPECT_TRUE(n.has_path("c"));
+    n.remove("c");
+    n.print();
+    EXPECT_FALSE(n.has_path("a"));
+    EXPECT_TRUE(n.has_path("b"));
+    EXPECT_FALSE(n.has_path("c"));
+    n.remove("b");
+    n.print();
+    EXPECT_FALSE(n.has_path("a"));
+    EXPECT_FALSE(n.has_path("b"));
+    EXPECT_FALSE(n.has_path("c"));
 }
 

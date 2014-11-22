@@ -598,15 +598,18 @@ Schema::remove(const std::string &path)
     {
         myschema->remove(p_next);
     }
-
-    object_map().erase(p_curr);
-    children().erase(children().begin() + idx);
-    object_order().erase(object_order().begin() + idx);
-    delete myschema;
-
-    for (index_t i = idx; i < object_order().size(); i++) {
-        object_map()[object_order()[idx]]--;
-    }
+    else
+    {
+        // any index above the current needs to shift down by one
+        for (index_t i = idx; i < object_order().size(); i++)
+        {
+            object_map()[object_order()[i]]--;
+        }
+        object_map().erase(p_curr);
+        children().erase(children().begin() + idx);
+        object_order().erase(object_order().begin() + idx);
+        delete myschema;
+    }    
 }
 
 //============================================
@@ -814,5 +817,32 @@ Schema::object_order() const
 {
     return object_hierarchy()->object_order;
 }
+
+//============================================
+void
+Schema::object_map_print() const
+{
+    index_t sz = object_order().size();
+    for(index_t i=0;i<sz;i++)
+    {
+        std::cout << object_order()[i] << " ";
+    }
+    std::cout << std::endl;
+}
+
+
+//============================================
+void
+Schema::object_order_print() const
+{
+    std::map<std::string, index_t>::const_iterator itr; 
+        
+    for(itr = object_map().begin(); itr != object_map().end();itr++)
+    {
+       std::cout << itr->first << ":" << itr->second << " ";
+    }
+    std::cout << std::endl;
+}
+
 
 }

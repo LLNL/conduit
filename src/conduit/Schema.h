@@ -158,6 +158,8 @@ private:
     std::map<std::string, index_t>         &object_map();
     std::vector<std::string>               &object_order();
 
+    void                                   object_map_print()   const;
+    void                                   object_order_print() const;
 
     const std::vector<Schema*>             &children()  const;    
     const std::map<std::string, index_t>   &object_map()   const;
