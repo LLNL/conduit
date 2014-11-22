@@ -800,6 +800,16 @@ Node::set(const std::vector<float64>  &data)
 }
 
 //============================================
+/// bool8 array
+//============================================
+void 
+Node::set(const bool8_array  &data)
+{
+    init(DataType::Arrays::bool8(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+
+//============================================
 /// int array types
 //============================================
 
@@ -934,6 +944,189 @@ Node::set(const char *data, index_t dtype_id)
 }
 
 // --- end set ---
+
+// --- begin set ptr variants -- 
+
+//============================================
+void 
+Node::set(bool8 *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
+{
+    set(bool8_array(data,DataType::Arrays::bool8(num_elements,
+                                                 offset,
+                                                 stride,
+                                                 element_bytes,
+                                                 endianness)));
+}
+
+//============================================
+void 
+Node::set(int8  *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
+{
+    set(int8_array(data,DataType::Arrays::int8(num_elements,
+                                               offset,
+                                               stride,
+                                               element_bytes,
+                                               endianness)));
+}
+
+
+//============================================
+void 
+Node::set(int16 *data, 
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
+{
+    set(int16_array(data,DataType::Arrays::int16(num_elements,
+                                                 offset,
+                                                 stride,
+                                                 element_bytes,
+                                                 endianness)));    
+}
+
+//============================================
+void 
+Node::set(int32 *data,
+         index_t num_elements,
+         index_t offset,
+         index_t stride,
+         index_t element_bytes,
+         index_t endianness)
+{
+    set(int32_array(data,DataType::Arrays::int32(num_elements,
+                                                 offset,
+                                                 stride,
+                                                 element_bytes,
+                                                 endianness)));        
+}
+//============================================
+void 
+Node::set(int64 *data,
+         index_t num_elements,
+         index_t offset,
+         index_t stride,
+         index_t element_bytes,
+         index_t endianness)
+{
+    set(int64_array(data,DataType::Arrays::int64(num_elements,
+                                                 offset,
+                                                 stride,
+                                                 element_bytes,
+                                                 endianness)));
+}
+
+//============================================
+void 
+Node::set(uint8  *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
+{
+    set(uint8_array(data,DataType::Arrays::uint8(num_elements,
+                                                 offset,
+                                                 stride,
+                                                 element_bytes,
+                                                 endianness)));
+}
+
+
+//============================================
+void 
+Node::set(uint16 *data,
+         index_t num_elements,
+         index_t offset,
+         index_t stride,
+         index_t element_bytes,
+         index_t endianness)
+{
+    set(uint16_array(data,DataType::Arrays::uint16(num_elements,
+                                                   offset,
+                                                   stride,
+                                                   element_bytes,
+                                                   endianness)));
+}
+
+//============================================
+void 
+Node::set(uint32 *data, 
+         index_t num_elements,
+         index_t offset,
+         index_t stride,
+         index_t element_bytes,
+         index_t endianness)
+{
+    set(uint32_array(data,DataType::Arrays::uint32(num_elements,
+                                                   offset,
+                                                   stride,
+                                                   element_bytes,
+                                                   endianness))); 
+}
+               
+//============================================   
+void 
+Node::set(uint64 *data,
+         index_t num_elements,
+         index_t offset,
+         index_t stride,
+         index_t element_bytes,
+         index_t endianness)
+{
+    set(uint64_array(data,DataType::Arrays::uint64(num_elements,
+                                                   offset,
+                                                   stride,
+                                                   element_bytes,
+                                                   endianness)));     
+    
+}
+
+//============================================   
+void 
+Node::set(float32 *data,
+         index_t num_elements,
+         index_t offset,
+         index_t stride,
+         index_t element_bytes,
+         index_t endianness)
+{
+    set(float32_array(data,DataType::Arrays::float32(num_elements,
+                                                     offset,
+                                                     stride,
+                                                     element_bytes,
+                                                     endianness)));
+}
+
+//============================================   
+void 
+Node::set(float64 *data, 
+         index_t num_elements,
+         index_t offset,
+         index_t stride,
+         index_t element_bytes,
+         index_t endianness)
+{
+    set(float64_array(data,DataType::Arrays::float64(num_elements,
+                                                     offset,
+                                                     stride,
+                                                     element_bytes,
+                                                     endianness)));
+}
+
+
+// --- end set ptr variants -- 
 
 // --- begin set_external ---
 

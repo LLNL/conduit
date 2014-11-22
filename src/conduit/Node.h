@@ -57,7 +57,8 @@ public:
     Node(const Schema &schema, void *data);
     Node(const Schema &schema, const std::string &stream_path, bool mmap=false);    
     Node(const DataType &dtype, void *data);
-        
+    
+   // todo explicit Node(bool  data); // bool may not nicely map, wr coerse to bool8 in this case    
     explicit Node(bool8  data);
 
     explicit Node(int8   data);
@@ -116,8 +117,9 @@ public:
     ///  constructor: explicit Node({DTYPE}  data);
     ///  assign op:  Node &operator=({DTYPE} data);
     ///  setter: void set({DTYPE} data);
-    /// accessor: {DTYPE} as_{DTYPE};
-      
+    ///  accessor: {DTYPE} as_{DTYPE};
+
+    // -- begin set --  
     /* Setters */
     void set(const Node& data);
     void set(const Node& node, Schema* schema);
@@ -142,8 +144,7 @@ public:
     void set(float32 data);
     void set(float64 data);
 
-    void set(const std::vector<bool8>   &data);
-    
+
     void set(const std::vector<int8>   &data);
     void set(const std::vector<int16>  &data);
     void set(const std::vector<int32>  &data);
@@ -176,7 +177,350 @@ public:
     void set(const char* data, index_t dtype_id = DataType::BYTESTR_T);
     void set(const std::string &data);
     
+    // set pointer cases, these use the set array cases above
+    void set(bool8 *data,
+             index_t num_elements = 1,
+             index_t offset = 0,
+             index_t stride = sizeof(conduit::bool8),
+             index_t element_bytes = sizeof(conduit::bool8),
+             index_t endianness = Endianness::DEFAULT_T);
+
+    void set(int8  *data,
+             index_t num_elements = 1,
+             index_t offset = 0,
+             index_t stride = sizeof(conduit::int8),
+             index_t element_bytes = sizeof(conduit::int8),
+             index_t endianness = Endianness::DEFAULT_T);
     
+    void set(int16 *data, 
+             index_t num_elements = 1,
+             index_t offset = 0,
+             index_t stride = sizeof(conduit::int16),
+             index_t element_bytes = sizeof(conduit::int16),
+             index_t endianness = Endianness::DEFAULT_T);
+    
+    void set(int32 *data,
+             index_t num_elements = 1,
+             index_t offset = 0,
+             index_t stride = sizeof(conduit::int32),
+             index_t element_bytes = sizeof(conduit::int32),
+             index_t endianness = Endianness::DEFAULT_T);
+
+    void set(int64 *data,
+             index_t num_elements = 1,
+             index_t offset = 0,
+             index_t stride = sizeof(conduit::int64),
+             index_t element_bytes = sizeof(conduit::int64),
+             index_t endianness = Endianness::DEFAULT_T);
+
+    void set(uint8  *data,
+             index_t num_elements = 1,
+             index_t offset = 0,
+             index_t stride = sizeof(conduit::uint8),
+             index_t element_bytes = sizeof(conduit::uint8),
+             index_t endianness = Endianness::DEFAULT_T);
+
+    void set(uint16 *data,
+             index_t num_elements = 1,
+             index_t offset = 0,
+             index_t stride = sizeof(conduit::uint16),
+             index_t element_bytes = sizeof(conduit::uint16),
+             index_t endianness = Endianness::DEFAULT_T);
+
+    void set(uint32 *data, 
+             index_t num_elements = 1,
+             index_t offset = 0,
+             index_t stride = sizeof(conduit::uint32),
+             index_t element_bytes = sizeof(conduit::uint32),
+             index_t endianness = Endianness::DEFAULT_T);
+                      
+    void set(uint64 *data,
+             index_t num_elements = 1,
+             index_t offset = 0,
+             index_t stride = sizeof(conduit::uint64),
+             index_t element_bytes = sizeof(conduit::uint64),
+             index_t endianness = Endianness::DEFAULT_T);
+
+    void set(float32 *data,
+             index_t num_elements = 1,
+             index_t offset = 0,
+             index_t stride = sizeof(conduit::float32),
+             index_t element_bytes = sizeof(conduit::float32),
+             index_t endianness = Endianness::DEFAULT_T);
+
+    void set(float64 *data, 
+             index_t num_elements = 1,
+             index_t offset = 0,
+             index_t stride = sizeof(conduit::float64),
+             index_t element_bytes = sizeof(conduit::float64),
+             index_t endianness = Endianness::DEFAULT_T);
+    
+    // -- end set --
+    
+    // -- begin set_path --
+     void set_path(const std::string &path,const Node& data) 
+         {fetch(path).set(data);}
+     void set_path(const std::string &path,const Node& node, Schema* schema)
+         {fetch(path).set(node,schema);}
+     void set_path(const std::string &path,const DataType& dtype)
+         {fetch(path).set(dtype);}
+
+     void set_path(const std::string &path,const Schema &schema)
+         {fetch(path).set(schema);}
+              
+     void set_path(const std::string &path,const Schema &schema, void* data)
+         {fetch(path).set(data);}
+     void set_path(const std::string &path,const DataType &dtype, void* data)
+         {fetch(path).set(data);}
+         
+     void set_path(const std::string &path,bool8 data)
+         {fetch(path).set(data);}         
+
+     void set_path(const std::string &path,int8 data)
+         {fetch(path).set(data);}
+
+     void set_path(const std::string &path,int16 data)
+         {fetch(path).set(data);}
+         
+     void set_path(const std::string &path,int32 data)
+         {fetch(path).set(data);}
+     void set_path(const std::string &path,int64 data)
+         {fetch(path).set(data);}
+ 
+     void set_path(const std::string &path,uint8 data)
+         {fetch(path).set(data);}
+         
+     void set_path(const std::string &path,uint16 data)
+         {fetch(path).set(data);}
+     void set_path(const std::string &path,uint32 data)
+         {fetch(path).set(data);}
+     void set_path(const std::string &path,uint64 data)
+         {fetch(path).set(data);}
+
+     void set_path(const std::string &path,float32 data)
+         {fetch(path).set(data);}
+     void set_path(const std::string &path,float64 data)
+         {fetch(path).set(data);}
+
+     void set_path(const std::string &path,const std::vector<int8>   &data)
+        {fetch(path).set(data);}
+     void set_path(const std::string &path,const std::vector<int16>  &data)
+        {fetch(path).set(data);}
+     void set_path(const std::string &path,const std::vector<int32>  &data)
+        {fetch(path).set(data);}
+     void set_path(const std::string &path,const std::vector<int64>  &data)
+        {fetch(path).set(data);}
+
+     void set_path(const std::string &path,const std::vector<uint8>   &data)
+        {fetch(path).set(data);}
+     void set_path(const std::string &path,const std::vector<uint16>  &data)
+        {fetch(path).set(data);}
+     void set_path(const std::string &path,const std::vector<uint32>  &data)
+        {fetch(path).set(data);}
+     void set_path(const std::string &path,const std::vector<uint64>  &data)
+        {fetch(path).set(data);}
+
+     void set_path(const std::string &path,const std::vector<float32> &data)
+        {fetch(path).set(data);}
+     void set_path(const std::string &path,const std::vector<float64> &data)
+        {fetch(path).set(data);}
+
+     void set_path(const std::string &path,const bool8_array  &data)
+        {fetch(path).set(data);}
+
+     void set_path(const std::string &path,const int8_array  &data)
+        {fetch(path).set(data);}
+     void set_path(const std::string &path,const int16_array &data)
+        {fetch(path).set(data);}
+     void set_path(const std::string &path,const int32_array &data)
+        {fetch(path).set(data);}
+     void set_path(const std::string &path,const int64_array &data)
+        {fetch(path).set(data);}
+
+     void set_path(const std::string &path,const uint8_array  &data)
+        {fetch(path).set(data);}
+     void set_path(const std::string &path,const uint16_array &data)
+        {fetch(path).set(data);}
+     void set_path(const std::string &path,const uint32_array &data)
+        {fetch(path).set(data);}
+     void set_path(const std::string &path,const uint64_array &data)
+        {fetch(path).set(data);}
+
+     void set_path(const std::string &path,const float32_array &data)
+        {fetch(path).set(data);}
+     void set_path(const std::string &path,const float64_array &data)
+        {fetch(path).set(data);}
+
+     // bytestr use cases:
+     void set_path(const std::string &path,
+                   const char* data, 
+                   index_t dtype_id = DataType::BYTESTR_T)
+        {fetch(path).set(data);}
+
+     void set_path(const std::string &path,
+                   const std::string &data)
+        {fetch(path).set(data);}
+        
+     // set pointer cases, these use the set array cases above
+     void set_path(const std::string &path,
+                    bool8 *data,
+                    index_t num_elements = 1,
+                    index_t offset = 0,
+                    index_t stride = sizeof(conduit::bool8),
+                    index_t element_bytes = sizeof(conduit::bool8),
+                    index_t endianness = Endianness::DEFAULT_T)
+        {fetch(path).set(data,
+                         num_elements,
+                         offset,
+                         stride,
+                         element_bytes,
+                         endianness);}
+        
+     void set_path(const std::string &path,int8  *data,
+                   index_t num_elements = 1,
+                   index_t offset = 0,
+                   index_t stride = sizeof(conduit::int8),
+                   index_t element_bytes = sizeof(conduit::int8),
+                   index_t endianness = Endianness::DEFAULT_T)
+       {fetch(path).set(data,
+                        num_elements,
+                        offset,
+                        stride,
+                        element_bytes,
+                        endianness);}
+        
+     void set_path(const std::string &path,
+                   int16 *data, 
+                   index_t num_elements = 1,
+                   index_t offset = 0,
+                   index_t stride = sizeof(conduit::int16),
+                   index_t element_bytes = sizeof(conduit::int16),
+                   index_t endianness = Endianness::DEFAULT_T)
+        {fetch(path).set(data,
+                         num_elements,
+                         offset,
+                         stride,
+                         element_bytes,
+                         endianness);}
+
+     void set_path(const std::string &path,
+                   int32 *data,
+                   index_t num_elements = 1,
+                   index_t offset = 0,
+                   index_t stride = sizeof(conduit::int32),
+                   index_t element_bytes = sizeof(conduit::int32),
+                   index_t endianness = Endianness::DEFAULT_T)
+        {fetch(path).set(data,
+                        num_elements,
+                        offset,
+                        stride,
+                        element_bytes,
+                        endianness);}
+
+     void set_path(const std::string &path,
+                   int64 *data,
+                   index_t num_elements = 1,
+                   index_t offset = 0,
+                   index_t stride = sizeof(conduit::int64),
+                   index_t element_bytes = sizeof(conduit::int64),
+                   index_t endianness = Endianness::DEFAULT_T)
+       {fetch(path).set(data,
+                        num_elements,
+                        offset,
+                        stride,
+                        element_bytes,
+                        endianness);}
+
+     void set_path(const std::string &path,
+                   uint8  *data,
+                   index_t num_elements = 1,
+                   index_t offset = 0,
+                   index_t stride = sizeof(conduit::uint8),
+                   index_t element_bytes = sizeof(conduit::uint8),
+                   index_t endianness = Endianness::DEFAULT_T)
+       {fetch(path).set(data,
+                        num_elements,
+                        offset,
+                        stride,
+                        element_bytes,
+                        endianness);}
+
+     void set_path(const std::string &path,
+                   uint16 *data,
+                   index_t num_elements = 1,
+                   index_t offset = 0,
+                   index_t stride = sizeof(conduit::uint16),
+                   index_t element_bytes = sizeof(conduit::uint16),
+                   index_t endianness = Endianness::DEFAULT_T)
+       {fetch(path).set(data,
+                        num_elements,
+                        offset,
+                        stride,
+                        element_bytes,
+                        endianness);}
+
+     void set_path(const std::string &path,
+                   uint32 *data, 
+                   index_t num_elements = 1,
+                   index_t offset = 0,
+                   index_t stride = sizeof(conduit::uint32),
+                   index_t element_bytes = sizeof(conduit::uint32),
+                   index_t endianness = Endianness::DEFAULT_T)
+       {fetch(path).set(data,
+                        num_elements,
+                        offset,
+                        stride,
+                        element_bytes,
+                        endianness);}
+              
+     void set_path(const std::string &path,
+                   uint64 *data,
+                   index_t num_elements = 1,
+                   index_t offset = 0,
+                   index_t stride = sizeof(conduit::uint64),
+                   index_t element_bytes = sizeof(conduit::uint64),
+                   index_t endianness = Endianness::DEFAULT_T)
+       {fetch(path).set(data,
+                        num_elements,
+                        offset,
+                        stride,
+                        element_bytes,
+                        endianness);}
+
+     void set_path(const std::string &path,
+                   float32 *data,
+                   index_t num_elements = 1,
+                   index_t offset = 0,
+                   index_t stride = sizeof(conduit::float32),
+                   index_t element_bytes = sizeof(conduit::float32),
+                   index_t endianness = Endianness::DEFAULT_T)
+           {fetch(path).set(data,
+                            num_elements,
+                            offset,
+                            stride,
+                            element_bytes,
+                            endianness);}
+
+     void set_path(const std::string &path,
+                   float64 *data, 
+                   index_t num_elements = 1,
+                   index_t offset = 0,
+                   index_t stride = sizeof(conduit::float64),
+                   index_t element_bytes = sizeof(conduit::float64),
+                   index_t endianness = Endianness::DEFAULT_T)
+       {fetch(path).set(data,
+                        num_elements,
+                        offset,
+                        stride,
+                        element_bytes,
+                        endianness);}
+
+    
+             
+    // -- end set_path
+                        
+    // -- begin set external --
+                 
     // sets that allow the node to point to external memory
     
     void set_external(bool8 *data,
@@ -291,12 +635,279 @@ public:
                       index_t dtype_id,
                       index_t num_elements = 1,
                       index_t offset = 0,
-                      index_t stride = sizeof(conduit::int16),
-                      index_t element_bytes = sizeof(conduit::int16),
+                      index_t stride = sizeof(conduit::uint8),
+                      index_t element_bytes = sizeof(conduit::uint8),
                       index_t endianness = Endianness::DEFAULT_T);
     
-    
-                
+    // -- end set external --
+    // -- begin set path external --
+    void set_path_external(const std::string &path,
+                           bool8 *data,
+                           index_t num_elements = 1,
+                           index_t offset = 0,
+                           index_t stride = sizeof(conduit::bool8),
+                           index_t element_bytes = sizeof(conduit::bool8),
+                           index_t endianness = Endianness::DEFAULT_T)
+                         {fetch(path).set_external(data,
+                                                   num_elements,
+                                                   offset,
+                                                   stride,
+                                                   element_bytes,
+                                                   endianness);
+                         }
+
+    void set_path_external(const std::string &path,
+                           int8  *data,
+                           index_t num_elements = 1,
+                           index_t offset = 0,
+                           index_t stride = sizeof(conduit::int8),
+                           index_t element_bytes = sizeof(conduit::int8),
+                           index_t endianness = Endianness::DEFAULT_T)
+                           {fetch(path).set_external(data,
+                                                     num_elements,
+                                                     offset,
+                                                     stride,
+                                                     element_bytes,
+                                                     endianness);
+                           }
+
+
+    void set_path_external(const std::string &path,
+                           int16 *data, 
+                           index_t num_elements = 1,
+                           index_t offset = 0,
+                           index_t stride = sizeof(conduit::int16),
+                           index_t element_bytes = sizeof(conduit::int16),
+                           index_t endianness = Endianness::DEFAULT_T)
+                           {fetch(path).set_external(data,
+                                                     num_elements,
+                                                     offset,
+                                                     stride,
+                                                     element_bytes,
+                                                     endianness);
+                           }
+ 
+
+    void set_path_external(const std::string &path,
+                           int32 *data,
+                           index_t num_elements = 1,
+                           index_t offset = 0,
+                           index_t stride = sizeof(conduit::int32),
+                           index_t element_bytes = sizeof(conduit::int32),
+                           index_t endianness = Endianness::DEFAULT_T)
+                           {fetch(path).set_external(data,
+                                                     num_elements,
+                                                     offset,
+                                                     stride,
+                                                     element_bytes,
+                                                     endianness);
+                           }
+
+
+    void set_path_external(const std::string &path,
+                           int64 *data,
+                           index_t num_elements = 1,
+                           index_t offset = 0,
+                           index_t stride = sizeof(conduit::int64),
+                           index_t element_bytes = sizeof(conduit::int64),
+                           index_t endianness = Endianness::DEFAULT_T)
+                           {fetch(path).set_external(data,
+                                                     num_elements,
+                                                     offset,
+                                                     stride,
+                                                     element_bytes,
+                                                     endianness);
+                           }
+
+
+    void set_path_external(const std::string &path,
+                           uint8  *data,
+                           index_t num_elements = 1,
+                           index_t offset = 0,
+                           index_t stride = sizeof(conduit::uint8),
+                           index_t element_bytes = sizeof(conduit::uint8),
+                           index_t endianness = Endianness::DEFAULT_T)
+                           {fetch(path).set_external(data,
+                                                     num_elements,
+                                                     offset,
+                                                     stride,
+                                                     element_bytes,
+                                                     endianness);
+                           }
+
+
+    void set_path_external(const std::string &path,
+                           uint16 *data,
+                           index_t num_elements = 1,
+                           index_t offset = 0,
+                           index_t stride = sizeof(conduit::uint16),
+                           index_t element_bytes = sizeof(conduit::uint16),
+                           index_t endianness = Endianness::DEFAULT_T)
+                           {fetch(path).set_external(data,
+                                                     num_elements,
+                                                     offset,
+                                                     stride,
+                                                     element_bytes,
+                                                     endianness);
+                           }
+
+                           
+    void set_path_external(const std::string &path,
+                           uint32 *data, 
+                           index_t num_elements = 1,
+                           index_t offset = 0,
+                           index_t stride = sizeof(conduit::uint32),
+                           index_t element_bytes = sizeof(conduit::uint32),
+                           index_t endianness = Endianness::DEFAULT_T)
+                           {fetch(path).set_external(data,
+                                                     num_elements,
+                                                     offset,
+                                                     stride,
+                                                     element_bytes,
+                                                     endianness);
+                           }
+
+                           
+    void set_path_external(const std::string &path,
+                           uint64 *data,
+                           index_t num_elements = 1,
+                           index_t offset = 0,
+                           index_t stride = sizeof(conduit::uint64),
+                           index_t element_bytes = sizeof(conduit::uint64),
+                           index_t endianness = Endianness::DEFAULT_T)
+                           {fetch(path).set_external(data,
+                                                     num_elements,
+                                                     offset,
+                                                     stride,
+                                                     element_bytes,
+                                                     endianness);
+                           }
+
+                           
+    void set_path_external(const std::string &path,
+                           float32 *data,
+                           index_t num_elements = 1,
+                           index_t offset = 0,
+                           index_t stride = sizeof(conduit::float32),
+                           index_t element_bytes = sizeof(conduit::float32),
+                           index_t endianness = Endianness::DEFAULT_T)
+                           {fetch(path).set_external(data,
+                                                     num_elements,
+                                                     offset,
+                                                     stride,
+                                                     element_bytes,
+                                                     endianness);
+                           }
+
+
+    void set_path_external(const std::string &path,
+                           float64 *data, 
+                           index_t num_elements = 1,
+                           index_t offset = 0,
+                           index_t stride = sizeof(conduit::float64),
+                           index_t element_bytes = sizeof(conduit::float64),
+                           index_t endianness = Endianness::DEFAULT_T)
+                           {fetch(path).set_external(data,
+                                                     num_elements,
+                                                     offset,
+                                                     stride,
+                                                     element_bytes,
+                                                     endianness);
+                           }
+
+
+    void set_path_external(const std::string &path,
+                           std::vector<bool8> &data)
+                     {fetch(path).set_external(data);}
+
+    void set_path_external(const std::string &path,
+                           std::vector<int8> &data)
+                     {fetch(path).set_external(data);}
+    void set_path_external(const std::string &path,
+                           std::vector<int16> &data)
+                     {fetch(path).set_external(data);}
+    void set_path_external(const std::string &path,
+                           std::vector<int32> &data)
+                     {fetch(path).set_external(data);}
+    void set_path_external(const std::string &path,
+                           std::vector<int64> &data)
+                     {fetch(path).set_external(data);}
+
+    void set_path_external(const std::string &path,
+                           std::vector<uint8>   &data)
+                     {fetch(path).set_external(data);}
+    void set_path_external(const std::string &path,
+                           std::vector<uint16>  &data)
+                     {fetch(path).set_external(data);}
+    void set_path_external(const std::string &path,
+                           std::vector<uint32>  &data)
+                     {fetch(path).set_external(data);}
+    void set_path_external(const std::string &path,
+                           std::vector<uint64>  &data)
+                     {fetch(path).set_external(data);}
+
+    void set_path_external(const std::string &path,
+                           std::vector<float32> &data)
+                     {fetch(path).set_external(data);}
+    void set_path_external(const std::string &path,
+                           std::vector<float64> &data)
+                     {fetch(path).set_external(data);}
+
+    void set_path_external(const std::string &path,
+                           const bool8_array  &data)
+                     {fetch(path).set_external(data);} 
+
+    void set_path_external(const std::string &path,
+                           const int8_array  &data)
+                     {fetch(path).set_external(data);}
+    void set_path_external(const std::string &path,
+                           const int16_array &data)
+                     {fetch(path).set_external(data);}
+    void set_path_external(const std::string &path,
+                           const int32_array &data)
+                     {fetch(path).set_external(data);}
+    void set_path_external(const std::string &path,
+                           const int64_array &data)
+                     {fetch(path).set_external(data);}
+
+    void set_path_external(const std::string &path,
+                           const uint8_array  &data)
+                     {fetch(path).set_external(data);}
+    void set_path_external(const std::string &path,
+                           const uint16_array &data)
+                     {fetch(path).set_external(data);}
+    void set_path_external(const std::string &path,
+                           const uint32_array &data)
+                     {fetch(path).set_external(data);}
+    void set_path_external(const std::string &path,
+                           const uint64_array &data)
+                     {fetch(path).set_external(data);}
+
+    void set_path_external(const std::string &path,
+                           const float32_array &data)
+                     {fetch(path).set_external(data);}
+    void set_path_external(const std::string &path,
+                           const float64_array &data)
+                     {fetch(path).set_external(data);}
+
+    // bytestr use cases:
+    void set_path_external(const std::string &path,
+                           char *data, 
+                           index_t dtype_id,
+                           index_t num_elements = 1,
+                           index_t offset = 0,
+                           index_t stride = sizeof(conduit::uint8),
+                           index_t element_bytes = sizeof(conduit::uint8),
+                           index_t endianness = Endianness::DEFAULT_T)
+                        {fetch(path).set_external(data,
+                                                  dtype_id,
+                                                  num_elements,
+                                                  offset,
+                                                  stride,
+                                                  element_bytes,
+                                                  endianness);}
+
+                                      
     /* Assignment ops */
     Node &operator=(const Node &node);
     Node &operator=(DataType dtype);
@@ -406,6 +1017,8 @@ public:
     Node             *fetch_pointer(const std::string &path);
     Node             *fetch_pointer(index_t idx);
 
+    //  begin list append interface methods
+
     void append(Node *node)
         {m_children.push_back(node);}
 
@@ -491,7 +1104,13 @@ public:
         {list_append(Node(data));}
     
     void append(const std::string &data)
-        {list_append(Node(data));}
+        {
+            index_t idx = m_children.size(); 
+            append();
+            m_children[idx]->set(data);
+        }
+
+    //  end list append interface methods
 
     index_t number_of_entries() const;
     void    remove(index_t idx);
@@ -653,9 +1272,9 @@ private:
     void             walk_schema(const Schema &schema,
                                  void *data);
 
-    static void     walk_schema(Node   *node,
-                                Schema *schema,
-                                void   *data);
+    static void      walk_schema(Node   *node,
+                                 Schema *schema,
+                                 void   *data);
    
     void            *element_pointer(index_t idx)
                      {return static_cast<char*>(m_data) + dtype().element_index(idx);};
@@ -670,7 +1289,7 @@ private:
     // for leaf types
     void              compact_elements_to(uint8 *data) const;
 
-    /* helper */
+    /* init helpers */
     void              init_defaults();
     void              init_list();
     void              init_object();
@@ -680,29 +1299,13 @@ private:
     Schema              *m_schema;
     std::vector<Node*>   m_children;    
 
-    // TODO DataContainer
+    // TODO: DataContainer
     void     *m_data;
     bool      m_alloced;
     index_t   m_alloced_size;
     bool      m_mmaped;
     int       m_mmap_fd;
     index_t   m_mmap_size;
-
-    // TODO: holds structure for objs + lists
-
-    // for true nodes
-//     std::map<std::string, Node>         &entries();
-//     std::vector<Node>                   &list();
-// 
-//     const std::map<std::string, Node>   &entries() const;
-//     const std::vector<Node>             &list() const;
-
-    // TODO: These are currently alloced per node, even if we have a simple node type
-    // Use m_obj_data w/ allocs in the future to reduce overhead. 
-    // The entries() & list() helper funcs already provide a single point of access
-    // so  change the storage shouldn't be very hard. 
-//     std::vector<Node>           m_list_data;
-//     std::map<std::string, Node> m_entries;
 };
 
 }
