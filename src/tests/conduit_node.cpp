@@ -100,7 +100,7 @@ TEST(conduit_node_simple_gen_schema_test, conduit_node)
 
     Schema schema("{\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}");
     Node n(schema,data);
-    
+
     EXPECT_EQ(n["a"].as_uint32(),a_val);
     EXPECT_EQ(n["b"].as_uint32(),b_val);
     EXPECT_EQ(n["c"].as_float64(),c_val);
@@ -108,12 +108,12 @@ TEST(conduit_node_simple_gen_schema_test, conduit_node)
     std::string s2_str = "{\"g\": {\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}}";
     std::cout << s2_str << std::endl;
     Schema schema2(s2_str);
-    
+
     Node n2(schema2,data);
     EXPECT_EQ(n2["g"]["a"].as_uint32(),a_val);
     EXPECT_EQ(n2["g"]["b"].as_uint32(),b_val);
     EXPECT_EQ(n2["g"]["c"].as_float64(),c_val);
-    
+
     Schema schema3("{\"dtype\":\"uint32\",\"length\": 5}");
     uint32 *data2 = new uint32[5];
     for (int i = 0; i < 5; i++) {
@@ -143,7 +143,7 @@ TEST(conduit_node_simple_gen_schema_test, conduit_node)
     memcpy(&data4[16],&d_val,4);
     memcpy(&data4[20],&e_val,8);
     Node n5(schema5,data4);
-    
+
     std::cout << n5.schema().to_json() << std::endl;
     EXPECT_EQ(n5["top"][0]["int1"].as_uint32(),a_val);
     EXPECT_EQ(n5["top"][0]["int2"].as_uint32(),b_val);
@@ -206,7 +206,7 @@ TEST(conduit_node_in_place_test, conduit_node)
     EXPECT_EQ(*(float64*)(&data[8]), d_val);
 }
 
-TEST(conduit_node_remove, conduit_node)
+TEST(conduit_node_remove_by_name, conduit_node)
 {
     conduit::Generator g("{a:1,b:2,c:3}", "json");
     conduit::Node n(g);
@@ -230,4 +230,41 @@ TEST(conduit_node_remove, conduit_node)
     EXPECT_FALSE(n.has_path("b"));
     EXPECT_FALSE(n.has_path("c"));
 }
+
+TEST(conduit_node_remove_by_index, conduit_node)
+{
+    conduit::Generator g("{a:1,b:2,c:3}", "json");
+    conduit::Node n(g);
+    n.print();
+    EXPECT_TRUE(n.has_path("a"));
+    EXPECT_TRUE(n.has_path("b"));
+    EXPECT_TRUE(n.has_path("c"));
+    n.remove(0);
+    n.print();
+    EXPECT_FALSE(n.has_path("a"));
+    EXPECT_TRUE(n.has_path("b"));
+    EXPECT_TRUE(n.has_path("c"));
+    n.remove(1);
+    n.print();
+    EXPECT_FALSE(n.has_path("a"));
+    EXPECT_TRUE(n.has_path("b"));
+    EXPECT_FALSE(n.has_path("c"));
+    n.remove(0);
+    n.print();
+    EXPECT_FALSE(n.has_path("a"));
+    EXPECT_FALSE(n.has_path("b"));
+    EXPECT_FALSE(n.has_path("c"));
+    
+    conduit::Generator g2("[{dtype:int64, value: 10},{dtype:int64, value: 20},{dtype:int64, value: 30}]");
+    conduit::Node n2(g2);
+    n2.print();
+    n2.remove(1);
+    n2.print();
+    EXPECT_EQ(n2[0].to_uint64(), 10);
+    EXPECT_EQ(n2[1].to_uint64(), 30);
+    n2.remove(0);
+    n2.print();    
+    EXPECT_EQ(n2[0].to_uint64(), 30);
+}
+
 

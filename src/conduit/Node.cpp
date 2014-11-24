@@ -2458,10 +2458,13 @@ Node::number_of_entries() const
 void    
 Node::remove(index_t idx)
 {
- 
-    m_schema->remove(idx);
+    // note: we must remove the child pointer before the
+    // schema. b/c the child pointer uses the schema
+    // to cleanup
+    
     // remove the proper list entry
     delete m_children[idx];
+    m_schema->remove(idx);
     m_children.erase(m_children.begin() + idx);
 }
 
@@ -2481,8 +2484,12 @@ Node::remove(const std::string &path)
     }
     else
     {
-        m_schema->remove(p_curr);
+        // note: we must remove the child pointer before the
+        // schema. b/c the child pointer uses the schema
+        // to cleanup
+        
         delete m_children[idx];
+        m_schema->remove(p_curr);
         m_children.erase(m_children.begin() + idx);
     }
 }

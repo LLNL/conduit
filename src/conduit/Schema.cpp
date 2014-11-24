@@ -566,19 +566,34 @@ Schema::compact_to(Schema &s_dest, index_t curr_offset) const
 void    
 Schema::remove(index_t idx)
 {
-    if(m_dtype.id() != DataType::LIST_T)
-        THROW_ERROR("<Schema::remove[LIST_T]> Schema is not LIST_T");
-    
-    std::vector<Schema*>  &lst = children();
-    if(idx > lst.size())
+    index_t dtype_id = m_dtype.id();
+    if(! (dtype_id == DataType::LIST_T || dtype_id == DataType::OBJECT_T))
     {
-        THROW_ERROR("<Schema::remove[LIST_T]> Invalid list index:" 
-                    << idx << ">" << lst.size() <<  "(list_size)");
+        THROW_ERROR("<Schema::remove> Schema is not LIST_T or OBJECT_T, dtype is" << DataType::id_to_name(dtype_id));
+    }
+    
+    std::vector<Schema*>  &chldrn = children();
+    if(idx > chldrn.size())
+    {
+        THROW_ERROR("<Schema::remove> Invalid index:" 
+                    << idx << ">" << chldrn.size() <<  "(list_size)");
     }
 
-    Schema* myschema = children()[idx];
-    delete myschema;
-    lst.erase(lst.begin() + idx);
+    if(dtype_id == DataType::OBJECT_T)
+    {
+        // any index above the current needs to shift down by one
+        for (index_t i = idx; i < object_order().size(); i++)
+        {
+            object_map()[object_order()[i]]--;
+        }
+        
+        object_map().erase(object_order()[idx]);
+        object_order().erase(object_order().begin() + idx);
+    }
+
+    Schema* child = chldrn[idx];
+    delete child;
+    chldrn.erase(chldrn.begin() + idx);
 }
 
 //============================================
@@ -592,11 +607,11 @@ Schema::remove(const std::string &path)
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
     index_t idx = entry_index(p_curr);
-    Schema* myschema = children()[idx];
+    Schema *child = children()[idx];
 
     if(!p_next.empty())
     {
-        myschema->remove(p_next);
+        child->remove(p_next);
     }
     else
     {
@@ -606,9 +621,9 @@ Schema::remove(const std::string &path)
             object_map()[object_order()[i]]--;
         }
         object_map().erase(p_curr);
-        children().erase(children().begin() + idx);
         object_order().erase(object_order().begin() + idx);
-        delete myschema;
+        children().erase(children().begin() + idx);
+        delete child;
     }    
 }
 
