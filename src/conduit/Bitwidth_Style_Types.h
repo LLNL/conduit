@@ -44,19 +44,22 @@
         typedef long double conduit_longdouble;
 #endif
 
-typedef bool            conduit_bool;
-typedef signed char     conduit_byte;
-typedef unsigned char   conduit_ubyte;
-typedef unsigned short  conduit_ushort;
-typedef unsigned int    conduit_uint;
-typedef unsigned long   conduit_ulong;
+typedef bool                conduit_bool;
+typedef signed char         conduit_byte;
+typedef unsigned char       conduit_ubyte;
+typedef unsigned short      conduit_ushort;
+typedef unsigned int        conduit_uint;
+typedef unsigned long       conduit_ulong;
+typedef unsigned long long  conduit_ulonglong;
 
-typedef char            conduit_char;
-typedef short           conduit_short;
-typedef int             conduit_int;
-typedef long            conduit_long;
-typedef float           conduit_float;
-typedef double          conduit_double;
+typedef char                conduit_char;
+typedef short               conduit_short;
+typedef int                 conduit_int;
+typedef long                conduit_long;
+typedef long long           conduit_longlong;
+
+typedef float               conduit_float;
+typedef double              conduit_double;
 
 
 #define BITSOF_CHAR CHAR_BIT
@@ -112,44 +115,39 @@ typedef double          conduit_double;
 
 #if BITSOF_LONG_LONG == 8
 #  ifndef CONDUIT_INT8
-#    define CONDUIT_INT8 CONDUIT_LONGLONG
-#    define CONDUIT_UINT8 CONDUIT_ULONGLONG
+#    define CONDUIT_INT8 CONDUIT_LONG_LONG
+#    define CONDUIT_UINT8 CONDUIT_ULONG_LONG
         typedef conduit_longlong conduit_int8;
         typedef conduit_ulonglong conduit_uint8;
 #  endif
-#elif BITSOF_LONGLONG == 16
+#elif BITSOF_LONG_LONG == 16
 #  ifndef CONDUIT_INT16
-#    define CONDUIT_INT16 CONDUIT_LONGLONG
-#    define CONDUIT_UINT16 CONDUIT_ULONGLONG
+#    define CONDUIT_INT16 CONDUIT_LONG_LONG
+#    define CONDUIT_UINT16 CONDUIT_ULONG_LONG
         typedef conduit_longlong conduit_int16;
         typedef conduit_ulonglong conduit_uint16;
 #  endif
-#elif BITSOF_LONGLONG == 32
+#elif BITSOF_LONG_LONG == 32
 #  ifndef CONDUIT_INT32
-#    define CONDUIT_INT32 CONDUIT_LONGLONG
-#    define CONDUIT_UINT32 CONDUIT_ULONGLONG
+#    define CONDUIT_INT32 CONDUIT_LONG_LONG
+#    define CONDUIT_UINT32 CONDUIT_ULONG_LONG
         typedef conduit_longlong conduit_int32;
         typedef conduit_ulonglong conduit_uint32;
 #  endif
-#elif BITSOF_LONGLONG == 64
+#elif BITSOF_LONG_LONG == 64
 #  ifndef CONDUIT_INT64
-#    define CONDUIT_INT64 CONDUIT_LONGLONG
-#    define CONDUIT_UINT64 CONDUIT_ULONGLONG
+#    define CONDUIT_INT64 CONDUIT_LONG_LONG
+#    define CONDUIT_UINT64 CONDUIT_ULONG_LONG
         typedef conduit_longlong conduit_int64;
         typedef conduit_ulonglong conduit_uint64;
 #  endif
-#elif BITSOF_LONGLONG == 128
+#elif BITSOF_LONG_LONG == 128
 #  ifndef CONDUIT_INT128
-#    define CONDUIT_INT128 CONDUIT_LONGLONG
-#    define CONDUIT_UINT128 CONDUIT_ULONGLONG
+#    define CONDUIT_INT128 CONDUIT_LONG_LONG
+#    define CONDUIT_UINT128 CONDUIT_ULONG_LONG
         typedef conduit_longlong conduit_int128;
         typedef conduit_ulonglong conduit_uint128;
 #  endif
-#elif BITSOF_LONGLONG == 256
-#  define CONDUIT_INT256 CONDUIT_LONGLONG
-#  define CONDUIT_UINT256 CONDUIT_ULONGLONG
-        typedef conduit_longlong conduit_int256;
-        typedef conduit_ulonglong conduit_uint256;
 #endif
 
 #if BITSOF_INT == 8
@@ -319,33 +317,33 @@ typedef double          conduit_double;
 #endif
 #endif
 
-#if BITSOF_LONGDOUBLE == 32
+#if BITSOF_LONG_DOUBLE == 32
 #ifndef CONDUIT_FLOAT32
-#define CONDUIT_FLOAT32 CONDUIT_LONGDOUBLE
+#define CONDUIT_FLOAT32 CONDUIT_LONG_DOUBLE
         typedef conduit_longdouble conduit_float32;
 #endif
-#elif BITSOF_LONGDOUBLE == 64
+#elif BITSOF_LONG_DOUBLE == 64
 #ifndef CONDUIT_FLOAT64
-#define CONDUIT_FLOAT64 CONDUIT_LONGDOUBLE
+#define CONDUIT_FLOAT64 CONDUIT_LONG_DOUBLE
         typedef conduit_longdouble conduit_float64;
 #endif
-#elif BITSOF_LONGDOUBLE == 80
+#elif BITSOF_LONG_DOUBLE == 80
 #ifndef CONDUIT_FLOAT80
-#define CONDUIT_FLOAT80 CONDUIT_LONGDOUBLE
+#define CONDUIT_FLOAT80 CONDUIT_LONG_DOUBLE
         typedef conduit_longdouble conduit_float80;
 #endif
-#elif BITSOF_LONGDOUBLE == 96
+#elif BITSOF_LONG_DOUBLE == 96
 #ifndef CONDUIT_FLOAT96
-#define CONDUIT_FLOAT96 CONDUIT_LONGDOUBLE
+#define CONDUIT_FLOAT96 CONDUIT_LONG_DOUBLE
         typedef conduit_longdouble conduit_float96;
 #endif
-#elif BITSOF_LONGDOUBLE == 128
+#elif BITSOF_LONG_DOUBLE == 128
 #ifndef CONDUIT_FLOAT128
-#define CONDUIT_FLOAT128 CONDUIT_LONGDOUBLE
+#define CONDUIT_FLOAT128 CONDUIT_LONG_DOUBLE
         typedef conduit_longdouble conduit_float128;
 #endif
-#elif BITSOF_LONGDOUBLE == 256
-#define CONDUIT_FLOAT256 CONDUIT_LONGDOUBLE
+#elif BITSOF_LONG_DOUBLE == 256
+#define CONDUIT_FLOAT256 CONDUIT_LONG_DOUBLE
         typedef conduit_longdouble conduit_float256;
 #endif
 
