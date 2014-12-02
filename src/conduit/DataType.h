@@ -31,7 +31,7 @@ class Node;
 ///============================================
 /// DataType
 ///============================================
-class DataType
+class CONDUIT_API DataType
 {
 public:
     typedef enum

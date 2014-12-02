@@ -15,10 +15,13 @@
 #ifndef __CONDUIT_CORE_H
 #define __CONDUIT_CORE_H
 
+#include "Conduit_Exports.h"
+
 #include <string>
 #include <iostream>
 
 #include "Bitwidth_Style_Types.h"
+
 
 namespace conduit
 {
@@ -49,8 +52,8 @@ typedef index32_t index_t;
 typedef index64_t index_t;
 #endif 
 
-std::string  about();
-void         about(Node &);
+std::string CONDUIT_API about();
+void        CONDUIT_API about(Node &);
 
 }
 

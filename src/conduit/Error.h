@@ -29,7 +29,7 @@
 namespace conduit
 {
 
-class Error : public std::exception
+class CONDUIT_API Error : public std::exception
 {
 public:    
     /* Constructors */

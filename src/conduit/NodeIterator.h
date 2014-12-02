@@ -23,7 +23,7 @@ namespace conduit
 {
     
 
-class NodeIterator
+class CONDUIT_API NodeIterator
 {
 public:
 

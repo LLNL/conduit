@@ -16,7 +16,7 @@
 #
 # Specify all headers
 #            
-set(conduit_silo_headers conduit_silo.h)
+set(conduit_silo_headers conduit_silo.h Conduit_Silo_Exports.h)
 
 #
 # Specify all sources

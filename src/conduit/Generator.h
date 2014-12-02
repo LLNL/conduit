@@ -25,7 +25,7 @@
 namespace conduit
 {
 
-class Generator
+class CONDUIT_API Generator
 {
 public:
     friend class Node;

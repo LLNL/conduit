@@ -32,6 +32,7 @@ set(conduit_headers
     NodeIterator.h
     Schema.h
     Utils.h
+    Conduit_Exports.h
     ${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h
     )
 

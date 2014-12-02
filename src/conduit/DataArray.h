@@ -22,7 +22,7 @@ namespace conduit
 {
 
 template <typename T> 
-class DataArray
+class CONDUIT_API DataArray
 {
 public: 
                     DataArray(void *data, const DataType &dtype);

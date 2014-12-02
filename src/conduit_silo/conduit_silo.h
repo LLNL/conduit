@@ -14,6 +14,7 @@
 
 #include <silo.h>
 #include <conduit.h>
+#include "Conduit_Silo_Exports.h"
 
-void conduit_silo_placeholder();
+void CONDUIT_SILO_API conduit_silo_placeholder();
 

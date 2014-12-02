@@ -27,7 +27,7 @@
 namespace conduit
 {
 
-class Schema
+class CONDUIT_API Schema
 {
 public:    
     friend class Node;

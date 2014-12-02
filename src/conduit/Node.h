@@ -37,7 +37,7 @@ namespace conduit
 class Generator;
 class NodeIterator;
 
-class Node
+class CONDUIT_API Node
 {
 public:
 
