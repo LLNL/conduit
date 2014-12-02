@@ -121,13 +121,13 @@ public:
 
     // -- begin set --  
     /* Setters */
-    void set(const Node& data);
-    void set(const Node& node, Schema* schema);
-    void set(const DataType& dtype);
+    void set(const Node &data);
+    void set(const Node &node, Schema *schema);
+    void set(const DataType &dtype);
 
     void set(const Schema &schema);
-    void set(const Schema &schema, void* data);
-    void set(const DataType &dtype, void* data);
+    void set(const Schema &schema, void *data);
+    void set(const DataType &dtype, void *data);
 
     void set(bool8 data);
     
@@ -363,12 +363,12 @@ public:
         
      // set pointer cases, these use the set array cases above
      void set_path(const std::string &path,
-                    bool8 *data,
-                    index_t num_elements = 1,
-                    index_t offset = 0,
-                    index_t stride = sizeof(conduit::bool8),
-                    index_t element_bytes = sizeof(conduit::bool8),
-                    index_t endianness = Endianness::DEFAULT_T)
+                   bool8 *data,
+                   index_t num_elements = 1,
+                   index_t offset = 0,
+                   index_t stride = sizeof(conduit::bool8),
+                   index_t element_bytes = sizeof(conduit::bool8),
+                   index_t endianness = Endianness::DEFAULT_T)
         {fetch(path).set(data,
                          num_elements,
                          offset,

@@ -139,7 +139,6 @@ Schema::init_defaults()
     m_hierarchy_data = NULL;
     m_parent = NULL;
     m_root   = false;
-    m_static = false;
 }
 
 //============================================
@@ -352,7 +351,7 @@ Schema::entry_index(const std::string &path) const
 {
     // find p_curr with an iterator
     std::map<std::string, index_t>::const_iterator itr = object_map().find(path);
-    // return Empty if the entry does not exist (static/locked case)
+    // return Empty if the entry does not exist (static/locked case ?)
     if(itr == object_map().end())
     {
         ///

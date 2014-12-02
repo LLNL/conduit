@@ -128,9 +128,6 @@ public:
     void    set_root(bool value) {m_root = value;}
     bool    is_root() const { return m_root;}
     
-    void    set_static(bool value) {m_static = value;}
-    bool    is_static() const { return m_static;}
-
     
     ///
     /// List Interface
@@ -147,10 +144,6 @@ public:
         {init_list(); children().push_back(new Schema(schema));}
 
     void list_of(const Schema &schema, index_t num_elements);
-
-    ///
-    /// TODO: static case (locking)
-    ///
 
 private:
     // for obj and list interfaces
@@ -178,8 +171,6 @@ private:
     DataType    m_dtype;
     void       *m_hierarchy_data;
     bool        m_root;
-    bool        m_static;
-    
     Schema     *m_parent;
 
 
