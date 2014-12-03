@@ -18,11 +18,17 @@
 #include "rapidjson/document.h"
 #include <iostream>
 #include <cstdio>
-#include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+#if !defined(CONDUIT_PLATFORM_WINDOWS)
+///
+/// mmap interface not avalaibe on windows
+/// 
+#include <sys/mman.h>
 #include <unistd.h>
+#endif
 
 namespace conduit
 {
@@ -299,6 +305,17 @@ Node::Node(const DataType &dtype)
 {
     init_defaults();
     set(dtype);
+}
+
+//============================================
+/// Bool type
+//============================================
+
+//============================================
+Node::Node(bool8  data)
+{
+    init_defaults();
+    set(data);
 }
 
 //============================================
@@ -1456,6 +1473,21 @@ Node::set_external(std::vector<float64>  &data)
     m_schema->set(DataType::Arrays::float64((index_t)data.size()));
     m_data  = &data[0];
 }
+
+
+//============================================
+/// bool8 array
+//============================================
+
+//============================================
+void 
+Node::set_external(const bool8_array  &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data   = data.data_ptr();
+}
+
 
 //============================================
 /// int array types

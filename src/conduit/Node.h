@@ -269,9 +269,9 @@ public:
          {fetch(path).set(schema);}
               
      void set_path(const std::string &path,const Schema &schema, void* data)
-         {fetch(path).set(data);}
+         {fetch(path).set(schema,data);}
      void set_path(const std::string &path,const DataType &dtype, void* data)
-         {fetch(path).set(data);}
+         {fetch(path).set(dtype,data);}
          
      void set_path(const std::string &path,bool8 data)
          {fetch(path).set(data);}         
@@ -600,7 +600,6 @@ public:
                       index_t element_bytes = sizeof(conduit::float64),
                       index_t endianness = Endianness::DEFAULT_T);
 
-    void set_external(std::vector<bool8>   &data);
     
     void set_external(std::vector<int8>   &data);
     void set_external(std::vector<int16>  &data);
@@ -815,10 +814,6 @@ public:
                                                      endianness);
                            }
 
-
-    void set_path_external(const std::string &path,
-                           std::vector<bool8> &data)
-                     {fetch(path).set_external(data);}
 
     void set_path_external(const std::string &path,
                            std::vector<int8> &data)
