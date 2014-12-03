@@ -2148,6 +2148,47 @@ TEST(conduit_node_set_path_external_float_ptr, conduit_node_set)
     n.print();
 }
 
+TEST(conduit_node_set_float_ptr_default_types, conduit_node_set)
+{
+    float   f32av[4] = {-0.8, -1.6, -3.2, -6.4};
+    double  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
+
+    Node n;
+    if(sizeof(float) == 4)
+    {
+        // float32
+        n.set(f32av,4);
+        n.schema().print();
+        EXPECT_EQ(n.total_bytes(),4*4);
+        EXPECT_EQ(n.dtype().element_bytes(),4);
+        float32 *f32av_ptr = n.as_float32_ptr();
+        for(index_t i=0;i<4;i++)
+        {
+            EXPECT_NEAR(f32av_ptr[i],f32av[i],0.001);
+            // set(...) semantics imply a copy -- mem addys should differ
+            EXPECT_NE(&f32av_ptr[i],&f32av[i]); 
+        }
+        EXPECT_NEAR(f32av_ptr[3],-6.4,0.001);
+    }
+    
+    if(sizeof(double)== 8)
+    {
+        // float64
+        n.set(f64av,4);
+        n.schema().print();
+        EXPECT_EQ(n.total_bytes(),4*8);
+        EXPECT_EQ(n.dtype().element_bytes(),8);
+        float64 *f64av_ptr = n.as_float64_ptr();
+        for(index_t i=0;i<4;i++)
+        {
+            EXPECT_NEAR(f64av_ptr[i],f64av[i],0.001);
+            // set(...) semantics imply a copy -- mem addys should differ
+            EXPECT_NE(&f64av_ptr[i],&f64av[i]);
+        }
+        EXPECT_NEAR(f64av_ptr[3],-6.4,0.001);
+    }
+}
+
 
 
 

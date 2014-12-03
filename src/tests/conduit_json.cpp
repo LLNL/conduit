@@ -103,7 +103,7 @@ TEST(conduit_to_json_inline_array, conduit_json)
     
     uint32 *ptr = &arr[0];
 
-    for(int i=0;i<5;i++)
+    for(index_t i=0;i<5;i++)
     {
         //std::cout << arr[i] << " vs " << ptr[i] << std::endl;
         EXPECT_EQ(arr[i],ptr[i]);
@@ -115,7 +115,7 @@ TEST(conduit_to_json_inline_array, conduit_json)
     n2.print_detailed();
     
     EXPECT_EQ(n2.dtype().number_of_elements(),3);
-    for(int i=0;i<n2.dtype().number_of_elements();i++)
+    for(index_t i=0;i<n2.dtype().number_of_elements();i++)
     {
         EXPECT_EQ(ptr[i],10*(i+1));
     }
@@ -126,7 +126,7 @@ TEST(conduit_to_json_inline_array, conduit_json)
     n3.print_detailed();
     
     EXPECT_EQ(n3.dtype().number_of_elements(),5);
-    for(int i=0;i<n3.dtype().number_of_elements();i++)
+    for(index_t i=0;i<n3.dtype().number_of_elements();i++)
     {
         EXPECT_EQ(ptr[i],100*(i+1));
     }
@@ -137,13 +137,13 @@ TEST(conduit_to_json_inline_array, conduit_json)
     n4.print_detailed();
     
     EXPECT_EQ(n4.dtype().number_of_elements(),2);
-    for(int i=0;i<n4.dtype().number_of_elements();i++)
+    for(index_t i=0;i<n4.dtype().number_of_elements();i++)
     {
         EXPECT_EQ(ptr[i],1000*(i+1));
     }
 
     // checking to make sure we are using the same memory space
-    for(int i=2;i<5;i++)
+    for(index_t i=2;i<5;i++)
     {
         EXPECT_EQ(ptr[i],100*(i+1));
     }
