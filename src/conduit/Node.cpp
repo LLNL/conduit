@@ -2779,6 +2779,10 @@ Node::release()
             m_alloced = false;
         }
     }   
+#if !defined(CONDUIT_PLATFORM_WINDOWS)
+    ///
+    /// TODO: mmap isn't yet supported on windows
+    ///
     else if(m_mmaped && m_data)
     {
         if(munmap(m_data, m_mmap_size) == -1) 
@@ -2790,6 +2794,7 @@ Node::release()
         m_mmap_fd   = -1;
         m_mmap_size = 0;
     }
+#endif
 }
     
 
