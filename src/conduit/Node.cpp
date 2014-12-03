@@ -2732,6 +2732,16 @@ Node::allocate(index_t dsize)
 void
 Node::mmap(const std::string &stream_path, index_t dsize)
 {
+#if defined(CONDUIT_PLATFORM_WINDOWS)
+    ///
+    /// TODO: mmap isn't supported on windows, we need to use a 
+    /// a windows specific API.  
+    /// See: https://lc.llnl.gov/jira/browse/CON-38
+    ///
+    /// For now, we simply throw an error
+    ///
+    THROW_ERROR("<Node::mmap> conduit does not yet support mmap on Windows");
+#else    
     m_mmap_fd   = open(stream_path.c_str(),O_RDWR| O_CREAT);
     m_mmap_size = dsize;
 
@@ -2745,6 +2755,7 @@ Node::mmap(const std::string &stream_path, index_t dsize)
     
     m_alloced = false;
     m_mmaped  = true;
+#endif    
 }
 
 

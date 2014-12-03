@@ -9,7 +9,7 @@
 *****************************************************************************/
 
 ///
-/// file: conduit-config.h
+/// file: Conduit_Config.h
 ///
 
 #define SIZEOF_CHAR 1
@@ -27,5 +27,15 @@
 #define HAVE_LONG_LONG       @HAVE_LONG_LONG@
 #define HAVE_UINTPTR_T       @HAVE_UINTPTR_T@
 
+//
+// #define platform check helpers
+//
 
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+#define CONDUIT_PLATFORM_WINDOWS
+#elif  defined(__APPLE__)
+#define CONDUIT_PLATFORM_APPLE
+#else
+#define CONDUIT_PLATFORM_UNIX
+#endif
 
