@@ -13,6 +13,8 @@
 # Add the conduit-silo library
 ################################
 
+ENABLE_WARNINGS()
+
 #
 # Specify all headers
 #            

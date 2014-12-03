@@ -13,6 +13,7 @@
 # Add our library
 ################################
 
+ENABLE_WARNINGS()
 
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_Config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h")

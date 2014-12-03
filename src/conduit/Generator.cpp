@@ -657,7 +657,7 @@ walk_schema(Node   *node,
             const rapidjson::Value &dt_value = jvalue["dtype"];
             if(dt_value.IsObject())
             {
-                int length =1;
+                index_t length =1;
                 if(jvalue.HasMember("length"))
                 {
                     if(jvalue["length"].IsNumber())
@@ -676,7 +676,7 @@ walk_schema(Node   *node,
                  
                 // TODO: we only need to parse this once, not leng # of times
                 // but this is the easiest way to start.                             
-                for(int i=0;i< length;i++)
+                for(index_t i=0;i< length;i++)
                 {
                     schema->append();
                     Schema *curr_schema = schema->fetch_pointer(i);

@@ -499,10 +499,9 @@ Schema::has_path(const std::string &path) const
 
 //============================================
 void
-Schema::paths(std::vector<std::string> &paths, bool walk) const
+Schema::paths(std::vector<std::string> &paths) const
 {
     paths = object_order();
-    // TODO: walk == True, show nested paths?
 }
 
 //============================================

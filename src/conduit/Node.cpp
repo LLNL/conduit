@@ -218,6 +218,17 @@ Node::Node(const std::vector<float64>  &data)
 }
 
 //============================================
+/* bool8 array*/
+//============================================
+
+//============================================
+Node::Node(const bool8_array  &data)
+{
+   init_defaults();
+   set(data);
+}
+
+//============================================
 /* int array types */
 //============================================
 
@@ -2474,9 +2485,9 @@ Node::has_path(const std::string &path) const
 
 //============================================
 void
-Node::paths(std::vector<std::string> &paths, bool walk) const
+Node::paths(std::vector<std::string> &paths) const
 {
-    m_schema->paths(paths,walk);
+    m_schema->paths(paths);
 }
 
 //============================================

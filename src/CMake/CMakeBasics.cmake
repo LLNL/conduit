@@ -20,3 +20,13 @@ endif()
 
 # enable creation of compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+
+macro(ENABLE_WARNINGS)
+    # set the warning levels we want to abide by
+    if(CMAKE_BUILD_TOOL MATCHES "(msdev|devenv|nmake)")
+        add_definitions(/W2)
+    else()
+        add_definitions(-Wall -Wextra)
+    endif()
+endmacro()

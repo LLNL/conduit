@@ -121,7 +121,7 @@ public:
     /// Object Interface
     ///
     bool    has_path(const std::string &path) const;
-    void    paths(std::vector<std::string> &paths,bool expand=false) const;
+    void    paths(std::vector<std::string> &paths) const;
     void    remove(const std::string &path);
 
 

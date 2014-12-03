@@ -355,7 +355,7 @@ public:
      void set_path(const std::string &path,
                    const char* data, 
                    index_t dtype_id = DataType::BYTESTR_T)
-        {fetch(path).set(data);}
+        {fetch(path).set(data,dtype_id);}
 
      void set_path(const std::string &path,
                    const std::string &data)
@@ -1112,7 +1112,7 @@ public:
     void    remove(const std::string &path);
     
     bool    has_path(const std::string &path) const;
-    void    paths(std::vector<std::string> &paths,bool walk=false) const;
+    void    paths(std::vector<std::string> &paths) const;
 
 
     // these support the map and list interfaces
