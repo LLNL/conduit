@@ -23,7 +23,7 @@ Endianness::machine_default()
 {
     union{uint8  vbyte; uint32 vuint;} test;
     test.vuint = 1;
-    if(test.vuint ^ 1) 
+    if(test.vbyte ^ 1)
         return BIG_T;
     else
         return LITTLE_T;

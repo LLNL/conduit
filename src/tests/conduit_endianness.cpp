@@ -78,7 +78,7 @@ TEST(conduit_endianness_swap_inplace, conduit_endianness)
         test64.vbytes[6] =  0x02;
         test64.vbytes[7] =  0x01;        
 
-        Endianness::swap32(&test64.vuint64);
+        Endianness::swap64(&test64.vuint64);
         EXPECT_EQ(0x0102030405060708,test64.vuint64);  
     }
     else
