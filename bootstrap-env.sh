@@ -128,15 +128,15 @@ function check_cmake_install
 function build_cmake
 {
     info "================================="
-    info "Setting up CMake 2.8.12.2"
+    info "Setting up CMake 3.0.2"
     info "================================="
     info "[Target Prefix: $CMAKE_PREFIX]"
     cd $BUILD_DIR
-    download http://www.cmake.org/files/v2.8/ cmake-2.8.12.2.tar.gz
-    rm -rf cmake-2.8.12
-    info "[Inflating: cmake-2.8.12.2.tar.gz]"
-    tar -xzf cmake-2.8.12.2.tar.gz
-    cd cmake-2.8.12.2
+    download http://www.cmake.org/files/v3.0/ cmake-3.0.2.tar.gz
+    rm -rf cmake-3.0.2
+    info "[Inflating: cmake-3.0.2.tar.gz]"
+    tar -xzf cmake-3.0.2.tar.gz
+    cd cmake-3.0.2
     info "[Configuring CMake]"
     ./configure --prefix=$CMAKE_PREFIX &> ../logs/cmake_configure.txt
     check $?
