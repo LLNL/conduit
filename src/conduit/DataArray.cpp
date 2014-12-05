@@ -13,6 +13,7 @@
 ///
 
 #include "DataArray.h"
+#include <cstring>
 
 namespace conduit
 {
