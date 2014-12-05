@@ -318,7 +318,7 @@ parse_leaf_dtype(const rapidjson::Value &jvalue, index_t offset, DataType &dtype
             {
                 length = jvalue["value"].Size();
             }
-            else
+            else if(!jvalue.HasMember("length")) // support explicit length 0 in a schema
             {
                 length = 1;
             }

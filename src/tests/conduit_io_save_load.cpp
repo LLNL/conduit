@@ -211,3 +211,41 @@ TEST(conduit_io_save_load, conduit_simple_class_restore)
     d2.n.info().print();
 
 }
+
+TEST(conduit_io_save_load, conduit_io_explicit_zero_length_vector_restore)
+{
+    std::vector<float> one;
+    float two = 2;
+    float three = 3;
+    float four = 4;
+
+    Node n1;
+    n1["one"].set_external(one);
+    n1["two"].set_external(&two);
+    n1["three"].set_external(&three);
+    n1["four"].set_external(&four);
+
+    std::cout << "n1 before saving" << std::endl;
+
+    n1.print_detailed();
+   
+    n1.save("test_zero_len_vector_save");
+
+    Node n2;
+    n2.load("test_zero_len_vector_save");
+
+    std::cout << "n2 load result" << std::endl;
+
+    n2.print_detailed();
+    EXPECT_EQ(n1.schema()["one"].dtype().number_of_elements(),n2.schema()["one"].dtype().number_of_elements());
+    EXPECT_EQ(n2.schema()["one"].dtype().number_of_elements(),0);
+    
+    n1.update(n2);
+
+    std::cout << "n1 after updating from n2" << std::endl;
+
+    n1.print_detailed();
+    EXPECT_EQ(n1.schema()["one"].dtype().number_of_elements(),0);
+
+}
+
