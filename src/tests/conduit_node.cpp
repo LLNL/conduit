@@ -201,8 +201,8 @@ TEST(conduit_node_in_place_test, conduit_node)
     EXPECT_EQ(n["b"].as_uint32(), a_val);
     EXPECT_EQ(n["c"].as_float64(), d_val);
 
-    EXPECT_EQ((uint32)(data[0]), b_val);
-    EXPECT_EQ((uint32)(data[4]), a_val);
+    EXPECT_EQ(*(uint32*)(&data[0]), b_val);
+    EXPECT_EQ(*(uint32*)(&data[4]), a_val);
     EXPECT_EQ(*(float64*)(&data[8]), d_val);
 }
 
