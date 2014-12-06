@@ -1,0 +1,11 @@
+/bin/*
+!/bin/data
+!/bin/encodings
+!/bin/jsonchecker
+/build/*.exe
+/build/gmake
+/build/vs*/
+/doc/html
+/doc/doxygen_*.db
+/thirdparty/lib
+/intermediate

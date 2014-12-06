@@ -1,25 +1,30 @@
 // JSON pretty formatting example
+// This example can only handle UTF-8. For handling other encodings, see prettyauto example.
 
 #include "rapidjson/reader.h"
 #include "rapidjson/prettywriter.h"
-#include "rapidjson/filestream.h"
+#include "rapidjson/filereadstream.h"
+#include "rapidjson/filewritestream.h"
+#include "rapidjson/error/en.h"
 
 using namespace rapidjson;
 
 int main(int, char*[]) {
-	// Prepare reader and input stream.
-	Reader reader;
-	FileStream is(stdin);
+    // Prepare reader and input stream.
+    Reader reader;
+    char readBuffer[65536];
+    FileReadStream is(stdin, readBuffer, sizeof(readBuffer));
 
-	// Prepare writer and output stream.
-	FileStream os(stdout);
-	PrettyWriter<FileStream> writer(os);
+    // Prepare writer and output stream.
+    char writeBuffer[65536];
+    FileWriteStream os(stdout, writeBuffer, sizeof(writeBuffer));
+    PrettyWriter<FileWriteStream> writer(os);
 
-	// JSON reader parse from the input stream and let writer generate the output.
-	if (!reader.Parse<0>(is, writer)) {
-		fprintf(stderr, "\nError(%u): %s\n", (unsigned)reader.GetErrorOffset(), reader.GetParseError());
-		return 1;
-	}
+    // JSON reader parse from the input stream and let writer generate the output.
+    if (!reader.Parse<kParseValidateEncodingFlag>(is, writer)) {
+        fprintf(stderr, "\nError(%u): %s\n", (unsigned)reader.GetErrorOffset(), GetParseError_En(reader.GetParseErrorCode()));
+        return 1;
+    }
 
-	return 0;
+    return 0;
 }
