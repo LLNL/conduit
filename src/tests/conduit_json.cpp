@@ -63,8 +63,12 @@ TEST(conduit_to_json_2, conduit_json)
     n2.print_detailed();
     n2.print();
 
-    EXPECT_EQ(n["a"].as_uint32(),n2["a"].as_uint32());
-    EXPECT_EQ(n["b"].as_uint32(),n2["b"].as_uint32());
+    //
+    // JSON parsing will place values into an int64, 
+    // here we use "to_uint32" to do a direct comparsion
+    //
+    EXPECT_EQ(n["a"].to_int64(),n2["a"].to_int64());
+    EXPECT_EQ(n["b"].to_int64(),n2["b"].to_int64());
 
 }
 
