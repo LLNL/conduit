@@ -81,7 +81,8 @@ Schema::save(const std::string &ofname,
 
     std::ofstream ofile;
     ofile.open(ofname.c_str());
-    // TODO: check for open error
+    if(!ofile.is_open())
+        THROW_ERROR("<Schema::save> failed to open: " << ofname);
     ofile << oss.str();
     ofile.close();
 }
@@ -93,7 +94,8 @@ Schema::load(const std::string &ifname)
     std::ostringstream oss;
     std::ifstream ifile;
     ifile.open(ifname.c_str());
-    // TODO: check for open error
+    if(!ifile.is_open())
+        THROW_ERROR("<Schema::load> failed to open: " << ifname);
     std::string res((std::istreambuf_iterator<char>(ifile)), std::istreambuf_iterator<char>());
     set(res);
 }            

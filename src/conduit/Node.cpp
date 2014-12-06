@@ -437,9 +437,11 @@ Node::load(const Schema &schema, const std::string &stream_path)
     allocate(dsize);
     std::ifstream ifs;
     ifs.open(stream_path.c_str());
+    if(!ifs.is_open())
+        THROW_ERROR("<Node::load> failed to open: " << stream_path);
     ifs.read((char *)m_data,dsize);
-    ifs.close();       
-    
+    ifs.close();
+
     ///
     /// See Below
     ///
@@ -2011,6 +2013,8 @@ Node::serialize(const std::string &stream_path) const
 {
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+        THROW_ERROR("<Node::serialize> failed to open: " << stream_path);
     serialize(ofs);
     ofs.close();
 }

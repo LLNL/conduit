@@ -57,13 +57,15 @@ TEST(conduit_to_json_2, conduit_json)
 
     n.print_detailed();
     n.print();
-    
+
     Generator g(pure_json,"json");
     Node n2(g);
-    
+    n2.print_detailed();
+    n2.print();
+
     EXPECT_EQ(n["a"].as_uint32(),n2["a"].as_uint32());
     EXPECT_EQ(n["b"].as_uint32(),n2["b"].as_uint32());
-    
+
 }
 
 TEST(conduit_to_json_3, conduit_json)
