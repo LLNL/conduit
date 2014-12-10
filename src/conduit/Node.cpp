@@ -939,7 +939,7 @@ Node::set(const std::string  &data)
     release();
     // size including the null term
     index_t str_size_with_term = data.length()+1;
-    DataType str_t(DataType::BYTESTR_T,
+    DataType str_t(DataType::CHAR8_STR_T,
                    str_size_with_term,
                    0,
                    sizeof(char),
@@ -953,12 +953,12 @@ Node::set(const std::string  &data)
 void 
 Node::set(const char *data, index_t dtype_id)
 {
-    if(dtype_id == DataType::BYTESTR_T)
+    if(dtype_id == DataType::CHAR8_STR_T)
     {
         release();
         // size including the null term
         index_t str_size_with_term = strlen(data)+1;
-        DataType str_t(DataType::BYTESTR_T,
+        DataType str_t(DataType::CHAR8_STR_T,
                        str_size_with_term,
                        0,
                        sizeof(char),
@@ -1619,7 +1619,7 @@ Node::set_external(char *data,
     release();
     // size including the null term
 
-    if(num_elements == 0 && dtype_id == DataType::BYTESTR_T)
+    if(num_elements == 0 && dtype_id == DataType::CHAR8_STR_T)
     {
         num_elements= strlen(data)+1;
     }
@@ -2719,7 +2719,7 @@ Node::to_json(std::ostringstream &oss,
             case DataType::FLOAT32_T: as_float32_array().to_json(value_oss); break;
             case DataType::FLOAT64_T: as_float64_array().to_json(value_oss); break;
             /* bytestr */
-            case DataType::BYTESTR_T: value_oss << "\"" << as_bytestr() << "\""; break;
+            case DataType::CHAR8_STR_T: value_oss << "\"" << as_char8_str() << "\""; break;
         }
 
         if(!detailed)

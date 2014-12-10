@@ -344,7 +344,7 @@ parse_inline_leaf(const rapidjson::Value &jvalue,
 {
     if(jvalue.IsString())
     {
-        if(node.dtype().id() == DataType::BYTESTR_T)
+        if(node.dtype().id() == DataType::CHAR8_STR_T)
         {
             std::string sval(jvalue.GetString());
             node.set(sval);

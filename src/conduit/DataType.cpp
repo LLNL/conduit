@@ -461,7 +461,7 @@ DataType::name_to_id(const std::string &dtype_name)
     else if(dtype_name == "uint64")  return UINT64_T;
     else if(dtype_name == "float32") return FLOAT32_T;
     else if(dtype_name == "float64") return FLOAT64_T;
-    else if(dtype_name == "bytestr") return BYTESTR_T;
+    else if(dtype_name == "char8_str") return CHAR8_STR_T;
     return EMPTY_T;
 }
 
@@ -487,7 +487,7 @@ DataType::id_to_name(index_t dtype_id)
     else if(dtype_id == FLOAT32_T) return "float32";
     else if(dtype_id == FLOAT64_T) return "float64";
     /* strs */
-    else if(dtype_id == BYTESTR_T) return "bytestr";
+    else if(dtype_id == CHAR8_STR_T) return "char8_str";
     return "[empty]";
 }
 
@@ -552,7 +552,7 @@ DataType::default_bytes(index_t dtype_id)
         case FLOAT32_T : return sizeof(conduit::float32);
         case FLOAT64_T : return sizeof(conduit::float64);
         /* string types */
-        case BYTESTR_T : return 1;
+        case CHAR8_STR_T : return 1;
         /* no default size for obj,list, or empty */
         default : 
         {

@@ -19,7 +19,7 @@ set(BASIC_TESTS gtest_smoke
                 rapidjson_smoke
                 conduit_smoke
                 conduit_endianness
-                conduit_bytestr
+                conduit_char8_str
                 conduit_node
                 conduit_node_parent
                 conduit_serialize

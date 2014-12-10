@@ -174,7 +174,7 @@ public:
     void set(const float64_array &data);
 
     // bytestr use cases:
-    void set(const char* data, index_t dtype_id = DataType::BYTESTR_T);
+    void set(const char* data, index_t dtype_id = DataType::CHAR8_STR_T);
     void set(const std::string &data);
     
     // set pointer cases, these use the set array cases above
@@ -354,7 +354,7 @@ public:
      // bytestr use cases:
      void set_path(const std::string &path,
                    const char* data, 
-                   index_t dtype_id = DataType::BYTESTR_T)
+                   index_t dtype_id = DataType::CHAR8_STR_T)
         {fetch(path).set(data,dtype_id);}
 
      void set_path(const std::string &path,
@@ -1240,10 +1240,10 @@ public:
     float32_array    as_float32_array() const { return float32_array(m_data,dtype());}
     float64_array    as_float64_array() const { return float64_array(m_data,dtype());}
 
-    char            *as_bytestr() {return (char *)element_pointer(0);}
-    const char      *as_bytestr() const {return (const char *)element_pointer(0);}
+    char            *as_char8_str() {return (char *)element_pointer(0);}
+    const char      *as_char8_str() const {return (const char *)element_pointer(0);}
     
-    std::string      as_string() const {return std::string(as_bytestr());}
+    std::string      as_string() const {return std::string(as_char8_str());}
 
     // these were private
     void             set(Schema *schema_ptr);

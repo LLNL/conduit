@@ -50,7 +50,7 @@ public:
         UINT64_T,    // uint64 and uint64_array
         FLOAT32_T,   // float32 and float32_array
         FLOAT64_T,   // float64 and float64_array
-        BYTESTR_T,   // bytestr (incore c-string)
+        CHAR8_STR_T, // char8 string (incore c-string)
     } TypeID;
     
     class Objects
