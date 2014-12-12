@@ -73,23 +73,7 @@ Node::Node(const Schema &schema)
     set(schema);
 }
     
-//============================================
-Node::Node(Schema *schema_ptr)
 
-{
-    init_defaults();
-    m_schema = schema_ptr;
-}
-    
-//============================================
-Node::Node(const Node &node, Schema *schema_ptr)
-
-{
-    init_defaults();
-    set(node,schema_ptr);
-}
-
-    
 //============================================
 Node::Node(const Schema &schema, const std::string &stream_path, bool mmap)
 {    
@@ -1677,6 +1661,9 @@ Node::set(Schema *schema_ptr,void *data)
 void
 Node::set(const DataType &dtype, void *data)
 {
+    ///
+    /// TODO: ERROR, this must obey copy semantics...
+    ///
     release();
     m_alloced = false;
     m_data    = data;
@@ -2403,25 +2390,28 @@ Node::fetch(const std::string &path)
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
 
-    // if this node doesn't exist, we need to 
-    // link it to a schema
-    
     // check for parent
     if(p_curr == "..")
     {
-        if(m_parent != NULL) // TODO: check for erro (no parent)
+        if(m_parent != NULL) // TODO: check for error (no parent) ?
            return m_parent->fetch(p_next);
     }
-    
+
+    // if this node doesn't exist yet, we need to create it and
+    // link it to a schema
+        
     index_t idx;
     if(!m_schema->has_path(p_curr))
     {
-        Schema *schema_ptr = &m_schema->fetch(p_curr);
-        Node *new_node = new Node(schema_ptr);
-        new_node->m_parent = this;
-        m_children.push_back(new_node);
+        Schema *schema_ptr = m_schema->fetch_pointer(p_curr);
+        Node *curr_node = new Node();
+        curr_node->set(schema_ptr);
+        curr_node->m_parent = this;
+        m_children.push_back(curr_node);
         idx = m_children.size() - 1;
-    } else {
+    }
+    else
+    {
         idx = m_schema->entry_index(p_curr);
     }
 
@@ -2886,8 +2876,10 @@ Node::list_append(const Node &node)
     init_list();
     index_t idx = m_children.size();
     m_schema->append(node.schema());
-    Schema *schema_ptr = &m_schema->fetch(idx);
-    Node *res_node = new Node(node,schema_ptr);
+    Schema *schema_ptr = m_schema->fetch_pointer(idx);
+
+    Node *res_node = new Node();
+    res_node->set(node,schema_ptr);
     res_node->m_parent=this;
     m_children.push_back(res_node);
 }
@@ -2929,7 +2921,8 @@ Node::walk_schema(Node   *node,
     
             std::string curr_name = schema->object_order()[i];
             Schema *curr_schema   = schema->fetch_pointer(curr_name);
-            Node *curr_node       = new Node(curr_schema);
+            Node *curr_node = new Node();
+            curr_node->set(curr_schema);
             curr_node->set_parent(node);
             walk_schema(curr_node,curr_schema,data);
             node->append(curr_node);
@@ -2941,7 +2934,8 @@ Node::walk_schema(Node   *node,
         for(index_t i=0;i<num_entries;i++)
         {
             Schema *curr_schema = schema->fetch_pointer(i);
-            Node *curr_node = new Node(curr_schema);
+            Node *curr_node = new Node();
+            curr_node->set(curr_schema);
             curr_node->set_parent(node);
             walk_schema(curr_node,curr_schema,data);
             node->append(curr_node);

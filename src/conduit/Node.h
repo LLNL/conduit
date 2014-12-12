@@ -37,13 +37,26 @@ namespace conduit
 class Generator;
 class NodeIterator;
 
+/// For each dtype, the Node class provides:
+///  constructor: explicit Node({DTYPE}  data);
+///  assign op:  Node &operator=({DTYPE} data);
+///  setters: 
+///      void set({DTYPE} data);
+///      void set_path({DTYPE} data);
+///  external setters: 
+///      void set_external({DTYPE} *data,...);
+///      void set_path_external({DTYPE} *data,...);
+///  accessor: {DTYPE} as_{DTYPE};
+
 class CONDUIT_API Node
 {
 public:
 
     friend class NodeIterator;
 
-    /* Constructors */
+    /// @name Constructors
+    ///@{
+
     Node(); // empty node
     Node(const Node &node);
     explicit Node(const DataType &dtype);
@@ -58,7 +71,7 @@ public:
     Node(const Schema &schema, const std::string &stream_path, bool mmap=false);    
     Node(const DataType &dtype, void *data);
     
-   // todo explicit Node(bool  data); // bool may not nicely map, wr coerse to bool8 in this case    
+    /// TODO: explicit Node(bool  data); // bool may not nicely map, wr coerse to bool8 in this case    
     explicit Node(bool8  data);
 
     explicit Node(int8   data);
@@ -104,28 +117,34 @@ public:
     
     explicit Node(const std::string  &data);
 
+   ///@}
+
     ~Node();
 
     void reset();
     void load(const Schema &schema, const std::string &stream_path);
-    void load(const std::string &ibase);  // dual file (schema + data)
+    /// dual file (schema + data) load
+    void load(const std::string &ibase);
     void mmap(const Schema &schema, const std::string &stream_path);
-    void mmap(const std::string &ibase); // dual file (schema + data)
-
+    /// dual file (schema + data) mmap load
+    void mmap(const std::string &ibase); 
     
-    /// For each dtype:
-    ///  constructor: explicit Node({DTYPE}  data);
-    ///  assign op:  Node &operator=({DTYPE} data);
-    ///  setter: void set({DTYPE} data);
-    ///  accessor: {DTYPE} as_{DTYPE};
+    // -- begin setters (general) -- 
+    /// @name Node Setters
+    ///
+    ///@{
 
     // -- begin set --  
-    /* Setters */
+    /// @name Standard Node::set(...) methods
+    /// set(...) methods follow copy semantics. 
+    ///@{
+    
     void set(const Node &data);
-    void set(const Node &node, Schema *schema);
     void set(const DataType &dtype);
 
     void set(const Schema &schema);
+
+    void set(const Node &node, Schema *schema);
     void set(const Schema &schema, void *data);
     void set(const DataType &dtype, void *data);
 
@@ -254,10 +273,16 @@ public:
              index_t stride = sizeof(conduit::float64),
              index_t element_bytes = sizeof(conduit::float64),
              index_t endianness = Endianness::DEFAULT_T);
-    
+
+    ///@}    
     // -- end set --
-    
+
     // -- begin set_path --
+    /// @name Path based Node::set(...) methods
+    /// set_path(...) methods follow copy semantics, 
+    /// and allow you to use an explciit path for the destination node.
+    ///@{
+             
      void set_path(const std::string &path,const Node& data) 
          {fetch(path).set(data);}
      void set_path(const std::string &path,const Node& node, Schema* schema)
@@ -514,15 +539,13 @@ public:
                         stride,
                         element_bytes,
                         endianness);}
-
-    
-             
-    // -- end set_path
+    ///@}
+    // -- end set_path --
                         
-    // -- begin set external --
-                 
-    // sets that allow the node to point to external memory
-    
+    // -- begin set_external --
+    /// @name Node::set_external(...) methods
+    /// set_external(...) methods allow the node to point to external memory.
+    ///@{
     void set_external(bool8 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
@@ -637,9 +660,15 @@ public:
                       index_t stride = sizeof(conduit::uint8),
                       index_t element_bytes = sizeof(conduit::uint8),
                       index_t endianness = Endianness::DEFAULT_T);
-    
-    // -- end set external --
-    // -- begin set path external --
+    ///@}
+    // -- end set_external --
+
+    // -- begin set_path_external --
+    /// @name Node::set_path_external(...) methods
+    /// set_path_external(...) methods allow the node to point to external memory, 
+    /// and allow you to use an explciit path for the destination node.
+    ///@{
+
     void set_path_external(const std::string &path,
                            bool8 *data,
                            index_t num_elements = 1,
@@ -902,8 +931,15 @@ public:
                                                   element_bytes,
                                                   endianness);}
 
-                                      
-    /* Assignment ops */
+
+    ///@}
+    // -- end set_path_external --
+
+    // -- begin assignment ops --
+    /** @name Node assignment operators
+      * &operator=(...) methods use set(...) (copy) semantics
+      */
+    ///@{                               
     Node &operator=(const Node &node);
     Node &operator=(DataType dtype);
 
@@ -952,6 +988,9 @@ public:
     Node &operator=(const char* data);
     Node &operator=(const std::string &data);
 
+    ///@}
+    // -- end assignment ops --
+
     NodeIterator     iterator();
     /*schema access */
     const Schema     &schema() const { return *m_schema;}   
@@ -995,25 +1034,32 @@ public:
     // this will be ineff w/o move semantics, but is very conv 
     Node        info() const;
 
-    /// update() will add entries from n to current Node (like python dict update) 
-    // the input should be const, but the lack of a const fetch prevents this for now
+    /// update() adds entries from n_src to current Node (like python dict update) 
+    /// the input should be const, but the lack of a const fetch prevents this for now
     void        update(Node &n_src);
-    /// TODO:
-    //  bool        compare(const Node &n, Node &cmp_results) const;
-    //  bool        operator==(const Node &n) const;
-    
     ///
-    /// Entry Access
-    ///    
-    // the `fetch' methods do modify map structure if a path doesn't exists
+    /// TODO:
+    ///  bool        compare(const Node &n, Node &cmp_results) const;
+    ///  bool        operator==(const Node &n) const;
+
+
+    // -- begin entry access --    
+    /// @name Node::fetch(...) methods
+    ///@{
+    // Note: `fetch' methods do modify map structure if a path doesn't exists
     Node             &fetch(const std::string &path);
     Node             &fetch(index_t idx);
     
     Node             *fetch_pointer(const std::string &path);
     Node             *fetch_pointer(index_t idx);
 
-    //  begin list append interface methods
+    ///@}
+    // -- end entry access --
 
+
+    // -- begin list append interface methods --
+    /// @name Node list append inteface methods
+    /// @{
     void append(Node *node)
         {m_children.push_back(node);}
 
@@ -1105,7 +1151,8 @@ public:
             m_children[idx]->set(data);
         }
 
-    //  end list append interface methods
+    // -- end list append interface methods --
+    ///@}
 
     index_t number_of_entries() const;
     void    remove(index_t idx);
@@ -1179,7 +1226,9 @@ public:
     void              print_detailed() const
                         {print(true);}
 
-
+    // -- begin value access --    
+    /// @name Node::as_{dtype}(...) methods
+    ///@{
     bool8            as_bool8()   const { return *((bool8*)element_pointer(0));}
 
     int8             as_int8()   const  { return *((int8*)element_pointer(0));}
@@ -1245,13 +1294,12 @@ public:
     
     std::string      as_string() const {return std::string(as_char8_str());}
 
+    // -- end value access --    
+    ///@}
+
     // these were private
     void             set(Schema *schema_ptr);
-                     Node(Schema *schema_ptr);
     void             set(Schema *schema_ptr, void *data_ptr);
-    
-                     Node(const Node &node,Schema *schema_ptr);
-    
     
 private:
     void             init(const DataType &dtype);
