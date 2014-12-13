@@ -553,7 +553,7 @@ Node::set(const DataType &dtype)
     
 //============================================
 void 
-Node::set(bool8 data)
+Node::set_bool8(bool8 data)
 {
     init(DataType::Scalars::bool8());
     *(bool8*)((char*)m_data + schema().element_index(0)) = data;
@@ -1636,12 +1636,15 @@ Node::set(const Schema &schema)
 void
 Node::set(const Schema &schema,void* data)
 {
+    ///
+    /// TODO: SET_SEMANTICS this must obey copy semantics...
+    ///
     walk_schema(schema,data);    
 }
 
 //============================================
 void
-Node::set(Schema *schema_ptr)
+Node::set_schema_pointer(Schema *schema_ptr)
 {
     if(m_schema->is_root())
         delete m_schema;
@@ -1652,7 +1655,10 @@ Node::set(Schema *schema_ptr)
 void
 Node::set(Schema *schema_ptr,void *data)
 {
-    set(schema_ptr);
+    ///
+    /// TODO: SET_SEMANTICS this must obey copy semantics...
+    ///
+    set_schema_pointer(schema_ptr);
     release();
     m_data    = data;    
 }
@@ -1662,7 +1668,7 @@ void
 Node::set(const DataType &dtype, void *data)
 {
     ///
-    /// TODO: ERROR, this must obey copy semantics...
+    /// TODO: SET_SEMANTICS this must obey copy semantics...
     ///
     release();
     m_alloced = false;
@@ -2405,7 +2411,7 @@ Node::fetch(const std::string &path)
     {
         Schema *schema_ptr = m_schema->fetch_pointer(p_curr);
         Node *curr_node = new Node();
-        curr_node->set(schema_ptr);
+        curr_node->set_schema_pointer(schema_ptr);
         curr_node->m_parent = this;
         m_children.push_back(curr_node);
         idx = m_children.size() - 1;
@@ -2922,7 +2928,7 @@ Node::walk_schema(Node   *node,
             std::string curr_name = schema->object_order()[i];
             Schema *curr_schema   = schema->fetch_pointer(curr_name);
             Node *curr_node = new Node();
-            curr_node->set(curr_schema);
+            curr_node->set_schema_pointer(curr_schema);
             curr_node->set_parent(node);
             walk_schema(curr_node,curr_schema,data);
             node->append(curr_node);
@@ -2935,7 +2941,7 @@ Node::walk_schema(Node   *node,
         {
             Schema *curr_schema = schema->fetch_pointer(i);
             Node *curr_node = new Node();
-            curr_node->set(curr_schema);
+            curr_node->set_schema_pointer(curr_schema);
             curr_node->set_parent(node);
             walk_schema(curr_node,curr_schema,data);
             node->append(curr_node);

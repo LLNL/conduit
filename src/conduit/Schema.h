@@ -36,9 +36,10 @@ public:
     /* Constructors */
     Schema(); // empty schema
     explicit Schema(index_t dtype_id);
-    Schema(const DataType &dtype);
-    Schema(const std::string &json_schema);
-    Schema(const Schema &schema);
+    explicit Schema(const DataType &dtype);
+    explicit Schema(const std::string &json_schema);
+    explicit Schema(const char *json_schema);
+    explicit Schema(const Schema &schema);
 
     /* Destructor */
     ~Schema();

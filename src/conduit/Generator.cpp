@@ -564,9 +564,8 @@ walk_schema_pure_json(Node  *node,
         {
             std::string entry_name(itr->name.GetString());
             Schema *curr_schema = schema->fetch_pointer(entry_name);
-//            Node *curr_node       = new Node(curr_schema);
             Node *curr_node  = new Node();
-            curr_node->set(curr_schema);
+            curr_node->set_schema_pointer(curr_schema);
             curr_node->set_parent(node);
             walk_schema_pure_json(curr_node,curr_schema,itr->value);
             node->append(curr_node);                
@@ -594,9 +593,8 @@ walk_schema_pure_json(Node  *node,
             {
                 schema->append();
                 Schema *curr_schema = schema->fetch_pointer(i);
-//                Node   *curr_node   = new Node(curr_schema);
                 Node * curr_node = new Node();
-                curr_node->set(curr_schema);
+                curr_node->set_schema_pointer(curr_schema);
                 curr_node->set_parent(node);
                 walk_schema_pure_json(curr_node,curr_schema,jvalue[i]);
                 node->append(curr_node);
@@ -684,9 +682,8 @@ walk_schema(Node   *node,
                 {
                     schema->append();
                     Schema *curr_schema = schema->fetch_pointer(i);
-//                    Node   *curr_node   = new Node(curr_schema);
                     Node *curr_node = new Node();
-                    curr_node->set(curr_schema);
+                    curr_node->set_schema_pointer(curr_schema);
                     curr_node->set_parent(node);
                     walk_schema(curr_node,curr_schema,data,dt_value, curr_offset);
                     // auto offset only makes sense when we have data
@@ -711,7 +708,7 @@ walk_schema(Node   *node,
                 }
                 else
                 {
-                    node->set(schema); // properly links back to schema tree
+                    node->set_schema_pointer(schema); // properly links back to schema tree
                     // we need to dynamically alloc
                     node->set(dtype);  // causes an init
                 }
@@ -732,9 +729,8 @@ walk_schema(Node   *node,
             {
                 std::string entry_name(itr->name.GetString());
                 Schema *curr_schema = schema->fetch_pointer(entry_name);
-//                Node *curr_node     = new Node(curr_schema);
                 Node *curr_node = new Node();
-                curr_node->set(curr_schema);
+                curr_node->set_schema_pointer(curr_schema);
                 curr_node->set_parent(node);
                 walk_schema(curr_node,curr_schema,data,itr->value, curr_offset);
                 // auto offset only makes sense when we have data
@@ -752,9 +748,8 @@ walk_schema(Node   *node,
         {
             schema->append();
             Schema *curr_schema = schema->fetch_pointer(i);
-//            Node   *curr_node   = new Node(curr_schema);
             Node *curr_node = new Node();
-            curr_node->set(curr_schema);
+            curr_node->set_schema_pointer(curr_schema);
             curr_node->set_parent(node);
             walk_schema(curr_node,curr_schema,data,jvalue[i], curr_offset);
             // auto offset only makes sense when we have data
@@ -779,7 +774,7 @@ walk_schema(Node   *node,
         else
         {
              // sets the pointer
-             node->set(schema); // properly links back to schema tree
+             node->set_schema_pointer(schema); // properly links back to schema tree
              // we need to dynamically alloc
              node->set(dtype);  // causes an init
         }

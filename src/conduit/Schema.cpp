@@ -61,6 +61,13 @@ Schema::Schema(const std::string &json_schema)
     set(json_schema);
 }
 
+//============================================
+Schema::Schema(const char *json_schema)
+{
+    init_defaults();
+    set(std::string(json_schema));
+}
+
 
 //============================================
 Schema::~Schema()

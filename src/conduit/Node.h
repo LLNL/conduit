@@ -51,7 +51,6 @@ class NodeIterator;
 class CONDUIT_API Node
 {
 public:
-
     friend class NodeIterator;
 
     /// @name Constructors
@@ -61,19 +60,17 @@ public:
     Node(const Node &node);
     explicit Node(const DataType &dtype);
 
-    Node(const Generator &gen);
-    
+    explicit Node(const Generator &gen);
+    explicit Node(const Schema &schema);
+        
     // convience interface:
     Node(const std::string &json_schema, void *data);
-
-    Node(const Schema &schema);
     Node(const Schema &schema, void *data);
     Node(const Schema &schema, const std::string &stream_path, bool mmap=false);    
     Node(const DataType &dtype, void *data);
     
     /// TODO: explicit Node(bool  data); // bool may not nicely map, wr coerse to bool8 in this case    
-    explicit Node(bool8  data);
-
+    explicit Node(bool8   data);
     explicit Node(int8   data);
     explicit Node(int16  data);
     explicit Node(int32  data);
@@ -148,8 +145,13 @@ public:
     void set(const Schema &schema, void *data);
     void set(const DataType &dtype, void *data);
 
-    void set(bool8 data);
-    
+    //
+    // Note: when bool8 maps to a bool, any pointer type will
+    // implicilty convert to bool. To avoid confusion, we 
+    // have an explicit set_bool8, instead of set(bool8 val)
+    //
+    void set_bool8(bool8 data);
+
     void set(int8 data);
     void set(int16 data);
     void set(int32 data);
@@ -943,8 +945,6 @@ public:
     Node &operator=(const Node &node);
     Node &operator=(DataType dtype);
 
-    Node &operator=(bool8 data);
-
     Node &operator=(int8 data);
     Node &operator=(int16 data);
     Node &operator=(int32 data);
@@ -1298,8 +1298,8 @@ public:
     ///@}
 
     // these were private
-    void             set(Schema *schema_ptr);
     void             set(Schema *schema_ptr, void *data_ptr);
+    void             set_schema_pointer(Schema *schema_ptr);
     
 private:
     void             init(const DataType &dtype);
