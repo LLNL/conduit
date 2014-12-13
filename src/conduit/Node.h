@@ -945,6 +945,11 @@ public:
     Node &operator=(const Node &node);
     Node &operator=(DataType dtype);
 
+    ///
+    /// Note: there is not bool8 operator b/c any pointer type
+    /// in c++ will impliclity cast to bool (which is one of the end points for bool)
+    ///
+
     Node &operator=(int8 data);
     Node &operator=(int16 data);
     Node &operator=(int32 data);
