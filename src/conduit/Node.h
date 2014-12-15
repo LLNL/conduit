@@ -70,11 +70,10 @@ public:
     // convience interface:
     Node(const std::string &json_schema, void *data);
     Node(const Schema &schema, void *data);
-    Node(const Schema &schema, const std::string &stream_path, bool mmap=false);
     Node(const DataType &dtype, void *data);
+    Node(const Schema &schema, const std::string &stream_path, bool mmap=false);
+
     
-    /// TODO: explicit Node(bool  data); // bool may not nicely map, wr coerse to bool8 in this case    
-    explicit Node(bool8   data);
     explicit Node(int8   data);
     explicit Node(int16  data);
     explicit Node(int32  data);
@@ -168,7 +167,7 @@ public:
 
     void set(const Schema &schema);
 
-    void set(const Schema &schema, void *data);
+//    void set(const Schema &schema, void *data);
     void set(const DataType &dtype, void *data);
 
     //
@@ -1032,7 +1031,6 @@ public:
 
     /* parent access */
     bool             has_parent() const {return m_parent != NULL;}
-    void             set_parent(Node *parent) { m_parent = parent;}
     Node            *parent() {return m_parent;}
     
     /* Info */
@@ -1076,7 +1074,7 @@ public:
     // -- begin entry access --
     /// @name Node::fetch(...) methods
     ///@{
-    // Note: `fetch' methods do modify map structure if a path doesn't exists
+    // Note: `fetch' methods do modify map structure if a path doesn't exist
     Node             &fetch(const std::string &path);
     Node             &fetch(index_t idx);
     
@@ -1328,24 +1326,21 @@ public:
     void             set_schema_pointer(Schema *schema_ptr);
     void             append_node_pointer(Node *node)
                         {m_children.push_back(node);}
+    void             set_parent(Node *parent) { m_parent = parent;}
 
 private:
+    // -- helpers for init, memory allocation, and cleanup --  
     void             init(const DataType &dtype);
-
     void             allocate(index_t dsize);
     void             allocate(const DataType &dtype);
-    void             mmap(const std::string &stream_path,index_t dsize);
+    void             mmap(const std::string &stream_path, index_t dsize);
     void             cleanup();
     void             release();
 
-    void             walk_schema(const Schema &schema);
-
-    void             walk_schema(const Schema &schema,
-                                 void *data);
-
     static void      walk_schema(Node   *node,
                                  Schema *schema,
-                                 void   *data);
+                                 void   *data,
+                                 bool    copy_data);
    
     void            *element_pointer(index_t idx)
                      {return static_cast<char*>(m_data) + dtype().element_index(idx);};
@@ -1373,11 +1368,11 @@ private:
 
     // TODO: DataContainer
     void     *m_data;
+    index_t   m_data_size;
+
     bool      m_alloced;
-    index_t   m_alloced_size;
     bool      m_mmaped;
     int       m_mmap_fd;
-    index_t   m_mmap_size;
 };
 
 }

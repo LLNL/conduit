@@ -40,12 +40,11 @@ void
 Node::init_defaults()
 {
     m_data = NULL;
+    m_data_size = 0;
     m_alloced = false;
-    m_alloced_size = 0;
 
     m_mmaped    = false;
     m_mmap_fd   = -1;
-    m_mmap_size = 0;
 
     m_schema = new Schema(DataType::EMPTY_T);
     
@@ -431,7 +430,8 @@ Node::load(const Schema &schema, const std::string &stream_path)
     ///
     m_alloced = false;
     
-    walk_schema(schema,m_data);
+    m_schema->set(schema);
+    walk_schema(this,m_schema,m_data,false);
 
     ///
     /// TODO: Design Issue
@@ -456,7 +456,8 @@ Node::mmap(const Schema &schema, const std::string &stream_path)
     ///
     m_mmaped = false;
     
-    walk_schema(schema,m_data);
+    m_schema->set(schema);
+    walk_schema(this,m_schema,m_data,false);
 
     ///
     /// TODO: Design Issue
@@ -474,9 +475,12 @@ Node::mmap(const Schema &schema, const std::string &stream_path)
 void 
 Node::set(const Node &node)
 {
+//    m_schema->set(node->schema());
+//    walk_schema(*this,m_schema,node.m_data,true);
     set_node_using_schema_pointer(node, NULL);
 }
 
+//============================================
 void
 Node::set_node_using_schema_pointer(const Node &node, Schema *schema)
 {
@@ -1617,17 +1621,23 @@ Node::set_external(char *data,
 void
 Node::set(const Schema &schema)
 {
-    walk_schema(schema);    
+    release();
+    m_schema->set(schema);
+    // allocate data
+    allocate(m_schema->total_bytes());
+    // call walk w/ internal data pointer
+    walk_schema(this,m_schema,m_data,false);
 }
 
 //============================================
 void
-Node::set(const Schema &schema,void* data)
+Node::set(const Schema &schema, void *data)
 {
     ///
     /// TODO: SET_SEMANTICS this must obey copy semantics...
     ///
-    walk_schema(schema,data);    
+    m_schema->set(schema);
+    walk_schema(this,m_schema,data,true);
 }
 
 //============================================
@@ -2192,12 +2202,12 @@ Node::info(Node &res, const std::string &curr_path) const
             if(m_alloced)
             {
                 ptr_ref["type"]  = "alloced";
-                ptr_ref["bytes"] = m_alloced_size;
+                ptr_ref["bytes"] = m_data_size;
             }
             else if(m_mmaped)
             {
                 ptr_ref["type"]  = "mmap";
-                ptr_ref["bytes"] = m_mmap_size;
+                ptr_ref["bytes"] = m_data_size;
             }
             else
             {
@@ -2316,7 +2326,7 @@ Node::compact_to(Node &n_dest) const
     n_dest.m_data = NULL; // TODO evil, brian doesn't like this.
 
     // need node structure
-    walk_schema(&n_dest,n_dest.m_schema,n_dest_data);
+    walk_schema(&n_dest,n_dest.m_schema,n_dest_data,false);
 
 
 }
@@ -2774,10 +2784,10 @@ Node::allocate(const DataType &dtype)
 void
 Node::allocate(index_t dsize)
 {
-    m_data    = malloc(dsize);
-    m_alloced = true;
-    m_alloced_size = dsize;
-    m_mmaped  = false;
+    m_data      = malloc(dsize);
+    m_data_size = dsize;
+    m_alloced   = true;
+    m_mmaped    = false;
 }
 
 
@@ -2796,7 +2806,7 @@ Node::mmap(const std::string &stream_path, index_t dsize)
     THROW_ERROR("<Node::mmap> conduit does not yet support mmap on Windows");
 #else    
     m_mmap_fd   = open(stream_path.c_str(),O_RDWR| O_CREAT);
-    m_mmap_size = dsize;
+    m_data_size = dsize;
 
     if (m_mmap_fd == -1) 
         THROW_ERROR("<Node::mmap> failed to open: " << stream_path);
@@ -2830,6 +2840,7 @@ Node::release()
             free(m_data);
             m_data = NULL;
             m_alloced = false;
+            m_data_size = 0;
         }
     }   
 #if !defined(CONDUIT_PLATFORM_WINDOWS)
@@ -2838,14 +2849,14 @@ Node::release()
     ///
     else if(m_mmaped && m_data)
     {
-        if(munmap(m_data, m_mmap_size) == -1) 
+        if(munmap(m_data, m_data_size) == -1) 
         {
             // TODO error
         }
         close(m_mmap_fd);
         m_data      = NULL;
         m_mmap_fd   = -1;
-        m_mmap_size = 0;
+        m_data_size = 0;
     }
 #endif
 }
@@ -2891,42 +2902,27 @@ Node::list_append(const Node &node)
 {
     init_list();
     index_t idx = m_children.size();
+    //
+    // This makes a proper copy of the schema for us to use
+    //
     m_schema->append(node.schema());
     Schema *schema_ptr = m_schema->fetch_pointer(idx);
 
     Node *res_node = new Node();
     res_node->set_node_using_schema_pointer(node,schema_ptr);
+    
+    //    res_node->set_schema_pointer(schema_ptr);
     res_node->m_parent=this;
     m_children.push_back(res_node);
 }
 
-//============================================
-void 
-Node::walk_schema(const Schema &schema)
-{
-    m_data    = NULL;
-    m_alloced = false;
-    m_schema->set(schema);
-    // allocate data
-    allocate(m_schema->total_bytes());
-    // call walk w/ data
-    walk_schema(this,m_schema,m_data);
-}
-
-
-//============================================
-void 
-Node::walk_schema(const Schema &schema, void *data)
-{
-    m_schema->set(schema);
-    walk_schema(this,m_schema,data);
-}
 
 //============================================
 void 
 Node::walk_schema(Node   *node, 
                   Schema *schema,
-                  void   *data)
+                  void   *data,
+                  bool    copy)
 {
     // we can have an object, list, or leaf
     
@@ -2940,7 +2936,7 @@ Node::walk_schema(Node   *node,
             Node *curr_node = new Node();
             curr_node->set_schema_pointer(curr_schema);
             curr_node->set_parent(node);
-            walk_schema(curr_node,curr_schema,data);
+            walk_schema(curr_node,curr_schema,data,copy);
             node->append_node_pointer(curr_node);
         }                   
     }
@@ -2953,7 +2949,7 @@ Node::walk_schema(Node   *node,
             Node *curr_node = new Node();
             curr_node->set_schema_pointer(curr_schema);
             curr_node->set_parent(node);
-            walk_schema(curr_node,curr_schema,data);
+            walk_schema(curr_node,curr_schema,data,copy);
             node->append_node_pointer(curr_node);
         }
     }
@@ -2962,7 +2958,6 @@ Node::walk_schema(Node   *node,
         // link the current node to the schema
         node->set_schema_pointer(schema);
         node->set_data_pointer(data);
-        
     } 
 }
 

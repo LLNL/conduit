@@ -467,9 +467,9 @@ parse_inline_value(const rapidjson::Value &jvalue,
 
 //============================================
 void 
-walk_schema(Schema *schema,
-            const   rapidjson::Value &jvalue,
-            index_t curr_offset)
+walk_json_schema(Schema *schema,
+                 const   rapidjson::Value &jvalue,
+                 index_t curr_offset)
 {
     // object cases
     if(jvalue.IsObject())
@@ -501,7 +501,7 @@ walk_schema(Schema *schema,
                 for(int i=0;i< length;i++)
                 {
                     Schema curr_schema(DataType::Objects::list());
-                    walk_schema(&curr_schema,dt_value, curr_offset);
+                    walk_json_schema(&curr_schema,dt_value, curr_offset);
                     schema->append(curr_schema);
                     curr_offset += curr_schema.total_bytes();
                 }
@@ -523,7 +523,7 @@ walk_schema(Schema *schema,
                 std::string entry_name(itr->name.GetString());
                 Schema &curr_schema = schema->fetch(entry_name);
                 curr_schema.set(DataType::Objects::object());
-                walk_schema(&curr_schema,itr->value, curr_offset);
+                walk_json_schema(&curr_schema,itr->value, curr_offset);
                 curr_offset += curr_schema.total_bytes();
             }
         }
@@ -534,7 +534,7 @@ walk_schema(Schema *schema,
         for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
         {
             Schema curr_schema(DataType::Objects::list());
-            walk_schema(&curr_schema,jvalue[i], curr_offset);
+            walk_json_schema(&curr_schema,jvalue[i], curr_offset);
             curr_offset += curr_schema.total_bytes();
             // this will coerce to a list
             schema->append(curr_schema);
@@ -551,9 +551,9 @@ walk_schema(Schema *schema,
 
 //============================================
 void 
-walk_schema_pure_json(Node  *node,
-                      Schema *schema,
-                      const rapidjson::Value &jvalue)
+walk_pure_json_schema(Node  *node,
+                     Schema *schema,
+                     const rapidjson::Value &jvalue)
 {
     // object cases
     if(jvalue.IsObject())
@@ -567,7 +567,7 @@ walk_schema_pure_json(Node  *node,
             Node *curr_node  = new Node();
             curr_node->set_schema_pointer(curr_schema);
             curr_node->set_parent(node);
-            walk_schema_pure_json(curr_node,curr_schema,itr->value);
+            walk_pure_json_schema(curr_node,curr_schema,itr->value);
             node->append_node_pointer(curr_node);
 
         }
@@ -597,7 +597,7 @@ walk_schema_pure_json(Node  *node,
                 Node * curr_node = new Node();
                 curr_node->set_schema_pointer(curr_schema);
                 curr_node->set_parent(node);
-                walk_schema_pure_json(curr_node,curr_schema,jvalue[i]);
+                walk_pure_json_schema(curr_node,curr_schema,jvalue[i]);
                 node->append_node_pointer(curr_node);
             }
         }
@@ -644,11 +644,11 @@ walk_schema_pure_json(Node  *node,
 
 //============================================
 void 
-walk_schema(Node   *node,
-            Schema *schema,
-            void   *data,
-            const rapidjson::Value &jvalue,
-            index_t curr_offset)
+walk_json_schema(Node   *node,
+                 Schema *schema,
+                 void   *data,
+                 const rapidjson::Value &jvalue,
+                 index_t curr_offset)
 {
     // object cases
     if(jvalue.IsObject())
@@ -686,7 +686,7 @@ walk_schema(Node   *node,
                     Node *curr_node = new Node();
                     curr_node->set_schema_pointer(curr_schema);
                     curr_node->set_parent(node);
-                    walk_schema(curr_node,curr_schema,data,dt_value, curr_offset);
+                    walk_json_schema(curr_node,curr_schema,data,dt_value, curr_offset);
                     // auto offset only makes sense when we have data
                     if(data != NULL)
                         curr_offset += curr_schema->total_bytes();
@@ -734,7 +734,7 @@ walk_schema(Node   *node,
                 Node *curr_node = new Node();
                 curr_node->set_schema_pointer(curr_schema);
                 curr_node->set_parent(node);
-                walk_schema(curr_node,curr_schema,data,itr->value, curr_offset);
+                walk_json_schema(curr_node,curr_schema,data,itr->value, curr_offset);
                 // auto offset only makes sense when we have data
                 if(data != NULL)
                     curr_offset += curr_schema->total_bytes();
@@ -753,7 +753,7 @@ walk_schema(Node   *node,
             Node *curr_node = new Node();
             curr_node->set_schema_pointer(curr_schema);
             curr_node->set_parent(node);
-            walk_schema(curr_node,curr_schema,data,jvalue[i], curr_offset);
+            walk_json_schema(curr_node,curr_schema,data,jvalue[i], curr_offset);
             // auto offset only makes sense when we have data
             if(data != NULL)
                 curr_offset += curr_schema->total_bytes();
@@ -831,7 +831,7 @@ Generator::walk(Schema &schema) const
         /// TODO: better parse error msg
     }
     index_t curr_offset = 0;
-    conduit::walk_schema(&schema,document,curr_offset);
+    conduit::walk_json_schema(&schema,document,curr_offset);
 }
 
 //============================================
@@ -840,7 +840,6 @@ Generator::walk(Node &node) const
 {
     node.reset();
     // if data is null, we can parse the schema via the other 'walk' method
-    
     if(m_protocol == "json")
     {
         rapidjson::Document document;
@@ -850,7 +849,7 @@ Generator::walk(Node &node) const
             THROW_ERROR("rapidjson parse error");
             /// TODO: better parse error msg
         }
-        conduit::walk_schema_pure_json(&node,
+        conduit::walk_pure_json_schema(&node,
                                        node.schema_pointer(),
                                        document);
     }
@@ -864,11 +863,11 @@ Generator::walk(Node &node) const
             /// TODO: better parse error msg
         }
         index_t curr_offset = 0;
-        conduit::walk_schema(&node,
-                             node.schema_pointer(),
-                             m_data,
-                             document,
-                             curr_offset);
+        conduit::walk_json_schema(&node,
+                                  node.schema_pointer(),
+                                  m_data,
+                                  document,
+                                  curr_offset);
     }
 }
 
