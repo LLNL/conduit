@@ -15,6 +15,8 @@
 #ifndef __CONDUIT_NODE_H
 #define __CONDUIT_NODE_H
 
+// -- conduit lib includes -- 
+
 #include "Core.h"
 #include "Error.h"
 #include "Endianness.h"
@@ -24,6 +26,7 @@
 #include "Generator.h"
 #include "NodeIterator.h"
 
+// -- stl includes -- 
 #include <map>
 #include <vector>
 #include <string>
@@ -51,6 +54,7 @@ class NodeIterator;
 class CONDUIT_API Node
 {
 public:
+    friend class Generator;
     friend class NodeIterator;
 
     /// @name Constructors
@@ -58,15 +62,15 @@ public:
 
     Node(); // empty node
     Node(const Node &node);
-    explicit Node(const DataType &dtype);
 
+    explicit Node(const DataType &dtype);
     explicit Node(const Generator &gen);
     explicit Node(const Schema &schema);
         
     // convience interface:
     Node(const std::string &json_schema, void *data);
     Node(const Schema &schema, void *data);
-    Node(const Schema &schema, const std::string &stream_path, bool mmap=false);    
+    Node(const Schema &schema, const std::string &stream_path, bool mmap=false);
     Node(const DataType &dtype, void *data);
     
     /// TODO: explicit Node(bool  data); // bool may not nicely map, wr coerse to bool8 in this case    
@@ -119,12 +123,35 @@ public:
     ~Node();
 
     void reset();
-    void load(const Schema &schema, const std::string &stream_path);
+
+    // -- begin alt construction -- 
+    /// @name Alternate Construction
+    ///
+    ///@{
+
+    void generate(const Generator &gen);    
+
+    void generate(const std::string &json_schema,
+                  void *data);
+
+    void generate(const std::string &json_schema,
+                  const std::string &protocol,
+                  void *data = NULL);
+    
+    void load(const Schema &schema,
+              const std::string &stream_path);
+
     /// dual file (schema + data) load
     void load(const std::string &ibase);
-    void mmap(const Schema &schema, const std::string &stream_path);
+
+    void mmap(const Schema &schema,
+              const std::string &stream_path);
+
     /// dual file (schema + data) mmap load
     void mmap(const std::string &ibase); 
+    
+    // -- end alt construction -- 
+    ///@}
     
     // -- begin setters (general) -- 
     /// @name Node Setters
@@ -141,7 +168,6 @@ public:
 
     void set(const Schema &schema);
 
-    void set(const Node &node, Schema *schema);
     void set(const Schema &schema, void *data);
     void set(const DataType &dtype, void *data);
 
@@ -287,8 +313,7 @@ public:
              
      void set_path(const std::string &path,const Node& data) 
          {fetch(path).set(data);}
-     void set_path(const std::string &path,const Node& node, Schema* schema)
-         {fetch(path).set(node,schema);}
+
      void set_path(const std::string &path,const DataType& dtype)
          {fetch(path).set(dtype);}
 
@@ -990,7 +1015,7 @@ public:
     Node &operator=(const float64_array &data);
 
     // bytestr use cases:
-    Node &operator=(const char* data);
+    Node &operator=(const char *data);
     Node &operator=(const std::string &data);
 
     ///@}
@@ -1001,6 +1026,9 @@ public:
     const Schema     &schema() const { return *m_schema;}   
 
     Schema           *schema_pointer() {return m_schema;}   
+
+    /* data access */
+    uint8            *data_pointer() {return (uint8*)m_data;}
 
     /* parent access */
     bool             has_parent() const {return m_parent != NULL;}
@@ -1014,14 +1042,11 @@ public:
     
     /* serialization */
     void        serialize(std::vector<uint8> &data) const;
-    void        serialize(uint8 *data, index_t curr_offset) const;
-
     void        serialize(const std::string &stream_path) const;
     
     // In the future, support our own IOStreams (which will provide single interface 
     // for bin,hdf,silo end-points.
     void        serialize(std::ofstream &ofs) const;
-
     void        save(const std::string &obase) const;
     
 
@@ -1048,7 +1073,7 @@ public:
     ///  bool        operator==(const Node &n) const;
 
 
-    // -- begin entry access --    
+    // -- begin entry access --
     /// @name Node::fetch(...) methods
     ///@{
     // Note: `fetch' methods do modify map structure if a path doesn't exists
@@ -1065,9 +1090,6 @@ public:
     // -- begin list append interface methods --
     /// @name Node list append inteface methods
     /// @{
-    void append(Node *node)
-        {m_children.push_back(node);}
-
     void append()
         {list_append(Node());}
 
@@ -1077,8 +1099,6 @@ public:
     void append(const DataType &data)
         {list_append(Node(data));}
 
-    void append(bool8 data)
-        {list_append(Node(data));}        
     void append(int8 data)
         {list_append(Node(data));}
     void append(int16 data)
@@ -1171,7 +1191,7 @@ public:
     Node             &operator[](const std::string &path);
     Node             &operator[](const index_t idx);
 
-    // TODO crs methods to all types
+    // TODO crs methods to all types ?
     int64            to_int64()   const;
     uint64           to_uint64()  const;
     float64          to_float64() const;
@@ -1195,10 +1215,10 @@ public:
                         {return to_json(false,indent);}
 
      void             to_pure_json(std::ostringstream &oss,
-                              index_t indent=2) const 
+                              index_t indent=2) const
                         {to_json(oss,false,indent);}
 
-    std::string      to_simple_json(index_t indent=2, 
+    std::string      to_simple_json(index_t indent=2,
                                     index_t depth=0,
                                     const std::string &pad=" ",
                                     const std::string &eoe="\n") const
@@ -1302,19 +1322,22 @@ public:
     // -- end value access --    
     ///@}
 
-    // these were private
-    void             set(Schema *schema_ptr, void *data_ptr);
+
+    // these are used for construction by the Node & Generator classes
+    void             set_data_pointer(void *data_ptr);
     void             set_schema_pointer(Schema *schema_ptr);
-    
+    void             append_node_pointer(Node *node)
+                        {m_children.push_back(node);}
+
 private:
     void             init(const DataType &dtype);
 
-    void             allocate(index_t dsize); 
-    void             allocate(const DataType &dtype); 
+    void             allocate(index_t dsize);
+    void             allocate(const DataType &dtype);
     void             mmap(const std::string &stream_path,index_t dsize);
     void             cleanup();
     void             release();
-    
+
     void             walk_schema(const Schema &schema);
 
     void             walk_schema(const Schema &schema,
@@ -1329,8 +1352,9 @@ private:
     const void      *element_pointer(index_t idx) const 
                      {return static_cast<char*>(m_data) + dtype().element_index(idx);};
 
-                              
+    void              serialize(uint8 *data, index_t curr_offset) const;
     void              info(Node &res, const std::string &curr_path) const;
+    void              set_node_using_schema_pointer(const Node &node, Schema *schema);
 
     void              compact_to(uint8 *data, index_t curr_offset) const;
 
@@ -1345,7 +1369,7 @@ private:
 
     Node                *m_parent;
     Schema              *m_schema;
-    std::vector<Node*>   m_children;    
+    std::vector<Node*>   m_children;
 
     // TODO: DataContainer
     void     *m_data;

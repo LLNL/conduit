@@ -38,7 +38,7 @@ public:
     T              &element(index_t idx) const;
 
     const DataType &dtype()    const { return m_dtype;} 
-    void           *data_ptr() const { return m_data;}
+    void           *data_pointer() const { return m_data;}
 
     index_t         number_of_elements() const {return m_dtype.number_of_elements();}
 

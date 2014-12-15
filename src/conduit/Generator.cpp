@@ -568,7 +568,8 @@ walk_schema_pure_json(Node  *node,
             curr_node->set_schema_pointer(curr_schema);
             curr_node->set_parent(node);
             walk_schema_pure_json(curr_node,curr_schema,itr->value);
-            node->append(curr_node);                
+            node->append_node_pointer(curr_node);
+
         }
     }
     // List case 
@@ -597,7 +598,7 @@ walk_schema_pure_json(Node  *node,
                 curr_node->set_schema_pointer(curr_schema);
                 curr_node->set_parent(node);
                 walk_schema_pure_json(curr_node,curr_schema,jvalue[i]);
-                node->append(curr_node);
+                node->append_node_pointer(curr_node);
             }
         }
     }
@@ -689,7 +690,7 @@ walk_schema(Node   *node,
                     // auto offset only makes sense when we have data
                     if(data != NULL)
                         curr_offset += curr_schema->total_bytes();
-                    node->append(curr_node);
+                    node->append_node_pointer(curr_node);
                 }
                 
             }
@@ -704,7 +705,8 @@ walk_schema(Node   *node,
                 {
                     // node needs to link schema ptr
                     schema->set(dtype);
-                    node->set(schema,data);
+                    node->set_schema_pointer(schema);
+                    node->set_data_pointer(data);
                 }
                 else
                 {
@@ -736,7 +738,7 @@ walk_schema(Node   *node,
                 // auto offset only makes sense when we have data
                 if(data != NULL)
                     curr_offset += curr_schema->total_bytes();
-                node->append(curr_node);                
+                node->append_node_pointer(curr_node);                
             }
             
         }
@@ -755,7 +757,7 @@ walk_schema(Node   *node,
             // auto offset only makes sense when we have data
             if(data != NULL)
                 curr_offset += curr_schema->total_bytes();
-            node->append(curr_node);
+            node->append_node_pointer(curr_node);
         }
         
     }
@@ -769,7 +771,9 @@ walk_schema(Node   *node,
         if(data != NULL)
         {
              // node needs to link schema ptr 
-             node->set(schema,data);
+             node->set_schema_pointer(schema);
+             node->set_data_pointer(data);
+             
         }
         else
         {
@@ -791,7 +795,7 @@ walk_schema(Node   *node,
 Generator::Generator(const std::string &json_schema)
 :m_json_schema(json_schema),
  m_protocol("conduit"),
- m_data_ptr(NULL)
+ m_data(NULL)
 {}
 
 
@@ -800,7 +804,7 @@ Generator::Generator(const std::string &json_schema,
                      void *data)
 :m_json_schema(json_schema),
  m_protocol("conduit"),
- m_data_ptr(data)
+ m_data(data)
 {}
 
 //============================================
@@ -809,7 +813,7 @@ Generator::Generator(const std::string &json_schema,
                      void *data)
 :m_json_schema(json_schema),
  m_protocol(protocol),
- m_data_ptr(data)
+ m_data(data)
 {}
 
 
@@ -862,7 +866,7 @@ Generator::walk(Node &node) const
         index_t curr_offset = 0;
         conduit::walk_schema(&node,
                              node.schema_pointer(),
-                             m_data_ptr,
+                             m_data,
                              document,
                              curr_offset);
     }

@@ -117,7 +117,10 @@ public:
     index_t           number_of_entries() const;
 
     void              compact_to(Schema &s_dest) const ;
-
+    
+    void    set_root(bool value) {m_root = value;}
+    bool    is_root() const { return m_root;}
+    
     ///
     /// Object Interface
     ///
@@ -125,11 +128,6 @@ public:
     void    paths(std::vector<std::string> &paths) const;
     void    remove(const std::string &path);
 
-
-    void    set_root(bool value) {m_root = value;}
-    bool    is_root() const { return m_root;}
-    
-    
     ///
     /// List Interface
     ///

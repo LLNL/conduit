@@ -28,6 +28,7 @@ namespace conduit
 class CONDUIT_API Generator
 {
 public:
+
     friend class Node;
     friend class Schema;
     
@@ -49,7 +50,7 @@ public:
 private:
     std::string  m_json_schema;
     std::string  m_protocol;
-    void        *m_data_ptr;
+    void        *m_data;
 
 };
 

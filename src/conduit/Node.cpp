@@ -474,11 +474,11 @@ Node::mmap(const Schema &schema, const std::string &stream_path)
 void 
 Node::set(const Node &node)
 {
-    set(node, NULL);
+    set_node_using_schema_pointer(node, NULL);
 }
 
 void
-Node::set(const Node& node, Schema* schema)
+Node::set_node_using_schema_pointer(const Node &node, Schema *schema)
 {
     if (node.dtype().id() != DataType::EMPTY_T)
     {
@@ -503,7 +503,7 @@ Node::set(const Node& node, Schema* schema)
             {
                 Node *child = new Node();
                 child->m_parent = this;
-                child->set(*node.m_children[i],m_schema->children()[i]);
+                child->set_node_using_schema_pointer(*node.m_children[i],m_schema->children()[i]);
                 m_children.push_back(child);
             }
         }
@@ -515,24 +515,12 @@ Node::set(const Node& node, Schema* schema)
             }
             else
             {
+                ///
+                /// TODO: We are doing a copy here, should we also compact?
+                ///
                 init(node.dtype());
                 memcpy(m_data, node.m_data, m_schema->total_bytes());
             }
-            
-//            // check if compatiable
-//            if (node.m_alloced) 
-//            {
-//                // TODO: compaction?
-//                init(node.dtype());
-//                memcpy(m_data, node.m_data, m_schema->total_bytes());
-//            }
-//            else 
-//            {
-//                // TODO: this needs to be handled by set external ...
-//                m_alloced = false;
-//                m_data    = node.m_data;
-//                m_schema->set(node.schema());
-//            }
         }
     }
     else
@@ -1482,7 +1470,7 @@ Node::set_external(const bool8_array  &data)
 {
     release();
     m_schema->set(data.dtype());
-    m_data   = data.data_ptr();
+    m_data   = data.data_pointer();
 }
 
 
@@ -1496,7 +1484,7 @@ Node::set_external(const int8_array  &data)
 {
     release();
     m_schema->set(data.dtype());
-    m_data   = data.data_ptr();
+    m_data   = data.data_pointer();
 }
 
 //============================================
@@ -1505,7 +1493,7 @@ Node::set_external(const int16_array  &data)
 {
     release();
     m_schema->set(data.dtype());
-    m_data  = data.data_ptr();
+    m_data  = data.data_pointer();
 }
 
 //============================================
@@ -1514,7 +1502,7 @@ Node::set_external(const int32_array  &data)
 {
     release();
     m_schema->set(data.dtype());
-    m_data  = data.data_ptr();
+    m_data  = data.data_pointer();
 }
 
 //============================================
@@ -1523,7 +1511,7 @@ Node::set_external(const int64_array  &data)
 {
     release();
     m_schema->set(data.dtype());
-    m_data  = data.data_ptr();
+    m_data  = data.data_pointer();
 }
 
 
@@ -1538,7 +1526,7 @@ Node::set_external(const uint8_array  &data)
 {
     release();
     m_schema->set(data.dtype());
-    m_data  = data.data_ptr();
+    m_data  = data.data_pointer();
 }
 
 //============================================
@@ -1547,7 +1535,7 @@ Node::set_external(const uint16_array  &data)
 {
     release();
     m_schema->set(data.dtype());
-    m_data  = data.data_ptr();
+    m_data  = data.data_pointer();
 }
 
 //============================================
@@ -1556,7 +1544,7 @@ Node::set_external(const uint32_array  &data)
 {
     release();
     m_schema->set(data.dtype());
-    m_data  = data.data_ptr();
+    m_data  = data.data_pointer();
 }
 
 //============================================
@@ -1565,7 +1553,7 @@ Node::set_external(const uint64_array  &data)
 {
     release();
     m_schema->set(data.dtype());
-    m_data  = data.data_ptr();
+    m_data  = data.data_pointer();
 }
 //============================================
 /// float array types
@@ -1577,7 +1565,7 @@ Node::set_external(const float32_array  &data)
 {
     release();
     m_schema->set(data.dtype());
-    m_data  = data.data_ptr();
+    m_data  = data.data_pointer();
 }
 
 //============================================
@@ -1586,7 +1574,7 @@ Node::set_external(const float64_array  &data)
 {
     release();
     m_schema->set(data.dtype());
-    m_data  = data.data_ptr();
+    m_data  = data.data_pointer();
 }
 
 
@@ -1653,12 +1641,8 @@ Node::set_schema_pointer(Schema *schema_ptr)
     
 //============================================
 void
-Node::set(Schema *schema_ptr,void *data)
+Node::set_data_pointer(void *data)
 {
-    ///
-    /// TODO: SET_SEMANTICS this must obey copy semantics...
-    ///
-    set_schema_pointer(schema_ptr);
     release();
     m_data    = data;    
 }
@@ -2022,6 +2006,32 @@ Node::save(const std::string &obase) const
     std::string ofdata   = obase + ".conduit_bin";
     res.schema().save(ofschema);
     res.serialize(ofdata);
+}
+
+//============================================
+void
+Node::generate(const Generator &gen)
+{
+    gen.walk(*this);
+}
+
+//============================================
+void
+Node::generate(const std::string &json_schema,
+               void *data)
+{
+    Generator g(json_schema,data);
+    generate(g);
+}
+    
+//============================================
+void
+Node::generate(const std::string &json_schema,
+               const std::string &protocol,
+               void *data)
+{
+    Generator g(json_schema,protocol,data);
+    generate(g);
 }
 
 
@@ -2885,7 +2895,7 @@ Node::list_append(const Node &node)
     Schema *schema_ptr = m_schema->fetch_pointer(idx);
 
     Node *res_node = new Node();
-    res_node->set(node,schema_ptr);
+    res_node->set_node_using_schema_pointer(node,schema_ptr);
     res_node->m_parent=this;
     m_children.push_back(res_node);
 }
@@ -2931,7 +2941,7 @@ Node::walk_schema(Node   *node,
             curr_node->set_schema_pointer(curr_schema);
             curr_node->set_parent(node);
             walk_schema(curr_node,curr_schema,data);
-            node->append(curr_node);
+            node->append_node_pointer(curr_node);
         }                   
     }
     else if(schema->dtype().id() == DataType::LIST_T)
@@ -2944,13 +2954,15 @@ Node::walk_schema(Node   *node,
             curr_node->set_schema_pointer(curr_schema);
             curr_node->set_parent(node);
             walk_schema(curr_node,curr_schema,data);
-            node->append(curr_node);
+            node->append_node_pointer(curr_node);
         }
     }
     else
     {
         // link the current node to the schema
-        node->set(schema,data);
+        node->set_schema_pointer(schema);
+        node->set_data_pointer(data);
+        
     } 
 }
 
