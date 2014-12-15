@@ -167,7 +167,7 @@ public:
 
     void set(const Schema &schema);
 
-//    void set(const Schema &schema, void *data);
+    void set(const Schema &schema, void *data);
     void set(const DataType &dtype, void *data);
 
     //
@@ -1088,91 +1088,51 @@ public:
     // -- begin list append interface methods --
     /// @name Node list append inteface methods
     /// @{
-    void append()
-        {list_append(Node());}
+    void append();
+    void append(const Node &node);
 
-    void append(const Node &node)
-        {list_append(Node(node));}
+    void append(const DataType &data);
 
-    void append(const DataType &data)
-        {list_append(Node(data));}
+    void append(int8 data);
+    void append(int16 data);
+    void append(int32 data);
+    void append(int64 data);
 
-    void append(int8 data)
-        {list_append(Node(data));}
-    void append(int16 data)
-        {list_append(Node(data));}
-    void append(int32 data)
-        {list_append(Node(data));}
-    void append(int64 data)
-        {list_append(Node(data));}
+    void append(uint8 data);
+    void append(uint16 data);
+    void append(uint32 data);
+    void append(uint64 data);
+    void append(float32 data);
+    void append(float64 data);
 
-    void append(uint8 data)
-        {list_append(Node(data));}
-    void append(uint16 data)
-        {list_append(Node(data));}
-    void append(uint32 data)
-        {list_append(Node(data));}
-    void append(uint64 data)
-        {list_append(Node(data));}
-    void append(float32 data)
-        {list_append(Node(data));}
-    void append(float64 data)
-        {list_append(Node(data));}
+    void append(const std::vector<int8>   &data);
+    void append(const std::vector<int16>  &data);
+    void append(const std::vector<int32>  &data);
+    void append(const std::vector<int64>  &data);
 
-    void append(const std::vector<int8>   &data)
-        {list_append(Node(data));}
-    void append(const std::vector<int16>  &data)
-        {list_append(Node(data));}
-    void append(const std::vector<int32>  &data)
-        {list_append(Node(data));}
-    void append(const std::vector<int64>  &data)
-        {list_append(Node(data));}
+    void append(const std::vector<uint8>   &data);
+    void append(const std::vector<uint16>  &data);
+    void append(const std::vector<uint32>  &data);
+    void append(const std::vector<uint64>  &data);
+    void append(const std::vector<float32> &data);
+    void append(const std::vector<float64> &data);
 
-    void append(const std::vector<uint8>   &data)
-        {list_append(Node(data));}
-    void append(const std::vector<uint16>  &data)
-        {list_append(Node(data));}
-    void append(const std::vector<uint32>  &data)
-        {list_append(Node(data));}
-    void append(const std::vector<uint64>  &data)
-        {list_append(Node(data));}
-    void append(const std::vector<float32> &data)
-        {list_append(Node(data));}
-    void append(const std::vector<float64> &data)
-        {list_append(Node(data));}
+    void append(const bool8_array  &data);
 
-    void append(const bool8_array  &data)
-        {list_append(Node(data));}
+    void append(const int8_array  &data);
+    void append(const int16_array &data);
+    void append(const int32_array &data);
+    void append(const int64_array &data);
 
-    void append(const int8_array  &data)
-        {list_append(Node(data));}
-    void append(const int16_array &data)
-        {list_append(Node(data));}
-    void append(const int32_array &data)
-        {list_append(Node(data));}
-    void append(const int64_array &data)
-        {list_append(Node(data));}
-
-    void append(const uint8_array  &data)
-        {list_append(Node(data));}
-    void append(const uint16_array &data)
-        {list_append(Node(data));}
-    void append(const uint32_array &data)
-        {list_append(Node(data));}
-    void append(const uint64_array &data)
-        {list_append(Node(data));}
-
-    void append(const float32_array &data)
-        {list_append(Node(data));}
-    void append(const float64_array &data)
-        {list_append(Node(data));}
+    void append(const uint8_array  &data);
+    void append(const uint16_array &data);
+    void append(const uint32_array &data);
+    void append(const uint64_array &data);
     
-    void append(const std::string &data)
-        {
-            index_t idx = m_children.size(); 
-            append();
-            m_children[idx]->set(data);
-        }
+    void append(const float32_array &data);
+    void append(const float64_array &data);
+    
+    void append(const std::string &data);
 
     // -- end list append interface methods --
     ///@}
@@ -1321,12 +1281,21 @@ public:
     ///@}
 
 
-    // these are used for construction by the Node & Generator classes
+    /// @name Interface Warts 
+    ///@{
+    /// these are used for construction by the Node & Generator classes
+    /// it would be nice to make them private, however to keep rapid json
+    /// headers out of the conduit interface, the json walking methods
+    /// aren't part of any public interface. We haven't found the right way
+    /// to use 'friend' to avoid this issue
+
     void             set_data_pointer(void *data_ptr);
     void             set_schema_pointer(Schema *schema_ptr);
     void             append_node_pointer(Node *node)
                         {m_children.push_back(node);}
     void             set_parent(Node *parent) { m_parent = parent;}
+
+    ///@}
 
 private:
     // -- helpers for init, memory allocation, and cleanup --  
@@ -1360,7 +1329,7 @@ private:
     void              init_defaults();
     void              init_list();
     void              init_object();
-    void              list_append(const Node &node);
+    index_t           list_append();
 
     Node                *m_parent;
     Schema              *m_schema;

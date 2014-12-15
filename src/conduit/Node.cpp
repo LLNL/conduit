@@ -301,16 +301,6 @@ Node::Node(const DataType &dtype)
     set(dtype);
 }
 
-//============================================
-/// Bool type
-//============================================
-
-//============================================
-Node::Node(bool8  data)
-{
-    init_defaults();
-    set(data);
-}
 
 //============================================
 /// int types
@@ -2895,25 +2885,314 @@ Node::init_object()
 {
     init(DataType::Objects::object());
 }
-    
+
+///////////////////////////////////////////////////////////////////////////////
+// -- begin append imp -- // 
+///////////////////////////////////////////////////////////////////////////////
+
 //============================================
-void
-Node::list_append(const Node &node)
+void 
+Node::append()
+{
+    list_append();
+}
+
+//============================================
+void 
+Node::append(const Node &node)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(node);
+}
+
+//============================================
+void 
+Node::append(const DataType &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+// int types
+
+//============================================
+void 
+Node::append(int8 data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(int16 data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(int32 data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(int64 data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+// uint types
+
+//============================================
+void 
+Node::append(uint8 data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(uint16 data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(uint32 data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(uint64 data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(float32 data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(float64 data)
+{   
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+// std::vector int types
+
+//============================================
+void 
+Node::append(const std::vector<int8>   &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(const std::vector<int16>  &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(const std::vector<int32>  &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(const std::vector<int64>  &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+// std::vector uint types
+
+//============================================
+void 
+Node::append(const std::vector<uint8>   &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(const std::vector<uint16>  &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(const std::vector<uint32>  &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(const std::vector<uint64>  &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(const std::vector<float32> &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(const std::vector<float64> &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(const bool8_array  &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+
+//============================================
+void 
+Node::append(const int8_array  &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(const int16_array &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(const int32_array &data)
+{   
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(const int64_array &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(const uint8_array  &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(const uint16_array &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(const uint32_array &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+//============================================
+void 
+Node::append(const uint64_array &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+//============================================
+void 
+Node::append(const float32_array &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+//============================================
+void 
+Node::append(const float64_array &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+//============================================
+void 
+Node::append(const std::string &data)
+{
+    index_t idx = list_append();
+    m_children[idx]->set(data);
+}
+
+
+//============================================
+index_t
+Node::list_append()
 {
     init_list();
     index_t idx = m_children.size();
     //
     // This makes a proper copy of the schema for us to use
     //
-    m_schema->append(node.schema());
+    m_schema->append();
     Schema *schema_ptr = m_schema->fetch_pointer(idx);
 
     Node *res_node = new Node();
-    res_node->set_node_using_schema_pointer(node,schema_ptr);
-    
-    //    res_node->set_schema_pointer(schema_ptr);
+    res_node->set_schema_pointer(schema_ptr);
     res_node->m_parent=this;
     m_children.push_back(res_node);
+    return idx;
 }
 
 
