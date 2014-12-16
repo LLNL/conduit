@@ -200,16 +200,6 @@ Node::Node(const std::vector<float64>  &data)
    set(data);
 }
 
-//============================================
-/* bool8 array*/
-//============================================
-
-//============================================
-Node::Node(const bool8_array  &data)
-{
-   init_defaults();
-   set(data);
-}
 
 //============================================
 /* int array types */
@@ -532,15 +522,6 @@ Node::set(const DataType &dtype)
     init(dtype);
 }
     
-    
-//============================================
-void 
-Node::set_bool8(bool8 data)
-{
-    init(DataType::Scalars::bool8());
-    *(bool8*)((char*)m_data + schema().element_index(0)) = data;
-}
-    
 
 //============================================
 /// int types
@@ -796,16 +777,6 @@ Node::set(const std::vector<float64>  &data)
 }
 
 //============================================
-/// bool8 array
-//============================================
-void 
-Node::set(const bool8_array  &data)
-{
-    init(DataType::Arrays::bool8(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
-}
-
-//============================================
 /// int array types
 //============================================
 
@@ -942,22 +913,6 @@ Node::set(const char *data, index_t dtype_id)
 // --- end set ---
 
 // --- begin set ptr variants -- 
-
-//============================================
-void 
-Node::set(bool8 *data,
-          index_t num_elements,
-          index_t offset,
-          index_t stride,
-          index_t element_bytes,
-          index_t endianness)
-{
-    set(bool8_array(data,DataType::Arrays::bool8(num_elements,
-                                                 offset,
-                                                 stride,
-                                                 element_bytes,
-                                                 endianness)));
-}
 
 //============================================
 void 
@@ -1127,25 +1082,6 @@ Node::set(float64 *data,
 // --- begin set_external ---
 
     
-//============================================
-void 
-Node::set_external(bool8 *data,
-                   index_t num_elements,
-                   index_t offset,
-                   index_t stride,
-                   index_t element_bytes,
-                   index_t endianness)
-{
-    release();
-    m_schema->set(DataType::Arrays::bool8(num_elements,
-                                          offset,
-                                          stride,
-                                          element_bytes,
-                                          endianness));
-    m_data  = data;
-}
-    
-
 //============================================
 /// int types
 //============================================
@@ -1451,20 +1387,6 @@ Node::set_external(std::vector<float64>  &data)
     release();
     m_schema->set(DataType::Arrays::float64((index_t)data.size()));
     m_data  = &data[0];
-}
-
-
-//============================================
-/// bool8 array
-//============================================
-
-//============================================
-void 
-Node::set_external(const bool8_array  &data)
-{
-    release();
-    m_schema->set(data.dtype());
-    m_data   = data.data_pointer();
 }
 
 
@@ -2553,7 +2475,6 @@ Node::to_int64() const
 {
     switch(dtype().id())
     {
-        case DataType::BOOL8_T: return (int64)as_bool8();
         /* ints */
         case DataType::INT8_T:  return (int64)as_int8();
         case DataType::INT16_T: return (int64)as_int16();
@@ -2578,7 +2499,6 @@ Node::to_uint64() const
 {
     switch(dtype().id())
     {
-        case DataType::BOOL8_T: return (uint64)as_bool8();
         /* ints */
         case DataType::INT8_T:  return (uint64)as_int8();
         case DataType::INT16_T: return (uint64)as_int16();
@@ -2602,7 +2522,6 @@ Node::to_float64() const
 {
     switch(dtype().id())
     {
-        case DataType::BOOL8_T: return (float64)as_bool8();
         /* ints */
         case DataType::INT8_T:  return (float64)as_int8();
         case DataType::INT16_T: return (float64)as_int16();
@@ -2627,7 +2546,6 @@ Node::to_index_t() const
 {
     switch(dtype().id())
     {
-        case DataType::BOOL8_T: return (index_t)as_bool8();
         /* ints */
         case DataType::INT8_T:  return (index_t)as_int8();
         case DataType::INT16_T: return (index_t)as_int16();
@@ -2709,8 +2627,6 @@ Node::to_json(std::ostringstream &oss,
         std::ostringstream value_oss; 
         switch(dtype().id())
         {
-            /* bool*/
-            case DataType::BOOL8_T: as_bool8_array().to_json(value_oss); break;
             /* ints */
             case DataType::INT8_T:  as_int8_array().to_json(value_oss); break;
             case DataType::INT16_T: as_int16_array().to_json(value_oss); break;
@@ -3076,14 +2992,6 @@ Node::append(const std::vector<float32> &data)
 //============================================
 void 
 Node::append(const std::vector<float64> &data)
-{
-    index_t idx = list_append();
-    m_children[idx]->set(data);
-}
-
-//============================================
-void 
-Node::append(const bool8_array  &data)
 {
     index_t idx = list_append();
     m_children[idx]->set(data);

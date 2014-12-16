@@ -46,12 +46,6 @@ about(Node &n)
     // Type Info Map
     Node &nn = n["native_typemap"];
 
-    // bool
-#ifdef CONDUIT_BOOL8_NATIVE_TYPENAME
-    nn["bool8"] = CONDUIT_BOOL8_NATIVE_TYPENAME;
-#else
-    nn["bool8"] = "<unmapped>";
-#endif
     // ints
 #ifdef CONDUIT_INT8_NATIVE_TYPENAME
     nn["int8"] = CONDUIT_INT8_NATIVE_TYPENAME;

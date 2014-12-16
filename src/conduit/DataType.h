@@ -39,12 +39,11 @@ public:
         EMPTY_T = 0, // default
         OBJECT_T,    // object
         LIST_T,      // list
-        BOOL8_T,     // boolean
-        INT8_T,      // int8 and  int8_array
+        INT8_T,      // int8 and int8_array
         INT16_T,     // int16 and int16_array
         INT32_T,     // int32 and int32_array
         INT64_T,     // int64 and int64_array
-        UINT8_T,     // int8 and  int8_array
+        UINT8_T,     // int8 and int8_array
         UINT16_T,    // uint16 and uint16_array
         UINT32_T,    // uint32 and uint32_array
         UINT64_T,    // uint64 and uint64_array
@@ -68,7 +67,6 @@ public:
     class Scalars
     {    
     public:
-        static const DataType &bool8() {return m_bool8;}
         /* int scalars */
         static const DataType &int8()  {return m_int8;}
         static const DataType &int16() {return m_int16;}
@@ -82,8 +80,6 @@ public:
         /* float scalars */
         static const DataType &float32() {return m_float32;}
         static const DataType &float64() {return m_float64;}
-
-        static DataType bool8(index_t offset) {return DataType::Arrays::bool8(1,offset);}
         /* int scalars */
         static DataType int8(index_t offset)  {return DataType::Arrays::int8(1,offset);}
         static DataType int16(index_t offset) {return DataType::Arrays::int16(1,offset);}
@@ -99,7 +95,6 @@ public:
         static DataType float64(index_t offset) {return DataType::Arrays::float64(1,offset);}
 
     private:
-        static DataType m_bool8;
         /* int scalars */
         static DataType m_int8;
         static DataType m_int16;
@@ -118,12 +113,6 @@ public:
     class Arrays
     {    
     public:
-        static DataType bool8(index_t num_elements,
-                              index_t offset = 0,
-                              index_t stride = sizeof(conduit::bool8),
-                              index_t element_bytes = sizeof(conduit::bool8),
-                              index_t endianness = Endianness::DEFAULT_T);
-
         /* int arrays */
         static DataType int8(index_t num_elements,
                              index_t offset = 0,

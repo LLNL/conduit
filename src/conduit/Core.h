@@ -28,7 +28,6 @@ namespace conduit
 
 class Node;
 
-typedef conduit_bool8   bool8;
 
 typedef conduit_uint8   uint8;
 typedef conduit_uint16  uint16;

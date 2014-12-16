@@ -100,8 +100,6 @@ public:
     explicit Node(const std::vector<float32>  &data);
     explicit Node(const std::vector<float64>  &data);
 
-    explicit Node(const bool8_array  &data);    
-
     explicit Node(const int8_array  &data);
     explicit Node(const int16_array &data);
     explicit Node(const int32_array &data);
@@ -170,13 +168,6 @@ public:
     void set(const Schema &schema, void *data);
     void set(const DataType &dtype, void *data);
 
-    //
-    // Note: when bool8 maps to a bool, any pointer type will
-    // implicilty convert to bool. To avoid confusion, we 
-    // have an explicit set_bool8, instead of set(bool8 val)
-    //
-    void set_bool8(bool8 data);
-
     void set(int8 data);
     void set(int16 data);
     void set(int32 data);
@@ -204,8 +195,6 @@ public:
     void set(const std::vector<float32> &data);
     void set(const std::vector<float64> &data);
 
-    void set(const bool8_array  &data);
-
     void set(const int8_array  &data);
     void set(const int16_array &data);
     void set(const int32_array &data);
@@ -222,14 +211,6 @@ public:
     // bytestr use cases:
     void set(const char* data, index_t dtype_id = DataType::CHAR8_STR_T);
     void set(const std::string &data);
-    
-    // set pointer cases, these use the set array cases above
-    void set(bool8 *data,
-             index_t num_elements = 1,
-             index_t offset = 0,
-             index_t stride = sizeof(conduit::bool8),
-             index_t element_bytes = sizeof(conduit::bool8),
-             index_t endianness = Endianness::DEFAULT_T);
 
     void set(int8  *data,
              index_t num_elements = 1,
@@ -323,9 +304,6 @@ public:
          {fetch(path).set(schema,data);}
      void set_path(const std::string &path,const DataType &dtype, void* data)
          {fetch(path).set(dtype,data);}
-         
-     void set_path(const std::string &path,bool8 data)
-         {fetch(path).set(data);}         
 
      void set_path(const std::string &path,int8 data)
          {fetch(path).set(data);}
@@ -376,9 +354,6 @@ public:
      void set_path(const std::string &path,const std::vector<float64> &data)
         {fetch(path).set(data);}
 
-     void set_path(const std::string &path,const bool8_array  &data)
-        {fetch(path).set(data);}
-
      void set_path(const std::string &path,const int8_array  &data)
         {fetch(path).set(data);}
      void set_path(const std::string &path,const int16_array &data)
@@ -413,20 +388,6 @@ public:
         {fetch(path).set(data);}
         
      // set pointer cases, these use the set array cases above
-     void set_path(const std::string &path,
-                   bool8 *data,
-                   index_t num_elements = 1,
-                   index_t offset = 0,
-                   index_t stride = sizeof(conduit::bool8),
-                   index_t element_bytes = sizeof(conduit::bool8),
-                   index_t endianness = Endianness::DEFAULT_T)
-        {fetch(path).set(data,
-                         num_elements,
-                         offset,
-                         stride,
-                         element_bytes,
-                         endianness);}
-        
      void set_path(const std::string &path,int8  *data,
                    index_t num_elements = 1,
                    index_t offset = 0,
@@ -572,13 +533,6 @@ public:
     /// @name Node::set_external(...) methods
     /// set_external(...) methods allow the node to point to external memory.
     ///@{
-    void set_external(bool8 *data,
-                      index_t num_elements = 1,
-                      index_t offset = 0,
-                      index_t stride = sizeof(conduit::bool8),
-                      index_t element_bytes = sizeof(conduit::bool8),
-                      index_t endianness = Endianness::DEFAULT_T);
-
     void set_external(int8  *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
@@ -663,8 +617,6 @@ public:
     void set_external(std::vector<float32> &data);
     void set_external(std::vector<float64> &data);
 
-    void set_external(const bool8_array  &data);
-
     void set_external(const int8_array  &data);
     void set_external(const int16_array &data);
     void set_external(const int32_array &data);
@@ -694,21 +646,6 @@ public:
     /// set_path_external(...) methods allow the node to point to external memory, 
     /// and allow you to use an explciit path for the destination node.
     ///@{
-
-    void set_path_external(const std::string &path,
-                           bool8 *data,
-                           index_t num_elements = 1,
-                           index_t offset = 0,
-                           index_t stride = sizeof(conduit::bool8),
-                           index_t element_bytes = sizeof(conduit::bool8),
-                           index_t endianness = Endianness::DEFAULT_T)
-                         {fetch(path).set_external(data,
-                                                   num_elements,
-                                                   offset,
-                                                   stride,
-                                                   element_bytes,
-                                                   endianness);
-                         }
 
     void set_path_external(const std::string &path,
                            int8  *data,
@@ -904,10 +841,6 @@ public:
                      {fetch(path).set_external(data);}
 
     void set_path_external(const std::string &path,
-                           const bool8_array  &data)
-                     {fetch(path).set_external(data);} 
-
-    void set_path_external(const std::string &path,
                            const int8_array  &data)
                      {fetch(path).set_external(data);}
     void set_path_external(const std::string &path,
@@ -968,11 +901,6 @@ public:
     ///@{                               
     Node &operator=(const Node &node);
     Node &operator=(DataType dtype);
-
-    ///
-    /// Note: there is not bool8 operator b/c any pointer type
-    /// in c++ will impliclity cast to bool (which is one of the end points for bool)
-    ///
 
     Node &operator=(int8 data);
     Node &operator=(int16 data);
@@ -1090,7 +1018,6 @@ public:
     /// @{
     void append();
     void append(const Node &node);
-
     void append(const DataType &data);
 
     void append(int8 data);
@@ -1117,7 +1044,6 @@ public:
     void append(const std::vector<float32> &data);
     void append(const std::vector<float64> &data);
 
-    void append(const bool8_array  &data);
 
     void append(const int8_array  &data);
     void append(const int16_array &data);
@@ -1212,8 +1138,6 @@ public:
     // -- begin value access --    
     /// @name Node::as_{dtype}(...) methods
     ///@{
-    bool8            as_bool8()   const { return *((bool8*)element_pointer(0));}
-
     int8             as_int8()   const  { return *((int8*)element_pointer(0));}
     int16            as_int16()  const  { return *((int16*)element_pointer(0));}
     int32            as_int32()  const  { return *((int32*)element_pointer(0));}
@@ -1227,8 +1151,6 @@ public:
     float32          as_float32() const { return *((float32*)element_pointer(0));}
     float64          as_float64() const { return *((float64*)element_pointer(0));}
 
-    bool8           *as_bool8_ptr()    { return (bool8*)element_pointer(0);}
-
     int8            *as_int8_ptr()     { return (int8*)element_pointer(0);}
     int16           *as_int16_ptr()    { return (int16*)element_pointer(0);}
     int32           *as_int32_ptr()    { return (int32*)element_pointer(0);}
@@ -1238,12 +1160,11 @@ public:
     uint16          *as_uint16_ptr()   { return (uint16*)element_pointer(0);}
     uint32          *as_uint32_ptr()   { return (uint32*)element_pointer(0);}
     uint64          *as_uint64_ptr()   { return (uint64*)element_pointer(0);}
-        
+
     float32         *as_float32_ptr()  { return (float32*)element_pointer(0);}
     float64         *as_float64_ptr()  { return (float64*)element_pointer(0);}
-    
-    bool8_array      as_bool8_array()  { return bool8_array(m_data,dtype());}
-    
+
+
     int8_array       as_int8_array()   { return int8_array(m_data,dtype());}
     int16_array      as_int16_array()  { return int16_array(m_data,dtype());}
     int32_array      as_int32_array()  { return int32_array(m_data,dtype());}
@@ -1257,8 +1178,6 @@ public:
     float32_array    as_float32_array() { return float32_array(m_data,dtype());}
     float64_array    as_float64_array() { return float64_array(m_data,dtype());}
 
-    bool8_array      as_bool8_array() const { return bool8_array(m_data,dtype());}
-    
     int8_array       as_int8_array()  const { return int8_array(m_data,dtype());}
     int16_array      as_int16_array() const { return int16_array(m_data,dtype());}
     int32_array      as_int32_array() const { return int32_array(m_data,dtype());}
@@ -1316,19 +1235,25 @@ private:
     const void      *element_pointer(index_t idx) const 
                      {return static_cast<char*>(m_data) + dtype().element_index(idx);};
 
-    void              serialize(uint8 *data, index_t curr_offset) const;
-    void              info(Node &res, const std::string &curr_path) const;
+    ///
+    /// TODO: This guy is ugly, currently only used by Node::set(const Node &n)
+    /// Need to figure out of walk_schema can replace it.
+    ///
     void              set_node_using_schema_pointer(const Node &node, Schema *schema);
 
+
+    void              serialize(uint8 *data, index_t curr_offset) const;
+    void              info(Node &res, const std::string &curr_path) const;
     void              compact_to(uint8 *data, index_t curr_offset) const;
 
-    // for leaf types
+    // compact helper for leaf types
     void              compact_elements_to(uint8 *data) const;
 
-    /* init helpers */
+    // init helpers
     void              init_defaults();
     void              init_list();
     void              init_object();
+    // list helper
     index_t           list_append();
 
     Node                *m_parent;

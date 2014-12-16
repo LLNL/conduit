@@ -111,15 +111,6 @@ DataArray<T>::to_json(std::ostringstream &oss) const
         switch(m_dtype.id())
         {
             /// TODO: This could be orged better
-            /* bool */
-            case DataType::BOOL8_T:
-            {
-                if(element(idx))
-                    oss << "true";
-                else
-                    oss << "false";
-                break;
-            } 
             /* ints */
             case DataType::INT8_T:  oss << (int64) element(idx); break;
             case DataType::INT16_T: oss << (int64) element(idx); break;
@@ -142,16 +133,6 @@ DataArray<T>::to_json(std::ostringstream &oss) const
         oss << "]";
 }
 
-//============================================
-template <typename T> 
-void            
-DataArray<T>::set(const bool8 *values, index_t num_elements)
-{ 
-    for(index_t i=0;i<num_elements;i++)
-    {
-        this->element(i) = (T)values[i];
-    }
-}
 
 //============================================
 template <typename T> 
@@ -283,8 +264,6 @@ DataArray<T>::compact_elements_to(uint8 *data) const
 
 
 /// Use explicit temp inst to generate the instances we need
-template class DataArray<bool8>;
-
 template class DataArray<int8>;
 template class DataArray<int16>;
 template class DataArray<int32>;

@@ -45,8 +45,6 @@ public:
     std::string     to_json() const;
     void            to_json(std::ostringstream &oss) const;
 
-    void            set(const bool8 *values, index_t num_elements);
-
     void            set(const int8  *values, index_t num_elements);
     void            set(const int16 *values, index_t num_elements);
     void            set(const int32 *values, index_t num_elements);
@@ -98,7 +96,6 @@ private:
 };
 
 
-typedef DataArray<bool8>    bool8_array;
 typedef DataArray<int8>     int8_array;
 typedef DataArray<int16>    int16_array;
 typedef DataArray<int32>    int32_array;

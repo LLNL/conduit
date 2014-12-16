@@ -44,7 +44,6 @@
         typedef long double conduit_longdouble;
 #endif
 
-typedef bool                conduit_bool;
 typedef signed char         conduit_byte;
 typedef unsigned char       conduit_ubyte;
 typedef unsigned short      conduit_ushort;
@@ -75,20 +74,6 @@ typedef double              conduit_double;
 #define BITSOF_FLOAT (SIZEOF_FLOAT * CHAR_BIT)
 #define BITSOF_DOUBLE (SIZEOF_DOUBLE * CHAR_BIT)
 #define BITSOF_LONG_DOUBLE (SIZEOF_LONG_DOUBLE * CHAR_BIT)
-
-
-#if BITSOF_BOOL == 8
-#define CONDUIT_BOOL8 CONDUIT_BOOL
-#define CONDUIT_BOOL8_NATIVE_TYPENAME "bool"
-#define CONDUIT_NATIVE_BOOL conduit_bool8
-        typedef conduit_bool conduit_bool8;
-#else
-#define CONDUIT_BOOL8 CONDUIT_CHAR
-#define CONDUIT_BOOL8_NATIVE_TYPENAME "char"
-#define CONDUIT_NATIVE_CHAR conduit_bool8
-        typedef conduit_char conduit_bool8;
-#endif
-
 
 #if BITSOF_LONG == 8
 #define CONDUIT_INT8 CONDUIT_LONG

@@ -352,23 +352,24 @@ parse_inline_leaf(const rapidjson::Value &jvalue,
         else
         {
              /// TODO: ERROR
-             // type incompat with bytestr
-             // only allow strings to be assigned to a bytestr type
+             // type incompat with char8_str
+             // only allow strings to be assigned to a char8_str type
              // throw parsing error if our inline values
              // don't match what we expected
         }
     }
     else if(jvalue.IsBool())
     {
-        if(node.dtype().id() == DataType::BOOL8_T)
+        //
+        if(node.dtype().id() == DataType::UINT8_T)
         {
-            node.set(jvalue.GetBool());
+            node.set((uint8)jvalue.GetBool());
         }
         else
         {
              /// TODO: ERROR
-             // type incompat with bool
-             // only allow bool to be assigned to a bool8 type
+             // type incompat with uint8
+             // only allow json bools to be assigned to a uint8 type
              // throw parsing error if our inline values
              // don't match what we expected
         }
