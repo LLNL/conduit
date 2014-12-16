@@ -625,6 +625,20 @@ Node::set(const Schema &schema, void *data)
     walk_schema(this,m_schema,data,true);
 }
 
+//---------------------------------------------------------------------------//
+void
+Node::set(const DataType &dtype, void *data)
+{
+    ///
+    /// TODO: SET_SEMANTICS this must obey copy semantics...
+    ///
+    release();
+    m_alloced = false;
+    m_data    = data;
+    m_schema->set(dtype);
+}
+
+
 //-----------------------------------------------------------------------------
 // -- set for scalar types ---
 //-----------------------------------------------------------------------------
@@ -2207,7 +2221,7 @@ Node::set_external_char8_str(char *data)
 
 //-----------------------------------------------------------------------------
 //
-// -- begin declaration of Node set_path_external methods --
+// -- begin definition of Node set_path_external methods --
 //
 //-----------------------------------------------------------------------------
 
@@ -2609,41 +2623,21 @@ Node::set_path_external_char8_str(const std::string &path,
 
 //-----------------------------------------------------------------------------
 //
-// -- end declaration of Node set_path_external methods --
+// -- end definition of Node set_path_external methods --
 //
 //-----------------------------------------------------------------------------
 
-//============================================
-void
-Node::set_schema_pointer(Schema *schema_ptr)
-{
-    if(m_schema->is_root())
-        delete m_schema;
-    m_schema = schema_ptr;    
-}
-    
-//============================================
-void
-Node::set_data_pointer(void *data)
-{
-    release();
-    m_data    = data;    
-}
-    
-//============================================
-void
-Node::set(const DataType &dtype, void *data)
-{
-    ///
-    /// TODO: SET_SEMANTICS this must obey copy semantics...
-    ///
-    release();
-    m_alloced = false;
-    m_data    = data;
-    m_schema->set(dtype);
-}
+//-----------------------------------------------------------------------------
+//
+// -- begin definition of Node assignment operators --
+//
+//-----------------------------------------------------------------------------
 
-//============================================
+//-----------------------------------------------------------------------------
+// -- assignment operators for generic types --
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const Node &node)
 {
@@ -2654,55 +2648,31 @@ Node::operator=(const Node &node)
     return *this;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
-Node::operator=(DataType dtype)
+Node::operator=(const DataType &dtype)
 {
     set(dtype);
     return *this;
 }
 
-//============================================
-/// uint types
-//============================================
-
-//============================================
+//---------------------------------------------------------------------------//
 Node &
-Node::operator=(uint8 data)
+Node::operator=(const Schema &schema)
 {
-    set(data);
+    set(schema);
     return *this;
 }
 
-//============================================
-Node &
-Node::operator=(uint16 data)
-{
-    set(data);
-    return *this;
-}
+//-----------------------------------------------------------------------------
+// --  assignment operators for scalar types ---
+//-----------------------------------------------------------------------------
 
-//============================================
-Node &
-Node::operator=(uint32 data)
-{
-    set(data);
-    return *this;
-}
+//-----------------------------------------------------------------------------
+// signed integer scalar types
+//-----------------------------------------------------------------------------
 
-//============================================
-Node &
-Node::operator=(uint64 data)
-{
-    set(data);
-    return *this;
-}
-
-//============================================
-/// int types
-//============================================
-
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(int8 data)
 {
@@ -2710,7 +2680,7 @@ Node::operator=(int8 data)
     return *this;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(int16 data)
 {
@@ -2718,7 +2688,7 @@ Node::operator=(int16 data)
     return *this;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(int32 data)
 {
@@ -2726,7 +2696,7 @@ Node::operator=(int32 data)
     return *this;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(int64 data)
 {
@@ -2734,11 +2704,48 @@ Node::operator=(int64 data)
     return *this;
 }
 
-//============================================
-/// float types
-//============================================
 
-//============================================
+//-----------------------------------------------------------------------------
+// unsigned integer scalar types
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+Node &
+Node::operator=(uint8 data)
+{
+    set(data);
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+Node &
+Node::operator=(uint16 data)
+{
+    set(data);
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+Node &
+Node::operator=(uint32 data)
+{
+    set(data);
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+Node &
+Node::operator=(uint64 data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+// floating point scalar types
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(float32 data)
 {
@@ -2746,7 +2753,7 @@ Node::operator=(float32 data)
     return *this;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(float64 data)
 {
@@ -2754,11 +2761,15 @@ Node::operator=(float64 data)
     return *this;
 }
 
-//============================================
-/// int vec types
-//============================================
+//-----------------------------------------------------------------------------
+// -- assignment operators for std::vector types ---
+//-----------------------------------------------------------------------------
 
-//============================================
+//-----------------------------------------------------------------------------
+// signed integer array types via std::vector
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const std::vector<int8> &data)
 {
@@ -2766,7 +2777,7 @@ Node::operator=(const std::vector<int8> &data)
     return *this;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const std::vector<int16> &data)
 {
@@ -2774,7 +2785,7 @@ Node::operator=(const std::vector<int16> &data)
     return *this;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const std::vector<int32> &data)
 {
@@ -2782,7 +2793,7 @@ Node::operator=(const std::vector<int32> &data)
     return *this;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const std::vector<int64> &data)
 {
@@ -2790,11 +2801,11 @@ Node::operator=(const std::vector<int64> &data)
     return *this;
 }
 
-//============================================
-/// uint vec types
-//============================================
+//-----------------------------------------------------------------------------
+// unsigned integer array types via std::vector
+//-----------------------------------------------------------------------------
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const std::vector<uint8> &data)
 {
@@ -2802,7 +2813,7 @@ Node::operator=(const std::vector<uint8> &data)
     return *this;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const std::vector<uint16> &data)
 {
@@ -2810,7 +2821,7 @@ Node::operator=(const std::vector<uint16> &data)
     return *this;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const std::vector<uint32> &data)
 {
@@ -2818,7 +2829,7 @@ Node::operator=(const std::vector<uint32> &data)
     return *this;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const std::vector<uint64> &data)
 {
@@ -2826,11 +2837,11 @@ Node::operator=(const std::vector<uint64> &data)
     return *this;
 }
 
-//============================================
-/// float vec types
-//============================================
+//-----------------------------------------------------------------------------
+// floating point array types via std::vector
+//-----------------------------------------------------------------------------
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const std::vector<float32> &data)
 {
@@ -2838,7 +2849,7 @@ Node::operator=(const std::vector<float32> &data)
     return *this;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const std::vector<float64> &data)
 {
@@ -2846,11 +2857,16 @@ Node::operator=(const std::vector<float64> &data)
     return *this;
 }
 
-//============================================
-/// int array types
-//============================================
+//-----------------------------------------------------------------------------
+// -- assignment operators for conduit::DataArray types ---
+//-----------------------------------------------------------------------------
 
-//============================================
+//-----------------------------------------------------------------------------
+// signed integer array types via conduit::DataArray
+//-----------------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const int8_array &data)
 {
@@ -2858,7 +2874,7 @@ Node::operator=(const int8_array &data)
     return *this;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const int16_array &data)
 {
@@ -2866,7 +2882,7 @@ Node::operator=(const int16_array &data)
     return *this;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const int32_array &data)
 {
@@ -2874,7 +2890,7 @@ Node::operator=(const int32_array &data)
     return *this;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const int64_array &data)
 {
@@ -2882,11 +2898,11 @@ Node::operator=(const int64_array &data)
     return *this;
 }
 
-//============================================
-/// uint vec types
-//============================================
+//-----------------------------------------------------------------------------
+// unsigned integer array ttypes via conduit::DataArray
+//-----------------------------------------------------------------------------
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const uint8_array &data)
 {
@@ -2894,7 +2910,7 @@ Node::operator=(const uint8_array &data)
     return *this;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const uint16_array &data)
 {
@@ -2902,7 +2918,7 @@ Node::operator=(const uint16_array &data)
     return *this;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const uint32_array &data)
 {
@@ -2910,7 +2926,7 @@ Node::operator=(const uint32_array &data)
     return *this;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const uint64_array &data)
 {
@@ -2918,11 +2934,11 @@ Node::operator=(const uint64_array &data)
     return *this;
 }
 
-//============================================
-/// float vec types
-//============================================
+//-----------------------------------------------------------------------------
+// floating point array types via conduit::DataArray
+//-----------------------------------------------------------------------------
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const float32_array &data)
 {
@@ -2930,7 +2946,7 @@ Node::operator=(const float32_array &data)
     return *this;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const float64_array &data)
 {
@@ -2938,11 +2954,11 @@ Node::operator=(const float64_array &data)
     return *this;
 }
 
-//============================================
-/// bytestr types
-//============================================
+//-----------------------------------------------------------------------------
+// -- assignment operators for string types -- 
+//-----------------------------------------------------------------------------
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const std::string &data)
 {
@@ -2950,7 +2966,7 @@ Node::operator=(const std::string &data)
     return *this;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 Node::operator=(const char *data)
 {
@@ -2958,8 +2974,23 @@ Node::operator=(const char *data)
     return *this;
 }
 
+//-----------------------------------------------------------------------------
+//
+// -- end definition of Node assignment operators --
+//
+//-----------------------------------------------------------------------------
 
-//============================================
+//-----------------------------------------------------------------------------
+//
+// -- begin definition of Node transform methods --
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- serialization methods ---
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
 void
 Node::serialize(std::vector<uint8> &data) const
 {
@@ -2967,7 +2998,7 @@ Node::serialize(std::vector<uint8> &data) const
     serialize(&data[0],0);
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 void
 Node::serialize(const std::string &stream_path) const
 {
@@ -2980,7 +3011,7 @@ Node::serialize(const std::string &stream_path) const
 }
 
 
-//============================================
+//---------------------------------------------------------------------------//
 void
 Node::serialize(std::ofstream &ofs) const
 {
@@ -3016,37 +3047,349 @@ Node::serialize(std::ofstream &ofs) const
     }
 }
 
+//-----------------------------------------------------------------------------
+// -- compaction methods ---
+//-----------------------------------------------------------------------------
 
-//============================================
+//---------------------------------------------------------------------------//
 void
-Node::serialize(uint8 *data,index_t curr_offset) const
+Node::compact()
 {
-    if(dtype().id() == DataType::OBJECT_T ||
-       dtype().id() == DataType::LIST_T)
+    // TODO: we can do this more efficiently
+    Node n;
+    compact_to(n);
+    set(n);
+}
+
+
+//---------------------------------------------------------------------------//
+Node
+Node::compact_to()const
+{
+    // NOTE: very ineff w/o move semantics
+    Node res;
+    compact_to(res);
+    return res;
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::compact_to(Node &n_dest) const
+{
+    n_dest.reset();
+    index_t c_size = total_bytes_compact();
+    m_schema->compact_to(*n_dest.schema_pointer());
+    n_dest.allocate(c_size);
+    
+    uint8 *n_dest_data = (uint8*)n_dest.m_data;
+    compact_to(n_dest_data,0);
+    n_dest.m_data = NULL; // TODO evil, brian doesn't like this.
+
+    // need node structure
+    walk_schema(&n_dest,n_dest.m_schema,n_dest_data,false);
+
+
+}
+
+//-----------------------------------------------------------------------------
+// -- update methods ---
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void
+Node::update(Node &n_src)
+{
+    // walk src and add it contents to this node
+    // OBJECT_T is the only special case here.
+    /// TODO:
+    /// arrays and non empty leafs will simply overwrite the current
+    /// node, these semantics seem sensible, but we could revisit this
+    index_t dtype_id = n_src.dtype().id();
+    if( dtype_id == DataType::OBJECT_T)
     {
-        std::vector<Node*>::const_iterator itr;
-        for(itr = m_children.begin(); itr < m_children.end(); ++itr)
+        std::vector<std::string> src_paths;
+        n_src.paths(src_paths);
+
+        for (std::vector<std::string>::const_iterator itr = src_paths.begin();
+             itr < src_paths.end(); ++itr)
         {
-            (*itr)->serialize(&data[0],curr_offset);
-            curr_offset+=(*itr)->total_bytes();
+            std::string ent_name = *itr;
+            fetch(ent_name).update(n_src.fetch(ent_name));
         }
     }
-    else
+    else if(dtype_id != DataType::EMPTY_T)
     {
-        if(is_compact())
-        {
-            memcpy(&data[curr_offset],
-                   m_data,
-                   total_bytes());
-        }
-        else // ser as is. This copies stride * num_ele bytes
-        {
-            // copy all elements 
-            compact_elements_to(&data[curr_offset]);      
-        }
-       
+        set(n_src);
     }
 }
+
+//-----------------------------------------------------------------------------
+// -- leaf coercion methods ---
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+int64
+Node::to_int64() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (int64)as_int8();
+        case DataType::INT16_T: return (int64)as_int16();
+        case DataType::INT32_T: return (int64)as_int32();
+        case DataType::INT64_T: return as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (int64)as_uint8();
+        case DataType::UINT16_T: return (int64)as_uint16();
+        case DataType::UINT32_T: return (int64)as_uint32();
+        case DataType::UINT64_T: return (int64)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (int64)as_float32();
+        case DataType::FLOAT64_T: return (int64)as_float64();
+    }
+    return 0;
+    
+}
+
+//---------------------------------------------------------------------------//
+uint64
+Node::to_uint64() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (uint64)as_int8();
+        case DataType::INT16_T: return (uint64)as_int16();
+        case DataType::INT32_T: return (uint64)as_int32();
+        case DataType::INT64_T: return (uint64)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (uint64)as_uint8();
+        case DataType::UINT16_T: return (uint64)as_uint16();
+        case DataType::UINT32_T: return (uint64)as_uint32();
+        case DataType::UINT64_T: return as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (uint64)as_float32();
+        case DataType::FLOAT64_T: return (uint64)as_float64();
+    }
+    return 0;
+}
+
+//---------------------------------------------------------------------------//
+float64
+Node::to_float64() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (float64)as_int8();
+        case DataType::INT16_T: return (float64)as_int16();
+        case DataType::INT32_T: return (float64)as_int32();
+        case DataType::INT64_T: return (float64)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (float64)as_uint8();
+        case DataType::UINT16_T: return (float64)as_uint16();
+        case DataType::UINT32_T: return (float64)as_uint32();
+        case DataType::UINT64_T: return (float64)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (float64)as_float32();
+        case DataType::FLOAT64_T: return as_float64();
+    }
+    return 0.0;
+}
+
+
+//---------------------------------------------------------------------------//
+index_t
+Node::to_index_t() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (index_t)as_int8();
+        case DataType::INT16_T: return (index_t)as_int16();
+        case DataType::INT32_T: return (index_t)as_int32();
+        case DataType::INT64_T: return (index_t)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (index_t)as_uint8();
+        case DataType::UINT16_T: return (index_t)as_uint16();
+        case DataType::UINT32_T: return (index_t)as_uint32();
+        case DataType::UINT64_T: return (index_t)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (index_t)as_float32();
+        case DataType::FLOAT64_T: return (index_t)as_float64();
+    }
+    return 0;
+}
+
+//-----------------------------------------------------------------------------
+// -- JSON construction methods ---
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+std::string 
+Node::to_json(bool detailed,
+              index_t indent, 
+              index_t depth,
+              const std::string &pad,
+              const std::string &eoe) const
+{
+   std::ostringstream oss;
+   to_json(oss,detailed,indent,depth,pad,eoe);
+   return oss.str();
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_json(std::ostringstream &oss,
+              bool detailed, 
+              index_t indent, 
+              index_t depth,
+              const std::string &pad,
+              const std::string &eoe) const
+{
+    if(dtype().id() == DataType::OBJECT_T)
+    {
+        oss << eoe;
+        utils::indent(oss,indent,depth,pad);
+        oss << "{" << eoe;
+    
+        index_t nchildren = m_children.size();
+        for(index_t i=0; i < nchildren;i++)
+        {
+            utils::indent(oss,indent,depth+1,pad);
+            oss << "\""<< m_schema->object_order()[i] << "\": ";
+            m_children[i]->to_json(oss,
+                                   detailed,
+                                   indent,
+                                   depth+1,
+                                   pad,
+                                   eoe);
+            if(i < nchildren-1)
+                oss << ",";
+            oss << eoe;
+        }
+        utils::indent(oss,indent,depth,pad);
+        oss << "}";
+    }
+    else if(dtype().id() == DataType::LIST_T)
+    {
+        oss << eoe;
+        utils::indent(oss,indent,depth,pad);
+        oss << "[" << eoe;
+        
+        index_t nchildren = m_children.size();
+        for(index_t i=0; i < nchildren;i++)
+        {
+            utils::indent(oss,indent,depth+1,pad);
+            m_children[i]->to_json(oss,
+                                   detailed,
+                                   indent,
+                                   depth+1,
+                                   pad,
+                                   eoe);
+            if(i < nchildren-1)
+                oss << ",";
+            oss << eoe;
+        }
+        utils::indent(oss,indent,depth,pad);
+        oss << "]";      
+    }
+    else // assume leaf data type
+    {
+        std::ostringstream value_oss; 
+        switch(dtype().id())
+        {
+            // ints 
+            case DataType::INT8_T:
+                as_int8_array().to_json(value_oss);
+                break;
+            case DataType::INT16_T:
+                as_int16_array().to_json(value_oss);
+                break;
+            case DataType::INT32_T:
+                as_int32_array().to_json(value_oss);
+                break;
+            case DataType::INT64_T:
+                as_int64_array().to_json(value_oss);
+                break;
+            // uints 
+            case DataType::UINT8_T:
+                as_uint8_array().to_json(value_oss);
+                break;
+            case DataType::UINT16_T: 
+                as_uint16_array().to_json(value_oss);
+                break;
+            case DataType::UINT32_T:
+                as_uint32_array().to_json(value_oss);
+                break;
+            case DataType::UINT64_T:
+                as_uint64_array().to_json(value_oss);
+                break;
+            // floats 
+            case DataType::FLOAT32_T:
+                as_float32_array().to_json(value_oss);
+                break;
+            case DataType::FLOAT64_T:
+                as_float64_array().to_json(value_oss);
+                break;
+            // char8_str
+            case DataType::CHAR8_STR_T: 
+                value_oss << "\"" << as_char8_str() << "\""; 
+                break;
+        }
+
+        if(!detailed)
+            oss << value_oss.str();
+        else
+            dtype().to_json(oss,value_oss.str());
+    }  
+}
+
+//---------------------------------------------------------------------------//
+std::string
+Node::to_pure_json(index_t indent) const
+{
+    return to_json(false,indent);
+}
+
+void
+Node::to_pure_json(std::ostringstream &oss,
+                   index_t indent) const
+{
+    to_json(oss,false,indent);
+}
+
+//---------------------------------------------------------------------------//
+std::string
+Node::to_detailed_json(index_t indent, 
+                       index_t depth,
+                       const std::string &pad,
+                       const std::string &eoe) const
+{
+    return to_json(true,indent,depth,pad,eoe);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_detailed_json(std::ostringstream &oss,
+                       index_t indent, 
+                       index_t depth,
+                       const std::string &pad,
+                       const std::string &eoe) const
+{
+    to_json(oss,true,indent,depth,pad,eoe);
+}
+
+
+//-----------------------------------------------------------------------------
+//
+// -- end definition of Node transform methods --
+//
+//-----------------------------------------------------------------------------
+
+
+
 
 //============================================
 NodeIterator
@@ -3055,6 +3398,24 @@ Node::iterator()
     return NodeIterator(this,0);
 }
 
+
+//============================================
+void
+Node::set_schema_pointer(Schema *schema_ptr)
+{
+    if(m_schema->is_root())
+        delete m_schema;
+    m_schema = schema_ptr;    
+}
+    
+//============================================
+void
+Node::set_data_pointer(void *data)
+{
+    release();
+    m_data    = data;    
+}
+    
 //============================================
 void
 Node::info(Node &res) const
@@ -3170,76 +3531,9 @@ Node::info()const
 
 
 
-//============================================
-/// TODO: update option with set_external
-void
-Node::update(Node &n_src)
-{
-    // walk src and add it concents to this node
-    // OBJECT_T is the only special case here.
-    /// TODO:
-    /// arrays and non empty leafs will simply overwrite the current
-    /// node, these semantics seem sensbile, but we could revisit this
-    index_t dtype_id = n_src.dtype().id();
-    if( dtype_id == DataType::OBJECT_T)
-    {
-        std::vector<std::string> src_paths;
-        n_src.paths(src_paths);
-
-        for (std::vector<std::string>::const_iterator itr = src_paths.begin();
-             itr < src_paths.end(); ++itr)
-        {
-            std::string ent_name = *itr;
-            fetch(ent_name).update(n_src.fetch(ent_name));
-        }
-    }
-    else if(dtype_id != DataType::EMPTY_T)
-    {
-        set(n_src);
-    }
-}
 
 
-//============================================
-void
-Node::compact()
-{
-    // TODO: we can do this more efficently
-    Node n;
-    compact_to(n);
-    set(n);
-}
 
-
-//============================================
-Node
-Node::compact_to()const
-{
-    // NOTE: very ineff w/o move semantics
-    Node res;
-    compact_to(res);
-    return res;
-}
-
-
-//============================================
-void
-Node::compact_to(Node &n_dest) const
-{
-    n_dest.reset();
-    index_t c_size = total_bytes_compact();
-    m_schema->compact_to(*n_dest.schema_pointer());
-    n_dest.allocate(c_size);
-    
-    uint8 *n_dest_data = (uint8*)n_dest.m_data;
-    compact_to(n_dest_data,0);
-    n_dest.m_data = NULL; // TODO evil, brian doesn't like this.
-
-    // need node structure
-    walk_schema(&n_dest,n_dest.m_schema,n_dest_data,false);
-
-
-}
 
 
 //============================================
@@ -3467,188 +3761,7 @@ Node::remove(const std::string &path)
     }
 }
 
-//============================================
-int64
-Node::to_int64() const
-{
-    switch(dtype().id())
-    {
-        /* ints */
-        case DataType::INT8_T:  return (int64)as_int8();
-        case DataType::INT16_T: return (int64)as_int16();
-        case DataType::INT32_T: return (int64)as_int32();
-        case DataType::INT64_T: return as_int64();
-        /* uints */
-        case DataType::UINT8_T:  return (int64)as_uint8();
-        case DataType::UINT16_T: return (int64)as_uint16();
-        case DataType::UINT32_T: return (int64)as_uint32();
-        case DataType::UINT64_T: return (int64)as_uint64();
-        /* floats */
-        case DataType::FLOAT32_T: return (int64)as_float32();
-        case DataType::FLOAT64_T: return (int64)as_float64();
-    }
-    return 0;
-    
-}
 
-//============================================
-uint64
-Node::to_uint64() const
-{
-    switch(dtype().id())
-    {
-        /* ints */
-        case DataType::INT8_T:  return (uint64)as_int8();
-        case DataType::INT16_T: return (uint64)as_int16();
-        case DataType::INT32_T: return (uint64)as_int32();
-        case DataType::INT64_T: return (uint64)as_int64();
-        /* uints */
-        case DataType::UINT8_T:  return (uint64)as_uint8();
-        case DataType::UINT16_T: return (uint64)as_uint16();
-        case DataType::UINT32_T: return (uint64)as_uint32();
-        case DataType::UINT64_T: return as_uint64();
-        /* floats */
-        case DataType::FLOAT32_T: return (uint64)as_float32();
-        case DataType::FLOAT64_T: return (uint64)as_float64();
-    }
-    return 0;
-}
-
-//============================================
-float64
-Node::to_float64() const
-{
-    switch(dtype().id())
-    {
-        /* ints */
-        case DataType::INT8_T:  return (float64)as_int8();
-        case DataType::INT16_T: return (float64)as_int16();
-        case DataType::INT32_T: return (float64)as_int32();
-        case DataType::INT64_T: return (float64)as_int64();
-        /* uints */
-        case DataType::UINT8_T:  return (float64)as_uint8();
-        case DataType::UINT16_T: return (float64)as_uint16();
-        case DataType::UINT32_T: return (float64)as_uint32();
-        case DataType::UINT64_T: return (float64)as_uint64();
-        /* floats */
-        case DataType::FLOAT32_T: return (float64)as_float32();
-        case DataType::FLOAT64_T: return as_float64();
-    }
-    return 0.0;
-}
-
-
-//============================================
-index_t
-Node::to_index_t() const
-{
-    switch(dtype().id())
-    {
-        /* ints */
-        case DataType::INT8_T:  return (index_t)as_int8();
-        case DataType::INT16_T: return (index_t)as_int16();
-        case DataType::INT32_T: return (index_t)as_int32();
-        case DataType::INT64_T: return (index_t)as_int64();
-        /* uints */
-        case DataType::UINT8_T:  return (index_t)as_uint8();
-        case DataType::UINT16_T: return (index_t)as_uint16();
-        case DataType::UINT32_T: return (index_t)as_uint32();
-        case DataType::UINT64_T: return (index_t)as_uint64();
-        /* floats */
-        case DataType::FLOAT32_T: return (index_t)as_float32();
-        case DataType::FLOAT64_T: return (index_t)as_float64();
-    }
-    return 0;
-}
-
-//============================================
-std::string 
-Node::to_json(bool detailed,
-              index_t indent, 
-              index_t depth,
-              const std::string &pad,
-              const std::string &eoe) const
-{
-   std::ostringstream oss;
-   to_json(oss,detailed,indent,depth,pad,eoe);
-   return oss.str();
-}
-
-//============================================
-void
-Node::to_json(std::ostringstream &oss,
-              bool detailed, 
-              index_t indent, 
-              index_t depth,
-              const std::string &pad,
-              const std::string &eoe) const
-{
-    if(dtype().id() == DataType::OBJECT_T)
-    {
-        oss << eoe;
-        utils::indent(oss,indent,depth,pad);
-        oss << "{" << eoe;
-    
-        index_t nchildren = m_children.size();
-        for(index_t i=0; i < nchildren;i++)
-        {
-            utils::indent(oss,indent,depth+1,pad);
-            oss << "\""<< m_schema->object_order()[i] << "\": ";
-            m_children[i]->to_json(oss,detailed,indent,depth+1,pad,eoe);
-            if(i < nchildren-1)
-                oss << ",";
-            oss << eoe;
-        }
-        utils::indent(oss,indent,depth,pad);
-        oss << "}";
-    }
-    else if(dtype().id() == DataType::LIST_T)
-    {
-        oss << eoe;
-        utils::indent(oss,indent,depth,pad);
-        oss << "[" << eoe;
-        
-        index_t nchildren = m_children.size();
-        for(index_t i=0; i < nchildren;i++)
-        {
-            utils::indent(oss,indent,depth+1,pad);
-            m_children[i]->to_json(oss,detailed,indent,depth+1,pad,eoe);
-            if(i < nchildren-1)
-                oss << ",";
-            oss << eoe;
-        }
-        utils::indent(oss,indent,depth,pad);
-        oss << "]";      
-    }
-    else // assume leaf data type
-    {
-        std::ostringstream value_oss; 
-        switch(dtype().id())
-        {
-            /* ints */
-            case DataType::INT8_T:  as_int8_array().to_json(value_oss); break;
-            case DataType::INT16_T: as_int16_array().to_json(value_oss); break;
-            case DataType::INT32_T: as_int32_array().to_json(value_oss); break;
-            case DataType::INT64_T: as_int64_array().to_json(value_oss); break;
-            /* uints */
-            case DataType::UINT8_T:  as_uint8_array().to_json(value_oss); break;
-            case DataType::UINT16_T: as_uint16_array().to_json(value_oss); break;
-            case DataType::UINT32_T: as_uint32_array().to_json(value_oss); break;
-            case DataType::UINT64_T: as_uint64_array().to_json(value_oss); break;
-            /* floats */
-            case DataType::FLOAT32_T: as_float32_array().to_json(value_oss); break;
-            case DataType::FLOAT64_T: as_float64_array().to_json(value_oss); break;
-            /* bytestr */
-            case DataType::CHAR8_STR_T: value_oss << "\"" << as_char8_str() << "\""; break;
-        }
-
-        if(!detailed)
-            oss << value_oss.str();
-        else
-            dtype().to_json(oss,value_oss.str());
-    }  
-}
-    
 //============================================
 void
 Node::init(const DataType& dtype)
@@ -3805,26 +3918,36 @@ Node::init_object()
 ///////////////////////////////////////////////////////////////////////////////
 
 //============================================
-void 
+Node &
 Node::append()
 {
-    list_append();
+    init_list();
+    index_t idx = m_children.size();
+    //
+    // This makes a proper copy of the schema for us to use
+    //
+    m_schema->append();
+    Schema *schema_ptr = m_schema->fetch_pointer(idx);
+
+    Node *res_node = new Node();
+    res_node->set_schema_pointer(schema_ptr);
+    res_node->m_parent=this;
+    m_children.push_back(res_node);
+    return *res_node;
 }
 
 //============================================
 void 
 Node::append(const Node &node)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(node);
+    append().set(node);
 }
 
 //============================================
 void 
 Node::append(const DataType &data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 // int types
@@ -3833,32 +3956,28 @@ Node::append(const DataType &data)
 void 
 Node::append(int8 data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(int16 data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(int32 data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(int64 data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 // uint types
@@ -3867,48 +3986,42 @@ Node::append(int64 data)
 void 
 Node::append(uint8 data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(uint16 data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(uint32 data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(uint64 data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(float32 data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(float64 data)
 {   
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 // std::vector int types
@@ -3917,32 +4030,28 @@ Node::append(float64 data)
 void 
 Node::append(const std::vector<int8>   &data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(const std::vector<int16>  &data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(const std::vector<int32>  &data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(const std::vector<int64>  &data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 // std::vector uint types
@@ -3951,48 +4060,42 @@ Node::append(const std::vector<int64>  &data)
 void 
 Node::append(const std::vector<uint8>   &data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(const std::vector<uint16>  &data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(const std::vector<uint32>  &data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(const std::vector<uint64>  &data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(const std::vector<float32> &data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+     append().set(data);
 }
 
 //============================================
 void 
 Node::append(const std::vector<float64> &data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 
@@ -4000,92 +4103,99 @@ Node::append(const std::vector<float64> &data)
 void 
 Node::append(const int8_array  &data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(const int16_array &data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(const int32_array &data)
 {   
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(const int64_array &data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(const uint8_array  &data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(const uint16_array &data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(const uint32_array &data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 //============================================
 void 
 Node::append(const uint64_array &data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 //============================================
 void 
 Node::append(const float32_array &data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+     append().set(data);
 }
 //============================================
 void 
 Node::append(const float64_array &data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 //============================================
 void 
 Node::append(const std::string &data)
 {
-    index_t idx = list_append();
-    m_children[idx]->set(data);
+    append().set(data);
 }
 
 
+//=============================================================================
+//-----------------------------------------------------------------------------
+//
+//
+// -- end conduit::Node public methods --
+//
+//
+//-----------------------------------------------------------------------------
+//=============================================================================
 
-//============================================
-/// Node
-//============================================
+//=============================================================================
+//-----------------------------------------------------------------------------
+//
+//
+// -- begin conduit::Node private methods --
+//
+//
+//-----------------------------------------------------------------------------
+//=============================================================================
+
+
+//---------------------------------------------------------------------------//
 void
 Node::init_defaults()
 {
@@ -4103,24 +4213,37 @@ Node::init_defaults()
 
 
 
-//============================================
-index_t
-Node::list_append()
+//---------------------------------------------------------------------------//
+void
+Node::serialize(uint8 *data,index_t curr_offset) const
 {
-    init_list();
-    index_t idx = m_children.size();
-    //
-    // This makes a proper copy of the schema for us to use
-    //
-    m_schema->append();
-    Schema *schema_ptr = m_schema->fetch_pointer(idx);
-
-    Node *res_node = new Node();
-    res_node->set_schema_pointer(schema_ptr);
-    res_node->m_parent=this;
-    m_children.push_back(res_node);
-    return idx;
+    if(dtype().id() == DataType::OBJECT_T ||
+       dtype().id() == DataType::LIST_T)
+    {
+        std::vector<Node*>::const_iterator itr;
+        for(itr = m_children.begin(); itr < m_children.end(); ++itr)
+        {
+            (*itr)->serialize(&data[0],curr_offset);
+            curr_offset+=(*itr)->total_bytes();
+        }
+    }
+    else
+    {
+        if(is_compact())
+        {
+            memcpy(&data[curr_offset],
+                   m_data,
+                   total_bytes());
+        }
+        else // ser as is. This copies stride * num_ele bytes
+        {
+            // copy all elements 
+            compact_elements_to(&data[curr_offset]);      
+        }
+       
+    }
 }
+
 
 //-----------------------------------------------------------------------------
 void
@@ -4224,6 +4347,16 @@ Node::walk_schema(Node   *node,
         node->set_data_pointer(data);
     } 
 }
+
+//=============================================================================
+//-----------------------------------------------------------------------------
+//
+//
+// -- end conduit::Node private methods --
+//
+//
+//-----------------------------------------------------------------------------
+//=============================================================================
 
 
 }

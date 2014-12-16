@@ -63,12 +63,22 @@ class NodeIterator;
 //-----------------------------------------------------------------------------
 class CONDUIT_API Node
 {
+
+//=============================================================================
+//-----------------------------------------------------------------------------
+//
+// -- public methods and members -- 
+//
+//-----------------------------------------------------------------------------
+//=============================================================================
 public:
     
-    // -- friends of Node --
-    /// note on use of `friend`: 
-    ///  NodeIterator needs access to Node internals for efficent iterator
-    ///
+//-----------------------------------------------------------------------------
+// -- friends of Node --
+//-----------------------------------------------------------------------------
+    /// Note on use of `friend`: 
+    ///  NodeIterator needs access to Node internals to create
+    ///   an efficient iterator
     friend class NodeIterator;
 
 //-----------------------------------------------------------------------------
@@ -84,7 +94,7 @@ public:
 ///
 /// notes:
 ///  TODO:
-///  Constructors currenlty use a mix of copy and pointer (external) semantics
+///  Constructors currently use a mix of copy and pointer (external) semantics
 ///
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -145,13 +155,13 @@ public:
     explicit Node(const std::vector<int32>  &data);
     explicit Node(const std::vector<int64>  &data);
 
-    // unsigned integer array types vvia std::vector
+    // unsigned integer array types via std::vector
     explicit Node(const std::vector<uint8>   &data);
     explicit Node(const std::vector<uint16>  &data);    
     explicit Node(const std::vector<uint32>  &data);
     explicit Node(const std::vector<uint64>  &data);
 
-    // floating point array types vvia std::vector    
+    // floating point array types via std::vector    
     explicit Node(const std::vector<float32>  &data);
     explicit Node(const std::vector<float64>  &data);
 
@@ -212,6 +222,8 @@ public:
 //-----------------------------------------------------------------------------
 // -- direct use of a generator --
 //-----------------------------------------------------------------------------
+    void generate(const Generator &gen);
+
     void generate_external(const Generator &gen);
 
 //-----------------------------------------------------------------------------
@@ -222,7 +234,6 @@ public:
     void generate(const std::string &json_schema,
                   const std::string &protocol);
 
-    void generate(const Generator &gen);
 
 //-----------------------------------------------------------------------------
 // -- json schema coupled with in-core data -- 
@@ -367,7 +378,7 @@ public:
 //-----------------------------------------------------------------------------
     // char8_str use cases
     void set(const std::string &data);
-    // special explcit case for string to avoid any overloading ambiguity
+    // special explicit case for string to avoid any overloading ambiguity
     void set_char8_str(const char *data);
 
 //-----------------------------------------------------------------------------
@@ -464,7 +475,7 @@ public:
 //-----------------------------------------------------------------------------
 /// description:
 ///   set_path(...) methods methods follow copy semantics and allow you to use
-///    an explcit path for the destination.
+///    an explicit path for the destination.
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -796,7 +807,7 @@ public:
 //-----------------------------------------------------------------------------
 /// description:
 ///   set_path_external(...) methods allow the node to point to external
-///   memory, and allow you to use an explcit path forthe destination node.
+///   memory, and allow you to use an explicit path for the destination node.
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -941,109 +952,266 @@ public:
 //
 //-----------------------------------------------------------------------------
 
-    // -- begin assignment ops --
-    /** @name Node assignment operators
-      * &operator=(...) methods use set(...) (copy) semantics
-      */
-    ///@{                               
-    Node &operator=(const Node &node);
-    Node &operator=(DataType dtype);
 
+//-----------------------------------------------------------------------------
+//
+// -- begin declaration of Node assignment operators --
+//
+//-----------------------------------------------------------------------------
+///@name Node Assignment Operators
+///@{
+//-----------------------------------------------------------------------------
+/// description:
+/// &operator=(...) methods use set(...) (copy) semantics
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- assignment operators for generic types --
+//-----------------------------------------------------------------------------
+    Node &operator=(const Node &node);
+    Node &operator=(const DataType &dtype);
+    Node &operator=(const Schema  &schema);
+
+//-----------------------------------------------------------------------------
+// --  assignment operators for scalar types ---
+//-----------------------------------------------------------------------------
+     // signed integer scalar types
     Node &operator=(int8 data);
     Node &operator=(int16 data);
     Node &operator=(int32 data);
     Node &operator=(int64 data);
 
+     // unsigned integer scalar types
     Node &operator=(uint8 data);
     Node &operator=(uint16 data);
     Node &operator=(uint32 data);
     Node &operator=(uint64 data);
-
+    
+    // floating point scalar types
     Node &operator=(float32 data);    
     Node &operator=(float64 data);
 
+//-----------------------------------------------------------------------------
+// -- assignment operators for std::vector types ---
+//-----------------------------------------------------------------------------
+
+    // signed integer array types via std::vector
     Node &operator=(const std::vector<int8>   &data);
     Node &operator=(const std::vector<int16>   &data);
     Node &operator=(const std::vector<int32>   &data);
     Node &operator=(const std::vector<int64>   &data);
 
+    // unsigned integer array types via std::vector
     Node &operator=(const std::vector<uint8>   &data);
     Node &operator=(const std::vector<uint16>   &data);
     Node &operator=(const std::vector<uint32>   &data);
     Node &operator=(const std::vector<uint64>   &data);
 
+    // floating point array types via std::vector
     Node &operator=(const std::vector<float32>  &data);
     Node &operator=(const std::vector<float64>  &data);
 
+//-----------------------------------------------------------------------------
+// -- assignment operators for conduit::DataArray types ---
+//-----------------------------------------------------------------------------
+    // signed integer array types via conduit::DataArray
     Node &operator=(const int8_array  &data);
     Node &operator=(const int16_array &data);
     Node &operator=(const int32_array &data);
     Node &operator=(const int64_array &data);
 
+    // unsigned integer array ttypes via conduit::DataArray
     Node &operator=(const uint8_array  &data);
     Node &operator=(const uint16_array &data);
     Node &operator=(const uint32_array &data);
     Node &operator=(const uint64_array &data);
 
+    // floating point array types via conduit::DataArray
     Node &operator=(const float32_array &data);
     Node &operator=(const float64_array &data);
 
-    // bytestr use cases:
+//-----------------------------------------------------------------------------
+// -- assignment operators for string types -- 
+//-----------------------------------------------------------------------------
+    // char8_str use cases
     Node &operator=(const char *data);
     Node &operator=(const std::string &data);
 
-    ///@}
-    // -- end assignment ops --
+//-----------------------------------------------------------------------------
+///@}                      
+//-----------------------------------------------------------------------------
+//
+// -- end declaration of Node assignment operators --
+//
+//-----------------------------------------------------------------------------
 
-    NodeIterator     iterator();
-    /*schema access */
+
+//-----------------------------------------------------------------------------
+//
+// -- begin declaration of Node transforms --
+//
+//-----------------------------------------------------------------------------
+///@name Node Transforms
+///@{
+//-----------------------------------------------------------------------------
+/// description:
+///  TODO
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- serialization methods ---
+//-----------------------------------------------------------------------------
+    /// serialize to a byte vector
+    void        serialize(std::vector<uint8> &data) const;
+    /// serialize to a file identified by stream_path
+    void        serialize(const std::string &stream_path) const;
+    /// serialize to an output stream
+    void        serialize(std::ofstream &ofs) const;
+
+//-----------------------------------------------------------------------------
+// -- compaction methods ---
+//-----------------------------------------------------------------------------
+    /// compact this node
+    void        compact();
+
+    /// compact into a new node
+    void        compact_to(Node &n_dest) const;
+
+    /// compact and return the result
+    /// TODO: this is inefficient w/o move semantics, but is very 
+    /// convenient for testing and example programs.
+    Node        compact_to() const;
+
+//-----------------------------------------------------------------------------
+// -- update methods ---
+//-----------------------------------------------------------------------------
+    /// update() adds entries from n_src to current Node (analogous to a 
+    /// python dictionary update) 
+    ///
+    /// NOTE: The input should be const, but the lack of a const fetch prevents
+    /// this for now.
+    void        update(Node &n_src);
+    /// TODO: update_external?
+
+
+
+//-----------------------------------------------------------------------------
+// -- leaf coercion methods ---
+//-----------------------------------------------------------------------------
+    ///
+    /// These methods allow you to coerce a leaf type to the widest bitwidth
+    /// type.
+    ///
+
+    /// convert to a 64-bit signed integer 
+    int64            to_int64()   const;
+    /// convert to a 64-bit unsigned integer 
+    uint64           to_uint64()  const;
+    /// convert to a 64-bit floating point number
+    float64          to_float64() const;
+    /// convert to the index type 
+    index_t          to_index_t() const;
+
+//-----------------------------------------------------------------------------
+// -- JSON construction methods ---
+//-----------------------------------------------------------------------------
+
+    // the generic to_json methods are used by the specialized cases 
+    std::string         to_json(bool detailed=true, 
+                                index_t indent=2, 
+                                index_t depth=0,
+                                const std::string &pad=" ",
+                                const std::string &eoe="\n") const;
+
+    void                to_json(std::ostringstream &oss,
+                                bool detailed=true, 
+                                index_t indent=2, 
+                                index_t depth=0,
+                                const std::string &pad=" ",
+                                const std::string &eoe="\n") const;
+
+    // transforms the node to json without any conduit schema constructs
+    std::string      to_pure_json(index_t indent=2) const;
+
+    void             to_pure_json(std::ostringstream &oss,
+                                  index_t indent=2) const;
+
+    // transforms the node to json that contains conduit schema constructs
+    std::string      to_detailed_json(index_t indent=2, 
+                                      index_t depth=0,
+                                      const std::string &pad=" ",
+                                      const std::string &eoe="\n") const;
+
+    void             to_detailed_json(std::ostringstream &oss,
+                                      index_t indent=2, 
+                                      index_t depth=0,
+                                      const std::string &pad=" ",
+                                      const std::string &eoe="\n") const;
+
+//-----------------------------------------------------------------------------
+//
+// -- end declaration of Node transforms --
+//
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+//
+// -- begin declaration of Node information methods --
+//
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+///@name Node Information
+///@{
+//-----------------------------------------------------------------------------
+/// description:
+///  TODO
+//-----------------------------------------------------------------------------
+    // schema access
     const Schema     &schema() const { return *m_schema;}   
+    const DataType   &dtype() const       { return m_schema->dtype();}
 
-    Schema           *schema_pointer() {return m_schema;}   
 
-    /* data access */
-    uint8            *data_pointer() {return (uint8*)m_data;}
-
-    /* parent access */
+    // parent access
     bool             has_parent() const {return m_parent != NULL;}
     Node            *parent() {return m_parent;}
     
-    /* Info */
+    //memory space info
     index_t           total_bytes() const { return m_schema->total_bytes();}
-    index_t           total_bytes_compact() const { return m_schema->total_bytes_compact();}
-    const DataType   &dtype() const       { return m_schema->dtype();}
-    
-    /* serialization */
-    void        serialize(std::vector<uint8> &data) const;
-    void        serialize(const std::string &stream_path) const;
-    
-    // In the future, support our own IOStreams (which will provide single interface 
-    // for bin,hdf,silo end-points.
-    void        serialize(std::ofstream &ofs) const;
+    index_t           total_bytes_compact() const
+                            { return m_schema->total_bytes_compact();}
 
-    // compact this node
-    void        compact();
-    // compact into a new node
-    void        compact_to(Node &n_dest) const;
     
-    // this will be ineff w/o move semantics, but is very conv 
-    Node        compact_to() const;
-    
+
     bool        is_compact() const {return dtype().is_compact();}
 
+    ///
+    /// info() creates a node that contains metadata about the current
+    /// node's memory properties
     void        info(Node &nres) const;
-    // this will be ineff w/o move semantics, but is very conv 
+    /// TODO: this is inefficient w/o move semantics, but is very 
+    /// convenient for testing and example programs.
     Node        info() const;
 
-    /// update() adds entries from n_src to current Node (like python dict update) 
-    /// the input should be const, but the lack of a const fetch prevents this for now
-    void        update(Node &n_src);
-    ///
-    /// TODO:
-    ///  bool        compare(const Node &n, Node &cmp_results) const;
-    ///  bool        operator==(const Node &n) const;
+    /// print a simplified json representation of the this node to std out
+    void              print(bool detailed=false) const
+                        {std::cout << to_json(detailed,2) << std::endl;}
+    /// print a detailed json representation of the this node to std out.
+    /// json output includes conduit schema constructs
+    void              print_detailed() const
+                        {print(true);}
 
+    /// TODO: compare or operator== ?
 
+//-----------------------------------------------------------------------------
+//
+// -- end declaration of Node information methods --
+//
+//-----------------------------------------------------------------------------
+    // data pointer access 
+    uint8            *data_pointer() {return (uint8*)m_data;}
+
+    NodeIterator     iterator();
     // -- begin entry access --
     /// @name Node::fetch(...) methods
     ///@{
@@ -1061,7 +1229,7 @@ public:
     // -- begin list append interface methods --
     /// @name Node list append inteface methods
     /// @{
-    void append();
+    Node &append();
 
     void append(const Node &node);
     void append(const DataType &data);
@@ -1121,66 +1289,6 @@ public:
     Node             &operator[](const std::string &path);
     Node             &operator[](const index_t idx);
 
-    // TODO crs methods to all types ?
-    int64            to_int64()   const;
-    uint64           to_uint64()  const;
-    float64          to_float64() const;
-    index_t          to_index_t() const;
-        
-    std::string         to_json(bool detailed=true, 
-                                index_t indent=2, 
-                                index_t depth=0,
-                                const std::string &pad=" ",
-                                const std::string &eoe="\n") const;
-
-    void                to_json(std::ostringstream &oss,
-                                bool detailed=true, 
-                                index_t indent=2, 
-                                index_t depth=0,
-                                const std::string &pad=" ",
-                                const std::string &eoe="\n") const;
-
-
-     std::string      to_pure_json(index_t indent=2) const
-                        {return to_json(false,indent);}
-
-     void             to_pure_json(std::ostringstream &oss,
-                              index_t indent=2) const
-                        {to_json(oss,false,indent);}
-
-    std::string      to_simple_json(index_t indent=2,
-                                    index_t depth=0,
-                                    const std::string &pad=" ",
-                                    const std::string &eoe="\n") const
-                            {return to_json(false,indent,depth,pad,eoe);}
-
-    void             to_simple_json(std::ostringstream &oss,
-                                    index_t indent=2, 
-                                    index_t depth=0,
-                                    const std::string &pad=" ",
-                                    const std::string &eoe="\n") const
-                            {to_json(oss,false,indent,depth,pad,eoe);}
-                                                                
-    std::string      to_detailed_json(index_t indent=2, 
-                                      index_t depth=0,
-                                      const std::string &pad=" ",
-                                      const std::string &eoe="\n") const
-                     {return to_json(true,indent,depth,pad,eoe);}
-
-    void             to_detailed_json(std::ostringstream &oss,
-                                      index_t indent=2, 
-                                      index_t depth=0,
-                                      const std::string &pad=" ",
-                                      const std::string &eoe="\n") const
-                     {to_json(oss,true,indent,depth,pad,eoe);}
-
-
-    void              print(bool detailed=false) const
-                        {std::cout << to_json(detailed,2) << std::endl;}
-
-    void              print_detailed() const
-                        {print(true);}
-
     // -- begin value access --    
     /// @name Node::as_{dtype}(...) methods
     ///@{
@@ -1221,97 +1329,174 @@ public:
     uint32_array     as_uint32_array() { return uint32_array(m_data,dtype());}
     uint64_array     as_uint64_array() { return uint64_array(m_data,dtype());}
 
-    float32_array    as_float32_array() { return float32_array(m_data,dtype());}
-    float64_array    as_float64_array() { return float64_array(m_data,dtype());}
+    float32_array    as_float32_array() 
+                        { return float32_array(m_data,dtype());}
+    float64_array    as_float64_array() 
+                        { return float64_array(m_data,dtype());}
 
-    int8_array       as_int8_array()  const { return int8_array(m_data,dtype());}
-    int16_array      as_int16_array() const { return int16_array(m_data,dtype());}
-    int32_array      as_int32_array() const { return int32_array(m_data,dtype());}
-    int64_array      as_int64_array() const { return int64_array(m_data,dtype());}
+    int8_array       as_int8_array()  const 
+                        { return int8_array(m_data,dtype());}
+    int16_array      as_int16_array() const 
+                        { return int16_array(m_data,dtype());}
+    int32_array      as_int32_array() const 
+                        { return int32_array(m_data,dtype());}
+    int64_array      as_int64_array() const 
+                        { return int64_array(m_data,dtype());}
 
-    uint8_array      as_uint8_array()  const { return uint8_array(m_data,dtype());}
-    uint16_array     as_uint16_array() const { return uint16_array(m_data,dtype());}
-    uint32_array     as_uint32_array() const { return uint32_array(m_data,dtype());}
-    uint64_array     as_uint64_array() const { return uint64_array(m_data,dtype());}
+    uint8_array      as_uint8_array()  const 
+                        { return uint8_array(m_data,dtype());}
+    uint16_array     as_uint16_array() const 
+                        { return uint16_array(m_data,dtype());}
+    uint32_array     as_uint32_array() const 
+                        { return uint32_array(m_data,dtype());}
+    uint64_array     as_uint64_array() const 
+                        { return uint64_array(m_data,dtype());}
 
-    float32_array    as_float32_array() const { return float32_array(m_data,dtype());}
-    float64_array    as_float64_array() const { return float64_array(m_data,dtype());}
+    float32_array    as_float32_array() const 
+                        { return float32_array(m_data,dtype());}
+    float64_array    as_float64_array() const 
+                        { return float64_array(m_data,dtype());}
 
     char            *as_char8_str() {return (char *)element_pointer(0);}
-    const char      *as_char8_str() const {return (const char *)element_pointer(0);}
+    const char      *as_char8_str() const 
+            {return (const char *)element_pointer(0);}
     
     std::string      as_string() const {return std::string(as_char8_str());}
 
     // -- end value access --    
     ///@}
 
-
-    /// @name Interface Warts 
-    ///@{
-    /// these are used for construction by the Node & Generator classes
-    /// it would be nice to make them private, however to keep rapid json
-    /// headers out of the conduit interface, the json walking methods
-    /// aren't part of any public interface. We haven't found the right way
-    /// to use 'friend' to avoid this issue
-
+//-----------------------------------------------------------------------------
+//
+// -- begin declaration of Interface Warts --
+//
+//-----------------------------------------------------------------------------
+///@name Interface Warts 
+///@{
+//-----------------------------------------------------------------------------
+/// description:
+/// these methods are used for construction by the Node & Generator classes
+/// it would be nice to make them private, however to keep rapid json
+/// headers out of the conduit interface, the json walking methods
+/// aren't part of any public interface. We haven't found the right way
+/// to use 'friend' to avoid this issue
+//-----------------------------------------------------------------------------
     void             set_data_pointer(void *data_ptr);
     void             set_schema_pointer(Schema *schema_ptr);
     void             append_node_pointer(Node *node)
                         {m_children.push_back(node);}
     void             set_parent(Node *parent) { m_parent = parent;}
-
+    Schema          *schema_pointer() {return m_schema;}
     ///@}
 
+//-----------------------------------------------------------------------------
+///@{
+//-----------------------------------------------------------------------------
+//
+// -- end declaration of Interface Warts --
+//
+//-----------------------------------------------------------------------------
+
+
+//=============================================================================
+//-----------------------------------------------------------------------------
+//
+// -- private methods and members -- 
+//
+//-----------------------------------------------------------------------------
+//=============================================================================
+
 private:
-    // -- helpers for init, memory allocation, and cleanup --  
+//-----------------------------------------------------------------------------
+//
+// -- private methods that help with init, memory allocation, and cleanup --
+//
+//-----------------------------------------------------------------------------
+    // setup a node to at as a given type
     void             init(const DataType &dtype);
+    // memory allocation and mapping routines
     void             allocate(index_t dsize);
     void             allocate(const DataType &dtype);
-    void             mmap(const std::string &stream_path, index_t dsize);
-    void             cleanup();
+    void             mmap(const std::string &stream_path,
+                          index_t dsize);
+    // release any alloced or memory mapped data
     void             release();
+    // clean up everything (used by destructor)
+    void             cleanup();
 
+    // set defaults (used by constructors)
+    void              init_defaults();
+    // setup node to act as a list
+    void              init_list();
+    // setup node to act as an object
+    void              init_object();
+
+//-----------------------------------------------------------------------------
+//
+// -- private methods that help with hierarchical construction --
+//
+//-----------------------------------------------------------------------------
+    // work horse for complex node hierarchical setup
     static void      walk_schema(Node   *node,
                                  Schema *schema,
                                  void   *data,
                                  bool    copy_data);
-   
-    void            *element_pointer(index_t idx)
-                     {return static_cast<char*>(m_data) + dtype().element_index(idx);};
-    const void      *element_pointer(index_t idx) const 
-                     {return static_cast<char*>(m_data) + dtype().element_index(idx);};
-
     ///
-    /// TODO: This guy is ugly, currently only used by Node::set(const Node &n)
-    /// Need to figure out of walk_schema can replace it.
+    /// TODO: This method is ugly, currently only used by:
+    ///  Node::set(const Node &n)
+    /// Need to figure out how walk_schema can replace it.
     ///
-    void              set_node_using_schema_pointer(const Node &node, Schema *schema);
+    void              set_node_using_schema_pointer(const Node &node,
+                                                    Schema *schema);
+
+//-----------------------------------------------------------------------------
+//
+// -- private methods that help with hierarchical construction --
+//
+//-----------------------------------------------------------------------------
+          void  *element_pointer(index_t idx)
+        {return static_cast<char*>(m_data) + dtype().element_index(idx);};
+    const void  *element_pointer(index_t idx) const 
+        {return static_cast<char*>(m_data) + dtype().element_index(idx);};
 
 
-    void              serialize(uint8 *data, index_t curr_offset) const;
-    void              info(Node &res, const std::string &curr_path) const;
-    void              compact_to(uint8 *data, index_t curr_offset) const;
-
+//-----------------------------------------------------------------------------
+//
+// -- private methods that help with compaction, serialization, and info  --
+//
+//-----------------------------------------------------------------------------
+    void              compact_to(uint8 *data,
+                                 index_t curr_offset) const;
     // compact helper for leaf types
     void              compact_elements_to(uint8 *data) const;
 
-    // init helpers
-    void              init_defaults();
-    void              init_list();
-    void              init_object();
-    // list helper
-    index_t           list_append();
 
+    void              serialize(uint8 *data,
+                                index_t curr_offset) const;
+
+    void              info(Node &res,
+                           const std::string &curr_path) const;
+
+//-----------------------------------------------------------------------------
+//
+// -- conduit::Node private data members --
+//
+//-----------------------------------------------------------------------------
     Node                *m_parent;
     Schema              *m_schema;
     std::vector<Node*>   m_children;
 
-    // TODO: DataContainer
+    // TODO: DataContainer?
+    // pointer to the node's data
     void     *m_data;
+    // size of the allocated or mmaped data point
     index_t   m_data_size;
 
+    // flag that indicates this node allocated m_data
     bool      m_alloced;
+    // flag that indicates if m_data is memory-mapped
     bool      m_mmaped;
+    // memory-map file descriptor
     int       m_mmap_fd;
 };
 
