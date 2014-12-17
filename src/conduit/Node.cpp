@@ -3389,34 +3389,15 @@ Node::to_detailed_json(std::ostringstream &oss,
 //-----------------------------------------------------------------------------
 
 
+//-----------------------------------------------------------------------------
+//
+// -- begin definition of Node information methods --
+//
+//-----------------------------------------------------------------------------
 
+// NOTE: several other Node information methods are inlined in Node.h
 
-//============================================
-NodeIterator
-Node::iterator()
-{
-    return NodeIterator(this,0);
-}
-
-
-//============================================
-void
-Node::set_schema_pointer(Schema *schema_ptr)
-{
-    if(m_schema->is_root())
-        delete m_schema;
-    m_schema = schema_ptr;    
-}
-    
-//============================================
-void
-Node::set_data_pointer(void *data)
-{
-    release();
-    m_data    = data;    
-}
-    
-//============================================
+//---------------------------------------------------------------------------//
 void
 Node::info(Node &res) const
 {
@@ -3454,7 +3435,927 @@ Node::info(Node &res) const
     res["total_bytes_mmaped"]  = tb_mmap;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
+Node
+Node::info()const
+{
+    // NOTE: very ineff w/o move semantics
+    Node res;
+    info(res);
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+//
+// -- end definition of Node information methods --
+//
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+//
+// -- begin definition of Node entry access methods --
+//
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+NodeIterator
+Node::iterator()
+{
+    return NodeIterator(this,0);
+}
+
+//---------------------------------------------------------------------------//
+Node&
+Node::fetch(const std::string &path)
+{
+    // fetch w/ path forces OBJECT_T
+    if(dtype().id() != DataType::OBJECT_T)
+    {
+        init(DataType::Objects::object());
+    }
+    
+    std::string p_curr;
+    std::string p_next;
+    utils::split_path(path,p_curr,p_next);
+
+    // check for parent
+    if(p_curr == "..")
+    {
+        if(m_parent != NULL) // TODO: check for error (no parent) ?
+           return m_parent->fetch(p_next);
+    }
+
+    // if this node doesn't exist yet, we need to create it and
+    // link it to a schema
+        
+    index_t idx;
+    if(!m_schema->has_path(p_curr))
+    {
+        Schema *schema_ptr = m_schema->fetch_pointer(p_curr);
+        Node *curr_node = new Node();
+        curr_node->set_schema_pointer(schema_ptr);
+        curr_node->m_parent = this;
+        m_children.push_back(curr_node);
+        idx = m_children.size() - 1;
+    }
+    else
+    {
+        idx = m_schema->entry_index(p_curr);
+    }
+
+    if(p_next.empty())
+    {
+        return  *m_children[idx];
+    }
+    else
+    {
+        return m_children[idx]->fetch(p_next);
+    }
+
+}
+
+
+//---------------------------------------------------------------------------//
+Node&
+Node::fetch(index_t idx)
+{
+    return *m_children[idx];
+}
+
+
+//---------------------------------------------------------------------------//
+Node *
+Node::fetch_pointer(const std::string &path)
+{
+    return &fetch(path);
+}
+
+//---------------------------------------------------------------------------//
+Node *
+Node::fetch_pointer(index_t idx)
+{
+    return &fetch(idx);
+}
+
+//---------------------------------------------------------------------------//
+Node&
+Node::operator[](const std::string &path)
+{
+    return fetch(path);
+}
+
+//---------------------------------------------------------------------------//
+Node&
+Node::operator[](index_t idx)
+{
+    return fetch(idx);
+}
+
+//---------------------------------------------------------------------------//
+index_t 
+Node::number_of_entries() const 
+{
+    return m_schema->number_of_entries();
+}
+
+
+//---------------------------------------------------------------------------//
+bool           
+Node::has_path(const std::string &path) const
+{
+    return m_schema->has_path(path);
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::paths(std::vector<std::string> &paths) const
+{
+    m_schema->paths(paths);
+}
+
+//---------------------------------------------------------------------------//
+Node &
+Node::append()
+{
+    init_list();
+    index_t idx = m_children.size();
+    //
+    // This makes a proper copy of the schema for us to use
+    //
+    m_schema->append();
+    Schema *schema_ptr = m_schema->fetch_pointer(idx);
+
+    Node *res_node = new Node();
+    res_node->set_schema_pointer(schema_ptr);
+    res_node->m_parent=this;
+    m_children.push_back(res_node);
+    return *res_node;
+}
+
+//---------------------------------------------------------------------------//
+void    
+Node::remove(index_t idx)
+{
+    // note: we must remove the child pointer before the
+    // schema. b/c the child pointer uses the schema
+    // to cleanup
+    
+    // remove the proper list entry
+    delete m_children[idx];
+    m_schema->remove(idx);
+    m_children.erase(m_children.begin() + idx);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::remove(const std::string &path)
+{
+    std::string p_curr;
+    std::string p_next;
+    utils::split_path(path,p_curr,p_next);
+
+    index_t idx=m_schema->entry_index(p_curr);
+    
+    if(!p_next.empty())
+    {
+        m_children[idx]->remove(p_next);
+    }
+    else
+    {
+        // note: we must remove the child pointer before the
+        // schema. b/c the child pointer uses the schema
+        // to cleanup
+        
+        delete m_children[idx];
+        m_schema->remove(p_curr);
+        m_children.erase(m_children.begin() + idx);
+    }
+}
+
+//-----------------------------------------------------------------------------
+//
+// -- end definition of Node entry access methods --
+//
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+//
+// -- begin definition of Node list append methods --
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// generic cases
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(const Node &node)
+{
+    append().set(node);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(const DataType &data)
+{
+    append().set(data);
+}
+//-----------------------------------------------------------------------------
+// signed integer scalars
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(int8 data)
+{
+    append().set(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(int16 data)
+{
+    append().set(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(int32 data)
+{
+    append().set(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(int64 data)
+{
+    append().set(data);
+}
+
+//-----------------------------------------------------------------------------
+// unsigned integer scalars
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(uint8 data)
+{
+    append().set(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(uint16 data)
+{
+    append().set(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(uint32 data)
+{
+    append().set(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(uint64 data)
+{
+    append().set(data);
+}
+
+//-----------------------------------------------------------------------------
+/// floating point scalars 
+//-----------------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(float32 data)
+{
+    append().set(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(float64 data)
+{   
+    append().set(data);
+}
+
+//-----------------------------------------------------------------------------
+// signed integer array types via std::vector
+//-----------------------------------------------------------------------------
+
+
+void 
+Node::append(const std::vector<int8>   &data)
+{
+    append().set(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(const std::vector<int16>  &data)
+{
+    append().set(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(const std::vector<int32>  &data)
+{
+    append().set(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(const std::vector<int64>  &data)
+{
+    append().set(data);
+}
+
+//-----------------------------------------------------------------------------
+// unsigned integer array types via std::vector
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(const std::vector<uint8>   &data)
+{
+    append().set(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(const std::vector<uint16>  &data)
+{
+    append().set(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(const std::vector<uint32>  &data)
+{
+    append().set(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(const std::vector<uint64>  &data)
+{
+    append().set(data);
+}
+
+
+//-----------------------------------------------------------------------------
+// floating point array types via std::vector
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(const std::vector<float32> &data)
+{
+     append().set(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(const std::vector<float64> &data)
+{
+    append().set(data);
+}
+
+//-----------------------------------------------------------------------------
+// signed integer array types via conduit::DataArray
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(const int8_array  &data)
+{
+    append().set(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(const int16_array &data)
+{
+    append().set(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(const int32_array &data)
+{   
+    append().set(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(const int64_array &data)
+{
+    append().set(data);
+}
+
+//-----------------------------------------------------------------------------
+// unsigned integer array types via conduit::DataArray
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(const uint8_array  &data)
+{
+    append().set(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(const uint16_array &data)
+{
+    append().set(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(const uint32_array &data)
+{
+    append().set(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(const uint64_array &data)
+{
+    append().set(data);
+}
+//---------------------------------------------------------------------------//
+void 
+Node::append(const float32_array &data)
+{
+     append().set(data);
+}
+
+//-----------------------------------------------------------------------------
+// floating point  array types via conduit::DataArray
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(const float64_array &data)
+{
+    append().set(data);
+}
+
+//-----------------------------------------------------------------------------
+// string types
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void 
+Node::append(const std::string &data)
+{
+    append().set(data);
+}
+
+
+//-----------------------------------------------------------------------------
+//
+// -- end definition of Node list append methods --
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+// -- begin definition of Interface Warts --
+//
+//-----------------------------------------------------------------------------
+
+// NOTE: several other warts methods are inlined in Node.h
+
+//---------------------------------------------------------------------------//
+void
+Node::set_schema_pointer(Schema *schema_ptr)
+{
+    if(m_schema->is_root())
+        delete m_schema;
+    m_schema = schema_ptr;    
+}
+    
+//---------------------------------------------------------------------------//
+void
+Node::set_data_pointer(void *data)
+{
+    release();
+    m_data    = data;    
+}
+    
+
+//-----------------------------------------------------------------------------
+//
+// -- end definition of Interface Warts --
+//
+//-----------------------------------------------------------------------------
+
+//=============================================================================
+//-----------------------------------------------------------------------------
+//
+//
+// -- end conduit::Node public methods --
+//
+//
+//-----------------------------------------------------------------------------
+//=============================================================================
+
+//=============================================================================
+//-----------------------------------------------------------------------------
+//
+//
+// -- begin conduit::Node private methods --
+//
+//
+//-----------------------------------------------------------------------------
+//=============================================================================
+
+//-----------------------------------------------------------------------------
+//
+// -- private methods that help with init, memory allocation, and cleanup --
+//
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void
+Node::init(const DataType& dtype)
+{
+    if(this->dtype().is_compatible(dtype))
+        return;
+    
+    if(m_data != NULL)
+    {
+        release();
+    }
+
+    index_t dt_id = dtype.id();
+    if(dt_id == DataType::OBJECT_T ||
+       dt_id == DataType::LIST_T)
+    {
+        m_children.clear();
+    }
+    else if(dt_id != DataType::EMPTY_T)
+    {
+        allocate(dtype);
+    }
+    
+    m_schema->set(dtype); 
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::allocate(const DataType &dtype)
+{
+    // TODO: This implies compact storage
+    allocate(dtype.number_of_elements()*dtype.element_bytes());
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::allocate(index_t dsize)
+{
+    m_data      = malloc(dsize);
+    m_data_size = dsize;
+    m_alloced   = true;
+    m_mmaped    = false;
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::mmap(const std::string &stream_path, index_t dsize)
+{
+#if defined(CONDUIT_PLATFORM_WINDOWS)
+    ///
+    /// TODO: mmap isn't supported on windows, we need to use a 
+    /// a windows specific API.  
+    /// See: https://lc.llnl.gov/jira/browse/CON-38
+    ///
+    /// For now, we simply throw an error
+    ///
+    THROW_ERROR("<Node::mmap> conduit does not yet support mmap on Windows");
+#else    
+    m_mmap_fd   = open(stream_path.c_str(),O_RDWR| O_CREAT);
+    m_data_size = dsize;
+
+    if (m_mmap_fd == -1) 
+        THROW_ERROR("<Node::mmap> failed to open: " << stream_path);
+
+    m_data = ::mmap(0, dsize, PROT_READ | PROT_WRITE, MAP_SHARED, m_mmap_fd, 0);
+
+    if (m_data == MAP_FAILED) 
+        THROW_ERROR("<Node::mmap> MAP_FAILED" << stream_path);
+    
+    m_alloced = false;
+    m_mmaped  = true;
+#endif    
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::release()
+{
+    for (index_t i = 0; i < m_children.size(); i++) {
+        Node* node = m_children[i];
+        delete node;
+    }
+    m_children.clear();
+
+    if(m_alloced && m_data)
+    {
+        if(dtype().id() != DataType::EMPTY_T)
+        {   
+            // clean up our storage
+            free(m_data);
+            m_data = NULL;
+            m_alloced = false;
+            m_data_size = 0;
+        }
+    }   
+#if !defined(CONDUIT_PLATFORM_WINDOWS)
+    ///
+    /// TODO: mmap isn't yet supported on windows
+    ///
+    else if(m_mmaped && m_data)
+    {
+        if(munmap(m_data, m_data_size) == -1) 
+        {
+            // TODO error
+        }
+        close(m_mmap_fd);
+        m_data      = NULL;
+        m_mmap_fd   = -1;
+        m_data_size = 0;
+    }
+#endif
+}
+    
+
+//---------------------------------------------------------------------------//
+void
+Node::cleanup()
+{
+    release();
+    if(m_schema->is_root())
+    {
+        if(m_schema != NULL)
+        {
+            delete m_schema;
+            m_schema = NULL;
+        }
+    }
+    else if(m_schema != NULL)
+    {
+        m_schema->set(DataType::EMPTY_T);
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::init_list()
+{
+    init(DataType::Objects::list());
+}
+ 
+//---------------------------------------------------------------------------//
+void
+Node::init_object()
+{
+    init(DataType::Objects::object());
+}
+
+
+
+
+//---------------------------------------------------------------------------//
+void
+Node::init_defaults()
+{
+    m_data = NULL;
+    m_data_size = 0;
+    m_alloced = false;
+
+    m_mmaped    = false;
+    m_mmap_fd   = -1;
+
+    m_schema = new Schema(DataType::EMPTY_T);
+    
+    m_parent = NULL;
+}
+
+
+//-----------------------------------------------------------------------------
+//
+// -- private methods that help with hierarchical construction --
+//
+//-----------------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------------//
+void 
+Node::walk_schema(Node   *node, 
+                  Schema *schema,
+                  void   *data,
+                  bool    copy)
+{
+    // we can have an object, list, or leaf
+    
+    if(schema->dtype().id() == DataType::OBJECT_T)
+    {
+        for(index_t i=0;i<schema->children().size();i++)
+        {
+    
+            std::string curr_name = schema->object_order()[i];
+            Schema *curr_schema   = schema->fetch_pointer(curr_name);
+            Node *curr_node = new Node();
+            curr_node->set_schema_pointer(curr_schema);
+            curr_node->set_parent(node);
+            walk_schema(curr_node,curr_schema,data,copy);
+            node->append_node_pointer(curr_node);
+        }                   
+    }
+    else if(schema->dtype().id() == DataType::LIST_T)
+    {
+        index_t num_entries = schema->number_of_entries();
+        for(index_t i=0;i<num_entries;i++)
+        {
+            Schema *curr_schema = schema->fetch_pointer(i);
+            Node *curr_node = new Node();
+            curr_node->set_schema_pointer(curr_schema);
+            curr_node->set_parent(node);
+            walk_schema(curr_node,curr_schema,data,copy);
+            node->append_node_pointer(curr_node);
+        }
+    }
+    else
+    {
+        // link the current node to the schema
+        node->set_schema_pointer(schema);
+        node->set_data_pointer(data);
+    } 
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_node_using_schema_pointer(const Node &node, Schema *schema)
+{
+    if (node.dtype().id() != DataType::EMPTY_T)
+    {
+    
+        if(node.dtype().id() == DataType::OBJECT_T || 
+           node.dtype().id() == DataType::LIST_T)
+        {
+            init(node.dtype());
+
+            // If we are making a new head, copy the schema, otherwise, use
+            // the pointer we were given
+            if (schema != NULL)
+            {
+                m_schema = schema;
+            } 
+            else 
+            {
+                m_schema = new Schema(node.schema());
+            }
+            
+            for(index_t i=0;i<node.m_children.size();i++)
+            {
+                Node *child = new Node();
+                child->m_parent = this;
+                child->set_node_using_schema_pointer(*node.m_children[i],
+                                                     m_schema->children()[i]);
+                m_children.push_back(child);
+            }
+        }
+        else
+        {
+            if(this->dtype().is_compatible(node.dtype()))
+            {
+                memcpy(element_pointer(0),
+                       node.element_pointer(0), 
+                       m_schema->total_bytes());
+            }
+            else
+            {
+                ///
+                /// TODO: We are doing a copy here, should we also compact?
+                ///
+                init(node.dtype());
+                memcpy(m_data, node.m_data, m_schema->total_bytes());
+            }
+        }
+    }
+    else
+    {
+        // if passed node is empty -- reset this.
+        reset();
+    }
+
+}
+
+
+//-----------------------------------------------------------------------------
+//
+// -- private methods that help with compaction, serialization, and info  --
+//
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void
+Node::compact_to(uint8 *data, index_t curr_offset) const
+{
+    index_t dtype_id = dtype().id();
+    if(dtype_id == DataType::OBJECT_T ||
+       dtype_id == DataType::LIST_T)
+    {
+            std::vector<Node*>::const_iterator itr;
+            for(itr = m_children.begin(); itr < m_children.end(); ++itr)
+            {
+                (*itr)->compact_to(data,curr_offset);
+                curr_offset +=  (*itr)->total_bytes_compact();
+            }
+    }
+    else
+    {
+        compact_elements_to(&data[curr_offset]);
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::compact_elements_to(uint8 *data) const
+{
+    index_t dtype_id = dtype().id();
+    if(dtype_id == DataType::OBJECT_T ||
+       dtype_id == DataType::LIST_T ||
+       dtype_id == DataType::EMPTY_T)
+    {
+        // TODO: error
+    }
+    else
+    {
+        // copy all elements 
+        index_t num_ele   = dtype().number_of_elements();
+        index_t ele_bytes = DataType::default_bytes(dtype_id);
+        uint8 *data_ptr = data;
+        for(index_t i=0;i<num_ele;i++)
+        {
+            memcpy(data_ptr,
+                   element_pointer(i),
+                   ele_bytes);
+            data_ptr+=ele_bytes;
+        }
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::serialize(uint8 *data,index_t curr_offset) const
+{
+    if(dtype().id() == DataType::OBJECT_T ||
+       dtype().id() == DataType::LIST_T)
+    {
+        std::vector<Node*>::const_iterator itr;
+        for(itr = m_children.begin(); itr < m_children.end(); ++itr)
+        {
+            (*itr)->serialize(&data[0],curr_offset);
+            curr_offset+=(*itr)->total_bytes();
+        }
+    }
+    else
+    {
+        if(is_compact())
+        {
+            memcpy(&data[curr_offset],
+                   m_data,
+                   total_bytes());
+        }
+        else // ser as is. This copies stride * num_ele bytes
+        {
+            // copy all elements 
+            compact_elements_to(&data[curr_offset]);      
+        }
+       
+    }
+}
+
+//---------------------------------------------------------------------------//
 void
 Node::info(Node &res, const std::string &curr_path) const
 {
@@ -3519,834 +4420,6 @@ Node::info(Node &res, const std::string &curr_path) const
     }    
 }
 
-//============================================
-Node
-Node::info()const
-{
-    // NOTE: very ineff w/o move semantics
-    Node res;
-    info(res);
-    return res;
-}
-
-
-
-
-
-
-
-
-//============================================
-void
-Node::compact_to(uint8 *data, index_t curr_offset) const
-{
-    index_t dtype_id = dtype().id();
-    if(dtype_id == DataType::OBJECT_T ||
-       dtype_id == DataType::LIST_T)
-    {
-            std::vector<Node*>::const_iterator itr;
-            for(itr = m_children.begin(); itr < m_children.end(); ++itr)
-            {
-                (*itr)->compact_to(data,curr_offset);
-                curr_offset +=  (*itr)->total_bytes_compact();
-            }
-    }
-    else
-    {
-        compact_elements_to(&data[curr_offset]);
-    }
-}
-
-
-//============================================
-void
-Node::compact_elements_to(uint8 *data) const
-{
-    index_t dtype_id = dtype().id();
-    if(dtype_id == DataType::OBJECT_T ||
-       dtype_id == DataType::LIST_T ||
-       dtype_id == DataType::EMPTY_T)
-    {
-        // TODO: error
-    }
-    else
-    {
-        // copy all elements 
-        index_t num_ele   = dtype().number_of_elements();
-        index_t ele_bytes = DataType::default_bytes(dtype_id);
-        uint8 *data_ptr = data;
-        for(index_t i=0;i<num_ele;i++)
-        {
-            memcpy(data_ptr,
-                   element_pointer(i),
-                   ele_bytes);
-            data_ptr+=ele_bytes;
-        }
-    }
-}
-
-
-
-
-
-//============================================
-// bool             
-// Node::compare(const Node &n, Node &cmp_results) const
-// {
-// /// TODO: cmp_results will describe the diffs between this & n    
-// }
-// 
-// 
-// //============================================
-// bool             
-// Node::operator==(const Node &n) const
-// {
-// /// TODO value comparison
-//     return false;
-// }
-
-
-//============================================
-Node&
-Node::fetch(const std::string &path)
-{
-    // fetch w/ path forces OBJECT_T
-    if(dtype().id() != DataType::OBJECT_T)
-    {
-        init(DataType::Objects::object());
-    }
-    
-    std::string p_curr;
-    std::string p_next;
-    utils::split_path(path,p_curr,p_next);
-
-    // check for parent
-    if(p_curr == "..")
-    {
-        if(m_parent != NULL) // TODO: check for error (no parent) ?
-           return m_parent->fetch(p_next);
-    }
-
-    // if this node doesn't exist yet, we need to create it and
-    // link it to a schema
-        
-    index_t idx;
-    if(!m_schema->has_path(p_curr))
-    {
-        Schema *schema_ptr = m_schema->fetch_pointer(p_curr);
-        Node *curr_node = new Node();
-        curr_node->set_schema_pointer(schema_ptr);
-        curr_node->m_parent = this;
-        m_children.push_back(curr_node);
-        idx = m_children.size() - 1;
-    }
-    else
-    {
-        idx = m_schema->entry_index(p_curr);
-    }
-
-    if(p_next.empty())
-    {
-        return  *m_children[idx];
-    }
-    else
-    {
-        return m_children[idx]->fetch(p_next);
-    }
-
-}
-
-
-//============================================
-Node&
-Node::fetch(index_t idx)
-{
-    // if(dtype().id() != DataType::LIST_T)
-    // {
-    // }
-    // we could also potentially support index fetch on:
-    //   OBJECT_T (imp-order)
-    return *m_children[idx];
-}
-
-
-//============================================
-Node *
-Node::fetch_pointer(const std::string &path)
-{
-    return &fetch(path);
-}
-
-//============================================
-Node *
-Node::fetch_pointer(index_t idx)
-{
-    return &fetch(idx);
-}
-
-//============================================
-Node&
-Node::operator[](const std::string &path)
-{
-    return fetch(path);
-}
-
-//============================================
-Node&
-Node::operator[](index_t idx)
-{
-    return fetch(idx);
-}
-
-
-//============================================
-bool           
-Node::has_path(const std::string &path) const
-{
-    return m_schema->has_path(path);
-}
-
-
-//============================================
-void
-Node::paths(std::vector<std::string> &paths) const
-{
-    m_schema->paths(paths);
-}
-
-//============================================
-index_t 
-Node::number_of_entries() const 
-{
-    return m_schema->number_of_entries();
-}
-
-//============================================
-void    
-Node::remove(index_t idx)
-{
-    // note: we must remove the child pointer before the
-    // schema. b/c the child pointer uses the schema
-    // to cleanup
-    
-    // remove the proper list entry
-    delete m_children[idx];
-    m_schema->remove(idx);
-    m_children.erase(m_children.begin() + idx);
-}
-
-//============================================
-void
-Node::remove(const std::string &path)
-{
-    std::string p_curr;
-    std::string p_next;
-    utils::split_path(path,p_curr,p_next);
-
-    index_t idx=m_schema->entry_index(p_curr);
-    
-    if(!p_next.empty())
-    {
-        m_children[idx]->remove(p_next);
-    }
-    else
-    {
-        // note: we must remove the child pointer before the
-        // schema. b/c the child pointer uses the schema
-        // to cleanup
-        
-        delete m_children[idx];
-        m_schema->remove(p_curr);
-        m_children.erase(m_children.begin() + idx);
-    }
-}
-
-
-//============================================
-void
-Node::init(const DataType& dtype)
-{
-    if(this->dtype().is_compatible(dtype))
-        return;
-    
-    if(m_data != NULL)
-    {
-        release();
-    }
-
-    index_t dt_id = dtype.id();
-    if(dt_id == DataType::OBJECT_T ||
-       dt_id == DataType::LIST_T)
-    {
-        m_children.clear();
-    }
-    else if(dt_id != DataType::EMPTY_T)
-    {
-        allocate(dtype);
-    }
-    
-    m_schema->set(dtype); 
-}
-
-
-//============================================
-void
-Node::allocate(const DataType &dtype)
-{
-    // TODO: This implies compact storage
-    allocate(dtype.number_of_elements()*dtype.element_bytes());
-}
-
-//============================================
-void
-Node::allocate(index_t dsize)
-{
-    m_data      = malloc(dsize);
-    m_data_size = dsize;
-    m_alloced   = true;
-    m_mmaped    = false;
-}
-
-
-//============================================
-void
-Node::mmap(const std::string &stream_path, index_t dsize)
-{
-#if defined(CONDUIT_PLATFORM_WINDOWS)
-    ///
-    /// TODO: mmap isn't supported on windows, we need to use a 
-    /// a windows specific API.  
-    /// See: https://lc.llnl.gov/jira/browse/CON-38
-    ///
-    /// For now, we simply throw an error
-    ///
-    THROW_ERROR("<Node::mmap> conduit does not yet support mmap on Windows");
-#else    
-    m_mmap_fd   = open(stream_path.c_str(),O_RDWR| O_CREAT);
-    m_data_size = dsize;
-
-    if (m_mmap_fd == -1) 
-        THROW_ERROR("<Node::mmap> failed to open: " << stream_path);
-
-    m_data = ::mmap(0, dsize, PROT_READ | PROT_WRITE, MAP_SHARED, m_mmap_fd, 0);
-
-    if (m_data == MAP_FAILED) 
-        THROW_ERROR("<Node::mmap> MAP_FAILED" << stream_path);
-    
-    m_alloced = false;
-    m_mmaped  = true;
-#endif    
-}
-
-
-//============================================
-void
-Node::release()
-{
-    for (index_t i = 0; i < m_children.size(); i++) {
-        Node* node = m_children[i];
-        delete node;
-    }
-    m_children.clear();
-
-    if(m_alloced && m_data)
-    {
-        if(dtype().id() != DataType::EMPTY_T)
-        {   
-            // clean up our storage
-            free(m_data);
-            m_data = NULL;
-            m_alloced = false;
-            m_data_size = 0;
-        }
-    }   
-#if !defined(CONDUIT_PLATFORM_WINDOWS)
-    ///
-    /// TODO: mmap isn't yet supported on windows
-    ///
-    else if(m_mmaped && m_data)
-    {
-        if(munmap(m_data, m_data_size) == -1) 
-        {
-            // TODO error
-        }
-        close(m_mmap_fd);
-        m_data      = NULL;
-        m_mmap_fd   = -1;
-        m_data_size = 0;
-    }
-#endif
-}
-    
-
-//============================================
-void
-Node::cleanup()
-{
-    release();
-    if(m_schema->is_root())
-    {
-        if(m_schema != NULL)
-        {
-            delete m_schema;
-            m_schema = NULL;
-        }
-    }
-    else if(m_schema != NULL)
-    {
-        m_schema->set(DataType::EMPTY_T);
-    }
-}
-
-
-//============================================
-void
-Node::init_list()
-{
-    init(DataType::Objects::list());
-}
- 
-//============================================
-void
-Node::init_object()
-{
-    init(DataType::Objects::object());
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// -- begin append imp -- // 
-///////////////////////////////////////////////////////////////////////////////
-
-//============================================
-Node &
-Node::append()
-{
-    init_list();
-    index_t idx = m_children.size();
-    //
-    // This makes a proper copy of the schema for us to use
-    //
-    m_schema->append();
-    Schema *schema_ptr = m_schema->fetch_pointer(idx);
-
-    Node *res_node = new Node();
-    res_node->set_schema_pointer(schema_ptr);
-    res_node->m_parent=this;
-    m_children.push_back(res_node);
-    return *res_node;
-}
-
-//============================================
-void 
-Node::append(const Node &node)
-{
-    append().set(node);
-}
-
-//============================================
-void 
-Node::append(const DataType &data)
-{
-    append().set(data);
-}
-
-// int types
-
-//============================================
-void 
-Node::append(int8 data)
-{
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(int16 data)
-{
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(int32 data)
-{
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(int64 data)
-{
-    append().set(data);
-}
-
-// uint types
-
-//============================================
-void 
-Node::append(uint8 data)
-{
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(uint16 data)
-{
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(uint32 data)
-{
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(uint64 data)
-{
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(float32 data)
-{
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(float64 data)
-{   
-    append().set(data);
-}
-
-// std::vector int types
-
-//============================================
-void 
-Node::append(const std::vector<int8>   &data)
-{
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(const std::vector<int16>  &data)
-{
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(const std::vector<int32>  &data)
-{
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(const std::vector<int64>  &data)
-{
-    append().set(data);
-}
-
-// std::vector uint types
-
-//============================================
-void 
-Node::append(const std::vector<uint8>   &data)
-{
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(const std::vector<uint16>  &data)
-{
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(const std::vector<uint32>  &data)
-{
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(const std::vector<uint64>  &data)
-{
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(const std::vector<float32> &data)
-{
-     append().set(data);
-}
-
-//============================================
-void 
-Node::append(const std::vector<float64> &data)
-{
-    append().set(data);
-}
-
-
-//============================================
-void 
-Node::append(const int8_array  &data)
-{
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(const int16_array &data)
-{
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(const int32_array &data)
-{   
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(const int64_array &data)
-{
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(const uint8_array  &data)
-{
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(const uint16_array &data)
-{
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(const uint32_array &data)
-{
-    append().set(data);
-}
-
-//============================================
-void 
-Node::append(const uint64_array &data)
-{
-    append().set(data);
-}
-//============================================
-void 
-Node::append(const float32_array &data)
-{
-     append().set(data);
-}
-//============================================
-void 
-Node::append(const float64_array &data)
-{
-    append().set(data);
-}
-//============================================
-void 
-Node::append(const std::string &data)
-{
-    append().set(data);
-}
-
-
-//=============================================================================
-//-----------------------------------------------------------------------------
-//
-//
-// -- end conduit::Node public methods --
-//
-//
-//-----------------------------------------------------------------------------
-//=============================================================================
-
-//=============================================================================
-//-----------------------------------------------------------------------------
-//
-//
-// -- begin conduit::Node private methods --
-//
-//
-//-----------------------------------------------------------------------------
-//=============================================================================
-
-
-//---------------------------------------------------------------------------//
-void
-Node::init_defaults()
-{
-    m_data = NULL;
-    m_data_size = 0;
-    m_alloced = false;
-
-    m_mmaped    = false;
-    m_mmap_fd   = -1;
-
-    m_schema = new Schema(DataType::EMPTY_T);
-    
-    m_parent = NULL;
-}
-
-
-
-//---------------------------------------------------------------------------//
-void
-Node::serialize(uint8 *data,index_t curr_offset) const
-{
-    if(dtype().id() == DataType::OBJECT_T ||
-       dtype().id() == DataType::LIST_T)
-    {
-        std::vector<Node*>::const_iterator itr;
-        for(itr = m_children.begin(); itr < m_children.end(); ++itr)
-        {
-            (*itr)->serialize(&data[0],curr_offset);
-            curr_offset+=(*itr)->total_bytes();
-        }
-    }
-    else
-    {
-        if(is_compact())
-        {
-            memcpy(&data[curr_offset],
-                   m_data,
-                   total_bytes());
-        }
-        else // ser as is. This copies stride * num_ele bytes
-        {
-            // copy all elements 
-            compact_elements_to(&data[curr_offset]);      
-        }
-       
-    }
-}
-
-
-//-----------------------------------------------------------------------------
-void
-Node::set_node_using_schema_pointer(const Node &node, Schema *schema)
-{
-    if (node.dtype().id() != DataType::EMPTY_T)
-    {
-    
-        if(node.dtype().id() == DataType::OBJECT_T || 
-           node.dtype().id() == DataType::LIST_T)
-        {
-            init(node.dtype());
-
-            // If we are making a new head, copy the schema, otherwise, use
-            // the pointer we were given
-            if (schema != NULL)
-            {
-                m_schema = schema;
-            } 
-            else 
-            {
-                m_schema = new Schema(node.schema());
-            }
-            
-            for(index_t i=0;i<node.m_children.size();i++)
-            {
-                Node *child = new Node();
-                child->m_parent = this;
-                child->set_node_using_schema_pointer(*node.m_children[i],
-                                                     m_schema->children()[i]);
-                m_children.push_back(child);
-            }
-        }
-        else
-        {
-            if(this->dtype().is_compatible(node.dtype()))
-            {
-                memcpy(element_pointer(0),
-                       node.element_pointer(0), 
-                       m_schema->total_bytes());
-            }
-            else
-            {
-                ///
-                /// TODO: We are doing a copy here, should we also compact?
-                ///
-                init(node.dtype());
-                memcpy(m_data, node.m_data, m_schema->total_bytes());
-            }
-        }
-    }
-    else
-    {
-        // if passed node is empty -- reset this.
-        reset();
-    }
-
-}
-
-
-//============================================
-void 
-Node::walk_schema(Node   *node, 
-                  Schema *schema,
-                  void   *data,
-                  bool    copy)
-{
-    // we can have an object, list, or leaf
-    
-    if(schema->dtype().id() == DataType::OBJECT_T)
-    {
-        for(index_t i=0;i<schema->children().size();i++)
-        {
-    
-            std::string curr_name = schema->object_order()[i];
-            Schema *curr_schema   = schema->fetch_pointer(curr_name);
-            Node *curr_node = new Node();
-            curr_node->set_schema_pointer(curr_schema);
-            curr_node->set_parent(node);
-            walk_schema(curr_node,curr_schema,data,copy);
-            node->append_node_pointer(curr_node);
-        }                   
-    }
-    else if(schema->dtype().id() == DataType::LIST_T)
-    {
-        index_t num_entries = schema->number_of_entries();
-        for(index_t i=0;i<num_entries;i++)
-        {
-            Schema *curr_schema = schema->fetch_pointer(i);
-            Node *curr_node = new Node();
-            curr_node->set_schema_pointer(curr_schema);
-            curr_node->set_parent(node);
-            walk_schema(curr_node,curr_schema,data,copy);
-            node->append_node_pointer(curr_node);
-        }
-    }
-    else
-    {
-        // link the current node to the schema
-        node->set_schema_pointer(schema);
-        node->set_data_pointer(data);
-    } 
-}
 
 //=============================================================================
 //-----------------------------------------------------------------------------

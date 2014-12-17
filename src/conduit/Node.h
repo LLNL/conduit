@@ -1165,174 +1165,287 @@ public:
 ///@{
 //-----------------------------------------------------------------------------
 /// description:
-///  TODO
+///  These methods provide general info about the node hierarchy, and memory 
+///  layout.
 //-----------------------------------------------------------------------------
     // schema access
-    const Schema     &schema() const { return *m_schema;}   
-    const DataType   &dtype() const       { return m_schema->dtype();}
+    const Schema     &schema() const 
+                        { return *m_schema;}   
+    const DataType   &dtype() const       
+                        { return m_schema->dtype();}
 
 
     // parent access
-    bool             has_parent() const {return m_parent != NULL;}
-    Node            *parent() {return m_parent;}
+    bool             has_parent() const 
+                        {return m_parent != NULL;}
+    Node            *parent() 
+                        {return m_parent;}
     
     //memory space info
-    index_t           total_bytes() const { return m_schema->total_bytes();}
-    index_t           total_bytes_compact() const
-                            { return m_schema->total_bytes_compact();}
+    index_t          total_bytes() const 
+                        { return m_schema->total_bytes();}
+    index_t          total_bytes_compact() const
+                        { return m_schema->total_bytes_compact();}
 
-    
-
-    bool        is_compact() const {return dtype().is_compact();}
-
+    /// is this node using a compact data layout
+    bool             is_compact() const 
+                        {return dtype().is_compact();}
     ///
     /// info() creates a node that contains metadata about the current
     /// node's memory properties
-    void        info(Node &nres) const;
+    void            info(Node &nres) const;
     /// TODO: this is inefficient w/o move semantics, but is very 
     /// convenient for testing and example programs.
-    Node        info() const;
-
-    /// print a simplified json representation of the this node to std out
-    void              print(bool detailed=false) const
-                        {std::cout << to_json(detailed,2) << std::endl;}
-    /// print a detailed json representation of the this node to std out.
-    /// json output includes conduit schema constructs
-    void              print_detailed() const
-                        {print(true);}
+    Node            info() const;
 
     /// TODO: compare or operator== ?
 
+//-----------------------------------------------------------------------------
+// -- stdout print methods ---
+//-----------------------------------------------------------------------------
+    /// print a simplified json representation of the this node to std out
+    void            print(bool detailed=false) const
+                        {std::cout << to_json(detailed,2) << std::endl;}
+    /// print a detailed json representation of the this node to std out.
+    /// json output includes conduit schema constructs
+    void            print_detailed() const
+                        {print(true);}
+//-----------------------------------------------------------------------------
+///@}
 //-----------------------------------------------------------------------------
 //
 // -- end declaration of Node information methods --
 //
 //-----------------------------------------------------------------------------
-    // data pointer access 
-    uint8            *data_pointer() {return (uint8*)m_data;}
 
+//-----------------------------------------------------------------------------
+//
+// -- begin declaration of Node entry access methods --
+//
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+///@name Node Entry Access Methods
+///@{
+//-----------------------------------------------------------------------------
+/// description:
+///  Node traversal (iterators), child access (for list or object types)
+//-----------------------------------------------------------------------------
+    /// iterator access
     NodeIterator     iterator();
-    // -- begin entry access --
-    /// @name Node::fetch(...) methods
-    ///@{
-    // Note: `fetch' methods do modify map structure if a path doesn't exist
-    Node             &fetch(const std::string &path);
-    Node             &fetch(index_t idx);
     
+    /// `fetch' methods do modify map structure if a path doesn't exist
+    /// fetch the node at the given path
+    Node             &fetch(const std::string &path);
+    /// fetch the node at the given index
+    Node             &fetch(index_t idx);
+
+    /// fetch a pointer to the node  at the given path   
     Node             *fetch_pointer(const std::string &path);
+    /// fetch a pointer to the node at the given index
     Node             *fetch_pointer(index_t idx);
 
-    ///@}
-    // -- end entry access --
+    /// access child node via a path (equivalent to fetch via path)
+    Node             &operator[](const std::string &path);
+    /// access child node via index (equivalent to fetch via index)
+    Node             &operator[](const index_t idx);
+
+    /// return the number of children (list and object interfaces)
+    index_t number_of_entries() const;
+    
+    /// checks if given path exists in the Node hierarchy 
+    bool    has_path(const std::string &path) const;
+    /// returns the direct child paths for this node
+    void    paths(std::vector<std::string> &paths) const;
+
+    /// adds an empty unnamed node to a list (list interface)
+    Node   &append();
+
+    /// remove child at index (list and object interfaces)
+    void    remove(index_t idx);
+    /// remove child at given path (object interface)
+    void    remove(const std::string &path);
 
 
-    // -- begin list append interface methods --
-    /// @name Node list append inteface methods
-    /// @{
-    Node &append();
+//-----------------------------------------------------------------------------
+///@}
+//-----------------------------------------------------------------------------
+//
+// -- end declaration of Node entry access methods --
+//
+//-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+//
+// -- begin declaration of Node list append methods --
+//
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+///@name Node List Append Methods
+///@{
+//-----------------------------------------------------------------------------
+/// description:
+/// TODO: these are incomplete, we may remove them instead of creating
+/// the full set of append, append_external methods
+//-----------------------------------------------------------------------------
+
+    /// TODO: append() missing other generic sets or stick to set()
+
+    // generic cases
     void append(const Node &node);
     void append(const DataType &data);
-
+    
+    // signed integer scalars
     void append(int8 data);
     void append(int16 data);
     void append(int32 data);
     void append(int64 data);
 
+    // unsigned integer scalars
     void append(uint8 data);
     void append(uint16 data);
     void append(uint32 data);
     void append(uint64 data);
+
+    // floating point scalars 
     void append(float32 data);
     void append(float64 data);
 
+    // signed integer array types via std::vector
     void append(const std::vector<int8>   &data);
     void append(const std::vector<int16>  &data);
     void append(const std::vector<int32>  &data);
     void append(const std::vector<int64>  &data);
 
+    // unsigned integer array types via std::vector
     void append(const std::vector<uint8>   &data);
     void append(const std::vector<uint16>  &data);
     void append(const std::vector<uint32>  &data);
     void append(const std::vector<uint64>  &data);
+    
+    // floating point array types via std::vector
     void append(const std::vector<float32> &data);
     void append(const std::vector<float64> &data);
 
-
+    // signed integer array types via conduit::DataArray
     void append(const int8_array  &data);
     void append(const int16_array &data);
     void append(const int32_array &data);
     void append(const int64_array &data);
 
+    // unsigned integer array types via conduit::DataArray
     void append(const uint8_array  &data);
     void append(const uint16_array &data);
     void append(const uint32_array &data);
     void append(const uint64_array &data);
     
+    // floating point  array types via conduit::DataArray
     void append(const float32_array &data);
     void append(const float64_array &data);
     
+    // string types
     void append(const std::string &data);
 
-    // -- end list append interface methods --
-    ///@}
-
-    index_t number_of_entries() const;
-    void    remove(index_t idx);
-    void    remove(const std::string &path);
-    
-    bool    has_path(const std::string &path) const;
-    void    paths(std::vector<std::string> &paths) const;
+//-----------------------------------------------------------------------------
+///@}
+//-----------------------------------------------------------------------------
+//
+// -- end declaration of Node list append methods --
+//
+//-----------------------------------------------------------------------------
 
 
-    // these support the map and list interfaces
-    Node             &operator[](const std::string &path);
-    Node             &operator[](const index_t idx);
+//-----------------------------------------------------------------------------
+//
+// -- begin declaration of Node value access methods --
+//
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+///@name Node Value Access Methods
+///@{
+//-----------------------------------------------------------------------------
+/// description:
+///  Direct access to data at leaf types.
+//-----------------------------------------------------------------------------
+     
+     // signed integer scalars
+    int8             as_int8()   const  
+                        { return *((int8*)element_pointer(0));}
+    int16            as_int16()  const  
+                        { return *((int16*)element_pointer(0));}
+    int32            as_int32()  const  
+                        { return *((int32*)element_pointer(0));}
+    int64            as_int64()  const  
+                        { return *((int64*)element_pointer(0));}
 
-    // -- begin value access --    
-    /// @name Node::as_{dtype}(...) methods
-    ///@{
-    int8             as_int8()   const  { return *((int8*)element_pointer(0));}
-    int16            as_int16()  const  { return *((int16*)element_pointer(0));}
-    int32            as_int32()  const  { return *((int32*)element_pointer(0));}
-    int64            as_int64()  const  { return *((int64*)element_pointer(0));}
+    // unsigned integer scalars
+    uint8            as_uint8()   const 
+                        { return *((uint8*)element_pointer(0));}
+    uint16           as_uint16()  const 
+                        { return *((uint16*)element_pointer(0));}
+    uint32           as_uint32()  const 
+                        { return *((uint32*)element_pointer(0));}
+    uint64           as_uint64()  const 
+                        { return *((uint64*)element_pointer(0));}
 
-    uint8            as_uint8()   const { return *((uint8*)element_pointer(0));}
-    uint16           as_uint16()  const { return *((uint16*)element_pointer(0));}
-    uint32           as_uint32()  const { return *((uint32*)element_pointer(0));}
-    uint64           as_uint64()  const { return *((uint64*)element_pointer(0));}
+    // floating point scalars
+    float32          as_float32() const 
+                        { return *((float32*)element_pointer(0));}
+    float64          as_float64() const 
+                        { return *((float64*)element_pointer(0));}
 
-    float32          as_float32() const { return *((float32*)element_pointer(0));}
-    float64          as_float64() const { return *((float64*)element_pointer(0));}
+    // signed integers via pointers
+    int8            *as_int8_ptr()     
+                        { return (int8*)element_pointer(0);}
+    int16           *as_int16_ptr()    
+                        { return (int16*)element_pointer(0);}
+    int32           *as_int32_ptr()    
+                        { return (int32*)element_pointer(0);}
+    int64           *as_int64_ptr()    
+                        { return (int64*)element_pointer(0);}
 
-    int8            *as_int8_ptr()     { return (int8*)element_pointer(0);}
-    int16           *as_int16_ptr()    { return (int16*)element_pointer(0);}
-    int32           *as_int32_ptr()    { return (int32*)element_pointer(0);}
-    int64           *as_int64_ptr()    { return (int64*)element_pointer(0);}
+    // unsigned integers via pointers
+    uint8           *as_uint8_ptr()    
+                        { return (uint8*)element_pointer(0);}
+    uint16          *as_uint16_ptr()   
+                        { return (uint16*)element_pointer(0);}
+    uint32          *as_uint32_ptr()   
+                        { return (uint32*)element_pointer(0);}
+    uint64          *as_uint64_ptr()   
+                        { return (uint64*)element_pointer(0);}
 
-    uint8           *as_uint8_ptr()    { return (uint8*)element_pointer(0);}
-    uint16          *as_uint16_ptr()   { return (uint16*)element_pointer(0);}
-    uint32          *as_uint32_ptr()   { return (uint32*)element_pointer(0);}
-    uint64          *as_uint64_ptr()   { return (uint64*)element_pointer(0);}
+    // floating point via pointers
+    float32         *as_float32_ptr()  
+                        { return (float32*)element_pointer(0);}
+    float64         *as_float64_ptr()  
+                        { return (float64*)element_pointer(0);}
 
-    float32         *as_float32_ptr()  { return (float32*)element_pointer(0);}
-    float64         *as_float64_ptr()  { return (float64*)element_pointer(0);}
+    // signed integer array types via conduit::DataArray
+    int8_array       as_int8_array()   
+                        { return int8_array(m_data,dtype());}
+    int16_array      as_int16_array()  
+                        { return int16_array(m_data,dtype());}
+    int32_array      as_int32_array()  
+                        { return int32_array(m_data,dtype());}
+    int64_array      as_int64_array()  
+                        { return int64_array(m_data,dtype());}
 
+    // unsigned integer array types via conduit::DataArray
+    uint8_array      as_uint8_array()  
+                        { return uint8_array(m_data,dtype());}
+    uint16_array     as_uint16_array() 
+                        { return uint16_array(m_data,dtype());}
+    uint32_array     as_uint32_array() 
+                        { return uint32_array(m_data,dtype());}
+    uint64_array     as_uint64_array() 
+                        { return uint64_array(m_data,dtype());}
 
-    int8_array       as_int8_array()   { return int8_array(m_data,dtype());}
-    int16_array      as_int16_array()  { return int16_array(m_data,dtype());}
-    int32_array      as_int32_array()  { return int32_array(m_data,dtype());}
-    int64_array      as_int64_array()  { return int64_array(m_data,dtype());}
-
-    uint8_array      as_uint8_array()  { return uint8_array(m_data,dtype());}
-    uint16_array     as_uint16_array() { return uint16_array(m_data,dtype());}
-    uint32_array     as_uint32_array() { return uint32_array(m_data,dtype());}
-    uint64_array     as_uint64_array() { return uint64_array(m_data,dtype());}
-
+    // floating point array types via conduit::DataArray
     float32_array    as_float32_array() 
                         { return float32_array(m_data,dtype());}
     float64_array    as_float64_array() 
                         { return float64_array(m_data,dtype());}
+
+    // signed integer array types via conduit::DataArray (const variants)
 
     int8_array       as_int8_array()  const 
                         { return int8_array(m_data,dtype());}
@@ -1343,6 +1456,7 @@ public:
     int64_array      as_int64_array() const 
                         { return int64_array(m_data,dtype());}
 
+    // unsigned integer array types via conduit::DataArray (const variants)
     uint8_array      as_uint8_array()  const 
                         { return uint8_array(m_data,dtype());}
     uint16_array     as_uint16_array() const 
@@ -1352,19 +1466,32 @@ public:
     uint64_array     as_uint64_array() const 
                         { return uint64_array(m_data,dtype());}
 
+    // floating point array value via conduit::DataArray (const variants)
     float32_array    as_float32_array() const 
                         { return float32_array(m_data,dtype());}
     float64_array    as_float64_array() const 
                         { return float64_array(m_data,dtype());}
 
-    char            *as_char8_str() {return (char *)element_pointer(0);}
+    // char8_str cases
+    char            *as_char8_str() 
+                        {return (char *)element_pointer(0);}
     const char      *as_char8_str() const 
-            {return (const char *)element_pointer(0);}
+                        {return (const char *)element_pointer(0);}
     
-    std::string      as_string() const {return std::string(as_char8_str());}
+    std::string      as_string() const 
+                        {return std::string(as_char8_str());}
 
-    // -- end value access --    
-    ///@}
+    // direct data pointer access 
+    uint8            *data_pointer() 
+                        {return (uint8*)m_data;}
+
+//-----------------------------------------------------------------------------
+///@}
+//-----------------------------------------------------------------------------
+//
+// -- end declaration of Node value access methods --
+//
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 //
@@ -1385,12 +1512,12 @@ public:
     void             set_schema_pointer(Schema *schema_ptr);
     void             append_node_pointer(Node *node)
                         {m_children.push_back(node);}
-    void             set_parent(Node *parent) { m_parent = parent;}
-    Schema          *schema_pointer() {return m_schema;}
-    ///@}
-
+    void             set_parent(Node *parent) 
+                        { m_parent = parent;}
+    Schema          *schema_pointer() 
+                        {return m_schema;}
 //-----------------------------------------------------------------------------
-///@{
+///@}
 //-----------------------------------------------------------------------------
 //
 // -- end declaration of Interface Warts --
@@ -1451,7 +1578,7 @@ private:
 
 //-----------------------------------------------------------------------------
 //
-// -- private methods that help with hierarchical construction --
+// -- private methods that help element access -- 
 //
 //-----------------------------------------------------------------------------
           void  *element_pointer(index_t idx)
@@ -1467,7 +1594,7 @@ private:
 //-----------------------------------------------------------------------------
     void              compact_to(uint8 *data,
                                  index_t curr_offset) const;
-    // compact helper for leaf types
+    /// compact helper for leaf types
     void              compact_elements_to(uint8 *data) const;
 
 
