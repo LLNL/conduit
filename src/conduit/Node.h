@@ -1258,6 +1258,9 @@ public:
     void    paths(std::vector<std::string> &paths) const;
 
     /// adds an empty unnamed node to a list (list interface)
+    /// TODO `append` is a strange name here, we want this interface
+    /// but we may be abusing the common concept folks think of
+    //  for the term `append`.
     Node   &append();
 
     /// remove child at index (list and object interfaces)
@@ -1273,86 +1276,6 @@ public:
 // -- end declaration of Node entry access methods --
 //
 //-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-//
-// -- begin declaration of Node list append methods --
-//
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-///@name Node List Append Methods
-///@{
-//-----------------------------------------------------------------------------
-/// description:
-/// TODO: these are incomplete, we may remove them instead of creating
-/// the full set of append, append_external methods
-//-----------------------------------------------------------------------------
-
-    /// TODO: append() missing other generic sets or stick to set()
-
-    // generic cases
-    void append(const Node &node);
-    void append(const DataType &data);
-    
-    // signed integer scalars
-    void append(int8 data);
-    void append(int16 data);
-    void append(int32 data);
-    void append(int64 data);
-
-    // unsigned integer scalars
-    void append(uint8 data);
-    void append(uint16 data);
-    void append(uint32 data);
-    void append(uint64 data);
-
-    // floating point scalars 
-    void append(float32 data);
-    void append(float64 data);
-
-    // signed integer array types via std::vector
-    void append(const std::vector<int8>   &data);
-    void append(const std::vector<int16>  &data);
-    void append(const std::vector<int32>  &data);
-    void append(const std::vector<int64>  &data);
-
-    // unsigned integer array types via std::vector
-    void append(const std::vector<uint8>   &data);
-    void append(const std::vector<uint16>  &data);
-    void append(const std::vector<uint32>  &data);
-    void append(const std::vector<uint64>  &data);
-    
-    // floating point array types via std::vector
-    void append(const std::vector<float32> &data);
-    void append(const std::vector<float64> &data);
-
-    // signed integer array types via conduit::DataArray
-    void append(const int8_array  &data);
-    void append(const int16_array &data);
-    void append(const int32_array &data);
-    void append(const int64_array &data);
-
-    // unsigned integer array types via conduit::DataArray
-    void append(const uint8_array  &data);
-    void append(const uint16_array &data);
-    void append(const uint32_array &data);
-    void append(const uint64_array &data);
-    
-    // floating point  array types via conduit::DataArray
-    void append(const float32_array &data);
-    void append(const float64_array &data);
-    
-    // string types
-    void append(const std::string &data);
-
-//-----------------------------------------------------------------------------
-///@}
-//-----------------------------------------------------------------------------
-//
-// -- end declaration of Node list append methods --
-//
-//-----------------------------------------------------------------------------
-
 
 //-----------------------------------------------------------------------------
 //

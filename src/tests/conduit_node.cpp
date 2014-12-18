@@ -71,10 +71,10 @@ TEST(conduit_node_list_test, conduit_node)
     uint32   a_val  = 10;
     uint32   b_val  = 20;
     float64  c_val  = 30.0;
-    list.append(a_val);
-    list.append(b_val);
-    list.append(c_val);
-    list.append(vec);
+    list.append().set(a_val);
+    list.append().set(b_val);
+    list.append().set(c_val);
+    list.append().set(vec);
     EXPECT_EQ(list[0].as_uint32(),a_val);
     EXPECT_EQ(list[1].as_uint32(),b_val);
     EXPECT_EQ(list[2].as_float64(),c_val);
