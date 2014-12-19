@@ -201,13 +201,13 @@ Schema::set(const Schema &schema)
     
     if (init_children) 
     {
-       std::vector<Schema*> &my_ents = children();
-       const std::vector<Schema*> &their_ents = schema.children();
-       for (index_t i = 0; i < their_ents.size(); i++) 
+       std::vector<Schema*> &my_children = children();
+       const std::vector<Schema*> &their_children = schema.children();
+       for (index_t i = 0; i < their_children.size(); i++) 
        {
-           Schema *entry_schema = new Schema(*their_ents[i]);
-           entry_schema->m_parent = this;
-           my_ents.push_back(entry_schema);
+           Schema *child_schema = new Schema(*their_children[i]);
+           child_schema->m_parent = this;
+           my_children.push_back(child_schema);
        }
     }
 }
@@ -274,43 +274,38 @@ Schema::operator=(const std::string &json_schema)
 
 //============================================
 Schema &
-Schema::entry(index_t idx)
+Schema::child(index_t idx)
 {
-    if(m_dtype.id() != DataType::LIST_T)
-        THROW_ERROR("<Schema::entry[LIST_T]>: Schema is not LIST_T");
     return *children()[idx];
 }
 
 //============================================
 const Schema &
-Schema::entry(index_t idx) const
+Schema::child(index_t idx) const
 {
-    if(m_dtype.id() != DataType::LIST_T)
-        THROW_ERROR("<Schema::entry[LIST_T]>: Schema is not LIST_T");
-
     return *children()[idx];
 }
 
 
 //============================================
 Schema&
-Schema::entry(const std::string &path)
+Schema::child(const std::string &path)
 {
     // fetch w/ path forces OBJECT_T
     if(m_dtype.id() != DataType::OBJECT_T)
-        THROW_ERROR("<Schema::entry[OBJECT_T]>: Schema is not OBJECT_T");
+        THROW_ERROR("<Schema::child[OBJECT_T]>: Schema is not OBJECT_T");
 
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
 
-    index_t idx = entry_index(p_curr);
+    index_t idx = child_index(p_curr);
     
     // check for parent
     if(p_curr == "..")
     {
         if(m_parent != NULL) // TODO: check for erro (no parent)
-           return m_parent->entry(p_next);
+           return m_parent->child(p_next);
     }
     
     if(p_next.empty())
@@ -319,18 +314,18 @@ Schema::entry(const std::string &path)
     }
     else
     {
-        return children()[idx]->entry(p_next);
+        return children()[idx]->child(p_next);
     }
 }
 
 
 //============================================
 const Schema &
-Schema::entry(const std::string &path) const
+Schema::child(const std::string &path) const
 {
     // fetch w/ path forces OBJECT_T
     if(m_dtype.id() != DataType::OBJECT_T)
-        THROW_ERROR("<Schema::entry[OBJECT_T]>: Schema is not OBJECT_T");
+        THROW_ERROR("<Schema::child[OBJECT_T]>: Schema is not OBJECT_T");
 
     std::string p_curr;
     std::string p_next;
@@ -340,10 +335,10 @@ Schema::entry(const std::string &path) const
     if(p_curr == "..")
     {
         if(m_parent != NULL) // TODO: check for erro (no parent)
-           return m_parent->entry(p_next);
+           return m_parent->child(p_next);
     }
 
-    index_t idx = entry_index(p_curr);
+    index_t idx = child_index(p_curr);
     
     if(p_next.empty())
     {
@@ -351,23 +346,23 @@ Schema::entry(const std::string &path) const
     }
     else
     {
-        return children()[idx]->entry(p_next);
+        return children()[idx]->child(p_next);
     }
 }
 
 index_t
-Schema::entry_index(const std::string &path) const
+Schema::child_index(const std::string &path) const
 {
     // find p_curr with an iterator
     std::map<std::string, index_t>::const_iterator itr = object_map().find(path);
-    // return Empty if the entry does not exist (static/locked case ?)
+    // return Empty if the child does not exist (static/locked case ?)
     if(itr == object_map().end())
     {
         ///
         /// Full path errors would be nice here. 
         ///
-        THROW_ERROR("<Schema::entry_index[OBJECT_T]>"
-                    << "Attempt to access invalid entry:" << path);
+        THROW_ERROR("<Schema::child_index[OBJECT_T]>"
+                    << "Attempt to access invalid child:" << path);
                       
     }
 
@@ -402,7 +397,7 @@ Schema::fetch(const std::string &path)
         object_order().push_back(p_curr);
     }
 
-    index_t idx = entry_index(p_curr);
+    index_t idx = child_index(p_curr);
     if(p_next.empty())
     {
         return *children()[idx];
@@ -415,12 +410,6 @@ Schema::fetch(const std::string &path)
 }
 
 
-//============================================
-Schema &
-Schema::fetch(index_t idx)
-{
-    return *children()[idx];
-}
 
 //============================================
 Schema *
@@ -431,9 +420,9 @@ Schema::fetch_pointer(const std::string &path)
 
 //============================================
 Schema *
-Schema::fetch_pointer(index_t idx)
+Schema::child_pointer(index_t idx)
 {
-    return &fetch(idx);
+    return &child(idx);
 }
 
 
@@ -441,20 +430,14 @@ Schema::fetch_pointer(index_t idx)
 Schema &
 Schema::operator[](const std::string &path)
 {
-    //if(!m_locked)
-        return fetch(path);
-    //else
-    //    return entry(path);
+    return fetch(path);
 }
 
 //============================================
 Schema &
 Schema::operator[](index_t idx)
 {
-    //if(!m_locked)
-        return fetch(idx);
-    //else
-    //    return entry(idx);
+    return child(idx);
 }
 
 /// Const variants use const get
@@ -462,14 +445,14 @@ Schema::operator[](index_t idx)
 const Schema &
 Schema::operator[](const std::string &path) const
 {
-    return entry(path);
+    return child(path);
 }
 
 //============================================
 const Schema &
 Schema::operator[](index_t idx) const
 {
-    return entry(idx);
+    return child(idx);
 }
 
 //============================================
@@ -515,7 +498,7 @@ Schema::paths(std::vector<std::string> &paths) const
 
 //============================================
 index_t 
-Schema::number_of_entries() const 
+Schema::number_of_children() const 
 {
     // LIST_T only for now, overload for OBJECT_T
     if(m_dtype.id() != DataType::LIST_T  &&
@@ -556,7 +539,7 @@ Schema::compact_to(Schema &s_dest, index_t curr_offset) const
         {            
             Schema  *cld_src = children()[i];
             s_dest.append();
-            Schema &cld_dest = s_dest.fetch(i);
+            Schema &cld_dest = s_dest.child(i);
             cld_src->compact_to(cld_dest,curr_offset);
             curr_offset += cld_dest.total_bytes();
         }
@@ -613,7 +596,7 @@ Schema::remove(const std::string &path)
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
-    index_t idx = entry_index(p_curr);
+    index_t idx = child_index(p_curr);
     Schema *child = children()[idx];
 
     if(!p_next.empty())

@@ -85,7 +85,7 @@ TEST(serialize_test_2, conduit_serialize)
     EXPECT_EQ(n2["b"].as_uint32(),b_val);
     EXPECT_EQ(n2["c"].as_float64(),c_val);
     EXPECT_EQ(n2["here"]["there"].as_uint32(),a_val);
-    EXPECT_EQ(1,n2["here"].number_of_entries());
+    EXPECT_EQ(1,n2["here"].number_of_children());
 
 }
 

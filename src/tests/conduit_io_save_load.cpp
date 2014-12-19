@@ -237,7 +237,9 @@ TEST(conduit_io_save_load, conduit_io_explicit_zero_length_vector_restore)
     std::cout << "n2 load result" << std::endl;
 
     n2.print_detailed();
-    EXPECT_EQ(n1.schema()["one"].dtype().number_of_elements(),n2.schema()["one"].dtype().number_of_elements());
+            
+    EXPECT_EQ(n1.schema()["one"].dtype().number_of_elements(),
+              n2.schema()["one"].dtype().number_of_elements());
     EXPECT_EQ(n2.schema()["one"].dtype().number_of_elements(),0);
     
     n1.update(n2);

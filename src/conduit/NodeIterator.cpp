@@ -26,7 +26,7 @@ namespace conduit
 NodeIterator::NodeIterator()
 : m_node(NULL),
   m_index(0),
-  m_num_ele(0)
+  m_num_children(0)
 {
     
 }
@@ -36,7 +36,7 @@ NodeIterator::NodeIterator(Node *node,index_t idx)
 :m_node(node),
  m_index(idx)
 {
-    m_num_ele = node->number_of_entries();
+    m_num_children = node->number_of_children();
 }
 
 
@@ -44,7 +44,7 @@ NodeIterator::NodeIterator(Node *node,index_t idx)
 NodeIterator::NodeIterator(const NodeIterator &itr)
 :m_node(itr.m_node),
  m_index(itr.m_index),
- m_num_ele(itr.m_index)
+ m_num_children(itr.m_num_children)
 {
 
 }
@@ -64,7 +64,7 @@ NodeIterator::operator=(const NodeIterator &itr)
     {
         m_node    = itr.m_node;
         m_index   = itr.m_index;
-        m_num_ele = itr.m_num_ele;
+        m_num_children = itr.m_num_children;
     }
     return *this;
 }
@@ -88,7 +88,7 @@ NodeIterator::index() const
 Node &
 NodeIterator::node()
 {
-    return m_node->fetch(m_index-1);
+    return m_node->child(m_index-1);
 }
 
 //============================================
@@ -103,8 +103,8 @@ NodeIterator::to_front()
 bool
 NodeIterator::has_next() const
 {
-    return ( (m_num_ele != 0) &&
-             (m_index < m_num_ele) );
+    return ( (m_num_children != 0) &&
+             (m_index < m_num_children) );
 }
 
 
@@ -113,7 +113,7 @@ Node &
 NodeIterator::next() 
 {
     m_index++;
-    return m_node->fetch(m_index-1);
+    return m_node->child(m_index-1);
 }
 
 //============================================
@@ -125,7 +125,7 @@ NodeIterator::peek_next()
     {
         idx++;
     }
-    return m_node->fetch(idx-1);
+    return m_node->child(idx-1);
 }
 
 
@@ -133,7 +133,7 @@ NodeIterator::peek_next()
 void
 NodeIterator::to_back()
 {
-    m_index = m_num_ele+1;
+    m_index = m_num_children+1;
 }
 
 
@@ -153,7 +153,7 @@ NodeIterator::previous()
     {
         m_index--;
     }
-    return m_node->fetch(m_index-1);
+    return m_node->child(m_index-1);
 }
 
 //============================================
@@ -165,7 +165,7 @@ NodeIterator::peek_previous()
     {
         idx--;
     }
-    return m_node->fetch(idx);
+    return m_node->child(idx);
 }
 
 
@@ -176,7 +176,7 @@ NodeIterator::info(Node &res) const
     res.reset();
     res["index"] = m_index;
     res["node_ref"] = utils::to_hex_string(m_node);
-    res["number_of_elements"] = m_num_ele;
+    res["number_of_children"] = m_num_children;
 }
 
 }

@@ -67,7 +67,7 @@ class CONDUIT_API Node
 //=============================================================================
 //-----------------------------------------------------------------------------
 //
-// -- public methods and members -- 
+// -- public methods -- 
 //
 //-----------------------------------------------------------------------------
 //=============================================================================
@@ -1085,7 +1085,7 @@ public:
 //-----------------------------------------------------------------------------
 // -- update methods ---
 //-----------------------------------------------------------------------------
-    /// update() adds entries from n_src to current Node (analogous to a 
+    /// update() adds children from n_src to current Node (analogous to a 
     /// python dictionary update) 
     ///
     /// NOTE: The input should be const, but the lack of a const fetch prevents
@@ -1237,12 +1237,12 @@ public:
     /// fetch the node at the given path
     Node             &fetch(const std::string &path);
     /// fetch the node at the given index
-    Node             &fetch(index_t idx);
+    Node             &child(index_t idx);
 
     /// fetch a pointer to the node  at the given path   
     Node             *fetch_pointer(const std::string &path);
     /// fetch a pointer to the node at the given index
-    Node             *fetch_pointer(index_t idx);
+    Node             *child_pointer(index_t idx);
 
     /// access child node via a path (equivalent to fetch via path)
     Node             &operator[](const std::string &path);
@@ -1250,7 +1250,7 @@ public:
     Node             &operator[](const index_t idx);
 
     /// return the number of children (list and object interfaces)
-    index_t number_of_entries() const;
+    index_t number_of_children() const;
     
     /// checks if given path exists in the Node hierarchy 
     bool    has_path(const std::string &path) const;

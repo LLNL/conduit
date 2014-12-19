@@ -3501,7 +3501,7 @@ Node::fetch(const std::string &path)
     }
     else
     {
-        idx = m_schema->entry_index(p_curr);
+        idx = m_schema->child_index(p_curr);
     }
 
     if(p_next.empty())
@@ -3518,7 +3518,7 @@ Node::fetch(const std::string &path)
 
 //---------------------------------------------------------------------------//
 Node&
-Node::fetch(index_t idx)
+Node::child(index_t idx)
 {
     return *m_children[idx];
 }
@@ -3533,9 +3533,9 @@ Node::fetch_pointer(const std::string &path)
 
 //---------------------------------------------------------------------------//
 Node *
-Node::fetch_pointer(index_t idx)
+Node::child_pointer(index_t idx)
 {
-    return &fetch(idx);
+    return &child(idx);
 }
 
 //---------------------------------------------------------------------------//
@@ -3549,14 +3549,14 @@ Node::operator[](const std::string &path)
 Node&
 Node::operator[](index_t idx)
 {
-    return fetch(idx);
+    return child(idx);
 }
 
 //---------------------------------------------------------------------------//
 index_t 
-Node::number_of_entries() const 
+Node::number_of_children() const 
 {
-    return m_schema->number_of_entries();
+    return m_schema->number_of_children();
 }
 
 
@@ -3585,7 +3585,7 @@ Node::append()
     // This makes a proper copy of the schema for us to use
     //
     m_schema->append();
-    Schema *schema_ptr = m_schema->fetch_pointer(idx);
+    Schema *schema_ptr = m_schema->child_pointer(idx);
 
     Node *res_node = new Node();
     res_node->set_schema_pointer(schema_ptr);
@@ -3616,7 +3616,7 @@ Node::remove(const std::string &path)
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
 
-    index_t idx=m_schema->entry_index(p_curr);
+    index_t idx=m_schema->child_index(p_curr);
     
     if(!p_next.empty())
     {
@@ -3901,10 +3901,10 @@ Node::walk_schema(Node   *node,
     }
     else if(schema->dtype().id() == DataType::LIST_T)
     {
-        index_t num_entries = schema->number_of_entries();
+        index_t num_entries = schema->number_of_children();
         for(index_t i=0;i<num_entries;i++)
         {
-            Schema *curr_schema = schema->fetch_pointer(i);
+            Schema *curr_schema = schema->child_pointer(i);
             Node *curr_node = new Node();
             curr_node->set_schema_pointer(curr_schema);
             curr_node->set_parent(node);

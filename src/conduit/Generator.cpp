@@ -594,7 +594,7 @@ walk_pure_json_schema(Node  *node,
             for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
             {
                 schema->append();
-                Schema *curr_schema = schema->fetch_pointer(i);
+                Schema *curr_schema = schema->child_pointer(i);
                 Node * curr_node = new Node();
                 curr_node->set_schema_pointer(curr_schema);
                 curr_node->set_parent(node);
@@ -683,7 +683,7 @@ walk_json_schema(Node   *node,
                 for(index_t i=0;i< length;i++)
                 {
                     schema->append();
-                    Schema *curr_schema = schema->fetch_pointer(i);
+                    Schema *curr_schema = schema->child_pointer(i);
                     Node *curr_node = new Node();
                     curr_node->set_schema_pointer(curr_schema);
                     curr_node->set_parent(node);
@@ -750,7 +750,7 @@ walk_json_schema(Node   *node,
         for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
         {
             schema->append();
-            Schema *curr_schema = schema->fetch_pointer(i);
+            Schema *curr_schema = schema->child_pointer(i);
             Node *curr_node = new Node();
             curr_node->set_schema_pointer(curr_schema);
             curr_node->set_parent(node);

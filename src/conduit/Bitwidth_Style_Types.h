@@ -8,26 +8,39 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: Bithwidth_Style_Types.h
 ///
+//-----------------------------------------------------------------------------
 
 #ifndef __CONDUIT_BITWIDTH_STYLE_TYPES_H
 #define __CONDUIT_BITWIDTH_STYLE_TYPES_H
 
-#include <limits.h>
+//-----------------------------------------------------------------------------
+// -- include sizes from cmake configure tests -- 
+//-----------------------------------------------------------------------------
 #include "Conduit_Config.h"
 
-///
-/// Bit width annotated Style Standard Data Types
-/// Derived from numpy (which provides very comprehensive support for these types)
-///
+//-----------------------------------------------------------------------------
+// -- standard lib includes -- 
+//-----------------------------------------------------------------------------
+#include <limits.h>
 
-/*
- * On Mac OS X, because there is only one configuration stage for all the archs
- * in universal builds, any macro which depends on the arch needs to be
- * harcoded
- */
+
+//-----------------------------------------------------------------------------
+/// Bit width annotated Style Standard Data Types
+/// Derived from numpy (which provides very comprehensive support 
+/// for these types)
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// OSX Specific Sizes:
+//-----------------------------------------------------------------------------
+// On Mac OS X, because there is only one configuration stage for all the 
+// architectures in universal builds, any macro which depends on the 
+// architecture needs to be hardcoded.
+//-----------------------------------------------------------------------------
 #ifdef __APPLE__
     #undef SIZEOF_LONG
     #ifdef __LP64__
@@ -37,6 +50,9 @@
     #endif
 #endif
 
+//-----------------------------------------------------------------------------
+// native types
+//-----------------------------------------------------------------------------
 
 #if SIZEOF_LONG_DOUBLE == SIZEOF_DOUBLE
         typedef double conduit_longdouble;
@@ -61,6 +77,9 @@ typedef float               conduit_float;
 typedef double              conduit_double;
 
 
+//-----------------------------------------------------------------------------
+// bytes to bits size definitions
+//-----------------------------------------------------------------------------
 #define BITSOF_CHAR CHAR_BIT
 
 #define BITSOF_BOOL (SIZEOF_BYTE * CHAR_BIT)
@@ -74,6 +93,10 @@ typedef double              conduit_double;
 #define BITSOF_FLOAT (SIZEOF_FLOAT * CHAR_BIT)
 #define BITSOF_DOUBLE (SIZEOF_DOUBLE * CHAR_BIT)
 #define BITSOF_LONG_DOUBLE (SIZEOF_LONG_DOUBLE * CHAR_BIT)
+
+//-----------------------------------------------------------------------------
+// -- long size checks --
+//-----------------------------------------------------------------------------
 
 #if BITSOF_LONG == 8
 #define CONDUIT_INT8 CONDUIT_LONG
@@ -121,6 +144,10 @@ typedef double              conduit_double;
         typedef conduit_long  conduit_int128;
         typedef conduit_ulong conduit_uint128;
 #endif
+
+//-----------------------------------------------------------------------------
+// -- long long size checks --
+//-----------------------------------------------------------------------------
 
 #if BITSOF_LONG_LONG == 8
 #ifndef CONDUIT_INT8
@@ -179,6 +206,10 @@ typedef double              conduit_double;
 #endif
 #endif
 
+//-----------------------------------------------------------------------------
+// -- int size checks --
+//-----------------------------------------------------------------------------
+
 #if BITSOF_INT == 8
 #ifndef CONDUIT_INT8
 #define CONDUIT_INT8 CONDUIT_INT
@@ -235,6 +266,10 @@ typedef double              conduit_double;
         typedef conduit_uint conduit_uint128;
 #endif
 #endif
+
+//-----------------------------------------------------------------------------
+// -- short size checks --
+//-----------------------------------------------------------------------------
 
 #if BITSOF_SHORT == 8
 #ifndef CONDUIT_INT8
@@ -293,6 +328,9 @@ typedef double              conduit_double;
 #endif
 #endif
 
+//-----------------------------------------------------------------------------
+// -- char size checks --
+//-----------------------------------------------------------------------------
 
 #if BITSOF_CHAR == 8
 #ifndef CONDUIT_INT8
@@ -350,7 +388,9 @@ typedef double              conduit_double;
         typedef conduit_ubyte conduit_uint128;
 #endif
 #endif
-
+        //-----------------------------------------------------------------------------
+// -- double size checks --
+//-----------------------------------------------------------------------------
 
 #if BITSOF_DOUBLE == 32
 #ifndef CONDUIT_FLOAT32
@@ -389,6 +429,10 @@ typedef double              conduit_double;
 #endif
 #endif
 
+//-----------------------------------------------------------------------------
+// -- float size checks --
+//-----------------------------------------------------------------------------
+
 #if BITSOF_FLOAT == 32
 #ifndef CONDUIT_FLOAT32
 #define CONDUIT_FLOAT32 CONDUIT_FLOAT
@@ -425,6 +469,10 @@ typedef double              conduit_double;
         typedef conduit_float conduit_float128;
 #endif
 #endif
+
+//-----------------------------------------------------------------------------
+// -- long double size checks --
+//-----------------------------------------------------------------------------
 
 #if BITSOF_LONG_DOUBLE == 32
 #ifndef CONDUIT_FLOAT32
@@ -468,6 +516,9 @@ typedef double              conduit_double;
         typedef conduit_longdouble conduit_float256;
 #endif
 
-/* End of typedefs for numarray style bit-width names */
+//-----------------------------------------------------------------------------
+/// End of typedefs for numarray style bit-width names.
+//-----------------------------------------------------------------------------
+
 
 #endif

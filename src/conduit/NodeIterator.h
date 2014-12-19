@@ -59,7 +59,7 @@ public:
 private:
     Node    *m_node;
     index_t  m_index;
-    index_t  m_num_ele; // for easier index calcs in the iterator
+    index_t  m_num_children; // for easier index calcs in the iterator
     
 };
 
