@@ -8,22 +8,45 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: Generator.cpp
 ///
+//-----------------------------------------------------------------------------
 
-#include <stdio.h>
+//-----------------------------------------------------------------------------
+// -- conduit library includes -- 
+//-----------------------------------------------------------------------------
 #include "Generator.h"
 #include "Error.h"
 #include "Utils.h"
+
+//-----------------------------------------------------------------------------
+// -- rapidjson includes -- 
+//-----------------------------------------------------------------------------
 #include "rapidjson/document.h"
 
+//-----------------------------------------------------------------------------
+// -- standard lib includes -- 
+//-----------------------------------------------------------------------------
+#include <stdio.h>
+
+//-----------------------------------------------------------------------------
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
 namespace conduit
 {
-    
+
+//-----------------------------------------------------------------------------
+// -- stand alone methods for parsing via rapidjson -- 
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 // we want to isolate the conduit API from the rapidjson headers
 // so any methods using rapidjson types are defined in the cpp imp.
+//-----------------------------------------------------------------------------
 
+//---------------------------------------------------------------------------//
 index_t 
 json_to_numeric_dtype(const rapidjson::Value &jvalue)
 {
@@ -48,6 +71,7 @@ json_to_numeric_dtype(const rapidjson::Value &jvalue)
     return res;
 }
 
+//---------------------------------------------------------------------------//
 index_t
 check_homogenus_json_array(const rapidjson::Value &jvalue)
 {
@@ -81,7 +105,7 @@ check_homogenus_json_array(const rapidjson::Value &jvalue)
     return val_type;
 }
 
-    
+//---------------------------------------------------------------------------// 
 void
 parse_json_int64_array(const rapidjson::Value &jvalue,
                         std::vector<int64> &res)
@@ -93,6 +117,7 @@ parse_json_int64_array(const rapidjson::Value &jvalue,
    }
 }
 
+//---------------------------------------------------------------------------//
 void
 parse_json_int64_array(const rapidjson::Value &jvalue,
                        Node &node)
@@ -138,7 +163,7 @@ parse_json_int64_array(const rapidjson::Value &jvalue,
     }
 }
 
-
+//---------------------------------------------------------------------------//
 void
 parse_json_uint64_array(const rapidjson::Value &jvalue,
                          std::vector<uint64> &res)
@@ -150,6 +175,7 @@ parse_json_uint64_array(const rapidjson::Value &jvalue,
     }
 }
 
+//---------------------------------------------------------------------------//
 void
 parse_json_uint64_array(const rapidjson::Value &jvalue,
                         Node &node)
@@ -195,6 +221,7 @@ parse_json_uint64_array(const rapidjson::Value &jvalue,
     }
 }
 
+//---------------------------------------------------------------------------//
 void
 parse_json_float64_array(const rapidjson::Value &jvalue,
                          std::vector<float64> &res)
@@ -206,6 +233,7 @@ parse_json_float64_array(const rapidjson::Value &jvalue,
     }
 }
 
+//---------------------------------------------------------------------------//
 void
 parse_json_float64_array(const rapidjson::Value &jvalue,
                          Node &node)
@@ -251,7 +279,7 @@ parse_json_float64_array(const rapidjson::Value &jvalue,
     }
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 void
 parse_leaf_dtype(const rapidjson::Value &jvalue, index_t offset, DataType &dtype_res)
 {
@@ -337,7 +365,7 @@ parse_leaf_dtype(const rapidjson::Value &jvalue, index_t offset, DataType &dtype
     }
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 void
 parse_inline_leaf(const rapidjson::Value &jvalue,
                   Node &node)
@@ -423,7 +451,7 @@ parse_inline_leaf(const rapidjson::Value &jvalue,
     }
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 void
 parse_inline_value(const rapidjson::Value &jvalue,
                    Node &node)
@@ -466,7 +494,7 @@ parse_inline_value(const rapidjson::Value &jvalue,
 }
 
 
-//============================================
+//---------------------------------------------------------------------------//
 void 
 walk_json_schema(Schema *schema,
                  const   rapidjson::Value &jvalue,
@@ -485,7 +513,8 @@ walk_json_schema(Schema *schema,
                 if(jvalue.HasMember("length"))
                 {
                     // TODO: Handle reference 
-                    if(jvalue["length"].IsObject() && jvalue["length"].HasMember("reference"))
+                    if(jvalue["length"].IsObject() && 
+                       jvalue["length"].HasMember("reference"))
                     {
                         // in some cases we shouldn't get here ...
                         // TODO ref without "data" could be a problem
@@ -498,7 +527,7 @@ walk_json_schema(Schema *schema,
                 // we will create `length' # of objects of obj des by dt_value
                  
                 // TODO: we only need to parse this once, not leng # of times
-                // but this is the easiest way to start.                             
+                // but this is the easiest way to start.
                 for(int i=0;i< length;i++)
                 {
                     Schema curr_schema(DataType::Objects::list());
@@ -518,7 +547,8 @@ walk_json_schema(Schema *schema,
         else
         {
             // loop over all entries
-            for (rapidjson::Value::ConstMemberIterator itr = jvalue.MemberBegin(); 
+            for (rapidjson::Value::ConstMemberIterator itr =
+                 jvalue.MemberBegin(); 
                  itr != jvalue.MemberEnd(); ++itr)
             {
                 std::string entry_name(itr->name.GetString());
@@ -550,7 +580,7 @@ walk_json_schema(Schema *schema,
     }
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 void 
 walk_pure_json_schema(Node  *node,
                      Schema *schema,
@@ -643,7 +673,7 @@ walk_pure_json_schema(Node  *node,
 }
 
 
-//============================================
+//---------------------------------------------------------------------------//
 void 
 walk_json_schema(Node   *node,
                  Schema *schema,
@@ -671,7 +701,8 @@ walk_json_schema(Node   *node,
                     else if(jvalue["length"].IsObject() && 
                             jvalue["length"].HasMember("reference"))
                     {
-                        std::string ref_path = jvalue["length"]["reference"].GetString();
+                        std::string ref_path = 
+                          jvalue["length"]["reference"].GetString();
                         length = node->fetch(ref_path).to_index_t();
                     }
                     
@@ -687,7 +718,11 @@ walk_json_schema(Node   *node,
                     Node *curr_node = new Node();
                     curr_node->set_schema_pointer(curr_schema);
                     curr_node->set_parent(node);
-                    walk_json_schema(curr_node,curr_schema,data,dt_value, curr_offset);
+                    walk_json_schema(curr_node,
+                                     curr_schema,
+                                     data,
+                                     dt_value,
+                                     curr_offset);
                     // auto offset only makes sense when we have data
                     if(data != NULL)
                         curr_offset += curr_schema->total_bytes();
@@ -727,7 +762,8 @@ walk_json_schema(Node   *node,
         else
         {
             // standard object case - loop over all entries
-            for (rapidjson::Value::ConstMemberIterator itr = jvalue.MemberBegin(); 
+            for (rapidjson::Value::ConstMemberIterator itr = 
+                 jvalue.MemberBegin(); 
                  itr != jvalue.MemberEnd(); ++itr)
             {
                 std::string entry_name(itr->name.GetString());
@@ -735,7 +771,11 @@ walk_json_schema(Node   *node,
                 Node *curr_node = new Node();
                 curr_node->set_schema_pointer(curr_schema);
                 curr_node->set_parent(node);
-                walk_json_schema(curr_node,curr_schema,data,itr->value, curr_offset);
+                walk_json_schema(curr_node,
+                                 curr_schema,
+                                 data,
+                                 itr->value,
+                                 curr_offset);
                 // auto offset only makes sense when we have data
                 if(data != NULL)
                     curr_offset += curr_schema->total_bytes();
@@ -754,7 +794,11 @@ walk_json_schema(Node   *node,
             Node *curr_node = new Node();
             curr_node->set_schema_pointer(curr_schema);
             curr_node->set_parent(node);
-            walk_json_schema(curr_node,curr_schema,data,jvalue[i], curr_offset);
+            walk_json_schema(curr_node,
+                             curr_schema,
+                             data,
+                             jvalue[i],
+                             curr_offset);
             // auto offset only makes sense when we have data
             if(data != NULL)
                 curr_offset += curr_schema->total_bytes();
@@ -787,12 +831,15 @@ walk_json_schema(Node   *node,
 }
 
 
-//============================================
-/// Generator
-//============================================
+//-----------------------------------------------------------------------------
+// -- begin conduit::Generator --
+//-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+// Generator Construction and Destruction
+//-----------------------------------------------------------------------------
 
-//============================================
+//---------------------------------------------------------------------------//
 Generator::Generator(const std::string &json_schema)
 :m_json_schema(json_schema),
  m_protocol("conduit"),
@@ -800,7 +847,7 @@ Generator::Generator(const std::string &json_schema)
 {}
 
 
-//============================================
+//---------------------------------------------------------------------------//
 Generator::Generator(const std::string &json_schema,
                      void *data)
 :m_json_schema(json_schema),
@@ -808,7 +855,7 @@ Generator::Generator(const std::string &json_schema,
  m_data(data)
 {}
 
-//============================================
+//---------------------------------------------------------------------------//
 Generator::Generator(const std::string &json_schema,
                      const std::string &protocol,
                      void *data)
@@ -817,9 +864,11 @@ Generator::Generator(const std::string &json_schema,
  m_data(data)
 {}
 
+//-----------------------------------------------------------------------------
+// JSON Parsing interface
+//-----------------------------------------------------------------------------s
 
-
-//============================================
+//---------------------------------------------------------------------------//
 void 
 Generator::walk(Schema &schema) const
 {
@@ -835,7 +884,7 @@ Generator::walk(Schema &schema) const
     conduit::walk_json_schema(&schema,document,curr_offset);
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 void 
 Generator::walk(Node &node) const
 {
@@ -872,6 +921,8 @@ Generator::walk(Node &node) const
     }
 }
 
-
 };
+//-----------------------------------------------------------------------------
+// -- end conduit:: --
+//-----------------------------------------------------------------------------
 
