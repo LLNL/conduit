@@ -8,35 +8,60 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: DataType.h
 ///
+//-----------------------------------------------------------------------------
 
 #ifndef __CONDUIT_DATA_TYPE_H
 #define __CONDUIT_DATA_TYPE_H
 
-
+//-----------------------------------------------------------------------------
+// -- conduit library includes -- 
+//-----------------------------------------------------------------------------
 #include "Core.h"
 #include "Endianness.h"
 
+//-----------------------------------------------------------------------------
+// -- standard lib includes -- 
+//-----------------------------------------------------------------------------
 #include <vector>
 #include <string>
 #include <sstream>
 
+//-----------------------------------------------------------------------------
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
 namespace conduit
 {
 
+//-----------------------------------------------------------------------------
+// -- forward declarations required for conduit::Node --
+//-----------------------------------------------------------------------------
 class Schema;
 class Node;
-///============================================
-/// DataType
-///============================================
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::DataType --
+//-----------------------------------------------------------------------------
+///
+/// class: conduit::DataType
+///
+/// description:
+///  DataType is used to describe a single entry in a Schema or Node Hierarchy.
+///
+//-----------------------------------------------------------------------------
 class CONDUIT_API DataType
 {
 public:
+//-----------------------------------------------------------------------------
+/// TypeID is an Enumeration used to describe the type cases supported
+///  by conduit:
+//-----------------------------------------------------------------------------
     typedef enum
     {
-        EMPTY_T = 0, // default
+        EMPTY_T = 0, // empty (default type)
         OBJECT_T,    // object
         LIST_T,      // list
         INT8_T,      // int8 and int8_array
@@ -51,7 +76,18 @@ public:
         FLOAT64_T,   // float64 and float64_array
         CHAR8_STR_T, // char8 string (incore c-string)
     } TypeID;
-    
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::DataType::Objects --
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+///
+/// class: conduit::DataType:Objects
+///
+/// description:
+///  Reference DataType instances for "object" types.
+///
+//-----------------------------------------------------------------------------
     class Objects
     {
     public:
@@ -59,61 +95,110 @@ public:
         static const DataType &object() {return m_object;}
         static const DataType &list()   {return m_list;}
     private:
+        /// private members of DataType::Objects
+        /// these are the concrete reference types
         static DataType m_empty;
         static DataType m_object;
         static DataType m_list;
     };
-    
+
+//-----------------------------------------------------------------------------
+// -- end conduit::DataType::Objects --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::DataType::Scalars --
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+///
+/// class: conduit::DataType:Scalars
+///
+/// description:
+///  Reference DataType instances for scalar numeric types, and helpers
+///  that create DataTypes that point to scalars at an offset.
+///
+//-----------------------------------------------------------------------------
     class Scalars
     {    
     public:
-        /* int scalars */
+        /// signed integer scalars 
         static const DataType &int8()  {return m_int8;}
         static const DataType &int16() {return m_int16;}
         static const DataType &int32() {return m_int32;}
         static const DataType &int64() {return m_int64;}
-        /* uint scalars */
+
+        /// unsigned integer scalars 
         static const DataType &uint8()  {return m_uint8;}
         static const DataType &uint16() {return m_uint16;}
         static const DataType &uint32() {return m_uint32;}
         static const DataType &uint64() {return m_uint64;}
-        /* float scalars */
+
+        /// floating point integer scalars 
         static const DataType &float32() {return m_float32;}
         static const DataType &float64() {return m_float64;}
-        /* int scalars */
-        static DataType int8(index_t offset)  {return DataType::Arrays::int8(1,offset);}
-        static DataType int16(index_t offset) {return DataType::Arrays::int16(1,offset);}
-        static DataType int32(index_t offset) {return DataType::Arrays::int32(1,offset);}
-        static DataType int64(index_t offset) {return DataType::Arrays::int64(1,offset);}
-        /* uint scalars */
-        static DataType uint8(index_t offset)  {return DataType::Arrays::uint8(1,offset);}
-        static DataType uint16(index_t offset) {return DataType::Arrays::uint16(1,offset);}
-        static DataType uint32(index_t offset) {return DataType::Arrays::uint32(1,offset);}
-        static DataType uint64(index_t offset) {return DataType::Arrays::uint64(1,offset);}
-        /* float scalars */
-        static DataType float32(index_t offset) {return DataType::Arrays::float32(1,offset);}
-        static DataType float64(index_t offset) {return DataType::Arrays::float64(1,offset);}
+
+        /// signed integer scalars with an offset
+        static DataType int8(index_t offset)  
+                            {return DataType::Arrays::int8(1,offset);}
+        static DataType int16(index_t offset) 
+                            {return DataType::Arrays::int16(1,offset);}
+        static DataType int32(index_t offset) 
+                            {return DataType::Arrays::int32(1,offset);}
+        static DataType int64(index_t offset) 
+                            {return DataType::Arrays::int64(1,offset);}
+
+        /// unsigned integer scalars with an offset
+        static DataType uint8(index_t offset)  
+                            {return DataType::Arrays::uint8(1,offset);}
+        static DataType uint16(index_t offset) 
+                            {return DataType::Arrays::uint16(1,offset);}
+        static DataType uint32(index_t offset) 
+                            {return DataType::Arrays::uint32(1,offset);}
+        static DataType uint64(index_t offset) 
+                            {return DataType::Arrays::uint64(1,offset);}
+
+        /// floating point integer scalars with an offset
+        static DataType float32(index_t offset) 
+                            {return DataType::Arrays::float32(1,offset);}
+        static DataType float64(index_t offset) 
+                            {return DataType::Arrays::float64(1,offset);}
 
     private:
-        /* int scalars */
+        /// private members of DataType::Scalars
+        /// these are the concrete reference types
+        /// signed integer scalars 
         static DataType m_int8;
         static DataType m_int16;
         static DataType m_int32;
         static DataType m_int64;
-        /* uint scalars */
+          /// unsigned integer scalars 
         static DataType m_uint8;
         static DataType m_uint16;
         static DataType m_uint32;
         static DataType m_uint64;
-        /* float scalars */
+         /// floating point integer scalars 
         static DataType m_float32;
         static DataType m_float64;
     };
 
+//-----------------------------------------------------------------------------
+// -- end conduit::DataType::Scalars --
+//-----------------------------------------------------------------------------
+    
+//-----------------------------------------------------------------------------
+// -- begin conduit::DataType::Arrays --
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+///
+/// class: conduit::DataType:Arrays
+///
+/// description:
+///  Helpers to create DataTypes that describe arrays.
+//-----------------------------------------------------------------------------
     class Arrays
     {    
     public:
-        /* int arrays */
+        /// signed integer arrays
         static DataType int8(index_t num_elements,
                              index_t offset = 0,
                              index_t stride = sizeof(conduit::int8),
@@ -137,7 +222,8 @@ public:
                               index_t stride = sizeof(conduit::int64),
                               index_t element_bytes = sizeof(conduit::int64),
                               index_t endianness = Endianness::DEFAULT_T);
-        /* uint arrays */
+
+        /// unsigned integer arrays
         static DataType uint8(index_t num_elements,
                               index_t offset = 0,
                               index_t stride = sizeof(conduit::uint8),
@@ -161,41 +247,62 @@ public:
                                index_t stride = sizeof(conduit::uint64),
                                index_t element_bytes = sizeof(conduit::uint64),
                                index_t endianness = Endianness::DEFAULT_T);
-        /* float arrays */
+
+       /// floating point arrays
         static DataType float32(index_t num_elements,
                                 index_t offset = 0,
                                 index_t stride = sizeof(conduit::float32),
-                                index_t element_bytes = sizeof(conduit::float32),
+                                index_t element_bytes=sizeof(conduit::float32),
                                 index_t endianness = Endianness::DEFAULT_T);
 
         static DataType float64(index_t num_elements,
                                 index_t offset = 0,
                                 index_t stride = sizeof(conduit::float64),
-                                index_t element_bytes = sizeof(conduit::float64),
+                                index_t element_bytes=sizeof(conduit::float64),
                                 index_t endianness = Endianness::DEFAULT_T);
     };
 
-             DataType();
-             explicit DataType(index_t id);
+//-----------------------------------------------------------------------------
+// -- end conduit::DataType::Arrays --
+//-----------------------------------------------------------------------------
 
-             DataType(const DataType& type);
+//-----------------------------------------------------------------------------
+//
+// -- conduit::DataType public methods --
+//
+//-----------------------------------------------------------------------------
 
-             DataType(const std::string &dtype_name,
-                      index_t num_elements,
-                      index_t offset,
-                      index_t stride,
-                      index_t element_bytes,
-                      index_t endianness);
+//-----------------------------------------------------------------------------
+// Construction and Destruction
+//-----------------------------------------------------------------------------
 
-             DataType(index_t dtype_id,
-                      index_t num_elements,
-                      index_t offset,
-                      index_t stride,
-                      index_t element_bytes,
-                      index_t endianness);
+    /// standard constructor
+    DataType();
+    /// copy constructor
+    DataType(const DataType& type);
+    /// construct simplest dtype for given type id
+    explicit DataType(index_t id);
 
-    ~DataType();
+    /// construct from full details, given a data type name
+    DataType(const std::string &dtype_name,
+             index_t num_elements,
+             index_t offset,
+             index_t stride,
+             index_t element_bytes,
+             index_t endianness);
+    /// construct from full details, given a data type id
+    DataType(index_t dtype_id,
+             index_t num_elements,
+             index_t offset,
+             index_t stride,
+             index_t element_bytes,
+             index_t endianness);
+    /// destructor
+   ~DataType();
 
+//-----------------------------------------------------------------------------
+// Setters
+//-----------------------------------------------------------------------------
     void       set(const DataType& type);
     void       set(index_t dtype_id);
     void       set(index_t dtype_id,
@@ -204,23 +311,20 @@ public:
                    index_t stride,
                    index_t element_bytes,
                    index_t endianness);
-    
-    static index_t          name_to_id(const std::string &name);
-    static std::string      id_to_name(index_t dtype);
+    void       set_number_of_elements(index_t v)
+                    { m_num_ele = v;}
+    void       set_offset(index_t v)
+                    { m_offset = v;}
+    void       set_stride(index_t v)
+                    { m_stride = v;}
+    void       set_element_bytes(index_t v)
+                    { m_ele_bytes = v;}
+    void       set_endianness(index_t v)
+                    { m_endianness = v;}
 
-
-    static DataType const  &default_dtype(index_t dtype_id);
-    static DataType const  &default_dtype(const std::string &name);
-
-    static index_t          default_bytes(index_t dtype_id);
-    static index_t          default_bytes(const std::string &name);
-
-    std::string         to_json() const;  
-    void                to_json(std::ostringstream &oss,
-                                const std::string &value="")const;
-    
-    void                compact_to(DataType &dtype) const;
-    
+//-----------------------------------------------------------------------------
+// Getters and info methods.
+//-----------------------------------------------------------------------------
     index_t     id()    const { return m_id;}    
     index_t     total_bytes()   const;
     index_t     total_bytes_compact() const;
@@ -241,27 +345,60 @@ public:
     index_t    endianness()          const { return m_endianness;}
     index_t    element_index(index_t idx) const;
     
-    void       set_number_of_elements(index_t v)  { m_num_ele = v;}
-    void       set_offset(index_t v)              { m_offset = v;}
-    void       set_stride(index_t v)              { m_stride = v;}
-    void       set_element_bytes(index_t v)       { m_ele_bytes = v;}
-    void       set_endianness(index_t v)          { m_endianness = v;}
+
+//-----------------------------------------------------------------------------
+// Helpers to convert TypeID Enum Values to human readable strings and 
+// vice versa.
+//-----------------------------------------------------------------------------
+    static index_t          name_to_id(const std::string &name);
+    static std::string      id_to_name(index_t dtype);
+
+//-----------------------------------------------------------------------------
+// Access to simple reference data types by id or name.
+//-----------------------------------------------------------------------------
+
+    static DataType const  &default_dtype(index_t dtype_id);
+    static DataType const  &default_dtype(const std::string &name);
+
+//-----------------------------------------------------------------------------
+// Return the default number of bytes used in a given type (from a type id, or
+// string)
+//-----------------------------------------------------------------------------
+    static index_t          default_bytes(index_t dtype_id);
+    static index_t          default_bytes(const std::string &name);
+
+
+//-----------------------------------------------------------------------------
+// Transforms
+//-----------------------------------------------------------------------------
+    std::string         to_json() const;  
+    void                to_json(std::ostringstream &oss,
+                                const std::string &value="")const;
+    void                compact_to(DataType &dtype) const;
 
 
 private:
-
-    index_t   m_id;         // for dtype enum value
-    index_t   m_num_ele;    // number of entries
-    index_t   m_offset;     // bytes to start of array
-    index_t   m_stride;     // bytes between start of current and start of next
-    index_t   m_ele_bytes;  // bytes per element
-    index_t   m_endianness; // endianness of elements
+//-----------------------------------------------------------------------------
+//
+// -- conduit::DataType private data members --
+//
+//-----------------------------------------------------------------------------
+    index_t   m_id;         /// for dtype enum value
+    index_t   m_num_ele;    /// number of elements
+    index_t   m_offset;     /// bytes to start of array
+    index_t   m_stride;     /// bytes between start of current and start of next
+    index_t   m_ele_bytes;  /// bytes per element
+    index_t   m_endianness; /// endianness of elements
 
 };
-
+//-----------------------------------------------------------------------------
+// -- end conduit::DataType --
+//-----------------------------------------------------------------------------
 
 
 };
-
+//-----------------------------------------------------------------------------
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
 
 #endif

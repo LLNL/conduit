@@ -15,23 +15,24 @@
 #include "DataType.h"
 #include "Schema.h"
 
+//-----------------------------------------------------------------------------
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
 namespace conduit
 {
 
-//============================================
-/// DataType::Objects
-//============================================
-
-// create storage for these common types:
+//-----------------------------------------------------------------------------
+// -- Storage for static members of conduit::DataType::Objects --
+//-----------------------------------------------------------------------------
 DataType DataType::Objects::m_empty(DataType::EMPTY_T);
 DataType DataType::Objects::m_object(DataType::OBJECT_T);
 DataType DataType::Objects::m_list(DataType::LIST_T);
 
-//============================================
-/// DataType::Scalars
-//============================================
+//-----------------------------------------------------------------------------
+// -- Storage for static members of conduit::DataType::Scalars --
+//-----------------------------------------------------------------------------
 
-/* int default dtypes */
+/// signed integer scalars
 DataType DataType::Scalars::m_int8(DataType::INT8_T,
                                    1,0,
                                    sizeof(conduit::int8),
@@ -56,7 +57,7 @@ DataType DataType::Scalars::m_int64(DataType::INT64_T,
                                     sizeof(conduit::int64),
                                     Endianness::DEFAULT_T);
 
-/* uint default dtypes */
+/// unsigned integer scalars
 DataType DataType::Scalars::m_uint8(DataType::UINT8_T,
                                     1,0,
                                     sizeof(conduit::uint8),
@@ -80,7 +81,7 @@ DataType DataType::Scalars::m_uint64(DataType::UINT64_T,
                                      sizeof(conduit::uint64),
                                      sizeof(conduit::uint64),
                                      Endianness::DEFAULT_T);
-/* float default dtypes */
+/// floating point scalars
 DataType DataType::Scalars::m_float32(DataType::FLOAT32_T,
                                       1,0,
                                       sizeof(conduit::float32),
@@ -93,12 +94,12 @@ DataType DataType::Scalars::m_float64(DataType::FLOAT64_T,
                                      sizeof(conduit::float64),
                                      Endianness::DEFAULT_T);
 
-//============================================
-/// DataType::Arrays
-//============================================
+//-----------------------------------------------------------------------------
+// -- conduit::DataType::Scalars members --
+//-----------------------------------------------------------------------------
 
-/* int array dtype helpers */
-//============================================
+ /// signed integer arrays
+//---------------------------------------------------------------------------//
 DataType
 DataType::Arrays::int8(index_t num_elements,
                        index_t offset,
@@ -109,7 +110,7 @@ DataType::Arrays::int8(index_t num_elements,
     return DataType(INT8_T,num_elements,offset,stride,element_bytes,endianness);
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 DataType
 DataType::Arrays::int16(index_t num_elements,
                         index_t offset,
@@ -120,7 +121,7 @@ DataType::Arrays::int16(index_t num_elements,
     return DataType(INT16_T,num_elements,offset,stride,element_bytes,endianness);
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 DataType 
 DataType::Arrays::int32(index_t num_elements,
                         index_t offset,
@@ -131,7 +132,7 @@ DataType::Arrays::int32(index_t num_elements,
     return DataType(INT32_T,num_elements,offset,stride,element_bytes,endianness);
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 DataType
 DataType::Arrays::int64(index_t num_elements,
                         index_t offset,
@@ -142,8 +143,8 @@ DataType::Arrays::int64(index_t num_elements,
     return DataType(INT64_T,num_elements,offset,stride,element_bytes,endianness);
 }
 
-/* uint array dtype helpers */
-//============================================
+/// unsigned integer arrays
+//---------------------------------------------------------------------------//
 DataType
 DataType::Arrays::uint8(index_t num_elements,
                         index_t offset,
@@ -153,8 +154,8 @@ DataType::Arrays::uint8(index_t num_elements,
 {
     return DataType(UINT8_T,num_elements,offset,stride,element_bytes,endianness);
 }
- 
- //============================================       
+
+//---------------------------------------------------------------------------//
 DataType
 DataType::Arrays::uint16(index_t num_elements,
                          index_t offset,
@@ -165,7 +166,7 @@ DataType::Arrays::uint16(index_t num_elements,
     return DataType(UINT16_T,num_elements,offset,stride,element_bytes,endianness);
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 DataType 
 DataType::Arrays::uint32(index_t num_elements,
                          index_t offset,
@@ -176,7 +177,7 @@ DataType::Arrays::uint32(index_t num_elements,
     return DataType(UINT32_T,num_elements,offset,stride,element_bytes,endianness);
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 DataType
 DataType::Arrays::uint64(index_t num_elements,
                          index_t offset,
@@ -187,8 +188,8 @@ DataType::Arrays::uint64(index_t num_elements,
     return DataType(UINT64_T,num_elements,offset,stride,element_bytes,endianness);
 }
 
-/* float array dtype helpers */
-//============================================
+ /// floating point arrays
+//---------------------------------------------------------------------------//
 DataType 
 DataType::Arrays::float32(index_t num_elements,
                           index_t offset,
@@ -199,7 +200,7 @@ DataType::Arrays::float32(index_t num_elements,
     return DataType(FLOAT32_T,num_elements,offset,stride,element_bytes,endianness);
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 DataType
 DataType::Arrays::float64(index_t num_elements,
                           index_t offset,
@@ -212,11 +213,21 @@ DataType::Arrays::float64(index_t num_elements,
 
 
 
-//============================================
-/// DataType
-//============================================
+//=============================================================================
+//-----------------------------------------------------------------------------
+//
+//
+// -- begin conduit::Node public methods --
+//
+//
+//-----------------------------------------------------------------------------
+//=============================================================================
 
-//============================================
+//-----------------------------------------------------------------------------
+// Construction and Destruction
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
 DataType::DataType()
 : m_id(DataType::EMPTY_T),
   m_num_ele(0),
@@ -226,7 +237,28 @@ DataType::DataType()
   m_endianness(Endianness::DEFAULT_T)
 {}
 
-//============================================ 
+//---------------------------------------------------------------------------// 
+DataType::DataType(const DataType& value)
+: m_id(value.m_id),
+  m_num_ele(value.m_num_ele),
+  m_offset(value.m_offset),
+  m_stride(value.m_stride),
+  m_ele_bytes(value.m_ele_bytes),
+  m_endianness(value.m_endianness)
+{}
+
+
+//---------------------------------------------------------------------------//
+DataType::DataType(index_t id)
+: m_id(id),
+  m_num_ele(0),
+  m_offset(0),
+  m_stride(0),
+  m_ele_bytes(0),
+  m_endianness(Endianness::DEFAULT_T)
+{}
+
+//---------------------------------------------------------------------------// 
 DataType::DataType(const std::string &dtype_name,
                    index_t num_elements,
                    index_t offset,
@@ -241,7 +273,7 @@ DataType::DataType(const std::string &dtype_name,
   m_endianness(endianness)
 {}
 
-//============================================ 
+//---------------------------------------------------------------------------// 
 DataType::DataType(index_t dtype_id,
                    index_t num_elements,
                    index_t offset,
@@ -257,32 +289,17 @@ DataType::DataType(index_t dtype_id,
   m_endianness(endianness)
 {}
 
-//============================================ 
-DataType::DataType(const DataType& value)
-: m_id(value.m_id),
-  m_num_ele(value.m_num_ele),
-  m_offset(value.m_offset),
-  m_stride(value.m_stride),
-  m_ele_bytes(value.m_ele_bytes),
-  m_endianness(value.m_endianness)
-{}
 
-
-//============================================
-DataType::DataType(index_t id)
-: m_id(id),
-  m_num_ele(0),
-  m_offset(0),
-  m_stride(0),
-  m_ele_bytes(0),
-  m_endianness(Endianness::DEFAULT_T)
-{}
-
-//============================================
+//---------------------------------------------------------------------------//
 DataType::~DataType()
 {}
 
-//============================================ 
+
+//-----------------------------------------------------------------------------
+// Setters
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
 void
 DataType::set(const DataType& dtype)
 {
@@ -294,7 +311,7 @@ DataType::set(const DataType& dtype)
     m_endianness = dtype.m_endianness;
 }
 
-//============================================ 
+//---------------------------------------------------------------------------// 
 void
 DataType::set(index_t dtype_id)
 {
@@ -307,7 +324,7 @@ DataType::set(index_t dtype_id)
 }
 
 
-//============================================ 
+//---------------------------------------------------------------------------// 
 void
 DataType::set(index_t dtype_id,
               index_t num_elements,
@@ -324,16 +341,11 @@ DataType::set(index_t dtype_id,
     m_endianness = endianness;
 }
 
-//============================================ 
-index_t     
-DataType::element_index(index_t idx) const
-{
-//     std::cout << "offset = " << m_offset 
-//               << " stride = " << m_stride << std::endl;
-    return m_offset + m_stride * idx;
-}
+//-----------------------------------------------------------------------------
+// Getters and info methods.
+//-----------------------------------------------------------------------------
 
-//============================================ 
+//---------------------------------------------------------------------------// 
 index_t
 DataType::total_bytes() const
 {
@@ -342,14 +354,14 @@ DataType::total_bytes() const
     return m_stride * m_num_ele;
 }
 
-//============================================ 
+//---------------------------------------------------------------------------//
 index_t
 DataType::total_bytes_compact() const
 {
     return default_bytes(m_id) * m_num_ele;
 }
     
-//============================================
+//---------------------------------------------------------------------------//
 bool
 DataType::is_compatible(const DataType& dtype) const
 {
@@ -357,51 +369,8 @@ DataType::is_compatible(const DataType& dtype) const
              (m_ele_bytes == dtype.m_ele_bytes) &&
              (total_bytes() == dtype.total_bytes()));
 }
-//============================================
-bool
-DataType::is_number() const
-{
-    return ( is_integer() ||
-             is_float());
-}
 
-//============================================
-bool
-DataType::is_float() const
-{
-    return ( (m_id == FLOAT32_T) ||
-             (m_id == FLOAT64_T));
-}
-
-//============================================
-bool
-DataType::is_integer() const
-{
-    return ( is_signed_integer() || 
-             is_unsigned_integer());
-}
-
-//============================================
-bool
-DataType::is_signed_integer() const
-{
-    return ( (m_id == INT8_T)  ||
-             (m_id == INT16_T) ||
-             (m_id == INT32_T) ||
-             (m_id == INT64_T));
-}
-
-//============================================
-bool
-DataType::is_unsigned_integer() const
-{
-    return ( (m_id == UINT8_T)  ||
-             (m_id == UINT16_T) ||
-             (m_id == UINT32_T) ||
-             (m_id == UINT64_T));
-}
-
-//============================================
+//---------------------------------------------------------------------------//
 bool
 DataType::is_compact() const
 {
@@ -411,23 +380,62 @@ DataType::is_compact() const
              (total_bytes() == total_bytes_compact()));
 }
 
-
-//============================================
-void
-DataType::compact_to(DataType &dtype) const
+//---------------------------------------------------------------------------//
+bool
+DataType::is_number() const
 {
-     index_t ele_size =  default_bytes(m_id);
-     dtype.set(m_id,
-               m_num_ele, 
-               0,    
-               ele_size,
-               ele_size,
-               m_endianness);
+    return ( is_integer() ||
+             is_float());
 }
 
+//---------------------------------------------------------------------------//
+bool
+DataType::is_float() const
+{
+    return ( (m_id == FLOAT32_T) ||
+             (m_id == FLOAT64_T));
+}
 
+//---------------------------------------------------------------------------//
+bool
+DataType::is_integer() const
+{
+    return ( is_signed_integer() || 
+             is_unsigned_integer());
+}
 
-//============================================     
+//---------------------------------------------------------------------------//
+bool
+DataType::is_signed_integer() const
+{
+    return ( (m_id == INT8_T)  ||
+             (m_id == INT16_T) ||
+             (m_id == INT32_T) ||
+             (m_id == INT64_T));
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_unsigned_integer() const
+{
+    return ( (m_id == UINT8_T)  ||
+             (m_id == UINT16_T) ||
+             (m_id == UINT32_T) ||
+             (m_id == UINT64_T));
+}
+
+//---------------------------------------------------------------------------// 
+index_t     
+DataType::element_index(index_t idx) const
+{
+    return m_offset + m_stride * idx;
+}
+
+//-----------------------------------------------------------------------------
+// TypeID to string and string to TypeId
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
 index_t 
 DataType::name_to_id(const std::string &dtype_name)
 {
@@ -448,108 +456,133 @@ DataType::name_to_id(const std::string &dtype_name)
     return EMPTY_T;
 }
 
-//============================================
+
+
+//---------------------------------------------------------------------------//
 std::string 
 DataType::id_to_name(index_t dtype_id)
 {
+    /// container types
     if(dtype_id      == EMPTY_T)   return "[empty]";
     else if(dtype_id == OBJECT_T)  return "Object";
     else if(dtype_id == LIST_T)    return "List";
-    /* ints */
+    /// signed integer types
     else if(dtype_id == INT8_T)    return "int8";
     else if(dtype_id == INT16_T)   return "int16";
     else if(dtype_id == INT32_T)   return "int32";
     else if(dtype_id == INT64_T)   return "int64";
-    /* uints */
+
+    /// unsigned integer types
     else if(dtype_id == UINT8_T)   return "uint8";
     else if(dtype_id == UINT16_T)  return "uint16";
     else if(dtype_id == UINT32_T)  return "uint32";
     else if(dtype_id == UINT64_T)  return "uint64";
-    /* floats */
+
+    /// floating point types
     else if(dtype_id == FLOAT32_T) return "float32";
     else if(dtype_id == FLOAT64_T) return "float64";
-    /* strs */
+    /// string types
     else if(dtype_id == CHAR8_STR_T) return "char8_str";
+    // default to empty
     return "[empty]";
 }
 
 
-//============================================ 
+//-----------------------------------------------------------------------------
+// Access to simple reference data types by id or name.
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------// 
 DataType const &
 DataType::default_dtype(index_t dtype_id)
 {
    switch (dtype_id)
    {
-        case OBJECT_T: return DataType::Objects::object();
-        case LIST_T :  return DataType::Objects::list();
-        /* int types */
-        case INT8_T :  return DataType::Scalars::int8();
-        case INT16_T : return DataType::Scalars::int16();
-        case INT32_T : return DataType::Scalars::int32();
-        case INT64_T : return DataType::Scalars::int64();
-        /* uint types */
-        case UINT8_T :  return DataType::Scalars::uint8();
-        case UINT16_T : return DataType::Scalars::uint16();
-        case UINT32_T : return DataType::Scalars::uint32();
-        case UINT64_T : return DataType::Scalars::uint64();
-        /* float types */
-        case FLOAT32_T : return DataType::Scalars::float32();
-        case FLOAT64_T : return DataType::Scalars::float64();
-        /* no default type for bytestr */
-        default : 
-        {
-            return DataType::Objects::empty();
-        }
+       /// container types
+       case OBJECT_T: return DataType::Objects::object();
+       case LIST_T :  return DataType::Objects::list();
+       
+       /// signed integer types
+       case INT8_T :  return DataType::Scalars::int8();
+       case INT16_T : return DataType::Scalars::int16();
+       case INT32_T : return DataType::Scalars::int32();
+       case INT64_T : return DataType::Scalars::int64();
+       
+       /// unsigned integer types
+       case UINT8_T :  return DataType::Scalars::uint8();
+       case UINT16_T : return DataType::Scalars::uint16();
+       case UINT32_T : return DataType::Scalars::uint32();
+       case UINT64_T : return DataType::Scalars::uint64();
+
+       /// floating point types
+       case FLOAT32_T : return DataType::Scalars::float32();
+       case FLOAT64_T : return DataType::Scalars::float64();
+       /// note: there is no default dtype for char8_str
+       
+       /// default
+       default : 
+       {
+           return DataType::Objects::empty();
+       }
     }
 }
 
-
-//============================================ 
+//---------------------------------------------------------------------------// 
 DataType const &
 DataType::default_dtype(const std::string &name)
 {
     return default_dtype(name_to_id(name));
 }
 
+//-----------------------------------------------------------------------------
+// Default byte sizes for data types
+//-----------------------------------------------------------------------------
 
-//============================================ 
+//---------------------------------------------------------------------------// 
 index_t
 DataType::default_bytes(index_t dtype_id)
 {
    switch (dtype_id)
    {
-        /* int types */
-        case INT8_T :  return sizeof(conduit::int8);
-        case INT16_T : return sizeof(conduit::int16);
-        case INT32_T : return sizeof(conduit::int32);
-        case INT64_T : return sizeof(conduit::int64);
-        /* uint types */
-        case UINT8_T :  return sizeof(conduit::uint8);
-        case UINT16_T : return sizeof(conduit::uint16);
-        case UINT32_T : return sizeof(conduit::uint32);
-        case UINT64_T : return sizeof(conduit::uint64);
-        /* float types */
-        case FLOAT32_T : return sizeof(conduit::float32);
-        case FLOAT64_T : return sizeof(conduit::float64);
-        /* string types */
-        case CHAR8_STR_T : return 1;
-        /* no default size for obj,list, or empty */
-        default : 
-        {
-            return 0;
-        }
+       /// signed integer types
+       case INT8_T :  return sizeof(conduit::int8);
+       case INT16_T : return sizeof(conduit::int16);
+       case INT32_T : return sizeof(conduit::int32);
+       case INT64_T : return sizeof(conduit::int64);
+
+       /// unsigned integer types
+       case UINT8_T :  return sizeof(conduit::uint8);
+       case UINT16_T : return sizeof(conduit::uint16);
+       case UINT32_T : return sizeof(conduit::uint32);
+       case UINT64_T : return sizeof(conduit::uint64);
+       
+       /// floating point types
+       case FLOAT32_T : return sizeof(conduit::float32);
+       case FLOAT64_T : return sizeof(conduit::float64);
+       /// string types
+       case CHAR8_STR_T : return 1;
+       /// note: there is no default bytes obj,list, or empty
+       default : 
+       {
+           return 0;
+       }
     }
 }
 
 
-//============================================ 
+//---------------------------------------------------------------------------// 
 index_t
 DataType::default_bytes(const std::string &name)
 {
     return default_bytes(name_to_id(name));
 }
 
-//============================================ 
+
+//-----------------------------------------------------------------------------
+// Transforms
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------// 
 std::string 
 DataType::to_json() const
 {
@@ -558,9 +591,10 @@ DataType::to_json() const
     return oss.str();
 }
 
-//============================================ 
+//---------------------------------------------------------------------------// 
 void
-DataType::to_json(std::ostringstream &oss, const std::string &value) const
+DataType::to_json(std::ostringstream &oss,
+                  const std::string &value) const
 {
     oss << "{\"dtype\":";
     if(m_id == EMPTY_T)
@@ -607,4 +641,30 @@ DataType::to_json(std::ostringstream &oss, const std::string &value) const
     oss << "}";
 }
 
+//---------------------------------------------------------------------------//
+void
+DataType::compact_to(DataType &dtype) const
+{
+     index_t ele_size =  default_bytes(m_id);
+     dtype.set(m_id,
+               m_num_ele, 
+               0,    
+               ele_size,
+               ele_size,
+               m_endianness);
+}
+
+//=============================================================================
+//-----------------------------------------------------------------------------
+//
+//
+// -- end conduit::DataType public methods --
+//
+//
+//-----------------------------------------------------------------------------
+//=============================================================================
+
 };
+//-----------------------------------------------------------------------------
+// -- end conduit:: --
+//-----------------------------------------------------------------------------
