@@ -8,16 +8,25 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_silo.cpp
 ///
+//-----------------------------------------------------------------------------
 
 #include "conduit_silo.h"
 #include <iostream>
+#include <silo.h>
 
+//-----------------------------------------------------------------------------
 void conduit_silo_placeholder()
 {
-    DBfile *dbfile = DBCreate("silo_smoke_test.silo", 0, DB_LOCAL, "test", DB_HDF5);
+    DBfile *dbfile = DBCreate("silo_smoke_test.silo",
+                              0,
+                              DB_LOCAL,
+                              "test",
+                              DB_HDF5);
+
     std::string twrite = "test_string";
     int twrite_len = twrite.size()+1;
     DBWrite (dbfile, "tdata", twrite.c_str(), &twrite_len, 1, DB_CHAR);

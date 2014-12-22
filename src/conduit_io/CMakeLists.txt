@@ -10,7 +10,7 @@
 
 
 ################################
-# Add the conduit-silo library
+# Add the conduit-io library
 ################################
 
 ENABLE_WARNINGS()
@@ -18,31 +18,31 @@ ENABLE_WARNINGS()
 #
 # Specify all headers
 #            
-set(conduit_silo_headers conduit_silo.h Conduit_Silo_Exports.h)
+set(conduit_io_headers conduit_io.h  conduit_silo.h  Conduit_IO_Exports.h)
 
 #
 # Specify all sources
 #
-set(conduit_silo_sources conduit_silo.cpp)
+set(conduit_io_sources conduit_silo.cpp)
 
 #
 # Note: headers are added here so they show up in project file generators
 # (such as xcode, eclipse, etc)
 #
-add_library(conduit_silo SHARED ${conduit_silo_sources} ${conduit_silo_headers})
+add_library(conduit_io SHARED ${conduit_io_sources} ${conduit_io_headers})
 
 #
 # Link with conduit and silo
 #
-target_link_libraries(conduit_silo conduit ${SILO_LIBRARIES})
+target_link_libraries(conduit_io conduit ${SILO_LIBRARIES})
 
 ##################################
 # Install Targets for conduit lib
 ##################################
 
-install(FILES ${conduit_silo_headers} DESTINATION include)
-install(TARGETS conduit_silo
-  EXPORT conduit-silo-lib
+install(FILES ${conduit_io_headers} DESTINATION include)
+install(TARGETS conduit_io
+  EXPORT conduit-io-lib
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
 )

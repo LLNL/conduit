@@ -54,12 +54,15 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/conduit
 add_subdirectory(conduit)
 
 ################################
-# Add the conduit-silo lib 
+# Add the conduit-io lib 
 ################################
+#
+# For now, Silo is the only specialized I/O case.
+#
 if(SILO_FOUND)
-    add_subdirectory(conduit_silo)
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/conduit_silo 
-                        ${CMAKE_CURRENT_BINARY_DIR}/conduit_silo )
+    add_subdirectory(conduit_io)
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/conduit_io
+                        ${CMAKE_CURRENT_BINARY_DIR}/conduit_io )
 endif()
 
 ################################

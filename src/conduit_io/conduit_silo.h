@@ -8,13 +8,21 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_silo.h
 ///
+//-----------------------------------------------------------------------------
 
+#ifndef __CONDUIT_SILO_H
+#define __CONDUIT_SILO_H
+
+
+#include "conduit_io.h"
 #include <silo.h>
-#include <conduit.h>
-#include "Conduit_Silo_Exports.h"
 
-void CONDUIT_SILO_API conduit_silo_placeholder();
+//-----------------------------------------------------------------------------
+void CONDUIT_IO_API conduit_silo_placeholder();
+
+#endif
 
