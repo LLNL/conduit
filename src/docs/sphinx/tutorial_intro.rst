@@ -154,10 +154,9 @@ Standard C++ numeric types will be mapped by the compiler to bitwidth style type
 
 
 Supported Bitwidth Style Types:
--  bool8
--  int8,int16,int32,int64
--  uint8,uint16,uint32,uint64
--  float32,float64
+ - signed integers: int8,int16,int32,int64
+ - unsigned integers: uint8,uint16,uint32,uint64
+ - floating point numbers: float32,float64
 
 Using *Generator* instances to parse JSON schemas
 ---------------------------------------------------

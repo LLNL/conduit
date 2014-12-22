@@ -57,14 +57,11 @@ public:
     friend class Node;
     friend class NodeIterator;
 
-//-----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 //
-// -- begin declaration of Schema construction and destruction --
+/// Schema construction and destruction.
 //
-//-----------------------------------------------------------------------------
-///@name Construction and Destruction
-///@{
-//-----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 /// description:
 ///  Standard construction and destruction methods.
 ///
@@ -87,27 +84,13 @@ public:
 
     /// Schema Destructor
     ~Schema();
-    
+    /// return a schema to the default (empty) state
     void  reset();
 
 //-----------------------------------------------------------------------------
-///@}
-//-----------------------------------------------------------------------------
 //
-// -- end declaration of Schema construction and destruction --
+// Schema set methods
 //
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-//
-// -- begin declaration of Schema set methods --
-//
-//-----------------------------------------------------------------------------
-///@name Schema::set(...)
-///@{
-//-----------------------------------------------------------------------------
-/// description:
-///   TODO
 //-----------------------------------------------------------------------------
     void set(const Schema &schema); 
 
@@ -115,41 +98,25 @@ public:
     void set(const DataType &dtype);
     void set(const std::string &json_schema);
 
-//-----------------------------------------------------------------------------
-///@}
-//-----------------------------------------------------------------------------
-//
-// -- end declaration of Schema set methods --
-//
-//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 //
-// -- begin declaration of Schema assignment operators --
+/// Schema assignment operators
 //
-//-----------------------------------------------------------------------------
-///@name Schema Assignment Operators
-///@{
-//-----------------------------------------------------------------------------
-/// description:
-///  TODO
 //-----------------------------------------------------------------------------
     Schema &operator=(const Schema &schema);
     Schema &operator=(index_t dtype_id);
     Schema &operator=(const DataType &dtype);
     Schema &operator=(const std::string &json_schema);
 
-//-----------------------------------------------------------------------------
-///@}                      
-//-----------------------------------------------------------------------------
-//
-// -- end declaration of Schema assignment operators --
-//
-//-----------------------------------------------------------------------------
 
-    /// info
+//-----------------------------------------------------------------------------
+//
+/// Information Methods
+//
+//-----------------------------------------------------------------------------
     const DataType &dtype() const 
-                    {return m_dtype;}
+                        {return m_dtype;}
 
     index_t         total_bytes() const;
     index_t         total_bytes_compact() const;
@@ -157,10 +124,17 @@ public:
     void            print() const
                         {std::cout << to_json() << std::endl;}
 
-    bool            compare(const Schema &n, Node &cmp_results) const;
-    bool            operator==(const Schema &n) const;
+    index_t         element_index(index_t idx) const 
+                        {return m_dtype.element_index(idx);}
 
-    /// transformations
+    bool            is_root() const
+                        { return m_root;}
+
+//-----------------------------------------------------------------------------
+//
+/// Transformation Methods
+//
+//-----------------------------------------------------------------------------
     void            compact_to(Schema &s_dest) const;
 
     std::string     to_json(bool detailed=true, 
@@ -176,7 +150,11 @@ public:
                                 const std::string &pad=" ",
                                 const std::string &eoe="\n") const;
 
-    /// i/o
+//-----------------------------------------------------------------------------
+//
+/// Basic I/O methods
+//
+//-----------------------------------------------------------------------------
     void            save(const std::string &ofname,
                          bool detailed=true, 
                          index_t indent=2, 
@@ -186,99 +164,110 @@ public:
 
     void            load(const std::string &ifname);
 
-    /// child access                         
 
-    // the `child' methods don't modify map structure, if a path doesn't exists
-    // they will throw an exception
-    
-    Schema           &child(const std::string &path);
-    const Schema     &child(const std::string &path) const;
+//-----------------------------------------------------------------------------
+//
+/// Access to children (object and list interface)
+//
+//-----------------------------------------------------------------------------
+    /// returns the number of children for a list of object type
+    index_t number_of_children() const;
 
+    // access a child schema by index
     Schema           &child(index_t idx);
     const Schema     &child(index_t idx) const;
+    /// access to child schema pointer by index
     Schema           *child_pointer(index_t idx);
 
-    index_t           child_index(const std::string &path) const;
+    /// remove a child by index
+    void             remove(index_t idx);
+
+    /// these use the "child" methods
+    Schema           &operator[](const index_t idx);
+    const Schema     &operator[](const index_t idx) const;
+
+//-----------------------------------------------------------------------------
+//
+/// Object interface methods
+//
+//-----------------------------------------------------------------------------
+    /// the `child' methods don't modify map structure, if a path doesn't exists
+    /// they will throw an exception
+    Schema           &child(const std::string &path);
+    const Schema     &child(const std::string &path) const;
 
     /// fetch with a path arg methods do modifies map structure 
     /// if a path doesn't exists
     Schema           &fetch(const std::string &path);
     Schema           *fetch_pointer(const std::string &path);
 
-    // this uses the fetch method
+    /// path to index map
+    index_t          child_index(const std::string &path) const;
+
+    /// this uses the fetch method
     Schema           &operator[](const std::string &path);
-
-    /// these use the "child" methods
+    /// the const variant uses the "child" methods
     const Schema     &operator[](const std::string &path) const;
-    Schema           &operator[](const index_t idx);
-    const Schema     &operator[](const index_t idx) const;
-  
 
-
-    index_t           element_index(index_t idx) const 
-                        {return m_dtype.element_index(idx);}
-     
+    bool              has_path(const std::string &path) const;
+    void              paths(std::vector<std::string> &paths) const;
+    void              remove(const std::string &path);
     
-
-    bool              is_root() const { return m_root;}
-    
-    ///
-    /// Object Interface
-    ///
-    index_t number_of_children() const; // object and list 
-    bool    has_path(const std::string &path) const;
-    void    paths(std::vector<std::string> &paths) const;
-    void    remove(const std::string &path);
-
-    ///
-    /// List Interface
-    ///
-    void    remove(index_t idx);
+//-----------------------------------------------------------------------------
+//
+/// List Append Interface Methods
+//
+//-----------------------------------------------------------------------------
 
     void    append()
-        {init_list(); children().push_back(new Schema());}
+                {init_list(); children().push_back(new Schema());}
 
     void    append(const DataType &dtype)
-        {init_list(); children().push_back(new Schema(dtype));}
+                {init_list(); children().push_back(new Schema(dtype));}
 
     void    append(const Schema &schema)
-        {init_list(); children().push_back(new Schema(schema));}
+                {init_list(); children().push_back(new Schema(schema));}
 
-    void list_of(const Schema &schema, index_t num_elements);
-
-    /// interface warts
-    void              set_root(bool value) {m_root = value;}
+//-----------------------------------------------------------------------------
+//
+/// Interface Warts
+//
+//-----------------------------------------------------------------------------
+    /// bookkeeping used by Node for memory management of schemas
+    void              set_root(bool value) 
+                        {m_root = value;}
 
 private:
-    // for obj and list interfaces
-    std::vector<Schema*>                   &children();
-    std::map<std::string, index_t>         &object_map();
-    std::vector<std::string>               &object_order();
-
-    void                                   object_map_print()   const;
-    void                                   object_order_print() const;
-
-    const std::vector<Schema*>             &children()  const;    
-    const std::map<std::string, index_t>   &object_map()   const;
-    const std::vector<std::string>         &object_order() const;
-
-
+//-----------------------------------------------------------------------------
+//
+// -- private methods that help with init, memory allocation, and cleanup --
+//
+//-----------------------------------------------------------------------------
+    // set defaults (used by constructors)
     void        init_defaults();
+    // setup schema to represent a list
     void        init_list();
+    // setup schema to represent an object
     void        init_object();
+    // cleanup any allocated memory.
     void        release();
-    
+
+//-----------------------------------------------------------------------------
+//
+/// -- Private transform helpers -- 
+//
+//-----------------------------------------------------------------------------
     void        compact_to(Schema &s_dest, index_t curr_offset) const ;
     void        walk_schema(const std::string &json_schema);
-    void        walk_schema(Schema &schema, const std::string &json_schema);
+//-----------------------------------------------------------------------------
+//
+// -- conduit::Schema::Schema_Object_Hierarchy --
+//
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+/// Holds hierarchy data for schemas that describe an object.
+//-----------------------------------------------------------------------------
 
-    DataType    m_dtype;
-    void       *m_hierarchy_data;
-    bool        m_root;
-    Schema     *m_parent;
-
-
-    
     struct Schema_Object_Hierarchy 
     {
         std::vector<Schema*>            children;
@@ -286,16 +275,65 @@ private:
         std::map<std::string, index_t>  object_map;
     };
 
+//-----------------------------------------------------------------------------
+//
+// -- conduit::Schema::Schema_List_Hierarchy --
+//
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+/// Holds hierarchy data for schemas that describe a list.
+//-----------------------------------------------------------------------------
     struct Schema_List_Hierarchy 
     {
         std::vector<Schema*> children;
     };
 
-    Schema_Object_Hierarchy        *object_hierarchy();
-    Schema_List_Hierarchy          *list_hierarchy();
+//-----------------------------------------------------------------------------
+//
+/// -- Private methods that help with access book keeping data structures. --
+//
+//-----------------------------------------------------------------------------
+    // for obj and list interfaces
+    std::vector<Schema*>                   &children();
+    std::map<std::string, index_t>         &object_map();
+    std::vector<std::string>               &object_order();
 
-    const Schema_Object_Hierarchy  *object_hierarchy() const;
-    const Schema_List_Hierarchy    *list_hierarchy()   const;
+    const std::vector<Schema*>             &children()  const;    
+    const std::map<std::string, index_t>   &object_map()   const;
+    const std::vector<std::string>         &object_order() const;
+
+    void                                   object_map_print()   const;
+    void                                   object_order_print() const;
+//-----------------------------------------------------------------------------
+/// Cast helpers for hierarchy data.
+//-----------------------------------------------------------------------------
+    Schema_Object_Hierarchy               *object_hierarchy();
+    Schema_List_Hierarchy                 *list_hierarchy();
+
+    const Schema_Object_Hierarchy         *object_hierarchy() const;
+    const Schema_List_Hierarchy           *list_hierarchy()   const;
+
+//-----------------------------------------------------------------------------
+//
+// -- conduit::Schema private data members --
+//
+//-----------------------------------------------------------------------------
+    /// holds the description of this schema instance
+    DataType    m_dtype;
+    /// holds the schema hierarchy data.
+    /// Instead of accessing this directly, use the private methods:
+    ///   children(), object_map(), object_order
+    /// concretely, this will be:
+    /// - NULL for leaf type
+    /// - A Schema_Object_Hierarchy instance for schemas describing an object
+    /// - A Schema_List_Hierarchy instance for schemas describing a list
+    void       *m_hierarchy_data;
+    /// holds flag used by node for memory management
+    bool        m_root;
+    /// if this schema instance has a parent, this holds the pointer to that
+    /// parent
+    Schema     *m_parent;
+
 
 };
 //-----------------------------------------------------------------------------

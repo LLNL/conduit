@@ -1532,7 +1532,7 @@ private:
 // -- conduit::Node private data members --
 //
 //-----------------------------------------------------------------------------
-    /// pointer to this node's parent (if it exixts)
+    /// pointer to this node's parent (if it exists)
     Node                *m_parent;
     /// pointer to this node's schema
     Schema              *m_schema;
