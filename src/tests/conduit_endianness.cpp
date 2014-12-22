@@ -8,19 +8,21 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_endianness.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "conduit.h"
 
 #include <iostream>
 #include "gtest/gtest.h"
+
 using namespace conduit;
 
-
-TEST(conduit_endianness_simple_1, conduit_endianness)
+//-----------------------------------------------------------------------------
+TEST(conduit_endianness, simple_1)
 {
     union{uint8  vbytes[4]; uint32 vuint;} test;
     std::string machine_endian = Endianness::id_to_name(Endianness::machine_default());
@@ -46,7 +48,8 @@ TEST(conduit_endianness_simple_1, conduit_endianness)
     }
 }
 
-TEST(conduit_endianness_swap_inplace, conduit_endianness)
+//-----------------------------------------------------------------------------
+TEST(conduit_endianness, swap_inplace)
 {
     union{uint8  vbytes[2]; uint16 vuint16;} test16;
     union{uint8  vbytes[4]; uint32 vuint32;} test32;

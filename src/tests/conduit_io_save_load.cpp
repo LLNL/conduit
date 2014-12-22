@@ -8,20 +8,22 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_io_save_load.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "conduit.h"
 
 #include <iostream>
 #include "gtest/gtest.h"
-#include "rapidjson/document.h"
+
+
 using namespace conduit;
 using namespace std;
 
-
+//-----------------------------------------------------------------------------
 class ExampleData
 {
 public:
@@ -44,8 +46,8 @@ public:
    std::vector<float64> z_vals;
 };
 
-
-TEST(conduit_io_save_load, conduit_bin_simple_2_file)
+//-----------------------------------------------------------------------------
+TEST(conduit_io_save_load, bin_simple_file)
 {
 
     int32   a1_val  = 10;
@@ -85,9 +87,8 @@ TEST(conduit_io_save_load, conduit_bin_simple_2_file)
 }
 
 
-
-
-TEST(conduit_io_save_load, conduit_mmap_simple_2_file)
+//-----------------------------------------------------------------------------
+TEST(conduit_io_save_load, mmap_simple_file)
 {
     int32   a1_val  = 10;
     int32   b1_val  = 20;
@@ -140,8 +141,8 @@ TEST(conduit_io_save_load, conduit_mmap_simple_2_file)
 }
 
 
-
-TEST(conduit_io_save_load, conduit_simple_restore)
+//-----------------------------------------------------------------------------
+TEST(conduit_io_save_load, simple_restore)
 {
     Node n_src;
     Node n_dest;
@@ -179,7 +180,8 @@ TEST(conduit_io_save_load, conduit_simple_restore)
 
 }
 
-TEST(conduit_io_save_load, conduit_simple_class_restore)
+//-----------------------------------------------------------------------------
+TEST(conduit_io_save_load, simple_class_restore)
 {
     ExampleData d;
     d.alloc(10);
@@ -212,7 +214,8 @@ TEST(conduit_io_save_load, conduit_simple_class_restore)
 
 }
 
-TEST(conduit_io_save_load, conduit_io_explicit_zero_length_vector_restore)
+//-----------------------------------------------------------------------------
+TEST(conduit_io_save_load, io_explicit_zero_length_vector_restore)
 {
     std::vector<float> one;
     float two = 2;

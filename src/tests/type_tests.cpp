@@ -8,9 +8,11 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
-/// file: value_type_tests.cpp
+/// file: type_tests.cpp
 ///
+//-----------------------------------------------------------------------------
 
 #include "conduit.h"
 
@@ -20,13 +22,15 @@
 
 using namespace conduit;
 
+
+//-----------------------------------------------------------------------------
 void print_dt(const DataType &dtype)
 {
     std::cout << dtype.to_json() << std::endl;
 }
 
-
-TEST(value_type_test, value_type_tests)
+//-----------------------------------------------------------------------------
+TEST(type_tests, value_print)
 {
     EXPECT_EQ(DataType::EMPTY_T,0);
     EXPECT_EQ(DataType::id_to_name(DataType::EMPTY_T),"[empty]");
@@ -50,5 +54,5 @@ TEST(value_type_test, value_type_tests)
     print_dt(DataType::Scalars::float32());
     print_dt(DataType::Scalars::float64());
 
-
 }
+

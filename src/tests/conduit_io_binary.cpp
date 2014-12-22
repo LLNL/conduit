@@ -8,20 +8,24 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_io_binary.cpp
 ///
+//-----------------------------------------------------------------------------
 
 
 #include "conduit.h"
 
 #include <iostream>
 #include "gtest/gtest.h"
-#include "rapidjson/document.h"
+
+
 using namespace conduit;
 using namespace std;
 
-TEST(conduit_io_binary, conduit_read_write)
+//-----------------------------------------------------------------------------
+TEST(conduit_io_binary, read_write)
 {
     int32   a1_val  = 10;
     int32   b1_val  = 20;
@@ -58,14 +62,11 @@ TEST(conduit_io_binary, conduit_read_write)
 
     EXPECT_EQ(n[0]["b"].as_int32(), b1_val);
     EXPECT_EQ(n[1]["b"].as_int32(), b2_val);
-
-    // src in schema    
-    //Schema rschema("{\"dtype\":{\"a\":\"int32\",\"b\":\"int32\"},\"length\":2 \"source\":\"test_conduit.bin\"}");
   
 }
 
-
-TEST(conduit_io_binary, conduit_mmap_simple)
+//-----------------------------------------------------------------------------
+TEST(conduit_io_binary, mmap_simple)
 {
     int32   a1_val  = 10;
     int32   b1_val  = 20;

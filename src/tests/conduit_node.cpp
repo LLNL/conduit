@@ -8,10 +8,11 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_node.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "conduit.h"
 
@@ -20,7 +21,8 @@
 #include "rapidjson/document.h"
 using namespace conduit;
 
-TEST(conduit_node_simple_test, conduit_node)
+//-----------------------------------------------------------------------------
+TEST(conduit_node, simple)
 {
 
     uint32   a_val  = 10;
@@ -37,7 +39,7 @@ TEST(conduit_node_simple_test, conduit_node)
     EXPECT_EQ(n["c"].as_float64(),c_val);
 }
 
-TEST(conduit_node_nested_test, conduit_node)
+TEST(conduit_node, nested)
 {
 
     uint32   val  = 10;
@@ -47,7 +49,8 @@ TEST(conduit_node_nested_test, conduit_node)
     EXPECT_EQ(n["a"]["b"].as_uint32(),val);
 }
 
-TEST(conduit_node_vec_test, conduit_node)
+//-----------------------------------------------------------------------------
+TEST(conduit_node, vector)
 {
 
     std::vector<uint32> vec;
@@ -59,7 +62,8 @@ TEST(conduit_node_vec_test, conduit_node)
     EXPECT_EQ(n["a"].as_uint32_ptr()[99],99);
 }
 
-TEST(conduit_node_list_test, conduit_node)
+//-----------------------------------------------------------------------------
+TEST(conduit_node, list)
 {
 
     std::vector<uint32> vec;
@@ -87,7 +91,8 @@ TEST(conduit_node_list_test, conduit_node)
 
 }
 
-TEST(conduit_node_simple_gen_schema_test, conduit_node)
+//-----------------------------------------------------------------------------
+TEST(conduit_node, simple_schema_gen )
 {
     uint32   a_val  = 10;
     uint32   b_val  = 20;
@@ -154,8 +159,8 @@ TEST(conduit_node_simple_gen_schema_test, conduit_node)
 }
 
 
-
-TEST(conduit_node_simple_schema_test, conduit_node)
+//-----------------------------------------------------------------------------
+TEST(conduit_node, simple_schema)
 {
     uint32   a_val  = 10;
     uint32   b_val  = 20;
@@ -178,7 +183,8 @@ TEST(conduit_node_simple_schema_test, conduit_node)
 }
 
 
-TEST(conduit_node_in_place_test, conduit_node)
+//-----------------------------------------------------------------------------
+TEST(conduit_node, in_place)
 {
     uint32   a_val  = 10;
     uint32   b_val  = 20;
@@ -206,7 +212,8 @@ TEST(conduit_node_in_place_test, conduit_node)
     EXPECT_EQ(*(float64*)(&data[8]), d_val);
 }
 
-TEST(conduit_node_remove_by_name, conduit_node)
+//-----------------------------------------------------------------------------
+TEST(conduit_node, remove_by_name)
 {
     conduit::Generator g("{a:1,b:2,c:3}", "json");
     conduit::Node n(g);
@@ -231,7 +238,8 @@ TEST(conduit_node_remove_by_name, conduit_node)
     EXPECT_FALSE(n.has_path("c"));
 }
 
-TEST(conduit_node_remove_by_index, conduit_node)
+//-----------------------------------------------------------------------------
+TEST(conduit_node, remove_by_index)
 {
     conduit::Generator g("{a:1,b:2,c:3}", "json");
     conduit::Node n(g);

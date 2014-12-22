@@ -8,10 +8,11 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_serialize.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "conduit.h"
 
@@ -21,9 +22,8 @@ using namespace conduit;
 
 
 
-
-
-TEST(serialize_test_1, conduit_serialize)
+//-----------------------------------------------------------------------------
+TEST(conduit_serialize, test_1)
 {
 
     uint32   a_val  = 10;
@@ -53,9 +53,8 @@ TEST(serialize_test_1, conduit_serialize)
     EXPECT_EQ(n2["b"].as_uint32(),b_val);
 }
 
-
-
-TEST(serialize_test_2, conduit_serialize)
+//-----------------------------------------------------------------------------
+TEST(conduit_serialize, test_2)
 {
 
     uint32   a_val  = 10;
@@ -89,10 +88,20 @@ TEST(serialize_test_2, conduit_serialize)
 
 }
 
-
-TEST(serialize_test_compact, conduit_serialize)
+//-----------------------------------------------------------------------------
+TEST(conduit_serialize, compact)
 {
-    float64 vals[] = { 100.0,-100.0,200.0,-200.0,300.0,-300.0,400.0,-400.0,500.0,-500.0};
+    float64 vals[] = { 100.0,
+                      -100.0, 
+                       200.0,
+                      -200.0,
+                       300.0,
+                      -300.0,
+                       400.0,
+                      -400.0,
+                       500.0,
+                      -500.0};
+
     Generator g("{dtype: float64, length: 5, stride: 16, offset:8}",vals);
 
     Node n(g);

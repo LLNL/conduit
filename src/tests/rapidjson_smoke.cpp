@@ -8,14 +8,17 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: rapidjson_smoke.cpp
 ///
+//-----------------------------------------------------------------------------
 
 #include "rapidjson/document.h"
 #include "gtest/gtest.h"
 
-TEST(rapidjson_smoke_test_case, rapidjson_smoke_test)
+//-----------------------------------------------------------------------------
+TEST(rapidjson_smoke, basic_use)
 {
     const char json[] = "{ \"hello\" : \"world\" }";
 

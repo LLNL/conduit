@@ -8,10 +8,11 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: numpy_smoke.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "Python.h"   
 #include "numpy/npy_common.h"
@@ -20,8 +21,8 @@
 #include <iostream>
 #include "gtest/gtest.h"
 
-
-TEST(numpy_smoke_test, numpy_smoke)
+//-----------------------------------------------------------------------------
+TEST(numpy_smoke, basic_dtype_include)
 {
     EXPECT_EQ(sizeof(npy_uint32),4);
     EXPECT_EQ(sizeof(npy_uint64),8);

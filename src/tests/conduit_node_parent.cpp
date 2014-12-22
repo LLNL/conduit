@@ -8,20 +8,21 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_node_parent.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "conduit.h"
 
 #include <iostream>
 #include "gtest/gtest.h"
-#include "rapidjson/document.h"
+
 using namespace conduit;
 
-
-TEST(conduit_node_parent_simple, conduit_node_parent)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_parent, simple)
 {
     uint32   val1  = 10;
     uint32   val2  = 20;

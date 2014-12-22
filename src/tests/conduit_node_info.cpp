@@ -8,19 +8,21 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_node_info.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "conduit.h"
 
 #include <iostream>
 #include "gtest/gtest.h"
+
 using namespace conduit;
 
-
-TEST(info_simple_1, conduit_node_info)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_info, simple_1)
 {
 
     uint32   a_val  = 10;
@@ -44,8 +46,8 @@ TEST(info_simple_1, conduit_node_info)
     EXPECT_EQ(0,ninfo["total_bytes_mmaped"].to_index_t());
 }
 
-
-TEST(info_simple_2, conduit_node_info)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_info, simple_2)
 {
     std::string pure_json ="{a:[0,1,2,3,4],b:[0.0,1.1,2.2,3.3]}";
     Generator g(pure_json,"json");
@@ -59,8 +61,8 @@ TEST(info_simple_2, conduit_node_info)
     EXPECT_EQ(0,ninfo["total_bytes_mmaped"].to_index_t());
 }
 
-
-TEST(info_simple_3, conduit_node_info)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_info, simple_3)
 {
     uint32   val=0;
 

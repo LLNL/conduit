@@ -8,10 +8,11 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_array.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "conduit.h"
 
@@ -20,7 +21,8 @@
 
 using namespace conduit;
 
-TEST(conduit_array_stride_int8, conduit_array)
+//-----------------------------------------------------------------------------
+TEST(conduit_array, array_stride_int8)
 {
     std::vector<int8> data(20,0);
 
@@ -91,7 +93,8 @@ TEST(conduit_array_stride_int8, conduit_array)
 
 }    
 
-TEST(conduit_array_stride_int8_external, conduit_array)
+//-----------------------------------------------------------------------------
+TEST(conduit_array, array_stride_int8_external)
 {
     std::vector<int64> data(20,0);
 
@@ -130,6 +133,6 @@ TEST(conduit_array_stride_int8_external, conduit_array)
     EXPECT_EQ(arr[2],10);
     EXPECT_EQ(arr[3],-10);
 
-}    
-    
+}
+
 

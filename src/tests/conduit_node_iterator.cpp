@@ -8,19 +8,22 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_node_iterator.cpp
 ///
+//-----------------------------------------------------------------------------
 
 
 #include "conduit.h"
 
 #include <iostream>
 #include "gtest/gtest.h"
+
 using namespace conduit;
 
-
-TEST(itr_simple_1, conduit_node_iterator)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_iterator, simple_1)
 {
 
     uint32   a_val  = 10;

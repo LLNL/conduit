@@ -8,9 +8,11 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_to_string.cpp
 ///
+//-----------------------------------------------------------------------------
 
 
 #include "conduit.h"
@@ -19,7 +21,8 @@
 #include "gtest/gtest.h"
 using namespace conduit;
 
-TEST(to_string_simple_1, conduit_to_string)
+//-----------------------------------------------------------------------------
+TEST(conduit_to_string, simple_1)
 {
     uint32   a_val  = 10;
     uint32   b_val  = 20;

@@ -8,19 +8,21 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_json_sanitize.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "conduit.h"
 
 #include <iostream>
 #include "gtest/gtest.h"
-#include "rapidjson/document.h"
+
 using namespace conduit;
 
-TEST(conduit_json_sanitize_comments, conduit_json_sanitize)
+//-----------------------------------------------------------------------------
+TEST(conduit_json_sanitize, sanitize_comments)
 {
     std::string t1_in  = "//comment\n{\"a\": \"uint32\", \"b\": \"uint32\" , \"c\": \"float64\"}\n// comment!";
     std::string t1_out = "{\"a\": \"uint32\", \"b\": \"uint32\" , \"c\": \"float64\"}\n";
@@ -28,8 +30,8 @@ TEST(conduit_json_sanitize_comments, conduit_json_sanitize)
     EXPECT_EQ(utils::json_sanitize(t1_in),t1_out);
 }
 
-
-TEST(conduit_json_sanitize_quoteless, conduit_json_sanitize)
+//-----------------------------------------------------------------------------
+TEST(conduit_json_sanitize, sanitize_quoteless)
 {
     std::string t1_in  = "{a: uint32, b: uint32 , c: float64}";
     std::string t1_out = "{\"a\": \"uint32\", \"b\": \"uint32\" , \"c\": \"float64\"}";
@@ -53,7 +55,8 @@ TEST(conduit_json_sanitize_quoteless, conduit_json_sanitize)
     EXPECT_EQ(utils::json_sanitize(t5_in),t5_out);
 }
 
-TEST(conduit_node_quoteless_simple_gen_schema_test, conduit_node_quoteless)
+//-----------------------------------------------------------------------------
+TEST(conduit_json_sanitize, simple_quoteless_schema)
 {
     return;
     uint32   a_val  = 10;

@@ -8,19 +8,21 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_json.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "conduit.h"
 
 #include <iostream>
 #include "gtest/gtest.h"
+
 using namespace conduit;
 
-
-TEST(conduit_to_json_1, conduit_json)
+//-----------------------------------------------------------------------------
+TEST(conduit_json, to_json_1)
 {
 
     uint32   a_val  = 10;
@@ -35,8 +37,8 @@ TEST(conduit_to_json_1, conduit_json)
 
     n.print_detailed();
 }
-
-TEST(conduit_to_json_2, conduit_json)
+//-----------------------------------------------------------------------------
+TEST(conduit_json, to_json_2)
 {
 
     uint32   a_val  = 10;
@@ -72,7 +74,8 @@ TEST(conduit_to_json_2, conduit_json)
 
 }
 
-TEST(conduit_to_json_3, conduit_json)
+//-----------------------------------------------------------------------------
+TEST(conduit_json, to_json_3)
 {
     std::string pure_json ="{a:[0,1,2,3,4],b:[0.0,1.1,2.2,3.3]}";
     Generator g(pure_json,"json");
@@ -80,8 +83,8 @@ TEST(conduit_to_json_3, conduit_json)
     n.print_detailed();
 }
 
-
-TEST(conduit_to_json_inline_value, conduit_json)
+//-----------------------------------------------------------------------------
+TEST(conduit_json, json_inline_value)
 {
     uint32   val=0;
 
@@ -99,7 +102,8 @@ TEST(conduit_to_json_inline_value, conduit_json)
     
 }
 
-TEST(conduit_to_json_inline_array, conduit_json)
+//-----------------------------------------------------------------------------
+TEST(conduit_json, json_inline_array)
 {
     uint32   arr[5];
 
@@ -157,7 +161,8 @@ TEST(conduit_to_json_inline_array, conduit_json)
     
 }
 
-TEST(conduit_schema_load_from_json, conduit_json)
+//-----------------------------------------------------------------------------
+TEST(conduit_json, load_from_json)
 {
     
     std::string ofname = "test_conduit_schema_load_from_json.conduit_json";

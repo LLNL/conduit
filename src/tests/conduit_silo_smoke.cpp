@@ -8,15 +8,18 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: silo_smoke.cpp
 ///
+//-----------------------------------------------------------------------------
 
 #include "conduit_silo.h"
 #include <iostream>
 #include "gtest/gtest.h"
 
-TEST(conduit_silo_smoke_test_case, conduit_silo_smoke)
+//-----------------------------------------------------------------------------
+TEST(conduit_silo_smoke, basic_use)
 {
     conduit_silo_placeholder();
 }

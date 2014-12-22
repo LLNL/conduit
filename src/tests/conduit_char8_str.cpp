@@ -8,10 +8,11 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_char8_str.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "conduit.h"
 
@@ -21,8 +22,8 @@
 #include "gtest/gtest.h"
 using namespace conduit;
 
-
-TEST(conduit_char8_str_basic, conduit_char8_str)
+//-----------------------------------------------------------------------------
+TEST(conduit_char8_str, basic)
 {
     const char *c_ta = "test string for a";
     const char *c_tb = "test string for b";

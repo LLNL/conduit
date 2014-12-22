@@ -8,14 +8,17 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
-/// file: conduit_mpi.cpp
+/// file: mpi_smoke.cpp
 ///
+//-----------------------------------------------------------------------------
 
 #include "gtest/gtest.h"
 #include <mpi.h>
 
-TEST(conduit_mpi_smoke, conduit_mpi)
+//-----------------------------------------------------------------------------
+TEST(mpi_smoke, mpi_init)
 {
     // simple mpi test 
     int size;
@@ -23,7 +26,9 @@ TEST(conduit_mpi_smoke, conduit_mpi)
     EXPECT_EQ(size, 2);
 }
 
-int main(int argc, char* argv[]) {
+//-----------------------------------------------------------------------------
+int main(int argc, char* argv[])
+{
     int result = 0;
 
     ::testing::InitGoogleTest(&argc, argv);
@@ -33,3 +38,4 @@ int main(int argc, char* argv[]) {
 
     return result;
 }
+

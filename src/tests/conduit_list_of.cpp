@@ -8,20 +8,21 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_list_of.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "conduit.h"
 
 #include <iostream>
 #include "gtest/gtest.h"
-#include "rapidjson/document.h"
+
 using namespace conduit;
 
-
-TEST(conduit_list_of_simple, conduit_list_of)
+//-----------------------------------------------------------------------------
+TEST(conduit_list_of, simple )
 {
     int32   a1_val  = 10;
     int32   b1_val  = 20;
@@ -54,7 +55,8 @@ TEST(conduit_list_of_simple, conduit_list_of)
     EXPECT_EQ(n[1]["b"].as_int32(), b2_val);
 }
 
-TEST(conduit_list_of_path_ref, conduit_list_of)
+//-----------------------------------------------------------------------------
+TEST(conduit_list_of, path_ref)
 {
     uint32  len_val = 2;
     int32   a1_val  = 10;

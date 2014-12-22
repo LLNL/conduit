@@ -8,20 +8,21 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_generator.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "conduit.h"
 
 #include <iostream>
 #include "gtest/gtest.h"
-#include "rapidjson/document.h"
+
 using namespace conduit;
 
-
-TEST(conduit_generator_simple_gen_schema_test, conduit_generator)
+//-----------------------------------------------------------------------------
+TEST(conduit_generator, simple_gen_schema)
 {
     uint32   a_val  = 10;
     uint32   b_val  = 20;

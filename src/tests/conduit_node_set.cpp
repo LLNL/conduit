@@ -8,10 +8,11 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_node_set.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "conduit.h"
 
@@ -20,7 +21,8 @@
 #include "rapidjson/document.h"
 using namespace conduit;
 
-TEST(conduit_node_set_uint_scalar, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_uint_scalar)
 {
     uint8    u8v = 8;
     uint16  u16v = 16;
@@ -83,8 +85,8 @@ TEST(conduit_node_set_uint_scalar, conduit_node_set)
 
 }
 
-
-TEST(conduit_node_set_path_uint_scalar, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_uint_scalar)
 {
     uint8    u8v = 8;
     uint16  u16v = 16;
@@ -159,8 +161,8 @@ TEST(conduit_node_set_path_uint_scalar, conduit_node_set)
 
 }
 
-
-TEST(conduit_node_set_external_uint_scalar, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_external_uint_scalar)
 {
     uint8    u8v = 8;
     uint16  u16v = 16;
@@ -234,8 +236,8 @@ TEST(conduit_node_set_external_uint_scalar, conduit_node_set)
 }
 
 
-
-TEST(conduit_node_set_int_scalar, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_int_scalar)
 {
     int8    i8v = -8;
     int16  i16v = -16;
@@ -298,7 +300,8 @@ TEST(conduit_node_set_int_scalar, conduit_node_set)
 
 }
 
-TEST(conduit_node_set_path_int_scalar, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_int_scalar)
 {
     int8    i8v = -8;
     int16  i16v = -16;
@@ -373,8 +376,8 @@ TEST(conduit_node_set_path_int_scalar, conduit_node_set)
 
 }
 
-
-TEST(conduit_node_set_external_int_scalar, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_external_int_scalar)
 {
     int8    i8v = -8;
     int16  i16v = -16;
@@ -479,7 +482,8 @@ TEST(conduit_node_set_float_scalar, conduit_node_set)
 
 }
 
-TEST(conduit_node_set_path_float_scalar, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_float_scalar)
 {
     float32  f32v = -3.2;
     float64  f64v = -6.4;
@@ -519,7 +523,8 @@ TEST(conduit_node_set_path_float_scalar, conduit_node_set)
 
 }
 
-TEST(conduit_node_set_external_float_scalar, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_external_float_scalar)
 {
     float32  f32v = -3.2;
     float64  f64v = -6.4;
@@ -557,8 +562,8 @@ TEST(conduit_node_set_external_float_scalar, conduit_node_set)
     EXPECT_NEAR(f64v,-1.1,0.001);
 }
 
-
-TEST(conduit_node_set_uint_array, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_uint_array)
 {
     uint8    u8av[6] = {2,4,8,16,32,64};
     uint16  u16av[6] = {2,4,8,16,32,64};
@@ -629,7 +634,8 @@ TEST(conduit_node_set_uint_array, conduit_node_set)
 
 }
 
-TEST(conduit_node_set_uint_ptr, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_uint_ptr)
 {
     uint8    u8av[6] = {2,4,8,16,32,64};
     uint16  u16av[6] = {2,4,8,16,32,64};
@@ -695,8 +701,8 @@ TEST(conduit_node_set_uint_ptr, conduit_node_set)
 
 }
 
-
-TEST(conduit_node_set_path_uint_array, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_uint_array)
 {
     uint8    u8av[6] = {2,4,8,16,32,64};
     uint16  u16av[6] = {2,4,8,16,32,64};
@@ -775,7 +781,8 @@ TEST(conduit_node_set_path_uint_array, conduit_node_set)
 
 }
 
-TEST(conduit_node_set_path_uint_ptr, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_uint_ptr)
 {
     uint8    u8av[6] = {2,4,8,16,32,64};
     uint16  u16av[6] = {2,4,8,16,32,64};
@@ -850,8 +857,8 @@ TEST(conduit_node_set_path_uint_ptr, conduit_node_set)
 
 }
 
-
-TEST(conduit_node_set_external_uint_array, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_external_uint_array)
 {
     uint8    u8av[6] = {2,4,8,16,32,64};
     uint16  u16av[6] = {2,4,8,16,32,64};
@@ -932,7 +939,8 @@ TEST(conduit_node_set_external_uint_array, conduit_node_set)
 
 }
 
-TEST(conduit_node_set_external_uint_ptr, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_external_uint_ptr)
 {
     uint8    u8av[6] = {2,4,8,16,32,64};
     uint16  u16av[6] = {2,4,8,16,32,64};
@@ -1008,7 +1016,8 @@ TEST(conduit_node_set_external_uint_ptr, conduit_node_set)
 
 }
 
-TEST(conduit_node_set_path_external_uint_array, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set__path_external_uint_array)
 {
     uint8    u8av[6] = {2,4,8,16,32,64};
     uint16  u16av[6] = {2,4,8,16,32,64};
@@ -1097,7 +1106,8 @@ TEST(conduit_node_set_path_external_uint_array, conduit_node_set)
 
 }
 
-TEST(conduit_node_set_path_external_uint_ptr, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_external_uint_ptr)
 {
     uint8    u8av[6] = {2,4,8,16,32,64};
     uint16  u16av[6] = {2,4,8,16,32,64};
@@ -1181,8 +1191,8 @@ TEST(conduit_node_set_path_external_uint_ptr, conduit_node_set)
 
 }
 
-
-TEST(conduit_node_set_int_array, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_int_array)
 {
     int8    i8av[6] = {-2,-4,-8,-16,-32,-64};
     int16  i16av[6] = {-2,-4,-8,-16,-32,-64};
@@ -1250,8 +1260,8 @@ TEST(conduit_node_set_int_array, conduit_node_set)
 
 }
 
-
-TEST(conduit_node_set_int_ptr, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_int_ptr)
 {
     int8    i8av[6] = {-2,-4,-8,-16,-32,-64};
     int16  i16av[6] = {-2,-4,-8,-16,-32,-64};
@@ -1314,7 +1324,8 @@ TEST(conduit_node_set_int_ptr, conduit_node_set)
 
 }
 
-TEST(conduit_node_set_path_int_array, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_int_array)
 {
     int8    i8av[6] = {-2,-4,-8,-16,-32,-64};
     int16  i16av[6] = {-2,-4,-8,-16,-32,-64};
@@ -1390,8 +1401,8 @@ TEST(conduit_node_set_path_int_array, conduit_node_set)
 
 }
 
-
-TEST(conduit_node_set_path_int_ptr, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set_, set_path_int_ptr)
 {
     int8    i8av[6] = {-2,-4,-8,-16,-32,-64};
     int16  i16av[6] = {-2,-4,-8,-16,-32,-64};
@@ -1462,7 +1473,8 @@ TEST(conduit_node_set_path_int_ptr, conduit_node_set)
 
 }
 
-TEST(conduit_node_set_external_int_array, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_external_int_array)
 {
     int8    i8av[6] = {-2,-4,-8,-16,-32,-64};
     int16  i16av[6] = {-2,-4,-8,-16,-32,-64};
@@ -1544,7 +1556,9 @@ TEST(conduit_node_set_external_int_array, conduit_node_set)
     n.print();
 
 }
-TEST(conduit_node_set_external_int_ptr, conduit_node_set)
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set_, set_external_int_ptr)
 {
     int8    i8av[6] = {-2,-4,-8,-16,-32,-64};
     int16  i16av[6] = {-2,-4,-8,-16,-32,-64};
@@ -1622,8 +1636,8 @@ TEST(conduit_node_set_external_int_ptr, conduit_node_set)
 
 }
 
-
-TEST(conduit_node_set_path_external_int_array, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_external_int_array)
 {
     int8    i8av[6] = {-2,-4,-8,-16,-32,-64};
     int16  i16av[6] = {-2,-4,-8,-16,-32,-64};
@@ -1714,7 +1728,8 @@ TEST(conduit_node_set_path_external_int_array, conduit_node_set)
 
 }
 
-TEST(conduit_node_set_path_external_int_ptr, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_external_int_ptr)
 {
     int8    i8av[6] = {-2,-4,-8,-16,-32,-64};
     int16  i16av[6] = {-2,-4,-8,-16,-32,-64};
@@ -1804,7 +1819,8 @@ TEST(conduit_node_set_path_external_int_ptr, conduit_node_set)
 /// set float array cases
 ///
 
-TEST(conduit_node_set_float_array, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_float_array)
 {
     float32  f32av[4] = {-0.8, -1.6, -3.2, -6.4};
     float64  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
@@ -1843,8 +1859,8 @@ TEST(conduit_node_set_float_array, conduit_node_set)
 
 }
 
-
-TEST(conduit_node_set_float_ptr, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_float_ptr)
 {
     float32  f32av[4] = {-0.8, -1.6, -3.2, -6.4};
     float64  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
@@ -1880,9 +1896,8 @@ TEST(conduit_node_set_float_ptr, conduit_node_set)
 
 }
 
-
-
-TEST(conduit_node_set_path_float_array, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_float_array)
 {
     float32  f32av[4] = {-0.8, -1.6, -3.2, -6.4};
     float64  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
@@ -1925,8 +1940,8 @@ TEST(conduit_node_set_path_float_array, conduit_node_set)
 
 }
 
-
-TEST(conduit_node_set_path_float_ptr, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_float_ptr)
 {
     float32  f32av[4] = {-0.8, -1.6, -3.2, -6.4};
     float64  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
@@ -1969,8 +1984,8 @@ TEST(conduit_node_set_path_float_ptr, conduit_node_set)
 /// 
 /// set float array external cases
 ///
-
-TEST(conduit_node_set_external_float_array, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_external_float_array)
 {
     float32  f32av[4] = {-0.8, -1.6, -3.2, -6.4};
     float64  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
@@ -2014,7 +2029,8 @@ TEST(conduit_node_set_external_float_array, conduit_node_set)
     n.print();
 }
 
-TEST(conduit_node_set_external_float_ptr, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_external_float_ptr)
 {
     float32  f32av[4] = {-0.8, -1.6, -3.2, -6.4};
     float64  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
@@ -2055,7 +2071,8 @@ TEST(conduit_node_set_external_float_ptr, conduit_node_set)
     n.print();
 }
 
-TEST(conduit_node_set_path_external_float_array, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_external_float_array)
 {
     float32  f32av[4] = {-0.8, -1.6, -3.2, -6.4};
     float64  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
@@ -2103,7 +2120,8 @@ TEST(conduit_node_set_path_external_float_array, conduit_node_set)
     n.print();
 }
 
-TEST(conduit_node_set_path_external_float_ptr, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_external_float_ptr)
 {
     float32  f32av[4] = {-0.8, -1.6, -3.2, -6.4};
     float64  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
@@ -2148,7 +2166,8 @@ TEST(conduit_node_set_path_external_float_ptr, conduit_node_set)
     n.print();
 }
 
-TEST(conduit_node_set_float_ptr_default_types, conduit_node_set)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_float_ptr_default_types)
 {
     float   f32av[4] = {-0.8, -1.6, -3.2, -6.4};
     double  f64av[4] = {-0.8, -1.6, -3.2, -6.4};

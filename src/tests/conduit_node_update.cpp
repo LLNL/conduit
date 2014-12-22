@@ -8,9 +8,11 @@
 // Lawrence Livermore National Laboratory.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_node_update.cpp
 ///
+//-----------------------------------------------------------------------------
 
 
 #include "conduit.h"
@@ -20,7 +22,8 @@
 #include "rapidjson/document.h"
 using namespace conduit;
 
-TEST(update_1, conduit_node_update)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_update, update_simple)
 {
 
     uint32   a_val  = 10;
