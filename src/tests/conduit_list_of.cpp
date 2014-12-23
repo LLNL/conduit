@@ -38,7 +38,7 @@ TEST(conduit_list_of, simple )
     
     std::string jschema = "{\"dtype\":{\"a\":\"int32\",\"b\":\"int32\"},\"length\":2}";
 	Schema sch(jschema);
-    Node n(sch,data);
+    Node n(sch,data,true);
     std::cout << n.schema().to_json() << std::endl;
     std::cout << n.to_json() << std::endl;
     
@@ -76,7 +76,7 @@ TEST(conduit_list_of, path_ref)
 	
     //For ref case, we will have to pass the json directly
     //
-    Node n(jschema,data);
+    Node n(jschema,data,true);
     std::cout << n.schema().to_json() << std::endl;
     std::cout << n.to_json() << std::endl;
 

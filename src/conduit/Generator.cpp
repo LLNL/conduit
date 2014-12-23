@@ -886,40 +886,51 @@ Generator::walk(Schema &schema) const
 
 //---------------------------------------------------------------------------//
 void 
-Generator::walk(Node &node) const
+Generator::walk(Node &node,bool external) const
 {
-    node.reset();
-    // if data is null, we can parse the schema via the other 'walk' method
-    if(m_protocol == "json")
+    if(external)
     {
-        rapidjson::Document document;
-        std::string res = utils::json_sanitize(m_json_schema);
-        if(document.Parse<0>(res.c_str()).HasParseError())
+        node.reset();
+        // if data is null, we can parse the schema via the other 'walk' method
+        if(m_protocol == "json")
         {
-            THROW_ERROR("rapidjson parse error");
-            /// TODO: better parse error msg
+            rapidjson::Document document;
+            std::string res = utils::json_sanitize(m_json_schema);
+            if(document.Parse<0>(res.c_str()).HasParseError())
+            {
+                THROW_ERROR("rapidjson parse error");
+                /// TODO: better parse error msg
+            }
+            conduit::walk_pure_json_schema(&node,
+                                           node.schema_pointer(),
+                                           document);
         }
-        conduit::walk_pure_json_schema(&node,
-                                       node.schema_pointer(),
-                                       document);
+        else
+        {
+            rapidjson::Document document;
+            std::string res = utils::json_sanitize(m_json_schema);
+            if(document.Parse<0>(res.c_str()).HasParseError())
+            {
+                THROW_ERROR("rapidjson parse error");
+                /// TODO: better parse error msg
+            }
+            index_t curr_offset = 0;
+            conduit::walk_json_schema(&node,
+                                      node.schema_pointer(),
+                                      m_data,
+                                      document,
+                                      curr_offset);
+        }
     }
     else
     {
-        rapidjson::Document document;
-        std::string res = utils::json_sanitize(m_json_schema);
-        if(document.Parse<0>(res.c_str()).HasParseError())
-        {
-            THROW_ERROR("rapidjson parse error");
-            /// TODO: better parse error msg
-        }
-        index_t curr_offset = 0;
-        conduit::walk_json_schema(&node,
-                                  node.schema_pointer(),
-                                  m_data,
-                                  document,
-                                  curr_offset);
+        /// TODO: This may be an inefficient code path, need better solution?
+        Node n;
+        walk(n,true);
+        n.compact_to(node);
     }
 }
+
 
 };
 //-----------------------------------------------------------------------------

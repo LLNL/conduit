@@ -51,7 +51,7 @@ TEST(conduit_node_info, simple_2)
 {
     std::string pure_json ="{a:[0,1,2,3,4],b:[0.0,1.1,2.2,3.3]}";
     Generator g(pure_json,"json");
-    Node n(g);
+    Node n(g,true);
     Node ninfo;
     n.info(ninfo);
     std::cout << ninfo.to_json(true,2) << std::endl;;
@@ -69,7 +69,7 @@ TEST(conduit_node_info, simple_3)
     std::string schema ="{dtype: uint32, value:42}";
     // TODO: check for "unit32" , bad spelling!
     Generator g(schema);
-    Node n(g);
+    Node n(g,true);
     std::cout << n.as_uint32() << std::endl;
     Node ninfo;
     n.info(ninfo);
@@ -79,7 +79,7 @@ TEST(conduit_node_info, simple_3)
     
     
     Generator g2(schema,&val);
-    Node n2(g2);
+    Node n2(g2,true);
     std::cout << n2.as_uint32() << std::endl;
     EXPECT_EQ(42,val);
     

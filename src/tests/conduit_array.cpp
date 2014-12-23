@@ -76,9 +76,11 @@ TEST(conduit_array, array_stride_int8)
     }
     std::cout << std::endl;
 
-// TODO: These cases are failing
+
     Node n2(DataType::Arrays::int8(10,sizeof(int8),sizeof(int8)*2),
-            &data[0]);
+            &data[0],
+            true); /// true for external
+
     int8_array arr_2 = n2.as_int8_array();
     
     for(int i=0;i<10;i++)

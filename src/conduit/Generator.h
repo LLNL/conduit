@@ -75,9 +75,10 @@ public:
 // JSON Parsing interface
 //-----------------------------------------------------------------------------
     /// parse a json schema to a Schema object.
-    void walk(Schema &) const;
+    void walk(Schema &sdest) const;
+
     /// parse a json schema to a Node object.
-    void walk(Node &)   const;
+    void walk(Node &ndest,bool external=true)   const;
 
 private:
 //-----------------------------------------------------------------------------

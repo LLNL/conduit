@@ -29,7 +29,7 @@ TEST(conduit_node_compact, compact_1)
 
     
     Generator g("{vals: {dtype:uint32, length:5, stride:8}}",vals);
-    Node n(g);
+    Node n(g,true);
 
     EXPECT_EQ(40,n.total_bytes());
     EXPECT_EQ(20,n.total_bytes_compact());
@@ -54,10 +54,10 @@ TEST(conduit_node_compact, compact_2)
     Generator g1("{dtype: float64, length: 5, stride: 16}",vals);
     Generator g2("{dtype: float64, length: 5, stride: 16, offset:8}",vals);
 
-    Node n1(g1);
+    Node n1(g1,true);
     n1.print();
 
-    Node n2(g2);
+    Node n2(g2,true);
     n2.print();
     
     Node ninfo;

@@ -34,7 +34,7 @@ TEST(conduit_to_string, simple_1)
     memcpy(&data[8],&c_val,8);
 
     Schema schema("{\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}");
-    Node n(schema,data);
+    Node n(schema,data,true);
     n.schema().print();
     n.print_detailed();
     EXPECT_EQ(std::string("{\"a\": 10,\"b\": 20,\"c\": 30}"),n.to_json(false,0,0,"",""));
@@ -42,7 +42,7 @@ TEST(conduit_to_string, simple_1)
 
 
     Schema schema2("{\"g\": {\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}}");
-    Node n2(schema2,data);
+    Node n2(schema2,data,true);
     n2.schema().print();
     n.print_detailed();
     EXPECT_EQ(std::string("{\"g\": {\"a\": 10,\"b\": 20,\"c\": 30}}"),n2.to_json(false,0,0,"",""));

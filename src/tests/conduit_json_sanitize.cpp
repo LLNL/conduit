@@ -69,7 +69,7 @@ TEST(conduit_json_sanitize, simple_quoteless_schema)
     memcpy(&data[8],&c_val,8);
 
     Schema schema("{a: uint32, b: uint32 , c: float64}");
-    Node n(schema,data);
+    Node n(schema,data,true);
     
     EXPECT_EQ(n["a"].as_uint32(),a_val);
     EXPECT_EQ(n["b"].as_uint32(),b_val);
@@ -79,7 +79,7 @@ TEST(conduit_json_sanitize, simple_quoteless_schema)
     std::cout << s2_str << std::endl;
     Schema schema2(s2_str);
     
-    Node n2(schema2,data);
+    Node n2(schema2,data,true);
     EXPECT_EQ(n2["g"]["a"].as_uint32(),a_val);
     EXPECT_EQ(n2["g"]["b"].as_uint32(),b_val);
     EXPECT_EQ(n2["g"]["c"].as_float64(),c_val);
@@ -89,7 +89,7 @@ TEST(conduit_json_sanitize, simple_quoteless_schema)
     for (int i = 0; i < 5; i++) {
        data2[i] = i * 5;
     }
-    Node n3(schema3,data2);
+    Node n3(schema3,data2,true);
     for (int i = 0; i < 5; i++) {
        EXPECT_EQ(n3.as_uint32_ptr()[i], i*5);
     }
@@ -98,7 +98,7 @@ TEST(conduit_json_sanitize, simple_quoteless_schema)
     memcpy(&data3[0],&a_val,4);
     memcpy(&data3[4],&c_val,8);
     memcpy(&data3[12],&b_val,4);
-    Node n4(schema4,data3);
+    Node n4(schema4,data3,true);
     EXPECT_EQ(n4[0].as_uint32(),a_val);
     EXPECT_EQ(n4[1].as_float64(),c_val);
     EXPECT_EQ(n4[2].as_uint32(),b_val);
@@ -112,7 +112,7 @@ TEST(conduit_json_sanitize, simple_quoteless_schema)
     memcpy(&data4[8],&c_val,8);
     memcpy(&data4[16],&d_val,4);
     memcpy(&data4[20],&e_val,8);
-    Node n5(schema5,data4);
+    Node n5(schema5,data4,true);
     
     n5.schema().print();
 

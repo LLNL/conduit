@@ -41,12 +41,13 @@ TEST(conduit_io_binary, read_write)
     
     Schema schema("{\"dtype\":{\"a\":\"int32\",\"b\":\"int32\"},\"length\":2}");
 
-    Node nsrc(schema,data);
+    Node nsrc(schema,data,true);
     
     nsrc.serialize("test_conduit.bin");
     
    
-    Node n(schema,"test_conduit.bin");
+    Node n;
+    n.load(schema,"test_conduit.bin");
     
     n.schema().print();
     n.print_detailed();
@@ -82,12 +83,13 @@ TEST(conduit_io_binary, mmap_simple)
     
     Schema schema("{\"dtype\":{\"a\":\"int32\",\"b\":\"int32\"},\"length\":2}");
 
-    Node nsrc(schema,data);
+    Node nsrc(schema,data,true);
     
     nsrc.serialize("test_conduit_mmap.bin");
     
    
-    Node nmmap(schema,"test_conduit_mmap.bin",true);
+    Node nmmap;
+    nmmap.mmap(schema,"test_conduit_mmap.bin");
     
     nmmap.schema().print();
     nmmap.print_detailed();
@@ -112,7 +114,9 @@ TEST(conduit_io_binary, mmap_simple)
    
     // standard read
     
-    Node ntest(schema,"test_conduit_mmap.bin");
+    Node ntest;
+    ntest.load(schema,"test_conduit_mmap.bin");
+
     EXPECT_EQ(ntest[0]["a"].as_int32(), 100);
     EXPECT_EQ(ntest[0]["b"].as_int32(), 200);
   

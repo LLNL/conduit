@@ -64,7 +64,7 @@ TEST(conduit_io_save_load, bin_simple_file)
     
     Schema schema("{\"dtype\":{\"a\":\"int32\",\"b\":\"int32\"},\"length\":2}");
 
-    Node nsrc(schema,data);
+    Node nsrc(schema,data,true);
     nsrc.save("test_conduit_io_bin_simple_2_file");
 
     Node n;
@@ -104,7 +104,7 @@ TEST(conduit_io_save_load, mmap_simple_file)
     
     Schema schema("{\"dtype\":{\"a\":\"int32\",\"b\":\"int32\"},\"length\":2}");
 
-    Node nsrc(schema,data);
+    Node nsrc(schema,data,true);
     
     nsrc.save("test_conduit_mmap_x2");
     
@@ -135,7 +135,8 @@ TEST(conduit_io_save_load, mmap_simple_file)
    
     // standard read
     
-    Node ntest(schema,"test_conduit_mmap_x2.conduit_bin");
+    Node ntest;
+    ntest.load(schema,"test_conduit_mmap_x2.conduit_bin");
     EXPECT_EQ(ntest[0]["a"].as_int32(), 100);
     EXPECT_EQ(ntest[0]["b"].as_int32(), 200);
 }

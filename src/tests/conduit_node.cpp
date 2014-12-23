@@ -104,7 +104,7 @@ TEST(conduit_node, simple_schema_gen )
     memcpy(&data[8],&c_val,8);
 
     Schema schema("{\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}");
-    Node n(schema,data);
+    Node n(schema,data,true);
 
     EXPECT_EQ(n["a"].as_uint32(),a_val);
     EXPECT_EQ(n["b"].as_uint32(),b_val);
@@ -114,7 +114,7 @@ TEST(conduit_node, simple_schema_gen )
     std::cout << s2_str << std::endl;
     Schema schema2(s2_str);
 
-    Node n2(schema2,data);
+    Node n2(schema2,data,true);
     EXPECT_EQ(n2["g"]["a"].as_uint32(),a_val);
     EXPECT_EQ(n2["g"]["b"].as_uint32(),b_val);
     EXPECT_EQ(n2["g"]["c"].as_float64(),c_val);
@@ -124,7 +124,7 @@ TEST(conduit_node, simple_schema_gen )
     for (int i = 0; i < 5; i++) {
        data2[i] = i * 5;
     }
-    Node n3(schema3,data2);
+    Node n3(schema3,data2,true);
     for (int i = 0; i < 5; i++) {
        EXPECT_EQ(n3.as_uint32_ptr()[i], i*5);
     }
@@ -133,7 +133,7 @@ TEST(conduit_node, simple_schema_gen )
     memcpy(&data3[0],&a_val,4);
     memcpy(&data3[4],&c_val,8);
     memcpy(&data3[12],&b_val,4);
-    Node n4(schema4,data3);
+    Node n4(schema4,data3,true);
     EXPECT_EQ(n4[0].as_uint32(),a_val);
     EXPECT_EQ(n4[1].as_float64(),c_val);
     EXPECT_EQ(n4[2].as_uint32(),b_val);
@@ -147,7 +147,7 @@ TEST(conduit_node, simple_schema_gen )
     memcpy(&data4[8],&c_val,8);
     memcpy(&data4[16],&d_val,4);
     memcpy(&data4[20],&e_val,8);
-    Node n5(schema5,data4);
+    Node n5(schema5,data4,true);
 
     std::cout << n5.schema().to_json() << std::endl;
     EXPECT_EQ(n5["top"][0]["int1"].as_uint32(),a_val);
@@ -198,7 +198,7 @@ TEST(conduit_node, in_place)
     EXPECT_EQ(*(float64*)(&data[8]), c_val);
 
     Schema schema("{\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}");
-    Node n(schema,data);
+    Node n(schema,data,true);
     n["a"] = b_val;
     n["b"] = a_val;
     n["c"] = d_val;
@@ -216,7 +216,7 @@ TEST(conduit_node, in_place)
 TEST(conduit_node, remove_by_name)
 {
     conduit::Generator g("{a:1,b:2,c:3}", "json");
-    conduit::Node n(g);
+    conduit::Node n(g,true);
     n.print();
     EXPECT_TRUE(n.has_path("a"));
     EXPECT_TRUE(n.has_path("b"));
@@ -242,7 +242,7 @@ TEST(conduit_node, remove_by_name)
 TEST(conduit_node, remove_by_index)
 {
     conduit::Generator g("{a:1,b:2,c:3}", "json");
-    conduit::Node n(g);
+    conduit::Node n(g,true);
     n.print();
     EXPECT_TRUE(n.has_path("a"));
     EXPECT_TRUE(n.has_path("b"));
@@ -264,7 +264,7 @@ TEST(conduit_node, remove_by_index)
     EXPECT_FALSE(n.has_path("c"));
     
     conduit::Generator g2("[{dtype:int64, value: 10},{dtype:int64, value: 20},{dtype:int64, value: 30}]");
-    conduit::Node n2(g2);
+    conduit::Node n2(g2,true);
     n2.print();
     n2.remove(1);
     n2.print();

@@ -34,7 +34,7 @@ TEST(conduit_node_paths, simple_path)
     memcpy(&data[8],&c_val,8);
 
     Schema schema("{\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}");
-    Node n(schema,data);
+    Node n(schema,data,true);
     std::cout << n.schema().to_json() <<std::endl; 
     
     EXPECT_TRUE(n.has_path("a"));
@@ -47,7 +47,7 @@ TEST(conduit_node_paths, simple_path)
     EXPECT_EQ(n.fetch("c").as_float64(),c_val);
 
     Schema schema2("{\"g\": {\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}}");
-    Node n2(schema2,data);
+    Node n2(schema2,data,true);
     std::cout << n2.schema().to_json() <<std::endl; 
     EXPECT_TRUE(n2.has_path("g/a"));
     EXPECT_EQ(n2.fetch("g/a").as_uint32(),a_val);

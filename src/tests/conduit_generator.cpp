@@ -47,7 +47,7 @@ TEST(conduit_generator, simple_gen_schema)
     Schema schema2;
     g2.walk(schema2);
     
-    Node n2(schema2,data);
+    Node n2(schema2,data,true); // true for external
     EXPECT_EQ(n2["g"]["a"].as_uint32(),a_val);
     EXPECT_EQ(n2["g"]["b"].as_uint32(),b_val);
     EXPECT_EQ(n2["g"]["c"].as_float64(),c_val);
@@ -60,7 +60,7 @@ TEST(conduit_generator, simple_gen_schema)
     Generator g3("{\"dtype\":\"uint32\",\"length\": 5}");
     Schema schema3;
     g3.walk(schema3);
-    Node n3(schema3,data2);
+    Node n3(schema3,data2,true); // true for external
 
     for (int i = 0; i < 5; i++) {
        EXPECT_EQ(n3.as_uint32_ptr()[i], i*5);
@@ -74,7 +74,7 @@ TEST(conduit_generator, simple_gen_schema)
     memcpy(&data3[12],&b_val,4);
     Schema schema4;
     g4.walk(schema4);
-    Node n4(schema4,data3);
+    Node n4(schema4,data3,true); // true for external
     EXPECT_EQ(n4[0].as_uint32(),a_val);
     EXPECT_EQ(n4[1].as_float64(),c_val);
     EXPECT_EQ(n4[2].as_uint32(),b_val);
@@ -92,7 +92,7 @@ TEST(conduit_generator, simple_gen_schema)
     memcpy(&data4[16],&d_val,4);
     memcpy(&data4[20],&e_val,8);
     
-    Node n5(schema5,data4);
+    Node n5(schema5,data4,true); // true for external
     
     n5.schema().print();
     EXPECT_EQ(n5["top"][0]["int1"].as_uint32(),a_val);

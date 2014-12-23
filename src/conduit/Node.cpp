@@ -106,32 +106,37 @@ Node::Node(const Schema &schema)
 }
 
 //---------------------------------------------------------------------------//
-Node::Node(const Schema &schema,
-           const std::string &stream_path,
-           bool mmap)
-{    
-    init_defaults();
-    if(mmap)
-        conduit::Node::mmap(schema,stream_path);
-    else
-        load(schema,stream_path);
-}
-
-
-//---------------------------------------------------------------------------//
-Node::Node(const Generator &gen)
+Node::Node(const Generator &gen,
+           bool external)
 {
-    init_defaults(); 
-    gen.walk(*this);
+    init_defaults();
+    if(external)
+    {
+        gen.walk(*this);
+    }
+    else
+    {
+        gen.walk(*this,false);
+    }
+
 }
 
 //---------------------------------------------------------------------------//
 Node::Node(const std::string &json_schema,
-           void *data)
+           void *data,
+           bool external)
 {
     init_defaults(); 
     Generator g(json_schema,data);
-    g.walk(*this);
+
+    if(external)
+    {
+        g.walk(*this);
+    }
+    else
+    {
+        g.walk(*this,false);
+    }
 
 }
 
@@ -144,20 +149,38 @@ Node::Node(const DataType &dtype)
 
 //---------------------------------------------------------------------------//
 Node::Node(const Schema &schema,
-           void *data)
+           void *data,
+           bool external)
 {
     init_defaults();
     std::string json_schema =schema.to_json(); 
     Generator g(json_schema,data);
-    g.walk(*this);
+    if(external)
+    {
+        /// TODO: External logic
+        g.walk(*this);
+    }
+    else
+    {
+        g.walk(*this);
+    }
 }
 
 
 //---------------------------------------------------------------------------//
-Node::Node(const DataType &dtype, void *data)
+Node::Node(const DataType &dtype,
+           void *data,
+           bool external)
 {    
     init_defaults();
-    set(dtype,data);
+    if(external)
+    {
+        set_external(dtype,data);
+    }
+    else
+    {
+        set(dtype,data);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -443,8 +466,16 @@ Node::generate(const Generator &gen)
 
 //---------------------------------------------------------------------------//
 void
-Node::generate(void *data,
-               const std::string &json_schema)
+Node::generate_external(const Generator &gen)
+{
+    /// TODO: generate external
+    gen.walk(*this);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::generate(const std::string &json_schema,
+               void *data)
 {
     Generator g(json_schema,data);
     generate(g);
@@ -452,16 +483,37 @@ Node::generate(void *data,
     
 //---------------------------------------------------------------------------//
 void
-Node::generate(void *data,
-               const std::string &json_schema,
-               const std::string &protocol)
+Node::generate(const std::string &json_schema,
+               const std::string &protocol,
+               void *data)
                
 {
     Generator g(json_schema,protocol,data);
     generate(g);
 }
 
+//---------------------------------------------------------------------------//
+void
+Node::generate_external(const std::string &json_schema,
+                        void *data)
+{
+    Generator g(json_schema,data);
+    generate_external(g);
+}
+    
+//---------------------------------------------------------------------------//
+void
+Node::generate_external(const std::string &json_schema,
+                        const std::string &protocol,
+                        void *data)
+               
+{
+    Generator g(json_schema,protocol,data);
+    generate_external(g);
+}
+
 /// TODO: missing def of several Node::generator methods
+
 
 //-----------------------------------------------------------------------------
 //
@@ -1769,6 +1821,30 @@ Node::set_path(const std::string &path,
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+// -- set_external for generic types --
+//-----------------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------------//
+void
+Node::set_external(const Schema &schema, void *data)
+{
+    m_schema->set(schema);
+    walk_schema(this,m_schema,data,true);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_external(const DataType &dtype, void *data)
+{
+    release();
+    m_alloced = false;
+    m_data    = data;
+    m_schema->set(dtype);
+}
+
+
+//-----------------------------------------------------------------------------
 // -- set_external via pointers (scalar and array types) -- 
 //-----------------------------------------------------------------------------
 
@@ -2224,6 +2300,29 @@ Node::set_external_char8_str(char *data)
 // -- begin definition of Node set_path_external methods --
 //
 //-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- set_external for generic types --
+//-----------------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external(const std::string &path,
+                        const Schema &schema,
+                        void *data)
+{
+    fetch(path).set_external(schema,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external(const std::string &path,
+                        const DataType &dtype,
+                        void *data)
+{
+    fetch(path).set_external(dtype,data);
+}
 
 //-----------------------------------------------------------------------------
 // -- set_path_external via pointers (scalar and array types) -- 

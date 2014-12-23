@@ -111,21 +111,24 @@ public:
 // -- constructors for generic types --
 //-----------------------------------------------------------------------------
     explicit Node(const DataType &dtype);
-    explicit Node(const Generator &gen);
     explicit Node(const Schema &schema);
 
-    /// TODO: these don't use copy semantics ... 
-    Node(const std::string &json_schema,
-         void *data);
-    Node(const Schema &schema,
-         void *data);
-    Node(const DataType &dtype,
-         void *data);
+    /// in these methods the `external` param controls if we use copy or
+    /// external semantics.
+    Node(const Generator &gen,
+         bool external);
 
-    /// (Cyrus) this is a convenience method that we don't need
+    Node(const std::string &json_schema,
+         void *data,
+         bool external);
+   
     Node(const Schema &schema,
-         const std::string &stream_path,
-         bool mmap=false);
+         void *data,
+         bool external);
+
+    Node(const DataType &dtype,
+         void *data,
+         bool external);
 
 //-----------------------------------------------------------------------------
 // -- constructors for scalar types ---
@@ -238,19 +241,19 @@ public:
 //-----------------------------------------------------------------------------
 // -- json schema coupled with in-core data -- 
 //-----------------------------------------------------------------------------
-    void generate(void *data,
-                  const std::string &json_schema);
+    void generate(const std::string &json_schema,
+                  void *data);
 
-    void generate(void *data,
-                  const std::string &json_schema,
-                  const std::string &protocol);
+    void generate(const std::string &json_schema,
+                  const std::string &protocol,
+                  void *data);
 
-    void generate_external(void *data,
-                           const std::string &json_schema);
+    void generate_external(const std::string &json_schema,
+                           void *data);
 
-    void generate_external(void *data,
-                           const std::string &json_schema,
-                           const std::string &protocol);
+    void generate_external(const std::string &json_schema,
+                           const std::string &protocol,
+                           void *data);
 
 //-----------------------------------------------------------------------------
 ///@}
@@ -312,7 +315,7 @@ public:
     void set(const Node &data);
     void set(const DataType &dtype);
     void set(const Schema &schema);
-    /// TODO: swap param order?
+
     void set(const Schema &schema, void *data);
     void set(const DataType &dtype, void *data);
 
@@ -670,7 +673,14 @@ public:
 ///   set_external(...) methods methods follow pointer semantics.
 ///   (they do not copy data into the node, but point to the data passed)
 //-----------------------------------------------------------------------------
-                        
+//-----------------------------------------------------------------------------
+// -- set for generic types --
+//-----------------------------------------------------------------------------
+
+    /// TODO: set_external(const Node &n)
+    void    set_external(const Schema &schema, void *data);
+    void    set_external(const DataType &dtype, void *data);
+
 //-----------------------------------------------------------------------------
 // -- set_external via pointers (scalar and array types) -- 
 //-----------------------------------------------------------------------------
@@ -809,6 +819,18 @@ public:
 ///   set_path_external(...) methods allow the node to point to external
 ///   memory, and allow you to use an explicit path for the destination node.
 //-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- set for generic types --
+//-----------------------------------------------------------------------------
+    /// TODO: set_path_external(const Node &n)
+    void    set_path_external(const std::string &path,
+                              const Schema &schema,
+                              void *data);
+
+    void    set_path_external(const std::string &path,
+                              const DataType &dtype,
+                              void *data);
 
 //-----------------------------------------------------------------------------
 // -- set_path_external via pointers (scalar and array types) -- 

@@ -48,7 +48,7 @@ TEST(conduit_serialize, test_1)
 
     std::cout << *((uint32*)&bytes[0]) << std::endl;
 
-	Node n2(s_schema,&bytes[0]);
+	Node n2(s_schema,&bytes[0],true);
     EXPECT_EQ(n2["a"].as_uint32(),a_val);
     EXPECT_EQ(n2["b"].as_uint32(),b_val);
 }
@@ -78,7 +78,7 @@ TEST(conduit_serialize, test_2)
 
     Schema c_schema;
     n.schema().compact_to(c_schema);
-    Node n2(c_schema,&bytes[0]);
+    Node n2(c_schema,&bytes[0],true);
     n2.schema().print();
     EXPECT_EQ(n2["a"].as_uint32(),a_val);
     EXPECT_EQ(n2["b"].as_uint32(),b_val);
@@ -104,7 +104,7 @@ TEST(conduit_serialize, compact)
 
     Generator g("{dtype: float64, length: 5, stride: 16, offset:8}",vals);
 
-    Node n(g);
+    Node n(g,true);
 
 
     EXPECT_EQ(n.info()["total_bytes"].to_uint64(),80);
@@ -119,7 +119,7 @@ TEST(conduit_serialize, compact)
     n.serialize(nc_bytes);
     EXPECT_EQ(nc_bytes.size(),40);
     
-    Node nc(nc_s,&nc_bytes[0]);
+    Node nc(nc_s,&nc_bytes[0],true);
 
 
     EXPECT_EQ(n.as_float64_array()[1],-200.0);
