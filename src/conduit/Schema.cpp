@@ -483,7 +483,7 @@ Schema::operator[](index_t idx) const
 
 //---------------------------------------------------------------------------//
 Schema&
-Schema::child(const std::string &path)
+Schema::fetch_child(const std::string &path)
 {
     // fetch w/ path forces OBJECT_T
     if(m_dtype.id() != DataType::OBJECT_T)
@@ -499,7 +499,7 @@ Schema::child(const std::string &path)
     if(p_curr == "..")
     {
         if(m_parent != NULL) // TODO: check for erro (no parent)
-           return m_parent->child(p_next);
+           return m_parent->fetch_child(p_next);
     }
     
     if(p_next.empty())
@@ -508,14 +508,14 @@ Schema::child(const std::string &path)
     }
     else
     {
-        return children()[idx]->child(p_next);
+        return children()[idx]->fetch_child(p_next);
     }
 }
 
 
 //---------------------------------------------------------------------------//
 const Schema &
-Schema::child(const std::string &path) const
+Schema::fetch_child(const std::string &path) const
 {
     // fetch w/ path forces OBJECT_T
     if(m_dtype.id() != DataType::OBJECT_T)
@@ -529,7 +529,7 @@ Schema::child(const std::string &path) const
     if(p_curr == "..")
     {
         if(m_parent != NULL) // TODO: check for erro (no parent)
-           return m_parent->child(p_next);
+           return m_parent->fetch_child(p_next);
     }
 
     index_t idx = child_index(p_curr);
@@ -540,20 +540,23 @@ Schema::child(const std::string &path) const
     }
     else
     {
-        return children()[idx]->child(p_next);
+        return children()[idx]->fetch_child(p_next);
     }
 }
 
+//---------------------------------------------------------------------------//
 index_t
 Schema::child_index(const std::string &path) const
 {
     // find p_curr with an iterator
-    std::map<std::string, index_t>::const_iterator itr = object_map().find(path);
-    // return Empty if the child does not exist (static/locked case ?)
+    std::map<std::string, index_t>::const_iterator itr;
+    itr = object_map().find(path);
+
+    // error if child does not exist. 
     if(itr == object_map().end())
     {
         ///
-        /// Full path errors would be nice here. 
+        /// TODO: Full path errors would be nice here. 
         ///
         THROW_ERROR("<Schema::child_index[OBJECT_T]>"
                     << "Attempt to access invalid child:" << path);
@@ -617,7 +620,7 @@ Schema::fetch_pointer(const std::string &path)
 const Schema &
 Schema::operator[](const std::string &path) const
 {
-    return child(path);
+    return fetch_child(path);
 }
 
 //---------------------------------------------------------------------------//

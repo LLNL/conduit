@@ -43,7 +43,7 @@ Used for Node instances in *Object* role interface. In the Object role, a Node h
  - Node::remove(string)
 
  - Schema::fetch(string)
- - Schema::child(string)
+ - Schema::fetch_child(string)
  - Schema::fetch_pointer(string)
  - Schema::operator=(string)
  - Schema::has_path(string)

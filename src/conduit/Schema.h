@@ -191,10 +191,10 @@ public:
 /// Object interface methods
 //
 //-----------------------------------------------------------------------------
-    /// the `child' methods don't modify map structure, if a path doesn't exists
-    /// they will throw an exception
-    Schema           &child(const std::string &path);
-    const Schema     &child(const std::string &path) const;
+    /// the `fetch_child' methods don't modify map structure, if a path
+    /// doesn't exists they will throw an exception
+    Schema           &fetch_child(const std::string &path);
+    const Schema     &fetch_child(const std::string &path) const;
 
     /// fetch with a path arg methods do modifies map structure 
     /// if a path doesn't exists
@@ -206,7 +206,7 @@ public:
 
     /// this uses the fetch method
     Schema           &operator[](const std::string &path);
-    /// the const variant uses the "child" methods
+    /// the const variant uses the "fetch_child" method
     const Schema     &operator[](const std::string &path) const;
 
     bool              has_path(const std::string &path) const;
