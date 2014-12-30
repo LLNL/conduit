@@ -43,9 +43,19 @@ namespace utils
 {
 
 //-----------------------------------------------------------------------------
-     void        split_path(const std::string &path,
-                            std::string &curr,
-                            std::string &next);
+    void        split_string(const std::string &path,
+                             const std::string &sep,
+                             std::string &curr,
+                             std::string &next);
+
+    void        rsplit_string(const std::string &path,
+                              const std::string &sep,
+                              std::string &curr,
+                              std::string &next);
+
+     void       split_path(const std::string &path,
+                           std::string &curr,
+                           std::string &next);
 
 //-----------------------------------------------------------------------------
      std::string json_sanitize(const std::string &json);

@@ -48,3 +48,13 @@
 #define CONDUIT_PLATFORM_UNIX
 #endif
 
+//-----------------------------------------------------------------------------
+//
+// #define optional i/o features
+//
+//-----------------------------------------------------------------------------
+#define CONDUIT_IO_ENABLE_SILO @SILO_FOUND@
+
+
+
+

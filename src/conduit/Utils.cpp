@@ -28,15 +28,17 @@ namespace conduit
 namespace utils
 {
 
-//-----------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
 void     
-split_path(const std::string &path,
-           std::string &curr,
-           std::string &next)
+split_string(const std::string &path,
+             const std::string &sep,
+             std::string &curr,
+             std::string &next)
 {
     curr.clear();
     next.clear();
-    std::size_t found = path.find("/");
+
+    std::size_t found = path.find(sep);
     if (found != std::string::npos)
     {
         curr = path.substr(0,found);
@@ -47,6 +49,37 @@ split_path(const std::string &path,
     {
         curr = path;
     }
+}
+    //-----------------------------------------------------------------------------
+void     
+rsplit_string(const std::string &path,
+              const std::string &sep,
+              std::string &curr,
+              std::string &next)
+{
+    curr.clear();
+    next.clear();
+
+    std::size_t found = path.rfind(sep);
+    if (found != std::string::npos)
+    {
+        curr = path.substr(0,found);
+        if(found != path.size()-1)
+            next = path.substr(found+1,path.size()-(found-1));
+    }
+    else
+    {
+        curr = path;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void     
+split_path(const std::string &path,
+           std::string &curr,
+           std::string &next)
+{
+    split_string(path,std::string("/"),curr,next);
 }
 
 //-----------------------------------------------------------------------------

@@ -40,7 +40,7 @@ if [ $# -ge 1 ]; then
         rm -rf build-debug-xcode
         mkdir build-debug-xcode
         cd build-debug-xcode
-        cmake -G Xcode -DCMAKE_BUILD_TYPE=Debug ../src 
+        cmake -G Xcode $CMAKE_OPTS ../src 
         cd ../
     fi
 fi
