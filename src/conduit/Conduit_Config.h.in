@@ -1,19 +1,26 @@
-/*****************************************************************************
-* Copyright (c) 2014, Lawrence Livermore National Security, LLC
-* Produced at the Lawrence Livermore National Laboratory. 
-* 
-* All rights reserved.
-* 
-* This source code cannot be distributed without further review from 
-* Lawrence Livermore National Laboratory.
-*****************************************************************************/
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) 2014, Lawrence Livermore National Security, LLC
+// Produced at the Lawrence Livermore National Laboratory. 
+// 
+// All rights reserved.
+// 
+// This source code cannot be distributed without further review from 
+// Lawrence Livermore National Laboratory.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: Conduit_Config.h
 ///
+//-----------------------------------------------------------------------------
+
 
 #define SIZEOF_CHAR 1
 #define SIZEOF_BYTE 1
+
+//-----------------------------------------------------------------------------
+// byte widths of native types
+//-----------------------------------------------------------------------------
 
 #define SIZEOF_BOOL          @SIZEOF_BOOLEAN@
 #define SIZEOF_SHORT         @SIZEOF_SHORT@
@@ -27,9 +34,11 @@
 #define HAVE_LONG_LONG       @HAVE_LONG_LONG@
 #define HAVE_UINTPTR_T       @HAVE_UINTPTR_T@
 
+//-----------------------------------------------------------------------------
 //
 // #define platform check helpers
 //
+//-----------------------------------------------------------------------------
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
 #define CONDUIT_PLATFORM_WINDOWS
@@ -38,4 +47,14 @@
 #else
 #define CONDUIT_PLATFORM_UNIX
 #endif
+
+//-----------------------------------------------------------------------------
+//
+// #define optional i/o features
+//
+//-----------------------------------------------------------------------------
+#define CONDUIT_IO_ENABLE_SILO @SILO_FOUND@
+
+
+
 

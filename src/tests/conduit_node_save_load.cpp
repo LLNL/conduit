@@ -1,27 +1,29 @@
-/*****************************************************************************
-* Copyright (c) 2014, Lawrence Livermore National Security, LLC
-* Produced at the Lawrence Livermore National Laboratory. 
-* 
-* All rights reserved.
-* 
-* This source code cannot be distributed without further review from 
-* Lawrence Livermore National Laboratory.
-*****************************************************************************/
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) 2014, Lawrence Livermore National Security, LLC
+// Produced at the Lawrence Livermore National Laboratory. 
+// 
+// All rights reserved.
+// 
+// This source code cannot be distributed without further review from 
+// Lawrence Livermore National Laboratory.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
-/// file: conduit_io_save_load.cpp
+/// file: conduit_node_save_load.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "conduit.h"
 
 #include <iostream>
 #include "gtest/gtest.h"
-#include "rapidjson/document.h"
+
+
 using namespace conduit;
 using namespace std;
 
-
+//-----------------------------------------------------------------------------
 class ExampleData
 {
 public:
@@ -44,8 +46,8 @@ public:
    std::vector<float64> z_vals;
 };
 
-
-TEST(conduit_io_save_load, conduit_bin_simple_2_file)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_save_load, bin_simple_file)
 {
 
     int32   a1_val  = 10;
@@ -62,11 +64,11 @@ TEST(conduit_io_save_load, conduit_bin_simple_2_file)
     
     Schema schema("{\"dtype\":{\"a\":\"int32\",\"b\":\"int32\"},\"length\":2}");
 
-    Node nsrc(schema,data);
-    nsrc.save("test_conduit_io_bin_simple_2_file");
+    Node nsrc(schema,data,true);
+    nsrc.save("tout_conduit_io_bin_simple_2_file");
 
     Node n;
-    n.load("test_conduit_io_bin_simple_2_file");
+    n.load("tout_conduit_io_bin_simple_2_file");
         
     n.schema().print();
     n.print_detailed();
@@ -85,9 +87,8 @@ TEST(conduit_io_save_load, conduit_bin_simple_2_file)
 }
 
 
-
-
-TEST(conduit_io_save_load, conduit_mmap_simple_2_file)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_save_load, mmap_simple_file)
 {
     int32   a1_val  = 10;
     int32   b1_val  = 20;
@@ -103,13 +104,13 @@ TEST(conduit_io_save_load, conduit_mmap_simple_2_file)
     
     Schema schema("{\"dtype\":{\"a\":\"int32\",\"b\":\"int32\"},\"length\":2}");
 
-    Node nsrc(schema,data);
+    Node nsrc(schema,data,true);
     
-    nsrc.save("test_conduit_mmap_x2");
+    nsrc.save("tout_conduit_mmap_x2");
     
    
     Node nmmap;
-    nmmap.mmap("test_conduit_mmap_x2");
+    nmmap.mmap("tout_conduit_mmap_x2");
     
     nmmap.schema().print();
     nmmap.print_detailed();
@@ -134,14 +135,15 @@ TEST(conduit_io_save_load, conduit_mmap_simple_2_file)
    
     // standard read
     
-    Node ntest(schema,"test_conduit_mmap_x2.conduit_bin");
+    Node ntest;
+    ntest.load(schema,"tout_conduit_mmap_x2.conduit_bin");
     EXPECT_EQ(ntest[0]["a"].as_int32(), 100);
     EXPECT_EQ(ntest[0]["b"].as_int32(), 200);
 }
 
 
-
-TEST(conduit_io_save_load, conduit_simple_restore)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_save_load, simple_restore)
 {
     Node n_src;
     Node n_dest;
@@ -162,10 +164,10 @@ TEST(conduit_io_save_load, conduit_simple_restore)
 
     n_src.print();
     n_src.info().print();
-    n_src.save("test_conduit_simple_restore");
+    n_src.save("tout_conduit_simple_restore");
 
     Node n_load;
-    n_load.load("test_conduit_simple_restore");
+    n_load.load("tout_conduit_simple_restore");
 
     n_load.print();
     
@@ -179,7 +181,8 @@ TEST(conduit_io_save_load, conduit_simple_restore)
 
 }
 
-TEST(conduit_io_save_load, conduit_simple_class_restore)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_save_load, simple_class_restore)
 {
     ExampleData d;
     d.alloc(10);
@@ -193,12 +196,12 @@ TEST(conduit_io_save_load, conduit_simple_class_restore)
     }
 
     d.n.print();
-    d.n.save("test_conduit_restore_mmap");
+    d.n.save("tout_conduit_restore_mmap");
 
     ExampleData d2;
     d2.alloc(10);
     Node nmmap;
-    nmmap.mmap("test_conduit_restore_mmap");
+    nmmap.mmap("tout_conduit_restore_mmap");
 
     d2.n.info().print();
 
@@ -212,7 +215,8 @@ TEST(conduit_io_save_load, conduit_simple_class_restore)
 
 }
 
-TEST(conduit_io_save_load, conduit_io_explicit_zero_length_vector_restore)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_save_load, io_explicit_zero_length_vector_restore)
 {
     std::vector<float> one;
     float two = 2;
@@ -229,15 +233,17 @@ TEST(conduit_io_save_load, conduit_io_explicit_zero_length_vector_restore)
 
     n1.print_detailed();
    
-    n1.save("test_zero_len_vector_save");
+    n1.save("tout_zero_len_vector_save");
 
     Node n2;
-    n2.load("test_zero_len_vector_save");
+    n2.load("tout_zero_len_vector_save");
 
     std::cout << "n2 load result" << std::endl;
 
     n2.print_detailed();
-    EXPECT_EQ(n1.schema()["one"].dtype().number_of_elements(),n2.schema()["one"].dtype().number_of_elements());
+            
+    EXPECT_EQ(n1.schema()["one"].dtype().number_of_elements(),
+              n2.schema()["one"].dtype().number_of_elements());
     EXPECT_EQ(n2.schema()["one"].dtype().number_of_elements(),0);
     
     n1.update(n2);

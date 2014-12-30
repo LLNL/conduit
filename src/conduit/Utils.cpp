@@ -1,34 +1,66 @@
-/*****************************************************************************
-* Copyright (c) 2014, Lawrence Livermore National Security, LLC
-* Produced at the Lawrence Livermore National Laboratory. 
-* 
-* All rights reserved.
-* 
-* This source code cannot be distributed without further review from 
-* Lawrence Livermore National Laboratory.
-*****************************************************************************/
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) 2014, Lawrence Livermore National Security, LLC
+// Produced at the Lawrence Livermore National Laboratory. 
+// 
+// All rights reserved.
+// 
+// This source code cannot be distributed without further review from 
+// Lawrence Livermore National Laboratory.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: Utils.cpp
 ///
+//-----------------------------------------------------------------------------
 
 #include "Utils.h"
 
+//-----------------------------------------------------------------------------
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
 namespace conduit
 {
 
+//-----------------------------------------------------------------------------
+// -- begin conduit::utils --
+//-----------------------------------------------------------------------------
 namespace utils
 {
 
-//============================================
+    //-----------------------------------------------------------------------------
 void     
-split_path(const std::string &path,
-           std::string &curr,
-           std::string &next)
+split_string(const std::string &path,
+             const std::string &sep,
+             std::string &curr,
+             std::string &next)
 {
     curr.clear();
     next.clear();
-    std::size_t found = path.find("/");
+
+    std::size_t found = path.find(sep);
+    if (found != std::string::npos)
+    {
+        curr = path.substr(0,found);
+        if(found != path.size()-1)
+            next = path.substr(found+1,path.size()-(found-1));
+    }
+    else
+    {
+        curr = path;
+    }
+}
+    //-----------------------------------------------------------------------------
+void     
+rsplit_string(const std::string &path,
+              const std::string &sep,
+              std::string &curr,
+              std::string &next)
+{
+    curr.clear();
+    next.clear();
+
+    std::size_t found = path.rfind(sep);
     if (found != std::string::npos)
     {
         curr = path.substr(0,found);
@@ -41,18 +73,29 @@ split_path(const std::string &path,
     }
 }
 
-bool check_word_char(const char v)
+//-----------------------------------------------------------------------------
+void     
+split_path(const std::string &path,
+           std::string &curr,
+           std::string &next)
+{
+    split_string(path,std::string("/"),curr,next);
+}
+
+//-----------------------------------------------------------------------------
+bool 
+check_word_char(const char v)
 {
     bool res = ( ( 'A' <= v) && 
                  (  v  <= 'Z') );
     res = res || ( ( 'a' <= v) && 
                  (  v  <= 'z') );
     res = res || v == '_';
-    //std::cout << "check " << v << " == " << res << std::endl;
     return res;
 }
 
-bool check_num_char(const char v)
+bool
+check_num_char(const char v)
 {
     bool res = ( ( '0' <= v) && 
                  (  v  <= '9') );
@@ -60,7 +103,7 @@ bool check_num_char(const char v)
 }
 
 
-//============================================
+//-----------------------------------------------------------------------------
 std::string
 json_sanitize(const std::string &json)
 {
@@ -161,11 +204,13 @@ json_sanitize(const std::string &json)
 
     return res;
 }
-    
-void indent(std::ostringstream &oss,
-            index_t indent,
-            index_t depth,
-            const std::string &pad)
+
+//-----------------------------------------------------------------------------
+void 
+indent(std::ostringstream &oss,
+       index_t indent,
+       index_t depth,
+       const std::string &pad)
 {
     for(index_t i=0;i<depth;i++)
     {
@@ -177,4 +222,13 @@ void indent(std::ostringstream &oss,
 }
     
 }
+
+//-----------------------------------------------------------------------------
+// -- end conduit::utils --
+//-----------------------------------------------------------------------------
+
 }
+//-----------------------------------------------------------------------------
+// -- end conduit:: --
+//-----------------------------------------------------------------------------
+

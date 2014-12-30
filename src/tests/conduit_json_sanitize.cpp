@@ -1,26 +1,28 @@
-/*****************************************************************************
-* Copyright (c) 2014, Lawrence Livermore National Security, LLC
-* Produced at the Lawrence Livermore National Laboratory. 
-* 
-* All rights reserved.
-* 
-* This source code cannot be distributed without further review from 
-* Lawrence Livermore National Laboratory.
-*****************************************************************************/
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) 2014, Lawrence Livermore National Security, LLC
+// Produced at the Lawrence Livermore National Laboratory. 
+// 
+// All rights reserved.
+// 
+// This source code cannot be distributed without further review from 
+// Lawrence Livermore National Laboratory.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_json_sanitize.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "conduit.h"
 
 #include <iostream>
 #include "gtest/gtest.h"
-#include "rapidjson/document.h"
+
 using namespace conduit;
 
-TEST(conduit_json_sanitize_comments, conduit_json_sanitize)
+//-----------------------------------------------------------------------------
+TEST(conduit_json_sanitize, sanitize_comments)
 {
     std::string t1_in  = "//comment\n{\"a\": \"uint32\", \"b\": \"uint32\" , \"c\": \"float64\"}\n// comment!";
     std::string t1_out = "{\"a\": \"uint32\", \"b\": \"uint32\" , \"c\": \"float64\"}\n";
@@ -28,8 +30,8 @@ TEST(conduit_json_sanitize_comments, conduit_json_sanitize)
     EXPECT_EQ(utils::json_sanitize(t1_in),t1_out);
 }
 
-
-TEST(conduit_json_sanitize_quoteless, conduit_json_sanitize)
+//-----------------------------------------------------------------------------
+TEST(conduit_json_sanitize, sanitize_quoteless)
 {
     std::string t1_in  = "{a: uint32, b: uint32 , c: float64}";
     std::string t1_out = "{\"a\": \"uint32\", \"b\": \"uint32\" , \"c\": \"float64\"}";
@@ -53,7 +55,8 @@ TEST(conduit_json_sanitize_quoteless, conduit_json_sanitize)
     EXPECT_EQ(utils::json_sanitize(t5_in),t5_out);
 }
 
-TEST(conduit_node_quoteless_simple_gen_schema_test, conduit_node_quoteless)
+//-----------------------------------------------------------------------------
+TEST(conduit_json_sanitize, simple_quoteless_schema)
 {
     return;
     uint32   a_val  = 10;
@@ -66,7 +69,7 @@ TEST(conduit_node_quoteless_simple_gen_schema_test, conduit_node_quoteless)
     memcpy(&data[8],&c_val,8);
 
     Schema schema("{a: uint32, b: uint32 , c: float64}");
-    Node n(schema,data);
+    Node n(schema,data,true);
     
     EXPECT_EQ(n["a"].as_uint32(),a_val);
     EXPECT_EQ(n["b"].as_uint32(),b_val);
@@ -76,7 +79,7 @@ TEST(conduit_node_quoteless_simple_gen_schema_test, conduit_node_quoteless)
     std::cout << s2_str << std::endl;
     Schema schema2(s2_str);
     
-    Node n2(schema2,data);
+    Node n2(schema2,data,true);
     EXPECT_EQ(n2["g"]["a"].as_uint32(),a_val);
     EXPECT_EQ(n2["g"]["b"].as_uint32(),b_val);
     EXPECT_EQ(n2["g"]["c"].as_float64(),c_val);
@@ -86,7 +89,7 @@ TEST(conduit_node_quoteless_simple_gen_schema_test, conduit_node_quoteless)
     for (int i = 0; i < 5; i++) {
        data2[i] = i * 5;
     }
-    Node n3(schema3,data2);
+    Node n3(schema3,data2,true);
     for (int i = 0; i < 5; i++) {
        EXPECT_EQ(n3.as_uint32_ptr()[i], i*5);
     }
@@ -95,7 +98,7 @@ TEST(conduit_node_quoteless_simple_gen_schema_test, conduit_node_quoteless)
     memcpy(&data3[0],&a_val,4);
     memcpy(&data3[4],&c_val,8);
     memcpy(&data3[12],&b_val,4);
-    Node n4(schema4,data3);
+    Node n4(schema4,data3,true);
     EXPECT_EQ(n4[0].as_uint32(),a_val);
     EXPECT_EQ(n4[1].as_float64(),c_val);
     EXPECT_EQ(n4[2].as_uint32(),b_val);
@@ -109,7 +112,7 @@ TEST(conduit_node_quoteless_simple_gen_schema_test, conduit_node_quoteless)
     memcpy(&data4[8],&c_val,8);
     memcpy(&data4[16],&d_val,4);
     memcpy(&data4[20],&e_val,8);
-    Node n5(schema5,data4);
+    Node n5(schema5,data4,true);
     
     n5.schema().print();
 

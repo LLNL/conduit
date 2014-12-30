@@ -1,17 +1,18 @@
-/*****************************************************************************
-* Copyright (c) 2014, Lawrence Livermore National Security, LLC
-* Produced at the Lawrence Livermore National Laboratory. 
-* 
-* All rights reserved.
-* 
-* This source code cannot be distributed without further review from 
-* Lawrence Livermore National Laboratory.
-*****************************************************************************/
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) 2014, Lawrence Livermore National Security, LLC
+// Produced at the Lawrence Livermore National Laboratory. 
+// 
+// All rights reserved.
+// 
+// This source code cannot be distributed without further review from 
+// Lawrence Livermore National Laboratory.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_serialize.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "conduit.h"
 
@@ -21,9 +22,8 @@ using namespace conduit;
 
 
 
-
-
-TEST(serialize_test_1, conduit_serialize)
+//-----------------------------------------------------------------------------
+TEST(conduit_serialize, test_1)
 {
 
     uint32   a_val  = 10;
@@ -48,14 +48,13 @@ TEST(serialize_test_1, conduit_serialize)
 
     std::cout << *((uint32*)&bytes[0]) << std::endl;
 
-	Node n2(s_schema,&bytes[0]);
+	Node n2(s_schema,&bytes[0],true);
     EXPECT_EQ(n2["a"].as_uint32(),a_val);
     EXPECT_EQ(n2["b"].as_uint32(),b_val);
 }
 
-
-
-TEST(serialize_test_2, conduit_serialize)
+//-----------------------------------------------------------------------------
+TEST(conduit_serialize, test_2)
 {
 
     uint32   a_val  = 10;
@@ -79,23 +78,33 @@ TEST(serialize_test_2, conduit_serialize)
 
     Schema c_schema;
     n.schema().compact_to(c_schema);
-    Node n2(c_schema,&bytes[0]);
+    Node n2(c_schema,&bytes[0],true);
     n2.schema().print();
     EXPECT_EQ(n2["a"].as_uint32(),a_val);
     EXPECT_EQ(n2["b"].as_uint32(),b_val);
     EXPECT_EQ(n2["c"].as_float64(),c_val);
     EXPECT_EQ(n2["here"]["there"].as_uint32(),a_val);
-    EXPECT_EQ(1,n2["here"].number_of_entries());
+    EXPECT_EQ(1,n2["here"].number_of_children());
 
 }
 
-
-TEST(serialize_test_compact, conduit_serialize)
+//-----------------------------------------------------------------------------
+TEST(conduit_serialize, compact)
 {
-    float64 vals[] = { 100.0,-100.0,200.0,-200.0,300.0,-300.0,400.0,-400.0,500.0,-500.0};
+    float64 vals[] = { 100.0,
+                      -100.0, 
+                       200.0,
+                      -200.0,
+                       300.0,
+                      -300.0,
+                       400.0,
+                      -400.0,
+                       500.0,
+                      -500.0};
+
     Generator g("{dtype: float64, length: 5, stride: 16, offset:8}",vals);
 
-    Node n(g);
+    Node n(g,true);
 
 
     EXPECT_EQ(n.info()["total_bytes"].to_uint64(),80);
@@ -110,7 +119,7 @@ TEST(serialize_test_compact, conduit_serialize)
     n.serialize(nc_bytes);
     EXPECT_EQ(nc_bytes.size(),40);
     
-    Node nc(nc_s,&nc_bytes[0]);
+    Node nc(nc_s,&nc_bytes[0],true);
 
 
     EXPECT_EQ(n.as_float64_array()[1],-200.0);

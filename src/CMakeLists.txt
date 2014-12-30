@@ -54,13 +54,12 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/conduit
 add_subdirectory(conduit)
 
 ################################
-# Add the conduit-silo lib 
+# Add the conduit-io lib 
 ################################
-if(SILO_FOUND)
-    add_subdirectory(conduit_silo)
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/conduit_silo 
-                        ${CMAKE_CURRENT_BINARY_DIR}/conduit_silo )
-endif()
+add_subdirectory(conduit_io)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/conduit_io
+                    ${CMAKE_CURRENT_BINARY_DIR}/conduit_io )
+
 
 ################################
 # Add docs

@@ -1,16 +1,18 @@
-/*****************************************************************************
-* Copyright (c) 2014, Lawrence Livermore National Security, LLC
-* Produced at the Lawrence Livermore National Laboratory. 
-* 
-* All rights reserved.
-* 
-* This source code cannot be distributed without further review from 
-* Lawrence Livermore National Laboratory.
-*****************************************************************************/
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) 2014, Lawrence Livermore National Security, LLC
+// Produced at the Lawrence Livermore National Laboratory. 
+// 
+// All rights reserved.
+// 
+// This source code cannot be distributed without further review from 
+// Lawrence Livermore National Laboratory.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: libb64_smoke.cpp
 ///
+//-----------------------------------------------------------------------------
 
 #include <iostream>
 #include "gtest/gtest.h"
@@ -18,7 +20,7 @@
 #include "b64/encode.h"
 #include "b64/decode.h"
 
-TEST(libb64_smoke_test_case, libb64_smoke)
+TEST(libb64_smoke, basic_use )
 {
     std::string sin("test");
     
@@ -43,3 +45,4 @@ TEST(libb64_smoke_test_case, libb64_smoke)
     
     EXPECT_EQ(oss.str(),sin);
 }
+

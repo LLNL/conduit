@@ -10,38 +10,32 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_char8_str.cpp
+/// file: mpi_smoke.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit.h"
-
-#include <iostream>
-#include <sstream>
-
 #include "gtest/gtest.h"
-using namespace conduit;
+#include <mpi.h>
 
 //-----------------------------------------------------------------------------
-TEST(conduit_char8_str, basic)
+TEST(mpi_smoke, mpi_init)
 {
-    const char *c_ta = "test string for a";
-    const char *c_tb = "test string for b";
-
-    Node n;
-    n["a"] = c_ta;
-    n["b"] = c_tb;
-    
-    std::ostringstream oss;
-    oss << n["a"].as_string() << " and " << n["b"].as_string();
-    
-    std::string cpp_tc = oss.str();
-    
-    n["c"] = cpp_tc;
-
-    EXPECT_EQ(strcmp(n["a"].as_char8_str(),c_ta),0);
-    EXPECT_EQ(strcmp(n["b"].as_char8_str(),c_tb),0);
-    EXPECT_EQ(n["c"].as_string(),cpp_tc);
-
-    n.print_detailed();
+    // simple mpi test 
+    int size;
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    EXPECT_EQ(size, 2);
 }
+
+//-----------------------------------------------------------------------------
+int main(int argc, char* argv[])
+{
+    int result = 0;
+
+    ::testing::InitGoogleTest(&argc, argv);
+    MPI_Init(&argc, &argv);
+    result = RUN_ALL_TESTS();
+    MPI_Finalize();
+
+    return result;
+}
+

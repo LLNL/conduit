@@ -1,27 +1,31 @@
-/*****************************************************************************
-* Copyright (c) 2014, Lawrence Livermore National Security, LLC
-* Produced at the Lawrence Livermore National Laboratory. 
-* 
-* All rights reserved.
-* 
-* This source code cannot be distributed without further review from 
-* Lawrence Livermore National Laboratory.
-*****************************************************************************/
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) 2014, Lawrence Livermore National Security, LLC
+// Produced at the Lawrence Livermore National Laboratory. 
+// 
+// All rights reserved.
+// 
+// This source code cannot be distributed without further review from 
+// Lawrence Livermore National Laboratory.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
-/// file: conduit_io_binary.cpp
+/// file: conduit_node_binary_io.cpp
 ///
+//-----------------------------------------------------------------------------
 
 
 #include "conduit.h"
 
 #include <iostream>
 #include "gtest/gtest.h"
-#include "rapidjson/document.h"
+
+
 using namespace conduit;
 using namespace std;
 
-TEST(conduit_io_binary, conduit_read_write)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_binary_io, read_write)
 {
     int32   a1_val  = 10;
     int32   b1_val  = 20;
@@ -37,12 +41,13 @@ TEST(conduit_io_binary, conduit_read_write)
     
     Schema schema("{\"dtype\":{\"a\":\"int32\",\"b\":\"int32\"},\"length\":2}");
 
-    Node nsrc(schema,data);
+    Node nsrc(schema,data,true);
     
-    nsrc.serialize("test_conduit.bin");
+    nsrc.serialize("tout_conduit.bin");
     
    
-    Node n(schema,"test_conduit.bin");
+    Node n;
+    n.load(schema,"tout_conduit.bin");
     
     n.schema().print();
     n.print_detailed();
@@ -58,14 +63,11 @@ TEST(conduit_io_binary, conduit_read_write)
 
     EXPECT_EQ(n[0]["b"].as_int32(), b1_val);
     EXPECT_EQ(n[1]["b"].as_int32(), b2_val);
-
-    // src in schema    
-    //Schema rschema("{\"dtype\":{\"a\":\"int32\",\"b\":\"int32\"},\"length\":2 \"source\":\"test_conduit.bin\"}");
   
 }
 
-
-TEST(conduit_io_binary, conduit_mmap_simple)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_binary_io, mmap_simple)
 {
     int32   a1_val  = 10;
     int32   b1_val  = 20;
@@ -81,12 +83,13 @@ TEST(conduit_io_binary, conduit_mmap_simple)
     
     Schema schema("{\"dtype\":{\"a\":\"int32\",\"b\":\"int32\"},\"length\":2}");
 
-    Node nsrc(schema,data);
+    Node nsrc(schema,data,true);
     
-    nsrc.serialize("test_conduit_mmap.bin");
+    nsrc.serialize("tout_conduit_mmap.bin");
     
    
-    Node nmmap(schema,"test_conduit_mmap.bin",true);
+    Node nmmap;
+    nmmap.mmap(schema,"tout_conduit_mmap.bin");
     
     nmmap.schema().print();
     nmmap.print_detailed();
@@ -111,7 +114,9 @@ TEST(conduit_io_binary, conduit_mmap_simple)
    
     // standard read
     
-    Node ntest(schema,"test_conduit_mmap.bin");
+    Node ntest;
+    ntest.load(schema,"tout_conduit_mmap.bin");
+
     EXPECT_EQ(ntest[0]["a"].as_int32(), 100);
     EXPECT_EQ(ntest[0]["b"].as_int32(), 200);
   

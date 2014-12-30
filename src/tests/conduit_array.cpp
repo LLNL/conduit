@@ -1,26 +1,28 @@
-/*****************************************************************************
-* Copyright (c) 2014, Lawrence Livermore National Security, LLC
-* Produced at the Lawrence Livermore National Laboratory. 
-* 
-* All rights reserved.
-* 
-* This source code cannot be distributed without further review from 
-* Lawrence Livermore National Laboratory.
-*****************************************************************************/
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) 2014, Lawrence Livermore National Security, LLC
+// Produced at the Lawrence Livermore National Laboratory. 
+// 
+// All rights reserved.
+// 
+// This source code cannot be distributed without further review from 
+// Lawrence Livermore National Laboratory.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_array.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "conduit.h"
 
 #include <iostream>
 #include "gtest/gtest.h"
-// #include "rapidjson/document.h"
+
 using namespace conduit;
 
-TEST(conduit_array_stride_int8, conduit_array)
+//-----------------------------------------------------------------------------
+TEST(conduit_array, array_stride_int8)
 {
     std::vector<int8> data(20,0);
 
@@ -74,9 +76,11 @@ TEST(conduit_array_stride_int8, conduit_array)
     }
     std::cout << std::endl;
 
-// TODO: These cases are failing
+
     Node n2(DataType::Arrays::int8(10,sizeof(int8),sizeof(int8)*2),
-            &data[0]);
+            &data[0],
+            true); /// true for external
+
     int8_array arr_2 = n2.as_int8_array();
     
     for(int i=0;i<10;i++)
@@ -91,7 +95,8 @@ TEST(conduit_array_stride_int8, conduit_array)
 
 }    
 
-TEST(conduit_array_stride_int8_external, conduit_array)
+//-----------------------------------------------------------------------------
+TEST(conduit_array, array_stride_int8_external)
 {
     std::vector<int64> data(20,0);
 
@@ -130,6 +135,6 @@ TEST(conduit_array_stride_int8_external, conduit_array)
     EXPECT_EQ(arr[2],10);
     EXPECT_EQ(arr[3],-10);
 
-}    
-    
+}
+
 

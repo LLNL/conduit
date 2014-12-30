@@ -21,20 +21,30 @@ What is Conduit?
 
 **Conduit: A Scientific Data Exchange Library for HPC Simulations**
 
+Conduit is used for data coupling between packages in-core, serialization, and I/O tasks.
+
 Conduit provides:
 
--  A flexible way to describe hierarchal data:
-   A JSON-based schema for describing hierarchical in-core data structures.
+- A flexible way to describe hierarchal data:
+  
+      A JSON-based schema for describing hierarchical in-core data structures.
 
--  A sane API to access hierarchal data:
-   A dynamic C++ API for rapid construction and consumption of hierarchical objects.
+- A sane API to access hierarchal data:
 
+    A dynamic C++ API for rapid construction and consumption of hierarchical objects.
+
+
+Unique Features
+----------------
+- A runtime focused data description API that does not require code generation.
+- Supports a mix of allocated and externally owned memory semantics.
 
 
 Conduit Documentation
 ----------------------
 
 .. toctree::
+   :maxdepth: 2
 
    user
    developer

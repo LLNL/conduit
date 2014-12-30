@@ -1,27 +1,28 @@
-/*****************************************************************************
-* Copyright (c) 2014, Lawrence Livermore National Security, LLC
-* Produced at the Lawrence Livermore National Laboratory. 
-* 
-* All rights reserved.
-* 
-* This source code cannot be distributed without further review from 
-* Lawrence Livermore National Laboratory.
-*****************************************************************************/
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) 2014, Lawrence Livermore National Security, LLC
+// Produced at the Lawrence Livermore National Laboratory. 
+// 
+// All rights reserved.
+// 
+// This source code cannot be distributed without further review from 
+// Lawrence Livermore National Laboratory.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_list_of.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "conduit.h"
 
 #include <iostream>
 #include "gtest/gtest.h"
-#include "rapidjson/document.h"
+
 using namespace conduit;
 
-
-TEST(conduit_list_of_simple, conduit_list_of)
+//-----------------------------------------------------------------------------
+TEST(conduit_list_of, simple )
 {
     int32   a1_val  = 10;
     int32   b1_val  = 20;
@@ -37,7 +38,7 @@ TEST(conduit_list_of_simple, conduit_list_of)
     
     std::string jschema = "{\"dtype\":{\"a\":\"int32\",\"b\":\"int32\"},\"length\":2}";
 	Schema sch(jschema);
-    Node n(sch,data);
+    Node n(sch,data,true);
     std::cout << n.schema().to_json() << std::endl;
     std::cout << n.to_json() << std::endl;
     
@@ -54,7 +55,8 @@ TEST(conduit_list_of_simple, conduit_list_of)
     EXPECT_EQ(n[1]["b"].as_int32(), b2_val);
 }
 
-TEST(conduit_list_of_path_ref, conduit_list_of)
+//-----------------------------------------------------------------------------
+TEST(conduit_list_of, path_ref)
 {
     uint32  len_val = 2;
     int32   a1_val  = 10;
@@ -74,7 +76,7 @@ TEST(conduit_list_of_path_ref, conduit_list_of)
 	
     //For ref case, we will have to pass the json directly
     //
-    Node n(jschema,data);
+    Node n(jschema,data,true);
     std::cout << n.schema().to_json() << std::endl;
     std::cout << n.to_json() << std::endl;
 

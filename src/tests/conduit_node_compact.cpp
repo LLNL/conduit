@@ -1,33 +1,35 @@
-/*****************************************************************************
-* Copyright (c) 2014, Lawrence Livermore National Security, LLC
-* Produced at the Lawrence Livermore National Laboratory. 
-* 
-* All rights reserved.
-* 
-* This source code cannot be distributed without further review from 
-* Lawrence Livermore National Laboratory.
-*****************************************************************************/
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) 2014, Lawrence Livermore National Security, LLC
+// Produced at the Lawrence Livermore National Laboratory. 
+// 
+// All rights reserved.
+// 
+// This source code cannot be distributed without further review from 
+// Lawrence Livermore National Laboratory.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_node_compact.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "conduit.h"
 
 #include <iostream>
 #include "gtest/gtest.h"
-#include "rapidjson/document.h"
+
 using namespace conduit;
 
-TEST(compact_1, conduit_node_compact)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_compact, compact_1)
 {
 
     uint32   vals[] = {10,20,30,40,50,60,70,80,90,100};
 
     
     Generator g("{vals: {dtype:uint32, length:5, stride:8}}",vals);
-    Node n(g);
+    Node n(g,true);
 
     EXPECT_EQ(40,n.total_bytes());
     EXPECT_EQ(20,n.total_bytes_compact());
@@ -44,17 +46,18 @@ TEST(compact_1, conduit_node_compact)
     EXPECT_EQ(n_arr[2],nc_arr[2]);
 }
 
-TEST(compact_2, conduit_node_compact)
+//-----------------------------------------------------------------------------
+TEST(conduit_node_compact, compact_2)
 {
 
     float64 vals[] = { 100.0,-100.0,200.0,-200.0,300.0,-300.0,400.0,-400.0,500.0,-500.0};
     Generator g1("{dtype: float64, length: 5, stride: 16}",vals);
     Generator g2("{dtype: float64, length: 5, stride: 16, offset:8}",vals);
 
-    Node n1(g1);
+    Node n1(g1,true);
     n1.print();
 
-    Node n2(g2);
+    Node n2(g2,true);
     n2.print();
     
     Node ninfo;

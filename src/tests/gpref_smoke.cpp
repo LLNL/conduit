@@ -1,16 +1,18 @@
-/*****************************************************************************
-* Copyright (c) 2014, Lawrence Livermore National Security, LLC
-* Produced at the Lawrence Livermore National Laboratory. 
-* 
-* All rights reserved.
-* 
-* This source code cannot be distributed without further review from 
-* Lawrence Livermore National Laboratory.
-*****************************************************************************/
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) 2014, Lawrence Livermore National Security, LLC
+// Produced at the Lawrence Livermore National Laboratory. 
+// 
+// All rights reserved.
+// 
+// This source code cannot be distributed without further review from 
+// Lawrence Livermore National Laboratory.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: gpref_smoke.cpp
 ///
+//-----------------------------------------------------------------------------
 
 #include <iostream>
 #include "conduit.h"
@@ -20,7 +22,8 @@
 
 using namespace conduit;
 
-TEST(gpref_heap_check_smoke, gperf_smoke)
+//-----------------------------------------------------------------------------
+TEST(gperf_smoke, heap_check)
 {
     //
     // To run successfully the env var HEAPCHECK  must be set to "local"
@@ -52,3 +55,4 @@ TEST(gpref_heap_check_smoke, gperf_smoke)
     HeapProfilerStop();
     
 }
+

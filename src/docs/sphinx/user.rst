@@ -18,9 +18,10 @@ User Documentation
 ================================
 
 .. toctree::
-   :maxdepth: 2
 
    tutorial
+   glossary
    api
    licenses
+
 

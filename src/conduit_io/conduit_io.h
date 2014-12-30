@@ -10,25 +10,25 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Utils.h
+/// file: conduit_io.h
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef __CONDUIT_UTILS_H
-#define __CONDUIT_UTILS_H
+
+#ifndef __CONDUIT_IO_H
+#define __CONDUIT_IO_H
 
 //-----------------------------------------------------------------------------
-// -- conduit library includes -- 
+// -- define proper lib exports for various platforms -- 
 //-----------------------------------------------------------------------------
-#include <Core.h>
+#include "Conduit_IO_Exports.h"
 
-//-----------------------------------------------------------------------------
-// -- standard lib includes -- 
-//-----------------------------------------------------------------------------
-#include <string>
-#include <iostream>
-#include <iomanip>
-#include <sstream>
+#include "conduit.h"
+
+// include optional libs
+#ifdef CONDUIT_IO_ENABLE_SILO
+#include "conduit_silo.h"
+#endif
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -37,52 +37,37 @@ namespace conduit
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::utils --
+// -- begin conduit::io --
 //-----------------------------------------------------------------------------
-namespace utils
+namespace io
 {
 
 //-----------------------------------------------------------------------------
-    void        split_string(const std::string &path,
-                             const std::string &sep,
-                             std::string &curr,
-                             std::string &next);
+void CONDUIT_IO_API save(const  Node &node,
+                         const std::string &path);
 
-    void        rsplit_string(const std::string &path,
-                              const std::string &sep,
-                              std::string &curr,
-                              std::string &next);
-
-     void       split_path(const std::string &path,
-                           std::string &curr,
-                           std::string &next);
+void CONDUIT_IO_API load(const std::string &path,
+                         Node &node);
 
 //-----------------------------------------------------------------------------
-     std::string json_sanitize(const std::string &json);
-     
-//----------------------------------------------------------------------------- 
-     template< typename T >
-     std::string to_hex_string(T value)
-     {
-           std::stringstream oss;
-           oss << std::hex << value;
-           return  oss.str();
-     }
+/// The about methods construct human readable info about how conduit_io was
+/// configured.
+//-----------------------------------------------------------------------------
+ std::string CONDUIT_IO_API about();
+ void        CONDUIT_IO_API about(Node &);
 
+};
 //-----------------------------------------------------------------------------
-     void        indent(std:: ostringstream &oss,
-                        index_t indent,
-                        index_t depth,
-                        const std::string &pad);
-     
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::utils --
+// -- end conduit::io --
 //-----------------------------------------------------------------------------
 
-}
+
+
+};
 //-----------------------------------------------------------------------------
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
 
+
 #endif
+

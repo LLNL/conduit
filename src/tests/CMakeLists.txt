@@ -13,7 +13,7 @@
 ################################
 
 ################################
-# Core Unit Tests
+# Core (conduit lib) Unit Tests
 ################################
 set(BASIC_TESTS gtest_smoke 
                 rapidjson_smoke
@@ -25,13 +25,13 @@ set(BASIC_TESTS gtest_smoke
                 conduit_serialize
                 conduit_array
                 conduit_list_of
+                conduit_node_binary_io
+                conduit_node_save_load
                 conduit_node_paths
                 conduit_node_set
                 conduit_to_string
                 conduit_json
                 conduit_json_sanitize
-                conduit_io_binary
-                conduit_io_save_load
                 conduit_generator
                 conduit_node_update
                 conduit_node_compact
@@ -41,12 +41,17 @@ set(BASIC_TESTS gtest_smoke
                 type_tests)
 
 ################################
+# conduit_io lib Unit Tests
+################################
+set(IO_TESTS conduit_io_smoke)
+
+################################
 # Optional Unit Tests
 ################################
 set(PYTHON_GPREF_TOOLS_TESTS gpref_smoke)
 set(PYTHON_TESTS numpy_smoke)
 set(MPI_TESTS conduit_mpi)
-set(SILO_TESTS silo_smoke conduit_silo_smoke)
+set(SILO_TESTS silo_smoke conduit_io_silo)
 
 ################################
 # Create the necessary lib list for our unit tests
@@ -70,9 +75,19 @@ function(add_basic_test TEST)
     endif()
 endfunction(add_basic_test)
 
+################################
+# Helper to IO Tests
+################################
+function(add_io_test TEST)
+    add_basic_test(${TEST})
+    target_link_libraries(${TEST} conduit_io)
+if(ENABLE_SILO AND SILO_FOUND)
+    target_link_libraries(${TEST} ${SILO_LIBRARIES})
+endif()
+endfunction(add_io_test)
 
 ################################
-# Helper to MPI Tests
+# Helper to Add MPI Tests
 ################################
 function(add_mpi_test TEST NUM_PROCS)
     message(STATUS " [*] Adding MPI Unit Test: ${TEST}")
@@ -94,8 +109,14 @@ endfunction(add_mpi_test)
 ################################
 # Add our Main Unit Tests
 ################################
+message(STATUS "Adding conduit lib unit tests")
 foreach(TEST ${BASIC_TESTS})
     add_basic_test(${TEST})
+endforeach()
+
+message(STATUS "Adding conduit_io lib unit tests")
+foreach(TEST ${IO_TESTS})
+    add_io_test(${TEST})
 endforeach()
 
 
@@ -134,9 +155,7 @@ endif()
 if(ENABLE_SILO AND SILO_FOUND)
     message(STATUS "Silo enabled: Adding related unit tests")
     foreach(TEST ${SILO_TESTS})
-        add_basic_test(${TEST})
-        target_link_libraries(${TEST} ${SILO_LIBRARIES})
-        target_link_libraries(${TEST} conduit_silo)
+        add_io_test(${TEST})
     endforeach()
 else()
     message(STATUS "Silo disabled: Skipping related tests")

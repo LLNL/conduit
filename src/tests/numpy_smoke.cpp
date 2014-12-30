@@ -1,17 +1,18 @@
-/*****************************************************************************
-* Copyright (c) 2014, Lawrence Livermore National Security, LLC
-* Produced at the Lawrence Livermore National Laboratory. 
-* 
-* All rights reserved.
-* 
-* This source code cannot be distributed without further review from 
-* Lawrence Livermore National Laboratory.
-*****************************************************************************/
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) 2014, Lawrence Livermore National Security, LLC
+// Produced at the Lawrence Livermore National Laboratory. 
+// 
+// All rights reserved.
+// 
+// This source code cannot be distributed without further review from 
+// Lawrence Livermore National Laboratory.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: numpy_smoke.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "Python.h"   
 #include "numpy/npy_common.h"
@@ -20,8 +21,8 @@
 #include <iostream>
 #include "gtest/gtest.h"
 
-
-TEST(numpy_smoke_test, numpy_smoke)
+//-----------------------------------------------------------------------------
+TEST(numpy_smoke, basic_dtype_include)
 {
     EXPECT_EQ(sizeof(npy_uint32),4);
     EXPECT_EQ(sizeof(npy_uint64),8);

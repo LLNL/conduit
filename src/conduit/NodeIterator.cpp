@@ -1,62 +1,71 @@
-/*****************************************************************************
-* Copyright (c) 2014, Lawrence Livermore National Security, LLC
-* Produced at the Lawrence Livermore National Laboratory. 
-* 
-* All rights reserved.
-* 
-* This source code cannot be distributed without further review from 
-* Lawrence Livermore National Laboratory.
-*****************************************************************************/
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) 2014, Lawrence Livermore National Security, LLC
+// Produced at the Lawrence Livermore National Laboratory. 
+// 
+// All rights reserved.
+// 
+// This source code cannot be distributed without further review from 
+// Lawrence Livermore National Laboratory.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: NodeIterator.cpp
 ///
+//-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+// -- conduit library includes -- 
+//-----------------------------------------------------------------------------
 #include "NodeIterator.h"
 
+//-----------------------------------------------------------------------------
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
 namespace conduit
 {
 
-//============================================
-// NodeIterator
-//============================================
+//-----------------------------------------------------------------------------
+// NodeIterator Construction and Destruction
+//-----------------------------------------------------------------------------
 
-/* Constructors */
-//============================================
+
+//---------------------------------------------------------------------------//
 NodeIterator::NodeIterator()
 : m_node(NULL),
   m_index(0),
-  m_num_ele(0)
+  m_num_children(0)
 {
     
 }
 
-//============================================
-NodeIterator::NodeIterator(Node *node,index_t idx)
+//---------------------------------------------------------------------------//
+NodeIterator::NodeIterator(Node *node,
+                           index_t idx)
 :m_node(node),
  m_index(idx)
 {
-    m_num_ele = node->number_of_entries();
+    m_num_children = node->number_of_children();
 }
 
 
-//============================================
+//---------------------------------------------------------------------------//
 NodeIterator::NodeIterator(const NodeIterator &itr)
 :m_node(itr.m_node),
  m_index(itr.m_index),
- m_num_ele(itr.m_index)
+ m_num_children(itr.m_num_children)
 {
 
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 NodeIterator::~NodeIterator()
 {
     
 }
  
  
-//============================================
+//---------------------------------------------------------------------------//
 NodeIterator &
 NodeIterator::operator=(const NodeIterator &itr)
 {
@@ -64,34 +73,42 @@ NodeIterator::operator=(const NodeIterator &itr)
     {
         m_node    = itr.m_node;
         m_index   = itr.m_index;
-        m_num_ele = itr.m_num_ele;
+        m_num_children = itr.m_num_children;
     }
     return *this;
 }
+
+//-----------------------------------------------------------------------------
+/// Iterator value and property access.
+//-----------------------------------------------------------------------------
  
- 
-//============================================
+//---------------------------------------------------------------------------//
 std::string
 NodeIterator::path() const
 {
     return m_node->m_schema->object_order()[m_index-1];
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 index_t
 NodeIterator::index() const
 {
     return m_index-1;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 NodeIterator::node()
 {
-    return m_node->fetch(m_index-1);
+    return m_node->child(m_index-1);
 }
 
-//============================================
+
+//-----------------------------------------------------------------------------
+/// Iterator forward control.
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
 void
 NodeIterator::to_front() 
 {
@@ -99,24 +116,25 @@ NodeIterator::to_front()
 }
 
 
-//============================================
+//---------------------------------------------------------------------------//
 bool
 NodeIterator::has_next() const
 {
-    return ( (m_num_ele != 0) &&
-             (m_index < m_num_ele) );
+    return ( (m_num_children != 0) &&
+             (m_index < m_num_children) );
 }
 
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 NodeIterator::next() 
 {
     m_index++;
-    return m_node->fetch(m_index-1);
+    return m_node->child(m_index-1);
 }
 
-//============================================
+
+//---------------------------------------------------------------------------//
 Node &
 NodeIterator::peek_next() 
 {
@@ -125,19 +143,22 @@ NodeIterator::peek_next()
     {
         idx++;
     }
-    return m_node->fetch(idx-1);
+    return m_node->child(idx-1);
 }
 
 
-//============================================
+//---------------------------------------------------------------------------//
 void
 NodeIterator::to_back()
 {
-    m_index = m_num_ele+1;
+    m_index = m_num_children+1;
 }
 
+//-----------------------------------------------------------------------------
+/// Iterator reverse control.
+//-----------------------------------------------------------------------------
 
-//============================================
+//---------------------------------------------------------------------------//
 bool
 NodeIterator::has_previous() const
 {
@@ -145,7 +166,7 @@ NodeIterator::has_previous() const
 }
 
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 NodeIterator::previous() 
 {
@@ -153,10 +174,10 @@ NodeIterator::previous()
     {
         m_index--;
     }
-    return m_node->fetch(m_index-1);
+    return m_node->child(m_index-1);
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 Node &
 NodeIterator::peek_previous() 
 {
@@ -165,19 +186,26 @@ NodeIterator::peek_previous()
     {
         idx--;
     }
-    return m_node->fetch(idx);
+    return m_node->child(idx);
 }
 
+//-----------------------------------------------------------------------------
+/// Human readable info about this iterator
+//-----------------------------------------------------------------------------
 
-//============================================
+//---------------------------------------------------------------------------//
 void
 NodeIterator::info(Node &res) const
 {
     res.reset();
     res["index"] = m_index;
     res["node_ref"] = utils::to_hex_string(m_node);
-    res["number_of_elements"] = m_num_ele;
+    res["number_of_children"] = m_num_children;
 }
 
 }
+//-----------------------------------------------------------------------------
+// -- end conduit:: --
+//-----------------------------------------------------------------------------
+
 

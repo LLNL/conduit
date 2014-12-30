@@ -1,26 +1,28 @@
-/*****************************************************************************
-* Copyright (c) 2014, Lawrence Livermore National Security, LLC
-* Produced at the Lawrence Livermore National Laboratory. 
-* 
-* All rights reserved.
-* 
-* This source code cannot be distributed without further review from 
-* Lawrence Livermore National Laboratory.
-*****************************************************************************/
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) 2014, Lawrence Livermore National Security, LLC
+// Produced at the Lawrence Livermore National Laboratory. 
+// 
+// All rights reserved.
+// 
+// This source code cannot be distributed without further review from 
+// Lawrence Livermore National Laboratory.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: conduit_json.cpp
 ///
-
+//-----------------------------------------------------------------------------
 
 #include "conduit.h"
 
 #include <iostream>
 #include "gtest/gtest.h"
+
 using namespace conduit;
 
-
-TEST(conduit_to_json_1, conduit_json)
+//-----------------------------------------------------------------------------
+TEST(conduit_json, to_json_1)
 {
 
     uint32   a_val  = 10;
@@ -35,8 +37,8 @@ TEST(conduit_to_json_1, conduit_json)
 
     n.print_detailed();
 }
-
-TEST(conduit_to_json_2, conduit_json)
+//-----------------------------------------------------------------------------
+TEST(conduit_json, to_json_2)
 {
 
     uint32   a_val  = 10;
@@ -59,7 +61,7 @@ TEST(conduit_to_json_2, conduit_json)
     n.print();
 
     Generator g(pure_json,"json");
-    Node n2(g);
+    Node n2(g,true);
     n2.print_detailed();
     n2.print();
 
@@ -72,39 +74,41 @@ TEST(conduit_to_json_2, conduit_json)
 
 }
 
-TEST(conduit_to_json_3, conduit_json)
+//-----------------------------------------------------------------------------
+TEST(conduit_json, to_json_3)
 {
     std::string pure_json ="{a:[0,1,2,3,4],b:[0.0,1.1,2.2,3.3]}";
     Generator g(pure_json,"json");
-    Node n(g);
+    Node n(g,true);
     n.print_detailed();
 }
 
-
-TEST(conduit_to_json_inline_value, conduit_json)
+//-----------------------------------------------------------------------------
+TEST(conduit_json, json_inline_value)
 {
     uint32   val=0;
 
     std::string schema ="{dtype: uint32, value:42}";
     // TODO: check for "unit32" , bad spelling!
     Generator g(schema);
-    Node n(g);
+    Node n(g,true);
     std::cout << n.as_uint32() << std::endl;
     EXPECT_EQ(42,n.as_uint32());
     
     Generator g2(schema,&val);
-    Node n2(g2);
+    Node n2(g2,true);
     std::cout << n2.as_uint32() << std::endl;
     EXPECT_EQ(42,val);
     
 }
 
-TEST(conduit_to_json_inline_array, conduit_json)
+//-----------------------------------------------------------------------------
+TEST(conduit_json, json_inline_array)
 {
     uint32   arr[5];
 
     std::string schema ="{dtype:uint32, length:5, value:[0,1,2,3,4]}";
-    Node n(schema,arr);
+    Node n(schema,arr,true);
     n.print_detailed();
     
     uint32 *ptr = &arr[0];
@@ -116,7 +120,7 @@ TEST(conduit_to_json_inline_array, conduit_json)
     }
     
     std::string schema2 ="{dtype:uint32, value:[10,20,30]}";
-    Node n2(schema2,arr);
+    Node n2(schema2,arr,true);
     ptr =n2.as_uint32_ptr();
     n2.print_detailed();
     
@@ -127,7 +131,7 @@ TEST(conduit_to_json_inline_array, conduit_json)
     }
     
     std::string schema3 ="{dtype:uint32, value:[100,200,300,400,500]}";
-    Node n3(schema3,arr);
+    Node n3(schema3,arr,true);
     ptr =n3.as_uint32_ptr();
     n3.print_detailed();
     
@@ -138,7 +142,7 @@ TEST(conduit_to_json_inline_array, conduit_json)
     }
     
     std::string schema4 ="{dtype:uint32, value:[1000,2000]}";
-    Node n4(schema4,arr);
+    Node n4(schema4,arr,true);
     ptr =n4.as_uint32_ptr();
     n4.print_detailed();
     
@@ -157,7 +161,8 @@ TEST(conduit_to_json_inline_array, conduit_json)
     
 }
 
-TEST(conduit_schema_load_from_json, conduit_json)
+//-----------------------------------------------------------------------------
+TEST(conduit_json, load_from_json)
 {
     
     std::string ofname = "test_conduit_schema_load_from_json.conduit_json";

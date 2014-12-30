@@ -1,37 +1,58 @@
-/*****************************************************************************
-* Copyright (c) 2014, Lawrence Livermore National Security, LLC
-* Produced at the Lawrence Livermore National Laboratory. 
-* 
-* All rights reserved.
-* 
-* This source code cannot be distributed without further review from 
-* Lawrence Livermore National Laboratory.
-*****************************************************************************/
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) 2014, Lawrence Livermore National Security, LLC
+// Produced at the Lawrence Livermore National Laboratory. 
+// 
+// All rights reserved.
+// 
+// This source code cannot be distributed without further review from 
+// Lawrence Livermore National Laboratory.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
 ///
 /// file: DataArray.cpp
 ///
+//-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+// -- conduit library includes -- 
+//-----------------------------------------------------------------------------
 #include "DataArray.h"
+
+//-----------------------------------------------------------------------------
+// -- standard includes -- 
+//-----------------------------------------------------------------------------
 #include <cstring>
 
+
+//-----------------------------------------------------------------------------
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
 namespace conduit
 {
 
 
-//============================================
-// DataArray
-//============================================
+//-----------------------------------------------------------------------------
+//
+// -- conduit::DataArray public methods --
+//
+//-----------------------------------------------------------------------------
 
+//---------------------------------------------------------------------------//
+template <typename T> 
+DataArray<T>::DataArray()
+: m_data(NULL),
+  m_dtype(DataType::Objects::empty())
+{} 
 
-//============================================
+//---------------------------------------------------------------------------//
 template <typename T> 
 DataArray<T>::DataArray(void *data,const DataType &dtype)
 : m_data(data),
   m_dtype(dtype)
 {}
 
-//============================================
+//---------------------------------------------------------------------------//
 template <typename T> 
 DataArray<T>::DataArray(const void *data,const DataType &dtype)
 : m_data(const_cast<void*>(data)),
@@ -39,19 +60,19 @@ DataArray<T>::DataArray(const void *data,const DataType &dtype)
 {}
 
 
-//============================================ 
+//---------------------------------------------------------------------------// 
 template <typename T> 
 DataArray<T>::DataArray(const DataArray<T> &array)
 : m_data(array.m_data),
   m_dtype(array.m_dtype)
 {}
 
-//============================================
+//---------------------------------------------------------------------------//
 template <typename T> 
 DataArray<T>::~DataArray()
 {} // all data is external
 
-//============================================
+//---------------------------------------------------------------------------//
 template <typename T> 
 DataArray<T> &
 DataArray<T>::operator=(const DataArray<T> &array)
@@ -64,27 +85,23 @@ DataArray<T>::operator=(const DataArray<T> &array)
     return *this;
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 template <typename T> 
 T &
 DataArray<T>::element(index_t idx)
 { 
-    //    std::cout << "[" << idx << "] = idx "
-    //              << m_dtype.element_index(idx) << std::endl;
-    // TODO: endian logic
     return (*(T*)(element_pointer(idx)));
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 template <typename T> 
 T &             
 DataArray<T>::element(index_t idx) const 
 { 
-    // TODO: endian logic
     return (*(T*)(element_pointer(idx)));
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 template <typename T> 
 std::string             
 DataArray<T>::to_json() const 
@@ -94,7 +111,7 @@ DataArray<T>::to_json() const
     return oss.str(); 
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 template <typename T> 
 void            
 DataArray<T>::to_json(std::ostringstream &oss) const 
@@ -134,7 +151,7 @@ DataArray<T>::to_json(std::ostringstream &oss) const
 }
 
 
-//============================================
+//---------------------------------------------------------------------------//
 template <typename T> 
 void            
 DataArray<T>::set(const int8 *values, index_t num_elements)
@@ -145,7 +162,7 @@ DataArray<T>::set(const int8 *values, index_t num_elements)
     }
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 template <typename T> 
 void            
 DataArray<T>::set(const  int16 *values, index_t num_elements)
@@ -156,7 +173,7 @@ DataArray<T>::set(const  int16 *values, index_t num_elements)
     }
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 template <typename T> 
 void            
 DataArray<T>::set(const int32 *values, index_t num_elements)
@@ -167,7 +184,7 @@ DataArray<T>::set(const int32 *values, index_t num_elements)
     }
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 template <typename T> 
 void            
 DataArray<T>::set(const  int64 *values, index_t num_elements)
@@ -178,7 +195,7 @@ DataArray<T>::set(const  int64 *values, index_t num_elements)
     }
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 template <typename T> 
 void            
 DataArray<T>::set(const  uint8 *values, index_t num_elements)
@@ -189,7 +206,7 @@ DataArray<T>::set(const  uint8 *values, index_t num_elements)
     }
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 template <typename T> 
 void            
 DataArray<T>::set(const  uint16 *values, index_t num_elements)
@@ -200,7 +217,7 @@ DataArray<T>::set(const  uint16 *values, index_t num_elements)
     }
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 template <typename T> 
 void            
 DataArray<T>::set(const uint32 *values, index_t num_elements)
@@ -211,6 +228,7 @@ DataArray<T>::set(const uint32 *values, index_t num_elements)
     }
 }
 
+//---------------------------------------------------------------------------//
 template <typename T> 
 void            
 DataArray<T>::set(const uint64 *values, index_t num_elements)
@@ -221,7 +239,7 @@ DataArray<T>::set(const uint64 *values, index_t num_elements)
     }
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 template <typename T> 
 void            
 DataArray<T>::set(const float32 *values, index_t num_elements)
@@ -232,7 +250,7 @@ DataArray<T>::set(const float32 *values, index_t num_elements)
     }
 }
 
-//============================================
+//---------------------------------------------------------------------------//
 template <typename T> 
 void            
 DataArray<T>::set(const float64 *values, index_t num_elements)
@@ -242,8 +260,7 @@ DataArray<T>::set(const float64 *values, index_t num_elements)
         this->element(i) = (T)values[i];
     }
 }
-
-//============================================
+//---------------------------------------------------------------------------//
 template <typename T> 
 void            
 DataArray<T>::compact_elements_to(uint8 *data) const
@@ -262,8 +279,11 @@ DataArray<T>::compact_elements_to(uint8 *data) const
 }
 
 
-
-/// Use explicit temp inst to generate the instances we need
+//-----------------------------------------------------------------------------
+//
+// -- conduit::DataArray explicit instantiations for supported array types --
+//
+//-----------------------------------------------------------------------------
 template class DataArray<int8>;
 template class DataArray<int16>;
 template class DataArray<int32>;
@@ -279,3 +299,8 @@ template class DataArray<float64>;
 
 
 };
+
+//-----------------------------------------------------------------------------
+// -- end conduit:: --
+//-----------------------------------------------------------------------------
+
