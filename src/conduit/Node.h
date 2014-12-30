@@ -1203,7 +1203,7 @@ public:
     /// access child node via a path (equivalent to fetch via path)
     Node             &operator[](const std::string &path);
     /// access child node via index (equivalent to fetch via index)
-    Node             &operator[](const index_t idx);
+    Node             &operator[](index_t idx);
 
     /// return the number of children (list and object interfaces)
     index_t number_of_children() const;
