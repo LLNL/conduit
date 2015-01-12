@@ -53,7 +53,7 @@
 // #define optional i/o features
 //
 //-----------------------------------------------------------------------------
-#define CONDUIT_IO_ENABLE_SILO @SILO_FOUND@
+#cmakedefine CONDUIT_IO_ENABLE_SILO @SILO_FOUND@
 
 
 
