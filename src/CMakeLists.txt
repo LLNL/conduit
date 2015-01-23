@@ -40,25 +40,25 @@ include(CMake/BasicChecks.cmake)
 ################################
 include(CMake/Setup3rdParty.cmake)
 
+
+
 ################################
-# Project Wide Includes
+# Add the conduit lib
 ################################
-# add conduit as an include dirs so units tests have access to the headers
+# add conduit include dirs so units tests have access to the headers
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/conduit 
-                    ${CMAKE_CURRENT_BINARY_DIR}/conduit )
-
-
-################################
-# Add the main lib
-################################
+                    ${CMAKE_CURRENT_BINARY_DIR}/conduit)
 add_subdirectory(conduit)
 
 ################################
 # Add the conduit-io lib 
 ################################
-add_subdirectory(conduit_io)
+# add conduit_io include dirs so units tests have access to the headers
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/conduit_io
-                    ${CMAKE_CURRENT_BINARY_DIR}/conduit_io )
+                    ${CMAKE_CURRENT_BINARY_DIR}/conduit_io)
+add_subdirectory(conduit_io)
+
+
 
 
 ################################

@@ -24,6 +24,7 @@
 #include "Conduit_IO_Exports.h"
 
 #include "conduit.h"
+#include "Conduit_IO_Config.h"
 
 // include optional libs
 #ifdef CONDUIT_IO_ENABLE_SILO

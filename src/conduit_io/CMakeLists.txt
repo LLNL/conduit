@@ -15,10 +15,20 @@
 
 ENABLE_WARNINGS()
 
+if(SILO_FOUND)
+  SET(CONDUIT_IO_ENABLE_SILO TRUE)
+endif()
+
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_IO_Config.h.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/Conduit_IO_Config.h")
+
 #
 # Specify all headers
 #            
-set(conduit_io_headers conduit_io.h  Conduit_IO_Exports.h)
+set(conduit_io_headers 
+    conduit_io.h 
+    Conduit_IO_Exports.h
+    ${CMAKE_CURRENT_BINARY_DIR}/Conduit_IO_Config.h)
 
 #
 # Specify all sources
