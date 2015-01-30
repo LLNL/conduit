@@ -162,6 +162,20 @@ TEST(conduit_json, json_inline_array)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_json, json_bool)
+{
+    
+    std::string pure_json = "{\"value\": true}";
+    Generator g(pure_json,"json");
+    Node n(g,true);
+    n.print_detailed();
+    EXPECT_EQ(n["value"].dtype().id(),DataType::UINT8_T);
+
+}
+
+
+
+//-----------------------------------------------------------------------------
 TEST(conduit_json, load_from_json)
 {
     

@@ -645,13 +645,14 @@ walk_pure_json_schema(Node  *node,
     }
     else if(jvalue.IsBool())
     {
+        // we store bools as uint8s
         if(jvalue.IsTrue())
         {
-            node->set(true);
+            node->set((uint8)1);
         }
         else
         {
-            node->set(false);
+            node->set((uint8)0);
         }
     }
     else if(jvalue.IsNumber())

@@ -112,7 +112,7 @@ json_sanitize(const std::string &json)
     /// but posix regs are greedy & it was hard for me to construct
     /// a viable regex, vs those that support non-greedy (Python + Perl style regex)
     /// 
-    /// Here are regexs I was able to us in python:
+    /// Here are regexs I was able to use in python:
     //  *comments*
     //     Remove '//' to end of line
     //     regex: \/\/.*\?n
@@ -180,8 +180,18 @@ json_sanitize(const std::string &json)
                     else
                     {
                         in_id = false;
-                        /// emit cur_id
-                        res += "\"" + cur_id + "\"";
+                        /// check for true & false which we need to support in json
+                        if( !(cur_id == "true" || cur_id == "false"))
+                        {
+                            /// emit cur_id
+                            res += "\"" + cur_id + "\"";
+                        }
+                        else
+                        {
+                            /// don't escape true or false
+                            res +=  cur_id;
+                        }
+                        
                         cur_id = "";
                     }
                     // we will also emit this char
