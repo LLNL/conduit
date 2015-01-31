@@ -1,6 +1,11 @@
 Licenses for Third Party Software
 ----------------------------------
 
+Conduit License 
+----------------
+
+.. include:: ../../../LICENSE
+
 Third Party Builtin Libraries
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
