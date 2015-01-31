@@ -85,7 +85,7 @@ set(IO_TESTS conduit_io_smoke)
 ################################
 set(PYTHON_GPREF_TOOLS_TESTS gpref_smoke)
 set(PYTHON_TESTS numpy_smoke)
-set(MPI_TESTS conduit_mpi)
+set(MPI_TESTS mpi_smoke)
 set(SILO_TESTS silo_smoke conduit_io_silo)
 
 ################################
