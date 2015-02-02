@@ -108,11 +108,11 @@ json_to_numeric_dtype(const rapidjson::Value &jvalue)
 
 //---------------------------------------------------------------------------//
 index_t
-check_homogenus_json_array(const rapidjson::Value &jvalue)
+check_homogenous_json_array(const rapidjson::Value &jvalue)
 {
     // check for homogenous array of ints or floats
     // promote to float64 as the most wide type
-    // (this is heruistic decison)
+    // (this is a heuristic decision)
 
     if(jvalue.Size() == 0)
         return DataType::EMPTY_T;
@@ -494,7 +494,7 @@ parse_inline_value(const rapidjson::Value &jvalue,
     if(jvalue.IsArray())
     {
         // we assume a "value" is a leaf or list of compatiable leafs
-        index_t hval_type = check_homogenus_json_array(jvalue);
+        index_t hval_type = check_homogenous_json_array(jvalue);
         
         if(node.dtype().number_of_elements() < jvalue.Size())
         {
@@ -641,7 +641,7 @@ walk_pure_json_schema(Node  *node,
     // List case 
     else if (jvalue.IsArray()) 
     {
-        index_t hval_type = check_homogenus_json_array(jvalue);
+        index_t hval_type = check_homogenous_json_array(jvalue);
         if(hval_type == DataType::INT64_T)
         {
             std::vector<int64> res;
