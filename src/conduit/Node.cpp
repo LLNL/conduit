@@ -70,7 +70,7 @@
 
 #if !defined(CONDUIT_PLATFORM_WINDOWS)
 //
-// mmap interface not avalaibe on windows
+// mmap interface not available on windows
 // 
 #include <sys/mman.h>
 #include <unistd.h>
@@ -149,11 +149,11 @@ Node::Node(const Generator &gen,
     init_defaults();
     if(external)
     {
-        gen.walk(*this);
+        gen.walk_external(*this);
     }
     else
     {
-        gen.walk(*this,false);
+        gen.walk(*this);
     }
 
 }
@@ -168,11 +168,11 @@ Node::Node(const std::string &json_schema,
 
     if(external)
     {
-        g.walk(*this);
+        g.walk_external(*this);
     }
     else
     {
-        g.walk(*this,false);
+        g.walk(*this);
     }
 
 }
@@ -194,8 +194,7 @@ Node::Node(const Schema &schema,
     Generator g(json_schema,data);
     if(external)
     {
-        /// TODO: External logic
-        g.walk(*this);
+        g.walk_external(*this);
     }
     else
     {
@@ -238,15 +237,14 @@ Node::Node(const DataType &dtype,
 void
 Node::generate(const Generator &gen)
 {
-    gen.walk(*this,false);
+    gen.walk(*this);
 }
 
 //---------------------------------------------------------------------------//
 void
 Node::generate_external(const Generator &gen)
 {
-    /// TODO: generate external
-    gen.walk(*this);
+    gen.walk_external(*this);
 }
 
 //---------------------------------------------------------------------------//
@@ -2958,7 +2956,7 @@ Node::compact_to(Node &n_dest) const
     
     uint8 *n_dest_data = (uint8*)n_dest.m_data;
     compact_to(n_dest_data,0);
-    n_dest.m_data = NULL; // TODO evil, brian doesn't like this.
+    n_dest.m_data = NULL; // TODO evil, Brian doesn't like this.
 
     // need node structure
     walk_schema(&n_dest,n_dest.m_schema,n_dest_data);

@@ -227,7 +227,7 @@ void CONDUIT_IO_API silo_load(DBfile *dbfile,
 
     Generator node_gen(schema, data);
     /// gen copy 
-    node_gen.walk(node,false);
+    node_gen.walk(node);
     
     delete [] schema;
     delete [] data;

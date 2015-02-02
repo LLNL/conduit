@@ -113,7 +113,8 @@ public:
     void walk(Schema &sdest) const;
 
     /// parse a json schema to a Node object.
-    void walk(Node &ndest,bool external=true)   const;
+    void walk(Node &ndest) const;
+    void walk_external(Node &ndest) const;
 
 private:
 //-----------------------------------------------------------------------------
