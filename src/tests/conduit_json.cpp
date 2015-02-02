@@ -87,7 +87,7 @@ TEST(conduit_json, to_json_2)
     Node n;
     n["a"] = a_val;
     n["b"] = b_val;
-    n["arr"].set(DataType::Arrays::uint32(5),arr);
+    n["arr"].set_external(DataType::Arrays::uint32(5),arr);
 
 
     std::string pure_json = n.to_json(false);

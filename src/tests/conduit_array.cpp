@@ -85,7 +85,7 @@ TEST(conduit_array, array_stride_int8)
                    sizeof(int8),
                    Endianness::DEFAULT_T);
     Node n;
-    n["value"].set(arr_t,&data[0]);
+    n["value"].set_external(arr_t,&data[0]);
 
 
     int8_array arr = n["value"].as_int8_array();

@@ -238,7 +238,7 @@ Node::Node(const DataType &dtype,
 void
 Node::generate(const Generator &gen)
 {
-    gen.walk(*this);
+    gen.walk(*this,false);
 }
 
 //---------------------------------------------------------------------------//
@@ -325,7 +325,7 @@ Node::load(const Schema &schema,
     m_alloced = false;
     
     m_schema->set(schema);
-    walk_schema(this,m_schema,m_data,false);
+    walk_schema(this,m_schema,m_data);
 
     ///
     /// TODO: Design Issue
@@ -387,7 +387,7 @@ Node::mmap(const Schema &schema,
     m_mmaped = false;
     
     m_schema->set(schema);
-    walk_schema(this,m_schema,m_data,false);
+    walk_schema(this,m_schema,m_data);
 
     ///
     /// TODO: Design Issue
@@ -440,31 +440,29 @@ Node::set(const Schema &schema)
     // allocate data
     allocate(m_schema->total_bytes());
     // call walk w/ internal data pointer
-    walk_schema(this,m_schema,m_data,false);
+    walk_schema(this,m_schema,m_data);
 }
 
 //---------------------------------------------------------------------------//
 void
 Node::set(const Schema &schema, void *data)
 {
-    ///
-    /// TODO: SET_SEMANTICS this must obey copy semantics...
-    ///
-    m_schema->set(schema);
-    walk_schema(this,m_schema,data,true);
+    release();
+    m_schema->set(schema);   
+    allocate(m_schema->total_bytes());
+    memcpy(m_data, data, m_schema->total_bytes());
+    walk_schema(this,m_schema,data);
 }
 
 //---------------------------------------------------------------------------//
 void
 Node::set(const DataType &dtype, void *data)
 {
-    ///
-    /// TODO: SET_SEMANTICS this must obey copy semantics...
-    ///
     release();
-    m_alloced = false;
-    m_data    = data;
     m_schema->set(dtype);
+    allocate(m_schema->total_bytes());
+    memcpy(m_data, data, m_schema->total_bytes());
+    walk_schema(this,m_schema,data);
 }
 
 
@@ -1607,7 +1605,7 @@ void
 Node::set_external(const Schema &schema, void *data)
 {
     m_schema->set(schema);
-    walk_schema(this,m_schema,data,true);
+    walk_schema(this,m_schema,data);
 }
 
 //---------------------------------------------------------------------------//
@@ -2963,7 +2961,7 @@ Node::compact_to(Node &n_dest) const
     n_dest.m_data = NULL; // TODO evil, brian doesn't like this.
 
     // need node structure
-    walk_schema(&n_dest,n_dest.m_schema,n_dest_data,false);
+    walk_schema(&n_dest,n_dest.m_schema,n_dest_data);
 
 
 }
@@ -3756,8 +3754,7 @@ Node::init_defaults()
 void 
 Node::walk_schema(Node   *node, 
                   Schema *schema,
-                  void   *data,
-                  bool    copy)
+                  void   *data)
 {
     // we can have an object, list, or leaf
     
@@ -3771,7 +3768,7 @@ Node::walk_schema(Node   *node,
             Node *curr_node = new Node();
             curr_node->set_schema_pointer(curr_schema);
             curr_node->set_parent(node);
-            walk_schema(curr_node,curr_schema,data,copy);
+            walk_schema(curr_node,curr_schema,data);
             node->append_node_pointer(curr_node);
         }                   
     }
@@ -3784,15 +3781,15 @@ Node::walk_schema(Node   *node,
             Node *curr_node = new Node();
             curr_node->set_schema_pointer(curr_schema);
             curr_node->set_parent(node);
-            walk_schema(curr_node,curr_schema,data,copy);
+            walk_schema(curr_node,curr_schema,data);
             node->append_node_pointer(curr_node);
         }
     }
     else
     {
-        // link the current node to the schema
-        node->set_schema_pointer(schema);
-        node->set_data_pointer(data);
+            // link the current node to the schema
+            node->set_schema_pointer(schema);
+            node->set_data_pointer(data);
     } 
 }
 
@@ -3828,7 +3825,7 @@ Node::set_node_using_schema_pointer(const Node &node, Schema *schema)
                 m_children.push_back(child);
             }
         }
-        else
+        else // leaf case
         {
             if(this->dtype().is_compatible(node.dtype()))
             {
@@ -3836,7 +3833,7 @@ Node::set_node_using_schema_pointer(const Node &node, Schema *schema)
                        node.element_pointer(0), 
                        m_schema->total_bytes());
             }
-            else
+            else // not compatible
             {
                 ///
                 /// TODO: We are doing a copy here, should we also compact?

@@ -1480,8 +1480,7 @@ private:
     // work horse for complex node hierarchical setup
     static void      walk_schema(Node   *node,
                                  Schema *schema,
-                                 void   *data,
-                                 bool    copy_data);
+                                 void   *data);
     ///
     /// TODO: This method is ugly, currently only used by:
     ///  Node::set(const Node &n)
