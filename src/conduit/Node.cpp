@@ -1597,11 +1597,20 @@ Node::set_path(const std::string &path,
 // -- set_external for generic types --
 //-----------------------------------------------------------------------------
 
+//---------------------------------------------------------------------------//
+void
+Node::set_external(Node &node)
+{
+    reset();
+    m_schema->set(node.schema());
+    mirror_node(this,m_schema,&node);
+}
 
 //---------------------------------------------------------------------------//
 void
 Node::set_external(const Schema &schema, void *data)
 {
+    reset();
     m_schema->set(schema);
     walk_schema(this,m_schema,data);
 }
@@ -1610,8 +1619,7 @@ Node::set_external(const Schema &schema, void *data)
 void
 Node::set_external(const DataType &dtype, void *data)
 {
-    release();
-    m_alloced = false;
+    reset();
     m_data    = data;
     m_schema->set(dtype);
 }
@@ -3790,6 +3798,52 @@ Node::walk_schema(Node   *node,
             node->set_data_pointer(data);
     } 
 }
+
+//---------------------------------------------------------------------------//
+void 
+Node::mirror_node(Node   *node,
+                  Schema *schema,
+                  Node   *src)
+{
+    // we can have an object, list, or leaf
+    
+    if(schema->dtype().id() == DataType::OBJECT_T)
+    {
+        for(index_t i=0;i<schema->children().size();i++)
+        {
+    
+            std::string curr_name = schema->object_order()[i];
+            Schema *curr_schema   = schema->fetch_pointer(curr_name);
+            Node *curr_node = new Node();
+            Node *curr_src = src->child_pointer(i);
+            curr_node->set_schema_pointer(curr_schema);
+            curr_node->set_parent(node);
+            mirror_node(curr_node,curr_schema,curr_src);
+            node->append_node_pointer(curr_node);
+        }                   
+    }
+    else if(schema->dtype().id() == DataType::LIST_T)
+    {
+        index_t num_entries = schema->number_of_children();
+        for(index_t i=0;i<num_entries;i++)
+        {
+            Schema *curr_schema = schema->child_pointer(i);
+            Node *curr_node = new Node();
+            Node *curr_src = src->child_pointer(i);
+            curr_node->set_schema_pointer(curr_schema);
+            curr_node->set_parent(node);
+            mirror_node(curr_node,curr_schema,curr_src);
+            node->append_node_pointer(curr_node);
+        }
+    }
+    else
+    {
+            // link the current node to the schema
+            node->set_schema_pointer(schema);
+            node->set_data_pointer(src->m_data);
+    } 
+}
+
 
 //---------------------------------------------------------------------------//
 void

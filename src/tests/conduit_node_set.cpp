@@ -2245,4 +2245,59 @@ TEST(conduit_node_set, set_float_ptr_default_types)
 
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_external_node)
+{
+    float32  f32av[4] = {-0.8, -1.6, -3.2, -6.4};
+    float64  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
 
+    Node nsrc;
+    // float32
+    nsrc.set_path_external("two/lvl",f32av,4);
+    nsrc.schema().print();
+    nsrc.print();
+
+    
+    Node n;
+    n.set_external(nsrc);
+    
+    EXPECT_TRUE(n.has_path("two"));
+    EXPECT_TRUE(n["two"].has_path("lvl"));
+    EXPECT_EQ(n["two"]["lvl"].total_bytes(),4*4);
+    EXPECT_EQ(n["two"]["lvl"].dtype().element_bytes(),4);
+    float32 *f32av_ptr = n["two/lvl"].as_float32_ptr();
+    for(index_t i=0;i<4;i++)
+    {
+        EXPECT_NEAR(f32av_ptr[i],f32av[i],0.001);
+        // set_external(...) semantics imply a ref -- mem addys should match
+        EXPECT_EQ(&f32av_ptr[i],&f32av[i]);
+    }
+    EXPECT_NEAR(f32av_ptr[3],-6.4,0.001);
+    f32av_ptr[1] = -110.1;
+    EXPECT_NEAR(f32av[1],-110.1,0.001);
+    n.print();
+    
+    
+    // float64
+    nsrc.set_path_external("two/lvl",f64av,4);
+    nsrc.schema().print();
+    nsrc.print();
+    
+    n.set_external(nsrc);
+    n.schema().print();
+    EXPECT_TRUE(n.has_path("two"));
+    EXPECT_TRUE(n["two"].has_path("lvl"));
+    EXPECT_EQ(n["two"]["lvl"].total_bytes(),4*8);
+    EXPECT_EQ(n["two"]["lvl"].dtype().element_bytes(),8);
+    float64 *f64av_ptr = n["two/lvl"].as_float64_ptr();
+    for(index_t i=0;i<4;i++)
+    {
+        EXPECT_NEAR(f64av_ptr[i],f64av[i],0.001);
+        // set_external(...) semantics imply a ref -- mem addys should match
+        EXPECT_EQ(&f64av_ptr[i],&f64av[i]);
+    }
+    EXPECT_NEAR(f64av_ptr[3],-6.4,0.001);
+    f64av_ptr[1] = -110.1;
+    EXPECT_NEAR(f64av[1],-110.1,0.001);
+    n.print();
+}

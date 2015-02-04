@@ -646,7 +646,7 @@ public:
 // -- set for generic types --
 //-----------------------------------------------------------------------------
 
-    /// TODO: set_external(const Node &n)
+    void    set_external(Node &n);
     void    set_external(const Schema &schema, void *data);
     void    set_external(const DataType &dtype, void *data);
 
@@ -1481,6 +1481,11 @@ private:
     static void      walk_schema(Node   *node,
                                  Schema *schema,
                                  void   *data);
+
+    static void      mirror_node(Node   *node,
+                                 Schema *schema,
+                                 Node   *src);
+
     ///
     /// TODO: This method is ugly, currently only used by:
     ///  Node::set(const Node &n)
