@@ -3887,11 +3887,7 @@ Node::set_node_using_schema_pointer(const Node &node, Schema *schema)
             }
             else // not compatible
             {
-                ///
-                /// TODO: We are doing a copy here, should we also compact?
-                ///
-                init(node.dtype());
-                memcpy(m_data, node.m_data, m_schema->total_bytes());
+                node.compact_to(*this);
             }
         }
     }
