@@ -106,3 +106,9 @@ add_subdirectory(docs)
 ################################
 add_subdirectory(tests)
 
+
+################################
+# Create CMake importable 
+# exports for all of our targets
+################################
+install(EXPORT conduit DESTINATION lib/cmake)

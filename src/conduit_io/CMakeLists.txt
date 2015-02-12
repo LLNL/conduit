@@ -97,7 +97,7 @@ endif()
 
 install(FILES ${conduit_io_headers} DESTINATION include)
 install(TARGETS conduit_io
-  EXPORT conduit-io-lib
+  EXPORT conduit
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
 )

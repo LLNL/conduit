@@ -100,8 +100,7 @@ add_library(conduit SHARED ${conduit_sources} ${conduit_headers})
 
 install(FILES ${conduit_headers} DESTINATION include)
 install(TARGETS conduit
-  EXPORT conduit-lib
+  EXPORT conduit
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
 )
-
