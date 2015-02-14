@@ -50,24 +50,24 @@
 //-----------------------------------------------------------------------------
 
 
-#define SIZEOF_CHAR 1
-#define SIZEOF_BYTE 1
+#define CONDUIT_SIZEOF_CHAR 1
+#define CONDUIT_SIZEOF_BYTE 1
 
 //-----------------------------------------------------------------------------
 // byte widths of native types
 //-----------------------------------------------------------------------------
 
-#define SIZEOF_BOOL          @SIZEOF_BOOLEAN@
-#define SIZEOF_SHORT         @SIZEOF_SHORT@
-#define SIZEOF_INT           @SIZEOF_INT@
-#define SIZEOF_LONG          @SIZEOF_LONG@
-#define SIZEOF_LONG_LONG     @SIZEOF_LONG_LONG@
-#define SIZEOF_FLOAT         @SIZEOF_FLOAT@
-#define SIZEOF_DOUBLE        @SIZEOF_DOUBLE@
-#define SIZEOF_LONG_DOUBLE   @SIZEOF_LONG_DOUBLE@
-#define SIZEOF_PY_INTPTR_T   @SIZEOF_PY_INTPTR_T@
-#define HAVE_LONG_LONG       @HAVE_LONG_LONG@
-#define HAVE_UINTPTR_T       @HAVE_UINTPTR_T@
+#define CONDUIT_SIZEOF_BOOL          @SIZEOF_BOOLEAN@
+#define CONDUIT_SIZEOF_SHORT         @SIZEOF_SHORT@
+#define CONDUIT_SIZEOF_INT           @SIZEOF_INT@
+#define CONDUIT_SIZEOF_LONG          @SIZEOF_LONG@
+#define CONDUIT_SIZEOF_LONG_LONG     @SIZEOF_LONG_LONG@
+#define CONDUIT_SIZEOF_FLOAT         @SIZEOF_FLOAT@
+#define CONDUIT_SIZEOF_DOUBLE        @SIZEOF_DOUBLE@
+#define CONDUIT_SIZEOF_LONG_DOUBLE   @SIZEOF_LONG_DOUBLE@
+#define CONDUIT_SIZEOF_PY_INTPTR_T   @SIZEOF_PY_INTPTR_T@
+#define CONDUIT_HAVE_LONG_LONG       @HAVE_LONG_LONG@
+#define CONDUIT_HAVE_UINTPTR_T       @HAVE_UINTPTR_T@
 
 //-----------------------------------------------------------------------------
 //
