@@ -16,14 +16,14 @@
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
 # 
-# • Redistributions of source code must retain the above copyright notice, 
+# * Redistributions of source code must retain the above copyright notice, 
 #   this list of conditions and the disclaimer below.
 # 
-# • Redistributions in binary form must reproduce the above copyright notice,
+# * Redistributions in binary form must reproduce the above copyright notice,
 #   this list of conditions and the disclaimer (as noted below) in the
 #   documentation and/or other materials provided with the distribution.
 # 
-# • Neither the name of the LLNS/LLNL nor the names of its contributors may
+# * Neither the name of the LLNS/LLNL nor the names of its contributors may
 #   be used to endorse or promote products derived from this software without
 #   specific prior written permission.
 # 
@@ -37,78 +37,25 @@
 # OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
 # HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
 # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-# 
 # IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
+"""
+ file: test_basic.py
+ description: Unit tests for basic conduit python module interface.
+
+"""
+
+import unittest
+
+import conduit
+
+class Test_Condut_Basic(unittest.TestCase):
+    def test_about(self):
+        conduit.about()
+
+if __name__ == '__main__':
+    unittest.main()
 
 
-################################
-# Add our library
-################################
-
-ENABLE_WARNINGS()
-
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_Config.h.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h")
-#
-# Specify all headers
-#            
-set(conduit_headers
-    Bitwidth_Style_Types.h
-    DataArray.h
-    Endianness.h
-    Node.h
-    conduit.h
-    Core.h
-    DataType.h
-    Generator.h
-    Error.h
-    NodeIterator.h
-    Schema.h
-    Utils.h
-    Conduit_Exports.h
-    ${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h
-    )
-
-#
-# Specify all sources
-#
-set(conduit_sources
-    Core.cpp
-    Error.cpp
-    Endianness.cpp 
-    DataType.cpp
-    DataArray.cpp
-    Generator.cpp
-    Node.cpp
-    NodeIterator.cpp
-    Schema.cpp
-    Utils.cpp
-    )
-
-#
-# Note: headers are added here so they show up in project file generators
-# (such as xcode, eclipse, etc)
-#
-add_library(conduit SHARED ${conduit_sources} ${conduit_headers})
-
-################################
-# Add python wrappers if python
-# support was selected
-################################
-if(ENABLE_PYTHON)
-    add_subdirectory(python)
-endif()
-
-##################################
-# Install Targets for conduit lib
-##################################
-
-install(FILES ${conduit_headers} DESTINATION include)
-install(TARGETS conduit
-  EXPORT conduit
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-)

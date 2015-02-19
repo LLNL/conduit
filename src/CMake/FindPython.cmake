@@ -44,13 +44,15 @@
 ###############################################################################
 
 # Find the interpreter first
+set(PYTHON_EXECUTABLE ${PYTHON_DIR}/bin/python)
+
 find_package(PythonInterp REQUIRED)
 if(PYTHONINTERP_FOUND)
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
                                 "import sys;from distutils.sysconfig import get_python_inc;sys.stdout.write(get_python_inc())"
                         OUTPUT_VARIABLE PYTHON_INCLUDE_DIR
                         ERROR_VARIABLE ERROR_FINDING_INCLUDES)
-        
+        MESSAGE(STATUS "PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE}")
         get_filename_component(PYTHON_BIN_DIR ${PYTHON_EXECUTABLE} PATH)
         set(PYTHON_GLOB_TEST "${PYTHON_BIN_DIR}/../lib/libpython*")
         FILE(GLOB PYTHON_GLOB_RESULT ${PYTHON_GLOB_TEST})
@@ -58,3 +60,49 @@ if(PYTHONINTERP_FOUND)
         MESSAGE(STATUS "{PythonLibs from PythonInterp} using: PYTHON_LIBRARY=${PYTHON_LIBRARY}")
         find_package(PythonLibs)
 endif()
+
+
+FUNCTION(PYTHON_ADD_DISTUTILS_SETUP target_name dest_dir setup_file)
+MESSAGE(STATUS "Configuring python distutils setup: ${target_name}")
+    add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/build
+            COMMAND ${PYTHON_EXECUTABLE} ${setup_file} -v
+            build
+            --build-base=${CMAKE_CURRENT_BINARY_DIR}/build
+            install
+            --install-purelib=${CMAKE_BINARY_DIR}/${dest_dir}
+            DEPENDS  ${setup_file} ${ARGN}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+    add_custom_target(${target_name} ALL DEPENDS 
+                      ${CMAKE_CURRENT_BINARY_DIR}/build)
+    # also use distutils for the install ...
+    INSTALL(CODE
+        "
+        EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMAND ${PYTHON_EXECUTABLE} ${setup_file} -v
+                build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/build_install
+                install --install-purelib=\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${dest_dir}
+            OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
+        MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
+        ")
+
+ENDFUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
+
+FUNCTION(PYTHON_ADD_HYBRID_MODULE target_name dest_dir py_name setup_file py_sources)
+    MESSAGE(STATUS "Configuring hybrid python module: ${target_name}")
+    PYTHON_ADD_DISTUTILS_SETUP("${target_name}_py_setup"
+                               ${dest_dir}
+                               ${setup_file}
+                               ${py_sources})
+    PYTHON_ADD_MODULE(${target_name} ${ARGN})
+    SET_TARGET_PROPERTIES(${target_name} PROPERTIES
+                                         LIBRARY_OUTPUT_DIRECTORY   
+                             ${CMAKE_BINARY_DIR}/${dest_dir}/${py_name})
+
+    install(TARGETS ${target_name}
+            EXPORT  conduit
+            LIBRARY DESTINATION ${dest_dir}/${py_name}
+            ARCHIVE DESTINATION ${dest_dir}/${py_name}
+    )
+
+ENDFUNCTION(PYTHON_ADD_HYBRID_MODULE)

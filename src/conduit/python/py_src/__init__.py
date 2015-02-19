@@ -43,53 +43,13 @@
 # 
 ###############################################################################
 
-################################
-# Standard CMake Options
-################################
+###############################################################################
+# file: __init__.py
+# Purpose: Main init for the conduit module.
+###############################################################################
+
+from conduit_python import *
 
 
-# Fail if someone tries to config an in-source build.
-if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
-   message(FATAL_ERROR "In-source builds are not supported. Please remove CMakeCache.txt from the 'src' dir and configure an out-of-source build in another directory.")
-endif()
 
-# enable creation of compile_commands.json
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-
-macro(ENABLE_WARNINGS)
-    # set the warning levels we want to abide by
-    if(CMAKE_BUILD_TOOL MATCHES "(msdev|devenv|nmake)")
-        add_definitions(/W2)
-    else()
-        if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR
-            "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-            # using clang or gcc
-            add_definitions(-Wall -Wextra)
-        endif()
-    endif()
-endmacro()
-
-################################
-# RPath Settings
-################################
-
-# use, i.e. don't skip the full RPATH for the build tree
-SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
-
-# when building, don't use the install RPATH already
-# (but later on when installing)
-set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib")
-
-# add the automatically determined parts of the RPATH
-# which point to directories outside the build tree to the install RPATH
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-# the RPATH to be used when installing, but only if it's not a system directory
-list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
-if("${isSystemDir}" STREQUAL "-1")
-   set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-endif()
 
