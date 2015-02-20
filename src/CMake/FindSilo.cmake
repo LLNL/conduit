@@ -86,7 +86,7 @@ find_library(SILO_LIBS NAMES siloh5
 #             
 
 #
-# libjson is part of the silo build
+# if json support is enabled, libjson is part of the silo build
 #
 find_library(SILO_JSON_LIBS NAMES json
              PATHS ${SILO_DIR}/json/lib/
@@ -113,7 +113,10 @@ find_library(SZIP_LIBS NAMES sz
              NO_CMAKE_SYSTEM_PATH)
 
 
-set(SILO_LIBRARIES  ${SILO_LIBS} ${SILO_JSON_LIBS} ${HDF5_LIBS} ${SZIP_LIBS})
+set(SILO_LIBRARIES  ${SILO_LIBS} ${HDF5_LIBS} ${SZIP_LIBS})
+if(${SILO_JSON_LIBS})
+    list(APPEND SILO_LIBRARIES ${SILO_JSON_LIBS})
+endif()
 set(SILO_INCLUDE_DIRS ${SILO_INCLUDE_DIR} )
 
 

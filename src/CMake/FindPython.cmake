@@ -52,8 +52,13 @@ if(PYTHONINTERP_FOUND)
                         OUTPUT_VARIABLE PYTHON_INCLUDE_DIR
                         ERROR_VARIABLE ERROR_FINDING_INCLUDES)
         MESSAGE(STATUS "PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE}")
-        get_filename_component(PYTHON_BIN_DIR ${PYTHON_EXECUTABLE} PATH)
-        set(PYTHON_GLOB_TEST "${PYTHON_BIN_DIR}/../lib/libpython*")
+
+        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
+                                "import sys;from distutils.sysconfig import get_python_lib;sys.stdout.write(get_python_lib())"
+                        OUTPUT_VARIABLE PYTHON_SITE_PACKAGES_DIR
+                        ERROR_VARIABLE ERROR_FINDING_INCLUDES)
+        MESSAGE(STATUS "PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR}")
+        set(PYTHON_GLOB_TEST "${PYTHON_SITE_PACKAGES_DIR}/../../libpython*")
         FILE(GLOB PYTHON_GLOB_RESULT ${PYTHON_GLOB_TEST})
         get_filename_component(PYTHON_LIBRARY "${PYTHON_GLOB_RESULT}" ABSOLUTE)
         MESSAGE(STATUS "{PythonLibs from PythonInterp} using: PYTHON_LIBRARY=${PYTHON_LIBRARY}")
