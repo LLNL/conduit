@@ -47,13 +47,47 @@
 
 """
 
+import sys
+sys.path.append('//g/g22/ryujin1/conduit/conduit/build-debug/python-modules')
 import unittest
 
 import conduit
+Node = conduit.Node.Node
+
+from numpy import *
 
 class Test_Condut_Basic(unittest.TestCase):
     def test_about(self):
         conduit.about()
+
+class Test_Conduit_Node(unittest.TestCase):
+    def test_simple(self):
+        a_val = uint32(10)
+        b_val = uint32(20)
+        c_val = float64(30.0)
+
+        n = Node()
+        n['a'] = a_val
+        n['b'] = b_val
+        n['c'] = c_val
+  
+        self.assertTrue(n['a'] == a_val)
+        self.assertTrue(n['b'] == b_val)
+        self.assertTrue(n['c'] == c_val)
+
+    def test_nested(self):
+        val = uint32(10)
+        n = Node()
+        n['a']['b'] = val
+        print n['a']['b']
+        self.assertTrue(n['a']['b'] == val)
+
+    def test_vector(self):
+        vec = array(range(100), uint32)
+        n = Node()
+        n['a'] = vec
+        self.assertTrue(n['a'][99], 99)
+
 
 if __name__ == '__main__':
     unittest.main()

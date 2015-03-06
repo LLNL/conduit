@@ -279,7 +279,7 @@ static PyObject* PyConduitNode_GetItem(Py_ConduitNode* self, PyObject* key)
         Node& node = (*self->node)[ckey];
         retval = PyConduit_convertNodeToPython(node);
     } else {
-        PyErr_SetString(PyExc_KeyError, "Key does not exist");
+        retval = PyConduitNode_getObject(&(*self->node)[ckey]);
     }
     return (retval);
 }
@@ -664,6 +664,7 @@ static PyObject* PyConduit_convertNodeToPython(Node& node)
     PyObject* retval;
 
     switch (type.id()) {
+        case DataType::EMPTY_T :
         case DataType::OBJECT_T : {
             retval = PyConduitNode_getObject(&node);
             break;
