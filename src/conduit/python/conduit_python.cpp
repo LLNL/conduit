@@ -406,11 +406,8 @@ static PyTypeObject PyConduit_NodeType = {
 // conduit:::about
 //---------------------------------------------------------------------------//
 static PyObject*
-py_conduit_about(PyObject *self, PyObject *args)
+py_conduit_about(PyObject *self)
 {
-    if (!PyArg_ParseTuple(args, "")) {
-        return (NULL);
-    }
     // in the future we can return the string, or a node
     std::cout << conduit::about() << std::endl;
 
