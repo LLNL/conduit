@@ -291,6 +291,33 @@ static PyObject* PyConduitNode_data(Py_ConduitNode* self)
     return (retval);
 }
 
+static PyObject* PyConduitNode_save(Py_ConduitNode* self, PyObject* args)
+{
+     const char *obase;     
+     if (!PyArg_ParseTuple(args, "s", &obase))
+     {
+         PyErr_SetString(PyExc_TypeError, "Save file path must be a string");
+         return NULL;
+     }
+     
+     self->node->save(std::string(obase));
+     Py_RETURN_NONE;
+}
+
+static PyObject* PyConduitNode_load(Py_ConduitNode* self, PyObject* args)
+{
+     const char *ibase;     
+     if (!PyArg_ParseTuple(args, "s", &ibase))
+     {
+         PyErr_SetString(PyExc_TypeError, "Load file path must be a string");
+         return NULL;
+     }
+     
+     self->node->load(std::string(ibase));
+     Py_RETURN_NONE;
+}
+
+
 static PyObject* PyConduitNode_fetch(Py_ConduitNode* self, PyObject* args)
 {
      const char *key;
@@ -372,22 +399,28 @@ static PyObject* PyConduitNode_schema(Py_ConduitNode* self)
 }
 
 static PyMethodDef PyConduitNode_METHODS[] = {
-   {"set",(PyCFunction)PyConduitNode_set,
-          METH_VARARGS,
-          "Sets the node"},
-   {"fetch", (PyCFunction)PyConduitNode_fetch,
+    {"set",(PyCFunction)PyConduitNode_set,
+           METH_VARARGS,
+           "Sets the node"},
+    {"fetch",(PyCFunction)PyConduitNode_fetch,
              METH_VARARGS, 
              "Fetches the node at a given path"},
-   {"child", (PyCFunction)PyConduitNode_child,
-           METH_VARARGS, 
-           "Retrieves the child node at a given index"},
-   {"data", (PyCFunction)PyConduitNode_data,
-           METH_NOARGS, 
-           "{data val of node}"},
-   {"set_path",(PyCFunction)PyConduitNode_set_path,
-               METH_VARARGS,
-               "Sets the node at the given path"},
-   {"schema",(PyCFunction)PyConduitNode_schema, 
+    {"child",(PyCFunction)PyConduitNode_child,
+             METH_VARARGS, 
+             "Retrieves the child node at a given index"},
+    {"data",(PyCFunction)PyConduitNode_data,
+            METH_NOARGS, 
+            "{data val of node}"},
+    {"save",(PyCFunction)PyConduitNode_save,
+             METH_VARARGS,
+             "Saves a node to a file pair"},
+    {"load",(PyCFunction)PyConduitNode_load,
+            METH_VARARGS,
+            "Loads a node from a file pair"},
+    {"set_path",(PyCFunction)PyConduitNode_set_path,
+                METH_VARARGS,
+                "Sets the node at the given path"},
+    {"schema",(PyCFunction)PyConduitNode_schema, 
               METH_NOARGS,
               "Returns the schema for the node"}, 
    {NULL, NULL, 0, NULL}
