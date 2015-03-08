@@ -284,6 +284,20 @@ static PyObject* PyConduitNode_GetItem(Py_ConduitNode* self, PyObject* key)
     return (retval);
 }
 
+static PyObject* PyConduitNode_fetch(Py_ConduitNode* self, PyObject* args)
+{
+     const char *key;
+     PyObject* retval = NULL;
+     if (!PyArg_ParseTuple(args, "s", &key))
+     {
+         PyErr_SetString(PyExc_TypeError, "Key must be a string");
+         return NULL;
+     }
+
+    retval = PyConduitNode_getObject(&(*self->node).fetch(key));
+    return (retval);
+}
+
 static int PyConduitNode_SetItem(Py_ConduitNode* self, PyObject* key,
                                        PyObject* value)
 {
@@ -317,7 +331,7 @@ static PyObject* PyConduitNode_set(Py_ConduitNode* self, PyObject* args)
     }
 }
 
-static PyObject* PyConduitNode_setpath(Py_ConduitNode* self, PyObject* args)
+static PyObject* PyConduitNode_set_path(Py_ConduitNode* self, PyObject* args)
 {
     PyObject* value, *path;
     if (!PyArg_ParseTuple(args, "OO", &path, &value)) {
@@ -337,9 +351,18 @@ static PyObject* PyConduitNode_schema(Py_ConduitNode* self)
 }
 
 static PyMethodDef PyConduitNode_METHODS[] = {
-   {"set", (PyCFunction)PyConduitNode_set, METH_VARARGS, "Sets the node"},
-   {"setpath", (PyCFunction)PyConduitNode_setpath, METH_VARARGS, "Sets the node on the path"},
-   {"schema", (PyCFunction)PyConduitNode_schema, METH_NOARGS, "Returns the schema for the node"}, 
+   {"set",(PyCFunction)PyConduitNode_set,
+          METH_VARARGS,
+          "Sets the node"},
+   {"fetch", (PyCFunction)PyConduitNode_fetch,
+             METH_VARARGS, 
+             "Fetches the node at a given path"},
+   {"set_path",(PyCFunction)PyConduitNode_set_path,
+               METH_VARARGS,
+               "Sets the node at the given path"},
+   {"schema",(PyCFunction)PyConduitNode_schema, 
+              METH_NOARGS,
+              "Returns the schema for the node"}, 
    {NULL, NULL, 0, NULL}
 };
 
@@ -408,10 +431,7 @@ static PyTypeObject PyConduit_NodeType = {
 static PyObject*
 py_conduit_about(PyObject *self)
 {
-    // in the future we can return the string, or a node
-    std::cout << conduit::about() << std::endl;
-
-    Py_RETURN_NONE;
+    return PyString_FromString(conduit::about().c_str());
 }
 
 

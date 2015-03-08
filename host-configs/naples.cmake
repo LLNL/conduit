@@ -56,4 +56,4 @@ set(SZIP_DIR "/Users/harrison37/Work/masonry/mbuild-visit-2.8.0-darwin-x86_64/th
 
 # Enable python module builds
 set(ENABLE_PYTHON ON CACHE PATH "")
-set(PYTHON_DIR /Users/harrison37/Applications/anaconda/ CACHE PATH "")
+set(PYTHON_EXECUTABLE /Users/harrison37/Work/conduit/libs/python/2.7.9/bin/python CACHE PATH "")

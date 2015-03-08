@@ -73,6 +73,7 @@ about(Node &n)
 {
     n.reset();
     n["version"] = "{alpha}";
+/// TODO: auto include from lic file (at compile time using cmake)
     n["copyright"] = "\n"
 "Copyright (c) 2014, Lawrence Livermore National Security, LLC \n"
 "Produced at the Lawrence Livermore National Laboratory.  \n"

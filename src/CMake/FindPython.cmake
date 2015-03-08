@@ -43,7 +43,9 @@
 ###############################################################################
 
 # Find the interpreter first
-set(PYTHON_EXECUTABLE ${PYTHON_DIR}/bin/python)
+if(PYTHON_DIR AND NOT PYTHON_EXECUTABLE)
+    set(PYTHON_EXECUTABLE ${PYTHON_DIR}/bin/python)
+endif()
 
 find_package(PythonInterp REQUIRED)
 if(PYTHONINTERP_FOUND)
