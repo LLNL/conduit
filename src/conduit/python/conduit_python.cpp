@@ -61,10 +61,10 @@
 using namespace conduit;
 
 static PyObject* PyConduitSchema_getObject(const Schema* schema);
-static int PyConduitSchema_Check(PyObject* obj);
+static int       PyConduitSchema_Check(PyObject* obj);
 static PyObject* PyConduitNode_getObject(Node* node);
-static int PyConduitNode_Check(PyObject* obj);
-static int PyConduitNode_SetFromPython(Node& node, PyObject* value);
+static int       PyConduitNode_Check(PyObject* obj);
+static int       PyConduitNode_SetFromPython(Node& node, PyObject* value);
 static PyObject* PyConduit_createNumpyType(Node& node, int type);
 static PyObject* PyConduit_convertNodeToPython(Node& node);
 static PyObject* getType(const char* name);
@@ -284,6 +284,13 @@ static PyObject* PyConduitNode_GetItem(Py_ConduitNode* self, PyObject* key)
     return (retval);
 }
 
+static PyObject* PyConduitNode_data(Py_ConduitNode* self)
+{
+    PyObject* retval = NULL;
+    retval = PyConduit_convertNodeToPython(*self->node);
+    return (retval);
+}
+
 static PyObject* PyConduitNode_fetch(Py_ConduitNode* self, PyObject* args)
 {
      const char *key;
@@ -295,6 +302,20 @@ static PyObject* PyConduitNode_fetch(Py_ConduitNode* self, PyObject* args)
      }
 
     retval = PyConduitNode_getObject(&(*self->node).fetch(key));
+    return (retval);
+}
+
+static PyObject* PyConduitNode_child(Py_ConduitNode* self, PyObject* args)
+{
+     Py_ssize_t idx;
+     PyObject* retval = NULL;
+     if (!PyArg_ParseTuple(args, "n", &idx))
+     {
+         PyErr_SetString(PyExc_TypeError, "Index must be an integer");
+         return NULL;
+     }
+
+    retval = PyConduitNode_getObject(&(*self->node).child(idx));
     return (retval);
 }
 
@@ -357,6 +378,12 @@ static PyMethodDef PyConduitNode_METHODS[] = {
    {"fetch", (PyCFunction)PyConduitNode_fetch,
              METH_VARARGS, 
              "Fetches the node at a given path"},
+   {"child", (PyCFunction)PyConduitNode_child,
+           METH_VARARGS, 
+           "Retrieves the child node at a given index"},
+   {"data", (PyCFunction)PyConduitNode_data,
+           METH_NOARGS, 
+           "{data val of node}"},
    {"set_path",(PyCFunction)PyConduitNode_set_path,
                METH_VARARGS,
                "Sets the node at the given path"},

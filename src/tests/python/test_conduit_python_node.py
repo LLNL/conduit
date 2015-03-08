@@ -84,6 +84,22 @@ class Test_Conduit_Node(unittest.TestCase):
         n['a'] = vec
         self.assertTrue(n['a'][99], 99)
 
+    def test_fetch(self):
+        vec = array(range(100), uint32)
+        n = Node()
+        n['a'] = vec
+        na = n.fetch('a')
+        na_val = na.data()
+        self.assertTrue(n['a'][99], 99)
+        
+    def test_child(self):
+        vec = array(range(100), uint32)
+        n = Node()
+        n['a'] = vec
+        na = n.child(0)
+        na_val = na.data()
+        self.assertTrue(n['a'][99], 99)
+        
 
 if __name__ == '__main__':
     unittest.main()
