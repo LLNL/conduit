@@ -52,7 +52,7 @@
 # Takes you from zero to a Python + CMake env for conduit on OSX and linux
 #
 
-export PY_VERSION="2.7.6"
+export PY_VERSION="2.7.9"
 
 function info
 {
@@ -162,15 +162,15 @@ function check_cmake_install
 function build_cmake
 {
     info "================================="
-    info "Setting up CMake 3.0.2"
+    info "Setting up CMake 3.1.3"
     info "================================="
     info "[Target Prefix: $CMAKE_PREFIX]"
     cd $BUILD_DIR
-    download http://www.cmake.org/files/v3.0/ cmake-3.0.2.tar.gz
+    download http://www.cmake.org/files/v3.1/ cmake-3.1.3.tar.gz
     rm -rf cmake-3.0.2
-    info "[Inflating: cmake-3.0.2.tar.gz]"
-    tar -xzf cmake-3.0.2.tar.gz
-    cd cmake-3.0.2
+    info "[Inflating: cmake-3.1.3.tar.gz]"
+    tar -xzf cmake-3.1.3.tar.gz
+    cd cmake-3.1.3
     info "[Configuring CMake]"
     ./configure --prefix=$CMAKE_PREFIX &> ../logs/cmake_configure.txt
     check $?
@@ -182,7 +182,6 @@ function build_cmake
     check $?
     cd $START_DIR
 }
-
 
 
 function bootstrap_python
@@ -201,8 +200,9 @@ function bootstrap_python
     tar -xzf Python-$PY_VERSION.tgz
     cd Python-$PY_VERSION
     info "[Configuring Python]"
-    mkdir -p ${PY_PREFIX}/lib/ z
-    ./configure --enable-shared --prefix=$PY_PREFIX LDFLAGS='-Wl,-rpath,${PY_PREFIX}/lib/ -pthread'  &> ../logs/python_configure.txt
+    mkdir -p ${PY_PREFIX}/lib/
+    ./configure --enable-shared --prefix=$PY_PREFIX &> ../logs/python_configure.txt
+    # LDFLAGS='-Wl,-rpath,${PY_PREFIX}/lib/ -pthread'  
 
     check $?
     info "[Building Python]"
@@ -223,11 +223,11 @@ function bootstrap_modules
     info "================================="
 
     cd $BUILD_DIR
-    download https://pypi.python.org/packages/source/s/setuptools/ setuptools-1.3.tar.gz
-    rm -rf setuptools-1.3
-    info "[Inflating: setuptools-1.3.tar.gz]"
-    tar -xzf setuptools-1.3.tar.gz
-    cd setuptools-1.3
+    download https://pypi.python.org/packages/source/s/setuptools/ setuptools-14.0.tar.gz
+    rm -rf setuptools-14
+    info "[Inflating: setuptools-14.0.tar.gz]"
+    tar -xzf setuptools-14.0.tar.gz
+    cd setuptools-14.0
     info "[Building setuptools]"
     $PY_EXE setup.py build &> ../logs/setuptools_build.txt
     check $?
@@ -235,13 +235,13 @@ function bootstrap_modules
     $PY_EXE setup.py install &> ../logs/setuptools_install.txt
     check $?
 
-
     cd $BUILD_DIR
-    download http://pypi.python.org/packages/source/p/pip pip-1.2.1.tar.gz
-    rm -rf pip-1.2.1
-    info "[Inflating: pip-1.2.1.tar.gz]"
-    tar -xzf pip-1.2.1.tar.gz
-    cd pip-1.2.1
+    
+    download http://pypi.python.org/packages/source/p/pip pip-6.0.8.tar
+    rm -rf pip-6.0.8
+    info "[Inflating: pip-6.0.8.tar]"
+    tar -xzf pip-6.0.8.tar
+    cd pip-6.0.8
     info "[Building pip]"
     $PY_EXE setup.py build &> ../logs/pip_build.txt
     check $?
@@ -287,8 +287,6 @@ function main
     fi
     
     info "[Active CMake:" `which cmake` "]"
-    # we no longer rely on numpy for bitwidth types
-    return
     
     check_python_install $DEST
     if [[ $? == 0 ]] ; then
