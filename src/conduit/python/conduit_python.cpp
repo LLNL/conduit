@@ -399,6 +399,12 @@ PyConduitNode_mmap(Py_ConduitNode* self,
     Py_RETURN_NONE;
 }
 
+//-----------------------------------------------------------------------------
+//
+// -- Node Entry Access --
+//
+//-----------------------------------------------------------------------------
+
 //---------------------------------------------------------------------------//
 static PyObject *
 PyConduitNode_fetch(Py_ConduitNode* self,
@@ -432,6 +438,95 @@ PyConduitNode_child(Py_ConduitNode* self,
     retval = PyConduitNode_getObject(&(*self->node).child(idx));
     return (retval);
 }
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduitNode_number_of_children(Py_ConduitNode *self)
+{
+    return PyLong_FromSsize_t(self->node->number_of_children());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyConduitNode_has_path(Py_ConduitNode *self,
+                       PyObject* args)
+{
+    const char *path;
+    PyObject* retval = NULL;
+    if (!PyArg_ParseTuple(args, "s", &path))
+    {
+        PyErr_SetString(PyExc_TypeError, "Path must be a string");
+        return NULL;
+    }
+    
+    if(self->node->has_path(std::string(path)))
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyConduitNode_paths(Py_ConduitNode *self)
+{
+    std::vector<std::string> paths;
+    self->node->paths(paths);
+    
+    /// TODO: I think there is a faster way in the Python CAPI
+    /// since we know the size of the list.
+    PyObject *retval = PyList_New(0);
+    
+    for (std::vector<std::string>::const_iterator itr = paths.begin();
+         itr < paths.end(); ++itr)
+    {
+        PyList_Append(retval, PyString_FromString( (*itr).c_str()));
+    };
+
+    return retval;
+}
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduitNode_append(Py_ConduitNode* self)
+{
+    return  PyConduitNode_getObject(&(self->node->append()));
+}
+
+
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyConduitNode_remove(Py_ConduitNode *self,
+                     PyObject *args,
+                     PyObject *kwargs)
+{
+    Py_ssize_t idx;
+    const char *path = NULL;
+
+    static char *kwlist[] = {"index","path", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "|ns",
+                                     kwlist,
+                                     &idx, &path))
+    {
+        return (NULL);
+    }
+    
+    if(!path == NULL)
+    {
+        self->node->remove(std::string(path));
+    }else
+    {
+        self->node->remove(idx);
+    }
+}
+
 
 //-----------------------------------------------------------------------------
 //
@@ -593,6 +688,31 @@ static PyMethodDef PyConduitNode_METHODS[] = {
      (PyCFunction)PyConduitNode_child,
      METH_VARARGS, 
      "Retrieves the child node at a given index"},
+    //-----------------------------------------------------------------------//
+    {"number_of_children",
+      (PyCFunction)PyConduitNode_number_of_children,
+      METH_NOARGS, 
+      "Number of child nodes"},
+    //-----------------------------------------------------------------------//
+    {"has_path",
+     (PyCFunction)PyConduitNode_has_path,
+     METH_VARARGS, 
+     "Returns if this node has the given path"},
+    //-----------------------------------------------------------------------//
+    {"paths",
+     (PyCFunction)PyConduitNode_paths,
+     METH_NOARGS, 
+     "Returns a list with this node's child paths"},
+    //-----------------------------------------------------------------------//
+    {"append",
+     (PyCFunction)PyConduitNode_append,
+     METH_NOARGS, 
+     "Appends a node (coarse to conduit list)"},
+    //-----------------------------------------------------------------------//
+    {"remove",
+     (PyCFunction)PyConduitNode_remove,
+     METH_KEYWORDS, 
+     "Remove as node at a given index or path."},
     //-----------------------------------------------------------------------//
     {"data",
      (PyCFunction)PyConduitNode_data,

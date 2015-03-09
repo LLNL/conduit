@@ -99,6 +99,8 @@ class Test_Conduit_Node(unittest.TestCase):
         na = n.child(0)
         na_val = na.data()
         self.assertTrue(na_val[99], 99)
+        n['b'] = vec
+        self.assertTrue(n.number_of_children(),2)
       
     def test_save_load(self):
         vec = array(range(100), uint32)
@@ -108,6 +110,7 @@ class Test_Conduit_Node(unittest.TestCase):
         nl = Node()
         nl.load("test_pyconduit_node_save_load")
         self.assertTrue(nl['a'][99], 99)
+
     def test_parent(self):
         vec = array(range(100), uint32)
         n = Node()
@@ -115,6 +118,7 @@ class Test_Conduit_Node(unittest.TestCase):
         na = n.fetch('a')
         self.assertTrue(na.has_parent())
         # todo: test parent()
+
     def test_total_bytes(self):
         vec = array(range(100), uint32)
         n = Node()
@@ -124,6 +128,45 @@ class Test_Conduit_Node(unittest.TestCase):
         # TODO: check if n.is_compact() should pass as well?
         # it doesn't currently
         self.assertTrue(n.fetch('a').is_compact())
+
+    def test_paths(self):
+        n = Node()
+        n['a'] = 1
+        n['b'] = 2
+        n['c'] = 3
+        for v in ['a','b','c']:
+            self.assertTrue(n.has_path(v))
+        paths = n.paths()
+        for v in ['a','b','c']:
+            self.assertTrue(v in paths)
+
+    def test_list(self):
+        n = Node()
+        n.append().set(1)
+        self.assertTrue(n.child(0).data(),1)
+        # TODO: this needs to work but doesn't
+        #self.assertTrue(n[0],1)
+        n2 = Node()
+        n2_c = n2.append()
+        n2_c.set(2)
+        self.assertTrue(n2.child(0).data(),2)
+        
+
+    def test_remove(self):
+        n = Node()
+        n['a'] = 1
+        n['b'] = 2
+        n['c'] = 3
+        self.assertTrue(n.number_of_children(),3)
+        n.remove(path='c')
+        self.assertTrue(n.number_of_children(),2)
+        paths = n.paths()
+        for v in ['a','b']:
+            self.assertTrue(v in paths)
+        n.remove(index=0)
+        paths = n.paths()
+        for v in ['b']:
+            self.assertTrue(v in paths)
 
 
 if __name__ == '__main__':
