@@ -709,7 +709,7 @@ static PyMethodDef PyConduitNode_METHODS[] = {
      METH_NOARGS, 
      "Appends a node (coarse to conduit list)"},
     //-----------------------------------------------------------------------//
-    {"remove",
+    {"remove", // PyCFunctionWithKeywords ?
      (PyCFunction)PyConduitNode_remove,
      METH_KEYWORDS, 
      "Remove as node at a given index or path."},
