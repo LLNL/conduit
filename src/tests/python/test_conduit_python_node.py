@@ -108,6 +108,23 @@ class Test_Conduit_Node(unittest.TestCase):
         nl = Node()
         nl.load("test_pyconduit_node_save_load")
         self.assertTrue(nl['a'][99], 99)
+    def test_parent(self):
+        vec = array(range(100), uint32)
+        n = Node()
+        n['a'] = vec
+        na = n.fetch('a')
+        self.assertTrue(na.has_parent())
+        # todo: test parent()
+    def test_total_bytes(self):
+        vec = array(range(100), uint32)
+        n = Node()
+        n['a'] = vec
+        self.assertTrue(n.total_bytes(),4 * 100)
+        self.assertTrue(n.total_bytes_compact(),4 * 100)
+        # TODO: check if n.is_compact() should pass as well?
+        # it doesn't currently
+        self.assertTrue(n.fetch('a').is_compact())
+
 
 if __name__ == '__main__':
     unittest.main()

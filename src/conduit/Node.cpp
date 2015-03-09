@@ -248,6 +248,24 @@ Node::generate_external(const Generator &gen)
 
 //---------------------------------------------------------------------------//
 void
+Node::generate(const std::string &json_schema)
+{
+    Generator g(json_schema);
+    generate(g);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::generate(const std::string &json_schema,
+               const std::string &protocol)
+               
+{
+    Generator g(json_schema,protocol);
+    generate(g);
+}   
+
+//---------------------------------------------------------------------------//
+void
 Node::generate(const std::string &json_schema,
                void *data)
 {
