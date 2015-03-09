@@ -609,13 +609,47 @@ PyConduitNode_is_compact(Py_ConduitNode *self)
         Py_RETURN_FALSE;
     }
 }
-//---------------------------------------------------------------------------//
-///TODO: info
-//---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
-static int PyConduitNode_SetItem(Py_ConduitNode* self, PyObject* key,
-                                       PyObject* value)
+static PyObject * 
+PyConduitNode_info(Py_ConduitNode *self,
+                   PyObject *args)
+{
+    PyObject *py_node;
+    if (!PyArg_ParseTuple(args, "|O", &py_node))
+    {
+         return (NULL);
+    }
+    
+    if(py_node == NULL)
+    {
+        ///TODO: create a python wrapped node that we will return
+    }
+    else 
+    {
+        // make we were passed a wrapped conduit node
+        if(!PyConduitNode_Check(py_node))
+        {
+            PyErr_SetString(PyExc_TypeError,
+               "Argument is not a conduit node");
+               return (NULL);
+        }
+        // we need to increment the ref count, if we plan to return the
+        // node passed as our result
+        Py_INCREF(py_node);
+    }
+    
+    Node *info_node = ((Py_ConduitNode*)py_node)->node;
+    self->node->info(*info_node);
+
+    return py_node;
+}
+
+
+//---------------------------------------------------------------------------//
+static int PyConduitNode_SetItem(Py_ConduitNode* self,
+                                 PyObject* key,
+                                 PyObject* value)
 {
     if (!PyString_Check(key)) {
         PyErr_SetString(PyExc_TypeError, "Key must be a string");
@@ -703,6 +737,11 @@ static PyMethodDef PyConduitNode_METHODS[] = {
      (PyCFunction)PyConduitNode_paths,
      METH_NOARGS, 
      "Returns a list with this node's child paths"},
+     //-----------------------------------------------------------------------//
+     {"info",
+      (PyCFunction)PyConduitNode_info,
+      METH_VARARGS, 
+      "Returns a node populated with the memory space details for this node"},
     //-----------------------------------------------------------------------//
     {"append",
      (PyCFunction)PyConduitNode_append,
