@@ -61,6 +61,12 @@
 using namespace conduit;
 
 //---------------------------------------------------------------------------//
+struct PyConduit_DataType {
+    PyObject_HEAD
+    DataType dtype; // NoteIterator is light weight, we can deal with copies
+};
+
+//---------------------------------------------------------------------------//
 struct PyConduit_Schema {
     PyObject_HEAD
     Schema *schema;
@@ -82,9 +88,15 @@ struct PyConduit_Node {
 
 
 //---------------------------------------------------------------------------//
+static PyConduit_DataType *PyConduit_DataType_python_create();
+static int       PyConduit_DataType_check(PyObject* obj);
+
+
+//---------------------------------------------------------------------------//
 static PyConduit_Schema* PyConduit_Schema_python_create();
 static PyObject* PyConduit_Schema_python_wrap(Schema *schema,int python_owns);
 static int       PyConduit_Schema_Check(PyObject* obj);
+
 
 //---------------------------------------------------------------------------//
 static PyConduit_Node* PyConduit_Node_python_create();
@@ -95,6 +107,563 @@ static PyObject* PyConduit_createNumpyType(Node& node, int type);
 static PyObject* PyConduit_convertNodeToPython(Node& node);
 static PyObject* getType(const char* name);
 
+
+
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+//
+// DataType Object 
+//
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyConduit_DataType_new(PyTypeObject* type,
+                       PyObject* args,
+                       PyObject* kwds)
+{
+    /// TODO: args and kwargs
+    
+    // static char *kwlist[] = {"value", NULL};
+    // PyObject* value = NULL;
+    // if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &value)) {
+    //     return (NULL);
+    // }
+
+    PyConduit_DataType *self = (PyConduit_DataType*)type->tp_alloc(type, 0);
+    return ((PyObject*)self);
+}
+
+//---------------------------------------------------------------------------//
+static int
+PyConduit_DataType_init(PyConduit_Schema* self,
+                        PyObject* args,
+                        PyObject* kwds)
+{
+     /// TODO: args and kwargs
+     static char *kwlist[] = {"value", NULL};
+     PyObject* value = NULL;
+     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &value))
+     {
+         return (NULL);
+     }
+     return (0);
+}
+
+//---------------------------------------------------------------------------//
+static void
+PyConduit_DataType_dealloc(PyConduit_DataType *self)
+{
+    self->ob_type->tp_free((PyObject*)self);
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_str(PyConduit_DataType *self)
+{
+   std::string output = self->dtype.to_json();
+   return (Py_BuildValue("s", output.c_str()));
+}
+
+
+//-----------------------------------------------------------------------------
+// Setters
+//-----------------------------------------------------------------------------
+//     void       set(const DataType& type);
+//     void       set(index_t dtype_id);
+//     void       set(index_t dtype_id,
+//                    index_t num_elements,
+//                    index_t offset,
+//                    index_t stride,
+//                    index_t element_bytes,
+//                    index_t endianness);
+
+
+//     void       set_number_of_elements(index_t v)
+//                     { m_num_ele = v;}
+//     void       set_offset(index_t v)
+//                     { m_offset = v;}
+//     void       set_stride(index_t v)
+//                     { m_stride = v;}
+//     void       set_element_bytes(index_t v)
+//                     { m_ele_bytes = v;}
+//     void       set_endianness(index_t v)
+//                     { m_endianness = v;}
+//
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_set_number_of_elements(PyConduit_DataType *self,
+                                          PyObject *args)
+{
+    Py_ssize_t value;
+    PyObject* retval = NULL;
+    if (!PyArg_ParseTuple(args, "n", &value))
+    {
+        PyErr_SetString(PyExc_TypeError,
+            "number_of_elements must be a signed integer");
+        return NULL;
+    }
+
+    self->dtype.set_number_of_elements(value);
+
+    Py_RETURN_NONE; 
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_set_offset(PyConduit_DataType *self,
+                              PyObject *args)
+{
+    Py_ssize_t value;
+    PyObject* retval = NULL;
+    if (!PyArg_ParseTuple(args, "n", &value))
+    {
+        PyErr_SetString(PyExc_TypeError,
+            "offset must be be a signed integer");
+        return NULL;
+    }
+
+    self->dtype.set_offset(value);
+
+    Py_RETURN_NONE; 
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_set_stride(PyConduit_DataType *self,
+                              PyObject *args)
+{
+    Py_ssize_t value;
+    PyObject* retval = NULL;
+    if (!PyArg_ParseTuple(args, "n", &value))
+    {
+        PyErr_SetString(PyExc_TypeError,
+            "stride must be a signed integer");
+        return NULL;
+    }
+
+    self->dtype.set_stride(value);
+
+    Py_RETURN_NONE; 
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_set_element_bytes(PyConduit_DataType *self,
+                                     PyObject *args)
+{
+    Py_ssize_t value;
+    PyObject* retval = NULL;
+    if (!PyArg_ParseTuple(args, "n", &value))
+    {
+        PyErr_SetString(PyExc_TypeError,
+            "element bytes must be a signed integer");
+        return NULL;
+    }
+
+    self->dtype.set_element_bytes(value);
+
+    Py_RETURN_NONE; 
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_set_endianness(PyConduit_DataType *self,
+                                  PyObject *args)
+{
+    Py_ssize_t value;
+    PyObject* retval = NULL;
+    if (!PyArg_ParseTuple(args, "n", &value))
+    {
+        PyErr_SetString(PyExc_TypeError,
+            "endianness must be a signed integer");
+        return NULL;
+    }
+
+    self->dtype.set_endianness(value);
+
+    Py_RETURN_NONE; 
+}
+
+//-----------------------------------------------------------------------------
+// Getters and info methods.
+//-----------------------------------------------------------------------------
+//     index_t     id()    const { return m_id;}
+//     index_t     total_bytes()   const;
+//     index_t     total_bytes_compact() const;
+//     bool        is_compact() const;
+//     bool        is_compatible(const DataType& type) const;
+//
+//     bool        is_number()           const;
+//     bool        is_float()            const;
+//     bool        is_integer()          const;
+//     bool        is_signed_integer()   const;
+//     bool        is_unsigned_integer() const;
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_id(PyConduit_DataType *self)
+{
+    return PyLong_FromSsize_t(self->dtype.id());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_total_bytes(PyConduit_DataType *self)
+{
+    return PyLong_FromSsize_t(self->dtype.total_bytes());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_total_bytes_compact(PyConduit_DataType *self)
+{
+    return PyLong_FromSsize_t(self->dtype.total_bytes_compact());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_compact(PyConduit_DataType *self)
+{
+    if(self->dtype.is_compact())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_compatible(PyConduit_DataType *self,
+                                 PyObject *args)
+{
+    PyObject *py_dtype;
+    if ( (!PyArg_ParseTuple(args, "O", &py_dtype)) || 
+         (!PyConduit_DataType_check(py_dtype)) )
+    {
+         PyErr_SetString(PyExc_TypeError, "is_compatible needs a DataType arg");
+         return (NULL);
+    }
+    
+    
+    if(self->dtype.is_compatible( ((PyConduit_DataType*)py_dtype)->dtype))
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_number(PyConduit_DataType *self)
+{
+    if(self->dtype.is_number())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_float(PyConduit_DataType *self)
+{
+    if(self->dtype.is_float())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_integer(PyConduit_DataType *self)
+{
+    if(self->dtype.is_float())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_signed_integer(PyConduit_DataType *self)
+{
+    if(self->dtype.is_signed_integer())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_unsigned_integer(PyConduit_DataType *self)
+{
+    if(self->dtype.is_unsigned_integer())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+
+//
+//
+//     index_t    number_of_elements()  const { return m_num_ele;}
+//     index_t    offset()              const { return m_offset;}
+//     index_t    stride()              const { return m_stride;}
+//     index_t    element_bytes()       const { return m_ele_bytes;}
+//     index_t    endianness()          const { return m_endianness;}
+//     index_t    element_index(index_t idx) const;
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_number_of_elements(PyConduit_DataType *self)
+{
+    return PyLong_FromSsize_t(self->dtype.number_of_elements());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_offset(PyConduit_DataType *self)
+{
+    return PyLong_FromSsize_t(self->dtype.offset());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_stride(PyConduit_DataType *self)
+{
+    return PyLong_FromSsize_t(self->dtype.stride());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_element_bytes(PyConduit_DataType *self)
+{
+    return PyLong_FromSsize_t(self->dtype.element_bytes());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_endianness(PyConduit_DataType *self)
+{
+    return PyLong_FromSsize_t(self->dtype.endianness());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_element_index(PyConduit_DataType *self,
+                                 PyObject *args)
+{
+    Py_ssize_t idx;
+    PyObject* retval = NULL;
+    if (!PyArg_ParseTuple(args, "n", &idx))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                "index must be a signed integer");
+        return NULL;
+    }
+
+    return PyLong_FromSsize_t(self->dtype.element_index(idx));
+}
+
+
+//----------------------------------------------------------------------------//
+// Schema methods table
+//----------------------------------------------------------------------------//
+static PyMethodDef PyConduit_DataType_METHODS[] = {
+    //-----------------------------------------------------------------------//
+    {"set_number_of_elements",
+     (PyCFunction)PyConduit_DataType_set_number_of_elements,
+     METH_VARARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"set_offset",
+     (PyCFunction)PyConduit_DataType_set_offset,
+     METH_VARARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"set_stride",
+     (PyCFunction)PyConduit_DataType_set_stride,
+     METH_VARARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"set_element_bytes",
+     (PyCFunction)PyConduit_DataType_set_element_bytes,
+     METH_VARARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"set_endianness",
+     (PyCFunction)PyConduit_DataType_set_endianness,
+     METH_VARARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"id",
+     (PyCFunction)PyConduit_DataType_id,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"total_bytes",
+     (PyCFunction)PyConduit_DataType_total_bytes,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"total_bytes_compact",
+     (PyCFunction)PyConduit_DataType_total_bytes_compact,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"is_compact",
+     (PyCFunction)PyConduit_DataType_is_compact,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"is_compatible",
+     (PyCFunction)PyConduit_DataType_is_compatible,
+     METH_VARARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"is_number",
+     (PyCFunction)PyConduit_DataType_is_number,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"is_float",
+     (PyCFunction)PyConduit_DataType_is_float,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"is_integer",
+     (PyCFunction)PyConduit_DataType_is_integer,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"is_signed_integer",
+     (PyCFunction)PyConduit_DataType_is_signed_integer,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"is_unsigned_integer",
+     (PyCFunction)PyConduit_DataType_is_unsigned_integer,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"number_of_elements",
+     (PyCFunction)PyConduit_DataType_number_of_elements,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"offset",
+     (PyCFunction)PyConduit_DataType_offset,
+     METH_VARARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"stride",
+     (PyCFunction)PyConduit_DataType_stride,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"element_bytes",
+     (PyCFunction)PyConduit_DataType_element_bytes,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"element_index",
+     (PyCFunction)PyConduit_DataType_element_index,
+     METH_VARARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    // end DataType methods table
+    //-----------------------------------------------------------------------//
+    {NULL, NULL, 0, NULL}
+};
+
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+static PyTypeObject PyConduit_DataType_TYPE = {
+   PyObject_HEAD_INIT(NULL)
+   0,
+   "Schema",
+   sizeof(PyConduit_DataType),  /* tp_basicsize */
+   0, /* tp_itemsize */
+   (destructor)PyConduit_DataType_dealloc, /* tp_dealloc */
+   0, /* tp_print */
+   0, /* tp_getattr */
+   0, /* tp_setattr */
+   0, /* tp_compare */
+   0, /* tp_repr */
+   0, /* tp_as_number */
+   0, /* tp_as_sequence */
+   0, /* as_mapping */
+   0, /* hash */
+   0, /* call */
+   (reprfunc)PyConduit_DataType_str, /* str */
+   0, /* getattro */
+   0, /* setattro */
+   0, /* asbuffer */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,     /* flags */
+   "Conduit DataType objects",
+   0, /* traverse */
+   0, /* clear */
+   0, /* tp_richcompare */
+   0, /* tp_weaklistoffset */
+   0, /* iter */
+   0, /* iternext */
+   PyConduit_DataType_METHODS, /* METHODS */
+   0, /* MEMBERS */
+   0, /* get/set */
+   0, /* tp_base */
+   0, /* dict */
+   0, /* descr_get */
+   0, /* gescr_set */
+   0, /* dictoffset */
+   (initproc)PyConduit_DataType_init,
+   0, /* alloc */
+   PyConduit_DataType_new,                                   /* new */
+   0, /* tp_free */
+   0, /* tp_is_gc */
+   0, /* tp_bases */
+   0, /* tp_mro */
+   0, /* tp_cache */
+   0, /* tp_subclasses */
+   0,  /* tp_weaklist */
+   0,
+   0
+};
+
+//---------------------------------------------------------------------------//
+static int
+PyConduit_DataType_check(PyObject* obj)
+{
+    return (PyObject_TypeCheck(obj, &PyConduit_DataType_TYPE));
+}
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
@@ -242,7 +811,7 @@ static PyMethodDef PyConduit_Schema_METHODS[] = {
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
-static PyTypeObject PyConduit_SchemaType = {
+static PyTypeObject PyConduit_Schema_TYPE = {
    PyObject_HEAD_INIT(NULL)
    0,
    "Schema",
@@ -584,7 +1153,7 @@ static PyMethodDef PyConduit_NodeIterator_METHODS[] = {
 };
 
 //---------------------------------------------------------------------------//
-static PyTypeObject PyConduit_NodeIterator_Type = {
+static PyTypeObject PyConduit_NodeIterator_TYPE = {
    PyObject_HEAD_INIT(NULL)
    0,
    "Schema",
@@ -1310,7 +1879,7 @@ static PyMappingMethods node_as_mapping = {
 };
 
 //---------------------------------------------------------------------------//
-static PyTypeObject PyConduit_NodeType = {
+static PyTypeObject PyConduit_Node_TYPE = {
    PyObject_HEAD_INIT(NULL)
    0,
    //PyObject_VAR_HEAD
@@ -1398,7 +1967,7 @@ CONDUIT_PYTHON_API initconduit_python(void)
     //-----------------------------------------------------------------------//
     // add Schema
     //-----------------------------------------------------------------------//
-    if (PyType_Ready(&PyConduit_SchemaType) < 0)
+    if (PyType_Ready(&PyConduit_Schema_TYPE) < 0)
     {
         return;
     }
@@ -1408,12 +1977,12 @@ CONDUIT_PYTHON_API initconduit_python(void)
                                          PyConduit_Node_METHODS,
                                          "Schema class for Conduit");
 
-    PyModule_AddObject(schema, "Schema", (PyObject*)&PyConduit_SchemaType);
+    PyModule_AddObject(schema, "Schema", (PyObject*)&PyConduit_Schema_TYPE);
     
     //-----------------------------------------------------------------------//
     // add NodeIterator
     //-----------------------------------------------------------------------//
-    if (PyType_Ready(&PyConduit_NodeIterator_Type) < 0)
+    if (PyType_Ready(&PyConduit_NodeIterator_TYPE) < 0)
     {
         return;
     }
@@ -1424,12 +1993,12 @@ CONDUIT_PYTHON_API initconduit_python(void)
 
     PyModule_AddObject(node_iter,
                        "NodeIterator",
-                       (PyObject*)&PyConduit_NodeIterator_Type);
+                       (PyObject*)&PyConduit_NodeIterator_TYPE);
                        
     //-----------------------------------------------------------------------//
     // add Node
     //-----------------------------------------------------------------------//
-    if (PyType_Ready(&PyConduit_NodeType) < 0)
+    if (PyType_Ready(&PyConduit_Node_TYPE) < 0)
     {
         return;
     }
@@ -1438,7 +2007,7 @@ CONDUIT_PYTHON_API initconduit_python(void)
                                        PyConduit_Node_METHODS,
                                        "Node class for Conduit");
 
-    PyModule_AddObject(node, "Node", (PyObject*)&PyConduit_NodeType);
+    PyModule_AddObject(node, "Node", (PyObject*)&PyConduit_Node_TYPE);
 
     PyObject *conduit =  Py_InitModule("conduit_python", conduit_python_funcs);
 
@@ -1470,7 +2039,7 @@ getType(const char* name)
 static int
 PyConduit_Schema_Check(PyObject* obj)
 {
-    return (PyObject_TypeCheck(obj, &PyConduit_SchemaType));
+    return (PyObject_TypeCheck(obj, &PyConduit_Schema_TYPE));
 }
 
 
@@ -1499,7 +2068,7 @@ PyConduit_Schema_python_create()
 static int
 PyConduit_Node_Check(PyObject *obj)
 {
-    return (PyObject_TypeCheck(obj, &PyConduit_NodeType));
+    return (PyObject_TypeCheck(obj, &PyConduit_Node_TYPE));
 }
 
 //---------------------------------------------------------------------------//
