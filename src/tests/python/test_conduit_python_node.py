@@ -170,11 +170,10 @@ class Test_Conduit_Node(unittest.TestCase):
 
     def test_info(self):
         n = Node()
-        ni = Node()
         n['a'] = 1
         n['b'] = 2
         n['c'] = 3
-        n.info(ni);
+        ni = n.info();
         #print ni
         self.assertTrue(ni["total_bytes"],n.total_bytes())
 
