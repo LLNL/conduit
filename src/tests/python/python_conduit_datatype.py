@@ -66,9 +66,9 @@ class Test_Conduit_Node(unittest.TestCase):
         n['a'] = a_val
         n['b'] = b_val
         n['c'] = c_val
-        print n.fetch('a').dtype()
-        print n.fetch('b').dtype()
-        print n.fetch('c').dtype()
+        print n
+        d = n.fetch('a').dtype()
+        print d
 
 if __name__ == '__main__':
     unittest.main()

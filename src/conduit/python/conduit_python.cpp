@@ -141,12 +141,12 @@ PyConduit_DataType_init(PyConduit_Schema* self,
                         PyObject* kwds)
 {
      /// TODO: args and kwargs
-     static char *kwlist[] = {"value", NULL};
-     PyObject* value = NULL;
-     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &value))
-     {
-         return (NULL);
-     }
+     // static char *kwlist[] = {"value", NULL};
+     // PyObject* value = NULL;
+     // if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &value))
+     // {
+     //     return (NULL);
+     // }
      return (0);
 }
 
@@ -2100,6 +2100,23 @@ static PyMethodDef conduit_python_funcs[] =
 extern "C" void
 CONDUIT_PYTHON_API initconduit_python(void)
 {
+
+    //-----------------------------------------------------------------------//
+    // add DataType
+    //-----------------------------------------------------------------------//
+    if (PyType_Ready(&PyConduit_DataType_TYPE) < 0)
+    {
+        return;
+    }
+
+    /// TODO: PyConduit_Node_METHODS seems wrong
+    PyObject *data_type = Py_InitModule3("DataType",
+                                         PyConduit_DataType_METHODS,
+                                         "DataType class for Conduit");
+
+    PyModule_AddObject(data_type,
+                       "DataType",
+                       (PyObject*)&PyConduit_DataType_TYPE);
     //-----------------------------------------------------------------------//
     // add Schema
     //-----------------------------------------------------------------------//
@@ -2108,9 +2125,8 @@ CONDUIT_PYTHON_API initconduit_python(void)
         return;
     }
 
-    /// TODO: PyConduit_Node_METHODS seems wrong
     PyObject* schema    = Py_InitModule3("Schema",
-                                         PyConduit_Node_METHODS,
+                                         PyConduit_Schema_METHODS,
                                          "Schema class for Conduit");
 
     PyModule_AddObject(schema, "Schema", (PyObject*)&PyConduit_Schema_TYPE);
@@ -2146,6 +2162,9 @@ CONDUIT_PYTHON_API initconduit_python(void)
     PyModule_AddObject(node, "Node", (PyObject*)&PyConduit_Node_TYPE);
 
     PyObject *conduit =  Py_InitModule("conduit_python", conduit_python_funcs);
+
+    Py_INCREF(data_type);
+    PyModule_AddObject(conduit, "DataType", data_type);
 
     Py_INCREF(schema);
     PyModule_AddObject(conduit, "Schema", schema);
