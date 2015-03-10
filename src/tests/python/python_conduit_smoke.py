@@ -41,29 +41,22 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
+"""
+ file: python_conduit_smoke.py
+ description: Simple unit test for the basic conduit python module interface.
 
-####################################
-# Helper to add Python Module Tests
-####################################
-function(add_python_unit_test TEST)
-    message(STATUS " [*] Adding Python-based Unit Test: ${TEST}")
-    add_test(NAME ${TEST} COMMAND 
-             ${PYTHON_EXECUTABLE} -B -m unittest -v ${TEST})
-    # make sure python can pick up the modules we built
-    set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${CMAKE_BINARY_DIR}/python-modules/:${CMAKE_CURRENT_SOURCE_DIR}")
-endfunction(add_python_unit_test)
+"""
 
-####################################
-# Add Python Module Tests
-####################################
-set(PYTHON_MODULE_TESTS python_conduit_smoke
-                        python_conduit_node
-                        python_conduit_schema
-                        python_conduit_datatype
-                        python_conduit_node_iterator)
+import sys
+import unittest
 
+import conduit
 
-foreach(TEST ${PYTHON_MODULE_TESTS})
-    add_python_unit_test(${TEST})
-endforeach()
+class Test_Condut_Basic(unittest.TestCase):
+    def test_about(self):
+        conduit.about()
+
+if __name__ == '__main__':
+    unittest.main()
+
 

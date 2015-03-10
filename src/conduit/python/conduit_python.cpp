@@ -165,11 +165,18 @@ PyConduit_DataType_str(PyConduit_DataType *self)
    return (Py_BuildValue("s", output.c_str()));
 }
 
+//---------------------------------------------------------------------------//
+static PyConduit_DataType *
+PyConduit_DataType_python_create()
+{
+    PyTypeObject *type = (PyTypeObject*)getType("DataType");
+    return (PyConduit_DataType*)type->tp_alloc(type,0);
+}
 
 //-----------------------------------------------------------------------------
 // Setters
 //-----------------------------------------------------------------------------
-//     void       set(const DataType& type);
+//     void       set(const DataType& dtype);
 //     void       set(index_t dtype_id);
 //     void       set(index_t dtype_id,
 //                    index_t num_elements,
@@ -180,13 +187,9 @@ PyConduit_DataType_str(PyConduit_DataType *self)
 
 
 //     void       set_number_of_elements(index_t v)
-//                     { m_num_ele = v;}
 //     void       set_offset(index_t v)
-//                     { m_offset = v;}
 //     void       set_stride(index_t v)
-//                     { m_stride = v;}
 //     void       set_element_bytes(index_t v)
-//                     { m_ele_bytes = v;}
 //     void       set_endianness(index_t v)
 //                     { m_endianness = v;}
 //
@@ -784,6 +787,104 @@ PyConduit_Schema_python_attach(PyConduit_Schema *self)
 }
 
 
+//-----------------------------------------------------------------------------
+//
+/// Information Methods
+//
+//-----------------------------------------------------------------------------
+    // const DataType &dtype() const
+    // index_t         total_bytes() const;
+    // index_t         total_bytes_compact() const;
+    // index_t         element_index(index_t idx) const
+    // bool            is_root() const
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_dtype(PyConduit_Schema *self)
+{
+    PyConduit_DataType *retval = PyConduit_DataType_python_create();
+    retval->dtype = self->schema->dtype();
+    return (PyObject*)retval;
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_total_bytes(PyConduit_Schema *self)
+{
+    return PyLong_FromSsize_t(self->schema->total_bytes());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_total_bytes_compact(PyConduit_Schema *self)
+{
+    return PyLong_FromSsize_t(self->schema->total_bytes_compact());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_element_index(PyConduit_Schema *self,
+                               PyObject *args)
+{
+    Py_ssize_t idx;
+    PyObject* retval = NULL;
+    if (!PyArg_ParseTuple(args, "n", &idx))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                "index must be a signed integer");
+        return NULL;
+    }
+
+    return PyLong_FromSsize_t(self->schema->element_index(idx));
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_is_root(PyConduit_Schema *self)
+{
+    if(self->schema->is_root())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//-----------------------------------------------------------------------------
+//
+/// Transformation Methods
+//
+//-----------------------------------------------------------------------------
+    // void            compact_to(Schema &s_dest) const;
+    // std::string     to_json(bool detailed=true,
+    //                             index_t indent=2,
+    //                             index_t depth=0,
+    //                             const std::string &pad=" ",
+    //                             const std::string &eoe="\n") const;
+    // void            to_json(std::ostringstream &oss,
+    //                             bool detailed=true,
+    //                             index_t indent=2,
+    //                             index_t depth=0,
+    //                             const std::string &pad=" ",
+    //                             const std::string &eoe="\n") const;
+
+//-----------------------------------------------------------------------------
+//
+/// Basic I/O methods
+//
+//-----------------------------------------------------------------------------
+    // void            save(const std::string &ofname,
+    //                      bool detailed=true,
+    //                      index_t indent=2,
+    //                      index_t depth=0,
+    //                      const std::string &pad=" ",
+    //                      const std::string &eoe="\n") const;
+    //
+    // void            load(const std::string &ifname);
+
+
 //----------------------------------------------------------------------------//
 // Schema methods table
 //----------------------------------------------------------------------------//
@@ -803,8 +904,33 @@ static PyMethodDef PyConduit_Schema_METHODS[] = {
      (PyCFunction)PyConduit_Schema_python_detach,
      METH_NOARGS,
      "{todo}"},
+     //-----------------------------------------------------------------------//
+     {"dtype",
+      (PyCFunction)PyConduit_Schema_dtype,
+      METH_NOARGS,
+      "{todo}"},
+     //-----------------------------------------------------------------------//
+     {"total_bytes",
+      (PyCFunction)PyConduit_Schema_total_bytes,
+       METH_NOARGS,
+       "{todo}"},
+     //-----------------------------------------------------------------------//
+     {"total_bytes_compact",
+      (PyCFunction)PyConduit_Schema_total_bytes_compact,
+      METH_NOARGS,
+      "{todo}"},
     //-----------------------------------------------------------------------//
-    // end NodeIterator methods table
+    {"element_index",
+     (PyCFunction)PyConduit_Schema_element_index,
+     METH_VARARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"is_root",
+     (PyCFunction)PyConduit_Schema_is_root,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    // end Schema methods table
     //-----------------------------------------------------------------------//
     {NULL, NULL, 0, NULL}
 };
@@ -1593,8 +1719,13 @@ PyConduit_Node_schema(PyConduit_Node *self)
 }
 
 //---------------------------------------------------------------------------//
-/// TODO: dtype()
-//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_dtype(PyConduit_Node *self)
+{
+    PyConduit_DataType *retval = PyConduit_DataType_python_create();
+    retval->dtype = self->node->dtype();
+    return (PyObject*)retval;
+}
 
 //---------------------------------------------------------------------------//
 // parent access
@@ -1835,6 +1966,11 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      (PyCFunction)PyConduit_Node_schema, 
      METH_NOARGS,
      "Returns the schema for the node"}, 
+     //-----------------------------------------------------------------------//
+     {"dtype",
+      (PyCFunction)PyConduit_Node_dtype, 
+      METH_NOARGS,
+      "Returns the conduit DataType for the node"}, 
     //-----------------------------------------------------------------------//
     {"has_parent",
      (PyCFunction)PyConduit_Node_has_parent, 

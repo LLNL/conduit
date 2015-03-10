@@ -42,8 +42,8 @@
 # 
 ###############################################################################
 """
- file: test_basic.py
- description: Unit tests for basic conduit python module interface.
+ file: python_conduit_datatype.py
+ description: Unit tests for conduit::DataType python module interface.
 
 """
 
@@ -51,10 +51,24 @@ import sys
 import unittest
 
 import conduit
+Node = conduit.Node.Node
 
-class Test_Condut_Basic(unittest.TestCase):
-    def test_about(self):
-        conduit.about()
+from numpy import *
+
+
+class Test_Conduit_Node(unittest.TestCase):
+    def test_simple(self):
+        a_val = uint32(10)
+        b_val = uint32(20)
+        c_val = float64(30.0)
+
+        n = Node()
+        n['a'] = a_val
+        n['b'] = b_val
+        n['c'] = c_val
+        print n.fetch('a').dtype()
+        print n.fetch('b').dtype()
+        print n.fetch('c').dtype()
 
 if __name__ == '__main__':
     unittest.main()

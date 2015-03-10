@@ -42,8 +42,8 @@
 # 
 ###############################################################################
 """
- file: test_conduit_python_node.py
- description: Unit tests for conduit::Node python module interface.
+ file: python_conduit_schema.py
+ description: Unit tests for conduit::Schema python module interface.
 
 """
 
@@ -52,35 +52,21 @@ import unittest
 
 import conduit
 Node = conduit.Node.Node
-NodeIterator = conduit.NodeIterator.NodeIterator
 
 from numpy import *
 
 
-class Test_Conduit_Node(unittest.TestCase):
+class Test_Conduit_Schema(unittest.TestCase):
     def test_simple(self):
         a_val = uint32(10)
         b_val = uint32(20)
         c_val = float64(30.0)
-
         n = Node()
         n['a'] = a_val
         n['b'] = b_val
         n['c'] = c_val
-  
-        itr = NodeIterator()
-        print itr.has_next();
-        itr = n.iterator()
-        print itr.has_next();
-        for v in itr:
-            print v.path(), v.node()
+        s = n.schema();
 
-#
-# TODO: sensible itr use cases:
-# for v in itr:
-# for k,v in itr.items():
-# for i,v in itr.children():
-#
 
 if __name__ == '__main__':
     unittest.main()
