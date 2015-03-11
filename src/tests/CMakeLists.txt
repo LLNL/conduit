@@ -179,7 +179,7 @@ else()
 endif()
 
 
-if(ENABLE_MPI AND MPI_FOUND)
+if(ENABLE_MPI)
     message(STATUS "MPI enabled: Adding related unit tests")
     foreach(TEST ${MPI_TESTS})
         add_mpi_test(${TEST} 2) # this uses 2 procs
@@ -188,7 +188,7 @@ else()
     message(STATUS "MPI disabled: Skipping related tests")
 endif()
 
-if(ENABLE_SILO AND SILO_FOUND)
+if(ENABLE_SILO)
     message(STATUS "Silo enabled: Adding related unit tests")
     foreach(TEST ${SILO_TESTS})
         add_io_test(${TEST})
