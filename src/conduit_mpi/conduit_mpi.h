@@ -74,12 +74,37 @@ namespace conduit
 namespace mpi
 {
 
+    int CONDUIT_MPI_API send(Node& node, int dest, int tag, MPI_Comm comm);
+
+    int CONDUIT_MPI_API recv(Node& node, int source, int tag, MPI_Comm comm);
+
+// int sendrecv(Node& sendNode,
+//              int dest, int sendtag,
+//              Node& receiveNode,
+//              int source, int recvtag, MPI_Comm comm, MPI_Status *status );
+//
+// int broadcast(Node& node, int root,
+//                MPI_Comm comm );
+//
+// int gather(Node& sendNode,
+//            Node& recvNode,
+//            int root, MPI_Comm comm );
+//
+// int scatter(Node& sendNode,
+//             Node& recvNode,
+//             int root,
+//             MPI_Comm comm );
+//
+// int alltoall(Node& sendNode,
+//              Node& recvNode,
+//              MPI_Comm comm );
+
 //-----------------------------------------------------------------------------
 /// The about methods construct human readable info about how conduit_mpi was
 /// configured.
 //-----------------------------------------------------------------------------
- std::string CONDUIT_IO_API about();
- void        CONDUIT_IO_API about(Node &);
+ std::string CONDUIT_MPI_API about();
+ void        CONDUIT_MPI_API about(Node &);
 
 };
 //-----------------------------------------------------------------------------

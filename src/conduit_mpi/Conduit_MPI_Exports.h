@@ -44,21 +44,21 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Conduit_IO_Exports.h
+/// file: Conduit_MPI_Exports.h
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_IO_EXPORTS_H
-#define CONDUIT_IO_EXPORTS_H
+#ifndef CONDUIT_MPI_EXPORTS_H
+#define CONDUIT_MPI_EXPORTS_H
 
 //-----------------------------------------------------------------------------
 // -- define proper lib exports for various platforms -- 
 //-----------------------------------------------------------------------------
 #if defined(_WIN32)
-#if defined(CONDUIT_IO_EXPORTS) || defined(conduit_io_EXPORTS)
-#define CONDUIT_IO_API __declspec(dllexport)
+#if defined(CONDUIT_MPI_EXPORTS) || defined(conduit_mpi_EXPORTS)
+#define CONDUIT_MPI_API __declspec(dllexport)
 #else
-#define CONDUIT_IO_API __declspec(dllimport)
+#define CONDUIT_MPI_API __declspec(dllimport)
 #endif
 #if defined(_MSC_VER)
 // Turn off warning about lack of DLL interface
@@ -69,10 +69,10 @@
 #pragma warning(disable:4786)
 #endif
 #else
-# if __GNUC__ >= 4 && (defined(CONDUIT_IO_EXPORTS) || defined(conduit_io_EXPORTS))
-#   define CONDUIT_IO_API __attribute__ ((visibility("default")))
+# if __GNUC__ >= 4 && (defined(CONDUIT_MPI_EXPORTS) || defined(conduit_mpi_EXPORTS))
+#   define CONDUIT_MPI_API __attribute__ ((visibility("default")))
 # else
-#   define CONDUIT_IO_API /* hidden by default */
+#   define CONDUIT_MPI_API /* hidden by default */
 # endif
 #endif
 

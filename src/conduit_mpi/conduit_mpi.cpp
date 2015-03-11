@@ -63,7 +63,86 @@ namespace conduit
 namespace mpi
 {
 
+//---------------------------------------------------------------------------//
+int send(Node& node, int dest, int tag, MPI_Comm comm)
+{ 
 
+    Schema schema_c;
+    node.schema().compact_to(schema_c);
+    std::string schema = schema_c.to_json();
+    int schema_len = schema.length() + 1;
+
+    std::vector<uint8> data;
+    node.serialize(data);
+    int data_len = data.size();
+
+
+    int intArray[2] = { schema_len, data_len };
+
+
+    int mpiError = MPI_Send(intArray, 2, MPI_INT, dest, tag, comm);
+
+
+    //Check errors on return value mpiError here
+    if (mpiError == MPI_ERR_COMM) {
+    } else if (mpiError == MPI_ERR_COUNT) {
+    } else if (mpiError == MPI_ERR_TYPE) {
+    } else if (mpiError == MPI_ERR_TAG) {
+    } else if (mpiError == MPI_ERR_RANK) {
+    }
+
+    mpiError = MPI_Send(const_cast <char*> (schema.c_str()), schema_len, MPI_CHAR, dest, tag, comm);
+
+    if (mpiError == MPI_ERR_COMM) {
+    } else if (mpiError == MPI_ERR_COUNT) {
+    } else if (mpiError == MPI_ERR_TYPE) {
+    } else if (mpiError == MPI_ERR_TAG) {
+    } else if (mpiError == MPI_ERR_RANK) {
+    }
+
+    return MPI_Send(&data[0], data_len, MPI_CHAR, dest, tag, comm);
+}
+
+//---------------------------------------------------------------------------//
+int recv(Node& node, int src, int tag, MPI_Comm comm)
+{  
+    int intArray[2];
+    MPI_Status status;
+
+    int mpiError = MPI_Recv(intArray, 2, MPI_INT, src, tag, comm, &status);
+
+    //Check errors on return value mpiError here
+    if (mpiError == MPI_ERR_COMM) {
+    } else if (mpiError == MPI_ERR_COUNT) {
+    } else if (mpiError == MPI_ERR_TYPE) {
+    } else if (mpiError == MPI_ERR_TAG) {
+    } else if (mpiError == MPI_ERR_RANK) {
+    }
+
+    int schema_len = intArray[0];
+    int data_len = intArray[1];
+
+    char schema[schema_len + 1];
+    char data[data_len + 1];
+
+    mpiError = MPI_Recv(schema, schema_len, MPI_CHAR, src, tag, comm, &status);
+
+    if (mpiError == MPI_ERR_COMM) {
+    } else if (mpiError == MPI_ERR_COUNT) {
+    } else if (mpiError == MPI_ERR_TYPE) {
+    } else if (mpiError == MPI_ERR_TAG) {
+    } else if (mpiError == MPI_ERR_RANK) {
+    }
+
+    mpiError = MPI_Recv(data, data_len, MPI_CHAR, src, tag, comm, &status);
+
+    Generator node_gen(schema, data);
+    /// gen copy 
+    node_gen.walk(node);
+
+    return mpiError;
+}
+    
 //---------------------------------------------------------------------------//
 std::string
 about()
