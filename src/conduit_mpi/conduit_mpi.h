@@ -44,44 +44,55 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_io_smoke.cpp
+/// file: conduit_mpi.h
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit_io.h"
-#include <iostream>
-#include "gtest/gtest.h"
 
-using namespace conduit;
+#ifndef __CONDUIT_MPI_H
+#define __CONDUIT_MPI_H
 
+//-----------------------------------------------------------------------------
+// -- define proper lib exports for various platforms -- 
+//-----------------------------------------------------------------------------
+#include "Conduit_MPI_Exports.h"
 
-TEST(conduit_io_smoke, about)
+#include <mpi.h>
+
+#include "conduit.h"
+#include "Conduit_MPI_Config.h"
+
+//-----------------------------------------------------------------------------
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
+namespace conduit
 {
-    std::cout << io::about() << std::endl;
-}
 
-
-TEST(conduit_io_smoke, basic_bin)
+//-----------------------------------------------------------------------------
+// -- begin conduit::mpi --
+//-----------------------------------------------------------------------------
+namespace mpi
 {
-    uint32 a_val = 20;
-    uint32 b_val = 8;
-    uint32 c_val = 13;
 
-    Node n;
-    n["a"] = a_val;
-    n["b"] = b_val;
-    n["c"] = c_val;
+//-----------------------------------------------------------------------------
+/// The about methods construct human readable info about how conduit_mpi was
+/// configured.
+//-----------------------------------------------------------------------------
+ std::string CONDUIT_IO_API about();
+ void        CONDUIT_IO_API about(Node &);
 
-    EXPECT_EQ(n["a"].as_uint32(), a_val);
-    EXPECT_EQ(n["b"].as_uint32(), b_val);
-    EXPECT_EQ(n["c"].as_uint32(), c_val);
+};
+//-----------------------------------------------------------------------------
+// -- end conduit::mpi --
+//-----------------------------------------------------------------------------
 
-    io::save(n, "test_conduit_io_dump");
 
-    Node n_load;
-    io::load("test_conduit_io_dump",n_load);
-    
-    EXPECT_EQ(n_load["a"].as_uint32(), a_val);
-    EXPECT_EQ(n_load["b"].as_uint32(), b_val);
-    EXPECT_EQ(n_load["c"].as_uint32(), c_val);
-}
+
+};
+//-----------------------------------------------------------------------------
+// -- end conduit:: --
+//-----------------------------------------------------------------------------
+
+
+#endif
+

@@ -44,44 +44,54 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_io_smoke.cpp
+/// file: conduit_mpi.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit_io.h"
+#include "conduit_mpi.h"
 #include <iostream>
-#include "gtest/gtest.h"
 
-using namespace conduit;
-
-
-TEST(conduit_io_smoke, about)
+//-----------------------------------------------------------------------------
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
+namespace conduit
 {
-    std::cout << io::about() << std::endl;
-}
 
-
-TEST(conduit_io_smoke, basic_bin)
+    //-----------------------------------------------------------------------------
+// -- begin conduit::mpi --
+//-----------------------------------------------------------------------------
+namespace mpi
 {
-    uint32 a_val = 20;
-    uint32 b_val = 8;
-    uint32 c_val = 13;
 
+
+//---------------------------------------------------------------------------//
+std::string
+about()
+{
     Node n;
-    n["a"] = a_val;
-    n["b"] = b_val;
-    n["c"] = c_val;
-
-    EXPECT_EQ(n["a"].as_uint32(), a_val);
-    EXPECT_EQ(n["b"].as_uint32(), b_val);
-    EXPECT_EQ(n["c"].as_uint32(), c_val);
-
-    io::save(n, "test_conduit_io_dump");
-
-    Node n_load;
-    io::load("test_conduit_io_dump",n_load);
-    
-    EXPECT_EQ(n_load["a"].as_uint32(), a_val);
-    EXPECT_EQ(n_load["b"].as_uint32(), b_val);
-    EXPECT_EQ(n_load["c"].as_uint32(), c_val);
+    mpi::about(n);
+    return n.to_json(true,2);
 }
+
+//---------------------------------------------------------------------------//
+void
+about(Node &n)
+{
+    n.reset();
+    n["mpi"] = "enabled";
+}
+
+
+};
+//-----------------------------------------------------------------------------
+// -- end conduit::mpi --
+//-----------------------------------------------------------------------------
+
+
+
+};
+//-----------------------------------------------------------------------------
+// -- end conduit:: --
+//-----------------------------------------------------------------------------
+
+
