@@ -48,7 +48,7 @@
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit_io.h"
+#include "conduit_mpi.h"
 #include <iostream>
 #include "gtest/gtest.h"
 
@@ -57,7 +57,7 @@ using namespace conduit;
 
 TEST(conduit_mpi_smoke, about)
 {
-    std::cout << io::about() << std::endl;
+    std::cout << mpi::about() << std::endl;
 }
 
 
