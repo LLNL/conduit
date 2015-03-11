@@ -60,101 +60,563 @@
 
 using namespace conduit;
 
-static PyObject* PyConduitSchema_getObject(const Schema* schema);
-static int       PyConduitSchema_Check(PyObject* obj);
-static PyObject* PyConduitNode_getObject(Node* node);
-static int       PyConduitNode_Check(PyObject* obj);
-static int       PyConduitNode_SetFromPython(Node& node, PyObject* value);
+//---------------------------------------------------------------------------//
+struct PyConduit_DataType {
+    PyObject_HEAD
+    DataType dtype; // NoteIterator is light weight, we can deal with copies
+};
+
+//---------------------------------------------------------------------------//
+struct PyConduit_Schema {
+    PyObject_HEAD
+    Schema *schema;
+    int python_owns;
+};
+
+//---------------------------------------------------------------------------//
+struct PyConduit_NodeIterator {
+    PyObject_HEAD
+    NodeIterator itr; // NoteIterator is light weight, we can deal with copies
+};
+
+//---------------------------------------------------------------------------//
+struct PyConduit_Node {
+   PyObject_HEAD
+   Node *node;
+   int python_owns;
+};
+
+
+//---------------------------------------------------------------------------//
+static PyConduit_DataType *PyConduit_DataType_python_create();
+static int       PyConduit_DataType_check(PyObject* obj);
+
+
+//---------------------------------------------------------------------------//
+static PyConduit_Schema* PyConduit_Schema_python_create();
+static PyObject* PyConduit_Schema_python_wrap(Schema *schema,int python_owns);
+static int       PyConduit_Schema_Check(PyObject* obj);
+
+
+//---------------------------------------------------------------------------//
+static PyConduit_Node* PyConduit_Node_python_create();
+static PyObject* PyConduit_Node_python_wrap(Node *node,int python_owns);
+static int       PyConduit_Node_Check(PyObject* obj);
+static int       PyConduit_Node_SetFromPython(Node& node, PyObject* value);
 static PyObject* PyConduit_createNumpyType(Node& node, int type);
 static PyObject* PyConduit_convertNodeToPython(Node& node);
 static PyObject* getType(const char* name);
 
-struct Py_ConduitSchema {
-    PyObject_HEAD
-    Schema* schema;
-    int owns_data;
-};
+
 
 //---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+//
+// DataType Object 
+//
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
 static PyObject * 
-PyConduitSchema_New(PyTypeObject* type,
-                    PyObject* args,
-                    PyObject* kwds)
+PyConduit_DataType_new(PyTypeObject* type,
+                       PyObject* args,
+                       PyObject* kwds)
 {
-    static char *kwlist[] = {"value", NULL};
-    PyObject* value = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &value)) {
-        return (NULL);
-    }
+    /// TODO: args and kwargs
+    
+    // static char *kwlist[] = {"value", NULL};
+    // PyObject* value = NULL;
+    // if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &value)) {
+    //     return (NULL);
+    // }
 
-    Py_ConduitSchema* self = (Py_ConduitSchema*)type->tp_alloc(type, 0);
-    if (self) {
-        self->schema = 0;
-        self->owns_data = 0;
-    }
-
+    PyConduit_DataType *self = (PyConduit_DataType*)type->tp_alloc(type, 0);
     return ((PyObject*)self);
 }
 
 //---------------------------------------------------------------------------//
 static int
-PyConduitSchema_init(Py_ConduitSchema* self,
-                     PyObject* args,
-                     PyObject* kwds)
+PyConduit_DataType_init(PyConduit_Schema* self,
+                        PyObject* args,
+                        PyObject* kwds)
 {
-     static char *kwlist[] = {"value", NULL};
-     PyObject* value = NULL;
-     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &value)) {
-         return (NULL);
-     }
-
-     if (value) {
-
-         if (PyConduitSchema_Check(value)) {
-             self->schema = new Schema(*((Py_ConduitSchema*)value)->schema);
-         } else if (PyString_Check(value)) {
-             self->schema = new Schema(PyString_AsString(value));
-         } else {
-             PyErr_SetString(PyExc_TypeError, "Invalid initializer for schema");
-             return (-1);
-         }
-     } else {
-         self->schema = new Schema();
-     }
-
-     self->owns_data = 1;
-
+     /// TODO: args and kwargs
+     // static char *kwlist[] = {"value", NULL};
+     // PyObject* value = NULL;
+     // if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &value))
+     // {
+     //     return (NULL);
+     // }
      return (0);
-
 }
 
 //---------------------------------------------------------------------------//
 static void
-PyConduitSchema_dealloc(Py_ConduitSchema* self)
+PyConduit_DataType_dealloc(PyConduit_DataType *self)
 {
-    if (self->owns_data) {
-        delete self->schema;
-    }
     self->ob_type->tp_free((PyObject*)self);
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduitSchema_str(Py_ConduitSchema* self)
+PyConduit_DataType_str(PyConduit_DataType *self)
 {
-   std::string output = self->schema->to_json();
+   std::string output = self->dtype.to_json();
    return (Py_BuildValue("s", output.c_str()));
 }
 
 //---------------------------------------------------------------------------//
+static PyConduit_DataType *
+PyConduit_DataType_python_create()
+{
+    PyTypeObject *type = (PyTypeObject*)getType("DataType");
+    return (PyConduit_DataType*)type->tp_alloc(type,0);
+}
+
+//-----------------------------------------------------------------------------
+// Setters
+//-----------------------------------------------------------------------------
+//     void       set(const DataType& dtype);
+//     void       set(index_t dtype_id);
+//     void       set(index_t dtype_id,
+//                    index_t num_elements,
+//                    index_t offset,
+//                    index_t stride,
+//                    index_t element_bytes,
+//                    index_t endianness);
+
+
+//     void       set_number_of_elements(index_t v)
+//     void       set_offset(index_t v)
+//     void       set_stride(index_t v)
+//     void       set_element_bytes(index_t v)
+//     void       set_endianness(index_t v)
+//                     { m_endianness = v;}
+//
+
+
 //---------------------------------------------------------------------------//
-static PyTypeObject PyConduit_SchemaType = {
+static PyObject *
+PyConduit_DataType_set_number_of_elements(PyConduit_DataType *self,
+                                          PyObject *args)
+{
+    Py_ssize_t value;
+    PyObject* retval = NULL;
+    if (!PyArg_ParseTuple(args, "n", &value))
+    {
+        PyErr_SetString(PyExc_TypeError,
+            "number_of_elements must be a signed integer");
+        return NULL;
+    }
+
+    self->dtype.set_number_of_elements(value);
+
+    Py_RETURN_NONE; 
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_set_offset(PyConduit_DataType *self,
+                              PyObject *args)
+{
+    Py_ssize_t value;
+    PyObject* retval = NULL;
+    if (!PyArg_ParseTuple(args, "n", &value))
+    {
+        PyErr_SetString(PyExc_TypeError,
+            "offset must be be a signed integer");
+        return NULL;
+    }
+
+    self->dtype.set_offset(value);
+
+    Py_RETURN_NONE; 
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_set_stride(PyConduit_DataType *self,
+                              PyObject *args)
+{
+    Py_ssize_t value;
+    PyObject* retval = NULL;
+    if (!PyArg_ParseTuple(args, "n", &value))
+    {
+        PyErr_SetString(PyExc_TypeError,
+            "stride must be a signed integer");
+        return NULL;
+    }
+
+    self->dtype.set_stride(value);
+
+    Py_RETURN_NONE; 
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_set_element_bytes(PyConduit_DataType *self,
+                                     PyObject *args)
+{
+    Py_ssize_t value;
+    PyObject* retval = NULL;
+    if (!PyArg_ParseTuple(args, "n", &value))
+    {
+        PyErr_SetString(PyExc_TypeError,
+            "element bytes must be a signed integer");
+        return NULL;
+    }
+
+    self->dtype.set_element_bytes(value);
+
+    Py_RETURN_NONE; 
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_set_endianness(PyConduit_DataType *self,
+                                  PyObject *args)
+{
+    Py_ssize_t value;
+    PyObject* retval = NULL;
+    if (!PyArg_ParseTuple(args, "n", &value))
+    {
+        PyErr_SetString(PyExc_TypeError,
+            "endianness must be a signed integer");
+        return NULL;
+    }
+
+    self->dtype.set_endianness(value);
+
+    Py_RETURN_NONE; 
+}
+
+//-----------------------------------------------------------------------------
+// Getters and info methods.
+//-----------------------------------------------------------------------------
+//     index_t     id()    const { return m_id;}
+//     index_t     total_bytes()   const;
+//     index_t     total_bytes_compact() const;
+//     bool        is_compact() const;
+//     bool        is_compatible(const DataType& type) const;
+//
+//     bool        is_number()           const;
+//     bool        is_float()            const;
+//     bool        is_integer()          const;
+//     bool        is_signed_integer()   const;
+//     bool        is_unsigned_integer() const;
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_id(PyConduit_DataType *self)
+{
+    return PyLong_FromSsize_t(self->dtype.id());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_total_bytes(PyConduit_DataType *self)
+{
+    return PyLong_FromSsize_t(self->dtype.total_bytes());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_total_bytes_compact(PyConduit_DataType *self)
+{
+    return PyLong_FromSsize_t(self->dtype.total_bytes_compact());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_compact(PyConduit_DataType *self)
+{
+    if(self->dtype.is_compact())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_compatible(PyConduit_DataType *self,
+                                 PyObject *args)
+{
+    PyObject *py_dtype;
+    if ( (!PyArg_ParseTuple(args, "O", &py_dtype)) || 
+         (!PyConduit_DataType_check(py_dtype)) )
+    {
+         PyErr_SetString(PyExc_TypeError, "is_compatible needs a DataType arg");
+         return (NULL);
+    }
+    
+    
+    if(self->dtype.is_compatible( ((PyConduit_DataType*)py_dtype)->dtype))
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_number(PyConduit_DataType *self)
+{
+    if(self->dtype.is_number())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_float(PyConduit_DataType *self)
+{
+    if(self->dtype.is_float())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_integer(PyConduit_DataType *self)
+{
+    if(self->dtype.is_float())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_signed_integer(PyConduit_DataType *self)
+{
+    if(self->dtype.is_signed_integer())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_unsigned_integer(PyConduit_DataType *self)
+{
+    if(self->dtype.is_unsigned_integer())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+
+//
+//
+//     index_t    number_of_elements()  const { return m_num_ele;}
+//     index_t    offset()              const { return m_offset;}
+//     index_t    stride()              const { return m_stride;}
+//     index_t    element_bytes()       const { return m_ele_bytes;}
+//     index_t    endianness()          const { return m_endianness;}
+//     index_t    element_index(index_t idx) const;
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_number_of_elements(PyConduit_DataType *self)
+{
+    return PyLong_FromSsize_t(self->dtype.number_of_elements());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_offset(PyConduit_DataType *self)
+{
+    return PyLong_FromSsize_t(self->dtype.offset());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_stride(PyConduit_DataType *self)
+{
+    return PyLong_FromSsize_t(self->dtype.stride());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_element_bytes(PyConduit_DataType *self)
+{
+    return PyLong_FromSsize_t(self->dtype.element_bytes());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_endianness(PyConduit_DataType *self)
+{
+    return PyLong_FromSsize_t(self->dtype.endianness());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_element_index(PyConduit_DataType *self,
+                                 PyObject *args)
+{
+    Py_ssize_t idx;
+    PyObject* retval = NULL;
+    if (!PyArg_ParseTuple(args, "n", &idx))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                "index must be a signed integer");
+        return NULL;
+    }
+
+    return PyLong_FromSsize_t(self->dtype.element_index(idx));
+}
+
+
+//----------------------------------------------------------------------------//
+// Schema methods table
+//----------------------------------------------------------------------------//
+static PyMethodDef PyConduit_DataType_METHODS[] = {
+    //-----------------------------------------------------------------------//
+    {"set_number_of_elements",
+     (PyCFunction)PyConduit_DataType_set_number_of_elements,
+     METH_VARARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"set_offset",
+     (PyCFunction)PyConduit_DataType_set_offset,
+     METH_VARARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"set_stride",
+     (PyCFunction)PyConduit_DataType_set_stride,
+     METH_VARARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"set_element_bytes",
+     (PyCFunction)PyConduit_DataType_set_element_bytes,
+     METH_VARARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"set_endianness",
+     (PyCFunction)PyConduit_DataType_set_endianness,
+     METH_VARARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"id",
+     (PyCFunction)PyConduit_DataType_id,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"total_bytes",
+     (PyCFunction)PyConduit_DataType_total_bytes,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"total_bytes_compact",
+     (PyCFunction)PyConduit_DataType_total_bytes_compact,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"is_compact",
+     (PyCFunction)PyConduit_DataType_is_compact,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"is_compatible",
+     (PyCFunction)PyConduit_DataType_is_compatible,
+     METH_VARARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"is_number",
+     (PyCFunction)PyConduit_DataType_is_number,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"is_float",
+     (PyCFunction)PyConduit_DataType_is_float,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"is_integer",
+     (PyCFunction)PyConduit_DataType_is_integer,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"is_signed_integer",
+     (PyCFunction)PyConduit_DataType_is_signed_integer,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"is_unsigned_integer",
+     (PyCFunction)PyConduit_DataType_is_unsigned_integer,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"number_of_elements",
+     (PyCFunction)PyConduit_DataType_number_of_elements,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"offset",
+     (PyCFunction)PyConduit_DataType_offset,
+     METH_VARARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"stride",
+     (PyCFunction)PyConduit_DataType_stride,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"element_bytes",
+     (PyCFunction)PyConduit_DataType_element_bytes,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"element_index",
+     (PyCFunction)PyConduit_DataType_element_index,
+     METH_VARARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    // end DataType methods table
+    //-----------------------------------------------------------------------//
+    {NULL, NULL, 0, NULL}
+};
+
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+static PyTypeObject PyConduit_DataType_TYPE = {
    PyObject_HEAD_INIT(NULL)
    0,
    "Schema",
-   sizeof(Py_ConduitSchema),  /* tp_basicsize */
+   sizeof(PyConduit_DataType),  /* tp_basicsize */
    0, /* tp_itemsize */
-   (destructor)PyConduitSchema_dealloc,                   /* tp_dealloc */
+   (destructor)PyConduit_DataType_dealloc, /* tp_dealloc */
    0, /* tp_print */
    0, /* tp_getattr */
    0, /* tp_setattr */
@@ -165,19 +627,19 @@ static PyTypeObject PyConduit_SchemaType = {
    0, /* as_mapping */
    0, /* hash */
    0, /* call */
-   (reprfunc)PyConduitSchema_str,                         /* str */
+   (reprfunc)PyConduit_DataType_str, /* str */
    0, /* getattro */
    0, /* setattro */
    0, /* asbuffer */
    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,     /* flags */
-   "Conduit schema objects",
+   "Conduit DataType objects",
    0, /* traverse */
    0, /* clear */
    0, /* tp_richcompare */
    0, /* tp_weaklistoffset */
    0, /* iter */
    0, /* iternext */
-   0, /* METHODS */
+   PyConduit_DataType_METHODS, /* METHODS */
    0, /* MEMBERS */
    0, /* get/set */
    0, /* tp_base */
@@ -185,9 +647,9 @@ static PyTypeObject PyConduit_SchemaType = {
    0, /* descr_get */
    0, /* gescr_set */
    0, /* dictoffset */
-   (initproc)PyConduitSchema_init,
+   (initproc)PyConduit_DataType_init,
    0, /* alloc */
-   PyConduitSchema_New,                                   /* new */
+   PyConduit_DataType_new,                                   /* new */
    0, /* tp_free */
    0, /* tp_is_gc */
    0, /* tp_bases */
@@ -200,29 +662,687 @@ static PyTypeObject PyConduit_SchemaType = {
 };
 
 //---------------------------------------------------------------------------//
-struct Py_ConduitNodeIter {
-    PyObject_HEAD
-};
+static int
+PyConduit_DataType_check(PyObject* obj)
+{
+    return (PyObject_TypeCheck(obj, &PyConduit_DataType_TYPE));
+}
+
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+//
+// Schema Object 
+//
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyConduit_Schema_New(PyTypeObject* type,
+                    PyObject* args,
+                    PyObject* kwds)
+{
+    static char *kwlist[] = {"value", NULL};
+    PyObject* value = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &value)) {
+        return (NULL);
+    }
+
+    PyConduit_Schema* self = (PyConduit_Schema*)type->tp_alloc(type, 0);
+    if (self) {
+        self->schema = 0;
+        self->python_owns = 0;
+    }
+
+    return ((PyObject*)self);
+}
+
+//---------------------------------------------------------------------------//
+static int
+PyConduit_Schema_init(PyConduit_Schema* self,
+                      PyObject* args,
+                      PyObject* kwds)
+{
+     static char *kwlist[] = {"value", NULL};
+     PyObject* value = NULL;
+     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &value))
+     {
+         return (NULL);
+     }
+
+     if (value)
+     {
+         if (PyConduit_Schema_Check(value))
+         {
+             self->schema = new Schema(*((PyConduit_Schema*)value)->schema);
+         }
+         else if (PyString_Check(value))
+         {
+             self->schema = new Schema(PyString_AsString(value));
+         }
+         else
+         {
+             PyErr_SetString(PyExc_TypeError, "Invalid initializer for schema");
+             return (-1);
+         }
+     }
+     else
+     {
+         self->schema = new Schema();
+     }
+
+     self->python_owns = 1;
+
+     return (0);
+
+}
+
+//---------------------------------------------------------------------------//
+static void
+PyConduit_Schema_dealloc(PyConduit_Schema* self)
+{
+    if (self->python_owns)
+    {
+        delete self->schema;
+    }
+    self->ob_type->tp_free((PyObject*)self);
+}
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduitNodeIter_next(PyObject* self)
+PyConduit_Schema_str(PyConduit_Schema *self)
 {
-    // if done return NULL, else return item and increment
+   std::string output = self->schema->to_json();
+   return (Py_BuildValue("s", output.c_str()));
+}
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_python_owns(PyConduit_Schema *self)
+{
+    if(self->python_owns)
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_python_detach(PyConduit_Schema *self)
+{
+    self->python_owns = 0;
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_python_attach(PyConduit_Schema *self)
+{
+    self->python_owns = 1;
+}
+
+
+//-----------------------------------------------------------------------------
+//
+/// Information Methods
+//
+//-----------------------------------------------------------------------------
+    // const DataType &dtype() const
+    // index_t         total_bytes() const;
+    // index_t         total_bytes_compact() const;
+    // index_t         element_index(index_t idx) const
+    // bool            is_root() const
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_dtype(PyConduit_Schema *self)
+{
+    PyConduit_DataType *retval = PyConduit_DataType_python_create();
+    retval->dtype = self->schema->dtype();
+    return (PyObject*)retval;
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_total_bytes(PyConduit_Schema *self)
+{
+    return PyLong_FromSsize_t(self->schema->total_bytes());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_total_bytes_compact(PyConduit_Schema *self)
+{
+    return PyLong_FromSsize_t(self->schema->total_bytes_compact());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_element_index(PyConduit_Schema *self,
+                               PyObject *args)
+{
+    Py_ssize_t idx;
+    PyObject* retval = NULL;
+    if (!PyArg_ParseTuple(args, "n", &idx))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                "index must be a signed integer");
+        return NULL;
+    }
+
+    return PyLong_FromSsize_t(self->schema->element_index(idx));
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_is_root(PyConduit_Schema *self)
+{
+    if(self->schema->is_root())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//-----------------------------------------------------------------------------
+//
+/// Transformation Methods
+//
+//-----------------------------------------------------------------------------
+    // void            compact_to(Schema &s_dest) const;
+    // std::string     to_json(bool detailed=true,
+    //                             index_t indent=2,
+    //                             index_t depth=0,
+    //                             const std::string &pad=" ",
+    //                             const std::string &eoe="\n") const;
+    // void            to_json(std::ostringstream &oss,
+    //                             bool detailed=true,
+    //                             index_t indent=2,
+    //                             index_t depth=0,
+    //                             const std::string &pad=" ",
+    //                             const std::string &eoe="\n") const;
+
+//-----------------------------------------------------------------------------
+//
+/// Basic I/O methods
+//
+//-----------------------------------------------------------------------------
+    // void            save(const std::string &ofname,
+    //                      bool detailed=true,
+    //                      index_t indent=2,
+    //                      index_t depth=0,
+    //                      const std::string &pad=" ",
+    //                      const std::string &eoe="\n") const;
+    //
+    // void            load(const std::string &ifname);
+
+
+//----------------------------------------------------------------------------//
+// Schema methods table
+//----------------------------------------------------------------------------//
+static PyMethodDef PyConduit_Schema_METHODS[] = {
+    //-----------------------------------------------------------------------//
+    {"python_owns",
+     (PyCFunction)PyConduit_Schema_python_owns,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"python_attach",
+     (PyCFunction)PyConduit_Schema_python_attach,
+      METH_NOARGS,
+      "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"python_detach",
+     (PyCFunction)PyConduit_Schema_python_detach,
+     METH_NOARGS,
+     "{todo}"},
+     //-----------------------------------------------------------------------//
+     {"dtype",
+      (PyCFunction)PyConduit_Schema_dtype,
+      METH_NOARGS,
+      "{todo}"},
+     //-----------------------------------------------------------------------//
+     {"total_bytes",
+      (PyCFunction)PyConduit_Schema_total_bytes,
+       METH_NOARGS,
+       "{todo}"},
+     //-----------------------------------------------------------------------//
+     {"total_bytes_compact",
+      (PyCFunction)PyConduit_Schema_total_bytes_compact,
+      METH_NOARGS,
+      "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"element_index",
+     (PyCFunction)PyConduit_Schema_element_index,
+     METH_VARARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"is_root",
+     (PyCFunction)PyConduit_Schema_is_root,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    // end Schema methods table
+    //-----------------------------------------------------------------------//
+    {NULL, NULL, 0, NULL}
+};
+
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+static PyTypeObject PyConduit_Schema_TYPE = {
+   PyObject_HEAD_INIT(NULL)
+   0,
+   "Schema",
+   sizeof(PyConduit_Schema),  /* tp_basicsize */
+   0, /* tp_itemsize */
+   (destructor)PyConduit_Schema_dealloc, /* tp_dealloc */
+   0, /* tp_print */
+   0, /* tp_getattr */
+   0, /* tp_setattr */
+   0, /* tp_compare */
+   0, /* tp_repr */
+   0, /* tp_as_number */
+   0, /* tp_as_sequence */
+   0, /* as_mapping */
+   0, /* hash */
+   0, /* call */
+   (reprfunc)PyConduit_Schema_str, /* str */
+   0, /* getattro */
+   0, /* setattro */
+   0, /* asbuffer */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,     /* flags */
+   "Conduit schema objects",
+   0, /* traverse */
+   0, /* clear */
+   0, /* tp_richcompare */
+   0, /* tp_weaklistoffset */
+   0, /* iter */
+   0, /* iternext */
+   PyConduit_Schema_METHODS, /* METHODS */
+   0, /* MEMBERS */
+   0, /* get/set */
+   0, /* tp_base */
+   0, /* dict */
+   0, /* descr_get */
+   0, /* gescr_set */
+   0, /* dictoffset */
+   (initproc)PyConduit_Schema_init,
+   0, /* alloc */
+   PyConduit_Schema_New,                                   /* new */
+   0, /* tp_free */
+   0, /* tp_is_gc */
+   0, /* tp_bases */
+   0, /* tp_mro */
+   0, /* tp_cache */
+   0, /* tp_subclasses */
+   0,  /* tp_weaklist */
+   0,
+   0
+};
+
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_NodeIterator_new(PyTypeObject *type,
+                            PyObject *args,
+                            PyObject *kwds)
+{
+    PyConduit_NodeIterator *self = NULL;
+    self = (PyConduit_NodeIterator*)type->tp_alloc(type,0);
+    
+    if(!self) 
+    {
+        // error?
+    }
+    
+    return ((PyObject*)self);
+}
+
+//---------------------------------------------------------------------------//
+static int
+PyConduit_NodeIterator_init(PyConduit_Schema* self,
+                            PyObject* args,
+                            PyObject* kwds)
+{
+    /// TODO?
+    return (0);
+}
+
+//---------------------------------------------------------------------------//
+static void
+PyConduit_NodeIterator_dealloc(PyConduit_NodeIterator *self)
+{
+    self->ob_type->tp_free((PyObject*)self);
+}
+
+//---------------------------------------------------------------------------//
+///TODO: imp
+static PyObject *
+PyConduit_NodeIterator_str(PyConduit_NodeIterator *self)
+{
     Py_RETURN_NONE;
 }
 
 //---------------------------------------------------------------------------//
-// conduit:::Node class
-//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_NodeIterator_iter(PyObject *self)
+{
+    Py_INCREF(self);
+    return self;
+}
 
 //---------------------------------------------------------------------------//
-struct Py_ConduitNode {
-   PyObject_HEAD
-   Node* node;
+static PyObject *
+PyConduit_NodeIterator_iternext(PyObject *self)
+{
+    PyConduit_NodeIterator *py_nitr = (PyConduit_NodeIterator *)self;
+    
+    if(py_nitr->itr.has_next()) 
+    {
+        py_nitr->itr.next();
+        Py_INCREF(self);
+        return self;
+    }
+    else 
+    {
+        // Raise StopIteration
+        PyErr_SetNone(PyExc_StopIteration);
+        return NULL;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_NodeIterator_path(PyConduit_NodeIterator *self)
+{
+    return (Py_BuildValue("s", self->itr.path().c_str()));
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_NodeIterator_index(PyConduit_NodeIterator *self)
+{
+    return PyLong_FromSsize_t(self->itr.index());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_NodeIterator_node(PyConduit_NodeIterator *self)
+{
+    return PyConduit_Node_python_wrap(&(self->itr.node()),0);
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_NodeIterator_to_front(PyConduit_NodeIterator *self)
+{
+    self->itr.to_front();
+    Py_RETURN_NONE;
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_NodeIterator_has_next(PyConduit_NodeIterator *self)
+{
+    if(self->itr.has_next())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_NodeIterator_next(PyConduit_NodeIterator *self)
+{
+    if(self->itr.has_next())
+    {
+        Node &n = self->itr.next();
+        return PyConduit_Node_python_wrap(&n,0);
+    }
+    else
+    {
+        // if done return None
+        Py_RETURN_NONE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_NodeIterator_peek_next(PyConduit_NodeIterator *self)
+{
+    if(self->itr.has_next())
+    {
+        Node &n = self->itr.peek_next();
+        return PyConduit_Node_python_wrap(&n,0);
+    }
+    else
+    {
+        // if done return None
+        Py_RETURN_NONE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_NodeIterator_has_previous(PyConduit_NodeIterator *self)
+{
+    if(self->itr.has_previous())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_NodeIterator_previous(PyConduit_NodeIterator *self)
+{
+    if(self->itr.has_previous())
+    {
+        Node &n = self->itr.previous();
+        return PyConduit_Node_python_wrap(&n,0);
+    }
+    else
+    {
+        // if done return None
+        Py_RETURN_NONE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_NodeIterator_peek_previous(PyConduit_NodeIterator *self)
+{
+    if(self->itr.has_previous())
+    {
+        Node &n = self->itr.peek_previous();
+        return PyConduit_Node_python_wrap(&n,0);
+    }
+    else
+    {
+        // if done return None
+        Py_RETURN_NONE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_NodeIterator_to_back(PyConduit_NodeIterator *self)
+{
+    self->itr.to_back();
+    Py_RETURN_NONE;
+}
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_NodeIterator_info(PyConduit_NodeIterator *self)
+{
+    //create and return a node with the result of info
+    PyConduit_Node *retval = PyConduit_Node_python_create();
+    self->itr.info(*retval->node);
+    return (PyObject*)retval;
+}
+
+//---------------------------------------------------------------------------//
+static PyConduit_NodeIterator *
+PyConduit_NodeIterator_python_create()
+{
+    PyTypeObject *type = (PyTypeObject*)getType("NodeIterator");
+    return (PyConduit_NodeIterator*)type->tp_alloc(type,0);
+}
+
+//----------------------------------------------------------------------------//
+// NodeIterator methods table
+//----------------------------------------------------------------------------//
+static PyMethodDef PyConduit_NodeIterator_METHODS[] = {
+    //-----------------------------------------------------------------------//
+    {"path",
+     (PyCFunction)PyConduit_NodeIterator_path, 
+     METH_NOARGS,
+     "{todo}"}, 
+    //-----------------------------------------------------------------------//
+    {"index",
+     (PyCFunction)PyConduit_NodeIterator_index, 
+     METH_NOARGS,
+     "{todo}"}, 
+     //-----------------------------------------------------------------------//
+     {"node",
+      (PyCFunction)PyConduit_NodeIterator_node, 
+      METH_NOARGS,
+      "{todo}"}, 
+    //-----------------------------------------------------------------------//
+    {"to_front",
+     (PyCFunction)PyConduit_NodeIterator_to_front, 
+     METH_NOARGS,
+     "{todo}"}, 
+    //-----------------------------------------------------------------------//
+    {"has_next",
+     (PyCFunction)PyConduit_NodeIterator_has_next, 
+     METH_NOARGS,
+     "{todo}"}, 
+    //-----------------------------------------------------------------------//
+    {"next",
+     (PyCFunction)PyConduit_NodeIterator_next, 
+     METH_NOARGS,
+     "{todo}"}, 
+    //-----------------------------------------------------------------------//
+    {"peek_next",
+     (PyCFunction)PyConduit_NodeIterator_peek_next, 
+     METH_NOARGS,
+     "{todo}"}, 
+    //-----------------------------------------------------------------------//
+    {"has_previous",
+     (PyCFunction)PyConduit_NodeIterator_has_previous, 
+     METH_NOARGS,
+     "{todo}"}, 
+    //-----------------------------------------------------------------------//
+    {"previous",
+     (PyCFunction)PyConduit_NodeIterator_peek_previous, 
+     METH_NOARGS,
+     "{todo}"}, 
+    //-----------------------------------------------------------------------//
+    {"peek_previous",
+     (PyCFunction)PyConduit_NodeIterator_peek_previous, 
+     METH_NOARGS,
+     "{todo}"}, 
+    //-----------------------------------------------------------------------//
+    {"to_back",
+     (PyCFunction)PyConduit_NodeIterator_to_back, 
+     METH_NOARGS,
+     "{todo}"}, 
+    //-----------------------------------------------------------------------//
+    {"info",
+     (PyCFunction)PyConduit_NodeIterator_info, 
+     METH_NOARGS,
+     "{todo}"}, 
+    //-----------------------------------------------------------------------//
+    // end NodeIterator methods table
+    //-----------------------------------------------------------------------//
+    {NULL, NULL, 0, NULL}
 };
 
 //---------------------------------------------------------------------------//
+static PyTypeObject PyConduit_NodeIterator_TYPE = {
+   PyObject_HEAD_INIT(NULL)
+   0,
+   "Schema",
+   sizeof(PyConduit_NodeIterator),  /* tp_basicsize */
+   0, /* tp_itemsize */
+   (destructor)PyConduit_NodeIterator_dealloc,   /* tp_dealloc */
+   0, /* tp_print */
+   0, /* tp_getattr */
+   0, /* tp_setattr */
+   0, /* tp_compare */
+   0, /* tp_repr */
+   0, /* tp_as_number */
+   0, /* tp_as_sequence */
+   0, /* as_mapping */
+   0, /* hash */
+   0, /* call */
+   (reprfunc)PyConduit_NodeIterator_str,                         /* str */
+   0, /* getattro */
+   0, /* setattro */
+   0, /* asbuffer */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,     /* flags */
+   "Conduit schema objects",
+   0, /* traverse */
+   0, /* clear */
+   0, /* tp_richcompare */
+   0, /* tp_weaklistoffset */
+   PyConduit_NodeIterator_iter, /* iter */
+   PyConduit_NodeIterator_iternext, /* iternext */
+   PyConduit_NodeIterator_METHODS, /* METHODS */
+   0, /* MEMBERS */
+   0, /* get/set */
+   0, /* tp_base */
+   0, /* dict */
+   0, /* descr_get */
+   0, /* gescr_set */
+   0, /* dictoffset */
+   (initproc)PyConduit_NodeIterator_init,
+   0, /* alloc */
+   PyConduit_NodeIterator_new,   /* new */
+   0, /* tp_free */
+   0, /* tp_is_gc */
+   0, /* tp_bases */
+   0, /* tp_mro */
+   0, /* tp_cache */
+   0, /* tp_subclasses */
+   0,  /* tp_weaklist */
+   0,
+   0
+};
+
+
+
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+//
+// conduit:::Node class
+//
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
+/// TODO: We may be able to use a conduit data array here to avoid copies
 template <class T>
 static void
 PyConduit_fillVector(std::vector<T>& vec,
@@ -238,20 +1358,28 @@ PyConduit_fillVector(std::vector<T>& vec,
 }
 
 //---------------------------------------------------------------------------//
+// begin Node python special methods
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
 static PyObject *
-PyConduitNode_New(PyTypeObject* type,
-                  PyObject* args,
-                  PyObject* kwds)
+PyConduit_Node_New(PyTypeObject* type,
+                   PyObject* args,
+                   PyObject* kwds)
 {
     static char *kwlist[] = {"value", NULL};
     PyObject* value = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &value)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &value))
+    {
         return (NULL);
     }
 
-    Py_ConduitNode* self = (Py_ConduitNode*)type->tp_alloc(type, 0);
-    if (self) {
+    PyConduit_Node* self = (PyConduit_Node*)type->tp_alloc(type, 0);
+
+    if (self)
+    {
         self->node = 0;
+        self->python_owns = 0;
     }
 
     return ((PyObject*)self);
@@ -259,37 +1387,45 @@ PyConduitNode_New(PyTypeObject* type,
 
 //---------------------------------------------------------------------------//
 static int
-PyConduitNode_init(Py_ConduitNode* self,
-                   PyObject* args,
-                   PyObject* kwds)
+PyConduit_Node_init(PyConduit_Node* self,
+                    PyObject* args,
+                    PyObject* kwds)
 {
-     static char *kwlist[] = {"value", NULL};
-     PyObject* value = NULL;
-     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &value)) {
-         return (NULL);
-     }
+    static char *kwlist[] = {"value", NULL};
+    PyObject* value = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &value))
+    {
+        return (NULL);
+    }
+    
     self->node = new Node();
+    self->python_owns = 1;
 
-    if (value) {
-        return (PyConduitNode_SetFromPython(*self->node, value));
-    } else {
+    if (value)
+    {
+        return (PyConduit_Node_SetFromPython(*self->node, value));
+    }
+    else 
+    {
         return (0);
     }
 }
 
 //---------------------------------------------------------------------------//
 static void 
-PyConduitNode_dealloc(Py_ConduitNode* self)
+PyConduit_Node_dealloc(PyConduit_Node* self)
 {
-   if (self->node->schema().is_root()) {
+    if(self->python_owns)
+    {
        delete self->node;
-   }
-   self->ob_type->tp_free((PyObject*)self);
+    }
+
+    self->ob_type->tp_free((PyObject*)self);
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduitNode_str(Py_ConduitNode* self)
+PyConduit_Node_str(PyConduit_Node* self)
 {
    std::string output = self->node->to_json();
    return (Py_BuildValue("s", output.c_str()));
@@ -297,7 +1433,7 @@ PyConduitNode_str(Py_ConduitNode* self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduitNode_GetItem(Py_ConduitNode* self,
+PyConduit_Node_GetItem(PyConduit_Node* self,
                       PyObject* key)
 {
     if (!PyString_Check(key)) {
@@ -308,18 +1444,56 @@ PyConduitNode_GetItem(Py_ConduitNode* self,
     PyObject* retval = NULL;
     char* ckey = PyString_AsString(key);
 
-    if (self->node->has_path(ckey)) {
+    if(self->node->has_path(ckey))
+    {
         Node& node = (*self->node)[ckey];
         retval = PyConduit_convertNodeToPython(node);
-    } else {
-        retval = PyConduitNode_getObject(&(*self->node)[ckey]);
+    }
+    else
+    {
+        retval = PyConduit_Node_python_wrap(&(*self->node)[ckey],0);
     }
     return (retval);
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduitNode_data(Py_ConduitNode* self)
+PyConduit_Node_python_owns(PyConduit_Node *self)
+{
+    if(self->python_owns)
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_python_detach(PyConduit_Node *self)
+{
+    self->python_owns = 0;
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_python_attach(PyConduit_Node *self)
+{
+    self->python_owns = 1;
+}
+
+
+//---------------------------------------------------------------------------//
+// end Node python special methods
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_data(PyConduit_Node* self)
 {
     PyObject* retval = NULL;
     retval = PyConduit_convertNodeToPython(*self->node);
@@ -328,7 +1502,7 @@ PyConduitNode_data(Py_ConduitNode* self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduitNode_generate(Py_ConduitNode* self,
+PyConduit_Node_generate(PyConduit_Node* self,
                        PyObject* args)
 {
     /// TODO: sigs to support
@@ -351,7 +1525,7 @@ PyConduitNode_generate(Py_ConduitNode* self,
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduitNode_save(Py_ConduitNode* self,
+PyConduit_Node_save(PyConduit_Node* self,
                    PyObject* args)
 {
      const char *obase;     
@@ -367,7 +1541,7 @@ PyConduitNode_save(Py_ConduitNode* self,
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduitNode_load(Py_ConduitNode* self,
+PyConduit_Node_load(PyConduit_Node* self,
                    PyObject* args)
 {
     /// TODO: sigs to support via kwargs: path, or path and schema
@@ -384,7 +1558,7 @@ PyConduitNode_load(Py_ConduitNode* self,
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduitNode_mmap(Py_ConduitNode* self,
+PyConduit_Node_mmap(PyConduit_Node* self,
                    PyObject* args)
 {
     /// TODO: sigs to support via kwargs: path, or path and schema
@@ -407,7 +1581,7 @@ PyConduitNode_mmap(Py_ConduitNode* self,
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduitNode_fetch(Py_ConduitNode* self,
+PyConduit_Node_fetch(PyConduit_Node* self,
                      PyObject* args)
 {
      const char *key;
@@ -418,13 +1592,13 @@ PyConduitNode_fetch(Py_ConduitNode* self,
          return NULL;
      }
 
-    retval = PyConduitNode_getObject(&(*self->node).fetch(key));
+    retval = PyConduit_Node_python_wrap(&(*self->node).fetch(key),0);
     return (retval);
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduitNode_child(Py_ConduitNode* self,
+PyConduit_Node_child(PyConduit_Node* self,
                     PyObject* args)
 {
      Py_ssize_t idx;
@@ -435,20 +1609,20 @@ PyConduitNode_child(Py_ConduitNode* self,
          return NULL;
      }
 
-    retval = PyConduitNode_getObject(&(*self->node).child(idx));
+    retval = PyConduit_Node_python_wrap(&(*self->node).child(idx),0);
     return (retval);
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduitNode_number_of_children(Py_ConduitNode *self)
+PyConduit_Node_number_of_children(PyConduit_Node *self)
 {
     return PyLong_FromSsize_t(self->node->number_of_children());
 }
 
 //---------------------------------------------------------------------------//
 static PyObject * 
-PyConduitNode_has_path(Py_ConduitNode *self,
+PyConduit_Node_has_path(PyConduit_Node *self,
                        PyObject* args)
 {
     const char *path;
@@ -471,7 +1645,7 @@ PyConduitNode_has_path(Py_ConduitNode *self,
 
 //---------------------------------------------------------------------------//
 static PyObject * 
-PyConduitNode_paths(Py_ConduitNode *self)
+PyConduit_Node_paths(PyConduit_Node *self)
 {
     std::vector<std::string> paths;
     self->node->paths(paths);
@@ -492,15 +1666,15 @@ PyConduitNode_paths(Py_ConduitNode *self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduitNode_append(Py_ConduitNode* self)
+PyConduit_Node_append(PyConduit_Node* self)
 {
-    return  PyConduitNode_getObject(&(self->node->append()));
+    return  PyConduit_Node_python_wrap(&(self->node->append()),0);
 }
 
 
 //---------------------------------------------------------------------------//
 static PyObject * 
-PyConduitNode_remove(Py_ConduitNode *self,
+PyConduit_Node_remove(PyConduit_Node *self,
                      PyObject *args,
                      PyObject *kwargs)
 {
@@ -538,13 +1712,20 @@ PyConduitNode_remove(Py_ConduitNode *self,
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduitNode_schema(Py_ConduitNode *self)
+PyConduit_Node_schema(PyConduit_Node *self)
 {
-    return (PyConduitSchema_getObject(&self->node->schema()));
+    // python_owns = 0
+    return (PyConduit_Schema_python_wrap(self->node->schema_pointer(),0));
 }
+
 //---------------------------------------------------------------------------//
-/// TODO: dtype()
-//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_dtype(PyConduit_Node *self)
+{
+    PyConduit_DataType *retval = PyConduit_DataType_python_create();
+    retval->dtype = self->node->dtype();
+    return (PyObject*)retval;
+}
 
 //---------------------------------------------------------------------------//
 // parent access
@@ -552,7 +1733,7 @@ PyConduitNode_schema(Py_ConduitNode *self)
 
 //---------------------------------------------------------------------------//
 static PyObject * 
-PyConduitNode_has_parent(Py_ConduitNode *self)
+PyConduit_Node_has_parent(PyConduit_Node *self)
 {
     if(self->node->has_parent())
     {
@@ -566,7 +1747,7 @@ PyConduitNode_has_parent(Py_ConduitNode *self)
 
 //---------------------------------------------------------------------------//
 static PyObject* 
-PyConduitNode_parent(Py_ConduitNode* self)
+PyConduit_Node_parent(PyConduit_Node* self)
 {
     if(~self->node->has_parent())
     {
@@ -574,7 +1755,7 @@ PyConduitNode_parent(Py_ConduitNode* self)
     }
     else
     {
-        return PyConduitNode_getObject(self->node->parent());
+        return PyConduit_Node_python_wrap(self->node->parent(),0);
     }
 }
 
@@ -584,21 +1765,21 @@ PyConduitNode_parent(Py_ConduitNode* self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduitNode_total_bytes(Py_ConduitNode *self)
+PyConduit_Node_total_bytes(PyConduit_Node *self)
 {
     return PyLong_FromSsize_t(self->node->total_bytes());
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduitNode_total_bytes_compact(Py_ConduitNode *self)
+PyConduit_Node_total_bytes_compact(PyConduit_Node *self)
 {
     return PyLong_FromSsize_t(self->node->total_bytes_compact());
 }
 
 //---------------------------------------------------------------------------//
 static PyObject * 
-PyConduitNode_is_compact(Py_ConduitNode *self)
+PyConduit_Node_is_compact(PyConduit_Node *self)
 {
     if(self->node->is_compact())
     {
@@ -612,46 +1793,21 @@ PyConduitNode_is_compact(Py_ConduitNode *self)
 
 //---------------------------------------------------------------------------//
 static PyObject * 
-PyConduitNode_info(Py_ConduitNode *self,
-                   PyObject *args)
+PyConduit_Node_info(PyConduit_Node *self)
 {
-    PyObject *py_node;
-    if (!PyArg_ParseTuple(args, "|O", &py_node))
-    {
-         return (NULL);
-    }
-    
-    if(py_node == NULL)
-    {
-        ///TODO: create a python wrapped node that we will return
-    }
-    else 
-    {
-        // make we were passed a wrapped conduit node
-        if(!PyConduitNode_Check(py_node))
-        {
-            PyErr_SetString(PyExc_TypeError,
-               "Argument is not a conduit node");
-               return (NULL);
-        }
-        // we need to increment the ref count, if we plan to return the
-        // node passed as our result
-        Py_INCREF(py_node);
-    }
-    
-    Node *info_node = ((Py_ConduitNode*)py_node)->node;
-    self->node->info(*info_node);
-
-    return py_node;
+    PyConduit_Node *retval = PyConduit_Node_python_create();
+    self->node->info(*retval->node);
+    return (PyObject*)retval;
 }
 
 
 //---------------------------------------------------------------------------//
-static int PyConduitNode_SetItem(Py_ConduitNode* self,
-                                 PyObject* key,
-                                 PyObject* value)
+static int PyConduit_Node_SetItem(PyConduit_Node *self,
+                                  PyObject *key,
+                                  PyObject *value)
 {
-    if (!PyString_Check(key)) {
+    if (!PyString_Check(key))
+    {
         PyErr_SetString(PyExc_TypeError, "Key must be a string");
         return (-1);
     }
@@ -659,27 +1815,33 @@ static int PyConduitNode_SetItem(Py_ConduitNode* self,
     char* ckey = PyString_AsString(key);
     Node& node = (*self->node)[ckey];
 
-    return (PyConduitNode_SetFromPython(node, value));
+    return (PyConduit_Node_SetFromPython(node, value));
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduitNode_iter(Py_ConduitNode* self)
+PyConduit_Node_iter(PyObject *self)
 {
-    Py_RETURN_NONE;
+    PyConduit_Node *py_n = (PyConduit_Node *)self;
+
+    PyConduit_NodeIterator *retval = NULL;
+    retval = PyConduit_NodeIterator_python_create();
+    retval->itr =  py_n->node->iterator();
+
+    return ((PyObject *)retval);
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduitNode_set(Py_ConduitNode* self,
-                  PyObject* args)
+PyConduit_Node_set(PyConduit_Node* self,
+                   PyObject* args)
 {
     PyObject* value;
     if (!PyArg_ParseTuple(args, "O", &value)) {
          return (NULL);
     }
 
-    if (PyConduitNode_SetFromPython(*self->node, value)) {
+    if (PyConduit_Node_SetFromPython(*self->node, value)) {
          return (NULL);
     } else {
         Py_RETURN_NONE;
@@ -688,7 +1850,7 @@ PyConduitNode_set(Py_ConduitNode* self,
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduitNode_set_path(Py_ConduitNode* self,
+PyConduit_Node_set_path(PyConduit_Node* self,
                        PyObject* args)
 {
     PyObject* value, *path;
@@ -696,122 +1858,149 @@ PyConduitNode_set_path(Py_ConduitNode* self,
          return (NULL);
     }
 
-    if (PyConduitNode_SetItem(self, path, value)) {
+    if (PyConduit_Node_SetItem(self, path, value)) {
         return (NULL);
     } else {
         Py_RETURN_NONE;
     }
 }
 
+
+
 //----------------------------------------------------------------------------//
 // Node methods table
 //----------------------------------------------------------------------------//
-static PyMethodDef PyConduitNode_METHODS[] = {
+static PyMethodDef PyConduit_Node_METHODS[] = {
+    //-----------------------------------------------------------------------//
+    {"python_owns",
+     (PyCFunction)PyConduit_Node_python_owns,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"python_attach",
+     (PyCFunction)PyConduit_Node_python_attach,
+      METH_NOARGS,
+      "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"python_detach",
+     (PyCFunction)PyConduit_Node_python_detach,
+     METH_NOARGS,
+     "{todo}"},
     //-----------------------------------------------------------------------//
     {"set",
-     (PyCFunction)PyConduitNode_set,
+     (PyCFunction)PyConduit_Node_set,
      METH_VARARGS,
      "Sets the node"},
     //-----------------------------------------------------------------------//
     {"fetch",
-     (PyCFunction)PyConduitNode_fetch,
+     (PyCFunction)PyConduit_Node_fetch,
      METH_VARARGS, 
      "Fetches the node at a given path"},
     //-----------------------------------------------------------------------//
     {"child",
-     (PyCFunction)PyConduitNode_child,
+     (PyCFunction)PyConduit_Node_child,
      METH_VARARGS, 
      "Retrieves the child node at a given index"},
     //-----------------------------------------------------------------------//
     {"number_of_children",
-      (PyCFunction)PyConduitNode_number_of_children,
+      (PyCFunction)PyConduit_Node_number_of_children,
       METH_NOARGS, 
       "Number of child nodes"},
     //-----------------------------------------------------------------------//
     {"has_path",
-     (PyCFunction)PyConduitNode_has_path,
+     (PyCFunction)PyConduit_Node_has_path,
      METH_VARARGS, 
      "Returns if this node has the given path"},
     //-----------------------------------------------------------------------//
     {"paths",
-     (PyCFunction)PyConduitNode_paths,
+     (PyCFunction)PyConduit_Node_paths,
      METH_NOARGS, 
      "Returns a list with this node's child paths"},
      //-----------------------------------------------------------------------//
      {"info",
-      (PyCFunction)PyConduitNode_info,
+      (PyCFunction)PyConduit_Node_info,
       METH_VARARGS, 
       "Returns a node populated with the memory space details for this node"},
     //-----------------------------------------------------------------------//
     {"append",
-     (PyCFunction)PyConduitNode_append,
+     (PyCFunction)PyConduit_Node_append,
      METH_NOARGS, 
      "Appends a node (coarse to conduit list)"},
     //-----------------------------------------------------------------------//
     {"remove", // PyCFunctionWithKeywords ?
-     (PyCFunction)PyConduitNode_remove,
+     (PyCFunction)PyConduit_Node_remove,
      METH_KEYWORDS, 
      "Remove as node at a given index or path."},
     //-----------------------------------------------------------------------//
     {"data",
-     (PyCFunction)PyConduitNode_data,
+     (PyCFunction)PyConduit_Node_data,
      METH_NOARGS, 
      "{data val of node}"},
     //-----------------------------------------------------------------------//
     {"generate",
-     (PyCFunction)PyConduitNode_generate,
+     (PyCFunction)PyConduit_Node_generate,
      METH_VARARGS,  // will become kwargs
      "Generate a node"},
     //-----------------------------------------------------------------------//
     {"save",
-     (PyCFunction)PyConduitNode_save,
+     (PyCFunction)PyConduit_Node_save,
      METH_VARARGS, 
      "Saves a node to a file pair"},
     //-----------------------------------------------------------------------//
     {"load",
-     (PyCFunction)PyConduitNode_load,
+     (PyCFunction)PyConduit_Node_load,
      METH_VARARGS,  // will become kwargs
      "Loads a node from a file pair"},
     //-----------------------------------------------------------------------//
     {"mmap",
-     (PyCFunction)PyConduitNode_mmap,
+     (PyCFunction)PyConduit_Node_mmap,
      METH_VARARGS, // will become kwargs
      "Memory Maps a node from a file pair"},
     //-----------------------------------------------------------------------//
     {"set_path",
-     (PyCFunction)PyConduitNode_set_path,
+     (PyCFunction)PyConduit_Node_set_path,
      METH_VARARGS,
      "Sets the node at the given path"},
     //-----------------------------------------------------------------------//
     {"schema",
-     (PyCFunction)PyConduitNode_schema, 
+     (PyCFunction)PyConduit_Node_schema, 
      METH_NOARGS,
      "Returns the schema for the node"}, 
+     //-----------------------------------------------------------------------//
+     {"dtype",
+      (PyCFunction)PyConduit_Node_dtype, 
+      METH_NOARGS,
+      "Returns the conduit DataType for the node"}, 
     //-----------------------------------------------------------------------//
     {"has_parent",
-     (PyCFunction)PyConduitNode_has_parent, 
+     (PyCFunction)PyConduit_Node_has_parent, 
      METH_NOARGS,
      "Returns of the node has a parent node"}, 
     //-----------------------------------------------------------------------//
     {"parent",
-     (PyCFunction)PyConduitNode_parent, 
+     (PyCFunction)PyConduit_Node_parent, 
      METH_NOARGS,
      "Returns this nodes parent, or None if no parent"}, 
     //-----------------------------------------------------------------------//
     {"total_bytes",
-     (PyCFunction)PyConduitNode_total_bytes, 
+     (PyCFunction)PyConduit_Node_total_bytes, 
      METH_NOARGS,
      "Returns the total bytes of this node's data"}, 
     //-----------------------------------------------------------------------//
     {"total_bytes_compact",
-     (PyCFunction)PyConduitNode_total_bytes_compact, 
+     (PyCFunction)PyConduit_Node_total_bytes_compact, 
      METH_NOARGS,
      "Returns the total bytes of compact rep of node's data"}, 
     //-----------------------------------------------------------------------//
     {"is_compact",
-     (PyCFunction)PyConduitNode_is_compact, 
+     (PyCFunction)PyConduit_Node_is_compact, 
      METH_NOARGS,
      "Returns if this node's data is in compact form"}, 
+     //-----------------------------------------------------------------------//
+     {"iterator",
+      (PyCFunction)PyConduit_Node_iter, 
+      METH_NOARGS,
+      "Returns a NodeIterator for this node"}, 
     //-----------------------------------------------------------------------//
     // end node methods table
     //-----------------------------------------------------------------------//
@@ -821,19 +2010,19 @@ static PyMethodDef PyConduitNode_METHODS[] = {
 //---------------------------------------------------------------------------//
 static PyMappingMethods node_as_mapping = {
    (lenfunc)0,    // len operator is not supported
-   (binaryfunc)PyConduitNode_GetItem,
-   (objobjargproc)PyConduitNode_SetItem,
+   (binaryfunc)PyConduit_Node_GetItem,
+   (objobjargproc)PyConduit_Node_SetItem,
 };
 
 //---------------------------------------------------------------------------//
-static PyTypeObject PyConduit_NodeType = {
+static PyTypeObject PyConduit_Node_TYPE = {
    PyObject_HEAD_INIT(NULL)
    0,
    //PyObject_VAR_HEAD
    "Node",
-   sizeof(Py_ConduitNode),  /* tp_basicsize */
+   sizeof(PyConduit_Node),  /* tp_basicsize */
    0, /* tp_itemsize */
-   (destructor)PyConduitNode_dealloc,                   /* tp_dealloc */
+   (destructor)PyConduit_Node_dealloc,                   /* tp_dealloc */
    0, /* tp_print */
    0, /* tp_getattr */
    0, /* tp_setattr */
@@ -844,7 +2033,7 @@ static PyTypeObject PyConduit_NodeType = {
    &node_as_mapping, /* as_mapping */
    0, /* hash */
    0, /* call */
-   (reprfunc)PyConduitNode_str,                         /* str */
+   (reprfunc)PyConduit_Node_str,                         /* str */
    0, /* getattro */
    0, /* setattro */
    0, /* asbuffer */
@@ -854,9 +2043,9 @@ static PyTypeObject PyConduit_NodeType = {
    0, /* clear */
    0, /* tp_richcompare */
    0, /* tp_weaklistoffset */
-   (getiterfunc)PyConduitNode_iter, /* iter */
+   (getiterfunc)PyConduit_Node_iter, /* iter */
    0, /* iternext */
-   PyConduitNode_METHODS,
+   PyConduit_Node_METHODS,
    0,
    0, /* get/set */
    0, /* tp_base */
@@ -864,9 +2053,9 @@ static PyTypeObject PyConduit_NodeType = {
    0, /* descr_get */
    0, /* gescr_set */
    0, /* dictoffset */
-   (initproc)PyConduitNode_init,
+   (initproc)PyConduit_Node_init,
    0, /* alloc */
-   PyConduitNode_New,                                   /* new */
+   PyConduit_Node_New,                                   /* new */
    0, /* tp_free */
    0, /* tp_is_gc */
    0, /* tp_bases */
@@ -883,7 +2072,7 @@ static PyTypeObject PyConduit_NodeType = {
 // conduit:::about
 //---------------------------------------------------------------------------//
 static PyObject*
-py_conduit_about(PyObject *self)
+PyConduit_about(PyObject *self)
 {
     return PyString_FromString(conduit::about().c_str());
 }
@@ -896,7 +2085,7 @@ static PyMethodDef conduit_python_funcs[] =
 {
     //-----------------------------------------------------------------------//
     {"about",
-     (PyCFunction)py_conduit_about,
+     (PyCFunction)PyConduit_about,
       METH_NOARGS,
       NULL},
     //-----------------------------------------------------------------------//
@@ -911,26 +2100,81 @@ static PyMethodDef conduit_python_funcs[] =
 extern "C" void
 CONDUIT_PYTHON_API initconduit_python(void)
 {
-    if (PyType_Ready(&PyConduit_SchemaType) < 0) {
-        return;
-    }
-    PyObject* schema    = Py_InitModule3("Schema", PyConduitNode_METHODS,
-                                       "Schema class for Conduit");
-    PyModule_AddObject(schema, "Schema", (PyObject*)&PyConduit_SchemaType);
 
-    if (PyType_Ready(&PyConduit_NodeType) < 0) {
+    //-----------------------------------------------------------------------//
+    // add DataType
+    //-----------------------------------------------------------------------//
+    if (PyType_Ready(&PyConduit_DataType_TYPE) < 0)
+    {
         return;
     }
 
-    PyObject* node    = Py_InitModule3("Node", PyConduitNode_METHODS,
+    /// TODO: PyConduit_Node_METHODS seems wrong
+    PyObject *data_type = Py_InitModule3("DataType",
+                                         PyConduit_DataType_METHODS,
+                                         "DataType class for Conduit");
+
+    PyModule_AddObject(data_type,
+                       "DataType",
+                       (PyObject*)&PyConduit_DataType_TYPE);
+    //-----------------------------------------------------------------------//
+    // add Schema
+    //-----------------------------------------------------------------------//
+    if (PyType_Ready(&PyConduit_Schema_TYPE) < 0)
+    {
+        return;
+    }
+
+    PyObject* schema    = Py_InitModule3("Schema",
+                                         PyConduit_Schema_METHODS,
+                                         "Schema class for Conduit");
+
+    PyModule_AddObject(schema, "Schema", (PyObject*)&PyConduit_Schema_TYPE);
+    
+    //-----------------------------------------------------------------------//
+    // add NodeIterator
+    //-----------------------------------------------------------------------//
+    if (PyType_Ready(&PyConduit_NodeIterator_TYPE) < 0)
+    {
+        return;
+    }
+
+    PyObject *node_iter    = Py_InitModule3("NodeIterator",
+                                            PyConduit_NodeIterator_METHODS,
+                                            "NodeIterator class for Conduit");
+
+    PyModule_AddObject(node_iter,
+                       "NodeIterator",
+                       (PyObject*)&PyConduit_NodeIterator_TYPE);
+                       
+    //-----------------------------------------------------------------------//
+    // add Node
+    //-----------------------------------------------------------------------//
+    if (PyType_Ready(&PyConduit_Node_TYPE) < 0)
+    {
+        return;
+    }
+
+    PyObject* node    = Py_InitModule3("Node",
+                                       PyConduit_Node_METHODS,
                                        "Node class for Conduit");
-    PyModule_AddObject(node, "Node", (PyObject*)&PyConduit_NodeType);
 
-    PyObject* conduit =  Py_InitModule("conduit_python", conduit_python_funcs);
+    PyModule_AddObject(node, "Node", (PyObject*)&PyConduit_Node_TYPE);
+
+    PyObject *conduit =  Py_InitModule("conduit_python", conduit_python_funcs);
+
+    Py_INCREF(data_type);
+    PyModule_AddObject(conduit, "DataType", data_type);
+
     Py_INCREF(schema);
     PyModule_AddObject(conduit, "Schema", schema);
+
+    Py_INCREF(node_iter);
+    PyModule_AddObject(conduit, "NodeIterator", node_iter);
+
     Py_INCREF(node);
     PyModule_AddObject(conduit, "Node", node);
+
     // req setup for numpy
     import_array();
 }
@@ -948,47 +2192,70 @@ getType(const char* name)
 
 //---------------------------------------------------------------------------//
 static int
-PyConduitSchema_Check(PyObject* obj)
+PyConduit_Schema_Check(PyObject* obj)
 {
-    return (PyObject_TypeCheck(obj, &PyConduit_SchemaType));
+    return (PyObject_TypeCheck(obj, &PyConduit_Schema_TYPE));
 }
+
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduitSchema_getObject(const Schema* schema)
+PyConduit_Schema_python_wrap(Schema *schema, int python_owns)
 {
-    PyTypeObject* type = (PyTypeObject*)getType("Schema");
-    Py_ConduitSchema* retval = (Py_ConduitSchema*)type->tp_alloc(type, 0);
-    retval->schema = (Schema*)schema;
-    retval->owns_data = 0;
+    PyTypeObject *type = (PyTypeObject*)getType("Schema");
+    PyConduit_Schema *retval = (PyConduit_Schema*)type->tp_alloc(type, 0);
+    retval->schema = schema;
+    retval->python_owns = python_owns;
     return ((PyObject*)retval);
 }
 
 //---------------------------------------------------------------------------//
-static int
-PyConduitNode_Check(PyObject *obj)
+static PyConduit_Schema *
+PyConduit_Schema_python_create()
 {
-    return (PyObject_TypeCheck(obj, &PyConduit_NodeType));
+    Schema *schema = new Schema();
+    // python_owns = 1
+    return (PyConduit_Schema *)PyConduit_Schema_python_wrap(schema,1); 
+}
+
+
+//---------------------------------------------------------------------------//
+static int
+PyConduit_Node_Check(PyObject *obj)
+{
+    return (PyObject_TypeCheck(obj, &PyConduit_Node_TYPE));
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduitNode_getObject(Node *node)
+PyConduit_Node_python_wrap(Node *node, int python_owns)
 {
     PyTypeObject* type = (PyTypeObject*)getType("Node");
-    Py_ConduitNode* retval = (Py_ConduitNode*)type->tp_alloc(type, 0);
+    PyConduit_Node* retval = (PyConduit_Node*)type->tp_alloc(type, 0);
     retval->node = node;
+    retval->python_owns = python_owns;
     return ((PyObject*)retval);
 }
+
+//---------------------------------------------------------------------------//
+static PyConduit_Node *
+PyConduit_Node_python_create()
+{
+    Node *node = new Node();
+    // python_owns = 1
+    return (PyConduit_Node *)PyConduit_Node_python_wrap(node,1); 
+}
+
+
 //---------------------------------------------------------------------------//
 static int
-PyConduitNode_SetFromPython(Node &node,
+PyConduit_Node_SetFromPython(Node &node,
                             PyObject *value)
 {
-    if (PyConduitNode_Check(value)) {
-        node = *((Py_ConduitNode*)value)->node;
-    } else if (PyConduitSchema_Check(value)) {
-        node = *((Py_ConduitSchema*)value)->schema;
+    if (PyConduit_Node_Check(value)) {
+        node = *((PyConduit_Node*)value)->node;
+    } else if (PyConduit_Schema_Check(value)) {
+        node = *((PyConduit_Schema*)value)->schema;
     } else if (PyString_Check(value)) {
         node = PyString_AsString(value);
     } else if (PyInt_Check(value)) {
@@ -1164,7 +2431,7 @@ PyConduit_convertNodeToPython(Node& node)
     switch (type.id()) {
         case DataType::EMPTY_T :
         case DataType::OBJECT_T : {
-            retval = PyConduitNode_getObject(&node);
+            retval = PyConduit_Node_python_wrap(&node,0);
             break;
         }
         case DataType::CHAR8_STR_T : {
