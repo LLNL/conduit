@@ -1448,7 +1448,7 @@ PyConduit_Node_init(PyConduit_Node* self,
                                      const_cast<char**>(kwlist),
                                      &value))
     {
-        return (NULL);
+        return 0;
     }
     
     self->node = new Node();
@@ -1460,7 +1460,7 @@ PyConduit_Node_init(PyConduit_Node* self,
     }
     else 
     {
-        return (0);
+        return 0;
     }
 }
 
