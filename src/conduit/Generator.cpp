@@ -564,9 +564,9 @@ walk_json_schema(Schema *schema,
                 // but this is the easiest way to start.
                 for(int i=0;i< length;i++)
                 {
-                    Schema curr_schema(DataType::Objects::list());
+                    Schema &curr_schema =schema->append();
+                    curr_schema.set(DataType::Objects::list());
                     walk_json_schema(&curr_schema,dt_value, curr_offset);
-                    schema->append(curr_schema);
                     curr_offset += curr_schema.total_bytes();
                 }
             }
@@ -598,11 +598,10 @@ walk_json_schema(Schema *schema,
     {
         for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
         {
-            Schema curr_schema(DataType::Objects::list());
+            Schema &curr_schema = schema->append();
+            curr_schema.set(DataType::Objects::list());
             walk_json_schema(&curr_schema,jvalue[i], curr_offset);
             curr_offset += curr_schema.total_bytes();
-            // this will coerce to a list
-            schema->append(curr_schema);
         }
     }
     // Simplest case, handles "uint32", "float64", etc

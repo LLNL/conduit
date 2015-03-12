@@ -738,12 +738,23 @@ Schema::remove(const std::string &path)
     }    
 }
 
+//---------------------------------------------------------------------------//
+Schema &
+Schema::append()
+{
+    init_list();
+    init_list();
+    Schema *sch = new Schema();
+    children().push_back(sch);
+    return *sch;
+}
+
 
 //=============================================================================
 //-----------------------------------------------------------------------------
 //
 //
-// -- begin conduit::Schema public methods --
+// -- begin conduit::Schema private methods --
 //
 //
 //-----------------------------------------------------------------------------
@@ -848,8 +859,7 @@ Schema::compact_to(Schema &s_dest, index_t curr_offset) const
         for(index_t i=0; i < nchildren ;i++)
         {            
             Schema  *cld_src = children()[i];
-            s_dest.append();
-            Schema &cld_dest = s_dest.child(i);
+            Schema &cld_dest = s_dest.append();
             cld_src->compact_to(cld_dest,curr_offset);
             curr_offset += cld_dest.total_bytes();
         }
