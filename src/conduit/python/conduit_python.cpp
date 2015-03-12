@@ -124,11 +124,16 @@ PyConduit_DataType_new(PyTypeObject* type,
 {
     /// TODO: args and kwargs
     
-    // static char *kwlist[] = {"value", NULL};
-    // PyObject* value = NULL;
-    // if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &value)) {
-    //     return (NULL);
-    // }
+    static const char *kwlist[] = {"value", NULL};
+    PyObject* value = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwds,
+                                     "|O",
+                                     const_cast<char**>(kwlist),
+                                     &value))
+    {
+        return (NULL);
+    }
 
     PyConduit_DataType *self = (PyConduit_DataType*)type->tp_alloc(type, 0);
     return ((PyObject*)self);
@@ -140,14 +145,19 @@ PyConduit_DataType_init(PyConduit_Schema* self,
                         PyObject* args,
                         PyObject* kwds)
 {
-     /// TODO: args and kwargs
-     // static char *kwlist[] = {"value", NULL};
-     // PyObject* value = NULL;
-     // if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &value))
-     // {
-     //     return (NULL);
-     // }
-     return (0);
+    /// TODO: args and kwargs
+    static const char *kwlist[] = {"value", NULL};
+    PyObject* value = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwds,
+                                     "|O",
+                                     const_cast<char**>(kwlist),
+                                     &value))
+
+    {
+        return (0);
+    }
+    return (0);
 }
 
 //---------------------------------------------------------------------------//
@@ -201,7 +211,7 @@ PyConduit_DataType_set_number_of_elements(PyConduit_DataType *self,
                                           PyObject *args)
 {
     Py_ssize_t value;
-    PyObject* retval = NULL;
+
     if (!PyArg_ParseTuple(args, "n", &value))
     {
         PyErr_SetString(PyExc_TypeError,
@@ -220,7 +230,7 @@ PyConduit_DataType_set_offset(PyConduit_DataType *self,
                               PyObject *args)
 {
     Py_ssize_t value;
-    PyObject* retval = NULL;
+
     if (!PyArg_ParseTuple(args, "n", &value))
     {
         PyErr_SetString(PyExc_TypeError,
@@ -239,7 +249,7 @@ PyConduit_DataType_set_stride(PyConduit_DataType *self,
                               PyObject *args)
 {
     Py_ssize_t value;
-    PyObject* retval = NULL;
+
     if (!PyArg_ParseTuple(args, "n", &value))
     {
         PyErr_SetString(PyExc_TypeError,
@@ -258,7 +268,7 @@ PyConduit_DataType_set_element_bytes(PyConduit_DataType *self,
                                      PyObject *args)
 {
     Py_ssize_t value;
-    PyObject* retval = NULL;
+
     if (!PyArg_ParseTuple(args, "n", &value))
     {
         PyErr_SetString(PyExc_TypeError,
@@ -277,7 +287,7 @@ PyConduit_DataType_set_endianness(PyConduit_DataType *self,
                                   PyObject *args)
 {
     Py_ssize_t value;
-    PyObject* retval = NULL;
+
     if (!PyArg_ParseTuple(args, "n", &value))
     {
         PyErr_SetString(PyExc_TypeError,
@@ -486,7 +496,7 @@ PyConduit_DataType_element_index(PyConduit_DataType *self,
                                  PyObject *args)
 {
     Py_ssize_t idx;
-    PyObject* retval = NULL;
+
     if (!PyArg_ParseTuple(args, "n", &idx))
     {
         PyErr_SetString(PyExc_TypeError,
@@ -598,6 +608,11 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
      METH_NOARGS,
      "{todo}"},
     //-----------------------------------------------------------------------//
+    {"endianness",
+     (PyCFunction)PyConduit_DataType_endianness,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
     {"element_index",
      (PyCFunction)PyConduit_DataType_element_index,
      METH_VARARGS,
@@ -683,9 +698,14 @@ PyConduit_Schema_New(PyTypeObject* type,
                     PyObject* args,
                     PyObject* kwds)
 {
-    static char *kwlist[] = {"value", NULL};
+    static const char *kwlist[] = {"value", NULL};
     PyObject* value = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &value)) {
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwds,
+                                     "|O",
+                                     const_cast<char**>(kwlist),
+                                     &value))
+    {
         return (NULL);
     }
 
@@ -704,12 +724,16 @@ PyConduit_Schema_init(PyConduit_Schema* self,
                       PyObject* args,
                       PyObject* kwds)
 {
-     static char *kwlist[] = {"value", NULL};
+     static const char *kwlist[] = {"value", NULL};
      PyObject* value = NULL;
-     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &value))
-     {
-         return (NULL);
-     }
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwds,
+                                     "|O",
+                                     const_cast<char**>(kwlist),
+                                     &value))
+    {
+         return (0);
+    }
 
      if (value)
      {
@@ -777,6 +801,7 @@ static PyObject *
 PyConduit_Schema_python_detach(PyConduit_Schema *self)
 {
     self->python_owns = 0;
+    Py_RETURN_NONE;
 }
 
 //---------------------------------------------------------------------------//
@@ -784,6 +809,7 @@ static PyObject *
 PyConduit_Schema_python_attach(PyConduit_Schema *self)
 {
     self->python_owns = 1;
+    Py_RETURN_NONE;
 }
 
 
@@ -827,7 +853,7 @@ PyConduit_Schema_element_index(PyConduit_Schema *self,
                                PyObject *args)
 {
     Py_ssize_t idx;
-    PyObject* retval = NULL;
+
     if (!PyArg_ParseTuple(args, "n", &idx))
     {
         PyErr_SetString(PyExc_TypeError,
@@ -996,14 +1022,21 @@ PyConduit_NodeIterator_new(PyTypeObject *type,
                             PyObject *args,
                             PyObject *kwds)
 {
-    PyConduit_NodeIterator *self = NULL;
-    self = (PyConduit_NodeIterator*)type->tp_alloc(type,0);
+    /// TODO: args and kwargs
+    /// TODO: args and kwargs
     
-    if(!self) 
+    static const char *kwlist[] = {"value", NULL};
+    PyObject* value = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwds,
+                                     "|O",
+                                     const_cast<char**>(kwlist),
+                                     &value))
     {
-        // error?
+        return (NULL);
     }
     
+    PyConduit_DataType *self = (PyConduit_DataType*)type->tp_alloc(type, 0);
     return ((PyObject*)self);
 }
 
@@ -1013,7 +1046,19 @@ PyConduit_NodeIterator_init(PyConduit_Schema* self,
                             PyObject* args,
                             PyObject* kwds)
 {
-    /// TODO?
+    /// TODO: args and kwargs
+    static const char *kwlist[] = {"value", NULL};
+    PyObject* value = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwds,
+                                     "|O",
+                                     const_cast<char**>(kwlist),
+                                     &value))
+        
+    {
+        return 0;
+    }
+
     return (0);
 }
 
@@ -1254,7 +1299,7 @@ static PyMethodDef PyConduit_NodeIterator_METHODS[] = {
      "{todo}"}, 
     //-----------------------------------------------------------------------//
     {"previous",
-     (PyCFunction)PyConduit_NodeIterator_peek_previous, 
+     (PyCFunction)PyConduit_NodeIterator_previous,
      METH_NOARGS,
      "{todo}"}, 
     //-----------------------------------------------------------------------//
@@ -1367,9 +1412,13 @@ PyConduit_Node_New(PyTypeObject* type,
                    PyObject* args,
                    PyObject* kwds)
 {
-    static char *kwlist[] = {"value", NULL};
+    static const char *kwlist[] = {"value", NULL};
     PyObject* value = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &value))
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwds,
+                                     "|O",
+                                     const_cast<char**>(kwlist),
+                                     &value))
     {
         return (NULL);
     }
@@ -1391,9 +1440,13 @@ PyConduit_Node_init(PyConduit_Node* self,
                     PyObject* args,
                     PyObject* kwds)
 {
-    static char *kwlist[] = {"value", NULL};
+    static const char *kwlist[] = {"value", NULL};
     PyObject* value = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &value))
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwds,
+                                     "|O",
+                                     const_cast<char**>(kwlist),
+                                     &value))
     {
         return (NULL);
     }
@@ -1475,6 +1528,7 @@ static PyObject *
 PyConduit_Node_python_detach(PyConduit_Node *self)
 {
     self->python_owns = 0;
+    Py_RETURN_NONE;
 }
 
 //---------------------------------------------------------------------------//
@@ -1482,6 +1536,7 @@ static PyObject *
 PyConduit_Node_python_attach(PyConduit_Node *self)
 {
     self->python_owns = 1;
+    Py_RETURN_NONE;
 }
 
 
@@ -1626,7 +1681,7 @@ PyConduit_Node_has_path(PyConduit_Node *self,
                        PyObject* args)
 {
     const char *path;
-    PyObject* retval = NULL;
+
     if (!PyArg_ParseTuple(args, "s", &path))
     {
         PyErr_SetString(PyExc_TypeError, "Path must be a string");
@@ -1681,24 +1736,26 @@ PyConduit_Node_remove(PyConduit_Node *self,
     Py_ssize_t idx;
     const char *path = NULL;
 
-    static char *kwlist[] = {"index","path", NULL};
+    static const char *kwlist[] = {"index","path", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
                                      "|ns",
-                                     kwlist,
+                                     const_cast<char**>(kwlist),
                                      &idx, &path))
     {
         return (NULL);
     }
     
-    if(!path == NULL)
+    if(path != NULL)
     {
         self->node->remove(std::string(path));
     }else
     {
         self->node->remove(idx);
     }
+
+    Py_RETURN_NONE;
 }
 
 
