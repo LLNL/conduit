@@ -1485,14 +1485,6 @@ private:
                                  Schema *schema,
                                  Node   *src);
 
-    ///
-    /// TODO: This method is ugly, currently only used by:
-    ///  Node::set(const Node &n)
-    /// Need to figure out how walk_schema can replace it.
-    ///
-    void              set_node_using_schema_pointer(const Node &node,
-                                                    Schema *schema);
-
 //-----------------------------------------------------------------------------
 //
 // -- private methods that help element access -- 

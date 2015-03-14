@@ -435,11 +435,9 @@ Node::mmap(const Schema &schema,
 void 
 Node::set(const Node &node)
 {
-    /// TODO: avoid using this beast:
-    //set_node_using_schema_pointer(node, NULL);
-
     if(node.dtype().id() == DataType::OBJECT_T)
     {
+        init(DataType::Objects::object());
         std::vector<std::string> paths;
         node.paths(paths);
 
@@ -457,6 +455,7 @@ Node::set(const Node &node)
     }
     else if(node.dtype().id() == DataType::LIST_T)       
     {   
+        init(DataType::Objects::list());
         for(index_t i=0;i<node.m_children.size();i++)
         {
             this->m_schema->append();
@@ -3903,62 +3902,6 @@ Node::mirror_node(Node   *node,
 
     
 }
-
-
-//---------------------------------------------------------------------------//
-void
-Node::set_node_using_schema_pointer(const Node &node, Schema *schema)
-{
-    if (node.dtype().id() != DataType::EMPTY_T)
-    {
-    
-        if(node.dtype().id() == DataType::OBJECT_T || 
-           node.dtype().id() == DataType::LIST_T)
-        {
-            init(node.dtype());
-
-            // If we are making a new head, copy the schema, otherwise, use
-            // the pointer we were given
-            if (schema != NULL)
-            {
-                m_schema = schema;
-            } 
-            else 
-            {
-                m_schema = new Schema(node.schema());
-            }
-            
-            for(index_t i=0;i<node.m_children.size();i++)
-            {
-                Node *child = new Node();
-                child->m_parent = this;
-                child->set_node_using_schema_pointer(*node.m_children[i],
-                                                     m_schema->children()[i]);
-                m_children.push_back(child);
-            }
-        }
-        else // leaf case
-        {
-            // if(this->dtype().is_compatible(node.dtype()))
-            // {
-            //     memcpy(element_pointer(0),
-            //            node.element_pointer(0),
-            //            m_schema->total_bytes());
-            // }
-            // else // not compatible
-            // {
-                node.compact_to(*this);
-            // }
-        }
-    }
-    else
-    {
-        // if passed node is empty -- reset this.
-        reset();
-    }
-
-}
-
 
 //-----------------------------------------------------------------------------
 //
