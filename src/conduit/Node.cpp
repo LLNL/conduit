@@ -3021,11 +3021,8 @@ Node::compact_to(Node &n_dest) const
     
     uint8 *n_dest_data = (uint8*)n_dest.m_data;
     compact_to(n_dest_data,0);
-    n_dest.m_data = NULL; // TODO evil, Brian doesn't like this.
-
     // need node structure
     walk_schema(&n_dest,n_dest.m_schema,n_dest_data);
-
 
 }
 
@@ -3608,8 +3605,9 @@ Node::set_schema_pointer(Schema *schema_ptr)
 void
 Node::set_data_pointer(void *data)
 {
-    release();
-    m_data    = data;    
+    /// TODO: We need to audit where we actually need release
+    //release();
+    m_data    = data;
 }
     
 
@@ -3830,7 +3828,8 @@ Node::walk_schema(Node   *node,
                   void   *data)
 {
     // we can have an object, list, or leaf
-    
+    node->set_schema_pointer(schema);
+    node->set_data_pointer(data);
     if(schema->dtype().id() == DataType::OBJECT_T)
     {
         for(index_t i=0;i<schema->children().size();i++)
@@ -3858,12 +3857,8 @@ Node::walk_schema(Node   *node,
             node->append_node_pointer(curr_node);
         }
     }
-    else
-    {
-            // link the current node to the schema
-            node->set_schema_pointer(schema);
-            node->set_data_pointer(data);
-    } 
+
+  
 }
 
 //---------------------------------------------------------------------------//
@@ -3873,6 +3868,8 @@ Node::mirror_node(Node   *node,
                   Node   *src)
 {
     // we can have an object, list, or leaf
+    node->set_schema_pointer(schema);
+    node->set_data_pointer(src->m_data);
     
     if(schema->dtype().id() == DataType::OBJECT_T)
     {
@@ -3903,12 +3900,8 @@ Node::mirror_node(Node   *node,
             node->append_node_pointer(curr_node);
         }
     }
-    else
-    {
-            // link the current node to the schema
-            node->set_schema_pointer(schema);
-            node->set_data_pointer(src->m_data);
-    } 
+
+    
 }
 
 
