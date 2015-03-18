@@ -44,96 +44,80 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_node_compact.cpp
+/// file: conduit_mpi.h
 ///
 //-----------------------------------------------------------------------------
 
+
+#ifndef __CONDUIT_MPI_H
+#define __CONDUIT_MPI_H
+
+//-----------------------------------------------------------------------------
+// -- define proper lib exports for various platforms -- 
+//-----------------------------------------------------------------------------
+#include "Conduit_MPI_Exports.h"
+
+#include <mpi.h>
+
 #include "conduit.h"
-
-#include <iostream>
-#include "gtest/gtest.h"
-
-using namespace conduit;
+#include "Conduit_MPI_Config.h"
 
 //-----------------------------------------------------------------------------
-TEST(conduit_node_compact, compact_1)
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
+namespace conduit
 {
-
-    uint32   vals[] = {10,20,30,40,50,60,70,80,90,100};
-
-    
-    Generator g("{vals: {dtype:uint32, length:5, stride:8}}",vals);
-    Node n(g,true);
-
-    EXPECT_EQ(40,n.total_bytes());
-    EXPECT_EQ(20,n.total_bytes_compact());
-    n.print();
-    Node nc;
-    n.compact_to(nc);
-    nc.schema().print();
-    nc.print_detailed();
-    EXPECT_EQ(20,nc.total_bytes());
-    EXPECT_EQ(20,nc.total_bytes_compact());
-
-    uint32_array n_arr  = n["vals"].as_uint32_array();
-    uint32_array nc_arr = nc["vals"].as_uint32_array();
-    EXPECT_EQ(n_arr[2],nc_arr[2]);
-}
 
 //-----------------------------------------------------------------------------
-TEST(conduit_node_compact, compact_2)
+// -- begin conduit::mpi --
+//-----------------------------------------------------------------------------
+namespace mpi
 {
 
-    float64 vals[] = { 100.0,-100.0,200.0,-200.0,300.0,-300.0,400.0,-400.0,500.0,-500.0};
-    Generator g1("{dtype: float64, length: 5, stride: 16}",vals);
-    Generator g2("{dtype: float64, length: 5, stride: 16, offset:8}",vals);
+    int CONDUIT_MPI_API send(Node& node, int dest, int tag, MPI_Comm comm);
 
-    Node n1(g1,true);
-    n1.print();
+    int CONDUIT_MPI_API recv(Node& node, int source, int tag, MPI_Comm comm);
 
-    Node n2(g2,true);
-    n2.print();
-    
-    Node ninfo;
-    n1.info(ninfo);
-    ninfo.print();
-
-    Node n1c;
-    n1.compact_to(n1c);
-
-    n1c.schema().print();
-    n1c.print_detailed();
-    n1c.info(ninfo);
-    ninfo.print();
-
-    float64_array n1_arr  = n1.as_float64_array();
-    float64_array n1c_arr = n1c.as_float64_array();
-    for(index_t i=0;i<5;i++)
-    {
-        EXPECT_EQ(n1_arr[i],n1c_arr[i]);
-    }    
-}
+// int sendrecv(Node& sendNode,
+//              int dest, int sendtag,
+//              Node& receiveNode,
+//              int source, int recvtag, MPI_Comm comm, MPI_Status *status );
+//
+// int broadcast(Node& node, int root,
+//                MPI_Comm comm );
+//
+// int gather(Node& sendNode,
+//            Node& recvNode,
+//            int root, MPI_Comm comm );
+//
+// int scatter(Node& sendNode,
+//             Node& recvNode,
+//             int root,
+//             MPI_Comm comm );
+//
+// int alltoall(Node& sendNode,
+//              Node& recvNode,
+//              MPI_Comm comm );
 
 //-----------------------------------------------------------------------------
-TEST(conduit_node_compact, compact_3)
-{
+/// The about methods construct human readable info about how conduit_mpi was
+/// configured.
+//-----------------------------------------------------------------------------
+ std::string CONDUIT_MPI_API about();
+ void        CONDUIT_MPI_API about(Node &);
 
-    float64 vals[] = { 100.0,-100.0,200.0,-200.0,300.0,-300.0,400.0,-400.0,500.0,-500.0};
+};
+//-----------------------------------------------------------------------------
+// -- end conduit::mpi --
+//-----------------------------------------------------------------------------
 
-    Node n;
-    n["a"].set_external(vals,10);
-    n.print();
 
-    Node nc;
-    n.compact_to(nc);
-    nc.schema().print();
-    nc.print_detailed();
-    nc.info().print();
 
-    float64_array n_arr  = n["a"].as_float64_array();
-    float64_array nc_arr = nc["a"].as_float64_array();
-    for(index_t i=0;i<10;i++)
-    {
-        EXPECT_EQ(n_arr[i],nc_arr[i]);
-    }
-}
+};
+//-----------------------------------------------------------------------------
+// -- end conduit:: --
+//-----------------------------------------------------------------------------
+
+
+#endif
+

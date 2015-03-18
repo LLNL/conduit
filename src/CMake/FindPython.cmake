@@ -68,6 +68,10 @@ if(PYTHONINTERP_FOUND)
 endif()
 
 
+find_package_handle_standard_args(Python  DEFAULT_MSG
+                                  PYTHON_LIBRARY PYTHON_INCLUDE_DIR)
+
+
 FUNCTION(PYTHON_ADD_DISTUTILS_SETUP target_name dest_dir setup_file)
 MESSAGE(STATUS "Configuring python distutils setup: ${target_name}")
     add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/build

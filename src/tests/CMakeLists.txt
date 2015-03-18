@@ -84,7 +84,7 @@ set(IO_TESTS conduit_io_smoke)
 ################################
 set(PYTHON_GPREF_TOOLS_TESTS gpref_smoke)
 set(PYTHON_TESTS numpy_smoke)
-set(MPI_TESTS mpi_smoke)
+set(MPI_TESTS mpi_smoke conduit_mpi_smoke)
 set(SILO_TESTS silo_smoke conduit_io_silo)
 
 ################################
@@ -135,6 +135,7 @@ function(add_mpi_test TEST NUM_PROCS)
     endif()
     add_executable(${TEST} ${TEST}.cpp)
     target_link_libraries(${TEST} ${UNIT_TEST_LIBS} ${MPI_CXX_LIBRARIES})
+    target_link_libraries(${TEST} conduit conduit_mpi)
     set(test_parameters ${MPIEXEC_NUMPROC_FLAG} ${NUM_PROCS} "./${TEST}")
     add_test(NAME ${TEST} COMMAND ${MPIEXEC} ${test_parameters})
 endfunction(add_mpi_test)
@@ -178,7 +179,7 @@ else()
 endif()
 
 
-if(ENABLE_MPI AND MPI_FOUND)
+if(ENABLE_MPI)
     message(STATUS "MPI enabled: Adding related unit tests")
     foreach(TEST ${MPI_TESTS})
         add_mpi_test(${TEST} 2) # this uses 2 procs
@@ -187,7 +188,7 @@ else()
     message(STATUS "MPI disabled: Skipping related tests")
 endif()
 
-if(ENABLE_SILO AND SILO_FOUND)
+if(ENABLE_SILO)
     message(STATUS "Silo enabled: Adding related unit tests")
     foreach(TEST ${SILO_TESTS})
         add_io_test(${TEST})

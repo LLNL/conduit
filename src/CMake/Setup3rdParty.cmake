@@ -109,10 +109,20 @@ if(ENABLE_PYTHON)
     include(CMake/FindPython.cmake)
     message(STATUS "Using Python Include: ${PYTHON_INCLUDE_DIRS}")
     include_directories(${PYTHON_INCLUDE_DIRS})
+    # if we don't find python, throw a fatal error
+    if(NOT PYTHON_FOUND)
+        message(FATAL_ERROR "ENABLE_PYTHON is true, but Python wasn't found.")
+    endif()
+
+
     
     include(CMake/FindNumPy.cmake)
     message(STATUS "Using NumPy Include: ${NUMPY_INCLUDE_DIRS}")
     include_directories(${NUMPY_INCLUDE_DIRS})
+    # if we don't find numpy, throw a fatal error
+    if(NOT NUMPY_FOUND)
+        message(FATAL_ERROR "ENABLE_PYTHON is true, but NumPy wasn't found.")
+    endif()
 endif()
 
 ################################
@@ -121,6 +131,10 @@ endif()
 # Search for MPI.
 if(ENABLE_MPI)
     include(FindMPI)
+    # if we don't find mpi, throw a fatal error
+    if(NOT MPI_FOUND)
+        message(FATAL_ERROR "ENABLE_MPI is true, but MPI wasn't found.")
+    endif()
 endif()
 
 
@@ -131,5 +145,9 @@ endif()
 if(ENABLE_SILO)
     include(CMake/FindSilo.cmake)
     include_directories(${SILO_INCLUDE_DIRS})
+    # if we don't find silo, throw a fatal error
+    if(NOT SILO_FOUND)
+        message(FATAL_ERROR "ENABLE_SILO is true, but Silo wasn't found.")
+    endif()
 endif()
 

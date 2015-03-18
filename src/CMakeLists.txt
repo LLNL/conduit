@@ -43,6 +43,11 @@
 ###############################################################################
 
 cmake_minimum_required(VERSION 2.8)
+################################
+# cmake policy selections
+################################
+# avoid default mac osx rpath settings for cmake 3.0
+cmake_policy(SET CMP0042 OLD)
 
 ################################
 # Conduit
@@ -92,8 +97,14 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/conduit_io
                     ${CMAKE_CURRENT_BINARY_DIR}/conduit_io)
 add_subdirectory(conduit_io)
 
-
-
+################################
+# Add the conduit-mpi lib 
+################################
+if(ENABLE_MPI)
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/conduit_mpi
+                        ${CMAKE_CURRENT_BINARY_DIR}/conduit_mpi)
+    add_subdirectory(conduit_mpi)
+endif()
 
 ################################
 # Add docs

@@ -239,8 +239,8 @@ function bootstrap_modules
     
     download http://pypi.python.org/packages/source/p/pip pip-6.0.8.tar
     rm -rf pip-6.0.8
-    info "[Inflating: pip-6.0.8.tar]"
-    tar -xzf pip-6.0.8.tar
+    info "[Inflating: pip-6.0.8.tar.gz]"
+    tar -xzf pip-6.0.8.tar.gz
     cd pip-6.0.8
     info "[Building pip]"
     $PY_EXE setup.py build &> ../logs/pip_build.txt
@@ -259,8 +259,16 @@ function build_python_modules
     if check_osx; then
         $PIP_EXE install readline
     fi;
-    # numpy and cython
+    # numpy
     $PIP_EXE install numpy
+    # sphinx
+    $PIP_EXE install sphinx
+    # breathe
+    $PIP_EXE install pip breathe 
+    # rtd theme
+    $PIP_EXE install pip install https://github.com/snide/sphinx_rtd_theme/archive/master.zip
+
+
 }
 
 

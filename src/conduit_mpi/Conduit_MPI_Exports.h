@@ -44,96 +44,39 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_node_compact.cpp
+/// file: Conduit_MPI_Exports.h
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit.h"
-
-#include <iostream>
-#include "gtest/gtest.h"
-
-using namespace conduit;
+#ifndef CONDUIT_MPI_EXPORTS_H
+#define CONDUIT_MPI_EXPORTS_H
 
 //-----------------------------------------------------------------------------
-TEST(conduit_node_compact, compact_1)
-{
-
-    uint32   vals[] = {10,20,30,40,50,60,70,80,90,100};
-
-    
-    Generator g("{vals: {dtype:uint32, length:5, stride:8}}",vals);
-    Node n(g,true);
-
-    EXPECT_EQ(40,n.total_bytes());
-    EXPECT_EQ(20,n.total_bytes_compact());
-    n.print();
-    Node nc;
-    n.compact_to(nc);
-    nc.schema().print();
-    nc.print_detailed();
-    EXPECT_EQ(20,nc.total_bytes());
-    EXPECT_EQ(20,nc.total_bytes_compact());
-
-    uint32_array n_arr  = n["vals"].as_uint32_array();
-    uint32_array nc_arr = nc["vals"].as_uint32_array();
-    EXPECT_EQ(n_arr[2],nc_arr[2]);
-}
-
+// -- define proper lib exports for various platforms -- 
 //-----------------------------------------------------------------------------
-TEST(conduit_node_compact, compact_2)
-{
+#if defined(_WIN32)
+#if defined(CONDUIT_MPI_EXPORTS) || defined(conduit_mpi_EXPORTS)
+#define CONDUIT_MPI_API __declspec(dllexport)
+#else
+#define CONDUIT_MPI_API __declspec(dllimport)
+#endif
+#if defined(_MSC_VER)
+// Turn off warning about lack of DLL interface
+#pragma warning(disable:4251)
+// Turn off warning non-dll class is base for dll-interface class.
+#pragma warning(disable:4275)
+// Turn off warning about identifier truncation
+#pragma warning(disable:4786)
+#endif
+#else
+# if __GNUC__ >= 4 && (defined(CONDUIT_MPI_EXPORTS) || defined(conduit_mpi_EXPORTS))
+#   define CONDUIT_MPI_API __attribute__ ((visibility("default")))
+# else
+#   define CONDUIT_MPI_API /* hidden by default */
+# endif
+#endif
 
-    float64 vals[] = { 100.0,-100.0,200.0,-200.0,300.0,-300.0,400.0,-400.0,500.0,-500.0};
-    Generator g1("{dtype: float64, length: 5, stride: 16}",vals);
-    Generator g2("{dtype: float64, length: 5, stride: 16, offset:8}",vals);
+#endif
 
-    Node n1(g1,true);
-    n1.print();
 
-    Node n2(g2,true);
-    n2.print();
-    
-    Node ninfo;
-    n1.info(ninfo);
-    ninfo.print();
 
-    Node n1c;
-    n1.compact_to(n1c);
-
-    n1c.schema().print();
-    n1c.print_detailed();
-    n1c.info(ninfo);
-    ninfo.print();
-
-    float64_array n1_arr  = n1.as_float64_array();
-    float64_array n1c_arr = n1c.as_float64_array();
-    for(index_t i=0;i<5;i++)
-    {
-        EXPECT_EQ(n1_arr[i],n1c_arr[i]);
-    }    
-}
-
-//-----------------------------------------------------------------------------
-TEST(conduit_node_compact, compact_3)
-{
-
-    float64 vals[] = { 100.0,-100.0,200.0,-200.0,300.0,-300.0,400.0,-400.0,500.0,-500.0};
-
-    Node n;
-    n["a"].set_external(vals,10);
-    n.print();
-
-    Node nc;
-    n.compact_to(nc);
-    nc.schema().print();
-    nc.print_detailed();
-    nc.info().print();
-
-    float64_array n_arr  = n["a"].as_float64_array();
-    float64_array nc_arr = nc["a"].as_float64_array();
-    for(index_t i=0;i<10;i++)
-    {
-        EXPECT_EQ(n_arr[i],nc_arr[i]);
-    }
-}
