@@ -105,9 +105,6 @@ static int       PyConduit_Node_Check(PyObject* obj);
 static int       PyConduit_Node_SetFromPython(Node& node, PyObject* value);
 static PyObject* PyConduit_createNumpyType(Node& node, int type);
 static PyObject* PyConduit_convertNodeToPython(Node& node);
-static PyObject* getType(const char* name);
-
-
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
@@ -175,13 +172,6 @@ PyConduit_DataType_str(PyConduit_DataType *self)
    return (Py_BuildValue("s", output.c_str()));
 }
 
-//---------------------------------------------------------------------------//
-static PyConduit_DataType *
-PyConduit_DataType_python_create()
-{
-    PyTypeObject *type = (PyTypeObject*)getType("DataType");
-    return (PyConduit_DataType*)type->tp_alloc(type,0);
-}
 
 //-----------------------------------------------------------------------------
 // Setters
@@ -717,6 +707,14 @@ static PyTypeObject PyConduit_DataType_TYPE = {
    0,
    0
 };
+
+//---------------------------------------------------------------------------//
+static PyConduit_DataType *
+PyConduit_DataType_python_create()
+{
+    PyTypeObject* type = (PyTypeObject*)&PyConduit_DataType_TYPE;
+    return (PyConduit_DataType*)type->tp_alloc(type,0);
+}
 
 //---------------------------------------------------------------------------//
 static int
@@ -1288,14 +1286,6 @@ PyConduit_NodeIterator_info(PyConduit_NodeIterator *self)
     return (PyObject*)retval;
 }
 
-//---------------------------------------------------------------------------//
-static PyConduit_NodeIterator *
-PyConduit_NodeIterator_python_create()
-{
-    PyTypeObject *type = (PyTypeObject*)getType("NodeIterator");
-    return (PyConduit_NodeIterator*)type->tp_alloc(type,0);
-}
-
 //----------------------------------------------------------------------------//
 // NodeIterator methods table
 //----------------------------------------------------------------------------//
@@ -1418,6 +1408,13 @@ static PyTypeObject PyConduit_NodeIterator_TYPE = {
    0
 };
 
+//---------------------------------------------------------------------------//
+static PyConduit_NodeIterator *
+PyConduit_NodeIterator_python_create()
+{
+    PyTypeObject* type = (PyTypeObject*)&PyConduit_NodeIterator_TYPE;
+    return (PyConduit_NodeIterator*)type->tp_alloc(type,0);
+}
 
 
 //---------------------------------------------------------------------------//
@@ -2263,17 +2260,6 @@ CONDUIT_PYTHON_API initconduit_python(void)
 }
 
 //---------------------------------------------------------------------------//
-static PyObject *
-getType(const char* name)
-{
-    PyObject* module = PyImport_AddModule(name);
-    PyObject* dict = PyModule_GetDict(module);
-    PyObject* object = PyDict_GetItemString(dict, name);
-    Py_INCREF(object);
-    return (object);
-}
-
-//---------------------------------------------------------------------------//
 static int
 PyConduit_Schema_Check(PyObject* obj)
 {
@@ -2285,7 +2271,8 @@ PyConduit_Schema_Check(PyObject* obj)
 static PyObject *
 PyConduit_Schema_python_wrap(Schema *schema, int python_owns)
 {
-    PyTypeObject *type = (PyTypeObject*)getType("Schema");
+    PyTypeObject *type = (PyTypeObject*)&PyConduit_Schema_TYPE;
+
     PyConduit_Schema *retval = (PyConduit_Schema*)type->tp_alloc(type, 0);
     retval->schema = schema;
     retval->python_owns = python_owns;
@@ -2313,7 +2300,7 @@ PyConduit_Node_Check(PyObject *obj)
 static PyObject *
 PyConduit_Node_python_wrap(Node *node, int python_owns)
 {
-    PyTypeObject* type = (PyTypeObject*)getType("Node");
+    PyTypeObject* type = (PyTypeObject*)&PyConduit_Schema_TYPE;
     PyConduit_Node* retval = (PyConduit_Node*)type->tp_alloc(type, 0);
     retval->node = node;
     retval->python_owns = python_owns;
