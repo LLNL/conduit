@@ -66,7 +66,7 @@ class Test_Conduit_Schema(unittest.TestCase):
         n['b'] = b_val
         n['c'] = c_val
         s = n.schema();
-
+        self.assertEqual(s.total_bytes(),16)
 
 if __name__ == '__main__':
     unittest.main()

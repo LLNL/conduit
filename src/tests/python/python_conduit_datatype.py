@@ -68,11 +68,13 @@ class Test_Conduit_Node(unittest.TestCase):
         n['c'] = c_val
         print n
         d = n.fetch('a').dtype()
+        self.assertEqual(d.id(),DataType.name_to_id("uint32"))
         print d
 
     def test_1_id_to_name(self):
-        for i in xrange(14):
-            print DataType.id_to_name(i)
+        names = [DataType.id_to_name(i) for i in xrange(14)]
+        ids   = [DataType.name_to_id(n) for n in names]
+        self.assertEqual(ids,range(14))
 
 if __name__ == '__main__':
     unittest.main()
