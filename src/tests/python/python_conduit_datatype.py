@@ -50,14 +50,14 @@
 import sys
 import unittest
 
-import conduit
-Node = conduit.Node.Node
+from conduit import Node
+from conduit import DataType
 
 from numpy import *
 
 
 class Test_Conduit_Node(unittest.TestCase):
-    def test_simple(self):
+    def test_0_simple(self):
         a_val = uint32(10)
         b_val = uint32(20)
         c_val = float64(30.0)
@@ -69,6 +69,10 @@ class Test_Conduit_Node(unittest.TestCase):
         print n
         d = n.fetch('a').dtype()
         print d
+
+    def test_1_id_to_name(self):
+        for i in xrange(14):
+            print DataType.id_to_name(i)
 
 if __name__ == '__main__':
     unittest.main()

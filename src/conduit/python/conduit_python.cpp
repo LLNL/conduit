@@ -507,6 +507,38 @@ PyConduit_DataType_element_index(PyConduit_DataType *self,
     return PyLong_FromSsize_t(self->dtype.element_index(idx));
 }
 
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_name_to_id(PyObject *cls,
+                              PyObject *args)
+{
+    const char *dtype_name;
+    if (!PyArg_ParseTuple(args, "s", &dtype_name))
+    {
+        PyErr_SetString(PyExc_TypeError, "DataType name must be a string");
+        return NULL;
+    }
+
+    return PyLong_FromSsize_t(DataType::name_to_id(std::string(dtype_name)));
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_id_to_name(PyObject *cls,
+                              PyObject *args)
+{
+    Py_ssize_t dtype_id;
+
+    if (!PyArg_ParseTuple(args, "n", &dtype_id))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                "DataType id must be a signed integer");
+        return NULL;
+    }
+
+    return Py_BuildValue("s", DataType::id_to_name(dtype_id).c_str());
+}
+
 
 //----------------------------------------------------------------------------//
 // Schema methods table
@@ -618,6 +650,16 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
      METH_VARARGS,
      "{todo}"},
     //-----------------------------------------------------------------------//
+    {"name_to_id",
+     PyConduit_DataType_name_to_id,
+     METH_VARARGS | METH_CLASS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"id_to_name",
+     PyConduit_DataType_id_to_name,
+     METH_VARARGS | METH_CLASS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
     // end DataType methods table
     //-----------------------------------------------------------------------//
     {NULL, NULL, 0, NULL}
@@ -628,7 +670,7 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
 static PyTypeObject PyConduit_DataType_TYPE = {
    PyObject_HEAD_INIT(NULL)
    0,
-   "Schema",
+   "DataType",
    sizeof(PyConduit_DataType),  /* tp_basicsize */
    0, /* tp_itemsize */
    (destructor)PyConduit_DataType_dealloc, /* tp_dealloc */
@@ -710,7 +752,8 @@ PyConduit_Schema_New(PyTypeObject* type,
     }
 
     PyConduit_Schema* self = (PyConduit_Schema*)type->tp_alloc(type, 0);
-    if (self) {
+    if (self)
+    {
         self->schema = 0;
         self->python_owns = 0;
     }
@@ -756,7 +799,7 @@ PyConduit_Schema_init(PyConduit_Schema* self,
          self->schema = new Schema();
      }
 
-     self->python_owns = 1;
+     //self->python_owns = 1;
 
      return (0);
 
@@ -2156,81 +2199,64 @@ static PyMethodDef conduit_python_funcs[] =
 //---------------------------------------------------------------------------//
 extern "C" void
 CONDUIT_PYTHON_API initconduit_python(void)
-{
+{    
+    //-----------------------------------------------------------------------//
+    // create our main module
+    //-----------------------------------------------------------------------//
+
+    PyObject *conduit_module =  Py_InitModule("conduit_python",
+                                              conduit_python_funcs);
+    
+    //-----------------------------------------------------------------------//
+    // init our custom types
+    //-----------------------------------------------------------------------//
+
+    if (PyType_Ready(&PyConduit_DataType_TYPE) < 0)
+        return;
+
+    if (PyType_Ready(&PyConduit_Schema_TYPE) < 0)
+        return;
+
+    if (PyType_Ready(&PyConduit_NodeIterator_TYPE) < 0)
+        return;
+
+    if (PyType_Ready(&PyConduit_Node_TYPE) < 0)
+        return;
 
     //-----------------------------------------------------------------------//
     // add DataType
     //-----------------------------------------------------------------------//
-    if (PyType_Ready(&PyConduit_DataType_TYPE) < 0)
-    {
-        return;
-    }
-
-    /// TODO: PyConduit_Node_METHODS seems wrong
-    PyObject *data_type = Py_InitModule3("DataType",
-                                         PyConduit_DataType_METHODS,
-                                         "DataType class for Conduit");
-
-    PyModule_AddObject(data_type,
+    
+    Py_INCREF(&PyConduit_DataType_TYPE);
+    PyModule_AddObject(conduit_module,
                        "DataType",
                        (PyObject*)&PyConduit_DataType_TYPE);
     //-----------------------------------------------------------------------//
     // add Schema
     //-----------------------------------------------------------------------//
-    if (PyType_Ready(&PyConduit_Schema_TYPE) < 0)
-    {
-        return;
-    }
 
-    PyObject* schema    = Py_InitModule3("Schema",
-                                         PyConduit_Schema_METHODS,
-                                         "Schema class for Conduit");
+    Py_INCREF(&PyConduit_Schema_TYPE);
+    PyModule_AddObject(conduit_module,
+                       "Schema",
+                       (PyObject*)&PyConduit_Schema_TYPE);
 
-    PyModule_AddObject(schema, "Schema", (PyObject*)&PyConduit_Schema_TYPE);
-    
     //-----------------------------------------------------------------------//
     // add NodeIterator
     //-----------------------------------------------------------------------//
-    if (PyType_Ready(&PyConduit_NodeIterator_TYPE) < 0)
-    {
-        return;
-    }
 
-    PyObject *node_iter    = Py_InitModule3("NodeIterator",
-                                            PyConduit_NodeIterator_METHODS,
-                                            "NodeIterator class for Conduit");
-
-    PyModule_AddObject(node_iter,
+    Py_INCREF(&PyConduit_NodeIterator_TYPE);
+    PyModule_AddObject(conduit_module,
                        "NodeIterator",
                        (PyObject*)&PyConduit_NodeIterator_TYPE);
-                       
+
     //-----------------------------------------------------------------------//
     // add Node
     //-----------------------------------------------------------------------//
-    if (PyType_Ready(&PyConduit_Node_TYPE) < 0)
-    {
-        return;
-    }
 
-    PyObject* node    = Py_InitModule3("Node",
-                                       PyConduit_Node_METHODS,
-                                       "Node class for Conduit");
-
-    PyModule_AddObject(node, "Node", (PyObject*)&PyConduit_Node_TYPE);
-
-    PyObject *conduit =  Py_InitModule("conduit_python", conduit_python_funcs);
-
-    Py_INCREF(data_type);
-    PyModule_AddObject(conduit, "DataType", data_type);
-
-    Py_INCREF(schema);
-    PyModule_AddObject(conduit, "Schema", schema);
-
-    Py_INCREF(node_iter);
-    PyModule_AddObject(conduit, "NodeIterator", node_iter);
-
-    Py_INCREF(node);
-    PyModule_AddObject(conduit, "Node", node);
+    Py_INCREF(&PyConduit_Node_TYPE);
+    PyModule_AddObject(conduit_module,
+                       "Node",
+                       (PyObject*)&PyConduit_Node_TYPE);
 
     // req setup for numpy
     import_array();

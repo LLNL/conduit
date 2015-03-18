@@ -50,9 +50,9 @@
 import sys
 import unittest
 
-import conduit
-Node = conduit.Node.Node
-NodeIterator = conduit.NodeIterator.NodeIterator
+from conduit import Node
+from conduit import NodeIterator
+
 
 from numpy import *
 
