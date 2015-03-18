@@ -2300,7 +2300,7 @@ PyConduit_Node_Check(PyObject *obj)
 static PyObject *
 PyConduit_Node_python_wrap(Node *node, int python_owns)
 {
-    PyTypeObject* type = (PyTypeObject*)&PyConduit_Schema_TYPE;
+    PyTypeObject* type = (PyTypeObject*)&PyConduit_Node_TYPE;
     PyConduit_Node* retval = (PyConduit_Node*)type->tp_alloc(type, 0);
     retval->node = node;
     retval->python_owns = python_owns;
