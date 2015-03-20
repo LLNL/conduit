@@ -328,6 +328,18 @@ DataType::DataType(index_t dtype_id,
 DataType::~DataType()
 {}
 
+//---------------------------------------------------------------------------//
+void
+DataType::reset()
+{
+    m_id = EMPTY_T;
+    m_num_ele = 0;
+    m_offset = 0;
+    m_stride = 0;
+    m_ele_bytes = 0;
+    m_endianness = Endianness::DEFAULT_T;
+    
+}
 
 //-----------------------------------------------------------------------------
 // Setters
@@ -345,18 +357,23 @@ DataType::set(const DataType& dtype)
     m_endianness = dtype.m_endianness;
 }
 
+
 //---------------------------------------------------------------------------// 
 void
-DataType::set(index_t dtype_id)
+DataType::set(const std::string &dtype_name,
+              index_t num_elements,
+              index_t offset,
+              index_t stride,
+              index_t element_bytes,
+              index_t endianness)
 {
-    m_id = dtype_id;
-    m_num_ele = 0;
-    m_offset = 0;
-    m_stride = 0;
-    m_ele_bytes = 0;
-    m_endianness = Endianness::DEFAULT_T;
+    m_id = name_to_id(dtype_name);
+    m_num_ele = num_elements;
+    m_offset = offset;
+    m_stride = stride;
+    m_ele_bytes = element_bytes;
+    m_endianness = endianness;
 }
-
 
 //---------------------------------------------------------------------------// 
 void

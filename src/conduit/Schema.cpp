@@ -187,7 +187,8 @@ void
 Schema::set(index_t dtype_id)
 {
     reset();
-    m_dtype.set(dtype_id);
+    m_dtype.reset();
+    m_dtype.set_id(dtype_id);
 }
 
 

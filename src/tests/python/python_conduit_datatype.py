@@ -76,6 +76,21 @@ class Test_Conduit_Node(unittest.TestCase):
         ids   = [DataType.name_to_id(n) for n in names]
         self.assertEqual(ids,range(14))
 
+    def test_2_explicit_set(self):
+        d = DataType()
+        d.set(dtype_id = DataType.name_to_id("uint32"),
+              num_elements = 1,
+              offset = 0,
+              stride = 4,
+              element_bytes = 4)
+        print d
+        self.assertEqual(d.id(),DataType.name_to_id("uint32"))
+        self.assertEqual(d.number_of_elements(),1)
+        self.assertEqual(d.offset(),0)
+        self.assertEqual(d.stride(),4)
+        self.assertEqual(d.element_bytes(),4)
+        self.assertEqual(d.endianness(),0)
+
 if __name__ == '__main__':
     unittest.main()
 

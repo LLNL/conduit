@@ -197,6 +197,112 @@ PyConduit_DataType_str(PyConduit_DataType *self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
+PyConduit_DataType_set(PyConduit_DataType *self,
+                       PyObject *args,
+                       PyObject *kwargs)
+{
+    static const char *kwlist[] = {"dtype_id",
+                                   "dtype_name",
+                                   "num_elements",
+                                   "offset",
+                                   "stride",
+                                   "element_bytes",
+                                   "endianness",
+                                     NULL};
+    Py_ssize_t  dtype_id = 0;
+    const char *dtype_name;
+    Py_ssize_t  num_elements = 0;
+    Py_ssize_t  offset = 0;
+    Py_ssize_t  stride = 0;
+    Py_ssize_t  element_bytes = 0;
+    Py_ssize_t  endianness =0;
+    
+    
+        
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "|nsnnnnn",
+                                     const_cast<char**>(kwlist),
+                                     &dtype_id,
+                                     dtype_name,
+                                     &num_elements,
+                                     &offset,
+                                     &stride,
+                                     &element_bytes,
+                                     &endianness))
+    {
+        return (NULL);
+    }
+    
+    //Note: we are doing dict entry checks w/ kwargs b/c we don't have
+    // a good "unset" sentinel for unsigned type args
+    
+    // dtype_id
+    if(PyDict_GetItemString(kwargs,kwlist[0])) 
+    {
+        self->dtype.set_id(dtype_id);
+    }
+    else if(PyDict_GetItemString(kwargs,kwlist[1]))  // dtype_name
+    {
+        // if not dtype_id and dtype_name, we use dtype_name
+        self->dtype.set_id(DataType::name_to_id(std::string(dtype_name)));
+    }
+
+    // num_elements
+    if(PyDict_GetItemString(kwargs,kwlist[2]))
+    {
+        self->dtype.set_number_of_elements(num_elements);
+    }
+
+    // offset
+    if(PyDict_GetItemString(kwargs,kwlist[3]))
+    {
+        self->dtype.set_offset(offset);
+    }
+
+    // stride
+    if(PyDict_GetItemString(kwargs,kwlist[3]))
+    {
+        self->dtype.set_stride(stride);
+    }
+
+    // element_bytes
+    if(PyDict_GetItemString(kwargs,kwlist[4]))
+    {
+         self->dtype.set_element_bytes(element_bytes);
+    }
+
+     // endianness
+    if(PyDict_GetItemString(kwargs,kwlist[5]))
+    {
+       self->dtype.set_endianness(endianness);
+    }
+
+    Py_RETURN_NONE; 
+}
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_set_id(PyConduit_DataType *self,
+                                          PyObject *args)
+{
+    Py_ssize_t value;
+
+    if (!PyArg_ParseTuple(args, "n", &value))
+    {
+        PyErr_SetString(PyExc_TypeError,
+            "dtype_id must be a signed integer");
+        return NULL;
+    }
+
+    self->dtype.set_id(value);
+
+    Py_RETURN_NONE; 
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
 PyConduit_DataType_set_number_of_elements(PyConduit_DataType *self,
                                           PyObject *args)
 {
@@ -293,17 +399,6 @@ PyConduit_DataType_set_endianness(PyConduit_DataType *self,
 //-----------------------------------------------------------------------------
 // Getters and info methods.
 //-----------------------------------------------------------------------------
-//     index_t     id()    const { return m_id;}
-//     index_t     total_bytes()   const;
-//     index_t     total_bytes_compact() const;
-//     bool        is_compact() const;
-//     bool        is_compatible(const DataType& type) const;
-//
-//     bool        is_number()           const;
-//     bool        is_float()            const;
-//     bool        is_integer()          const;
-//     bool        is_signed_integer()   const;
-//     bool        is_unsigned_integer() const;
 
 //---------------------------------------------------------------------------//
 static PyObject *
@@ -435,16 +530,6 @@ PyConduit_DataType_is_unsigned_integer(PyConduit_DataType *self)
     }
 }
 
-
-//
-//
-//     index_t    number_of_elements()  const { return m_num_ele;}
-//     index_t    offset()              const { return m_offset;}
-//     index_t    stride()              const { return m_stride;}
-//     index_t    element_bytes()       const { return m_ele_bytes;}
-//     index_t    endianness()          const { return m_endianness;}
-//     index_t    element_index(index_t idx) const;
-
 //---------------------------------------------------------------------------//
 static PyObject *
 PyConduit_DataType_number_of_elements(PyConduit_DataType *self)
@@ -530,10 +615,20 @@ PyConduit_DataType_id_to_name(PyObject *cls,
 }
 
 
+
 //----------------------------------------------------------------------------//
 // Schema methods table
 //----------------------------------------------------------------------------//
 static PyMethodDef PyConduit_DataType_METHODS[] = {
+    //-----------------------------------------------------------------------//
+    {"set",
+     (PyCFunction)PyConduit_DataType_set,
+     METH_VARARGS | METH_KEYWORDS,
+     "{todo}"},
+     {"set",
+    (PyCFunction)PyConduit_DataType_set_id,
+      METH_VARARGS,
+      "{todo}"},
     //-----------------------------------------------------------------------//
     {"set_number_of_elements",
      (PyCFunction)PyConduit_DataType_set_number_of_elements,
