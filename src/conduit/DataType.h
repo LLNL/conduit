@@ -366,7 +366,7 @@ public:
     bool        is_compatible(const DataType& type) const;
 
     bool        is_number()           const;
-    bool        is_float()            const;
+    bool        is_floating_point()   const;
     bool        is_integer()          const;
     bool        is_signed_integer()   const;
     bool        is_unsigned_integer() const;

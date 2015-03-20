@@ -419,12 +419,12 @@ bool
 DataType::is_number() const
 {
     return ( is_integer() ||
-             is_float());
+             is_floating_point());
 }
 
 //---------------------------------------------------------------------------//
 bool
-DataType::is_float() const
+DataType::is_floating_point() const
 {
     return ( (m_id == FLOAT32_T) ||
              (m_id == FLOAT64_T));

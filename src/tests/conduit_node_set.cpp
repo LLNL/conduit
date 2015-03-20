@@ -74,7 +74,7 @@ TEST(conduit_node_set, set_uint_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_uint64(),8);
     
     // uint16
@@ -87,7 +87,7 @@ TEST(conduit_node_set, set_uint_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_uint64(),16);
 
     
@@ -101,7 +101,7 @@ TEST(conduit_node_set, set_uint_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_uint64(),32);
     
     // uint64
@@ -114,7 +114,7 @@ TEST(conduit_node_set, set_uint_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_uint64(),64);
 
 }
@@ -141,7 +141,7 @@ TEST(conduit_node_set, set_path_uint_scalar)
     EXPECT_EQ(nc.dtype().is_integer(),true);
     EXPECT_EQ(nc.dtype().is_signed_integer(),false);
     EXPECT_EQ(nc.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(nc.dtype().is_float(),false);
+    EXPECT_EQ(nc.dtype().is_floating_point(),false);
     EXPECT_EQ(nc.to_uint64(),8);
     
     // uint16
@@ -157,7 +157,7 @@ TEST(conduit_node_set, set_path_uint_scalar)
     EXPECT_EQ(nc.dtype().is_integer(),true);
     EXPECT_EQ(nc.dtype().is_signed_integer(),false);
     EXPECT_EQ(nc.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(nc.dtype().is_float(),false);
+    EXPECT_EQ(nc.dtype().is_floating_point(),false);
     EXPECT_EQ(nc.to_uint64(),16);
 
     
@@ -174,7 +174,7 @@ TEST(conduit_node_set, set_path_uint_scalar)
     EXPECT_EQ(nc.dtype().is_integer(),true);
     EXPECT_EQ(nc.dtype().is_signed_integer(),false);
     EXPECT_EQ(nc.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(nc.dtype().is_float(),false);
+    EXPECT_EQ(nc.dtype().is_floating_point(),false);
     EXPECT_EQ(nc.to_uint64(),32);
     
     // uint64
@@ -190,7 +190,7 @@ TEST(conduit_node_set, set_path_uint_scalar)
     EXPECT_EQ(nc.dtype().is_integer(),true);
     EXPECT_EQ(nc.dtype().is_signed_integer(),false);
     EXPECT_EQ(nc.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(nc.dtype().is_float(),false);
+    EXPECT_EQ(nc.dtype().is_floating_point(),false);
     EXPECT_EQ(nc.to_uint64(),64);
 
 }
@@ -214,7 +214,7 @@ TEST(conduit_node_set, set_external_uint_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),8);
     n.set((uint8)1);
     EXPECT_EQ(u8v,1);
@@ -229,7 +229,7 @@ TEST(conduit_node_set, set_external_uint_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),16);
     n.set((uint16)1);
     EXPECT_EQ(u16v,1);
@@ -245,7 +245,7 @@ TEST(conduit_node_set, set_external_uint_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),32);
     n.set((uint32)1);
     EXPECT_EQ(u32v,1);
@@ -261,7 +261,7 @@ TEST(conduit_node_set, set_external_uint_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),64);
     n.set((uint64)1);
     EXPECT_EQ(u64v,1);
@@ -289,7 +289,7 @@ TEST(conduit_node_set, set_int_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),true);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),-8);
     
     // int16
@@ -302,7 +302,7 @@ TEST(conduit_node_set, set_int_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),true);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),-16);
 
     
@@ -316,7 +316,7 @@ TEST(conduit_node_set, set_int_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),true);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),-32);
     
     // int64
@@ -329,7 +329,7 @@ TEST(conduit_node_set, set_int_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),true);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),-64);
 
 }
@@ -356,7 +356,7 @@ TEST(conduit_node_set, set_path_int_scalar)
     EXPECT_EQ(nc.dtype().is_integer(),true);
     EXPECT_EQ(nc.dtype().is_signed_integer(),true);
     EXPECT_EQ(nc.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(nc.dtype().is_float(),false);
+    EXPECT_EQ(nc.dtype().is_floating_point(),false);
     EXPECT_EQ(nc.to_int64(),-8);
     
     // int16
@@ -372,7 +372,7 @@ TEST(conduit_node_set, set_path_int_scalar)
     EXPECT_EQ(nc.dtype().is_integer(),true);
     EXPECT_EQ(nc.dtype().is_signed_integer(),true);
     EXPECT_EQ(nc.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(nc.dtype().is_float(),false);
+    EXPECT_EQ(nc.dtype().is_floating_point(),false);
     EXPECT_EQ(nc.to_int64(),-16);
 
     
@@ -389,7 +389,7 @@ TEST(conduit_node_set, set_path_int_scalar)
     EXPECT_EQ(nc.dtype().is_integer(),true);
     EXPECT_EQ(nc.dtype().is_signed_integer(),true);
     EXPECT_EQ(nc.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(nc.dtype().is_float(),false);
+    EXPECT_EQ(nc.dtype().is_floating_point(),false);
     EXPECT_EQ(nc.to_int64(),-32);
     
     // int64
@@ -405,7 +405,7 @@ TEST(conduit_node_set, set_path_int_scalar)
     EXPECT_EQ(nc.dtype().is_integer(),true);
     EXPECT_EQ(nc.dtype().is_signed_integer(),true);
     EXPECT_EQ(nc.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(nc.dtype().is_float(),false);
+    EXPECT_EQ(nc.dtype().is_floating_point(),false);
     EXPECT_EQ(nc.to_int64(),-64);
 
 }
@@ -429,7 +429,7 @@ TEST(conduit_node_set, set_external_int_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),true);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     n.set((int8)-1);
     EXPECT_EQ(i8v,-1);
     
@@ -443,7 +443,7 @@ TEST(conduit_node_set, set_external_int_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),true);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),-16);
     n.set((int16)-1);
     EXPECT_EQ(i16v,-1);
@@ -459,7 +459,7 @@ TEST(conduit_node_set, set_external_int_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),true);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),-32);
     n.set((int32)-1);
     EXPECT_EQ(i32v,-1);
@@ -474,7 +474,7 @@ TEST(conduit_node_set, set_external_int_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),true);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),-64);
     n.set((int64)-1);
     EXPECT_EQ(i64v,-1);
@@ -498,7 +498,7 @@ TEST(conduit_node_set_float_scalar, conduit_node_set)
     EXPECT_EQ(n.dtype().is_integer(),false);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),true);
+    EXPECT_EQ(n.dtype().is_floating_point(),true);
     EXPECT_NEAR(n.to_float64(),-3.2,0.001);
     
     // float64
@@ -511,7 +511,7 @@ TEST(conduit_node_set_float_scalar, conduit_node_set)
     EXPECT_EQ(n.dtype().is_integer(),false);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),true);
+    EXPECT_EQ(n.dtype().is_floating_point(),true);
     EXPECT_NEAR(n.to_float64(),-6.4,0.001);
 
 }
@@ -536,7 +536,7 @@ TEST(conduit_node_set, set_path_float_scalar)
     EXPECT_EQ(nc.dtype().is_integer(),false);
     EXPECT_EQ(nc.dtype().is_signed_integer(),false);
     EXPECT_EQ(nc.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(nc.dtype().is_float(),true);
+    EXPECT_EQ(nc.dtype().is_floating_point(),true);
     EXPECT_NEAR(nc.to_float64(),-3.2,0.001);
     
     // float64
@@ -552,7 +552,7 @@ TEST(conduit_node_set, set_path_float_scalar)
     EXPECT_EQ(nc.dtype().is_integer(),false);
     EXPECT_EQ(nc.dtype().is_signed_integer(),false);
     EXPECT_EQ(nc.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(nc.dtype().is_float(),true);
+    EXPECT_EQ(nc.dtype().is_floating_point(),true);
     EXPECT_NEAR(nc.to_float64(),-6.4,0.001);
 
 }
@@ -575,7 +575,7 @@ TEST(conduit_node_set, set_external_float_scalar)
     EXPECT_EQ(n.dtype().is_integer(),false);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),true);
+    EXPECT_EQ(n.dtype().is_floating_point(),true);
     EXPECT_NEAR(n.to_float64(),-3.2,0.001);
     n.set((float32)-1.1);
     EXPECT_NEAR(f32v,-1.1,0.001);
@@ -590,7 +590,7 @@ TEST(conduit_node_set, set_external_float_scalar)
     EXPECT_EQ(n.dtype().is_integer(),false);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),true);
+    EXPECT_EQ(n.dtype().is_floating_point(),true);
     EXPECT_NEAR(n.to_float64(),-6.4,0.001);
     n.set((float64)-1.1);
     EXPECT_NEAR(f64v,-1.1,0.001);

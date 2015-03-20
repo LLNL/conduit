@@ -1398,6 +1398,124 @@ public:
     uint8            *data_pointer() 
                         {return (uint8*)m_data;}
 
+
+//-----------------------------------------------------------------------------
+/// description:
+///  Direct access to data at leaf types (native c++ types)
+//-----------------------------------------------------------------------------
+     
+     // signed integer scalars
+    char           as_char()  const
+                   { return *((char*)element_pointer(0));}
+
+    short          as_short()  const
+                   { return *((short*)element_pointer(0));}
+
+    int            as_int()  const  
+                   { return *((int*)element_pointer(0));}
+
+    long           as_long()  const  
+                   { return *((long*)element_pointer(0));}
+
+    // unsigned integer scalars
+    unsigned char   as_unsigned_char()   const 
+                        { return *((unsigned char*)element_pointer(0));}
+
+    unsigned short   as_unsigned_short()   const 
+                        { return *((unsigned short*)element_pointer(0));}
+    
+    unsigned int     as_unsigned_int()   const 
+                        { return *((unsigned int*)element_pointer(0));}
+    unsigned long    as_unsigned_long()  const 
+                        { return *(( unsigned long*)element_pointer(0));}
+
+    // floating point scalars
+    float            as_float() const 
+                       { return *((float*)element_pointer(0));}
+    double           as_double() const 
+                        { return *((double*)element_pointer(0));}
+
+    // signed integers via pointers
+    
+    char            *as_char_ptr()     
+                        { return (char*)element_pointer(0);}
+    short           *as_short_ptr()    
+                        { return (short*)element_pointer(0);}
+    int             *as_int_ptr()    
+                        { return (int*)element_pointer(0);}
+    long            *as_long_ptr()    
+                        { return (long*)element_pointer(0);}
+
+    // unsigned integers via pointers
+    unsigned char      *as_unsigned_char_ptr()    
+                        { return (unsigned char*)element_pointer(0);}
+    unsigned short      *as_unsigned_short_ptr()   
+                       { return (unsigned short*)element_pointer(0);}
+    unsigned int       *as_unsigned_int_ptr()   
+                        { return (unsigned int*)element_pointer(0);}
+    unsigned long      *as_unsigned_long_ptr()   
+                        { return (unsigned long*)element_pointer(0);}
+
+    // floating point via pointers
+    float             *as_float_ptr()  
+                        { return (float*)element_pointer(0);}
+    double           *as_double_ptr()  
+                        { return (double*)element_pointer(0);}
+
+    // signed integer array types via conduit::DataArray
+    char_array       as_char_array()
+                        { return char_array(m_data,dtype());}
+    short_array      as_short_array()
+                        { return short_array(m_data,dtype());}
+    int_array        as_int_array()
+                        { return int_array(m_data,dtype());}
+    long_array      as_long_array()
+                        { return long_array(m_data,dtype());}
+
+    // unsigned integer array types via conduit::DataArray
+    unsigned_char_array    as_unsigned_char_array()
+                            { return unsigned_char_array(m_data,dtype());}
+    unsigned_short_array   as_unsigned_short_array()
+                            { return unsigned_short_array(m_data,dtype());}
+    unsigned_int_array     as_unsigned_int_array()
+                            { return unsigned_int_array(m_data,dtype());}
+    unsigned_long_array    as_unsigned_long_()
+                            { return unsigned_long_array(m_data,dtype());}
+
+    // floating point array types via conduit::DataArray
+    float_array     as_float_array()
+                        { return float_array(m_data,dtype());}
+    double_array    as_double_array()
+                        { return double_array(m_data,dtype());}
+
+    // signed integer array types via conduit::DataArray (const variants)
+
+    char_array       as_char_array() const
+                        { return char_array(m_data,dtype());}
+    short_array      as_short_array() const
+                        { return short_array(m_data,dtype());}
+    int_array        as_int_array() const
+                        { return int_array(m_data,dtype());}
+    long_array      as_long_array() const
+                        { return long_array(m_data,dtype());}
+
+    // unsigned integer array types via conduit::DataArray (const variants)
+    unsigned_char_array    as_unsigned_char_array() const
+                            { return unsigned_char_array(m_data,dtype());}
+    unsigned_short_array   as_unsigned_short_array() const
+                            { return unsigned_short_array(m_data,dtype());}
+    unsigned_int_array     as_unsigned_int_array() const
+                            { return unsigned_int_array(m_data,dtype());}
+    unsigned_long_array    as_unsigned_long_() const
+                            { return unsigned_long_array(m_data,dtype());}
+
+
+    // floating point array value via conduit::DataArray (const variants)
+    float_array     as_float_array() const
+                        { return float_array(m_data,dtype());}
+    double_array    as_double_array() const
+                        { return double_array(m_data,dtype());}
+
 //-----------------------------------------------------------------------------
 ///@}
 //-----------------------------------------------------------------------------
