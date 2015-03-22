@@ -112,7 +112,7 @@ public:
     } TypeID;
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::DataType::Objects --
+// -- begin conduit::DataType Objects Constructor Helpers --
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 ///
@@ -122,182 +122,153 @@ public:
 ///  Reference DataType instances for "object" types.
 ///
 //-----------------------------------------------------------------------------
-    class Objects
-    {
-    public:
-        static const DataType &empty()  {return m_empty;}
-        static const DataType &object() {return m_object;}
-        static const DataType &list()   {return m_list;}
-    private:
-        /// private members of DataType::Objects
-        /// these are the concrete reference types
-        static DataType m_empty;
-        static DataType m_object;
-        static DataType m_list;
-    };
 
-//-----------------------------------------------------------------------------
-// -- end conduit::DataType::Objects --
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::DataType::Scalars --
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-///
-/// class: conduit::DataType:Scalars
-///
-/// description:
-///  Reference DataType instances for scalar numeric types, and helpers
-///  that create DataTypes that point to scalars at an offset.
-///
-//-----------------------------------------------------------------------------
-    class Scalars
-    {    
-    public:
-        /// signed integer scalars 
-        static const DataType &int8()  {return m_int8;}
-        static const DataType &int16() {return m_int16;}
-        static const DataType &int32() {return m_int32;}
-        static const DataType &int64() {return m_int64;}
-
-        /// unsigned integer scalars 
-        static const DataType &uint8()  {return m_uint8;}
-        static const DataType &uint16() {return m_uint16;}
-        static const DataType &uint32() {return m_uint32;}
-        static const DataType &uint64() {return m_uint64;}
-
-        /// floating point integer scalars 
-        static const DataType &float32() {return m_float32;}
-        static const DataType &float64() {return m_float64;}
-
-        /// signed integer scalars with an offset
-        static DataType int8(index_t offset)  
-                            {return DataType::Arrays::int8(1,offset);}
-        static DataType int16(index_t offset) 
-                            {return DataType::Arrays::int16(1,offset);}
-        static DataType int32(index_t offset) 
-                            {return DataType::Arrays::int32(1,offset);}
-        static DataType int64(index_t offset) 
-                            {return DataType::Arrays::int64(1,offset);}
-
-        /// unsigned integer scalars with an offset
-        static DataType uint8(index_t offset)  
-                            {return DataType::Arrays::uint8(1,offset);}
-        static DataType uint16(index_t offset) 
-                            {return DataType::Arrays::uint16(1,offset);}
-        static DataType uint32(index_t offset) 
-                            {return DataType::Arrays::uint32(1,offset);}
-        static DataType uint64(index_t offset) 
-                            {return DataType::Arrays::uint64(1,offset);}
-
-        /// floating point integer scalars with an offset
-        static DataType float32(index_t offset) 
-                            {return DataType::Arrays::float32(1,offset);}
-        static DataType float64(index_t offset) 
-                            {return DataType::Arrays::float64(1,offset);}
-
-    private:
-        /// private members of DataType::Scalars
-        /// these are the concrete reference types
-        /// signed integer scalars 
-        static DataType m_int8;
-        static DataType m_int16;
-        static DataType m_int32;
-        static DataType m_int64;
-          /// unsigned integer scalars 
-        static DataType m_uint8;
-        static DataType m_uint16;
-        static DataType m_uint32;
-        static DataType m_uint64;
-         /// floating point integer scalars 
-        static DataType m_float32;
-        static DataType m_float64;
-    };
-
-//-----------------------------------------------------------------------------
-// -- end conduit::DataType::Scalars --
-//-----------------------------------------------------------------------------
+    static DataType empty();
+    static DataType object();
+    static DataType list();
     
 //-----------------------------------------------------------------------------
-// -- begin conduit::DataType::Arrays --
+// -- end conduit::DataType Objects Constructor Helpers --
 //-----------------------------------------------------------------------------
+
 //-----------------------------------------------------------------------------
-///
-/// class: conduit::DataType:Arrays
-///
-/// description:
-///  Helpers to create DataTypes that describe arrays.
+// -- begin conduit::DataType Leaf Constructor Helpers --
 //-----------------------------------------------------------------------------
-    class Arrays
-    {    
-    public:
-        /// signed integer arrays
-        static DataType int8(index_t num_elements,
+    /// signed integer arrays
+    static DataType int8(index_t num_elements=1,
+                         index_t offset = 0,
+                         index_t stride = sizeof(conduit::int8),
+                         index_t element_bytes = sizeof(conduit::int8),
+                         index_t endianness = Endianness::DEFAULT_T);
+
+    static DataType int16(index_t num_elements=1,
+                          index_t offset = 0,
+                          index_t stride = sizeof(conduit::int16),
+                          index_t element_bytes = sizeof(conduit::int16),
+                          index_t endianness = Endianness::DEFAULT_T);
+
+    static DataType int32(index_t num_elements=1,
+                          index_t offset = 0,
+                          index_t stride = sizeof(conduit::int32),
+                          index_t element_bytes = sizeof(conduit::int32),
+                          index_t endianness = Endianness::DEFAULT_T);
+
+    static DataType int64(index_t num_elements=1,
+                          index_t offset = 0,
+                          index_t stride = sizeof(conduit::int64),
+                          index_t element_bytes = sizeof(conduit::int64),
+                          index_t endianness = Endianness::DEFAULT_T);
+
+    /// unsigned integer arrays
+    static DataType uint8(index_t num_elements=1,
+                          index_t offset = 0,
+                          index_t stride = sizeof(conduit::uint8),
+                          index_t element_bytes = sizeof(conduit::uint8),
+                          index_t endianness = Endianness::DEFAULT_T);
+
+    static DataType uint16(index_t num_elements=1,
+                           index_t offset = 0,
+                           index_t stride = sizeof(conduit::uint16),
+                           index_t element_bytes = sizeof(conduit::uint16),
+                           index_t endianness = Endianness::DEFAULT_T);
+
+    static DataType uint32(index_t num_elements=1,
+                           index_t offset = 0,
+                           index_t stride = sizeof(conduit::uint32),
+                           index_t element_bytes = sizeof(conduit::uint32),
+                           index_t endianness = Endianness::DEFAULT_T);
+
+    static DataType uint64(index_t num_elements=1,
+                           index_t offset = 0,
+                           index_t stride = sizeof(conduit::uint64),
+                           index_t element_bytes = sizeof(conduit::uint64),
+                           index_t endianness = Endianness::DEFAULT_T);
+
+    /// floating point arrays
+    static DataType float32(index_t num_elements=1,
+                            index_t offset = 0,
+                            index_t stride = sizeof(conduit::float32),
+                            index_t element_bytes=sizeof(conduit::float32),
+                            index_t endianness = Endianness::DEFAULT_T);
+
+    static DataType float64(index_t num_elements=1,
+                            index_t offset = 0,
+                            index_t stride = sizeof(conduit::float64),
+                            index_t element_bytes=sizeof(conduit::float64),
+                            index_t endianness = Endianness::DEFAULT_T);
+
+//-----------------------------------------------------------------------------
+// -- end conduit::DataType Leaf Constructor Helpers --
+//-----------------------------------------------------------------------------
+                            
+//-----------------------------------------------------------------------------
+// -- begin conduit::DataType C Native Leaf Constructor Helpers --
+//-----------------------------------------------------------------------------
+    /// signed integer arrays
+    static DataType c_char(index_t num_elements=1,
+                           index_t offset = 0,
+                           index_t stride = sizeof(CONDUIT_NATIVE_CHAR),
+                           index_t element_bytes = sizeof(CONDUIT_NATIVE_CHAR),
+                           index_t endianness = Endianness::DEFAULT_T);
+
+    static DataType c_short(index_t num_elements=1,
+                            index_t offset = 0,
+                            index_t stride = sizeof(CONDUIT_NATIVE_SHORT),
+                            index_t element_bytes = sizeof(CONDUIT_NATIVE_SHORT),
+                            index_t endianness = Endianness::DEFAULT_T);
+
+    static DataType c_int(index_t num_elements=1,
+                          index_t offset = 0,
+                          index_t stride = sizeof(CONDUIT_NATIVE_INT),
+                          index_t element_bytes = sizeof(CONDUIT_NATIVE_INT),
+                          index_t endianness = Endianness::DEFAULT_T);
+
+    static DataType c_long(index_t num_elements=1,
+                           index_t offset = 0,
+                           index_t stride = sizeof(CONDUIT_NATIVE_LONG),
+                           index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG),
+                           index_t endianness = Endianness::DEFAULT_T);
+
+    /// unsigned integer arrays
+    static DataType c_unsigned_char(index_t num_elements=1,
+                                    index_t offset = 0,
+                                    index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR),
+                                    index_t element_bytes =  sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR),
+                                    index_t endianness = Endianness::DEFAULT_T);
+
+    static DataType c_unsigned_short(index_t num_elements=1,
+                                     index_t offset = 0,
+                                     index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT),
+                                     index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT),
+                                     index_t endianness = Endianness::DEFAULT_T);
+
+    static DataType c_unsigned_int(index_t num_elements=1,
+                                   index_t offset = 0,
+                                   index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_INT),
+                                   index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_INT),
+                                   index_t endianness = Endianness::DEFAULT_T);
+
+    static DataType c_unsigned_long(index_t num_elements=1,
+                                    index_t offset = 0,
+                                    index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
+                                    index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
+                                    index_t endianness = Endianness::DEFAULT_T);
+
+    /// floating point arrays
+    static DataType c_float(index_t num_elements=1,
+                            index_t offset = 0,
+                            index_t stride = sizeof(CONDUIT_NATIVE_FLOAT),
+                            index_t element_bytes=sizeof(CONDUIT_NATIVE_FLOAT),
+                            index_t endianness = Endianness::DEFAULT_T);
+
+    static DataType c_double(index_t num_elements=1,
                              index_t offset = 0,
-                             index_t stride = sizeof(conduit::int8),
-                             index_t element_bytes = sizeof(conduit::int8),
+                             index_t stride = sizeof(CONDUIT_NATIVE_DOUBLE),
+                             index_t element_bytes=sizeof(CONDUIT_NATIVE_DOUBLE),
                              index_t endianness = Endianness::DEFAULT_T);
-        
-        static DataType int16(index_t num_elements,
-                              index_t offset = 0,
-                              index_t stride = sizeof(conduit::int16),
-                              index_t element_bytes = sizeof(conduit::int16),
-                              index_t endianness = Endianness::DEFAULT_T);
-
-        static DataType int32(index_t num_elements,
-                              index_t offset = 0,
-                              index_t stride = sizeof(conduit::int32),
-                              index_t element_bytes = sizeof(conduit::int32),
-                              index_t endianness = Endianness::DEFAULT_T);
-
-        static DataType int64(index_t num_elements,
-                              index_t offset = 0,
-                              index_t stride = sizeof(conduit::int64),
-                              index_t element_bytes = sizeof(conduit::int64),
-                              index_t endianness = Endianness::DEFAULT_T);
-
-        /// unsigned integer arrays
-        static DataType uint8(index_t num_elements,
-                              index_t offset = 0,
-                              index_t stride = sizeof(conduit::uint8),
-                              index_t element_bytes = sizeof(conduit::uint8),
-                              index_t endianness = Endianness::DEFAULT_T);
-
-        static DataType uint16(index_t num_elements,
-                               index_t offset = 0,
-                               index_t stride = sizeof(conduit::uint16),
-                               index_t element_bytes = sizeof(conduit::uint16),
-                               index_t endianness = Endianness::DEFAULT_T);
-
-        static DataType uint32(index_t num_elements,
-                               index_t offset = 0,
-                               index_t stride = sizeof(conduit::uint32),
-                               index_t element_bytes = sizeof(conduit::uint32),
-                               index_t endianness = Endianness::DEFAULT_T);
-
-        static DataType uint64(index_t num_elements,
-                               index_t offset = 0,
-                               index_t stride = sizeof(conduit::uint64),
-                               index_t element_bytes = sizeof(conduit::uint64),
-                               index_t endianness = Endianness::DEFAULT_T);
-
-       /// floating point arrays
-        static DataType float32(index_t num_elements,
-                                index_t offset = 0,
-                                index_t stride = sizeof(conduit::float32),
-                                index_t element_bytes=sizeof(conduit::float32),
-                                index_t endianness = Endianness::DEFAULT_T);
-
-        static DataType float64(index_t num_elements,
-                                index_t offset = 0,
-                                index_t stride = sizeof(conduit::float64),
-                                index_t element_bytes=sizeof(conduit::float64),
-                                index_t endianness = Endianness::DEFAULT_T);
-    };
 
 //-----------------------------------------------------------------------------
-// -- end conduit::DataType::Arrays --
+// -- begin conduit::DataType C Native Leaf Constructor Helpers 
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -386,13 +357,14 @@ public:
 //-----------------------------------------------------------------------------
     static index_t          name_to_id(const std::string &name);
     static std::string      id_to_name(index_t dtype);
+    static index_t          c_type_name_to_id(const std::string &name);
 
 //-----------------------------------------------------------------------------
 // Access to simple reference data types by id or name.
 //-----------------------------------------------------------------------------
 
-    static DataType const  &default_dtype(index_t dtype_id);
-    static DataType const  &default_dtype(const std::string &name);
+    static DataType default_dtype(index_t dtype_id);
+    static DataType default_dtype(const std::string &name);
 
 //-----------------------------------------------------------------------------
 // Return the default number of bytes used in a given type (from a type id, or

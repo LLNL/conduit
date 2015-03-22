@@ -604,10 +604,10 @@ TEST(conduit_node_set, set_uint_array)
     uint32  u32av[6] = {2,4,8,16,32,64};
     uint64  u64av[6] = {2,4,8,16,32,64};
     
-    uint8_array  u8av_a(u8av,DataType::Arrays::uint8(6));
-    uint16_array u16av_a(u16av,DataType::Arrays::uint16(6));
-    uint32_array u32av_a(u32av,DataType::Arrays::uint32(6));
-    uint64_array u64av_a(u64av,DataType::Arrays::uint64(6));
+    uint8_array  u8av_a(u8av,DataType::uint8(6));
+    uint16_array u16av_a(u16av,DataType::uint16(6));
+    uint32_array u32av_a(u32av,DataType::uint32(6));
+    uint64_array u64av_a(u64av,DataType::uint64(6));
     
     Node n;
     // uint8
@@ -743,10 +743,10 @@ TEST(conduit_node_set, set_path_uint_array)
     uint32  u32av[6] = {2,4,8,16,32,64};
     uint64  u64av[6] = {2,4,8,16,32,64};
     
-    uint8_array  u8av_a(u8av,DataType::Arrays::uint8(6));
-    uint16_array u16av_a(u16av,DataType::Arrays::uint16(6));
-    uint32_array u32av_a(u32av,DataType::Arrays::uint32(6));
-    uint64_array u64av_a(u64av,DataType::Arrays::uint64(6));
+    uint8_array  u8av_a(u8av,DataType::uint8(6));
+    uint16_array u16av_a(u16av,DataType::uint16(6));
+    uint32_array u32av_a(u32av,DataType::uint32(6));
+    uint64_array u64av_a(u64av,DataType::uint64(6));
     
     Node n;
     // uint8
@@ -899,10 +899,10 @@ TEST(conduit_node_set, set_external_uint_array)
     uint32  u32av[6] = {2,4,8,16,32,64};
     uint64  u64av[6] = {2,4,8,16,32,64};
     
-    uint8_array u8av_a(u8av,DataType::Arrays::uint8(6));
-    uint16_array u16av_a(u16av,DataType::Arrays::uint16(6));
-    uint32_array u32av_a(u32av,DataType::Arrays::uint32(6));
-    uint64_array u64av_a(u64av,DataType::Arrays::uint64(6));
+    uint8_array u8av_a(u8av,DataType::uint8(6));
+    uint16_array u16av_a(u16av,DataType::uint16(6));
+    uint32_array u32av_a(u32av,DataType::uint32(6));
+    uint64_array u64av_a(u64av,DataType::uint64(6));
     
     Node n;
     // uint8
@@ -1058,10 +1058,10 @@ TEST(conduit_node_set, set__path_external_uint_array)
     uint32  u32av[6] = {2,4,8,16,32,64};
     uint64  u64av[6] = {2,4,8,16,32,64};
     
-    uint8_array u8av_a(u8av,DataType::Arrays::uint8(6));
-    uint16_array u16av_a(u16av,DataType::Arrays::uint16(6));
-    uint32_array u32av_a(u32av,DataType::Arrays::uint32(6));
-    uint64_array u64av_a(u64av,DataType::Arrays::uint64(6));
+    uint8_array u8av_a(u8av,DataType::uint8(6));
+    uint16_array u16av_a(u16av,DataType::uint16(6));
+    uint32_array u32av_a(u32av,DataType::uint32(6));
+    uint64_array u64av_a(u64av,DataType::uint64(6));
     
     Node n;
     // uint8
@@ -1233,10 +1233,10 @@ TEST(conduit_node_set, set_int_array)
     int32  i32av[6] = {-2,-4,-8,-16,-32,-64};
     int64  i64av[6] = {-2,-4,-8,-16,-32,-64};
     
-    int8_array  i8av_a(i8av,DataType::Arrays::int8(6));
-    int16_array i16av_a(i16av,DataType::Arrays::int16(6));
-    int32_array i32av_a(i32av,DataType::Arrays::int32(6));
-    int64_array i64av_a(i64av,DataType::Arrays::int64(6));
+    int8_array  i8av_a(i8av,DataType::int8(6));
+    int16_array i16av_a(i16av,DataType::int16(6));
+    int32_array i32av_a(i32av,DataType::int32(6));
+    int64_array i64av_a(i64av,DataType::int64(6));
     
     Node n;
     // int8
@@ -1366,10 +1366,10 @@ TEST(conduit_node_set, set_path_int_array)
     int32  i32av[6] = {-2,-4,-8,-16,-32,-64};
     int64  i64av[6] = {-2,-4,-8,-16,-32,-64};
     
-    int8_array  i8av_a(i8av,DataType::Arrays::int8(6));
-    int16_array i16av_a(i16av,DataType::Arrays::int16(6));
-    int32_array i32av_a(i32av,DataType::Arrays::int32(6));
-    int64_array i64av_a(i64av,DataType::Arrays::int64(6));
+    int8_array  i8av_a(i8av,DataType::int8(6));
+    int16_array i16av_a(i16av,DataType::int16(6));
+    int32_array i32av_a(i32av,DataType::int32(6));
+    int64_array i64av_a(i64av,DataType::int64(6));
     
     Node n;
     // int8
@@ -1515,10 +1515,10 @@ TEST(conduit_node_set, set_external_int_array)
     int32  i32av[6] = {-2,-4,-8,-16,-32,-64};
     int64  i64av[6] = {-2,-4,-8,-16,-32,-64};
     
-    int8_array  i8av_a(i8av,DataType::Arrays::int8(6));
-    int16_array i16av_a(i16av,DataType::Arrays::int16(6));
-    int32_array i32av_a(i32av,DataType::Arrays::int32(6));
-    int64_array i64av_a(i64av,DataType::Arrays::int64(6));
+    int8_array  i8av_a(i8av,DataType::int8(6));
+    int16_array i16av_a(i16av,DataType::int16(6));
+    int32_array i32av_a(i32av,DataType::int32(6));
+    int64_array i64av_a(i64av,DataType::int64(6));
     
     Node n;
     // int8
@@ -1678,10 +1678,10 @@ TEST(conduit_node_set, set_path_external_int_array)
     int32  i32av[6] = {-2,-4,-8,-16,-32,-64};
     int64  i64av[6] = {-2,-4,-8,-16,-32,-64};
     
-    int8_array  i8av_a(i8av,DataType::Arrays::int8(6));
-    int16_array i16av_a(i16av,DataType::Arrays::int16(6));
-    int32_array i32av_a(i32av,DataType::Arrays::int32(6));
-    int64_array i64av_a(i64av,DataType::Arrays::int64(6));
+    int8_array  i8av_a(i8av,DataType::int8(6));
+    int16_array i16av_a(i16av,DataType::int16(6));
+    int32_array i32av_a(i32av,DataType::int32(6));
+    int64_array i64av_a(i64av,DataType::int64(6));
     
     Node n;
     // int8
@@ -1859,8 +1859,8 @@ TEST(conduit_node_set, set_float_array)
     float32  f32av[4] = {-0.8, -1.6, -3.2, -6.4};
     float64  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
 
-    float32_array f32av_a(f32av,DataType::Arrays::float32(4));
-    float64_array f64av_a(f64av,DataType::Arrays::float64(4));
+    float32_array f32av_a(f32av,DataType::float32(4));
+    float64_array f64av_a(f64av,DataType::float64(4));
 
     Node n;
     // float32
@@ -1936,8 +1936,8 @@ TEST(conduit_node_set, set_path_float_array)
     float32  f32av[4] = {-0.8, -1.6, -3.2, -6.4};
     float64  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
 
-    float32_array f32av_a(f32av,DataType::Arrays::float32(4));
-    float64_array f64av_a(f64av,DataType::Arrays::float64(4));
+    float32_array f32av_a(f32av,DataType::float32(4));
+    float64_array f64av_a(f64av,DataType::float64(4));
 
     Node n;
     // float32
@@ -2024,8 +2024,8 @@ TEST(conduit_node_set, set_external_float_array)
     float32  f32av[4] = {-0.8, -1.6, -3.2, -6.4};
     float64  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
 
-    float32_array f32av_a(f32av,DataType::Arrays::float32(4));
-    float64_array f64av_a(f64av,DataType::Arrays::float64(4));
+    float32_array f32av_a(f32av,DataType::float32(4));
+    float64_array f64av_a(f64av,DataType::float64(4));
 
     Node n;
     // float32
@@ -2111,8 +2111,8 @@ TEST(conduit_node_set, set_path_external_float_array)
     float32  f32av[4] = {-0.8, -1.6, -3.2, -6.4};
     float64  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
 
-    float32_array f32av_a(f32av,DataType::Arrays::float32(4));
-    float64_array f64av_a(f64av,DataType::Arrays::float64(4));
+    float32_array f32av_a(f32av,DataType::float32(4));
+    float64_array f64av_a(f64av,DataType::float64(4));
 
     Node n;
     // float32

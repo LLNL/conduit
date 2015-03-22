@@ -76,7 +76,7 @@ namespace conduit
 template <typename T> 
 DataArray<T>::DataArray()
 : m_data(NULL),
-  m_dtype(DataType::Objects::empty())
+  m_dtype(DataType::empty())
 {} 
 
 //---------------------------------------------------------------------------//
