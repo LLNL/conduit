@@ -90,3 +90,22 @@ TEST(type_tests, value_print)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(type_tests, c_types_value_print)
+{
+    
+    print_dt(DataType::c_char());
+    print_dt(DataType::c_short());
+    print_dt(DataType::c_int());
+    print_dt(DataType::c_long());
+
+    print_dt(DataType::c_unsigned_char());
+    print_dt(DataType::c_unsigned_short());
+    print_dt(DataType::c_unsigned_int());
+    print_dt(DataType::c_unsigned_long());
+
+    print_dt(DataType::c_float());
+    print_dt(DataType::c_double());
+}
+
+
