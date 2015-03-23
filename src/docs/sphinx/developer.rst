@@ -52,7 +52,10 @@ Developer Documentation
 Source Code Repo Layout
 ------------------------
 - **src/conduit**: Main library source
+- **src/conduit_io**: Conduit I/O library source
+- **src/conduit_mpi**: Conduit MPI library source
 - **src/tests**: Unit tests
+- **src/tests/python**: Python Unit tests
 - **src/docs**: Documentation 
 - **src/thirdparty_builtin**:  Third party libraries we build and manage directly
 
@@ -84,3 +87,35 @@ Adding a Unit Test
 ~~~~~~~~~~~~~~~~~~~
 - Create a test source file in *src/tests*
 - Add the test to build system by editing *src/tests/CMakeLists.txt*
+
+
+Git Development Workflow 
+------------------------
+
+The master conduit source repository is hosted on LLNL's CZ Stash instance:
+
+https://lc.llnl.gov/stash/projects/CON
+
+We we are using a **Github Flow** model, which is a simpler variant of the confusing similar sounding **Git Flow** model.
+
+
+Here are the basics: 
+
+- Development is done on topic branches off the master.
+
+- Merge to master is only done via a pull request.
+
+- The master should always compile and pass all tests.
+
+More details on GitHub Flow:
+
+https://guides.github.com/introduction/flow/index.html
+
+Here are some other rules to abide by:
+
+- You *can* merge your own pull requests.
+
+- After completing all intended work on branch, please delete the remote branch after merging to master. (Stash has an option to do this when merging a pull request.)
+
+
+
