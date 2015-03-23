@@ -50,8 +50,8 @@
 import sys
 import unittest
 
-import conduit
-Node = conduit.Node.Node
+from conduit import Node
+from conduit import DataType
 
 from numpy import *
 
@@ -68,7 +68,102 @@ class Test_Conduit_Node(unittest.TestCase):
         n['c'] = c_val
         print n
         d = n.fetch('a').dtype()
+        self.assertEqual(d.id(),DataType.name_to_id("uint32"))
         print d
+
+    def test_id_to_name(self):
+        names = [DataType.id_to_name(i) for i in xrange(14)]
+        ids   = [DataType.name_to_id(n) for n in names]
+        self.assertEqual(ids,range(14))
+
+    def test_explicit_set(self):
+        d = DataType()
+        d.set(dtype_id = DataType.name_to_id("uint32"),
+              num_elements = 1,
+              offset = 0,
+              stride = 4,
+              element_bytes = 4)
+        print d
+        self.assertEqual(d.id(),DataType.name_to_id("uint32"))
+        self.assertEqual(d.number_of_elements(),1)
+        self.assertEqual(d.offset(),0)
+        self.assertEqual(d.stride(),4)
+        self.assertEqual(d.element_bytes(),4)
+        self.assertEqual(d.endianness(),0)
+
+    def test_construction(self):
+        dt = DataType();
+        dt.set_id(DataType.name_to_id("uint32"))
+        dt.set_number_of_elements(10);
+        dt.set_offset(0);
+        dt.set_stride(4);
+        dt.set_element_bytes(4);
+        
+        dt2 = DataType(dt)
+        self.assertEqual(dt.id(),dt2.id())
+        self.assertEqual(dt.number_of_elements(),dt2.number_of_elements())
+        self.assertEqual(dt.offset(),dt2.offset())
+        self.assertEqual(dt.stride(),dt2.stride())
+        self.assertEqual(dt.element_bytes(),dt2.element_bytes())        
+        self.assertEqual(dt.endianness(),dt2.endianness())
+
+        # broken
+        # dt3 = DataType(dtype_name="uint32",
+        #        num_elements=10,
+        #        offset=0,
+        #        stride=4,
+        #        element_bytes=4)
+        dt3 = DataType()
+        dt3.set(dtype_name="uint32",
+                num_elements=10,
+                offset=0,
+                stride=4,
+                element_bytes=4)
+        self.assertEqual(dt2.id(),dt3.id())
+        self.assertEqual(dt2.number_of_elements(),dt3.number_of_elements())
+        self.assertEqual(dt2.offset(),dt3.offset())
+        self.assertEqual(dt2.stride(),dt3.stride())
+        self.assertEqual(dt2.element_bytes(),dt3.element_bytes())
+        self.assertEqual(dt2.endianness(),dt3.endianness())
+        
+        print dt
+        print dt2
+        print dt3
+
+    def test_constructor_helpers(self):
+        # objs
+        print DataType.empty();
+        print DataType.object();
+        print DataType.list();
+        # signed integers
+        print DataType.int8();
+        print DataType.int16();
+        print DataType.int32();
+        print DataType.int64();
+        # unsigned integers
+        print DataType.uint8();
+        print DataType.uint16();
+        print DataType.uint32();
+        print DataType.uint64();
+        # floating point
+        print DataType.float32();
+        print DataType.float64();
+        # signed integers
+        print DataType.c_char();
+        print DataType.c_short();
+        print DataType.c_int();
+        print DataType.c_long();
+        # unsigned integers
+        print DataType.c_unsigned_char();
+        print DataType.c_unsigned_short();
+        print DataType.c_unsigned_int();
+        print DataType.c_unsigned_long();
+        # floating point
+        print DataType.c_float();
+        print DataType.c_double();
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

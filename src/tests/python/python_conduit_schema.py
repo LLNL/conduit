@@ -50,8 +50,8 @@
 import sys
 import unittest
 
-import conduit
-Node = conduit.Node.Node
+from conduit import Node
+from conduit import Schema
 
 from numpy import *
 
@@ -66,7 +66,7 @@ class Test_Conduit_Schema(unittest.TestCase):
         n['b'] = b_val
         n['c'] = c_val
         s = n.schema();
-
+        self.assertEqual(s.total_bytes(),16)
 
 if __name__ == '__main__':
     unittest.main()

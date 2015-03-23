@@ -305,17 +305,31 @@ public:
     /// destructor
    ~DataType();
 
+   /// return a data type to the default (empty) state
+   void  reset();
+   
 //-----------------------------------------------------------------------------
 // Setters
 //-----------------------------------------------------------------------------
     void       set(const DataType& type);
-    void       set(index_t dtype_id);
+    
+    void       set(const std::string &dtype_name,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness);    
+
     void       set(index_t dtype_id,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
                    index_t element_bytes,
                    index_t endianness);
+    
+    void       set_id(index_t dtype_id)
+                    { m_id = dtype_id;}
+                   
     void       set_number_of_elements(index_t v)
                     { m_num_ele = v;}
     void       set_offset(index_t v)

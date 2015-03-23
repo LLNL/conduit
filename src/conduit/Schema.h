@@ -252,15 +252,7 @@ public:
 /// List Append Interface Methods
 //
 //-----------------------------------------------------------------------------
-
-    void    append()
-                {init_list(); children().push_back(new Schema());}
-
-    void    append(const DataType &dtype)
-                {init_list(); children().push_back(new Schema(dtype));}
-
-    void    append(const Schema &schema)
-                {init_list(); children().push_back(new Schema(schema));}
+    Schema &append();
 
 //-----------------------------------------------------------------------------
 //
