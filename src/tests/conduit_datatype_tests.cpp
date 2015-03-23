@@ -71,22 +71,41 @@ TEST(type_tests, value_print)
     EXPECT_EQ(DataType::name_to_id("[empty]"),DataType::EMPTY_T);
     EXPECT_TRUE( (DataType::EMPTY_T != DataType::OBJECT_T) );
 
-    print_dt(DataType::Objects::empty());
-    print_dt(DataType::Objects::object());
-    print_dt(DataType::Objects::list());
+    print_dt(DataType::empty());
+    print_dt(DataType::object());
+    print_dt(DataType::list());
     
-    print_dt(DataType::Scalars::int8());
-    print_dt(DataType::Scalars::int16());
-    print_dt(DataType::Scalars::int32());
-    print_dt(DataType::Scalars::int64());
+    print_dt(DataType::int8());
+    print_dt(DataType::int16());
+    print_dt(DataType::int32());
+    print_dt(DataType::int64());
 
-    print_dt(DataType::Scalars::uint8());
-    print_dt(DataType::Scalars::uint16());
-    print_dt(DataType::Scalars::uint32());
-    print_dt(DataType::Scalars::uint64());
+    print_dt(DataType::uint8());
+    print_dt(DataType::uint16());
+    print_dt(DataType::uint32());
+    print_dt(DataType::uint64());
 
-    print_dt(DataType::Scalars::float32());
-    print_dt(DataType::Scalars::float64());
+    print_dt(DataType::float32());
+    print_dt(DataType::float64());
 
 }
+
+//-----------------------------------------------------------------------------
+TEST(type_tests, c_types_value_print)
+{
+    
+    print_dt(DataType::c_char());
+    print_dt(DataType::c_short());
+    print_dt(DataType::c_int());
+    print_dt(DataType::c_long());
+
+    print_dt(DataType::c_unsigned_char());
+    print_dt(DataType::c_unsigned_short());
+    print_dt(DataType::c_unsigned_int());
+    print_dt(DataType::c_unsigned_long());
+
+    print_dt(DataType::c_float());
+    print_dt(DataType::c_double());
+}
+
 

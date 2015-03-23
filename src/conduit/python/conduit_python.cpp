@@ -476,9 +476,9 @@ PyConduit_DataType_is_number(PyConduit_DataType *self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduit_DataType_is_float(PyConduit_DataType *self)
+PyConduit_DataType_is_floating_point(PyConduit_DataType *self)
 {
-    if(self->dtype.is_float())
+    if(self->dtype.is_floating_point())
     {
         Py_RETURN_TRUE;
     }
@@ -492,7 +492,7 @@ PyConduit_DataType_is_float(PyConduit_DataType *self)
 static PyObject *
 PyConduit_DataType_is_integer(PyConduit_DataType *self)
 {
-    if(self->dtype.is_float())
+    if(self->dtype.is_integer())
     {
         Py_RETURN_TRUE;
     }
@@ -685,8 +685,8 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
      METH_NOARGS,
      "{todo}"},
     //-----------------------------------------------------------------------//
-    {"is_float",
-     (PyCFunction)PyConduit_DataType_is_float,
+    {"is_floating_point",
+     (PyCFunction)PyConduit_DataType_is_floating_point,
      METH_NOARGS,
      "{todo}"},
     //-----------------------------------------------------------------------//
