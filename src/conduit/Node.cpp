@@ -3066,6 +3066,64 @@ Node::update(Node &n_src)
         //set(n_src);
     }
 }
+//-----------------------------------------------------------------------------
+// -- endian related --
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void
+Node::endian_swap(index_t endianness)
+{
+    index_t dtype_id = dtype().id();
+
+    if (dtype_id == DataType::OBJECT_T || dtype_id == DataType::LIST_T )
+    {
+        for(index_t i=0;i<number_of_children();i++)
+        {
+            child(i).endian_swap(endianness);
+        }
+    }
+    else
+    {
+        index_t num_ele   = dtype().number_of_elements();
+        //note: we always use the default bytes type for endian swap
+        index_t ele_bytes = DataType::default_bytes(dtype_id);
+
+        index_t src_endian  = dtype().endianness();
+        index_t dest_endian = endianness;
+    
+        if(src_endian == Endianness::DEFAULT_T)
+        {
+            src_endian = Endianness::machine_default();
+        }
+    
+        if(dest_endian == Endianness::DEFAULT_T)
+        {
+            dest_endian = Endianness::machine_default();
+        }
+        
+        if(src_endian != dest_endian)
+        {
+            if(ele_bytes == 2)
+            {
+                for(index_t i=0;i<num_ele;i++)
+                    Endianness::swap16(element_pointer(i));
+            }
+            else if(ele_bytes == 4)
+            {
+                for(index_t i=0;i<num_ele;i++)
+                    Endianness::swap32(element_pointer(i));
+            }
+            else if(ele_bytes == 8)
+            {
+                for(index_t i=0;i<num_ele;i++)
+                    Endianness::swap64(element_pointer(i));
+            }
+        }
+
+        m_schema->dtype().set_endianness(dest_endian);
+    }
+}
 
 //-----------------------------------------------------------------------------
 // -- leaf coercion methods ---

@@ -1084,6 +1084,20 @@ public:
     /// TODO: update_external?
 
 
+//-----------------------------------------------------------------------------
+// -- endian related --
+//-----------------------------------------------------------------------------
+    void endian_swap(index_t endianness);
+
+    void endian_swap_to_machine_default()
+        {endian_swap(Endianness::DEFAULT_T);}
+    
+    void endian_swap_to_little()
+        {endian_swap(Endianness::LITTLE_T);}
+    
+    void endian_swap_to_big()
+        {endian_swap(Endianness::BIG_T);}
+
 
 //-----------------------------------------------------------------------------
 // -- leaf coercion methods ---

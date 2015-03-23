@@ -152,6 +152,9 @@ public:
     const DataType &dtype() const 
                         {return m_dtype;}
 
+    DataType       &dtype() 
+                        {return m_dtype;}
+
     index_t         total_bytes() const;
     index_t         total_bytes_compact() const;
 
