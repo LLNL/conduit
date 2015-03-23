@@ -138,22 +138,60 @@ PyConduit_DataType_new(PyTypeObject* type,
 
 //---------------------------------------------------------------------------//
 static int
-PyConduit_DataType_init(PyConduit_Schema* self,
+PyConduit_DataType_init(PyConduit_DataType* self,
                         PyObject* args,
-                        PyObject* kwds)
+                        PyObject* kwargs)
 {
-    /// TODO: args and kwargs
-    static const char *kwlist[] = {"value", NULL};
-    PyObject* value = NULL;
+    static const char *kwlist[] = {"dtype_name",
+                                   "num_elements",
+                                   "offset",
+                                   "stride",
+                                   "element_bytes",
+                                   "endianness",
+                                   "dtype_id",
+                                     NULL};
+    Py_ssize_t  dtype_id = 0;
+    const char *dtype_name = NULL;
+    Py_ssize_t  num_elements = 0;
+    Py_ssize_t  offset = 0;
+    Py_ssize_t  stride = 0;
+    Py_ssize_t  element_bytes = 0;
+    Py_ssize_t  endianness =0;
+    
+        
     if (!PyArg_ParseTupleAndKeywords(args,
-                                     kwds,
-                                     "|O",
+                                     kwargs,
+                                     "|snnnnnn",
                                      const_cast<char**>(kwlist),
-                                     &value))
-
+                                     dtype_name,
+                                     &num_elements,
+                                     &offset,
+                                     &stride,
+                                     &element_bytes,
+                                     &endianness,
+                                     &dtype_id))
     {
+        // TODO: Set Error?
         return (0);
     }
+    
+    
+    if(kwargs != NULL) // dtype_id vs dtype_name
+    {
+        // dtype_id
+        if(PyDict_GetItemString(kwargs,kwlist[0]))  // dtype_name
+        {
+            dtype_id = DataType::name_to_id(std::string(dtype_name));
+        }
+    }
+
+    self->dtype.set(dtype_id,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+
     return (0);
 }
 
@@ -173,10 +211,16 @@ PyConduit_DataType_str(PyConduit_DataType *self)
 }
 
 //-----------------------------------------------------------------------------
-static PyObject *
-PyConduit_DataType_Parse_Standard_Set_Keyword_Args(PyConduit_DataType *self,
-                                                   PyObject *args,
-                                                   PyObject *kwargs)
+static bool
+PyConduit_DataType_Parse_Standard_Set_Keyword_Args(PyObject *args,
+                                                   PyObject *kwargs,
+                                                   Py_ssize_t &num_elements,
+                                                   Py_ssize_t &offset,
+                                                   Py_ssize_t &stride,
+                                                   Py_ssize_t &element_bytes,
+                                                   Py_ssize_t &endianness)
+                                                   
+                                                      
 {
     static const char *kwlist[] = {"num_elements",
                                    "offset",
@@ -184,14 +228,6 @@ PyConduit_DataType_Parse_Standard_Set_Keyword_Args(PyConduit_DataType *self,
                                    "element_bytes",
                                    "endianness",
                                      NULL};
-    Py_ssize_t  num_elements = 0;
-    Py_ssize_t  offset = 0;
-    Py_ssize_t  stride = 0;
-    Py_ssize_t  element_bytes = 0;
-    Py_ssize_t  endianness =0;
-    
-    if(kwargs == NULL)
-        return (PyObject*)self;
 
     if (!PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
@@ -203,43 +239,11 @@ PyConduit_DataType_Parse_Standard_Set_Keyword_Args(PyConduit_DataType *self,
                                      &element_bytes,
                                      &endianness))
     {
-        return (NULL);
+        return false;
     }
-    
-    //Note: we are doing dict entry checks w/ kwargs b/c we don't have
-    // a good "unset" sentinel for unsigned type args
-
-    // num_elements
-    if(PyDict_GetItemString(kwargs,kwlist[0]))
-    {
-        self->dtype.set_number_of_elements(num_elements);
-    }
-
-    // offset
-    if(PyDict_GetItemString(kwargs,kwlist[1]))
-    {
-        self->dtype.set_offset(offset);
-    }
-
-    // stride
-    if(PyDict_GetItemString(kwargs,kwlist[2]))
-    {
-        self->dtype.set_stride(stride);
-    }
-
-    // element_bytes
-    if(PyDict_GetItemString(kwargs,kwlist[3]))
-    {
-         self->dtype.set_element_bytes(element_bytes);
-    }
-
-     // endianness
-    if(PyDict_GetItemString(kwargs,kwlist[4]))
-    {
-       self->dtype.set_endianness(endianness);
-    }
-    return (PyObject*)self;
+    return true;
 }
+
 
 
 //-----------------------------------------------------------------------------
@@ -248,7 +252,7 @@ PyConduit_DataType_Parse_Standard_Set_Keyword_Args(PyConduit_DataType *self,
 
 //-----------------------------------------------------------------------------
 static PyObject *
-PyConduit_DataType_empty(PyObject *cls)
+PyConduit_DataType_empty()
 {
     PyConduit_DataType *res = PyConduit_DataType_python_create();
     res->dtype.set_id(DataType::EMPTY_T);
@@ -283,9 +287,33 @@ PyConduit_DataType_int8(PyObject *cls,
                         PyObject *args,
                         PyObject *kwargs)
 {
+    // default args for int8
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = sizeof(conduit::int8);
+    Py_ssize_t element_bytes = sizeof(conduit::int8);
+    Py_ssize_t endianness = Endianness::DEFAULT_T;
+    
     PyConduit_DataType *res = PyConduit_DataType_python_create();
-    res->dtype.set_id(DataType::INT8_T);
-    return PyConduit_DataType_Parse_Standard_Set_Keyword_Args(res,args,kwargs);
+    
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))
+    {
+        // parsing error
+        return NULL;
+    }
+    
+    res->dtype.set(DataType::int8(num_elements,
+                                  offset,
+                                  stride,
+                                  element_bytes,
+                                  endianness));
+    return (PyObject*)res;
 }
 
 //-----------------------------------------------------------------------------
@@ -294,9 +322,34 @@ PyConduit_DataType_int16(PyObject *cls,
                          PyObject *args,
                          PyObject *kwargs)
 {
+    // default args for int16
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = sizeof(conduit::int16);
+    Py_ssize_t element_bytes = sizeof(conduit::int16);
+    Py_ssize_t endianness = Endianness::DEFAULT_T;
+    
     PyConduit_DataType *res = PyConduit_DataType_python_create();
-    res->dtype.set_id(DataType::INT16_T);
-    return PyConduit_DataType_Parse_Standard_Set_Keyword_Args(res,args,kwargs);
+
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))
+
+    {
+        // parsing error
+        return NULL;
+    }
+    
+    res->dtype.set(DataType::int16(num_elements,
+                                   offset,
+                                   stride,
+                                   element_bytes,
+                                   endianness));
+    return (PyObject*)res;
 }
 
 //-----------------------------------------------------------------------------
@@ -305,9 +358,33 @@ PyConduit_DataType_int32(PyObject *cls,
                          PyObject *args,
                          PyObject *kwargs)
 {
+    // default args for int32
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = sizeof(conduit::int32);
+    Py_ssize_t element_bytes = sizeof(conduit::int32);
+    Py_ssize_t endianness = Endianness::DEFAULT_T;
+    
     PyConduit_DataType *res = PyConduit_DataType_python_create();
-    res->dtype.set_id(DataType::INT32_T);
-    return PyConduit_DataType_Parse_Standard_Set_Keyword_Args(res,args,kwargs);
+
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))
+    {
+        // parsing error
+        return NULL;
+    }
+    
+    res->dtype.set(DataType::int32(num_elements,
+                                   offset,
+                                   stride,
+                                   element_bytes,
+                                   endianness));
+    return (PyObject*)res;
 }
 //-----------------------------------------------------------------------------
 static PyObject *
@@ -315,9 +392,33 @@ PyConduit_DataType_int64(PyObject *cls,
                          PyObject *args,
                          PyObject *kwargs)
 {
+    // default args for int64
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = sizeof(conduit::int64);
+    Py_ssize_t element_bytes = sizeof(conduit::int64);
+    Py_ssize_t endianness = Endianness::DEFAULT_T;
+    
     PyConduit_DataType *res = PyConduit_DataType_python_create();
-    res->dtype.set_id(DataType::INT64_T);
-    return PyConduit_DataType_Parse_Standard_Set_Keyword_Args(res,args,kwargs);
+    
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))
+    {
+        // parsing error
+        return NULL;
+    }
+    
+    res->dtype.set(DataType::int64(num_elements,
+                                   offset,
+                                   stride,
+                                   element_bytes,
+                                   endianness));
+    return (PyObject*)res;
 }
 
 
@@ -331,9 +432,34 @@ PyConduit_DataType_uint8(PyObject *cls,
                          PyObject *args,
                          PyObject *kwargs)
 {
+    // default args for uint8
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = sizeof(conduit::uint8);
+    Py_ssize_t element_bytes = sizeof(conduit::uint8);
+    Py_ssize_t endianness = Endianness::DEFAULT_T;
+    
     PyConduit_DataType *res = PyConduit_DataType_python_create();
-    res->dtype.set_id(DataType::UINT8_T);
-    return PyConduit_DataType_Parse_Standard_Set_Keyword_Args(res,args,kwargs);
+
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))
+    {
+        // parsing error
+        return NULL;
+    }
+    
+    res->dtype.set(DataType::uint8(num_elements,
+                                   offset,
+                                   stride,
+                                   element_bytes,
+                                   endianness));
+    return (PyObject*)res;
+;
 }
 
 //-----------------------------------------------------------------------------
@@ -342,9 +468,33 @@ PyConduit_DataType_uint16(PyObject *cls,
                          PyObject *args,
                          PyObject *kwargs)
 {
+    // default args for uint16
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = sizeof(conduit::uint16);
+    Py_ssize_t element_bytes = sizeof(conduit::uint16);
+    Py_ssize_t endianness = Endianness::DEFAULT_T;
+    
     PyConduit_DataType *res = PyConduit_DataType_python_create();
-    res->dtype.set_id(DataType::UINT16_T);
-    return PyConduit_DataType_Parse_Standard_Set_Keyword_Args(res,args,kwargs);
+
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))
+    {
+        // parsing error
+        return NULL;
+    }
+    
+    res->dtype.set(DataType::uint16(num_elements,
+                                    offset,
+                                    stride,
+                                    element_bytes,
+                                    endianness));
+    return (PyObject*)res;
 }
 
 //-----------------------------------------------------------------------------
@@ -353,9 +503,33 @@ PyConduit_DataType_uint32(PyObject *cls,
                          PyObject *args,
                          PyObject *kwargs)
 {
+    // default args for uint32
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = sizeof(conduit::uint32);
+    Py_ssize_t element_bytes = sizeof(conduit::uint32);
+    Py_ssize_t endianness = Endianness::DEFAULT_T;
+    
     PyConduit_DataType *res = PyConduit_DataType_python_create();
-    res->dtype.set_id(DataType::UINT32_T);
-    return PyConduit_DataType_Parse_Standard_Set_Keyword_Args(res,args,kwargs);
+
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))
+    {
+        // parsing error
+        return NULL;
+    }
+    
+    res->dtype.set(DataType::uint32(num_elements,
+                                    offset,
+                                    stride,
+                                    element_bytes,
+                                    endianness));
+    return (PyObject*)res;
 }
 //-----------------------------------------------------------------------------
 static PyObject *
@@ -363,9 +537,33 @@ PyConduit_DataType_uint64(PyObject *cls,
                           PyObject *args,
                           PyObject *kwargs)
 {
+    // default args for uint64
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = sizeof(conduit::uint64);
+    Py_ssize_t element_bytes = sizeof(conduit::uint64);
+    Py_ssize_t endianness = Endianness::DEFAULT_T;
+    
     PyConduit_DataType *res = PyConduit_DataType_python_create();
-    res->dtype.set_id(DataType::UINT64_T);
-    return PyConduit_DataType_Parse_Standard_Set_Keyword_Args(res,args,kwargs);
+    
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))
+    {
+        // parsing error
+        return NULL;
+    }
+    
+    res->dtype.set(DataType::uint64(num_elements,
+                                    offset,
+                                    stride,
+                                    element_bytes,
+                                    endianness));
+    return (PyObject*)res;
 }
 
 //-----------------------------------------------------------------------------
@@ -378,9 +576,33 @@ PyConduit_DataType_float32(PyObject *cls,
                            PyObject *args,
                            PyObject *kwargs)
 {
+    // default args for float32
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = sizeof(conduit::float32);
+    Py_ssize_t element_bytes = sizeof(conduit::float32);
+    Py_ssize_t endianness = Endianness::DEFAULT_T;
+    
     PyConduit_DataType *res = PyConduit_DataType_python_create();
-    res->dtype.set_id(DataType::FLOAT32_T);
-    return PyConduit_DataType_Parse_Standard_Set_Keyword_Args(res,args,kwargs);
+    
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))
+    {
+        // parsing error
+        return NULL;
+    }
+    
+    res->dtype.set(DataType::float32(num_elements,
+                                     offset,
+                                     stride,
+                                     element_bytes,
+                                     endianness));
+    return (PyObject*)res;
 }
 //-----------------------------------------------------------------------------
 static PyObject *
@@ -388,9 +610,33 @@ PyConduit_DataType_float64(PyObject *cls,
                            PyObject *args,
                            PyObject *kwargs)
 {
+    // default args for float64
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = sizeof(conduit::float64);
+    Py_ssize_t element_bytes = sizeof(conduit::float64);
+    Py_ssize_t endianness = Endianness::DEFAULT_T;
+    
     PyConduit_DataType *res = PyConduit_DataType_python_create();
-    res->dtype.set_id(DataType::FLOAT64_T);
-    return PyConduit_DataType_Parse_Standard_Set_Keyword_Args(res,args,kwargs);
+
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))
+    {
+        // parsing error
+        return NULL;
+    }
+    
+    res->dtype.set(DataType::float64(num_elements,
+                                     offset,
+                                     stride,
+                                     element_bytes,
+                                     endianness));
+    return (PyObject*)res;
 }
 
 //-----------------------------------------------------------------------------
@@ -403,9 +649,33 @@ PyConduit_DataType_c_char(PyObject *cls,
                           PyObject *args,
                           PyObject *kwargs)
 {
+    // default args for c_char
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = sizeof(CONDUIT_NATIVE_CHAR_DATATYPE_ID);
+    Py_ssize_t element_bytes = sizeof(CONDUIT_NATIVE_CHAR_DATATYPE_ID);
+    Py_ssize_t endianness = Endianness::DEFAULT_T;
+    
     PyConduit_DataType *res = PyConduit_DataType_python_create();
-    res->dtype.set_id(CONDUIT_NATIVE_CHAR_DATATYPE_ID);
-    return PyConduit_DataType_Parse_Standard_Set_Keyword_Args(res,args,kwargs);
+
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))    
+    {
+        // parsing error
+        return NULL;
+    }
+    
+    res->dtype.set(DataType::c_char(num_elements,
+                                    offset,
+                                    stride,
+                                    element_bytes,
+                                    endianness));
+    return (PyObject*)res;
 }
 
 //-----------------------------------------------------------------------------
@@ -414,9 +684,33 @@ PyConduit_DataType_c_short(PyObject *cls,
                            PyObject *args,
                            PyObject *kwargs)
 {
+    // default args for c_short
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = sizeof(CONDUIT_NATIVE_SHORT_DATATYPE_ID);
+    Py_ssize_t element_bytes = sizeof(CONDUIT_NATIVE_SHORT_DATATYPE_ID);
+    Py_ssize_t endianness = Endianness::DEFAULT_T;
+    
     PyConduit_DataType *res = PyConduit_DataType_python_create();
-    res->dtype.set_id(CONDUIT_NATIVE_SHORT_DATATYPE_ID);
-    return PyConduit_DataType_Parse_Standard_Set_Keyword_Args(res,args,kwargs);
+
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))
+    {
+        // parsing error
+        return NULL;
+    }
+    
+    res->dtype.set(DataType::c_short(num_elements,
+                                     offset,
+                                     stride,
+                                     element_bytes,
+                                     endianness));
+    return (PyObject*)res;
 }
 
 //-----------------------------------------------------------------------------
@@ -425,9 +719,33 @@ PyConduit_DataType_c_int(PyObject *cls,
                          PyObject *args,
                          PyObject *kwargs)
 {
+    // default args for c_int
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = sizeof(CONDUIT_NATIVE_INT_DATATYPE_ID);
+    Py_ssize_t element_bytes = sizeof(CONDUIT_NATIVE_INT_DATATYPE_ID);
+    Py_ssize_t endianness = Endianness::DEFAULT_T;
+    
     PyConduit_DataType *res = PyConduit_DataType_python_create();
-    res->dtype.set_id(CONDUIT_NATIVE_INT_DATATYPE_ID);
-    return PyConduit_DataType_Parse_Standard_Set_Keyword_Args(res,args,kwargs);
+
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))
+    {
+        // parsing error
+        return NULL;
+    }
+    
+    res->dtype.set(DataType::c_int(num_elements,
+                                   offset,
+                                   stride,
+                                   element_bytes,
+                                   endianness));
+    return (PyObject*)res;
 }
 //-----------------------------------------------------------------------------
 static PyObject *
@@ -435,9 +753,33 @@ PyConduit_DataType_c_long(PyObject *cls,
                           PyObject *args,
                           PyObject *kwargs)
 {
+    // default args for c_long
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = sizeof(CONDUIT_NATIVE_LONG_DATATYPE_ID);
+    Py_ssize_t element_bytes = sizeof(CONDUIT_NATIVE_LONG_DATATYPE_ID);
+    Py_ssize_t endianness = Endianness::DEFAULT_T;
+    
     PyConduit_DataType *res = PyConduit_DataType_python_create();
-    res->dtype.set_id(CONDUIT_NATIVE_LONG_DATATYPE_ID);
-    return PyConduit_DataType_Parse_Standard_Set_Keyword_Args(res,args,kwargs);
+    
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))
+    {
+        // parsing error
+        return NULL;
+    }
+    
+    res->dtype.set(DataType::c_long(num_elements,
+                                    offset,
+                                    stride,
+                                    element_bytes,
+                                    endianness));
+    return (PyObject*)res;
 }
 
 
@@ -451,9 +793,33 @@ PyConduit_DataType_c_unsigned_char(PyConduit_DataType *cls,
                                    PyObject *args,
                                    PyObject *kwargs)
 {
+    // default args for c_unsigned_char
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID);
+    Py_ssize_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID);
+    Py_ssize_t endianness = Endianness::DEFAULT_T;
+    
     PyConduit_DataType *res = PyConduit_DataType_python_create();
-    res->dtype.set_id(CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID);
-    return PyConduit_DataType_Parse_Standard_Set_Keyword_Args(res,args,kwargs);
+    
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))
+    {
+        // parsing error
+        return NULL;
+    }
+    
+    res->dtype.set(DataType::c_unsigned_char(num_elements,
+                                             offset,
+                                             stride,
+                                             element_bytes,
+                                             endianness));
+    return (PyObject*)res;
 }
 
 //-----------------------------------------------------------------------------
@@ -462,9 +828,33 @@ PyConduit_DataType_c_unsigned_short(PyConduit_DataType *cls,
                                     PyObject *args,
                                     PyObject *kwargs)
 {
+    // default args for c_unsigned_short
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID);
+    Py_ssize_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID);
+    Py_ssize_t endianness = Endianness::DEFAULT_T;
+    
     PyConduit_DataType *res = PyConduit_DataType_python_create();
-    res->dtype.set_id(CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID);
-    return PyConduit_DataType_Parse_Standard_Set_Keyword_Args(res,args,kwargs);
+    
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))
+    {
+        // parsing error
+        return NULL;
+    }
+    
+    res->dtype.set(DataType::c_unsigned_short(num_elements,
+                                              offset,
+                                              stride,
+                                              element_bytes,
+                                              endianness));
+    return (PyObject*)res;
 }
 
 //-----------------------------------------------------------------------------
@@ -473,19 +863,68 @@ PyConduit_DataType_c_unsigned_int(PyConduit_DataType *cls,
                                   PyObject *args,
                                   PyObject *kwargs)
 {
+    // default args for c_unsigned_int
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID);
+    Py_ssize_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID);
+    Py_ssize_t endianness = Endianness::DEFAULT_T;
+    
     PyConduit_DataType *res = PyConduit_DataType_python_create();
-    res->dtype.set_id(CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID);
-    return PyConduit_DataType_Parse_Standard_Set_Keyword_Args(res,args,kwargs);
+
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))
+    {
+        // parsing error
+        return NULL;
+    }
+    
+    res->dtype.set(DataType::c_unsigned_int(num_elements,
+                                            offset,
+                                            stride,
+                                            element_bytes,
+                                            endianness));
+    return (PyObject*)res;
 }
+
 //-----------------------------------------------------------------------------
 static PyObject *
 PyConduit_DataType_c_unsigned_long(PyConduit_DataType *cls,
                                    PyObject *args,
                                    PyObject *kwargs)
 {
+    // default args for c_unsigned_long
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID);
+    Py_ssize_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID);
+    Py_ssize_t endianness = Endianness::DEFAULT_T;
+    
     PyConduit_DataType *res = PyConduit_DataType_python_create();
-    res->dtype.set_id(CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID);
-    return PyConduit_DataType_Parse_Standard_Set_Keyword_Args(res,args,kwargs);
+
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))
+    {
+        // parsing error
+        return NULL;
+    }
+    
+    res->dtype.set(DataType::c_unsigned_long(num_elements,
+                                             offset,
+                                             stride,
+                                             element_bytes,
+                                             endianness));
+    return (PyObject*)res;
 }
 
 //-----------------------------------------------------------------------------
@@ -498,19 +937,68 @@ PyConduit_DataType_c_float(PyConduit_DataType *cls,
                            PyObject *args,
                            PyObject *kwargs)
 {
+    // default args for c_float
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = sizeof(CONDUIT_NATIVE_FLOAT_DATATYPE_ID);
+    Py_ssize_t element_bytes = sizeof(CONDUIT_NATIVE_FLOAT_DATATYPE_ID);
+    Py_ssize_t endianness = Endianness::DEFAULT_T;
+    
     PyConduit_DataType *res = PyConduit_DataType_python_create();
-    res->dtype.set_id(CONDUIT_NATIVE_FLOAT_DATATYPE_ID);
-    return PyConduit_DataType_Parse_Standard_Set_Keyword_Args(res,args,kwargs);
+    
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))
+    {
+        // parsing error
+        return NULL;
+    }
+    
+    res->dtype.set(DataType::c_float(num_elements,
+                                     offset,
+                                     stride,
+                                     element_bytes,
+                                     endianness));
+    return (PyObject*)res;
 }
+
 //-----------------------------------------------------------------------------
 static PyObject *
 PyConduit_DataType_c_double(PyConduit_DataType *cls,
                             PyObject *args,
                             PyObject *kwargs)
 {
+    // default args for c_double
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = sizeof(CONDUIT_NATIVE_DOUBLE_DATATYPE_ID);
+    Py_ssize_t element_bytes = sizeof(CONDUIT_NATIVE_DOUBLE_DATATYPE_ID);
+    Py_ssize_t endianness = Endianness::DEFAULT_T;
+    
     PyConduit_DataType *res = PyConduit_DataType_python_create();
-    res->dtype.set_id(CONDUIT_NATIVE_DOUBLE_DATATYPE_ID);
-    return PyConduit_DataType_Parse_Standard_Set_Keyword_Args(res,args,kwargs);
+    
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))
+    {
+        // parsing error
+        return NULL;
+    }
+    
+    res->dtype.set(DataType::c_double(num_elements,
+                                      offset,
+                                      stride,
+                                      element_bytes,
+                                      endianness));
+    return (PyObject*)res;
 }
 
 
@@ -524,13 +1012,13 @@ PyConduit_DataType_set(PyConduit_DataType *self,
                        PyObject *args,
                        PyObject *kwargs)
 {
-    static const char *kwlist[] = {"dtype_id",
-                                   "dtype_name",
+    static const char *kwlist[] = {"dtype_name",
                                    "num_elements",
                                    "offset",
                                    "stride",
                                    "element_bytes",
                                    "endianness",
+                                   "dtype_id",
                                      NULL};
     Py_ssize_t  dtype_id = 0;
     const char *dtype_name = NULL;
@@ -544,41 +1032,51 @@ PyConduit_DataType_set(PyConduit_DataType *self,
         
     if (!PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
-                                     "|nsnnnnn",
+                                     "|snnnnnn",
                                      const_cast<char**>(kwlist),
-                                     &dtype_id,
                                      dtype_name,
                                      &num_elements,
                                      &offset,
                                      &stride,
                                      &element_bytes,
-                                     &endianness))
+                                     &endianness,
+                                     &dtype_id))
     {
         return (NULL);
     }
     
+    ///
+    /// TODO: For now, this is an error -- we also like to support the "args"
+    /// type call, however we need to think about the optional args
+    /// support 
+    ///
+
+    if(kwargs == NULL)
+        return NULL;
+
     //Note: we are doing dict entry checks w/ kwargs b/c we don't have
     // a good "unset" sentinel for unsigned type args
     
     // dtype_id
-    if(PyDict_GetItemString(kwargs,kwlist[0])) 
+    if(PyDict_GetItemString(kwargs,kwlist[0]))  // dtype_name
     {
-        self->dtype.set_id(dtype_id);
-    }
-    else if(PyDict_GetItemString(kwargs,kwlist[1]))  // dtype_name
-    {
-        // if not dtype_id and dtype_name, we use dtype_name
         self->dtype.set_id(DataType::name_to_id(std::string(dtype_name)));
     }
+    else if(PyDict_GetItemString(kwargs,kwlist[6])) 
+    {
+        // if not dtype_name and dtype_id, we use dtype_id
+        self->dtype.set_id(dtype_id);
+    }
+        
 
     // num_elements
-    if(PyDict_GetItemString(kwargs,kwlist[2]))
+    if(PyDict_GetItemString(kwargs,kwlist[1]))
     {
         self->dtype.set_number_of_elements(num_elements);
     }
 
     // offset
-    if(PyDict_GetItemString(kwargs,kwlist[3]))
+    if(PyDict_GetItemString(kwargs,kwlist[2]))
     {
         self->dtype.set_offset(offset);
     }
