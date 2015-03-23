@@ -437,7 +437,7 @@ Node::set(const Node &node)
 {
     if(node.dtype().id() == DataType::OBJECT_T)
     {
-        init(DataType::Objects::object());
+        init(DataType::object());
         std::vector<std::string> paths;
         node.paths(paths);
 
@@ -455,7 +455,7 @@ Node::set(const Node &node)
     }
     else if(node.dtype().id() == DataType::LIST_T)       
     {   
-        init(DataType::Objects::list());
+        init(DataType::list());
         for(index_t i=0;i<node.m_children.size();i++)
         {
             this->m_schema->append();
@@ -532,7 +532,7 @@ Node::set(const DataType &dtype, void *data)
 void 
 Node::set(int8 data)
 {
-    init(DataType::Scalars::int8());
+    init(DataType::int8());
     *(int8*)((char*)m_data + schema().element_index(0)) = data;
 }
 
@@ -541,7 +541,7 @@ Node::set(int8 data)
 void 
 Node::set(int16 data)
 {
-    init(DataType::Scalars::int16());
+    init(DataType::int16());
     *(int16*)((char*)m_data + schema().element_index(0)) = data;
 }
 
@@ -550,7 +550,7 @@ Node::set(int16 data)
 void 
 Node::set(int32 data)
 {
-    init(DataType::Scalars::int32());
+    init(DataType::int32());
     *(int32*)((char*)m_data + schema().element_index(0)) = data;
 }
 
@@ -559,7 +559,7 @@ Node::set(int32 data)
 void 
 Node::set(int64 data)
 {
-    init(DataType::Scalars::int64());
+    init(DataType::int64());
     *(int64*)((char*)m_data + schema().element_index(0)) = data;
 }
 
@@ -571,7 +571,7 @@ Node::set(int64 data)
 void 
 Node::set(uint8 data)
 {
-    init(DataType::Scalars::uint8());
+    init(DataType::uint8());
     *(uint8*)((char*)m_data + schema().element_index(0)) = data;
 }
 
@@ -580,7 +580,7 @@ Node::set(uint8 data)
 void 
 Node::set(uint16 data)
 {
-    init(DataType::Scalars::uint16());
+    init(DataType::uint16());
     *(uint16*)((char*)m_data + schema().element_index(0)) = data;
 }
 
@@ -589,7 +589,7 @@ Node::set(uint16 data)
 void 
 Node::set(uint32 data)
 {
-    init(DataType::Scalars::uint32());
+    init(DataType::uint32());
     *(uint32*)((char*)m_data + schema().element_index(0)) = data;
 }
 
@@ -598,7 +598,7 @@ Node::set(uint32 data)
 void 
 Node::set(uint64 data)
 {
-    init(DataType::Scalars::uint64());
+    init(DataType::uint64());
     *(uint64*)((char*)m_data + schema().element_index(0)) = data;
 }
 
@@ -610,7 +610,7 @@ Node::set(uint64 data)
 void 
 Node::set(float32 data)
 {
-    init(DataType::Scalars::float32());
+    init(DataType::float32());
     *(float32*)((char*)m_data + schema().element_index(0)) = data;
 }
 
@@ -619,7 +619,7 @@ Node::set(float32 data)
 void 
 Node::set(float64 data)
 {
-    init(DataType::Scalars::float64());
+    init(DataType::float64());
     *(float64*)((char*)m_data + schema().element_index(0)) = data;
 }
 
@@ -793,7 +793,7 @@ Node::set(const std::vector<float64>  &data)
 void 
 Node::set(const int8_array  &data)
 {
-    init(DataType::Arrays::int8(data.number_of_elements()));
+    init(DataType::int8(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
 }
 
@@ -801,7 +801,7 @@ Node::set(const int8_array  &data)
 void 
 Node::set(const int16_array  &data)
 {
-    init(DataType::Arrays::int16(data.number_of_elements()));
+    init(DataType::int16(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
 }
 
@@ -809,7 +809,7 @@ Node::set(const int16_array  &data)
 void 
 Node::set(const int32_array  &data)
 {
-    init(DataType::Arrays::int32(data.number_of_elements()));
+    init(DataType::int32(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
 }
 
@@ -817,7 +817,7 @@ Node::set(const int32_array  &data)
 void 
 Node::set(const int64_array  &data)
 {
-    init(DataType::Arrays::int64(data.number_of_elements()));
+    init(DataType::int64(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
 }
 
@@ -830,7 +830,7 @@ Node::set(const int64_array  &data)
 void 
 Node::set(const uint8_array  &data)
 {
-    init(DataType::Arrays::uint8(data.number_of_elements()));
+    init(DataType::uint8(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
 }
 
@@ -838,7 +838,7 @@ Node::set(const uint8_array  &data)
 void 
 Node::set(const uint16_array  &data)
 {
-    init(DataType::Arrays::uint16(data.number_of_elements()));
+    init(DataType::uint16(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
 }
 
@@ -846,7 +846,7 @@ Node::set(const uint16_array  &data)
 void 
 Node::set(const uint32_array  &data)
 {
-    init(DataType::Arrays::uint32(data.number_of_elements()));
+    init(DataType::uint32(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
 }
 
@@ -854,7 +854,7 @@ Node::set(const uint32_array  &data)
 void 
 Node::set(const uint64_array  &data)
 {
-    init(DataType::Arrays::uint64(data.number_of_elements()));
+    init(DataType::uint64(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
 }
 
@@ -866,7 +866,7 @@ Node::set(const uint64_array  &data)
 void 
 Node::set(const float32_array  &data)
 {
-    init(DataType::Arrays::float32(data.number_of_elements()));
+    init(DataType::float32(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
 }
 
@@ -874,7 +874,7 @@ Node::set(const float32_array  &data)
 void 
 Node::set(const float64_array  &data)
 {
-    init(DataType::Arrays::float64(data.number_of_elements()));
+    init(DataType::float64(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
 }
 
@@ -938,7 +938,7 @@ Node::set(int8  *data,
           index_t element_bytes,
           index_t endianness)
 {
-    set(int8_array(data,DataType::Arrays::int8(num_elements,
+    set(int8_array(data,DataType::int8(num_elements,
                                                offset,
                                                stride,
                                                element_bytes,
@@ -955,7 +955,7 @@ Node::set(int16 *data,
           index_t element_bytes,
           index_t endianness)
 {
-    set(int16_array(data,DataType::Arrays::int16(num_elements,
+    set(int16_array(data,DataType::int16(num_elements,
                                                  offset,
                                                  stride,
                                                  element_bytes,
@@ -971,7 +971,7 @@ Node::set(int32 *data,
          index_t element_bytes,
          index_t endianness)
 {
-    set(int32_array(data,DataType::Arrays::int32(num_elements,
+    set(int32_array(data,DataType::int32(num_elements,
                                                  offset,
                                                  stride,
                                                  element_bytes,
@@ -986,7 +986,7 @@ Node::set(int64 *data,
          index_t element_bytes,
          index_t endianness)
 {
-    set(int64_array(data,DataType::Arrays::int64(num_elements,
+    set(int64_array(data,DataType::int64(num_elements,
                                                  offset,
                                                  stride,
                                                  element_bytes,
@@ -1008,7 +1008,7 @@ Node::set(uint8  *data,
           index_t element_bytes,
           index_t endianness)
 {
-    set(uint8_array(data,DataType::Arrays::uint8(num_elements,
+    set(uint8_array(data,DataType::uint8(num_elements,
                                                  offset,
                                                  stride,
                                                  element_bytes,
@@ -1025,7 +1025,7 @@ Node::set(uint16 *data,
          index_t element_bytes,
          index_t endianness)
 {
-    set(uint16_array(data,DataType::Arrays::uint16(num_elements,
+    set(uint16_array(data,DataType::uint16(num_elements,
                                                    offset,
                                                    stride,
                                                    element_bytes,
@@ -1041,7 +1041,7 @@ Node::set(uint32 *data,
          index_t element_bytes,
          index_t endianness)
 {
-    set(uint32_array(data,DataType::Arrays::uint32(num_elements,
+    set(uint32_array(data,DataType::uint32(num_elements,
                                                    offset,
                                                    stride,
                                                    element_bytes,
@@ -1057,7 +1057,7 @@ Node::set(uint64 *data,
          index_t element_bytes,
          index_t endianness)
 {
-    set(uint64_array(data,DataType::Arrays::uint64(num_elements,
+    set(uint64_array(data,DataType::uint64(num_elements,
                                                    offset,
                                                    stride,
                                                    element_bytes,
@@ -1078,7 +1078,7 @@ Node::set(float32 *data,
          index_t element_bytes,
          index_t endianness)
 {
-    set(float32_array(data,DataType::Arrays::float32(num_elements,
+    set(float32_array(data,DataType::float32(num_elements,
                                                      offset,
                                                      stride,
                                                      element_bytes,
@@ -1094,7 +1094,7 @@ Node::set(float64 *data,
          index_t element_bytes,
          index_t endianness)
 {
-    set(float64_array(data,DataType::Arrays::float64(num_elements,
+    set(float64_array(data,DataType::float64(num_elements,
                                                      offset,
                                                      stride,
                                                      element_bytes,
@@ -1699,7 +1699,7 @@ Node::set_external(int8 *data,
                    index_t endianness)
 {
     release();
-    m_schema->set(DataType::Arrays::int8(num_elements,
+    m_schema->set(DataType::int8(num_elements,
                                          offset,
                                          stride,
                                          element_bytes,
@@ -1717,7 +1717,7 @@ Node::set_external(int16 *data,
                    index_t endianness)
 {
     release();
-    m_schema->set(DataType::Arrays::int16(num_elements,
+    m_schema->set(DataType::int16(num_elements,
                                           offset,
                                           stride,
                                           element_bytes,
@@ -1735,7 +1735,7 @@ Node::set_external(int32 *data,
                    index_t endianness)
 {
     release();
-    m_schema->set(DataType::Arrays::int32(num_elements,
+    m_schema->set(DataType::int32(num_elements,
                                           offset,
                                           stride,
                                           element_bytes,
@@ -1754,7 +1754,7 @@ Node::set_external(int64 *data,
                    index_t endianness)
 {
     release();
-    m_schema->set(DataType::Arrays::int64(num_elements,
+    m_schema->set(DataType::int64(num_elements,
                                           offset,
                                           stride,
                                           element_bytes,
@@ -1778,7 +1778,7 @@ Node::set_external(uint8 *data,
                    index_t endianness)
 {
     release();
-    m_schema->set(DataType::Arrays::uint8(num_elements,
+    m_schema->set(DataType::uint8(num_elements,
                                           offset,
                                           stride,
                                           element_bytes,
@@ -1798,7 +1798,7 @@ Node::set_external(uint16 *data,
                    index_t endianness)
 {
     release();
-    m_schema->set(DataType::Arrays::uint16(num_elements,
+    m_schema->set(DataType::uint16(num_elements,
                                            offset,
                                            stride,
                                            element_bytes,
@@ -1817,7 +1817,7 @@ Node::set_external(uint32 *data,
                    index_t endianness)
 {
     release();
-    m_schema->set(DataType::Arrays::uint32(num_elements,
+    m_schema->set(DataType::uint32(num_elements,
                                            offset,
                                            stride,
                                            element_bytes,
@@ -1835,7 +1835,7 @@ Node::set_external(uint64 *data,
                    index_t endianness)
 {
     release();
-    m_schema->set(DataType::Arrays::uint64(num_elements,
+    m_schema->set(DataType::uint64(num_elements,
                                            offset,
                                            stride,
                                            element_bytes,
@@ -1857,7 +1857,7 @@ Node::set_external(float32 *data,
                    index_t endianness)
 {
     release();
-    m_schema->set(DataType::Arrays::float32(num_elements,
+    m_schema->set(DataType::float32(num_elements,
                                             offset,
                                             stride,
                                             element_bytes,
@@ -1876,7 +1876,7 @@ Node::set_external(float64 *data,
                    index_t endianness)
 {
     release();
-    m_schema->set(DataType::Arrays::float64(num_elements,
+    m_schema->set(DataType::float64(num_elements,
                                             offset,
                                             stride,
                                             element_bytes,
@@ -1900,7 +1900,7 @@ void
 Node::set_external(std::vector<int8>  &data)
 {
     release();
-    m_schema->set(DataType::Arrays::int8((index_t)data.size()));
+    m_schema->set(DataType::int8((index_t)data.size()));
     m_data  = &data[0];
 }
     
@@ -1910,7 +1910,7 @@ void
 Node::set_external(std::vector<int16>  &data)
 {
     release();
-    m_schema->set(DataType::Arrays::int16((index_t)data.size()));
+    m_schema->set(DataType::int16((index_t)data.size()));
     m_data  = &data[0];
 }
 
@@ -1919,7 +1919,7 @@ void
 Node::set_external(std::vector<int32>  &data)
 {
     release();
-    m_schema->set(DataType::Arrays::int32((index_t)data.size()));
+    m_schema->set(DataType::int32((index_t)data.size()));
     m_data  = &data[0];
 }
 
@@ -1928,7 +1928,7 @@ void
 Node::set_external(std::vector<int64>  &data)
 {
     release();
-    m_schema->set(DataType::Arrays::int64((index_t)data.size()));
+    m_schema->set(DataType::int64((index_t)data.size()));
     m_data  = &data[0];
 }
 
@@ -1941,7 +1941,7 @@ void
 Node::set_external(std::vector<uint8>  &data)
 {
     release();
-    m_schema->set(DataType::Arrays::uint8((index_t)data.size()));
+    m_schema->set(DataType::uint8((index_t)data.size()));
     m_data  = &data[0];
 }
 
@@ -1951,7 +1951,7 @@ void
 Node::set_external(std::vector<uint16>  &data)
 {
     release();
-    m_schema->set(DataType::Arrays::uint16((index_t)data.size()));
+    m_schema->set(DataType::uint16((index_t)data.size()));
     m_data  = &data[0];
 }
 
@@ -1961,7 +1961,7 @@ void
 Node::set_external(std::vector<uint32>  &data)
 {
     release();
-    m_schema->set(DataType::Arrays::uint32((index_t)data.size()));
+    m_schema->set(DataType::uint32((index_t)data.size()));
     m_data  = &data[0];
 }
 
@@ -1970,7 +1970,7 @@ void
 Node::set_external(std::vector<uint64>  &data)
 {
     release();
-    m_schema->set(DataType::Arrays::uint64((index_t)data.size()));
+    m_schema->set(DataType::uint64((index_t)data.size()));
     m_data  = &data[0];
 }
 
@@ -1983,7 +1983,7 @@ void
 Node::set_external(std::vector<float32>  &data)
 {
     release();
-    m_schema->set(DataType::Arrays::float32((index_t)data.size()));
+    m_schema->set(DataType::float32((index_t)data.size()));
     m_data  = &data[0];
 }
 
@@ -1992,7 +1992,7 @@ void
 Node::set_external(std::vector<float64>  &data)
 {
     release();
-    m_schema->set(DataType::Arrays::float64((index_t)data.size()));
+    m_schema->set(DataType::float64((index_t)data.size()));
     m_data  = &data[0];
 }
 
@@ -3415,7 +3415,7 @@ Node::fetch(const std::string &path)
     // fetch w/ path forces OBJECT_T
     if(dtype().id() != DataType::OBJECT_T)
     {
-        init(DataType::Objects::object());
+        init(DataType::object());
     }
     
     std::string p_curr;
@@ -3783,14 +3783,14 @@ Node::cleanup()
 void
 Node::init_list()
 {
-    init(DataType::Objects::list());
+    init(DataType::list());
 }
  
 //---------------------------------------------------------------------------//
 void
 Node::init_object()
 {
-    init(DataType::Objects::object());
+    init(DataType::object());
 }
 
 

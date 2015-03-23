@@ -111,7 +111,7 @@ TEST(conduit_array, array_stride_int8)
     std::cout << std::endl;
 
 
-    Node n2(DataType::Arrays::int8(10,sizeof(int8),sizeof(int8)*2),
+    Node n2(DataType::int8(10,sizeof(int8),sizeof(int8)*2),
             &data[0],
             true); /// true for external
 

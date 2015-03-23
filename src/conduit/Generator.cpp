@@ -564,7 +564,7 @@ walk_json_schema(Schema *schema,
                 // but this is the easiest way to start.
                 for(int i=0;i< length;i++)
                 {
-                    Schema curr_schema(DataType::Objects::list());
+                    Schema curr_schema(DataType::list());
                     walk_json_schema(&curr_schema,dt_value, curr_offset);
                     schema->append(curr_schema);
                     curr_offset += curr_schema.total_bytes();
@@ -587,7 +587,7 @@ walk_json_schema(Schema *schema,
             {
                 std::string entry_name(itr->name.GetString());
                 Schema &curr_schema = schema->fetch(entry_name);
-                curr_schema.set(DataType::Objects::object());
+                curr_schema.set(DataType::object());
                 walk_json_schema(&curr_schema,itr->value, curr_offset);
                 curr_offset += curr_schema.total_bytes();
             }
@@ -598,7 +598,7 @@ walk_json_schema(Schema *schema,
     {
         for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
         {
-            Schema curr_schema(DataType::Objects::list());
+            Schema curr_schema(DataType::list());
             walk_json_schema(&curr_schema,jvalue[i], curr_offset);
             curr_offset += curr_schema.total_bytes();
             // this will coerce to a list

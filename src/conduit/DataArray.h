@@ -136,7 +136,6 @@ public:
     /// floating point arrays
     void            set(const float32 *values, index_t num_elements);
     void            set(const float64 *values, index_t num_elements);
-
     
     /// signed integer arrays via std::vector
     void            set(const std::vector<int8>    &values)
@@ -226,6 +225,23 @@ typedef DataArray<uint64>   uint64_array;
 /// floating point arrays
 typedef DataArray<float32>  float32_array;
 typedef DataArray<float64>  float64_array;
+
+
+/// signed integer arrays
+typedef DataArray<CONDUIT_NATIVE_CHAR>    char_array;
+typedef DataArray<CONDUIT_NATIVE_SHORT>   short_array;
+typedef DataArray<CONDUIT_NATIVE_INT>     int_array;
+typedef DataArray<CONDUIT_NATIVE_LONG>    long_array;
+
+/// unsigned integer arrays
+typedef DataArray<CONDUIT_NATIVE_UNSIGNED_CHAR>   unsigned_char_array;
+typedef DataArray<CONDUIT_NATIVE_UNSIGNED_SHORT>  unsigned_short_array;
+typedef DataArray<CONDUIT_NATIVE_UNSIGNED_INT>    unsigned_int_array;
+typedef DataArray<CONDUIT_NATIVE_UNSIGNED_LONG>   unsigned_long_array;
+
+/// floating point arrays
+typedef DataArray<CONDUIT_NATIVE_FLOAT>   float_array;
+typedef DataArray<CONDUIT_NATIVE_DOUBLE>  double_array;
 
 
 }

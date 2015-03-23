@@ -760,7 +760,7 @@ Schema::remove(const std::string &path)
 void
 Schema::init_defaults()
 {
-    m_dtype  = DataType::Objects::empty();
+    m_dtype  = DataType::empty();
     m_hierarchy_data = NULL;
     m_parent = NULL;
     m_root   = false;
@@ -773,7 +773,7 @@ Schema::init_object()
     if(dtype().id() != DataType::OBJECT_T)
     {
         reset();
-        m_dtype  = DataType::Objects::object();
+        m_dtype  = DataType::object();
         m_hierarchy_data = new Schema_Object_Hierarchy();
     }
 }
@@ -785,7 +785,7 @@ Schema::init_list()
     if(dtype().id() != DataType::LIST_T)
     {
         reset();
-        m_dtype  = DataType::Objects::list();
+        m_dtype  = DataType::list();
         m_hierarchy_data = new Schema_List_Hierarchy();
     }
 }

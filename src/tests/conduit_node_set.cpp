@@ -74,7 +74,7 @@ TEST(conduit_node_set, set_uint_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_uint64(),8);
     
     // uint16
@@ -87,7 +87,7 @@ TEST(conduit_node_set, set_uint_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_uint64(),16);
 
     
@@ -101,7 +101,7 @@ TEST(conduit_node_set, set_uint_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_uint64(),32);
     
     // uint64
@@ -114,7 +114,7 @@ TEST(conduit_node_set, set_uint_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_uint64(),64);
 
 }
@@ -141,7 +141,7 @@ TEST(conduit_node_set, set_path_uint_scalar)
     EXPECT_EQ(nc.dtype().is_integer(),true);
     EXPECT_EQ(nc.dtype().is_signed_integer(),false);
     EXPECT_EQ(nc.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(nc.dtype().is_float(),false);
+    EXPECT_EQ(nc.dtype().is_floating_point(),false);
     EXPECT_EQ(nc.to_uint64(),8);
     
     // uint16
@@ -157,7 +157,7 @@ TEST(conduit_node_set, set_path_uint_scalar)
     EXPECT_EQ(nc.dtype().is_integer(),true);
     EXPECT_EQ(nc.dtype().is_signed_integer(),false);
     EXPECT_EQ(nc.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(nc.dtype().is_float(),false);
+    EXPECT_EQ(nc.dtype().is_floating_point(),false);
     EXPECT_EQ(nc.to_uint64(),16);
 
     
@@ -174,7 +174,7 @@ TEST(conduit_node_set, set_path_uint_scalar)
     EXPECT_EQ(nc.dtype().is_integer(),true);
     EXPECT_EQ(nc.dtype().is_signed_integer(),false);
     EXPECT_EQ(nc.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(nc.dtype().is_float(),false);
+    EXPECT_EQ(nc.dtype().is_floating_point(),false);
     EXPECT_EQ(nc.to_uint64(),32);
     
     // uint64
@@ -190,7 +190,7 @@ TEST(conduit_node_set, set_path_uint_scalar)
     EXPECT_EQ(nc.dtype().is_integer(),true);
     EXPECT_EQ(nc.dtype().is_signed_integer(),false);
     EXPECT_EQ(nc.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(nc.dtype().is_float(),false);
+    EXPECT_EQ(nc.dtype().is_floating_point(),false);
     EXPECT_EQ(nc.to_uint64(),64);
 
 }
@@ -214,7 +214,7 @@ TEST(conduit_node_set, set_external_uint_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),8);
     n.set((uint8)1);
     EXPECT_EQ(u8v,1);
@@ -229,7 +229,7 @@ TEST(conduit_node_set, set_external_uint_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),16);
     n.set((uint16)1);
     EXPECT_EQ(u16v,1);
@@ -245,7 +245,7 @@ TEST(conduit_node_set, set_external_uint_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),32);
     n.set((uint32)1);
     EXPECT_EQ(u32v,1);
@@ -261,7 +261,7 @@ TEST(conduit_node_set, set_external_uint_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),true);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),64);
     n.set((uint64)1);
     EXPECT_EQ(u64v,1);
@@ -289,7 +289,7 @@ TEST(conduit_node_set, set_int_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),true);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),-8);
     
     // int16
@@ -302,7 +302,7 @@ TEST(conduit_node_set, set_int_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),true);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),-16);
 
     
@@ -316,7 +316,7 @@ TEST(conduit_node_set, set_int_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),true);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),-32);
     
     // int64
@@ -329,7 +329,7 @@ TEST(conduit_node_set, set_int_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),true);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),-64);
 
 }
@@ -356,7 +356,7 @@ TEST(conduit_node_set, set_path_int_scalar)
     EXPECT_EQ(nc.dtype().is_integer(),true);
     EXPECT_EQ(nc.dtype().is_signed_integer(),true);
     EXPECT_EQ(nc.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(nc.dtype().is_float(),false);
+    EXPECT_EQ(nc.dtype().is_floating_point(),false);
     EXPECT_EQ(nc.to_int64(),-8);
     
     // int16
@@ -372,7 +372,7 @@ TEST(conduit_node_set, set_path_int_scalar)
     EXPECT_EQ(nc.dtype().is_integer(),true);
     EXPECT_EQ(nc.dtype().is_signed_integer(),true);
     EXPECT_EQ(nc.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(nc.dtype().is_float(),false);
+    EXPECT_EQ(nc.dtype().is_floating_point(),false);
     EXPECT_EQ(nc.to_int64(),-16);
 
     
@@ -389,7 +389,7 @@ TEST(conduit_node_set, set_path_int_scalar)
     EXPECT_EQ(nc.dtype().is_integer(),true);
     EXPECT_EQ(nc.dtype().is_signed_integer(),true);
     EXPECT_EQ(nc.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(nc.dtype().is_float(),false);
+    EXPECT_EQ(nc.dtype().is_floating_point(),false);
     EXPECT_EQ(nc.to_int64(),-32);
     
     // int64
@@ -405,7 +405,7 @@ TEST(conduit_node_set, set_path_int_scalar)
     EXPECT_EQ(nc.dtype().is_integer(),true);
     EXPECT_EQ(nc.dtype().is_signed_integer(),true);
     EXPECT_EQ(nc.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(nc.dtype().is_float(),false);
+    EXPECT_EQ(nc.dtype().is_floating_point(),false);
     EXPECT_EQ(nc.to_int64(),-64);
 
 }
@@ -429,7 +429,7 @@ TEST(conduit_node_set, set_external_int_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),true);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     n.set((int8)-1);
     EXPECT_EQ(i8v,-1);
     
@@ -443,7 +443,7 @@ TEST(conduit_node_set, set_external_int_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),true);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),-16);
     n.set((int16)-1);
     EXPECT_EQ(i16v,-1);
@@ -459,7 +459,7 @@ TEST(conduit_node_set, set_external_int_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),true);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),-32);
     n.set((int32)-1);
     EXPECT_EQ(i32v,-1);
@@ -474,7 +474,7 @@ TEST(conduit_node_set, set_external_int_scalar)
     EXPECT_EQ(n.dtype().is_integer(),true);
     EXPECT_EQ(n.dtype().is_signed_integer(),true);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),false);
+    EXPECT_EQ(n.dtype().is_floating_point(),false);
     EXPECT_EQ(n.to_int64(),-64);
     n.set((int64)-1);
     EXPECT_EQ(i64v,-1);
@@ -498,7 +498,7 @@ TEST(conduit_node_set_float_scalar, conduit_node_set)
     EXPECT_EQ(n.dtype().is_integer(),false);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),true);
+    EXPECT_EQ(n.dtype().is_floating_point(),true);
     EXPECT_NEAR(n.to_float64(),-3.2,0.001);
     
     // float64
@@ -511,7 +511,7 @@ TEST(conduit_node_set_float_scalar, conduit_node_set)
     EXPECT_EQ(n.dtype().is_integer(),false);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),true);
+    EXPECT_EQ(n.dtype().is_floating_point(),true);
     EXPECT_NEAR(n.to_float64(),-6.4,0.001);
 
 }
@@ -536,7 +536,7 @@ TEST(conduit_node_set, set_path_float_scalar)
     EXPECT_EQ(nc.dtype().is_integer(),false);
     EXPECT_EQ(nc.dtype().is_signed_integer(),false);
     EXPECT_EQ(nc.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(nc.dtype().is_float(),true);
+    EXPECT_EQ(nc.dtype().is_floating_point(),true);
     EXPECT_NEAR(nc.to_float64(),-3.2,0.001);
     
     // float64
@@ -552,7 +552,7 @@ TEST(conduit_node_set, set_path_float_scalar)
     EXPECT_EQ(nc.dtype().is_integer(),false);
     EXPECT_EQ(nc.dtype().is_signed_integer(),false);
     EXPECT_EQ(nc.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(nc.dtype().is_float(),true);
+    EXPECT_EQ(nc.dtype().is_floating_point(),true);
     EXPECT_NEAR(nc.to_float64(),-6.4,0.001);
 
 }
@@ -575,7 +575,7 @@ TEST(conduit_node_set, set_external_float_scalar)
     EXPECT_EQ(n.dtype().is_integer(),false);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),true);
+    EXPECT_EQ(n.dtype().is_floating_point(),true);
     EXPECT_NEAR(n.to_float64(),-3.2,0.001);
     n.set((float32)-1.1);
     EXPECT_NEAR(f32v,-1.1,0.001);
@@ -590,7 +590,7 @@ TEST(conduit_node_set, set_external_float_scalar)
     EXPECT_EQ(n.dtype().is_integer(),false);
     EXPECT_EQ(n.dtype().is_signed_integer(),false);
     EXPECT_EQ(n.dtype().is_unsigned_integer(),false);
-    EXPECT_EQ(n.dtype().is_float(),true);
+    EXPECT_EQ(n.dtype().is_floating_point(),true);
     EXPECT_NEAR(n.to_float64(),-6.4,0.001);
     n.set((float64)-1.1);
     EXPECT_NEAR(f64v,-1.1,0.001);
@@ -604,10 +604,10 @@ TEST(conduit_node_set, set_uint_array)
     uint32  u32av[6] = {2,4,8,16,32,64};
     uint64  u64av[6] = {2,4,8,16,32,64};
     
-    uint8_array  u8av_a(u8av,DataType::Arrays::uint8(6));
-    uint16_array u16av_a(u16av,DataType::Arrays::uint16(6));
-    uint32_array u32av_a(u32av,DataType::Arrays::uint32(6));
-    uint64_array u64av_a(u64av,DataType::Arrays::uint64(6));
+    uint8_array  u8av_a(u8av,DataType::uint8(6));
+    uint16_array u16av_a(u16av,DataType::uint16(6));
+    uint32_array u32av_a(u32av,DataType::uint32(6));
+    uint64_array u64av_a(u64av,DataType::uint64(6));
     
     Node n;
     // uint8
@@ -667,6 +667,72 @@ TEST(conduit_node_set, set_uint_array)
     EXPECT_EQ(u64av_ptr[5],64);
 
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_c_uint_array)
+{
+    unsigned char   uchar_av[6]  = {2,4,8,16,32,64};
+    unsigned short  ushort_av[6] = {2,4,8,16,32,64};
+    unsigned int    uint_av[6]   = {2,4,8,16,32,64};
+    unsigned long   ulong_av[6]  = {2,4,8,16,32,64};
+    
+    unsigned_char_array  uchar_av_a(uchar_av,DataType::c_unsigned_char(6));
+    unsigned_short_array ushort_av_a(ushort_av,DataType::c_unsigned_short(6));
+    unsigned_int_array   uint_av_a(uint_av,DataType::c_unsigned_int(6));
+    unsigned_long_array  ulong_av_a(ulong_av,DataType::c_unsigned_long(6));
+    
+    Node n;
+    // unsigned char
+    n.set(uchar_av_a);
+    n.schema().print();
+    unsigned char *uchar_ptr = n.as_unsigned_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(uchar_ptr[i],uchar_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&uchar_ptr[i],&uchar_av[i]);
+    }
+    EXPECT_EQ(uchar_ptr[5],64);
+    
+    // unsigned short
+    n.set(ushort_av_a);
+    n.schema().print();
+    unsigned short *ushort_ptr = n.as_unsigned_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(ushort_ptr[i],ushort_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&ushort_ptr[i],&ushort_av[i]);
+    }
+    EXPECT_EQ(ushort_ptr[5],64);
+    
+    // unsigned int    
+    n.set(uint_av_a);
+    n.schema().print();
+    unsigned int *uint_ptr = n.as_unsigned_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(uint_ptr[i],uint_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&uint_ptr[i],&uint_av[i]);
+    }
+    EXPECT_EQ(uint_ptr[5],64);
+    
+    // unsigned long
+    n.set(ulong_av_a);
+    n.schema().print();
+    unsigned long *ulong_ptr = n.as_unsigned_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(ulong_ptr[i],ulong_av_a[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&ulong_ptr[i],&ulong_av_a[i]);
+    }
+    EXPECT_EQ(ulong_ptr[5],64);
+
+}
+
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node_set, set_uint_ptr)
@@ -743,10 +809,10 @@ TEST(conduit_node_set, set_path_uint_array)
     uint32  u32av[6] = {2,4,8,16,32,64};
     uint64  u64av[6] = {2,4,8,16,32,64};
     
-    uint8_array  u8av_a(u8av,DataType::Arrays::uint8(6));
-    uint16_array u16av_a(u16av,DataType::Arrays::uint16(6));
-    uint32_array u32av_a(u32av,DataType::Arrays::uint32(6));
-    uint64_array u64av_a(u64av,DataType::Arrays::uint64(6));
+    uint8_array  u8av_a(u8av,DataType::uint8(6));
+    uint16_array u16av_a(u16av,DataType::uint16(6));
+    uint32_array u32av_a(u32av,DataType::uint32(6));
+    uint64_array u64av_a(u64av,DataType::uint64(6));
     
     Node n;
     // uint8
@@ -899,10 +965,10 @@ TEST(conduit_node_set, set_external_uint_array)
     uint32  u32av[6] = {2,4,8,16,32,64};
     uint64  u64av[6] = {2,4,8,16,32,64};
     
-    uint8_array u8av_a(u8av,DataType::Arrays::uint8(6));
-    uint16_array u16av_a(u16av,DataType::Arrays::uint16(6));
-    uint32_array u32av_a(u32av,DataType::Arrays::uint32(6));
-    uint64_array u64av_a(u64av,DataType::Arrays::uint64(6));
+    uint8_array u8av_a(u8av,DataType::uint8(6));
+    uint16_array u16av_a(u16av,DataType::uint16(6));
+    uint32_array u32av_a(u32av,DataType::uint32(6));
+    uint64_array u64av_a(u64av,DataType::uint64(6));
     
     Node n;
     // uint8
@@ -1058,10 +1124,10 @@ TEST(conduit_node_set, set__path_external_uint_array)
     uint32  u32av[6] = {2,4,8,16,32,64};
     uint64  u64av[6] = {2,4,8,16,32,64};
     
-    uint8_array u8av_a(u8av,DataType::Arrays::uint8(6));
-    uint16_array u16av_a(u16av,DataType::Arrays::uint16(6));
-    uint32_array u32av_a(u32av,DataType::Arrays::uint32(6));
-    uint64_array u64av_a(u64av,DataType::Arrays::uint64(6));
+    uint8_array u8av_a(u8av,DataType::uint8(6));
+    uint16_array u16av_a(u16av,DataType::uint16(6));
+    uint32_array u32av_a(u32av,DataType::uint32(6));
+    uint64_array u64av_a(u64av,DataType::uint64(6));
     
     Node n;
     // uint8
@@ -1233,10 +1299,10 @@ TEST(conduit_node_set, set_int_array)
     int32  i32av[6] = {-2,-4,-8,-16,-32,-64};
     int64  i64av[6] = {-2,-4,-8,-16,-32,-64};
     
-    int8_array  i8av_a(i8av,DataType::Arrays::int8(6));
-    int16_array i16av_a(i16av,DataType::Arrays::int16(6));
-    int32_array i32av_a(i32av,DataType::Arrays::int32(6));
-    int64_array i64av_a(i64av,DataType::Arrays::int64(6));
+    int8_array  i8av_a(i8av,DataType::int8(6));
+    int16_array i16av_a(i16av,DataType::int16(6));
+    int32_array i32av_a(i32av,DataType::int32(6));
+    int64_array i64av_a(i64av,DataType::int64(6));
     
     Node n;
     // int8
@@ -1293,6 +1359,71 @@ TEST(conduit_node_set, set_int_array)
     EXPECT_EQ(i64av_ptr[5],-64);
 
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_c_int_array)
+{
+    char   char_av[6]  = {-2,-4,-8,-16,-32,-64};
+    short  short_av[6] = {-2,-4,-8,-16,-32,-64};
+    int    int_av[6]   = {-2,-4,-8,-16,-32,-64};
+    long   long_av[6]  = {-2,-4,-8,-16,-32,-64};
+    
+    char_array  char_av_a(char_av,DataType::c_char(6));
+    short_array short_av_a(short_av,DataType::c_short(6));
+    int_array   int_av_a(int_av,DataType::c_int(6));
+    long_array  long_av_a(long_av,DataType::c_long(6));
+    
+    Node n;
+    // char
+    n.set(char_av_a);
+    n.schema().print();
+    char *char_ptr = n.as_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(char_ptr[i],char_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&char_ptr[i],&char_av[i]);
+    }
+    EXPECT_EQ(char_ptr[5],-64);
+
+    // short 
+    n.set(short_av_a);
+    n.schema().print();
+    short *short_ptr = n.as_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(short_ptr[i],short_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&short_ptr[i],&short_av[i]);
+    }
+    EXPECT_EQ(short_ptr[5],-64);
+
+    // int
+    n.set(int_av_a);
+    n.schema().print();
+    int *int_ptr = n.as_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(int_ptr[i],int_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&int_ptr[i],&int_av[i]);
+    }
+    EXPECT_EQ(int_ptr[5],-64);
+
+    // long
+    n.set(long_av_a);
+    n.schema().print();
+    long *long_ptr = n.as_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(long_ptr[i],long_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&long_ptr[i],&long_av[i]);
+    }
+    EXPECT_EQ(long_ptr[5],-64);
+
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node_set, set_int_ptr)
@@ -1366,10 +1497,10 @@ TEST(conduit_node_set, set_path_int_array)
     int32  i32av[6] = {-2,-4,-8,-16,-32,-64};
     int64  i64av[6] = {-2,-4,-8,-16,-32,-64};
     
-    int8_array  i8av_a(i8av,DataType::Arrays::int8(6));
-    int16_array i16av_a(i16av,DataType::Arrays::int16(6));
-    int32_array i32av_a(i32av,DataType::Arrays::int32(6));
-    int64_array i64av_a(i64av,DataType::Arrays::int64(6));
+    int8_array  i8av_a(i8av,DataType::int8(6));
+    int16_array i16av_a(i16av,DataType::int16(6));
+    int32_array i32av_a(i32av,DataType::int32(6));
+    int64_array i64av_a(i64av,DataType::int64(6));
     
     Node n;
     // int8
@@ -1515,10 +1646,10 @@ TEST(conduit_node_set, set_external_int_array)
     int32  i32av[6] = {-2,-4,-8,-16,-32,-64};
     int64  i64av[6] = {-2,-4,-8,-16,-32,-64};
     
-    int8_array  i8av_a(i8av,DataType::Arrays::int8(6));
-    int16_array i16av_a(i16av,DataType::Arrays::int16(6));
-    int32_array i32av_a(i32av,DataType::Arrays::int32(6));
-    int64_array i64av_a(i64av,DataType::Arrays::int64(6));
+    int8_array  i8av_a(i8av,DataType::int8(6));
+    int16_array i16av_a(i16av,DataType::int16(6));
+    int32_array i32av_a(i32av,DataType::int32(6));
+    int64_array i64av_a(i64av,DataType::int64(6));
     
     Node n;
     // int8
@@ -1678,10 +1809,10 @@ TEST(conduit_node_set, set_path_external_int_array)
     int32  i32av[6] = {-2,-4,-8,-16,-32,-64};
     int64  i64av[6] = {-2,-4,-8,-16,-32,-64};
     
-    int8_array  i8av_a(i8av,DataType::Arrays::int8(6));
-    int16_array i16av_a(i16av,DataType::Arrays::int16(6));
-    int32_array i32av_a(i32av,DataType::Arrays::int32(6));
-    int64_array i64av_a(i64av,DataType::Arrays::int64(6));
+    int8_array  i8av_a(i8av,DataType::int8(6));
+    int16_array i16av_a(i16av,DataType::int16(6));
+    int32_array i32av_a(i32av,DataType::int32(6));
+    int64_array i64av_a(i64av,DataType::int64(6));
     
     Node n;
     // int8
@@ -1859,8 +1990,8 @@ TEST(conduit_node_set, set_float_array)
     float32  f32av[4] = {-0.8, -1.6, -3.2, -6.4};
     float64  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
 
-    float32_array f32av_a(f32av,DataType::Arrays::float32(4));
-    float64_array f64av_a(f64av,DataType::Arrays::float64(4));
+    float32_array f32av_a(f32av,DataType::float32(4));
+    float64_array f64av_a(f64av,DataType::float64(4));
 
     Node n;
     // float32
@@ -1892,6 +2023,43 @@ TEST(conduit_node_set, set_float_array)
     EXPECT_NEAR(f64av_ptr[3],-6.4,0.001);
 
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_c_float_array)
+{
+    float   fav[4] = {-0.8, -1.6, -3.2, -6.4};
+    double  dav[4] = {-0.8, -1.6, -3.2, -6.4};
+
+    float_array  fav_a(fav,DataType::c_float(4));
+    double_array dav_a(dav,DataType::c_double(4));
+
+    Node n;
+    // float
+    n.set(fav_a);
+    n.schema().print();
+    float *f_ptr = n.as_float_ptr();
+    for(index_t i=0;i<4;i++)
+    {
+        EXPECT_NEAR(f_ptr[i],fav[i],0.001);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&f_ptr[i],&fav[i]); 
+    }
+    EXPECT_NEAR(f_ptr[3],-6.4,0.001);
+    
+    // double
+    n.set(dav_a);
+    n.schema().print();
+    double *d_ptr = n.as_double_ptr();
+    for(index_t i=0;i<4;i++)
+    {
+        EXPECT_NEAR(d_ptr[i],dav[i],0.001);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&d_ptr[i],&dav[i]);
+    }
+    EXPECT_NEAR(d_ptr[3],-6.4,0.001);
+
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node_set, set_float_ptr)
@@ -1936,8 +2104,8 @@ TEST(conduit_node_set, set_path_float_array)
     float32  f32av[4] = {-0.8, -1.6, -3.2, -6.4};
     float64  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
 
-    float32_array f32av_a(f32av,DataType::Arrays::float32(4));
-    float64_array f64av_a(f64av,DataType::Arrays::float64(4));
+    float32_array f32av_a(f32av,DataType::float32(4));
+    float64_array f64av_a(f64av,DataType::float64(4));
 
     Node n;
     // float32
@@ -2024,8 +2192,8 @@ TEST(conduit_node_set, set_external_float_array)
     float32  f32av[4] = {-0.8, -1.6, -3.2, -6.4};
     float64  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
 
-    float32_array f32av_a(f32av,DataType::Arrays::float32(4));
-    float64_array f64av_a(f64av,DataType::Arrays::float64(4));
+    float32_array f32av_a(f32av,DataType::float32(4));
+    float64_array f64av_a(f64av,DataType::float64(4));
 
     Node n;
     // float32
@@ -2111,8 +2279,8 @@ TEST(conduit_node_set, set_path_external_float_array)
     float32  f32av[4] = {-0.8, -1.6, -3.2, -6.4};
     float64  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
 
-    float32_array f32av_a(f32av,DataType::Arrays::float32(4));
-    float64_array f64av_a(f64av,DataType::Arrays::float64(4));
+    float32_array f32av_a(f32av,DataType::float32(4));
+    float64_array f64av_a(f64av,DataType::float64(4));
 
     Node n;
     // float32
@@ -2203,23 +2371,23 @@ TEST(conduit_node_set, set_path_external_float_ptr)
 //-----------------------------------------------------------------------------
 TEST(conduit_node_set, set_float_ptr_default_types)
 {
-    float   f32av[4] = {-0.8, -1.6, -3.2, -6.4};
-    double  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
+    float   fav[4] = {-0.8, -1.6, -3.2, -6.4};
+    double  dav[4] = {-0.8, -1.6, -3.2, -6.4};
 
     Node n;
     if(sizeof(float) == 4)
     {
         // float32
-        n.set(f32av,4);
+        n.set(fav,4);
         n.schema().print();
         EXPECT_EQ(n.total_bytes(),4*4);
         EXPECT_EQ(n.dtype().element_bytes(),4);
         float32 *f32av_ptr = n.as_float32_ptr();
         for(index_t i=0;i<4;i++)
         {
-            EXPECT_NEAR(f32av_ptr[i],f32av[i],0.001);
+            EXPECT_NEAR(f32av_ptr[i],fav[i],0.001);
             // set(...) semantics imply a copy -- mem addys should differ
-            EXPECT_NE(&f32av_ptr[i],&f32av[i]); 
+            EXPECT_NE(&f32av_ptr[i],&fav[i]); 
         }
         EXPECT_NEAR(f32av_ptr[3],-6.4,0.001);
     }
@@ -2227,19 +2395,44 @@ TEST(conduit_node_set, set_float_ptr_default_types)
     if(sizeof(double)== 8)
     {
         // float64
-        n.set(f64av,4);
+        n.set(dav,4);
         n.schema().print();
         EXPECT_EQ(n.total_bytes(),4*8);
         EXPECT_EQ(n.dtype().element_bytes(),8);
         float64 *f64av_ptr = n.as_float64_ptr();
         for(index_t i=0;i<4;i++)
         {
-            EXPECT_NEAR(f64av_ptr[i],f64av[i],0.001);
+            EXPECT_NEAR(f64av_ptr[i],dav[i],0.001);
             // set(...) semantics imply a copy -- mem addys should differ
-            EXPECT_NE(&f64av_ptr[i],&f64av[i]);
+            EXPECT_NE(&f64av_ptr[i],&dav[i]);
         }
         EXPECT_NEAR(f64av_ptr[3],-6.4,0.001);
     }
+
+    // float
+    n.set(fav,4);
+    n.schema().print();
+    float *f_ptr = n.as_float_ptr();
+    for(index_t i=0;i<4;i++)
+    {
+        EXPECT_NEAR(f_ptr[i],fav[i],0.001);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&f_ptr[i],&fav[i]); 
+    }
+    EXPECT_NEAR(f_ptr[3],-6.4,0.001);
+
+    
+    // double
+    n.set(dav,4);
+    n.schema().print();
+    double *d_ptr = n.as_double_ptr();
+    for(index_t i=0;i<4;i++)
+    {
+        EXPECT_NEAR(d_ptr[i],dav[i],0.001);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&d_ptr[i],&dav[i]);
+    }
+    EXPECT_NEAR(d_ptr[3],-6.4,0.001);
 }
 
 
