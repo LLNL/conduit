@@ -57,7 +57,7 @@ from numpy import *
 
 
 class Test_Conduit_Node(unittest.TestCase):
-    def test_0_simple(self):
+    def test_simple(self):
         a_val = uint32(10)
         b_val = uint32(20)
         c_val = float64(30.0)
@@ -76,7 +76,7 @@ class Test_Conduit_Node(unittest.TestCase):
         ids   = [DataType.name_to_id(n) for n in names]
         self.assertEqual(ids,range(14))
 
-    def test_2_explicit_set(self):
+    def test_explicit_set(self):
         d = DataType()
         d.set(dtype_id = DataType.name_to_id("uint32"),
               num_elements = 1,
@@ -90,6 +90,41 @@ class Test_Conduit_Node(unittest.TestCase):
         self.assertEqual(d.stride(),4)
         self.assertEqual(d.element_bytes(),4)
         self.assertEqual(d.endianness(),0)
+
+    def test_constructor_helpers(self):
+        # objs
+        print DataType.empty();
+        print DataType.object();
+        print DataType.list();
+        # signed integers
+        print DataType.int8();
+        print DataType.int16();
+        print DataType.int32();
+        print DataType.int64();
+        # unsigned integers
+        print DataType.uint8();
+        print DataType.uint16();
+        print DataType.uint32();
+        print DataType.uint64();
+        # floating point
+        print DataType.float32();
+        print DataType.float64();
+        # signed integers
+        print DataType.c_char();
+        print DataType.c_short();
+        print DataType.c_int();
+        print DataType.c_long();
+        # unsigned integers
+        print DataType.c_unsigned_char();
+        print DataType.c_unsigned_short();
+        print DataType.c_unsigned_int();
+        print DataType.c_unsigned_long();
+        # floating point
+        print DataType.c_float();
+        print DataType.c_double();
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
