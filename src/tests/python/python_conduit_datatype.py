@@ -71,7 +71,7 @@ class Test_Conduit_Node(unittest.TestCase):
         self.assertEqual(d.id(),DataType.name_to_id("uint32"))
         print d
 
-    def test_1_id_to_name(self):
+    def test_id_to_name(self):
         names = [DataType.id_to_name(i) for i in xrange(14)]
         ids   = [DataType.name_to_id(n) for n in names]
         self.assertEqual(ids,range(14))
@@ -90,6 +90,45 @@ class Test_Conduit_Node(unittest.TestCase):
         self.assertEqual(d.stride(),4)
         self.assertEqual(d.element_bytes(),4)
         self.assertEqual(d.endianness(),0)
+
+    def test_construction(self):
+        dt = DataType();
+        dt.set_id(DataType.name_to_id("uint32"))
+        dt.set_number_of_elements(10);
+        dt.set_offset(0);
+        dt.set_stride(4);
+        dt.set_element_bytes(4);
+        
+        dt2 = DataType(dt)
+        self.assertEqual(dt.id(),dt2.id())
+        self.assertEqual(dt.number_of_elements(),dt2.number_of_elements())
+        self.assertEqual(dt.offset(),dt2.offset())
+        self.assertEqual(dt.stride(),dt2.stride())
+        self.assertEqual(dt.element_bytes(),dt2.element_bytes())        
+        self.assertEqual(dt.endianness(),dt2.endianness())
+
+        # broken
+        # dt3 = DataType(dtype_name="uint32",
+        #        num_elements=10,
+        #        offset=0,
+        #        stride=4,
+        #        element_bytes=4)
+        dt3 = DataType()
+        dt3.set(dtype_name="uint32",
+                num_elements=10,
+                offset=0,
+                stride=4,
+                element_bytes=4)
+        self.assertEqual(dt2.id(),dt3.id())
+        self.assertEqual(dt2.number_of_elements(),dt3.number_of_elements())
+        self.assertEqual(dt2.offset(),dt3.offset())
+        self.assertEqual(dt2.stride(),dt3.stride())
+        self.assertEqual(dt2.element_bytes(),dt3.element_bytes())
+        self.assertEqual(dt2.endianness(),dt3.endianness())
+        
+        print dt
+        print dt2
+        print dt3
 
     def test_constructor_helpers(self):
         # objs

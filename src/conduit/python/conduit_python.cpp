@@ -137,62 +137,191 @@ PyConduit_DataType_new(PyTypeObject* type,
 }
 
 //---------------------------------------------------------------------------//
-static int
-PyConduit_DataType_init(PyConduit_DataType* self,
-                        PyObject* args,
-                        PyObject* kwargs)
+static bool
+PyConduit_DataType_Set_Parse_Args(PyConduit_DataType* self,
+                                  PyObject* args,
+                                  PyObject* kwargs)
 {
-    static const char *kwlist[] = {"dtype_name",
-                                   "num_elements",
-                                   "offset",
-                                   "stride",
-                                   "element_bytes",
-                                   "endianness",
-                                   "dtype_id",
-                                     NULL};
+    int32 parse_case = -1;
+    ///
+    /// Three ways to call:
+    ///
+    /// Copy Constructor style:
+    ///   args[0] == PyObject || kwargs[0] == PyObject
+
+    static const char *kwlist_obj[] = {"dtype",
+                                        NULL};
+    ///
+    /// DataType Name First:
+    ///    
+    static const char *kwlist_name[] = {"dtype_name",
+                                        "num_elements",
+                                        "offset",
+                                        "stride",
+                                        "element_bytes",
+                                        "endianness",
+                                        NULL};
+    ///
+    /// DataType Id First:
+    ///    
+    static const char *kwlist_id[] = {"dtype_id",
+                                      "num_elements",
+                                      "offset",
+                                      "stride",
+                                      "element_bytes",
+                                      "endianness",
+                                       NULL};
+
+    PyObject *py_obj = 0;
+
+    if(args != NULL)
+    {
+        if(PySequence_Size(args)>0)
+        {
+            py_obj = PySequence_GetItem(args,0);
+            if(py_obj)
+            {
+                // check for object
+                if(PyConduit_DataType_check(py_obj))
+                {
+                    parse_case = 0;
+                }
+                // else check for string
+                else if(PyString_Check(py_obj))
+                {
+                    parse_case = 1;
+                }
+                // else check for index_t
+                else if(PyIndex_Check(py_obj))
+                {
+                    parse_case = 2;                
+                }
+            }
+        }
+    }
+
+    if(parse_case == -1 && kwargs !=NULL)
+    {
+        // check for object
+        if(PyDict_GetItemString(kwargs,"dtype"))
+        {
+            parse_case = 0;
+        }
+        // else check for string
+        else if(PyDict_GetItemString(kwargs,"dtype_name"))
+        {
+            parse_case = 1;            
+        }
+        // else check for index_t
+        else if(PyDict_GetItemString(kwargs,"dtype_id"))
+        {
+            parse_case = 2;
+        }
+    }
+
+    std::cout << "parse_case = " << parse_case <<  std::endl;
+    /// if we aren't parsing any args, simply return
+    if(parse_case == -1)
+        return true;
+
     Py_ssize_t  dtype_id = 0;
-    const char *dtype_name = NULL;
+    char       *dtype_name = NULL;
     Py_ssize_t  num_elements = 0;
     Py_ssize_t  offset = 0;
     Py_ssize_t  stride = 0;
     Py_ssize_t  element_bytes = 0;
     Py_ssize_t  endianness =0;
-    
-        
-    if (!PyArg_ParseTupleAndKeywords(args,
-                                     kwargs,
-                                     "|snnnnnn",
-                                     const_cast<char**>(kwlist),
-                                     dtype_name,
-                                     &num_elements,
-                                     &offset,
-                                     &stride,
-                                     &element_bytes,
-                                     &endianness,
-                                     &dtype_id))
+
+    if(parse_case == 0)
     {
-        // TODO: Set Error?
-        return (0);
-    }
-    
-    
-    if(kwargs != NULL) // dtype_id vs dtype_name
-    {
-        // dtype_id
-        if(PyDict_GetItemString(kwargs,kwlist[0]))  // dtype_name
+        if (!PyArg_ParseTupleAndKeywords(args,
+                                         kwargs,
+                                         "O",
+                                         const_cast<char**>(kwlist_obj),
+                                         py_obj))
         {
-            dtype_id = DataType::name_to_id(std::string(dtype_name));
+            // TODO: Set Error?
+            return false;
         }
+        
+        if(!PyConduit_DataType_check(py_obj))
+        {
+            // TODO: Set Error?
+            return false;
+        }
+        
+        PyConduit_DataType *py_dtype = (PyConduit_DataType *)py_obj;
+        
+        self->dtype.set(py_dtype->dtype);
+    
     }
+    else if(parse_case == 1)
+    {
+        if (!PyArg_ParseTupleAndKeywords(args,
+                                         kwargs,
+                                         "s|nnnnn",
+                                         const_cast<char**>(kwlist_name),
+                                         &dtype_name,
+                                         &num_elements,
+                                         &offset,
+                                         &stride,
+                                         &element_bytes,
+                                         &endianness))
+        {
+            // TODO: Set Error?
+            return false;
+        }
 
-    self->dtype.set(dtype_id,
-                    num_elements,
-                    offset,
-                    stride,
-                    element_bytes,
-                    endianness);
+        dtype_id = DataType::name_to_id(std::string(dtype_name));
 
-    return (0);
+        self->dtype.set(dtype_id,
+                        num_elements,
+                        offset,
+                        stride,
+                        element_bytes,
+                        endianness);
+    }
+    else if(parse_case ==2)
+    {
+        if (!PyArg_ParseTupleAndKeywords(args,
+                                         kwargs,
+                                         "n|nnnnn",
+                                         const_cast<char**>(kwlist_id),
+                                         &dtype_id,
+                                         &num_elements,
+                                         &offset,
+                                         &stride,
+                                         &element_bytes,
+                                         &endianness))
+        {
+            // TODO: Set Error?
+            return false;
+        }
+
+        self->dtype.set(dtype_id,
+                        num_elements,
+                        offset,
+                        stride,
+                        element_bytes,
+                        endianness);
+    }
+    
+    return true;
+}
+
+
+//---------------------------------------------------------------------------//
+static int
+PyConduit_DataType_init(PyConduit_DataType* self,
+                        PyObject* args,
+                        PyObject* kwargs)
+{
+    if(!PyConduit_DataType_Set_Parse_Args(self,args,kwargs))
+    {
+        // todo: error?
+        return 0;
+    }
+    return 0;
 }
 
 //---------------------------------------------------------------------------//
@@ -1012,93 +1141,11 @@ PyConduit_DataType_set(PyConduit_DataType *self,
                        PyObject *args,
                        PyObject *kwargs)
 {
-    static const char *kwlist[] = {"dtype_name",
-                                   "num_elements",
-                                   "offset",
-                                   "stride",
-                                   "element_bytes",
-                                   "endianness",
-                                   "dtype_id",
-                                     NULL};
-    Py_ssize_t  dtype_id = 0;
-    const char *dtype_name = NULL;
-    Py_ssize_t  num_elements = 0;
-    Py_ssize_t  offset = 0;
-    Py_ssize_t  stride = 0;
-    Py_ssize_t  element_bytes = 0;
-    Py_ssize_t  endianness =0;
-    
-    
-        
-    if (!PyArg_ParseTupleAndKeywords(args,
-                                     kwargs,
-                                     "|snnnnnn",
-                                     const_cast<char**>(kwlist),
-                                     dtype_name,
-                                     &num_elements,
-                                     &offset,
-                                     &stride,
-                                     &element_bytes,
-                                     &endianness,
-                                     &dtype_id))
+    if(!PyConduit_DataType_Set_Parse_Args(self,args,kwargs))
     {
-        return (NULL);
-    }
-    
-    ///
-    /// TODO: For now, this is an error -- we also like to support the "args"
-    /// type call, however we need to think about the optional args
-    /// support 
-    ///
-
-    if(kwargs == NULL)
+        /// TODO: error?
         return NULL;
-
-    //Note: we are doing dict entry checks w/ kwargs b/c we don't have
-    // a good "unset" sentinel for unsigned type args
-    
-    // dtype_id
-    if(PyDict_GetItemString(kwargs,kwlist[0]))  // dtype_name
-    {
-        self->dtype.set_id(DataType::name_to_id(std::string(dtype_name)));
     }
-    else if(PyDict_GetItemString(kwargs,kwlist[6])) 
-    {
-        // if not dtype_name and dtype_id, we use dtype_id
-        self->dtype.set_id(dtype_id);
-    }
-        
-
-    // num_elements
-    if(PyDict_GetItemString(kwargs,kwlist[1]))
-    {
-        self->dtype.set_number_of_elements(num_elements);
-    }
-
-    // offset
-    if(PyDict_GetItemString(kwargs,kwlist[2]))
-    {
-        self->dtype.set_offset(offset);
-    }
-
-    // stride
-    if(PyDict_GetItemString(kwargs,kwlist[3]))
-    {
-        self->dtype.set_stride(stride);
-    }
-
-    // element_bytes
-    if(PyDict_GetItemString(kwargs,kwlist[4]))
-    {
-         self->dtype.set_element_bytes(element_bytes);
-    }
-
-     // endianness
-    if(PyDict_GetItemString(kwargs,kwlist[5]))
-    {
-       self->dtype.set_endianness(endianness);
-    }
-
     Py_RETURN_NONE; 
 }
 
@@ -1446,8 +1493,8 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
      (PyCFunction)PyConduit_DataType_set,
      METH_VARARGS | METH_KEYWORDS,
      "{todo}"},
-     {"set",
-    (PyCFunction)PyConduit_DataType_set_id,
+    {"set_id",
+     (PyCFunction)PyConduit_DataType_set_id,
       METH_VARARGS,
       "{todo}"},
     //-----------------------------------------------------------------------//
