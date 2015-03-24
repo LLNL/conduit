@@ -99,5 +99,6 @@ install(TARGETS conduit_io
   EXPORT conduit
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION lib
 )
 

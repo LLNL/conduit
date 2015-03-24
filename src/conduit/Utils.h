@@ -96,7 +96,7 @@ namespace utils
      
 //----------------------------------------------------------------------------- 
      template< typename T >
-     std::string CONDUIT_API to_hex_string(T value)
+     std::string to_hex_string(T value)
      {
            std::stringstream oss;
            oss << std::hex << value;

@@ -113,6 +113,7 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE target_name dest_dir py_name setup_file py_sou
             EXPORT  conduit
             LIBRARY DESTINATION ${dest_dir}/${py_name}
             ARCHIVE DESTINATION ${dest_dir}/${py_name}
+            RUNTIME DESTINATION ${dest_dir}/${py_name}
     )
 
 ENDFUNCTION(PYTHON_ADD_HYBRID_MODULE)
