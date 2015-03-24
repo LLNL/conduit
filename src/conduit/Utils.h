@@ -77,26 +77,26 @@ namespace utils
 {
 
 //-----------------------------------------------------------------------------
-    void        split_string(const std::string &path,
-                             const std::string &sep,
-                             std::string &curr,
-                             std::string &next);
+    void CONDUIT_API split_string(const std::string &path,
+                                  const std::string &sep,
+                                  std::string &curr,
+                                  std::string &next);
 
-    void        rsplit_string(const std::string &path,
-                              const std::string &sep,
-                              std::string &curr,
-                              std::string &next);
+    void CONDUIT_API rsplit_string(const std::string &path,
+                                   const std::string &sep,
+                                   std::string &curr,
+                                   std::string &next);
 
-     void       split_path(const std::string &path,
-                           std::string &curr,
-                           std::string &next);
+    void  CONDUIT_API split_path(const std::string &path,
+                                 std::string &curr,
+                                 std::string &next);
 
 //-----------------------------------------------------------------------------
      std::string json_sanitize(const std::string &json);
      
 //----------------------------------------------------------------------------- 
      template< typename T >
-     std::string to_hex_string(T value)
+     std::string CONDUIT_API to_hex_string(T value)
      {
            std::stringstream oss;
            oss << std::hex << value;
@@ -104,10 +104,10 @@ namespace utils
      }
 
 //-----------------------------------------------------------------------------
-     void        indent(std:: ostringstream &oss,
-                        index_t indent,
-                        index_t depth,
-                        const std::string &pad);
+     void CONDUIT_API indent(std:: ostringstream &oss,
+                             index_t indent,
+                             index_t depth,
+                             const std::string &pad);
      
 }
 //-----------------------------------------------------------------------------
