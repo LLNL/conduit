@@ -46,12 +46,14 @@
 # Conduit 3rd Party Dependencies
 ################################
 
-################################
-# Enable GTest
-################################
-add_subdirectory(thirdparty_builtin/gtest-1.7.0)
-enable_testing()
-include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+if(ENABLE_TESTS)
+    ################################
+    # Enable GTest
+    ################################
+    add_subdirectory(thirdparty_builtin/gtest-1.7.0)
+    enable_testing()
+    include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+endif()
 
 ################################
 # Setup includes for RapidJSON
