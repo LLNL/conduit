@@ -206,13 +206,13 @@ TEST(conduit_mpi_smoke, external)
     doubles2.push_back(3.4124*rank + 1);
     doubles2.push_back(10.7 - rank + 1);
 
-    //n1.append().set_external(doubles2);
+    n1.append().set_external(doubles2);
 
     doubles3.push_back(rank+3);
     doubles3.push_back(3.4124*rank + 2);
     doubles3.push_back(10.7 - rank + 2);
 
-    //n1.append().set_external(doubles3);
+    n1.append().set_external(doubles3);
 
     mpi::ConduitMPIRequest request;
 
@@ -225,17 +225,17 @@ TEST(conduit_mpi_smoke, external)
         mpi::Waitsend(&request, &status);
     }
 
-    // EXPECT_EQ(n1["a"].as_float64_ptr()[0], 2);
-    //EXPECT_EQ(n1["a"].as_float64_ptr()[1], 3.4124);
-    //EXPECT_EQ(n1["a"].as_float64_ptr()[2], 9.7);
+    EXPECT_EQ(n1["a"].as_float64_ptr()[0], 2);
+    EXPECT_EQ(n1["a"].as_float64_ptr()[1], 3.4124);
+    EXPECT_EQ(n1["a"].as_float64_ptr()[2], 9.7);
 
-    //EXPECT_EQ(n1[1].as_float64_ptr()[0], 3);
-    //EXPECT_EQ(n1[1].as_float64_ptr()[1], 4.4124);
-    //EXPECT_EQ(n1[1].as_float64_ptr()[2], 10.7);
+    EXPECT_EQ(n1[1].as_float64_ptr()[0], 3);
+    EXPECT_EQ(n1[1].as_float64_ptr()[1], 4.4124);
+    EXPECT_EQ(n1[1].as_float64_ptr()[2], 10.7);
     
-    //EXPECT_EQ(n1[1].as_float64_ptr()[0], 4);
-    //EXPECT_EQ(n1[1].as_float64_ptr()[1], 5.4124);
-    //EXPECT_EQ(n1[1].as_float64_ptr()[2], 11.7);
+    EXPECT_EQ(n1[2].as_float64_ptr()[0], 4);
+    EXPECT_EQ(n1[2].as_float64_ptr()[1], 5.4124);
+    EXPECT_EQ(n1[2].as_float64_ptr()[2], 11.7);
 }
 
 //-----------------------------------------------------------------------------
