@@ -142,7 +142,166 @@ int recv(Node& node, int src, int tag, MPI_Comm comm)
 
     return mpiError;
 }
+//---------------------------------------------------------------------------//
+int reduce(Node& sendNode, Node& recvNode, MPI_Datatype datatype, MPI_Op op, unsigned int root, MPI_Comm comm) {
+
+    int temp;
+    MPI_Comm_rank(MPI_COMM_WORLD, &temp);
+    const unsigned int rank = temp;
+
+    Schema schema_c;
+    sendNode.schema().compact_to(schema_c);
+    std::string schema = schema_c.to_json();
+
+
+    std::vector<uint8> data;
+    sendNode.serialize(data);
+    int data_len = data.size();
+
+    int datasize = 0;
+    MPI_Type_size(datatype, &datasize);
+
+    char recvdata[data_len+1];
+
+    int mpiError = MPI_Reduce(&data[0], recvdata, (data_len / datasize) + 1, datatype, op, root, comm);
+
+    if (rank == root) {
+        Generator node_gen(schema, recvdata);
+
+        node_gen.walk(recvNode);
+    }
+
+    return mpiError;
+}
+
+//--------------------------------------------------------------------------//
+int allreduce(Node& sendNode, Node& recvNode, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm) {
+
+    Schema schema_c;
+    sendNode.schema().compact_to(schema_c);
+    std::string schema = schema_c.to_json();
+
+
+    std::vector<uint8> data;
+    sendNode.serialize(data);
+    int data_len = data.size();
+
+    int datasize = 0;
+    MPI_Type_size(datatype, &datasize);
+
+    char recvdata[data_len+1];
+
+    int mpiError = MPI_Allreduce(&data[0], recvdata, (data_len / datasize) + 1, datatype, op, comm);
+
+    Generator node_gen(schema, recvdata);
+
+    node_gen.walk(recvNode);
+
+
+    return mpiError;
+}
+
+//---------------------------------------------------------------------------//
+int Isend(Node& node, int dest, int tag, MPI_Comm comm, ConduitMPIRequest* request) { 
+
+    request->_externalData = new Node();
+    node.compact_to(*(request->_externalData));
+
+    request->_externalData->print_detailed();
+    request->_externalData->schema_pointer()->print();
+    request->_externalData->info().print();
+
+    return MPI_Isend(request->_externalData->data_pointer(), request->_externalData->total_bytes(), MPI_CHAR, dest, tag, comm, &(request->_request));
+}
+
+//---------------------------------------------------------------------------//
+
+int Irecv(Node& node, int src, int tag, MPI_Comm comm, ConduitMPIRequest* request) {
+
+    request->_externalData = new Node();
+    node.compact_to(*(request->_externalData));
+
+    request->_recvData = &node;
+
+    return MPI_Irecv(request->_externalData->data_pointer(), request->_externalData->total_bytes(), MPI_CHAR, src, tag, comm, &(request->_request));
+}
+
+//---------------------------------------------------------------------------//
+
+int Waitsend(ConduitMPIRequest* request , MPI_Status *status) {
+    int mpiError = MPI_Wait(&(request->_request), status);
+
+    delete request->_externalData;
+    request->_externalData = 0;
     
+    
+
+    return mpiError;
+}
+
+//---------------------------------------------------------------------------//
+
+int Waitrecv(ConduitMPIRequest* request , MPI_Status *status) {
+    int mpiError = MPI_Wait(&(request->_request), status);
+
+    request->_recvData->update(*(request->_externalData));
+
+    delete request->_externalData;
+    request->_externalData = 0;
+
+    request->_recvData = 0;
+    
+    
+
+    return mpiError;
+}
+
+//---------------------------------------------------------------------------//
+
+int Waitallsend(int count, ConduitMPIRequest requests[], MPI_Status statuses[]) {
+     MPI_Request* justrequests = new MPI_Request[count];
+     for (int i = 0; i < count; ++i) {
+         justrequests[i] = requests[i]._request;
+     }
+     int mpiError = MPI_Waitall(count, justrequests, statuses);
+
+     for (int i = 0; i < count; ++i) {
+         requests[i]._request = justrequests[i];
+         delete requests[i]._externalData;
+         requests[i]._externalData = 0;
+     }
+
+     delete [] justrequests;
+
+     return mpiError; 
+
+
+}
+
+//---------------------------------------------------------------------------//
+int Waitallrecv(int count, ConduitMPIRequest requests[], MPI_Status statuses[]) {
+     MPI_Request* justrequests = new MPI_Request[count];
+     for (int i = 0; i < count; ++i) {
+         justrequests[i] = requests[i]._request;
+     }
+     int mpiError = MPI_Waitall(count, justrequests, statuses);
+
+     for (int i = 0; i < count; ++i) {
+         requests[i]._recvData->update(*(requests[i]._externalData));
+
+         requests[i]._request = justrequests[i];
+         delete requests[i]._externalData;
+         requests[i]._externalData = 0;
+     }
+
+     delete [] justrequests;
+
+     return mpiError; 
+
+
+}
+
+
 //---------------------------------------------------------------------------//
 std::string
 about()

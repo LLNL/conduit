@@ -59,4 +59,5 @@ set(PYTHON_DIR /usr/local/ CACHE PATH "")
 
 # Enable mpi for conduit-mpi
 set(ENABLE_MPI ON CACHE PATH "")
-
+set(MPIEXEC /usr/bin/srun CACHE PATH "")
+set(MPIEXEC_NUMPROC_FLAG -p pdebug -n CACHE PATH "")

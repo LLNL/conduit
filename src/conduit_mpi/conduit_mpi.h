@@ -74,9 +74,31 @@ namespace conduit
 namespace mpi
 {
 
+    struct ConduitMPIRequest {
+        MPI_Request _request;
+        Node* _externalData;
+        Node* _recvData;
+    };
+
     int CONDUIT_MPI_API send(Node& node, int dest, int tag, MPI_Comm comm);
 
     int CONDUIT_MPI_API recv(Node& node, int source, int tag, MPI_Comm comm);
+    
+    int CONDUIT_MPI_API reduce(Node& sendNode, Node& recvNode, MPI_Datatype datatype, MPI_Op op, unsigned int root, MPI_Comm comm);
+
+    int CONDUIT_MPI_API allreduce(Node& sendNode, Node& recvNode, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm);
+
+    int CONDUIT_MPI_API Isend(Node& node, int dest, int tag, MPI_Comm comm, ConduitMPIRequest* request);
+
+    int CONDUIT_MPI_API Irecv(Node& node, int src, int tag, MPI_Comm comm, ConduitMPIRequest* request);
+
+    int CONDUIT_MPI_API Waitsend(ConduitMPIRequest* request, MPI_Status* status);
+   
+    int CONDUIT_MPI_API Waitrecv(ConduitMPIRequest* request, MPI_Status* status);
+
+    int CONDUIT_MPI_API Waitallsend(int count, ConduitMPIRequest requests[], MPI_Status statuses[]);
+
+    int CONDUIT_MPI_API Waitallrecv(int count, ConduitMPIRequest requests[], MPI_Status statuses[]);
 
 // int sendrecv(Node& sendNode,
 //              int dest, int sendtag,
