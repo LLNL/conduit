@@ -50,8 +50,8 @@
 import sys
 import unittest
 
-import conduit
-Node = conduit.Node.Node
+from conduit import Node
+
 
 from numpy import *
 
@@ -76,13 +76,13 @@ class Test_Conduit_Node(unittest.TestCase):
         n = Node()
         n['a']['b'] = val
         print n['a']['b']
-        self.assertTrue(n['a']['b'] == val)
+        self.assertEqual(n['a']['b'],val)
 
     def test_vector(self):
         vec = array(range(100), uint32)
         n = Node()
         n['a'] = vec
-        self.assertTrue(n['a'][99], 99)
+        self.assertEqual(n['a'][99], 99)
 
     def test_fetch(self):
         vec = array(range(100), uint32)
@@ -90,7 +90,7 @@ class Test_Conduit_Node(unittest.TestCase):
         n['a'] = vec
         na = n.fetch('a')
         na_val = na.data()
-        self.assertTrue(na_val[99], 99)
+        self.assertEqual(na_val[99], 99)
         
     def test_child(self):
         vec = array(range(100), uint32)
@@ -98,9 +98,9 @@ class Test_Conduit_Node(unittest.TestCase):
         n['a'] = vec
         na = n.child(0)
         na_val = na.data()
-        self.assertTrue(na_val[99], 99)
+        self.assertEqual(na_val[99], 99)
         n['b'] = vec
-        self.assertTrue(n.number_of_children(),2)
+        self.assertEqual(n.number_of_children(),2)
       
     def test_save_load(self):
         vec = array(range(100), uint32)
@@ -109,7 +109,7 @@ class Test_Conduit_Node(unittest.TestCase):
         n.save("test_pyconduit_node_save_load")
         nl = Node()
         nl.load("test_pyconduit_node_save_load")
-        self.assertTrue(nl['a'][99], 99)
+        self.assertEqual(nl['a'][99], 99)
 
     def test_parent(self):
         vec = array(range(100), uint32)
@@ -123,8 +123,8 @@ class Test_Conduit_Node(unittest.TestCase):
         vec = array(range(100), uint32)
         n = Node()
         n['a'] = vec
-        self.assertTrue(n.total_bytes(),4 * 100)
-        self.assertTrue(n.total_bytes_compact(),4 * 100)
+        self.assertEqual(n.total_bytes(),4 * 100)
+        self.assertEqual(n.total_bytes_compact(),4 * 100)
         # TODO: check if n.is_compact() should pass as well?
         # it doesn't currently
         self.assertTrue(n.fetch('a').is_compact())
@@ -149,7 +149,7 @@ class Test_Conduit_Node(unittest.TestCase):
         n2 = Node()
         n2_c = n2.append()
         n2_c.set(2)
-        self.assertTrue(n2.child(0).data(),2)
+        self.assertEqual(n2.child(0).data(),2)
         
 
     def test_remove(self):
@@ -157,9 +157,9 @@ class Test_Conduit_Node(unittest.TestCase):
         n['a'] = 1
         n['b'] = 2
         n['c'] = 3
-        self.assertTrue(n.number_of_children(),3)
+        self.assertEqual(n.number_of_children(),3)
         n.remove(path='c')
-        self.assertTrue(n.number_of_children(),2)
+        self.assertEqual(n.number_of_children(),2)
         paths = n.paths()
         for v in ['a','b']:
             self.assertTrue(v in paths)
@@ -175,7 +175,7 @@ class Test_Conduit_Node(unittest.TestCase):
         n['c'] = 3
         ni = n.info();
         #print ni
-        self.assertTrue(ni["total_bytes"],n.total_bytes())
+        self.assertEqual(ni["total_bytes"],n.total_bytes())
 
 
 if __name__ == '__main__':

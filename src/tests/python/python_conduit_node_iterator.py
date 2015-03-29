@@ -50,9 +50,9 @@
 import sys
 import unittest
 
-import conduit
-Node = conduit.Node.Node
-NodeIterator = conduit.NodeIterator.NodeIterator
+from conduit import Node
+from conduit import NodeIterator
+
 
 from numpy import *
 
@@ -69,11 +69,19 @@ class Test_Conduit_Node(unittest.TestCase):
         n['c'] = c_val
   
         itr = NodeIterator()
-        print itr.has_next();
+        self.assertFalse(itr.has_next())
         itr = n.iterator()
+        self.assertTrue(itr.has_next())
         print itr.has_next();
         for v in itr:
             print v.path(), v.node()
+            idx = v.index()
+            if idx == 0:
+                self.assertEqual(v.node().data(),a_val)
+            elif idx == 1:
+                self.assertEqual(v.node().data(),b_val)
+            elif idx == 2:
+                self.assertEqual(v.node().data(),c_val)
 
 #
 # TODO: sensible itr use cases:

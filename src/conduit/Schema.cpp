@@ -187,7 +187,8 @@ void
 Schema::set(index_t dtype_id)
 {
     reset();
-    m_dtype.set(dtype_id);
+    m_dtype.reset();
+    m_dtype.set_id(dtype_id);
 }
 
 
@@ -738,12 +739,23 @@ Schema::remove(const std::string &path)
     }    
 }
 
+//---------------------------------------------------------------------------//
+Schema &
+Schema::append()
+{
+    init_list();
+    init_list();
+    Schema *sch = new Schema();
+    children().push_back(sch);
+    return *sch;
+}
+
 
 //=============================================================================
 //-----------------------------------------------------------------------------
 //
 //
-// -- begin conduit::Schema public methods --
+// -- begin conduit::Schema private methods --
 //
 //
 //-----------------------------------------------------------------------------
@@ -760,7 +772,7 @@ Schema::remove(const std::string &path)
 void
 Schema::init_defaults()
 {
-    m_dtype  = DataType::Objects::empty();
+    m_dtype  = DataType::empty();
     m_hierarchy_data = NULL;
     m_parent = NULL;
     m_root   = false;
@@ -773,7 +785,7 @@ Schema::init_object()
     if(dtype().id() != DataType::OBJECT_T)
     {
         reset();
-        m_dtype  = DataType::Objects::object();
+        m_dtype  = DataType::object();
         m_hierarchy_data = new Schema_Object_Hierarchy();
     }
 }
@@ -785,7 +797,7 @@ Schema::init_list()
     if(dtype().id() != DataType::LIST_T)
     {
         reset();
-        m_dtype  = DataType::Objects::list();
+        m_dtype  = DataType::list();
         m_hierarchy_data = new Schema_List_Hierarchy();
     }
 }
@@ -848,8 +860,7 @@ Schema::compact_to(Schema &s_dest, index_t curr_offset) const
         for(index_t i=0; i < nchildren ;i++)
         {            
             Schema  *cld_src = children()[i];
-            s_dest.append();
-            Schema &cld_dest = s_dest.child(i);
+            Schema &cld_dest = s_dest.append();
             cld_src->compact_to(cld_dest,curr_offset);
             curr_offset += cld_dest.total_bytes();
         }

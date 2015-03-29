@@ -54,6 +54,7 @@ set(BASIC_TESTS gtest_smoke
                 conduit_smoke
                 conduit_endianness
                 conduit_char8_str
+                conduit_datatype_tests
                 conduit_node
                 conduit_node_parent
                 conduit_serialize
@@ -71,8 +72,7 @@ set(BASIC_TESTS gtest_smoke
                 conduit_node_compact
                 conduit_node_info
                 conduit_node_iterator
-                libb64_smoke
-                type_tests)
+                libb64_smoke)
 
 ################################
 # conduit_io lib Unit Tests

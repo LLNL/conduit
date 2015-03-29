@@ -113,3 +113,27 @@ TEST(conduit_node_compact, compact_2)
         EXPECT_EQ(n1_arr[i],n1c_arr[i]);
     }    
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_compact, compact_3)
+{
+
+    float64 vals[] = { 100.0,-100.0,200.0,-200.0,300.0,-300.0,400.0,-400.0,500.0,-500.0};
+
+    Node n;
+    n["a"].set_external(vals,10);
+    n.print();
+
+    Node nc;
+    n.compact_to(nc);
+    nc.schema().print();
+    nc.print_detailed();
+    nc.info().print();
+
+    float64_array n_arr  = n["a"].as_float64_array();
+    float64_array nc_arr = nc["a"].as_float64_array();
+    for(index_t i=0;i<10;i++)
+    {
+        EXPECT_EQ(n_arr[i],nc_arr[i]);
+    }
+}

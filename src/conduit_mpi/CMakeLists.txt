@@ -101,5 +101,6 @@ install(TARGETS conduit_mpi
   EXPORT conduit
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION lib
 )
 

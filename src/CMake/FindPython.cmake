@@ -60,7 +60,15 @@ if(PYTHONINTERP_FOUND)
                         OUTPUT_VARIABLE PYTHON_SITE_PACKAGES_DIR
                         ERROR_VARIABLE ERROR_FINDING_INCLUDES)
         MESSAGE(STATUS "PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR}")
-        set(PYTHON_GLOB_TEST "${PYTHON_SITE_PACKAGES_DIR}/../../libpython*")
+        
+        # check for python libs differs for windows python installs
+        if(NOT WIN32)
+            set(PYTHON_GLOB_TEST "${PYTHON_SITE_PACKAGES_DIR}/../../libpython*")
+        else()
+            set(PYTHON_GLOB_TEST    
+                  "${PYTHON_SITE_PACKAGES_DIR}/../../libs/python*.lib")
+        endif()
+        
         FILE(GLOB PYTHON_GLOB_RESULT ${PYTHON_GLOB_TEST})
         get_filename_component(PYTHON_LIBRARY "${PYTHON_GLOB_RESULT}" ABSOLUTE)
         MESSAGE(STATUS "{PythonLibs from PythonInterp} using: PYTHON_LIBRARY=${PYTHON_LIBRARY}")
@@ -113,6 +121,7 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE target_name dest_dir py_name setup_file py_sou
             EXPORT  conduit
             LIBRARY DESTINATION ${dest_dir}/${py_name}
             ARCHIVE DESTINATION ${dest_dir}/${py_name}
+            RUNTIME DESTINATION ${dest_dir}/${py_name}
     )
 
 ENDFUNCTION(PYTHON_ADD_HYBRID_MODULE)

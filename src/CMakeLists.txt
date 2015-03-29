@@ -42,7 +42,7 @@
 # 
 ###############################################################################
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 ################################
 # cmake policy selections
 ################################
@@ -58,10 +58,12 @@ project(conduit)
 ################################
 # Build Options
 ################################
+option(ENABLE_TESTS       "Build conduit tests"         ON)
 option(ENABLE_GPREF_TOOLS "Build with google perftools" OFF)
 option(ENABLE_PYTHON      "Build Python Support"        OFF)
 option(ENABLE_MPI         "Build MPI Support"           OFF)
 option(ENABLE_SILO        "Build Silo Support"          OFF)
+
 
 
 ################################
@@ -78,7 +80,6 @@ include(CMake/BasicChecks.cmake)
 # Setup 3rd Party Libs
 ################################
 include(CMake/Setup3rdParty.cmake)
-
 
 
 ################################
@@ -114,11 +115,13 @@ add_subdirectory(docs)
 ################################
 # Add our tests
 ################################
-add_subdirectory(tests)
-
+if(ENABLE_TESTS)
+    add_subdirectory(tests)
+endif()
 
 ################################
 # Create CMake importable 
 # exports for all of our targets
 ################################
 install(EXPORT conduit DESTINATION lib/cmake)
+
