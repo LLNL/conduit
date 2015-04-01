@@ -200,7 +200,7 @@ TEST(conduit_mpi_smoke, external)
     doubles1.push_back(3.4124*rank);
     doubles1.push_back(10.7 - rank);
 
-    n1["a"].set_external(doubles1);
+    n1.append().set_external(doubles1);
 
     doubles2.push_back(rank+2);
     doubles2.push_back(3.4124*rank + 1);
@@ -220,14 +220,16 @@ TEST(conduit_mpi_smoke, external)
     if (rank == 0) {
         mpi::Irecv(n1, 1, 0, MPI_COMM_WORLD, &request);
         mpi::Waitrecv(&request, &status);
+        
     } else if (rank == 1) {
         mpi::Isend(n1, 0, 0, MPI_COMM_WORLD, &request);
         mpi::Waitsend(&request, &status);
     }
 
-    EXPECT_EQ(n1["a"].as_float64_ptr()[0], 2);
-    EXPECT_EQ(n1["a"].as_float64_ptr()[1], 3.4124);
-    EXPECT_EQ(n1["a"].as_float64_ptr()[2], 9.7);
+
+    EXPECT_EQ(n1[0].as_float64_ptr()[0], 2);
+    EXPECT_EQ(n1[0].as_float64_ptr()[1], 3.4124);
+    EXPECT_EQ(n1[0].as_float64_ptr()[2], 9.7);
 
     EXPECT_EQ(n1[1].as_float64_ptr()[0], 3);
     EXPECT_EQ(n1[1].as_float64_ptr()[1], 4.4124);

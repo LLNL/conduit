@@ -207,9 +207,9 @@ int Isend(Node& node, int dest, int tag, MPI_Comm comm, ConduitMPIRequest* reque
     request->_externalData = new Node();
     node.compact_to(*(request->_externalData));
 
-    request->_externalData->print_detailed();
-    request->_externalData->schema_pointer()->print();
-    request->_externalData->info().print();
+    //request->_externalData->print_detailed();
+    //request->_externalData->schema_pointer()->print();
+    //request->_externalData->info().print();
 
     return MPI_Isend(request->_externalData->data_pointer(), request->_externalData->total_bytes(), MPI_CHAR, dest, tag, comm, &(request->_request));
 }
@@ -243,8 +243,9 @@ int Waitsend(ConduitMPIRequest* request , MPI_Status *status) {
 
 int Waitrecv(ConduitMPIRequest* request , MPI_Status *status) {
     int mpiError = MPI_Wait(&(request->_request), status);
-
     request->_recvData->update(*(request->_externalData));
+
+    
 
     delete request->_externalData;
     request->_externalData = 0;
