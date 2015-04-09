@@ -78,7 +78,7 @@ namespace conduit
 ///  Class for endian info and conversation. 
 ///
 //-----------------------------------------------------------------------------
-class Endianness
+class CONDUIT_API Endianness
 {
 public:
 //-----------------------------------------------------------------------------
