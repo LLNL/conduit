@@ -1554,6 +1554,11 @@ public:
 /// to use 'friend' to avoid this issue
 //-----------------------------------------------------------------------------
     void             set_data_pointer(void *data_ptr);
+    ///
+    /// Note: set_schema_pointer is *only* used in the case were we have 
+    /// a schema pointer that is owned by a parent schema. Using it to set a 
+    /// pointer that should be owned by a node unleashes chaos.
+    ///
     void             set_schema_pointer(Schema *schema_ptr);
     void             append_node_pointer(Node *node)
                         {m_children.push_back(node);}
@@ -1654,6 +1659,9 @@ private:
     Node                *m_parent;
     /// pointer to this node's schema
     Schema              *m_schema;
+    /// we need to know if *this* node created the schema
+    bool                 m_owns_schema;
+    
     /// collection of children
     std::vector<Node*>   m_children;
 

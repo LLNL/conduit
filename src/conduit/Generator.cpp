@@ -774,14 +774,13 @@ walk_json_schema(Node   *node,
    
                 if(data != NULL)
                 {
-                    // node needs to link schema ptr
+                    // node is already linked to the schema pointer
                     schema->set(dtype);
-                    node->set_schema_pointer(schema);
                     node->set_data_pointer(data);
                 }
                 else
                 {
-                    node->set_schema_pointer(schema); // properly links back to schema tree
+                    // node is already linked to the schema pointer
                     // we need to dynamically alloc
                     node->set(dtype);  // causes an init
                 }
@@ -850,15 +849,13 @@ walk_json_schema(Node   *node,
         
         if(data != NULL)
         {
-             // node needs to link schema ptr 
-             node->set_schema_pointer(schema);
+             // node is already linked to the schema pointer
              node->set_data_pointer(data);
              
         }
         else
         {
-             // sets the pointer
-             node->set_schema_pointer(schema); // properly links back to schema tree
+             // node is already linked to the schema pointer
              // we need to dynamically alloc
              node->set(dtype);  // causes an init
         }

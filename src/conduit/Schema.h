@@ -167,6 +167,12 @@ public:
     bool            is_root() const
                         { return m_root;}
 
+    bool            has_parent() const
+                        { return m_parent != NULL;}
+
+    Schema         *parent()
+                        { return m_parent;}
+
 //-----------------------------------------------------------------------------
 //
 /// Transformation Methods
