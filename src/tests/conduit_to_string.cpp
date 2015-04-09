@@ -80,5 +80,7 @@ TEST(conduit_to_string, simple_1)
     n2.schema().print();
     n.print_detailed();
     EXPECT_EQ(std::string("{\"g\": {\"a\": 10,\"b\": 20,\"c\": 30}}"),n2.to_json(false,0,0,"",""));
+
+    delete [] data;
 }
 

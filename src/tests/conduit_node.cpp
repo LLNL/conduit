@@ -190,6 +190,10 @@ TEST(conduit_node, simple_schema_gen )
     EXPECT_EQ(n5["top"][2].as_uint32(),d_val);
     EXPECT_EQ(n5["other"].as_float64(),e_val);
 
+    delete [] data;
+    delete [] data2;
+    delete [] data3;
+    delete [] data4;
 }
 
 
@@ -244,6 +248,8 @@ TEST(conduit_node, in_place)
     EXPECT_EQ(*(uint32*)(&data[0]), b_val);
     EXPECT_EQ(*(uint32*)(&data[4]), a_val);
     EXPECT_EQ(*(float64*)(&data[8]), d_val);
+
+    delete [] data;
 }
 
 //-----------------------------------------------------------------------------
