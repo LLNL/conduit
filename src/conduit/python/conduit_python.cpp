@@ -1944,10 +1944,8 @@ PyConduit_Schema_python_attach(PyConduit_Schema *self)
     // index_t         total_bytes() const;
     // index_t         total_bytes_compact() const;
     // index_t         element_index(index_t idx) const
-
-    /// TODO:
-    //Schema          *parent() const
-    //bool             has_parent() const
+    // Schema         *parent() const
+    // bool            has_parent() const
 
 //---------------------------------------------------------------------------//
 static PyObject *
@@ -1988,6 +1986,36 @@ PyConduit_Schema_element_index(PyConduit_Schema *self,
 
     return PyLong_FromSsize_t(self->schema->element_index(idx));
 }
+
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyConduit_Schema_has_parent(PyConduit_Schema *self)
+{
+    if(self->schema->has_parent())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject* 
+PyConduit_Schema_parent(PyConduit_Schema* self)
+{
+    if(~self->schema->has_parent())
+    {
+        Py_RETURN_NONE;
+    }
+    else
+    {
+        // python owned == 0 (at least for this instance)
+        return PyConduit_Schema_python_wrap(self->schema->parent(),0);
+    }
+}
+
 
 
 //-----------------------------------------------------------------------------
@@ -2062,6 +2090,16 @@ static PyMethodDef PyConduit_Schema_METHODS[] = {
      (PyCFunction)PyConduit_Schema_element_index,
      METH_VARARGS,
      "{todo}"},
+     //-----------------------------------------------------------------------//
+     {"has_parent",
+      (PyCFunction)PyConduit_Schema_has_parent,
+      METH_NOARGS,
+      "{todo}"},
+     //-----------------------------------------------------------------------//
+     {"parent",
+      (PyCFunction)PyConduit_Schema_parent,
+      METH_NOARGS,
+      "{todo}"},
     //-----------------------------------------------------------------------//
     // end Schema methods table
     //-----------------------------------------------------------------------//

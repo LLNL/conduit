@@ -220,6 +220,26 @@ TEST(conduit_node, simple_schema)
     EXPECT_TRUE(d.HasMember("c"));
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, simple_schema_parent)
+{
+    uint32   a_val  = 10;
+    uint32   b_val  = 20;
+    float64  c_val  = 30.0;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+    n["here"]["there"] = c_val;
+
+    EXPECT_FALSE(n.schema().has_parent());
+    Node & na = n["a"];
+    const Schema &na_schema =na.schema();
+    EXPECT_TRUE(na_schema.has_parent());
+
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node, in_place)
