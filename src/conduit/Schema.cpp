@@ -134,7 +134,6 @@ void
 Schema::reset()
 {
     release();
-    init_defaults();
 }
 
 //-----------------------------------------------------------------------------
@@ -616,7 +615,7 @@ Schema::fetch(const std::string &path)
     // check for parent
     if(p_curr == "..")
     {
-        if(m_parent != NULL) // TODO: check for erro (no parent)
+        if(m_parent != NULL) // TODO: check for error (no parent)
            return m_parent->fetch(p_next);
     }
     
@@ -775,7 +774,6 @@ Schema::init_defaults()
     m_dtype  = DataType::empty();
     m_hierarchy_data = NULL;
     m_parent = NULL;
-    m_root   = false;
 }
 
 //---------------------------------------------------------------------------//
@@ -825,6 +823,9 @@ Schema::release()
     { 
         delete list_hierarchy();
     }
+
+    m_dtype  = DataType::empty();
+    m_hierarchy_data = NULL;
 }
 
 

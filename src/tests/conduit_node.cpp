@@ -190,6 +190,10 @@ TEST(conduit_node, simple_schema_gen )
     EXPECT_EQ(n5["top"][2].as_uint32(),d_val);
     EXPECT_EQ(n5["other"].as_float64(),e_val);
 
+    delete [] data;
+    delete [] data2;
+    delete [] data3;
+    delete [] data4;
 }
 
 
@@ -214,6 +218,26 @@ TEST(conduit_node, simple_schema)
     EXPECT_TRUE(d.HasMember("a"));
     EXPECT_TRUE(d.HasMember("b"));
     EXPECT_TRUE(d.HasMember("c"));
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node, simple_schema_parent)
+{
+    uint32   a_val  = 10;
+    uint32   b_val  = 20;
+    float64  c_val  = 30.0;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+    n["here"]["there"] = c_val;
+
+    EXPECT_FALSE(n.schema().has_parent());
+    Node & na = n["a"];
+    const Schema &na_schema =na.schema();
+    EXPECT_TRUE(na_schema.has_parent());
+
 }
 
 
@@ -244,6 +268,8 @@ TEST(conduit_node, in_place)
     EXPECT_EQ(*(uint32*)(&data[0]), b_val);
     EXPECT_EQ(*(uint32*)(&data[4]), a_val);
     EXPECT_EQ(*(float64*)(&data[8]), d_val);
+
+    delete [] data;
 }
 
 //-----------------------------------------------------------------------------

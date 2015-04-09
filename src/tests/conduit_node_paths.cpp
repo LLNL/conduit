@@ -91,5 +91,7 @@ TEST(conduit_node_paths, simple_path)
     EXPECT_EQ(n2.fetch("g/c").as_float64(),c_val);
 
     EXPECT_FALSE(n.has_path("g/d"));
+
+    delete [] data;
 }
 

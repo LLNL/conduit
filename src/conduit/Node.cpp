@@ -3653,8 +3653,12 @@ Node::remove(const std::string &path)
 void
 Node::set_schema_pointer(Schema *schema_ptr)
 {
-    if(m_schema->is_root())
+    // if(m_schema->is_root())
+    if(m_owns_schema)
+    {
         delete m_schema;
+        m_owns_schema = false;
+    }
     m_schema = schema_ptr;    
 }
     
@@ -3781,14 +3785,20 @@ Node::mmap(const std::string &stream_path, index_t dsize)
 void
 Node::release()
 {
-    for (index_t i = 0; i < m_children.size(); i++) {
+    // delete all children
+    for (index_t i = 0; i < m_children.size(); i++)
+    {
         Node* node = m_children[i];
         delete node;
     }
     m_children.clear();
 
+    // clean up any allocated or mmaped buffers
     if(m_alloced && m_data)
     {
+        ///
+        /// TODO: why do we need to check for empty here?
+        ///
         if(dtype().id() != DataType::EMPTY_T)
         {   
             // clean up our storage
@@ -3822,13 +3832,12 @@ void
 Node::cleanup()
 {
     release();
-    if(m_schema->is_root())
+    // if(m_schema->is_root())
+    if(m_owns_schema && m_schema != NULL)
     {
-        if(m_schema != NULL)
-        {
-            delete m_schema;
-            m_schema = NULL;
-        }
+        delete m_schema;
+        m_schema = NULL;
+        m_owns_schema = false;
     }
     else if(m_schema != NULL)
     {
@@ -3866,6 +3875,7 @@ Node::init_defaults()
     m_mmap_fd   = -1;
 
     m_schema = new Schema(DataType::EMPTY_T);
+    m_owns_schema = true;
     
     m_parent = NULL;
 }
@@ -3885,7 +3895,6 @@ Node::walk_schema(Node   *node,
                   void   *data)
 {
     // we can have an object, list, or leaf
-    node->set_schema_pointer(schema);
     node->set_data_pointer(data);
     if(schema->dtype().id() == DataType::OBJECT_T)
     {
@@ -3925,7 +3934,6 @@ Node::mirror_node(Node   *node,
                   Node   *src)
 {
     // we can have an object, list, or leaf
-    node->set_schema_pointer(schema);
     node->set_data_pointer(src->m_data);
     
     if(schema->dtype().id() == DataType::OBJECT_T)
