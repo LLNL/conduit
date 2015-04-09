@@ -1185,8 +1185,8 @@ public:
 
 
     // parent access
-    bool             has_parent() const 
-                        {return m_parent != NULL;}
+    bool             is_root() const 
+                        {return m_parent == NULL;}
 
     Node            *parent() 
                         {return m_parent;}

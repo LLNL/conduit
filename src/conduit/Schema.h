@@ -164,8 +164,8 @@ public:
     index_t         element_index(index_t idx) const 
                         {return m_dtype.element_index(idx);}
 
-    bool            has_parent() const
-                        { return m_parent != NULL;}
+    bool            is_root() const
+                        { return m_parent == NULL;}
 
     Schema         *parent()
                         { return m_parent;}
