@@ -164,9 +164,6 @@ public:
     index_t         element_index(index_t idx) const 
                         {return m_dtype.element_index(idx);}
 
-    bool            is_root() const
-                        { return m_root;}
-
     bool            has_parent() const
                         { return m_parent != NULL;}
 
@@ -263,15 +260,6 @@ public:
 //-----------------------------------------------------------------------------
     Schema &append();
 
-//-----------------------------------------------------------------------------
-//
-/// Interface Warts
-//
-//-----------------------------------------------------------------------------
-    /// bookkeeping used by Node for memory management of schemas
-    void              set_root(bool value) 
-                        {m_root = value;}
-
 private:
 //-----------------------------------------------------------------------------
 //
@@ -363,8 +351,6 @@ private:
     /// - A Schema_Object_Hierarchy instance for schemas describing an object
     /// - A Schema_List_Hierarchy instance for schemas describing a list
     void       *m_hierarchy_data;
-    /// holds flag used by node for memory management
-    bool        m_root;
     /// if this schema instance has a parent, this holds the pointer to that
     /// parent
     Schema     *m_parent;

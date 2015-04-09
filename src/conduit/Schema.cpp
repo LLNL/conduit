@@ -775,7 +775,6 @@ Schema::init_defaults()
     m_dtype  = DataType::empty();
     m_hierarchy_data = NULL;
     m_parent = NULL;
-    m_root   = false;
 }
 
 //---------------------------------------------------------------------------//

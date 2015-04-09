@@ -1944,7 +1944,10 @@ PyConduit_Schema_python_attach(PyConduit_Schema *self)
     // index_t         total_bytes() const;
     // index_t         total_bytes_compact() const;
     // index_t         element_index(index_t idx) const
-    // bool            is_root() const
+
+    /// TODO:
+    //Schema          *parent() const
+    //bool             has_parent() const
 
 //---------------------------------------------------------------------------//
 static PyObject *
@@ -1986,19 +1989,6 @@ PyConduit_Schema_element_index(PyConduit_Schema *self,
     return PyLong_FromSsize_t(self->schema->element_index(idx));
 }
 
-//---------------------------------------------------------------------------//
-static PyObject *
-PyConduit_Schema_is_root(PyConduit_Schema *self)
-{
-    if(self->schema->is_root())
-    {
-        Py_RETURN_TRUE;
-    }
-    else
-    {
-        Py_RETURN_FALSE;
-    }
-}
 
 //-----------------------------------------------------------------------------
 //
@@ -2071,11 +2061,6 @@ static PyMethodDef PyConduit_Schema_METHODS[] = {
     {"element_index",
      (PyCFunction)PyConduit_Schema_element_index,
      METH_VARARGS,
-     "{todo}"},
-    //-----------------------------------------------------------------------//
-    {"is_root",
-     (PyCFunction)PyConduit_Schema_is_root,
-     METH_NOARGS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     // end Schema methods table
