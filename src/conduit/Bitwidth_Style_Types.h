@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Bithwidth_Style_Types.h
+/// file: Bitwidth_Style_Types.h
 ///
 //-----------------------------------------------------------------------------
 
@@ -114,19 +114,19 @@ typedef double              conduit_double;
 //-----------------------------------------------------------------------------
 // bytes to bits size definitions
 //-----------------------------------------------------------------------------
-#define CONDUIT_BITSOF_CHAR CHAR_BIT
+#define CONDUIT_BITSOF_CHAR        CHAR_BIT
 
-#define CONDUIT_BITSOF_BOOL        (CONDUIT_SIZEOF_BYTE * CHAR_BIT)
 #define CONDUIT_BITSOF_BYTE        (CONDUIT_SIZEOF_BYTE * CHAR_BIT)
 #define CONDUIT_BITSOF_SHORT       (CONDUIT_SIZEOF_SHORT * CHAR_BIT)
 #define CONDUIT_BITSOF_INT         (CONDUIT_SIZEOF_INT * CHAR_BIT)
 #define CONDUIT_BITSOF_LONG        (CONDUIT_SIZEOF_LONG * CHAR_BIT)
 #define CONDUIT_BITSOF_LONG_LONG   (CONDUIT_SIZEOF_LONG_LONG * CHAR_BIT)
-#define CONDUIT_BITSOF_INTP        (CONDUIT_SIZEOF_INTP * CHAR_BIT)
-#define CONDUIT_BITSOF_HALF        (CONDUIT_SIZEOF_HALF * CHAR_BIT)
+
 #define CONDUIT_BITSOF_FLOAT       (CONDUIT_SIZEOF_FLOAT * CHAR_BIT)
 #define CONDUIT_BITSOF_DOUBLE      (CONDUIT_SIZEOF_DOUBLE * CHAR_BIT)
 #define CONDUIT_BITSOF_LONG_DOUBLE (CONDUIT_SIZEOF_LONG_DOUBLE * CHAR_BIT)
+
+#define CONDUIT_BITSOF_VOID_P      (CONDUIT_SIZEOF_VOID_P * CHAR_BIT)
 
 //-----------------------------------------------------------------------------
 // -- long size checks --
