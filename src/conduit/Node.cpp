@@ -76,6 +76,25 @@
 #endif
 
 //-----------------------------------------------------------------------------
+//
+/// The CONDUIT_ASSERT_DTYPE macro is used to check the dtype for leaf access
+/// methods.
+//-----------------------------------------------------------------------------
+#define CONDUIT_ASSERT_DTYPE( dtype_id, dtype_id_expect, msg )      \
+{                                                                   \
+    if(dtype_id != dtype_id_expect)                                 \
+    {                                                               \
+        std::ostringstream oss;                                     \
+        oss << "[DataType " << DataType::id_to_name(dtype_id)       \
+            << " does not equal expected DataType "                 \
+            << DataType::id_to_name(dtype_id_expect)                \
+            << "] " << msg;                                         \
+        std::cout << oss.str() << std::endl;                        \
+        CONDUIT_ASSERT( (dtype_id == dtype_id_expect) , oss.str()); \
+    }                                                               \
+}                                                                   \
+
+//-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
@@ -3655,6 +3674,7 @@ Node::remove(const std::string &path)
 int8
 Node::as_int8()  const
 { 
+    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT8_T,"");
     return *((int8*)element_pointer(0));
 }
 
@@ -3662,6 +3682,7 @@ Node::as_int8()  const
 int16
 Node::as_int16() const
 { 
+    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT16_T,"");
     return *((int16*)element_pointer(0));
 }
 
