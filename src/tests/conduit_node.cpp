@@ -343,7 +343,7 @@ TEST(conduit_node, check_leaf_assert)
     int16 v = 64;
     n["v"] = v;
     n.print();
-    n["v"].as_int8();
+    EXPECT_THROW(n["v"].as_int8(),conduit::Error);
 }
 
 
