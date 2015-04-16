@@ -115,7 +115,7 @@ save(const  Node &node,
 #ifdef CONDUIT_IO_ENABLE_SILO
         silo_save(node,path);
 #else
-        THROW_ERROR("conduit_io lacks Silo support: " << 
+        CONDUIT_ERROR("conduit_io lacks Silo support: " << 
                     "Failed to save conduit node to path " << path);
 #endif
     }
@@ -139,7 +139,7 @@ load(const std::string &path,
 #ifdef CONDUIT_IO_ENABLE_SILO
         silo_load(path,node);
 #else
-        THROW_ERROR("conduit_io lacks Silo support: " << 
+        CONDUIT_ERROR("conduit_io lacks Silo support: " << 
                     "Failed to load conduit node from path " << path);
 #endif
     }

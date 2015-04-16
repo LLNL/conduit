@@ -81,7 +81,7 @@ silo_save(const  Node &node,
     /// If silo_obj_base is empty, we have a problem ... 
     if(silo_obj_base.size() == 0)
     {
-        THROW_ERROR("Invalid path for save: " << path);
+        CONDUIT_ERROR("Invalid path for save: " << path);
     }
 
     silo_save(node,file_path,silo_obj_base);
@@ -103,7 +103,7 @@ silo_load(const std::string &path,
     /// If silo_obj_base is empty, we have a problem ... 
     if(silo_obj_base.size() == 0)
     {
-        THROW_ERROR("Invalid path for load: " << path);
+        CONDUIT_ERROR("Invalid path for load: " << path);
     }
 
     silo_load(file_path,silo_obj_base,node);
@@ -127,13 +127,13 @@ void silo_save(const  Node &node,
     }
     else 
     {
-        THROW_ERROR("Error opening Silo file for writting: " << file_path );
+        CONDUIT_ERROR("Error opening Silo file for writting: " << file_path );
         return;
     }
     
     if(DBClose(dbfile) != 0)
     {
-        THROW_ERROR("Error closing Silo file: " << file_path);
+        CONDUIT_ERROR("Error closing Silo file: " << file_path);
     }
 }
 
@@ -150,12 +150,12 @@ void silo_load(const std::string &file_path,
     }
     else 
     {
-        THROW_ERROR("Error opening Silo file for reading: " << file_path );
+        CONDUIT_ERROR("Error opening Silo file for reading: " << file_path );
     }
     
     if(DBClose(dbfile) != 0)
     {
-        THROW_ERROR("Error closing Silo file: " << file_path );
+        CONDUIT_ERROR("Error closing Silo file: " << file_path );
     }
 }
 
@@ -195,7 +195,7 @@ void silo_save(const  Node &node,
 
     if(silo_error != 0)
     {
-        THROW_ERROR("Error writing conduit Node to Silo file");
+        CONDUIT_ERROR("Error writing conduit Node to Silo file");
     }
 }
 
@@ -221,7 +221,7 @@ void CONDUIT_IO_API silo_load(DBfile *dbfile,
 
     if (schema == NULL || data == NULL) 
     {
-        THROW_ERROR("Error extracting data conduit Node from Silo file");
+        CONDUIT_ERROR("Error extracting data conduit Node from Silo file");
     }
 
     Generator node_gen(schema, data);

@@ -330,7 +330,7 @@ Node::load(const Schema &schema,
     std::ifstream ifs;
     ifs.open(stream_path.c_str());
     if(!ifs.is_open())
-        THROW_ERROR("<Node::load> failed to open: " << stream_path);
+        CONDUIT_ERROR("<Node::load> failed to open: " << stream_path);
     ifs.read((char *)m_data,dsize);
     ifs.close();
 
@@ -2941,7 +2941,7 @@ Node::serialize(const std::string &stream_path) const
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
-        THROW_ERROR("<Node::serialize> failed to open: " << stream_path);
+        CONDUIT_ERROR("<Node::serialize> failed to open: " << stream_path);
     serialize(ofs);
     ofs.close();
 }
@@ -4469,18 +4469,18 @@ Node::mmap(const std::string &stream_path, index_t dsize)
     ///
     /// For now, we simply throw an error
     ///
-    THROW_ERROR("<Node::mmap> conduit does not yet support mmap on Windows");
+    CONDUIT_ERROR("<Node::mmap> conduit does not yet support mmap on Windows");
 #else    
     m_mmap_fd   = open(stream_path.c_str(),O_RDWR| O_CREAT);
     m_data_size = dsize;
 
     if (m_mmap_fd == -1) 
-        THROW_ERROR("<Node::mmap> failed to open: " << stream_path);
+        CONDUIT_ERROR("<Node::mmap> failed to open: " << stream_path);
 
     m_data = ::mmap(0, dsize, PROT_READ | PROT_WRITE, MAP_SHARED, m_mmap_fd, 0);
 
     if (m_data == MAP_FAILED) 
-        THROW_ERROR("<Node::mmap> MAP_FAILED" << stream_path);
+        CONDUIT_ERROR("<Node::mmap> MAP_FAILED" << stream_path);
     
     m_alloced = false;
     m_mmaped  = true;
