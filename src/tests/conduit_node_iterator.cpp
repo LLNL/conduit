@@ -117,3 +117,28 @@ TEST(conduit_node_iterator, simple_1)
         i++;
     }
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_iterator, empty)
+{
+    uint32   a_val  = 10;
+    uint32   b_val  = 20;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"]; // empty
+
+
+    NodeIterator itr = n.iterator();
+    while(itr.has_next())
+    {
+        Node &n = itr.next();
+        n.print();
+    }
+    
+    itr = n["c"].iterator();
+    EXPECT_FALSE(itr.has_next());    
+    
+}
