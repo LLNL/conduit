@@ -100,6 +100,8 @@ namespace mpi
 
     int CONDUIT_MPI_API Waitallrecv(int count, ConduitMPIRequest requests[], MPI_Status statuses[]);
 
+    void CONDUIT_MPI_API copy(Node& a, Node& b);
+
 // int sendrecv(Node& sendNode,
 //              int dest, int sendtag,
 //              Node& receiveNode,

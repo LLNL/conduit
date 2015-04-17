@@ -243,9 +243,25 @@ int Waitsend(ConduitMPIRequest* request , MPI_Status *status) {
 
 int Waitrecv(ConduitMPIRequest* request , MPI_Status *status) {
     int mpiError = MPI_Wait(&(request->_request), status);
+
+    request->_externalData->print_detailed();
+    request->_externalData->schema_pointer()->print();
+    request->_externalData->info().print();
+
+    request->_recvData->print_detailed();
+    request->_recvData->schema_pointer()->print();
+    request->_recvData->info().print();
+
     request->_recvData->update(*(request->_externalData));
 
-    
+    //copy(*(request->_recvData), *(request->_externalData));
+
+    //std::cout << "Copy complete" << std::endl;
+
+    //request->_recvData->print_detailed();
+    //request->_recvData->schema_pointer()->print();
+    //request->_recvData->info().print();
+
 
     delete request->_externalData;
     request->_externalData = 0;
@@ -318,6 +334,86 @@ about(Node &n)
 {
     n.reset();
     n["mpi"] = "enabled";
+}
+
+//---------------------------------------------------------------------------//
+//This function needs to copy b's contents into a. b will have only internal, allocated data, while
+// a may have a mix of external and internal data.
+void 
+copy(Node &a, Node &b) {
+    
+    
+    NodeIterator ia = a.iterator();
+    NodeIterator ib = b.iterator();
+
+    while (ia.has_next()) {
+  
+
+        Node achild = ia.next();
+        Node bchild = ib.next();
+
+        index_t dtype_id = achild.dtype().id();
+
+        switch(dtype_id) {
+            case (DataType::INT8_T): 
+                 std::cout << "a" << std::endl;
+                 achild = bchild.as_int8_array();
+                 break;
+            case (DataType::INT16_T): 
+                 std::cout << "b" << std::endl;
+                 achild = bchild.as_int16_array();
+                 break;
+            case (DataType::INT32_T): 
+                 std::cout << "c" << std::endl;
+                 achild.print();
+                 achild = bchild.as_int32_array();
+                 break;
+            case (DataType::INT64_T): 
+                 std::cout << "d" << std::endl;
+                 achild = bchild.as_int64_array();
+                 break;
+            case (DataType::UINT8_T): 
+                 std::cout << "e" << std::endl;
+                 achild = bchild.as_uint8_array();
+                 break;
+            case (DataType::UINT16_T): 
+                 std::cout << "f" << std::endl;
+                 achild = bchild.as_uint16_array();
+                 break;
+            case (DataType::UINT32_T): 
+                 std::cout << "g" << std::endl;
+                 achild = bchild.as_uint32_array();
+                 break;
+            case (DataType::UINT64_T): 
+                 std::cout << "h" << std::endl;
+                 achild = bchild.as_uint64_array();
+                 break;
+            case (DataType::FLOAT32_T): 
+                 std::cout << "i" << std::endl;
+                 achild = bchild.as_float32_array();
+                 break;
+            case (DataType::FLOAT64_T): 
+                 std::cout << "j" << std::endl;
+                 achild.print();
+                 achild = bchild.as_float64_array();
+                 break;
+            case (DataType::CHAR8_STR_T): 
+                 std::cout << "k" << std::endl;
+                 achild = bchild.as_string();
+                 break;
+            case (DataType::EMPTY_T):
+                 std::cout << "l" << std::endl;
+                 break;
+            default:
+                 break;
+        }       
+
+
+        copy(achild, bchild);
+        
+        
+    }
+
 }
 
 
