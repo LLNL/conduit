@@ -1417,7 +1417,7 @@ public:
     unsigned_char_array    as_unsigned_char_array();
     unsigned_short_array   as_unsigned_short_array();
     unsigned_int_array     as_unsigned_int_array();
-    unsigned_long_array    as_unsigned_long_();
+    unsigned_long_array    as_unsigned_long_array();
 
     // floating point array types via conduit::DataArray
     float_array     as_float_array();
@@ -1434,7 +1434,7 @@ public:
     unsigned_char_array    as_unsigned_char_array()  const;
     unsigned_short_array   as_unsigned_short_array() const;
     unsigned_int_array     as_unsigned_int_array()   const;
-    unsigned_long_array    as_unsigned_long_()       const;
+    unsigned_long_array    as_unsigned_long_array()  const;
 
 
     // floating point array value via conduit::DataArray (const variants)
