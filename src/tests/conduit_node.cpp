@@ -335,4 +335,16 @@ TEST(conduit_node, remove_by_index)
     EXPECT_EQ(n2[0].to_uint64(), 30);
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, check_leaf_assert)
+{
+
+    conduit::Node n;
+    int16 v = 64;
+    n["v"] = v;
+    n.print();
+    EXPECT_THROW(n["v"].as_int8(),conduit::Error);
+}
+
+
 

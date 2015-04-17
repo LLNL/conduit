@@ -909,7 +909,7 @@ Generator::walk(Schema &schema) const
     std::string res = utils::json_sanitize(m_json_schema);
     if(document.Parse<0>(res.c_str()).HasParseError())
     {
-        THROW_ERROR("rapidjson parse error");
+        CONDUIT_ERROR("rapidjson parse error");
         /// TODO: better parse error msg
     }
     index_t curr_offset = 0;
@@ -938,7 +938,7 @@ Generator::walk_external(Node &node) const
         std::string res = utils::json_sanitize(m_json_schema);
         if(document.Parse<0>(res.c_str()).HasParseError())
         {
-            THROW_ERROR("rapidjson parse error");
+            CONDUIT_ERROR("rapidjson parse error");
             /// TODO: better parse error msg
         }
         conduit::walk_pure_json_schema(&node,
@@ -951,7 +951,7 @@ Generator::walk_external(Node &node) const
         std::string res = utils::json_sanitize(m_json_schema);
         if(document.Parse<0>(res.c_str()).HasParseError())
         {
-            THROW_ERROR("rapidjson parse error");
+            CONDUIT_ERROR("rapidjson parse error");
             /// TODO: better parse error msg
         }
         index_t curr_offset = 0;

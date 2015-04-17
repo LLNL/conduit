@@ -64,18 +64,37 @@
 
 //-----------------------------------------------------------------------------
 //
-/// The THROW_ERROR macro is the primary mechanism used to capture errors  
+/// The CONDUIT_ERROR macro is the primary mechanism used to capture errors  
 /// in conduit. It currently throws a c++ exception, in the form of a
 /// conduit::Error class. If we decide to not use exceptions in the future
 /// we can simply change the behavior of this macro.
 ///
 //-----------------------------------------------------------------------------
-#define THROW_ERROR( msg )                                          \
+#define CONDUIT_ERROR( msg )                                        \
 {                                                                   \
-    std::ostringstream oss;                                         \
-    oss << msg;                                                     \
-    throw conduit::Error( oss.str(), __FILE__, __LINE__);           \
+    std::ostringstream oss_error;                                   \
+    oss_error << msg;                                               \
+    throw conduit::Error( oss_error.str(), __FILE__, __LINE__);     \
 }                                                                   \
+
+//-----------------------------------------------------------------------------
+//
+/// The CONDUIT_ASSERT macro is the primary mechanism used to capture errors  
+/// in conduit. It currently throws a c++ exception, in the form of a
+/// conduit::Error class. If we decide to not use exceptions in the future
+/// we can simply change the behavior of this macro.
+///
+//-----------------------------------------------------------------------------
+#define CONDUIT_ASSERT( cond, msg)                                   \
+{                                                                    \
+    if(!cond)                                                        \
+    {                                                                \
+        std::ostringstream oss_assert;                               \
+        oss_assert << msg;                                           \
+        throw conduit::Error( oss_assert.str(), __FILE__, __LINE__); \
+    }                                                                \
+}                                                                    \
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -109,7 +128,7 @@ public:
     Error();
     /// Copy constructor
     Error(const Error &err);
-    /// Main constructor, used by THROW_ERROR macro
+    /// Main constructor, used by CONDUIT_ERROR macro
     Error(const std::string &msg, 
           const std::string &file,
           index_t line);

@@ -82,3 +82,41 @@ TEST(conduit_node_update, update_simple)
     EXPECT_EQ(n["d/aa"].as_uint32(),a_val);
     EXPECT_EQ(n["d/bb"].as_uint32(),b_val);
 }
+
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_update, update_with_list)
+{
+
+    uint32   a_val  = 10;
+    uint32   b_val  = 20;
+    float64  c_val  = 30.0;
+    float32  d_val  = 40.0;
+    
+    float64 c_val_double = 60.0;
+
+    Node n1;
+    n1.append().set(a_val);
+    n1.append().set(b_val);
+    n1.append().set_external(&c_val);
+    
+    Node n2;
+    n2.append().set(a_val*2);
+    n2.append().set(b_val*2);
+    n2.append().set(c_val*2);
+    n2.append().set(d_val);
+
+    
+    n1.update(n2);
+    EXPECT_EQ(n1[0].as_uint32(),a_val*2);
+    EXPECT_EQ(n1[1].as_uint32(),b_val*2);
+    EXPECT_EQ(n1[2].as_float64(),c_val_double);
+    EXPECT_EQ(n1[3].as_float32(),d_val);
+
+    // we did something tricky with set external for c_val, see if it worked.
+    EXPECT_NEAR(c_val,c_val_double,0.001);
+}
+
+
+
