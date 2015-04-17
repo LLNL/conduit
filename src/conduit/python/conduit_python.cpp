@@ -3584,7 +3584,7 @@ PyConduit_createNumpyType(Node& node,
     const DataType& dtype = node.dtype();
     PyArray_Descr* descr = PyArray_DescrFromType(type);
     PyObject* retval = NULL;
-    void* data = node.as_char8_str();
+    void* data = node.data_pointer();
     npy_intp len = dtype.number_of_elements();
     if (len == 1) {
         retval = PyArray_Scalar(data, descr, NULL);
