@@ -3055,7 +3055,6 @@ void
 Node::update(Node &n_src)
 {
     // walk src and add it contents to this node
-    // OBJECT_T is the only special case here?
     /// TODO:
     /// arrays and non empty leafs will simply overwrite the current
     /// node, these semantics seem sensible, but we could revisit this
@@ -3070,6 +3069,30 @@ Node::update(Node &n_src)
         {
             std::string ent_name = *itr;
             fetch(ent_name).update(n_src.fetch(ent_name));
+        }
+    }
+    else if( dtype_id == DataType::LIST_T)
+    {
+        // if we are already a list type, then call update on the children
+        //  in the list
+        index_t src_idx = 0;
+        index_t src_num_children = n_src.number_of_children();
+        if( dtype().id() == DataType::LIST_T)
+        {
+            index_t num_children = number_of_children();
+            for(index_t idx=0; 
+                (idx < num_children and idx < src_num_children); 
+                idx++)
+            {
+                child(idx).update(n_src.child(idx));
+                src_idx++;
+            }
+        }
+        // if the current node is not a list, or if the src has more children
+        // than the current node, use append to capture the nodes
+        for(index_t idx = src_idx; idx < src_num_children;idx++)
+        {
+            append().update(n_src.child(idx));
         }
     }
     else if(dtype_id != DataType::EMPTY_T)
