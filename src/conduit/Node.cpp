@@ -84,13 +84,15 @@
 {                                                                   \
     if(dtype_id != dtype_id_expect)                                 \
     {                                                               \
-        std::ostringstream oss;                                     \
-        oss << "[DataType " << DataType::id_to_name(dtype_id)       \
+        std::ostringstream oss_assert_dtype;                        \
+        oss_assert_dtype << "DataType "                             \
+            << DataType::id_to_name(dtype_id)                       \
             << " does not equal expected DataType "                 \
-            << DataType::id_to_name(dtype_id_expect)                \
-            << "] " << msg;                                         \
-        std::cout << oss.str() << std::endl;                        \
-        CONDUIT_ASSERT( (dtype_id == dtype_id_expect) , oss.str()); \
+            << DataType::id_to_name(dtype_id_expect);               \
+        if (msg != "")                                              \
+            oss_assert_dtype << ": " << msg;                        \
+        CONDUIT_ASSERT( (dtype_id == dtype_id_expect) ,             \
+                         oss_assert_dtype.str());                   \
     }                                                               \
 }                                                                   \
 

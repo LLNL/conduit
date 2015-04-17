@@ -72,9 +72,9 @@
 //-----------------------------------------------------------------------------
 #define CONDUIT_ERROR( msg )                                        \
 {                                                                   \
-    std::ostringstream oss;                                         \
-    oss << msg;                                                     \
-    throw conduit::Error( oss.str(), __FILE__, __LINE__);           \
+    std::ostringstream oss_error;                                   \
+    oss_error << msg;                                               \
+    throw conduit::Error( oss_error.str(), __FILE__, __LINE__);     \
 }                                                                   \
 
 //-----------------------------------------------------------------------------
@@ -85,15 +85,15 @@
 /// we can simply change the behavior of this macro.
 ///
 //-----------------------------------------------------------------------------
-#define CONDUIT_ASSERT( cond, msg)                                  \
-{                                                                   \
-    if(!cond)                                                       \
-    {                                                               \
-        std::ostringstream oss;                                     \
-        oss << msg;                                                 \
-        throw conduit::Error( oss.str(), __FILE__, __LINE__);       \
-    }                                                               \
-}                                                                   \
+#define CONDUIT_ASSERT( cond, msg)                                   \
+{                                                                    \
+    if(!cond)                                                        \
+    {                                                                \
+        std::ostringstream oss_assert;                               \
+        oss_assert << msg;                                           \
+        throw conduit::Error( oss_assert.str(), __FILE__, __LINE__); \
+    }                                                                \
+}                                                                    \
 
 
 //-----------------------------------------------------------------------------
