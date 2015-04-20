@@ -83,8 +83,6 @@ TEST(conduit_node_update, update_simple)
     EXPECT_EQ(n["d/bb"].as_uint32(),b_val);
 }
 
-
-
 //-----------------------------------------------------------------------------
 TEST(conduit_node_update, update_with_list)
 {
@@ -118,5 +116,38 @@ TEST(conduit_node_update, update_with_list)
     EXPECT_NEAR(c_val,c_val_double,0.001);
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_update, update_realloc_like)
+{
+    std::vector<uint32> vals;
+    for(index_t i=0;i<10;i++)
+    {
+        vals.push_back(i);
+    }
+
+    Node n;
+    n["a"].set(vals);
+    
+    Node n2;
+    n2["a"].set(DataType::uint32(15));
+    // zero out the buffer just to be safe for this unit test
+    memset(n2["a"].data_pointer(),0,sizeof(uint32)*15);
+    
+    n2.update(n);
+
+    uint32 *n_v_ptr  = n["a"].as_uint32_ptr();    
+    uint32 *n2_v_ptr = n2["a"].as_uint32_ptr();
+
+    for(index_t i=0;i<10;i++)
+    {
+        EXPECT_EQ(n_v_ptr[i],n2_v_ptr[i]);
+    }    
+    
+    for(index_t i=10;i<15;i++)
+    {
+        EXPECT_EQ(n2_v_ptr[i],0); // assumes zeroed-alloc
+    }
+}
 
 
