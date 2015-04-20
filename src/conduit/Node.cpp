@@ -3102,11 +3102,23 @@ Node::update(Node &n_src)
                    n_src.element_pointer(0), 
                    m_schema->total_bytes());
         }
+        else if( (this->dtype().id() == n_src.dtype().id()) &&
+                 (this->dtype().number_of_elements() >=  
+                   n_src.dtype().number_of_elements())) 
+        {
+            for(index_t idx = 0;
+                idx < n_src.dtype().number_of_elements();
+                idx++)
+            {
+                memcpy(element_pointer(idx),
+                       n_src.element_pointer(idx), 
+                       this->dtype().element_bytes());
+            }
+        }
         else // not compatible
         {
             n_src.compact_to(*this);
         }
-        //set(n_src);
     }
 }
 //-----------------------------------------------------------------------------
