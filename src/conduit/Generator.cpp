@@ -774,14 +774,13 @@ walk_json_schema(Node   *node,
    
                 if(data != NULL)
                 {
-                    // node needs to link schema ptr
+                    // node is already linked to the schema pointer
                     schema->set(dtype);
-                    node->set_schema_pointer(schema);
                     node->set_data_pointer(data);
                 }
                 else
                 {
-                    node->set_schema_pointer(schema); // properly links back to schema tree
+                    // node is already linked to the schema pointer
                     // we need to dynamically alloc
                     node->set(dtype);  // causes an init
                 }
@@ -850,15 +849,13 @@ walk_json_schema(Node   *node,
         
         if(data != NULL)
         {
-             // node needs to link schema ptr 
-             node->set_schema_pointer(schema);
+             // node is already linked to the schema pointer
              node->set_data_pointer(data);
              
         }
         else
         {
-             // sets the pointer
-             node->set_schema_pointer(schema); // properly links back to schema tree
+             // node is already linked to the schema pointer
              // we need to dynamically alloc
              node->set(dtype);  // causes an init
         }
@@ -912,7 +909,7 @@ Generator::walk(Schema &schema) const
     std::string res = utils::json_sanitize(m_json_schema);
     if(document.Parse<0>(res.c_str()).HasParseError())
     {
-        THROW_ERROR("rapidjson parse error");
+        CONDUIT_ERROR("rapidjson parse error");
         /// TODO: better parse error msg
     }
     index_t curr_offset = 0;
@@ -941,7 +938,7 @@ Generator::walk_external(Node &node) const
         std::string res = utils::json_sanitize(m_json_schema);
         if(document.Parse<0>(res.c_str()).HasParseError())
         {
-            THROW_ERROR("rapidjson parse error");
+            CONDUIT_ERROR("rapidjson parse error");
             /// TODO: better parse error msg
         }
         conduit::walk_pure_json_schema(&node,
@@ -954,7 +951,7 @@ Generator::walk_external(Node &node) const
         std::string res = utils::json_sanitize(m_json_schema);
         if(document.Parse<0>(res.c_str()).HasParseError())
         {
-            THROW_ERROR("rapidjson parse error");
+            CONDUIT_ERROR("rapidjson parse error");
             /// TODO: better parse error msg
         }
         index_t curr_offset = 0;

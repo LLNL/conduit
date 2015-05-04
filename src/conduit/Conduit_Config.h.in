@@ -48,25 +48,24 @@
 ///
 //-----------------------------------------------------------------------------
 
-
-#define CONDUIT_SIZEOF_CHAR 1
-#define CONDUIT_SIZEOF_BYTE 1
-
 //-----------------------------------------------------------------------------
 // byte widths of native types
 //-----------------------------------------------------------------------------
 
-#define CONDUIT_SIZEOF_BOOL          @SIZEOF_BOOLEAN@
-#define CONDUIT_SIZEOF_SHORT         @SIZEOF_SHORT@
-#define CONDUIT_SIZEOF_INT           @SIZEOF_INT@
-#define CONDUIT_SIZEOF_LONG          @SIZEOF_LONG@
-#define CONDUIT_SIZEOF_LONG_LONG     @SIZEOF_LONG_LONG@
-#define CONDUIT_SIZEOF_FLOAT         @SIZEOF_FLOAT@
-#define CONDUIT_SIZEOF_DOUBLE        @SIZEOF_DOUBLE@
-#define CONDUIT_SIZEOF_LONG_DOUBLE   @SIZEOF_LONG_DOUBLE@
-#define CONDUIT_SIZEOF_PY_INTPTR_T   @SIZEOF_PY_INTPTR_T@
-#define CONDUIT_HAVE_LONG_LONG       @HAVE_LONG_LONG@
-#define CONDUIT_HAVE_UINTPTR_T       @HAVE_UINTPTR_T@
+#define CONDUIT_SIZEOF_BYTE 1
+
+#cmakedefine CONDUIT_SIZEOF_CHAR        @CONDUIT_SIZEOF_CHAR@
+#cmakedefine CONDUIT_SIZEOF_SHORT       @CONDUIT_SIZEOF_SHORT@
+#cmakedefine CONDUIT_SIZEOF_INT         @CONDUIT_SIZEOF_INT@
+#cmakedefine CONDUIT_SIZEOF_LONG        @CONDUIT_SIZEOF_LONG@
+#cmakedefine CONDUIT_SIZEOF_LONG_LONG   @CONDUIT_SIZEOF_LONG_LONG@
+
+#cmakedefine CONDUIT_SIZEOF_FLOAT       @CONDUIT_SIZEOF_FLOAT@
+#cmakedefine CONDUIT_SIZEOF_DOUBLE      @CONDUIT_SIZEOF_DOUBLE@
+#cmakedefine CONDUIT_SIZEOF_LONG_DOUBLE @CONDUIT_SIZEOF_LONG_DOUBLE@
+
+#cmakedefine CONDUIT_SIZEOF_VOID_P      @CONDUIT_SIZEOF_VOID_P@
+
 
 //-----------------------------------------------------------------------------
 //

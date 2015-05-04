@@ -87,6 +87,8 @@ TEST(conduit_list_of, simple )
 
     EXPECT_EQ(n[0]["b"].as_int32(), b1_val);
     EXPECT_EQ(n[1]["b"].as_int32(), b2_val);
+
+    delete [] data;
 }
 
 //-----------------------------------------------------------------------------
@@ -128,5 +130,7 @@ TEST(conduit_list_of, path_ref)
 
     EXPECT_EQ(n["values"][0]["b"].as_int32(), b1_val);
     EXPECT_EQ(n["values"][1]["b"].as_int32(), b2_val);
+
+    delete [] data;
 }
     

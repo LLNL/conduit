@@ -97,6 +97,8 @@ TEST(conduit_node_binary_io, read_write)
 
     EXPECT_EQ(n[0]["b"].as_int32(), b1_val);
     EXPECT_EQ(n[1]["b"].as_int32(), b2_val);
+
+    delete [] data;
   
 }
 
@@ -153,5 +155,7 @@ TEST(conduit_node_binary_io, mmap_simple)
 
     EXPECT_EQ(ntest[0]["a"].as_int32(), 100);
     EXPECT_EQ(ntest[0]["b"].as_int32(), 200);
+
+    delete [] data;
   
 }

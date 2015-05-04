@@ -49,6 +49,7 @@
 //-----------------------------------------------------------------------------
 
 #include "Error.h"
+#include "Node.h"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -120,10 +121,12 @@ Error::message() const
 void
     Error::message(std::ostringstream &oss) const
 {
-    std::string msg = m_msg;
-    if(msg == "")
-        msg = "<EMPTY>";
-    oss << "[" << m_file << ":" << m_line <<"]Error: " << msg;    
+    Node n;
+    n["file"] = m_file;
+    n["line"] = m_line;
+    n["message"] = m_msg;
+    n.to_pure_json(oss);
+    oss << std::endl;
 }
     
 

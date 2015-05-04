@@ -1295,122 +1295,77 @@ public:
 //-----------------------------------------------------------------------------
      
      // signed integer scalars
-    int8             as_int8()   const  
-                        { return *((int8*)element_pointer(0));}
-    int16            as_int16()  const  
-                        { return *((int16*)element_pointer(0));}
-    int32            as_int32()  const  
-                        { return *((int32*)element_pointer(0));}
-    int64            as_int64()  const  
-                        { return *((int64*)element_pointer(0));}
+    int8             as_int8()   const;
+    int16            as_int16()  const;
+    int32            as_int32()  const;
+    int64            as_int64()  const;
 
     // unsigned integer scalars
-    uint8            as_uint8()   const 
-                        { return *((uint8*)element_pointer(0));}
-    uint16           as_uint16()  const 
-                        { return *((uint16*)element_pointer(0));}
-    uint32           as_uint32()  const 
-                        { return *((uint32*)element_pointer(0));}
-    uint64           as_uint64()  const 
-                        { return *((uint64*)element_pointer(0));}
+    uint8            as_uint8()   const;
+    uint16           as_uint16()  const;
+    uint32           as_uint32()  const;
+    uint64           as_uint64()  const;
 
     // floating point scalars
-    float32          as_float32() const 
-                        { return *((float32*)element_pointer(0));}
-    float64          as_float64() const 
-                        { return *((float64*)element_pointer(0));}
+    float32          as_float32() const;
+    float64          as_float64() const;
 
     // signed integers via pointers
-    int8            *as_int8_ptr()     
-                        { return (int8*)element_pointer(0);}
-    int16           *as_int16_ptr()    
-                        { return (int16*)element_pointer(0);}
-    int32           *as_int32_ptr()    
-                        { return (int32*)element_pointer(0);}
-    int64           *as_int64_ptr()    
-                        { return (int64*)element_pointer(0);}
+    int8            *as_int8_ptr();
+    int16           *as_int16_ptr();
+    int32           *as_int32_ptr();
+    int64           *as_int64_ptr();
 
     // unsigned integers via pointers
-    uint8           *as_uint8_ptr()    
-                        { return (uint8*)element_pointer(0);}
-    uint16          *as_uint16_ptr()   
-                        { return (uint16*)element_pointer(0);}
-    uint32          *as_uint32_ptr()   
-                        { return (uint32*)element_pointer(0);}
-    uint64          *as_uint64_ptr()   
-                        { return (uint64*)element_pointer(0);}
+    uint8           *as_uint8_ptr();
+    uint16          *as_uint16_ptr();
+    uint32          *as_uint32_ptr();
+    uint64          *as_uint64_ptr();
 
     // floating point via pointers
-    float32         *as_float32_ptr()  
-                        { return (float32*)element_pointer(0);}
-    float64         *as_float64_ptr()  
-                        { return (float64*)element_pointer(0);}
+    float32         *as_float32_ptr();
+    float64         *as_float64_ptr();
 
     // signed integer array types via conduit::DataArray
-    int8_array       as_int8_array()   
-                        { return int8_array(m_data,dtype());}
-    int16_array      as_int16_array()  
-                        { return int16_array(m_data,dtype());}
-    int32_array      as_int32_array()  
-                        { return int32_array(m_data,dtype());}
-    int64_array      as_int64_array()  
-                        { return int64_array(m_data,dtype());}
+    int8_array       as_int8_array();
+    int16_array      as_int16_array();
+    int32_array      as_int32_array();
+    int64_array      as_int64_array();
 
     // unsigned integer array types via conduit::DataArray
-    uint8_array      as_uint8_array()  
-                        { return uint8_array(m_data,dtype());}
-    uint16_array     as_uint16_array() 
-                        { return uint16_array(m_data,dtype());}
-    uint32_array     as_uint32_array() 
-                        { return uint32_array(m_data,dtype());}
-    uint64_array     as_uint64_array() 
-                        { return uint64_array(m_data,dtype());}
+    uint8_array      as_uint8_array();
+    uint16_array     as_uint16_array();
+    uint32_array     as_uint32_array();
+    uint64_array     as_uint64_array();
 
     // floating point array types via conduit::DataArray
-    float32_array    as_float32_array() 
-                        { return float32_array(m_data,dtype());}
-    float64_array    as_float64_array() 
-                        { return float64_array(m_data,dtype());}
+    float32_array    as_float32_array();
+    float64_array    as_float64_array();
 
     // signed integer array types via conduit::DataArray (const variants)
 
-    int8_array       as_int8_array()  const 
-                        { return int8_array(m_data,dtype());}
-    int16_array      as_int16_array() const 
-                        { return int16_array(m_data,dtype());}
-    int32_array      as_int32_array() const 
-                        { return int32_array(m_data,dtype());}
-    int64_array      as_int64_array() const 
-                        { return int64_array(m_data,dtype());}
+    int8_array       as_int8_array()  const;
+    int16_array      as_int16_array() const;
+    int32_array      as_int32_array() const;
+    int64_array      as_int64_array() const;
 
     // unsigned integer array types via conduit::DataArray (const variants)
-    uint8_array      as_uint8_array()  const 
-                        { return uint8_array(m_data,dtype());}
-    uint16_array     as_uint16_array() const 
-                        { return uint16_array(m_data,dtype());}
-    uint32_array     as_uint32_array() const 
-                        { return uint32_array(m_data,dtype());}
-    uint64_array     as_uint64_array() const 
-                        { return uint64_array(m_data,dtype());}
+    uint8_array      as_uint8_array()  const;
+    uint16_array     as_uint16_array() const;
+    uint32_array     as_uint32_array() const;
+    uint64_array     as_uint64_array() const;
 
     // floating point array value via conduit::DataArray (const variants)
-    float32_array    as_float32_array() const 
-                        { return float32_array(m_data,dtype());}
-    float64_array    as_float64_array() const 
-                        { return float64_array(m_data,dtype());}
+    float32_array    as_float32_array() const;
+    float64_array    as_float64_array() const;
 
     // char8_str cases
-    char            *as_char8_str() 
-                        {return (char *)element_pointer(0);}
-    const char      *as_char8_str() const 
-                        {return (const char *)element_pointer(0);}
-    
-    std::string      as_string() const 
-                        {return std::string(as_char8_str());}
+    char            *as_char8_str();
+    const char      *as_char8_str() const;
+    std::string      as_string()    const;
 
     // direct data pointer access 
-    uint8            *data_pointer() 
-                        {return (uint8*)m_data;}
+    uint8            *data_pointer();
 
 
 //-----------------------------------------------------------------------------
@@ -1419,116 +1374,72 @@ public:
 //-----------------------------------------------------------------------------
      
      // signed integer scalars
-    char           as_char()  const
-                   { return *((char*)element_pointer(0));}
-
-    short          as_short()  const
-                   { return *((short*)element_pointer(0));}
-
-    int            as_int()  const  
-                   { return *((int*)element_pointer(0));}
-
-    long           as_long()  const  
-                   { return *((long*)element_pointer(0));}
+    char           as_char()  const;
+    short          as_short() const;
+    int            as_int()   const;
+    long           as_long()  const;
 
     // unsigned integer scalars
-    unsigned char   as_unsigned_char()   const 
-                        { return *((unsigned char*)element_pointer(0));}
-
-    unsigned short   as_unsigned_short()   const 
-                        { return *((unsigned short*)element_pointer(0));}
+    unsigned char    as_unsigned_char()  const;
+    unsigned short   as_unsigned_short() const;
     
-    unsigned int     as_unsigned_int()   const 
-                        { return *((unsigned int*)element_pointer(0));}
-    unsigned long    as_unsigned_long()  const 
-                        { return *(( unsigned long*)element_pointer(0));}
+    unsigned int     as_unsigned_int()   const;
+    unsigned long    as_unsigned_long()  const;
 
     // floating point scalars
-    float            as_float() const 
-                       { return *((float*)element_pointer(0));}
-    double           as_double() const 
-                        { return *((double*)element_pointer(0));}
+    float            as_float() const;
+    double           as_double() const;
 
     // signed integers via pointers
     
-    char            *as_char_ptr()     
-                        { return (char*)element_pointer(0);}
-    short           *as_short_ptr()    
-                        { return (short*)element_pointer(0);}
-    int             *as_int_ptr()    
-                        { return (int*)element_pointer(0);}
-    long            *as_long_ptr()    
-                        { return (long*)element_pointer(0);}
+    char            *as_char_ptr();
+    short           *as_short_ptr();
+    int             *as_int_ptr();
+    long            *as_long_ptr();
 
     // unsigned integers via pointers
-    unsigned char      *as_unsigned_char_ptr()    
-                        { return (unsigned char*)element_pointer(0);}
-    unsigned short      *as_unsigned_short_ptr()   
-                       { return (unsigned short*)element_pointer(0);}
-    unsigned int       *as_unsigned_int_ptr()   
-                        { return (unsigned int*)element_pointer(0);}
-    unsigned long      *as_unsigned_long_ptr()   
-                        { return (unsigned long*)element_pointer(0);}
+    unsigned char      *as_unsigned_char_ptr();
+    unsigned short      *as_unsigned_short_ptr();
+    unsigned int       *as_unsigned_int_ptr();
+    unsigned long      *as_unsigned_long_ptr();
 
     // floating point via pointers
-    float             *as_float_ptr()  
-                        { return (float*)element_pointer(0);}
-    double           *as_double_ptr()  
-                        { return (double*)element_pointer(0);}
+    float             *as_float_ptr();
+    double           *as_double_ptr();
 
     // signed integer array types via conduit::DataArray
-    char_array       as_char_array()
-                        { return char_array(m_data,dtype());}
-    short_array      as_short_array()
-                        { return short_array(m_data,dtype());}
-    int_array        as_int_array()
-                        { return int_array(m_data,dtype());}
-    long_array      as_long_array()
-                        { return long_array(m_data,dtype());}
+    char_array       as_char_array();
+    short_array      as_short_array();
+    int_array        as_int_array();
+    long_array      as_long_array();
 
     // unsigned integer array types via conduit::DataArray
-    unsigned_char_array    as_unsigned_char_array()
-                            { return unsigned_char_array(m_data,dtype());}
-    unsigned_short_array   as_unsigned_short_array()
-                            { return unsigned_short_array(m_data,dtype());}
-    unsigned_int_array     as_unsigned_int_array()
-                            { return unsigned_int_array(m_data,dtype());}
-    unsigned_long_array    as_unsigned_long_()
-                            { return unsigned_long_array(m_data,dtype());}
+    unsigned_char_array    as_unsigned_char_array();
+    unsigned_short_array   as_unsigned_short_array();
+    unsigned_int_array     as_unsigned_int_array();
+    unsigned_long_array    as_unsigned_long_array();
 
     // floating point array types via conduit::DataArray
-    float_array     as_float_array()
-                        { return float_array(m_data,dtype());}
-    double_array    as_double_array()
-                        { return double_array(m_data,dtype());}
+    float_array     as_float_array();
+    double_array    as_double_array();
 
     // signed integer array types via conduit::DataArray (const variants)
 
-    char_array       as_char_array() const
-                        { return char_array(m_data,dtype());}
-    short_array      as_short_array() const
-                        { return short_array(m_data,dtype());}
-    int_array        as_int_array() const
-                        { return int_array(m_data,dtype());}
-    long_array      as_long_array() const
-                        { return long_array(m_data,dtype());}
+    char_array       as_char_array()  const;
+    short_array      as_short_array() const;
+    int_array        as_int_array()   const;
+    long_array       as_long_array()  const;
 
     // unsigned integer array types via conduit::DataArray (const variants)
-    unsigned_char_array    as_unsigned_char_array() const
-                            { return unsigned_char_array(m_data,dtype());}
-    unsigned_short_array   as_unsigned_short_array() const
-                            { return unsigned_short_array(m_data,dtype());}
-    unsigned_int_array     as_unsigned_int_array() const
-                            { return unsigned_int_array(m_data,dtype());}
-    unsigned_long_array    as_unsigned_long_() const
-                            { return unsigned_long_array(m_data,dtype());}
+    unsigned_char_array    as_unsigned_char_array()  const;
+    unsigned_short_array   as_unsigned_short_array() const;
+    unsigned_int_array     as_unsigned_int_array()   const;
+    unsigned_long_array    as_unsigned_long_array()  const;
 
 
     // floating point array value via conduit::DataArray (const variants)
-    float_array     as_float_array() const
-                        { return float_array(m_data,dtype());}
-    double_array    as_double_array() const
-                        { return double_array(m_data,dtype());}
+    float_array     as_float_array()  const;
+    double_array    as_double_array() const;
 
 //-----------------------------------------------------------------------------
 ///@}
@@ -1554,6 +1465,11 @@ public:
 /// to use 'friend' to avoid this issue
 //-----------------------------------------------------------------------------
     void             set_data_pointer(void *data_ptr);
+    ///
+    /// Note: set_schema_pointer is *only* used in the case were we have 
+    /// a schema pointer that is owned by a parent schema. Using it to set a 
+    /// pointer that should be owned by a node unleashes chaos.
+    ///
     void             set_schema_pointer(Schema *schema_ptr);
     void             append_node_pointer(Node *node)
                         {m_children.push_back(node);}
@@ -1654,6 +1570,9 @@ private:
     Node                *m_parent;
     /// pointer to this node's schema
     Schema              *m_schema;
+    /// we need to know if *this* node created the schema
+    bool                 m_owns_schema;
+    
     /// collection of children
     std::vector<Node*>   m_children;
 

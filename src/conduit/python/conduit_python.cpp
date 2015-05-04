@@ -1944,7 +1944,8 @@ PyConduit_Schema_python_attach(PyConduit_Schema *self)
     // index_t         total_bytes() const;
     // index_t         total_bytes_compact() const;
     // index_t         element_index(index_t idx) const
-    // bool            is_root() const
+    // Schema         *parent() const
+    // bool            has_parent() const
 
 //---------------------------------------------------------------------------//
 static PyObject *
@@ -1987,10 +1988,10 @@ PyConduit_Schema_element_index(PyConduit_Schema *self,
 }
 
 //---------------------------------------------------------------------------//
-static PyObject *
-PyConduit_Schema_is_root(PyConduit_Schema *self)
+static PyObject * 
+PyConduit_Schema_has_parent(PyConduit_Schema *self)
 {
-    if(self->schema->is_root())
+    if(self->schema->has_parent())
     {
         Py_RETURN_TRUE;
     }
@@ -1999,6 +2000,23 @@ PyConduit_Schema_is_root(PyConduit_Schema *self)
         Py_RETURN_FALSE;
     }
 }
+
+//---------------------------------------------------------------------------//
+static PyObject* 
+PyConduit_Schema_parent(PyConduit_Schema* self)
+{
+    if(~self->schema->has_parent())
+    {
+        Py_RETURN_NONE;
+    }
+    else
+    {
+        // python owned == 0 (at least for this instance)
+        return PyConduit_Schema_python_wrap(self->schema->parent(),0);
+    }
+}
+
+
 
 //-----------------------------------------------------------------------------
 //
@@ -2072,11 +2090,16 @@ static PyMethodDef PyConduit_Schema_METHODS[] = {
      (PyCFunction)PyConduit_Schema_element_index,
      METH_VARARGS,
      "{todo}"},
-    //-----------------------------------------------------------------------//
-    {"is_root",
-     (PyCFunction)PyConduit_Schema_is_root,
-     METH_NOARGS,
-     "{todo}"},
+     //-----------------------------------------------------------------------//
+     {"has_parent",
+      (PyCFunction)PyConduit_Schema_has_parent,
+      METH_NOARGS,
+      "{todo}"},
+     //-----------------------------------------------------------------------//
+     {"parent",
+      (PyCFunction)PyConduit_Schema_parent,
+      METH_NOARGS,
+      "{todo}"},
     //-----------------------------------------------------------------------//
     // end Schema methods table
     //-----------------------------------------------------------------------//
@@ -3561,7 +3584,7 @@ PyConduit_createNumpyType(Node& node,
     const DataType& dtype = node.dtype();
     PyArray_Descr* descr = PyArray_DescrFromType(type);
     PyObject* retval = NULL;
-    void* data = node.as_char8_str();
+    void* data = node.data_pointer();
     npy_intp len = dtype.number_of_elements();
     if (len == 1) {
         retval = PyArray_Scalar(data, descr, NULL);

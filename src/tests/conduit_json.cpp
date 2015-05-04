@@ -238,3 +238,42 @@ TEST(conduit_json, load_from_json)
 }
 
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_json, json_explicit_offsets)
+{
+    
+    uint32   vals[100];
+    char    *vals_ptr = (char*)&vals;
+
+    std::string schema ="{dtype: uint32, value:42, offset:8}";
+    Generator g1(schema,vals_ptr);
+    Node n1(g1,true);
+
+    EXPECT_EQ(42,n1.as_uint32());
+    EXPECT_EQ((char*)n1.as_uint32_ptr(),vals_ptr+8);
+    
+    
+    schema ="{dtype: uint32, value:52, offset:16}";
+    Generator g2(schema,vals_ptr);
+    Node n2(g2,true);
+    std::cout << n2.as_uint32() << std::endl;
+    EXPECT_EQ(52,n2.as_uint32());
+    EXPECT_EQ((char*)n2.as_uint32_ptr(),vals_ptr+16);
+    
+    
+    schema ="{v1 :{dtype: uint32, offset:8}, v2: {dtype: uint32, offset:16}}";
+    Generator g3(schema,vals_ptr);
+    Node n3(g3,true);
+
+    EXPECT_EQ(42,n3["v1"].as_uint32());
+    EXPECT_EQ(52,n3["v2"].as_uint32());
+    
+    // everything should be wired up to the same pointers
+    EXPECT_EQ((char*)n3["v1"].as_uint32_ptr(),vals_ptr+8);
+    EXPECT_EQ((char*)n3["v1"].as_uint32_ptr(),(char*)n1.as_uint32_ptr());
+    
+    EXPECT_EQ((char*)n3["v2"].as_uint32_ptr(),vals_ptr+16);
+    EXPECT_EQ((char*)n3["v2"].as_uint32_ptr(),(char*)n2.as_uint32_ptr());
+}
+

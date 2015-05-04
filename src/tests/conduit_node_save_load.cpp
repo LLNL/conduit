@@ -118,6 +118,8 @@ TEST(conduit_node_save_load, bin_simple_file)
 
     EXPECT_EQ(n[0]["b"].as_int32(), b1_val);
     EXPECT_EQ(n[1]["b"].as_int32(), b2_val);
+
+    delete [] data;
 }
 
 
@@ -173,6 +175,8 @@ TEST(conduit_node_save_load, mmap_simple_file)
     ntest.load(schema,"tout_conduit_mmap_x2.conduit_bin");
     EXPECT_EQ(ntest[0]["a"].as_int32(), 100);
     EXPECT_EQ(ntest[0]["b"].as_int32(), 200);
+
+    delete [] data;
 }
 
 
