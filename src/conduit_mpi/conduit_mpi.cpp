@@ -64,7 +64,8 @@ namespace mpi
 {
 
 //---------------------------------------------------------------------------//
-int send(Node& node, int dest, int tag, MPI_Comm comm)
+int 
+send(Node &node, int dest, int tag, MPI_Comm comm)
 { 
 
     Schema schema_c;
@@ -100,11 +101,12 @@ int send(Node& node, int dest, int tag, MPI_Comm comm)
     } else if (mpiError == MPI_ERR_RANK) {
     }
 
-    return MPI_Send(&data[0], data_len, MPI_CHAR, dest, tag, comm);
+    return MPI_Send((char*)&data[0], data_len, MPI_CHAR, dest, tag, comm);
 }
 
 //---------------------------------------------------------------------------//
-int recv(Node& node, int src, int tag, MPI_Comm comm)
+int
+recv(Node &node, int src, int tag, MPI_Comm comm)
 {  
     int intArray[2];
     MPI_Status status;
@@ -142,7 +144,219 @@ int recv(Node& node, int src, int tag, MPI_Comm comm)
 
     return mpiError;
 }
+//---------------------------------------------------------------------------//
+int 
+reduce(Node &send_node,
+       Node& recv_node,
+       MPI_Datatype mpi_datatype,
+       MPI_Op mpi_op,
+       unsigned int root,
+       MPI_Comm mpi_comm) 
+{
+
+    int temp;
+    MPI_Comm_rank(MPI_COMM_WORLD, &temp);
+    const unsigned int rank = temp;
+
+    Schema schema_c;
+    send_node.schema().compact_to(schema_c);
+    std::string schema = schema_c.to_json();
+
+
+    std::vector<uint8> data;
+    send_node.serialize(data);
+    int data_len = data.size();
+
+    int datasize = 0;
+    MPI_Type_size(mpi_datatype, &datasize);
+
+    char recvdata[data_len+1];
+
+    int mpi_error = MPI_Reduce(&data[0],
+                               recvdata,
+                               (data_len / datasize) + 1,
+                               mpi_datatype, mpi_op, root, mpi_comm);
+
+    if (rank == root)
+    {
+        Generator node_gen(schema, recvdata);
+
+        node_gen.walk(recv_node);
+    }
+
+    return mpi_error;
+}
+
+//--------------------------------------------------------------------------//
+int
+all_reduce(Node &send_node,
+           Node &recv_node,
+           MPI_Datatype mpi_datatype,
+           MPI_Op mpi_op,
+           MPI_Comm mpi_comm)
+{
+
+    Schema schema_c;
+    send_node.schema().compact_to(schema_c);
+    std::string schema = schema_c.to_json();
+
+
+    std::vector<uint8> data;
+    send_node.serialize(data);
+    int data_len = data.size();
+
+    int datasize = 0;
+    MPI_Type_size(mpi_datatype, &datasize);
+
+    char recvdata[data_len+1];
+
+    int mpi_error = MPI_Allreduce(&data[0],
+                                  recvdata,
+                                  (data_len / datasize) + 1,
+                                  mpi_datatype,
+                                  mpi_op,
+                                  mpi_comm);
+
+    Generator node_gen(schema, recvdata);
+
+    node_gen.walk(recv_node);
+
+
+    return mpi_error;
+}
+
+//---------------------------------------------------------------------------//
+int
+isend(Node &node,
+      int dest,
+      int tag,
+      MPI_Comm mpi_comm,
+      ConduitMPIRequest* request) 
+{
+    request->_externalData = new Node();
+    node.compact_to(*(request->_externalData));
+
+    return MPI_Isend((char*)request->_externalData->data_pointer(), 
+                     request->_externalData->total_bytes(), 
+                     MPI_CHAR, 
+                     dest, 
+                     tag,
+                     mpi_comm,
+                     &(request->_request));
+}
+
+//---------------------------------------------------------------------------//
+int 
+irecv(Node &node,
+      int src,
+      int tag,
+      MPI_Comm mpi_comm,
+      ConduitMPIRequest *request) 
+{
+    request->_externalData = new Node();
+    node.compact_to(*(request->_externalData));
+
+    request->_recvData = &node;
+
+    return MPI_Irecv((char*)request->_externalData->data_pointer(),
+                     request->_externalData->total_bytes(),
+                     MPI_CHAR,
+                     src,
+                     tag,
+                     mpi_comm,
+                     &(request->_request));
+}
+
+//---------------------------------------------------------------------------//
+int
+wait_send(ConduitMPIRequest* request,
+          MPI_Status *status) 
+{
+    int mpi_error = MPI_Wait(&(request->_request), status);
+
+    delete request->_externalData;
+    request->_externalData = 0;
+
+    return mpi_error;
+}
+
+//---------------------------------------------------------------------------//
+int
+wait_recv(ConduitMPIRequest* request,
+          MPI_Status *status) 
+{
+    int mpi_error = MPI_Wait(&(request->_request), status);
+
+    request->_recvData->update(*(request->_externalData));
+
+    delete request->_externalData;
+    request->_externalData = 0;
+
+    request->_recvData = 0;
     
+    return mpi_error;
+}
+
+//---------------------------------------------------------------------------//
+int
+wait_all_send(int count,
+              ConduitMPIRequest requests[],
+              MPI_Status statuses[]) 
+{
+     MPI_Request *justrequests = new MPI_Request[count];
+     
+     for (int i = 0; i < count; ++i) 
+     {
+         justrequests[i] = requests[i]._request;
+     }
+     
+     int mpi_error = MPI_Waitall(count, justrequests, statuses);
+
+     for (int i = 0; i < count; ++i)
+     {
+         requests[i]._request = justrequests[i];
+         delete requests[i]._externalData;
+         requests[i]._externalData = 0;
+     }
+
+     delete [] justrequests;
+
+     return mpi_error; 
+
+
+}
+
+//---------------------------------------------------------------------------//
+int
+wait_all_recv(int count,
+              ConduitMPIRequest requests[],
+              MPI_Status statuses[])
+{
+     MPI_Request *justrequests = new MPI_Request[count];
+     
+     for (int i = 0; i < count; ++i)
+     {
+         justrequests[i] = requests[i]._request;
+     }
+     
+     int mpi_error = MPI_Waitall(count, justrequests, statuses);
+
+     for (int i = 0; i < count; ++i)
+     {
+         requests[i]._recvData->update(*(requests[i]._externalData));
+
+         requests[i]._request = justrequests[i];
+         delete requests[i]._externalData;
+         requests[i]._externalData = 0;
+     }
+
+     delete [] justrequests;
+
+     return mpi_error; 
+
+}
+
+
 //---------------------------------------------------------------------------//
 std::string
 about()
@@ -159,7 +373,6 @@ about(Node &n)
     n.reset();
     n["mpi"] = "enabled";
 }
-
 
 };
 //-----------------------------------------------------------------------------

@@ -57,4 +57,7 @@ set(SZIP_DIR "/usr/gapps/visit/thirdparty_shared/2.9.0/szip/2.1/linux-x86_64_gcc
 set(ENABLE_PYTHON ON CACHE PATH "")
 set(PYTHON_DIR /usr/local/ CACHE PATH "")
 
-
+# Enable mpi for conduit-mpi
+set(ENABLE_MPI ON CACHE PATH "")
+set(MPIEXEC /usr/bin/srun CACHE PATH "")
+set(MPIEXEC_NUMPROC_FLAG -p pdebug -n CACHE PATH "")
