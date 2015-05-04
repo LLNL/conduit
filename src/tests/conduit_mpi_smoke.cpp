@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_mpi_smoke.cpp
+/// file: conduit_mpi.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -54,11 +54,12 @@
 
 using namespace conduit;
 
-
+//-----------------------------------------------------------------------------
 TEST(conduit_mpi_smoke, about)
 {
     std::cout << mpi::about() << std::endl;
 }
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_mpi_smoke, allreduce) 
@@ -71,11 +72,12 @@ TEST(conduit_mpi_smoke, allreduce)
 
     Node n2;
 
-    mpi::allreduce(n1, n2, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+    mpi::all_reduce(n1, n2, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
     EXPECT_EQ(n2["value"].as_int32(), 10);
 }
 
+//-----------------------------------------------------------------------------
 TEST(conduit_mpi_smoke, isend_irecv_wait) 
 {
     Node n1;
@@ -92,16 +94,17 @@ TEST(conduit_mpi_smoke, isend_irecv_wait)
     n1.set_external(doubles);
     
 
-
     mpi::ConduitMPIRequest request;
 
     MPI_Status status;
-    if (rank == 0) {
-        mpi::Irecv(n1, 1, 0, MPI_COMM_WORLD, &request);
-        mpi::Waitrecv(&request, &status);
-    } else if (rank == 1) {
-        mpi::Isend(n1, 0, 0, MPI_COMM_WORLD, &request);
-        mpi::Waitsend(&request, &status);
+    if (rank == 0) 
+    {
+        mpi::irecv(n1, 1, 0, MPI_COMM_WORLD, &request);
+        mpi::wait_recv(&request, &status);
+    } else if (rank == 1) 
+    {
+        mpi::isend(n1, 0, 0, MPI_COMM_WORLD, &request);
+        mpi::wait_send(&request, &status);
     }
 
     EXPECT_EQ(n1.as_float64_ptr()[0], 2);
@@ -110,6 +113,7 @@ TEST(conduit_mpi_smoke, isend_irecv_wait)
     
 }
 
+//-----------------------------------------------------------------------------
 TEST(conduit_mpi_smoke, waitall) 
 {
     Node n1;
@@ -130,12 +134,14 @@ TEST(conduit_mpi_smoke, waitall)
     mpi::ConduitMPIRequest requests[1];
 
     MPI_Status statuses[1];
-    if (rank == 0) {
-        mpi::Irecv(n1, 1, 0, MPI_COMM_WORLD, &requests[0]);
-        mpi::Waitallrecv(1, requests, statuses);
-    } else if (rank == 1) {
-        mpi::Isend(n1, 0, 0, MPI_COMM_WORLD, &requests[0]);
-        mpi::Waitallsend(1, requests, statuses);
+    if (rank == 0) 
+    {
+        mpi::irecv(n1, 1, 0, MPI_COMM_WORLD, &requests[0]);
+        mpi::wait_all_recv(1, requests, statuses);
+    } else if (rank == 1) 
+    {
+        mpi::isend(n1, 0, 0, MPI_COMM_WORLD, &requests[0]);
+        mpi::wait_all_send(1, requests, statuses);
     }
 
     EXPECT_EQ(n1.as_float64_ptr()[0], 2);
@@ -144,6 +150,7 @@ TEST(conduit_mpi_smoke, waitall)
     
 }
 
+//-----------------------------------------------------------------------------
 TEST(conduit_mpi_smoke, waitallmultirequest) 
 {
     Node n1;
@@ -167,14 +174,16 @@ TEST(conduit_mpi_smoke, waitallmultirequest)
     mpi::ConduitMPIRequest requests[2];
 
     MPI_Status statuses[2];
-    if (rank == 0) {
-        mpi::Irecv(n1, 1, 0, MPI_COMM_WORLD, &requests[0]);
-        mpi::Irecv(n2, 1, 0, MPI_COMM_WORLD, &requests[1]);
-        mpi::Waitallrecv(1, requests, statuses);
-    } else if (rank == 1) {
-        mpi::Isend(n1, 0, 0, MPI_COMM_WORLD, &requests[0]);
-        mpi::Isend(n2, 0, 0, MPI_COMM_WORLD, &requests[1]);
-        mpi::Waitallsend(1, requests, statuses);
+    if (rank == 0) 
+    {
+        mpi::irecv(n1, 1, 0, MPI_COMM_WORLD, &requests[0]);
+        mpi::irecv(n2, 1, 0, MPI_COMM_WORLD, &requests[1]);
+        mpi::wait_all_recv(1, requests, statuses);
+    } else if (rank == 1) 
+    {
+        mpi::isend(n1, 0, 0, MPI_COMM_WORLD, &requests[0]);
+        mpi::isend(n2, 0, 0, MPI_COMM_WORLD, &requests[1]);
+        mpi::wait_all_send(1, requests, statuses);
     }
 
     EXPECT_EQ(n1.as_float64_ptr()[0], 2);
@@ -185,6 +194,7 @@ TEST(conduit_mpi_smoke, waitallmultirequest)
     
 }
 
+//-----------------------------------------------------------------------------
 TEST(conduit_mpi_smoke, external) 
 {
      Node n1;
@@ -217,13 +227,15 @@ TEST(conduit_mpi_smoke, external)
     mpi::ConduitMPIRequest request;
 
     MPI_Status status;
-    if (rank == 0) {
-        mpi::Irecv(n1, 1, 0, MPI_COMM_WORLD, &request);
-        mpi::Waitrecv(&request, &status);
+    if (rank == 0) 
+    {
+        mpi::irecv(n1, 1, 0, MPI_COMM_WORLD, &request);
+        mpi::wait_recv(&request, &status);
         
-    } else if (rank == 1) {
-        mpi::Isend(n1, 0, 0, MPI_COMM_WORLD, &request);
-        mpi::Waitsend(&request, &status);
+    } else if (rank == 1)
+    {
+        mpi::isend(n1, 0, 0, MPI_COMM_WORLD, &request);
+        mpi::wait_send(&request, &status);
     }
 
 
@@ -252,3 +264,4 @@ int main(int argc, char* argv[])
 
     return result;
 }
+

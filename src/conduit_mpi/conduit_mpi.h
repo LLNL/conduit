@@ -80,48 +80,96 @@ namespace mpi
         Node* _recvData;
     };
 
-    int CONDUIT_MPI_API send(Node& node, int dest, int tag, MPI_Comm comm);
+//-----------------------------------------------------------------------------
+/// Standard MPI Send Recv
+//-----------------------------------------------------------------------------
 
-    int CONDUIT_MPI_API recv(Node& node, int source, int tag, MPI_Comm comm);
+    int CONDUIT_MPI_API send(Node& node,
+                             int dest,
+                             int tag,
+                             MPI_Comm comm);
+
+    int CONDUIT_MPI_API recv(Node& node,
+                             int source,
+                             int tag,
+                             MPI_Comm comm);
+// TODO:
+// int send_recv(Node &send_node,
+//              int dest,
+//              int send_tag,
+//              Node &recv_node,
+//              int source,
+//              int recv_tag,
+//              MPI_Comm mpi_comm, 
+//              MPI_Status *status);
+
+//-----------------------------------------------------------------------------
+/// MPI Reduce
+//-----------------------------------------------------------------------------
     
-    int CONDUIT_MPI_API reduce(Node& sendNode, Node& recvNode, MPI_Datatype datatype, MPI_Op op, unsigned int root, MPI_Comm comm);
+    int CONDUIT_MPI_API reduce(Node &send_node,
+                               Node &recv_node,
+                               MPI_Datatype mpi_datatype,
+                               MPI_Op mpi_op,
+                               unsigned int root,
+                               MPI_Comm comm);
 
-    int CONDUIT_MPI_API allreduce(Node& sendNode, Node& recvNode, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm);
+    int CONDUIT_MPI_API all_reduce(Node &send_node,
+                                   Node &recv_node,
+                                   MPI_Datatype mpi_datatype,
+                                   MPI_Op mpi_op,
+                                   MPI_Comm comm);
 
-    int CONDUIT_MPI_API Isend(Node& node, int dest, int tag, MPI_Comm comm, ConduitMPIRequest* request);
+//-----------------------------------------------------------------------------
+/// Async MPI Send Recv
+//-----------------------------------------------------------------------------
 
-    int CONDUIT_MPI_API Irecv(Node& node, int src, int tag, MPI_Comm comm, ConduitMPIRequest* request);
+    int CONDUIT_MPI_API isend(Node &node,
+                              int dest,
+                              int tag,
+                              MPI_Comm mpi_comm,
+                              ConduitMPIRequest *request);
 
-    int CONDUIT_MPI_API Waitsend(ConduitMPIRequest* request, MPI_Status* status);
+    int CONDUIT_MPI_API irecv(Node &node,
+                              int src,
+                              int tag,
+                              MPI_Comm comm,
+                              ConduitMPIRequest *request);
+
+    int CONDUIT_MPI_API wait_send(ConduitMPIRequest* request,
+                                  MPI_Status *status);
    
-    int CONDUIT_MPI_API Waitrecv(ConduitMPIRequest* request, MPI_Status* status);
+    int CONDUIT_MPI_API wait_recv(ConduitMPIRequest *request,
+                                  MPI_Status *status);
 
-    int CONDUIT_MPI_API Waitallsend(int count, ConduitMPIRequest requests[], MPI_Status statuses[]);
+    int CONDUIT_MPI_API wait_all_send(int count,
+                                      ConduitMPIRequest requests[],
+                                      MPI_Status statuses[]);
 
-    int CONDUIT_MPI_API Waitallrecv(int count, ConduitMPIRequest requests[], MPI_Status statuses[]);
+    int CONDUIT_MPI_API wait_all_recv(int count,
+                                       ConduitMPIRequest requests[],
+                                       MPI_Status statuses[]);
 
-    void CONDUIT_MPI_API copy(Node& a, Node& b);
 
-// int sendrecv(Node& sendNode,
-//              int dest, int sendtag,
-//              Node& receiveNode,
-//              int source, int recvtag, MPI_Comm comm, MPI_Status *status );
+// TODO:
 //
-// int broadcast(Node& node, int root,
-//                MPI_Comm comm );
+// int broadcast(Node& node,
+//               int root,
+//               MPI_Comm comm );
 //
-// int gather(Node& sendNode,
-//            Node& recvNode,
-//            int root, MPI_Comm comm );
+// int gather(Node &send_node,
+//            Node &recv_node,
+//            int root, 
+//            MPI_Comm mpi_comm );
 //
-// int scatter(Node& sendNode,
-//             Node& recvNode,
+// int scatter(Node &send_node,
+//             Node &recv_node,
 //             int root,
-//             MPI_Comm comm );
+//             MPI_Comm mpi_comm );
 //
-// int alltoall(Node& sendNode,
-//              Node& recvNode,
-//              MPI_Comm comm );
+// int all_to_all(Node& send_node,
+//                Node& recv_node,
+//                MPI_Comm mpi_comm);
 
 //-----------------------------------------------------------------------------
 /// The about methods construct human readable info about how conduit_mpi was

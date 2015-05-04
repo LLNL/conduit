@@ -64,7 +64,8 @@ namespace mpi
 {
 
 //---------------------------------------------------------------------------//
-int send(Node& node, int dest, int tag, MPI_Comm comm)
+int 
+send(Node &node, int dest, int tag, MPI_Comm comm)
 { 
 
     Schema schema_c;
@@ -100,11 +101,12 @@ int send(Node& node, int dest, int tag, MPI_Comm comm)
     } else if (mpiError == MPI_ERR_RANK) {
     }
 
-    return MPI_Send(&data[0], data_len, MPI_CHAR, dest, tag, comm);
+    return MPI_Send((char*)&data[0], data_len, MPI_CHAR, dest, tag, comm);
 }
 
 //---------------------------------------------------------------------------//
-int recv(Node& node, int src, int tag, MPI_Comm comm)
+int
+recv(Node &node, int src, int tag, MPI_Comm comm)
 {  
     int intArray[2];
     MPI_Status status;
@@ -143,146 +145,175 @@ int recv(Node& node, int src, int tag, MPI_Comm comm)
     return mpiError;
 }
 //---------------------------------------------------------------------------//
-int reduce(Node& sendNode, Node& recvNode, MPI_Datatype datatype, MPI_Op op, unsigned int root, MPI_Comm comm) {
+int 
+reduce(Node &send_node,
+       Node& recv_node,
+       MPI_Datatype mpi_datatype,
+       MPI_Op mpi_op,
+       unsigned int root,
+       MPI_Comm mpi_comm) 
+{
 
     int temp;
     MPI_Comm_rank(MPI_COMM_WORLD, &temp);
     const unsigned int rank = temp;
 
     Schema schema_c;
-    sendNode.schema().compact_to(schema_c);
+    send_node.schema().compact_to(schema_c);
     std::string schema = schema_c.to_json();
 
 
     std::vector<uint8> data;
-    sendNode.serialize(data);
+    send_node.serialize(data);
     int data_len = data.size();
 
     int datasize = 0;
-    MPI_Type_size(datatype, &datasize);
+    MPI_Type_size(mpi_datatype, &datasize);
 
     char recvdata[data_len+1];
 
-    int mpiError = MPI_Reduce(&data[0], recvdata, (data_len / datasize) + 1, datatype, op, root, comm);
+    int mpi_error = MPI_Reduce(&data[0],
+                               recvdata,
+                               (data_len / datasize) + 1,
+                               mpi_datatype, mpi_op, root, mpi_comm);
 
-    if (rank == root) {
+    if (rank == root)
+    {
         Generator node_gen(schema, recvdata);
 
-        node_gen.walk(recvNode);
+        node_gen.walk(recv_node);
     }
 
-    return mpiError;
+    return mpi_error;
 }
 
 //--------------------------------------------------------------------------//
-int allreduce(Node& sendNode, Node& recvNode, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm) {
+int
+all_reduce(Node &send_node,
+           Node &recv_node,
+           MPI_Datatype mpi_datatype,
+           MPI_Op mpi_op,
+           MPI_Comm mpi_comm)
+{
 
     Schema schema_c;
-    sendNode.schema().compact_to(schema_c);
+    send_node.schema().compact_to(schema_c);
     std::string schema = schema_c.to_json();
 
 
     std::vector<uint8> data;
-    sendNode.serialize(data);
+    send_node.serialize(data);
     int data_len = data.size();
 
     int datasize = 0;
-    MPI_Type_size(datatype, &datasize);
+    MPI_Type_size(mpi_datatype, &datasize);
 
     char recvdata[data_len+1];
 
-    int mpiError = MPI_Allreduce(&data[0], recvdata, (data_len / datasize) + 1, datatype, op, comm);
+    int mpi_error = MPI_Allreduce(&data[0],
+                                  recvdata,
+                                  (data_len / datasize) + 1,
+                                  mpi_datatype,
+                                  mpi_op,
+                                  mpi_comm);
 
     Generator node_gen(schema, recvdata);
 
-    node_gen.walk(recvNode);
+    node_gen.walk(recv_node);
 
 
-    return mpiError;
+    return mpi_error;
 }
 
 //---------------------------------------------------------------------------//
-int Isend(Node& node, int dest, int tag, MPI_Comm comm, ConduitMPIRequest* request) { 
-
+int
+isend(Node &node,
+      int dest,
+      int tag,
+      MPI_Comm mpi_comm,
+      ConduitMPIRequest* request) 
+{
     request->_externalData = new Node();
     node.compact_to(*(request->_externalData));
 
-    //request->_externalData->print_detailed();
-    //request->_externalData->schema_pointer()->print();
-    //request->_externalData->info().print();
-
-    return MPI_Isend(request->_externalData->data_pointer(), request->_externalData->total_bytes(), MPI_CHAR, dest, tag, comm, &(request->_request));
+    return MPI_Isend((char*)request->_externalData->data_pointer(), 
+                     request->_externalData->total_bytes(), 
+                     MPI_CHAR, 
+                     dest, 
+                     tag,
+                     mpi_comm,
+                     &(request->_request));
 }
 
 //---------------------------------------------------------------------------//
-
-int Irecv(Node& node, int src, int tag, MPI_Comm comm, ConduitMPIRequest* request) {
-
+int 
+irecv(Node &node,
+      int src,
+      int tag,
+      MPI_Comm mpi_comm,
+      ConduitMPIRequest *request) 
+{
     request->_externalData = new Node();
     node.compact_to(*(request->_externalData));
 
     request->_recvData = &node;
 
-    return MPI_Irecv(request->_externalData->data_pointer(), request->_externalData->total_bytes(), MPI_CHAR, src, tag, comm, &(request->_request));
+    return MPI_Irecv((char*)request->_externalData->data_pointer(),
+                     request->_externalData->total_bytes(),
+                     MPI_CHAR,
+                     src,
+                     tag,
+                     mpi_comm,
+                     &(request->_request));
 }
 
 //---------------------------------------------------------------------------//
-
-int Waitsend(ConduitMPIRequest* request , MPI_Status *status) {
-    int mpiError = MPI_Wait(&(request->_request), status);
+int
+wait_send(ConduitMPIRequest* request,
+          MPI_Status *status) 
+{
+    int mpi_error = MPI_Wait(&(request->_request), status);
 
     delete request->_externalData;
     request->_externalData = 0;
-    
-    
 
-    return mpiError;
+    return mpi_error;
 }
 
 //---------------------------------------------------------------------------//
-
-int Waitrecv(ConduitMPIRequest* request , MPI_Status *status) {
-    int mpiError = MPI_Wait(&(request->_request), status);
-
-    request->_externalData->print_detailed();
-    request->_externalData->schema_pointer()->print();
-    request->_externalData->info().print();
-
-    request->_recvData->print_detailed();
-    request->_recvData->schema_pointer()->print();
-    request->_recvData->info().print();
+int
+wait_recv(ConduitMPIRequest* request,
+          MPI_Status *status) 
+{
+    int mpi_error = MPI_Wait(&(request->_request), status);
 
     request->_recvData->update(*(request->_externalData));
-
-    //copy(*(request->_recvData), *(request->_externalData));
-
-    //std::cout << "Copy complete" << std::endl;
-
-    //request->_recvData->print_detailed();
-    //request->_recvData->schema_pointer()->print();
-    //request->_recvData->info().print();
-
 
     delete request->_externalData;
     request->_externalData = 0;
 
     request->_recvData = 0;
     
-    
-
-    return mpiError;
+    return mpi_error;
 }
 
 //---------------------------------------------------------------------------//
-
-int Waitallsend(int count, ConduitMPIRequest requests[], MPI_Status statuses[]) {
-     MPI_Request* justrequests = new MPI_Request[count];
-     for (int i = 0; i < count; ++i) {
+int
+wait_all_send(int count,
+              ConduitMPIRequest requests[],
+              MPI_Status statuses[]) 
+{
+     MPI_Request *justrequests = new MPI_Request[count];
+     
+     for (int i = 0; i < count; ++i) 
+     {
          justrequests[i] = requests[i]._request;
      }
-     int mpiError = MPI_Waitall(count, justrequests, statuses);
+     
+     int mpi_error = MPI_Waitall(count, justrequests, statuses);
 
-     for (int i = 0; i < count; ++i) {
+     for (int i = 0; i < count; ++i)
+     {
          requests[i]._request = justrequests[i];
          delete requests[i]._externalData;
          requests[i]._externalData = 0;
@@ -290,20 +321,28 @@ int Waitallsend(int count, ConduitMPIRequest requests[], MPI_Status statuses[]) 
 
      delete [] justrequests;
 
-     return mpiError; 
+     return mpi_error; 
 
 
 }
 
 //---------------------------------------------------------------------------//
-int Waitallrecv(int count, ConduitMPIRequest requests[], MPI_Status statuses[]) {
-     MPI_Request* justrequests = new MPI_Request[count];
-     for (int i = 0; i < count; ++i) {
+int
+wait_all_recv(int count,
+              ConduitMPIRequest requests[],
+              MPI_Status statuses[])
+{
+     MPI_Request *justrequests = new MPI_Request[count];
+     
+     for (int i = 0; i < count; ++i)
+     {
          justrequests[i] = requests[i]._request;
      }
-     int mpiError = MPI_Waitall(count, justrequests, statuses);
+     
+     int mpi_error = MPI_Waitall(count, justrequests, statuses);
 
-     for (int i = 0; i < count; ++i) {
+     for (int i = 0; i < count; ++i)
+     {
          requests[i]._recvData->update(*(requests[i]._externalData));
 
          requests[i]._request = justrequests[i];
@@ -313,8 +352,7 @@ int Waitallrecv(int count, ConduitMPIRequest requests[], MPI_Status statuses[]) 
 
      delete [] justrequests;
 
-     return mpiError; 
-
+     return mpi_error; 
 
 }
 
@@ -335,87 +373,6 @@ about(Node &n)
     n.reset();
     n["mpi"] = "enabled";
 }
-
-//---------------------------------------------------------------------------//
-//This function needs to copy b's contents into a. b will have only internal, allocated data, while
-// a may have a mix of external and internal data.
-void 
-copy(Node &a, Node &b) {
-    
-    
-    NodeIterator ia = a.iterator();
-    NodeIterator ib = b.iterator();
-
-    while (ia.has_next()) {
-  
-
-        Node achild = ia.next();
-        Node bchild = ib.next();
-
-        index_t dtype_id = achild.dtype().id();
-
-        switch(dtype_id) {
-            case (DataType::INT8_T): 
-                 std::cout << "a" << std::endl;
-                 achild = bchild.as_int8_array();
-                 break;
-            case (DataType::INT16_T): 
-                 std::cout << "b" << std::endl;
-                 achild = bchild.as_int16_array();
-                 break;
-            case (DataType::INT32_T): 
-                 std::cout << "c" << std::endl;
-                 achild.print();
-                 achild = bchild.as_int32_array();
-                 break;
-            case (DataType::INT64_T): 
-                 std::cout << "d" << std::endl;
-                 achild = bchild.as_int64_array();
-                 break;
-            case (DataType::UINT8_T): 
-                 std::cout << "e" << std::endl;
-                 achild = bchild.as_uint8_array();
-                 break;
-            case (DataType::UINT16_T): 
-                 std::cout << "f" << std::endl;
-                 achild = bchild.as_uint16_array();
-                 break;
-            case (DataType::UINT32_T): 
-                 std::cout << "g" << std::endl;
-                 achild = bchild.as_uint32_array();
-                 break;
-            case (DataType::UINT64_T): 
-                 std::cout << "h" << std::endl;
-                 achild = bchild.as_uint64_array();
-                 break;
-            case (DataType::FLOAT32_T): 
-                 std::cout << "i" << std::endl;
-                 achild = bchild.as_float32_array();
-                 break;
-            case (DataType::FLOAT64_T): 
-                 std::cout << "j" << std::endl;
-                 achild.print();
-                 achild = bchild.as_float64_array();
-                 break;
-            case (DataType::CHAR8_STR_T): 
-                 std::cout << "k" << std::endl;
-                 achild = bchild.as_string();
-                 break;
-            case (DataType::EMPTY_T):
-                 std::cout << "l" << std::endl;
-                 break;
-            default:
-                 break;
-        }       
-
-
-        copy(achild, bchild);
-        
-        
-    }
-
-}
-
 
 };
 //-----------------------------------------------------------------------------
