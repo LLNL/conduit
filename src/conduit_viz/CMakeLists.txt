@@ -42,37 +42,56 @@
 # 
 ###############################################################################
 
-####################################
-# Simple CMake setup for civetweb
-####################################
+
+################################
+# Add the conduit-viz library
+################################
+
+ENABLE_WARNINGS()
 
 #
-# civetweb sources
+# Define a variable for the absolute path to the visualizer's client
+# directory
 #
+set(CONDUIT_VIZ_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/client)
 
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_Viz_Config.h.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/Conduit_Viz_Config.h")
 
-set(civetweb_headers
-    include/civetweb.h
-    include/CivetServer.h
-    )
+#
+# Specify all headers
+#            
+set(conduit_viz_headers 
+    conduit_viz.h 
+    Conduit_Viz_Exports.h
+    ${CMAKE_CURRENT_BINARY_DIR}/Conduit_Viz_Config.h)
 
-set(civetweb_sources
-    src/civetweb.c
-    src/CivetServer.cpp
-    )
+#
+# Specify all sources
+#
+set(conduit_viz_sources 
+    conduit_viz.cpp)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+#
+# Note: headers are added here so they show up in project file generators
+# (such as xcode, eclipse, etc)
+#
+add_library(conduit_viz SHARED ${conduit_viz_sources} ${conduit_viz_headers})
 
-add_library(civetweb STATIC ${civetweb_sources} ${civetweb_headers})
+#
+# Link with conduit (if enabled)
+#
+target_link_libraries(conduit_viz conduit civetweb)
 
 ##################################
-# Install Targets for civetweb
+# Install Targets for conduit lib
 ##################################
 
-install(FILES ${civetweb_headers} DESTINATION include)
-install(TARGETS civetweb
+install(FILES ${conduit_viz_headers} DESTINATION include)
+install(TARGETS conduit_viz
   EXPORT conduit
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
 )
+
 

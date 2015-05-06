@@ -59,6 +59,7 @@ Here is a list of the software components used by conduit in source from and the
 - *gtest*: thirdparty_builtin/gtest-1.7.0/LICENSE
 - *libb64*: thirdparty_builtin/libb64/LICENSE
 - *rapidjson*: thirdparty_builtin/rapidjson/license.txt
+- *civetweb*: thirdparty_builtin/civetweb/license.txt
 
 
 Build System

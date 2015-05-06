@@ -1,0 +1,176 @@
+.treemapnode {
+  box-sizing:border-box;
+  -moz-box-sizing:border-box;
+  -webkit-box-sizing:border-box;
+  border: dashed 0px black;
+  font: 10px sans-serif;
+  line-height: 12px;
+  overflow: hidden;
+  position: absolute;
+  text-indent: 2px;
+}
+
+.treenode circle {
+  cursor: pointer;
+  fill: #fff;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+.treenode text {
+  font-size: 11px;
+}
+
+.boldText {
+  font-weight: bold;
+}
+
+path.link {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 1.5px;
+}
+
+* {
+  box-sizing:border-box;
+  -moz-box-sizing:border-box;
+  -webkit-box-sizing:border-box;
+}
+
+body {
+  margin: 20px 20px 20px 20px;
+  min-width: 1024px;
+  font: 12px sans-serif;
+}
+
+.visualizer {
+  margin: 2em auto;
+}
+
+.pure-g {
+  align-content:flex-start;
+}
+
+div [class*='pure-u'] {
+  padding: 1em 0px;
+  border-style: solid none none solid;
+  border-width: 5px medium medium 5px;
+  border-color: white;
+}
+
+.heading {
+  font: 16px sans-serif;
+  font-weight: bold;
+  text-align: center;
+  background-color: #cccccc;
+}
+
+.scary-button {
+  font-size: 150%;
+  background: rgb(202, 60, 60);
+  color: white;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+#main {
+  height:100vh;
+  width:100vw;
+}
+
+#d3tree {
+  padding: 0px 20px 0px 20px;
+  position: relative;
+  margin: 0 auto;
+}
+
+#d3treemap {
+  padding: 0px 20px 0px 20px;
+  position: relative;
+  margin: 0 auto;
+}
+
+#searchResultsTableContainer {
+  height: 175px;
+}
+
+#d3searchtable table {
+  table-layout: fixed;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+#d3searchtable th, #d3searchtable td {
+  padding: 5px;
+  text-align: left;
+  overflow: hidden;
+}
+
+#d3searchtable thead tr {
+  position: relative;
+}
+
+#d3searchtable tbody {
+  display: block;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: 160px;
+}
+
+#d3searchtable th:nth-child(1) {
+  width: 50%;
+}
+#d3searchtable th:nth-child(2) {
+  width: 16%;
+}
+#d3searchtable th:nth-child(3) {
+  width: 17%;
+}
+#d3searchtable th:nth-child(4) {
+  width: 17%;
+}
+
+.fattable-header-container {
+    background-color: rgb(224, 224, 224);
+    color: black;
+    font-weight: bold;
+}
+.fattable-header-container > div > div {
+    border-right: solid 1px rgb(203, 203, 203);
+    padding: 7px;
+}
+.fattable-body-container {
+    background-color: #ffffff;
+}
+.fattable-body-container > div > div {
+    border-right: solid 1px rgb(203, 203, 203);
+    padding: 7px;
+}
+.fattable-body-container > div > div.even {
+    background-color: rgb(242, 242, 242);
+}
+
+.fattable-body-container > div > div.pending {
+    background-color: rgba(255,0,0,0.06);
+}
+
+#valueTableContainer {
+  height: 200px;
+}
+
+#d3valuetable {
+  position: absolute;
+  height:180px;
+}
+
+#goodbye {
+  display: none;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  font-size: 300%;
+  text-align: center;
+  vertical-align: middle;
+  height: 100%;
+  width: 100%;
+  line-height: 100vh;
+}
