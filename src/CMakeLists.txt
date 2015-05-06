@@ -82,7 +82,7 @@ include(CMake/BasicChecks.cmake)
 include(CMake/Setup3rdParty.cmake)
 
 ################################
-# Setup toolkit docs targets
+# Setup docs targets
 ################################
 include(CMake/SetupDocs.cmake)
 
