@@ -73,6 +73,10 @@ Unique Features
 - A runtime focused data description API that does not require code generation.
 - Supports a mix of allocated and externally owned memory semantics.
 
+Contributors 
+----------------
+ Cyrus Harrison (LLNL), Brian Ryujin (LLNL), Adam Kunen (LLNL), George Aspesi (Harvey Mudd), Justin Bai (Harvey Mudd), Rupert Deese (Harvey Mudd), Linnea Shin (Harvey Mudd)
+
 
 Conduit Documentation
 ----------------------

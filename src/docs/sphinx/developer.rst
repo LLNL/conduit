@@ -54,6 +54,7 @@ Source Code Repo Layout
 - **src/conduit**: Main library source
 - **src/conduit_io**: Conduit I/O library source
 - **src/conduit_mpi**: Conduit MPI library source
+- **src/conduit_viz**: Conduit Visualization library source
 - **src/tests**: Unit tests
 - **src/tests/python**: Python Unit tests
 - **src/docs**: Documentation 
