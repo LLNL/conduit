@@ -55,11 +55,20 @@ Third Party Builtin Libraries
 
 Here is a list of the software components used by conduit in source from and the location of their respective license files in our source repo. 
 
-- *gpreftools*: thirdparty_builtin/gperftools-2.2.1.tar.gz: gperftools-2.2.1/COPYING
-- *gtest*: thirdparty_builtin/gtest-1.7.0/LICENSE
-- *libb64*: thirdparty_builtin/libb64/LICENSE
-- *rapidjson*: thirdparty_builtin/rapidjson/license.txt
+C and C++ Libraries 
+=====================
 
+- *gpreftools*: thirdparty_builtin/gperftools-2.2.1.tar.gz: gperftools-2.2.1/COPYING (BSD Style License)
+- *gtest*: thirdparty_builtin/gtest-1.7.0/LICENSE (BSD Style License)
+- *libb64*: thirdparty_builtin/libb64/LICENSE (Public Domain)
+- *rapidjson*: thirdparty_builtin/rapidjson/license.txt (MIT License)
+- *civetweb*: thirdparty_builtin/civetweb/license.txt (MIT License)
+
+JavaScript Libraries
+=====================
+- *fattable*: src/conduit_viz/client/js/fattable/LICENSE (MIT License)
+- *pure*: src/conduit_viz/client/js/pure/LICENSE.md  (BSD Style License)
+- *d3*: src/conduit_viz/client/js/d3/LICENSE (BSD Style License)
 
 Build System
 ~~~~~~~~~~~~~~~

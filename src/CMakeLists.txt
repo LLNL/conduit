@@ -102,6 +102,15 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/conduit_io
                     ${CMAKE_CURRENT_BINARY_DIR}/conduit_io)
 add_subdirectory(conduit_io)
 
+
+################################
+# Add the conduit-viz lib 
+################################
+# add conduit_viz include dirs so units tests have access to the headers
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/conduit_viz
+                    ${CMAKE_CURRENT_BINARY_DIR}/conduit_viz)
+add_subdirectory(conduit_viz)
+
 ################################
 # Add the conduit-mpi lib 
 ################################

@@ -1,3 +1,4 @@
+/*
 ###############################################################################
 # Copyright (c) 2014, Lawrence Livermore National Security, LLC.
 # 
@@ -41,38 +42,23 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
+*/
+var visualizer;
 
-####################################
-# Simple CMake setup for civetweb
-####################################
+var request = new XMLHttpRequest();
+request.open('POST', '/api/get-schema', true);
+request.onload = function () {
+  if (request.status >= 200 && request.status < 400) {
+    var node = JSON.parse(request.response.replace(/nan/ig, "null"));
+    visualizer = new Visualizer(node);
+    visualizer.run();
+  } else {
+    console.log("Server responded with error code: ", request.status);
+  }
+};
 
-#
-# civetweb sources
-#
+request.onerror = function () {
+  console.log("Connection error");
+};
 
-
-set(civetweb_headers
-    include/civetweb.h
-    include/CivetServer.h
-    )
-
-set(civetweb_sources
-    src/civetweb.c
-    src/CivetServer.cpp
-    )
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-add_library(civetweb STATIC ${civetweb_sources} ${civetweb_headers})
-
-##################################
-# Install Targets for civetweb
-##################################
-
-install(FILES ${civetweb_headers} DESTINATION include)
-install(TARGETS civetweb
-  EXPORT conduit
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-)
-
+request.send();
