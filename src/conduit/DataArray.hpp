@@ -44,18 +44,18 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: DataArray.h
+/// file: DataArray.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef __CONDUIT_DATA_ARRAY_H
-#define __CONDUIT_DATA_ARRAY_H
+#ifndef CONDUIT_DATA_ARRAY_HPP
+#define CONDUIT_DATA_ARRAY_HPP
 
 //-----------------------------------------------------------------------------
-// -- conduit library includes -- 
+// -- conduit  includes -- 
 //-----------------------------------------------------------------------------
-#include "Core.h"
-#include "DataType.h"
+#include "Core.hpp"
+#include "DataType.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --

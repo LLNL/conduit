@@ -44,152 +44,99 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_mpi.h
+/// file: Generator.hpp
 ///
 //-----------------------------------------------------------------------------
 
-
-#ifndef __CONDUIT_MPI_H
-#define __CONDUIT_MPI_H
+#ifndef CONDUIT_GENERATOR_HPP
+#define CONDUIT_GENERATOR_HPP
 
 //-----------------------------------------------------------------------------
-// -- define proper lib exports for various platforms -- 
+// -- conduit includes -- 
 //-----------------------------------------------------------------------------
-#include "Conduit_MPI_Exports.h"
-
-#include <mpi.h>
-
-#include "conduit.h"
-#include "Conduit_MPI_Config.h"
+#include "Core.hpp"
+#include "Endianness.hpp"
+#include "DataType.hpp"
+#include "Node.hpp"
+#include "Schema.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
 {
-
 //-----------------------------------------------------------------------------
-// -- begin conduit::mpi --
+// -- begin conduit::Generator --
 //-----------------------------------------------------------------------------
-namespace mpi
+///
+/// class: conduit::Generator
+///
+/// description:
+///  The Generator class implements parsing logic for json schemas.
+///
+//-----------------------------------------------------------------------------
+class CONDUIT_API Generator
 {
-
-    struct ConduitMPIRequest {
-        MPI_Request _request;
-        Node* _externalData;
-        Node* _recvData;
-    };
-
-//-----------------------------------------------------------------------------
-/// Standard MPI Send Recv
-//-----------------------------------------------------------------------------
-
-    int CONDUIT_MPI_API send(Node& node,
-                             int dest,
-                             int tag,
-                             MPI_Comm comm);
-
-    int CONDUIT_MPI_API recv(Node& node,
-                             int source,
-                             int tag,
-                             MPI_Comm comm);
-// TODO:
-// int send_recv(Node &send_node,
-//              int dest,
-//              int send_tag,
-//              Node &recv_node,
-//              int source,
-//              int recv_tag,
-//              MPI_Comm mpi_comm, 
-//              MPI_Status *status);
-
-//-----------------------------------------------------------------------------
-/// MPI Reduce
-//-----------------------------------------------------------------------------
+public:
     
-    int CONDUIT_MPI_API reduce(Node &send_node,
-                               Node &recv_node,
-                               MPI_Datatype mpi_datatype,
-                               MPI_Op mpi_op,
-                               unsigned int root,
-                               MPI_Comm comm);
-
-    int CONDUIT_MPI_API all_reduce(Node &send_node,
-                                   Node &recv_node,
-                                   MPI_Datatype mpi_datatype,
-                                   MPI_Op mpi_op,
-                                   MPI_Comm comm);
-
 //-----------------------------------------------------------------------------
-/// Async MPI Send Recv
+// -- friends of Generator --
+//-----------------------------------------------------------------------------
+    friend class Node;
+    friend class Schema;
+    
+//-----------------------------------------------------------------------------
+//
+// -- conduit::Generator public members --
+//
 //-----------------------------------------------------------------------------
 
-    int CONDUIT_MPI_API isend(Node &node,
-                              int dest,
-                              int tag,
-                              MPI_Comm mpi_comm,
-                              ConduitMPIRequest *request);
-
-    int CONDUIT_MPI_API irecv(Node &node,
-                              int src,
-                              int tag,
-                              MPI_Comm comm,
-                              ConduitMPIRequest *request);
-
-    int CONDUIT_MPI_API wait_send(ConduitMPIRequest* request,
-                                  MPI_Status *status);
-   
-    int CONDUIT_MPI_API wait_recv(ConduitMPIRequest *request,
-                                  MPI_Status *status);
-
-    int CONDUIT_MPI_API wait_all_send(int count,
-                                      ConduitMPIRequest requests[],
-                                      MPI_Status statuses[]);
-
-    int CONDUIT_MPI_API wait_all_recv(int count,
-                                       ConduitMPIRequest requests[],
-                                       MPI_Status statuses[]);
-
-
-// TODO:
-//
-// int broadcast(Node& node,
-//               int root,
-//               MPI_Comm comm );
-//
-// int gather(Node &send_node,
-//            Node &recv_node,
-//            int root, 
-//            MPI_Comm mpi_comm );
-//
-// int scatter(Node &send_node,
-//             Node &recv_node,
-//             int root,
-//             MPI_Comm mpi_comm );
-//
-// int all_to_all(Node& send_node,
-//                Node& recv_node,
-//                MPI_Comm mpi_comm);
+//-----------------------------------------------------------------------------
+// Generator Construction and Destruction
+//-----------------------------------------------------------------------------
+    /// create a generator from json
+    Generator(const std::string &json_schema);
+    /// create a generator from json, which can be applied to a data pointer
+    Generator(const std::string &json_schema,
+              void *data);
+    /// create a generator from json, using a given protocol name, which can 
+    /// optionally be applied to a data pointer
+    Generator(const std::string &json_schema,
+              const std::string &protocol,
+              void *data = NULL);
 
 //-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how conduit_mpi was
-/// configured.
+// JSON Parsing interface
 //-----------------------------------------------------------------------------
- std::string CONDUIT_MPI_API about();
- void        CONDUIT_MPI_API about(Node &);
+    /// parse a json schema to a Schema object.
+    void walk(Schema &sdest) const;
+
+    /// parse a json schema to a Node object.
+    void walk(Node &ndest) const;
+    void walk_external(Node &ndest) const;
+
+private:
+//-----------------------------------------------------------------------------
+//
+// -- conduit::Error private data members --
+//
+//-----------------------------------------------------------------------------
+    /// holds the json based schema text
+    std::string  m_json_schema;
+    /// holds the parsing protocol
+    std::string  m_protocol;
+    /// optional external data pointer
+    void        *m_data;
 
 };
 //-----------------------------------------------------------------------------
-// -- end conduit::mpi --
+// -- end conduit::Generator --
 //-----------------------------------------------------------------------------
 
-
-
-};
+}
 //-----------------------------------------------------------------------------
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
 
 
 #endif
-

@@ -44,26 +44,23 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_io.h
+/// file: Endianness.hpp
 ///
 //-----------------------------------------------------------------------------
 
-
-#ifndef __CONDUIT_IO_H
-#define __CONDUIT_IO_H
+#ifndef CONDUIT_ENDIANNESS_HPP
+#define CONDUIT_ENDIANNESS_HPP
 
 //-----------------------------------------------------------------------------
-// -- define proper lib exports for various platforms -- 
+// -- standard lib includes -- 
 //-----------------------------------------------------------------------------
-#include "Conduit_IO_Exports.h"
+#include <vector>
+#include <sstream>
 
-#include "conduit.h"
-#include "Conduit_IO_Config.h"
-
-// include optional libs
-#ifdef CONDUIT_IO_ENABLE_SILO
-#include "conduit_silo.h"
-#endif
+//-----------------------------------------------------------------------------
+// -- conduit includes -- 
+//-----------------------------------------------------------------------------
+#include "Core.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -72,37 +69,73 @@ namespace conduit
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::io --
+// -- begin conduit::Endianness --
 //-----------------------------------------------------------------------------
-namespace io
+///
+/// class: conduit::Endianness
+///
+/// description:
+///  Class for endian info and conversation. 
+///
+//-----------------------------------------------------------------------------
+class CONDUIT_API Endianness
 {
+public:
+//-----------------------------------------------------------------------------
+//
+// -- conduit::Endianness public members --
+//
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-void CONDUIT_IO_API save(const  Node &node,
-                         const std::string &path);
-
-void CONDUIT_IO_API load(const std::string &path,
-                         Node &node);
+/// EndianEnum is an Enumeration used to hold endian states:
+///  *DEFAULT_T - represents the current machine's endianness
+///  *BIG_T     - represents is big endian 
+///  *LITTLE_T  - represents little endian
+//-----------------------------------------------------------------------------
+    typedef enum
+    {
+        DEFAULT_T = 0, // default
+        BIG_T,
+        LITTLE_T,
+    } EndianEnum;
 
 //-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how conduit_io was
-/// configured.
+/// Returns the current machine's endianness: BIG_T or LITTLE_T
 //-----------------------------------------------------------------------------
- std::string CONDUIT_IO_API about();
- void        CONDUIT_IO_API about(Node &);
+    static index_t          machine_default();
+//-----------------------------------------------------------------------------
+/// Convert human readable string {big|little|default} to an EndianEnum id.
+//-----------------------------------------------------------------------------
+    static index_t          name_to_id(const std::string &name);
+//-----------------------------------------------------------------------------
+/// Converts an EndianEnum id to a human readable string.
+//-----------------------------------------------------------------------------
+    static std::string      id_to_name(index_t endianness);
+    
+//-----------------------------------------------------------------------------
+/// Helpers for endianness transforms
+//-----------------------------------------------------------------------------
+    /// swaps for 16 bit types
+    static void             swap16(void *data);
+    static void             swap16(void *src,void *dest);
+
+    /// swaps for 32 bit types
+    static void             swap32(void *data);
+    static void             swap32(void *src,void *dest);
+
+    /// swaps for 64 bit types    
+    static void             swap64(void *data);
+    static void             swap64(void *src,void *dest);
 
 };
 //-----------------------------------------------------------------------------
-// -- end conduit::io --
+// -- end conduit::Endianness --
 //-----------------------------------------------------------------------------
 
-
-
-};
+}
 //-----------------------------------------------------------------------------
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
 
-
 #endif
-

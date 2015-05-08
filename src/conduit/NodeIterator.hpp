@@ -44,19 +44,19 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: NodeIterator.h
+/// file: NodeIterator.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef __CONDUIT_NODE_ITERATOR_H
-#define __CONDUIT_NODE_ITERATOR_H
+#ifndef CONDUIT_NODE_ITERATOR_HPP
+#define CONDUIT_NODE_ITERATOR_HPP
 
 //-----------------------------------------------------------------------------
-// -- conduit library includes -- 
+// -- conduit includes -- 
 //-----------------------------------------------------------------------------
-#include "Error.h"
-#include "Node.h"
-#include "Utils.h"
+#include "Error.hpp"
+#include "Node.hpp"
+#include "Utils.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --

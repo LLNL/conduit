@@ -53,16 +53,16 @@ if(SILO_FOUND)
   SET(CONDUIT_IO_ENABLE_SILO TRUE)
 endif()
 
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_IO_Config.h.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/Conduit_IO_Config.h")
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_IO_Config.hpp.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/Conduit_IO_Config.hpp")
 
 #
 # Specify all headers
 #            
 set(conduit_io_headers 
-    conduit_io.h 
-    Conduit_IO_Exports.h
-    ${CMAKE_CURRENT_BINARY_DIR}/Conduit_IO_Config.h)
+    conduit_io.hpp
+    Conduit_IO_Exports.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/Conduit_IO_Config.hpp)
 
 #
 # Specify all sources
@@ -70,7 +70,7 @@ set(conduit_io_headers
 set(conduit_io_sources conduit_io.cpp)
 
 if(SILO_FOUND)
-    list(APPEND conduit_io_headers conduit_silo.h)
+    list(APPEND conduit_io_headers conduit_silo.hpp)
     list(APPEND conduit_io_sources conduit_silo.cpp)
 endif()
 

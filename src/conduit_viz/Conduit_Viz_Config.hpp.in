@@ -44,9 +44,15 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Conduit_Viz_Config.h
+/// file: Conduit_Viz_Config.hpp
 ///
 //-----------------------------------------------------------------------------
 
+#ifndef CONDUIT_VIZ_CONFIG_HPP
+#define CONDUIT_VIZ_CONFIG_HPP
+
+// this path points to the web client js code tree
 #define CONDUIT_VIZ_CLIENT_ROOT "@CONDUIT_VIZ_CLIENT_ROOT@"
+
+#endif
 

@@ -49,16 +49,12 @@
 
 ENABLE_WARNINGS()
 
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_MPI_Config.h.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/Conduit_MPI_Config.h")
-
 #
 # Specify all headers
 #            
 set(conduit_mpi_headers 
-    conduit_mpi.h 
-    Conduit_MPI_Exports.h
-    ${CMAKE_CURRENT_BINARY_DIR}/Conduit_MPI_Config.h)
+    conduit_mpi.hpp
+    Conduit_MPI_Exports.hpp)
 
 #
 # Specify all sources

@@ -44,79 +44,39 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Core.h
+/// file: Conduit_IO_Exports.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef __CONDUIT_CORE_H
-#define __CONDUIT_CORE_H
+#ifndef CONDUIT_IO_EXPORTS_HPP
+#define CONDUIT_IO_EXPORTS_HPP
 
 //-----------------------------------------------------------------------------
 // -- define proper lib exports for various platforms -- 
 //-----------------------------------------------------------------------------
-#include "Conduit_Exports.h"
-
-//-----------------------------------------------------------------------------
-// -- include bit width style types mapping header  -- 
-//-----------------------------------------------------------------------------
-#include "Bitwidth_Style_Types.h"
-
-//-----------------------------------------------------------------------------
-// -- standard lib includes -- 
-//-----------------------------------------------------------------------------
-#include <string>
-#include <iostream>
-
-//-----------------------------------------------------------------------------
-// -- begin conduit:: --
-//-----------------------------------------------------------------------------
-namespace conduit
-{
-
-class Node;
-
-//-----------------------------------------------------------------------------
-/// typedefs that map bit width style types into conduit::
-//-----------------------------------------------------------------------------
-
-/// unsigned integer typedefs
-typedef conduit_uint8   uint8;
-typedef conduit_uint16  uint16;
-typedef conduit_uint32  uint32;
-typedef conduit_uint64  uint64;
-
-/// signed integer typedefs
-typedef conduit_int8    int8;
-typedef conduit_int16   int16;
-typedef conduit_int32   int32;
-typedef conduit_int64   int64;
-
-/// floating point typedefs
-typedef conduit_float32 float32;
-typedef conduit_float64 float64;
-
-/// index typedefs
-typedef uint32 index32_t;
-typedef uint64 index64_t;
-
-/// index_t typedef
-/// use a 64-bit index, unless CONDUIT_INDEX_32 is defined.
-#ifdef CONDUIT_INDEX_32
-typedef index32_t index_t;
+#if defined(_WIN32)
+#if defined(CONDUIT_IO_EXPORTS) || defined(conduit_io_EXPORTS)
+#define CONDUIT_IO_API __declspec(dllexport)
 #else
-typedef index64_t index_t;
-#endif 
-
-//-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how conduit was
-/// configured.
-//-----------------------------------------------------------------------------
-std::string CONDUIT_API about();
-void        CONDUIT_API about(Node &);
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit:: --
-//-----------------------------------------------------------------------------
+#define CONDUIT_IO_API __declspec(dllimport)
+#endif
+#if defined(_MSC_VER)
+// Turn off warning about lack of DLL interface
+#pragma warning(disable:4251)
+// Turn off warning non-dll class is base for dll-interface class.
+#pragma warning(disable:4275)
+// Turn off warning about identifier truncation
+#pragma warning(disable:4786)
+#endif
+#else
+# if __GNUC__ >= 4 && (defined(CONDUIT_IO_EXPORTS) || defined(conduit_io_EXPORTS))
+#   define CONDUIT_IO_API __attribute__ ((visibility("default")))
+# else
+#   define CONDUIT_IO_API /* hidden by default */
+# endif
+#endif
 
 #endif
+
+
+

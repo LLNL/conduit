@@ -48,7 +48,7 @@
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit_mpi.h"
+#include "conduit_mpi.hpp"
 #include <iostream>
 #include "gtest/gtest.h"
 
