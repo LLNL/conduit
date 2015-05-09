@@ -44,36 +44,44 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Conduit_MPI_Exports.h
+/// file: Conduit_Config.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_MPI_EXPORTS_H
-#define CONDUIT_MPI_EXPORTS_H
+#ifndef CONDUIT_CONFIG_HPP
+#define CONDUIT_CONFIG_HPP
 
 //-----------------------------------------------------------------------------
-// -- define proper lib exports for various platforms -- 
+// byte widths of native types
 //-----------------------------------------------------------------------------
-#if defined(_WIN32)
-#if defined(CONDUIT_MPI_EXPORTS) || defined(conduit_mpi_EXPORTS)
-#define CONDUIT_MPI_API __declspec(dllexport)
+
+#define CONDUIT_SIZEOF_BYTE 1
+
+#cmakedefine CONDUIT_SIZEOF_CHAR        @CONDUIT_SIZEOF_CHAR@
+#cmakedefine CONDUIT_SIZEOF_SHORT       @CONDUIT_SIZEOF_SHORT@
+#cmakedefine CONDUIT_SIZEOF_INT         @CONDUIT_SIZEOF_INT@
+#cmakedefine CONDUIT_SIZEOF_LONG        @CONDUIT_SIZEOF_LONG@
+#cmakedefine CONDUIT_SIZEOF_LONG_LONG   @CONDUIT_SIZEOF_LONG_LONG@
+
+#cmakedefine CONDUIT_SIZEOF_FLOAT       @CONDUIT_SIZEOF_FLOAT@
+#cmakedefine CONDUIT_SIZEOF_DOUBLE      @CONDUIT_SIZEOF_DOUBLE@
+#cmakedefine CONDUIT_SIZEOF_LONG_DOUBLE @CONDUIT_SIZEOF_LONG_DOUBLE@
+
+#cmakedefine CONDUIT_SIZEOF_VOID_P      @CONDUIT_SIZEOF_VOID_P@
+
+
+//-----------------------------------------------------------------------------
+//
+// #define platform check helpers
+//
+//-----------------------------------------------------------------------------
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+#define CONDUIT_PLATFORM_WINDOWS
+#elif  defined(__APPLE__)
+#define CONDUIT_PLATFORM_APPLE
 #else
-#define CONDUIT_MPI_API __declspec(dllimport)
-#endif
-#if defined(_MSC_VER)
-// Turn off warning about lack of DLL interface
-#pragma warning(disable:4251)
-// Turn off warning non-dll class is base for dll-interface class.
-#pragma warning(disable:4275)
-// Turn off warning about identifier truncation
-#pragma warning(disable:4786)
-#endif
-#else
-# if __GNUC__ >= 4 && (defined(CONDUIT_MPI_EXPORTS) || defined(conduit_mpi_EXPORTS))
-#   define CONDUIT_MPI_API __attribute__ ((visibility("default")))
-# else
-#   define CONDUIT_MPI_API /* hidden by default */
-# endif
+#define CONDUIT_PLATFORM_UNIX
 #endif
 
 #endif

@@ -44,22 +44,22 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Conduit_Python_Exports.h
+/// file: Conduit_Exports.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_PYTHON_EXPORTS_H
-#define CONDUIT_PYTHON_EXPORTS_H
+#ifndef CONDUIT_EXPORTS_HPP
+#define CONDUIT_EXPORTS_HPP
 
 //-----------------------------------------------------------------------------
 // -- define proper lib exports for various platforms -- 
 //-----------------------------------------------------------------------------
 
 #if defined(_WIN32)
-#if defined(CONDUIT_PYTHON_EXPORTS) || defined(conduit_python_EXPORTS)
-#define CONDUIT_PYTHON_API __declspec(dllexport)
+#if defined(CONDUIT_EXPORTS) || defined(conduit_EXPORTS)
+#define CONDUIT_API __declspec(dllexport)
 #else
-#define CONDUIT_PYTHON_API __declspec(dllimport)
+#define CONDUIT_API __declspec(dllimport)
 #endif
 #if defined(_MSC_VER)
 // Turn off warning about lack of DLL interface
@@ -70,10 +70,10 @@
 #pragma warning(disable:4786)
 #endif
 #else
-# if __GNUC__ >= 4 && (defined(CONDUIT_PYTHON_EXPORTS) || defined(conduit_python_EXPORTS))
-#   define CONDUIT_PYTHON_API __attribute__ ((visibility("default")))
+# if __GNUC__ >= 4 && (defined(CONDUIT_EXPORTS) || defined(conduit_EXPORTS))
+#   define CONDUIT_API __attribute__ ((visibility("default")))
 # else
-#   define CONDUIT_PYTHON_API /* hidden by default */
+#   define CONDUIT_API /* hidden by default */
 # endif
 #endif
 

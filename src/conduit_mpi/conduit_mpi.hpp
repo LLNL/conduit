@@ -44,23 +44,24 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Endianness.h
+/// file: conduit_mpi.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef __CONDUIT_ENDIANNESS_H
-#define __CONDUIT_ENDIANNESS_H
+
+#ifndef CONDUIT_MPI_HPP
+#define CONDUIT_MPI_HPP
 
 //-----------------------------------------------------------------------------
-// -- conduit library includes -- 
+// external lib includes
 //-----------------------------------------------------------------------------
-#include "Core.h"
+#include <mpi.h>
 
 //-----------------------------------------------------------------------------
-// -- standard lib includes -- 
+// conduit includes
 //-----------------------------------------------------------------------------
-#include <vector>
-#include <sstream>
+#include "conduit.hpp"
+#include "Conduit_MPI_Exports.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -69,73 +70,127 @@ namespace conduit
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::Endianness --
+// -- begin conduit::mpi --
 //-----------------------------------------------------------------------------
-///
-/// class: conduit::Endianness
-///
-/// description:
-///  Class for endian info and conversation. 
-///
-//-----------------------------------------------------------------------------
-class CONDUIT_API Endianness
+namespace mpi
 {
-public:
-//-----------------------------------------------------------------------------
-//
-// -- conduit::Endianness public members --
-//
-//-----------------------------------------------------------------------------
+
+    struct ConduitMPIRequest {
+        MPI_Request _request;
+        Node* _externalData;
+        Node* _recvData;
+    };
 
 //-----------------------------------------------------------------------------
-/// EndianEnum is an Enumeration used to hold endian states:
-///  *DEFAULT_T - represents the current machine's endianness
-///  *BIG_T     - represents is big endian 
-///  *LITTLE_T  - represents little endian
+/// Standard MPI Send Recv
 //-----------------------------------------------------------------------------
-    typedef enum
-    {
-        DEFAULT_T = 0, // default
-        BIG_T,
-        LITTLE_T,
-    } EndianEnum;
+
+    int CONDUIT_MPI_API send(Node& node,
+                             int dest,
+                             int tag,
+                             MPI_Comm comm);
+
+    int CONDUIT_MPI_API recv(Node& node,
+                             int source,
+                             int tag,
+                             MPI_Comm comm);
+// TODO:
+// int send_recv(Node &send_node,
+//              int dest,
+//              int send_tag,
+//              Node &recv_node,
+//              int source,
+//              int recv_tag,
+//              MPI_Comm mpi_comm, 
+//              MPI_Status *status);
 
 //-----------------------------------------------------------------------------
-/// Returns the current machine's endianness: BIG_T or LITTLE_T
+/// MPI Reduce
 //-----------------------------------------------------------------------------
-    static index_t          machine_default();
-//-----------------------------------------------------------------------------
-/// Convert human readable string {big|little|default} to an EndianEnum id.
-//-----------------------------------------------------------------------------
-    static index_t          name_to_id(const std::string &name);
-//-----------------------------------------------------------------------------
-/// Converts an EndianEnum id to a human readable string.
-//-----------------------------------------------------------------------------
-    static std::string      id_to_name(index_t endianness);
     
-//-----------------------------------------------------------------------------
-/// Helpers for endianness transforms
-//-----------------------------------------------------------------------------
-    /// swaps for 16 bit types
-    static void             swap16(void *data);
-    static void             swap16(void *src,void *dest);
+    int CONDUIT_MPI_API reduce(Node &send_node,
+                               Node &recv_node,
+                               MPI_Datatype mpi_datatype,
+                               MPI_Op mpi_op,
+                               unsigned int root,
+                               MPI_Comm comm);
 
-    /// swaps for 32 bit types
-    static void             swap32(void *data);
-    static void             swap32(void *src,void *dest);
+    int CONDUIT_MPI_API all_reduce(Node &send_node,
+                                   Node &recv_node,
+                                   MPI_Datatype mpi_datatype,
+                                   MPI_Op mpi_op,
+                                   MPI_Comm comm);
 
-    /// swaps for 64 bit types    
-    static void             swap64(void *data);
-    static void             swap64(void *src,void *dest);
+//-----------------------------------------------------------------------------
+/// Async MPI Send Recv
+//-----------------------------------------------------------------------------
+
+    int CONDUIT_MPI_API isend(Node &node,
+                              int dest,
+                              int tag,
+                              MPI_Comm mpi_comm,
+                              ConduitMPIRequest *request);
+
+    int CONDUIT_MPI_API irecv(Node &node,
+                              int src,
+                              int tag,
+                              MPI_Comm comm,
+                              ConduitMPIRequest *request);
+
+    int CONDUIT_MPI_API wait_send(ConduitMPIRequest* request,
+                                  MPI_Status *status);
+   
+    int CONDUIT_MPI_API wait_recv(ConduitMPIRequest *request,
+                                  MPI_Status *status);
+
+    int CONDUIT_MPI_API wait_all_send(int count,
+                                      ConduitMPIRequest requests[],
+                                      MPI_Status statuses[]);
+
+    int CONDUIT_MPI_API wait_all_recv(int count,
+                                       ConduitMPIRequest requests[],
+                                       MPI_Status statuses[]);
+
+
+// TODO:
+//
+// int broadcast(Node& node,
+//               int root,
+//               MPI_Comm comm );
+//
+// int gather(Node &send_node,
+//            Node &recv_node,
+//            int root, 
+//            MPI_Comm mpi_comm );
+//
+// int scatter(Node &send_node,
+//             Node &recv_node,
+//             int root,
+//             MPI_Comm mpi_comm );
+//
+// int all_to_all(Node& send_node,
+//                Node& recv_node,
+//                MPI_Comm mpi_comm);
+
+//-----------------------------------------------------------------------------
+/// The about methods construct human readable info about how conduit_mpi was
+/// configured.
+//-----------------------------------------------------------------------------
+ std::string CONDUIT_MPI_API about();
+ void        CONDUIT_MPI_API about(Node &);
 
 };
 //-----------------------------------------------------------------------------
-// -- end conduit::Endianness --
+// -- end conduit::mpi --
 //-----------------------------------------------------------------------------
 
-}
+
+
+};
 //-----------------------------------------------------------------------------
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
 
+
 #endif
+

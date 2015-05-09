@@ -49,7 +49,7 @@
 //-----------------------------------------------------------------------------
 
 #include <iostream>
-#include "conduit.h"
+#include "conduit.hpp"
 #include "gperftools/heap-checker.h"
 #include "gperftools/heap-profiler.h"
 #include "gtest/gtest.h"

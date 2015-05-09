@@ -44,99 +44,79 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Generator.h
+/// file: Core.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef __CONDUIT_GENERATOR_H
-#define __CONDUIT_GENERATOR_H
+#ifndef CONDUIT_CORE_HPP
+#define CONDUIT_CORE_HPP
 
 //-----------------------------------------------------------------------------
-// -- conduit library includes -- 
+// -- standard cpp lib includes -- 
 //-----------------------------------------------------------------------------
-#include "Core.h"
-#include "Endianness.h"
-#include "DataType.h"
-#include "Node.h"
-#include "Schema.h"
+#include <string>
+#include <iostream>
+
+//-----------------------------------------------------------------------------
+// -- define proper lib exports for various platforms -- 
+//-----------------------------------------------------------------------------
+#include "Conduit_Exports.hpp"
+
+//-----------------------------------------------------------------------------
+// -- include bit width style types mapping header  -- 
+//-----------------------------------------------------------------------------
+#include "Bitwidth_Style_Types.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
 {
-//-----------------------------------------------------------------------------
-// -- begin conduit::Generator --
-//-----------------------------------------------------------------------------
-///
-/// class: conduit::Generator
-///
-/// description:
-///  The Generator class implements parsing logic for json schemas.
-///
-//-----------------------------------------------------------------------------
-class CONDUIT_API Generator
-{
-public:
-    
-//-----------------------------------------------------------------------------
-// -- friends of Generator --
-//-----------------------------------------------------------------------------
-    friend class Node;
-    friend class Schema;
-    
-//-----------------------------------------------------------------------------
-//
-// -- conduit::Generator public members --
-//
-//-----------------------------------------------------------------------------
+
+class Node;
 
 //-----------------------------------------------------------------------------
-// Generator Construction and Destruction
+/// typedefs that map bit width style types into conduit::
 //-----------------------------------------------------------------------------
-    /// create a generator from json
-    Generator(const std::string &json_schema);
-    /// create a generator from json, which can be applied to a data pointer
-    Generator(const std::string &json_schema,
-              void *data);
-    /// create a generator from json, using a given protocol name, which can 
-    /// optionally be applied to a data pointer
-    Generator(const std::string &json_schema,
-              const std::string &protocol,
-              void *data = NULL);
+
+/// unsigned integer typedefs
+typedef conduit_uint8   uint8;
+typedef conduit_uint16  uint16;
+typedef conduit_uint32  uint32;
+typedef conduit_uint64  uint64;
+
+/// signed integer typedefs
+typedef conduit_int8    int8;
+typedef conduit_int16   int16;
+typedef conduit_int32   int32;
+typedef conduit_int64   int64;
+
+/// floating point typedefs
+typedef conduit_float32 float32;
+typedef conduit_float64 float64;
+
+/// index typedefs
+typedef uint32 index32_t;
+typedef uint64 index64_t;
+
+/// index_t typedef
+/// use a 64-bit index, unless CONDUIT_INDEX_32 is defined.
+#ifdef CONDUIT_INDEX_32
+typedef index32_t index_t;
+#else
+typedef index64_t index_t;
+#endif 
 
 //-----------------------------------------------------------------------------
-// JSON Parsing interface
+/// The about methods construct human readable info about how conduit was
+/// configured.
 //-----------------------------------------------------------------------------
-    /// parse a json schema to a Schema object.
-    void walk(Schema &sdest) const;
-
-    /// parse a json schema to a Node object.
-    void walk(Node &ndest) const;
-    void walk_external(Node &ndest) const;
-
-private:
-//-----------------------------------------------------------------------------
-//
-// -- conduit::Error private data members --
-//
-//-----------------------------------------------------------------------------
-    /// holds the json based schema text
-    std::string  m_json_schema;
-    /// holds the parsing protocol
-    std::string  m_protocol;
-    /// optional external data pointer
-    void        *m_data;
-
-};
-//-----------------------------------------------------------------------------
-// -- end conduit::Generator --
-//-----------------------------------------------------------------------------
+std::string CONDUIT_API about();
+void        CONDUIT_API about(Node &);
 
 }
 //-----------------------------------------------------------------------------
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
-
 
 #endif

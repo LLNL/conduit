@@ -44,26 +44,72 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit.h
+/// file: conduit_silo.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef __CONDUIT_H
-#define __CONDUIT_H
-
+#ifndef CONDUIT_SILO_HPP
+#define CONDUIT_SILO_HPP
 
 //-----------------------------------------------------------------------------
-// -- includes for the public conduit interface -- 
+// external lib includes
+//-----------------------------------------------------------------------------
+#include <silo.h>
+
+//-----------------------------------------------------------------------------
+// conduit includes
+//-----------------------------------------------------------------------------
+#include "conduit_io.hpp"
+
+//-----------------------------------------------------------------------------
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
+namespace conduit
+{
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::io --
+//-----------------------------------------------------------------------------
+namespace io
+{
+
+//-----------------------------------------------------------------------------
+void CONDUIT_IO_API silo_save(const  Node &node,
+                              const std::string &path);
+
+void CONDUIT_IO_API silo_load(const std::string &path,
+                              Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_IO_API silo_save(const  Node &node,
+                              const std::string &file_path,
+                              const std::string &silo_obj_path);
+
+void CONDUIT_IO_API silo_load(const std::string &file_path,
+                              const std::string &silo_obj_path,
+                              Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_IO_API silo_save(const  Node &node,
+                              DBfile *dbfile,
+                              const std::string &silo_obj_path);
+
+void CONDUIT_IO_API silo_load(DBfile *dbfile,
+                              const std::string &silo_obj_path,
+                              Node &node);
+
+
+};
+//-----------------------------------------------------------------------------
+// -- end conduit::io --
 //-----------------------------------------------------------------------------
 
-#include "Core.h"
-#include "Error.h"
-#include "Endianness.h"
-#include "DataType.h"
-#include "DataArray.h"
-#include "Schema.h"
-#include "Node.h"
-#include "Generator.h"
-#include "Utils.h"
+
+};
+//-----------------------------------------------------------------------------
+// -- end conduit:: --
+//-----------------------------------------------------------------------------
+
 
 #endif
+

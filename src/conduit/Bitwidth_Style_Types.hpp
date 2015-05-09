@@ -44,23 +44,22 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Bitwidth_Style_Types.h
+/// file: Bitwidth_Style_Types.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef __CONDUIT_BITWIDTH_STYLE_TYPES_H
-#define __CONDUIT_BITWIDTH_STYLE_TYPES_H
-
-//-----------------------------------------------------------------------------
-// -- include sizes from cmake configure tests -- 
-//-----------------------------------------------------------------------------
-#include "Conduit_Config.h"
+#ifndef CONDUIT_BITWIDTH_STYLE_TYPES_HPP
+#define CONDUIT_BITWIDTH_STYLE_TYPES_HPP
 
 //-----------------------------------------------------------------------------
 // -- standard lib includes -- 
 //-----------------------------------------------------------------------------
 #include <limits.h>
 
+//-----------------------------------------------------------------------------
+// -- include sizes from cmake configure tests -- 
+//-----------------------------------------------------------------------------
+#include "Conduit_Config.hpp"
 
 //-----------------------------------------------------------------------------
 /// Bit width annotated Style Standard Data Types

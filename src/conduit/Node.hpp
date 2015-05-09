@@ -45,24 +45,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Node.h
+/// file: Node.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef __CONDUIT_NODE_H
-#define __CONDUIT_NODE_H
-
-//-----------------------------------------------------------------------------
-// -- conduit library includes -- 
-//-----------------------------------------------------------------------------
-#include "Core.h"
-#include "Error.h"
-#include "Endianness.h"
-#include "DataType.h"
-#include "DataArray.h"
-#include "Schema.h"
-#include "Generator.h"
-#include "NodeIterator.h"
+#ifndef CONDUIT_NODE_HPP
+#define CONDUIT_NODE_HPP
 
 //-----------------------------------------------------------------------------
 // -- standard lib includes -- 
@@ -72,6 +60,18 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+
+//-----------------------------------------------------------------------------
+// -- conduit includes -- 
+//-----------------------------------------------------------------------------
+#include "Core.hpp"
+#include "Error.hpp"
+#include "Endianness.hpp"
+#include "DataType.hpp"
+#include "DataArray.hpp"
+#include "Schema.hpp"
+#include "Generator.hpp"
+#include "NodeIterator.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --

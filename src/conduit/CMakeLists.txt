@@ -49,26 +49,26 @@
 
 ENABLE_WARNINGS()
 
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_Config.h.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h")
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_Config.hpp.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.hpp")
 #
 # Specify all headers
 #            
 set(conduit_headers
-    Bitwidth_Style_Types.h
-    DataArray.h
-    Endianness.h
-    Node.h
-    conduit.h
-    Core.h
-    DataType.h
-    Generator.h
-    Error.h
-    NodeIterator.h
-    Schema.h
-    Utils.h
-    Conduit_Exports.h
-    ${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h
+    Bitwidth_Style_Types.hpp
+    DataArray.hpp
+    Endianness.hpp
+    Node.hpp
+    conduit.hpp
+    Core.hpp
+    DataType.hpp
+    Generator.hpp
+    Error.hpp
+    NodeIterator.hpp
+    Schema.hpp
+    Utils.hpp
+    Conduit_Exports.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.hpp
     )
 
 #

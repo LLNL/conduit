@@ -55,16 +55,16 @@ ENABLE_WARNINGS()
 #
 set(CONDUIT_VIZ_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/client)
 
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_Viz_Config.h.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/Conduit_Viz_Config.h")
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_Viz_Config.hpp.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/Conduit_Viz_Config.hpp")
 
 #
 # Specify all headers
 #            
 set(conduit_viz_headers 
-    conduit_viz.h 
-    Conduit_Viz_Exports.h
-    ${CMAKE_CURRENT_BINARY_DIR}/Conduit_Viz_Config.h)
+    conduit_viz.hpp
+    Conduit_Viz_Exports.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/Conduit_Viz_Config.hpp)
 
 #
 # Specify all sources

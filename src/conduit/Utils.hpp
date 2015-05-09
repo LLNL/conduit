@@ -44,44 +44,79 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Conduit_Config.h
+/// file: Utils.hpp
 ///
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-// byte widths of native types
-//-----------------------------------------------------------------------------
-
-#define CONDUIT_SIZEOF_BYTE 1
-
-#cmakedefine CONDUIT_SIZEOF_CHAR        @CONDUIT_SIZEOF_CHAR@
-#cmakedefine CONDUIT_SIZEOF_SHORT       @CONDUIT_SIZEOF_SHORT@
-#cmakedefine CONDUIT_SIZEOF_INT         @CONDUIT_SIZEOF_INT@
-#cmakedefine CONDUIT_SIZEOF_LONG        @CONDUIT_SIZEOF_LONG@
-#cmakedefine CONDUIT_SIZEOF_LONG_LONG   @CONDUIT_SIZEOF_LONG_LONG@
-
-#cmakedefine CONDUIT_SIZEOF_FLOAT       @CONDUIT_SIZEOF_FLOAT@
-#cmakedefine CONDUIT_SIZEOF_DOUBLE      @CONDUIT_SIZEOF_DOUBLE@
-#cmakedefine CONDUIT_SIZEOF_LONG_DOUBLE @CONDUIT_SIZEOF_LONG_DOUBLE@
-
-#cmakedefine CONDUIT_SIZEOF_VOID_P      @CONDUIT_SIZEOF_VOID_P@
-
+#ifndef CONDUIT_UTILS_HPP
+#define CONDUIT_UTILS_HPP
 
 //-----------------------------------------------------------------------------
-//
-// #define platform check helpers
-//
+// -- standard lib includes -- 
+//-----------------------------------------------------------------------------
+#include <string>
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+
+//-----------------------------------------------------------------------------
+// -- conduit includes -- 
+//-----------------------------------------------------------------------------
+#include "Core.hpp"
+
+//-----------------------------------------------------------------------------
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
+namespace conduit
+{
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::utils --
+//-----------------------------------------------------------------------------
+namespace utils
+{
+
+//-----------------------------------------------------------------------------
+    void CONDUIT_API split_string(const std::string &path,
+                                  const std::string &sep,
+                                  std::string &curr,
+                                  std::string &next);
+
+    void CONDUIT_API rsplit_string(const std::string &path,
+                                   const std::string &sep,
+                                   std::string &curr,
+                                   std::string &next);
+
+    void  CONDUIT_API split_path(const std::string &path,
+                                 std::string &curr,
+                                 std::string &next);
+
+//-----------------------------------------------------------------------------
+     std::string CONDUIT_API json_sanitize(const std::string &json);
+     
+//----------------------------------------------------------------------------- 
+     template< typename T >
+     std::string to_hex_string(T value)
+     {
+           std::stringstream oss;
+           oss << std::hex << value;
+           return  oss.str();
+     }
+
+//-----------------------------------------------------------------------------
+     void CONDUIT_API indent(std:: ostringstream &oss,
+                             index_t indent,
+                             index_t depth,
+                             const std::string &pad);
+     
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::utils --
 //-----------------------------------------------------------------------------
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
-#define CONDUIT_PLATFORM_WINDOWS
-#elif  defined(__APPLE__)
-#define CONDUIT_PLATFORM_APPLE
-#else
-#define CONDUIT_PLATFORM_UNIX
+}
+//-----------------------------------------------------------------------------
+// -- end conduit:: --
+//-----------------------------------------------------------------------------
+
 #endif
-
-
-
-
-

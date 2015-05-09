@@ -44,42 +44,40 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_viz.h
+/// file: Conduit_Python_Exports.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef __CONDUIT_VISUALIZER_H
-#define __CONDUIT_VISUALIZER_H
-
-#include "conduit.h"
-#include "Conduit_Viz_Exports.h"
+#ifndef CONDUIT_PYTHON_EXPORTS_HPP
+#define CONDUIT_PYTHON_EXPORTS_HPP
 
 //-----------------------------------------------------------------------------
-// -- begin conduit:: --
-//-----------------------------------------------------------------------------
-namespace conduit
-{
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::viz --
+// -- define proper lib exports for various platforms -- 
 //-----------------------------------------------------------------------------
 
-namespace viz 
-{
+#if defined(_WIN32)
+#if defined(CONDUIT_PYTHON_EXPORTS) || defined(conduit_python_EXPORTS)
+#define CONDUIT_PYTHON_API __declspec(dllexport)
+#else
+#define CONDUIT_PYTHON_API __declspec(dllimport)
+#endif
+#if defined(_MSC_VER)
+// Turn off warning about lack of DLL interface
+#pragma warning(disable:4251)
+// Turn off warning non-dll class is base for dll-interface class.
+#pragma warning(disable:4275)
+// Turn off warning about identifier truncation
+#pragma warning(disable:4786)
+#endif
+#else
+# if __GNUC__ >= 4 && (defined(CONDUIT_PYTHON_EXPORTS) || defined(conduit_python_EXPORTS))
+#   define CONDUIT_PYTHON_API __attribute__ ((visibility("default")))
+# else
+#   define CONDUIT_PYTHON_API /* hidden by default */
+# endif
+#endif
+
+#endif
 
 
-void CONDUIT_VIZ_API visualize(Node *n);
 
-};
-//-----------------------------------------------------------------------------
-// -- end conduit::viz --
-//-----------------------------------------------------------------------------
-
-
-
-};
-//-----------------------------------------------------------------------------
-// -- end conduit:: --
-//-----------------------------------------------------------------------------
-
-#endif /* __CONDUIT_VISUALIZER_H */

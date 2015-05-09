@@ -48,7 +48,7 @@
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit.h"
+#include "conduit.hpp"
 
 #include <iostream>
 #include "gtest/gtest.h"
