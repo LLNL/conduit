@@ -87,6 +87,12 @@ include(CMake/Setup3rdParty.cmake)
 include(CMake/SetupDocs.cmake)
 
 ################################
+# Setup tests helpers
+################################
+include(CMake/SetupTests.cmake)
+
+
+################################
 # Add the conduit lib
 ################################
 # add conduit include dirs so units tests have access to the headers
@@ -110,6 +116,7 @@ add_subdirectory(conduit_io)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/conduit_viz
                     ${CMAKE_CURRENT_BINARY_DIR}/conduit_viz)
 add_subdirectory(conduit_viz)
+
 
 ################################
 # Add the conduit-mpi lib 
