@@ -10,3 +10,4 @@ temp.cpp
 temp.exe
 *.pyc
 .ipynb_checkpoints
+visitlog.py
