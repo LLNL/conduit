@@ -80,6 +80,11 @@ set(BASIC_TESTS gtest_smoke
 set(IO_TESTS conduit_io_smoke)
 
 ################################
+# conduit_mesh lib Unit Tests
+################################
+set(MESH_TESTS conduit_mesh_smoke)
+
+################################
 # Optional Unit Tests
 ################################
 set(PYTHON_GPREF_TOOLS_TESTS gpref_smoke)
@@ -102,6 +107,12 @@ foreach(TEST ${IO_TESTS})
     if(ENABLE_SILO AND SILO_FOUND)
         target_link_libraries(${TEST} ${SILO_LIBRARIES})
     endif()
+endforeach()
+
+
+message(STATUS "Adding conduit_mesh lib unit tests")
+foreach(TEST ${MESH_TESTS})
+    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_mesh)
 endforeach()
 
 
