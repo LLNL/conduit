@@ -3282,6 +3282,31 @@ Node::to_index_t() const
     return 0;
 }
 
+//---------------------------------------------------------------------------//
+int
+Node::to_c_int() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (int)as_int8();
+        case DataType::INT16_T: return (int)as_int16();
+        case DataType::INT32_T: return (int)as_int32();
+        case DataType::INT64_T: return (int)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (int)as_uint8();
+        case DataType::UINT16_T: return (int)as_uint16();
+        case DataType::UINT32_T: return (int)as_uint32();
+        case DataType::UINT64_T: return (int)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (int)as_float32();
+        case DataType::FLOAT64_T: return (int)as_float64();
+    }
+    return 0;
+    
+}
+
+
 //-----------------------------------------------------------------------------
 // -- JSON construction methods ---
 //-----------------------------------------------------------------------------

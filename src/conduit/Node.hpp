@@ -1116,6 +1116,20 @@ public:
     /// convert to the index type 
     index_t          to_index_t() const;
 
+
+    /// convert to a c signed integer 
+    int              to_c_int()   const;
+    explicit        operator int() const
+                 { return to_c_int(); }
+    
+    // /// convert to an c unsigned integer
+    // unsigned int     to_c_unsigned_int()  const;
+    // /// convert to a c float
+    // float            to_c_float() const;
+    // /// convert to a c double
+    // double           to_c_double()) const;
+
+
 //-----------------------------------------------------------------------------
 // -- JSON construction methods ---
 //-----------------------------------------------------------------------------

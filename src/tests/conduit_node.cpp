@@ -346,5 +346,20 @@ TEST(conduit_node, check_leaf_assert)
     EXPECT_THROW(n["v"].as_int8(),conduit::Error);
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, check_implict_c_type_cast)
+{
+
+    conduit::Node n;
+    int v = 32;
+    n["v"] = v;
+    n.print();
+    
+    int z = static_cast<int>(n["v"]);
+    
+    EXPECT_EQ(z,32);
+
+}
+
 
 
