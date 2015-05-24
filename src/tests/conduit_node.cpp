@@ -355,9 +355,22 @@ TEST(conduit_node, check_implict_c_type_cast)
     n["v"] = v;
     n.print();
     
-    int z = static_cast<int>(n["v"]);
+    int z = n["v"].value();
     
     EXPECT_EQ(z,32);
+    
+    float f = 3.14;
+    n["f"] = f;
+    float ff = n["f"].value();
+    EXPECT_NEAR(ff,3.14,0.001);
+    
+    float64 f64 = 2.8;
+    
+    n["f64"] = f64;
+    float64 f64r = n["f64"].value();
+    EXPECT_NEAR(f64r,2.8,0.001);
+    
+    
 
 }
 

@@ -1116,19 +1116,41 @@ public:
     /// convert to the index type 
     index_t          to_index_t() const;
 
-
     /// convert to a c signed integer 
     int              to_c_int()   const;
-    explicit        operator int() const
-                 { return to_c_int(); }
+    // explicit        operator int() const
+    //              { return to_c_int(); }
+
+    // /// convert to a c signed integer
+    //  explicit       operator float64() const
+    //              { return to_float64(); }
+
     
     // /// convert to an c unsigned integer
     // unsigned int     to_c_unsigned_int()  const;
     // /// convert to a c float
-    // float            to_c_float() const;
-    // /// convert to a c double
-    // double           to_c_double()) const;
+    float            to_c_float() const;
+    /// convert to a c double
+// double           to_c_double()) const;
 
+    class Value
+    {
+        friend class Node;
+        public:
+            ~Value();
+            Value(const Value &rhs);
+            
+            operator int()   const;
+            operator float() const;
+            operator float64() const;
+            
+        private:
+            Value(Node *node);
+            Node *m_node;
+    };
+
+    Value value()  
+        { return  Value(this); }
 
 //-----------------------------------------------------------------------------
 // -- JSON construction methods ---

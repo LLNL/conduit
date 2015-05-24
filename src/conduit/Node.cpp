@@ -3307,6 +3307,77 @@ Node::to_c_int() const
 }
 
 
+//---------------------------------------------------------------------------//
+float
+Node::to_c_float() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (float)as_int8();
+        case DataType::INT16_T: return (float)as_int16();
+        case DataType::INT32_T: return (float)as_int32();
+        case DataType::INT64_T: return (float)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (float)as_uint8();
+        case DataType::UINT16_T: return (float)as_uint16();
+        case DataType::UINT32_T: return (float)as_uint32();
+        case DataType::UINT64_T: return (float)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (float)as_float32();
+        case DataType::FLOAT64_T: return (float)as_float64();
+    }
+    return 0;
+
+}
+
+
+//-----------------------------------------------------------------------------
+// -- Value Helper class ---
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+Node::Value::Value(Node *node)
+:m_node(node)
+{
+    
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::Value(const Value &value)
+:m_node(value.m_node)
+{
+    
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::~Value()
+{
+    
+}
+
+
+//---------------------------------------------------------------------------//
+Node::Value::operator int() const
+{
+    return m_node->to_c_int();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator float() const
+{
+    return m_node->to_c_float();
+}
+
+
+//---------------------------------------------------------------------------//
+Node::Value::operator float64() const
+{
+    return m_node->to_float64();
+}
+
+
+
 //-----------------------------------------------------------------------------
 // -- JSON construction methods ---
 //-----------------------------------------------------------------------------

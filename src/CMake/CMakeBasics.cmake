@@ -69,8 +69,6 @@ macro(ENABLE_WARNINGS)
     endif()
 endmacro()
 
-add_definitions(-Wc++11-extensions)
-
 ################################
 # RPath Settings
 ################################
