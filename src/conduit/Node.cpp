@@ -3189,6 +3189,76 @@ Node::endian_swap(index_t endianness)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
+int8
+Node::to_int8() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return as_int8();
+        case DataType::INT16_T: return (int8)as_int16();
+        case DataType::INT32_T: return (int8)as_int32();
+        case DataType::INT64_T: return (int8)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (int8)as_uint8();
+        case DataType::UINT16_T: return (int8)as_uint16();
+        case DataType::UINT32_T: return (int8)as_uint32();
+        case DataType::UINT64_T: return (int8)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (int8)as_float32();
+        case DataType::FLOAT64_T: return (int8)as_float64();
+    }
+    return 0;
+}
+
+
+//---------------------------------------------------------------------------//
+int16
+Node::to_int16() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (int16)as_int8();
+        case DataType::INT16_T: return as_int16();
+        case DataType::INT32_T: return (int16)as_int32();
+        case DataType::INT64_T: return (int16)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (int16)as_uint8();
+        case DataType::UINT16_T: return (int16)as_uint16();
+        case DataType::UINT32_T: return (int16)as_uint32();
+        case DataType::UINT64_T: return (int16)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (int16)as_float32();
+        case DataType::FLOAT64_T: return (int16)as_float64();
+    }
+    return 0;
+}
+
+//---------------------------------------------------------------------------//
+int32
+Node::to_int32() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (int32)as_int8();
+        case DataType::INT16_T: return (int32)as_int16();
+        case DataType::INT32_T: return as_int32();
+        case DataType::INT64_T: return (int32)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (int32)as_uint8();
+        case DataType::UINT16_T: return (int32)as_uint16();
+        case DataType::UINT32_T: return (int32)as_uint32();
+        case DataType::UINT64_T: return (int32)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (int32)as_float32();
+        case DataType::FLOAT64_T: return (int32)as_float64();
+    }
+    return 0;
+}
+
+//---------------------------------------------------------------------------//
 int64
 Node::to_int64() const
 {
@@ -3209,7 +3279,76 @@ Node::to_int64() const
         case DataType::FLOAT64_T: return (int64)as_float64();
     }
     return 0;
-    
+}
+
+//---------------------------------------------------------------------------//
+uint8
+Node::to_uint8() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (uint8)as_int8();
+        case DataType::INT16_T: return (uint8)as_int16();
+        case DataType::INT32_T: return (uint8)as_int32();
+        case DataType::INT64_T: return (uint8)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return as_uint8();
+        case DataType::UINT16_T: return (uint8)as_uint16();
+        case DataType::UINT32_T: return (uint8)as_uint32();
+        case DataType::UINT64_T: return (uint8)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (uint8)as_float32();
+        case DataType::FLOAT64_T: return (uint8)as_float64();
+    }
+    return 0;
+}
+
+
+//---------------------------------------------------------------------------//
+uint16
+Node::to_uint16() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (uint16)as_int8();
+        case DataType::INT16_T: return (uint16)as_int16();
+        case DataType::INT32_T: return (uint16)as_int32();
+        case DataType::INT64_T: return (uint16)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (uint16)as_uint8();
+        case DataType::UINT16_T: return as_uint16();
+        case DataType::UINT32_T: return (uint16)as_uint32();
+        case DataType::UINT64_T: return (uint16)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (uint16)as_float32();
+        case DataType::FLOAT64_T: return (uint16)as_float64();
+    }
+    return 0;
+}
+
+//---------------------------------------------------------------------------//
+uint32
+Node::to_uint32() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (uint32)as_int8();
+        case DataType::INT16_T: return (uint32)as_int16();
+        case DataType::INT32_T: return (uint32)as_int32();
+        case DataType::INT64_T: return (uint32)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (uint32)as_uint8();
+        case DataType::UINT16_T: return (uint32)as_uint16();
+        case DataType::UINT32_T: return as_uint32();
+        case DataType::UINT64_T: return (uint32)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (uint32)as_float32();
+        case DataType::FLOAT64_T: return (uint32)as_float64();
+    }
+    return 0;
 }
 
 //---------------------------------------------------------------------------//
@@ -3234,6 +3373,31 @@ Node::to_uint64() const
     }
     return 0;
 }
+
+
+//---------------------------------------------------------------------------//
+float32
+Node::to_float32() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (float32)as_int8();
+        case DataType::INT16_T: return (float32)as_int16();
+        case DataType::INT32_T: return (float32)as_int32();
+        case DataType::INT64_T: return (float32)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (float32)as_uint8();
+        case DataType::UINT16_T: return (float32)as_uint16();
+        case DataType::UINT32_T: return (float32)as_uint32();
+        case DataType::UINT64_T: return (float32)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return as_float32();
+        case DataType::FLOAT64_T: return (float64)as_float64();
+    }
+    return 0.0;
+}
+
 
 //---------------------------------------------------------------------------//
 float64
@@ -3283,8 +3447,58 @@ Node::to_index_t() const
 }
 
 //---------------------------------------------------------------------------//
+// -- std signed types -- //
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+char
+Node::to_char() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (char)as_int8();
+        case DataType::INT16_T: return (char)as_int16();
+        case DataType::INT32_T: return (char)as_int32();
+        case DataType::INT64_T: return (char)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (char)as_uint8();
+        case DataType::UINT16_T: return (char)as_uint16();
+        case DataType::UINT32_T: return (char)as_uint32();
+        case DataType::UINT64_T: return (char)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (char)as_float32();
+        case DataType::FLOAT64_T: return (char)as_float64();
+    }
+    return 0;
+}
+
+//---------------------------------------------------------------------------//
+short
+Node::to_short() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (short)as_int8();
+        case DataType::INT16_T: return (short)as_int16();
+        case DataType::INT32_T: return (short)as_int32();
+        case DataType::INT64_T: return (short)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (short)as_uint8();
+        case DataType::UINT16_T: return (short)as_uint16();
+        case DataType::UINT32_T: return (short)as_uint32();
+        case DataType::UINT64_T: return (short)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (short)as_float32();
+        case DataType::FLOAT64_T: return (short)as_float64();
+    }
+    return 0;
+}
+
+//---------------------------------------------------------------------------//
 int
-Node::to_c_int() const
+Node::to_int() const
 {
     switch(dtype().id())
     {
@@ -3306,10 +3520,129 @@ Node::to_c_int() const
     
 }
 
+//---------------------------------------------------------------------------//
+long
+Node::to_long() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (long)as_int8();
+        case DataType::INT16_T: return (long)as_int16();
+        case DataType::INT32_T: return (long)as_int32();
+        case DataType::INT64_T: return (long)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (long)as_uint8();
+        case DataType::UINT16_T: return (long)as_uint16();
+        case DataType::UINT32_T: return (long)as_uint32();
+        case DataType::UINT64_T: return (long)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (long)as_float32();
+        case DataType::FLOAT64_T: return (long)as_float64();
+    }
+    return 0;
+}
+
+//---------------------------------------------------------------------------//
+// -- std signed types -- //
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+unsigned char
+Node::to_unsigned_char() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (unsigned char)as_int8();
+        case DataType::INT16_T: return (unsigned char)as_int16();
+        case DataType::INT32_T: return (unsigned char)as_int32();
+        case DataType::INT64_T: return (unsigned char)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (unsigned char)as_uint8();
+        case DataType::UINT16_T: return (unsigned char)as_uint16();
+        case DataType::UINT32_T: return (unsigned char)as_uint32();
+        case DataType::UINT64_T: return (unsigned char)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (unsigned char)as_float32();
+        case DataType::FLOAT64_T: return (unsigned char)as_float64();
+    }
+    return 0;
+}
+
+//---------------------------------------------------------------------------//
+unsigned short
+Node::to_unsigned_short() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (unsigned short)as_int8();
+        case DataType::INT16_T: return (unsigned short)as_int16();
+        case DataType::INT32_T: return (unsigned short)as_int32();
+        case DataType::INT64_T: return (unsigned short)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (unsigned short)as_uint8();
+        case DataType::UINT16_T: return (unsigned short)as_uint16();
+        case DataType::UINT32_T: return (unsigned short)as_uint32();
+        case DataType::UINT64_T: return (unsigned short)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (unsigned short)as_float32();
+        case DataType::FLOAT64_T: return (unsigned short)as_float64();
+    }
+    return 0;
+}
+
+//---------------------------------------------------------------------------//
+unsigned int
+Node::to_unsigned_int() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (unsigned int)as_int8();
+        case DataType::INT16_T: return (unsigned int)as_int16();
+        case DataType::INT32_T: return (unsigned int)as_int32();
+        case DataType::INT64_T: return (unsigned int)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (unsigned int)as_uint8();
+        case DataType::UINT16_T: return (unsigned int)as_uint16();
+        case DataType::UINT32_T: return (unsigned int)as_uint32();
+        case DataType::UINT64_T: return (unsigned int)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (unsigned int)as_float32();
+        case DataType::FLOAT64_T: return (unsigned int)as_float64();
+    }
+    return 0;
+}
+
+//---------------------------------------------------------------------------//
+unsigned long
+Node::to_unsigned_long() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (unsigned long)as_int8();
+        case DataType::INT16_T: return (unsigned long)as_int16();
+        case DataType::INT32_T: return (unsigned long)as_int32();
+        case DataType::INT64_T: return (unsigned long)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (unsigned long)as_uint8();
+        case DataType::UINT16_T: return (unsigned long)as_uint16();
+        case DataType::UINT32_T: return (unsigned long)as_uint32();
+        case DataType::UINT64_T: return (unsigned long)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (unsigned long)as_float32();
+        case DataType::FLOAT64_T: return (unsigned long)as_float64();
+    }
+    return 0;
+}
+
 
 //---------------------------------------------------------------------------//
 float
-Node::to_c_float() const
+Node::to_float() const
 {
     switch(dtype().id())
     {
@@ -3329,6 +3662,30 @@ Node::to_c_float() const
     }
     return 0;
 
+}
+
+//---------------------------------------------------------------------------//
+double
+Node::to_double() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (double)as_int8();
+        case DataType::INT16_T: return (double)as_int16();
+        case DataType::INT32_T: return (double)as_int32();
+        case DataType::INT64_T: return (double)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (double)as_uint8();
+        case DataType::UINT16_T: return (double)as_uint16();
+        case DataType::UINT32_T: return (double)as_uint32();
+        case DataType::UINT64_T: return (double)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (double)as_float32();
+        case DataType::FLOAT64_T: return (double)as_float64();
+    }
+
+    return 0; // TODO:: Error for Obj or list?
 }
 
 
@@ -3356,27 +3713,71 @@ Node::Value::~Value()
     
 }
 
+//---------------------------------------------------------------------------//
+Node::Value::operator signed char() const
+{
+    return m_node->to_char();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator char() const
+{
+    return m_node->to_char();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator short() const
+{
+    return m_node->to_short();
+}
 
 //---------------------------------------------------------------------------//
 Node::Value::operator int() const
 {
-    return m_node->to_c_int();
+    return m_node->to_int();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator long() const
+{
+    return m_node->to_long();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned char() const
+{
+    return m_node->to_unsigned_char();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned short() const
+{
+    return m_node->to_unsigned_short();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned int() const
+{
+    return m_node->to_unsigned_int();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned long() const
+{
+    return m_node->to_unsigned_long();
 }
 
 //---------------------------------------------------------------------------//
 Node::Value::operator float() const
 {
-    return m_node->to_c_float();
+    return m_node->to_float();
 }
-
 
 //---------------------------------------------------------------------------//
-Node::Value::operator float64() const
+Node::Value::operator double() const
 {
-    return m_node->to_float64();
+    return m_node->to_double();
 }
-
-
 
 //-----------------------------------------------------------------------------
 // -- JSON construction methods ---
