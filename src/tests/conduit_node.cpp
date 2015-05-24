@@ -346,5 +346,132 @@ TEST(conduit_node, check_leaf_assert)
     EXPECT_THROW(n["v"].as_int8(),conduit::Error);
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, check_value_implict_c_type_cast)
+{
+    conduit::Node n;
+    
+    char  cv = -1;
+    short sv = -2;
+    int   iv = -3;
+    long  lv = -4;
+     
+    unsigned char  ucv = 1;
+    unsigned short usv = 2;
+    unsigned int   uiv = 3;
+    unsigned long  ulv = 4;
+    
+    float  fv = 1.2;
+    double dv = 2.4;
+    
+    n["cv"] = cv;
+    n["sv"] = sv;
+    n["iv"] = iv;
+    n["lv"] = lv;
+    
+    
+    n["ucv"] = ucv;
+    n["usv"] = usv;
+    n["uiv"] = uiv;
+    n["ulv"] = ulv;
+    
+    n["fv"] = fv;
+    n["dv"] = dv;
+    
+     
+    n.print();
+    
+    char  cv_r = n["cv"].value();
+    short sv_r = n["sv"].value();
+    int   iv_r = n["iv"].value();
+    long  lv_r = n["lv"].value();
+    
+    
+    EXPECT_EQ(cv,cv_r);
+    EXPECT_EQ(sv,sv_r);
+    EXPECT_EQ(iv,iv_r);
+    EXPECT_EQ(lv,lv_r);
+
+    unsigned char  ucv_r = n["ucv"].value();
+    unsigned short usv_r = n["usv"].value();
+    unsigned int   uiv_r = n["uiv"].value();
+    unsigned long  ulv_r = n["ulv"].value();
+
+    EXPECT_EQ(ucv,ucv_r);
+    EXPECT_EQ(usv,usv_r);
+    EXPECT_EQ(uiv,uiv_r);
+    EXPECT_EQ(ulv,ulv_r);
+
+
+    float fv_r = n["fv"].value();
+    float dv_r = n["dv"].value();
+
+    EXPECT_NEAR(fv,fv_r,0.001);
+    EXPECT_NEAR(dv,dv_r,0.001);
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node, check_value_implict_bitwidth_type_cast)
+{
+    conduit::Node n;
+    
+    int8  i8v  = -1;
+    int16 i16v = -2;
+    int32 i32v = -3;
+    int64 i64v = -4;
+     
+    uint8  ui8v  = 1;
+    uint16 ui16v = 2;
+    uint32 ui32v = 3;
+    uint64 ui64v = 4;
+
+    float32 f32v = 1.2;
+    float64 f64v = 2.4;
+    
+    n["i8v"]  = i8v;
+    n["i16v"] = i16v;
+    n["i32v"] = i32v;
+    n["i64v"] = i64v;
+    
+    n["ui8v"]  = ui8v;
+    n["ui16v"] = ui16v;
+    n["ui32v"] = ui32v;
+    n["ui64v"] = ui64v;
+    
+    n["f32v"] = f32v;
+    n["f64v"] = f64v;
+    
+     
+    n.print();
+    
+    int8  i8v_r  = n["i8v"].value();
+    int16 i16v_r = n["i16v"].value();
+    int32 i32v_r = n["i32v"].value();
+    int64 i64v_r = n["i64v"].value();
+    
+    EXPECT_EQ(i8v,i8v_r);
+    EXPECT_EQ(i16v,i16v_r);
+    EXPECT_EQ(i32v,i32v_r);
+    EXPECT_EQ(i64v,i64v_r);
+
+    uint8  ui8v_r  = n["ui8v"].value();
+    uint16 ui16v_r = n["ui16v"].value();
+    uint32 ui32v_r = n["ui32v"].value();
+    uint64 ui64v_r = n["ui64v"].value();
+    
+    EXPECT_EQ(ui8v,ui8v_r);
+    EXPECT_EQ(ui16v,ui16v_r);
+    EXPECT_EQ(ui32v,ui32v_r);
+    EXPECT_EQ(ui64v,ui64v_r);
+
+
+    float f32v_r = n["f32v"].value();
+    float f64v_r = n["f64v"].value();
+
+    EXPECT_NEAR(f32v,f32v_r,0.001);
+    EXPECT_NEAR(f64v,f64v_r,0.001);
+}
+
 
 

@@ -53,9 +53,9 @@ set(CMAKE_CXX_COMPILER "clang++" CACHE PATH "")
 # Enable Silo Support in conduit_io
 set(ENABLE_SILO ON CACHE PATH "")
 
-set(SILO_DIR "/Users/harrison37/Work/masonry/mbuild-visit-2.8.0-darwin-x86_64/thirdparty_shared/visit/silo/4.10/darwin-x86_64/" CACHE PATH "")
-set(HDF5_DIR "/Users/harrison37/Work/masonry/mbuild-visit-2.8.0-darwin-x86_64/thirdparty_shared/visit//hdf5/1.8.7/darwin-x86_64/" CACHE PATH "")
-set(SZIP_DIR "/Users/harrison37/Work/masonry/mbuild-visit-2.8.0-darwin-x86_64/thirdparty_shared/visit//szip/2.1/darwin-x86_64/" CACHE PATH "")
+set(SILO_DIR "/Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thirdparty_shared/visit/silo/4.10.1/darwin-x86_64/" CACHE PATH "")
+set(HDF5_DIR "/Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thirdparty_shared/visit//hdf5/1.8.7/darwin-x86_64/" CACHE PATH "")
+set(SZIP_DIR "/Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thirdparty_shared/visit//szip/2.1/darwin-x86_64/" CACHE PATH "")
 
 
 # Enable python module builds
@@ -65,9 +65,9 @@ set(PYTHON_EXECUTABLE /Users/harrison37/Work/conduit/libs/python/2.7.9/bin/pytho
 # Enable mpi for conduit-mpi
 set(ENABLE_MPI ON CACHE PATH "")
 
-set(MPIEXEC /Users/harrison37/Work/masonry/mbuild-visit-2.9.0-darwin-x86_64/thirdparty_shared/visit/mpich/3.0.4/darwin-x86_64/bin/mpiexec CACHE PATH "")
+set(MPIEXEC /Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thirdparty_shared/visit/mpich/3.0.4/darwin-x86_64/bin/mpiexec CACHE PATH "")
 
-set(MPI_CC_COMPILER /Users/harrison37/Work/masonry/mbuild-visit-2.9.0-darwin-x86_64/thirdparty_shared/visit/mpich/3.0.4/darwin-x86_64/bin/mpicc CACHE PATH "")
+set(MPI_CC_COMPILER /Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thirdparty_shared/visit/mpich/3.0.4/darwin-x86_64/bin/mpicc CACHE PATH "")
 
-set(MPI_CXX_COMPILER /Users/harrison37/Work/masonry/mbuild-visit-2.9.0-darwin-x86_64/thirdparty_shared/visit/mpich/3.0.4/darwin-x86_64/bin/mpicc CACHE PATH "")
+set(MPI_CXX_COMPILER /Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thirdparty_shared/visit/mpich/3.0.4/darwin-x86_64/bin/mpicc CACHE PATH "")
 

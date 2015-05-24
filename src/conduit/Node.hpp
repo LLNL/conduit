@@ -1103,18 +1103,82 @@ public:
 // -- leaf coercion methods ---
 //-----------------------------------------------------------------------------
     ///
-    /// These methods allow you to coerce a leaf type to the widest bitwidth
-    /// type.
+    /// These methods allow you to coerce a leaf type to another type.
     ///
+    
+    /// scalar coercion
 
-    /// convert to a 64-bit signed integer 
-    int64            to_int64()   const;
-    /// convert to a 64-bit unsigned integer 
+    /// convert to a signed integer types
+    int8             to_int8()   const;
+    int16            to_int16()  const;
+    int32            to_int32()  const;
+    int64            to_int64()  const;
+    
+    /// convert to a unsigned integer types
+    uint8            to_uint8()   const;
+    uint16           to_uint16()  const;
+    uint32           to_uint32()  const;
     uint64           to_uint64()  const;
-    /// convert to a 64-bit floating point number
+    
+    /// convert to a floating point type
+    float32          to_float32() const;
     float64          to_float64() const;
+    
     /// convert to the index type 
     index_t          to_index_t() const;
+
+    /// convert to c signed integer types
+    char             to_char()  const;
+    short            to_short() const;
+    int              to_int()   const;
+    long             to_long()  const;
+
+    /// convert to c unsigned integer types
+    unsigned char    to_unsigned_char()  const;
+    unsigned short   to_unsigned_short() const;
+    unsigned int     to_unsigned_int()   const;
+    unsigned long    to_unsigned_long()  const;
+    
+    /// convert to c floating type
+    float            to_float() const;
+    double           to_double() const;
+
+
+//-----------------------------------------------------------------------------
+// -- Node::Value Helper class --
+//-----------------------------------------------------------------------------
+    class Value
+    {
+        friend class Node;
+        public:
+            ~Value();
+            Value(const Value &rhs);
+            // cast operators for signed integers
+            
+            // we need an explicit case for signed char
+            operator signed char()  const;
+            operator char()   const;
+            operator short()  const;
+            operator int()    const;
+            operator long()   const;
+
+            // cast operators for unsigned integers
+            operator unsigned char()   const;
+            operator unsigned short()  const;
+            operator unsigned int()    const;
+            operator unsigned long()   const;
+            
+            // cast operators for floating point types
+            operator float()  const;
+            operator double() const;
+            
+        private:
+            Value(Node *node);
+            Node    *m_node;
+    };
+
+    Value value()  
+        { return  Value(this); }
 
 //-----------------------------------------------------------------------------
 // -- JSON construction methods ---
