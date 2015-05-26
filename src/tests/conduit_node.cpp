@@ -351,7 +351,7 @@ TEST(conduit_node, check_value_implict_c_type_cast)
 {
     conduit::Node n;
     
-    char  cv = -1;
+    signed char  cv = -1;
     short sv = -2;
     int   iv = -3;
     long  lv = -4;
@@ -381,7 +381,7 @@ TEST(conduit_node, check_value_implict_c_type_cast)
      
     n.print();
     
-    char  cv_r = n["cv"].value();
+    signed char  cv_r = n["cv"].value();
     short sv_r = n["sv"].value();
     int   iv_r = n["iv"].value();
     long  lv_r = n["lv"].value();
@@ -403,11 +403,86 @@ TEST(conduit_node, check_value_implict_c_type_cast)
     EXPECT_EQ(ulv,ulv_r);
 
 
-    float fv_r = n["fv"].value();
-    float dv_r = n["dv"].value();
+    float  fv_r = n["fv"].value();
+    double dv_r = n["dv"].value();
 
     EXPECT_NEAR(fv,fv_r,0.001);
     EXPECT_NEAR(dv,dv_r,0.001);
+    
+    
+    signed char  *cv_p_r = n["cv"].value();
+    short *sv_p_r = n["sv"].value();
+    int   *iv_p_r = n["iv"].value();
+    long  *lv_p_r = n["lv"].value();
+    
+    
+    EXPECT_EQ(cv,cv_p_r[0]);
+    EXPECT_EQ(sv,sv_p_r[0]);
+    EXPECT_EQ(iv,iv_p_r[0]);
+    EXPECT_EQ(lv,lv_p_r[0]);
+
+    unsigned char  *ucv_p_r = n["ucv"].value();
+    unsigned short *usv_p_r = n["usv"].value();
+    unsigned int   *uiv_p_r = n["uiv"].value();
+    unsigned long  *ulv_p_r = n["ulv"].value();
+
+    EXPECT_EQ(ucv,ucv_p_r[0]);
+    EXPECT_EQ(usv,usv_p_r[0]);
+    EXPECT_EQ(uiv,uiv_p_r[0]);
+    EXPECT_EQ(ulv,ulv_p_r[0]);
+
+
+    float  *fv_p_r = n["fv"].value();
+    double *dv_p_r = n["dv"].value();
+
+    EXPECT_NEAR(fv,fv_p_r[0],0.001);
+    EXPECT_NEAR(dv,dv_p_r[0],0.001);
+    
+    
+    char_array  cv_a_r = n["cv"].value();
+    short_array sv_a_r = n["sv"].value();
+    int_array   iv_a_r = n["iv"].value();
+    long_array  lv_a_r = n["lv"].value();
+    
+    
+    EXPECT_EQ(cv_a_r.number_of_elements(),1);
+    EXPECT_EQ(sv_a_r.number_of_elements(),1);
+    EXPECT_EQ(iv_a_r.number_of_elements(),1);
+    EXPECT_EQ(lv_a_r.number_of_elements(),1);
+    
+    EXPECT_EQ(cv,cv_a_r[0]);
+    EXPECT_EQ(sv,sv_a_r[0]);
+    EXPECT_EQ(iv,iv_a_r[0]);
+    EXPECT_EQ(lv,lv_a_r[0]);
+
+    unsigned_char_array  ucv_a_r = n["ucv"].value();
+    unsigned_short_array usv_a_r = n["usv"].value();
+    unsigned_int_array   uiv_a_r = n["uiv"].value();
+    unsigned_long_array  ulv_a_r = n["ulv"].value();
+
+
+    EXPECT_EQ(ucv_a_r.number_of_elements(),1);
+    EXPECT_EQ(usv_a_r.number_of_elements(),1);
+    EXPECT_EQ(uiv_a_r.number_of_elements(),1);
+    EXPECT_EQ(ulv_a_r.number_of_elements(),1);
+
+    EXPECT_EQ(ucv,ucv_a_r[0]);
+    EXPECT_EQ(usv,usv_a_r[0]);
+    EXPECT_EQ(uiv,uiv_a_r[0]);
+    EXPECT_EQ(ulv,ulv_a_r[0]);
+
+
+    float_array  fv_a_r = n["fv"].value();
+    double_array dv_a_r = n["dv"].value();
+
+    EXPECT_EQ(fv_a_r.number_of_elements(),1);
+    EXPECT_EQ(dv_a_r.number_of_elements(),1);
+
+
+    EXPECT_NEAR(fv,fv_a_r[0],0.001);
+    EXPECT_NEAR(dv,dv_a_r[0],0.001);
+
+
 }
 
 
@@ -466,11 +541,81 @@ TEST(conduit_node, check_value_implict_bitwidth_type_cast)
     EXPECT_EQ(ui64v,ui64v_r);
 
 
-    float f32v_r = n["f32v"].value();
-    float f64v_r = n["f64v"].value();
+    float32 f32v_r = n["f32v"].value();
+    float64 f64v_r = n["f64v"].value();
 
     EXPECT_NEAR(f32v,f32v_r,0.001);
     EXPECT_NEAR(f64v,f64v_r,0.001);
+    
+    
+    int8  *i8v_p_r  = n["i8v"].value();
+    int16 *i16v_p_r = n["i16v"].value();
+    int32 *i32v_p_r = n["i32v"].value();
+    int64 *i64v_p_r = n["i64v"].value();
+    
+    EXPECT_EQ(i8v,i8v_p_r[0]);
+    EXPECT_EQ(i16v,i16v_p_r[0]);
+    EXPECT_EQ(i32v,i32v_p_r[0]);
+    EXPECT_EQ(i64v,i64v_p_r[0]);
+
+    uint8  *ui8v_p_r  = n["ui8v"].value();
+    uint16 *ui16v_p_r = n["ui16v"].value();
+    uint32 *ui32v_p_r = n["ui32v"].value();
+    uint64 *ui64v_p_r = n["ui64v"].value();
+    
+    EXPECT_EQ(ui8v,ui8v_p_r[0]);
+    EXPECT_EQ(ui16v,ui16v_p_r[0]);
+    EXPECT_EQ(ui32v,ui32v_p_r[0]);
+    EXPECT_EQ(ui64v,ui64v_p_r[0]);
+
+
+    float32 *f32v_p_r = n["f32v"].value();
+    float64 *f64v_p_r = n["f64v"].value();
+
+    EXPECT_NEAR(f32v,f32v_p_r[0],0.001);
+    EXPECT_NEAR(f64v,f64v_p_r[0],0.001);
+    
+    int8_array  i8v_a_r  = n["i8v"].value();
+    int16_array i16v_a_r = n["i16v"].value();
+    int32_array i32v_a_r = n["i32v"].value();
+    int64_array i64v_a_r = n["i64v"].value();
+
+    EXPECT_EQ(i8v_a_r.number_of_elements(),1);
+    EXPECT_EQ(i16v_a_r.number_of_elements(),1);
+    EXPECT_EQ(i32v_a_r.number_of_elements(),1);
+    EXPECT_EQ(i64v_a_r.number_of_elements(),1);
+    
+    EXPECT_EQ(i8v,i8v_a_r[0]);
+    EXPECT_EQ(i16v,i16v_a_r[0]);
+    EXPECT_EQ(i32v,i32v_a_r[0]);
+    EXPECT_EQ(i64v,i64v_a_r[0]);
+
+    uint8_array  ui8v_a_r  = n["ui8v"].value();
+    uint16_array ui16v_a_r = n["ui16v"].value();
+    uint32_array ui32v_a_r = n["ui32v"].value();
+    uint64_array ui64v_a_r = n["ui64v"].value();
+    
+    EXPECT_EQ(ui8v_a_r.number_of_elements(),1);
+    EXPECT_EQ(ui16v_a_r.number_of_elements(),1);
+    EXPECT_EQ(ui32v_a_r.number_of_elements(),1);
+    EXPECT_EQ(ui64v_a_r.number_of_elements(),1);
+    
+    EXPECT_EQ(ui8v,ui8v_a_r[0]);
+    EXPECT_EQ(ui16v,ui16v_a_r[0]);
+    EXPECT_EQ(ui32v,ui32v_a_r[0]);
+    EXPECT_EQ(ui64v,ui64v_a_r[0]);
+
+
+    float32_array f32v_a_r = n["f32v"].value();
+    float64_array f64v_a_r = n["f64v"].value();
+
+    EXPECT_EQ(f32v_a_r.number_of_elements(),1);
+    EXPECT_EQ(f64v_a_r.number_of_elements(),1);
+
+    EXPECT_NEAR(f32v,f32v_a_r[0],0.001);
+    EXPECT_NEAR(f64v,f64v_a_r[0],0.001);
+    
+    
 }
 
 
