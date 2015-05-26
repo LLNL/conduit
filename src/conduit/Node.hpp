@@ -1103,18 +1103,131 @@ public:
 // -- leaf coercion methods ---
 //-----------------------------------------------------------------------------
     ///
-    /// These methods allow you to coerce a leaf type to the widest bitwidth
-    /// type.
+    /// These methods allow you to coerce a leaf type to another type.
     ///
+    
+    /// scalar coercion
 
-    /// convert to a 64-bit signed integer 
-    int64            to_int64()   const;
-    /// convert to a 64-bit unsigned integer 
+    /// convert to a signed integer types
+    int8             to_int8()   const;
+    int16            to_int16()  const;
+    int32            to_int32()  const;
+    int64            to_int64()  const;
+    
+    /// convert to a unsigned integer types
+    uint8            to_uint8()   const;
+    uint16           to_uint16()  const;
+    uint32           to_uint32()  const;
     uint64           to_uint64()  const;
-    /// convert to a 64-bit floating point number
+    
+    /// convert to a floating point type
+    float32          to_float32() const;
     float64          to_float64() const;
+    
     /// convert to the index type 
     index_t          to_index_t() const;
+
+    /// convert to c signed integer types
+    char             to_char()  const;
+    short            to_short() const;
+    int              to_int()   const;
+    long             to_long()  const;
+
+    /// convert to c unsigned integer types
+    unsigned char    to_unsigned_char()  const;
+    unsigned short   to_unsigned_short() const;
+    unsigned int     to_unsigned_int()   const;
+    unsigned long    to_unsigned_long()  const;
+    
+    /// convert to c floating type
+    float            to_float() const;
+    double           to_double() const;
+
+
+//-----------------------------------------------------------------------------
+// -- Node::Value Helper class --
+//
+// This class allows us to support casting return semantics.
+// we can't support these methods directly in conduit::Node  because doing so
+// undermines our operator=() overloads. 
+//-----------------------------------------------------------------------------
+    class Value
+    {
+        friend class Node;
+        public:
+            ~Value();
+            Value(const Value &rhs);
+            // cast operators for signed integers
+            
+            // we need an explicit case for signed char
+            operator signed char()  const;
+            operator short()  const;
+            operator int()    const;
+            operator long()   const;
+
+            // cast operators for unsigned integers
+            operator unsigned char()   const;
+            operator unsigned short()  const;
+            operator unsigned int()    const;
+            operator unsigned long()   const;
+            
+            // cast operators for floating point types
+            operator float()  const;
+            operator double() const;
+        
+            // -- as pointer -- //
+
+            // as signed int ptr
+            operator char*()        const;
+            // we need an explicit case for signed char, due to how int8 
+            // is implemented
+            operator signed char*() const;
+            operator short*()       const;
+            operator int*()         const;
+            operator long*()        const;
+
+            // as unsigned int ptr
+            operator unsigned char*()  const;
+            operator unsigned short*() const;
+            operator unsigned int*()   const;
+            operator unsigned long*()  const;
+            
+            // as floating point ptr
+            operator float*()  const;
+            operator double*() const;
+
+            // -- as array -- //
+
+            operator char_array()  const;
+            operator short_array() const;
+            operator int_array()   const;
+            operator long_array()  const;
+
+            operator unsigned_char_array()  const;
+            operator unsigned_short_array() const;
+            operator unsigned_int_array()   const;
+            operator unsigned_long_array()  const;
+
+            operator float_array()  const;
+            operator double_array() const;
+
+        private:
+            // This is private we only want conduit::Node to create a 
+            // conduit::Node::Value instance
+            Value(Node *node, bool coerse);
+            // holds the node with the actually data
+            Node    *m_node;
+            // coercion flag, note - only scalars types can be coerced 
+            bool     m_coerse; 
+    };
+    
+
+    Value value()  // works for all leaf types, but no coercion
+        { return  Value(this,false); }
+
+    Value to_value()  // only works for scalar leaf types
+        { return  Value(this,true); }
+
 
 //-----------------------------------------------------------------------------
 // -- JSON construction methods ---
@@ -1398,20 +1511,20 @@ public:
     long            *as_long_ptr();
 
     // unsigned integers via pointers
-    unsigned char      *as_unsigned_char_ptr();
-    unsigned short      *as_unsigned_short_ptr();
-    unsigned int       *as_unsigned_int_ptr();
-    unsigned long      *as_unsigned_long_ptr();
+    unsigned char   *as_unsigned_char_ptr();
+    unsigned short  *as_unsigned_short_ptr();
+    unsigned int    *as_unsigned_int_ptr();
+    unsigned long   *as_unsigned_long_ptr();
 
     // floating point via pointers
-    float             *as_float_ptr();
-    double           *as_double_ptr();
+    float           *as_float_ptr();
+    double          *as_double_ptr();
 
     // signed integer array types via conduit::DataArray
     char_array       as_char_array();
     short_array      as_short_array();
     int_array        as_int_array();
-    long_array      as_long_array();
+    long_array       as_long_array();
 
     // unsigned integer array types via conduit::DataArray
     unsigned_char_array    as_unsigned_char_array();
