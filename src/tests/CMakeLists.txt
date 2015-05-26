@@ -82,7 +82,7 @@ set(IO_TESTS conduit_io_smoke)
 ################################
 # conduit_mesh lib Unit Tests
 ################################
-set(MESH_TESTS conduit_mesh_smoke)
+set(MESH_TESTS conduit_mesh_smoke conduit_mesh_examples)
 
 ################################
 # Optional Unit Tests

@@ -44,70 +44,29 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_mesh.hpp
+/// file: conduit_mesh_smoke.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_MESH_HPP
-#define CONDUIT_MESH_HPP
-
-//-----------------------------------------------------------------------------
-// conduit lib includes
-//-----------------------------------------------------------------------------
 #include "conduit.hpp"
-#include "Conduit_Mesh_Exports.hpp"
+#include "conduit_mesh.hpp"
+
+#include <iostream>
+#include "gtest/gtest.h"
+
+using namespace conduit;
 
 //-----------------------------------------------------------------------------
-// -- begin conduit:: --
-//-----------------------------------------------------------------------------
-namespace conduit
+TEST(conduit_mesh_examples, uniform_2d)
 {
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::mesh --
-//-----------------------------------------------------------------------------
-
-namespace mesh 
-{
-
-
-//-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how conduit_mesh was
-/// configured.
-//-----------------------------------------------------------------------------
- std::string CONDUIT_MESH_API about();
- void        CONDUIT_MESH_API about(Node &n);
-
-
-//-----------------------------------------------------------------------------
-/// Methods that generate example meshes.
-/// We should move these to a better place in the future.
-//-----------------------------------------------------------------------------
-namespace examples
-{
-    void CONDUIT_MESH_API braid_uniform(index_t nx,
-                                        index_t ny,
-                                        index_t nz,  // not implemented ... 
-                                        Node &res);
-    // void CONDUIT_MESH_API braid_rectilinear(Node &res);
-    // void CONDUIT_MESH_API braid_unstructured_quads(Node &res);
-    // void CONDUIT_MESH_API braid_unstructured_tris(Node &res);
-};
-
-};
-
-//-----------------------------------------------------------------------------
-// -- end conduit::mesh --
-//-----------------------------------------------------------------------------
-
-
-
-};
-//-----------------------------------------------------------------------------
-// -- end conduit:: --
-//-----------------------------------------------------------------------------
-
-#endif 
-
-
-
+    Node a;
+    Node b;
+    mesh::examples::braid_uniform(50,50,0,a);
+    mesh::examples::braid_uniform(20,20,0,b);
+    
+    a.print();
+    b.print();
+    
+    a.to_pure_json("braid_a_example.json",2);
+    b.to_pure_json("braid_b_example.json",2);
+}

@@ -4034,6 +4034,38 @@ Node::to_json(bool detailed,
    return oss.str();
 }
 
+
+//---------------------------------------------------------------------------//
+void
+Node::to_json(const std::string &stream_path,
+              bool detailed, 
+              index_t indent, 
+              index_t depth,
+              const std::string &pad,
+              const std::string &eoe) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+        CONDUIT_ERROR("<Node::to_json> failed to open: " << stream_path);
+    to_json(ofs,detailed,indent,depth,pad,eoe);
+    ofs.close();
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_json(std::ostream &os,
+              bool detailed, 
+              index_t indent, 
+              index_t depth,
+              const std::string &pad,
+              const std::string &eoe) const
+{
+    std::ostringstream oss;
+    to_json(oss,detailed,indent,depth,pad,eoe);
+    os << oss.str();
+}
+
 //---------------------------------------------------------------------------//
 void
 Node::to_json(std::ostringstream &oss,
@@ -4148,6 +4180,28 @@ Node::to_pure_json(index_t indent) const
     return to_json(false,indent);
 }
 
+//---------------------------------------------------------------------------//
+void
+Node::to_pure_json(const std::string &stream_path,
+                   index_t indent) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+        CONDUIT_ERROR("<Node::to_pure_json> failed to open: " << stream_path);
+    to_json(ofs,false,indent);
+    ofs.close();
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_pure_json(std::ostream &os,
+                   index_t indent) const
+{
+    to_json(os,false,indent);
+}
+
+//---------------------------------------------------------------------------//
 void
 Node::to_pure_json(std::ostringstream &oss,
                    index_t indent) const
@@ -4163,6 +4217,34 @@ Node::to_detailed_json(index_t indent,
                        const std::string &eoe) const
 {
     return to_json(true,indent,depth,pad,eoe);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_detailed_json(const std::string &stream_path,
+                       index_t indent, 
+                       index_t depth,
+                       const std::string &pad,
+                       const std::string &eoe) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+        CONDUIT_ERROR("<Node::to_pure_json> failed to open: " << stream_path);
+    to_json(ofs,true,indent,depth,pad,eoe);
+    ofs.close();
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::to_detailed_json(std::ostream &os,
+                       index_t indent, 
+                       index_t depth,
+                       const std::string &pad,
+                       const std::string &eoe) const
+{
+    to_json(os,true,indent,depth,pad,eoe);
 }
 
 //---------------------------------------------------------------------------//

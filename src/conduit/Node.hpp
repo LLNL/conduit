@@ -1240,6 +1240,20 @@ public:
                                 const std::string &pad=" ",
                                 const std::string &eoe="\n") const;
 
+    void                to_json(const std::string &stream_path,
+                                bool detailed=true, 
+                                index_t indent=2, 
+                                index_t depth=0,
+                                const std::string &pad=" ",
+                                const std::string &eoe="\n") const;
+
+    void                to_json(std::ostream &os,
+                                bool detailed=true, 
+                                index_t indent=2, 
+                                index_t depth=0,
+                                const std::string &pad=" ",
+                                const std::string &eoe="\n") const;
+
     void                to_json(std::ostringstream &oss,
                                 bool detailed=true, 
                                 index_t indent=2, 
@@ -1250,11 +1264,30 @@ public:
     // transforms the node to json without any conduit schema constructs
     std::string      to_pure_json(index_t indent=2) const;
 
+    void             to_pure_json(const std::string &stream_path,
+                                  index_t indent=2) const;
+
+    void             to_pure_json(std::ostream &os,
+                                  index_t indent=2) const;
+
     void             to_pure_json(std::ostringstream &oss,
                                   index_t indent=2) const;
 
+
     // transforms the node to json that contains conduit schema constructs
     std::string      to_detailed_json(index_t indent=2, 
+                                      index_t depth=0,
+                                      const std::string &pad=" ",
+                                      const std::string &eoe="\n") const;
+
+    void             to_detailed_json(const std::string &stream_path,
+                                      index_t indent=2, 
+                                      index_t depth=0,
+                                      const std::string &pad=" ",
+                                      const std::string &eoe="\n") const;
+
+    void             to_detailed_json(std::ostream &os,
+                                      index_t indent=2, 
                                       index_t depth=0,
                                       const std::string &pad=" ",
                                       const std::string &eoe="\n") const;
