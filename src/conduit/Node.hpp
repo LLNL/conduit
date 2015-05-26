@@ -1146,6 +1146,10 @@ public:
 
 //-----------------------------------------------------------------------------
 // -- Node::Value Helper class --
+//
+// This class allows us to support casting return semantics.
+// we can't support these methods directly in conduit::Node  because doing so
+// undermines our operator=() overloads. 
 //-----------------------------------------------------------------------------
     class Value
     {
@@ -1157,7 +1161,6 @@ public:
             
             // we need an explicit case for signed char
             operator signed char()  const;
-            operator char()   const;
             operator short()  const;
             operator int()    const;
             operator long()   const;
@@ -1171,14 +1174,60 @@ public:
             // cast operators for floating point types
             operator float()  const;
             operator double() const;
-            
-        private:
-            Value(Node *node);
-            Node    *m_node;
-    };
+        
+            // -- as pointer -- //
 
-    Value value()  
-        { return  Value(this); }
+            // as signed int ptr
+            operator char*()        const;
+            // we need an explicit case for signed char, due to how int8 
+            // is implemented
+            operator signed char*() const;
+            operator short*()       const;
+            operator int*()         const;
+            operator long*()        const;
+
+            // as unsigned int ptr
+            operator unsigned char*()  const;
+            operator unsigned short*() const;
+            operator unsigned int*()   const;
+            operator unsigned long*()  const;
+            
+            // as floating point ptr
+            operator float*()  const;
+            operator double*() const;
+
+            // -- as array -- //
+
+            operator char_array()  const;
+            operator short_array() const;
+            operator int_array()   const;
+            operator long_array()  const;
+
+            operator unsigned_char_array()  const;
+            operator unsigned_short_array() const;
+            operator unsigned_int_array()   const;
+            operator unsigned_long_array()  const;
+
+            operator float_array()  const;
+            operator double_array() const;
+
+        private:
+            // This is private we only want conduit::Node to create a 
+            // conduit::Node::Value instance
+            Value(Node *node, bool coerse);
+            // holds the node with the actually data
+            Node    *m_node;
+            // coercion flag, note - only scalars types can be coerced 
+            bool     m_coerse; 
+    };
+    
+
+    Value value()  // works for all leaf types, but no coercion
+        { return  Value(this,false); }
+
+    Value to_value()  // only works for scalar leaf types
+        { return  Value(this,true); }
+
 
 //-----------------------------------------------------------------------------
 // -- JSON construction methods ---
@@ -1462,20 +1511,20 @@ public:
     long            *as_long_ptr();
 
     // unsigned integers via pointers
-    unsigned char      *as_unsigned_char_ptr();
-    unsigned short      *as_unsigned_short_ptr();
-    unsigned int       *as_unsigned_int_ptr();
-    unsigned long      *as_unsigned_long_ptr();
+    unsigned char   *as_unsigned_char_ptr();
+    unsigned short  *as_unsigned_short_ptr();
+    unsigned int    *as_unsigned_int_ptr();
+    unsigned long   *as_unsigned_long_ptr();
 
     // floating point via pointers
-    float             *as_float_ptr();
-    double           *as_double_ptr();
+    float           *as_float_ptr();
+    double          *as_double_ptr();
 
     // signed integer array types via conduit::DataArray
     char_array       as_char_array();
     short_array      as_short_array();
     int_array        as_int_array();
-    long_array      as_long_array();
+    long_array       as_long_array();
 
     // unsigned integer array types via conduit::DataArray
     unsigned_char_array    as_unsigned_char_array();

@@ -3694,15 +3694,17 @@ Node::to_double() const
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-Node::Value::Value(Node *node)
-:m_node(node)
+Node::Value::Value(Node *node, bool coerse)
+:m_node(node),
+ m_coerse(coerse)
 {
     
 }
 
 //---------------------------------------------------------------------------//
 Node::Value::Value(const Value &value)
-:m_node(value.m_node)
+:m_node(value.m_node), 
+ m_coerse(value.m_coerse)
 {
     
 }
@@ -3713,71 +3715,307 @@ Node::Value::~Value()
     
 }
 
+// TODO: why do we have to use a signed char here, does it have to do with
+// how we danced around setting string types?
 //---------------------------------------------------------------------------//
 Node::Value::operator signed char() const
 {
-    return m_node->to_char();
+    if(m_coerse)
+        return m_node->to_char();
+    else
+        return m_node->as_char();
 }
 
-//---------------------------------------------------------------------------//
-Node::Value::operator char() const
-{
-    return m_node->to_char();
-}
+////---------------------------------------------------------------------------//
+//Node::Value::operator char() const
+//{
+//    if(m_coerse)
+//        return m_node->to_char();
+//    else
+//        return m_node->as_char();
+//}
 
 //---------------------------------------------------------------------------//
 Node::Value::operator short() const
 {
-    return m_node->to_short();
+    if(m_coerse)
+        return m_node->to_short();
+    else
+        return m_node->as_short();
 }
 
 //---------------------------------------------------------------------------//
 Node::Value::operator int() const
 {
-    return m_node->to_int();
+    if(m_coerse)
+        return m_node->to_int();
+    else
+        return m_node->as_int();
 }
 
 //---------------------------------------------------------------------------//
 Node::Value::operator long() const
 {
-    return m_node->to_long();
+    if(m_coerse)
+        return m_node->to_long();
+    else
+        return m_node->as_long();
 }
 
 //---------------------------------------------------------------------------//
 Node::Value::operator unsigned char() const
 {
-    return m_node->to_unsigned_char();
+    if(m_coerse)
+        return m_node->to_unsigned_char();
+    else
+        return m_node->as_unsigned_char();
 }
 
 //---------------------------------------------------------------------------//
 Node::Value::operator unsigned short() const
 {
-    return m_node->to_unsigned_short();
+    if(m_coerse)
+        return m_node->to_unsigned_short();
+    else
+        return m_node->as_unsigned_short();
 }
 
 //---------------------------------------------------------------------------//
 Node::Value::operator unsigned int() const
 {
-    return m_node->to_unsigned_int();
+    if(m_coerse)
+        return m_node->to_unsigned_int();
+    else
+        return m_node->as_unsigned_int();
 }
 
 //---------------------------------------------------------------------------//
 Node::Value::operator unsigned long() const
 {
-    return m_node->to_unsigned_long();
+    if(m_coerse)
+        return m_node->to_unsigned_long();
+    else
+        return m_node->as_unsigned_long();
 }
 
 //---------------------------------------------------------------------------//
 Node::Value::operator float() const
 {
-    return m_node->to_float();
+    if(m_coerse)
+        return m_node->to_float();
+    else
+        return m_node->as_float();
 }
 
 //---------------------------------------------------------------------------//
 Node::Value::operator double() const
 {
-    return m_node->to_double();
+    if(m_coerse)
+        return m_node->to_double();
+    else
+        return m_node->as_double();
 }
+
+//---------------------------------------------------------------------------//
+// -- pointer casts -- 
+// (no coercion)
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+Node::Value::operator char*() const
+{
+    return m_node->as_char_ptr();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator signed char*() const
+{
+    return (signed char*)m_node->as_char_ptr();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator short*() const
+{
+    return m_node->as_short_ptr();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator int*() const
+{
+    return m_node->as_int_ptr();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator long*() const
+{
+    return m_node->as_long_ptr();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned char*() const
+{
+    return m_node->as_unsigned_char_ptr();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned short*() const
+{
+    return m_node->as_unsigned_short_ptr();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned int*() const
+{
+    return m_node->as_unsigned_int_ptr();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned long*() const
+{
+    return m_node->as_unsigned_long_ptr();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator float*() const
+{
+    return m_node->as_float_ptr();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator double*() const
+{
+    return m_node->as_double_ptr();
+}
+
+
+//---------------------------------------------------------------------------//
+// -- array casts -- 
+// (no coercion)
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+Node::Value::operator char_array() const
+{
+    return m_node->as_char_array();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator short_array() const
+{
+    return m_node->as_short_array();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator int_array() const
+{
+    return m_node->as_int_array();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator long_array() const
+{
+    return m_node->as_long_array();
+}
+
+
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned_char_array() const
+{
+    return m_node->as_unsigned_char_array();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned_short_array() const
+{
+    return m_node->as_unsigned_short_array();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned_int_array() const
+{
+    return m_node->as_unsigned_int_array();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned_long_array() const
+{
+    return m_node->as_unsigned_long_array();
+}
+
+
+//---------------------------------------------------------------------------//
+Node::Value::operator float_array() const
+{
+    return m_node->as_float_array();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator double_array() const
+{
+    return m_node->as_double_array();
+}
+
+
+// //---------------------------------------------------------------------------//
+// Node::Value::operator int8_array() const
+// {
+//     return m_node->as_int8_array();
+// }
+
+// //---------------------------------------------------------------------------//
+// Node::Value::operator int16_array() const
+// {
+//     return m_node->as_int16_array();
+// }
+//
+// //---------------------------------------------------------------------------//
+// Node::Value::operator int32_array() const
+// {
+//     return m_node->as_int32_array();
+// }
+//
+// //---------------------------------------------------------------------------//
+// Node::Value::operator int64_array() const
+// {
+//     return m_node->as_int64_array();
+// }
+//
+//
+// //---------------------------------------------------------------------------//
+// Node::Value::operator uint8_array() const
+// {
+//     return m_node->as_uint8_array();
+// }
+//
+// //---------------------------------------------------------------------------//
+// Node::Value::operator uint16_array() const
+// {
+//     return m_node->as_uint16_array();
+// }
+//
+// //---------------------------------------------------------------------------//
+// Node::Value::operator uint32_array() const
+// {
+//     return m_node->as_uint32_array();
+// }
+//
+// //---------------------------------------------------------------------------//
+// Node::Value::operator uint64_array() const
+// {
+//     return m_node->as_uint64_array();
+// }
+//
+// //---------------------------------------------------------------------------//
+// Node::Value::operator float32_array() const
+// {
+//     return m_node->as_float32_array();
+// }
+//
+// //---------------------------------------------------------------------------//
+// Node::Value::operator float64_array() const
+// {
+//     return m_node->as_float64_array();
+// }
 
 //-----------------------------------------------------------------------------
 // -- JSON construction methods ---
