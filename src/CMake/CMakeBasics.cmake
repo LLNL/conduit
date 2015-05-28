@@ -55,6 +55,8 @@ endif()
 # enable creation of compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# always use position independent code
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 macro(ENABLE_WARNINGS)
     # set the warning levels we want to abide by
