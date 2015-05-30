@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -87,27 +87,35 @@
 // native types
 //-----------------------------------------------------------------------------
 
-#if CONDUIT_SIZEOF_LONG_DOUBLE == CONDUIT_SIZEOF_DOUBLE
-        typedef double conduit_longdouble;
-#else
-        typedef long double conduit_longdouble;
-#endif
-
 typedef signed char         conduit_byte;
 typedef unsigned char       conduit_ubyte;
 typedef unsigned short      conduit_ushort;
 typedef unsigned int        conduit_uint;
 typedef unsigned long       conduit_ulong;
-typedef unsigned long long  conduit_ulonglong;
+
+#ifdef CONDUIT_HAS_LONG_LONG
+typedef unsigned long long  conduit_ulong_long;
+#endif
 
 typedef char                conduit_char;
 typedef short               conduit_short;
 typedef int                 conduit_int;
 typedef long                conduit_long;
-typedef long long           conduit_longlong;
+
+#ifdef CONDUIT_HAS_LONG_LONG
+typedef long long           conduit_long_long;
+#endif
 
 typedef float               conduit_float;
 typedef double              conduit_double;
+
+#if CONDUIT_SIZEOF_LONG_DOUBLE == CONDUIT_SIZEOF_DOUBLE
+        typedef double conduit_long_double;
+#else
+#ifdef CONDUIT_HAS_LONG_DOUBLE
+        typedef long double conduit_long_double;
+#endif
+#endif
 
 
 //-----------------------------------------------------------------------------
@@ -119,11 +127,17 @@ typedef double              conduit_double;
 #define CONDUIT_BITSOF_SHORT       (CONDUIT_SIZEOF_SHORT * CHAR_BIT)
 #define CONDUIT_BITSOF_INT         (CONDUIT_SIZEOF_INT * CHAR_BIT)
 #define CONDUIT_BITSOF_LONG        (CONDUIT_SIZEOF_LONG * CHAR_BIT)
+
+#ifdef CONDUIT_HAS_LONG_LONG
 #define CONDUIT_BITSOF_LONG_LONG   (CONDUIT_SIZEOF_LONG_LONG * CHAR_BIT)
+#endif
 
 #define CONDUIT_BITSOF_FLOAT       (CONDUIT_SIZEOF_FLOAT * CHAR_BIT)
 #define CONDUIT_BITSOF_DOUBLE      (CONDUIT_SIZEOF_DOUBLE * CHAR_BIT)
+
+#ifdef CONDUIT_HAS_LONG_DOUBLE
 #define CONDUIT_BITSOF_LONG_DOUBLE (CONDUIT_SIZEOF_LONG_DOUBLE * CHAR_BIT)
+#endif
 
 #define CONDUIT_BITSOF_VOID_P      (CONDUIT_SIZEOF_VOID_P * CHAR_BIT)
 
@@ -184,15 +198,16 @@ typedef double              conduit_double;
 //-----------------------------------------------------------------------------
 // -- long long size checks --
 //-----------------------------------------------------------------------------
-
+#ifdef CONDUIT_HAS_LONG_LONG
 #if CONDUIT_BITSOF_LONG_LONG == 8
     #ifndef CONDUIT_INT8
+        #define CONDUIT_USE_LONG_LONG
         #define CONDUIT_INT8 CONDUIT_LONG_LONG
         #define CONDUIT_UINT8 CONDUIT_ULONG_LONG
         #define CONDUIT_INT8_NATIVE_TYPENAME "long long"
         #define CONDUIT_UINT8_NATIVE_TYPENAME "unsigned long long"
-        typedef conduit_longlong conduit_int8;
-        typedef conduit_ulonglong conduit_uint8;
+        typedef conduit_long_long conduit_int8;
+        typedef conduit_ulong_long conduit_uint8;
     #endif
     #ifndef CONDUIT_NATIVE_LONG_LONG
         #define CONDUIT_NATIVE_LONG_LONG conduit_int8
@@ -202,14 +217,16 @@ typedef double              conduit_double;
     #endif
 #elif CONDUIT_BITSOF_LONG_LONG == 16
     #ifndef CONDUIT_INT16
+        #define CONDUIT_USE_LONG_LONG
         #define CONDUIT_INT16 CONDUIT_LONG_LONG
         #define CONDUIT_UINT16 CONDUIT_ULONG_LONG
         #define CONDUIT_INT16_NATIVE_TYPENAME "long long"
         #define CONDUIT_UINT16_NATIVE_TYPENAME "unsigned long long"
-        typedef conduit_longlong conduit_int16;
-        typedef conduit_ulonglong conduit_uint16;
+        typedef conduit_long_long conduit_int16;
+        typedef conduit_ulong_long conduit_uint16;
     #endif
     #ifndef CONDUIT_NATIVE_LONG_LONG
+        #define CONDUIT_USE_LONG_LONG
         #define CONDUIT_NATIVE_LONG_LONG conduit_int16
         #define CONDUIT_NATIVE_UNSIGNED_LONG_LONG conduit_uint16
         #define CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID DataType::INT16_T
@@ -217,14 +234,16 @@ typedef double              conduit_double;
     #endif
 #elif CONDUIT_BITSOF_LONG_LONG == 32
     #ifndef CONDUIT_INT32
+        #define CONDUIT_USE_LONG_LONG
         #define CONDUIT_INT32 CONDUIT_LONG_LONG
         #define CONDUIT_UINT32 CONDUIT_ULONG_LONG
         #define CONDUIT_INT32_NATIVE_TYPENAME "long long"
         #define CONDUIT_UINT32_NATIVE_TYPENAME "unsigned long long"
-        typedef conduit_longlong conduit_int32;
-        typedef conduit_ulonglong conduit_uint32;
+        typedef conduit_long_long conduit_int32;
+        typedef conduit_ulong_long conduit_uint32;
     #endif
     #ifndef CONDUIT_NATIVE_LONG_LONG
+        #define CONDUIT_USE_LONG_LONG
         #define CONDUIT_NATIVE_LONG_LONG conduit_int32
         #define CONDUIT_NATIVE_UNSIGNED_LONG_LONG conduit_uint32
         #define CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID DataType::INT32_T
@@ -232,12 +251,13 @@ typedef double              conduit_double;
     #endif
 #elif CONDUIT_BITSOF_LONG_LONG == 64
     #ifndef CONDUIT_INT64
+        #define CONDUIT_USE_LONG_LONG
         #define CONDUIT_INT64 CONDUIT_LONG_LONG
         #define CONDUIT_UINT64 CONDUIT_ULONG_LONG
         #define CONDUIT_INT64_NATIVE_TYPENAME "long long"
         #define CONDUIT_UINT64_NATIVE_TYPENAME "unsigned long long"
-        typedef conduit_longlong conduit_int64;
-        typedef conduit_ulonglong conduit_uint64;
+        typedef conduit_long_long conduit_int64;
+        typedef conduit_ulong_long conduit_uint64;
     #endif
     #ifndef CONDUIT_NATIVE_LONG_LONG
         #define CONDUIT_NATIVE_LONG_LONG conduit_int64
@@ -246,6 +266,7 @@ typedef double              conduit_double;
         #define CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID DataType::UINT64_T
     #endif
 #endif
+#endif 
 
 //-----------------------------------------------------------------------------
 // -- int size checks --
@@ -446,7 +467,8 @@ typedef double              conduit_double;
         #define CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID DataType::UINT64_T
     #endif
 #endif
-        //-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 // -- double size checks --
 //-----------------------------------------------------------------------------
 
@@ -561,12 +583,13 @@ typedef double              conduit_double;
 //-----------------------------------------------------------------------------
 // -- long double size checks --
 //-----------------------------------------------------------------------------
-
+#ifdef CONDUIT_HAS_LONG_DOUBLE
 #if CONDUIT_BITSOF_LONG_DOUBLE == 32
     #ifndef CONDUIT_FLOAT32
+        #define CONDUIT_USE_LONG_DOUBLE
         #define CONDUIT_FLOAT32 CONDUIT_LONG_DOUBLE
         #define CONDUIT_FLOAT32_NATIVE_TYPENAME "long double"
-        typedef conduit_longdouble conduit_float32;
+        typedef conduit_long_double conduit_float32;
     #endif
     #ifndef CONDUIT_NATIVE_LONG_DOUBLE
         #define CONDUIT_NATIVE_LONG_DOUBLE conduit_float32
@@ -574,9 +597,10 @@ typedef double              conduit_double;
     #endif
 #elif CONDUIT_BITSOF_LONG_DOUBLE == 64
     #ifndef CONDUIT_FLOAT64
+        #define CONDUIT_USE_LONG_DOUBLE
         #define CONDUIT_FLOAT64 CONDUIT_LONG_DOUBLE
         #define CONDUIT_FLOAT64_NATIVE_TYPENAME "long double"
-        typedef conduit_longdouble conduit_float64;
+        typedef conduit_long_double conduit_float64;
     #endif
     #ifndef CONDUIT_NATIVE_LONG_DOUBLE
         #define CONDUIT_NATIVE_LONG_DOUBLE conduit_float64
@@ -586,7 +610,7 @@ typedef double              conduit_double;
     #ifndef CONDUIT_FLOAT80
         #define CONDUIT_FLOAT80 CONDUIT_LONG_DOUBLE
         #define CONDUIT_FLOAT80_NATIVE_TYPENAME "long double"
-        typedef conduit_longdouble conduit_float80;
+        typedef conduit_long_double conduit_float80;
     #endif
     #ifndef CONDUIT_NATIVE_LONG_DOUBLE
         #define CONDUIT_NATIVE_LONG_DOUBLE conduit_float80
@@ -595,7 +619,7 @@ typedef double              conduit_double;
     #ifndef CONDUIT_FLOAT96
         #define CONDUIT_FLOAT96 CONDUIT_LONG_DOUBLE
         #define CONDUIT_FLOAT96_NATIVE_TYPENAME "long double"
-        typedef conduit_longdouble conduit_float96;
+        typedef conduit_long_double conduit_float96;
     #endif
     #ifndef CONDUIT_NATIVE_LONG_DOUBLE
         #define CONDUIT_NATIVE_LONG_DOUBLE conduit_float96
@@ -604,7 +628,7 @@ typedef double              conduit_double;
     #ifndef CONDUIT_FLOAT128
         #define CONDUIT_FLOAT128 CONDUIT_LONG_DOUBLE
         #define CONDUIT_FLOAT128_NATIVE_TYPENAME "long double"
-        typedef conduit_longdouble conduit_float128;
+        typedef conduit_long_double conduit_float128;
     #endif
     #ifndef CONDUIT_NATIVE_LONG_DOUBLE
             #define CONDUIT_NATIVE_LONG_DOUBLE conduit_float128
@@ -613,16 +637,73 @@ typedef double              conduit_double;
     #ifndef CONDUIT_FLOAT256
         #define CONDUIT_FLOAT256 CONDUIT_LONG_DOUBLE
         #define CONDUIT_FLOAT256_NATIVE_TYPENAME "long double"
-        typedef conduit_longdouble conduit_float256;
+        typedef conduit_long_double conduit_float256;
     #endif
     #ifndef CONDUIT_NATIVE_LONG_DOUBLE
         #define CONDUIT_NATIVE_LONG_DOUBLE conduit_float256
     #endif
+#endif
 #endif
 
 //-----------------------------------------------------------------------------
 /// End of typedefs for numarray style bit-width names.
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+/// Bit-width type map sanity checks
+//-----------------------------------------------------------------------------
+
+//
+// check that we were able to resolve all of the bitwidth style types we want
+// to support
+
+// signed int
+#ifndef CONDUIT_INT8_NATIVE_TYPENAME
+#error Bitwidth Style Types: no native type found that maps to int8
+#endif
+
+#ifndef CONDUIT_INT16_NATIVE_TYPENAME
+#error Bitwidth Style Types: no native type found that maps to int16
+#endif
+
+#ifndef CONDUIT_INT32_NATIVE_TYPENAME
+#error Bitwidth Style Types: no native type found that maps to int32
+#endif
+
+#ifndef CONDUIT_INT64_NATIVE_TYPENAME
+#error Bitwidth Style Types: no native type found that maps to int64
+#endif
+
+// unsigned ints
+#ifndef CONDUIT_UINT8_NATIVE_TYPENAME
+#error Bitwidth Style Types: no native type found that maps to uint8
+#endif
+
+#ifndef CONDUIT_UINT16_NATIVE_TYPENAME
+#error Bitwidth Style Types: no native type found that maps to uint16
+#endif
+
+#ifndef CONDUIT_UINT32_NATIVE_TYPENAME
+#error Bitwidth Style Types: no native type found that maps to uint32
+#endif
+
+#ifndef CONDUIT_UINT64_NATIVE_TYPENAME
+#error Bitwidth Style Types: no native type found that maps to uint64
+#endif
+
+// floating points numbers
+#ifndef CONDUIT_FLOAT32_NATIVE_TYPENAME
+#error Bitwidth Style Types: no native type found that maps to float32
+#endif
+
+#ifndef CONDUIT_FLOAT64_NATIVE_TYPENAME
+#error Bitwidth Style Types: no native type found that maps to float64
+#endif
+
+//-----------------------------------------------------------------------------
+///End Bit-width type map sanity checks
+//-----------------------------------------------------------------------------
+
 
 #endif
+

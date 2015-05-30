@@ -41,62 +41,50 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
+"""
+file: update_license_header_txt.py
+description:
+ Simple python script to help with update license header text in files  
+ throughout the source tree.
+"""
+
+import os
+import sys
+
+pattern = {
+# c++ style headers
+    "hdr":"""//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+""",
+    "st": "// "}
 
 
-################################
-# Add the conduit-mpi library
-################################
+def gen_lic_hpp(lic_file,hpp_out):
+    lic_txt = open(lic_file).readlines()
+    # write the lic prelude, then create var to use in c++
+    hpp_f = open(hpp_out,"w")
+    hpp_f.write(pattern["hdr"])
+    for l in lic_txt:
+        hpp_f.write("%s%s" % (pattern["st"],l))
+    hpp_f.write(pattern["hdr"])
+    hpp_f.write("\n")
+    hpp_f.write("#ifndef CONDUIT_LICENSE_TEXT_HPP\n")
+    hpp_f.write("#define CONDUIT_LICENSE_TEXT_HPP\n\n")
+    hpp_f.write("std::string CONDUIT_LICENSE_TEXT = ")
+    for l in lic_txt:
+        ltxt = l.strip().replace("\"","\\\"")
+        hpp_f.write("\"%s\\n\"\n" % (ltxt))
+    hpp_f.write("\"\";")
+    hpp_f.write("\n\n")
+    hpp_f.write("#endif\n\n")
 
-ENABLE_WARNINGS()
-
-#
-# Specify all headers
-#            
-set(conduit_mpi_headers 
-    conduit_mpi.hpp
-    Conduit_MPI_Exports.hpp)
-
-#
-# Specify all sources
-#
-set(conduit_mpi_sources conduit_mpi.cpp)
-
-include_directories(${MPI_CXX_INCLUDE_PATH})
-
-#
-# Note: headers are added here so they show up in project file generators
-# (such as xcode, eclipse, etc)
-#
-add_library(conduit_mpi SHARED ${conduit_mpi_sources} ${conduit_mpi_headers})
-
-# guard against empty mpi params
-if(NOT "${MPI_CXX_COMPILE_FLAGS}" STREQUAL "")
-    set_target_properties(conduit_mpi 
-                                PROPERTIES COMPILE_FLAGS            
-                                ${MPI_CXX_COMPILE_FLAGS} )
-endif()
-
-if(NOT "${MPI_CXX_LINK_FLAGS}" STREQUAL "")
-    set_target_properties(conduit_mpi 
-                                PROPERTIES LINK_FLAGS
-                                ${MPI_CXX_LINK_FLAGS} )
-endif()
-
-#
-# Link with conduit and silo (if enabled)
-#
-target_link_libraries(conduit_mpi conduit ${MPI_CXX_LIBRARIES})
-
-
-##################################
-# Install Targets for conduit lib
-##################################
-
-install(FILES ${conduit_mpi_headers} DESTINATION include)
-install(TARGETS conduit_mpi
-  EXPORT conduit
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION lib
-)
+if __name__ == "__main__":
+    nargs = len(sys.argv)
+    modify_files = False
+    if nargs < 3:
+        print "usage: python generate_cpp_license_header.py "
+        print "[new lic] [output file]"
+        sys.exit(-1)
+    lic_file = sys.argv[1]
+    hpp_out  = sys.argv[2]
+    gen_lic_hpp(lic_file,hpp_out)
 

@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -55,6 +55,9 @@
 //-----------------------------------------------------------------------------
 #include "Node.hpp"
 
+// Note: This header is only needed a compile time.
+#include "Conduit_License.hpp"
+
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
@@ -68,7 +71,7 @@ about()
 {
     Node n;
     about(n);
-    return n.to_json(true,2);
+    return n.to_pure_json();
 }
 
 //---------------------------------------------------------------------------//
@@ -77,16 +80,9 @@ about(Node &n)
 {
     n.reset();
     n["version"] = "{alpha}";
-/// TODO: auto include from lic file (at compile time using cmake)
-    n["copyright"] = "\n"
-"Copyright (c) 2014, Lawrence Livermore National Security, LLC \n"
-"Produced at the Lawrence Livermore National Laboratory.  \n"
-"\n"
-"All rights reserved. \n"
-"\n"
-"This source code cannot be distributed without further review from  \n"
-"Lawrence Livermore National Laboratory. \n";
-    // TODO: include compiler info, license info, etc
+    n["license"] = CONDUIT_LICENSE_TEXT;
+    
+    // TODO: include compiler info, etc ?
 
     // Type Info Map
     Node &nn = n["native_typemap"];

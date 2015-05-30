@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -49,7 +49,7 @@
 ################################
 # Core (conduit lib) Unit Tests
 ################################
-set(BASIC_TESTS gtest_smoke 
+set(BASIC_TESTS gtest_smoke
                 rapidjson_smoke
                 conduit_smoke
                 conduit_endianness
@@ -87,71 +87,21 @@ set(PYTHON_TESTS numpy_smoke)
 set(MPI_TESTS mpi_smoke conduit_mpi_smoke)
 set(SILO_TESTS silo_smoke conduit_io_silo)
 
-################################
-# Create the necessary lib list for our unit tests
-################################
-set(UNIT_TEST_LIBS gtest_main gtest conduit libb64)
-if(ENABLE_GPREF_TOOLS)
-    list(APPEND UNIT_TEST_LIBS gperftools_lib)
-endif()
-
-################################
-# Helper to Add Unit Tests
-################################
-function(add_basic_test TEST)
-    message(STATUS " [*] Adding Unit Test: ${TEST}")
-    add_executable(${TEST} ${TEST}.cpp )
-    target_link_libraries(${TEST} ${UNIT_TEST_LIBS})
-    add_test( ${TEST} ${TEST} )
-    if(ENABLE_GPREF_TOOLS)
-        # Set HEAPCHECK to local to enable explicit gpref heap checking 
-        set_property(TEST ${TEST}  PROPERTY ENVIRONMENT "HEAPCHECK=local")
-    endif()
-endfunction(add_basic_test)
-
-################################
-# Helper to IO Tests
-################################
-function(add_io_test TEST)
-    add_basic_test(${TEST})
-    target_link_libraries(${TEST} conduit_io)
-if(ENABLE_SILO AND SILO_FOUND)
-    target_link_libraries(${TEST} ${SILO_LIBRARIES})
-endif()
-endfunction(add_io_test)
-
-################################
-# Helper to Add MPI Tests
-################################
-function(add_mpi_test TEST NUM_PROCS)
-    message(STATUS " [*] Adding MPI Unit Test: ${TEST}")
-    include_directories(${MPI_CXX_INCLUDE_PATH})
-    # guard against empty mpi params
-    if(NOT "${MPI_CXX_COMPILE_FLAGS}" STREQUAL "")
-        set_source_files_properties(${TEST}.cpp PROPERTIES COMPILE_FLAGS  ${MPI_CXX_COMPILE_FLAGS} )
-    endif()
-    if(NOT "${MPI_CXX_LINK_FLAGS}" STREQUAL "")
-        set_source_files_properties(${TEST}.cpp PROPERTIES LINK_FLAGS  ${MPI_CXX_LINK_FLAGS} )
-    endif()
-    add_executable(${TEST} ${TEST}.cpp)
-    target_link_libraries(${TEST} ${UNIT_TEST_LIBS} ${MPI_CXX_LIBRARIES})
-    target_link_libraries(${TEST} conduit conduit_mpi)
-    set(test_parameters ${MPIEXEC_NUMPROC_FLAG} ${NUM_PROCS} "./${TEST}")
-    add_test(NAME ${TEST} COMMAND ${MPIEXEC} ${test_parameters})
-endfunction(add_mpi_test)
-
 
 ################################
 # Add our Main Unit Tests
 ################################
 message(STATUS "Adding conduit lib unit tests")
 foreach(TEST ${BASIC_TESTS})
-    add_basic_test(${TEST})
+    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit libb64 )
 endforeach()
 
 message(STATUS "Adding conduit_io lib unit tests")
 foreach(TEST ${IO_TESTS})
-    add_io_test(${TEST})
+    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_io )
+    if(ENABLE_SILO AND SILO_FOUND)
+        target_link_libraries(${TEST} ${SILO_LIBRARIES})
+    endif()
 endforeach()
 
 
@@ -162,7 +112,7 @@ endforeach()
 if(ENABLE_GPREF_TOOLS)
     message(STATUS "Google perftools enabled: Adding related unit tests")
     foreach(TEST ${GPERF_TOOLS_TESTS})
-        add_basic_test(${TEST})
+        add_cpp_test(TEST_NAME ${TEST})
     endforeach()
 else()
     message(STATUS "Google perftools disabled: Skipping related tests")
@@ -171,7 +121,7 @@ endif()
 if(ENABLE_PYTHON)
     message(STATUS "Python enabled: Adding related unit tests")
     foreach(TEST ${PYTHON_TESTS})
-        add_basic_test(${TEST})
+        add_cpp_test(TEST ${TEST})
     endforeach()
     add_subdirectory("python")
 else()
@@ -182,7 +132,7 @@ endif()
 if(ENABLE_MPI)
     message(STATUS "MPI enabled: Adding related unit tests")
     foreach(TEST ${MPI_TESTS})
-        add_mpi_test(${TEST} 2) # this uses 2 procs
+        add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2 DEPENDS_ON conduit conduit_mpi) # this uses 2 procs
     endforeach()
 else()
     message(STATUS "MPI disabled: Skipping related tests")
@@ -191,7 +141,10 @@ endif()
 if(ENABLE_SILO)
     message(STATUS "Silo enabled: Adding related unit tests")
     foreach(TEST ${SILO_TESTS})
-        add_io_test(${TEST})
+        add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_io )
+        if(ENABLE_SILO AND SILO_FOUND)
+            target_link_libraries(${TEST} ${SILO_LIBRARIES})
+        endif()
     endforeach()
 else()
     message(STATUS "Silo disabled: Skipping related tests")
