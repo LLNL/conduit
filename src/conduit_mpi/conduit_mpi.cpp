@@ -363,7 +363,7 @@ about()
 {
     Node n;
     mpi::about(n);
-    return n.to_json(true,2);
+    return n.to_json_pure_json();
 }
 
 //---------------------------------------------------------------------------//
