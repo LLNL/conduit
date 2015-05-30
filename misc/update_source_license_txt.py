@@ -42,10 +42,13 @@
 # 
 ###############################################################################
 """
-file: update_license_header_txt.py
+file: update_source_license_txt.py
 description:
  Simple python script to help with update license header text in files  
  throughout the source tree.
+ 
+ usage: python update_source_license_txt.py [old lic] [new lic] [exec]"
+
 """
 
 import os
@@ -93,6 +96,7 @@ def update_lic(lic_file_old,lic_file_new,modify_files):
     all_files = []
     updated   = []
     for root_path in ["../src",
+                      "../misc",
                       "../host-configs",
                       "../config-build.sh",
                       "../bootstrap-env.sh",
