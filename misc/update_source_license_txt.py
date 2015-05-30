@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -106,8 +106,8 @@ def update_lic(lic_file_old,lic_file_new,modify_files):
             for dirpath, dnames, fnames in os.walk(root_path):
                 for f in fnames:
                     full = os.path.abspath(os.path.join(dirpath, f))
-                    if not full.count("thirdparty_builtin/") > 0:
-                        all_files.append(full)
+                    #if not full.count("thirdparty_builtin/") > 0:
+                    all_files.append(full)
         else:
             all_files.append(os.path.abspath(root_path))
     print all_files
