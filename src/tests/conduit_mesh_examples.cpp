@@ -50,6 +50,7 @@
 
 #include "conduit.hpp"
 #include "conduit_mesh.hpp"
+#include "conduit_io.hpp"
 
 #include <iostream>
 #include "gtest/gtest.h"
@@ -59,14 +60,41 @@ using namespace conduit;
 //-----------------------------------------------------------------------------
 TEST(conduit_mesh_examples, uniform_2d)
 {
-    Node a;
-    Node b;
-    mesh::examples::braid_uniform(50,50,0,a);
-    mesh::examples::braid_uniform(20,20,0,b);
+    Node iocfg;
+    io::about(iocfg);
+
+    bool silo_enabled = iocfg["endpoints/conduit_silo"].as_string() == "enabled";
+        
+    Node uniform;
+    mesh::examples::braid("uniform",20,20,0,uniform);
+    uniform.print();
+    uniform.to_pure_json("braid_uniform_example.json");
+
+
+    Node rect;
+    mesh::examples::braid("rectilinear",20,20,0,rect);
+    rect.print();
+    rect.to_pure_json("braid_rect_example.json");
+
+
+    Node tris;
+    mesh::examples::braid("tris",20,20,0,tris);
+    tris.print();
+    tris.to_pure_json("braid_quads_example.json");
+
+
+    Node quads;
+    mesh::examples::braid("quads",20,20,0,quads);
+    quads.print();
+    quads.to_pure_json("braid_quads_example.json");
+
     
-    a.print();
-    b.print();
+    if(silo_enabled)
+    {
+        conduit::io::mesh::save(uniform,"braid_uniform_example.silo:uniform2d");
+        conduit::io::mesh::save(rect,"braid_rect_example.silo:rect2d");
+        conduit::io::mesh::save(tris,"braid_tris_example.silo:tris");
+        conduit::io::mesh::save(quads,"braid_quad_example.silo:quad");
+    }
     
-    a.to_pure_json("braid_a_example.json",2);
-    b.to_pure_json("braid_b_example.json",2);
 }

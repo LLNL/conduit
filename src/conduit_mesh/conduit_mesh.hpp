@@ -85,17 +85,21 @@ namespace mesh
 //-----------------------------------------------------------------------------
 namespace examples
 {
-    void CONDUIT_MESH_API braid_uniform(index_t nx,
-                                        index_t ny,
-                                        index_t nz,  // not implemented ... 
-                                        Node &res);
-    // void CONDUIT_MESH_API braid_rectilinear(Node &res);
-    // void CONDUIT_MESH_API braid_unstructured_quads(Node &res);
-    // void CONDUIT_MESH_API braid_unstructured_tris(Node &res);
+    
+    void CONDUIT_MESH_API braid(const std::string &mesh_type,
+                                index_t nx,
+                                index_t ny,
+                                index_t nz,  // not implemented ... 
+                                Node &res);
 };
+//-----------------------------------------------------------------------------
+// -- end conduit::mesh::examples --
+//-----------------------------------------------------------------------------
+
+
+
 
 };
-
 //-----------------------------------------------------------------------------
 // -- end conduit::mesh --
 //-----------------------------------------------------------------------------

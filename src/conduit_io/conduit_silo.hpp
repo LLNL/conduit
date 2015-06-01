@@ -98,6 +98,31 @@ void CONDUIT_IO_API silo_load(DBfile *dbfile,
                               const std::string &silo_obj_path,
                               Node &node);
 
+//-----------------------------------------------------------------------------
+/// Silo mesh aware io api
+//-----------------------------------------------------------------------------
+namespace mesh
+{
+    //-----------------------------------------------------------------------------    
+    void CONDUIT_IO_API silo_save(const Node &mesh,
+                                  const std::string &path);
+
+    //-----------------------------------------------------------------------------
+    void CONDUIT_IO_API silo_save(const  Node &mesh,
+                                  const std::string &file_path,
+                                  const std::string &silo_obj_path);
+
+    //-----------------------------------------------------------------------------
+    void CONDUIT_IO_API silo_save(const  Node &mesh,
+                                  DBfile *dbfile,
+                                  const std::string &silo_obj_path);
+
+};
+//-----------------------------------------------------------------------------
+// -- end conduit::io::mesh --
+//-----------------------------------------------------------------------------
+
+
 
 };
 //-----------------------------------------------------------------------------

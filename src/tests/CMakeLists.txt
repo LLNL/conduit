@@ -112,7 +112,7 @@ endforeach()
 
 message(STATUS "Adding conduit_mesh lib unit tests")
 foreach(TEST ${MESH_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_mesh)
+    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_mesh conduit_io)
 endforeach()
 
 

@@ -165,18 +165,59 @@ void
 about(Node &n)
 {
     n.reset();
-    Node &nn = n["io_endpoints"];
+    Node &epts = n["endpoints"];
 
     // standard binary io
-    nn.append().set("conduit_bin");
+    epts["conduit_bin"] = "enabled";
     
     // silo
 #ifdef CONDUIT_IO_ENABLE_SILO
-    nn.append().set("conduit_silo");
+    epts["conduit_silo"] = "enabled";
+#else
+    epts["conduit_silo"] = "disabled";
 #endif
 
+}
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::io::mesh --
+//-----------------------------------------------------------------------------
+namespace  mesh
+{
+
+//---------------------------------------------------------------------------//
+void 
+save(const  Node &node,
+     const std::string &path)
+{
+    std::string io_type;
+    identify_io_type(path,io_type);
+    if( io_type == "conduit_silo")
+    {
+#ifdef CONDUIT_IO_ENABLE_SILO
+        mesh::silo_save(node,path);
+#else
+        CONDUIT_ERROR("conduit_io lacks Silo support: " << 
+                    "Failed to save conduit mesh node to path " << path);
+#endif
+    }
 
 }
+
+
+//---------------------------------------------------------------------------//
+void
+load(const std::string &path,
+     Node &node)
+{
+    CONDUIT_ERROR("conduit_io mesh aware load not implemented.");
+}
+
+};
+//-----------------------------------------------------------------------------
+// -- end conduit::io::mesh --
+//-----------------------------------------------------------------------------
+
 
 
 };

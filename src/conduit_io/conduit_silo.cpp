@@ -135,7 +135,7 @@ void silo_save(const  Node &node,
     }
     else 
     {
-        CONDUIT_ERROR("Error opening Silo file for writting: " << file_path );
+        CONDUIT_ERROR("Error opening Silo file for writing: " << file_path );
         return;
     }
     
@@ -239,6 +239,109 @@ void CONDUIT_IO_API silo_load(DBfile *dbfile,
     delete [] schema;
     delete [] data;
 }
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::io::mesh --
+//-----------------------------------------------------------------------------
+namespace mesh
+{
+
+
+//---------------------------------------------------------------------------//
+void 
+silo_save(const  Node &node,
+          const std::string &path)
+{
+    // check for ":" split
+    std::string file_path;
+    std::string silo_obj_base;
+    conduit::utils::split_string(path,
+                                 std::string(":"),
+                                 file_path,
+                                 silo_obj_base);
+
+    /// If silo_obj_base is empty, we have a problem ... 
+    if(silo_obj_base.size() == 0)
+    {
+        CONDUIT_ERROR("Invalid path for save: " << path);
+    }
+
+    mesh::silo_save(node,file_path,silo_obj_base);
+}
+
+
+//---------------------------------------------------------------------------//
+void silo_save(const  Node &node,
+               const std::string &file_path,
+               const std::string &silo_obj_path)
+{
+    DBfile *dbfile = DBCreate(file_path.c_str(),
+                              DB_CLOBBER,
+                              DB_LOCAL,
+                              NULL,
+                              DB_HDF5);
+
+    if(dbfile)
+    {
+        mesh::silo_save(node,dbfile,silo_obj_path);
+    }
+    else 
+    {
+        CONDUIT_ERROR("Error opening Silo file for writing: " << file_path );
+        return;
+    }
+    
+    if(DBClose(dbfile) != 0)
+    {
+        CONDUIT_ERROR("Error closing Silo file: " << file_path);
+    }
+}
+
+
+
+//---------------------------------------------------------------------------//
+void silo_save(const  Node &node,
+               DBfile *dbfile,
+               const std::string &silo_obj_path)
+{
+    Schema schema_c;
+    node.schema().compact_to(schema_c);
+    std::string schema = schema_c.to_json();
+    int schema_len = schema.length() + 1;
+
+    std::vector<uint8> data;
+    node.serialize(data);
+    int data_len = data.size();
+
+    // use path to construct dest silo obj paths
+    
+    std::string dest_json = silo_obj_path +  "_conduit_json";
+    std::string dest_data = silo_obj_path +  "_conduit_bin";
+
+    int silo_error = 0;
+    silo_error += DBWrite(dbfile,
+                          dest_json.c_str(),
+                          schema.c_str(),
+                          &schema_len,
+                          1,
+                          DB_CHAR);
+    silo_error += DBWrite(dbfile,
+                          dest_data.c_str(),
+                          &data[0],
+                          &data_len,
+                          1,
+                          DB_CHAR);
+
+    if(silo_error != 0)
+    {
+        CONDUIT_ERROR("Error writing conduit Node to Silo file");
+    }
+}
+
+};
+//-----------------------------------------------------------------------------
+// -- end conduit::io::mesh --
+//-----------------------------------------------------------------------------
 
 
 };

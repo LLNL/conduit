@@ -78,7 +78,7 @@ about()
 {
     Node n;
     mesh::about(n);
-    return n.to_json(true,2);
+    return n.to_pure_json();
 }
 
 //---------------------------------------------------------------------------//
@@ -114,10 +114,15 @@ void braid_init_example_pt_scalar_field(index_t nx,
                                         Node &res)
 {
     index_t npts = (nx+1)*(ny+1);
-    float64 *vals = new float64[npts];
+    
+    res["association"] = "point";
+    res["type"] = "scalar";
+    res["values"].set(DataType::float64(npts));
+    
+    float64 *vals = res["values"].value();
 
-    float dx = 20.0 / float64(nx+1);
-    float dy = 20.0 / float64(ny+1);
+    float dx = 20.0 / float64(nx);
+    float dy = 20.0 / float64(ny);
     
     index_t idx = 0;
     
@@ -134,13 +139,6 @@ void braid_init_example_pt_scalar_field(index_t nx,
             idx++;
         }
     }
-    
-    res["association"] = "point";
-    res["type"] = "scalar";
-    res["values"].set(vals,npts);
-    
-    delete [] vals;
-    
 }
 
 //---------------------------------------------------------------------------//
@@ -150,10 +148,15 @@ void braid_init_example_ele_scalar_field(index_t nx,
                                          Node &res)
 {
     index_t nele = nx*ny;
-    float64 *vals = new float64[nele];
 
-    float dx = 20.0 / float64(nx);
-    float dy = 20.0 / float64(ny);
+    res["association"] = "element";
+    res["type"] = "scalar";
+    res["values"].set(DataType::float64(nele));
+
+    float64 *vals = res["values"].value();
+
+    float dx = 20.0 / float64(nx-1);
+    float dy = 20.0 / float64(ny-1);
     
     index_t idx = 0;
     
@@ -167,13 +170,6 @@ void braid_init_example_ele_scalar_field(index_t nx,
             idx++;
         }
     }
-    
-    res["association"] = "element";
-    res["type"] = "scalar";
-    res["values"].set(vals,nele);
-    
-    delete [] vals;
-
 }
 
 
@@ -197,16 +193,205 @@ braid_uniform(index_t nx,
     origin["y"] = -10.0;
     // skip z for now
     Node &spacing = res["coords/uniform/spacing"];
-    spacing["x"] = 20.0 / (float64)(nx+1);
-    spacing["y"] = 20.0 / (float64)(ny+1);
+    spacing["x"] = 20.0 / (float64)(nx);
+    spacing["y"] = 20.0 / (float64)(ny);
     // skip z for now
-    res["topology/logical"] = "coords"; // or name?
+    res["topology/uniform"] = "coords"; // or name?
     
     Node &fields = res["fields"];
 
     braid_init_example_pt_scalar_field(nx,ny,nz,fields["braid_pc"]);
     braid_init_example_ele_scalar_field(nx,ny,nz,fields["radial_ec"]);
 }
+
+
+//---------------------------------------------------------------------------//
+void
+braid_rectilinear(index_t nx,
+                  index_t ny,
+                  index_t nz,
+                  Node &res)
+{
+    res.reset();
+    braid_init_example_state(res);
+    
+    Node &dims = res["coords/rectilinear/"];
+    dims["x"].set(DataType::float64(nx+1));
+    dims["y"].set(DataType::float64(ny+1));
+    float64 *x_vals = dims["x"].value();
+    float64 *y_vals = dims["y"].value();
+
+    float64 dx = 20.0 / (float64)(nx);
+    float64 dy = 20.0 / (float64)(ny);
+
+    for(int i=0; i < nx+1; i++)
+    {
+        x_vals[i] = -10.0 + i * dx;
+    }
+    
+    for(int j=0; j < ny+1; j++)
+    {
+        y_vals[j] = -10.0 + j * dy;
+    }
+    
+    // skip z for now
+
+    res["topology/rectilinear"] = "coords"; // or name?
+    
+    Node &fields = res["fields"];
+
+    braid_init_example_pt_scalar_field(nx,ny,nz,fields["braid_pc"]);
+    braid_init_example_ele_scalar_field(nx,ny,nz,fields["radial_ec"]);
+}
+
+
+//---------------------------------------------------------------------------//
+void
+braid_init_explicit_coords(index_t nx,
+                           index_t ny,
+                           index_t nz,
+                           bool interleaved,
+                           Node &res)
+{
+    Node &coords = res["coords"];
+    
+    index_t npts = (nx+1)*(ny+1);
+
+    // also support interleaved
+    coords["x"].set(DataType::float64(npts));
+    coords["y"].set(DataType::float64(npts));
+
+    float64 *x_vals = coords["x"].value();
+    float64 *y_vals = coords["y"].value();
+
+    float dx = 20.0 / float64(nx);
+    float dy = 20.0 / float64(ny);
+    // skip z for now
+
+    index_t idx = 0;
+    for(index_t j = 0; j < ny+1 ; j++)
+    {
+        float64 cy =  -10.0 + j * dy;
+        for(index_t i = 0; i < nx+1 ; i++)
+        {
+            x_vals[idx] = -10.0 + i * dx;
+            y_vals[idx] = cy;
+            idx++;
+        }
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void
+braid_quads(index_t nx,
+            index_t ny,
+            index_t nz,
+            Node &res)
+{
+    res.reset();
+    braid_init_example_state(res);
+    braid_init_explicit_coords(nx,ny,nz,false,res);
+  
+    res["topology/quads"].set(DataType::int32(nx*ny*4));
+
+    int32 *conn = res["topology/quads"].value();
+
+    index_t idx = 0;
+    for(index_t j = 0; j < ny ; j++)
+    {
+        index_t yoff = j * (nx+1);
+        for(index_t i = 0; i < nx; i++)
+        {
+            conn[idx]   = yoff + i;
+            conn[idx+1] = yoff + i + 1;
+            conn[idx+2] = yoff + i + nx;
+            conn[idx+3] = yoff + i + 1 + nx;
+            idx+=4;
+        }
+    }
+
+
+    Node &fields = res["fields"];
+
+    braid_init_example_pt_scalar_field(nx,ny,nz,fields["braid_pc"]);
+    braid_init_example_ele_scalar_field(nx,ny,nz,fields["radial_ec"]);
+}
+
+//---------------------------------------------------------------------------//
+void
+braid_tris(index_t nx,
+           index_t ny,
+           index_t nz,
+           Node &res)
+{
+    res.reset();
+    braid_init_example_state(res);
+    braid_init_explicit_coords(nx,ny,nz,false,res);
+  
+    res["topology/tris"].set(DataType::int32(nx*ny*6));
+
+    int32 *conn = res["topology/tris"].value();
+
+    index_t idx = 0;
+    for(index_t j = 0; j < ny ; j++)
+    {
+        index_t yoff = j * (nx+1);
+        for(index_t i = 0; i < nx; i++)
+        {
+            conn[idx]   = yoff + i;
+            conn[idx+1] = yoff + i + 1;
+            conn[idx+2] = yoff + i + nx;
+            
+            conn[idx+3] = yoff + i +1 ;
+            conn[idx+4] = yoff + i + nx;
+            conn[idx+5] = yoff + i + 1 + nx;
+
+            idx+=6;
+        }
+    }
+
+
+    Node &fields = res["fields"];
+
+    braid_init_example_pt_scalar_field(nx,ny,nz,fields["braid_pc"]);
+    braid_init_example_ele_scalar_field(nx,ny,nz,fields["radial_ec"]);
+}
+
+
+
+
+//---------------------------------------------------------------------------//
+void
+braid(const std::string &mesh_type,
+      index_t nx,
+      index_t ny,
+      index_t nz,
+      Node &res)
+{
+
+    if(mesh_type == "uniform")
+    {
+        braid_uniform(nx,ny,nz,res);
+    }
+    else if(mesh_type == "rectilinear")
+    {
+        braid_rectilinear(nx,ny,nz,res);
+    }
+    else if(mesh_type == "tris")
+    {
+        braid_tris(nx,ny,nz,res);
+    }
+    else if(mesh_type == "quads")
+    {
+        braid_quads(nx,ny,nz,res);
+    }
+    else
+    {
+        CONDUIT_ERROR("unknown mesh_type = " << mesh_type);
+    }
+}
+
 
 
 
