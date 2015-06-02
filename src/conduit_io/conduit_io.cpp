@@ -187,7 +187,7 @@ namespace  mesh
 
 //---------------------------------------------------------------------------//
 void 
-save(const  Node &node,
+save(Node &node,
      const std::string &path)
 {
     std::string io_type;

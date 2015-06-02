@@ -91,6 +91,67 @@ about(Node &n)
 }
 
 
+void
+expand(Node &src, Node &des)
+{
+    if(src.has_path("topologies") && src.has_path("coordsets"))
+    {
+        // assume all is well, we already have a multi-topology description
+        des.set_external(src);
+    }
+    else if(src.has_path("topology") && src.has_path("coords"))
+    {
+        // promote single topology to standard multi-topology description
+        if(src.has_path("state"))
+        {
+            des["state"].set_external(src["state"]);
+            
+        }
+        // mesh is the default name for a topo, coords is the default name for a coordset
+
+        des["coordsets/coords"].set_external(src["coords"]);
+
+        Node &des_topo = des["topologies/mesh"];
+        
+        NodeIterator itr = src["topology"].iterator();
+        itr.next();
+        std::string topo_name = itr.path();
+
+        des_topo[topo_name]["coordset"].set("coords");
+
+
+        if(topo_name == "quads")
+        {
+            des_topo[topo_name]["connectivity"].set_external(src["topology/quads"]);
+        }
+        else if(topo_name == "tris")
+        {
+            des_topo[topo_name]["connectivity"].set_external(src["topology/tris"]);            
+        }
+        
+        if(src.has_path("fields"))
+        {
+            des["fields"].set_external(src["fields"]);
+            
+            NodeIterator itr = des["fields"].iterator();
+            
+            while( itr.has_next() )
+            {
+                Node &field = itr.next();
+                field["topology"].set("mesh");
+            }
+        }
+        des.print();
+        
+        
+    }
+    else
+    {
+        CONDUIT_ERROR("Missing topologies and coordsets, or topology and coords");
+    }
+}
+
+
 namespace examples
 {
 
@@ -108,10 +169,10 @@ void braid_init_example_state(Node &res)
 
 
 //---------------------------------------------------------------------------//
-void braid_init_example_pt_scalar_field(index_t nx,
-                                        index_t ny,
-                                        index_t nz,
-                                        Node &res)
+void braid_init_example_point_scalar_field(index_t nx,
+                                           index_t ny,
+                                            index_t nz,
+                                            Node &res)
 {
     index_t npts = (nx+1)*(ny+1);
     
@@ -142,16 +203,17 @@ void braid_init_example_pt_scalar_field(index_t nx,
 }
 
 //---------------------------------------------------------------------------//
-void braid_init_example_ele_scalar_field(index_t nx,
-                                         index_t ny,
-                                         index_t nz,
-                                         Node &res)
+void braid_init_example_element_scalar_field(index_t nx,
+                                             index_t ny,
+                                             index_t nz,
+                                             Node &res,
+                                             index_t prims_per_ele=1)
 {
     index_t nele = nx*ny;
 
     res["association"] = "element";
     res["type"] = "scalar";
-    res["values"].set(DataType::float64(nele));
+    res["values"].set(DataType::float64(nele*prims_per_ele));
 
     float64 *vals = res["values"].value();
 
@@ -166,8 +228,12 @@ void braid_init_example_ele_scalar_field(index_t nx,
         for(index_t i = 0; i < nx ; i++)
         {
             float64 cx =  (i * dx) + -10.0;
-            vals[idx] = 10.0 * sqrt( cx*cx + cy*cy );
-            idx++;
+            float64 cv = 10.0 * sqrt( cx*cx + cy*cy );
+            for(index_t ppe = 0; ppe < prims_per_ele; ppe++ )
+            {
+                vals[idx] = cv;
+                idx++;
+            }
         }
     }
 }
@@ -200,8 +266,8 @@ braid_uniform(index_t nx,
     
     Node &fields = res["fields"];
 
-    braid_init_example_pt_scalar_field(nx,ny,nz,fields["braid_pc"]);
-    braid_init_example_ele_scalar_field(nx,ny,nz,fields["radial_ec"]);
+    braid_init_example_point_scalar_field(nx,ny,nz,fields["braid_pc"]);
+    braid_init_example_element_scalar_field(nx,ny,nz,fields["radial_ec"]);
 }
 
 
@@ -240,8 +306,8 @@ braid_rectilinear(index_t nx,
     
     Node &fields = res["fields"];
 
-    braid_init_example_pt_scalar_field(nx,ny,nz,fields["braid_pc"]);
-    braid_init_example_ele_scalar_field(nx,ny,nz,fields["radial_ec"]);
+    braid_init_example_point_scalar_field(nx,ny,nz,fields["braid_pc"]);
+    braid_init_example_element_scalar_field(nx,ny,nz,fields["radial_ec"]);
 }
 
 
@@ -303,10 +369,11 @@ braid_quads(index_t nx,
         index_t yoff = j * (nx+1);
         for(index_t i = 0; i < nx; i++)
         {
-            conn[idx]   = yoff + i;
-            conn[idx+1] = yoff + i + 1;
-            conn[idx+2] = yoff + i + nx;
-            conn[idx+3] = yoff + i + 1 + nx;
+            conn[idx+0] = yoff + i;
+            conn[idx+1] = yoff + i + (nx+1);
+            conn[idx+2] = yoff + i + 1 + (nx+1);
+            conn[idx+3] = yoff + i + 1;
+
             idx+=4;
         }
     }
@@ -314,8 +381,8 @@ braid_quads(index_t nx,
 
     Node &fields = res["fields"];
 
-    braid_init_example_pt_scalar_field(nx,ny,nz,fields["braid_pc"]);
-    braid_init_example_ele_scalar_field(nx,ny,nz,fields["radial_ec"]);
+    braid_init_example_point_scalar_field(nx,ny,nz,fields["braid_pc"]);
+    braid_init_example_element_scalar_field(nx,ny,nz,fields["radial_ec"]);
 }
 
 //---------------------------------------------------------------------------//
@@ -339,14 +406,14 @@ braid_tris(index_t nx,
         index_t yoff = j * (nx+1);
         for(index_t i = 0; i < nx; i++)
         {
-            conn[idx]   = yoff + i;
-            conn[idx+1] = yoff + i + 1;
-            conn[idx+2] = yoff + i + nx;
-            
-            conn[idx+3] = yoff + i +1 ;
-            conn[idx+4] = yoff + i + nx;
-            conn[idx+5] = yoff + i + 1 + nx;
+            conn[idx+0] = yoff + i;
+            conn[idx+1] = yoff + i + (nx+1);
+            conn[idx+2] = yoff + i + 1 + (nx+1);
 
+            conn[idx+3] = yoff + i;
+            conn[idx+4] = yoff + i +1;
+            conn[idx+5] = yoff + i + 1 + (nx+1);
+            
             idx+=6;
         }
     }
@@ -354,8 +421,8 @@ braid_tris(index_t nx,
 
     Node &fields = res["fields"];
 
-    braid_init_example_pt_scalar_field(nx,ny,nz,fields["braid_pc"]);
-    braid_init_example_ele_scalar_field(nx,ny,nz,fields["radial_ec"]);
+    braid_init_example_point_scalar_field(nx,ny,nz,fields["braid_pc"]);
+    braid_init_example_element_scalar_field(nx,ny,nz,fields["radial_ec"],2);
 }
 
 

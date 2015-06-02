@@ -100,7 +100,7 @@ namespace mesh
 {
 
 //-----------------------------------------------------------------------------
-void CONDUIT_IO_API save(const  Node &node,
+void CONDUIT_IO_API save(Node &node,
                          const std::string &path);
 
 //-----------------------------------------------------------------------------

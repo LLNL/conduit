@@ -96,7 +96,7 @@ namespace examples
 // -- end conduit::mesh::examples --
 //-----------------------------------------------------------------------------
 
-
+void expand(Node &src, Node &des);
 
 
 };
