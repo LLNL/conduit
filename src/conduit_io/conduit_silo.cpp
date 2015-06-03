@@ -309,144 +309,149 @@ silo_save_field(DBfile *dbfile,
 {
 
 
-    if (!n_var.has_path("topology"))
+    if (!n_var.has_path("topologies"))
     {
         CONDUIT_ERROR( "Missing linked topology! " 
                         << "fields/"
                         << var_name 
-                        << "/topology");
+                        << "/topologies");
     }
 
-    std::string mesh_name = n_var["topology"].as_string();
+    NodeIterator fld_topos_itr = n_var["topologies"].iterator();
 
-    if(!n_mesh_info.has_path(mesh_name))
+    while(fld_topos_itr.has_next())
     {
-        CONDUIT_ERROR( "Invalid linked topology! " 
-                        << "fields/" 
-                        << var_name << "/topology = "
-                        << mesh_name);
-    }
+        std::string mesh_name = fld_topos_itr.next().as_string();
 
-    std::string mtype = n_mesh_info[mesh_name]["type"].as_string();
-    int num_elems = n_mesh_info[mesh_name]["num_elems"].value();
-    int num_pts   = n_mesh_info[mesh_name]["num_pts"].value();;
+        if(!n_mesh_info.has_path(mesh_name))
+        {
+            CONDUIT_ERROR( "Invalid linked topology! " 
+                            << "fields/" 
+                            << var_name << "/topologies: "
+                            << mesh_name);
+        }
+
+        std::string mtype = n_mesh_info[mesh_name]["type"].as_string();
+        int num_elems = n_mesh_info[mesh_name]["num_elems"].value();
+        int num_pts   = n_mesh_info[mesh_name]["num_pts"].value();;
 
 
-    int centering  = 0;
-    int num_values = 0;
+        int centering  = 0;
+        int num_values = 0;
 
-    if (!n_var.has_path("association"))
-    {
-        CONDUIT_ERROR( "Missing association! "
-                       << "fields/" 
-                       << var_name << "/association");
-    }
+        if (!n_var.has_path("association"))
+        {
+            CONDUIT_ERROR( "Missing association! "
+                           << "fields/" 
+                           << var_name << "/association");
+        }
 
-    if (n_var["association"].as_string() == "element")
-    {
-        centering  = DB_ZONECENT;
-        num_values = num_elems;
-    }
+        if (n_var["association"].as_string() == "element")
+        {
+            centering  = DB_ZONECENT;
+            num_values = num_elems;
+        }
 
-    if (n_var["association"].as_string() == "point")
-    {
-        centering  = DB_NODECENT;
-        num_values = num_pts;
-    }
+        if (n_var["association"].as_string() == "point")
+        {
+            centering  = DB_NODECENT;
+            num_values = num_pts;
+        }
 
-    if (!n_var.has_path("values"))
-    {
-        CONDUIT_ERROR( "Missing field data ! " 
-                       << "fields/" 
-                       << var_name << "/values");
-    }
+        if (!n_var.has_path("values"))
+        {
+            CONDUIT_ERROR( "Missing field data ! " 
+                           << "fields/" 
+                           << var_name << "/values");
+        }
 
-    // we compact to support a strided array cases
-    Node n_values;
-    n_var["values"].compact_to(n_values);
+        // we compact to support a strided array cases
+        Node n_values;
+        n_var["values"].compact_to(n_values);
 
-    // create a name
-    int vals_type = 0;
-    void *vals_ptr = NULL;
+        // create a name
+        int vals_type = 0;
+        void *vals_ptr = NULL;
 
-    int dtype_id = n_var["values"].dtype().id();
+        int dtype_id = n_var["values"].dtype().id();
 
-    if( dtype_id == DataType::c_float().id())
-    {
-        vals_type = DB_FLOAT;
-        vals_ptr = (void*)n_values.as_float_ptr();
-    }
-    else if(dtype_id == DataType::c_double().id())
-    {
-        vals_type = DB_DOUBLE;
-        vals_ptr = (void*)n_values.as_double_ptr();
-    }
-    else
-    {
-        CONDUIT_ERROR( "field " 
-                        << var_name 
-                        << "'s type not implemented, found " 
-                        << DataType::id_to_name(dtype_id));
-    }
+        if( dtype_id == DataType::c_float().id())
+        {
+            vals_type = DB_FLOAT;
+            vals_ptr = (void*)n_values.as_float_ptr();
+        }
+        else if(dtype_id == DataType::c_double().id())
+        {
+            vals_type = DB_DOUBLE;
+            vals_ptr = (void*)n_values.as_double_ptr();
+        }
+        else
+        {
+            CONDUIT_ERROR( "field " 
+                            << var_name 
+                            << "'s type not implemented, found " 
+                            << DataType::id_to_name(dtype_id));
+        }
 
-    int silo_error = 0;
+        int silo_error = 0;
     
-    if(mtype == "ucd")
-    {
-        silo_error = DBPutUcdvar1(dbfile, 
-                                  var_name.c_str(), 
-                                  mesh_name.c_str(), 
-                                  vals_ptr,
-                                  num_values, 
-                                  NULL, 
-                                  0, 
-                                  vals_type, 
-                                  centering,
-                                  NULL);
-    }
-    else if(mtype == "rectilinear")
-    {
-        int dims[3] = {0,0,0};
-        int num_dims = 2;
-        dims[0] = n_mesh_info[mesh_name]["dims/x"].value();
-        dims[1] = n_mesh_info[mesh_name]["dims/y"].value();
-
-        if(n_mesh_info[mesh_name]["dims"].has_path("z"))
+        if(mtype == "ucd")
         {
-            num_dims = 3;
-            dims[2] = n_mesh_info[mesh_name]["dims/z"].value();
+            silo_error = DBPutUcdvar1(dbfile, 
+                                      var_name.c_str(), 
+                                      mesh_name.c_str(), 
+                                      vals_ptr,
+                                      num_values, 
+                                      NULL, 
+                                      0, 
+                                      vals_type, 
+                                      centering,
+                                      NULL);
         }
-
-        if(centering == DB_ZONECENT)
+        else if(mtype == "rectilinear")
         {
-            dims[0]--;
-            dims[1]--;
-            if(num_dims ==3)
+            int dims[3] = {0,0,0};
+            int num_dims = 2;
+            dims[0] = n_mesh_info[mesh_name]["dims/x"].value();
+            dims[1] = n_mesh_info[mesh_name]["dims/y"].value();
+
+            if(n_mesh_info[mesh_name]["dims"].has_path("z"))
             {
-                dims[2]--;
+                num_dims = 3;
+                dims[2] = n_mesh_info[mesh_name]["dims/z"].value();
             }
-        }
+
+            if(centering == DB_ZONECENT)
+            {
+                dims[0]--;
+                dims[1]--;
+                if(num_dims ==3)
+                {
+                    dims[2]--;
+                }
+            }
         
 
-        silo_error = DBPutQuadvar1(dbfile, 
-                                   var_name.c_str(), 
-                                   mesh_name.c_str(), 
-                                   vals_ptr,
-                                   dims,
-                                   num_dims, 
-                                   NULL, 
-                                   0, 
-                                   vals_type, 
-                                   centering,
-                                   NULL);
-    }
-    else
-    {
-        CONDUIT_ERROR( "only putucd + putquad var are supported");
-    }
+            silo_error = DBPutQuadvar1(dbfile, 
+                                       var_name.c_str(), 
+                                       mesh_name.c_str(), 
+                                       vals_ptr,
+                                       dims,
+                                       num_dims, 
+                                       NULL, 
+                                       0, 
+                                       vals_type, 
+                                       centering,
+                                       NULL);
+        }
+        else
+        {
+            CONDUIT_ERROR( "only putucd + putquad var are supported");
+        }
 
-    CONDUIT_CHECK_SILO_ERROR(silo_error,
-                             " after creating field " << var_name);
+        CONDUIT_CHECK_SILO_ERROR(silo_error,
+                                 " after creating field " << var_name);
+    }// end field topologies itr while
 }
 
 //---------------------------------------------------------------------------//

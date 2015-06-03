@@ -138,7 +138,7 @@ expand(Node &src, Node &des)
             while( itr.has_next() )
             {
                 Node &field = itr.next();
-                field["topology"].set("mesh");
+                field["topologies"].append().set("mesh");
             }
         }
         des.print();
