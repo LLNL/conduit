@@ -267,12 +267,11 @@ namespace mesh
 DBoptlist * 
 silo_gen_state_optlist(Node &n)
 {
-    int silo_error = 0;
     DBoptlist *res = NULL;
     
     if (n.has_path("state"))
     {
-        
+        int silo_error = 0;
         Node &n_state = n["state"];
         res = DBMakeOptlist(2);
         
@@ -295,7 +294,7 @@ silo_gen_state_optlist(Node &n)
         CONDUIT_CHECK_SILO_ERROR(silo_error,
                                  " creating state optlist (time, cycle) ");
     }
-    
+
     return res;
 }
 
@@ -331,7 +330,7 @@ silo_save_field(DBfile *dbfile,
                             << mesh_name);
         }
 
-        std::string mtype = n_mesh_info[mesh_name]["type"].as_string();
+        std::string mesh_type = n_mesh_info[mesh_name]["type"].as_string();
         int num_elems = n_mesh_info[mesh_name]["num_elems"].value();
         int num_pts   = n_mesh_info[mesh_name]["num_pts"].value();;
 
@@ -373,14 +372,15 @@ silo_save_field(DBfile *dbfile,
         int vals_type = 0;
         void *vals_ptr = NULL;
 
-        int dtype_id = n_var["values"].dtype().id();
+        DataType dtype = n_var["values"].dtype();
 
-        if( dtype_id == DataType::c_float().id())
+        if( dtype.is_float() )
         {
             vals_type = DB_FLOAT;
             vals_ptr = (void*)n_values.as_float_ptr();
         }
-        else if(dtype_id == DataType::c_double().id())
+        else  if( dtype.is_double() )
+
         {
             vals_type = DB_DOUBLE;
             vals_ptr = (void*)n_values.as_double_ptr();
@@ -390,12 +390,12 @@ silo_save_field(DBfile *dbfile,
             CONDUIT_ERROR( "field " 
                             << var_name 
                             << "'s type not implemented, found " 
-                            << DataType::id_to_name(dtype_id));
+                            << dtype.name());
         }
 
         int silo_error = 0;
     
-        if(mtype == "ucd")
+        if(mesh_type == "quads" || mesh_type == "tris")
         {
             silo_error = DBPutUcdvar1(dbfile, 
                                       var_name.c_str(), 
@@ -408,7 +408,7 @@ silo_save_field(DBfile *dbfile,
                                       centering,
                                       NULL);
         }
-        else if(mtype == "rectilinear")
+        else if(mesh_type == "rectilinear" || mesh_type == "uniform")
         {
             int dims[3] = {0,0,0};
             int num_dims = 2;
@@ -446,7 +446,7 @@ silo_save_field(DBfile *dbfile,
         }
         else
         {
-            CONDUIT_ERROR( "only putucd + putquad var are supported");
+            CONDUIT_ERROR( "only DBPutQuadvar1 + DBPutUcdvar1 var are supported");
         }
 
         CONDUIT_CHECK_SILO_ERROR(silo_error,
@@ -533,22 +533,16 @@ silo_save_ucd_zonelist(DBfile *dbfile,
 //---------------------------------------------------------------------------//
 void
 mesh_topology_basics(const std::string &mesh_name,
-                     Node &n_topo,
-                     Node &n_topo_info)
+                     Node &n_mesh,
+                     Node &n_mesh_info)
 {
-    NodeIterator itr = n_topo.iterator();
+    NodeIterator itr = n_mesh.iterator();
     itr.next();
-    std::string topo_type = itr.path();
+    std::string mesh_type = itr.path();
 
-    std::string coordset_name = n_topo[topo_type]["coordset"].as_string();
-    n_topo_info[mesh_name]["coordset"].set(coordset_name);
-    
-    if(topo_type == "quads" || topo_type == "tris" ) // other ucd types ...
-    {
-        topo_type = "ucd";
-    }
-    
-    n_topo_info[mesh_name]["type"].set(topo_type);
+    std::string coordset_name = n_mesh[mesh_type]["coordset"].as_string();
+    n_mesh_info[mesh_name]["coordset"].set(coordset_name);
+    n_mesh_info[mesh_name]["type"].set(mesh_type);
 }
 
 
@@ -594,11 +588,9 @@ silo_save_ucd_mesh(DBfile *dbfile,
     void *coords_ptrs[3] = {NULL, NULL, NULL};
 
     // assume x,y,z are all the same type
-    int dtype_id = n_coords_compact["x"].dtype().id();
+    DataType dtype = n_coords_compact["x"].dtype();
 
-    // need a DataType::is_c_float() , etc methods
-
-    if( dtype_id == DataType::c_float().id())
+    if( dtype.is_float() )
     {
         coords_ptrs[0] = (void*)n_coords_compact["x"].as_float_ptr();
         coords_ptrs[1] = (void*)n_coords_compact["y"].as_float_ptr();
@@ -606,7 +598,8 @@ silo_save_ucd_mesh(DBfile *dbfile,
             coords_ptrs[2] = (void*)n_coords_compact["z"].as_float_ptr();
         coords_type = DB_FLOAT;
     }
-    else if(dtype_id == DataType::c_double().id())
+    else if( dtype.is_double() )
+
     {
         coords_ptrs[0] = (void*)n_coords_compact["x"].as_double_ptr();
         coords_ptrs[1] = (void*)n_coords_compact["y"].as_double_ptr();
@@ -623,7 +616,7 @@ silo_save_ucd_mesh(DBfile *dbfile,
         // n_coords["x"].convert_to_double_array(); 
         // n_coords["y"].convert_to_double_array(); 
         CONDUIT_ERROR("coords data type not implemented, found " << 
-                      DataType::id_to_name(n_coords_compact["x"].dtype().id()));
+                      dtype.name());
     }
 
     int num_elems = n_mesh_info[mesh_name]["num_elems"].value();
@@ -708,11 +701,11 @@ silo_save_quad_rect_mesh(DBfile *dbfile,
     void *coords_ptrs[3] = {NULL, NULL, NULL};
 
     // assume x,y,z are all the same type
-    int dtype_id = n_coords_compact["x"].dtype().id();
+    DataType dtype = n_coords_compact["x"].dtype();
 
     // need a DataType::is_c_float() , etc methods
 
-    if( dtype_id == DataType::c_float().id())
+    if( dtype.is_float() )
     {
         coords_ptrs[0] = (void*)n_coords_compact["x"].as_float_ptr();
         coords_ptrs[1] = (void*)n_coords_compact["y"].as_float_ptr();
@@ -720,7 +713,7 @@ silo_save_quad_rect_mesh(DBfile *dbfile,
             coords_ptrs[2] = (void*)n_coords_compact["z"].as_float_ptr();
         coords_dtype = DB_FLOAT;
     }
-    else if(dtype_id == DataType::c_double().id())
+    else if( dtype.is_double() )
     {
         coords_ptrs[0] = (void*)n_coords_compact["x"].as_double_ptr();
         coords_ptrs[1] = (void*)n_coords_compact["y"].as_double_ptr();
@@ -737,7 +730,7 @@ silo_save_quad_rect_mesh(DBfile *dbfile,
         // n_coords["x"].convert_to_double_array(); 
         // n_coords["y"].convert_to_double_array(); 
         CONDUIT_ERROR("coords data type not implemented, found " << 
-                      DataType::id_to_name(n_coords_compact["x"].dtype().id()));
+                      dtype.name());
     }
 
     int silo_error = DBPutQuadmesh(dbfile, // silo file ptr
@@ -791,7 +784,7 @@ silo_save_mesh(Node &n,
         std::string mesh_type = n_mesh_info[mesh_name]["type"].as_string();
 
         // we need a zone list for a ucd mesh
-        if(mesh_type == "ucd")
+        if(mesh_type == "quads" || mesh_type == "tris")
         {
             silo_save_ucd_zonelist(dbfile,
                                    mesh_name,
@@ -819,7 +812,7 @@ silo_save_mesh(Node &n,
     
         Node &n_coords = n["coordsets"][coordset_name];
     
-        if(mesh_type == "ucd")
+        if(mesh_type == "quads" || mesh_type == "tris")
         {
             silo_save_ucd_mesh(dbfile,
                                mesh_name,

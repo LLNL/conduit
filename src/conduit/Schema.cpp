@@ -470,7 +470,8 @@ Schema::remove(index_t idx)
     index_t dtype_id = m_dtype.id();
     if(! (dtype_id == DataType::LIST_T || dtype_id == DataType::OBJECT_T))
     {
-        CONDUIT_ERROR("<Schema::remove> Schema is not LIST_T or OBJECT_T, dtype is" << DataType::id_to_name(dtype_id));
+        CONDUIT_ERROR("<Schema::remove> Schema is not LIST_T or OBJECT_T, dtype is" 
+                      << m_dtype.name();
     }
     
     std::vector<Schema*>  &chldrn = children();

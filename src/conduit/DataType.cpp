@@ -507,6 +507,27 @@ DataType::is_compact() const
 
 //---------------------------------------------------------------------------//
 bool
+DataType::is_empty() const
+{
+    return m_id == EMPTY_T;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_object() const
+{
+    return m_id == OBJECT_T;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_list() const
+{
+    return m_id == LIST_T;
+}
+
+//---------------------------------------------------------------------------//
+bool
 DataType::is_number() const
 {
     return ( is_integer() ||
@@ -548,6 +569,177 @@ DataType::is_unsigned_integer() const
              (m_id == UINT32_T) ||
              (m_id == UINT64_T));
 }
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_int8() const
+{
+    return m_id == INT8_T;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_int16() const
+{
+    return m_id == INT16_T;
+}
+
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_int32() const
+{
+    return m_id == INT32_T;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_int64() const
+{
+    return m_id == INT64_T;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_uint8() const
+{
+    return m_id == UINT8_T;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_uint16() const
+{
+    return m_id == UINT16_T;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_uint32() const
+{
+    return m_id == UINT32_T;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_uint64() const
+{
+    return m_id == UINT64_T;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_float32() const
+{
+    return m_id == FLOAT32_T;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_float64() const
+{
+    return m_id == FLOAT64_T;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_char() const
+{
+    return m_id == CONDUIT_NATIVE_CHAR_DATATYPE_ID;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_short() const
+{
+    return m_id == CONDUIT_NATIVE_SHORT_DATATYPE_ID;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_int() const
+{
+    return m_id == CONDUIT_NATIVE_INT_DATATYPE_ID;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_long() const
+{
+    return m_id == CONDUIT_NATIVE_LONG_DATATYPE_ID;
+}
+
+
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+bool
+DataType::is_long_long() const
+{
+    return m_id == CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID;
+}
+#endif
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_unsigned_char() const
+{
+    return m_id == CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_unsigned_short() const
+{
+    return m_id == CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_unsigned_int() const
+{
+    return m_id == CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_unsigned_long() const
+{
+    return m_id == CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID;
+}
+
+
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+bool
+DataType::is_unsigned_long_long() const
+{
+    return m_id == CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID;
+}
+#endif
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_float() const
+{
+    return m_id == CONDUIT_NATIVE_FLOAT_DATATYPE_ID;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_double() const
+{
+    return m_id == CONDUIT_NATIVE_DOUBLE_DATATYPE_ID;
+}
+
+
+#ifdef CONDUIT_USE_LONG_DOUBLE
+//---------------------------------------------------------------------------//
+bool
+DataType::is_long_double() const
+{
+    return m_id == CONDUIT_NATIVE_LONG_DOUBLE_DATATYPE_ID;
+}
+#endif
 
 //---------------------------------------------------------------------------// 
 index_t     
