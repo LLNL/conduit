@@ -351,12 +351,12 @@ public:
     bool        is_compact() const;
     bool        is_compatible(const DataType& type) const;
     
-    index_t    number_of_elements()  const { return m_num_ele;}
-    index_t    offset()              const { return m_offset;}
-    index_t    stride()              const { return m_stride;}
-    index_t    element_bytes()       const { return m_ele_bytes;}
-    index_t    endianness()          const { return m_endianness;}
-    index_t    element_index(index_t idx) const;
+    index_t     number_of_elements()  const { return m_num_ele;}
+    index_t     offset()              const { return m_offset;}
+    index_t     stride()              const { return m_stride;}
+    index_t     element_bytes()       const { return m_ele_bytes;}
+    index_t     endianness()          const { return m_endianness;}
+    index_t     element_index(index_t idx) const;
 
     bool        is_empty()           const;
     bool        is_object()          const;
