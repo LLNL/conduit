@@ -142,8 +142,6 @@ expand(Node &src, Node &des)
             }
         }
         des.print();
-        
-        
     }
     else
     {

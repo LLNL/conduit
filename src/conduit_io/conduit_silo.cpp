@@ -404,9 +404,45 @@ silo_save_field(DBfile *dbfile,
                                   centering,
                                   NULL);
     }
+    else if(mtype == "rectilinear")
+    {
+        int dims[3] = {0,0,0};
+        int num_dims = 2;
+        dims[0] = n_mesh_info[mesh_name]["dims/x"].value();
+        dims[1] = n_mesh_info[mesh_name]["dims/y"].value();
+
+        if(n_mesh_info[mesh_name]["dims"].has_path("z"))
+        {
+            num_dims = 3;
+            dims[2] = n_mesh_info[mesh_name]["dims/z"].value();
+        }
+
+        if(centering == DB_ZONECENT)
+        {
+            dims[0]--;
+            dims[1]--;
+            if(num_dims ==3)
+            {
+                dims[2]--;
+            }
+        }
+        
+
+        silo_error = DBPutQuadvar1(dbfile, 
+                                   var_name.c_str(), 
+                                   mesh_name.c_str(), 
+                                   vals_ptr,
+                                   dims,
+                                   num_dims, 
+                                   NULL, 
+                                   0, 
+                                   vals_type, 
+                                   centering,
+                                   NULL);
+    }
     else
     {
-        CONDUIT_ERROR( "only putucd var is supported");
+        CONDUIT_ERROR( "only putucd + putquad var are supported");
     }
 
     CONDUIT_CHECK_SILO_ERROR(silo_error,
@@ -437,9 +473,7 @@ silo_save_ucd_zonelist(DBfile *dbfile,
         Node n_conn;
         n_mesh_conn.compact_to(n_conn);
         num_elems = n_conn.dtype().number_of_elements() / 4;
-
-        n_mesh_info[mesh_name]["type"].set("ucd");
-        n_mesh_info[mesh_name]["coordset"].set(coordset_name);
+        
         n_mesh_info[mesh_name]["num_elems"].set(num_elems);
     
         shapetype[0] = DB_ZONETYPE_QUAD;
@@ -459,8 +493,6 @@ silo_save_ucd_zonelist(DBfile *dbfile,
         n_mesh_conn.compact_to(n_conn);
         num_elems = n_conn.dtype().number_of_elements() / 3;
 
-        n_mesh_info[mesh_name]["type"].set("ucd");
-        n_mesh_info[mesh_name]["coordset"].set(coordset_name);
         n_mesh_info[mesh_name]["num_elems"].set(num_elems);
 
         shapetype[0] = DB_ZONETYPE_TRIANGLE;
@@ -493,6 +525,26 @@ silo_save_ucd_zonelist(DBfile *dbfile,
 
 }
 
+//---------------------------------------------------------------------------//
+void
+mesh_topology_basics(const std::string &mesh_name,
+                     Node &n_topo,
+                     Node &n_topo_info)
+{
+    NodeIterator itr = n_topo.iterator();
+    itr.next();
+    std::string topo_type = itr.path();
+
+    std::string coordset_name = n_topo[topo_type]["coordset"].as_string();
+    n_topo_info[mesh_name]["coordset"].set(coordset_name);
+    
+    if(topo_type == "quads" || topo_type == "tris" ) // other ucd types ...
+    {
+        topo_type = "ucd";
+    }
+    
+    n_topo_info[mesh_name]["type"].set(topo_type);
+}
 
 
 //---------------------------------------------------------------------------//
@@ -592,6 +644,115 @@ silo_save_ucd_mesh(DBfile *dbfile,
 
 //---------------------------------------------------------------------------//
 void 
+silo_save_quad_rect_mesh(DBfile *dbfile, 
+                        const std::string &mesh_name,
+                        Node &n_coords,
+                        DBoptlist *mesh_optlist,
+                        Node &n_mesh_info)
+{
+    // also support interleaved:
+    // xy, xyz 
+    // convert these to separate coord arrays for silo 
+    Node &n_coords_rect = n_coords["rectilinear"];
+
+    // check if we are 2d or 3d
+    int num_coords = 2;    
+    if(!n_coords_rect.has_path("x"))
+    {
+        CONDUIT_ERROR( "mesh coordset missing: x");
+    }
+    if(!n_coords_rect.has_path("y"))
+    {
+        CONDUIT_ERROR( "mesh coordset missing: y");
+    }
+    if(n_coords_rect.has_path("z"))
+    {
+        num_coords = 3;
+    }
+
+    const char* coordnames[3] = {"x", "y", "z"};
+
+
+    Node n_coords_compact;
+    // compaction is necessary to support ragged arrays
+    n_coords_rect.compact_to(n_coords_compact);
+
+    int dims[3];
+    dims[0] = n_coords_compact["x"].dtype().number_of_elements();
+    dims[1] = n_coords_compact["y"].dtype().number_of_elements();
+    dims[2] = 0;
+    
+    int num_pts = dims[0]* dims[1];
+    int num_elems = (dims[0]-1)*(dims[1]-1);
+    if(num_coords == 3)
+    {
+        num_pts   = num_pts * dims[2];
+        num_elems = num_elems * (dims[2]-1);
+    }
+    
+    n_mesh_info[mesh_name]["num_pts"].set(num_pts);
+    n_mesh_info[mesh_name]["num_elems"].set(num_elems);
+    n_mesh_info[mesh_name]["dims/x"] = dims[0];
+    n_mesh_info[mesh_name]["dims/y"] = dims[1];
+    if(num_coords == 3)
+    {
+        n_mesh_info[mesh_name]["dims/z"] = dims[2];
+    }
+    
+    int coords_dtype = 0;
+    void *coords_ptrs[3] = {NULL, NULL, NULL};
+
+    // assume x,y,z are all the same type
+    int dtype_id = n_coords_compact["x"].dtype().id();
+
+    // need a DataType::is_c_float() , etc methods
+
+    if( dtype_id == DataType::c_float().id())
+    {
+        coords_ptrs[0] = (void*)n_coords_compact["x"].as_float_ptr();
+        coords_ptrs[1] = (void*)n_coords_compact["y"].as_float_ptr();
+        if(num_coords == 3)
+            coords_ptrs[2] = (void*)n_coords_compact["z"].as_float_ptr();
+        coords_dtype = DB_FLOAT;
+    }
+    else if(dtype_id == DataType::c_double().id())
+    {
+        coords_ptrs[0] = (void*)n_coords_compact["x"].as_double_ptr();
+        coords_ptrs[1] = (void*)n_coords_compact["y"].as_double_ptr();
+        if(num_coords == 3)
+            coords_ptrs[2] = (void*)n_coords_compact["z"].as_double_ptr();
+
+        coords_dtype = DB_DOUBLE;
+    }
+    else
+    {
+        // n_coords["x"].to_double_array(n_convert["x"]);
+        // n_coords["y"].to_double_array(n_convert["y"]);
+        // or:
+        // n_coords["x"].convert_to_double_array(); 
+        // n_coords["y"].convert_to_double_array(); 
+        CONDUIT_ERROR("coords data type not implemented, found " << 
+                      DataType::id_to_name(n_coords_compact["x"].dtype().id()));
+    }
+
+    int silo_error = DBPutQuadmesh(dbfile, // silo file ptr
+                                   mesh_name.c_str(), // mesh name
+                                   (char**)&coordnames[0], // coord names
+                                   coords_ptrs, // coords values
+                                   dims, //dims vals
+                                   num_coords, // number of dims
+                                   coords_dtype, // type of data array
+                                   DB_COLLINEAR, // DB_COLLINEAR or DB_NONCOLLINEAR
+                                   mesh_optlist); // opt list
+
+    CONDUIT_CHECK_SILO_ERROR(silo_error,
+                             " DBPutUcdmesh");
+
+}
+
+
+//---------------------------------------------------------------------------//
+void 
 silo_save_mesh(Node &n,
                DBfile *dbfile,
                const std::string &silo_obj_path)
@@ -618,10 +779,20 @@ silo_save_mesh(Node &n,
         
         std::string mesh_name = topo_itr.path();
         
-        silo_save_ucd_zonelist(dbfile,
-                               mesh_name,
-                               n_mesh,
-                               n_mesh_info);
+        mesh_topology_basics(mesh_name,
+                             n_mesh,
+                             n_mesh_info);
+        
+        std::string mesh_type = n_mesh_info[mesh_name]["type"].as_string();
+
+        // we need a zone list for a ucd mesh
+        if(mesh_type == "ucd")
+        {
+            silo_save_ucd_zonelist(dbfile,
+                                   mesh_name,
+                                   n_mesh,
+                                   n_mesh_info);
+        }
 
 
         // now create the UCD mesh 
@@ -631,6 +802,7 @@ silo_save_mesh(Node &n,
         }
         
         std::string coordset_name = n_mesh_info[mesh_name]["coordset"].as_string();
+
         // look for coordset with name
         if(!n["coordsets"].has_path(coordset_name))
         {
@@ -642,12 +814,36 @@ silo_save_mesh(Node &n,
     
         Node &n_coords = n["coordsets"][coordset_name];
     
-        silo_save_ucd_mesh(dbfile,
-                           mesh_name,
-                           n_coords,
-                           mesh_optlist,
-                           n_mesh_info);
+        if(mesh_type == "ucd")
+        {
+            silo_save_ucd_mesh(dbfile,
+                               mesh_name,
+                               n_coords,
+                               mesh_optlist,
+                               n_mesh_info);
+        }
+        else if (mesh_type == "rectilinear")
+        {
+            silo_save_quad_rect_mesh(dbfile,
+                                     mesh_name,
+                                     n_coords,
+                                     mesh_optlist,
+                                     n_mesh_info);
+        }
+        else if (mesh_type == "uniform")
+        {
+            //silo_save_quad_uniform_mesh(dbfile,...)
+        }
+        else if (mesh_type == "structured")
+        {
+            //silo_save_quad_structured_mesh(dbfile,...)
+        }
+        else if (mesh_type == "point")
+        {
+            //silo_save_point_mesh(dbfile,...)
+        }
     }
+
     
     
     if(mesh_optlist)
