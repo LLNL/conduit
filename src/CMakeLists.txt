@@ -119,12 +119,12 @@ add_subdirectory(conduit_viz)
 
 
 ################################
-# Add the conduit-mesh lib 
+# Add the blueprint lib 
 ################################
-# add conduit_mesh include dirs so units tests have access to the headers
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/conduit_mesh
-                    ${CMAKE_CURRENT_BINARY_DIR}/conduit_mesh)
-add_subdirectory(conduit_mesh)
+# add cblueprint include dirs so units tests have access to the headers
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/blueprint
+                    ${CMAKE_CURRENT_BINARY_DIR}/blueprint)
+add_subdirectory(blueprint)
 
 ################################
 # Add the conduit-mpi lib 

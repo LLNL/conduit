@@ -44,68 +44,67 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_mesh_smoke.cpp
+/// file: blueprint_mesh.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit.hpp"
-#include "conduit_mesh.hpp"
-#include "conduit_io.hpp"
-
-#include <iostream>
-#include "gtest/gtest.h"
-
-using namespace conduit;
+#ifndef BLUEPRINT_MESH_HPP
+#define BLUEPRINT_MESH_HPP
 
 //-----------------------------------------------------------------------------
-TEST(conduit_mesh_examples, mesh_2d)
+// conduit lib includes
+//-----------------------------------------------------------------------------
+#include "conduit.hpp"
+#include "Blueprint_Exports.hpp"
+
+
+//-----------------------------------------------------------------------------
+// -- begin blueprint:: --
+//-----------------------------------------------------------------------------
+namespace blueprint
 {
-    Node iocfg;
-    io::about(iocfg);
 
-    bool silo_enabled = iocfg["endpoints/conduit_silo"].as_string() == "enabled";
-        
-    Node uniform;
-    mesh::examples::braid("uniform",20,20,0,uniform);
-    uniform.print();
-    uniform.to_pure_json("braid_uniform_example.json");
+//-----------------------------------------------------------------------------
+// -- begin blueprint::mesh --
+//-----------------------------------------------------------------------------
 
-    Node rect;
-    mesh::examples::braid("rectilinear",20,20,0,rect);
-    rect.print();
-    rect.to_pure_json("braid_rect_example.json");
+namespace mesh 
+{
 
-    Node tris;
-    mesh::examples::braid("tris",20,20,0,tris);
-    tris.print();
-    tris.to_pure_json("braid_quads_example.json");
-
-    Node quads;
-    mesh::examples::braid("quads",20,20,0,quads);
-    quads.print();
-    quads.to_pure_json("braid_quads_example.json");
-
-    Node rect_expanded;
-    mesh::expand(rect,rect_expanded);
-    rect_expanded.print();
-    rect_expanded.to_pure_json("braid_rect_expanded_example.json");
-
-    Node tris_expanded;
-    mesh::expand(tris,tris_expanded);
-    tris_expanded.print();
-    tris_expanded.to_pure_json("braid_tris_expanded_example.json");
-
-    Node quads_expanded;
-    mesh::expand(quads,quads_expanded);
-    quads_expanded.print();
-    quads_expanded.to_pure_json("braid_quads_expanded_example.json");
+//-----------------------------------------------------------------------------
+/// Methods that generate example meshes.
+/// We should move these to a better place in the future.
+//-----------------------------------------------------------------------------
+namespace examples
+{
     
-    if(silo_enabled)
-    {
-        // conduit::io::mesh::save(uniform,"braid_uniform_example.silo:uniform2d");
-        conduit::io::mesh::save(rect_expanded,"braid_rect_example.silo:rect2d");
-        conduit::io::mesh::save(tris_expanded,"braid_tris_example.silo:tris");
-        conduit::io::mesh::save(quads_expanded,"braid_quads_example.silo:quad");
-    }
-    
-}
+    void BLUEPRINT_API braid(const std::string &mesh_type,
+                             conduit::index_t nx,
+                             conduit::index_t ny,
+                             conduit::index_t nz,  // not implemented ... 
+                             conduit::Node &res);
+};
+//-----------------------------------------------------------------------------
+// -- end blueprint::mesh::examples --
+//-----------------------------------------------------------------------------
+
+void expand(conduit::Node &src,
+            conduit::Node &des);
+
+
+};
+//-----------------------------------------------------------------------------
+// -- end blueprint::mesh --
+//-----------------------------------------------------------------------------
+
+
+
+};
+//-----------------------------------------------------------------------------
+// -- end blueprint:: --
+//-----------------------------------------------------------------------------
+
+#endif 
+
+
+

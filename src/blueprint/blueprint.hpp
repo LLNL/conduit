@@ -44,39 +44,49 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Conduit_Mesh_Exports.hpp
+/// file: blueprint.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_MESH_EXPORTS_HPP
-#define CONDUIT_MESH_EXPORTS_HPP
+#ifndef BLUEPRINT_HPP
+#define BLUEPRINT_HPP
 
 //-----------------------------------------------------------------------------
-// -- define proper lib exports for various platforms -- 
+// conduit lib includes
 //-----------------------------------------------------------------------------
-#if defined(_WIN32)
-#if defined(CONDUIT_MESH_EXPORTS) || defined(conduit_mesh_EXPORTS)
-#define CONDUIT_MESH_API __declspec(dllexport)
-#else
-#define CONDUIT_MESH_API __declspec(dllimport)
-#endif
-#if defined(_MSC_VER)
-// Turn off warning about lack of DLL interface
-#pragma warning(disable:4251)
-// Turn off warning non-dll class is base for dll-interface class.
-#pragma warning(disable:4275)
-// Turn off warning about identifier truncation
-#pragma warning(disable:4786)
-#endif
-#else
-# if __GNUC__ >= 4 && (defined(CONDUIT_MESH_EXPORTS) || defined(conduit_mesh_EXPORTS))
-#   define CONDUIT_MESH_API __attribute__ ((visibility("default")))
-# else
-#   define CONDUIT_MESH_API /* hidden by default */
-# endif
-#endif
+#include "conduit.hpp"
+#include "Blueprint_Exports.hpp"
 
-#endif
+//-----------------------------------------------------------------------------
+// -- begin blueprint:: --
+//-----------------------------------------------------------------------------
+namespace blueprint
+{
+
+//-----------------------------------------------------------------------------
+/// The about methods construct human readable info about how blueprint was
+/// configured.
+//-----------------------------------------------------------------------------
+std::string BLUEPRINT_API about();
+void        BLUEPRINT_API about(conduit::Node &n);
+
+//-----------------------------------------------------------------------------
+/// Experimental blueprint interface
+//-----------------------------------------------------------------------------
+bool veritfy(const std::string &protocol,
+             conduit::Node &n);
+//-----------------------------------------------------------------------------
+bool transform(const std::string &protocol,
+               conduit::Node &src,
+               conduit::Node &actions,
+               conduit::Node &dest);
+
+};
+//-----------------------------------------------------------------------------
+// -- end blueprint:: --
+//-----------------------------------------------------------------------------
+
+#endif 
 
 
 

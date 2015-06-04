@@ -165,7 +165,7 @@ void
 about(Node &n)
 {
     n.reset();
-    Node &epts = n["endpoints"];
+    Node &epts = n["protocols"];
 
     // standard binary io
     epts["conduit_bin"] = "enabled";

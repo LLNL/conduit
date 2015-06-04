@@ -44,7 +44,7 @@
 
 
 ################################
-# Add the conduit-mesh library
+# Add the blueprint library
 ################################
 
 ENABLE_WARNINGS()
@@ -52,36 +52,39 @@ ENABLE_WARNINGS()
 #
 # Specify all headers
 #            
-set(conduit_mesh_headers 
-    conduit_mesh.hpp
-    Conduit_Mesh_Exports.hpp)
+set(blueprint_headers 
+    blueprint.hpp
+    blueprint_mesh.hpp
+    Blueprint_Exports.hpp)
 
 #
 # Specify all sources
 #
-set(conduit_mesh_sources 
-    conduit_mesh.cpp)
+set(blueprint_sources 
+    blueprint.cpp
+    blueprint_mesh.cpp)
 
 #
 # Note: headers are added here so they show up in project file generators
 # (such as xcode, eclipse, etc)
 #
-add_library(conduit_mesh SHARED ${conduit_mesh_sources} ${conduit_mesh_headers})
+add_library(blueprint SHARED ${blueprint_sources} ${blueprint_headers})
 
 #
-# Link with conduit (if enabled)
+# Link with conduit
 #
-target_link_libraries(conduit_mesh conduit)
+target_link_libraries(blueprint conduit)
 
 ##################################
-# Install Targets for conduit lib
+# Install Targets for conduit 
 ##################################
 
-install(FILES ${conduit_mesh_headers} DESTINATION include)
-install(TARGETS conduit_mesh
+install(FILES ${blueprint_headers} DESTINATION include)
+install(TARGETS blueprint
   EXPORT conduit
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
 )
+
 
 

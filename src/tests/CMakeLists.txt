@@ -80,9 +80,9 @@ set(BASIC_TESTS gtest_smoke
 set(IO_TESTS conduit_io_smoke)
 
 ################################
-# conduit_mesh lib Unit Tests
+# blueprint lib Unit Tests
 ################################
-set(MESH_TESTS conduit_mesh_smoke conduit_mesh_examples)
+set(BLUEPRINT_TESTS conduit_blueprint_smoke conduit_blueprint_mesh_examples)
 
 ################################
 # Optional Unit Tests
@@ -110,9 +110,9 @@ foreach(TEST ${IO_TESTS})
 endforeach()
 
 
-message(STATUS "Adding conduit_mesh lib unit tests")
+message(STATUS "Adding blueprint lib unit tests")
 foreach(TEST ${MESH_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_mesh conduit_io)
+    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit blueprint conduit_io)
 endforeach()
 
 
