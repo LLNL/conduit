@@ -412,13 +412,13 @@ silo_save_field(DBfile *dbfile,
         {
             int dims[3] = {0,0,0};
             int num_dims = 2;
-            dims[0] = n_mesh_info[mesh_name]["dims/x"].value();
-            dims[1] = n_mesh_info[mesh_name]["dims/y"].value();
+            dims[0] = n_mesh_info[mesh_name]["dims/i"].value();
+            dims[1] = n_mesh_info[mesh_name]["dims/j"].value();
 
-            if(n_mesh_info[mesh_name]["dims"].has_path("z"))
+            if(n_mesh_info[mesh_name]["dims"].has_path("j"))
             {
                 num_dims = 3;
-                dims[2] = n_mesh_info[mesh_name]["dims/z"].value();
+                dims[2] = n_mesh_info[mesh_name]["dims/j"].value();
             }
 
             if(centering == DB_ZONECENT)
@@ -690,11 +690,11 @@ silo_save_quad_rect_mesh(DBfile *dbfile,
     
     n_mesh_info[mesh_name]["num_pts"].set(num_pts);
     n_mesh_info[mesh_name]["num_elems"].set(num_elems);
-    n_mesh_info[mesh_name]["dims/x"] = dims[0];
-    n_mesh_info[mesh_name]["dims/y"] = dims[1];
+    n_mesh_info[mesh_name]["dims/i"] = dims[0];
+    n_mesh_info[mesh_name]["dims/j"] = dims[1];
     if(num_coords == 3)
     {
-        n_mesh_info[mesh_name]["dims/z"] = dims[2];
+        n_mesh_info[mesh_name]["dims/k"] = dims[2];
     }
     
     int coords_dtype = 0;

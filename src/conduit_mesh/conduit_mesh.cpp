@@ -248,8 +248,8 @@ braid_uniform(index_t nx,
     braid_init_example_state(res);
     
     Node &dims = res["coords/uniform/dims"];
-    dims["x"] = nx;
-    dims["y"] = ny;
+    dims["i"] = nx;
+    dims["j"] = ny;
         
     // -10 to 10 in each dim, 
     Node &origin = res["coords/uniform/origin"];
