@@ -44,86 +44,51 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_io.hpp
+/// file: blueprint.hpp
 ///
 //-----------------------------------------------------------------------------
 
-
-#ifndef CONDUIT_IO_HPP
-#define CONDUIT_IO_HPP
+#ifndef BLUEPRINT_HPP
+#define BLUEPRINT_HPP
 
 //-----------------------------------------------------------------------------
-// conduit lib include 
+// conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-#include "Conduit_IO_Exports.hpp"
-#include "Conduit_IO_Config.hpp"
 
-// include optional libs
-#ifdef CONDUIT_IO_ENABLE_SILO
-#include "conduit_silo.hpp"
-#endif
+#include "Blueprint_Exports.hpp"
+#include "blueprint_mesh.hpp"
 
 //-----------------------------------------------------------------------------
-// -- begin conduit:: --
+// -- begin blueprint:: --
 //-----------------------------------------------------------------------------
-namespace conduit
+namespace blueprint
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::io --
-//-----------------------------------------------------------------------------
-namespace io
-{
-
-//-----------------------------------------------------------------------------
-void CONDUIT_IO_API save(const  Node &node,
-                         const std::string &path);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_IO_API load(const std::string &path,
-                         Node &node);
-
-//-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how conduit_io was
+/// The about methods construct human readable info about how blueprint was
 /// configured.
 //-----------------------------------------------------------------------------
- std::string CONDUIT_IO_API about();
- void        CONDUIT_IO_API about(Node &);
-
-
+std::string BLUEPRINT_API about();
+void        BLUEPRINT_API about(conduit::Node &n);
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::io::mesh --
+/// Experimental blueprint interface
 //-----------------------------------------------------------------------------
-namespace mesh
-{
-
+bool veritfy(const std::string &protocol,
+             conduit::Node &n);
 //-----------------------------------------------------------------------------
-void CONDUIT_IO_API save(Node &node,
-                         const std::string &path);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_IO_API load(const std::string &path,
-                         Node &node);
-};
-//-----------------------------------------------------------------------------
-// -- end conduit::io::mesh --
-//-----------------------------------------------------------------------------
-
+bool transform(const std::string &protocol,
+               conduit::Node &src,
+               conduit::Node &actions,
+               conduit::Node &dest);
 
 };
 //-----------------------------------------------------------------------------
-// -- end conduit::io --
+// -- end blueprint:: --
 //-----------------------------------------------------------------------------
 
+#endif 
 
 
-};
-//-----------------------------------------------------------------------------
-// -- end conduit:: --
-//-----------------------------------------------------------------------------
-
-
-#endif
 

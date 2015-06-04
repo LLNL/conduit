@@ -344,11 +344,23 @@ public:
 //-----------------------------------------------------------------------------
 // Getters and info methods.
 //-----------------------------------------------------------------------------
-    index_t     id()    const { return m_id;}    
+    index_t     id()    const { return m_id;}
+    std::string name()  const { return id_to_name(m_id);}
     index_t     total_bytes()   const;
     index_t     total_bytes_compact() const;
     bool        is_compact() const;
     bool        is_compatible(const DataType& type) const;
+    
+    index_t     number_of_elements()  const { return m_num_ele;}
+    index_t     offset()              const { return m_offset;}
+    index_t     stride()              const { return m_stride;}
+    index_t     element_bytes()       const { return m_ele_bytes;}
+    index_t     endianness()          const { return m_endianness;}
+    index_t     element_index(index_t idx) const;
+
+    bool        is_empty()           const;
+    bool        is_object()          const;
+    bool        is_list()            const;
 
     bool        is_number()           const;
     bool        is_floating_point()   const;
@@ -356,14 +368,45 @@ public:
     bool        is_signed_integer()   const;
     bool        is_unsigned_integer() const;
     
+    bool        is_int8()             const;
+    bool        is_int16()            const;
+    bool        is_int32()            const;
+    bool        is_int64()            const;
 
-    index_t    number_of_elements()  const { return m_num_ele;}
-    index_t    offset()              const { return m_offset;}
-    index_t    stride()              const { return m_stride;}
-    index_t    element_bytes()       const { return m_ele_bytes;}
-    index_t    endianness()          const { return m_endianness;}
-    index_t    element_index(index_t idx) const;
+    bool        is_uint8()            const;
+    bool        is_uint16()           const;
+    bool        is_uint32()           const;
+    bool        is_uint64()           const;
+
+    bool        is_float32()          const;
+    bool        is_float64()          const;
+    bool        is_index_t()          const;
+
+    bool        is_char()             const;
+    bool        is_short()            const;
+    bool        is_int()              const;
+    bool        is_long()             const;
+
+#ifdef CONDUIT_USE_LONG_LONG
+    bool        is_long_long()        const;
+#endif
     
+    bool        is_unsigned_char()    const;
+    bool        is_unsigned_short()   const;
+    bool        is_unsigned_int()     const;
+    bool        is_unsigned_long()    const;
+
+#ifdef CONDUIT_USE_LONG_LONG
+    bool        is_unsigned_long_long()        const;
+#endif
+
+    bool        is_float()          const;
+    bool        is_double()         const;
+
+#ifdef CONDUIT_USE_LONG_DOUBLE
+    bool        is_long_double()    const;
+#endif
+
 
 //-----------------------------------------------------------------------------
 // Helpers to convert TypeID Enum Values to human readable strings and 

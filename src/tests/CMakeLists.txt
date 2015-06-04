@@ -80,6 +80,12 @@ set(BASIC_TESTS gtest_smoke
 set(IO_TESTS conduit_io_smoke)
 
 ################################
+# blueprint lib Unit Tests
+################################
+set(BLUEPRINT_TESTS blueprint_smoke 
+                    blueprint_mesh_examples)
+
+################################
 # Optional Unit Tests
 ################################
 set(PYTHON_GPREF_TOOLS_TESTS gpref_smoke)
@@ -102,6 +108,11 @@ foreach(TEST ${IO_TESTS})
     if(ENABLE_SILO AND SILO_FOUND)
         target_link_libraries(${TEST} ${SILO_LIBRARIES})
     endif()
+endforeach()
+
+message(STATUS "Adding blueprint lib unit tests")
+foreach(TEST ${BLUEPRINT_TESTS})
+    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit blueprint conduit_io)
 endforeach()
 
 
