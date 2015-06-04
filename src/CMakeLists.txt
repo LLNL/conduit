@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -121,7 +121,7 @@ add_subdirectory(conduit_viz)
 ################################
 # Add the blueprint lib 
 ################################
-# add cblueprint include dirs so units tests have access to the headers
+# add blueprint include dirs so units tests have access to the headers
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/blueprint
                     ${CMAKE_CURRENT_BINARY_DIR}/blueprint)
 add_subdirectory(blueprint)
@@ -134,6 +134,7 @@ if(ENABLE_MPI)
                         ${CMAKE_CURRENT_BINARY_DIR}/conduit_mpi)
     add_subdirectory(conduit_mpi)
 endif()
+
 
 ################################
 # Add docs

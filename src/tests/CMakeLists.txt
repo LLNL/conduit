@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -82,7 +82,8 @@ set(IO_TESTS conduit_io_smoke)
 ################################
 # blueprint lib Unit Tests
 ################################
-set(BLUEPRINT_TESTS conduit_blueprint_smoke conduit_blueprint_mesh_examples)
+set(BLUEPRINT_TESTS blueprint_smoke 
+                    blueprint_mesh_examples)
 
 ################################
 # Optional Unit Tests
@@ -109,9 +110,8 @@ foreach(TEST ${IO_TESTS})
     endif()
 endforeach()
 
-
 message(STATUS "Adding blueprint lib unit tests")
-foreach(TEST ${MESH_TESTS})
+foreach(TEST ${BLUEPRINT_TESTS})
     add_cpp_test(TEST ${TEST} DEPENDS_ON conduit blueprint conduit_io)
 endforeach()
 

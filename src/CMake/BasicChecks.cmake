@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -61,6 +61,14 @@ CHECK_TYPE_SIZE("long float"    CONDUIT_SIZEOF_LONG_FLOAT)
 CHECK_TYPE_SIZE("long double"   CONDUIT_SIZEOF_LONG_DOUBLE)
 
 CHECK_TYPE_SIZE("void *"        CONDUIT_SIZEOF_VOID_P)
+
+if(CONDUIT_SIZEOF_LONG_LONG)
+    set(CONDUIT_HAS_LONG_LONG 1)
+endif()
+
+if(CONDUIT_SIZEOF_LONG_DOUBLE)
+    set(CONDUIT_HAS_LONG_DOUBLE 1)
+endif()
 
 
 
