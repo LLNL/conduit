@@ -160,7 +160,7 @@ public:
     index_t         total_bytes_compact() const;
 
     void            print() const
-                        {std::cout << to_json() << std::endl;}
+                        {std::cout << to_json(false,2) << std::endl;}
 
     index_t         element_index(index_t idx) const 
                         {return m_dtype.element_index(idx);}

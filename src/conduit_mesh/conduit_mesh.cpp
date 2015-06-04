@@ -107,27 +107,11 @@ expand(Node &src, Node &des)
             des["state"].set_external(src["state"]);
             
         }
-        // mesh is the default name for a topo, coords is the default name for a coordset
-
+        // mesh is the default name for a topo, 
+        // coords is the default name for a coordset
         des["coordsets/coords"].set_external(src["coords"]);
-
-        Node &des_topo = des["topologies/mesh"];
-        
-        NodeIterator itr = src["topology"].iterator();
-        itr.next();
-        std::string topo_name = itr.path();
-
-        des_topo[topo_name]["coordset"].set("coords");
-
-
-        if(topo_name == "quads")
-        {
-            des_topo[topo_name]["connectivity"].set_external(src["topology/quads"]);
-        }
-        else if(topo_name == "tris")
-        {
-            des_topo[topo_name]["connectivity"].set_external(src["topology/tris"]);            
-        }
+        des["topologies/mesh"].set_external(src["topology"]);
+        des["topologies/mesh/coordset"].set("coords");
         
         if(src.has_path("fields"))
         {
@@ -246,21 +230,25 @@ braid_uniform(index_t nx,
 {
     res.reset();
     braid_init_example_state(res);
-    
-    Node &dims = res["coords/uniform/dims"];
+    Node &coords = res["coords"]; 
+
+    coords["type"] = "uniform";
+    Node &dims = coords["dims"];
     dims["i"] = nx;
     dims["j"] = ny;
         
     // -10 to 10 in each dim, 
-    Node &origin = res["coords/uniform/origin"];
+    Node &origin = coords["origin"];
     origin["x"] = -10.0;
     origin["y"] = -10.0;
     // skip z for now
-    Node &spacing = res["coords/uniform/spacing"];
+    Node &spacing = coords["spacing"];
     spacing["dx"] = 20.0 / (float64)(nx);
     spacing["dy"] = 20.0 / (float64)(ny);
     // skip z for now
-    res["topology/uniform"] = "coords"; // or name?
+    res["topology/type"] = "uniform";
+    res["topology/coordset"] = "coords"; 
+    
     
     Node &fields = res["fields"];
 
@@ -278,12 +266,13 @@ braid_rectilinear(index_t nx,
 {
     res.reset();
     braid_init_example_state(res);
-    
-    Node &dims = res["coords/rectilinear/"];
-    dims["x"].set(DataType::float64(nx+1));
-    dims["y"].set(DataType::float64(ny+1));
-    float64 *x_vals = dims["x"].value();
-    float64 *y_vals = dims["y"].value();
+
+    Node &coords = res["coords"];    
+    coords["type"] = "rectilinear";
+    coords["x"].set(DataType::float64(nx+1));
+    coords["y"].set(DataType::float64(ny+1));
+    float64 *x_vals = coords["x"].value();
+    float64 *y_vals = coords["y"].value();
 
     float64 dx = 20.0 / (float64)(nx);
     float64 dy = 20.0 / (float64)(ny);
@@ -299,8 +288,8 @@ braid_rectilinear(index_t nx,
     }
     
     // skip z for now
-
-    res["topology/rectilinear"] = "coords"; // or name?
+    res["topology/type"] = "rectilinear";
+    res["topology/coordset"] = "coords"; 
     
     Node &fields = res["fields"];
 
@@ -357,9 +346,9 @@ braid_quads(index_t nx,
     braid_init_example_state(res);
     braid_init_explicit_coords(nx,ny,nz,false,res);
   
-    res["topology/quads"].set(DataType::int32(nx*ny*4));
-
-    int32 *conn = res["topology/quads"].value();
+    res["topology/type"] = "quads";
+    res["topology/connectivity"].set(DataType::int32(nx*ny*4));
+    int32 *conn = res["topology/connectivity"].value();
 
     index_t idx = 0;
     for(index_t j = 0; j < ny ; j++)
@@ -394,9 +383,9 @@ braid_tris(index_t nx,
     braid_init_example_state(res);
     braid_init_explicit_coords(nx,ny,nz,false,res);
   
-    res["topology/tris"].set(DataType::int32(nx*ny*6));
-
-    int32 *conn = res["topology/tris"].value();
+    res["topology/type"] = "tris";
+    res["topology/connectivity"].set(DataType::int32(nx*ny*6));
+    int32 *conn = res["topology/connectivity"].value();
 
     index_t idx = 0;
     for(index_t j = 0; j < ny ; j++)
