@@ -307,6 +307,7 @@ braid_init_explicit_coords(index_t nx,
                            Node &res)
 {
     Node &coords = res["coords"];
+    coords["type"] = "explicit";
     
     index_t npts = (nx+1)*(ny+1);
 
