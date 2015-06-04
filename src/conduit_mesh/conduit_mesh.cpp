@@ -257,8 +257,8 @@ braid_uniform(index_t nx,
     origin["y"] = -10.0;
     // skip z for now
     Node &spacing = res["coords/uniform/spacing"];
-    spacing["x"] = 20.0 / (float64)(nx);
-    spacing["y"] = 20.0 / (float64)(ny);
+    spacing["dx"] = 20.0 / (float64)(nx);
+    spacing["dy"] = 20.0 / (float64)(ny);
     // skip z for now
     res["topology/uniform"] = "coords"; // or name?
     
