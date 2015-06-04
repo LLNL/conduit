@@ -42,56 +42,51 @@
 # 
 ###############################################################################
 
+################################
+# Conduit Unit Tests
+################################
 
 ################################
-# Add the conduit-viz library
+# Core (conduit lib) Unit Tests
 ################################
+set(BASIC_TESTS conduit_smoke
+                conduit_endianness
+                conduit_char8_str
+                conduit_datatype_tests
+                conduit_node
+                conduit_node_parent
+                conduit_serialize
+                conduit_array
+                conduit_list_of
+                conduit_node_binary_io
+                conduit_node_save_load
+                conduit_node_paths
+                conduit_node_set
+                conduit_to_string
+                conduit_json
+                conduit_json_sanitize
+                conduit_generator
+                conduit_node_update
+                conduit_node_compact
+                conduit_node_info
+                conduit_node_iterator)
 
-ENABLE_WARNINGS()
 
-#
-# Define a variable for the absolute path to the visualizer's client
-# directory
-#
-set(CONDUIT_VIZ_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/client)
+################################
+# Add our tests
+################################
+message(STATUS "Adding conduit lib unit tests")
+foreach(TEST ${BASIC_TESTS})
+    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit libb64 )
+endforeach()
 
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_Viz_Config.hpp.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/Conduit_Viz_Config.hpp")
-
-#
-# Specify all headers
-#            
-set(conduit_viz_headers 
-    conduit_viz.hpp
-    Conduit_Viz_Exports.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/Conduit_Viz_Config.hpp)
-
-#
-# Specify all sources
-#
-set(conduit_viz_sources 
-    conduit_viz.cpp)
-
-#
-# Note: headers are added here so they show up in project file generators
-# (such as xcode, eclipse, etc)
-#
-add_library(conduit_viz SHARED ${conduit_viz_sources} ${conduit_viz_headers})
-
-#
-# Link with conduit (if enabled)
-#
-target_link_libraries(conduit_viz conduit civetweb)
-
-##################################
-# Install Targets for conduit lib
-##################################
-
-install(FILES ${conduit_viz_headers} DESTINATION include)
-install(TARGETS conduit_viz
-  EXPORT conduit
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-)
+################################
+# Add optional tests
+################################
+if(ENABLE_PYTHON)
+    add_subdirectory("python")
+else()
+    message(STATUS "Python disabled: Skipping conduit python module tests")
+endif()
 
 

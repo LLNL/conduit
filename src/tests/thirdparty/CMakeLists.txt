@@ -42,69 +42,76 @@
 # 
 ###############################################################################
 
+################################
+# Conduit Unit Tests
+################################
 
 ################################
-# Add the conduit-io library
+# Core (conduit lib) Unit Tests
+################################
+set(TPL_TESTS gtest_smoke
+              rapidjson_smoke
+              libb64_smoke)
+
+################################
+# Optional Unit Tests
+################################
+set(PYTHON_GPREF_TOOLS_TESTS gpref_smoke)
+set(PYTHON_TESTS numpy_smoke)
+set(MPI_TESTS mpi_smoke)
+set(SILO_TESTS silo_smoke)
+
+
+################################
+# Add our Main Unit Tests
+################################
+message(STATUS "Adding thirdparty lib unit tests")
+foreach(TEST ${TPL_TESTS})
+    add_cpp_test(TEST ${TEST} DEPENDS_ON libb64 )
+endforeach()
+
+
+################################
+# Add our Optional Unit Tests
 ################################
 
-ENABLE_WARNINGS()
-
-if(SILO_FOUND)
-  SET(CONDUIT_IO_ENABLE_SILO TRUE)
+if(ENABLE_GPREF_TOOLS)
+    message(STATUS "Google perftools enabled: Adding related unit tests")
+    foreach(TEST ${GPERF_TOOLS_TESTS})
+        add_cpp_test(TEST_NAME ${TEST})
+    endforeach()
+else()
+    message(STATUS "Google perftools disabled: Skipping related tests")
 endif()
 
-set(CONDUIT_REST_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/rest_client)
-
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_IO_Config.hpp.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/Conduit_IO_Config.hpp")
-
-#
-# Specify all headers
-#            
-set(conduit_io_headers 
-    conduit_io.hpp
-    conduit_rest.hpp
-    Conduit_IO_Exports.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/Conduit_IO_Config.hpp)
-
-#
-# Specify all sources
-#
-set(conduit_io_sources 
-    conduit_io.cpp
-    conduit_rest.cpp)
-    
-
-if(SILO_FOUND)
-    list(APPEND conduit_io_headers conduit_silo.hpp)
-    list(APPEND conduit_io_sources conduit_silo.cpp)
+if(ENABLE_PYTHON)
+    message(STATUS "Python enabled: Adding related unit tests")
+    foreach(TEST ${PYTHON_TESTS})
+        add_cpp_test(TEST ${TEST})
+    endforeach()
+else()
+    message(STATUS "Python disabled: Skipping related tests")
 endif()
 
 
-#
-# Note: headers are added here so they show up in project file generators
-# (such as xcode, eclipse, etc)
-#
-add_library(conduit_io SHARED ${conduit_io_sources} ${conduit_io_headers})
-
-#
-# Link with conduit and silo (if enabled)
-#
-target_link_libraries(conduit_io conduit civetweb)
-
-if(SILO_FOUND)
-    target_link_libraries(conduit_io conduit ${SILO_LIBRARIES})
+if(ENABLE_MPI)
+    message(STATUS "MPI enabled: Adding related unit tests")
+    foreach(TEST ${MPI_TESTS})
+        # this uses 2 procs
+        add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2) 
+    endforeach()
+else()
+    message(STATUS "MPI disabled: Skipping related tests")
 endif()
 
-##################################
-# Install Targets for conduit lib
-##################################
+if(ENABLE_SILO)
+    message(STATUS "Silo enabled: Adding related unit tests")
+    foreach(TEST ${SILO_TESTS})
+        add_cpp_test(TEST ${TEST})
+        target_link_libraries(${TEST} ${SILO_LIBRARIES})
+    endforeach()
+else()
+    message(STATUS "Silo disabled: Skipping related tests")
+endif()
 
-install(FILES ${conduit_io_headers} DESTINATION include)
-install(TARGETS conduit_io
-  EXPORT conduit
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION lib
-)
 
