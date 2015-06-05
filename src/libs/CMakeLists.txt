@@ -42,56 +42,25 @@
 # 
 ###############################################################################
 
-####################################
-# Simple CMake setup for civetweb
-####################################
+################################
+# Add the conduit lib
+################################
+add_subdirectory(conduit)
 
-#
-# civetweb sources
-#
+################################
+# Add the conduit-io lib 
+################################
+add_subdirectory(conduit_io)
 
+################################
+# Add the blueprint lib 
+################################
+add_subdirectory(blueprint)
 
-set(civetweb_headers
-    include/civetweb.h
-    include/CivetServer.h
-    )
-
-set(civetweb_sources
-    src/civetweb.c
-    src/CivetServer.cpp
-    )
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-add_library(civetweb STATIC ${civetweb_sources} ${civetweb_headers})
-
-##################################
-# system dependencies for civetweb
-##################################
-
-if(UNIX AND NOT APPLE)
-    # we need these on linux, we may need similar libs on windows 
-    # (OSX appears ok without them)
-    target_link_libraries(civetweb dl rt)
+################################
+# Add the conduit-mpi lib 
+################################
+if(ENABLE_MPI)
+    add_subdirectory(conduit_mpi)
 endif()
-
-##################################
-# Install Targets for civetweb
-##################################
-
-
-#############################################
-# We don't really need to install civetweb,
-# since we are using it as a static lib only
-# inside of conduit_io. But if we don't export
-# CMake will yell b/c it is a dep of the 
-# exported conduit_io lib.
-#############################################
-
-install(TARGETS civetweb
-  EXPORT conduit
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-)
-
 
