@@ -42,81 +42,21 @@
 # 
 ###############################################################################
 
-cmake_minimum_required(VERSION 3.0)
 ################################
-# cmake policy selections
-################################
-# avoid default mac osx rpath settings for cmake 3.0
-cmake_policy(SET CMP0042 OLD)
-
-################################
-# Conduit
+# Conduit Project Wide Includes
 ################################
 
-project(conduit)
+# add conduit include dirs so units tests have access to the headers across
+# libs and in unit tests
 
-################################
-# Build Options
-################################
-option(ENABLE_TESTS       "Build conduit tests"         ON)
-option(ENABLE_GPREF_TOOLS "Build with google perftools" OFF)
-option(ENABLE_PYTHON      "Build Python Support"        OFF)
-option(ENABLE_MPI         "Build MPI Support"           OFF)
-option(ENABLE_SILO        "Build Silo Support"          OFF)
+include_directories(${PROJECT_SOURCE_DIR}/libs/conduit 
+                    ${PROJECT_BINARY_DIR}/libs/conduit)
 
+include_directories(${PROJECT_SOURCE_DIR}/libs/conduit_io 
+                    ${PROJECT_BINARY_DIR}/libs/conduit_io)
 
+include_directories(${PROJECT_SOURCE_DIR}/libs/conduit_mpi 
+                    ${PROJECT_BINARY_DIR}/libs/conduit_mpi)
 
-################################
-# Set some standard cmake opts
-################################
-include(CMake/CMakeBasics.cmake)
-
-################################
-# Checks for type sizes, etc
-################################
-include(CMake/BasicChecks.cmake)
-
-################################
-# Setup 3rd Party Libs
-################################
-include(CMake/Setup3rdParty.cmake)
-
-################################
-# Setup docs targets
-################################
-include(CMake/SetupDocs.cmake)
-
-################################
-# Setup tests helpers
-################################
-include(CMake/SetupTests.cmake)
-
-################################
-# Setup project wide includes
-################################
-include(CMake/SetupIncludes.cmake)
-
-
-################################
-# Add our libs
-################################
-add_subdirectory(libs)
-
-################################
-# Add docs
-################################
-add_subdirectory(docs)
-
-################################
-# Add our tests
-################################
-if(ENABLE_TESTS)
-    add_subdirectory(tests)
-endif()
-
-################################
-# Create CMake importable 
-# exports for all of our targets
-################################
-install(EXPORT conduit DESTINATION lib/cmake)
-
+include_directories(${PROJECT_SOURCE_DIR}/libs/blueprint 
+                    ${PROJECT_BINARY_DIR}/libs/blueprint)

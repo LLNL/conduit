@@ -58,7 +58,7 @@ endif()
 ################################
 # Setup includes for RapidJSON
 ################################
-include(CMake/FindRapidJSON.cmake)
+include(CMake/thirdparty/FindRapidJSON.cmake)
 message(STATUS "Using RapidJSON Include: ${RAPIDJSON_INCLUDE_DIR}")
 include_directories(${RAPIDJSON_INCLUDE_DIR})
 
@@ -83,7 +83,7 @@ include_directories(thirdparty_builtin/civetweb/include)
 ################################
 
 find_package(Doxygen)
-include(CMake/FindSphinx.cmake)
+include(CMake/thirdparty/FindSphinx.cmake)
 
 
 if(ENABLE_GPERFTOOLS)
@@ -114,7 +114,7 @@ if(ENABLE_PYTHON)
     ################################
     # Setup includes for Python & Numpy
     ################################
-    include(CMake/FindPython.cmake)
+    include(CMake/thirdparty/FindPython.cmake)
     message(STATUS "Using Python Include: ${PYTHON_INCLUDE_DIRS}")
     include_directories(${PYTHON_INCLUDE_DIRS})
     # if we don't find python, throw a fatal error
@@ -124,7 +124,7 @@ if(ENABLE_PYTHON)
 
 
     
-    include(CMake/FindNumPy.cmake)
+    include(CMake/thirdparty/FindNumPy.cmake)
     message(STATUS "Using NumPy Include: ${NUMPY_INCLUDE_DIRS}")
     include_directories(${NUMPY_INCLUDE_DIRS})
     # if we don't find numpy, throw a fatal error
@@ -151,7 +151,7 @@ endif()
 ################################
 # Search for Silo.
 if(ENABLE_SILO)
-    include(CMake/FindSilo.cmake)
+    include(CMake/thirdparty/FindSilo.cmake)
     include_directories(${SILO_INCLUDE_DIRS})
     # if we don't find silo, throw a fatal error
     if(NOT SILO_FOUND)
