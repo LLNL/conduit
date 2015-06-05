@@ -50,7 +50,7 @@ Clone conduit from LLNL's CZ Stash
 
 .. code:: bash
     
-    git clone https://cyrush@lc.llnl.gov/stash/scm/con/conduit.git
+    git clone https://{USER_NAME}@lc.llnl.gov/stash/scm/con/conduit.git
 
 
 Your first build with no optional dependencies. 

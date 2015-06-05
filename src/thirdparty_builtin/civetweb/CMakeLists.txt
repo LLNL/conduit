@@ -65,11 +65,20 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 add_library(civetweb STATIC ${civetweb_sources} ${civetweb_headers})
 
-if(UNIX)
+##################################
+# system dependencies for civetweb
+##################################
+
+if(UNIX AND NOT APPLE)
     # we need these on linux, we may need similar libs on windows 
     # (OSX appears ok without them)
     target_link_libraries(civetweb dl rt)
 endif()
+
+##################################
+# Install Targets for civetweb
+##################################
+
 
 #############################################
 # We don't really need to install civetweb,
