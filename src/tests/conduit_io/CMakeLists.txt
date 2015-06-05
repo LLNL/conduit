@@ -42,10 +42,32 @@
 # 
 ###############################################################################
 
-PROJECT_NAME  = Conduit
-PROJECT_BRIEF = "Scientific Data Exchange Library for HPC Simulations"
+################################
+# Conduit Unit Tests
+################################
 
-INPUT = @CMAKE_CURRENT_SOURCE_DIR@/../../libs
+################################
+# conduit_io lib Unit Tests
+################################
+set(IO_TESTS conduit_io_smoke)
+set(IO_SILO_TESTS conduit_io_silo)
 
-GENERATE_XML = YES
-RECURSIVE    = YES
+
+################################
+# Add our tests
+################################
+
+message(STATUS "Adding conduit_io lib unit tests")
+foreach(TEST ${IO_TESTS})
+    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_io )
+endforeach()
+
+
+if(ENABLE_SILO AND SILO_FOUND)
+    foreach(TEST ${IO_SILO_TESTS})
+        add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_io)
+        target_link_libraries(${TEST} ${SILO_LIBRARIES})
+    endforeach()
+endif()
+
+

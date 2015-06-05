@@ -42,10 +42,21 @@
 # 
 ###############################################################################
 
-PROJECT_NAME  = Conduit
-PROJECT_BRIEF = "Scientific Data Exchange Library for HPC Simulations"
+################################
+# Conduit Project Wide Includes
+################################
 
-INPUT = @CMAKE_CURRENT_SOURCE_DIR@/../../libs
+# add conduit include dirs so units tests have access to the headers across
+# libs and in unit tests
 
-GENERATE_XML = YES
-RECURSIVE    = YES
+include_directories(${PROJECT_SOURCE_DIR}/libs/conduit 
+                    ${PROJECT_BINARY_DIR}/libs/conduit)
+
+include_directories(${PROJECT_SOURCE_DIR}/libs/conduit_io 
+                    ${PROJECT_BINARY_DIR}/libs/conduit_io)
+
+include_directories(${PROJECT_SOURCE_DIR}/libs/conduit_mpi 
+                    ${PROJECT_BINARY_DIR}/libs/conduit_mpi)
+
+include_directories(${PROJECT_SOURCE_DIR}/libs/blueprint 
+                    ${PROJECT_BINARY_DIR}/libs/blueprint)

@@ -44,54 +44,67 @@
 
 
 ################################
-# Add the conduit-viz library
+# Add the conduit-io library
 ################################
 
 ENABLE_WARNINGS()
 
-#
-# Define a variable for the absolute path to the visualizer's client
-# directory
-#
-set(CONDUIT_VIZ_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/client)
+if(SILO_FOUND)
+  SET(CONDUIT_IO_ENABLE_SILO TRUE)
+endif()
 
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_Viz_Config.hpp.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/Conduit_Viz_Config.hpp")
+set(CONDUIT_REST_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/rest_client)
+
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_IO_Config.hpp.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/Conduit_IO_Config.hpp")
 
 #
 # Specify all headers
 #            
-set(conduit_viz_headers 
-    conduit_viz.hpp
-    Conduit_Viz_Exports.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/Conduit_Viz_Config.hpp)
+set(conduit_io_headers 
+    conduit_io.hpp
+    conduit_rest.hpp
+    Conduit_IO_Exports.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/Conduit_IO_Config.hpp)
 
 #
 # Specify all sources
 #
-set(conduit_viz_sources 
-    conduit_viz.cpp)
+set(conduit_io_sources 
+    conduit_io.cpp
+    conduit_rest.cpp)
+    
+
+if(SILO_FOUND)
+    list(APPEND conduit_io_headers conduit_silo.hpp)
+    list(APPEND conduit_io_sources conduit_silo.cpp)
+endif()
+
 
 #
 # Note: headers are added here so they show up in project file generators
 # (such as xcode, eclipse, etc)
 #
-add_library(conduit_viz SHARED ${conduit_viz_sources} ${conduit_viz_headers})
+add_library(conduit_io SHARED ${conduit_io_sources} ${conduit_io_headers})
 
 #
-# Link with conduit (if enabled)
+# Link with conduit and silo (if enabled)
 #
-target_link_libraries(conduit_viz conduit civetweb)
+target_link_libraries(conduit_io conduit civetweb)
+
+if(SILO_FOUND)
+    target_link_libraries(conduit_io conduit ${SILO_LIBRARIES})
+endif()
 
 ##################################
 # Install Targets for conduit lib
 ##################################
 
-install(FILES ${conduit_viz_headers} DESTINATION include)
-install(TARGETS conduit_viz
+install(FILES ${conduit_io_headers} DESTINATION include)
+install(TARGETS conduit_io
   EXPORT conduit
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION lib
 )
-
 

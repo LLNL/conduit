@@ -44,39 +44,62 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Conduit_Viz_Exports.hpp
+/// file: conduit_rest.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_VIZ_EXPORTS_HPP
-#define CONDUIT_VIZ_EXPORTS_HPP
+#ifndef CONDUIT_REST_HPP
+#define CONDUIT_REST_HPP
 
 //-----------------------------------------------------------------------------
-// -- define proper lib exports for various platforms -- 
+// conduit lib includes
 //-----------------------------------------------------------------------------
-#if defined(_WIN32)
-#if defined(CONDUIT_VIZ_EXPORTS) || defined(conduit_viz_EXPORTS)
-#define CONDUIT_VIZ_API __declspec(dllexport)
-#else
-#define CONDUIT_VIZ_API __declspec(dllimport)
-#endif
-#if defined(_MSC_VER)
-// Turn off warning about lack of DLL interface
-#pragma warning(disable:4251)
-// Turn off warning non-dll class is base for dll-interface class.
-#pragma warning(disable:4275)
-// Turn off warning about identifier truncation
-#pragma warning(disable:4786)
-#endif
-#else
-# if __GNUC__ >= 4 && (defined(CONDUIT_VIZ_EXPORTS) || defined(conduit_viz_EXPORTS))
-#   define CONDUIT_VIZ_API __attribute__ ((visibility("default")))
-# else
-#   define CONDUIT_VIZ_API /* hidden by default */
-# endif
-#endif
+#include "conduit.hpp"
+#include "Conduit_IO_Exports.hpp"
 
-#endif
+//-----------------------------------------------------------------------------
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
+namespace conduit
+{
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::io --
+//-----------------------------------------------------------------------------
+
+namespace io 
+{
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::io::rest --
+//-----------------------------------------------------------------------------
+
+namespace rest 
+{
+
+
+void CONDUIT_IO_API serve(Node *n);
+
+};
+//-----------------------------------------------------------------------------
+// -- end conduit::io::rest --
+//-----------------------------------------------------------------------------
+
+
+
+};
+//-----------------------------------------------------------------------------
+// -- end conduit::io --
+//-----------------------------------------------------------------------------
+
+
+
+};
+//-----------------------------------------------------------------------------
+// -- end conduit:: --
+//-----------------------------------------------------------------------------
+
+#endif 
 
 
 

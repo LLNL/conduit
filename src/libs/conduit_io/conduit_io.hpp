@@ -59,10 +59,14 @@
 #include "Conduit_IO_Exports.hpp"
 #include "Conduit_IO_Config.hpp"
 
+
+#include "conduit_rest.hpp"
+
 // include optional libs
 #ifdef CONDUIT_IO_ENABLE_SILO
 #include "conduit_silo.hpp"
 #endif
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --

@@ -65,7 +65,6 @@ option(ENABLE_MPI         "Build MPI Support"           OFF)
 option(ENABLE_SILO        "Build Silo Support"          OFF)
 
 
-
 ################################
 # Set some standard cmake opts
 ################################
@@ -91,50 +90,15 @@ include(CMake/SetupDocs.cmake)
 ################################
 include(CMake/SetupTests.cmake)
 
+################################
+# Setup project wide includes
+################################
+include(CMake/SetupIncludes.cmake)
 
 ################################
-# Add the conduit lib
+# Add our libs
 ################################
-# add conduit include dirs so units tests have access to the headers
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/conduit 
-                    ${CMAKE_CURRENT_BINARY_DIR}/conduit)
-add_subdirectory(conduit)
-
-################################
-# Add the conduit-io lib 
-################################
-# add conduit_io include dirs so units tests have access to the headers
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/conduit_io
-                    ${CMAKE_CURRENT_BINARY_DIR}/conduit_io)
-add_subdirectory(conduit_io)
-
-
-################################
-# Add the conduit-viz lib 
-################################
-# add conduit_viz include dirs so units tests have access to the headers
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/conduit_viz
-                    ${CMAKE_CURRENT_BINARY_DIR}/conduit_viz)
-add_subdirectory(conduit_viz)
-
-
-################################
-# Add the blueprint lib 
-################################
-# add blueprint include dirs so units tests have access to the headers
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/blueprint
-                    ${CMAKE_CURRENT_BINARY_DIR}/blueprint)
-add_subdirectory(blueprint)
-
-################################
-# Add the conduit-mpi lib 
-################################
-if(ENABLE_MPI)
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/conduit_mpi
-                        ${CMAKE_CURRENT_BINARY_DIR}/conduit_mpi)
-    add_subdirectory(conduit_mpi)
-endif()
-
+add_subdirectory(libs)
 
 ################################
 # Add docs
@@ -153,4 +117,6 @@ endif()
 # exports for all of our targets
 ################################
 install(EXPORT conduit DESTINATION lib/cmake)
+
+
 

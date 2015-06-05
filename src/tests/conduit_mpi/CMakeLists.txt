@@ -42,10 +42,29 @@
 # 
 ###############################################################################
 
-PROJECT_NAME  = Conduit
-PROJECT_BRIEF = "Scientific Data Exchange Library for HPC Simulations"
+################################
+# Conduit Unit Tests
+################################
 
-INPUT = @CMAKE_CURRENT_SOURCE_DIR@/../../libs
+################################
+# Optional Unit Tests
+################################
+set(CONDUIT_MPI_TESTS conduit_mpi_smoke)
 
-GENERATE_XML = YES
-RECURSIVE    = YES
+
+################################
+# Add our Optional Unit Tests
+################################
+
+if(ENABLE_MPI)
+    message(STATUS "MPI enabled: Adding conduit_mpi unit tests")
+    foreach(TEST ${CONDUIT_MPI_TESTS})
+        # this uses 2 procs
+        add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2 DEPENDS_ON conduit conduit_mpi) 
+    endforeach()
+else()
+    message(STATUS "MPI disabled: Skipping related tests")
+endif()
+
+
+

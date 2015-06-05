@@ -165,16 +165,19 @@ void
 about(Node &n)
 {
     n.reset();
-    Node &epts = n["protocols"];
+    Node &protos = n["protocols"];
 
     // standard binary io
-    epts["conduit_bin"] = "enabled";
+    protos["conduit_bin"] = "enabled";
+    
+    // rest server
+    protos["rest"] = "enabled";
     
     // silo
 #ifdef CONDUIT_IO_ENABLE_SILO
-    epts["conduit_silo"] = "enabled";
+    protos["conduit_silo"] = "enabled";
 #else
-    epts["conduit_silo"] = "disabled";
+    protos["conduit_silo"] = "disabled";
 #endif
 
 }

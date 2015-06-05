@@ -42,10 +42,24 @@
 # 
 ###############################################################################
 
-PROJECT_NAME  = Conduit
-PROJECT_BRIEF = "Scientific Data Exchange Library for HPC Simulations"
+################################
+# Blueprint Unit Tests
+################################
 
-INPUT = @CMAKE_CURRENT_SOURCE_DIR@/../../libs
+################################
+# blueprint lib Unit Tests
+################################
+set(BLUEPRINT_TESTS blueprint_smoke 
+                    blueprint_mesh_examples)
 
-GENERATE_XML = YES
-RECURSIVE    = YES
+
+################################
+# Add our Main Unit Tests
+################################
+
+message(STATUS "Adding blueprint lib unit tests")
+foreach(TEST ${BLUEPRINT_TESTS})
+    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit blueprint conduit_io)
+endforeach()
+
+

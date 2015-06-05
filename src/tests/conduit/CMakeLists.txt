@@ -42,63 +42,51 @@
 # 
 ###############################################################################
 
+################################
+# Conduit Unit Tests
+################################
 
 ################################
-# Add the conduit-io library
+# Core (conduit lib) Unit Tests
 ################################
+set(BASIC_TESTS conduit_smoke
+                conduit_endianness
+                conduit_char8_str
+                conduit_datatype_tests
+                conduit_node
+                conduit_node_parent
+                conduit_serialize
+                conduit_array
+                conduit_list_of
+                conduit_node_binary_io
+                conduit_node_save_load
+                conduit_node_paths
+                conduit_node_set
+                conduit_to_string
+                conduit_json
+                conduit_json_sanitize
+                conduit_generator
+                conduit_node_update
+                conduit_node_compact
+                conduit_node_info
+                conduit_node_iterator)
 
-ENABLE_WARNINGS()
 
-if(SILO_FOUND)
-  SET(CONDUIT_IO_ENABLE_SILO TRUE)
+################################
+# Add our tests
+################################
+message(STATUS "Adding conduit lib unit tests")
+foreach(TEST ${BASIC_TESTS})
+    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit libb64 )
+endforeach()
+
+################################
+# Add optional tests
+################################
+if(ENABLE_PYTHON)
+    add_subdirectory("python")
+else()
+    message(STATUS "Python disabled: Skipping conduit python module tests")
 endif()
 
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_IO_Config.hpp.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/Conduit_IO_Config.hpp")
-
-#
-# Specify all headers
-#            
-set(conduit_io_headers 
-    conduit_io.hpp
-    Conduit_IO_Exports.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/Conduit_IO_Config.hpp)
-
-#
-# Specify all sources
-#
-set(conduit_io_sources conduit_io.cpp)
-
-if(SILO_FOUND)
-    list(APPEND conduit_io_headers conduit_silo.hpp)
-    list(APPEND conduit_io_sources conduit_silo.cpp)
-endif()
-
-
-#
-# Note: headers are added here so they show up in project file generators
-# (such as xcode, eclipse, etc)
-#
-add_library(conduit_io SHARED ${conduit_io_sources} ${conduit_io_headers})
-
-#
-# Link with conduit and silo (if enabled)
-#
-target_link_libraries(conduit_io conduit)
-
-if(SILO_FOUND)
-    target_link_libraries(conduit_io conduit ${SILO_LIBRARIES})
-endif()
-
-##################################
-# Install Targets for conduit lib
-##################################
-
-install(FILES ${conduit_io_headers} DESTINATION include)
-install(TARGETS conduit_io
-  EXPORT conduit
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION lib
-)
 

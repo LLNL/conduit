@@ -42,10 +42,76 @@
 # 
 ###############################################################################
 
-PROJECT_NAME  = Conduit
-PROJECT_BRIEF = "Scientific Data Exchange Library for HPC Simulations"
+################################
+# Conduit Unit Tests
+################################
 
-INPUT = @CMAKE_CURRENT_SOURCE_DIR@/../../libs
+################################
+# Core (conduit lib) Unit Tests
+################################
+set(TPL_TESTS gtest_smoke
+              rapidjson_smoke
+              libb64_smoke)
 
-GENERATE_XML = YES
-RECURSIVE    = YES
+################################
+# Optional Unit Tests
+################################
+set(PYTHON_GPREF_TOOLS_TESTS gpref_smoke)
+set(PYTHON_TESTS numpy_smoke)
+set(MPI_TESTS mpi_smoke)
+set(SILO_TESTS silo_smoke)
+
+
+################################
+# Add our Main Unit Tests
+################################
+message(STATUS "Adding thirdparty lib unit tests")
+foreach(TEST ${TPL_TESTS})
+    add_cpp_test(TEST ${TEST} DEPENDS_ON libb64 )
+endforeach()
+
+
+################################
+# Add our Optional Unit Tests
+################################
+
+if(ENABLE_GPREF_TOOLS)
+    message(STATUS "Google perftools enabled: Adding related unit tests")
+    foreach(TEST ${GPERF_TOOLS_TESTS})
+        add_cpp_test(TEST_NAME ${TEST})
+    endforeach()
+else()
+    message(STATUS "Google perftools disabled: Skipping related tests")
+endif()
+
+if(ENABLE_PYTHON)
+    message(STATUS "Python enabled: Adding related unit tests")
+    foreach(TEST ${PYTHON_TESTS})
+        add_cpp_test(TEST ${TEST})
+    endforeach()
+else()
+    message(STATUS "Python disabled: Skipping related tests")
+endif()
+
+
+if(ENABLE_MPI)
+    message(STATUS "MPI enabled: Adding related unit tests")
+    foreach(TEST ${MPI_TESTS})
+        # this uses 2 procs
+        add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2) 
+    endforeach()
+else()
+    message(STATUS "MPI disabled: Skipping related tests")
+endif()
+
+if(ENABLE_SILO)
+    message(STATUS "Silo enabled: Adding related unit tests")
+    foreach(TEST ${SILO_TESTS})
+        add_cpp_test(TEST ${TEST})
+        target_link_libraries(${TEST} ${SILO_LIBRARIES})
+    endforeach()
+else()
+    message(STATUS "Silo disabled: Skipping related tests")
+endif()
+
+
