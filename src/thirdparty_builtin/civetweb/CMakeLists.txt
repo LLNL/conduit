@@ -65,14 +65,24 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 add_library(civetweb STATIC ${civetweb_sources} ${civetweb_headers})
 
-##################################
-# Install Targets for civetweb
-##################################
+if(UNIX)
+    # we need these on linux, we may need similar libs on windows 
+    # (OSX appears ok without them)
+    target_link_libraries(civetweb dl rt)
+endif()
 
-install(FILES ${civetweb_headers} DESTINATION include)
+#############################################
+# We don't really need to install civetweb,
+# since we are using it as a static lib only
+# inside of conduit_io. But if we don't export
+# CMake will yell b/c it is a dep of the 
+# exported conduit_io lib.
+#############################################
+
 install(TARGETS civetweb
   EXPORT conduit
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
 )
+
 
