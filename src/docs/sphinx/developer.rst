@@ -94,7 +94,7 @@ Important CMake Targets
 
 Adding a Unit Test
 ~~~~~~~~~~~~~~~~~~~
-- Create a test source file in **src/tests/{lib_name}/**
+- Create a test source file in *src/tests/{lib_name}/*
 - Add the test to build system by editing *src/tests/{lib_name}/CMakeLists.txt*
 
 
