@@ -41,45 +41,47 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
-#
-#
-# CMake Cache Seed file for naples (Cyrus' laptop)
-#
 
-# use clang compilers
-set(CMAKE_C_COMPILER "clang" CACHE PATH "")
-set(CMAKE_CXX_COMPILER "clang++" CACHE PATH "")
+from spack import *
 
-# Enable Silo Support in conduit_io
-set(ENABLE_SILO ON CACHE PATH "")
+import socket
+from os.path import join as pjoin
 
-set(SILO_DIR "/Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thirdparty_shared/visit/silo/4.10.1/darwin-x86_64/" CACHE PATH "")
-set(HDF5_DIR "/Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thirdparty_shared/visit//hdf5/1.8.7/darwin-x86_64/" CACHE PATH "")
-set(SZIP_DIR "/Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thirdparty_shared/visit//szip/2.1/darwin-x86_64/" CACHE PATH "")
+class UberenvConduit(Package):
+    """Spack Based Uberenv Build for Conduit Thirdparty Libs """
 
+    # TODO: what do we need for DIY mode?
+    
+    homepage = "http://sphinx-doc.org/"
+    url      = "https://pypi.python.org/packages/source/S/Sphinx/Sphinx-1.3.1.tar.gz#md5=8786a194acf9673464c5455b11fd4332"
 
-# Enable python module builds
-set(ENABLE_PYTHON ON CACHE PATH "")
+    version('1.3.1', '8786a194acf9673464c5455b11fd4332')
+    
+    # all of these packages are custom
+    depends_on("python")
+    depends_on("py-sphinx")
+    depends_on("py-breathe")
+    depends_on("py-numpy")
+    depends_on("cmake")
 
-# Enable mpi for conduit-mpi
-set(ENABLE_MPI ON CACHE PATH "")
-
-set(MPIEXEC /Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thirdparty_shared/visit/mpich/3.0.4/darwin-x86_64/bin/mpiexec CACHE PATH "")
-
-set(MPI_CC_COMPILER /Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thirdparty_shared/visit/mpich/3.0.4/darwin-x86_64/bin/mpicc CACHE PATH "")
-
-set(MPI_CXX_COMPILER /Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thirdparty_shared/visit/mpich/3.0.4/darwin-x86_64/bin/mpicc CACHE PATH "")
-
-#######
-# uberenv host-config for conduit
-#######
-# cmake from uberenv
-# cmake exectuable path: /Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/cmake@3.0.2/bin/cmake
-
-# python from uberenv
-set(PYTHON_EXECUTABLE "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/python@2.7.8/bin/python" CACHE PATH "")
-
-# sphinx from uberenv
-set(SPHINX_EXECUTABLE "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/python@2.7.8/bin/sphinx-build" CACHE PATH "")
-
-
+    def install(self, spec, prefix):
+        dest_dir = env["SPACK_DEBUG_LOG_DIR"]
+        cmake_exe        = pjoin(spec['cmake'].prefix.bin,"cmake")
+        python_exe       = pjoin(spec['python'].prefix.bin,"python")
+        sphinx_build_exe = pjoin(spec['python'].prefix.bin,"sphinx-build")
+        # TODO: better name (use sys-type and compiler name ?)
+        print "cmake executable: %s" % cmake_exe
+        cfg = open(pjoin(dest_dir,"%s.cmake" % socket.gethostname()),"w")
+        cfg.write("#######\n")
+        cfg.write("# uberenv host-config for conduit\n")
+        cfg.write("#######\n")
+        cfg.write("# cmake from uberenv\n")
+        cfg.write("# cmake exectuable path: %s\n\n" % cmake_exe)
+        cfg.write("# python from uberenv\n")
+        cfg.write('set(PYTHON_EXECUTABLE "%s" CACHE PATH "")\n\n' % python_exe)
+        cfg.write("# sphinx from uberenv\n")
+        cfg.write('set(SPHINX_EXECUTABLE "%s" CACHE PATH "")\n\n' % sphinx_build_exe)
+        cfg.close()        
+        
+        
+        

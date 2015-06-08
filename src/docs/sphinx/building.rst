@@ -135,7 +135,26 @@ These file use standard cmake commands. CMake *set* commands need to specify the
 
     set(CMAKE_VARIABLE_NAME {VALUE} CACHE PATH "")
 
-In the future, we will have an environment setup script that will build all external thirdparty dependencies and write an initial host-config file for you.
+
+Bootstrapping Thirdparty Dependencies 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can use *bootstrap-env.sh* (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses *misc/uberenv*, which leverages **Spack** (https://scalability-llnl.github.io/spack) to build external thirdparty libraries and tools used by conduit.
+It also writes a initial host-config file for you and adds the spack built cmake to your path, so can directly call the *config-build.sh* helper script to configure a conduit build.
+
+.. code:: bash
+    
+    #build thirdparty libs using spack
+    source bootstrap-env.sh
+    
+    #copy the generated host-config file into the standard location
+    cp uberenv_libs/`hostname`.cmake to host-configs/
+    
+    # run the configure helper script
+    ./config-build.sh
+
+
+
 
 
 

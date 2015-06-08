@@ -10,3 +10,4 @@ temp.exe
 *.pyc
 .ipynb_checkpoints
 visitlog.py
+uberenv_libs
