@@ -44,61 +44,65 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_rest.hpp
+/// file: conduit_io_rest.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_REST_HPP
-#define CONDUIT_REST_HPP
+#include "conduit_io.hpp"
+#include <iostream>
+#include "gtest/gtest.h"
 
-//-----------------------------------------------------------------------------
-// conduit lib includes
-//-----------------------------------------------------------------------------
-#include "conduit.hpp"
-#include "Conduit_IO_Exports.hpp"
+using namespace conduit;
 
-//-----------------------------------------------------------------------------
-// -- begin conduit:: --
-//-----------------------------------------------------------------------------
-namespace conduit
+bool launch_server = false;
+
+TEST(conduit_io_rest, rest_server)
 {
+    uint32 a_val = 20;
+    uint32 b_val = 8;
+    uint32 c_val = 13;
+
+    Node *n = new Node();
+    n->fetch("a") = a_val;
+    n->fetch("b") = b_val;
+    n->fetch("c") = c_val;
+
+    EXPECT_EQ(n->fetch("a").as_uint32(), a_val);
+    EXPECT_EQ(n->fetch("b").as_uint32(), b_val);
+    EXPECT_EQ(n->fetch("c").as_uint32(), c_val);
+    
+    if(launch_server)
+    {
+        io::rest::serve(n);
+    }
+    else
+    {
+        std::cout << "provide \"launch\" as a command line arg "
+                  << "to launch a conduit::Node REST test server at "
+                  << "http://localhost:8080" << std::endl;
+    }
+
+    delete n;
+}
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::io --
-//-----------------------------------------------------------------------------
-
-namespace io 
+int main(int argc, char* argv[])
 {
+    int result = 0;
 
-//-----------------------------------------------------------------------------
-// -- begin conduit::io::rest --
-//-----------------------------------------------------------------------------
+    ::testing::InitGoogleTest(&argc, argv);
 
-namespace rest 
-{
+    for(int i=0; i < argc ; i++)
+    {
+        std::string arg_str(argv[i]);
+        if(arg_str == "launch")
+        {
+            launch_server = true;;
+        }
+    }
 
-void CONDUIT_IO_API serve(Node *n);
-
-};
-//-----------------------------------------------------------------------------
-// -- end conduit::io::rest --
-//-----------------------------------------------------------------------------
-
-
-
-};
-//-----------------------------------------------------------------------------
-// -- end conduit::io --
-//-----------------------------------------------------------------------------
-
-
-
-};
-//-----------------------------------------------------------------------------
-// -- end conduit:: --
-//-----------------------------------------------------------------------------
-
-#endif 
-
+    result = RUN_ALL_TESTS();
+    return result;
+}
 
 

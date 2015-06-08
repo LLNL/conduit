@@ -174,7 +174,7 @@ handle_release(struct mg_connection *conn,
 
 //---------------------------------------------------------------------------//
 void
-visualize(Node *n)
+serve(Node *n)
 {
     theNode = n;
 
@@ -207,7 +207,6 @@ visualize(Node *n)
 
     printf("Visualizer has been closed; execution continuing...\n");
 }
-
 
 };
 //-----------------------------------------------------------------------------
