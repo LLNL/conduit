@@ -81,11 +81,21 @@ namespace io
 {
 
 //-----------------------------------------------------------------------------
-void CONDUIT_IO_API save(const  Node &node,
+void CONDUIT_IO_API save(Node &node,
                          const std::string &path);
 
 //-----------------------------------------------------------------------------
 void CONDUIT_IO_API load(const std::string &path,
+                         Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_IO_API save(const std::string &protocol,
+                         Node &node,
+                         const std::string &path);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_IO_API load(const std::string &protocol,
+                         const std::string &path,
                          Node &node);
 
 //-----------------------------------------------------------------------------
@@ -94,26 +104,6 @@ void CONDUIT_IO_API load(const std::string &path,
 //-----------------------------------------------------------------------------
  std::string CONDUIT_IO_API about();
  void        CONDUIT_IO_API about(Node &);
-
-
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::io::mesh --
-//-----------------------------------------------------------------------------
-namespace mesh
-{
-
-//-----------------------------------------------------------------------------
-void CONDUIT_IO_API save(Node &node,
-                         const std::string &path);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_IO_API load(const std::string &path,
-                         Node &node);
-};
-//-----------------------------------------------------------------------------
-// -- end conduit::io::mesh --
-//-----------------------------------------------------------------------------
 
 
 };

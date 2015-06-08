@@ -69,9 +69,9 @@ namespace io
 
 
 //---------------------------------------------------------------------------//
-void 
-identify_io_type(const std::string &path,
-                 std::string &io_type)
+void
+identify_protocol(const std::string &path,
+                  std::string &io_type)
 {
     io_type = "conduit_bin";
 
@@ -88,8 +88,8 @@ identify_io_type(const std::string &path,
     {
         std::string file_name_base;
         std::string file_name_ext;
-        
-        // find file extension to auto match 
+
+        // find file extension to auto match
         conduit::utils::rsplit_string(file_path,
                                       std::string("."),
                                       file_name_base,
@@ -104,41 +104,71 @@ identify_io_type(const std::string &path,
 
 //---------------------------------------------------------------------------//
 void 
-save(const  Node &node,
+save(Node &node,
      const std::string &path)
 {
-    std::string io_type;
-    identify_io_type(path,io_type);
+    std::string protocol;
+    identify_protocol(path,protocol);
+    save(protocol,node,path);
+}
 
-    if(io_type == "conduit_bin")
+//---------------------------------------------------------------------------//
+void 
+load(const std::string &path,
+     Node &node)
+{
+    std::string protocol;
+    identify_protocol(path,protocol);
+    load(protocol,path,node);
+}
+
+
+//---------------------------------------------------------------------------//
+void 
+save(const std::string &protocol,
+     Node &node,
+     const std::string &path)
+{
+    if(protocol == "conduit_bin")
     {
         node.save(path);
     }
-    else if( io_type == "conduit_silo")
+    else if( protocol == "conduit_silo")
     {
 #ifdef CONDUIT_IO_ENABLE_SILO
         silo_save(node,path);
 #else
         CONDUIT_ERROR("conduit_io lacks Silo support: " << 
-                    "Failed to save conduit node to path " << path);
+                      "Failed to save conduit node to path " << path);
 #endif
     }
-
+    else if(protocol == "conduit_silo_mesh")
+    {
+#ifdef CONDUIT_IO_ENABLE_SILO
+        silo_save_mesh(node,path);
+#else
+        CONDUIT_ERROR("conduit_io lacks Silo support: " << 
+                      "Failed to save conduit mesh node to path " << path);
+#endif
+    }
+    else
+    {
+        CONDUIT_ERROR("conduit_io unknown protocol: " << protocol);
+    }
 }
 
 //---------------------------------------------------------------------------//
 void
-load(const std::string &path,
+load(const std::string &protocol,
+     const std::string &path,
      Node &node)
 {
-    std::string io_type;
-    identify_io_type(path,io_type);
 
-    if(io_type == "conduit_bin")
+    if(protocol == "conduit_bin")
     {
         node.load(path);
     }
-    else if( io_type == "conduit_silo")
+    else if( protocol == "conduit_silo")
     {
 #ifdef CONDUIT_IO_ENABLE_SILO
         silo_load(path,node);
@@ -147,7 +177,16 @@ load(const std::string &path,
                     "Failed to load conduit node from path " << path);
 #endif
     }
-
+    else if(protocol == "conduit_silo_mesh")
+    {
+        CONDUIT_ERROR("the conduit_io conduit_silo_mesh protocol does not "
+                      "support \"load\"");
+    }
+    else
+    {
+        CONDUIT_ERROR("conduit_io unknown protocol: " << protocol);
+        
+    }
 
 }
 
@@ -179,48 +218,15 @@ about(Node &n)
 #else
     protos["conduit_silo"] = "disabled";
 #endif
-
-}
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::io::mesh --
-//-----------------------------------------------------------------------------
-namespace  mesh
-{
-
-//---------------------------------------------------------------------------//
-void 
-save(Node &node,
-     const std::string &path)
-{
-    std::string io_type;
-    identify_io_type(path,io_type);
-    if( io_type == "conduit_silo")
-    {
+    
+    // silo mesh aware
 #ifdef CONDUIT_IO_ENABLE_SILO
-        mesh::silo_save(node,path);
+    protos["conduit_silo_mesh"] = "enabled";
 #else
-        CONDUIT_ERROR("conduit_io lacks Silo support: " << 
-                    "Failed to save conduit mesh node to path " << path);
+    protos["conduit_silo_mesh"] = "disabled";
 #endif
-    }
 
 }
-
-
-//---------------------------------------------------------------------------//
-void
-load(const std::string &path,
-     Node &node)
-{
-    CONDUIT_ERROR("conduit_io mesh aware load not implemented.");
-}
-
-};
-//-----------------------------------------------------------------------------
-// -- end conduit::io::mesh --
-//-----------------------------------------------------------------------------
-
 
 
 };

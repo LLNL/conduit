@@ -60,10 +60,10 @@ using namespace conduit;
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, mesh_2d)
 {
-    Node iocfg;
-    io::about(iocfg);
+    Node io_protos;
+    io::about(io_protos);
 
-    bool silo_enabled = iocfg["protocols/conduit_silo"].as_string() == "enabled";
+    bool silo_enabled = io_protos["protocols/conduit_silo"].as_string() == "enabled";
         
     Node uniform;
     blueprint::mesh::examples::braid("uniform",20,20,0,uniform);
@@ -102,10 +102,10 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
     
     if(silo_enabled)
     {
-        // conduit::io::mesh::save(uniform,"braid_uniform_example.silo:uniform2d");
-        io::mesh::save(rect_expanded,"braid_rect_example.silo:rect2d");
-        io::mesh::save(tris_expanded,"braid_tris_example.silo:tris");
-        io::mesh::save(quads_expanded,"braid_quads_example.silo:quad");
+        // conduit::io::save("conduit_silo_mesh",uniform,"braid_uniform_example.silo:uniform2d");
+        io::save("conduit_silo_mesh",rect_expanded,"braid_rect_example.silo:rect2d");
+        io::save("conduit_silo_mesh",tris_expanded,"braid_tris_example.silo:tris");
+        io::save("conduit_silo_mesh",quads_expanded,"braid_quads_example.silo:quad");
     }
     
 }
