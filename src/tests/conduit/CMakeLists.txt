@@ -55,6 +55,7 @@ set(BASIC_TESTS conduit_smoke
                 conduit_datatype_tests
                 conduit_node
                 conduit_node_parent
+                conduit_node_convert
                 conduit_serialize
                 conduit_array
                 conduit_list_of

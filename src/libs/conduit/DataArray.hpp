@@ -163,6 +163,22 @@ public:
     void            set(const std::vector<float64> &values)
                         {set(&values[0],values.size());}
 
+    /// signed integer arrays via DataArray
+    void            set(const DataArray<int8>    &values);
+    void            set(const DataArray<int16>   &values);
+    void            set(const DataArray<int32>   &values);
+    void            set(const DataArray<int64>   &values);
+
+    /// unsigned integer arrays via DataArray
+    void            set(const DataArray<uint8>   &values);
+    void            set(const DataArray<uint16>  &values);
+    void            set(const DataArray<uint32>  &values);
+    void            set(const DataArray<uint64>  &values);
+    
+    /// floating point arrays via DataArray
+    void            set(const DataArray<float32>  &values);
+    void            set(const DataArray<float64>  &values);
+
 //-----------------------------------------------------------------------------
 // Transforms
 //-----------------------------------------------------------------------------

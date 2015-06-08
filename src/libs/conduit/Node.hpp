@@ -1139,9 +1139,48 @@ public:
     unsigned int     to_unsigned_int()   const;
     unsigned long    to_unsigned_long()  const;
     
-    /// convert to c floating type
+    /// convert to c floating point types
     float            to_float() const;
     double           to_double() const;
+
+//-----------------------------------------------------------------------------
+// -- array conversion methods -- 
+// 
+/// These methods convert an array to a specific array type.
+/// The result is stored in the passed node.
+//-----------------------------------------------------------------------------
+
+    /// convert to a signed integer types
+    void    to_int8_array(Node &res)  const;
+    void    to_int16_array(Node &res) const;
+    void    to_int32_array(Node &res) const;    
+    void    to_int64_array(Node &res) const;    
+    
+    /// convert to a unsigned integer types
+    void    to_uint8_array(Node &res)  const;
+    void    to_uint16_array(Node &res) const;
+    void    to_uint32_array(Node &res) const;    
+    void    to_uint64_array(Node &res) const;    
+    
+    /// convert to a floating point type
+    void    to_float32_array(Node &res) const;    
+    void    to_float64_array(Node &res) const;    
+    
+    /// convert to c signed integer types
+    void    to_char_array(Node &res)  const;
+    void    to_short_array(Node &res) const;
+    void    to_int_array(Node &res)   const;
+    void    to_long_array(Node &res)  const;
+    
+    /// convert to c unsigned integer types
+    void    to_unsigned_char_array(Node &res)  const;
+    void    to_unsigned_short_array(Node &res) const;
+    void    to_unsigned_int_array(Node &res)   const;
+    void    to_unsigned_long_array(Node &res)  const;
+
+    /// convert to c floating point types
+    void    to_float_array(Node &res) const;
+    void    to_double_array(Node &res) const;
 
 
 //-----------------------------------------------------------------------------
@@ -1160,10 +1199,10 @@ public:
             // cast operators for signed integers
             
             // we need an explicit case for signed char
-            operator signed char()  const;
-            operator short()  const;
-            operator int()    const;
-            operator long()   const;
+            operator signed char() const;
+            operator short()       const;
+            operator int()         const;
+            operator long()        const;
 
             // cast operators for unsigned integers
             operator unsigned char()   const;
@@ -1221,6 +1260,10 @@ public:
             bool     m_coerse; 
     };
     
+
+//-----------------------------------------------------------------------------
+// -- Node methods that use the Node::Value class as a casting vehicle.
+//-----------------------------------------------------------------------------
 
     Value value()  // works for all leaf types, but no coercion
         { return  Value(this,false); }
@@ -1472,6 +1515,22 @@ public:
     float32         *as_float32_ptr();
     float64         *as_float64_ptr();
 
+    // signed integers via pointers
+    const int8      *as_int8_ptr()   const;
+    const int16     *as_int16_ptr()  const;
+    const int32     *as_int32_ptr()  const;
+    const int64     *as_int64_ptr()  const;
+
+    // unsigned integers via pointers
+    const uint8     *as_uint8_ptr()  const;
+    const uint16    *as_uint16_ptr() const;
+    const uint32    *as_uint32_ptr() const;
+    const uint64    *as_uint64_ptr() const;
+
+    // floating point via pointers
+    const float32   *as_float32_ptr() const;
+    const float64   *as_float64_ptr() const;
+
     // signed integer array types via conduit::DataArray
     int8_array       as_int8_array();
     int16_array      as_int16_array();
@@ -1490,20 +1549,20 @@ public:
 
     // signed integer array types via conduit::DataArray (const variants)
 
-    int8_array       as_int8_array()  const;
-    int16_array      as_int16_array() const;
-    int32_array      as_int32_array() const;
-    int64_array      as_int64_array() const;
+    const int8_array       as_int8_array()  const;
+    const int16_array      as_int16_array() const;
+    const int32_array      as_int32_array() const;
+    const int64_array      as_int64_array() const;
 
     // unsigned integer array types via conduit::DataArray (const variants)
-    uint8_array      as_uint8_array()  const;
-    uint16_array     as_uint16_array() const;
-    uint32_array     as_uint32_array() const;
-    uint64_array     as_uint64_array() const;
+    const uint8_array      as_uint8_array()  const;
+    const uint16_array     as_uint16_array() const;
+    const uint32_array     as_uint32_array() const;
+    const uint64_array     as_uint64_array() const;
 
     // floating point array value via conduit::DataArray (const variants)
-    float32_array    as_float32_array() const;
-    float64_array    as_float64_array() const;
+    const float32_array    as_float32_array() const;
+    const float64_array    as_float64_array() const;
 
     // char8_str cases
     char            *as_char8_str();
@@ -1511,7 +1570,8 @@ public:
     std::string      as_string()    const;
 
     // direct data pointer access 
-    uint8            *data_ptr();
+    void            *data_ptr();
+    const void      *data_ptr() const;
 
 
 //-----------------------------------------------------------------------------
@@ -1536,8 +1596,8 @@ public:
     float            as_float() const;
     double           as_double() const;
 
+
     // signed integers via pointers
-    
     char            *as_char_ptr();
     short           *as_short_ptr();
     int             *as_int_ptr();
@@ -1552,6 +1612,23 @@ public:
     // floating point via pointers
     float           *as_float_ptr();
     double          *as_double_ptr();
+
+    // signed integers via pointers (const variants)
+    const char       *as_char_ptr()  const;
+    const short      *as_short_ptr() const;
+    const int        *as_int_ptr()   const;
+    const long       *as_long_ptr()  const;
+
+    // unsigned integers via pointers (const variants)
+    const unsigned char   *as_unsigned_char_ptr()  const;
+    const unsigned short  *as_unsigned_short_ptr() const;
+    const unsigned int    *as_unsigned_int_ptr()   const;
+    const unsigned long   *as_unsigned_long_ptr()  const;
+
+    // floating point via pointers (const variants)
+    const float           *as_float_ptr()  const;
+    const double          *as_double_ptr() const;
+
 
     // signed integer array types via conduit::DataArray
     char_array       as_char_array();
@@ -1571,21 +1648,21 @@ public:
 
     // signed integer array types via conduit::DataArray (const variants)
 
-    char_array       as_char_array()  const;
-    short_array      as_short_array() const;
-    int_array        as_int_array()   const;
-    long_array       as_long_array()  const;
+    const char_array       as_char_array()  const;
+    const short_array      as_short_array() const;
+    const int_array        as_int_array()   const;
+    const long_array       as_long_array()  const;
 
     // unsigned integer array types via conduit::DataArray (const variants)
-    unsigned_char_array    as_unsigned_char_array()  const;
-    unsigned_short_array   as_unsigned_short_array() const;
-    unsigned_int_array     as_unsigned_int_array()   const;
-    unsigned_long_array    as_unsigned_long_array()  const;
+    const unsigned_char_array    as_unsigned_char_array()  const;
+    const unsigned_short_array   as_unsigned_short_array() const;
+    const unsigned_int_array     as_unsigned_int_array()   const;
+    const unsigned_long_array    as_unsigned_long_array()  const;
 
 
     // floating point array value via conduit::DataArray (const variants)
-    float_array     as_float_array()  const;
-    double_array    as_double_array() const;
+    const float_array     as_float_array()  const;
+    const double_array    as_double_array() const;
 
 //-----------------------------------------------------------------------------
 ///@}
