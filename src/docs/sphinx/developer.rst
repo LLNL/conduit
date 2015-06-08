@@ -52,16 +52,20 @@ Developer Documentation
 Source Code Repo Layout
 ------------------------
 * **src/libs/**
+
  * **conduit/** - Main Conduit library source
  * **conduit_io/** - Conduit I/O library source
  * **conduit_mpi/** - Conduit MPI library source
  * **blueprint/** - Blueprint library source
+
 * **src/tests/**
+
  * **conduit/** - Unit tests for the main Conduit library
  * **conduit_io/** - Unit tests for Conduit I/O library
  * **conduit_mpi/** - Unit tests for Conduit MPI library
  * **blueprint/** - Unit tests for Blueprint library
  * **thirdparty/** - Unit tests for thirdparty libraries
+
 * **src/docs/** -  Documentation 
 * **src/thirdparty_builtin/** - Thirdparty libraries we build and manage directly
 
