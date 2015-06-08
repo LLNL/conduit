@@ -55,13 +55,13 @@ Used for Node instances in the *Object* and *List* role interfaces. A Node may h
 
  - Node::number_of_children()
  - Node::child(index_t)
- - Node::child_pointer(index_t)
+ - Node::child_ptr(index_t)
  - Node::operator=(index_t)
  - Node::remove(index_t)
 
  - Schema::number_of_children()
  - Schema::child(index_t)
- - Schema::child_pointer(index_t)
+ - Schema::child_ptr(index_t)
  - Schema::operator=(index_t)
  - Schema::remove(index_t)
 
@@ -70,7 +70,7 @@ paths
 Used for Node instances in *Object* role interface. In the Object role, a Node has a collection of indexed and named children. Access by name is done via a *path*. The path is a foward-slash separated URI, where each segment maps to Node in a hierarchal tree. Methods related to this concept include:
 
  - Node::fetch(string)
- - Node::fetch_pointer(string)
+ - Node::fetch_ptr(string)
  - Node::operator=(string)
  - Node::has_path(string)
  - Node::paths(vector of strings)
@@ -78,7 +78,7 @@ Used for Node instances in *Object* role interface. In the Object role, a Node h
 
  - Schema::fetch(string)
  - Schema::fetch_child(string)
- - Schema::fetch_pointer(string)
+ - Schema::fetch_ptr(string)
  - Schema::operator=(string)
  - Schema::has_path(string)
  - Schema::paths(vector of strings)
