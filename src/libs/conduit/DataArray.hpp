@@ -115,7 +115,7 @@ public:
                         {return m_dtype.number_of_elements();}
     const DataType &dtype()    const 
                         { return m_dtype;} 
-    void           *data_pointer() const 
+    void           *data_ptr() const 
                         { return m_data;}
 
 //-----------------------------------------------------------------------------
@@ -176,13 +176,13 @@ private:
 // -- conduit::DataArray private methods --
 //
 //-----------------------------------------------------------------------------
-    void           *element_pointer(index_t idx)
+    void           *element_ptr(index_t idx)
                     {
                         return static_cast<char*>(m_data) +       
                             m_dtype.element_index(idx);
                     };
 
-    const void     *element_pointer(index_t idx) const 
+    const void     *element_ptr(index_t idx) const 
                     {
                          return static_cast<char*>(m_data) +    
                             m_dtype.element_index(idx);

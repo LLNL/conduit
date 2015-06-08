@@ -1390,9 +1390,9 @@ public:
     Node             &child(index_t idx);
 
     /// fetch a pointer to the node  at the given path   
-    Node             *fetch_pointer(const std::string &path);
+    Node             *fetch_ptr(const std::string &path);
     /// fetch a pointer to the node at the given index
-    Node             *child_pointer(index_t idx);
+    Node             *child_ptr(index_t idx);
 
     /// access child node via a path (equivalent to fetch via path)
     Node             &operator[](const std::string &path);
@@ -1511,7 +1511,7 @@ public:
     std::string      as_string()    const;
 
     // direct data pointer access 
-    uint8            *data_pointer();
+    uint8            *data_ptr();
 
 
 //-----------------------------------------------------------------------------
@@ -1610,18 +1610,18 @@ public:
 /// aren't part of any public interface. We haven't found the right way
 /// to use 'friend' to avoid this issue
 //-----------------------------------------------------------------------------
-    void             set_data_pointer(void *data_ptr);
+    void             set_data_ptr(void *data_ptr);
     ///
-    /// Note: set_schema_pointer is *only* used in the case were we have 
+    /// Note: set_schema_ptr is *only* used in the case were we have 
     /// a schema pointer that is owned by a parent schema. Using it to set a 
     /// pointer that should be owned by a node unleashes chaos.
     ///
-    void             set_schema_pointer(Schema *schema_ptr);
-    void             append_node_pointer(Node *node)
+    void             set_schema_ptr(Schema *schema_ptr);
+    void             append_node_ptr(Node *node)
                         {m_children.push_back(node);}
     void             set_parent(Node *parent) 
                         { m_parent = parent;}
-    Schema          *schema_pointer() 
+    Schema          *schema_ptr() 
                         {return m_schema;}
 //-----------------------------------------------------------------------------
 ///@}
@@ -1684,9 +1684,9 @@ private:
 // -- private methods that help element access -- 
 //
 //-----------------------------------------------------------------------------
-          void  *element_pointer(index_t idx)
+          void  *element_ptr(index_t idx)
         {return static_cast<char*>(m_data) + dtype().element_index(idx);};
-    const void  *element_pointer(index_t idx) const 
+    const void  *element_ptr(index_t idx) const 
         {return static_cast<char*>(m_data) + dtype().element_index(idx);};
 
 

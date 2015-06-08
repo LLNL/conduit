@@ -119,7 +119,7 @@ template <typename T>
 T &
 DataArray<T>::element(index_t idx)
 { 
-    return (*(T*)(element_pointer(idx)));
+    return (*(T*)(element_ptr(idx)));
 }
 
 //---------------------------------------------------------------------------//
@@ -127,7 +127,7 @@ template <typename T>
 T &             
 DataArray<T>::element(index_t idx) const 
 { 
-    return (*(T*)(element_pointer(idx)));
+    return (*(T*)(element_ptr(idx)));
 }
 
 //---------------------------------------------------------------------------//
@@ -301,7 +301,7 @@ DataArray<T>::compact_elements_to(uint8 *data) const
     for(index_t i=0;i<num_ele;i++)
     {
         memcpy(data_ptr,
-               element_pointer(i),
+               element_ptr(i),
                ele_bytes);
         data_ptr+=ele_bytes;
     }
