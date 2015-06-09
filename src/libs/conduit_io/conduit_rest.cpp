@@ -318,8 +318,8 @@ RESTServer::serve(Node *node,
          CONDUIT_ERROR("RESTServer failed to bind civet server on port " << port);
     }else
     {
-        std::cout << "conduit::io::RESTServer instance active on port: " 
-                  << port << std::endl;
+        CONDUIT_INFO("conduit::io::RESTServer instance active on port: " 
+                     << port);
     }
 
     m_server->addHandler("/api/*",m_handler);
@@ -345,8 +345,8 @@ RESTServer::shutdown()
 {
     if(is_running())
     {
-        std::cout << "closing conduit::io::RESTServer instance on port: " 
-                  << m_port << std::endl;
+        CONDUIT_INFO("closing conduit::io::RESTServer instance on port: " 
+                     << m_port);
         
         m_running = false;
         delete m_server;

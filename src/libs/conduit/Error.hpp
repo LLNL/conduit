@@ -65,6 +65,20 @@
 
 //-----------------------------------------------------------------------------
 //
+/// The CONDUIT_INFO macro is the primary mechanism used to send info messages.
+/// It currently simply prints the message to std::out.
+///
+//-----------------------------------------------------------------------------
+#define CONDUIT_INFO( msg )                                         \
+{                                                                   \
+    std::ostringstream oss_info;                                    \
+    oss_info << msg;                                                \
+    std::cout << oss_info.str() << std::endl;                       \
+}                                                                   \
+
+
+//-----------------------------------------------------------------------------
+//
 /// The CONDUIT_ERROR macro is the primary mechanism used to capture errors  
 /// in conduit. It currently throws a c++ exception, in the form of a
 /// conduit::Error class. If we decide to not use exceptions in the future
