@@ -124,6 +124,29 @@ handle_get_value(struct mg_connection *conn,
 }
 
 //---------------------------------------------------------------------------//
+// Handles a request from the client for the entire node via http
+int
+handle_get_encoded(struct mg_connection *conn,
+                   void *cbdata)
+{
+    char post_data[2048];
+    Node res;
+    theNode->compact_to(res);
+    
+    Node comm;
+    
+    comm["schema"] = res.schema().to_json();
+    //comm["data"] = libb64::encode(res.data_ptr(),res.schema().total_bytes());
+    
+    const struct mg_request_info *ri = mg_get_request_info(conn);
+    int post_data_len = mg_read(conn, post_data, sizeof(post_data));
+
+    //mg_get_var(post_data, post_data_len, "cpath", cpath, sizeof(cpath));
+    mg_printf(conn,"%s",comm.to_pure_json().c_str());
+    return 1;
+}
+
+//---------------------------------------------------------------------------//
 int 
 handle_release(struct mg_connection *conn,
                void *cbdata)
@@ -174,12 +197,24 @@ handle_release(struct mg_connection *conn,
 
 //---------------------------------------------------------------------------//
 void
-serve(Node *n)
+serve(Node *n,
+      bool block,
+      const std::string &bind_host,
+      index_t bind_port)
+
 {
+    //RESTServer svr;
+    //return svr.serve(n,blocks,bind_host,bind_port);
+    
+        
     theNode = n;
 
+    std::ostringstream oss_port;
+    oss_port << bind_port;
+    std::string str_port = oss_port.str();
+    
     const char * options[] = { "document_root", CONDUIT_REST_CLIENT_ROOT,
-                               "listening_ports", "8080", 0
+                               "listening_ports", str_port.c_str(), 0
                              };
 
     struct mg_callbacks callbacks;
@@ -190,6 +225,7 @@ serve(Node *n)
     
     mg_set_request_handler(ctx, "/api/get-schema", handle_get_schema, 0);
     mg_set_request_handler(ctx, "/api/get-value", handle_get_value, 0);
+    mg_set_request_handler(ctx, "/api/get-encoded", handle_get_encoded, 0);
     mg_set_request_handler(ctx, "/api/kill-server", handle_release, 0);
 
     visualizerIsRunning = true;
@@ -207,6 +243,81 @@ serve(Node *n)
 
     printf("Visualizer has been closed; execution continuing...\n");
 }
+
+
+//-----------------------------------------------------------------------------
+// -- REST Server Interface -
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+RESTServer::RESTServer()
+: m_node(NULL),
+  m_running(false)
+{
+    
+}
+
+//-----------------------------------------------------------------------------
+RESTServer::~RESTServer()
+{
+    if(m_running)
+    {
+        shutdown();
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+RESTServer::serve(Node *node,
+                  bool block,
+                  const std::string &bind_host,
+                  index_t bind_port)
+{
+    m_node = node;
+    // register callbacks for civetweb
+    
+    // start the server
+    bind(bind_host,bind_port);
+
+    if(block)
+    {
+        while(m_running) // wait for shutdown()
+        {
+#if defined(CONDUIT_PLATFORM_WINDOWS)
+        Sleep(1000);
+#else
+        sleep(10);
+#endif
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+void     
+RESTServer::shutdown()
+{
+    if(m_running)
+    {
+        // shutdown civetweb server
+        m_running = false;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+RESTServer::bind(const std::string &bind_host,
+                 index_t bind_port)
+{
+    // if things go wrong
+    if(false)
+    {
+        CONDUIT_ERROR("failed to bind RESTServer to "
+                      << bind_host << ":" << bind_port);
+    }
+    
+    m_running = true;
+}
+
 
 };
 //-----------------------------------------------------------------------------
