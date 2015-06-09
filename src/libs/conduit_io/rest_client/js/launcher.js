@@ -62,3 +62,21 @@ request.onerror = function () {
 };
 
 request.send();
+
+var request2 = new XMLHttpRequest();
+request2.open('POST', '/api/get-encoded', true);
+request2.onload = function () {
+  if (request.status >= 200 && request.status < 400) {
+        var node = JSON.parse(request.response);
+        console.log("HERE ", request.response);
+    } else {
+      console.log("Server responded with error code: ", request.status);
+    }
+};
+
+request2.onerror = function () {
+  console.log("Connection error");
+};
+
+request2.send();
+

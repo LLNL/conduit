@@ -197,6 +197,13 @@ public:
                             index_t element_bytes=sizeof(conduit::float64),
                             index_t endianness = Endianness::DEFAULT_T);
 
+    static DataType char8_str(index_t num_elements=1,
+                              index_t offset = 0,
+                              index_t stride = 1,
+                              index_t element_bytes=1,
+                              index_t endianness = Endianness::DEFAULT_T);
+
+
 //-----------------------------------------------------------------------------
 // -- end conduit::DataType Leaf Constructor Helpers --
 //-----------------------------------------------------------------------------

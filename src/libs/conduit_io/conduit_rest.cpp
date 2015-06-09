@@ -65,6 +65,9 @@
 #include "civetweb.h"
 #include "CivetServer.h"
 
+#define BUFFERSIZE 65536
+#include "b64/encode.h"
+
 //-----------------------------------------------------------------------------
 // conduit includes
 //-----------------------------------------------------------------------------
@@ -148,6 +151,10 @@ public:
             {
                 return handle_get_value(server,conn);                
             }
+            else if(uri_cmd == "get-encoded")
+            {
+                return handle_get_encoded(server,conn);
+            }
             else if(uri_cmd == "kill-server")
             {
                 return handle_release(server,conn);
@@ -175,6 +182,7 @@ public:
         }
         
         //---------------------------------------------------------------------------//
+        // Handles a request from the client for the node's schema.
         bool handle_get_schema(CivetServer *server,
                                struct mg_connection *conn)
         {
@@ -183,7 +191,7 @@ public:
         }
 
         //---------------------------------------------------------------------------//
-        // Handles a request from the client for a specific value in the Node
+        // Handles a request from the client for a specific value in the node.
         bool handle_get_value(CivetServer *server,
                               struct mg_connection *conn)
         {
@@ -202,6 +210,38 @@ public:
         }
 
         //---------------------------------------------------------------------------//
+        // Handles a request from the client for a compact, base64 encoded version
+        // of the node.
+        bool handle_get_encoded(CivetServer *server,
+                              struct mg_connection *conn)
+        {
+            Node n;
+            m_node->compact_to(n);
+            n.print();
+            index_t nbytes = n.schema().total_bytes();
+            base64::encoder e;
+
+            std::cout << "nbytes = "   << nbytes << std::endl;
+
+            Node res;
+            res["schema"] = n.schema().to_json();
+            // allocate buffer for base64 encoded result
+            res["base64/data"].set(DataType::char8_str(nbytes*2));
+            
+            index_t code_len = e.encode((const char*)n.data_ptr(),
+                                        nbytes,
+                                        (char*)res["base64/data"].data_ptr());
+
+            std::cout << "code len = " << code_len << std::endl;
+            res.print();
+            mg_printf(conn, "%s",res.to_pure_json().c_str());
+            
+            
+            return true;
+        }
+
+        //---------------------------------------------------------------------------//
+        // Handles a request from the client to shutdown the REST server
         bool handle_release(CivetServer *server,
                             struct mg_connection *conn)
         {
@@ -248,7 +288,7 @@ RESTServer::serve(Node *node,
 {
     if(is_running())
     {
-        CONDUIT_ERROR("server already running");
+        CONDUIT_ERROR("RESTServer is already running");
     }
         
     std::ostringstream oss;
@@ -259,14 +299,23 @@ RESTServer::serve(Node *node,
                                NULL};
 
     m_handler = new RESTHandler(*this,node);
-    // TODO: catch Civet Exception?
-    m_server = new CivetServer(options);
-    // check for valid context
+    try
+    {
     
+        m_server = new CivetServer(options);
+
+    }
+    catch(CivetException except)
+    {
+        // Catch Civet Exception and use Conduit's error handling mech.
+        CONDUIT_ERROR("RESTServer failed to bind civet server on port " << port);
+    }
+    
+    // check for valid context    
     const struct mg_context *ctx = m_server->getContext();
     if(ctx == NULL)
     {
-         CONDUIT_ERROR("failed to bind civet server on port " << port);
+         CONDUIT_ERROR("RESTServer failed to bind civet server on port " << port);
     }else
     {
         std::cout << "conduit::io::RESTServer instance active on port: " 
