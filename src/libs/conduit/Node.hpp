@@ -114,6 +114,7 @@ public:
     ///  NodeIterator needs access to Node internals to create
     ///   an efficient iterator
     friend class NodeIterator;
+    friend class Generator;
 
 //-----------------------------------------------------------------------------
 //
@@ -1364,13 +1365,18 @@ public:
     // schema access
     const Schema     &schema() const 
                         { return *m_schema;}   
+
     const DataType   &dtype() const       
                         { return m_schema->dtype();}
 
+    Schema          *schema_ptr() 
+                        {return m_schema;}
+
 
     // parent access
-    bool             has_parent() const 
-                        {return m_parent != NULL;}
+    bool             is_root() const 
+                        {return m_parent == NULL;}
+
     Node            *parent() 
                         {return m_parent;}
     
@@ -1672,20 +1678,18 @@ public:
 //
 //-----------------------------------------------------------------------------
 
+
+private:
 //-----------------------------------------------------------------------------
 //
-// -- begin declaration of Interface Warts --
+// -- begin declaration of  Private Construction Helpers --
 //
 //-----------------------------------------------------------------------------
-///@name Interface Warts 
+///@name Private Construction Helpers
 ///@{
 //-----------------------------------------------------------------------------
 /// description:
-/// these methods are used for construction by the Node & Generator classes
-/// it would be nice to make them private, however to keep rapid json
-/// headers out of the conduit interface, the json walking methods
-/// aren't part of any public interface. We haven't found the right way
-/// to use 'friend' to avoid this issue
+/// these methods are used for construction by the Node & Generator classes.
 //-----------------------------------------------------------------------------
     void             set_data_ptr(void *data_ptr);
     ///
@@ -1696,15 +1700,16 @@ public:
     void             set_schema_ptr(Schema *schema_ptr);
     void             append_node_ptr(Node *node)
                         {m_children.push_back(node);}
+
     void             set_parent(Node *parent) 
                         { m_parent = parent;}
-    Schema          *schema_ptr() 
-                        {return m_schema;}
+
+
 //-----------------------------------------------------------------------------
 ///@}
 //-----------------------------------------------------------------------------
 //
-// -- end declaration of Interface Warts --
+// -- end declaration of Private Construction Helpers --
 //
 //-----------------------------------------------------------------------------
 
@@ -1717,7 +1722,7 @@ public:
 //-----------------------------------------------------------------------------
 //=============================================================================
 
-private:
+
 //-----------------------------------------------------------------------------
 //
 // -- private methods that help with init, memory allocation, and cleanup --

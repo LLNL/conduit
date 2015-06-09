@@ -72,17 +72,73 @@ namespace conduit
 {
 
 //-----------------------------------------------------------------------------
-// -- stand alone methods for parsing via rapidjson -- 
+// -- begin conduit::Generator::Parser --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// we want to isolate the conduit API from the rapidjson headers
-// so any methods using rapidjson types are defined in the cpp imp.
 //-----------------------------------------------------------------------------
+// Generator::Parser handles parsing via rapidjson.
+// We want to isolate the conduit API from the rapidjson headers
+// so any methods using rapidjson types are defined in here.
+// "friend Generator" in Node, allows Generator::Parser to construct complex
+// nodes. 
+//-----------------------------------------------------------------------------
+
+ class Generator::Parser
+{
+public:
+    static index_t json_to_numeric_dtype(const rapidjson::Value &jvalue);
+    
+    static index_t check_homogenous_json_array(const rapidjson::Value &jvalue);
+    
+    static void    parse_json_int64_array(const rapidjson::Value &jvalue,
+                                         std::vector<int64> &res);
+                                         
+    static void    parse_json_int64_array(const rapidjson::Value &jvalue,
+                                          Node &node);
+                                          
+    static void    parse_json_uint64_array(const rapidjson::Value &jvalue,
+                                           std::vector<uint64> &res);
+                                           
+    static void    parse_json_uint64_array(const rapidjson::Value &jvalue,
+                                           Node &node);
+                                           
+    static void    parse_json_float64_array(const rapidjson::Value &jvalue,
+                                            std::vector<float64> &res);
+
+    static void    parse_json_float64_array(const rapidjson::Value &jvalue,
+                                            Node &node);
+                                            
+    static void    parse_leaf_dtype(const rapidjson::Value &jvalue,
+                                    index_t offset,
+                                    DataType &dtype_res);
+                                    
+    static void    parse_inline_leaf(const rapidjson::Value &jvalue,
+                                     Node &node);
+                                     
+    static void    parse_inline_value(const rapidjson::Value &jvalue,
+                                      Node &node);
+                                      
+    static void    walk_json_schema(Schema *schema,
+                                    const   rapidjson::Value &jvalue,
+                                    index_t curr_offset);
+                                    
+    static void    walk_pure_json_schema(Node  *node,
+                                         Schema *schema,
+                                         const rapidjson::Value &jvalue);
+
+    static void    walk_json_schema(Node   *node,
+                                    Schema *schema,
+                                    void   *data,
+                                    const rapidjson::Value &jvalue,
+                                    index_t curr_offset);
+
+
+};
 
 //---------------------------------------------------------------------------//
 index_t 
-json_to_numeric_dtype(const rapidjson::Value &jvalue)
+Generator::Parser::json_to_numeric_dtype(const rapidjson::Value &jvalue)
 {
     index_t res = DataType::EMPTY_T; 
     if(jvalue.IsNumber())
@@ -99,7 +155,7 @@ json_to_numeric_dtype(const rapidjson::Value &jvalue)
         {
             res  = DataType::FLOAT64_T; // for float
         } 
-        // else -- value already inite to EMPTY_T
+        // else -- value already init to EMPTY_T
     }
     
     return res;
@@ -107,7 +163,7 @@ json_to_numeric_dtype(const rapidjson::Value &jvalue)
 
 //---------------------------------------------------------------------------//
 index_t
-check_homogenous_json_array(const rapidjson::Value &jvalue)
+Generator::Parser::check_homogenous_json_array(const rapidjson::Value &jvalue)
 {
     // check for homogenous array of ints or floats
     // promote to float64 as the most wide type
@@ -141,8 +197,8 @@ check_homogenous_json_array(const rapidjson::Value &jvalue)
 
 //---------------------------------------------------------------------------// 
 void
-parse_json_int64_array(const rapidjson::Value &jvalue,
-                        std::vector<int64> &res)
+Generator::Parser::parse_json_int64_array(const rapidjson::Value &jvalue,
+                                          std::vector<int64> &res)
 {
    res.resize(jvalue.Size(),0);
    for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
@@ -153,8 +209,8 @@ parse_json_int64_array(const rapidjson::Value &jvalue,
 
 //---------------------------------------------------------------------------//
 void
-parse_json_int64_array(const rapidjson::Value &jvalue,
-                       Node &node)
+Generator::Parser::parse_json_int64_array(const rapidjson::Value &jvalue,
+                                          Node &node)
 {
     // TODO: we can make this more efficent 
     std::vector<int64> vals;
@@ -199,8 +255,8 @@ parse_json_int64_array(const rapidjson::Value &jvalue,
 
 //---------------------------------------------------------------------------//
 void
-parse_json_uint64_array(const rapidjson::Value &jvalue,
-                         std::vector<uint64> &res)
+Generator::Parser::parse_json_uint64_array(const rapidjson::Value &jvalue,
+                                           std::vector<uint64> &res)
 {
     res.resize(jvalue.Size(),0);
     for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
@@ -211,8 +267,8 @@ parse_json_uint64_array(const rapidjson::Value &jvalue,
 
 //---------------------------------------------------------------------------//
 void
-parse_json_uint64_array(const rapidjson::Value &jvalue,
-                        Node &node)
+Generator::Parser::parse_json_uint64_array(const rapidjson::Value &jvalue,
+                                           Node &node)
 {
     // TODO: we can make this more efficent 
     std::vector<uint64> vals;
@@ -257,8 +313,8 @@ parse_json_uint64_array(const rapidjson::Value &jvalue,
 
 //---------------------------------------------------------------------------//
 void
-parse_json_float64_array(const rapidjson::Value &jvalue,
-                         std::vector<float64> &res)
+Generator::Parser::parse_json_float64_array(const rapidjson::Value &jvalue,
+                                            std::vector<float64> &res)
 {
     res.resize(jvalue.Size(),0);
     for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
@@ -269,8 +325,8 @@ parse_json_float64_array(const rapidjson::Value &jvalue,
 
 //---------------------------------------------------------------------------//
 void
-parse_json_float64_array(const rapidjson::Value &jvalue,
-                         Node &node)
+Generator::Parser::parse_json_float64_array(const rapidjson::Value &jvalue,
+                                            Node &node)
 {
     // TODO: we can make this more efficent 
     std::vector<float64> vals;
@@ -315,7 +371,9 @@ parse_json_float64_array(const rapidjson::Value &jvalue,
 
 //---------------------------------------------------------------------------//
 void
-parse_leaf_dtype(const rapidjson::Value &jvalue, index_t offset, DataType &dtype_res)
+Generator::Parser::parse_leaf_dtype(const rapidjson::Value &jvalue,
+                                    index_t offset,
+                                    DataType &dtype_res)
 {
     
     if(jvalue.IsString())
@@ -401,8 +459,8 @@ parse_leaf_dtype(const rapidjson::Value &jvalue, index_t offset, DataType &dtype
 
 //---------------------------------------------------------------------------//
 void
-parse_inline_leaf(const rapidjson::Value &jvalue,
-                  Node &node)
+Generator::Parser::parse_inline_leaf(const rapidjson::Value &jvalue,
+                                     Node &node)
 {
     if(jvalue.IsString())
     {
@@ -487,8 +545,8 @@ parse_inline_leaf(const rapidjson::Value &jvalue,
 
 //---------------------------------------------------------------------------//
 void
-parse_inline_value(const rapidjson::Value &jvalue,
-                   Node &node)
+Generator::Parser::parse_inline_value(const rapidjson::Value &jvalue,
+                                      Node &node)
 {
     if(jvalue.IsArray())
     {
@@ -530,9 +588,9 @@ parse_inline_value(const rapidjson::Value &jvalue,
 
 //---------------------------------------------------------------------------//
 void 
-walk_json_schema(Schema *schema,
-                 const   rapidjson::Value &jvalue,
-                 index_t curr_offset)
+Generator::Parser::walk_json_schema(Schema *schema,
+                                    const   rapidjson::Value &jvalue,
+                                    index_t curr_offset)
 {
     // object cases
     if(jvalue.IsObject())
@@ -616,9 +674,9 @@ walk_json_schema(Schema *schema,
 
 //---------------------------------------------------------------------------//
 void 
-walk_pure_json_schema(Node  *node,
-                     Schema *schema,
-                     const rapidjson::Value &jvalue)
+Generator::Parser::walk_pure_json_schema(Node  *node,
+                                         Schema *schema,
+                                         const rapidjson::Value &jvalue)
 {
     // object cases
     if(jvalue.IsObject())
@@ -710,11 +768,11 @@ walk_pure_json_schema(Node  *node,
 
 //---------------------------------------------------------------------------//
 void 
-walk_json_schema(Node   *node,
-                 Schema *schema,
-                 void   *data,
-                 const rapidjson::Value &jvalue,
-                 index_t curr_offset)
+Generator::Parser::walk_json_schema(Node   *node,
+                                    Schema *schema,
+                                    void   *data,
+                                    const rapidjson::Value &jvalue,
+                                    index_t curr_offset)
 {
     // object cases
     if(jvalue.IsObject())
@@ -862,6 +920,10 @@ walk_json_schema(Node   *node,
     }
 }
 
+//-----------------------------------------------------------------------------
+// -- end conduit::Generator::Parser --
+//-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::Generator --
@@ -913,14 +975,14 @@ Generator::walk(Schema &schema) const
         /// TODO: better parse error msg
     }
     index_t curr_offset = 0;
-    conduit::walk_json_schema(&schema,document,curr_offset);
+    Parser::walk_json_schema(&schema,document,curr_offset);
 }
 
 //---------------------------------------------------------------------------//
 void 
 Generator::walk(Node &node) const
 {
-    /// TODO: THis is an inefficient code path, need better solution?
+    /// TODO: This is an inefficient code path, need better solution?
     Node n;
     walk_external(n);
     n.compact_to(node);
@@ -941,9 +1003,10 @@ Generator::walk_external(Node &node) const
             CONDUIT_ERROR("rapidjson parse error");
             /// TODO: better parse error msg
         }
-        conduit::walk_pure_json_schema(&node,
-                                       node.schema_ptr(),
-                                       document);
+
+        Parser::walk_pure_json_schema(&node,
+                                      node.schema_ptr(),
+                                      document);
     }
     else
     {
@@ -955,14 +1018,19 @@ Generator::walk_external(Node &node) const
             /// TODO: better parse error msg
         }
         index_t curr_offset = 0;
-        conduit::walk_json_schema(&node,
-                                  node.schema_ptr(),
-                                  m_data,
-                                  document,
-                                  curr_offset);
+
+        Parser::walk_json_schema(&node,
+                                 node.schema_ptr(),
+                                 m_data,
+                                 document,
+                                 curr_offset);
     }
 }
 
+
+//-----------------------------------------------------------------------------
+// -- end conduit::Generator --
+//-----------------------------------------------------------------------------
 
 };
 //-----------------------------------------------------------------------------

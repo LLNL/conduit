@@ -115,12 +115,18 @@ public:
     void walk(Node &ndest) const;
     void walk_external(Node &ndest) const;
 
+    // private class used to encapsulate RapidJSON logic. 
+    class Parser;
+
+
 private:
 //-----------------------------------------------------------------------------
 //
-// -- conduit::Error private data members --
+// -- conduit::Generator private data members --
 //
 //-----------------------------------------------------------------------------
+    
+    
     /// holds the json based schema text
     std::string  m_json_schema;
     /// holds the parsing protocol

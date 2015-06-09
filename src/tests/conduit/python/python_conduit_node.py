@@ -116,7 +116,7 @@ class Test_Conduit_Node(unittest.TestCase):
         n = Node()
         n['a'] = vec
         na = n.fetch('a')
-        self.assertTrue(na.has_parent())
+        self.assertFalse(na.is_root())
         # todo: test parent()
 
     def test_total_bytes(self):
