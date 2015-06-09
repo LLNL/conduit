@@ -96,9 +96,9 @@ rsplit_string(const std::string &path,
     std::size_t found = path.rfind(sep);
     if (found != std::string::npos)
     {
-        curr = path.substr(0,found);
+        next = path.substr(0,found);
         if(found != path.size()-1)
-            next = path.substr(found+1,path.size()-(found-1));
+             curr = path.substr(found+1,path.size()-(found-1));
     }
     else
     {

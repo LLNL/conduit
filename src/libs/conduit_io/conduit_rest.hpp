@@ -57,6 +57,13 @@
 #include "conduit.hpp"
 #include "Conduit_IO_Exports.hpp"
 
+//
+// forward declare CivetServer so we don't need the civetweb headers in our
+// public interface. 
+// 
+
+class CivetServer;
+
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
@@ -77,43 +84,40 @@ namespace io
 namespace rest 
 {
 
+//-----------------------------------------------------------------------------
+/// Simple interface to launch a blocking REST server    
+//-----------------------------------------------------------------------------
 void CONDUIT_IO_API serve(Node *n,
-                          bool block = false,
-                          const std::string &bind_host = "localhost",
-                          index_t bind_port = 8080);
+                          index_t port = 8080);
 
 
 //-----------------------------------------------------------------------------
 // -- REST Server Interface -
 //-----------------------------------------------------------------------------
 
-class RESTServer
+// forward declare internal handler class
+class RESTHandler;
+
+class CONDUIT_IO_API RESTServer
 {
 public:
+
              RESTServer();
     virtual ~RESTServer();
 
     void     serve(Node *data,
                    bool block=false,
-                   const std::string &bind_host = "localhost",
-                   index_t bind_port = 8080);
+                   index_t port = 8080);
 
     void     shutdown();
-    
-    bool     is_running() const
-              {return m_running;}
-
-    void     set_data(Node *node);
-    
-    void     bind(const std::string &bind_host,
-                  index_t bind_port);
+    bool     is_running() const;
 
 private:
     
-    class RESTCallbacks;
-    
-    Node *m_node;
-    bool  m_running;
+    CivetServer   *m_server;
+    RESTHandler   *m_handler;
+    std::string    m_port;
+    bool           m_running;
     
 };
 
