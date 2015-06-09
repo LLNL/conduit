@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -48,15 +48,6 @@
 
 # add a target to generate API documentation with Doxygen
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
-add_custom_target(doxygen_docs
-                 ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-                 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                 COMMENT "Generating API documentation with Doxygen" VERBATIM)
+add_doxygen_target( conduit_doxygen )
 
-add_dependencies(docs doxygen_docs)
 
-install(CODE "execute_process(COMMAND ${CMAKE_BUILD_TOOL} doxygen_docs WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}\")")
-
-install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/html" 
-        DESTINATION docs/doxygen/)

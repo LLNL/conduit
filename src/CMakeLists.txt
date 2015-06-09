@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -65,7 +65,6 @@ option(ENABLE_MPI         "Build MPI Support"           OFF)
 option(ENABLE_SILO        "Build Silo Support"          OFF)
 
 
-
 ################################
 # Set some standard cmake opts
 ################################
@@ -81,31 +80,25 @@ include(CMake/BasicChecks.cmake)
 ################################
 include(CMake/Setup3rdParty.cmake)
 
+################################
+# Setup docs targets
+################################
+include(CMake/SetupDocs.cmake)
 
 ################################
-# Add the conduit lib
+# Setup tests helpers
 ################################
-# add conduit include dirs so units tests have access to the headers
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/conduit 
-                    ${CMAKE_CURRENT_BINARY_DIR}/conduit)
-add_subdirectory(conduit)
+include(CMake/SetupTests.cmake)
 
 ################################
-# Add the conduit-io lib 
+# Setup project wide includes
 ################################
-# add conduit_io include dirs so units tests have access to the headers
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/conduit_io
-                    ${CMAKE_CURRENT_BINARY_DIR}/conduit_io)
-add_subdirectory(conduit_io)
+include(CMake/SetupIncludes.cmake)
 
 ################################
-# Add the conduit-mpi lib 
+# Add our libs
 ################################
-if(ENABLE_MPI)
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/conduit_mpi
-                        ${CMAKE_CURRENT_BINARY_DIR}/conduit_mpi)
-    add_subdirectory(conduit_mpi)
-endif()
+add_subdirectory(libs)
 
 ################################
 # Add docs
@@ -124,4 +117,6 @@ endif()
 # exports for all of our targets
 ################################
 install(EXPORT conduit DESTINATION lib/cmake)
+
+
 

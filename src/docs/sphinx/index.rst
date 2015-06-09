@@ -1,5 +1,5 @@
 .. ############################################################################
-.. # Copyright (c) 2014, Lawrence Livermore National Security, LLC.
+.. # Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 .. # 
 .. # Produced at the Lawrence Livermore National Laboratory
 .. # 
@@ -72,6 +72,10 @@ Unique Features
 ----------------
 - A runtime focused data description API that does not require code generation.
 - Supports a mix of allocated and externally owned memory semantics.
+
+Contributors 
+----------------
+ Cyrus Harrison (LLNL), Brian Ryujin (LLNL), Adam Kunen (LLNL), George Aspesi (Harvey Mudd), Justin Bai (Harvey Mudd), Rupert Deese (Harvey Mudd), Linnea Shin (Harvey Mudd)
 
 
 Conduit Documentation

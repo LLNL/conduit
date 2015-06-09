@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -44,5 +44,8 @@
 
 PROJECT_NAME  = Conduit
 PROJECT_BRIEF = "Scientific Data Exchange Library for HPC Simulations"
-INPUT = @CMAKE_CURRENT_SOURCE_DIR@/../../conduit
+
+INPUT = @CMAKE_CURRENT_SOURCE_DIR@/../../libs
+
 GENERATE_XML = YES
+RECURSIVE    = YES

@@ -1,5 +1,5 @@
 .. ############################################################################
-.. # Copyright (c) 2014, Lawrence Livermore National Security, LLC.
+.. # Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 .. # 
 .. # Produced at the Lawrence Livermore National Laboratory
 .. # 
@@ -67,7 +67,7 @@ Used for Node instances in the *Object* and *List* role interfaces. A Node may h
 
 paths
 ~~~~~~~~~
-Used for Node instances in *Object* role interface. In the Object role, a Node has a collection of indexed and named children. Access by name is done via a path. The path is a foward-slash separated URI, where each segment mapps to Node in a hierarchal tree. Methods related to this concept include:
+Used for Node instances in *Object* role interface. In the Object role, a Node has a collection of indexed and named children. Access by name is done via a *path*. The path is a foward-slash separated URI, where each segment maps to Node in a hierarchal tree. Methods related to this concept include:
 
  - Node::fetch(string)
  - Node::fetch_pointer(string)

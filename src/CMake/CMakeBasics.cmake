@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -55,6 +55,8 @@ endif()
 # enable creation of compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# always use position independent code
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 macro(ENABLE_WARNINGS)
     # set the warning levels we want to abide by

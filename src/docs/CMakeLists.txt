@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -48,7 +48,6 @@
 
 # add a target to generate API documentation with Doxygen
 
-add_custom_target(docs)
 
 if(DOXYGEN_FOUND)
     add_subdirectory(doxygen)

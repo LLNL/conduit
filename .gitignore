@@ -1,4 +1,3 @@
-libs/
 build-debug/
 build-release/
 build-debug-xcode/
@@ -10,3 +9,4 @@ temp.cpp
 temp.exe
 *.pyc
 .ipynb_checkpoints
+visitlog.py

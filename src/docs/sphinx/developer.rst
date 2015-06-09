@@ -1,5 +1,5 @@
 .. ############################################################################
-.. # Copyright (c) 2014, Lawrence Livermore National Security, LLC.
+.. # Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 .. # 
 .. # Produced at the Lawrence Livermore National Laboratory
 .. # 
@@ -54,6 +54,7 @@ Source Code Repo Layout
 - **src/conduit**: Main library source
 - **src/conduit_io**: Conduit I/O library source
 - **src/conduit_mpi**: Conduit MPI library source
+- **src/conduit_viz**: Conduit Visualization library source
 - **src/tests**: Unit tests
 - **src/tests/python**: Python Unit tests
 - **src/docs**: Documentation 
