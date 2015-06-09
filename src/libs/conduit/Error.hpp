@@ -62,55 +62,6 @@
 //-----------------------------------------------------------------------------
 #include "Core.hpp"
 
-
-//-----------------------------------------------------------------------------
-//
-/// The CONDUIT_INFO macro is the primary mechanism used to send info messages.
-/// It currently simply prints the message to std::out.
-///
-//-----------------------------------------------------------------------------
-#define CONDUIT_INFO( msg )                                         \
-{                                                                   \
-    std::ostringstream oss_info;                                    \
-    oss_info << msg;                                                \
-    std::cout << oss_info.str() << std::endl;                       \
-}                                                                   \
-
-
-//-----------------------------------------------------------------------------
-//
-/// The CONDUIT_ERROR macro is the primary mechanism used to capture errors  
-/// in conduit. It currently throws a c++ exception, in the form of a
-/// conduit::Error class. If we decide to not use exceptions in the future
-/// we can simply change the behavior of this macro.
-///
-//-----------------------------------------------------------------------------
-#define CONDUIT_ERROR( msg )                                        \
-{                                                                   \
-    std::ostringstream oss_error;                                   \
-    oss_error << msg;                                               \
-    throw conduit::Error( oss_error.str(), __FILE__, __LINE__);     \
-}                                                                   \
-
-//-----------------------------------------------------------------------------
-//
-/// The CONDUIT_ASSERT macro is the primary mechanism used to capture errors  
-/// in conduit. It currently throws a c++ exception, in the form of a
-/// conduit::Error class. If we decide to not use exceptions in the future
-/// we can simply change the behavior of this macro.
-///
-//-----------------------------------------------------------------------------
-#define CONDUIT_ASSERT( cond, msg)                                   \
-{                                                                    \
-    if(!cond)                                                        \
-    {                                                                \
-        std::ostringstream oss_assert;                               \
-        oss_assert << msg;                                           \
-        throw conduit::Error( oss_assert.str(), __FILE__, __LINE__); \
-    }                                                                \
-}                                                                    \
-
-
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------

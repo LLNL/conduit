@@ -48,6 +48,7 @@
 ///
 //-----------------------------------------------------------------------------
 #include "Utils.hpp"
+#include "Error.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -61,7 +62,41 @@ namespace conduit
 namespace utils
 {
 
-    //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// default error handler callback, simply throws a conduit::Error exception.
+void CONDUIT_API default_on_error(const std::string &msg,
+                                  const std::string &file,
+                                  int line)
+{
+    throw conduit::Error( msg, file, line);
+}
+
+//-----------------------------------------------------------------------------
+// Private namespace member that holds our error handler callback.
+void (*conduit_on_error)(const std::string &,
+                         const std::string &,
+                         int)= default_on_error;
+
+//-----------------------------------------------------------------------------
+// Allows other libraries to provide an alternate error handler.
+void CONDUIT_API set_error_handler( void(*on_error)
+                                    (const std::string&,
+                                     const std::string&,
+                                     int))
+{
+    conduit_on_error = on_error;
+}
+
+//-----------------------------------------------------------------------------
+void CONDUIT_API handle_error(const std::string &msg,
+                              const std::string &file,
+                              int line)
+{
+    conduit_on_error(msg,file,line);
+}
+
+
+//-----------------------------------------------------------------------------
 void     
 split_string(const std::string &path,
              const std::string &sep,
@@ -83,7 +118,8 @@ split_string(const std::string &path,
         curr = path;
     }
 }
-    //-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 void     
 rsplit_string(const std::string &path,
               const std::string &sep,
