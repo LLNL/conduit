@@ -77,8 +77,8 @@ class Test_Conduit_Schema(unittest.TestCase):
         n['b'] = b_val
         n['c'] = c_val
         s = n.schema();
-        self.assertFalse(s.has_parent())
-        self.assertTrue(n.fetch('a').schema().has_parent())
+        self.assertTrue(s.is_root())
+        self.assertFalse(n.fetch('a').schema().is_root())
 
 
 if __name__ == '__main__':

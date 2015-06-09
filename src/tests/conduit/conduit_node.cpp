@@ -233,10 +233,10 @@ TEST(conduit_node, simple_schema_parent)
     n["c"] = c_val;
     n["here"]["there"] = c_val;
 
-    EXPECT_FALSE(n.schema().has_parent());
+    EXPECT_TRUE(n.schema().is_root());
     Node & na = n["a"];
     const Schema &na_schema =na.schema();
-    EXPECT_TRUE(na_schema.has_parent());
+    EXPECT_FALSE(na_schema.is_root());
 
 }
 
