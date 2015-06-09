@@ -59,7 +59,7 @@ function info
 
 function uberenv
 {
-    python misc/uberenv/uberenv.py
+    python scripts/uberenv/uberenv.py
 }
 
 
