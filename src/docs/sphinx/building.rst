@@ -139,7 +139,7 @@ These file use standard cmake commands. CMake *set* commands need to specify the
 Bootstrapping Thirdparty Dependencies 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can use *bootstrap-env.sh* (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses *misc/uberenv*, which leverages **Spack** (https://scalability-llnl.github.io/spack) to build external thirdparty libraries and tools used by conduit.
+You can use *bootstrap-env.sh* (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses *scripts/uberenv*, which leverages **Spack** (https://scalability-llnl.github.io/spack) to build external thirdparty libraries and tools used by conduit.
 It also writes a initial host-config file for you and adds the spack built cmake to your path, so can directly call the *config-build.sh* helper script to configure a conduit build.
 
 .. code:: bash
