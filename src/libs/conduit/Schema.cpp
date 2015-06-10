@@ -457,7 +457,7 @@ Schema::child(index_t idx) const
 
 //---------------------------------------------------------------------------//
 Schema *
-Schema::child_pointer(index_t idx)
+Schema::child_ptr(index_t idx)
 {
     return &child(idx);
 }
@@ -647,7 +647,7 @@ Schema::fetch(const std::string &path)
 
 //---------------------------------------------------------------------------//
 Schema *
-Schema::fetch_pointer(const std::string &path)
+Schema::fetch_ptr(const std::string &path)
 {
     return &fetch(path);
 }

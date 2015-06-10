@@ -115,7 +115,7 @@ public:
                         {return m_dtype.number_of_elements();}
     const DataType &dtype()    const 
                         { return m_dtype;} 
-    void           *data_pointer() const 
+    void           *data_ptr() const 
                         { return m_data;}
 
 //-----------------------------------------------------------------------------
@@ -163,6 +163,22 @@ public:
     void            set(const std::vector<float64> &values)
                         {set(&values[0],values.size());}
 
+    /// signed integer arrays via DataArray
+    void            set(const DataArray<int8>    &values);
+    void            set(const DataArray<int16>   &values);
+    void            set(const DataArray<int32>   &values);
+    void            set(const DataArray<int64>   &values);
+
+    /// unsigned integer arrays via DataArray
+    void            set(const DataArray<uint8>   &values);
+    void            set(const DataArray<uint16>  &values);
+    void            set(const DataArray<uint32>  &values);
+    void            set(const DataArray<uint64>  &values);
+    
+    /// floating point arrays via DataArray
+    void            set(const DataArray<float32>  &values);
+    void            set(const DataArray<float64>  &values);
+
 //-----------------------------------------------------------------------------
 // Transforms
 //-----------------------------------------------------------------------------
@@ -176,13 +192,13 @@ private:
 // -- conduit::DataArray private methods --
 //
 //-----------------------------------------------------------------------------
-    void           *element_pointer(index_t idx)
+    void           *element_ptr(index_t idx)
                     {
                         return static_cast<char*>(m_data) +       
                             m_dtype.element_index(idx);
                     };
 
-    const void     *element_pointer(index_t idx) const 
+    const void     *element_ptr(index_t idx) const 
                     {
                          return static_cast<char*>(m_data) +    
                             m_dtype.element_index(idx);

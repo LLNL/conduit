@@ -132,7 +132,7 @@ TEST(conduit_node_update, update_realloc_like)
     Node n2;
     n2["a"].set(DataType::uint32(15));
     // zero out the buffer just to be safe for this unit test
-    memset(n2["a"].data_pointer(),0,sizeof(uint32)*15);
+    memset(n2["a"].data_ptr(),0,sizeof(uint32)*15);
     
     n2.update(n);
 

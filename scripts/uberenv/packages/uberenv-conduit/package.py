@@ -1,4 +1,3 @@
-#!/bin/bash
 ###############################################################################
 # Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 # 
@@ -43,41 +42,46 @@
 # 
 ###############################################################################
 
-#
-# file: bootstrap-env.sh
-#
+from spack import *
 
-#
-# Takes you from zero to an env  with TPLS needed to develop conduit on OSX
-# and linux.
-#
+import socket
+from os.path import join as pjoin
 
-function info
-{
-    echo "$@"
-}
+class UberenvConduit(Package):
+    """Spack Based Uberenv Build for Conduit Thirdparty Libs """
 
-function uberenv
-{
-    python scripts/uberenv/uberenv.py
-}
-
-
-function main
-{
-    uberenv
-
-    BOOSTRAP_CWD=`pwd`
-    SPACK_CMAKE_PREFIX=`ls -d $BOOSTRAP_CWD/uberenv_libs/spack/opt/*/*/cmake*`
-    SPACK_CMAKE=`ls $SPACK_CMAKE_PREFIX/bin/cmake`
-
-    # Only add to PATH if `which cmake` isn't our CMake
-    CMAKE_CURRENT=`which cmake`
-    if [[ "$CMAKE_CURRENT" != "$SPACK_CMAKE" ]] ; then
-        export PATH=$SPACK_CMAKE_PREFIX/bin:$PATH
-    fi
+    # TODO: what do we need for DIY mode?
     
-    info "[Active CMake:" `which cmake` "]"
-}
+    homepage = "http://sphinx-doc.org/"
+    url      = "https://pypi.python.org/packages/source/S/Sphinx/Sphinx-1.3.1.tar.gz#md5=8786a194acf9673464c5455b11fd4332"
 
-main
+    version('1.3.1', '8786a194acf9673464c5455b11fd4332')
+    
+    # all of these packages are custom
+    depends_on("python")
+    depends_on("py-sphinx")
+    depends_on("py-breathe")
+    depends_on("py-numpy")
+    depends_on("cmake")
+
+    def install(self, spec, prefix):
+        dest_dir = env["SPACK_DEBUG_LOG_DIR"]
+        cmake_exe        = pjoin(spec['cmake'].prefix.bin,"cmake")
+        python_exe       = pjoin(spec['python'].prefix.bin,"python")
+        sphinx_build_exe = pjoin(spec['python'].prefix.bin,"sphinx-build")
+        # TODO: better name (use sys-type and compiler name ?)
+        print "cmake executable: %s" % cmake_exe
+        cfg = open(pjoin(dest_dir,"%s.cmake" % socket.gethostname()),"w")
+        cfg.write("#######\n")
+        cfg.write("# uberenv host-config for conduit\n")
+        cfg.write("#######\n")
+        cfg.write("# cmake from uberenv\n")
+        cfg.write("# cmake exectuable path: %s\n\n" % cmake_exe)
+        cfg.write("# python from uberenv\n")
+        cfg.write('set(PYTHON_EXECUTABLE "%s" CACHE PATH "")\n\n' % python_exe)
+        cfg.write("# sphinx from uberenv\n")
+        cfg.write('set(SPHINX_EXECUTABLE "%s" CACHE PATH "")\n\n' % sphinx_build_exe)
+        cfg.close()        
+        
+        
+        

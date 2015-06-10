@@ -1,4 +1,3 @@
-#!/bin/bash
 ###############################################################################
 # Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 # 
@@ -42,42 +41,18 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
+from spack import *
 
-#
-# file: bootstrap-env.sh
-#
+class PySphinx(Package):
+    """Sphinx Documentation Generator."""
 
-#
-# Takes you from zero to an env  with TPLS needed to develop conduit on OSX
-# and linux.
-#
+    homepage = "http://sphinx-doc.org/"
+    url      = "https://pypi.python.org/packages/source/S/Sphinx/Sphinx-1.3.1.tar.gz#md5=8786a194acf9673464c5455b11fd4332"
 
-function info
-{
-    echo "$@"
-}
+    version('1.3.1', '8786a194acf9673464c5455b11fd4332')
 
-function uberenv
-{
-    python scripts/uberenv/uberenv.py
-}
+    extends('python')
 
-
-function main
-{
-    uberenv
-
-    BOOSTRAP_CWD=`pwd`
-    SPACK_CMAKE_PREFIX=`ls -d $BOOSTRAP_CWD/uberenv_libs/spack/opt/*/*/cmake*`
-    SPACK_CMAKE=`ls $SPACK_CMAKE_PREFIX/bin/cmake`
-
-    # Only add to PATH if `which cmake` isn't our CMake
-    CMAKE_CURRENT=`which cmake`
-    if [[ "$CMAKE_CURRENT" != "$SPACK_CMAKE" ]] ; then
-        export PATH=$SPACK_CMAKE_PREFIX/bin:$PATH
-    fi
-    
-    info "[Active CMake:" `which cmake` "]"
-}
-
-main
+    def install(self, spec, prefix):
+        # simply install to the spack python
+        python('setup.py', 'install') #, '--prefix=%s' % prefix)

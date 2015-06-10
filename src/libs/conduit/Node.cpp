@@ -468,13 +468,13 @@ Node::set(const Node &node)
         for (std::vector<std::string>::const_iterator itr = paths.begin();
              itr < paths.end(); ++itr)
         {
-            Schema *curr_schema = this->m_schema->fetch_pointer(*itr);
+            Schema *curr_schema = this->m_schema->fetch_ptr(*itr);
             index_t idx = this->m_schema->child_index(*itr);
             Node *curr_node = new Node();
-            curr_node->set_schema_pointer(curr_schema);
+            curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(this);
             curr_node->set(*node.m_children[idx]);
-            this->append_node_pointer(curr_node);       
+            this->append_node_ptr(curr_node);       
         }        
     }
     else if(node.dtype().id() == DataType::LIST_T)       
@@ -483,12 +483,12 @@ Node::set(const Node &node)
         for(index_t i=0;i<node.m_children.size();i++)
         {
             this->m_schema->append();
-            Schema *curr_schema = this->m_schema->child_pointer(i);
+            Schema *curr_schema = this->m_schema->child_ptr(i);
             Node *curr_node = new Node();
-            curr_node->set_schema_pointer(curr_schema);
+            curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(this);
             curr_node->set(*node.m_children[i]);
-            this->append_node_pointer(curr_node);
+            this->append_node_ptr(curr_node);
         }
     }
     else if (node.dtype().id() != DataType::EMPTY_T)
@@ -2035,7 +2035,7 @@ Node::set_external(const int8_array  &data)
 {
     release();
     m_schema->set(data.dtype());
-    m_data   = data.data_pointer();
+    m_data   = data.data_ptr();
 }
 
 //---------------------------------------------------------------------------//
@@ -2044,7 +2044,7 @@ Node::set_external(const int16_array  &data)
 {
     release();
     m_schema->set(data.dtype());
-    m_data  = data.data_pointer();
+    m_data  = data.data_ptr();
 }
 
 //---------------------------------------------------------------------------//
@@ -2053,7 +2053,7 @@ Node::set_external(const int32_array  &data)
 {
     release();
     m_schema->set(data.dtype());
-    m_data  = data.data_pointer();
+    m_data  = data.data_ptr();
 }
 
 //---------------------------------------------------------------------------//
@@ -2062,7 +2062,7 @@ Node::set_external(const int64_array  &data)
 {
     release();
     m_schema->set(data.dtype());
-    m_data  = data.data_pointer();
+    m_data  = data.data_ptr();
 }
 
 //-----------------------------------------------------------------------------
@@ -2075,7 +2075,7 @@ Node::set_external(const uint8_array  &data)
 {
     release();
     m_schema->set(data.dtype());
-    m_data  = data.data_pointer();
+    m_data  = data.data_ptr();
 }
 
 //---------------------------------------------------------------------------//
@@ -2084,7 +2084,7 @@ Node::set_external(const uint16_array  &data)
 {
     release();
     m_schema->set(data.dtype());
-    m_data  = data.data_pointer();
+    m_data  = data.data_ptr();
 }
 
 //---------------------------------------------------------------------------//
@@ -2093,7 +2093,7 @@ Node::set_external(const uint32_array  &data)
 {
     release();
     m_schema->set(data.dtype());
-    m_data  = data.data_pointer();
+    m_data  = data.data_ptr();
 }
 
 //---------------------------------------------------------------------------//
@@ -2102,7 +2102,7 @@ Node::set_external(const uint64_array  &data)
 {
     release();
     m_schema->set(data.dtype());
-    m_data  = data.data_pointer();
+    m_data  = data.data_ptr();
 }
 
 
@@ -2116,7 +2116,7 @@ Node::set_external(const float32_array  &data)
 {
     release();
     m_schema->set(data.dtype());
-    m_data  = data.data_pointer();
+    m_data  = data.data_ptr();
 }
 
 //---------------------------------------------------------------------------//
@@ -2125,7 +2125,7 @@ Node::set_external(const float64_array  &data)
 {
     release();
     m_schema->set(data.dtype());
-    m_data  = data.data_pointer();
+    m_data  = data.data_ptr();
 }
 
 
@@ -2991,7 +2991,7 @@ Node::serialize(std::ofstream &ofs) const
         {
             // ser as is. This copies stride * num_ele bytes
             {
-                ofs.write((const char*)element_pointer(0),
+                ofs.write((const char*)element_ptr(0),
                           total_bytes());
             }
         }
@@ -3039,7 +3039,7 @@ Node::compact_to(Node &n_dest) const
 {
     n_dest.reset();
     index_t c_size = total_bytes_compact();
-    m_schema->compact_to(*n_dest.schema_pointer());
+    m_schema->compact_to(*n_dest.schema_ptr());
     n_dest.allocate(c_size);
     
     uint8 *n_dest_data = (uint8*)n_dest.m_data;
@@ -3102,8 +3102,8 @@ Node::update(Node &n_src)
     {
         if(this->dtype().is_compatible(n_src.dtype()))
         {
-            memcpy(element_pointer(0),
-                   n_src.element_pointer(0), 
+            memcpy(element_ptr(0),
+                   n_src.element_ptr(0), 
                    m_schema->total_bytes());
         }
         else if( (this->dtype().id() == n_src.dtype().id()) &&
@@ -3114,8 +3114,8 @@ Node::update(Node &n_src)
                 idx < n_src.dtype().number_of_elements();
                 idx++)
             {
-                memcpy(element_pointer(idx),
-                       n_src.element_pointer(idx), 
+                memcpy(element_ptr(idx),
+                       n_src.element_ptr(idx), 
                        this->dtype().element_bytes());
             }
         }
@@ -3166,17 +3166,17 @@ Node::endian_swap(index_t endianness)
             if(ele_bytes == 2)
             {
                 for(index_t i=0;i<num_ele;i++)
-                    Endianness::swap16(element_pointer(i));
+                    Endianness::swap16(element_ptr(i));
             }
             else if(ele_bytes == 4)
             {
                 for(index_t i=0;i<num_ele;i++)
-                    Endianness::swap32(element_pointer(i));
+                    Endianness::swap32(element_ptr(i));
             }
             else if(ele_bytes == 8)
             {
                 for(index_t i=0;i<num_ele;i++)
-                    Endianness::swap64(element_pointer(i));
+                    Endianness::swap64(element_ptr(i));
             }
         }
 
@@ -3686,6 +3686,1487 @@ Node::to_double() const
     }
 
     return 0; // TODO:: Error for Obj or list?
+}
+
+//---------------------------------------------------------------------------//
+/// convert array to a signed integer arrays
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+void
+Node::to_int8_array(Node &res)  const
+{
+    res.set(DataType::int8(dtype().number_of_elements()));
+    int8_array res_array = res.as_int8_array();
+
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:
+        {   
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_T: 
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_T:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_T:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_T:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_T: 
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_T:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_T:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_T:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_T: 
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric " 
+                        << dtype().name() 
+                        << " type to int8_array.");
+        }
+    }
+
+}
+
+//---------------------------------------------------------------------------//
+void    
+Node::to_int16_array(Node &res) const
+{
+    res.set(DataType::int16(dtype().number_of_elements()));
+ 
+    int16_array res_array = res.as_int16_array();
+ 
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:
+        {   
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_T: 
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_T:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_T:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_T:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_T: 
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_T:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_T:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_T:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_T: 
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric " 
+                        << dtype().name() 
+                        << " type to int16_array.");
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_int32_array(Node &res) const
+{
+    res.set(DataType::int32(dtype().number_of_elements()));
+ 
+    int32_array res_array = res.as_int32_array();
+ 
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:
+        {   
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_T: 
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_T:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_T:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_T:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_T: 
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_T:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_T:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_T:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_T: 
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric " 
+                        << dtype().name() 
+                        << " type to int32_array.");
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_int64_array(Node &res) const
+{
+    res.set(DataType::int64(dtype().number_of_elements()));
+ 
+    int64_array res_array = res.as_int64_array();
+ 
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:
+        {   
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_T: 
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_T:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_T:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_T:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_T: 
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_T:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_T:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_T:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_T: 
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric " 
+                        << dtype().name() 
+                        << " type to int64_array.");
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
+/// convert array to a unsigned integer arrays
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+void
+Node::to_uint8_array(Node &res)  const
+{
+    res.set(DataType::uint8(dtype().number_of_elements()));
+ 
+    uint8_array res_array = res.as_uint8_array();
+ 
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:
+        {   
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_T: 
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_T:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_T:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_T:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_T: 
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_T:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_T:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_T:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_T: 
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric " 
+                        << dtype().name() 
+                        << " type to uint8_array.");
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_uint16_array(Node &res) const
+{
+    res.set(DataType::uint16(dtype().number_of_elements()));
+ 
+    uint16_array res_array = res.as_uint16_array();
+ 
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:
+        {   
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_T: 
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_T:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_T:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_T:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_T: 
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_T:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_T:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_T:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_T: 
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric " 
+                        << dtype().name() 
+                        << " type to uint16_array.");
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_uint32_array(Node &res) const
+{
+    res.set(DataType::uint32(dtype().number_of_elements()));
+ 
+    uint32_array res_array = res.as_uint32_array();
+ 
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:
+        {   
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_T: 
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_T:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_T:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_T:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_T: 
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_T:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_T:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_T:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_T: 
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric " 
+                        << dtype().name() 
+                        << " type to uint32_array.");
+        }
+    }
+
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_uint64_array(Node &res) const
+{
+    res.set(DataType::uint64(dtype().number_of_elements()));
+ 
+    uint64_array res_array = res.as_uint64_array();
+ 
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:
+        {   
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_T: 
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_T:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_T:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_T:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_T: 
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_T:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_T:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_T:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_T: 
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric " 
+                        << dtype().name() 
+                        << " type to uint64_array.");
+        }
+    }
+
+}
+
+//---------------------------------------------------------------------------//
+/// convert array to floating point arrays
+//---------------------------------------------------------------------------//
+void
+Node::to_float32_array(Node &res) const
+{
+    res.set(DataType::float32(dtype().number_of_elements()));
+ 
+    float32_array res_array = res.as_float32_array();
+ 
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:
+        {   
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_T: 
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_T:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_T:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_T:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_T: 
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_T:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_T:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_T:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_T: 
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric " 
+                        << dtype().name() 
+                        << " type to float32_array.");
+        }
+    }
+
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_float64_array(Node &res) const
+{
+    res.set(DataType::float64(dtype().number_of_elements()));
+ 
+    float64_array res_array = res.as_float64_array();
+ 
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:
+        {   
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_T: 
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_T:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_T:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_T:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_T: 
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_T:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_T:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_T:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_T: 
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric " 
+                        << dtype().name() 
+                        << " type to float64_array.");
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
+/// convert array to c signed integer arrays
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+void
+Node::to_char_array(Node &res) const
+{
+    res.set(DataType::c_char(dtype().number_of_elements()));
+ 
+    char_array res_array = res.as_char_array();
+ 
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:
+        {   
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_T: 
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_T:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_T:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_T:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_T: 
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_T:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_T:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_T:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_T: 
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric " 
+                        << dtype().name() 
+                        << " type to char_array.");
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_short_array(Node &res) const
+{
+    res.set(DataType::c_short(dtype().number_of_elements()));
+ 
+    short_array res_array = res.as_short_array();
+ 
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:
+        {   
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_T: 
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_T:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_T:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_T:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_T: 
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_T:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_T:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_T:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_T: 
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric " 
+                        << dtype().name() 
+                        << " type to short_array.");
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
+void    
+Node::to_int_array(Node &res) const
+{
+    res.set(DataType::c_int(dtype().number_of_elements()));
+ 
+    int_array res_array = res.as_int_array();
+ 
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:
+        {   
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_T: 
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_T:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_T:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_T:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_T: 
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_T:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_T:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_T:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_T: 
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric " 
+                        << dtype().name() 
+                        << " type to int_array.");
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_long_array(Node &res) const
+{
+    res.set(DataType::c_long(dtype().number_of_elements()));
+ 
+    long_array res_array = res.as_long_array();
+ 
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:
+        {   
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_T: 
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_T:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_T:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_T:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_T: 
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_T:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_T:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_T:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_T: 
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric " 
+                        << dtype().name() 
+                        << " type to long_array.");
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
+/// convert array to c unsigned integer arrays
+//---------------------------------------------------------------------------//
+void
+Node::to_unsigned_char_array(Node &res) const
+{
+    res.set(DataType::c_unsigned_char(dtype().number_of_elements()));
+ 
+    unsigned_char_array res_array = res.as_unsigned_char_array();
+ 
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:
+        {   
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_T: 
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_T:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_T:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_T:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_T: 
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_T:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_T:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_T:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_T: 
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric " 
+                        << dtype().name() 
+                        << " type to unsinged_char_array.");
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_unsigned_short_array(Node &res) const
+{
+    res.set(DataType::c_unsigned_short(dtype().number_of_elements()));
+ 
+    unsigned_short_array res_array = res.as_unsigned_short_array();
+ 
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:
+        {   
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_T: 
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_T:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_T:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_T:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_T: 
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_T:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_T:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_T:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_T: 
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric " 
+                        << dtype().name() 
+                        << " type to unsinged_short_array.");
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_unsigned_int_array(Node &res) const
+{
+    res.set(DataType::c_unsigned_int(dtype().number_of_elements()));
+ 
+    unsigned_int_array res_array = res.as_unsigned_int_array();
+ 
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:
+        {   
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_T: 
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_T:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_T:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_T:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_T: 
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_T:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_T:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_T:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_T: 
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric " 
+                        << dtype().name() 
+                        << " type to unsinged_int_array.");
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_unsigned_long_array(Node &res) const
+{
+    res.set(DataType::c_unsigned_long(dtype().number_of_elements()));
+ 
+    unsigned_long_array res_array = res.as_unsigned_long_array();
+ 
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:
+        {   
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_T: 
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_T:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_T:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_T:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_T: 
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_T:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_T:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_T:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_T: 
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric " 
+                        << dtype().name() 
+                        << " type to unsinged_long_array.");
+        }
+    }
+}
+
+/// convert array to c floating point arrays
+//---------------------------------------------------------------------------//
+void
+Node::to_float_array(Node &res) const
+{
+    res.set(DataType::c_float(dtype().number_of_elements()));
+ 
+    float_array res_array = res.as_float_array();
+ 
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:
+        {   
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_T: 
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_T:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_T:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_T:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_T: 
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_T:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_T:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_T:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_T: 
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric " 
+                        << dtype().name() 
+                        << " type to float_array.");
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_double_array(Node &res) const
+{
+    res.set(DataType::c_double(dtype().number_of_elements()));
+ 
+    double_array res_array = res.as_double_array();
+ 
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:
+        {   
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_T: 
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_T:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_T:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_T:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_T: 
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_T:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_T:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_T:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_T: 
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric " 
+                        << dtype().name() 
+                        << " type to double_array.");
+        }
+    }
+
 }
 
 
@@ -4369,9 +5850,9 @@ Node::fetch(const std::string &path)
     index_t idx;
     if(!m_schema->has_path(p_curr))
     {
-        Schema *schema_ptr = m_schema->fetch_pointer(p_curr);
+        Schema *schema_ptr = m_schema->fetch_ptr(p_curr);
         Node *curr_node = new Node();
-        curr_node->set_schema_pointer(schema_ptr);
+        curr_node->set_schema_ptr(schema_ptr);
         curr_node->m_parent = this;
         m_children.push_back(curr_node);
         idx = m_children.size() - 1;
@@ -4403,14 +5884,14 @@ Node::child(index_t idx)
 
 //---------------------------------------------------------------------------//
 Node *
-Node::fetch_pointer(const std::string &path)
+Node::fetch_ptr(const std::string &path)
 {
     return &fetch(path);
 }
 
 //---------------------------------------------------------------------------//
 Node *
-Node::child_pointer(index_t idx)
+Node::child_ptr(index_t idx)
 {
     return &child(idx);
 }
@@ -4462,10 +5943,10 @@ Node::append()
     // This makes a proper copy of the schema for us to use
     //
     m_schema->append();
-    Schema *schema_ptr = m_schema->child_pointer(idx);
+    Schema *schema_ptr = m_schema->child_ptr(idx);
 
     Node *res_node = new Node();
-    res_node->set_schema_pointer(schema_ptr);
+    res_node->set_schema_ptr(schema_ptr);
     res_node->m_parent=this;
     m_children.push_back(res_node);
     return *res_node;
@@ -4532,7 +6013,7 @@ int8
 Node::as_int8()  const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT8_T,"as_int8()");
-    return *((int8*)element_pointer(0));
+    return *((int8*)element_ptr(0));
 }
 
 //---------------------------------------------------------------------------//
@@ -4540,7 +6021,7 @@ int16
 Node::as_int16() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT16_T,"as_int16()");
-    return *((int16*)element_pointer(0));
+    return *((int16*)element_ptr(0));
 }
 
 //---------------------------------------------------------------------------//
@@ -4548,7 +6029,7 @@ int32
 Node::as_int32() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT32_T,"as_int32()");
-    return *((int32*)element_pointer(0));
+    return *((int32*)element_ptr(0));
 }
 
 //---------------------------------------------------------------------------//
@@ -4556,7 +6037,7 @@ int64
 Node::as_int64() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT64_T,"as_int64()");
-    return *((int64*)element_pointer(0));
+    return *((int64*)element_ptr(0));
 }
 
 //---------------------------------------------------------------------------//
@@ -4568,7 +6049,7 @@ uint8
 Node::as_uint8() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT8_T,"as_uint8()");
-    return *((uint8*)element_pointer(0));
+    return *((uint8*)element_ptr(0));
 }
 
 //---------------------------------------------------------------------------//
@@ -4576,7 +6057,7 @@ uint16
 Node::as_uint16() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT16_T,"as_uint16()");
-    return *((uint16*)element_pointer(0));
+    return *((uint16*)element_ptr(0));
 }
 
 //---------------------------------------------------------------------------//
@@ -4584,7 +6065,7 @@ uint32
 Node::as_uint32() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT32_T,"as_uint32()");
-    return *((uint32*)element_pointer(0));
+    return *((uint32*)element_ptr(0));
 }
 
 //---------------------------------------------------------------------------//
@@ -4592,7 +6073,7 @@ uint64
 Node::as_uint64() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT64_T,"as_uint64()");
-    return *((uint64*)element_pointer(0));
+    return *((uint64*)element_ptr(0));
 }
 
 //---------------------------------------------------------------------------//
@@ -4604,7 +6085,7 @@ float32
 Node::as_float32() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::FLOAT32_T,"as_float32()");
-    return *((float32*)element_pointer(0));
+    return *((float32*)element_ptr(0));
 }
 
 //---------------------------------------------------------------------------//
@@ -4612,7 +6093,7 @@ float64
 Node::as_float64() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::FLOAT64_T,"as_float64()");
-    return *((float64*)element_pointer(0));
+    return *((float64*)element_ptr(0));
 }
 
 //---------------------------------------------------------------------------//
@@ -4624,7 +6105,7 @@ int8 *
 Node::as_int8_ptr()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT8_T,"as_int8_ptr()");
-    return (int8*)element_pointer(0);
+    return (int8*)element_ptr(0);
 }
 
 //---------------------------------------------------------------------------//
@@ -4632,7 +6113,7 @@ int16 *
 Node::as_int16_ptr()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT16_T,"as_int16_ptr()");
-    return (int16*)element_pointer(0);
+    return (int16*)element_ptr(0);
 }
 
 //---------------------------------------------------------------------------//
@@ -4640,7 +6121,7 @@ int32 *
 Node::as_int32_ptr()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT32_T,"as_int32_ptr()");
-    return (int32*)element_pointer(0);
+    return (int32*)element_ptr(0);
 }
 
 //---------------------------------------------------------------------------//
@@ -4648,7 +6129,7 @@ int64 *
 Node::as_int64_ptr()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT64_T,"as_int64_ptr()");
-    return (int64*)element_pointer(0);
+    return (int64*)element_ptr(0);
 }
 
 //---------------------------------------------------------------------------//
@@ -4660,7 +6141,7 @@ uint8 *
 Node::as_uint8_ptr()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT8_T,"as_uint8_ptr()");
-    return (uint8*)element_pointer(0);
+    return (uint8*)element_ptr(0);
 }
 
 //---------------------------------------------------------------------------//
@@ -4668,7 +6149,7 @@ uint16 *
 Node::as_uint16_ptr()   
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT16_T,"as_uint16_ptr()");
-    return (uint16*)element_pointer(0);
+    return (uint16*)element_ptr(0);
 }
 
 //---------------------------------------------------------------------------//
@@ -4676,7 +6157,7 @@ uint32 *
 Node::as_uint32_ptr()   
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT32_T,"as_uint32_ptr()");
-    return (uint32*)element_pointer(0);
+    return (uint32*)element_ptr(0);
 }
 
 //---------------------------------------------------------------------------//
@@ -4684,7 +6165,7 @@ uint64 *
 Node::as_uint64_ptr()   
 {     
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT64_T,"as_uint64_ptr()");
-    return (uint64*)element_pointer(0);
+    return (uint64*)element_ptr(0);
 }
 
 //---------------------------------------------------------------------------//
@@ -4696,7 +6177,7 @@ float32 *
 Node::as_float32_ptr()  
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::FLOAT32_T,"as_float32_ptr()");
-    return (float32*)element_pointer(0);
+    return (float32*)element_ptr(0);
 }
 
 //---------------------------------------------------------------------------//
@@ -4704,8 +6185,102 @@ float64 *
 Node::as_float64_ptr()  
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::FLOAT64_T,"as_float64_ptr()");
-    return (float64*)element_pointer(0);
+    return (float64*)element_ptr(0);
 }
+
+
+//---------------------------------------------------------------------------//
+// signed integers via pointers (const cases)
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+const int8 *
+Node::as_int8_ptr() const
+{ 
+    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT8_T,"as_int8_ptr()");
+    return (int8*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+const int16 *
+Node::as_int16_ptr() const
+{ 
+    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT16_T,"as_int16_ptr()");
+    return (int16*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+const int32 *
+Node::as_int32_ptr() const
+{ 
+    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT32_T,"as_int32_ptr()");
+    return (int32*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+const int64 *
+Node::as_int64_ptr() const
+{ 
+    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT64_T,"as_int64_ptr()");
+    return (int64*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+// unsigned integers via pointers
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+const uint8 *
+Node::as_uint8_ptr() const
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT8_T,"as_uint8_ptr()");
+    return (uint8*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+const uint16 *
+Node::as_uint16_ptr() const
+{ 
+    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT16_T,"as_uint16_ptr()");
+    return (uint16*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+const uint32 *
+Node::as_uint32_ptr() const
+{ 
+    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT32_T,"as_uint32_ptr()");
+    return (uint32*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+const uint64 *
+Node::as_uint64_ptr() const
+{     
+    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT64_T,"as_uint64_ptr()");
+    return (uint64*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+// floating point via pointers
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+const float32 *
+Node::as_float32_ptr() const
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::FLOAT32_T,"as_float32_ptr()");
+    return (float32*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+const float64 *
+Node::as_float64_ptr() const
+{ 
+    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::FLOAT64_T,"as_float64_ptr()");
+    return (float64*)element_ptr(0);
+}
+
 
 //---------------------------------------------------------------------------//
 // signed integer array types via conduit::DataArray
@@ -4808,7 +6383,7 @@ Node::as_float64_array()
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
-int8_array
+const int8_array
 Node::as_int8_array() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT8_T,"as_int8_array()");
@@ -4816,7 +6391,7 @@ Node::as_int8_array() const
 }
 
 //---------------------------------------------------------------------------//
-int16_array
+const int16_array
 Node::as_int16_array() const 
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT16_T,"as_int16_array()");
@@ -4824,7 +6399,7 @@ Node::as_int16_array() const
 }
 
 //---------------------------------------------------------------------------//
-int32_array
+const int32_array
 Node::as_int32_array() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT32_T,"as_int32_array()");
@@ -4832,7 +6407,7 @@ Node::as_int32_array() const
 }
 
 //---------------------------------------------------------------------------//
-int64_array
+const int64_array
 Node::as_int64_array() const 
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT64_T,"as_int64_array()");
@@ -4845,7 +6420,7 @@ Node::as_int64_array() const
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
-uint8_array
+const uint8_array
 Node::as_uint8_array() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT8_T,"as_uint8_array()");
@@ -4853,7 +6428,7 @@ Node::as_uint8_array() const
 }
 
 //---------------------------------------------------------------------------//
-uint16_array
+const uint16_array
 Node::as_uint16_array() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT16_T,"as_uint16_array()");
@@ -4861,7 +6436,7 @@ Node::as_uint16_array() const
 }
 
 //---------------------------------------------------------------------------//
-uint32_array
+const uint32_array
 Node::as_uint32_array() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT32_T,"as_uint32_array()");
@@ -4869,7 +6444,7 @@ Node::as_uint32_array() const
 }
 
 //---------------------------------------------------------------------------//
-uint64_array
+const uint64_array
 Node::as_uint64_array() const 
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT64_T,"as_uint64_array()");
@@ -4881,7 +6456,7 @@ Node::as_uint64_array() const
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
-float32_array
+const float32_array
 Node::as_float32_array() const 
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
@@ -4891,7 +6466,7 @@ Node::as_float32_array() const
 }
 
 //---------------------------------------------------------------------------//
-float64_array
+const float64_array
 Node::as_float64_array() const 
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
@@ -4909,7 +6484,7 @@ char *
 Node::as_char8_str()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::CHAR8_STR_T,"as_char8_str()");
-    return (char *)element_pointer(0);
+    return (char *)element_ptr(0);
 }
 
 //---------------------------------------------------------------------------//
@@ -4917,7 +6492,7 @@ const char *
 Node::as_char8_str() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::CHAR8_STR_T,"as_char8_str()");
-    return (const char *)element_pointer(0);
+    return (const char *)element_ptr(0);
 }
 
 //---------------------------------------------------------------------------//
@@ -4930,10 +6505,17 @@ Node::as_string() const
 
 //---------------------------------------------------------------------------//
 // direct data pointer access 
-uint8 *
-Node::data_pointer() 
+void *
+Node::data_ptr() 
 {
-    return (uint8*)m_data;
+    return m_data;
+}
+
+//---------------------------------------------------------------------------//
+const void *
+Node::data_ptr() const
+{
+    return m_data;
 }
 
 
@@ -4952,7 +6534,7 @@ Node::as_char() const
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_CHAR_DATATYPE_ID,
                          "as_char()");
-    return *((char*)element_pointer(0));
+    return *((char*)element_ptr(0));
 }
 
 //---------------------------------------------------------------------------//
@@ -4962,7 +6544,7 @@ Node::as_short() const
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_SHORT_DATATYPE_ID,
                          "as_short()");
-    return *((short*)element_pointer(0));
+    return *((short*)element_ptr(0));
 }
 
 //---------------------------------------------------------------------------//
@@ -4972,7 +6554,7 @@ Node::as_int() const
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_INT_DATATYPE_ID,
                          "as_int()");
-    return *((int*)element_pointer(0));
+    return *((int*)element_ptr(0));
 }
 
 //---------------------------------------------------------------------------//
@@ -4982,7 +6564,7 @@ Node::as_long()  const
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_LONG_DATATYPE_ID,
                          "as_long()");
-    return *((long*)element_pointer(0));
+    return *((long*)element_ptr(0));
 }
 
 //---------------------------------------------------------------------------//
@@ -4996,7 +6578,7 @@ Node::as_unsigned_char() const
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID,
                          "as_unsigned_char()");
-    return *((unsigned char*)element_pointer(0));
+    return *((unsigned char*)element_ptr(0));
 }
 
 //---------------------------------------------------------------------------//
@@ -5006,7 +6588,7 @@ Node::as_unsigned_short() const
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID,
                          "as_unsigned_short()");
-    return *((unsigned short*)element_pointer(0));
+    return *((unsigned short*)element_ptr(0));
 }
 
 //---------------------------------------------------------------------------//
@@ -5016,7 +6598,7 @@ Node::as_unsigned_int()const
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID,
                          "as_unsigned_int()");
-    return *((unsigned int*)element_pointer(0));
+    return *((unsigned int*)element_ptr(0));
 }
 
 //---------------------------------------------------------------------------//
@@ -5026,7 +6608,7 @@ Node::as_unsigned_long() const
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID,
                          "as_unsigned_long()");
-    return *(( unsigned long*)element_pointer(0));
+    return *(( unsigned long*)element_ptr(0));
 }
 
 //---------------------------------------------------------------------------//
@@ -5040,7 +6622,7 @@ Node::as_float() const
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_FLOAT_DATATYPE_ID,
                          "as_float()");
-    return *((float*)element_pointer(0));
+    return *((float*)element_ptr(0));
 }
 
 //---------------------------------------------------------------------------//
@@ -5050,7 +6632,7 @@ Node::as_double() const
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_DOUBLE_DATATYPE_ID,
                          "as_double()");
-    return *((double*)element_pointer(0));
+    return *((double*)element_ptr(0));
 }
 
 //---------------------------------------------------------------------------//
@@ -5064,7 +6646,7 @@ Node::as_char_ptr()
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_CHAR_DATATYPE_ID,
                          "as_char_ptr()");
-    return (char*)element_pointer(0);
+    return (char*)element_ptr(0);
 }
 
 //---------------------------------------------------------------------------//
@@ -5074,7 +6656,7 @@ Node::as_short_ptr()
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_SHORT_DATATYPE_ID,
                          "as_short_ptr()");
-    return (short*)element_pointer(0);
+    return (short*)element_ptr(0);
 }
 
 //---------------------------------------------------------------------------//
@@ -5084,7 +6666,7 @@ Node::as_int_ptr()
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_INT_DATATYPE_ID,
                          "as_int_ptr()");
-    return (int*)element_pointer(0);
+    return (int*)element_ptr(0);
 }
 
 //---------------------------------------------------------------------------//
@@ -5094,7 +6676,7 @@ Node::as_long_ptr()
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_LONG_DATATYPE_ID,
                          "as_long_ptr()");
-    return (long*)element_pointer(0);
+    return (long*)element_ptr(0);
 }
 
 //---------------------------------------------------------------------------//
@@ -5108,7 +6690,7 @@ Node::as_unsigned_char_ptr()
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID,
                          "as_unsigned_char_ptr()");
-    return (unsigned char*)element_pointer(0);
+    return (unsigned char*)element_ptr(0);
 }
 
 //---------------------------------------------------------------------------//
@@ -5118,7 +6700,7 @@ Node::as_unsigned_short_ptr()
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID,
                          "as_unsigned_short_ptr()");
-    return (unsigned short*)element_pointer(0);
+    return (unsigned short*)element_ptr(0);
 }
 
 //---------------------------------------------------------------------------//
@@ -5128,7 +6710,7 @@ Node::as_unsigned_int_ptr()
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID,
                          "as_unsigned_int_ptr()");
-    return (unsigned int*)element_pointer(0);
+    return (unsigned int*)element_ptr(0);
 }
 
 //---------------------------------------------------------------------------//
@@ -5138,7 +6720,7 @@ Node::as_unsigned_long_ptr()
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID,
                          "as_unsigned_long_ptr()");
-    return (unsigned long*)element_pointer(0);
+    return (unsigned long*)element_ptr(0);
 }
 
 //---------------------------------------------------------------------------//
@@ -5152,7 +6734,7 @@ Node::as_float_ptr()
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_FLOAT_DATATYPE_ID,
                          "as_float_ptr()");
-    return (float*)element_pointer(0);
+    return (float*)element_ptr(0);
 }
 
 //---------------------------------------------------------------------------//
@@ -5162,8 +6744,122 @@ Node::as_double_ptr()
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_DOUBLE_DATATYPE_ID,
                          "as_double_ptr()");
-    return (double*)element_pointer(0);
+    return (double*)element_ptr(0);
 }
+
+//---------------------------------------------------------------------------//
+// signed integers via pointers
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+const char *
+Node::as_char_ptr() const
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_CHAR_DATATYPE_ID,
+                         "as_char_ptr()");
+    return (char*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+const short *
+Node::as_short_ptr() const
+{ 
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_SHORT_DATATYPE_ID,
+                         "as_short_ptr()");
+    return (short*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+const int *
+Node::as_int_ptr() const
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_INT_DATATYPE_ID,
+                         "as_int_ptr()");
+    return (int*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+const long *
+Node::as_long_ptr() const
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_LONG_DATATYPE_ID,
+                         "as_long_ptr()");
+    return (long*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+// unsigned integers via pointers
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+const unsigned char *
+Node::as_unsigned_char_ptr() const
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID,
+                         "as_unsigned_char_ptr()");
+    return (unsigned char*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+const unsigned short *
+Node::as_unsigned_short_ptr() const
+{ 
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID,
+                         "as_unsigned_short_ptr()");
+    return (unsigned short*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+const unsigned int *
+Node::as_unsigned_int_ptr() const
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID,
+                         "as_unsigned_int_ptr()");
+    return (unsigned int*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+const unsigned long *
+Node::as_unsigned_long_ptr() const
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID,
+                         "as_unsigned_long_ptr()");
+    return (unsigned long*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+// floating point via pointers
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+const float *
+Node::as_float_ptr() const
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_FLOAT_DATATYPE_ID,
+                         "as_float_ptr()");
+    return (float*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+const double *
+Node::as_double_ptr() const
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_DOUBLE_DATATYPE_ID,
+                         "as_double_ptr()");
+    return (double*)element_ptr(0);
+}
+
+
 
 //---------------------------------------------------------------------------//
 // signed integer array types via conduit::DataArray
@@ -5282,7 +6978,7 @@ Node::as_double_array()
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
-char_array
+const char_array
 Node::as_char_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
@@ -5292,7 +6988,7 @@ Node::as_char_array() const
 }
 
 //---------------------------------------------------------------------------//
-short_array
+const short_array
 Node::as_short_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
@@ -5302,7 +6998,7 @@ Node::as_short_array() const
 }
 
 //---------------------------------------------------------------------------//
-int_array
+const int_array
 Node::as_int_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
@@ -5312,7 +7008,7 @@ Node::as_int_array() const
 }
 
 //---------------------------------------------------------------------------//
-long_array
+const long_array
 Node::as_long_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
@@ -5326,7 +7022,7 @@ Node::as_long_array() const
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
-unsigned_char_array
+const unsigned_char_array
 Node::as_unsigned_char_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
@@ -5336,7 +7032,7 @@ Node::as_unsigned_char_array() const
 }
 
 //---------------------------------------------------------------------------//
-unsigned_short_array
+const unsigned_short_array
 Node::as_unsigned_short_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
@@ -5346,7 +7042,7 @@ Node::as_unsigned_short_array() const
 }
 
 //---------------------------------------------------------------------------//
-unsigned_int_array
+const unsigned_int_array
 Node::as_unsigned_int_array() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
@@ -5356,7 +7052,7 @@ Node::as_unsigned_int_array() const
 }
 
 //---------------------------------------------------------------------------//
-unsigned_long_array
+const unsigned_long_array
 Node::as_unsigned_long_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
@@ -5370,7 +7066,7 @@ Node::as_unsigned_long_array() const
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
-float_array
+const float_array
 Node::as_float_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
@@ -5380,7 +7076,7 @@ Node::as_float_array() const
 }
 
 //---------------------------------------------------------------------------//
-double_array
+const double_array
 Node::as_double_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
@@ -5405,7 +7101,7 @@ Node::as_double_array() const
 
 //---------------------------------------------------------------------------//
 void
-Node::set_schema_pointer(Schema *schema_ptr)
+Node::set_schema_ptr(Schema *schema_ptr)
 {
     // if(m_schema->is_root())
     if(m_owns_schema)
@@ -5418,7 +7114,7 @@ Node::set_schema_pointer(Schema *schema_ptr)
     
 //---------------------------------------------------------------------------//
 void
-Node::set_data_pointer(void *data)
+Node::set_data_ptr(void *data)
 {
     /// TODO: We need to audit where we actually need release
     //release();
@@ -5649,19 +7345,19 @@ Node::walk_schema(Node   *node,
                   void   *data)
 {
     // we can have an object, list, or leaf
-    node->set_data_pointer(data);
+    node->set_data_ptr(data);
     if(schema->dtype().id() == DataType::OBJECT_T)
     {
         for(index_t i=0;i<schema->children().size();i++)
         {
     
             std::string curr_name = schema->object_order()[i];
-            Schema *curr_schema   = schema->fetch_pointer(curr_name);
+            Schema *curr_schema   = schema->fetch_ptr(curr_name);
             Node *curr_node = new Node();
-            curr_node->set_schema_pointer(curr_schema);
+            curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
             walk_schema(curr_node,curr_schema,data);
-            node->append_node_pointer(curr_node);
+            node->append_node_ptr(curr_node);
         }                   
     }
     else if(schema->dtype().id() == DataType::LIST_T)
@@ -5669,12 +7365,12 @@ Node::walk_schema(Node   *node,
         index_t num_entries = schema->number_of_children();
         for(index_t i=0;i<num_entries;i++)
         {
-            Schema *curr_schema = schema->child_pointer(i);
+            Schema *curr_schema = schema->child_ptr(i);
             Node *curr_node = new Node();
-            curr_node->set_schema_pointer(curr_schema);
+            curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
             walk_schema(curr_node,curr_schema,data);
-            node->append_node_pointer(curr_node);
+            node->append_node_ptr(curr_node);
         }
     }
 
@@ -5688,7 +7384,7 @@ Node::mirror_node(Node   *node,
                   Node   *src)
 {
     // we can have an object, list, or leaf
-    node->set_data_pointer(src->m_data);
+    node->set_data_ptr(src->m_data);
     
     if(schema->dtype().id() == DataType::OBJECT_T)
     {
@@ -5696,13 +7392,13 @@ Node::mirror_node(Node   *node,
         {
     
             std::string curr_name = schema->object_order()[i];
-            Schema *curr_schema   = schema->fetch_pointer(curr_name);
+            Schema *curr_schema   = schema->fetch_ptr(curr_name);
             Node *curr_node = new Node();
-            Node *curr_src = src->child_pointer(i);
-            curr_node->set_schema_pointer(curr_schema);
+            Node *curr_src = src->child_ptr(i);
+            curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
             mirror_node(curr_node,curr_schema,curr_src);
-            node->append_node_pointer(curr_node);
+            node->append_node_ptr(curr_node);
         }                   
     }
     else if(schema->dtype().id() == DataType::LIST_T)
@@ -5710,13 +7406,13 @@ Node::mirror_node(Node   *node,
         index_t num_entries = schema->number_of_children();
         for(index_t i=0;i<num_entries;i++)
         {
-            Schema *curr_schema = schema->child_pointer(i);
+            Schema *curr_schema = schema->child_ptr(i);
             Node *curr_node = new Node();
-            Node *curr_src = src->child_pointer(i);
-            curr_node->set_schema_pointer(curr_schema);
+            Node *curr_src = src->child_ptr(i);
+            curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
             mirror_node(curr_node,curr_schema,curr_src);
-            node->append_node_pointer(curr_node);
+            node->append_node_ptr(curr_node);
         }
     }
 
@@ -5771,7 +7467,7 @@ Node::compact_elements_to(uint8 *data) const
         for(index_t i=0;i<num_ele;i++)
         {
             memcpy(data_ptr,
-                   element_pointer(i),
+                   element_ptr(i),
                    ele_bytes);
             data_ptr+=ele_bytes;
         }

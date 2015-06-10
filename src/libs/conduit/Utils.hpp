@@ -59,10 +59,69 @@
 #include <iomanip>
 #include <sstream>
 
+
 //-----------------------------------------------------------------------------
 // -- conduit includes -- 
 //-----------------------------------------------------------------------------
 #include "Core.hpp"
+
+
+//-----------------------------------------------------------------------------
+//
+/// The CONDUIT_INFO macro is the primary mechanism used to log basic messages.
+/// It currently simply prints the message to std::out.
+///
+//-----------------------------------------------------------------------------
+#define CONDUIT_INFO( msg )                                         \
+{                                                                   \
+    std::ostringstream conduit_oss_info;                            \
+    conduit_oss_info << msg;                                        \
+    std::cout << conduit_oss_info.str() << std::endl;               \
+}                                                                   \
+
+
+//-----------------------------------------------------------------------------
+//
+/// The CONDUIT_ERROR macro is the primary mechanism used to capture errors  
+/// in conduit. It calls conduit::utils::handle_error() which invokes 
+/// the currently configured error handler. 
+///
+/// The default error handler throws a c++ exception, in the form of a
+/// conduit::Error class. You can change the error handler via
+/// conduit::utils::set_error_handler().
+//
+//-----------------------------------------------------------------------------
+#define CONDUIT_ERROR( msg )                                        \
+{                                                                   \
+    std::ostringstream conduit_oss_error;                           \
+    conduit_oss_error << msg;                                       \
+    conduit::utils::handle_error( conduit_oss_error.str(),          \
+                                  std::string(__FILE__),            \
+                                  __LINE__);                        \
+}                                                                   \
+
+//-----------------------------------------------------------------------------
+//
+/// The CONDUIT_ASSERT macro is the primary mechanism used to capture assert
+/// failures in conduit. It calls conduit::utils::handle_error() which invokes 
+/// the currently configured error handler. 
+///
+/// The default error handler throws a c++ exception, in the form of a
+/// conduit::Error class. You can change the error handler via
+/// conduit::utils::set_error_handler().
+//
+//-----------------------------------------------------------------------------
+#define CONDUIT_ASSERT( cond, msg)                                   \
+{                                                                    \
+    if(!cond)                                                        \
+    {                                                                \
+        std::ostringstream conduit_oss_assert;                       \
+        conduit_oss_assert << msg;                                   \
+        conduit::utils::handle_error( conduit_oss_assert.str(),      \
+                                      std::string(__FILE__),         \
+                                      __LINE__);                     \
+    }                                                                \
+}                                                                    \
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -76,6 +135,25 @@ namespace conduit
 namespace utils
 {
 
+//-----------------------------------------------------------------------------
+/// Primary interface used by the conduit API when an error occurs. 
+/// This simply dispatches the error to the currently configured error handler.
+/// The default error handler throws a conduit::Error exception.
+//-----------------------------------------------------------------------------
+    void CONDUIT_API handle_error(const std::string &msg,
+                                  const std::string &file,
+                                  int line);
+
+//-----------------------------------------------------------------------------
+/// Allows other libraries to provide an alternate error handler.
+//-----------------------------------------------------------------------------
+    void CONDUIT_API set_error_handler( void(*on_error)
+                                        (const std::string &,
+                                         const std::string &,
+                                         int));
+
+//-----------------------------------------------------------------------------
+/// Helpers for common string splitting operations. 
 //-----------------------------------------------------------------------------
     void CONDUIT_API split_string(const std::string &path,
                                   const std::string &sep,

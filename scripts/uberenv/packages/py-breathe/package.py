@@ -1,4 +1,3 @@
-#!/bin/bash
 ###############################################################################
 # Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 # 
@@ -43,41 +42,20 @@
 # 
 ###############################################################################
 
-#
-# file: bootstrap-env.sh
-#
+from spack import *
 
-#
-# Takes you from zero to an env  with TPLS needed to develop conduit on OSX
-# and linux.
-#
+class PyBreathe(Package):
+    """Breathe provides a bridge between the Sphinx and Doxygen documentation systems."""
 
-function info
-{
-    echo "$@"
-}
+    homepage = "https://breathe.readthedocs.org/en/latest/"
+    url      = "https://pypi.python.org/packages/source/b/breathe/breathe-4.0.0.tar.gz#md5=32316d5a890a3124ea3e8a9e0b2b3b97"
 
-function uberenv
-{
-    python scripts/uberenv/uberenv.py
-}
+    version('4.0.0', '32316d5a890a3124ea3e8a9e0b2b3b97')
+
+    extends('python')
 
 
-function main
-{
-    uberenv
-
-    BOOSTRAP_CWD=`pwd`
-    SPACK_CMAKE_PREFIX=`ls -d $BOOSTRAP_CWD/uberenv_libs/spack/opt/*/*/cmake*`
-    SPACK_CMAKE=`ls $SPACK_CMAKE_PREFIX/bin/cmake`
-
-    # Only add to PATH if `which cmake` isn't our CMake
-    CMAKE_CURRENT=`which cmake`
-    if [[ "$CMAKE_CURRENT" != "$SPACK_CMAKE" ]] ; then
-        export PATH=$SPACK_CMAKE_PREFIX/bin:$PATH
-    fi
-    
-    info "[Active CMake:" `which cmake` "]"
-}
-
-main
+    def install(self, spec, prefix):
+        # breathe + sphinx doesn't play well with --prefix installs, for now simply 
+        # install to the spack python
+        python('setup.py', 'install') #, '--prefix=%s' % prefix)

@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -44,68 +44,95 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_mesh_examples.cpp
+/// file: conduit_node_convert.cpp
 ///
 //-----------------------------------------------------------------------------
 
 #include "conduit.hpp"
-#include "blueprint.hpp"
-#include "conduit_io.hpp"
 
 #include <iostream>
 #include "gtest/gtest.h"
-
+#include "rapidjson/document.h"
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_examples, mesh_2d)
+TEST(conduit_node_convert, to_arrays)
 {
-    Node io_protos;
-    io::about(io_protos);
-
-    bool silo_enabled = io_protos["protocols/conduit_silo"].as_string() == "enabled";
-        
-    Node uniform;
-    blueprint::mesh::examples::braid("uniform",20,20,0,uniform);
-    uniform.print();
-    uniform.to_pure_json("braid_uniform_example.json");
-
-    Node rect;
-    blueprint::mesh::examples::braid("rectilinear",20,20,0,rect);
-    rect.print();
-    rect.to_pure_json("braid_rect_example.json");
-
-    Node tris;
-    blueprint::mesh::examples::braid("tris",20,20,0,tris);
-    tris.print();
-    tris.to_pure_json("braid_quads_example.json");
-
-    Node quads;
-    blueprint::mesh::examples::braid("quads",20,20,0,quads);
-    quads.print();
-    quads.to_pure_json("braid_quads_example.json");
-
-    Node rect_expanded;
-    blueprint::mesh::expand(rect,rect_expanded);
-    rect_expanded.print();
-    rect_expanded.to_pure_json("braid_rect_expanded_example.json");
-
-    Node tris_expanded;
-    blueprint::mesh::expand(tris,tris_expanded);
-    tris_expanded.print();
-    tris_expanded.to_pure_json("braid_tris_expanded_example.json");
-
-    Node quads_expanded;
-    blueprint::mesh::expand(quads,quads_expanded);
-    quads_expanded.print();
-    quads_expanded.to_pure_json("braid_quads_expanded_example.json");
+    uint8 data_vals[] = {1,2,3,4,5,6,7,8};
     
-    if(silo_enabled)
-    {
-        // conduit::io::save("conduit_silo_mesh",uniform,"braid_uniform_example.silo:uniform2d");
-        io::save("conduit_silo_mesh",rect_expanded,"braid_rect_example.silo:rect2d");
-        io::save("conduit_silo_mesh",tris_expanded,"braid_tris_example.silo:tris");
-        io::save("conduit_silo_mesh",quads_expanded,"braid_quads_example.silo:quad");
-    }
+    Node n;
+    n.set(data_vals,8);
+
+    n.schema().print();
     
+    Node nconv;
+    
+    // signed bw-style
+    n.to_int8_array(nconv);
+    nconv.print();
+
+    n.to_int16_array(nconv);
+    nconv.print();
+
+    n.to_int32_array(nconv);
+    nconv.print();
+    
+    n.to_int64_array(nconv);
+    nconv.print();
+
+    // unsigned bw-style
+    n.to_uint8_array(nconv);
+    nconv.print();
+
+    n.to_uint16_array(nconv);
+    nconv.print();
+
+    n.to_uint32_array(nconv);
+    nconv.print();
+    
+    n.to_uint64_array(nconv);
+    nconv.print();
+    
+    // float bw-style
+    n.to_float32_array(nconv);
+    nconv.print();
+    
+    n.to_float64_array(nconv);
+    nconv.print();
+
+    // signed native c
+    n.to_char_array(nconv);
+    nconv.print();
+
+    n.to_short_array(nconv);
+    nconv.print();
+
+    n.to_int_array(nconv);
+    nconv.print();
+    
+    n.to_long_array(nconv);
+    nconv.print();
+
+    // unsigned native c
+    n.to_unsigned_char_array(nconv);
+    nconv.print();
+
+    n.to_unsigned_short_array(nconv);
+    nconv.print();
+
+    n.to_unsigned_int_array(nconv);
+    nconv.print();
+    
+    n.to_unsigned_long_array(nconv);
+    nconv.print();
+
+    // float native c
+    n.to_float_array(nconv);
+    nconv.print();
+    
+    n.to_double_array(nconv);
+    nconv.print();
+
+
 }
+

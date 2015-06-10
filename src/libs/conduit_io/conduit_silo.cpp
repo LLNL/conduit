@@ -256,12 +256,6 @@ void CONDUIT_IO_API silo_load(DBfile *dbfile,
     delete [] data;
 }
 
-//-----------------------------------------------------------------------------
-// -- begin conduit::io::mesh --
-//-----------------------------------------------------------------------------
-namespace mesh
-{
-
 
 //---------------------------------------------------------------------------//
 DBoptlist * 
@@ -662,6 +656,7 @@ silo_save_quad_rect_mesh(DBfile *dbfile,
     // compaction is necessary to support ragged arrays
     n_coords_rect.compact_to(n_coords_compact);
 
+
     int dims[3];
     dims[0] = n_coords_compact["x"].dtype().number_of_elements();
     dims[1] = n_coords_compact["y"].dtype().number_of_elements();
@@ -689,8 +684,6 @@ silo_save_quad_rect_mesh(DBfile *dbfile,
 
     // assume x,y,z are all the same type
     DataType dtype = n_coords_compact["x"].dtype();
-
-    // need a DataType::is_c_float() , etc methods
 
     if( dtype.is_float() )
     {
@@ -866,8 +859,8 @@ silo_save_mesh(Node &n,
 
 //---------------------------------------------------------------------------//
 void 
-silo_save(Node &node,
-          const std::string &path)
+silo_save_mesh(Node &node,
+               const std::string &path)
 {
     // check for ":" split
     std::string file_path;
@@ -883,14 +876,14 @@ silo_save(Node &node,
         CONDUIT_ERROR("Invalid path for save: " << path);
     }
 
-    mesh::silo_save(node,file_path,silo_obj_base);
+    silo_save_mesh(node,file_path,silo_obj_base);
 }
 
 
 //---------------------------------------------------------------------------//
-void silo_save(Node &node,
-               const std::string &file_path,
-               const std::string &silo_obj_path)
+void silo_save_mesh(Node &node,
+                   const std::string &file_path,
+                   const std::string &silo_obj_path)
 {
     DBfile *dbfile = DBCreate(file_path.c_str(),
                               DB_CLOBBER,
@@ -900,7 +893,7 @@ void silo_save(Node &node,
 
     if(dbfile)
     {
-        mesh::silo_save(node,dbfile,silo_obj_path);
+        silo_save_mesh(node,dbfile,silo_obj_path);
     }
     else 
     {
@@ -913,21 +906,6 @@ void silo_save(Node &node,
         CONDUIT_ERROR("Error closing Silo file: " << file_path);
     }
 }
-
-
-
-//---------------------------------------------------------------------------//
-void silo_save(Node &node,
-               DBfile *dbfile,
-               const std::string &silo_obj_path)
-{
-    silo_save_mesh(node,dbfile,silo_obj_path);
-}
-
-};
-//-----------------------------------------------------------------------------
-// -- end conduit::io::mesh --
-//-----------------------------------------------------------------------------
 
 
 };

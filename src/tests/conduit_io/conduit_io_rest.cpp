@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -44,68 +44,65 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_mesh_examples.cpp
+/// file: conduit_io_rest.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit.hpp"
-#include "blueprint.hpp"
 #include "conduit_io.hpp"
-
 #include <iostream>
 #include "gtest/gtest.h"
 
 using namespace conduit;
 
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_examples, mesh_2d)
+bool launch_server = false;
+
+TEST(conduit_io_rest, rest_server)
 {
-    Node io_protos;
-    io::about(io_protos);
+    uint32 a_val = 20;
+    uint32 b_val = 8;
+    uint32 c_val = 13;
 
-    bool silo_enabled = io_protos["protocols/conduit_silo"].as_string() == "enabled";
-        
-    Node uniform;
-    blueprint::mesh::examples::braid("uniform",20,20,0,uniform);
-    uniform.print();
-    uniform.to_pure_json("braid_uniform_example.json");
+    Node *n = new Node();
+    n->fetch("a") = a_val;
+    n->fetch("b") = b_val;
+    n->fetch("c") = c_val;
 
-    Node rect;
-    blueprint::mesh::examples::braid("rectilinear",20,20,0,rect);
-    rect.print();
-    rect.to_pure_json("braid_rect_example.json");
-
-    Node tris;
-    blueprint::mesh::examples::braid("tris",20,20,0,tris);
-    tris.print();
-    tris.to_pure_json("braid_quads_example.json");
-
-    Node quads;
-    blueprint::mesh::examples::braid("quads",20,20,0,quads);
-    quads.print();
-    quads.to_pure_json("braid_quads_example.json");
-
-    Node rect_expanded;
-    blueprint::mesh::expand(rect,rect_expanded);
-    rect_expanded.print();
-    rect_expanded.to_pure_json("braid_rect_expanded_example.json");
-
-    Node tris_expanded;
-    blueprint::mesh::expand(tris,tris_expanded);
-    tris_expanded.print();
-    tris_expanded.to_pure_json("braid_tris_expanded_example.json");
-
-    Node quads_expanded;
-    blueprint::mesh::expand(quads,quads_expanded);
-    quads_expanded.print();
-    quads_expanded.to_pure_json("braid_quads_expanded_example.json");
+    EXPECT_EQ(n->fetch("a").as_uint32(), a_val);
+    EXPECT_EQ(n->fetch("b").as_uint32(), b_val);
+    EXPECT_EQ(n->fetch("c").as_uint32(), c_val);
     
-    if(silo_enabled)
+    if(launch_server)
     {
-        // conduit::io::save("conduit_silo_mesh",uniform,"braid_uniform_example.silo:uniform2d");
-        io::save("conduit_silo_mesh",rect_expanded,"braid_rect_example.silo:rect2d");
-        io::save("conduit_silo_mesh",tris_expanded,"braid_tris_example.silo:tris");
-        io::save("conduit_silo_mesh",quads_expanded,"braid_quads_example.silo:quad");
+        io::rest::serve(n);
     }
-    
+    else
+    {
+        std::cout << "provide \"launch\" as a command line arg "
+                  << "to launch a conduit::Node REST test server at "
+                  << "http://localhost:8080" << std::endl;
+    }
+
+    delete n;
 }
+
+//-----------------------------------------------------------------------------
+int main(int argc, char* argv[])
+{
+    int result = 0;
+
+    ::testing::InitGoogleTest(&argc, argv);
+
+    for(int i=0; i < argc ; i++)
+    {
+        std::string arg_str(argv[i]);
+        if(arg_str == "launch")
+        {
+            launch_server = true;;
+        }
+    }
+
+    result = RUN_ALL_TESTS();
+    return result;
+}
+
+

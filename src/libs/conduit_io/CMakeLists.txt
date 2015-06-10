@@ -90,7 +90,7 @@ add_library(conduit_io SHARED ${conduit_io_sources} ${conduit_io_headers})
 #
 # Link with conduit and silo (if enabled)
 #
-target_link_libraries(conduit_io conduit civetweb)
+target_link_libraries(conduit_io conduit civetweb libb64)
 
 if(SILO_FOUND)
     target_link_libraries(conduit_io conduit ${SILO_LIBRARIES})

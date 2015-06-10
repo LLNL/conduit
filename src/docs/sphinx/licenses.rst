@@ -73,6 +73,7 @@ JavaScript Libraries
 Build System
 ~~~~~~~~~~~~~~~
 - *CMake*: http://www.cmake.org/licensing/ (BSD Style License)
+- *Spack*: https://scalability-llnl.github.io/spack (LGPL License)
 
 
 Documentation

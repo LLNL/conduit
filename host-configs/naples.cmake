@@ -60,7 +60,6 @@ set(SZIP_DIR "/Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/t
 
 # Enable python module builds
 set(ENABLE_PYTHON ON CACHE PATH "")
-set(PYTHON_EXECUTABLE /Users/harrison37/Work/conduit/libs/python/2.7.9/bin/python CACHE PATH "")
 
 # Enable mpi for conduit-mpi
 set(ENABLE_MPI ON CACHE PATH "")
@@ -70,4 +69,17 @@ set(MPIEXEC /Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thi
 set(MPI_CC_COMPILER /Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thirdparty_shared/visit/mpich/3.0.4/darwin-x86_64/bin/mpicc CACHE PATH "")
 
 set(MPI_CXX_COMPILER /Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thirdparty_shared/visit/mpich/3.0.4/darwin-x86_64/bin/mpicc CACHE PATH "")
+
+#######
+# uberenv host-config for conduit
+#######
+# cmake from uberenv
+# cmake exectuable path: /Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/cmake@3.0.2/bin/cmake
+
+# python from uberenv
+set(PYTHON_EXECUTABLE "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/python@2.7.8/bin/python" CACHE PATH "")
+
+# sphinx from uberenv
+set(SPHINX_EXECUTABLE "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/python@2.7.8/bin/sphinx-build" CACHE PATH "")
+
 

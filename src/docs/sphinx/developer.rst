@@ -51,14 +51,23 @@ Developer Documentation
 
 Source Code Repo Layout
 ------------------------
-- **src/conduit**: Main library source
-- **src/conduit_io**: Conduit I/O library source
-- **src/conduit_mpi**: Conduit MPI library source
-- **src/conduit_viz**: Conduit Visualization library source
-- **src/tests**: Unit tests
-- **src/tests/python**: Python Unit tests
-- **src/docs**: Documentation 
-- **src/thirdparty_builtin**:  Third party libraries we build and manage directly
+* **src/libs/**
+
+ * **conduit/** - Main Conduit library source
+ * **conduit_io/** - Conduit I/O library source
+ * **conduit_mpi/** - Conduit MPI library source
+ * **blueprint/** - Blueprint library source
+
+* **src/tests/**
+
+ * **conduit/** - Unit tests for the main Conduit library
+ * **conduit_io/** - Unit tests for Conduit I/O library
+ * **conduit_mpi/** - Unit tests for Conduit MPI library
+ * **blueprint/** - Unit tests for Blueprint library
+ * **thirdparty/** - Unit tests for thirdparty libraries
+
+* **src/docs/** -  Documentation 
+* **src/thirdparty_builtin/** - Thirdparty libraries we build and manage directly
 
 
 Build System Info
@@ -67,10 +76,13 @@ Build System Info
 Configuring with CMake
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Conduit uses a CMake based build system. You can run CMake directly to configure an out-of-source build, or use the "config-build.sh" helper script, which does the following:
+See :ref:`building` in the User Documentation. 
 
-- Creates a fresh *build-debug* folder.
-- Runs :bash:`cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install-debug` from within the *build-debug* folder.
+..
+.. Conduit uses a CMake based build system. You can run CMake directly to configure an out-of-source build, or use the "config-build.sh" helper script, which does the following:
+..
+.. - Creates a fresh *build-debug* folder.
+.. - Runs :bash:`cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install-debug` from within the *build-debug* folder.
 
 
 Important CMake Targets
@@ -86,8 +98,8 @@ Important CMake Targets
 
 Adding a Unit Test
 ~~~~~~~~~~~~~~~~~~~
-- Create a test source file in *src/tests*
-- Add the test to build system by editing *src/tests/CMakeLists.txt*
+- Create a test source file in *src/tests/{lib_name}/*
+- Add the test to build system by editing *src/tests/{lib_name}/CMakeLists.txt*
 
 
 Git Development Workflow 

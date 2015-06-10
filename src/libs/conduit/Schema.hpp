@@ -218,7 +218,7 @@ public:
     Schema           &child(index_t idx);
     const Schema     &child(index_t idx) const;
     /// access to child schema pointer by index
-    Schema           *child_pointer(index_t idx);
+    Schema           *child_ptr(index_t idx);
 
     /// remove a child by index
     void             remove(index_t idx);
@@ -240,7 +240,7 @@ public:
     /// fetch with a path arg methods do modifies map structure 
     /// if a path doesn't exists
     Schema           &fetch(const std::string &path);
-    Schema           *fetch_pointer(const std::string &path);
+    Schema           *fetch_ptr(const std::string &path);
 
     /// path to index map
     index_t          child_index(const std::string &path) const;

@@ -1,4 +1,3 @@
-#!/bin/bash
 ###############################################################################
 # Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 # 
@@ -42,42 +41,43 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
+"""
+file: update_lc_conduit_docs.py
+description:
+ Copies sphinx docs to publish them on LLNL's CZ webserver. 
 
-#
-# file: bootstrap-env.sh
-#
+"""
 
-#
-# Takes you from zero to an env  with TPLS needed to develop conduit on OSX
-# and linux.
-#
-
-function info
-{
-    echo "$@"
-}
-
-function uberenv
-{
-    python scripts/uberenv/uberenv.py
-}
+import os
+import sys
+import subprocess
 
 
-function main
-{
-    uberenv
+def sexe(cmd,echo=True):
+    if echo:
+        print "[sexe: %s]" % cmd
+    subprocess.call(cmd,shell=True)
 
-    BOOSTRAP_CWD=`pwd`
-    SPACK_CMAKE_PREFIX=`ls -d $BOOSTRAP_CWD/uberenv_libs/spack/opt/*/*/cmake*`
-    SPACK_CMAKE=`ls $SPACK_CMAKE_PREFIX/bin/cmake`
+def update_lc_docs(src_dir):
+    src_dir = os.path.abspath(src_dir)
+    dest_dir = "/usr/global/web-pages/lc/www/conduit/"
+    print "[copied docs from %s to %s]" % (src_dir,dest_dir)
+    sexe("cp -R %s/* %s" % (src_dir,dest_dir))
+    sexe("chgrp -R bdiv %s" % (dest_dir))
+    sexe("chmod -R a+rX %s" % (dest_dir))
+    sexe("chmod -R g+rwX %s" % (dest_dir))
 
-    # Only add to PATH if `which cmake` isn't our CMake
-    CMAKE_CURRENT=`which cmake`
-    if [[ "$CMAKE_CURRENT" != "$SPACK_CMAKE" ]] ; then
-        export PATH=$SPACK_CMAKE_PREFIX/bin:$PATH
-    fi
-    
-    info "[Active CMake:" `which cmake` "]"
-}
 
-main
+if __name__ == "__main__":
+    nargs = len(sys.argv)
+    modify_files = False
+    if nargs < 1:
+        print "usage: python update_lc_conduit_docs.py "
+        print "[sphinx_html_dir]"
+        sys.exit(-1)
+    src_dir = sys.argv[1]
+    update_lc_docs(src_dir)
+
+
+
+

@@ -195,6 +195,22 @@ DataType::float64(index_t num_elements,
     return DataType(FLOAT64_T,num_elements,offset,stride,element_bytes,endianness);
 }
 
+//---------------------------------------------------------------------------//
+DataType
+DataType::char8_str(index_t num_elements,
+                    index_t offset,
+                    index_t stride,
+                    index_t element_bytes,
+                    index_t endianness)
+{
+    return DataType(CHAR8_STR_T,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+
 /// native c types
 //-----------------------------------------------------------------------------
 /// signed integer arrays

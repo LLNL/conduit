@@ -2935,7 +2935,7 @@ static PyObject *
 PyConduit_Node_schema(PyConduit_Node *self)
 {
     // python_owns = 0
-    return (PyConduit_Schema_python_wrap(self->node->schema_pointer(),0));
+    return (PyConduit_Schema_python_wrap(self->node->schema_ptr(),0));
 }
 
 //---------------------------------------------------------------------------//
@@ -3603,7 +3603,7 @@ PyConduit_createNumpyType(Node& node,
     const DataType& dtype = node.dtype();
     PyArray_Descr* descr = PyArray_DescrFromType(type);
     PyObject* retval = NULL;
-    void* data = node.data_pointer();
+    void* data = node.data_ptr();
     npy_intp len = dtype.number_of_elements();
     if (len == 1) {
         retval = PyArray_Scalar(data, descr, NULL);

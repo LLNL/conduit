@@ -236,7 +236,7 @@ isend(Node &node,
     request->_externalData = new Node();
     node.compact_to(*(request->_externalData));
 
-    return MPI_Isend((char*)request->_externalData->data_pointer(), 
+    return MPI_Isend((char*)request->_externalData->data_ptr(), 
                      request->_externalData->total_bytes(), 
                      MPI_CHAR, 
                      dest, 
@@ -258,7 +258,7 @@ irecv(Node &node,
 
     request->_recvData = &node;
 
-    return MPI_Irecv((char*)request->_externalData->data_pointer(),
+    return MPI_Irecv((char*)request->_externalData->data_ptr(),
                      request->_externalData->total_bytes(),
                      MPI_CHAR,
                      src,

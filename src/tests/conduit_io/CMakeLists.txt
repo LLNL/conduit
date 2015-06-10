@@ -49,7 +49,7 @@
 ################################
 # conduit_io lib Unit Tests
 ################################
-set(IO_TESTS conduit_io_smoke)
+set(IO_TESTS conduit_io_smoke conduit_io_rest) 
 set(IO_SILO_TESTS conduit_io_silo)
 
 

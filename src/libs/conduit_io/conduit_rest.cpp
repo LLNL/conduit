@@ -63,6 +63,10 @@
 // external lib includes
 //-----------------------------------------------------------------------------
 #include "civetweb.h"
+#include "CivetServer.h"
+
+#define BUFFERSIZE 65536
+#include "b64/encode.h"
 
 //-----------------------------------------------------------------------------
 // conduit includes
@@ -90,123 +94,270 @@ namespace io
 namespace rest 
 {
     
-
-// TODO refactor to move this server into a class
-
-Node *theNode;
-bool visualizerIsRunning;
-
-//---------------------------------------------------------------------------//
-int
-handle_get_schema(struct mg_connection *conn,
-                  void *cbdata)
-{
-    mg_printf(conn, "%s",theNode->schema().to_json(true).c_str());
-    return 1;
-}
-
-//---------------------------------------------------------------------------//
-// Handles a request from the client for a specific value in the Node
-int
-handle_get_value(struct mg_connection *conn,
-                 void *cbdata)
-{
-    char post_data[2048];
-    char cpath[2048];
-
-    const struct mg_request_info *ri = mg_get_request_info(conn);
-    int post_data_len = mg_read(conn, post_data, sizeof(post_data));
-
-    mg_get_var(post_data, post_data_len, "cpath", cpath, sizeof(cpath));
-    mg_printf(conn, "{ \"datavalue\": %s }",
-              theNode->fetch(cpath).to_json(false).c_str());
-    return 1;
-}
-
-//---------------------------------------------------------------------------//
-int 
-handle_release(struct mg_connection *conn,
-               void *cbdata)
-{
-    visualizerIsRunning = false;
-    return 1;
-}
-    
-
-//---------------------------------------------------------------------------//
-// Event handler, deals with requests other than GETs to page resources.
-// int
-// ev_handler(struct mg_connection *conn,
-//            enum mg_event ev)
-// {
-//     switch (ev)
-//     {
-//         case MG_AUTH:
-//         {
-//             return MG_TRUE;
-//         }
-//         case MG_REQUEST:
-//         {
-//             if (!strcmp(conn->uri, "/api/get-schema"))
-//             {
-//                 handle_get_schema(conn);
-//                 return MG_TRUE;
-//             }
-//
-//             if (!strcmp(conn->uri, "/api/get-value"))
-//             {
-//                 handle_get_value(conn);
-//                 return MG_TRUE;
-//             }
-//
-//             if (!strcmp(conn->uri, "/api/kill-server"))
-//             {
-//                 visualizerIsRunning = false;
-//                 return MG_TRUE;
-//             }
-//         }
-//         default:
-//         {
-//             return MG_FALSE;
-//         }
-//     }
-// }
-
-//---------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------
+// simple interface to launch a blocking REST server    
+//-----------------------------------------------------------------------------
 void
-visualize(Node *n)
+serve(Node *n,
+      index_t port)
+
 {
-    theNode = n;
+    RESTServer srv;
+    srv.serve(n,true,port);
+}
 
-    const char * options[] = { "document_root", CONDUIT_REST_CLIENT_ROOT,
-                               "listening_ports", "8080", 0
-                             };
 
-    struct mg_callbacks callbacks;
-    struct mg_context *ctx;
 
-    memset(&callbacks, 0, sizeof(callbacks));
-    ctx = mg_start(&callbacks, 0, options);
+//-----------------------------------------------------------------------------
+// -- Internal REST Server Interface Classes -
+//-----------------------------------------------------------------------------
+
+class RESTHandler : public CivetHandler
+{
+public:
+        
+        //---------------------------------------------------------------------------//
+        RESTHandler(RESTServer &server,
+                    Node *node)
+        : m_server(&server),
+          m_node(node)
+        {
+            // empty
+        }
+
+        //---------------------------------------------------------------------------//
+        ~RESTHandler()
+        {
+            // empty
+        }
+        
+        
+        //---------------------------------------------------------------------------//
+        bool handleAll(CivetServer *server,
+                       struct mg_connection *conn) 
+        {
+            const struct mg_request_info *req_info = mg_get_request_info(conn);
+            
+            std::string uri(req_info->uri);
+            std::string uri_cmd;
+            std::string uri_next;
+            utils::rsplit_string(uri,"/",uri_cmd,uri_next);
+            
+            if(uri_cmd == "get-schema")
+            {
+                return handle_get_schema(server,conn);
+            }
+            else if(uri_cmd == "get-value")
+            {
+                return handle_get_value(server,conn);                
+            }
+            else if(uri_cmd == "get-encoded")
+            {
+                return handle_get_encoded(server,conn);
+            }
+            else if(uri_cmd == "kill-server")
+            {
+                return handle_release(server,conn);
+            }
+            else
+            {
+                // TODO: unknown REST command
+            }
+
+            return true;
+        }
+        
+        //---------------------------------------------------------------------------//
+        bool handlePost(CivetServer *server,
+                       struct mg_connection *conn) 
+        {
+            return handleAll(server,conn);
+        }
+        
+        //---------------------------------------------------------------------------//
+        bool handleGet(CivetServer *server,
+                       struct mg_connection *conn) 
+        {
+            return handleAll(server,conn);
+        }
+        
+        //---------------------------------------------------------------------------//
+        // Handles a request from the client for the node's schema.
+        bool handle_get_schema(CivetServer *server,
+                               struct mg_connection *conn)
+        {
+            mg_printf(conn, "%s",m_node->schema().to_json(true).c_str());
+            return 1;
+        }
+
+        //---------------------------------------------------------------------------//
+        // Handles a request from the client for a specific value in the node.
+        bool handle_get_value(CivetServer *server,
+                              struct mg_connection *conn)
+        {
+            // todo size checks?
+            char post_data[2048];
+            char cpath[2048];
+
+            const struct mg_request_info *ri = mg_get_request_info(conn);
+            int post_data_len = mg_read(conn, post_data, sizeof(post_data));
+
+            mg_get_var(post_data, post_data_len, "cpath", cpath, sizeof(cpath));
+
+            mg_printf(conn, "{ \"datavalue\": %s }",
+                      m_node->fetch(cpath).to_json(false).c_str());
+            return true;
+        }
+
+        //---------------------------------------------------------------------------//
+        // Handles a request from the client for a compact, base64 encoded version
+        // of the node.
+        bool handle_get_encoded(CivetServer *server,
+                              struct mg_connection *conn)
+        {
+            Node n;
+            m_node->compact_to(n);
+            n.print();
+            index_t nbytes = n.schema().total_bytes();
+            base64::encoder e;
+
+            std::cout << "nbytes = "   << nbytes << std::endl;
+
+            Node res;
+            res["schema"] = n.schema().to_json();
+            // allocate buffer for base64 encoded result
+            res["base64/data"].set(DataType::char8_str(nbytes*2));
+            
+            index_t code_len = e.encode((const char*)n.data_ptr(),
+                                        nbytes,
+                                        (char*)res["base64/data"].data_ptr());
+
+            std::cout << "code len = " << code_len << std::endl;
+            res.print();
+            mg_printf(conn, "%s",res.to_pure_json().c_str());
+            
+            
+            return true;
+        }
+
+        //---------------------------------------------------------------------------//
+        // Handles a request from the client to shutdown the REST server
+        bool handle_release(CivetServer *server,
+                            struct mg_connection *conn)
+        {
+            m_server->shutdown();
+            return true;
+        }
     
-    mg_set_request_handler(ctx, "/api/get-schema", handle_get_schema, 0);
-    mg_set_request_handler(ctx, "/api/get-value", handle_get_value, 0);
-    mg_set_request_handler(ctx, "/api/kill-server", handle_release, 0);
+        
+  private:
+      RESTServer *m_server;
+      Node       *m_node;
 
-    visualizerIsRunning = true;
+};
 
-    printf("Visualizer is running!\n");
+
+//-----------------------------------------------------------------------------
+RESTServer::RESTServer()
+: m_server(NULL),
+  m_handler(NULL),
+  m_port(""),
+  m_running(false)
+{
     
-    while (visualizerIsRunning)
+}
+
+//-----------------------------------------------------------------------------
+RESTServer::~RESTServer()
+{
+    shutdown();
+}
+
+//-----------------------------------------------------------------------------
+bool
+RESTServer::is_running() const
+{
+    return m_running;
+}
+
+//-----------------------------------------------------------------------------
+void
+RESTServer::serve(Node *node,
+                  bool block,
+                  index_t port)
+{
+    if(is_running())
     {
+        CONDUIT_ERROR("RESTServer is already running");
+    }
+        
+    std::ostringstream oss;
+    oss << port;
+    m_port = oss.str();
+    const char *options[] = { "document_root", CONDUIT_REST_CLIENT_ROOT,
+                              "listening_ports", m_port.c_str(),
+                               NULL};
+
+    m_handler = new RESTHandler(*this,node);
+    try
+    {
+    
+        m_server = new CivetServer(options);
+
+    }
+    catch(CivetException except)
+    {
+        // Catch Civet Exception and use Conduit's error handling mech.
+        CONDUIT_ERROR("RESTServer failed to bind civet server on port " << port);
+    }
+    
+    // check for valid context    
+    const struct mg_context *ctx = m_server->getContext();
+    if(ctx == NULL)
+    {
+         CONDUIT_ERROR("RESTServer failed to bind civet server on port " << port);
+    }else
+    {
+        CONDUIT_INFO("conduit::io::RESTServer instance active on port: " 
+                     << port);
+    }
+
+    m_server->addHandler("/api/*",m_handler);
+
+    m_running = true;
+
+    if(block)
+    {
+        while(is_running()) // wait for shutdown()
+        {
 #if defined(CONDUIT_PLATFORM_WINDOWS)
         Sleep(1000);
 #else
         sleep(10);
 #endif
+        }
     }
-
-    printf("Visualizer has been closed; execution continuing...\n");
 }
+
+//-----------------------------------------------------------------------------
+void     
+RESTServer::shutdown()
+{
+    if(is_running())
+    {
+        CONDUIT_INFO("closing conduit::io::RESTServer instance on port: " 
+                     << m_port);
+        
+        m_running = false;
+        delete m_server;
+        delete m_handler;
+
+
+        m_handler = NULL;
+        m_server  = NULL;
+    }
+}
+
 
 
 };

@@ -686,12 +686,12 @@ Generator::Parser::walk_pure_json_schema(Node  *node,
              itr != jvalue.MemberEnd(); ++itr)
         {
             std::string entry_name(itr->name.GetString());
-            Schema *curr_schema = schema->fetch_pointer(entry_name);
+            Schema *curr_schema = schema->fetch_ptr(entry_name);
             Node *curr_node  = new Node();
-            curr_node->set_schema_pointer(curr_schema);
+            curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
             walk_pure_json_schema(curr_node,curr_schema,itr->value);
-            node->append_node_pointer(curr_node);
+            node->append_node_ptr(curr_node);
 
         }
     }
@@ -716,12 +716,12 @@ Generator::Parser::walk_pure_json_schema(Node  *node,
             for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
             {
                 schema->append();
-                Schema *curr_schema = schema->child_pointer(i);
+                Schema *curr_schema = schema->child_ptr(i);
                 Node * curr_node = new Node();
-                curr_node->set_schema_pointer(curr_schema);
+                curr_node->set_schema_ptr(curr_schema);
                 curr_node->set_parent(node);
                 walk_pure_json_schema(curr_node,curr_schema,jvalue[i]);
-                node->append_node_pointer(curr_node);
+                node->append_node_ptr(curr_node);
             }
         }
     }
@@ -807,9 +807,9 @@ Generator::Parser::walk_json_schema(Node   *node,
                 for(index_t i=0;i< length;i++)
                 {
                     schema->append();
-                    Schema *curr_schema = schema->child_pointer(i);
+                    Schema *curr_schema = schema->child_ptr(i);
                     Node *curr_node = new Node();
-                    curr_node->set_schema_pointer(curr_schema);
+                    curr_node->set_schema_ptr(curr_schema);
                     curr_node->set_parent(node);
                     walk_json_schema(curr_node,
                                      curr_schema,
@@ -819,7 +819,7 @@ Generator::Parser::walk_json_schema(Node   *node,
                     // auto offset only makes sense when we have data
                     if(data != NULL)
                         curr_offset += curr_schema->total_bytes();
-                    node->append_node_pointer(curr_node);
+                    node->append_node_ptr(curr_node);
                 }
                 
             }
@@ -834,7 +834,7 @@ Generator::Parser::walk_json_schema(Node   *node,
                 {
                     // node is already linked to the schema pointer
                     schema->set(dtype);
-                    node->set_data_pointer(data);
+                    node->set_data_ptr(data);
                 }
                 else
                 {
@@ -859,9 +859,9 @@ Generator::Parser::walk_json_schema(Node   *node,
                  itr != jvalue.MemberEnd(); ++itr)
             {
                 std::string entry_name(itr->name.GetString());
-                Schema *curr_schema = schema->fetch_pointer(entry_name);
+                Schema *curr_schema = schema->fetch_ptr(entry_name);
                 Node *curr_node = new Node();
-                curr_node->set_schema_pointer(curr_schema);
+                curr_node->set_schema_ptr(curr_schema);
                 curr_node->set_parent(node);
                 walk_json_schema(curr_node,
                                  curr_schema,
@@ -871,7 +871,7 @@ Generator::Parser::walk_json_schema(Node   *node,
                 // auto offset only makes sense when we have data
                 if(data != NULL)
                     curr_offset += curr_schema->total_bytes();
-                node->append_node_pointer(curr_node);                
+                node->append_node_ptr(curr_node);                
             }
             
         }
@@ -882,9 +882,9 @@ Generator::Parser::walk_json_schema(Node   *node,
         for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
         {
             schema->append();
-            Schema *curr_schema = schema->child_pointer(i);
+            Schema *curr_schema = schema->child_ptr(i);
             Node *curr_node = new Node();
-            curr_node->set_schema_pointer(curr_schema);
+            curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
             walk_json_schema(curr_node,
                              curr_schema,
@@ -894,7 +894,7 @@ Generator::Parser::walk_json_schema(Node   *node,
             // auto offset only makes sense when we have data
             if(data != NULL)
                 curr_offset += curr_schema->total_bytes();
-            node->append_node_pointer(curr_node);
+            node->append_node_ptr(curr_node);
         }
         
     }
@@ -908,7 +908,7 @@ Generator::Parser::walk_json_schema(Node   *node,
         if(data != NULL)
         {
              // node is already linked to the schema pointer
-             node->set_data_pointer(data);
+             node->set_data_ptr(data);
              
         }
         else
@@ -982,7 +982,7 @@ Generator::walk(Schema &schema) const
 void 
 Generator::walk(Node &node) const
 {
-    /// TODO: THis is an inefficient code path, need better solution?
+    /// TODO: This is an inefficient code path, need better solution?
     Node n;
     walk_external(n);
     n.compact_to(node);
@@ -1003,8 +1003,9 @@ Generator::walk_external(Node &node) const
             CONDUIT_ERROR("rapidjson parse error");
             /// TODO: better parse error msg
         }
+
         Parser::walk_pure_json_schema(&node,
-                                      node.schema_pointer(),
+                                      node.schema_ptr(),
                                       document);
     }
     else
@@ -1017,8 +1018,9 @@ Generator::walk_external(Node &node) const
             /// TODO: better parse error msg
         }
         index_t curr_offset = 0;
+
         Parser::walk_json_schema(&node,
-                                 node.schema_pointer(),
+                                 node.schema_ptr(),
                                  m_data,
                                  document,
                                  curr_offset);
