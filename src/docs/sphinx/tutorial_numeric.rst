@@ -42,28 +42,93 @@
 .. # 
 .. ############################################################################
 
-============================================
-Memory Ownership Semantics
-============================================
+=======================
+Accessing Numeric Data
+=======================
 
-*set* vs *set_external* 
+
+Accessing Scalars and Arrays
 --------------------------------
 
-The *Node* class provides two classes of functions that enable passing of data to a *Node*:
+You can access leaf types (numeric scalars or arrays) using Node's *as_{type}* methods.
 
-- **set(...)**: Makes a copy of the data passed into the *Node*. This will trigger an allocation if the current data type of the *Node* is incompatible with what was passed. The *Node* assignment operators use their respective *set* variants, so they follow the same copy semantics. 
-
-- **set_external(...)**: Sets up the *Node* to describe data passed and access the data externally. Does not copy the data.
-
-.. # from conduit_tutorial_examples: mem_ownership_external
+.. # from conduit_tutorial_examples: numeric_as_dtype
 
 .. literalinclude:: ../../tests/conduit/conduit_tutorial_examples.cpp
-   :lines: 438-456
+   :lines: 159-162
    :language: cpp
    :dedent: 4
 
 .. literalinclude:: tutorial_examples_out.txt
-   :lines: 317-346
+   :lines: 118
+
+Or you can use Node::value(), which can infer the correct return type via a cast.
+
+.. # from conduit_tutorial_examples: numeric_via_value
+
+.. literalinclude:: ../../tests/conduit/conduit_tutorial_examples.cpp
+   :lines: 171-177
+   :language: cpp
+   :dedent: 4
+
+.. literalinclude:: tutorial_examples_out.txt
+   :lines: 125
 
 
+Accessing array data via pointers works the same way, using Node's *as_{type}* methods.
+
+.. # from conduit_tutorial_examples: numeric_ptr_as_dtype
+
+.. literalinclude:: ../../tests/conduit/conduit_tutorial_examples.cpp
+   :lines: 188-199
+   :language: cpp
+   :dedent: 4
+
+.. literalinclude:: tutorial_examples_out.txt
+   :lines: 132-135
+
+
+Or using Node::value():
+
+.. # from conduit_tutorial_examples: numeric_ptr_via_value
+
+.. literalinclude:: ../../tests/conduit/conduit_tutorial_examples.cpp
+   :lines: 209-220
+   :language: cpp
+   :dedent: 4
+
+.. literalinclude:: tutorial_examples_out.txt
+   :lines: 142-145
+
+
+
+For non-contiguous arrays, direct pointer access is complex due to the indexing required. Conduit provides a simple DataArray class that handles per-element indexing for all types of arrays.
+
+.. # from conduit_tutorial_examples: numeric_strided_data_array
+
+.. literalinclude:: ../../tests/conduit/conduit_tutorial_examples.cpp
+   :lines: 229-245
+   :language: cpp
+   :dedent: 4
+
+.. literalinclude:: tutorial_examples_out.txt
+   :lines: 152-154
+
+
+
+Using Introspection and Conversion
+-----------------------------------
+
+In this example, we have an array in a node that we are interested in processing using an and existing function that only handles doubles. We ensure the node is compatible with the function, or transform it 
+to a contiguous double array. 
+
+
+.. # from conduit_tutorial_examples: numeric_double_conversion
+
+.. literalinclude:: ../../tests/conduit/conduit_tutorial_examples.cpp
+   :lines: 255-313
+   :language: cpp
+
+.. literalinclude:: tutorial_examples_out.txt
+   :lines: 163-176
 
