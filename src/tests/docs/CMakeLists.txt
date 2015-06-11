@@ -46,10 +46,20 @@
 # Conduit Unit Tests
 ################################
 
-add_subdirectory("conduit")
-add_subdirectory("conduit_io")
-add_subdirectory("conduit_mpi")
-add_subdirectory("blueprint")
-add_subdirectory("docs")
-add_subdirectory("thirdparty")
+################################
+# Docs Related Unit Tests
+################################
+set(DOCS_TESTS conduit_tutorial_examples)
+
+
+################################
+# Add our tests
+################################
+message(STATUS "Adding docs related unit tests")
+foreach(TEST ${DOCS_TESTS})
+    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit libb64 )
+endforeach()
+
+
+
 

@@ -42,15 +42,68 @@
 .. # 
 .. ############################################################################
 
-===========
-Tutorial
-===========
+======================
+Generators 
+======================
 
-This short tutorial provides C++ examples that demonstrate conduit's features.
 
-.. toctree::
+Using *Generator* instances to parse JSON schemas
+---------------------------------------------------
 
-   tutorial_basics
-   tutorial_numeric
-   tutorial_json
-   tutorial_ownership
+The *Generator* class is used to parse conduit JSON schemas into a *Node*.
+
+
+.. # from conduit_tutorial_examples: json_generator_std
+
+.. literalinclude:: ../../tests/conduit/conduit_tutorial_examples.cpp
+   :lines: 326-335
+   :language: cpp
+   :dedent: 4
+
+.. literalinclude:: tutorial_examples_out.txt
+   :lines: 185-193
+
+
+The *Generator* can also parse pure json. For leaf nodes: wide types such as *int64*, *uint64*, and *float64* are inferred.
+
+.. # from conduit_tutorial_examples: json_generator_pure_json
+
+.. literalinclude:: ../../tests/conduit/conduit_tutorial_examples.cpp
+   :lines: 343-352
+   :language: cpp
+   :dedent: 4
+
+.. literalinclude:: tutorial_examples_out.txt
+   :lines: 200-208
+
+Schemas can easily be bound to in-core data.
+
+.. # from conduit_tutorial_examples: json_generator_bind_to_incore
+
+.. literalinclude:: ../../tests/conduit/conduit_tutorial_examples.cpp
+   :lines: 360-366
+   :language: cpp
+   :dedent: 4
+
+.. literalinclude:: tutorial_examples_out.txt
+   :lines: 215-236
+
+
+
+Compacting Nodes
+--------------------------------
+
+*Nodes* can be compacted to transform sparse data.
+
+.. # from conduit_tutorial_examples: json_generator_compact
+
+.. literalinclude:: ../../tests/conduit/conduit_tutorial_examples.cpp
+   :lines: 384-429
+   :language: cpp
+   :dedent: 4
+
+.. literalinclude:: tutorial_examples_out.txt
+   :lines: 243-309
+
+
+

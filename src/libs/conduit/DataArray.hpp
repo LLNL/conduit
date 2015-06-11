@@ -185,6 +185,14 @@ public:
     std::string     to_json() const;
     void            to_json(std::ostringstream &oss) const;
     void            compact_elements_to(uint8 *data) const;
+    
+//-----------------------------------------------------------------------------
+// -- stdout print methods ---
+//-----------------------------------------------------------------------------
+    /// print a simplified json representation of the this node to std out
+    void            print() const
+                      {std::cout << to_json() << std::endl;}
+    
 
 private:
 //-----------------------------------------------------------------------------
