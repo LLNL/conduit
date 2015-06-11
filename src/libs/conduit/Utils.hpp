@@ -75,7 +75,9 @@
 #define CONDUIT_INFO( msg )                                         \
 {                                                                   \
     std::ostringstream conduit_oss_info;                            \
-    conduit_oss_info << msg;                                        \
+    conduit_oss_info << "[" << std::string(__FILE__);               \
+    conduit_oss_info << " : " << __LINE__  << "]";                  \
+    conduit_oss_info << "\n " << msg;                               \
     std::cout << conduit_oss_info.str() << std::endl;               \
 }                                                                   \
 
