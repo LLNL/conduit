@@ -316,4 +316,24 @@ TEST(conduit_json, json_c_type_names)
     EXPECT_EQ((char*)n3["v2"].as_int_ptr(),(char*)n2.as_int_ptr());
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_json, json_parse_error)
+{
+    
+    std::string schema ="{dtype: int, value:42, offset:8";
+    Node n;
+    Generator g(schema);
+    ASSERT_THROW(g.walk(n),conduit::Error);
+
+    try
+    {
+        g.walk(n);
+    }
+    catch(conduit::Error &e)
+    {
+        e.print();
+    }
+}
+
+
 

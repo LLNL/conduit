@@ -995,10 +995,12 @@ Generator::walk(Schema &schema) const
 
     if(document.Parse<0>(res.c_str()).HasParseError())
     {
-        CONDUIT_ERROR("JSON parse error: "
+        CONDUIT_ERROR("JSON parse error: \n"
                       << " offset: " << document.GetErrorOffset() 
-                      << " message " 
-                      << GetParseError_En(document.GetParseError()) );
+                      << "\n"
+                      << " message: " 
+                      << GetParseError_En(document.GetParseError()) 
+                      << "\n");
     }
     index_t curr_offset = 0;
     Parser::walk_json_schema(&schema,document,curr_offset);
@@ -1027,10 +1029,12 @@ Generator::walk_external(Node &node) const
                 
         if(document.Parse<0>(res.c_str()).HasParseError())
         {
-            CONDUIT_ERROR("JSON parse error: "
+            CONDUIT_ERROR("JSON parse error: \n"
                           << " offset: " << document.GetErrorOffset() 
-                          << " message " 
-                          << GetParseError_En(document.GetParseError()) );
+                          << "\n"
+                          << " message: " 
+                          << GetParseError_En(document.GetParseError()) 
+                          << "\n");
         }
 
         Parser::walk_pure_json_schema(&node,
@@ -1044,10 +1048,12 @@ Generator::walk_external(Node &node) const
         
         if(document.Parse<0>(res.c_str()).HasParseError())
         {
-            CONDUIT_ERROR("JSON parse error: "
+            CONDUIT_ERROR("JSON parse error: \n"
                           << " offset: " << document.GetErrorOffset() 
-                          << " message " 
-                          << GetParseError_En(document.GetParseError()) );
+                          << "\n"
+                          << " message: " 
+                          << GetParseError_En(document.GetParseError()) 
+                          << "\n");
         }
         index_t curr_offset = 0;
 
