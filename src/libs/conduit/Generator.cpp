@@ -58,6 +58,7 @@
 // -- rapidjson includes -- 
 //-----------------------------------------------------------------------------
 #include "rapidjson/document.h"
+#include "rapidjson/error/en.h"
 
 //-----------------------------------------------------------------------------
 // -- conduit library includes -- 
@@ -108,7 +109,8 @@ public:
 
     static void    parse_json_float64_array(const rapidjson::Value &jvalue,
                                             Node &node);
-                                            
+    static index_t parse_leaf_dtype_name(const std::string &dtype_name);
+    
     static void    parse_leaf_dtype(const rapidjson::Value &jvalue,
                                     index_t offset,
                                     DataType &dtype_res);
@@ -369,6 +371,27 @@ Generator::Parser::parse_json_float64_array(const rapidjson::Value &jvalue,
     }
 }
 
+
+//---------------------------------------------------------------------------//
+index_t 
+Generator::Parser::parse_leaf_dtype_name(const std::string &dtype_name)
+{
+    index_t dtype_id = DataType::name_to_id(dtype_name);
+    if(dtype_id == DataType::EMPTY_T)
+    {
+        // also try native type names
+        dtype_id = DataType::c_type_name_to_id(dtype_name);
+    }
+
+    // do an explicit check for empty
+    if(dtype_id == DataType::EMPTY_T && dtype_name != "empty")
+    {
+        CONDUIT_ERROR("Generator parsing error: invalid leaf type "
+                      << "\""  <<  dtype_name << "\"");
+    }
+    return dtype_id;
+}
+
 //---------------------------------------------------------------------------//
 void
 Generator::Parser::parse_leaf_dtype(const rapidjson::Value &jvalue,
@@ -379,7 +402,7 @@ Generator::Parser::parse_leaf_dtype(const rapidjson::Value &jvalue,
     if(jvalue.IsString())
     {
         std::string dtype_name(jvalue.GetString());
-        index_t dtype_id = DataType::name_to_id(dtype_name);
+        index_t dtype_id = parse_leaf_dtype_name(dtype_name);
         index_t ele_size = DataType::default_bytes(dtype_id);
         dtype_res.set(dtype_id,
                       1,
@@ -396,7 +419,7 @@ Generator::Parser::parse_leaf_dtype(const rapidjson::Value &jvalue,
         {
             length = jvalue["length"].GetUint64();
         }
-        index_t dtype_id  = DataType::name_to_id(dtype_name);
+        index_t dtype_id  = parse_leaf_dtype_name(dtype_name);
         index_t ele_size  = DataType::default_bytes(dtype_id);
         index_t stride    = ele_size;
     
@@ -969,10 +992,13 @@ Generator::walk(Schema &schema) const
     schema.reset();
     rapidjson::Document document;
     std::string res = utils::json_sanitize(m_json_schema);
+
     if(document.Parse<0>(res.c_str()).HasParseError())
     {
-        CONDUIT_ERROR("rapidjson parse error");
-        /// TODO: better parse error msg
+        CONDUIT_ERROR("JSON parse error: "
+                      << " offset: " << document.GetErrorOffset() 
+                      << " message " 
+                      << GetParseError_En(document.GetParseError()) );
     }
     index_t curr_offset = 0;
     Parser::walk_json_schema(&schema,document,curr_offset);
@@ -998,10 +1024,13 @@ Generator::walk_external(Node &node) const
     {
         rapidjson::Document document;
         std::string res = utils::json_sanitize(m_json_schema);
+                
         if(document.Parse<0>(res.c_str()).HasParseError())
         {
-            CONDUIT_ERROR("rapidjson parse error");
-            /// TODO: better parse error msg
+            CONDUIT_ERROR("JSON parse error: "
+                          << " offset: " << document.GetErrorOffset() 
+                          << " message " 
+                          << GetParseError_En(document.GetParseError()) );
         }
 
         Parser::walk_pure_json_schema(&node,
@@ -1012,10 +1041,13 @@ Generator::walk_external(Node &node) const
     {
         rapidjson::Document document;
         std::string res = utils::json_sanitize(m_json_schema);
+        
         if(document.Parse<0>(res.c_str()).HasParseError())
         {
-            CONDUIT_ERROR("rapidjson parse error");
-            /// TODO: better parse error msg
+            CONDUIT_ERROR("JSON parse error: "
+                          << " offset: " << document.GetErrorOffset() 
+                          << " message " 
+                          << GetParseError_En(document.GetParseError()) );
         }
         index_t curr_offset = 0;
 
