@@ -134,3 +134,77 @@ TEST(conduit_list_of, path_ref)
     delete [] data;
 }
     
+    
+
+//-----------------------------------------------------------------------------
+TEST(conduit_list_of, without_json)
+{
+    uint32  len_val = 2;
+    int32   a1_val  = 10;
+    int32   b1_val  = 20;
+    
+    int32   a2_val  = -10;
+    int32   b2_val  = -20;
+    
+    char *data = new char[16];
+    memcpy(&data[0],&a1_val,4);    
+    memcpy(&data[4],&b1_val,4);
+    memcpy(&data[8],&a2_val,4);
+    memcpy(&data[12],&b2_val,4);
+    
+    Node n;
+    
+    Schema entry_s;
+    entry_s["a"].set(DataType::int32());
+    entry_s["b"].set(DataType::int32());
+    
+    n["list_length"] = len_val;
+    n["values"].list_of_external(data,entry_s,2);
+    
+    std::cout << n.schema().to_json() << std::endl;
+    std::cout << n.to_json() << std::endl;
+
+    std::cout <<  n["list_length"].as_uint32() << std::endl;
+
+    std::cout <<  n["values"][0]["a"].as_int32() << std::endl;
+    std::cout <<  n["values"][1]["a"].as_int32() << std::endl;
+
+    std::cout <<  n["values"][0]["b"].as_int32() << std::endl;
+    std::cout <<  n["values"][1]["b"].as_int32() << std::endl;
+
+    EXPECT_EQ(n["list_length"].as_uint32(), len_val);
+    EXPECT_EQ(n["values"][0]["a"].as_int32(), a1_val);
+    EXPECT_EQ(n["values"][1]["a"].as_int32(), a2_val);
+
+    EXPECT_EQ(n["values"][0]["b"].as_int32(), b1_val);
+    EXPECT_EQ(n["values"][1]["b"].as_int32(), b2_val);
+
+
+    // test the non-external case:
+    Node n2;
+    n2.list_of(entry_s,2);
+    n2.update(n["values"]);
+    n2.print();
+    
+    // we should only have one allocation 
+    Node ninfo;
+    n2.info(ninfo);
+    ninfo.print();
+    
+
+    // test if n2 was actually created in a contiguous way
+    Node n3;
+    n3.set_external((int32*)n2.data_ptr(),4);
+    n3.print();
+    
+    int32 *n3_ptr = n3.value();
+    
+    EXPECT_EQ(n3_ptr[0], a1_val);
+    EXPECT_EQ(n3_ptr[1], b1_val);
+    EXPECT_EQ(n3_ptr[2], a2_val);
+    EXPECT_EQ(n3_ptr[3], b2_val);
+
+    delete [] data;
+}
+    
+

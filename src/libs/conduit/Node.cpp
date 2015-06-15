@@ -5992,6 +5992,60 @@ Node::remove(const std::string &path)
     }
 }
 
+
+//---------------------------------------------------------------------------//
+// helper to create a Schema the describes a list of a homogenous type
+void
+Node::list_of(const Schema &schema, 
+              index_t num_entries)
+{
+    init_list();
+
+    Schema s_compact;
+    schema.compact_to(s_compact);
+    
+    index_t entry_bytes = s_compact.total_bytes();
+    index_t total_bytes = entry_bytes * num_entries;
+
+    // allocate what we need
+    allocate(DataType::uint8(total_bytes));
+    
+    uint8 *ptr =(uint8*)data_ptr();
+    
+    for(index_t i=0; i <  num_entries ; i++)
+    {
+        append().set_external(s_compact,ptr);
+        ptr += entry_bytes;
+    }
+}
+
+//---------------------------------------------------------------------------//
+// helper to create a Schema the describes a list of a homogenous type
+// where the data is held externally.
+void
+Node::list_of_external(void *data,
+                       const Schema &schema, 
+                       index_t num_entries)
+{
+    release();
+    init_list();
+
+    Schema s_compact;
+    schema.compact_to(s_compact);
+    
+    index_t entry_bytes = s_compact.total_bytes();
+    index_t total_bytes = entry_bytes * num_entries;
+
+    m_data = data;
+    uint8 *ptr = (uint8*) data;
+    
+    for(index_t i=0; i <  num_entries ; i++)
+    {
+        append().set_external(s_compact,ptr);
+        ptr += entry_bytes;
+    }
+}
+
 //-----------------------------------------------------------------------------
 //
 // -- end definition of Node entry access methods --
