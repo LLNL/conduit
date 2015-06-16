@@ -246,6 +246,69 @@ TEST(conduit_mpi_test, external)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, allgather_simple) 
+{
+    Node n;
+    
+    int rank = mpi::rank(MPI_COMM_WORLD);
+    int size = mpi::size(MPI_COMM_WORLD);
+
+    n["values/a"] = rank+1;
+    n["values/b"] = rank+2;
+    n["values/c"] = rank+3;
+    
+    Node rcv;
+    mpi::allgather(n,rcv,MPI_COMM_WORLD);
+    rcv.print();
+    
+    Node res;
+    res.set_external((int*)rcv.data_ptr(), 6);
+    res.print();
+    
+    int *res_ptr = res.value();
+    EXPECT_EQ(res_ptr[0],1);
+    EXPECT_EQ(res_ptr[1],2);
+    EXPECT_EQ(res_ptr[2],3);
+    EXPECT_EQ(res_ptr[3],2);
+    EXPECT_EQ(res_ptr[4],3);
+    EXPECT_EQ(res_ptr[5],4);
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, gather_simple) 
+{
+    Node n;
+    
+    int rank = mpi::rank(MPI_COMM_WORLD);
+    int size = mpi::size(MPI_COMM_WORLD);
+
+    n["values/a"] = rank+1;
+    n["values/b"] = rank+2;
+    n["values/c"] = rank+3;
+    
+    Node rcv;
+    mpi::allgather(n,rcv,MPI_COMM_WORLD);
+    rcv.print();
+    
+    if(rank == 0)
+    {
+        Node res;
+        res.set_external((int*)rcv.data_ptr(), 6);
+        res.print();
+    
+        int *res_ptr = res.value();
+        EXPECT_EQ(res_ptr[0],1);
+        EXPECT_EQ(res_ptr[1],2);
+        EXPECT_EQ(res_ptr[2],3);
+        EXPECT_EQ(res_ptr[3],2);
+        EXPECT_EQ(res_ptr[4],3);
+        EXPECT_EQ(res_ptr[5],4);
+    }
+}
+
+
+//-----------------------------------------------------------------------------
 TEST(conduit_mpi_test, gatherv_simple) 
 {
     Node n;
@@ -281,6 +344,44 @@ TEST(conduit_mpi_test, gatherv_simple)
         EXPECT_EQ(res_ptr[6],5);
     }
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, allgatherv_simple) 
+{
+    Node n;
+    
+    int rank = mpi::rank(MPI_COMM_WORLD);
+    int size = mpi::size(MPI_COMM_WORLD);
+
+    n["values/a"] = rank+1;
+    n["values/b"] = rank+2;
+    n["values/c"] = rank+3;
+    if(rank != 0)
+    {
+        n["values/d"] = rank+4;
+    }
+    
+    Node rcv;
+    mpi::allgatherv(n,rcv,MPI_COMM_WORLD);
+    rcv.print();
+    
+    Node res;
+    res.set_external((int*)rcv.data_ptr(), 7);
+    res.print();
+    
+    int *res_ptr = res.value();
+    EXPECT_EQ(res_ptr[0],1);
+    EXPECT_EQ(res_ptr[1],2);
+    EXPECT_EQ(res_ptr[2],3);
+    EXPECT_EQ(res_ptr[3],2);
+    EXPECT_EQ(res_ptr[4],3);
+    EXPECT_EQ(res_ptr[5],4);
+    EXPECT_EQ(res_ptr[6],5);
+
+}
+
+
+
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

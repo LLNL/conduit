@@ -379,6 +379,68 @@ wait_all_recv(int count,
 
 //---------------------------------------------------------------------------//
 int
+gather(Node &send_node,
+       Node &recv_node,
+       int root,
+       MPI_Comm mpi_comm)
+{
+    Node n_snd_compact;
+    send_node.compact_to(n_snd_compact);
+    int data_len = n_snd_compact.total_bytes();
+
+    int m_size = mpi::size(mpi_comm);
+    int m_rank = mpi::rank(mpi_comm);
+
+    if(m_rank == root)
+    {
+        recv_node.list_of(n_snd_compact.schema(),
+                          m_size);
+    }
+
+    int mpi_error = MPI_Gather( n_snd_compact.data_ptr(), // local data
+                                data_len, // local data len
+                                MPI_CHAR, // send chars
+                                recv_node.data_ptr(),  // rcv buffer
+                                data_len, // data len 
+                                MPI_CHAR,  // rcv chars
+                                root,
+                                mpi_comm); // mpi com
+
+    // TODO: Check for fatal mpi_error
+    return mpi_error;
+}
+
+//---------------------------------------------------------------------------//
+int
+allgather(Node &send_node,
+          Node &recv_node,
+          MPI_Comm mpi_comm)
+{
+    Node n_snd_compact;
+    send_node.compact_to(n_snd_compact);
+    int data_len = n_snd_compact.total_bytes();
+    
+    int m_size = mpi::size(mpi_comm);
+
+    recv_node.list_of(n_snd_compact.schema(),
+                      m_size);
+
+    int mpi_error = MPI_Allgather( n_snd_compact.data_ptr(), // local data
+                                   data_len, // local data len
+                                   MPI_CHAR, // send chars
+                                   recv_node.data_ptr(),  // rcv buffer
+                                   data_len, // data len 
+                                   MPI_CHAR,  // rcv chars
+                                   mpi_comm); // mpi com
+
+    // TODO: Check for fatal mpi_error
+    return mpi_error;
+}
+
+
+
+//---------------------------------------------------------------------------//
+int
 gatherv(Node &send_node,
         Node &recv_node,
         int root, 
@@ -492,14 +554,14 @@ gatherv(Node &send_node,
     if( m_rank == root )
     {
         //TODO: should we make it easer to create a compact schema?
-        Schema st;
+        Schema s_tmp;
         for(int i=0;i < m_size; i++)
         {
-            Schema &s = st.append();
+            Schema &s = s_tmp.append();
             s.set(&schema_rcv_buff[schema_rcv_displs[i]]);
         }
         
-        st.compact_to(rcv_schema);
+        s_tmp.compact_to(rcv_schema);
     }
 
     
@@ -530,7 +592,128 @@ allgatherv(Node &send_node,
            Node &recv_node,
            MPI_Comm mpi_comm)
 {
-    int mpi_error = 0;
+    Node n_snd_compact;
+    send_node.compact_to(n_snd_compact);
+
+    int m_size = mpi::size(mpi_comm);
+
+    std::string schema_str = n_snd_compact.schema().to_json();
+
+    int schema_len = schema_str.length() + 1;
+    int data_len   = n_snd_compact.total_bytes();
+    
+    // to do the conduit gatherv, first need a gather to get the 
+    // schema and data buffer sizes
+    
+    int snd_sizes[] = {schema_len, data_len};
+
+    Node n_rcv_sizes;
+
+    Schema s;
+    s["schema_len"].set(DataType::c_int());
+    s["data_len"].set(DataType::c_int());
+    n_rcv_sizes.list_of(s,m_size);
+
+    int mpi_error = MPI_Allgather( snd_sizes, // local data
+                                   2, // two ints per rank
+                                   MPI_INT, // send ints
+                                   n_rcv_sizes.data_ptr(),  // rcv buffer
+                                   2,  // two ints per rank
+                                   MPI_INT,  // rcv ints
+                                   mpi_comm); // mpi com
+
+    // TODO: Check for fatal mpi_error
+                                
+    Node n_rcv_tmp;
+    
+    int  *schema_rcv_counts = NULL;
+    int  *schema_rcv_displs = NULL;
+    char *schema_rcv_buff   = NULL;
+
+    int  *data_rcv_counts = NULL;
+    int  *data_rcv_displs = NULL;
+    char *data_rcv_buff   = NULL;
+
+
+    // alloc data for the mpi gather counts and displ arrays
+    n_rcv_tmp["schemas/counts"].set(DataType::c_int(m_size));
+    n_rcv_tmp["schemas/displs"].set(DataType::c_int(m_size));
+
+    n_rcv_tmp["data/counts"].set(DataType::c_int(m_size));
+    n_rcv_tmp["data/displs"].set(DataType::c_int(m_size));
+
+    // get pointers to counts and displs
+    schema_rcv_counts = n_rcv_tmp["schemas/counts"].value();
+    schema_rcv_displs = n_rcv_tmp["schemas/displs"].value();
+
+    data_rcv_counts = n_rcv_tmp["data/counts"].value();
+    data_rcv_displs = n_rcv_tmp["data/displs"].value();
+
+    int schema_curr_displ = 0;
+    int data_curr_displ   = 0;
+    int i=0;
+    
+    NodeIterator itr = n_rcv_sizes.iterator();
+    while(itr.has_next())
+    {
+        Node &curr = itr.next();
+
+        int schema_curr_count = curr["schema_len"].value();
+        int data_curr_count   = curr["data_len"].value();
+        
+        schema_rcv_counts[i] = schema_curr_count;
+        schema_rcv_displs[i] = schema_curr_displ;
+        schema_curr_displ   += schema_curr_count;
+        
+        data_rcv_counts[i] = data_curr_count;
+        data_rcv_displs[i] = data_curr_displ;
+        data_curr_displ   += data_curr_count;
+        
+        i++;
+    }
+    
+    n_rcv_tmp["schemas/data"].set(DataType::c_char(schema_curr_displ));
+    schema_rcv_buff = n_rcv_tmp["schemas/data"].value();
+
+    mpi_error = MPI_Allgatherv( const_cast <char*>(schema_str.c_str()),
+                                schema_len,
+                                MPI_CHAR,
+                                schema_rcv_buff,
+                                schema_rcv_counts,
+                                schema_rcv_displs,
+                                MPI_CHAR,
+                                mpi_comm);
+
+    // TODO: Check for fatal mpi_error
+
+    // build all schemas from JSON, compact them.
+    Schema rcv_schema;
+    //TODO: should we make it easer to create a compact schema?
+    Schema s_tmp;
+    for(int i=0;i < m_size; i++)
+    {
+        Schema &s = s_tmp.append();
+        s.set(&schema_rcv_buff[schema_rcv_displs[i]]);
+    }
+    
+    s_tmp.compact_to(rcv_schema);
+
+
+    
+    // allocate data to hold the gather result
+    recv_node.set(rcv_schema);
+    data_rcv_buff = (char*)recv_node.data_ptr();
+    
+    mpi_error = MPI_Allgatherv( n_snd_compact.data_ptr(),
+                                data_len,
+                                MPI_CHAR,
+                                data_rcv_buff,
+                                data_rcv_counts,
+                                data_rcv_displs,
+                                MPI_CHAR,
+                                mpi_comm);
+
+    // TODO: Check for fatal mpi_error
     return mpi_error;
 }
 
