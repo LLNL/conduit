@@ -619,4 +619,35 @@ TEST(conduit_node, check_value_implict_bitwidth_type_cast)
 }
 
 
+//-----------------------------------------------------------------------------
+void 
+print_error(const std::string &msg,
+            const std::string &file,
+            int line)
+{
+    std::cout << "File:" << file << std::endl;
+    std::cout << "Line:" << line << std::endl;
+    std::cout << "Error:" << msg << std::endl;
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node, check_as_value_default_after_error)
+{
+    conduit::utils::set_error_handler(print_error);
+    uint64 val = 10;
+    Node n;
+    n.set(val);
+    
+    EXPECT_EQ(n.as_uint8(),0);
+    EXPECT_EQ(n.as_uint8_ptr(),(void*)NULL);
+    
+    float32_array arr = n.value();
+
+    EXPECT_TRUE(arr.dtype().is_empty());        
+    EXPECT_EQ(arr.data_ptr(),(void*)NULL);
+    
+    conduit::utils::set_error_handler(conduit::utils::default_error_handler);
+}
+
 

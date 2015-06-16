@@ -64,9 +64,10 @@ namespace utils
 
 //-----------------------------------------------------------------------------
 // default error handler callback, simply throws a conduit::Error exception.
-void CONDUIT_API default_on_error(const std::string &msg,
-                                  const std::string &file,
-                                  int line)
+void 
+default_error_handler(const std::string &msg,
+                      const std::string &file,
+                      int line)
 {
     throw conduit::Error( msg, file, line);
 }
@@ -75,22 +76,24 @@ void CONDUIT_API default_on_error(const std::string &msg,
 // Private namespace member that holds our error handler callback.
 void (*conduit_on_error)(const std::string &,
                          const std::string &,
-                         int)= default_on_error;
+                         int)= default_error_handler;
 
 //-----------------------------------------------------------------------------
 // Allows other libraries to provide an alternate error handler.
-void CONDUIT_API set_error_handler( void(*on_error)
-                                    (const std::string&,
-                                     const std::string&,
-                                     int))
+void
+set_error_handler(void(*on_error)
+                  (const std::string&,
+                  const std::string&,
+                  int))
 {
     conduit_on_error = on_error;
 }
 
 //-----------------------------------------------------------------------------
-void CONDUIT_API handle_error(const std::string &msg,
-                              const std::string &file,
-                              int line)
+void
+handle_error(const std::string &msg,
+             const std::string &file,
+             int line)
 {
     conduit_on_error(msg,file,line);
 }

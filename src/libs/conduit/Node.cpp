@@ -84,18 +84,18 @@
 /// The CONDUIT_ASSERT_DTYPE macro is used to check the dtype for leaf access
 /// methods.
 //-----------------------------------------------------------------------------
-#define CONDUIT_ASSERT_DTYPE( dtype_id, dtype_id_expect, msg )      \
+#define CONDUIT_ASSERT_DTYPE( dtype_id, dtype_id_expect, msg, rtn ) \
 {                                                                   \
+    CONDUIT_ASSERT( (dtype_id == dtype_id_expect) ,                 \
+                    "DataType "                                     \
+                    << DataType::id_to_name(dtype_id)               \
+                    << " does not equal expected DataType "         \
+                    << DataType::id_to_name(dtype_id_expect)        \
+                    << " " << msg);                                 \
+                                                                    \
     if(dtype_id != dtype_id_expect)                                 \
     {                                                               \
-        std::ostringstream assert_dtype_oss;                        \
-        assert_dtype_oss << "DataType "                             \
-            << DataType::id_to_name(dtype_id)                       \
-            << " does not equal expected DataType "                 \
-            << DataType::id_to_name(dtype_id_expect)                \
-            << " " << msg;                                          \
-        CONDUIT_ASSERT( (dtype_id == dtype_id_expect) ,             \
-                         assert_dtype_oss.str());                   \
+        return rtn;                                                 \
     }                                                               \
 }                                                                   \
 
@@ -5992,6 +5992,60 @@ Node::remove(const std::string &path)
     }
 }
 
+
+//---------------------------------------------------------------------------//
+// helper to create a Schema the describes a list of a homogenous type
+void
+Node::list_of(const Schema &schema, 
+              index_t num_entries)
+{
+    init_list();
+
+    Schema s_compact;
+    schema.compact_to(s_compact);
+    
+    index_t entry_bytes = s_compact.total_bytes();
+    index_t total_bytes = entry_bytes * num_entries;
+
+    // allocate what we need
+    allocate(DataType::uint8(total_bytes));
+    
+    uint8 *ptr =(uint8*)data_ptr();
+    
+    for(index_t i=0; i <  num_entries ; i++)
+    {
+        append().set_external(s_compact,ptr);
+        ptr += entry_bytes;
+    }
+}
+
+//---------------------------------------------------------------------------//
+// helper to create a Schema the describes a list of a homogenous type
+// where the data is held externally.
+void
+Node::list_of_external(void *data,
+                       const Schema &schema, 
+                       index_t num_entries)
+{
+    release();
+    init_list();
+
+    Schema s_compact;
+    schema.compact_to(s_compact);
+    
+    index_t entry_bytes = s_compact.total_bytes();
+    index_t total_bytes = entry_bytes * num_entries;
+
+    m_data = data;
+    uint8 *ptr = (uint8*) data;
+    
+    for(index_t i=0; i <  num_entries ; i++)
+    {
+        append().set_external(s_compact,ptr);
+        ptr += entry_bytes;
+    }
+}
+
 //-----------------------------------------------------------------------------
 //
 // -- end definition of Node entry access methods --
@@ -6012,7 +6066,10 @@ Node::remove(const std::string &path)
 int8
 Node::as_int8()  const
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT8_T,"as_int8()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::INT8_T,
+                         "as_int8()",
+                         0);
     return *((int8*)element_ptr(0));
 }
 
@@ -6020,7 +6077,10 @@ Node::as_int8()  const
 int16
 Node::as_int16() const
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT16_T,"as_int16()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(), 
+                         DataType::INT16_T,
+                         "as_int16()",
+                         0);
     return *((int16*)element_ptr(0));
 }
 
@@ -6028,7 +6088,10 @@ Node::as_int16() const
 int32
 Node::as_int32() const
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT32_T,"as_int32()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::INT32_T,
+                         "as_int32()",
+                         0);
     return *((int32*)element_ptr(0));
 }
 
@@ -6036,7 +6099,10 @@ Node::as_int32() const
 int64
 Node::as_int64() const
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT64_T,"as_int64()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::INT64_T,
+                         "as_int64()",
+                         0);
     return *((int64*)element_ptr(0));
 }
 
@@ -6048,7 +6114,9 @@ Node::as_int64() const
 uint8
 Node::as_uint8() const
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT8_T,"as_uint8()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(), 
+                         DataType::UINT8_T,
+                         "as_uint8()", 0);
     return *((uint8*)element_ptr(0));
 }
 
@@ -6056,7 +6124,10 @@ Node::as_uint8() const
 uint16
 Node::as_uint16() const
 {
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT16_T,"as_uint16()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::UINT16_T,
+                         "as_uint16()",
+                         0);
     return *((uint16*)element_ptr(0));
 }
 
@@ -6064,7 +6135,10 @@ Node::as_uint16() const
 uint32
 Node::as_uint32() const
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT32_T,"as_uint32()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::UINT32_T,
+                         "as_uint32()",
+                         0);
     return *((uint32*)element_ptr(0));
 }
 
@@ -6072,7 +6146,10 @@ Node::as_uint32() const
 uint64
 Node::as_uint64() const
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT64_T,"as_uint64()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::UINT64_T,
+                         "as_uint64()",
+                         0);
     return *((uint64*)element_ptr(0));
 }
 
@@ -6084,7 +6161,10 @@ Node::as_uint64() const
 float32
 Node::as_float32() const
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::FLOAT32_T,"as_float32()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(), 
+                         DataType::FLOAT32_T,
+                         "as_float32()",
+                         0);
     return *((float32*)element_ptr(0));
 }
 
@@ -6092,7 +6172,10 @@ Node::as_float32() const
 float64
 Node::as_float64() const
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::FLOAT64_T,"as_float64()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::FLOAT64_T,
+                         "as_float64()",
+                         0);
     return *((float64*)element_ptr(0));
 }
 
@@ -6104,7 +6187,10 @@ Node::as_float64() const
 int8 *
 Node::as_int8_ptr()
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT8_T,"as_int8_ptr()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(), 
+                         DataType::INT8_T,
+                         "as_int8_ptr()",
+                         NULL);
     return (int8*)element_ptr(0);
 }
 
@@ -6112,7 +6198,10 @@ Node::as_int8_ptr()
 int16 *
 Node::as_int16_ptr()
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT16_T,"as_int16_ptr()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::INT16_T,
+                         "as_int16_ptr()",
+                         NULL);
     return (int16*)element_ptr(0);
 }
 
@@ -6120,7 +6209,10 @@ Node::as_int16_ptr()
 int32 *
 Node::as_int32_ptr()
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT32_T,"as_int32_ptr()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::INT32_T,
+                         "as_int32_ptr()",
+                         NULL);
     return (int32*)element_ptr(0);
 }
 
@@ -6128,7 +6220,10 @@ Node::as_int32_ptr()
 int64 *
 Node::as_int64_ptr()
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT64_T,"as_int64_ptr()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::INT64_T,
+                         "as_int64_ptr()",
+                         NULL);
     return (int64*)element_ptr(0);
 }
 
@@ -6140,7 +6235,10 @@ Node::as_int64_ptr()
 uint8 *
 Node::as_uint8_ptr()
 {
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT8_T,"as_uint8_ptr()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::UINT8_T,
+                         "as_uint8_ptr()",
+                         NULL);
     return (uint8*)element_ptr(0);
 }
 
@@ -6148,7 +6246,10 @@ Node::as_uint8_ptr()
 uint16 *
 Node::as_uint16_ptr()   
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT16_T,"as_uint16_ptr()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::UINT16_T,
+                         "as_uint16_ptr()",
+                         NULL);
     return (uint16*)element_ptr(0);
 }
 
@@ -6156,7 +6257,10 @@ Node::as_uint16_ptr()
 uint32 *
 Node::as_uint32_ptr()   
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT32_T,"as_uint32_ptr()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::UINT32_T,
+                         "as_uint32_ptr()",
+                         NULL);
     return (uint32*)element_ptr(0);
 }
 
@@ -6164,7 +6268,10 @@ Node::as_uint32_ptr()
 uint64 *
 Node::as_uint64_ptr()   
 {     
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT64_T,"as_uint64_ptr()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::UINT64_T,
+                         "as_uint64_ptr()",
+                         NULL);
     return (uint64*)element_ptr(0);
 }
 
@@ -6176,7 +6283,10 @@ Node::as_uint64_ptr()
 float32 *
 Node::as_float32_ptr()  
 {
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::FLOAT32_T,"as_float32_ptr()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::FLOAT32_T,
+                         "as_float32_ptr()",
+                         NULL);
     return (float32*)element_ptr(0);
 }
 
@@ -6184,7 +6294,10 @@ Node::as_float32_ptr()
 float64 *
 Node::as_float64_ptr()  
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::FLOAT64_T,"as_float64_ptr()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::FLOAT64_T,
+                         "as_float64_ptr()",
+                         NULL);
     return (float64*)element_ptr(0);
 }
 
@@ -6197,7 +6310,10 @@ Node::as_float64_ptr()
 const int8 *
 Node::as_int8_ptr() const
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT8_T,"as_int8_ptr()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::INT8_T,
+                         "as_int8_ptr()",
+                         NULL);
     return (int8*)element_ptr(0);
 }
 
@@ -6205,7 +6321,10 @@ Node::as_int8_ptr() const
 const int16 *
 Node::as_int16_ptr() const
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT16_T,"as_int16_ptr()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::INT16_T,
+                         "as_int16_ptr()",
+                         NULL);
     return (int16*)element_ptr(0);
 }
 
@@ -6213,7 +6332,10 @@ Node::as_int16_ptr() const
 const int32 *
 Node::as_int32_ptr() const
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT32_T,"as_int32_ptr()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::INT32_T,
+                         "as_int32_ptr()",
+                         NULL);
     return (int32*)element_ptr(0);
 }
 
@@ -6221,7 +6343,10 @@ Node::as_int32_ptr() const
 const int64 *
 Node::as_int64_ptr() const
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT64_T,"as_int64_ptr()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::INT64_T,
+                         "as_int64_ptr()",
+                         NULL);
     return (int64*)element_ptr(0);
 }
 
@@ -6233,7 +6358,10 @@ Node::as_int64_ptr() const
 const uint8 *
 Node::as_uint8_ptr() const
 {
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT8_T,"as_uint8_ptr()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::UINT8_T,
+                         "as_uint8_ptr()",
+                         NULL);
     return (uint8*)element_ptr(0);
 }
 
@@ -6241,7 +6369,10 @@ Node::as_uint8_ptr() const
 const uint16 *
 Node::as_uint16_ptr() const
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT16_T,"as_uint16_ptr()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::UINT16_T,
+                         "as_uint16_ptr()",
+                         NULL);
     return (uint16*)element_ptr(0);
 }
 
@@ -6249,7 +6380,10 @@ Node::as_uint16_ptr() const
 const uint32 *
 Node::as_uint32_ptr() const
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT32_T,"as_uint32_ptr()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::UINT32_T,
+                         "as_uint32_ptr()",
+                         NULL);
     return (uint32*)element_ptr(0);
 }
 
@@ -6257,7 +6391,10 @@ Node::as_uint32_ptr() const
 const uint64 *
 Node::as_uint64_ptr() const
 {     
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT64_T,"as_uint64_ptr()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::UINT64_T,
+                         "as_uint64_ptr()",
+                         NULL);
     return (uint64*)element_ptr(0);
 }
 
@@ -6269,7 +6406,10 @@ Node::as_uint64_ptr() const
 const float32 *
 Node::as_float32_ptr() const
 {
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::FLOAT32_T,"as_float32_ptr()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::FLOAT32_T,
+                         "as_float32_ptr()",
+                         NULL);
     return (float32*)element_ptr(0);
 }
 
@@ -6277,7 +6417,10 @@ Node::as_float32_ptr() const
 const float64 *
 Node::as_float64_ptr() const
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::FLOAT64_T,"as_float64_ptr()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::FLOAT64_T,
+                         "as_float64_ptr()",
+                         NULL);
     return (float64*)element_ptr(0);
 }
 
@@ -6290,7 +6433,10 @@ Node::as_float64_ptr() const
 int8_array
 Node::as_int8_array()
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT8_T,"as_int8_array()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::INT8_T,
+                         "as_int8_array()",
+                         int8_array());
     return int8_array(m_data,dtype());
 }
 
@@ -6298,7 +6444,10 @@ Node::as_int8_array()
 int16_array
 Node::as_int16_array()
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT16_T,"as_int16_array()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::INT16_T,
+                         "as_int16_array()",
+                         int16_array());
     return int16_array(m_data,dtype());
 }
 
@@ -6306,7 +6455,10 @@ Node::as_int16_array()
 int32_array
 Node::as_int32_array()
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT32_T,"as_int32_array()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::INT32_T,
+                         "as_int32_array()",
+                         int32_array());
     return int32_array(m_data,dtype());
 }
 
@@ -6314,7 +6466,10 @@ Node::as_int32_array()
 int64_array
 Node::as_int64_array()
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT64_T,"as_int64_array()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::INT64_T,
+                         "as_int64_array()",
+                         int64_array());
     return int64_array(m_data,dtype());
 }
 
@@ -6326,7 +6481,10 @@ Node::as_int64_array()
 uint8_array
 Node::as_uint8_array()
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT8_T,"as_uint8_array()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::UINT8_T,
+                         "as_uint8_array()",
+                         uint8_array());
     return uint8_array(m_data,dtype());
 }
 
@@ -6334,7 +6492,10 @@ Node::as_uint8_array()
 uint16_array
 Node::as_uint16_array()
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT16_T,"as_uint16_array()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::UINT16_T,
+                         "as_uint16_array()",
+                         uint16_array());
     return uint16_array(m_data,dtype());
 }
 
@@ -6342,7 +6503,10 @@ Node::as_uint16_array()
 uint32_array
 Node::as_uint32_array()
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT32_T,"as_uint32_array()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                          DataType::UINT32_T,
+                          "as_uint32_array()",
+                          uint32_array());
     return uint32_array(m_data,dtype());
 }
 
@@ -6350,7 +6514,10 @@ Node::as_uint32_array()
 uint64_array
 Node::as_uint64_array() 
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT64_T,"as_uint64_array()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::UINT64_T,
+                         "as_uint64_array()",
+                         uint64_array());
     return uint64_array(m_data,dtype());
 }
 
@@ -6364,7 +6531,8 @@ Node::as_float32_array()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          DataType::FLOAT32_T,
-                         "as_float32_array()");
+                         "as_float32_array()",
+                         float32_array());
     return float32_array(m_data,dtype());
 }
 
@@ -6374,7 +6542,8 @@ Node::as_float64_array()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          DataType::FLOAT64_T,
-                         "as_float64_array()");
+                         "as_float64_array()",
+                         float64_array());
     return float64_array(m_data,dtype());
 }
 
@@ -6386,7 +6555,10 @@ Node::as_float64_array()
 const int8_array
 Node::as_int8_array() const
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT8_T,"as_int8_array()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::INT8_T,
+                         "as_int8_array()",
+                         int8_array());
     return int8_array(m_data,dtype());
 }
 
@@ -6394,7 +6566,10 @@ Node::as_int8_array() const
 const int16_array
 Node::as_int16_array() const 
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT16_T,"as_int16_array()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::INT16_T,
+                         "as_int16_array()",
+                         int16_array());
     return int16_array(m_data,dtype());
 }
 
@@ -6402,7 +6577,10 @@ Node::as_int16_array() const
 const int32_array
 Node::as_int32_array() const
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT32_T,"as_int32_array()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::INT32_T,
+                         "as_int32_array()",
+                         int32_array());
     return int32_array(m_data,dtype());
 }
 
@@ -6410,7 +6588,10 @@ Node::as_int32_array() const
 const int64_array
 Node::as_int64_array() const 
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::INT64_T,"as_int64_array()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::INT64_T,
+                         "as_int64_array()",
+                         int64_array());
     return int64_array(m_data,dtype());
 }
 
@@ -6423,7 +6604,10 @@ Node::as_int64_array() const
 const uint8_array
 Node::as_uint8_array() const
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT8_T,"as_uint8_array()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::UINT8_T,
+                         "as_uint8_array()",
+                         uint8_array());
     return uint8_array(m_data,dtype());
 }
 
@@ -6431,7 +6615,10 @@ Node::as_uint8_array() const
 const uint16_array
 Node::as_uint16_array() const
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT16_T,"as_uint16_array()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::UINT16_T,
+                         "as_uint16_array()",
+                         uint16_array());
     return uint16_array(m_data,dtype());
 }
 
@@ -6439,7 +6626,10 @@ Node::as_uint16_array() const
 const uint32_array
 Node::as_uint32_array() const
 { 
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT32_T,"as_uint32_array()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::UINT32_T,
+                         "as_uint32_array()",
+                         uint32_array());
     return uint32_array(m_data,dtype());
 }
 
@@ -6447,7 +6637,10 @@ Node::as_uint32_array() const
 const uint64_array
 Node::as_uint64_array() const 
 {
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::UINT64_T,"as_uint64_array()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::UINT64_T,
+                         "as_uint64_array()",
+                         uint64_array());
     return uint64_array(m_data,dtype());
 }
 
@@ -6461,7 +6654,8 @@ Node::as_float32_array() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          DataType::FLOAT32_T,
-                         "as_float32_array()");
+                         "as_float32_array()",
+                         float32_array());
     return float32_array(m_data,dtype());
 }
 
@@ -6471,7 +6665,8 @@ Node::as_float64_array() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          DataType::FLOAT64_T,
-                         "as_float64_array()");
+                         "as_float64_array()",
+                         float64_array());
     return float64_array(m_data,dtype());
 }
 
@@ -6483,7 +6678,10 @@ Node::as_float64_array() const
 char *
 Node::as_char8_str()
 {
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::CHAR8_STR_T,"as_char8_str()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::CHAR8_STR_T,
+                         "as_char8_str()",
+                         NULL);
     return (char *)element_ptr(0);
 }
 
@@ -6491,7 +6689,10 @@ Node::as_char8_str()
 const char *
 Node::as_char8_str() const
 {
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::CHAR8_STR_T,"as_char8_str()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::CHAR8_STR_T,
+                         "as_char8_str()",
+                         NULL);
     return (const char *)element_ptr(0);
 }
 
@@ -6499,7 +6700,10 @@ Node::as_char8_str() const
 std::string
 Node::as_string() const
 {
-    CONDUIT_ASSERT_DTYPE(dtype().id(), DataType::CHAR8_STR_T,"as_string()");
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         DataType::CHAR8_STR_T,
+                         "as_string()",
+                         std::string());
     return std::string(as_char8_str());
 }
 
@@ -6533,7 +6737,8 @@ Node::as_char() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_CHAR_DATATYPE_ID,
-                         "as_char()");
+                         "as_char()",
+                         0);
     return *((char*)element_ptr(0));
 }
 
@@ -6543,7 +6748,8 @@ Node::as_short() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_SHORT_DATATYPE_ID,
-                         "as_short()");
+                         "as_short()",
+                         0);
     return *((short*)element_ptr(0));
 }
 
@@ -6553,7 +6759,8 @@ Node::as_int() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_INT_DATATYPE_ID,
-                         "as_int()");
+                         "as_int()",
+                         0);
     return *((int*)element_ptr(0));
 }
 
@@ -6563,7 +6770,8 @@ Node::as_long()  const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_LONG_DATATYPE_ID,
-                         "as_long()");
+                         "as_long()",
+                         0);
     return *((long*)element_ptr(0));
 }
 
@@ -6577,7 +6785,8 @@ Node::as_unsigned_char() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID,
-                         "as_unsigned_char()");
+                         "as_unsigned_char()",
+                         0);
     return *((unsigned char*)element_ptr(0));
 }
 
@@ -6587,7 +6796,8 @@ Node::as_unsigned_short() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID,
-                         "as_unsigned_short()");
+                         "as_unsigned_short()",
+                         0);
     return *((unsigned short*)element_ptr(0));
 }
 
@@ -6597,7 +6807,8 @@ Node::as_unsigned_int()const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID,
-                         "as_unsigned_int()");
+                         "as_unsigned_int()",
+                         0);
     return *((unsigned int*)element_ptr(0));
 }
 
@@ -6607,7 +6818,8 @@ Node::as_unsigned_long() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID,
-                         "as_unsigned_long()");
+                         "as_unsigned_long()",
+                         0);
     return *(( unsigned long*)element_ptr(0));
 }
 
@@ -6621,7 +6833,8 @@ Node::as_float() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_FLOAT_DATATYPE_ID,
-                         "as_float()");
+                         "as_float()",
+                         0);
     return *((float*)element_ptr(0));
 }
 
@@ -6631,7 +6844,8 @@ Node::as_double() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_DOUBLE_DATATYPE_ID,
-                         "as_double()");
+                         "as_double()",
+                         0);
     return *((double*)element_ptr(0));
 }
 
@@ -6645,7 +6859,8 @@ Node::as_char_ptr()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_CHAR_DATATYPE_ID,
-                         "as_char_ptr()");
+                         "as_char_ptr()",
+                         NULL);
     return (char*)element_ptr(0);
 }
 
@@ -6655,7 +6870,8 @@ Node::as_short_ptr()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_SHORT_DATATYPE_ID,
-                         "as_short_ptr()");
+                         "as_short_ptr()",
+                         NULL);
     return (short*)element_ptr(0);
 }
 
@@ -6665,7 +6881,8 @@ Node::as_int_ptr()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_INT_DATATYPE_ID,
-                         "as_int_ptr()");
+                         "as_int_ptr()",
+                         NULL);
     return (int*)element_ptr(0);
 }
 
@@ -6675,7 +6892,8 @@ Node::as_long_ptr()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_LONG_DATATYPE_ID,
-                         "as_long_ptr()");
+                         "as_long_ptr()",
+                         NULL);
     return (long*)element_ptr(0);
 }
 
@@ -6689,7 +6907,8 @@ Node::as_unsigned_char_ptr()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID,
-                         "as_unsigned_char_ptr()");
+                         "as_unsigned_char_ptr()",
+                         NULL);
     return (unsigned char*)element_ptr(0);
 }
 
@@ -6699,7 +6918,8 @@ Node::as_unsigned_short_ptr()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID,
-                         "as_unsigned_short_ptr()");
+                         "as_unsigned_short_ptr()",
+                         NULL);
     return (unsigned short*)element_ptr(0);
 }
 
@@ -6709,7 +6929,8 @@ Node::as_unsigned_int_ptr()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID,
-                         "as_unsigned_int_ptr()");
+                         "as_unsigned_int_ptr()",
+                         NULL);
     return (unsigned int*)element_ptr(0);
 }
 
@@ -6719,7 +6940,8 @@ Node::as_unsigned_long_ptr()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID,
-                         "as_unsigned_long_ptr()");
+                         "as_unsigned_long_ptr()",
+                         NULL);
     return (unsigned long*)element_ptr(0);
 }
 
@@ -6733,7 +6955,8 @@ Node::as_float_ptr()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_FLOAT_DATATYPE_ID,
-                         "as_float_ptr()");
+                         "as_float_ptr()",
+                         NULL);
     return (float*)element_ptr(0);
 }
 
@@ -6743,7 +6966,8 @@ Node::as_double_ptr()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_DOUBLE_DATATYPE_ID,
-                         "as_double_ptr()");
+                         "as_double_ptr()",
+                         NULL);
     return (double*)element_ptr(0);
 }
 
@@ -6757,7 +6981,8 @@ Node::as_char_ptr() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_CHAR_DATATYPE_ID,
-                         "as_char_ptr()");
+                         "as_char_ptr()",
+                         NULL);
     return (char*)element_ptr(0);
 }
 
@@ -6767,7 +6992,8 @@ Node::as_short_ptr() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_SHORT_DATATYPE_ID,
-                         "as_short_ptr()");
+                         "as_short_ptr()",
+                         NULL);
     return (short*)element_ptr(0);
 }
 
@@ -6777,7 +7003,8 @@ Node::as_int_ptr() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_INT_DATATYPE_ID,
-                         "as_int_ptr()");
+                         "as_int_ptr()",
+                         NULL);
     return (int*)element_ptr(0);
 }
 
@@ -6787,7 +7014,8 @@ Node::as_long_ptr() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_LONG_DATATYPE_ID,
-                         "as_long_ptr()");
+                         "as_long_ptr()",
+                         NULL);
     return (long*)element_ptr(0);
 }
 
@@ -6801,7 +7029,8 @@ Node::as_unsigned_char_ptr() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID,
-                         "as_unsigned_char_ptr()");
+                         "as_unsigned_char_ptr()",
+                         NULL);
     return (unsigned char*)element_ptr(0);
 }
 
@@ -6811,7 +7040,8 @@ Node::as_unsigned_short_ptr() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID,
-                         "as_unsigned_short_ptr()");
+                         "as_unsigned_short_ptr()",
+                         NULL);
     return (unsigned short*)element_ptr(0);
 }
 
@@ -6821,7 +7051,8 @@ Node::as_unsigned_int_ptr() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID,
-                         "as_unsigned_int_ptr()");
+                         "as_unsigned_int_ptr()",
+                         NULL);
     return (unsigned int*)element_ptr(0);
 }
 
@@ -6831,7 +7062,8 @@ Node::as_unsigned_long_ptr() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID,
-                         "as_unsigned_long_ptr()");
+                         "as_unsigned_long_ptr()",
+                         NULL);
     return (unsigned long*)element_ptr(0);
 }
 
@@ -6845,7 +7077,8 @@ Node::as_float_ptr() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_FLOAT_DATATYPE_ID,
-                         "as_float_ptr()");
+                         "as_float_ptr()",
+                         NULL);
     return (float*)element_ptr(0);
 }
 
@@ -6855,7 +7088,8 @@ Node::as_double_ptr() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_DOUBLE_DATATYPE_ID,
-                         "as_double_ptr()");
+                         "as_double_ptr()",
+                         NULL);
     return (double*)element_ptr(0);
 }
 
@@ -6871,7 +7105,8 @@ Node::as_char_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_CHAR_DATATYPE_ID,
-                         "as_char_array()");
+                         "as_char_array()",
+                         char_array());
     return char_array(m_data,dtype());
 }
 
@@ -6881,7 +7116,8 @@ Node::as_short_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_SHORT_DATATYPE_ID,
-                         "as_short_array()");
+                         "as_short_array()",
+                         short_array());
     return short_array(m_data,dtype());
 }
 
@@ -6891,7 +7127,8 @@ Node::as_int_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_INT_DATATYPE_ID,
-                         "as_int_array()");
+                         "as_int_array()",
+                         int_array());
     return int_array(m_data,dtype());
 }
 
@@ -6901,7 +7138,8 @@ Node::as_long_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_LONG_DATATYPE_ID,
-                         "as_long_array()");
+                         "as_long_array()",
+                         long_array());
     return long_array(m_data,dtype());
 }
 
@@ -6915,7 +7153,8 @@ Node::as_unsigned_char_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID,
-                         "as_unsigned_char_array()");
+                         "as_unsigned_char_array()",
+                         unsigned_char_array());
     return unsigned_char_array(m_data,dtype());
 }
 
@@ -6925,7 +7164,8 @@ Node::as_unsigned_short_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID,
-                         "as_unsigned_short_array()");
+                         "as_unsigned_short_array()",
+                         unsigned_short_array());
     return unsigned_short_array(m_data,dtype());
 }
 
@@ -6935,7 +7175,8 @@ Node::as_unsigned_int_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID,
-                         "as_unsigned_int_array()");
+                         "as_unsigned_int_array()",
+                         unsigned_int_array());
     return unsigned_int_array(m_data,dtype());
 }
 
@@ -6945,7 +7186,8 @@ Node::as_unsigned_long_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID,
-                         "as_unsigned_long_array()");
+                         "as_unsigned_long_array()",
+                         unsigned_long_array());
     return unsigned_long_array(m_data,dtype());
 }
 
@@ -6959,7 +7201,8 @@ Node::as_float_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_FLOAT_DATATYPE_ID,
-                         "as_float_array()");
+                         "as_float_array()",
+                         float_array());
     return float_array(m_data,dtype());
 }
 
@@ -6969,7 +7212,8 @@ Node::as_double_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_DOUBLE_DATATYPE_ID,
-                         "as_double_array()");
+                         "as_double_array()",
+                         double_array());
     return double_array(m_data,dtype());
 }
 
@@ -6983,7 +7227,8 @@ Node::as_char_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_CHAR_DATATYPE_ID,
-                         "as_char_array()");
+                         "as_char_array()",
+                         char_array());
     return char_array(m_data,dtype());
 }
 
@@ -6993,7 +7238,8 @@ Node::as_short_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_SHORT_DATATYPE_ID,
-                         "as_short_array()");
+                         "as_short_array()",
+                         short_array());
     return short_array(m_data,dtype());
 }
 
@@ -7003,7 +7249,8 @@ Node::as_int_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_INT_DATATYPE_ID,
-                         "as_int_array()");
+                         "as_int_array()",
+                         int_array());
     return int_array(m_data,dtype());
 }
 
@@ -7013,7 +7260,8 @@ Node::as_long_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_LONG_DATATYPE_ID,
-                         "as_long_array()");
+                         "as_long_array()",
+                         long_array());
     return long_array(m_data,dtype());
 }
 
@@ -7027,7 +7275,8 @@ Node::as_unsigned_char_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID,
-                         "as_unsigned_char_array()");
+                         "as_unsigned_char_array()",
+                         unsigned_char_array());
     return unsigned_char_array(m_data,dtype());
 }
 
@@ -7037,7 +7286,8 @@ Node::as_unsigned_short_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID,
-                         "as_unsigned_short_array()");
+                         "as_unsigned_short_array()",
+                         unsigned_short_array());
     return unsigned_short_array(m_data,dtype());
 }
 
@@ -7047,7 +7297,8 @@ Node::as_unsigned_int_array() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID,
-                         "as_unsigned_int_array()");
+                         "as_unsigned_int_array()",
+                         unsigned_int_array());
     return unsigned_int_array(m_data,dtype());
 }
 
@@ -7057,7 +7308,8 @@ Node::as_unsigned_long_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID,
-                         "as_unsigned_long_array()");
+                         "as_unsigned_long_array()",
+                         unsigned_long_array());
     return unsigned_long_array(m_data,dtype());
 }
 
@@ -7071,7 +7323,8 @@ Node::as_float_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_FLOAT_DATATYPE_ID,
-                         "as_float_array()");
+                         "as_float_array()",
+                         float_array());
     return float_array(m_data,dtype());
 }
 
@@ -7081,7 +7334,8 @@ Node::as_double_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
                          CONDUIT_NATIVE_DOUBLE_DATATYPE_ID,
-                         "as_double_array()");
+                         "as_double_array()",
+                         double_array());
     return double_array(m_data,dtype());
 }
 

@@ -155,6 +155,13 @@ namespace utils
                                          int));
 
 //-----------------------------------------------------------------------------
+/// Default error handler, which throws a conduit::Error exception.
+//-----------------------------------------------------------------------------
+   void CONDUIT_API default_error_handler(const std::string &msg,
+                                          const std::string &file,
+                                          int line);
+
+//-----------------------------------------------------------------------------
 /// Helpers for common string splitting operations. 
 //-----------------------------------------------------------------------------
     void CONDUIT_API split_string(const std::string &path,

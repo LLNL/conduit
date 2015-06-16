@@ -1468,6 +1468,15 @@ public:
     void    remove(const std::string &path);
 
 
+    /// helpers to create a list of a homogenous type
+    void list_of(const Schema &schema,
+                 index_t num_entries);
+    
+    void list_of_external(void *data,
+                          const Schema &schema,
+                          index_t num_entries);
+
+
 //-----------------------------------------------------------------------------
 ///@}
 //-----------------------------------------------------------------------------
