@@ -647,7 +647,7 @@ TEST(conduit_node, check_as_value_default_after_error)
     EXPECT_TRUE(arr.dtype().is_empty());        
     EXPECT_EQ(arr.data_ptr(),(void*)NULL);
     
-    conduit::utils::set_error_handler(conduit::utils::default_on_error);
+    conduit::utils::set_error_handler(conduit::utils::default_error_handler);
 }
 
 
