@@ -49,7 +49,7 @@
 ################################
 # Optional Unit Tests
 ################################
-set(CONDUIT_MPI_TESTS conduit_mpi_smoke)
+set(CONDUIT_MPI_TESTS conduit_mpi_smoke conduit_mpi_test)
 
 
 ################################

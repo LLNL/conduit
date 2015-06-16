@@ -81,6 +81,14 @@ namespace mpi
         Node* _recvData;
     };
 
+
+//-----------------------------------------------------------------------------
+/// Helpers for MPI Params
+//-----------------------------------------------------------------------------
+    int CONDUIT_MPI_API size(MPI_Comm mpi_comm);
+    
+    int CONDUIT_MPI_API rank(MPI_Comm mpi_comm);
+
 //-----------------------------------------------------------------------------
 /// Standard MPI Send Recv
 //-----------------------------------------------------------------------------
@@ -152,16 +160,36 @@ namespace mpi
                                        MPI_Status statuses[]);
 
 
+//-----------------------------------------------------------------------------
+/// MPI gather
+//-----------------------------------------------------------------------------
+
+    int CONDUIT_MPI_API gatherv(Node &send_node,
+                                Node &recv_node,
+                                int root, 
+                                MPI_Comm mpi_comm);
+
+    int CONDUIT_MPI_API allgatherv(Node &send_node,
+                                   Node &recv_node,
+                                   MPI_Comm mpi_comm);
+
+// TODO:
+
+// the non-v variants work for identical schemas
+    // int CONDUIT_MPI_API gather(Node &send_node,
+    //                            Node &recv_node,
+    //                            int root,
+    //                            MPI_Comm mpi_comm);
+    //
+    // int CONDUIT_MPI_API allgather(Node &send_node,
+    //                               Node &recv_node,
+    //                               MPI_Comm mpi_comm);
+
 // TODO:
 //
 // int broadcast(Node& node,
 //               int root,
 //               MPI_Comm comm );
-//
-// int gather(Node &send_node,
-//            Node &recv_node,
-//            int root, 
-//            MPI_Comm mpi_comm );
 //
 // int scatter(Node &send_node,
 //             Node &recv_node,
