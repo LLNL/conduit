@@ -172,7 +172,7 @@ reduce(Node &send_node,
        Node& recv_node,
        MPI_Datatype mpi_datatype,
        MPI_Op mpi_op,
-       unsigned int root,
+       int root,
        MPI_Comm mpi_comm) 
 {
 

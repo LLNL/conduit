@@ -120,7 +120,7 @@ namespace mpi
                                Node &recv_node,
                                MPI_Datatype mpi_datatype,
                                MPI_Op mpi_op,
-                               unsigned int root,
+                               int root,
                                MPI_Comm comm);
 
     int CONDUIT_MPI_API all_reduce(Node &send_node,
@@ -156,8 +156,8 @@ namespace mpi
                                       MPI_Status statuses[]);
 
     int CONDUIT_MPI_API wait_all_recv(int count,
-                                       ConduitMPIRequest requests[],
-                                       MPI_Status statuses[]);
+                                      ConduitMPIRequest requests[],
+                                      MPI_Status statuses[]);
 
 
 //-----------------------------------------------------------------------------
@@ -199,6 +199,11 @@ namespace mpi
 // int all_to_all(Node& send_node,
 //                Node& recv_node,
 //                MPI_Comm mpi_comm);
+//
+// int all_to_allv(Node& send_node,
+//                 Node& recv_node,
+//                 MPI_Comm mpi_comm);
+
 
 //-----------------------------------------------------------------------------
 /// The about methods construct human readable info about how conduit_mpi was
