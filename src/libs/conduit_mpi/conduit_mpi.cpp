@@ -70,6 +70,7 @@
                       <<  check_mpi_err_code  << "\n"               \
                       << " error message = "                        \
                       <<  check_mpi_err_str_buff << "\n");          \
+        return  check_mpi_err_code;                                 \
     }                                                               \
 }
 
