@@ -258,7 +258,7 @@ TEST(conduit_mpi_test, allgather_simple)
     n["values/c"] = rank+3;
     
     Node rcv;
-    mpi::allgather(n,rcv,MPI_COMM_WORLD);
+    mpi::all_gather(n,rcv,MPI_COMM_WORLD);
     rcv.print();
     
     Node res;
@@ -288,7 +288,7 @@ TEST(conduit_mpi_test, gather_simple)
     n["values/c"] = rank+3;
     
     Node rcv;
-    mpi::allgather(n,rcv,MPI_COMM_WORLD);
+    mpi::all_gather(n,rcv,MPI_COMM_WORLD);
     rcv.print();
     
     if(rank == 0)
@@ -362,7 +362,7 @@ TEST(conduit_mpi_test, allgatherv_simple)
     }
     
     Node rcv;
-    mpi::allgatherv(n,rcv,MPI_COMM_WORLD);
+    mpi::all_gatherv(n,rcv,MPI_COMM_WORLD);
     rcv.print();
     
     Node res;

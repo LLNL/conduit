@@ -170,9 +170,9 @@ namespace mpi
                                int root,
                                MPI_Comm mpi_comm);
 
-    int CONDUIT_MPI_API allgather(Node &send_node,
-                                  Node &recv_node,
-                                  MPI_Comm mpi_comm);
+    int CONDUIT_MPI_API all_gather(Node &send_node,
+                                   Node &recv_node,
+                                   MPI_Comm mpi_comm);
 
     // the v variants work for varying schemas
     int CONDUIT_MPI_API gatherv(Node &send_node,
@@ -180,9 +180,9 @@ namespace mpi
                                 int root, 
                                 MPI_Comm mpi_comm);
 
-    int CONDUIT_MPI_API allgatherv(Node &send_node,
-                                   Node &recv_node,
-                                   MPI_Comm mpi_comm);
+    int CONDUIT_MPI_API all_gatherv(Node &send_node,
+                                    Node &recv_node,
+                                    MPI_Comm mpi_comm);
 
 
 // TODO:
