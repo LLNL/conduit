@@ -86,16 +86,15 @@
 //-----------------------------------------------------------------------------
 #define CONDUIT_ASSERT_DTYPE( dtype_id, dtype_id_expect, msg, rtn ) \
 {                                                                   \
+    CONDUIT_ASSERT( (dtype_id == dtype_id_expect) ,                 \
+                    "DataType "                                     \
+                    << DataType::id_to_name(dtype_id)               \
+                    << " does not equal expected DataType "         \
+                    << DataType::id_to_name(dtype_id_expect)        \
+                    << " " << msg);                                 \
+                                                                    \
     if(dtype_id != dtype_id_expect)                                 \
     {                                                               \
-        std::ostringstream assert_dtype_oss;                        \
-        assert_dtype_oss << "DataType "                             \
-            << DataType::id_to_name(dtype_id)                       \
-            << " does not equal expected DataType "                 \
-            << DataType::id_to_name(dtype_id_expect)                \
-            << " " << msg;                                          \
-        CONDUIT_ASSERT( (dtype_id == dtype_id_expect) ,             \
-                         assert_dtype_oss.str());                   \
         return rtn;                                                 \
     }                                                               \
 }                                                                   \
