@@ -52,6 +52,29 @@
 #include <iostream>
 
 //-----------------------------------------------------------------------------
+/// The CONDUIT_CHECK_MPI_ERROR macro is used to check return values for 
+/// mpi calls.
+//-----------------------------------------------------------------------------
+#define CONDUIT_CHECK_MPI_ERROR( check_mpi_err_code )               \
+{                                                                   \
+    if( check_mpi_err_code  != MPI_SUCCESS)                         \
+    {                                                               \
+        char check_mpi_err_str_buff[MPI_MAX_ERROR_STRING];          \
+        int  check_mpi_err_str_len=0;                               \
+        MPI_Error_string( check_mpi_err_code ,                      \
+                         check_mpi_err_str_buff,                    \
+                         &check_mpi_err_str_len);                   \
+                                                                    \
+        CONDUIT_ERROR("MPI call failed: \n"                         \
+                      << " error code = "                           \
+                      <<  check_mpi_err_code  << "\n"               \
+                      << " error message = "                        \
+                      <<  check_mpi_err_str_buff << "\n");          \
+    }                                                               \
+}
+
+
+//-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
@@ -102,27 +125,16 @@ send(Node &node, int dest, int tag, MPI_Comm comm)
     int intArray[2] = { schema_len, data_len };
 
 
-    int mpiError = MPI_Send(intArray, 2, MPI_INT, dest, tag, comm);
+    int mpi_error = MPI_Send(intArray, 2, MPI_INT, dest, tag, comm);
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
 
+    mpi_error = MPI_Send(const_cast <char*> (schema.c_str()), schema_len, MPI_CHAR, dest, tag, comm);
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+    
+    mpi_error = MPI_Send((char*)&data[0], data_len, MPI_CHAR, dest, tag, comm);
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
 
-    //Check errors on return value mpiError here
-    if (mpiError == MPI_ERR_COMM) {
-    } else if (mpiError == MPI_ERR_COUNT) {
-    } else if (mpiError == MPI_ERR_TYPE) {
-    } else if (mpiError == MPI_ERR_TAG) {
-    } else if (mpiError == MPI_ERR_RANK) {
-    }
-
-    mpiError = MPI_Send(const_cast <char*> (schema.c_str()), schema_len, MPI_CHAR, dest, tag, comm);
-
-    if (mpiError == MPI_ERR_COMM) {
-    } else if (mpiError == MPI_ERR_COUNT) {
-    } else if (mpiError == MPI_ERR_TYPE) {
-    } else if (mpiError == MPI_ERR_TAG) {
-    } else if (mpiError == MPI_ERR_RANK) {
-    }
-
-    return MPI_Send((char*)&data[0], data_len, MPI_CHAR, dest, tag, comm);
+    return mpi_error;
 }
 
 //---------------------------------------------------------------------------//
@@ -132,15 +144,8 @@ recv(Node &node, int src, int tag, MPI_Comm comm)
     int intArray[2];
     MPI_Status status;
 
-    int mpiError = MPI_Recv(intArray, 2, MPI_INT, src, tag, comm, &status);
-
-    //Check errors on return value mpiError here
-    if (mpiError == MPI_ERR_COMM) {
-    } else if (mpiError == MPI_ERR_COUNT) {
-    } else if (mpiError == MPI_ERR_TYPE) {
-    } else if (mpiError == MPI_ERR_TAG) {
-    } else if (mpiError == MPI_ERR_RANK) {
-    }
+    int mpi_error = MPI_Recv(intArray, 2, MPI_INT, src, tag, comm, &status);
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
 
     int schema_len = intArray[0];
     int data_len = intArray[1];
@@ -148,22 +153,17 @@ recv(Node &node, int src, int tag, MPI_Comm comm)
     char schema[schema_len + 1];
     char data[data_len + 1];
 
-    mpiError = MPI_Recv(schema, schema_len, MPI_CHAR, src, tag, comm, &status);
+    mpi_error = MPI_Recv(schema, schema_len, MPI_CHAR, src, tag, comm, &status);
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
 
-    if (mpiError == MPI_ERR_COMM) {
-    } else if (mpiError == MPI_ERR_COUNT) {
-    } else if (mpiError == MPI_ERR_TYPE) {
-    } else if (mpiError == MPI_ERR_TAG) {
-    } else if (mpiError == MPI_ERR_RANK) {
-    }
-
-    mpiError = MPI_Recv(data, data_len, MPI_CHAR, src, tag, comm, &status);
-
+    mpi_error = MPI_Recv(data, data_len, MPI_CHAR, src, tag, comm, &status);
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+    
     Generator node_gen(schema, data);
     /// gen copy 
     node_gen.walk(node);
 
-    return mpiError;
+    return mpi_error;
 }
 //---------------------------------------------------------------------------//
 int 
@@ -197,7 +197,8 @@ reduce(Node &send_node,
                                recvdata,
                                (data_len / datasize) + 1,
                                mpi_datatype, mpi_op, root, mpi_comm);
-
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+    
     if (rank == root)
     {
         Generator node_gen(schema, recvdata);
@@ -237,6 +238,7 @@ all_reduce(Node &send_node,
                                   mpi_datatype,
                                   mpi_op,
                                   mpi_comm);
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
 
     Generator node_gen(schema, recvdata);
 
@@ -257,13 +259,15 @@ isend(Node &node,
     request->_externalData = new Node();
     node.compact_to(*(request->_externalData));
 
-    return MPI_Isend((char*)request->_externalData->data_ptr(), 
-                     request->_externalData->total_bytes(), 
-                     MPI_CHAR, 
-                     dest, 
-                     tag,
-                     mpi_comm,
-                     &(request->_request));
+    int mpi_error =  MPI_Isend((char*)request->_externalData->data_ptr(), 
+                               request->_externalData->total_bytes(), 
+                               MPI_CHAR, 
+                               dest, 
+                               tag,
+                               mpi_comm,
+                               &(request->_request));
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+    return mpi_error;
 }
 
 //---------------------------------------------------------------------------//
@@ -279,13 +283,15 @@ irecv(Node &node,
 
     request->_recvData = &node;
 
-    return MPI_Irecv((char*)request->_externalData->data_ptr(),
-                     request->_externalData->total_bytes(),
-                     MPI_CHAR,
-                     src,
-                     tag,
-                     mpi_comm,
-                     &(request->_request));
+    int mpi_error =  MPI_Irecv((char*)request->_externalData->data_ptr(),
+                               request->_externalData->total_bytes(),
+                               MPI_CHAR,
+                               src,
+                               tag,
+                               mpi_comm,
+                               &(request->_request));
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+    return mpi_error;
 }
 
 //---------------------------------------------------------------------------//
@@ -294,7 +300,8 @@ wait_send(ConduitMPIRequest* request,
           MPI_Status *status) 
 {
     int mpi_error = MPI_Wait(&(request->_request), status);
-
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+        
     delete request->_externalData;
     request->_externalData = 0;
 
@@ -307,7 +314,8 @@ wait_recv(ConduitMPIRequest* request,
           MPI_Status *status) 
 {
     int mpi_error = MPI_Wait(&(request->_request), status);
-
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+    
     request->_recvData->update(*(request->_externalData));
 
     delete request->_externalData;
@@ -332,6 +340,7 @@ wait_all_send(int count,
      }
      
      int mpi_error = MPI_Waitall(count, justrequests, statuses);
+     CONDUIT_CHECK_MPI_ERROR(mpi_error);
 
      for (int i = 0; i < count; ++i)
      {
@@ -361,6 +370,7 @@ wait_all_recv(int count,
      }
      
      int mpi_error = MPI_Waitall(count, justrequests, statuses);
+     CONDUIT_CHECK_MPI_ERROR(mpi_error);
 
      for (int i = 0; i < count; ++i)
      {
@@ -406,7 +416,8 @@ gather(Node &send_node,
                                 root,
                                 mpi_comm); // mpi com
 
-    // TODO: Check for fatal mpi_error
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+
     return mpi_error;
 }
 
@@ -433,7 +444,8 @@ allgather(Node &send_node,
                                    MPI_CHAR,  // rcv chars
                                    mpi_comm); // mpi com
 
-    // TODO: Check for fatal mpi_error
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+
     return mpi_error;
 }
 
@@ -481,7 +493,7 @@ gatherv(Node &send_node,
                                 root,  // id of root for gather op
                                 mpi_comm); // mpi com
 
-    // TODO: Check for fatal mpi_error
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
                                 
     Node n_rcv_tmp;
     
@@ -547,7 +559,7 @@ gatherv(Node &send_node,
                              root,
                              mpi_comm);
 
-    // TODO: Check for fatal mpi_error
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
 
     // build all schemas from JSON, compact them.
     Schema rcv_schema;
@@ -582,7 +594,8 @@ gatherv(Node &send_node,
                              root,
                              mpi_comm);
 
-    // TODO: Check for fatal mpi_error
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+
     return mpi_error;
 }
 
@@ -622,7 +635,7 @@ allgatherv(Node &send_node,
                                    MPI_INT,  // rcv ints
                                    mpi_comm); // mpi com
 
-    // TODO: Check for fatal mpi_error
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
                                 
     Node n_rcv_tmp;
     
@@ -684,7 +697,7 @@ allgatherv(Node &send_node,
                                 MPI_CHAR,
                                 mpi_comm);
 
-    // TODO: Check for fatal mpi_error
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
 
     // build all schemas from JSON, compact them.
     Schema rcv_schema;
@@ -713,7 +726,8 @@ allgatherv(Node &send_node,
                                 MPI_CHAR,
                                 mpi_comm);
 
-    // TODO: Check for fatal mpi_error
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+
     return mpi_error;
 }
 
