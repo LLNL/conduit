@@ -6034,7 +6034,6 @@ Node::list_of_external(void *data,
     schema.compact_to(s_compact);
     
     index_t entry_bytes = s_compact.total_bytes();
-    index_t total_bytes = entry_bytes * num_entries;
 
     m_data = data;
     uint8 *ptr = (uint8*) data;

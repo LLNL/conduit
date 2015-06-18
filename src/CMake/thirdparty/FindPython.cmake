@@ -60,19 +60,29 @@ if(PYTHONINTERP_FOUND)
                         OUTPUT_VARIABLE PYTHON_SITE_PACKAGES_DIR
                         ERROR_VARIABLE ERROR_FINDING_INCLUDES)
         MESSAGE(STATUS "PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR}")
+
+        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
+                                "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBDIR'))"
+                        OUTPUT_VARIABLE PYTHON_LIB_DIR
+                        ERROR_VARIABLE ERROR_FINDING_INCLUDES)
+        MESSAGE(STATUS "PYTHON_LIB_DIR ${PYTHON_LIB_DIR}")
         
         # check for python libs differs for windows python installs
         if(NOT WIN32)
-            set(PYTHON_GLOB_TEST "${PYTHON_SITE_PACKAGES_DIR}/../../libpython*")
+            set(PYTHON_GLOB_TEST "${PYTHON_LIB_DIR}/libpython*")
         else()
-            set(PYTHON_GLOB_TEST    
-                  "${PYTHON_SITE_PACKAGES_DIR}/../../libs/python*.lib")
+            set(PYTHON_GLOB_TEST "${PYTHON_LIB_DIR}/python*.lib")
         endif()
-        
+            
         FILE(GLOB PYTHON_GLOB_RESULT ${PYTHON_GLOB_TEST})
         get_filename_component(PYTHON_LIBRARY "${PYTHON_GLOB_RESULT}" ABSOLUTE)
         MESSAGE(STATUS "{PythonLibs from PythonInterp} using: PYTHON_LIBRARY=${PYTHON_LIBRARY}")
         find_package(PythonLibs)
+        
+        if(NOT PYTHONLIBS_FOUND)
+            MESSAGE(FATAL_ERROR "Failed to find Python Libraries using PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
+        endif()
+        
 endif()
 
 

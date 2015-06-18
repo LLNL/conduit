@@ -251,14 +251,13 @@ TEST(conduit_mpi_test, allgather_simple)
     Node n;
     
     int rank = mpi::rank(MPI_COMM_WORLD);
-    int size = mpi::size(MPI_COMM_WORLD);
 
     n["values/a"] = rank+1;
     n["values/b"] = rank+2;
     n["values/c"] = rank+3;
     
     Node rcv;
-    mpi::allgather(n,rcv,MPI_COMM_WORLD);
+    mpi::all_gather(n,rcv,MPI_COMM_WORLD);
     rcv.print();
     
     Node res;
@@ -281,14 +280,13 @@ TEST(conduit_mpi_test, gather_simple)
     Node n;
     
     int rank = mpi::rank(MPI_COMM_WORLD);
-    int size = mpi::size(MPI_COMM_WORLD);
 
     n["values/a"] = rank+1;
     n["values/b"] = rank+2;
     n["values/c"] = rank+3;
     
     Node rcv;
-    mpi::allgather(n,rcv,MPI_COMM_WORLD);
+    mpi::all_gather(n,rcv,MPI_COMM_WORLD);
     rcv.print();
     
     if(rank == 0)
@@ -314,7 +312,6 @@ TEST(conduit_mpi_test, gatherv_simple)
     Node n;
     
     int rank = mpi::rank(MPI_COMM_WORLD);
-    int size = mpi::size(MPI_COMM_WORLD);
 
     n["values/a"] = rank+1;
     n["values/b"] = rank+2;
@@ -351,7 +348,6 @@ TEST(conduit_mpi_test, allgatherv_simple)
     Node n;
     
     int rank = mpi::rank(MPI_COMM_WORLD);
-    int size = mpi::size(MPI_COMM_WORLD);
 
     n["values/a"] = rank+1;
     n["values/b"] = rank+2;
@@ -362,7 +358,7 @@ TEST(conduit_mpi_test, allgatherv_simple)
     }
     
     Node rcv;
-    mpi::allgatherv(n,rcv,MPI_COMM_WORLD);
+    mpi::all_gatherv(n,rcv,MPI_COMM_WORLD);
     rcv.print();
     
     Node res;
