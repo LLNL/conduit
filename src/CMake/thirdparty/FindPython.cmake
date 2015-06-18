@@ -49,22 +49,25 @@ endif()
 
 find_package(PythonInterp REQUIRED)
 if(PYTHONINTERP_FOUND)
+        
+        MESSAGE(STATUS "PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE}")
+        
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
                                 "import sys;from distutils.sysconfig import get_python_inc;sys.stdout.write(get_python_inc())"
                         OUTPUT_VARIABLE PYTHON_INCLUDE_DIR
                         ERROR_VARIABLE ERROR_FINDING_INCLUDES)
-        MESSAGE(STATUS "PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE}")
+        MESSAGE(STATUS "PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR}")
 
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
                                 "import sys;from distutils.sysconfig import get_python_lib;sys.stdout.write(get_python_lib())"
                         OUTPUT_VARIABLE PYTHON_SITE_PACKAGES_DIR
-                        ERROR_VARIABLE ERROR_FINDING_INCLUDES)
+                        ERROR_VARIABLE ERROR_FINDING_SITE_PACKAGES_DIR)
         MESSAGE(STATUS "PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR}")
 
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
                                 "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBDIR'))"
                         OUTPUT_VARIABLE PYTHON_LIB_DIR
-                        ERROR_VARIABLE ERROR_FINDING_INCLUDES)
+                        ERROR_VARIABLE ERROR_FINDING_LIB_DIR)
         MESSAGE(STATUS "PYTHON_LIB_DIR ${PYTHON_LIB_DIR}")
         
         # check for python libs differs for windows python installs
