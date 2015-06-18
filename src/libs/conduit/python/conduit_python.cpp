@@ -1717,37 +1717,37 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
     //-----------------------------------------------------------------------//
     {"c_long",
      (PyCFunction)PyConduit_DataType_c_long,
-     METH_VARARGS | METH_CLASS,
+     METH_KEYWORDS | METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_unsigned_char",
      (PyCFunction)PyConduit_DataType_c_unsigned_char,
-     METH_VARARGS | METH_CLASS,
+     METH_KEYWORDS | METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_unsigned_short",
      (PyCFunction)PyConduit_DataType_c_unsigned_short,
-     METH_VARARGS | METH_CLASS,
+     METH_KEYWORDS | METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_unsigned_int",
      (PyCFunction)PyConduit_DataType_c_unsigned_short,
-     METH_VARARGS | METH_CLASS,
+     METH_KEYWORDS | METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_unsigned_long",
      (PyCFunction)PyConduit_DataType_c_unsigned_long,
-     METH_VARARGS | METH_CLASS,
+     METH_KEYWORDS | METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_float",
      (PyCFunction)PyConduit_DataType_c_float,
-     METH_VARARGS | METH_CLASS,
+     METH_KEYWORDS | METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_double",
      (PyCFunction)PyConduit_DataType_c_double,
-     METH_VARARGS | METH_CLASS,
+     METH_KEYWORDS | METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     // end DataType methods table
