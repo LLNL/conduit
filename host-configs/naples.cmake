@@ -50,17 +50,6 @@
 set(CMAKE_C_COMPILER "clang" CACHE PATH "")
 set(CMAKE_CXX_COMPILER "clang++" CACHE PATH "")
 
-# Enable Silo Support in conduit_io
-set(ENABLE_SILO ON CACHE PATH "")
-
-set(SILO_DIR "/Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thirdparty_shared/visit/silo/4.10.1/darwin-x86_64/" CACHE PATH "")
-set(HDF5_DIR "/Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thirdparty_shared/visit//hdf5/1.8.7/darwin-x86_64/" CACHE PATH "")
-set(SZIP_DIR "/Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thirdparty_shared/visit//szip/2.1/darwin-x86_64/" CACHE PATH "")
-
-
-# Enable python module builds
-set(ENABLE_PYTHON ON CACHE PATH "")
-
 # Enable mpi for conduit-mpi
 set(ENABLE_MPI ON CACHE PATH "")
 
@@ -76,10 +65,28 @@ set(MPI_CXX_COMPILER /Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x
 # cmake from uberenv
 # cmake exectuable path: /Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/cmake@3.0.2/bin/cmake
 
+# Enable python module builds
+set(ENABLE_PYTHON ON CACHE PATH "")
+
 # python from uberenv
 set(PYTHON_EXECUTABLE "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/python@2.7.8/bin/python" CACHE PATH "")
 
 # sphinx from uberenv
 set(SPHINX_EXECUTABLE "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/python@2.7.8/bin/sphinx-build" CACHE PATH "")
+
+# I/O Packages
+
+# Enable Silo Support in conduit_io
+set(ENABLE_SILO ON CACHE PATH "")
+
+# szip from uberenv
+set(SZIP_DIR "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/szip@2.1" CACHE PATH "")
+
+# hdf5 from uberenv
+set(HDF5_DIR "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/hdf5@1.8.7-83ab1427" CACHE PATH "")
+
+# silo from uberenv
+set(SILO_DIR "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/silo@4.10.1-f5eccf8d" CACHE PATH "")
+
 
 
