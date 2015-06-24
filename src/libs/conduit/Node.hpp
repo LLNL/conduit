@@ -1306,16 +1306,28 @@ public:
                                 const std::string &eoe="\n") const;
 
     // transforms the node to json without any conduit schema constructs
-    std::string      to_pure_json(index_t indent=2) const;
+    std::string      to_pure_json(index_t indent=2,
+                                  index_t depth=0,
+                                  const std::string &pad=" ",
+                                  const std::string &eoe="\n") const;
 
     void             to_pure_json(const std::string &stream_path,
-                                  index_t indent=2) const;
+                                  index_t indent=2,
+                                  index_t depth=0,
+                                  const std::string &pad=" ",
+                                  const std::string &eoe="\n") const;
 
     void             to_pure_json(std::ostream &os,
-                                  index_t indent=2) const;
+                                  index_t indent=2,
+                                  index_t depth=0,
+                                  const std::string &pad=" ",
+                                  const std::string &eoe="\n") const;
 
     void             to_pure_json(std::ostringstream &oss,
-                                  index_t indent=2) const;
+                                  index_t indent=2,
+                                  index_t depth=0,
+                                  const std::string &pad=" ",
+                                  const std::string &eoe="\n") const;
 
 
     // transforms the node to json that contains conduit schema constructs
@@ -1341,6 +1353,30 @@ public:
                                       index_t depth=0,
                                       const std::string &pad=" ",
                                       const std::string &eoe="\n") const;
+
+    // transforms the node to json with data payload encoded using base64
+    std::string      to_base64_json(index_t indent=2,
+                                    index_t depth=0,
+                                    const std::string &pad=" ",
+                                    const std::string &eoe="\n") const;
+
+    void             to_base64_json(const std::string &stream_path,
+                                    index_t indent=2,
+                                    index_t depth=0,
+                                    const std::string &pad=" ",
+                                    const std::string &eoe="\n") const;
+
+    void             to_base64_json(std::ostream &os,
+                                    index_t indent=2,
+                                    index_t depth=0,
+                                    const std::string &pad=" ",
+                                    const std::string &eoe="\n") const;
+
+    void             to_base64_json(std::ostringstream &oss,
+                                    index_t indent=2,
+                                    index_t depth=0,
+                                    const std::string &pad=" ",
+                                    const std::string &eoe="\n") const;
 
 //-----------------------------------------------------------------------------
 //

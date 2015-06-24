@@ -93,6 +93,8 @@ set(conduit_sources
 #
 add_library(conduit SHARED ${conduit_sources} ${conduit_headers})
 
+target_link_libraries(conduit libb64)
+
 ################################
 # Add python wrappers if python
 # support was selected

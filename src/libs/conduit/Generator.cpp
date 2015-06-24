@@ -61,10 +61,18 @@
 #include "rapidjson/error/en.h"
 
 //-----------------------------------------------------------------------------
+// -- libb64 includes -- 
+//-----------------------------------------------------------------------------
+#define BUFFERSIZE 65536
+#include "b64/decode.h"
+using namespace base64;
+
+//-----------------------------------------------------------------------------
 // -- conduit library includes -- 
 //-----------------------------------------------------------------------------
 #include "Error.hpp"
 #include "Utils.hpp"
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -134,7 +142,9 @@ public:
                                     void   *data,
                                     const rapidjson::Value &jvalue,
                                     index_t curr_offset);
-
+    
+    static void    parse_base64(Node *node,
+                                const rapidjson::Value &jvalue);
 
 };
 
@@ -943,6 +953,56 @@ Generator::Parser::walk_json_schema(Node   *node,
     }
 }
 
+//---------------------------------------------------------------------------//
+void 
+Generator::Parser::parse_base64(Node *node,
+                                const rapidjson::Value &jvalue)
+{
+    // object case
+
+    std::string base64_str = "";
+    
+    if(jvalue.IsObject())
+    {
+        Schema s;
+        if (jvalue.HasMember("data") && jvalue["data"].HasMember("base64"))
+        {
+            base64_str = jvalue["data"]["base64"].GetString();
+        }
+        else
+        {
+            CONDUIT_ERROR("base64_json protocol error: missing data/base64");
+        }
+        
+        if (jvalue.HasMember("schema"))
+        {
+            // parse schema
+            index_t curr_offset = 0;
+            Parser::walk_json_schema(&s,jvalue["schema"],curr_offset);
+        }
+        else
+        {
+            CONDUIT_ERROR("base64_json protocol error: missing schema");
+        }
+        
+        node->set(s);
+        base64_decodestate dec_state;
+        int src_len = base64_str.length();
+        base64_init_decodestate(&dec_state);
+        const char *src_ptr = (const char*)base64_str.c_str();
+        char *des_ptr = (char*)node->data_ptr();
+        int code_len = base64_decode_block(src_ptr,
+                                           src_len,
+                                           des_ptr,
+                                           &dec_state);
+    }
+    else
+    {
+        CONDUIT_ERROR("base64_json protocol error: missing schema and data/base64");
+    }
+}
+
+
 //-----------------------------------------------------------------------------
 // -- end conduit::Generator::Parser --
 //-----------------------------------------------------------------------------
@@ -1041,7 +1101,24 @@ Generator::walk_external(Node &node) const
                                       node.schema_ptr(),
                                       document);
     }
-    else
+    else if( m_protocol == "base64_json")
+    {
+        rapidjson::Document document;
+        std::string res = utils::json_sanitize(m_json_schema);
+        
+        if(document.Parse<0>(res.c_str()).HasParseError())
+        {
+            CONDUIT_ERROR("JSON parse error: \n"
+                          << " offset: " << document.GetErrorOffset() 
+                          << "\n"
+                          << " message: " 
+                          << GetParseError_En(document.GetParseError()) 
+                          << "\n");
+        }
+        Parser::parse_base64(&node,
+                             document);
+    }
+    else if( m_protocol == "conduit")
     {
         rapidjson::Document document;
         std::string res = utils::json_sanitize(m_json_schema);
@@ -1062,6 +1139,10 @@ Generator::walk_external(Node &node) const
                                  m_data,
                                  document,
                                  curr_offset);
+    }
+    else
+    {
+        CONDUIT_ERROR("Generator unknown parsing protocol: " << m_protocol);
     }
 }
 

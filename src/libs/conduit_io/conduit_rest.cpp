@@ -151,9 +151,9 @@ public:
             {
                 return handle_get_value(server,conn);                
             }
-            else if(uri_cmd == "get-encoded")
+            else if(uri_cmd == "get-base64-json")
             {
-                return handle_get_encoded(server,conn);
+                return handle_get_base64_json(server,conn);
             }
             else if(uri_cmd == "kill-server")
             {
@@ -212,31 +212,11 @@ public:
         //---------------------------------------------------------------------------//
         // Handles a request from the client for a compact, base64 encoded version
         // of the node.
-        bool handle_get_encoded(CivetServer *server,
-                              struct mg_connection *conn)
+        bool handle_get_base64_json(CivetServer *server,
+                                    struct mg_connection *conn)
         {
-            Node n;
-            m_node->compact_to(n);
-            n.print();
-            index_t nbytes = n.schema().total_bytes();
-            base64::encoder e;
-
-            std::cout << "nbytes = "   << nbytes << std::endl;
-
-            Node res;
-            res["schema"] = n.schema().to_json();
-            // allocate buffer for base64 encoded result
-            res["base64/data"].set(DataType::char8_str(nbytes*2));
-            
-            index_t code_len = e.encode((const char*)n.data_ptr(),
-                                        nbytes,
-                                        (char*)res["base64/data"].data_ptr());
-
-            std::cout << "code len = " << code_len << std::endl;
-            res.print();
-            mg_printf(conn, "%s",res.to_pure_json().c_str());
-            
-            
+            std::string b64_json = m_node->to_base64_json();
+            mg_printf(conn, "%s",b64_json.c_str());
             return true;
         }
 
