@@ -8,6 +8,6 @@ class Szip(Package):
     version('2.1', '9cc9125a58b905a4148e4e2fda3fabc6')
 
     def install(self, spec, prefix):
-        configure("--prefix=%s" % prefix)
+        configure("--prefix=%s" % prefix,'LIBS=-lm')
         make()
         make("install")
