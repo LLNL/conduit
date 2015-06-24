@@ -74,6 +74,13 @@
 #endif
 
 //-----------------------------------------------------------------------------
+// -- libb64 includes -- 
+//-----------------------------------------------------------------------------
+#define BUFFERSIZE 65536
+#include "b64/encode.h"
+using namespace base64;
+    
+//-----------------------------------------------------------------------------
 // -- conduit includes -- 
 //-----------------------------------------------------------------------------
 #include "Utils.hpp"
@@ -5656,38 +5663,50 @@ Node::to_json(std::ostringstream &oss,
 
 //---------------------------------------------------------------------------//
 std::string
-Node::to_pure_json(index_t indent) const
+Node::to_pure_json(index_t indent,
+                   index_t depth,
+                   const std::string &pad,
+                   const std::string &eoe) const
 {
-    return to_json(false,indent);
+    return to_json(false,indent,depth,pad,eoe);
 }
 
 //---------------------------------------------------------------------------//
 void
 Node::to_pure_json(const std::string &stream_path,
-                   index_t indent) const
+                   index_t indent,
+                   index_t depth,
+                   const std::string &pad,
+                   const std::string &eoe) const
 {
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
         CONDUIT_ERROR("<Node::to_pure_json> failed to open: " << stream_path);
-    to_json(ofs,false,indent);
+    to_json(ofs,false,indent,depth,pad,eoe);
     ofs.close();
 }
 
 //---------------------------------------------------------------------------//
 void
 Node::to_pure_json(std::ostream &os,
-                   index_t indent) const
+                   index_t indent,
+                   index_t depth,
+                   const std::string &pad,
+                   const std::string &eoe) const
 {
-    to_json(os,false,indent);
+    to_json(os,false,indent,depth,pad,eoe);
 }
 
 //---------------------------------------------------------------------------//
 void
 Node::to_pure_json(std::ostringstream &oss,
-                   index_t indent) const
+                   index_t indent,
+                   index_t depth,
+                   const std::string &pad,
+                   const std::string &eoe) const
 {
-    to_json(oss,false,indent);
+    to_json(oss,false,indent,depth,pad,eoe);
 }
 
 //---------------------------------------------------------------------------//
@@ -5738,6 +5757,109 @@ Node::to_detailed_json(std::ostringstream &oss,
 {
     to_json(oss,true,indent,depth,pad,eoe);
 }
+
+//---------------------------------------------------------------------------//
+std::string
+Node::to_base64_json(index_t indent,
+                     index_t depth,
+                     const std::string &pad,
+                     const std::string &eoe) const
+{
+   std::ostringstream oss;
+   to_base64_json(oss,indent,depth,pad,eoe);
+   return oss.str();
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_base64_json(const std::string &stream_path,
+                     index_t indent,
+                     index_t depth,
+                     const std::string &pad,
+                     const std::string &eoe) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+        CONDUIT_ERROR("<Node::to_base64_json> failed to open: " << stream_path);
+    to_base64_json(ofs,indent,depth,pad,eoe);
+    ofs.close();
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_base64_json(std::ostream &os,
+                     index_t indent,
+                     index_t depth,
+                     const std::string &pad,
+                     const std::string &eoe) const
+{
+    std::ostringstream oss;
+    to_base64_json(oss,indent,depth,pad,eoe);
+    os << oss.str();
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::to_base64_json(std::ostringstream &oss,
+                    index_t indent,
+                    index_t depth,
+                    const std::string &pad,
+                    const std::string &eoe) const
+{
+    // we need compact data
+    Node n;
+    compact_to(n);
+    
+    // use libb64 to encode the data
+    
+    index_t nbytes = n.schema().total_bytes();
+    Node bb64_data;
+    bb64_data.set(DataType::char8_str(nbytes*2));
+    base64_encodestate enc_state;
+    base64_init_encodestate(&enc_state);
+    const char *src_ptr = (const char*)n.data_ptr();
+    char *des_ptr       = (char*)bb64_data.data_ptr();
+    memset(des_ptr,0,nbytes*2);
+    
+    int code_len = base64_encode_block(src_ptr,
+                                       nbytes,
+                                       des_ptr,
+                                       &enc_state);
+    des_ptr += code_len;
+    code_len = base64_encode_blockend(des_ptr, &enc_state);
+    des_ptr += code_len;
+    // for some reason end adds a newline or something else evil
+    // 
+    des_ptr[-1] = 0;
+    
+    // create the resulting json
+    
+    oss << eoe;
+    utils::indent(oss,indent,depth,pad);
+    oss << "{" << eoe;
+    utils::indent(oss,indent,depth+1,pad);
+    oss << "\"schema\": ";
+
+    n.schema().to_json(oss,true,indent,depth+1,pad,eoe);
+
+    oss  << "," << eoe;
+    
+    utils::indent(oss,indent,depth+1,pad);
+    oss << "\"data\": " << eoe;
+    utils::indent(oss,indent,depth+1,pad);
+    oss << "{" << eoe;
+    utils::indent(oss,indent,depth+2,pad);
+    oss << "\"base64\": ";
+    bb64_data.to_pure_json(oss,0,0,"","");
+    oss << eoe;
+    utils::indent(oss,indent,depth+1,pad);
+    oss << "}" << eoe;
+    utils::indent(oss,indent,depth,pad);
+    oss << "}";
+}
+
 
 
 //-----------------------------------------------------------------------------

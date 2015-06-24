@@ -45,17 +45,15 @@
 from spack import *
 
 import socket
+import os
 from os.path import join as pjoin
 
 class UberenvConduit(Package):
     """Spack Based Uberenv Build for Conduit Thirdparty Libs """
 
-    # TODO: what do we need for DIY mode?
-    
-    homepage = "http://sphinx-doc.org/"
-    url      = "https://pypi.python.org/packages/source/S/Sphinx/Sphinx-1.3.1.tar.gz#md5=8786a194acf9673464c5455b11fd4332"
+    homepage = "http://example.com"
 
-    version('1.3.1', '8786a194acf9673464c5455b11fd4332')
+    version('0.1', '8d378ef62dedc2df5db447b029b71200')
     
     # all of these packages are custom
     depends_on("python")
@@ -63,7 +61,20 @@ class UberenvConduit(Package):
     depends_on("py-breathe")
     depends_on("py-numpy")
     depends_on("cmake")
+    # i/o packages
+    depends_on("szip")
+    depends_on("hdf5")
+    depends_on("silo")
 
+    def url_for_version(self, version):
+        print __file__
+        dummy_tar_path =  os.path.abspath(pjoin(os.path.split(__file__)[0]))
+        dummy_tar_path = pjoin(dummy_tar_path,"uberenv-conduit.tar.gz")
+        url      = "file://" + dummy_tar_path
+        return url
+        
+        
+        
     def install(self, spec, prefix):
         dest_dir = env["SPACK_DEBUG_LOG_DIR"]
         cmake_exe        = pjoin(spec['cmake'].prefix.bin,"cmake")
@@ -77,11 +88,23 @@ class UberenvConduit(Package):
         cfg.write("#######\n")
         cfg.write("# cmake from uberenv\n")
         cfg.write("# cmake exectuable path: %s\n\n" % cmake_exe)
+        cfg.write("# Enable python module builds\n")
+        cfg.write('set(ENABLE_PYTHON ON CACHE PATH "")\n\n')
         cfg.write("# python from uberenv\n")
         cfg.write('set(PYTHON_EXECUTABLE "%s" CACHE PATH "")\n\n' % python_exe)
         cfg.write("# sphinx from uberenv\n")
         cfg.write('set(SPHINX_EXECUTABLE "%s" CACHE PATH "")\n\n' % sphinx_build_exe)
-        cfg.close()        
+        cfg.write("# I/O Packages\n\n")
+        cfg.write("# Enable Silo Support in conduit_io\n")
+        cfg.write('set(ENABLE_SILO ON CACHE PATH "")\n\n')
+        cfg.write("# szip from uberenv\n")
+        cfg.write('set(SZIP_DIR "%s" CACHE PATH "")\n\n' % spec['szip'].prefix)
+        cfg.write("# hdf5 from uberenv\n")
+        cfg.write('set(HDF5_DIR "%s" CACHE PATH "")\n\n' % spec['hdf5'].prefix)
+        cfg.write("# silo from uberenv\n")
+        cfg.write('set(SILO_DIR "%s" CACHE PATH "")\n\n' % spec['silo'].prefix)
+        cfg.close()
+
         
         
         

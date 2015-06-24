@@ -337,3 +337,42 @@ TEST(conduit_json, json_parse_error)
 
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_json, to_base64_json)
+{
+
+    uint32   a_val  = 10;
+    uint32   b_val  = 20;
+    uint32   arr[5];
+    for(index_t i=0;i<5;i++)
+    {
+        arr[i] = i*i;
+    }
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["arr"].set_external(DataType::uint32(5),arr);
+ 
+    std::string base64_json = n.to_base64_json();
+    std::cout << base64_json << std::endl;
+    
+    Node nparse;
+    Generator g(base64_json,"base64_json");
+    g.walk(nparse);
+
+    nparse.print();
+    
+    EXPECT_EQ(n["a"].as_uint32(),a_val);
+    EXPECT_EQ(n["b"].as_uint32(),b_val);
+    
+    uint32 *arr_vals= n["arr"].value();
+    
+    for(index_t i=0;i<5;i++)
+    {
+        EXPECT_EQ(arr_vals[i],arr[i]);
+    }
+
+}
+
+

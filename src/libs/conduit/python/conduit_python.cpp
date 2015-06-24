@@ -2548,22 +2548,23 @@ PyConduit_NodeIterator_python_create()
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
-
 //---------------------------------------------------------------------------//
-/// TODO: We may be able to use a conduit data array here to avoid copies
 template <class T>
 static void
-PyConduit_fillVector(std::vector<T>& vec,
-                     PyArrayObject* arr)
+PyConduit_Fill_DataArray_From_PyArray(DataArray<T> &conduit_array,
+                                      PyArrayObject *numpy_array)
 {
-    T* data = (T*)PyArray_BYTES(arr);
-    npy_intp size = PyArray_SIZE(arr);
-    vec.resize(size);
-    for (npy_intp i = 0; i < size; i++) {
-        vec[i] = data[i];
+    npy_int num_ele = conduit_array.number_of_elements();
+    
+    T *numpy_data = (T*)PyArray_BYTES(numpy_array);
+    
+    for (npy_intp i = 0; i < num_ele; i++)
+    {
+        conduit_array[i] = numpy_data[i];
     }
     
 }
+
 
 //---------------------------------------------------------------------------//
 // begin Node python special methods
@@ -3443,82 +3444,107 @@ PyConduit_Node_python_create()
 //---------------------------------------------------------------------------//
 static int
 PyConduit_Node_SetFromPython(Node &node,
-                            PyObject *value)
+                             PyObject *value)
 {
-    if (PyConduit_Node_Check(value)) {
+    if (PyConduit_Node_Check(value))
+    {
         node = *((PyConduit_Node*)value)->node;
-    } else if (PyConduit_Schema_Check(value)) {
+    }
+    else if (PyConduit_Schema_Check(value))
+    {
         node = *((PyConduit_Schema*)value)->schema;
-    } else if (PyString_Check(value)) {
+    }
+    else if (PyString_Check(value))
+    {
         node = PyString_AsString(value);
-    } else if (PyInt_Check(value)) {
+    }
+    else if (PyInt_Check(value))
+    {
         node = PyInt_AsLong(value);
-    } else if (PyLong_Check(value)) {
+    }
+    else if (PyLong_Check(value))
+    {
         node = PyLong_AsLong(value);
-    } else if (PyFloat_Check(value)) {
+    }
+    else if (PyFloat_Check(value))
+    {
         node = PyFloat_AS_DOUBLE(value);
-    } else if (PyArray_Check(value)) {
-        PyArray_Descr* desc = PyArray_DESCR((PyArrayObject*)value);
-        PyArrayObject* arr = (PyArrayObject*)value;
-        switch (desc->type_num) {
-            case NPY_UINT8 : {
-                std::vector<uint8> vec;
-                PyConduit_fillVector(vec, arr);
-                node = vec;
+    }
+    else if (PyArray_Check(value))
+    {
+        PyArray_Descr *desc = PyArray_DESCR((PyArrayObject*)value);
+        PyArrayObject *py_arr = (PyArrayObject*)value;
+        npy_intp num_ele = PyArray_SIZE(py_arr);
+        switch (desc->type_num) 
+        {
+            case NPY_UINT8 :
+            {
+                node.set(DataType::uint8(num_ele));
+                uint8_array c_arr = node.value();
+                PyConduit_Fill_DataArray_From_PyArray(c_arr, py_arr);
                 break;
             }
-            case NPY_UINT16 : {
-                std::vector<uint16> vec;
-                PyConduit_fillVector(vec, arr);
-                node = vec;
+            case NPY_UINT16 :
+            {
+                node.set(DataType::uint16(num_ele));
+                uint16_array c_arr = node.value();
+                PyConduit_Fill_DataArray_From_PyArray(c_arr, py_arr);
                 break;
             }
-            case NPY_UINT32 : {
-                std::vector<uint32> vec;
-                PyConduit_fillVector(vec, arr);
-                node = vec;
+            case NPY_UINT32 :
+            {
+                node.set(DataType::uint32(num_ele));
+                uint32_array c_arr = node.value();
+                PyConduit_Fill_DataArray_From_PyArray(c_arr, py_arr);
                 break;
             }
-            case NPY_UINT64 : {
-                std::vector<uint64> vec;
-                PyConduit_fillVector(vec, arr);
-                node = vec;
+            case NPY_UINT64 :
+            {
+                node.set(DataType::uint64(num_ele));
+                uint64_array c_arr = node.value();
+                PyConduit_Fill_DataArray_From_PyArray(c_arr, py_arr);
                 break;
             }
-            case NPY_INT8 : {
-                std::vector<int8> vec;
-                PyConduit_fillVector(vec, arr);
-                node = vec;
+            case NPY_INT8 :
+            {
+                node.set(DataType::int8(num_ele));
+                uint8_array c_arr = node.value();
+                PyConduit_Fill_DataArray_From_PyArray(c_arr, py_arr);
                 break;
             }
-            case NPY_INT16 : {
-                std::vector<int16> vec;
-                PyConduit_fillVector(vec, arr);
-                node = vec;
+            case NPY_INT16 :
+            {
+                node.set(DataType::int16(num_ele));
+                uint16_array c_arr = node.value();
+                PyConduit_Fill_DataArray_From_PyArray(c_arr, py_arr);
                 break;
             }
-            case NPY_INT32 : {
-                std::vector<int32> vec;
-                PyConduit_fillVector(vec, arr);
-                node = vec;
+            case NPY_INT32 :
+            {
+                node.set(DataType::int32(num_ele));
+                uint32_array c_arr = node.value();
+                PyConduit_Fill_DataArray_From_PyArray(c_arr, py_arr);
                 break;
             }
-            case NPY_INT64 : {
-                std::vector<int64> vec;
-                PyConduit_fillVector(vec, arr);
-                node = vec;
+            case NPY_INT64 :
+            {
+                node.set(DataType::int64(num_ele));
+                uint64_array c_arr = node.value();
+                PyConduit_Fill_DataArray_From_PyArray(c_arr, py_arr);
                 break;
             }
-            case NPY_FLOAT32 : {
-                std::vector<float32> vec;
-                PyConduit_fillVector(vec, arr);
-                node = vec;
+            case NPY_FLOAT32 :
+            {
+                node.set(DataType::float32(num_ele));
+                float32_array c_arr = node.value();
+                PyConduit_Fill_DataArray_From_PyArray(c_arr, py_arr);
                 break;
             }
-            case NPY_FLOAT64 : {
-                std::vector<float64> vec;
-                PyConduit_fillVector(vec, arr);
-                node = vec;
+            case NPY_FLOAT64 :
+            {
+                node.set(DataType::float64(num_ele));
+                float64_array c_arr = node.value();
+                PyConduit_Fill_DataArray_From_PyArray(c_arr, py_arr);
                 break;
             }
         }

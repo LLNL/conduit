@@ -63,20 +63,25 @@ request.onerror = function () {
 
 request.send();
 
-var request2 = new XMLHttpRequest();
-request2.open('POST', '/api/get-encoded', true);
-request2.onload = function () {
-  if (request.status >= 200 && request.status < 400) {
-        var node = JSON.parse(request.response);
-        console.log("HERE ", request.response);
-    } else {
-      console.log("Server responded with error code: ", request.status);
+var b64_req = new XMLHttpRequest();
+b64_req.open('POST', '/api/get-base64-json', true);
+b64_req.onload = function ()
+{
+    if (b64_req.status >= 200 && b64_req.status < 400) 
+    {
+        var node = JSON.parse(b64_req.response);
+        console.log("base64-json result:", b64_req.response);
+    }
+    else 
+    {
+      console.log("Server responded with error code: ", b64_req.status);
     }
 };
 
-request2.onerror = function () {
+b64_req.onerror = function ()
+{
   console.log("Connection error");
 };
 
-request2.send();
+b64_req.send();
 
