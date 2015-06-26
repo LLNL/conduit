@@ -1465,8 +1465,8 @@ public:
 /// description:
 ///  Node traversal (iterators), child access (for list or object types)
 //-----------------------------------------------------------------------------
-    /// iterator access
-    NodeIterator     iterator();
+    /// return a iterator that give access to this nodes children
+    NodeIterator     children();
     
     /// `fetch' methods do modify map structure if a path doesn't exist
     /// fetch the node at the given path

@@ -2972,7 +2972,7 @@ PyConduit_Node_python_attach(PyConduit_Node *self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduit_Node_data(PyConduit_Node* self)
+PyConduit_Node_value(PyConduit_Node* self)
 {
     PyObject* retval = NULL;
     retval = PyConduit_convertNodeToPython(*self->node);
@@ -3307,7 +3307,7 @@ PyConduit_Node_iter(PyObject *self)
 
     PyConduit_NodeIterator *retval = NULL;
     retval = PyConduit_NodeIterator_python_create();
-    retval->itr =  py_n->node->iterator();
+    retval->itr =  py_n->node->children();
 
     return ((PyObject *)retval);
 }
@@ -3622,7 +3622,7 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      "Remove as node at a given index or path."},
     //-----------------------------------------------------------------------//
     {"value",
-     (PyCFunction)PyConduit_Node_data,
+     (PyCFunction)PyConduit_Node_value,
      METH_NOARGS, 
      "Value access for leaf nodes"},
     //-----------------------------------------------------------------------//

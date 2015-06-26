@@ -5896,7 +5896,7 @@ Node::info(Node &res) const
     std::vector<std::string> mchildren;
     Node &mspaces = res["mem_spaces"];
     
-    NodeIterator itr = mspaces.iterator();
+    NodeIterator itr = mspaces.children();
     
     while(itr.has_next())
     {
@@ -5940,7 +5940,7 @@ Node::info()const
 
 //---------------------------------------------------------------------------//
 NodeIterator
-Node::iterator()
+Node::children()
 {
     return NodeIterator(this,0);
 }

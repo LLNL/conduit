@@ -72,7 +72,7 @@ TEST(conduit_node_iterator, simple_1)
 
     std::cout << n.to_json();
     
-    NodeIterator itr = n.iterator();
+    NodeIterator itr = n.children();
     Node itr_info;
     itr.info(itr_info);
     std::cout <<itr_info.to_json(true) << std::endl;
@@ -131,14 +131,14 @@ TEST(conduit_node_iterator, empty)
     n["c"]; // empty
 
 
-    NodeIterator itr = n.iterator();
+    NodeIterator itr = n.children();
     while(itr.has_next())
     {
         Node &n = itr.next();
         n.print();
     }
     
-    itr = n["c"].iterator();
+    itr = n["c"].children();
     EXPECT_FALSE(itr.has_next());    
     
 }
