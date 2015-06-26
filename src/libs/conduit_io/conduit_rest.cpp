@@ -276,6 +276,7 @@ RESTServer::serve(Node *node,
     m_port = oss.str();
     const char *options[] = { "document_root", CONDUIT_REST_CLIENT_ROOT,
                               "listening_ports", m_port.c_str(),
+                              "num_threads", "2",
                                NULL};
 
     m_handler = new RESTHandler(*this,node);
