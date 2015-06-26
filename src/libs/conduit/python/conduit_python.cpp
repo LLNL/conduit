@@ -78,6 +78,12 @@ struct PyConduit_DataType {
 };
 
 //---------------------------------------------------------------------------//
+struct PyConduit_Generator {
+    PyObject_HEAD
+    Generator *generator;
+};
+
+//---------------------------------------------------------------------------//
 struct PyConduit_Schema {
     PyObject_HEAD
     Schema *schema;
@@ -101,6 +107,10 @@ struct PyConduit_Node {
 //---------------------------------------------------------------------------//
 static PyConduit_DataType *PyConduit_DataType_python_create();
 static int       PyConduit_DataType_check(PyObject* obj);
+
+//---------------------------------------------------------------------------//
+static PyConduit_Generator *PyConduit_Generator_python_create();
+static int       PyConduit_Generator_check(PyObject* obj);
 
 
 //---------------------------------------------------------------------------//
@@ -1504,7 +1514,7 @@ PyConduit_DataType_id_to_name(PyObject *cls,
 
 
 //----------------------------------------------------------------------------//
-// Schema methods table
+// DataType methods table
 //----------------------------------------------------------------------------//
 static PyMethodDef PyConduit_DataType_METHODS[] = {
     //-----------------------------------------------------------------------//
@@ -1818,10 +1828,279 @@ PyConduit_DataType_python_create()
 
 //---------------------------------------------------------------------------//
 static int
-PyConduit_DataType_check(PyObject* obj)
+PyConduit_DataType_check(PyObject *obj)
 {
     return (PyObject_TypeCheck(obj, &PyConduit_DataType_TYPE));
 }
+
+
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+//
+// Generator Object 
+//
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyConduit_Generator_new(PyTypeObject *type,
+                        PyObject *args,
+                        PyObject *kwargs)
+{
+    PyConduit_Generator *self = (PyConduit_Generator*)type->tp_alloc(type, 0);
+    return ((PyObject*)self);
+}
+
+//---------------------------------------------------------------------------//
+static void
+PyConduit_Generator_dealloc(PyConduit_Generator *self)
+{
+    delete self->generator;
+    self->ob_type->tp_free((PyObject*)self);
+}
+
+
+//---------------------------------------------------------------------------//
+static int
+PyConduit_Generator_init(PyConduit_Generator *self,
+                         PyObject *args,
+                         PyObject *kwargs)
+{
+    static const char *kwlist[] = {"json_schema",
+                                   "protocol",
+                                   "data",
+                                    NULL};
+
+     char *json_schema = NULL;
+     char *protocol = NULL;
+     char *data     = NULL;
+     
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "s|ss",
+                                     const_cast<char**>(kwlist),
+                                     &json_schema,
+                                     &protocol,
+                                     &data))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "Generator::init requires a 'json_schema' argument");
+        return (-1);
+    }
+
+    if(protocol == NULL && data == NULL)
+    {
+        self->generator = new Generator(std::string(json_schema));
+    }
+    else if(protocol == NULL && data != NULL)
+    {
+        self->generator = new Generator(std::string(json_schema),
+                                        (void*)data);
+    }
+    else
+    {
+        self->generator = new Generator(std::string(json_schema),
+                                        std::string(protocol),
+                                        (void*)data);
+    }
+    
+    return (0);
+
+}
+
+
+
+//-----------------------------------------------------------------------------
+static PyObject *
+PyConduit_Generator_walk(PyConduit_Generator *self,
+                         PyObject *args,
+                         PyObject *kwargs)
+{
+
+    static const char *kwlist[] = {"node",
+                                   "schema",
+                                    NULL};
+
+     PyObject *py_node   = NULL;
+     PyObject *py_schema = NULL;
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "|OO",
+                                     const_cast<char**>(kwlist),
+                                     &py_node,
+                                     &py_schema))
+    {
+        return NULL;
+    }
+    
+    
+    if(py_node != NULL)
+    {
+        if(!PyConduit_Node_Check(py_node))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "Generator::walk 'node' argument must be a "
+                            "Conduit::Node");
+            return NULL;
+        }
+    }
+    
+    if(py_schema != NULL)
+    {
+        if(!PyConduit_Schema_Check(py_schema))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "Generator::walk 'schema' argument must be a "
+                            "Conduit::Schema");
+            return NULL;
+        }
+    }
+    
+    if(py_node != NULL)
+    {
+        Node *node_ptr = ((PyConduit_Node*)py_node)->node;
+        self->generator->walk(*node_ptr);
+    }
+    
+    if(py_schema != NULL)
+    {
+        Schema *schema_ptr = ((PyConduit_Schema*)py_schema)->schema;
+        self->generator->walk(*schema_ptr);
+    }
+
+    Py_RETURN_NONE; 
+}
+
+//-----------------------------------------------------------------------------
+static PyObject *
+PyConduit_Generator_walk_external(PyConduit_Generator *self,
+                                  PyObject *args,
+                                  PyObject *kwargs)
+{
+
+    static const char *kwlist[] = {"node",
+                                    NULL};
+
+     PyObject *py_node   = NULL;
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "O",
+                                     const_cast<char**>(kwlist),
+                                     &py_node))
+    {
+        return NULL;
+    }
+    
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "Generator::walk_external 'node' argument must "
+                        "be a Conduit::Node");
+        return NULL;
+    }
+
+
+    Node *node_ptr = ((PyConduit_Node*)py_node)->node;
+    self->generator->walk_external(*node_ptr);
+
+    Py_RETURN_NONE; 
+}
+
+
+
+//----------------------------------------------------------------------------//
+// Generator methods table
+//----------------------------------------------------------------------------//
+static PyMethodDef PyConduit_Generator_METHODS[] = {
+    //-----------------------------------------------------------------------//
+    {"walk",
+     (PyCFunction)PyConduit_Generator_walk,
+     METH_VARARGS | METH_KEYWORDS,
+     "Use Generator to parse a JSON schema into passed 'node' or 'schema'"},
+    {"walk_external",
+     (PyCFunction)PyConduit_Generator_walk_external,
+     METH_VARARGS | METH_KEYWORDS,
+     "Use Generator to parse a JSON schema into passed 'node' using"
+     " external data"},
+    //-----------------------------------------------------------------------//
+    // end Generator methods table
+    //-----------------------------------------------------------------------//
+    {NULL, NULL, 0, NULL}
+};
+
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+static PyTypeObject PyConduit_Generator_TYPE = {
+   PyObject_HEAD_INIT(NULL)
+   0,
+   "Generator",
+   sizeof(PyConduit_Generator),  /* tp_basicsize */
+   0, /* tp_itemsize */
+   (destructor)PyConduit_Generator_dealloc, /* tp_dealloc */
+   0, /* tp_print */
+   0, /* tp_getattr */
+   0, /* tp_setattr */
+   0, /* tp_compare */
+   0, /* tp_repr */
+   0, /* tp_as_number */
+   0, /* tp_as_sequence */
+   0, /* as_mapping */
+   0, /* hash */
+   0, /* call */
+   0, /* str */
+   0, /* getattro */
+   0, /* setattro */
+   0, /* asbuffer */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,     /* flags */
+   "Conduit Generator objects",
+   0, /* traverse */
+   0, /* clear */
+   0, /* tp_richcompare */
+   0, /* tp_weaklistoffset */
+   0, /* iter */
+   0, /* iternext */
+   PyConduit_Generator_METHODS, /* METHODS */
+   0, /* MEMBERS */
+   0, /* get/set */
+   0, /* tp_base */
+   0, /* dict */
+   0, /* descr_get */
+   0, /* gescr_set */
+   0, /* dictoffset */
+   (initproc)PyConduit_Generator_init,
+   0, /* alloc */
+   PyConduit_Generator_new,                       /* new */
+   0, /* tp_free */
+   0, /* tp_is_gc */
+   0, /* tp_bases */
+   0, /* tp_mro */
+   0, /* tp_cache */
+   0, /* tp_subclasses */
+   0,  /* tp_weaklist */
+   0,
+   0
+};
+
+//---------------------------------------------------------------------------//
+static PyConduit_Generator *
+PyConduit_Generator_python_create()
+{
+    PyTypeObject* type = (PyTypeObject*)&PyConduit_Generator_TYPE;
+    return (PyConduit_Generator*)type->tp_alloc(type,0);
+}
+
+//---------------------------------------------------------------------------//
+static int
+PyConduit_Generator_check(PyObject* obj)
+{
+    return (PyObject_TypeCheck(obj, &PyConduit_Generator_TYPE));
+}
+
+
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
@@ -1838,16 +2117,6 @@ PyConduit_Schema_New(PyTypeObject* type,
                     PyObject* args,
                     PyObject* kwds)
 {
-    static const char *kwlist[] = {"value", NULL};
-    PyObject* value = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args,
-                                     kwds,
-                                     "|O",
-                                     const_cast<char**>(kwlist),
-                                     &value))
-    {
-        return (NULL);
-    }
 
     PyConduit_Schema* self = (PyConduit_Schema*)type->tp_alloc(type, 0);
     if (self)
@@ -2644,7 +2913,7 @@ PyConduit_Node_dealloc(PyConduit_Node* self)
 static PyObject *
 PyConduit_Node_str(PyConduit_Node* self)
 {
-   std::string output = self->node->to_json();
+   std::string output = self->node->to_pure_json();
    return (Py_BuildValue("s", output.c_str()));
 }
 
@@ -2734,7 +3003,7 @@ PyConduit_Node_generate(PyConduit_Node* self,
      const char *json_schema;
      if (!PyArg_ParseTuple(args, "s", &json_schema))
      {
-         PyErr_SetString(PyExc_TypeError, "Save file path must be a string");
+         PyErr_SetString(PyExc_TypeError, "JSON schema must be a string");
          return NULL;
      }
      
@@ -3087,6 +3356,214 @@ PyConduit_Node_set_path(PyConduit_Node* self,
 }
 
 
+//-----------------------------------------------------------------------------
+static bool
+PyConduit_Parse_Standard_To_JSON_Args(PyObject *args,
+                                      PyObject *kwargs,
+                                      Py_ssize_t &indent,
+                                      Py_ssize_t &depth,
+                                      std::string &pad,
+                                      std::string &eoe)
+{
+    indent=2;
+    depth=0;
+    pad=" ";
+    eoe="\n";
+    
+    char *pad_c_str= NULL;
+    char *eoe_c_str= NULL;
+    
+    static const char *kwlist[] = {"indent",
+                                   "depth",
+                                   "pad",
+                                   "eoe",
+                                    NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "|nnss",
+                                     const_cast<char**>(kwlist),
+                                     &indent,
+                                     &depth,
+                                     &pad_c_str,
+                                     &eoe_c_str))
+    {
+        std::cout << "BAD!" << std::endl;
+        return false;
+    }
+    
+    if(pad_c_str != NULL)
+    {
+        pad = std::string(pad_c_str);
+    }
+
+    if(eoe_c_str != NULL)
+    {
+        eoe = std::string(eoe_c_str);
+    }
+
+    return true;
+}
+
+
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_to_json(PyConduit_Node* self,
+                       PyObject* args,
+                       PyObject* kwargs)
+{
+    
+    bool detailed = true;
+    Py_ssize_t indent = 2;
+    Py_ssize_t depth  = 0;
+    std::string pad = " ";
+    std::string eoe = "\n";
+    
+    PyObject *py_detailed = NULL;    
+    char *pad_c_str= NULL;
+    char *eoe_c_str= NULL;
+    
+    static const char *kwlist[] = {"detailed",
+                                   "indent",
+                                   "depth",
+                                   "pad",
+                                   "eoe",
+                                    NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "|Onnss",
+                                     const_cast<char**>(kwlist),
+                                     &py_detailed,
+                                     &indent,
+                                     &depth,
+                                     &pad_c_str,
+                                     &eoe_c_str))
+    {
+        return NULL;
+    }
+    
+    
+    if(py_detailed != NULL)
+    {
+        detailed = PyObject_IsTrue(py_detailed);
+    }
+    
+    if(pad_c_str != NULL)
+    {
+        pad = std::string(pad_c_str);
+    }
+
+    if(eoe_c_str != NULL)
+    {
+        eoe = std::string(eoe_c_str);
+    }
+    
+    
+    std::string output = self->node->to_json(detailed,
+                                             indent,
+                                             depth,
+                                             pad,
+                                             eoe);
+
+    return (Py_BuildValue("s", output.c_str()));
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_to_pure_json(PyConduit_Node* self,
+                            PyObject* args,
+                            PyObject* kwargs)
+{
+    
+    Py_ssize_t indent;
+    Py_ssize_t depth;
+    std::string pad;
+    std::string eoe;
+    
+    if( !PyConduit_Parse_Standard_To_JSON_Args(args,
+                                               kwargs,
+                                               indent,
+                                               depth,
+                                               pad,
+                                               eoe))
+    {
+        return NULL;
+    }
+
+    
+    std::string output = self->node->to_pure_json(indent,
+                                                  depth,
+                                                  pad,
+                                                  eoe);
+
+    return (Py_BuildValue("s", output.c_str()));
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_to_detailed_json(PyConduit_Node* self,
+                                PyObject* args,
+                                PyObject* kwargs)
+{
+    Py_ssize_t indent;
+    Py_ssize_t depth;
+    std::string pad;
+    std::string eoe;
+    
+    if( !PyConduit_Parse_Standard_To_JSON_Args(args,
+                                               kwargs,
+                                               indent,
+                                               depth,
+                                               pad,
+                                               eoe))
+    {
+        return NULL;
+    }
+
+    
+    std::string output = self->node->to_detailed_json(indent,
+                                                      depth,
+                                                      pad,
+                                                      eoe);
+
+    return (Py_BuildValue("s", output.c_str()));
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_to_base64_json(PyConduit_Node* self,
+                              PyObject* args,
+                              PyObject* kwargs)
+{
+    
+    Py_ssize_t indent;
+    Py_ssize_t depth;
+    std::string pad;
+    std::string eoe;
+    
+    if(!PyConduit_Parse_Standard_To_JSON_Args(args,
+                                              kwargs,
+                                              indent,
+                                              depth,
+                                              pad,
+                                              eoe))
+    {
+        return NULL;
+    }
+
+    
+    std::string output = self->node->to_base64_json(indent,
+                                                    depth,
+                                                    pad,
+                                                    eoe);
+
+    return (Py_BuildValue("s", output.c_str()));
+}
+
+
 
 //----------------------------------------------------------------------------//
 // Node methods table
@@ -3153,10 +3630,10 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      METH_KEYWORDS, 
      "Remove as node at a given index or path."},
     //-----------------------------------------------------------------------//
-    {"data",
+    {"value",
      (PyCFunction)PyConduit_Node_data,
      METH_NOARGS, 
-     "{data val of node}"},
+     "Value access for leaf nodes"},
     //-----------------------------------------------------------------------//
     {"generate",
      (PyCFunction)PyConduit_Node_generate,
@@ -3217,6 +3694,27 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      (PyCFunction)PyConduit_Node_is_compact, 
      METH_NOARGS,
      "Returns if this node's data is in compact form"}, 
+     //-----------------------------------------------------------------------//
+     {"to_json",
+      (PyCFunction)PyConduit_Node_to_json, 
+      METH_VARARGS| METH_KEYWORDS,
+      "Returns a JSON string representation of the node."},
+     //-----------------------------------------------------------------------//
+     {"to_detailed_json",
+      (PyCFunction)PyConduit_Node_to_detailed_json,
+      METH_VARARGS| METH_KEYWORDS,
+      "Returns a JSON string representation of the node using "
+      "conduit JSON schema conventions"},
+     //-----------------------------------------------------------------------//
+     {"to_pure_json",
+      (PyCFunction)PyConduit_Node_to_pure_json, 
+      METH_VARARGS| METH_KEYWORDS,
+      "Returns a pure JSON string representation of the node."},
+     //-----------------------------------------------------------------------//
+     {"to_base64_json",
+      (PyCFunction)PyConduit_Node_to_base64_json, 
+      METH_VARARGS| METH_KEYWORDS,
+      "Returns a JSON string representation of the node data base64 encoded."},
      //-----------------------------------------------------------------------//
      {"iterator",
       (PyCFunction)PyConduit_Node_iter, 
@@ -3338,6 +3836,9 @@ CONDUIT_PYTHON_API initconduit_python(void)
     if (PyType_Ready(&PyConduit_Schema_TYPE) < 0)
         return;
 
+    if (PyType_Ready(&PyConduit_Generator_TYPE) < 0)
+        return;
+
     if (PyType_Ready(&PyConduit_NodeIterator_TYPE) < 0)
         return;
 
@@ -3360,6 +3861,15 @@ CONDUIT_PYTHON_API initconduit_python(void)
     PyModule_AddObject(conduit_module,
                        "Schema",
                        (PyObject*)&PyConduit_Schema_TYPE);
+
+    //-----------------------------------------------------------------------//
+    // add Generator
+    //-----------------------------------------------------------------------//
+
+    Py_INCREF(&PyConduit_Generator_TYPE);
+    PyModule_AddObject(conduit_module,
+                       "Generator",
+                       (PyObject*)&PyConduit_Generator_TYPE);
 
     //-----------------------------------------------------------------------//
     // add NodeIterator

@@ -60,6 +60,7 @@ set(PYTHON_MODULE_TESTS python_conduit_smoke
                         python_conduit_node
                         python_conduit_schema
                         python_conduit_datatype
+                        python_conduit_generator
                         python_conduit_node_iterator)
 
 

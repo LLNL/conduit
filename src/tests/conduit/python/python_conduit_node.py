@@ -89,7 +89,7 @@ class Test_Conduit_Node(unittest.TestCase):
         n = Node()
         n['a'] = vec
         na = n.fetch('a')
-        na_val = na.data()
+        na_val = na.value()
         self.assertEqual(na_val[99], 99)
         
     def test_child(self):
@@ -97,7 +97,7 @@ class Test_Conduit_Node(unittest.TestCase):
         n = Node()
         n['a'] = vec
         na = n.child(0)
-        na_val = na.data()
+        na_val = na.value()
         self.assertEqual(na_val[99], 99)
         n['b'] = vec
         self.assertEqual(n.number_of_children(),2)
@@ -143,13 +143,13 @@ class Test_Conduit_Node(unittest.TestCase):
     def test_list(self):
         n = Node()
         n.append().set(1)
-        self.assertTrue(n.child(0).data(),1)
+        self.assertTrue(n.child(0).value(),1)
         # TODO: this needs to work but doesn't
         #self.assertTrue(n[0],1)
         n2 = Node()
         n2_c = n2.append()
         n2_c.set(2)
-        self.assertEqual(n2.child(0).data(),2)
+        self.assertEqual(n2.child(0).value(),2)
         
 
     def test_remove(self):

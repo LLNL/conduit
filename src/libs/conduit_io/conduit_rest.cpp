@@ -195,11 +195,10 @@ public:
         bool handle_get_value(CivetServer *server,
                               struct mg_connection *conn)
         {
-            // todo size checks?
+            // TODO size checks?
             char post_data[2048];
             char cpath[2048];
 
-            const struct mg_request_info *ri = mg_get_request_info(conn);
             int post_data_len = mg_read(conn, post_data, sizeof(post_data));
 
             mg_get_var(post_data, post_data_len, "cpath", cpath, sizeof(cpath));
