@@ -83,6 +83,11 @@ class Test_Conduit_Geneartor(unittest.TestCase):
         for p in ["a","b","c"]:
             orig = n.fetch(p).value()
             curr = ng.fetch(p).value()
+            print ng
+            print p, orig, curr
+            orig = n[p]
+            curr = ng[p]
+            print ng
             print p, orig, curr
             self.assertEqual(orig,curr)
         
@@ -102,8 +107,12 @@ class Test_Conduit_Geneartor(unittest.TestCase):
             curr = ng.fetch(p).value()
             print ng
             print p, orig, curr
+            orig = n[p]
+            curr = ng[p]
+            print ng
+            print p, orig, curr
             self.assertEqual(orig,curr)
-        
+
 
 
 if __name__ == '__main__':

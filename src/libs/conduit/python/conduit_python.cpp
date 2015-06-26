@@ -1867,46 +1867,37 @@ PyConduit_Generator_init(PyConduit_Generator *self,
                          PyObject *args,
                          PyObject *kwargs)
 {
+    // TODO: Support "data" arg
     static const char *kwlist[] = {"json_schema",
                                    "protocol",
-                                   "data",
+                                   // "data",
                                     NULL};
 
      char *json_schema = NULL;
      char *protocol = NULL;
-     char *data     = NULL;
-     
+ 
 
     if (!PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
-                                     "s|ss",
+                                     "s|s",
                                      const_cast<char**>(kwlist),
                                      &json_schema,
-                                     &protocol,
-                                     &data))
+                                     &protocol))
     {
-        PyErr_SetString(PyExc_TypeError,
-                        "Generator::init requires a 'json_schema' argument");
-        return (-1);
+        return -1;
     }
 
-    if(protocol == NULL && data == NULL)
+    if(protocol == NULL)
     {
         self->generator = new Generator(std::string(json_schema));
     }
-    else if(protocol == NULL && data != NULL)
+    else if(protocol != NULL)
     {
         self->generator = new Generator(std::string(json_schema),
-                                        (void*)data);
-    }
-    else
-    {
-        self->generator = new Generator(std::string(json_schema),
-                                        std::string(protocol),
-                                        (void*)data);
+                                        std::string(protocol));
     }
     
-    return (0);
+    return 0;
 
 }
 
@@ -4139,11 +4130,15 @@ PyConduit_createNumpyType(Node& node,
     const DataType& dtype = node.dtype();
     PyArray_Descr* descr = PyArray_DescrFromType(type);
     PyObject* retval = NULL;
-    void* data = node.data_ptr();
+    void* data = node.element_ptr(0);
     npy_intp len = dtype.number_of_elements();
-    if (len == 1) {
+    // TODO: This only deals with contiguous data?
+    if (len == 1) 
+    {
         retval = PyArray_Scalar(data, descr, NULL);
-    } else {
+    }
+    else 
+    {
         retval = PyArray_SimpleNewFromData(1, &len, type, data);
     }
     return (retval);
