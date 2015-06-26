@@ -1465,8 +1465,8 @@ public:
 /// description:
 ///  Node traversal (iterators), child access (for list or object types)
 //-----------------------------------------------------------------------------
-    /// iterator access
-    NodeIterator     iterator();
+    /// return a iterator that give access to this nodes children
+    NodeIterator     children();
     
     /// `fetch' methods do modify map structure if a path doesn't exist
     /// fetch the node at the given path
@@ -1624,6 +1624,10 @@ public:
     void            *data_ptr();
     const void      *data_ptr() const;
 
+    void  *element_ptr(index_t idx)
+        {return static_cast<char*>(m_data) + dtype().element_index(idx);};
+    const void  *element_ptr(index_t idx) const 
+        {return static_cast<char*>(m_data) + dtype().element_index(idx);};
 
 //-----------------------------------------------------------------------------
 /// description:
@@ -1805,17 +1809,6 @@ private:
     static void      mirror_node(Node   *node,
                                  Schema *schema,
                                  Node   *src);
-
-//-----------------------------------------------------------------------------
-//
-// -- private methods that help element access -- 
-//
-//-----------------------------------------------------------------------------
-          void  *element_ptr(index_t idx)
-        {return static_cast<char*>(m_data) + dtype().element_index(idx);};
-    const void  *element_ptr(index_t idx) const 
-        {return static_cast<char*>(m_data) + dtype().element_index(idx);};
-
 
 //-----------------------------------------------------------------------------
 //

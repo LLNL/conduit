@@ -527,7 +527,7 @@ gatherv(Node &send_node,
         int data_curr_displ   = 0;
         int i=0;
         
-        NodeIterator itr = n_rcv_sizes.iterator();
+        NodeIterator itr = n_rcv_sizes.children();
         while(itr.has_next())
         {
             Node &curr = itr.next();
@@ -667,7 +667,7 @@ all_gatherv(Node &send_node,
     int data_curr_displ   = 0;
     int i=0;
     
-    NodeIterator itr = n_rcv_sizes.iterator();
+    NodeIterator itr = n_rcv_sizes.children();
     while(itr.has_next())
     {
         Node &curr = itr.next();

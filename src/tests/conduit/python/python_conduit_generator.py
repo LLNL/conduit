@@ -42,8 +42,8 @@
 # 
 ###############################################################################
 """
- file: python_conduit_node_iterator.py
- description: Unit tests for conduit::NodeIterator python module interface.
+ file: python_conduit_generator.py
+ description: Unit tests for conduit::Geneartor python module interface.
 
 """
 
@@ -51,45 +51,69 @@ import sys
 import unittest
 
 from conduit import Node
-from conduit import NodeIterator
-
+from conduit import Schema
+from conduit import Generator
 
 from numpy import *
 
+def default_node():
+    a_val = uint32(10)
+    b_val = uint32(20)
+    c_val = float64(30.0)
 
-class Test_Conduit_Node(unittest.TestCase):
+    n = Node()
+    n['a'] = a_val
+    n['b'] = b_val
+    n['c'] = c_val
+    return n;
+    
+
+class Test_Conduit_Geneartor(unittest.TestCase):
     def test_simple(self):
-        a_val = uint32(10)
-        b_val = uint32(20)
-        c_val = float64(30.0)
+        n = default_node()
+        n_schema = n.to_detailed_json();
+        print "result detailed json", n_schema
+        g = Generator(json_schema=n_schema);
+        ng = Node();
+        sg = Schema()
+        g.walk(node=ng);
+        g.walk(schema=sg);
+        print ng
+        print sg
+        for p in ["a","b","c"]:
+            orig = n.fetch(p).value()
+            curr = ng.fetch(p).value()
+            print ng
+            print p, orig, curr
+            orig = n[p]
+            curr = ng[p]
+            print ng
+            print p, orig, curr
+            self.assertEqual(orig,curr)
+        
 
-        n = Node()
-        n['a'] = a_val
-        n['b'] = b_val
-        n['c'] = c_val
-  
-        itr = NodeIterator()
-        self.assertFalse(itr.has_next())
-        itr = n.iterator()
-        self.assertTrue(itr.has_next())
-        print itr.has_next();
-        for v in itr:
-            print v.path(), v.node()
-            idx = v.index()
-            if idx == 0:
-                self.assertEqual(v.node().value(),a_val)
-            elif idx == 1:
-                self.assertEqual(v.node().value(),b_val)
-            elif idx == 2:
-                self.assertEqual(v.node().value(),c_val)
+    def test_base64(self):
+        n = default_node()
+        print n
+        n_schema = n.to_base64_json();
+        print "result base64 json", n_schema
+        g = Generator(n_schema,"base64_json");
+        ng = Node();
+        g.walk(node=ng);
+        print "Generator result"
+        print ng
+        for p in ["a","b","c"]:
+            orig = n.fetch(p).value()
+            curr = ng.fetch(p).value()
+            print ng
+            print p, orig, curr
+            orig = n[p]
+            curr = ng[p]
+            print ng
+            print p, orig, curr
+            self.assertEqual(orig,curr)
 
-#
-# TODO: sensible itr use cases:
-# for v in itr:
-# ?
-# for k,v in itr.items():
-# for i,v in itr.children():
-#
+
 
 if __name__ == '__main__':
     unittest.main()

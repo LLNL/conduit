@@ -75,6 +75,22 @@ using namespace base64;
 
 
 //-----------------------------------------------------------------------------
+//
+/// The CONDUIT_JSON_PARSE_ERROR macro use as a single place for handling
+/// errors related to rapidjson parsing.
+//
+//-----------------------------------------------------------------------------
+#define CONDUIT_JSON_PARSE_ERROR( document)                                 \
+{                                                                           \
+    CONDUIT_ERROR("JSON parse error: \n"                                    \
+                  << " offset: " << document.GetErrorOffset()               \
+                  << "\n"                                                   \
+                  << " message: "                                           \
+                  << GetParseError_En(document.GetParseError())             \
+                  << "\n");                                                 \
+}
+
+//-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
@@ -831,6 +847,12 @@ Generator::Parser::walk_json_schema(Node   *node,
                           jvalue["length"]["reference"].GetString();
                         length = node->fetch(ref_path).to_index_t();
                     }
+                    else
+                    {
+                        CONDUIT_ERROR("JSON Parsing error:\n"
+                                      << "'length' must be a number "
+                                      << "or reference.");
+                    }
                     
                 }
                 // we will create `length' # of objects of obj des by dt_value
@@ -1055,12 +1077,7 @@ Generator::walk(Schema &schema) const
 
     if(document.Parse<0>(res.c_str()).HasParseError())
     {
-        CONDUIT_ERROR("JSON parse error: \n"
-                      << " offset: " << document.GetErrorOffset() 
-                      << "\n"
-                      << " message: " 
-                      << GetParseError_En(document.GetParseError()) 
-                      << "\n");
+        CONDUIT_JSON_PARSE_ERROR(document);
     }
     index_t curr_offset = 0;
     Parser::walk_json_schema(&schema,document,curr_offset);
@@ -1089,12 +1106,7 @@ Generator::walk_external(Node &node) const
                 
         if(document.Parse<0>(res.c_str()).HasParseError())
         {
-            CONDUIT_ERROR("JSON parse error: \n"
-                          << " offset: " << document.GetErrorOffset() 
-                          << "\n"
-                          << " message: " 
-                          << GetParseError_En(document.GetParseError()) 
-                          << "\n");
+            CONDUIT_JSON_PARSE_ERROR(document);
         }
 
         Parser::walk_pure_json_schema(&node,
@@ -1108,12 +1120,7 @@ Generator::walk_external(Node &node) const
         
         if(document.Parse<0>(res.c_str()).HasParseError())
         {
-            CONDUIT_ERROR("JSON parse error: \n"
-                          << " offset: " << document.GetErrorOffset() 
-                          << "\n"
-                          << " message: " 
-                          << GetParseError_En(document.GetParseError()) 
-                          << "\n");
+            CONDUIT_JSON_PARSE_ERROR(document);
         }
         Parser::parse_base64(&node,
                              document);
@@ -1125,12 +1132,7 @@ Generator::walk_external(Node &node) const
         
         if(document.Parse<0>(res.c_str()).HasParseError())
         {
-            CONDUIT_ERROR("JSON parse error: \n"
-                          << " offset: " << document.GetErrorOffset() 
-                          << "\n"
-                          << " message: " 
-                          << GetParseError_En(document.GetParseError()) 
-                          << "\n");
+            CONDUIT_JSON_PARSE_ERROR(document);
         }
         index_t curr_offset = 0;
 

@@ -195,11 +195,10 @@ public:
         bool handle_get_value(CivetServer *server,
                               struct mg_connection *conn)
         {
-            // todo size checks?
+            // TODO size checks?
             char post_data[2048];
             char cpath[2048];
 
-            const struct mg_request_info *ri = mg_get_request_info(conn);
             int post_data_len = mg_read(conn, post_data, sizeof(post_data));
 
             mg_get_var(post_data, post_data_len, "cpath", cpath, sizeof(cpath));
@@ -276,6 +275,7 @@ RESTServer::serve(Node *node,
     m_port = oss.str();
     const char *options[] = { "document_root", CONDUIT_REST_CLIENT_ROOT,
                               "listening_ports", m_port.c_str(),
+                              "num_threads", "2",
                                NULL};
 
     m_handler = new RESTHandler(*this,node);

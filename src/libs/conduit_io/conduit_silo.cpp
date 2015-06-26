@@ -310,7 +310,7 @@ silo_save_field(DBfile *dbfile,
                         << "/topologies");
     }
 
-    NodeIterator fld_topos_itr = n_var["topologies"].iterator();
+    NodeIterator fld_topos_itr = n_var["topologies"].children();
 
     while(fld_topos_itr.has_next())
     {
@@ -750,7 +750,7 @@ silo_save_mesh(Node &n,
     
     Node n_mesh_info; // helps with bookkeeping for all topos
     
-    NodeIterator topo_itr = n["topologies"].iterator();
+    NodeIterator topo_itr = n["topologies"].children();
     while(topo_itr.has_next())
     {
         Node &n_topo = topo_itr.next();
@@ -836,7 +836,7 @@ silo_save_mesh(Node &n,
 
     if (n.has_path("fields")) 
     {
-        NodeIterator itr = n["fields"].iterator();
+        NodeIterator itr = n["fields"].children();
 
         while(itr.has_next())
         {

@@ -101,7 +101,7 @@ expand(Node &src, Node &des)
         {
             des["fields"].set_external(src["fields"]);
             
-            NodeIterator itr = des["fields"].iterator();
+            NodeIterator itr = des["fields"].children();
             
             while( itr.has_next() )
             {
