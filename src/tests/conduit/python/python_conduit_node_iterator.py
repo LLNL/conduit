@@ -70,7 +70,7 @@ class Test_Conduit_Node(unittest.TestCase):
   
         itr = NodeIterator()
         self.assertFalse(itr.has_next())
-        itr = n.iterator()
+        itr = n.children()
         self.assertTrue(itr.has_next())
         print itr.has_next();
         for v in itr:
