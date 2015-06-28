@@ -54,6 +54,7 @@ cmake_policy(SET CMP0042 OLD)
 ################################
 
 project(conduit)
+enable_language(Fortran OPTIONAL)
 
 ################################
 # Build Options

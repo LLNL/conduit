@@ -117,6 +117,7 @@ TEST(c_conduit_node, simple_hier)
 
     conduit_node_print(n);
     
+    /// this actually deletes the node
     conduit_node_destroy(n);
 }
 

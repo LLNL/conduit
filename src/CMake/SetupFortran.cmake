@@ -47,7 +47,6 @@
 # Guards for Fortran support.
 ################################
 if(ENABLE_FORTRAN)
-    enable_language(FORTRAN)
     if(CMAKE_Fortran_COMPILER)
         MESSAGE(STATUS  "Fortran Compiler: ${CMAKE_Fortran_COMPILER}")
     else()
