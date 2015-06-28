@@ -63,15 +63,10 @@ extern "C" {
 #endif
 
 //-----------------------------------------------------------------------------
-// -- structs declarations required for conduit_node --
+// -- typedef for conduit_node --
 //-----------------------------------------------------------------------------
 
-typedef struct
-{
-   int    m_c_owns;
-   void  *m_node;
-
-} conduit_node;
+typedef void  conduit_node;
 
 //-----------------------------------------------------------------------------
 // -- conduit_node creation and destruction --
@@ -100,6 +95,9 @@ int          *conduit_node_as_int_ptr(conduit_node *cnode);
 double        conduit_node_as_double(conduit_node *cnode);
 double       *conduit_node_as_double_ptr(conduit_node *cnode);
 
+
+//-----------------------------------------------------------------------------
+int          conduit_node_is_root(conduit_node *cnode);
 
 //-----------------------------------------------------------------------------
 void          conduit_node_print(conduit_node *cnode);

@@ -62,21 +62,19 @@ extern "C" {
 using namespace conduit;
 
 //---------------------------------------------------------------------------//
-conduit_node *
-conduit_node_wrap_Node(Node *node, int c_owns)
-{
-    conduit_node *cnode = (conduit_node*)malloc(sizeof(conduit_node));
-    cnode->m_node   = (void*)node;
-    cnode->m_c_owns = c_owns;
-    return cnode;
-}
-
-//---------------------------------------------------------------------------//
 Node *
 cpp_node(conduit_node *cnode)
 {
-    return (Node*)cnode->m_node;
+    return static_cast<Node*>(cnode);
 }
+
+//---------------------------------------------------------------------------//
+conduit_node *
+c_node(Node *node)
+{
+    return (void*)node;
+}
+
 
 //-----------------------------------------------------------------------------
 // -- basic constructor and destruction -- 
@@ -87,20 +85,19 @@ cpp_node(conduit_node *cnode)
 conduit_node *
 conduit_node_create()
 {
-    // c_owns = 1
-    return conduit_node_wrap_Node(new Node(),1);
+    return c_node(new Node());
 }
 
 //---------------------------------------------------------------------------//
 void
 conduit_node_destroy(conduit_node *cnode)
 {
-    if(cnode->m_c_owns == 1)
+    Node *n = cpp_node(cnode);
+    // only clean up if n is the root node (not owned by another node)
+    if(n->is_root())
     {
-        delete (Node*)cnode->m_node;
+        delete n;
     }
-
-    free(cnode);
 }
 
 
@@ -110,10 +107,7 @@ conduit_node *
 conduit_node_fetch(conduit_node *cnode,
                    const char *path)
 {
-    Node *node = cpp_node(cnode)->fetch_ptr(path);
-    // c_owns = 0
-    return conduit_node_wrap_Node(node,0);
-
+    return c_node(cpp_node(cnode)->fetch_ptr(path));
 }
 
 //-----------------------------------------------------------------------------
@@ -143,7 +137,7 @@ conduit_node_as_int(conduit_node *cnode)
 int *
 conduit_node_as_int_ptr(conduit_node *cnode)
 {
-     return cpp_node(cnode)->as_int_ptr();
+    return cpp_node(cnode)->as_int_ptr();
 }
 
 //-----------------------------------------------------------------------------
@@ -157,14 +151,22 @@ conduit_node_as_double(conduit_node *cnode)
 double *
 conduit_node_as_double_ptr(conduit_node *cnode)
 {
-     return cpp_node(cnode)->as_double_ptr();
+    return cpp_node(cnode)->as_double_ptr();
+}
+
+
+//-----------------------------------------------------------------------------
+int 
+conduit_node_is_root(conduit_node *cnode)
+{
+    return cpp_node(cnode)->is_root();
 }
 
 //-----------------------------------------------------------------------------
 void 
 conduit_node_print(conduit_node *cnode)
 {
-     cpp_node(cnode)->print();
+    cpp_node(cnode)->print();
 }
 
 
