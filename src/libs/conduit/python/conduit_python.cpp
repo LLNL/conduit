@@ -3707,7 +3707,7 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
       METH_VARARGS| METH_KEYWORDS,
       "Returns a JSON string representation of the node data base64 encoded."},
      //-----------------------------------------------------------------------//
-     {"iterator",
+     {"children",
       (PyCFunction)PyConduit_Node_iter, 
       METH_NOARGS,
       "Returns a NodeIterator for this node"}, 
