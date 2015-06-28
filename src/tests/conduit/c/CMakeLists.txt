@@ -42,87 +42,21 @@
 # 
 ###############################################################################
 
-cmake_minimum_required(VERSION 3.0)
 ################################
-# cmake policy selections
-################################
-# avoid default mac osx rpath settings for cmake 3.0
-cmake_policy(SET CMP0042 OLD)
-
-################################
-# Conduit
+# Conduit C Interface Unit Tests
 ################################
 
-project(conduit)
-
 ################################
-# Build Options
+# Core (conduit lib) Unit Tests
 ################################
-option(ENABLE_TESTS       "Build conduit tests"         ON)
-option(ENABLE_GPREF_TOOLS "Build with google perftools" OFF)
-option(ENABLE_PYTHON      "Build Python Support"        OFF)
-option(ENABLE_MPI         "Build MPI Support"           OFF)
-option(ENABLE_SILO        "Build Silo Support"          OFF)
-option(ENABLE_FORTRAN     "Build Fortran  support"      OFF)
-
-
-################################
-# Set some standard cmake opts
-################################
-include(CMake/CMakeBasics.cmake)
-
-################################
-# Fortran Support
-################################
-include(CMake/SetupFortran.cmake)
-
-################################
-# Checks for type sizes, etc
-################################
-include(CMake/BasicChecks.cmake)
-
-################################
-# Setup 3rd Party Libs
-################################
-include(CMake/Setup3rdParty.cmake)
-
-################################
-# Setup docs targets
-################################
-include(CMake/SetupDocs.cmake)
-
-################################
-# Setup tests helpers
-################################
-include(CMake/SetupTests.cmake)
-
-################################
-# Setup project wide includes
-################################
-include(CMake/SetupIncludes.cmake)
-
-################################
-# Add our libs
-################################
-add_subdirectory(libs)
-
-################################
-# Add docs
-################################
-add_subdirectory(docs)
+set(BASIC_C_TESTS c_conduit_node)
 
 ################################
 # Add our tests
 ################################
-if(ENABLE_TESTS)
-    add_subdirectory(tests)
-endif()
-
-################################
-# Create CMake importable 
-# exports for all of our targets
-################################
-install(EXPORT conduit DESTINATION lib/cmake)
-
+message(STATUS "Adding conduit lib c interface unit tests")
+foreach(TEST ${BASIC_C_TESTS})
+    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit libb64 )
+endforeach()
 
 

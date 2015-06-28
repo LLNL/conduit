@@ -82,6 +82,11 @@ foreach(TEST ${BASIC_TESTS})
 endforeach()
 
 ################################
+# Add c interface tests
+################################
+add_subdirectory("c")
+
+################################
 # Add optional tests
 ################################
 if(ENABLE_PYTHON)

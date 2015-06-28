@@ -42,87 +42,17 @@
 # 
 ###############################################################################
 
-cmake_minimum_required(VERSION 3.0)
-################################
-# cmake policy selections
-################################
-# avoid default mac osx rpath settings for cmake 3.0
-cmake_policy(SET CMP0042 OLD)
 
 ################################
-# Conduit
+# Guards for Fortran support.
 ################################
-
-project(conduit)
-
-################################
-# Build Options
-################################
-option(ENABLE_TESTS       "Build conduit tests"         ON)
-option(ENABLE_GPREF_TOOLS "Build with google perftools" OFF)
-option(ENABLE_PYTHON      "Build Python Support"        OFF)
-option(ENABLE_MPI         "Build MPI Support"           OFF)
-option(ENABLE_SILO        "Build Silo Support"          OFF)
-option(ENABLE_FORTRAN     "Build Fortran  support"      OFF)
-
-
-################################
-# Set some standard cmake opts
-################################
-include(CMake/CMakeBasics.cmake)
-
-################################
-# Fortran Support
-################################
-include(CMake/SetupFortran.cmake)
-
-################################
-# Checks for type sizes, etc
-################################
-include(CMake/BasicChecks.cmake)
-
-################################
-# Setup 3rd Party Libs
-################################
-include(CMake/Setup3rdParty.cmake)
-
-################################
-# Setup docs targets
-################################
-include(CMake/SetupDocs.cmake)
-
-################################
-# Setup tests helpers
-################################
-include(CMake/SetupTests.cmake)
-
-################################
-# Setup project wide includes
-################################
-include(CMake/SetupIncludes.cmake)
-
-################################
-# Add our libs
-################################
-add_subdirectory(libs)
-
-################################
-# Add docs
-################################
-add_subdirectory(docs)
-
-################################
-# Add our tests
-################################
-if(ENABLE_TESTS)
-    add_subdirectory(tests)
+if(ENABLE_FORTRAN)
+    enable_language(FORTRAN)
+    if(CMAKE_Fortran_COMPILER)
+        MESSAGE(STATUS  "Fortran Compiler: ${CMAKE_Fortran_COMPILER}")
+    else()
+        MESSAGE(FATAL_ERROR "ENABLE_FORTRAN is true, but a Fortran compiler wasn't found.")
+    endif()    
 endif()
-
-################################
-# Create CMake importable 
-# exports for all of our targets
-################################
-install(EXPORT conduit DESTINATION lib/cmake)
-
 
 
