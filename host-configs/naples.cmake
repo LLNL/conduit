@@ -50,6 +50,8 @@
 set(CMAKE_C_COMPILER "clang" CACHE PATH "")
 set(CMAKE_CXX_COMPILER "clang++" CACHE PATH "")
 
+set(ENABLE_FORTRAN ON CACHE PATH "")
+
 # Enable mpi for conduit-mpi
 set(ENABLE_MPI ON CACHE PATH "")
 

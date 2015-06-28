@@ -53,6 +53,7 @@ set(TPL_TESTS gtest_smoke
               rapidjson_smoke
               libb64_smoke)
 
+
 ################################
 # Optional Unit Tests
 ################################
@@ -60,7 +61,7 @@ set(PYTHON_GPREF_TOOLS_TESTS gpref_smoke)
 set(PYTHON_TESTS numpy_smoke)
 set(MPI_TESTS mpi_smoke)
 set(SILO_TESTS silo_smoke)
-
+set(FORTRAN_TESTS fortran_smoke)
 
 ################################
 # Add our Main Unit Tests
@@ -113,5 +114,16 @@ if(ENABLE_SILO)
 else()
     message(STATUS "Silo disabled: Skipping related tests")
 endif()
+
+
+if(ENABLE_FORTRAN)
+    message(STATUS "Fortran enabled: Adding related unit tests")
+    foreach(TEST ${FORTRAN_TESTS})
+        add_fortran_test(TEST ${TEST})
+    endforeach()
+else()
+    message(STATUS "Fortran disabled: Skipping related tests")
+endif()
+
 
 
