@@ -46,8 +46,11 @@
 ! fortran_smoke.f
 !
 
-program main
+
+function fortran_test() bind(C,name="fortran_test")
   print *, "No Smoke?"
-end program main
+end function fortran_test
+    
+
 
 

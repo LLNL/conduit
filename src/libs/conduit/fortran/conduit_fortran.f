@@ -54,6 +54,7 @@ module conduit
         type(C_PTR) cnode
     contains
         procedure :: print => conduit_node_print
+        procedure :: set_int => conduit_node_set_int
     end type node
 
 
@@ -72,6 +73,14 @@ module conduit
         implicit none
         type(C_PTR), value, intent(IN) :: obj
     end subroutine c_conduit_node_destroy
+    
+    subroutine c_conduit_node_set_int(obj, val) &
+                   bind(C, name="conduit_node_set_int")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: obj
+        integer(C_INT), value, intent(IN) :: val
+    end subroutine c_conduit_node_set_int
         
     subroutine c_conduit_node_print(cnode) &
         bind(C, name="conduit_node_print")
@@ -97,6 +106,14 @@ contains
            call c_conduit_node_destroy(obj%cnode)
            obj%cnode = C_NULL_PTR
     end subroutine conduit_node_destroy
+
+    subroutine conduit_node_set_int(obj, val)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        integer(C_INT) :: val
+        call c_conduit_node_set_int(obj%cnode, val)
+    end subroutine conduit_node_set_int
 
     subroutine conduit_node_print(obj)
            use iso_c_binding

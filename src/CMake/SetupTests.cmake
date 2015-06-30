@@ -154,9 +154,11 @@ macro(add_fortran_test)
                          "${singleValueArgs}" 
                          "${multiValueArgs}" ${ARGN} )
 
-    message(STATUS " [*] Adding Unit Test: ${arg_TEST}")
+    message(STATUS " [*] Adding Fortran Unit Test: ${arg_TEST}")
+    set(fortran_driver_source
+        ${CMAKE_SOURCE_DIR}/thirdparty_builtin/fruit-3.3.9/gtest_fortran_driver.cpp)
 
-    add_executable( ${arg_TEST} ${arg_TEST}.f )
+    add_executable( ${arg_TEST} ${arg_TEST}.f ${fortran_driver_source})
     set_target_properties(${arg_TEST} PROPERTIES Fortran_FORMAT "FREE")
 
     target_link_libraries( ${arg_TEST} fruit)

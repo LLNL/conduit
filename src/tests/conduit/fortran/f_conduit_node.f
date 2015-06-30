@@ -60,6 +60,7 @@ contains
         type(node) obj
         
         obj = conduit_node_create()
+        call obj%set_int(42)
         call obj%print()
         call conduit_node_destroy(obj)
         
