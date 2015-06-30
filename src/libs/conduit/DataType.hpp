@@ -95,20 +95,20 @@ public:
 //-----------------------------------------------------------------------------
     typedef enum
     {
-        EMPTY_T = 0, // empty (default type)
-        OBJECT_T,    // object
-        LIST_T,      // list
-        INT8_T,      // int8 and int8_array
-        INT16_T,     // int16 and int16_array
-        INT32_T,     // int32 and int32_array
-        INT64_T,     // int64 and int64_array
-        UINT8_T,     // int8 and int8_array
-        UINT16_T,    // uint16 and uint16_array
-        UINT32_T,    // uint32 and uint32_array
-        UINT64_T,    // uint64 and uint64_array
-        FLOAT32_T,   // float32 and float32_array
-        FLOAT64_T,   // float64 and float64_array
-        CHAR8_STR_T, // char8 string (incore c-string)
+        EMPTY_T     = CONDUIT_EMPTY_T,     // empty (default type)
+        OBJECT_T    = CONDUIT_OBJECT_T,    // object
+        LIST_T      = CONDUIT_LIST_T,      // list
+        INT8_T      = CONDUIT_INT8_T,      // int8 and int8_array
+        INT16_T     = CONDUIT_INT16_T,     // int16 and int16_array
+        INT32_T     = CONDUIT_INT32_T,     // int32 and int32_array
+        INT64_T     = CONDUIT_INT64_T,     // int64 and int64_array
+        UINT8_T     = CONDUIT_UINT8_T,     // int8 and int8_array
+        UINT16_T    = CONDUIT_UINT16_T,    // uint16 and uint16_array
+        UINT32_T    = CONDUIT_UINT32_T,    // uint32 and uint32_array
+        UINT64_T    = CONDUIT_UINT64_T,    // uint64 and uint64_array
+        FLOAT32_T   = CONDUIT_FLOAT32_T,   // float32 and float32_array
+        FLOAT64_T   = CONDUIT_FLOAT64_T,   // float64 and float64_array
+        CHAR8_STR_T = CONDUIT_CHAR8_STR_T, // char8 string (incore c-string)
     } TypeID;
 
 //-----------------------------------------------------------------------------
