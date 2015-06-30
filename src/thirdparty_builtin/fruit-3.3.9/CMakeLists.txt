@@ -42,17 +42,16 @@
 # 
 ###############################################################################
 
+####################################
+# Simple CMake setup for fruit
+####################################
 
-################################
-# Guards for Fortran support.
-################################
-if(ENABLE_FORTRAN)
-    if(CMAKE_Fortran_COMPILER)
-        MESSAGE(STATUS  "Fortran Compiler: ${CMAKE_Fortran_COMPILER}")
-        set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/fortran)
-    else()
-        MESSAGE(FATAL_ERROR "ENABLE_FORTRAN is true, but a Fortran compiler wasn't found.")
-    endif()    
-endif()
+#
+# fruit sources
+#
+set(fruit_sources
+    fruit.f90)
+
+add_library(fruit STATIC ${fruit_sources})
 
 

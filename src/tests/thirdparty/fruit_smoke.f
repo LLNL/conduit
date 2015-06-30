@@ -42,37 +42,42 @@
 !* 
 !*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!*
 
+!------------------------------------------------------------------------------
 !
-! conduit_fortran.f
+! fruit_smoke.f
 !
-
-module conduit
-    use, intrinsic :: iso_c_binding, only : C_PTR
-    implicit none
-    
-    type node
-        type(C_PTR) cnode
-    contains
-        procedure :: print => conduit_node_print
-    end type node
-
-    interface
-    subroutine c_conduit_node_print(cnode) &
-        bind(C, name="conduit_node_print")
-        use iso_c_binding
-        implicit none
-        type(C_PTR), value, intent(IN) :: cnode
-    end subroutine c_conduit_node_print
-    end interface
+!------------------------------------------------------------------------------
+module fruit_smoke
+  use iso_c_binding
+  use fruit
+  implicit none
 
 contains
+!------------------------------------------------------------------------------
 
-    subroutine conduit_node_print(obj)
-         use iso_c_binding
-         implicit none
-         class(node) :: obj
-         call c_conduit_node_print(obj%cnode)
-     end subroutine conduit_node_print
+  subroutine simple_test
+        call assert_equals (42, 42)
+  end subroutine simple_test
 
-end module conduit
+
+!----------------------------------------------------------------------
+end module fruit_smoke
+!----------------------------------------------------------------------
+
+function fortran_test() bind(C,name="fortran_test")
+  use fruit
+  use fruit_smoke
+  implicit none
+  integer(C_INT) fortran_test
+
+  call init_fruit
+!----------
+! Our tests
+  call simple_test
+!----------
+  call fruit_summary
+  call fruit_finalize
+
+  fortran_test = 0
+end function fortran_test
 

@@ -159,3 +159,11 @@ if(ENABLE_SILO)
     endif()
 endif()
 
+
+################################
+# Setup fruit (fortran uint testing framework) if fortran is enabled
+################################
+if(ENABLE_FORTRAN)
+    add_subdirectory(thirdparty_builtin/fruit-3.3.9)
+endif()
+

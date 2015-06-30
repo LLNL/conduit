@@ -58,7 +58,6 @@ Here is a list of the software components used by conduit in source from and the
 
 C and C++ Libraries 
 =====================
-
 - *gpreftools*: thirdparty_builtin/gperftools-2.2.1.tar.gz: gperftools-2.2.1/COPYING (BSD Style License)
 - *gtest*: thirdparty_builtin/gtest-1.7.0/LICENSE (BSD Style License)
 - *libb64*: thirdparty_builtin/libb64/LICENSE (Public Domain)
@@ -70,6 +69,10 @@ JavaScript Libraries
 - *fattable*: src/conduit_viz/client/js/fattable/LICENSE (MIT License)
 - *pure*: src/conduit_viz/client/js/pure/LICENSE.md  (BSD Style License)
 - *d3*: src/conduit_viz/client/js/d3/LICENSE (BSD Style License)
+
+Fortran Libraries
+=====================
+- *fruit*: thirdparty_builtin/fruit-3.3.9/LICENSE.txt (BSD Style License)
 
 Build System
 ~~~~~~~~~~~~~~~

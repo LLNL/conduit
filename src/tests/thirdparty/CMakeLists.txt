@@ -61,7 +61,8 @@ set(PYTHON_GPREF_TOOLS_TESTS gpref_smoke)
 set(PYTHON_TESTS numpy_smoke)
 set(MPI_TESTS mpi_smoke)
 set(SILO_TESTS silo_smoke)
-set(FORTRAN_TESTS fortran_smoke)
+
+set(FORTRAN_TESTS fortran_smoke fruit_smoke)
 
 ################################
 # Add our Main Unit Tests

@@ -159,6 +159,7 @@ macro(add_fortran_test)
     add_executable( ${arg_TEST} ${arg_TEST}.f )
     set_target_properties(${arg_TEST} PROPERTIES Fortran_FORMAT "FREE")
 
+    target_link_libraries( ${arg_TEST} fruit)
     target_link_libraries( ${arg_TEST} ${UNIT_TEST_BASE_LIBS})
     target_link_libraries( ${arg_TEST} "${arg_DEPENDS_ON}" )
 
