@@ -55,6 +55,11 @@ module conduit
     contains
 
         !----------------------------------------------------------------------
+        procedure :: fetch  => conduit_node_fetch
+        procedure :: append => conduit_node_append
+        procedure :: child  => conduit_node_child
+        procedure :: number_of_children => conduit_node_number_of_children
+        !----------------------------------------------------------------------
         procedure :: set_int32  => conduit_node_set_int32
         procedure :: as_int32   => conduit_node_as_int
         !----------------------------------------------------------------------
@@ -89,6 +94,44 @@ module conduit
         implicit none
         type(C_PTR), value, intent(IN) :: obj
     end subroutine c_conduit_node_destroy
+
+    !--------------------------------------------------------------------------
+    function c_conduit_node_fetch(obj, path) result(res) &
+             bind(C, name="conduit_node_fetch")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: obj
+         character(kind=C_CHAR), intent(IN) :: path(*)
+         type(C_PTR) :: res
+     end function c_conduit_node_fetch
+
+     !--------------------------------------------------------------------------
+     function c_conduit_node_append(obj) result(res) &
+              bind(C, name="conduit_node_append")
+          use iso_c_binding
+          implicit none
+          type(C_PTR), value, intent(IN) :: obj
+          type(C_PTR) :: res
+      end function c_conduit_node_append
+
+      !--------------------------------------------------------------------------
+      function c_conduit_node_child(obj,idx) result(res) &
+               bind(C, name="conduit_node_child")
+           use iso_c_binding
+           implicit none
+           type(C_PTR), value, intent(IN) :: obj
+           integer(C_SIZE_T) :: idx
+           type(C_PTR) :: res
+       end function c_conduit_node_child
+
+       !--------------------------------------------------------------------------
+       function c_conduit_node_number_of_children(obj) result(res) &
+                bind(C, name="conduit_node_number_of_children")
+            use iso_c_binding
+            implicit none
+            type(C_PTR), value, intent(IN) :: obj
+            integer(C_SIZE_T) :: res
+        end function c_conduit_node_number_of_children
 
     !--------------------------------------------------------------------------
     subroutine c_conduit_node_set_int32(obj, val) &
@@ -179,7 +222,11 @@ module conduit
     end subroutine c_conduit_node_print_detailed
     end interface
 
+!------------------------------------------------------------------------------
+!
 contains
+!
+!------------------------------------------------------------------------------
 
     !--------------------------------------------------------------------------
     function conduit_node_create() result(obj)
@@ -191,12 +238,50 @@ contains
 
     !--------------------------------------------------------------------------
     subroutine conduit_node_destroy(obj)
-           use iso_c_binding
-           implicit none
-           type(node) :: obj
-           call c_conduit_node_destroy(obj%cnode)
-           obj%cnode = C_NULL_PTR
+        use iso_c_binding
+        implicit none
+        type(node) :: obj
+        call c_conduit_node_destroy(obj%cnode)
+        obj%cnode = C_NULL_PTR
     end subroutine conduit_node_destroy
+
+    !--------------------------------------------------------------------------
+    function conduit_node_fetch(obj, path) result(res)
+         use iso_c_binding
+         implicit none
+         class(node) :: obj
+         character(*) :: path
+         type(node) :: res
+         res%cnode = c_conduit_node_fetch(obj%cnode, trim(path) // C_NULL_CHAR)
+     end function conduit_node_fetch
+
+    !--------------------------------------------------------------------------
+    function conduit_node_append(obj) result(res)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        type(node) :: res
+        res%cnode = c_conduit_node_append(obj%cnode)
+    end function conduit_node_append
+
+    !--------------------------------------------------------------------------
+    function conduit_node_child(obj, idx) result(res)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        integer(C_SIZE_T) :: idx
+        type(node) :: res
+        res%cnode = c_conduit_node_child(obj%cnode, idx)
+    end function conduit_node_child
+
+    !--------------------------------------------------------------------------
+    function conduit_node_number_of_children(obj) result(res)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        integer(C_SIZE_T) :: res
+        res = c_conduit_node_number_of_children(obj%cnode)
+    end function conduit_node_number_of_children
 
     !--------------------------------------------------------------------------
     subroutine conduit_node_set_int32(obj, val)

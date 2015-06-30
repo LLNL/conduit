@@ -100,14 +100,33 @@ conduit_node_destroy(conduit_node *cnode)
     }
 }
 
-
-
 //-----------------------------------------------------------------------------
 conduit_node *
 conduit_node_fetch(conduit_node *cnode,
                    const char *path)
 {
     return c_node(cpp_node(cnode)->fetch_ptr(path));
+}
+
+//-----------------------------------------------------------------------------
+conduit_node *
+conduit_node_append(conduit_node *cnode)
+{
+    return c_node(&cpp_node(cnode)->append());
+}
+
+//-----------------------------------------------------------------------------
+conduit_node *
+conduit_node_child(conduit_node *cnode, size_t idx)
+{
+    return c_node(cpp_node(cnode)->child_ptr(idx));
+}
+
+//-----------------------------------------------------------------------------
+size_t
+conduit_node_number_of_children(conduit_node *cnode)
+{
+    return cpp_node(cnode)->number_of_children();
 }
 
 //-----------------------------------------------------------------------------

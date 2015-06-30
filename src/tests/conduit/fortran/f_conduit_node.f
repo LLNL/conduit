@@ -56,6 +56,7 @@ module f_conduit_node
 contains
 !------------------------------------------------------------------------------
 
+    !--------------------------------------------------------------------------
     subroutine t_create_node_int
         type(node) obj
         integer res
@@ -69,6 +70,67 @@ contains
         
     end subroutine t_create_node_int
 
+    !--------------------------------------------------------------------------
+    subroutine t_fetch_node_int32
+        type(node) obj
+        type(node) n1
+        integer res
+        
+        obj = conduit_node_create()
+        
+        n1 = obj%fetch("my_sub")
+        call n1%set_int32(42)
+        
+        call obj%print_detailed()
+        
+        res = n1%as_int32()
+        call assert_equals (42, res)
+        call conduit_node_destroy(obj)
+        
+    end subroutine t_fetch_node_int32
+
+    !--------------------------------------------------------------------------
+    subroutine t_append_nodes
+        type(node) obj
+        type(node) n1
+        type(node) n2
+        type(node) na
+        type(node) nb
+        integer(4) res_1
+        real(8)    res_2
+        integer    nchld
+        
+        obj = conduit_node_create()
+        
+        n1 = obj%append()
+        n2 = obj%append()
+        
+        nchld = obj%number_of_children()
+        
+        call assert_equals(nchld, 2)
+        
+        call n1%set_int32(42)
+        call n2%set_float64(3.1415d+0)
+        
+        call obj%print_detailed()
+        
+        ! TODO: these crash?
+        !na  = obj%child(0_8)
+        !nb  = obj%child(1_8)
+        
+        call obj%print_detailed()
+                
+        res_1 = n1%as_int32()
+        res_2 = n2%as_float64()
+        
+        call assert_equals (42, res_1)
+        call assert_equals (3.1415d+0, res_2)
+        call conduit_node_destroy(obj)
+        
+    end subroutine t_append_nodes
+
+
+    !--------------------------------------------------------------------------
     subroutine t_create_node_int32
         type(node) obj
         integer(4) res
@@ -82,6 +144,7 @@ contains
         
     end subroutine t_create_node_int32
 
+    !--------------------------------------------------------------------------
     subroutine t_create_node_double
         type(node) obj
         real(kind=8) res
@@ -95,6 +158,7 @@ contains
         
     end subroutine t_create_node_double
 
+    !--------------------------------------------------------------------------
     subroutine t_create_node_float64
         type(node) obj
         real(kind=8) res
@@ -125,7 +189,9 @@ function fortran_test() bind(C,name="fortran_test")
   call t_create_node_int32
   call t_create_node_double
   call t_create_node_float64
-
+  call t_fetch_node_int32
+  call t_append_nodes
+  
   call fruit_summary
   call fruit_finalize
 
