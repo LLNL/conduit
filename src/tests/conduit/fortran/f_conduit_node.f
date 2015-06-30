@@ -56,15 +56,31 @@ module f_conduit_node
 contains
 !------------------------------------------------------------------------------
 
-    subroutine t_create_node
+    subroutine t_create_node_int
         type(node) obj
+        integer res
         
         obj = conduit_node_create()
         call obj%set_int(42)
         call obj%print()
+        res = obj%as_int()
+        call assert_equals (42, res)
         call conduit_node_destroy(obj)
         
-    end subroutine t_create_node
+    end subroutine t_create_node_int
+
+    subroutine t_create_node_double
+        type(node) obj
+        real(8) res
+        
+        obj = conduit_node_create()
+        call obj%set_double(3.1415d+0)
+        call obj%print()
+        res = obj%as_double()
+        call assert_equals(3.1415d+0, res)
+        call conduit_node_destroy(obj)
+        
+    end subroutine t_create_node_double
 
 
 !----------------------------------------------------------------------
@@ -79,7 +95,8 @@ function fortran_test() bind(C,name="fortran_test")
 
   call init_fruit
 
-  call t_create_node
+  call t_create_node_int
+  call t_create_node_double
 
   call fruit_summary
   call fruit_finalize
