@@ -60,6 +60,7 @@ module conduit
         procedure :: child  => conduit_node_child
         procedure :: number_of_children => conduit_node_number_of_children
         !----------------------------------------------------------------------
+        procedure :: set_int32_ptr => conduit_node_set_int32_ptr
         procedure :: set_int32  => conduit_node_set_int32
         procedure :: as_int32   => conduit_node_as_int
         !----------------------------------------------------------------------
@@ -141,6 +142,16 @@ module conduit
         type(C_PTR), value, intent(IN) :: obj
         integer(4), value, intent(IN) :: val
     end subroutine c_conduit_node_set_int32
+
+    !--------------------------------------------------------------------------
+    subroutine c_conduit_node_set_int32_ptr(obj, data, num_elements) &
+                   bind(C, name="conduit_node_set_int32_ptr")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: obj
+        integer(4), intent (out), dimension (*) :: data
+        integer(C_SIZE_T) :: num_elements
+    end subroutine c_conduit_node_set_int32_ptr
 
     !--------------------------------------------------------------------------
     pure function c_conduit_node_as_int32(self) result(res) &
@@ -291,6 +302,16 @@ contains
         integer(4) :: val
         call c_conduit_node_set_int32(obj%cnode, val)
     end subroutine conduit_node_set_int32
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_int32_ptr(obj, data, num_elements) 
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        integer(4), intent (out), dimension (*) :: data
+        integer(C_SIZE_T) :: num_elements
+        call c_conduit_node_set_int32_ptr(obj%cnode,data,num_elements)
+    end subroutine conduit_node_set_int32_ptr
 
     !--------------------------------------------------------------------------
     function conduit_node_as_int32(obj) result(res)

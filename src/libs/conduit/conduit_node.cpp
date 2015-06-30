@@ -139,6 +139,15 @@ conduit_node_set_int32(conduit_node *cnode,
 
 //-----------------------------------------------------------------------------
 void
+conduit_node_set_int32_ptr(conduit_node *cnode, 
+                           conduit_int32 *data,
+                           size_t num_elements)
+{
+    cpp_node(cnode)->set_int32_ptr(data,num_elements);
+}
+
+//-----------------------------------------------------------------------------
+void
 conduit_node_set_int(conduit_node *cnode, 
                      int value)
 {

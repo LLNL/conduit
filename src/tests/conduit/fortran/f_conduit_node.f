@@ -172,6 +172,23 @@ contains
         
     end subroutine t_create_node_float64
 
+    !--------------------------------------------------------------------------
+    subroutine t_set_node_int32_ptr
+        type(node) obj
+        integer(4), dimension(0:4) :: data
+        integer i
+        
+        do i = 1,5
+            data(i) = i
+        enddo
+        
+        obj = conduit_node_create()
+        call obj%set_int32_ptr(data,5_8)
+        call obj%print_detailed()
+        call conduit_node_destroy(obj)
+        
+    end subroutine t_set_node_int32_ptr
+
 
 !----------------------------------------------------------------------
 end module f_conduit_node
@@ -191,6 +208,7 @@ function fortran_test() bind(C,name="fortran_test")
   call t_create_node_float64
   call t_fetch_node_int32
   call t_append_nodes
+  call t_set_node_int32_ptr
   
   call fruit_summary
   call fruit_finalize
