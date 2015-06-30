@@ -281,95 +281,196 @@ public:
 //-----------------------------------------------------------------------------
 // -- set for generic types --
 //-----------------------------------------------------------------------------
+    void set_node(const Node &data);
     void set(const Node &data);
+    
+    void set_dtype(const DataType &dtype);
     void set(const DataType &dtype);
+
+    void set_schema(const Schema &schema);    
     void set(const Schema &schema);
 
+    void set_data_using_schema(const Schema &schema, void *data);
     void set(const Schema &schema, void *data);
+
+    void set_data_using_dtype(const DataType &dtype, void *data);
     void set(const DataType &dtype, void *data);
 
 //-----------------------------------------------------------------------------
 // -- set for scalar types ---
 //-----------------------------------------------------------------------------
     // signed integer scalar types
+    void set_int8(int8 data);
     void set(int8 data);
+
+    void set_int16(int16 data);
     void set(int16 data);
+    
+    void set_int32(int32 data);
     void set(int32 data);
+    
+    void set_int64(int64 data);
     void set(int64 data);
 
     // unsigned integer scalar types
+    void set_uint8(uint8 data);
     void set(uint8 data);
+    
+    void set_uint16(uint16 data);
     void set(uint16 data);
+
+    void set_uint32(uint32 data);
     void set(uint32 data);
+    
+    void set_uint64(uint64 data);
     void set(uint64 data);
 
     // floating point scalar types
+    void set_float32(float32 data);
     void set(float32 data);
+    
+    void set_float64(float64 data);
     void set(float64 data);
-
-//-----------------------------------------------------------------------------
-// -- set for std::vector types ---
-//-----------------------------------------------------------------------------
-    // signed integer array types via std::vector
-    void set(const std::vector<int8>   &data);
-    void set(const std::vector<int16>  &data);
-    void set(const std::vector<int32>  &data);
-    void set(const std::vector<int64>  &data);
-
-    // unsigned integer array types via std::vector
-    void set(const std::vector<uint8>   &data);
-    void set(const std::vector<uint16>  &data);
-    void set(const std::vector<uint32>  &data);
-    void set(const std::vector<uint64>  &data);
-
-    // floating point array types via std::vector
-    void set(const std::vector<float32> &data);
-    void set(const std::vector<float64> &data);
 
 //-----------------------------------------------------------------------------
 // -- set for conduit::DataArray types ---
 //-----------------------------------------------------------------------------
     // signed integer array types via conduit::DataArray
+    void set_int8_array(const int8_array  &data);
     void set(const int8_array  &data);
+    
+    void set_int16_array(const int16_array &data);
     void set(const int16_array &data);
+    
+    void set_int32_array(const int32_array &data);
     void set(const int32_array &data);
+    
+    void set_int64_array(const int64_array &data);
     void set(const int64_array &data);
 
     // unsigned integer array types via conduit::DataArray
+    void set_uint8_array(const uint8_array  &data);
     void set(const uint8_array  &data);
+    
+    void set_uint16_array(const uint16_array &data);
     void set(const uint16_array &data);
+    
+    void set_uint32_array(const uint32_array &data);
     void set(const uint32_array &data);
+    
+    void set_uint64_array(const uint64_array &data);
     void set(const uint64_array &data);
 
     // floating point array types via conduit::DataArray
+    void set_float32_array(const float32_array &data);
     void set(const float32_array &data);
+    
+    void set_float64_array(const float64_array &data);
     void set(const float64_array &data);
 
 //-----------------------------------------------------------------------------
 // -- set for string types -- 
 //-----------------------------------------------------------------------------
     // char8_str use cases
+    void set_string(const std::string &data);
     void set(const std::string &data);
     // special explicit case for string to avoid any overloading ambiguity
     void set_char8_str(const char *data);
 
 //-----------------------------------------------------------------------------
+// -- set for std::vector types ---
+//  TODO IMP: move std::vector cases
+//-----------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    // signed integer array types via std::vector
+    //-------------------------------------------------------------------------
+    void set_int8_vector(const std::vector<int8>   &data);
+    void set(const std::vector<int8>   &data);
+    
+    //-------------------------------------------------------------------------
+    void set_int16_vector(const std::vector<int16>  &data);
+    void set(const std::vector<int16>  &data);
+
+    //-------------------------------------------------------------------------
+    void set_int32_vector(const std::vector<int32>  &data);    
+    void set(const std::vector<int32>  &data);
+
+    //-------------------------------------------------------------------------
+    void set_int64_vector(const std::vector<int64>  &data);
+    void set(const std::vector<int64>  &data);
+
+    //-------------------------------------------------------------------------
+    // unsigned integer array types via std::vector
+    //-------------------------------------------------------------------------
+    void set_uint8_vector(const std::vector<uint8>   &data);
+    void set(const std::vector<uint8>   &data);
+    
+    //-------------------------------------------------------------------------
+    void set_uint16_vector(const std::vector<uint16>  &data);
+    void set(const std::vector<uint16>  &data);
+
+    //-------------------------------------------------------------------------
+    void set_uint32_vector(const std::vector<uint32>  &data);
+    void set(const std::vector<uint32>  &data);
+    
+    //-------------------------------------------------------------------------
+    void set_uint64_vector(const std::vector<uint64>  &data);
+    void set(const std::vector<uint64>  &data);
+
+    //-------------------------------------------------------------------------
+    // floating point array types via std::vector
+    //-------------------------------------------------------------------------
+    void set_float32_vector(const std::vector<float32> &data);
+    void set(const std::vector<float32> &data);
+
+    //-------------------------------------------------------------------------
+    void set_float64_vector(const std::vector<float64> &data);
+    void set(const std::vector<float64> &data);
+
+
+
+//-----------------------------------------------------------------------------
 // -- set via pointers (scalar and array types) -- 
 //-----------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
     // signed integer pointer cases
+    //-------------------------------------------------------------------------
+    void set_int8_ptr(int8  *data,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(conduit::int8),
+                      index_t element_bytes = sizeof(conduit::int8),
+                      index_t endianness = Endianness::DEFAULT_T);
+
     void set(int8  *data,
              index_t num_elements = 1,
              index_t offset = 0,
              index_t stride = sizeof(conduit::int8),
              index_t element_bytes = sizeof(conduit::int8),
              index_t endianness = Endianness::DEFAULT_T);
-    
+
+    //-------------------------------------------------------------------------
+    void set_int16_ptr(int16 *data, 
+                       index_t num_elements = 1,
+                       index_t offset = 0,
+                       index_t stride = sizeof(conduit::int16),
+                       index_t element_bytes = sizeof(conduit::int16),
+                       index_t endianness = Endianness::DEFAULT_T);
+
     void set(int16 *data, 
              index_t num_elements = 1,
              index_t offset = 0,
              index_t stride = sizeof(conduit::int16),
              index_t element_bytes = sizeof(conduit::int16),
              index_t endianness = Endianness::DEFAULT_T);
+    
+    //-------------------------------------------------------------------------
+    void set_int32_ptr(int32 *data,
+                       index_t num_elements = 1,
+                       index_t offset = 0,
+                       index_t stride = sizeof(conduit::int32),
+                       index_t element_bytes = sizeof(conduit::int32),
+                       index_t endianness = Endianness::DEFAULT_T);
     
     void set(int32 *data,
              index_t num_elements = 1,
@@ -378,6 +479,15 @@ public:
              index_t element_bytes = sizeof(conduit::int32),
              index_t endianness = Endianness::DEFAULT_T);
 
+
+    //-------------------------------------------------------------------------
+    void set_int64_ptr(int64 *data,
+                       index_t num_elements = 1,
+                       index_t offset = 0,
+                       index_t stride = sizeof(conduit::int64),
+                       index_t element_bytes = sizeof(conduit::int64),
+                       index_t endianness = Endianness::DEFAULT_T);
+
     void set(int64 *data,
              index_t num_elements = 1,
              index_t offset = 0,
@@ -385,13 +495,30 @@ public:
              index_t element_bytes = sizeof(conduit::int64),
              index_t endianness = Endianness::DEFAULT_T);
 
+    //-------------------------------------------------------------------------
     // unsigned integer pointer cases
+    //-------------------------------------------------------------------------
+    void set_uint8_ptr(uint8  *data,
+                       index_t num_elements = 1,
+                       index_t offset = 0,
+                       index_t stride = sizeof(conduit::uint8),
+                       index_t element_bytes = sizeof(conduit::uint8),
+                       index_t endianness = Endianness::DEFAULT_T);
+
     void set(uint8  *data,
              index_t num_elements = 1,
              index_t offset = 0,
              index_t stride = sizeof(conduit::uint8),
              index_t element_bytes = sizeof(conduit::uint8),
              index_t endianness = Endianness::DEFAULT_T);
+
+    //-------------------------------------------------------------------------
+    void set_uint16_ptr(uint16 *data,
+                       index_t num_elements = 1,
+                       index_t offset = 0,
+                       index_t stride = sizeof(conduit::uint16),
+                       index_t element_bytes = sizeof(conduit::uint16),
+                       index_t endianness = Endianness::DEFAULT_T);
 
     void set(uint16 *data,
              index_t num_elements = 1,
@@ -400,13 +527,29 @@ public:
              index_t element_bytes = sizeof(conduit::uint16),
              index_t endianness = Endianness::DEFAULT_T);
 
+    //-------------------------------------------------------------------------
+    void set_uint32_ptr(uint32 *data, 
+                        index_t num_elements = 1,
+                        index_t offset = 0,
+                        index_t stride = sizeof(conduit::uint32),
+                        index_t element_bytes = sizeof(conduit::uint32),
+                        index_t endianness = Endianness::DEFAULT_T);
+
     void set(uint32 *data, 
              index_t num_elements = 1,
              index_t offset = 0,
              index_t stride = sizeof(conduit::uint32),
              index_t element_bytes = sizeof(conduit::uint32),
              index_t endianness = Endianness::DEFAULT_T);
-                      
+
+    //-------------------------------------------------------------------------
+    void set_uint64_ptr(uint64 *data,
+                        index_t num_elements = 1,
+                        index_t offset = 0,
+                        index_t stride = sizeof(conduit::uint64),
+                        index_t element_bytes = sizeof(conduit::uint64),
+                        index_t endianness = Endianness::DEFAULT_T);
+
     void set(uint64 *data,
              index_t num_elements = 1,
              index_t offset = 0,
@@ -414,13 +557,30 @@ public:
              index_t element_bytes = sizeof(conduit::uint64),
              index_t endianness = Endianness::DEFAULT_T);
 
+    //-------------------------------------------------------------------------
     // floating point pointer cases
+    //-------------------------------------------------------------------------
+    void set_float32_ptr(float32 *data,
+                         index_t num_elements = 1,
+                         index_t offset = 0,
+                         index_t stride = sizeof(conduit::float32),
+                         index_t element_bytes = sizeof(conduit::float32),
+                         index_t endianness = Endianness::DEFAULT_T);
+
     void set(float32 *data,
              index_t num_elements = 1,
              index_t offset = 0,
              index_t stride = sizeof(conduit::float32),
              index_t element_bytes = sizeof(conduit::float32),
              index_t endianness = Endianness::DEFAULT_T);
+
+    //-------------------------------------------------------------------------
+    void set_float64_ptr(float64 *data, 
+                         index_t num_elements = 1,
+                         index_t offset = 0,
+                         index_t stride = sizeof(conduit::float64),
+                         index_t element_bytes = sizeof(conduit::float64),
+                         index_t endianness = Endianness::DEFAULT_T);
 
     void set(float64 *data, 
              index_t num_elements = 1,
@@ -453,174 +613,426 @@ public:
 //-----------------------------------------------------------------------------
 // -- set_path for generic types --
 //-----------------------------------------------------------------------------
-     void set_path(const std::string &path,
-                   const Node& data);
+    void set_path_node(const std::string &path,
+                       const Node& data);
+    void set_path(const std::string &path,
+                  const Node& data);
 
-     void set_path(const std::string &path,
-                   const DataType& dtype);
+    //-------------------------------------------------------------------------
+    void set_path_dtype(const std::string &path,
+                        const DataType& dtype);
 
-     void set_path(const std::string &path,
-                   const Schema &schema);
-              
-     void set_path(const std::string &path,
-                   const Schema &schema,
-                   void *data);
+    void set_path(const std::string &path,
+                  const DataType& dtype);
 
-     void set_path(const std::string &path,
-                   const DataType &dtype,
-                   void *data);
+    //-------------------------------------------------------------------------
+    void set_path_schema(const std::string &path,
+                         const Schema &schema);
+
+    void set_path(const std::string &path,
+                  const Schema &schema);
+
+    //-------------------------------------------------------------------------
+    void set_path_data_using_schema(const std::string &path,
+                                    const Schema &schema,
+                                    void *data);              
+
+    void set_path(const std::string &path,
+                  const Schema &schema,
+                  void *data);
+
+    //-------------------------------------------------------------------------
+    void set_path_data_using_dtype(const std::string &path,
+                                   const DataType &dtype,
+                                   void *data);
+
+    void set_path(const std::string &path,
+                  const DataType &dtype,
+                  void *data);
 
 //-----------------------------------------------------------------------------
 // -- set_path for scalar types ---
 //-----------------------------------------------------------------------------
-     // signed integer scalar types
-     void set_path(const std::string &path, int8 data);
-     void set_path(const std::string &path, int16 data);
-     void set_path(const std::string &path, int32 data);
-     void set_path(const std::string &path, int64 data);
+    //-------------------------------------------------------------------------
+    // signed integer scalar types
+    //-------------------------------------------------------------------------
+    void set_path_int8(const std::string &path, int8 data);
+    void set_path(const std::string &path, int8 data);
 
-     // unsigned integer scalar types 
-     void set_path(const std::string &path, uint8 data);
-     void set_path(const std::string &path, uint16 data);
-     void set_path(const std::string &path, uint32 data);
-     void set_path(const std::string &path, uint64 data);
+    //-------------------------------------------------------------------------     
+    void set_path_int16(const std::string &path, int16 data);
+    void set_path(const std::string &path, int16 data);
 
-     // floating point scalar types
-     void set_path(const std::string &path, float32 data);
-     void set_path(const std::string &path, float64 data);
+    //-------------------------------------------------------------------------
+    void set_path_int32(const std::string &path, int32 data);
+    void set_path(const std::string &path, int32 data);
 
- //-----------------------------------------------------------------------------
- // -- set_path for std::vector types ---
- //-----------------------------------------------------------------------------
-     // signed integer array types via std::vector
-     void set_path(const std::string &path, const std::vector<int8>   &data);
-     void set_path(const std::string &path, const std::vector<int16>  &data);
-     void set_path(const std::string &path, const std::vector<int32>  &data);
-     void set_path(const std::string &path, const std::vector<int64>  &data);
-     
-     // unsigned integer array types via std::vector
-     void set_path(const std::string &path, const std::vector<uint8>   &data);
-     void set_path(const std::string &path, const std::vector<uint16>  &data);
-     void set_path(const std::string &path, const std::vector<uint32>  &data);
-     void set_path(const std::string &path, const std::vector<uint64>  &data);
-     
-     // floating point array types via std::vector
-     void set_path(const std::string &path, const std::vector<float32> &data);
-     void set_path(const std::string &path, const std::vector<float64> &data);
+    //-------------------------------------------------------------------------
+    void set_path_int64(const std::string &path, int64 data);
+    void set_path(const std::string &path, int64 data);
 
- //-----------------------------------------------------------------------------
- // -- set_path for conduit::DataArray types ---
- //-----------------------------------------------------------------------------
-     // signed integer array types via conduit::DataArray
-     void set_path(const std::string &path, const int8_array  &data);
-     void set_path(const std::string &path, const int16_array &data);
-     void set_path(const std::string &path, const int32_array &data);
-     void set_path(const std::string &path, const int64_array &data);
+    //-------------------------------------------------------------------------
+    // unsigned integer scalar types 
+    //-------------------------------------------------------------------------
+    void set_path_uint8(const std::string &path, uint8 data);
+    void set_path(const std::string &path, uint8 data);
 
-     // unsigned integer array types via conduit::DataArray
-     void set_path(const std::string &path, const uint8_array  &data);
-     void set_path(const std::string &path, const uint16_array &data);
-     void set_path(const std::string &path, const uint32_array &data);
-     void set_path(const std::string &path, const uint64_array &data);
+    //-------------------------------------------------------------------------
+    void set_path_uint16(const std::string &path, uint16 data);
+    void set_path(const std::string &path, uint16 data);
 
-     // floating point array types via conduit::DataArray
-     void set_path(const std::string &path, const float32_array &data);
-     void set_path(const std::string &path, const float64_array &data);
+    //-------------------------------------------------------------------------
+    void set_path_uint32(const std::string &path, uint32 data);
+    void set_path(const std::string &path, uint32 data);
+
+    //-------------------------------------------------------------------------
+    void set_path_uint64(const std::string &path, uint64 data);
+    void set_path(const std::string &path, uint64 data);
+
+    //-------------------------------------------------------------------------
+    // floating point scalar types
+    //-------------------------------------------------------------------------
+    void set_path_float32(const std::string &path, float32 data);
+    void set_path(const std::string &path, float32 data);
+
+    //-------------------------------------------------------------------------
+    void set_path_float64(const std::string &path, float64 data);
+    void set_path(const std::string &path, float64 data);
+
+//-----------------------------------------------------------------------------
+// -- set_path for conduit::DataArray types ---
+//-----------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    // signed integer array types via conduit::DataArray
+    //-------------------------------------------------------------------------
+    void set_path_int8_array(const std::string &path,
+                          const int8_array  &data);
+
+    void set_path(const std::string &path, const int8_array  &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_int16_array(const std::string &path,
+                           const int16_array &data);
+
+    void set_path(const std::string &path, const int16_array &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_int32_array(const std::string &path,
+                        const int32_array &data);
+
+    void set_path(const std::string &path, const int32_array &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_int64_array(const std::string &path,
+                           const int64_array &data);
+
+    void set_path(const std::string &path, const int64_array &data);
+
+    //-------------------------------------------------------------------------
+    // unsigned integer array types via conduit::DataArray
+    //-------------------------------------------------------------------------
+    void set_path_uint8_array(const std::string &path,
+                           const uint8_array  &data);
+
+    void set_path(const std::string &path, const uint8_array  &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_uint16_array(const std::string &path,
+                            const uint16_array &data);
+
+    void set_path(const std::string &path, const uint16_array &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_uint32_array(const std::string &path,
+                            const uint32_array &data);
+
+    void set_path(const std::string &path, const uint32_array &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_uint64_array(const std::string &path,
+                            const uint64_array &data);
+
+    void set_path(const std::string &path, const uint64_array &data);
+
+    //-------------------------------------------------------------------------
+    // floating point array types via conduit::DataArray
+    //-------------------------------------------------------------------------
+    void set_path_float32_array(const std::string &path,
+                             const float32_array &data);
+
+    void set_path(const std::string &path, const float32_array &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_float64_array(const std::string &path,
+                             const float64_array &data);
+
+    void set_path(const std::string &path, const float64_array &data);
 
 //-----------------------------------------------------------------------------
 // -- set_path for string types -- 
 //-----------------------------------------------------------------------------
-     // char8_str use cases
-     void set_path(const std::string &path,
-                   const std::string &data);
+    //-------------------------------------------------------------------------
+    // char8_str use cases
+    //-------------------------------------------------------------------------
+    void set_path_string(const std::string &path,
+                         const std::string &data);
 
-     // special explicit case for string to avoid any overloading ambiguity
-     void set_path_char8_str(const std::string &path,
-                             const char* data);
+    void set_path(const std::string &path,
+                  const std::string &data);
+
+    //-------------------------------------------------------------------------
+    // special explicit case for string to avoid any overloading ambiguity
+    //-------------------------------------------------------------------------
+    void set_path_char8_str(const std::string &path,
+                            const char* data);
+
+
+//-----------------------------------------------------------------------------
+// -- set_path for std::vector types ---
+//-----------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    // signed integer array types via std::vector
+    //-------------------------------------------------------------------------
+    void set_path_int8_vector(const std::string &path,
+                              const std::vector<int8> &data);
+
+    void set_path(const std::string &path, const std::vector<int8> &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_int16_vector(const std::string &path,
+                               const std::vector<int16> &data);
+
+    void set_path(const std::string &path, const std::vector<int16> &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_int32_vector(const std::string &path,
+                               const std::vector<int32> &data);
+
+    void set_path(const std::string &path, const std::vector<int32> &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_int64_vector(const std::string &path,
+                               const std::vector<int64> &data);
+
+    void set_path(const std::string &path, const std::vector<int64> &data);
+
+    //-------------------------------------------------------------------------     
+    // unsigned integer array types via std::vector
+    //-------------------------------------------------------------------------
+    void set_path_uint8_vector(const std::string &path,
+                               const std::vector<uint8> &data);
+
+    void set_path(const std::string &path, const std::vector<uint8> &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_uint16_vector(const std::string &path,
+                                const std::vector<uint16> &data);
+
+    void set_path(const std::string &path, const std::vector<uint16> &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_uint32_vector(const std::string &path,
+                                const std::vector<uint32> &data);
+    void set_path(const std::string &path, const std::vector<uint32> &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_uint64_vector(const std::string &path,
+                                const std::vector<uint64> &data);
+
+    void set_path(const std::string &path, const std::vector<uint64> &data);
+
+    //-------------------------------------------------------------------------
+    // floating point array types via std::vector
+    //-------------------------------------------------------------------------
+    void set_path_float32_vector(const std::string &path,
+                                 const std::vector<float32> &data);
+
+    void set_path(const std::string &path, const std::vector<float32> &data);
+
+
+    //-------------------------------------------------------------------------
+    void set_path_float64_vector(const std::string &path,
+                                 const std::vector<float64> &data);
+
+    void set_path(const std::string &path, const std::vector<float64> &data);
 
 //-----------------------------------------------------------------------------
 // -- set_path via pointers (scalar and array types) -- 
-//-----------------------------------------------------------------------------  // signed integer pointer cases
-     void set_path(const std::string &path,int8  *data,
-                   index_t num_elements = 1,
-                   index_t offset = 0,
-                   index_t stride = sizeof(conduit::int8),
-                   index_t element_bytes = sizeof(conduit::int8),
-                   index_t endianness = Endianness::DEFAULT_T);
-        
-     void set_path(const std::string &path,
-                   int16 *data, 
-                   index_t num_elements = 1,
-                   index_t offset = 0,
-                   index_t stride = sizeof(conduit::int16),
-                   index_t element_bytes = sizeof(conduit::int16),
-                   index_t endianness = Endianness::DEFAULT_T);
+//----------------------------------------------------------------------------- 
+    //-------------------------------------------------------------------------
+    // signed integer pointer cases
+    //-------------------------------------------------------------------------
+    void set_path_int8_ptr(const std::string &path,int8  *data,
+                           index_t num_elements = 1,
+                           index_t offset = 0,
+                           index_t stride = sizeof(conduit::int8),
+                           index_t element_bytes = sizeof(conduit::int8),
+                           index_t endianness = Endianness::DEFAULT_T);
 
-     void set_path(const std::string &path,
-                   int32 *data,
-                   index_t num_elements = 1,
-                   index_t offset = 0,
-                   index_t stride = sizeof(conduit::int32),
-                   index_t element_bytes = sizeof(conduit::int32),
-                   index_t endianness = Endianness::DEFAULT_T);
+    void set_path(const std::string &path,int8  *data,
+                  index_t num_elements = 1,
+                  index_t offset = 0,
+                  index_t stride = sizeof(conduit::int8),
+                  index_t element_bytes = sizeof(conduit::int8),
+                  index_t endianness = Endianness::DEFAULT_T);
 
-     void set_path(const std::string &path,
-                   int64 *data,
-                   index_t num_elements = 1,
-                   index_t offset = 0,
-                   index_t stride = sizeof(conduit::int64),
-                   index_t element_bytes = sizeof(conduit::int64),
-                   index_t endianness = Endianness::DEFAULT_T);
+    //-------------------------------------------------------------------------
+    void set_path_int16_ptr(const std::string &path,
+                            int16 *data, 
+                            index_t num_elements = 1,
+                            index_t offset = 0,
+                            index_t stride = sizeof(conduit::int16),
+                            index_t element_bytes = sizeof(conduit::int16),
+                            index_t endianness = Endianness::DEFAULT_T);
 
+    void set_path(const std::string &path,
+                  int16 *data, 
+                  index_t num_elements = 1,
+                  index_t offset = 0,
+                  index_t stride = sizeof(conduit::int16),
+                  index_t element_bytes = sizeof(conduit::int16),
+                  index_t endianness = Endianness::DEFAULT_T);
+
+    //-------------------------------------------------------------------------
+    void set_path_int32_ptr(const std::string &path,
+                            int32 *data,
+                            index_t num_elements = 1,
+                            index_t offset = 0,
+                            index_t stride = sizeof(conduit::int32),
+                            index_t element_bytes = sizeof(conduit::int32),
+                            index_t endianness = Endianness::DEFAULT_T);
+
+    void set_path(const std::string &path,
+                  int32 *data,
+                  index_t num_elements = 1,
+                  index_t offset = 0,
+                  index_t stride = sizeof(conduit::int32),
+                  index_t element_bytes = sizeof(conduit::int32),
+                  index_t endianness = Endianness::DEFAULT_T);
+
+    //-------------------------------------------------------------------------
+    void set_path_int64_ptr(const std::string &path,
+                            int64 *data,
+                            index_t num_elements = 1,
+                            index_t offset = 0,
+                            index_t stride = sizeof(conduit::int64),
+                            index_t element_bytes = sizeof(conduit::int64),
+                            index_t endianness = Endianness::DEFAULT_T);
+
+    void set_path(const std::string &path,
+               int64 *data,
+               index_t num_elements = 1,
+               index_t offset = 0,
+               index_t stride = sizeof(conduit::int64),
+               index_t element_bytes = sizeof(conduit::int64),
+               index_t endianness = Endianness::DEFAULT_T);
+
+    //-------------------------------------------------------------------------
     // unsigned integer pointer cases
-     void set_path(const std::string &path,
-                   uint8  *data,
-                   index_t num_elements = 1,
-                   index_t offset = 0,
-                   index_t stride = sizeof(conduit::uint8),
-                   index_t element_bytes = sizeof(conduit::uint8),
-                   index_t endianness = Endianness::DEFAULT_T);
+    //-------------------------------------------------------------------------
+    void set_path_uint8_ptr(const std::string &path,
+                            uint8  *data,
+                            index_t num_elements = 1,
+                            index_t offset = 0,
+                            index_t stride = sizeof(conduit::uint8),
+                            index_t element_bytes = sizeof(conduit::uint8),
+                            index_t endianness = Endianness::DEFAULT_T);
 
-     void set_path(const std::string &path,
-                   uint16 *data,
-                   index_t num_elements = 1,
-                   index_t offset = 0,
-                   index_t stride = sizeof(conduit::uint16),
-                   index_t element_bytes = sizeof(conduit::uint16),
-                   index_t endianness = Endianness::DEFAULT_T);
+    void set_path(const std::string &path,
+                  uint8  *data,
+                  index_t num_elements = 1,
+                  index_t offset = 0,
+                  index_t stride = sizeof(conduit::uint8),
+                  index_t element_bytes = sizeof(conduit::uint8),
+                  index_t endianness = Endianness::DEFAULT_T);
 
-     void set_path(const std::string &path,
-                   uint32 *data, 
-                   index_t num_elements = 1,
-                   index_t offset = 0,
-                   index_t stride = sizeof(conduit::uint32),
-                   index_t element_bytes = sizeof(conduit::uint32),
-                   index_t endianness = Endianness::DEFAULT_T);
-              
-     void set_path(const std::string &path,
-                   uint64 *data,
-                   index_t num_elements = 1,
-                   index_t offset = 0,
-                   index_t stride = sizeof(conduit::uint64),
-                   index_t element_bytes = sizeof(conduit::uint64),
-                   index_t endianness = Endianness::DEFAULT_T);
+    //-------------------------------------------------------------------------
+    void set_path_uint16_ptr(const std::string &path,
+                             uint16 *data,
+                             index_t num_elements = 1,
+                             index_t offset = 0,
+                             index_t stride = sizeof(conduit::uint16),
+                             index_t element_bytes = sizeof(conduit::uint16),
+                             index_t endianness = Endianness::DEFAULT_T);
 
-     // floating point integer pointer cases
-     void set_path(const std::string &path,
-                   float32 *data,
-                   index_t num_elements = 1,
-                   index_t offset = 0,
-                   index_t stride = sizeof(conduit::float32),
-                   index_t element_bytes = sizeof(conduit::float32),
-                   index_t endianness = Endianness::DEFAULT_T);
+    void set_path(const std::string &path,
+                  uint16 *data,
+                  index_t num_elements = 1,
+                  index_t offset = 0,
+                  index_t stride = sizeof(conduit::uint16),
+                  index_t element_bytes = sizeof(conduit::uint16),
+                  index_t endianness = Endianness::DEFAULT_T);
 
-     void set_path(const std::string &path,
-                   float64 *data, 
-                   index_t num_elements = 1,
-                   index_t offset = 0,
-                   index_t stride = sizeof(conduit::float64),
-                   index_t element_bytes = sizeof(conduit::float64),
-                   index_t endianness = Endianness::DEFAULT_T);
+    //-------------------------------------------------------------------------
+    void set_path_uint32_ptr(const std::string &path,
+                             uint32 *data, 
+                             index_t num_elements = 1,
+                             index_t offset = 0,
+                             index_t stride = sizeof(conduit::uint32),
+                             index_t element_bytes = sizeof(conduit::uint32),
+                             index_t endianness = Endianness::DEFAULT_T);
+
+    void set_path(const std::string &path,
+                  uint32 *data, 
+                  index_t num_elements = 1,
+                  index_t offset = 0,
+                  index_t stride = sizeof(conduit::uint32),
+                  index_t element_bytes = sizeof(conduit::uint32),
+                  index_t endianness = Endianness::DEFAULT_T);
+    
+    //-------------------------------------------------------------------------
+    void set_path_uint64_ptr(const std::string &path,
+                             uint64 *data,
+                             index_t num_elements = 1,
+                             index_t offset = 0,
+                             index_t stride = sizeof(conduit::uint64),
+                             index_t element_bytes = sizeof(conduit::uint64),
+                             index_t endianness = Endianness::DEFAULT_T);
+    
+    void set_path(const std::string &path,
+                  uint64 *data,
+                  index_t num_elements = 1,
+                  index_t offset = 0,
+                  index_t stride = sizeof(conduit::uint64),
+                  index_t element_bytes = sizeof(conduit::uint64),
+                  index_t endianness = Endianness::DEFAULT_T);
+
+    //-------------------------------------------------------------------------
+    // floating point integer pointer cases
+    //-------------------------------------------------------------------------
+    void set_path_float32_ptr(const std::string &path,
+                              float32 *data,
+                              index_t num_elements = 1,
+                              index_t offset = 0,
+                              index_t stride = sizeof(conduit::float32),
+                              index_t element_bytes = sizeof(conduit::float32),
+                              index_t endianness = Endianness::DEFAULT_T);
+
+    void set_path(const std::string &path,
+                  float32 *data,
+                  index_t num_elements = 1,
+                  index_t offset = 0,
+                  index_t stride = sizeof(conduit::float32),
+                  index_t element_bytes = sizeof(conduit::float32),
+                  index_t endianness = Endianness::DEFAULT_T);
+
+    //-------------------------------------------------------------------------
+    void set_path_float64_ptr(const std::string &path,
+                              float64 *data, 
+                              index_t num_elements = 1,
+                              index_t offset = 0,
+                              index_t stride = sizeof(conduit::float64),
+                              index_t element_bytes = sizeof(conduit::float64),
+                              index_t endianness = Endianness::DEFAULT_T);
+
+    void set_path(const std::string &path,
+                  float64 *data, 
+                  index_t num_elements = 1,
+                  index_t offset = 0,
+                  index_t stride = sizeof(conduit::float64),
+                  index_t element_bytes = sizeof(conduit::float64),
+                  index_t endianness = Endianness::DEFAULT_T);
+
 
 //-----------------------------------------------------------------------------
 ///@}                      
@@ -644,16 +1056,38 @@ public:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // -- set for generic types --
-//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------              
+    //-------------------------------------------------------------------------
+    void set_external_node(Node &n);
+    void set_external(Node &n);
 
-    void    set_external(Node &n);
-    void    set_external(const Schema &schema, void *data);
-    void    set_external(const DataType &dtype, void *data);
+    //-------------------------------------------------------------------------
+    void set_external_data_using_schema(const Schema &schema,
+                                        void *data);
+
+    void set_external(const Schema &schema,
+                      void *data);
+
+    //-------------------------------------------------------------------------
+    void set_external_data_using_dtype(const DataType &dtype,
+                                       void *data);
+
+    void set_external(const DataType &dtype,
+                      void *data);
 
 //-----------------------------------------------------------------------------
 // -- set_external via pointers (scalar and array types) -- 
 //-----------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
     // signed integer pointer cases
+    //-------------------------------------------------------------------------
+    void set_external_int8_ptr(int8  *data,
+                               index_t num_elements = 1,
+                               index_t offset = 0,
+                               index_t stride = sizeof(conduit::int8),
+                               index_t element_bytes = sizeof(conduit::int8),
+                               index_t endianness = Endianness::DEFAULT_T);
+
     void set_external(int8  *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
@@ -661,6 +1095,14 @@ public:
                       index_t element_bytes = sizeof(conduit::int8),
                       index_t endianness = Endianness::DEFAULT_T);
     
+    //-------------------------------------------------------------------------
+    void set_external_int16_ptr(int16 *data, 
+                                index_t num_elements = 1,
+                                index_t offset = 0,
+                                index_t stride = sizeof(conduit::int16),
+                                index_t element_bytes = sizeof(conduit::int16),
+                                index_t endianness = Endianness::DEFAULT_T);
+
     void set_external(int16 *data, 
                       index_t num_elements = 1,
                       index_t offset = 0,
@@ -668,12 +1110,28 @@ public:
                       index_t element_bytes = sizeof(conduit::int16),
                       index_t endianness = Endianness::DEFAULT_T);
     
+    //-------------------------------------------------------------------------
+    void set_external_int32_ptr(int32 *data,
+                                index_t num_elements = 1,
+                                index_t offset = 0,
+                                index_t stride = sizeof(conduit::int32),
+                                index_t element_bytes = sizeof(conduit::int32),
+                                index_t endianness = Endianness::DEFAULT_T);
+
     void set_external(int32 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::int32),
                       index_t element_bytes = sizeof(conduit::int32),
                       index_t endianness = Endianness::DEFAULT_T);
+    
+    //-------------------------------------------------------------------------
+    void set_external_int64_ptr(int64 *data,
+                                index_t num_elements = 1,
+                                index_t offset = 0,
+                                index_t stride = sizeof(conduit::int64),
+                                index_t element_bytes = sizeof(conduit::int64),
+                                index_t endianness = Endianness::DEFAULT_T);
 
     void set_external(int64 *data,
                       index_t num_elements = 1,
@@ -682,13 +1140,30 @@ public:
                       index_t element_bytes = sizeof(conduit::int64),
                       index_t endianness = Endianness::DEFAULT_T);
 
+    //-------------------------------------------------------------------------
     // unsigned integer pointer cases
+    //-------------------------------------------------------------------------
+    void set_external_uint8_ptr(uint8  *data,
+                                index_t num_elements = 1,
+                                index_t offset = 0,
+                                index_t stride = sizeof(conduit::uint8),
+                                index_t element_bytes = sizeof(conduit::uint8),
+                                index_t endianness = Endianness::DEFAULT_T);
+
     void set_external(uint8  *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::uint8),
                       index_t element_bytes = sizeof(conduit::uint8),
                       index_t endianness = Endianness::DEFAULT_T);
+
+    //-------------------------------------------------------------------------
+    void set_external_uint16_ptr(uint16 *data,
+                                 index_t num_elements = 1,
+                                 index_t offset = 0,
+                                 index_t stride = sizeof(conduit::uint16),
+                                 index_t element_bytes = sizeof(conduit::uint16),
+                                 index_t endianness = Endianness::DEFAULT_T);
 
     void set_external(uint16 *data,
                       index_t num_elements = 1,
@@ -697,6 +1172,14 @@ public:
                       index_t element_bytes = sizeof(conduit::uint16),
                       index_t endianness = Endianness::DEFAULT_T);
 
+    //-------------------------------------------------------------------------
+    void set_external_uint32_ptr(uint32 *data, 
+                                 index_t num_elements = 1,
+                                 index_t offset = 0,
+                                 index_t stride = sizeof(conduit::uint32),
+                                 index_t element_bytes = sizeof(conduit::uint32),
+                                 index_t endianness = Endianness::DEFAULT_T);
+
     void set_external(uint32 *data, 
                       index_t num_elements = 1,
                       index_t offset = 0,
@@ -704,6 +1187,14 @@ public:
                       index_t element_bytes = sizeof(conduit::uint32),
                       index_t endianness = Endianness::DEFAULT_T);
                       
+    //-------------------------------------------------------------------------
+    void set_external_uint64_ptr(uint64 *data,
+                                 index_t num_elements = 1,
+                                 index_t offset = 0,
+                                 index_t stride = sizeof(conduit::uint64),
+                                 index_t element_bytes = sizeof(conduit::uint64),
+                                 index_t endianness = Endianness::DEFAULT_T);
+
     void set_external(uint64 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
@@ -711,13 +1202,30 @@ public:
                       index_t element_bytes = sizeof(conduit::uint64),
                       index_t endianness = Endianness::DEFAULT_T);
 
+    //-------------------------------------------------------------------------
     // floating point pointer cases
+    //-------------------------------------------------------------------------
+    void set_external_float32_ptr(float32 *data,
+                                  index_t num_elements = 1,
+                                  index_t offset = 0,
+                                  index_t stride = sizeof(conduit::float32),
+                                  index_t element_bytes = sizeof(conduit::float32),
+                                  index_t endianness = Endianness::DEFAULT_T);
+
     void set_external(float32 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::float32),
                       index_t element_bytes = sizeof(conduit::float32),
                       index_t endianness = Endianness::DEFAULT_T);
+
+    //-------------------------------------------------------------------------
+    void set_external_float64_ptr(float64 *data, 
+                                  index_t num_elements = 1,
+                                  index_t offset = 0,
+                                  index_t stride = sizeof(conduit::float64),
+                                  index_t element_bytes = sizeof(conduit::float64),
+                                  index_t endianness = Endianness::DEFAULT_T);
 
     void set_external(float64 *data, 
                       index_t num_elements = 1,
@@ -727,46 +1235,110 @@ public:
                       index_t endianness = Endianness::DEFAULT_T);
 
 //-----------------------------------------------------------------------------
-// -- set_external for std::vector types ---
-//----------------------------------------------------------------------------- // signed integer array types via std::vector
-    void set_external(std::vector<int8>   &data);
-    void set_external(std::vector<int16>  &data);
-    void set_external(std::vector<int32>  &data);
-    void set_external(std::vector<int64>  &data);
-
-    // unsigned integer array types via std::vector
-    void set_external(std::vector<uint8>   &data);
-    void set_external(std::vector<uint16>  &data);
-    void set_external(std::vector<uint32>  &data);
-    void set_external(std::vector<uint64>  &data);
-
-    // floating point array types via std::vector
-    void set_external(std::vector<float32> &data);
-    void set_external(std::vector<float64> &data);
-
-    //-----------------------------------------------------------------------------
 // -- set_external for conduit::DataArray types ---
 //-----------------------------------------------------------------------------
+
+    //-------------------------------------------------------------------------
     // signed integer array types via conduit::DataArray
-    void set_external(const int8_array  &data);
+    //-------------------------------------------------------------------------
+    void set_external_int8_array(const int8_array &data);
+    void set_external(const int8_array &data);
+    
+    //-------------------------------------------------------------------------
+    void set_external_int16_array(const int16_array &data);
     void set_external(const int16_array &data);
+    
+    //-------------------------------------------------------------------------
+    void set_external_int32_array(const int32_array &data);
     void set_external(const int32_array &data);
+    
+    //-------------------------------------------------------------------------
+    void set_external_int64_array(const int64_array &data);
     void set_external(const int64_array &data);
 
+    //-------------------------------------------------------------------------
     // unsigned integer array types via conduit::DataArray
+    //-------------------------------------------------------------------------
+    void set_external_uint8_array(const uint8_array  &data);
     void set_external(const uint8_array  &data);
+
+    //-------------------------------------------------------------------------
+    void set_external_uint16_array(const uint16_array &data);
     void set_external(const uint16_array &data);
+
+    //-------------------------------------------------------------------------
+    void set_external_uint32_array(const uint32_array &data);
     void set_external(const uint32_array &data);
+    
+    //-------------------------------------------------------------------------
+    void set_external_uint64_array(const uint64_array &data);
     void set_external(const uint64_array &data);
 
+    //-------------------------------------------------------------------------
     // floating point array types via conduit::DataArray
+    //-------------------------------------------------------------------------
+    void set_external_float32_array(const float32_array &data);
     void set_external(const float32_array &data);
+
+    //-------------------------------------------------------------------------
+    void set_external_float64_array(const float64_array &data);
     void set_external(const float64_array &data);
 
-    //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // -- set_external for string types ---
 //-----------------------------------------------------------------------------
     void set_external_char8_str(char *data);
+
+//-----------------------------------------------------------------------------
+// -- set_external for std::vector types ---
+//----------------------------------------------------------------------------- 
+
+    //-------------------------------------------------------------------------
+    // signed integer array types via std::vector
+    //-------------------------------------------------------------------------
+    void set_external_int8_vector(std::vector<int8> &data);
+    void set_external(std::vector<int8> &data);
+
+    //-------------------------------------------------------------------------
+    void set_external_int16_vector(std::vector<int16> &data);
+    void set_external(std::vector<int16> &data);
+
+    //-------------------------------------------------------------------------
+    void set_external_int32_vector(std::vector<int32> &data);
+    void set_external(std::vector<int32> &data);
+    
+    //-------------------------------------------------------------------------
+    void set_external_int64_vector(std::vector<int64> &data);
+    void set_external(std::vector<int64> &data);
+
+    //-------------------------------------------------------------------------
+    // unsigned integer array types via std::vector
+    //-------------------------------------------------------------------------
+    void set_external_uint8_vector(std::vector<uint8> &data);
+    void set_external(std::vector<uint8> &data);
+    
+    //-------------------------------------------------------------------------
+    void set_external_uint16_vector(std::vector<uint16> &data);
+    void set_external(std::vector<uint16> &data);
+    
+    //-------------------------------------------------------------------------
+    void set_external_uint32_vector(std::vector<uint32> &data);
+    void set_external(std::vector<uint32> &data);
+    
+    //-------------------------------------------------------------------------
+    void set_external_uint64_vector(std::vector<uint64> &data);
+    void set_external(std::vector<uint64> &data);
+
+    //-------------------------------------------------------------------------
+    // floating point array types via std::vector
+    //-------------------------------------------------------------------------
+    void set_external_float32_vector(std::vector<float32> &data);
+    void set_external(std::vector<float32> &data);
+
+    //-------------------------------------------------------------------------
+    void set_external_float64_vector(std::vector<float64> &data);
+    void set_external(std::vector<float64> &data);
+
 
 //-----------------------------------------------------------------------------
 ///@}                      
@@ -792,10 +1364,27 @@ public:
 //-----------------------------------------------------------------------------
 // -- set for generic types --
 //-----------------------------------------------------------------------------
-    /// TODO: set_path_external(const Node &n)
+
+    //-------------------------------------------------------------------------    
+    void    set_path_external_node(const std::string &path,
+                                   Node &node);
+
+    void    set_path_external(const std::string &path,
+                              Node &node);
+
+    //-------------------------------------------------------------------------
+    void    set_path_external_data_using_schema(const std::string &path,
+                                                const Schema &schema,
+                                                void *data);
+    
     void    set_path_external(const std::string &path,
                               const Schema &schema,
                               void *data);
+
+    //-------------------------------------------------------------------------
+    void    set_path_external_data_using_dtype(const std::string &path,
+                                               const DataType &dtype,
+                                               void *data);
 
     void    set_path_external(const std::string &path,
                               const DataType &dtype,
@@ -804,7 +1393,17 @@ public:
 //-----------------------------------------------------------------------------
 // -- set_path_external via pointers (scalar and array types) -- 
 //-----------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
     // signed integer pointer cases
+    //-------------------------------------------------------------------------
+    void set_path_external_int8_ptr(const std::string &path,
+                                    int8  *data,
+                                    index_t num_elements = 1,
+                                    index_t offset = 0,
+                                    index_t stride = sizeof(conduit::int8),
+                                    index_t element_bytes = sizeof(conduit::int8),
+                                    index_t endianness = Endianness::DEFAULT_T);
+
     void set_path_external(const std::string &path,
                            int8  *data,
                            index_t num_elements = 1,
@@ -812,6 +1411,15 @@ public:
                            index_t stride = sizeof(conduit::int8),
                            index_t element_bytes = sizeof(conduit::int8),
                            index_t endianness = Endianness::DEFAULT_T);
+
+    //-------------------------------------------------------------------------
+    void set_path_external_int16_ptr(const std::string &path,
+                                     int16 *data, 
+                                     index_t num_elements = 1,
+                                     index_t offset = 0,
+                                     index_t stride = sizeof(conduit::int16),
+                                     index_t element_bytes = sizeof(conduit::int16),
+                                     index_t endianness = Endianness::DEFAULT_T);
 
 
     void set_path_external(const std::string &path,
@@ -822,6 +1430,15 @@ public:
                            index_t element_bytes = sizeof(conduit::int16),
                            index_t endianness = Endianness::DEFAULT_T);
  
+    //-------------------------------------------------------------------------
+    void set_path_external_int32_ptr(const std::string &path,
+                                     int32 *data,
+                                     index_t num_elements = 1,
+                                     index_t offset = 0,
+                                     index_t stride = sizeof(conduit::int32),
+                                     index_t element_bytes = sizeof(conduit::int32),
+                                     index_t endianness = Endianness::DEFAULT_T);
+
     void set_path_external(const std::string &path,
                            int32 *data,
                            index_t num_elements = 1,
@@ -829,6 +1446,15 @@ public:
                            index_t stride = sizeof(conduit::int32),
                            index_t element_bytes = sizeof(conduit::int32),
                            index_t endianness = Endianness::DEFAULT_T);
+
+    //-------------------------------------------------------------------------
+    void set_path_external_int64_ptr(const std::string &path,
+                                     int64 *data,
+                                     index_t num_elements = 1,
+                                     index_t offset = 0,
+                                     index_t stride = sizeof(conduit::int64),
+                                     index_t element_bytes = sizeof(conduit::int64),
+                                     index_t endianness = Endianness::DEFAULT_T);
 
     void set_path_external(const std::string &path,
                            int64 *data,
@@ -838,7 +1464,17 @@ public:
                            index_t element_bytes = sizeof(conduit::int64),
                            index_t endianness = Endianness::DEFAULT_T);
 
+    //-------------------------------------------------------------------------
     // unsigned integer pointer cases
+    //-------------------------------------------------------------------------
+    void set_path_external_uint8_ptr(const std::string &path,
+                                     uint8  *data,
+                                     index_t num_elements = 1,
+                                     index_t offset = 0,
+                                     index_t stride = sizeof(conduit::uint8),
+                                     index_t element_bytes = sizeof(conduit::uint8),
+                                     index_t endianness = Endianness::DEFAULT_T);
+
     void set_path_external(const std::string &path,
                            uint8  *data,
                            index_t num_elements = 1,
@@ -847,6 +1483,14 @@ public:
                            index_t element_bytes = sizeof(conduit::uint8),
                            index_t endianness = Endianness::DEFAULT_T);
 
+    //-------------------------------------------------------------------------
+    void set_path_external_uint16_ptr(const std::string &path,
+                                      uint16 *data,
+                                      index_t num_elements = 1,
+                                      index_t offset = 0,
+                                      index_t stride = sizeof(conduit::uint16),
+                                      index_t element_bytes = sizeof(conduit::uint16),
+                                      index_t endianness = Endianness::DEFAULT_T);
 
     void set_path_external(const std::string &path,
                            uint16 *data,
@@ -855,7 +1499,16 @@ public:
                            index_t stride = sizeof(conduit::uint16),
                            index_t element_bytes = sizeof(conduit::uint16),
                            index_t endianness = Endianness::DEFAULT_T);
-                           
+
+    //-------------------------------------------------------------------------
+    void set_path_external_uint32_ptr(const std::string &path,
+                                      uint32 *data, 
+                                      index_t num_elements = 1,
+                                      index_t offset = 0,
+                                      index_t stride = sizeof(conduit::uint32),
+                                      index_t element_bytes = sizeof(conduit::uint32),
+                                      index_t endianness = Endianness::DEFAULT_T);
+
     void set_path_external(const std::string &path,
                            uint32 *data, 
                            index_t num_elements = 1,
@@ -864,7 +1517,15 @@ public:
                            index_t element_bytes = sizeof(conduit::uint32),
                            index_t endianness = Endianness::DEFAULT_T);
 
-                           
+    //-------------------------------------------------------------------------
+    void set_path_external_uint64_ptr(const std::string &path,
+                                      uint64 *data,
+                                      index_t num_elements = 1,
+                                      index_t offset = 0,
+                                      index_t stride = sizeof(conduit::uint64),
+                                      index_t element_bytes = sizeof(conduit::uint64),
+                                      index_t endianness = Endianness::DEFAULT_T);
+
     void set_path_external(const std::string &path,
                            uint64 *data,
                            index_t num_elements = 1,
@@ -873,7 +1534,17 @@ public:
                            index_t element_bytes = sizeof(conduit::uint64),
                            index_t endianness = Endianness::DEFAULT_T);
 
+    //-------------------------------------------------------------------------
     // floating point pointer cases
+    //-------------------------------------------------------------------------
+    void set_path_external_float32_ptr(const std::string &path,
+                                       float32 *data,
+                                       index_t num_elements = 1,
+                                       index_t offset = 0,
+                                       index_t stride = sizeof(conduit::float32),
+                                       index_t element_bytes = sizeof(conduit::float32),
+                                       index_t endianness = Endianness::DEFAULT_T);
+
     void set_path_external(const std::string &path,
                            float32 *data,
                            index_t num_elements = 1,
@@ -882,6 +1553,14 @@ public:
                            index_t element_bytes = sizeof(conduit::float32),
                            index_t endianness = Endianness::DEFAULT_T);
 
+    //-------------------------------------------------------------------------
+    void set_path_external_float64_ptr(const std::string &path,
+                                       float64 *data, 
+                                       index_t num_elements = 1,
+                                       index_t offset = 0,
+                                       index_t stride = sizeof(conduit::float64),
+                                       index_t element_bytes = sizeof(conduit::float64),
+                                       index_t endianness = Endianness::DEFAULT_T);
 
     void set_path_external(const std::string &path,
                            float64 *data, 
@@ -891,49 +1570,171 @@ public:
                            index_t element_bytes = sizeof(conduit::float64),
                            index_t endianness = Endianness::DEFAULT_T);
 
-//-----------------------------------------------------------------------------
-// -- set_path_external for std::vector types ---
-//-----------------------------------------------------------------------------
-    // signed integer array types via std::vector
-    void set_path_external(const std::string &path, std::vector<int8> &data);
-    void set_path_external(const std::string &path, std::vector<int16> &data);
-    void set_path_external(const std::string &path, std::vector<int32> &data);
-    void set_path_external(const std::string &path, std::vector<int64> &data);
 
-    // unsigned integer array types via std::vector
-    void set_path_external(const std::string &path, std::vector<uint8> &data);
-    void set_path_external(const std::string &path, std::vector<uint16> &data);
-    void set_path_external(const std::string &path, std::vector<uint32> &data);
-    void set_path_external(const std::string &path, std::vector<uint64> &data);
-
-    // floating point array types via std::vector
-    void set_path_external(const std::string &path,
-                           std::vector<float32> &data);
-    void set_path_external(const std::string &path,
-                           std::vector<float64> &data);
-    //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // -- set_path_external for conduit::DataArray types ---
 //-----------------------------------------------------------------------------
+
+    //-------------------------------------------------------------------------
     // signed integer array types via conduit::DataArray
-    void set_path_external(const std::string &path, const int8_array  &data);
-    void set_path_external(const std::string &path, const int16_array &data);
-    void set_path_external(const std::string &path, const int32_array &data);
-    void set_path_external(const std::string &path, const int64_array &data);
+    //-------------------------------------------------------------------------
+    void set_path_external_int8_array(const std::string &path,
+                                      const int8_array &data);
 
+    void set_path_external(const std::string &path,
+                           const int8_array  &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_external_int16_array(const std::string &path,
+                                       const int16_array &data);
+
+    void set_path_external(const std::string &path,
+                           const int16_array &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_external_int32_array(const std::string &path,
+                                       const int32_array &data);
+
+    void set_path_external(const std::string &path,
+                           const int32_array &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_external_int64_array(const std::string &path,
+                                       const int64_array &data);
+
+    void set_path_external(const std::string &path,
+                           const int64_array &data);
+
+    //-------------------------------------------------------------------------
     // unsigned integer array types via conduit::DataArray
-    void set_path_external(const std::string &path, const uint8_array  &data);
-    void set_path_external(const std::string &path, const uint16_array &data);
-    void set_path_external(const std::string &path, const uint32_array &data);
-    void set_path_external(const std::string &path, const uint64_array &data);
+    //-------------------------------------------------------------------------
+    void set_path_external_uint8_array(const std::string &path,
+                                       const uint8_array &data);
 
+    void set_path_external(const std::string &path,
+                           const uint8_array &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_external_uint16_array(const std::string &path,
+                                        const uint16_array &data);
+
+    void set_path_external(const std::string &path,
+                           const uint16_array &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_external_uint32_array(const std::string &path,
+                                        const uint32_array &data);
+
+    void set_path_external(const std::string &path,
+                           const uint32_array &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_external_uint64_array(const std::string &path,
+                                        const uint64_array &data);
+
+    void set_path_external(const std::string &path,
+                           const uint64_array &data);
+
+    //-------------------------------------------------------------------------
     // floating point array types via conduit::DataArray
-    void set_path_external(const std::string &path, const float32_array &data);
-    void set_path_external(const std::string &path, const float64_array &data);
+    //-------------------------------------------------------------------------
+    void set_path_external_float32_array(const std::string &path,
+                                         const float32_array &data);
+
+    void set_path_external(const std::string &path,
+                           const float32_array &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_external_float64_array(const std::string &path,
+                                         const float64_array &data);
+
+    void set_path_external(const std::string &path,
+                          const float64_array &data);
 
 //-----------------------------------------------------------------------------
 // -- set_external for string types ---
 //-----------------------------------------------------------------------------
     void set_path_external_char8_str(const std::string &path, char *data);
+
+//-----------------------------------------------------------------------------
+// -- set_path_external for std::vector types ---
+//-----------------------------------------------------------------------------
+    
+    //-------------------------------------------------------------------------
+    // signed integer array types via std::vector
+    //-------------------------------------------------------------------------
+    void set_path_external_int8_vector(const std::string &path,
+                                       std::vector<int8> &data);
+
+    void set_path_external(const std::string &path,
+                           std::vector<int8> &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_external_int16_vector(const std::string &path,
+                                        std::vector<int16> &data);
+
+    void set_path_external(const std::string &path,
+                           std::vector<int16> &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_external_int32_vector(const std::string &path,
+                                        std::vector<int32> &data);
+
+    void set_path_external(const std::string &path,
+                           std::vector<int32> &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_external_int64_vector(const std::string &path,
+                                        std::vector<int64> &data);
+
+    void set_path_external(const std::string &path,
+                           std::vector<int64> &data);
+
+    //-------------------------------------------------------------------------
+    // unsigned integer array types via std::vector
+    //-------------------------------------------------------------------------
+    void set_path_external_uint8_vector(const std::string &path,
+                                        std::vector<uint8> &data);
+
+    void set_path_external(const std::string &path,
+                           std::vector<uint8> &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_external_uint16_vector(const std::string &path,
+                                         std::vector<uint16> &data);
+
+    void set_path_external(const std::string &path,
+                           std::vector<uint16> &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_external_uint32_vector(const std::string &path,
+                                         std::vector<uint32> &data);
+
+    void set_path_external(const std::string &path,
+                           std::vector<uint32> &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_external_uint64_vector(const std::string &path,
+                                         std::vector<uint64> &data);
+
+    void set_path_external(const std::string &path,
+                           std::vector<uint64> &data);
+
+    //-------------------------------------------------------------------------
+    // floating point array types via std::vector
+    //-------------------------------------------------------------------------
+    void set_path_external_float32_vector(const std::string &path,
+                                          std::vector<float32> &data);
+
+    void set_path_external(const std::string &path,
+                           std::vector<float32> &data);
+
+    //-------------------------------------------------------------------------
+    void set_path_external_float64_vector(const std::string &path,
+                                          std::vector<float64> &data);
+
+    void set_path_external(const std::string &path,
+                           std::vector<float64> &data);
 
 //-----------------------------------------------------------------------------
 ///@}                      
@@ -988,19 +1789,19 @@ public:
 
     // signed integer array types via std::vector
     Node &operator=(const std::vector<int8>   &data);
-    Node &operator=(const std::vector<int16>   &data);
-    Node &operator=(const std::vector<int32>   &data);
-    Node &operator=(const std::vector<int64>   &data);
+    Node &operator=(const std::vector<int16>  &data);
+    Node &operator=(const std::vector<int32>  &data);
+    Node &operator=(const std::vector<int64>  &data);
 
     // unsigned integer array types via std::vector
     Node &operator=(const std::vector<uint8>   &data);
-    Node &operator=(const std::vector<uint16>   &data);
-    Node &operator=(const std::vector<uint32>   &data);
-    Node &operator=(const std::vector<uint64>   &data);
+    Node &operator=(const std::vector<uint16>  &data);
+    Node &operator=(const std::vector<uint32>  &data);
+    Node &operator=(const std::vector<uint64>  &data);
 
     // floating point array types via std::vector
-    Node &operator=(const std::vector<float32>  &data);
-    Node &operator=(const std::vector<float64>  &data);
+    Node &operator=(const std::vector<float32> &data);
+    Node &operator=(const std::vector<float64> &data);
 
 //-----------------------------------------------------------------------------
 // -- assignment operators for conduit::DataArray types ---
@@ -1428,10 +2229,10 @@ public:
     ///
     /// info() creates a node that contains metadata about the current
     /// node's memory properties
-    void            info(Node &nres) const;
+    void             info(Node &nres) const;
     /// TODO: this is inefficient w/o move semantics, but is very 
     /// convenient for testing and example programs.
-    Node            info() const;
+    Node             info() const;
 
     /// TODO: compare or operator== ?
 
