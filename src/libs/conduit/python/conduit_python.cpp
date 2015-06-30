@@ -2904,7 +2904,7 @@ PyConduit_Node_dealloc(PyConduit_Node* self)
 static PyObject *
 PyConduit_Node_str(PyConduit_Node* self)
 {
-   std::string output = self->node->to_pure_json();
+   std::string output = self->node->to_json();
    return (Py_BuildValue("s", output.c_str()));
 }
 
@@ -3347,55 +3347,55 @@ PyConduit_Node_set_path(PyConduit_Node* self,
 }
 
 
-//-----------------------------------------------------------------------------
-static bool
-PyConduit_Parse_Standard_To_JSON_Args(PyObject *args,
-                                      PyObject *kwargs,
-                                      Py_ssize_t &indent,
-                                      Py_ssize_t &depth,
-                                      std::string &pad,
-                                      std::string &eoe)
-{
-    indent=2;
-    depth=0;
-    pad=" ";
-    eoe="\n";
-    
-    char *pad_c_str= NULL;
-    char *eoe_c_str= NULL;
-    
-    static const char *kwlist[] = {"indent",
-                                   "depth",
-                                   "pad",
-                                   "eoe",
-                                    NULL};
-
-    if (!PyArg_ParseTupleAndKeywords(args,
-                                     kwargs,
-                                     "|nnss",
-                                     const_cast<char**>(kwlist),
-                                     &indent,
-                                     &depth,
-                                     &pad_c_str,
-                                     &eoe_c_str))
-    {
-        std::cout << "BAD!" << std::endl;
-        return false;
-    }
-    
-    if(pad_c_str != NULL)
-    {
-        pad = std::string(pad_c_str);
-    }
-
-    if(eoe_c_str != NULL)
-    {
-        eoe = std::string(eoe_c_str);
-    }
-
-    return true;
-}
-
+// //-----------------------------------------------------------------------------
+// static bool
+// PyConduit_Parse_Standard_To_JSON_Args(PyObject *args,
+//                                       PyObject *kwargs,
+//                                       Py_ssize_t &indent,
+//                                       Py_ssize_t &depth,
+//                                       std::string &pad,
+//                                       std::string &eoe)
+// {
+//     indent=2;
+//     depth=0;
+//     pad=" ";
+//     eoe="\n";
+//
+//     char *pad_c_str= NULL;
+//     char *eoe_c_str= NULL;
+//
+//     static const char *kwlist[] = {"indent",
+//                                    "depth",
+//                                    "pad",
+//                                    "eoe",
+//                                     NULL};
+//
+//     if (!PyArg_ParseTupleAndKeywords(args,
+//                                      kwargs,
+//                                      "|nnss",
+//                                      const_cast<char**>(kwlist),
+//                                      &indent,
+//                                      &depth,
+//                                      &pad_c_str,
+//                                      &eoe_c_str))
+//     {
+//         std::cout << "BAD!" << std::endl;
+//         return false;
+//     }
+//
+//     if(pad_c_str != NULL)
+//     {
+//         pad = std::string(pad_c_str);
+//     }
+//
+//     if(eoe_c_str != NULL)
+//     {
+//         eoe = std::string(eoe_c_str);
+//     }
+//
+//     return true;
+// }
+//
 
 
 
@@ -3406,17 +3406,18 @@ PyConduit_Node_to_json(PyConduit_Node* self,
                        PyObject* kwargs)
 {
     
-    bool detailed = true;
+    char *protocol_c_str= NULL;
     Py_ssize_t indent = 2;
     Py_ssize_t depth  = 0;
+
+    std::string protocol = "pure_json";
     std::string pad = " ";
     std::string eoe = "\n";
     
-    PyObject *py_detailed = NULL;    
     char *pad_c_str= NULL;
     char *eoe_c_str= NULL;
     
-    static const char *kwlist[] = {"detailed",
+    static const char *kwlist[] = {"protocol",
                                    "indent",
                                    "depth",
                                    "pad",
@@ -3425,9 +3426,9 @@ PyConduit_Node_to_json(PyConduit_Node* self,
 
     if (!PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
-                                     "|Onnss",
+                                     "|snnss",
                                      const_cast<char**>(kwlist),
-                                     &py_detailed,
+                                     &protocol_c_str,
                                      &indent,
                                      &depth,
                                      &pad_c_str,
@@ -3436,11 +3437,11 @@ PyConduit_Node_to_json(PyConduit_Node* self,
         return NULL;
     }
     
-    
-    if(py_detailed != NULL)
+    if(protocol_c_str != NULL)
     {
-        detailed = PyObject_IsTrue(py_detailed);
+        protocol = std::string(protocol_c_str);
     }
+    
     
     if(pad_c_str != NULL)
     {
@@ -3453,7 +3454,7 @@ PyConduit_Node_to_json(PyConduit_Node* self,
     }
     
     
-    std::string output = self->node->to_json(detailed,
+    std::string output = self->node->to_json(protocol,
                                              indent,
                                              depth,
                                              pad,
@@ -3462,98 +3463,98 @@ PyConduit_Node_to_json(PyConduit_Node* self,
     return (Py_BuildValue("s", output.c_str()));
 }
 
-//---------------------------------------------------------------------------//
-static PyObject *
-PyConduit_Node_to_pure_json(PyConduit_Node* self,
-                            PyObject* args,
-                            PyObject* kwargs)
-{
-    
-    Py_ssize_t indent;
-    Py_ssize_t depth;
-    std::string pad;
-    std::string eoe;
-    
-    if( !PyConduit_Parse_Standard_To_JSON_Args(args,
-                                               kwargs,
-                                               indent,
-                                               depth,
-                                               pad,
-                                               eoe))
-    {
-        return NULL;
-    }
-
-    
-    std::string output = self->node->to_pure_json(indent,
-                                                  depth,
-                                                  pad,
-                                                  eoe);
-
-    return (Py_BuildValue("s", output.c_str()));
-}
-
-//---------------------------------------------------------------------------//
-static PyObject *
-PyConduit_Node_to_detailed_json(PyConduit_Node* self,
-                                PyObject* args,
-                                PyObject* kwargs)
-{
-    Py_ssize_t indent;
-    Py_ssize_t depth;
-    std::string pad;
-    std::string eoe;
-    
-    if( !PyConduit_Parse_Standard_To_JSON_Args(args,
-                                               kwargs,
-                                               indent,
-                                               depth,
-                                               pad,
-                                               eoe))
-    {
-        return NULL;
-    }
-
-    
-    std::string output = self->node->to_detailed_json(indent,
-                                                      depth,
-                                                      pad,
-                                                      eoe);
-
-    return (Py_BuildValue("s", output.c_str()));
-}
-
-//---------------------------------------------------------------------------//
-static PyObject *
-PyConduit_Node_to_base64_json(PyConduit_Node* self,
-                              PyObject* args,
-                              PyObject* kwargs)
-{
-    
-    Py_ssize_t indent;
-    Py_ssize_t depth;
-    std::string pad;
-    std::string eoe;
-    
-    if(!PyConduit_Parse_Standard_To_JSON_Args(args,
-                                              kwargs,
-                                              indent,
-                                              depth,
-                                              pad,
-                                              eoe))
-    {
-        return NULL;
-    }
-
-    
-    std::string output = self->node->to_base64_json(indent,
-                                                    depth,
-                                                    pad,
-                                                    eoe);
-
-    return (Py_BuildValue("s", output.c_str()));
-}
-
+// //---------------------------------------------------------------------------//
+// static PyObject *
+// PyConduit_Node_to_pure_json(PyConduit_Node* self,
+//                             PyObject* args,
+//                             PyObject* kwargs)
+// {
+//
+//     Py_ssize_t indent;
+//     Py_ssize_t depth;
+//     std::string pad;
+//     std::string eoe;
+//
+//     if( !PyConduit_Parse_Standard_To_JSON_Args(args,
+//                                                kwargs,
+//                                                indent,
+//                                                depth,
+//                                                pad,
+//                                                eoe))
+//     {
+//         return NULL;
+//     }
+//
+//
+//     std::string output = self->node->to_pure_json(indent,
+//                                                   depth,
+//                                                   pad,
+//                                                   eoe);
+//
+//     return (Py_BuildValue("s", output.c_str()));
+// }
+//
+// //---------------------------------------------------------------------------//
+// static PyObject *
+// PyConduit_Node_to_detailed_json(PyConduit_Node* self,
+//                                 PyObject* args,
+//                                 PyObject* kwargs)
+// {
+//     Py_ssize_t indent;
+//     Py_ssize_t depth;
+//     std::string pad;
+//     std::string eoe;
+//
+//     if( !PyConduit_Parse_Standard_To_JSON_Args(args,
+//                                                kwargs,
+//                                                indent,
+//                                                depth,
+//                                                pad,
+//                                                eoe))
+//     {
+//         return NULL;
+//     }
+//
+//
+//     std::string output = self->node->to_detailed_json(indent,
+//                                                       depth,
+//                                                       pad,
+//                                                       eoe);
+//
+//     return (Py_BuildValue("s", output.c_str()));
+// }
+//
+// //---------------------------------------------------------------------------//
+// static PyObject *
+// PyConduit_Node_to_base64_json(PyConduit_Node* self,
+//                               PyObject* args,
+//                               PyObject* kwargs)
+// {
+//
+//     Py_ssize_t indent;
+//     Py_ssize_t depth;
+//     std::string pad;
+//     std::string eoe;
+//
+//     if(!PyConduit_Parse_Standard_To_JSON_Args(args,
+//                                               kwargs,
+//                                               indent,
+//                                               depth,
+//                                               pad,
+//                                               eoe))
+//     {
+//         return NULL;
+//     }
+//
+//
+//     std::string output = self->node->to_base64_json(indent,
+//                                                     depth,
+//                                                     pad,
+//                                                     eoe);
+//
+//     return (Py_BuildValue("s", output.c_str()));
+// }
+//
 
 
 //----------------------------------------------------------------------------//
@@ -3690,22 +3691,22 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
       (PyCFunction)PyConduit_Node_to_json, 
       METH_VARARGS| METH_KEYWORDS,
       "Returns a JSON string representation of the node."},
-     //-----------------------------------------------------------------------//
-     {"to_detailed_json",
-      (PyCFunction)PyConduit_Node_to_detailed_json,
-      METH_VARARGS| METH_KEYWORDS,
-      "Returns a JSON string representation of the node using "
-      "conduit JSON schema conventions"},
-     //-----------------------------------------------------------------------//
-     {"to_pure_json",
-      (PyCFunction)PyConduit_Node_to_pure_json, 
-      METH_VARARGS| METH_KEYWORDS,
-      "Returns a pure JSON string representation of the node."},
-     //-----------------------------------------------------------------------//
-     {"to_base64_json",
-      (PyCFunction)PyConduit_Node_to_base64_json, 
-      METH_VARARGS| METH_KEYWORDS,
-      "Returns a JSON string representation of the node data base64 encoded."},
+     // //-----------------------------------------------------------------------//
+     // {"to_detailed_json",
+     //  (PyCFunction)PyConduit_Node_to_detailed_json,
+     //  METH_VARARGS| METH_KEYWORDS,
+     //  "Returns a JSON string representation of the node using "
+     //  "conduit JSON schema conventions"},
+     // //-----------------------------------------------------------------------//
+     // {"to_pure_json",
+     //  (PyCFunction)PyConduit_Node_to_pure_json,
+     //  METH_VARARGS| METH_KEYWORDS,
+     //  "Returns a pure JSON string representation of the node."},
+     // //-----------------------------------------------------------------------//
+     // {"to_base64_json",
+     //  (PyCFunction)PyConduit_Node_to_base64_json,
+     //  METH_VARARGS| METH_KEYWORDS,
+     //  "Returns a JSON string representation of the node data base64 encoded."},
      //-----------------------------------------------------------------------//
      {"children",
       (PyCFunction)PyConduit_Node_iter, 
