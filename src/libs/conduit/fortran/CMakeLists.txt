@@ -49,97 +49,33 @@
 
 ENABLE_WARNINGS()
 
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_Config.h.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h")
 #
-# Specify all headers
-#            
-set(conduit_headers
-    Bitwidth_Style_Types.h
-    DataArray.hpp
-    Endianness.hpp
-    Node.hpp
-    conduit.hpp
-    Core.hpp
-    DataType.hpp
-    Generator.hpp
-    Error.hpp
-    NodeIterator.hpp
-    Schema.hpp
-    Utils.hpp
-    Conduit_Exports.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h
-    )
-
+# Specify fortran sources
 #
-# c interface headers
-#            
-set(conduit_c_headers
-    c/conduit.h
-    c/conduit_node.h
-    )
-
-#
-# Specify all sources
-#
-set(conduit_sources
-    Core.cpp
-    Error.cpp
-    Endianness.cpp 
-    DataType.cpp
-    DataArray.cpp
-    Generator.cpp
-    Node.cpp
-    NodeIterator.cpp
-    Schema.cpp
-    Utils.cpp
-    )
-
-#
-# c interface sources
-#            
-set(conduit_c_sources
-    c/conduit_node.cpp
-    )
+set(conduit_fortran_sources
+    conduit_fortran.f)
 
 #
 # Note: headers are added here so they show up in project file generators
 # (such as xcode, eclipse, etc)
 #
-add_library(conduit SHARED 
-            ${conduit_sources} 
-            ${conduit_c_sources} 
-            ${conduit_headers}
-            ${conduit_c_headers})
+add_library(conduit_fortran SHARED 
+            ${conduit_fortran_sources}
+            )
 
-target_link_libraries(conduit libb64)
+target_link_libraries(conduit_fortran  conduit)
 
-################################
-# Add python wrappers if python
-# support was selected
-################################
-if(ENABLE_PYTHON)
-    add_subdirectory(python)
-endif()
-
-#################################
-# Add fortran interface lib 
-# if fortran support was selected
-#################################
-if(ENABLE_FORTRAN)
-    add_subdirectory(fortran)
-endif()
-
+set_target_properties(conduit_fortran PROPERTIES Fortran_FORMAT "FREE")
 
 ##################################
 # Install Targets for conduit lib
 ##################################
 
-install(FILES ${conduit_headers} DESTINATION include)
-install(TARGETS conduit
+install(TARGETS conduit_fortran
   EXPORT conduit
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION lib
 )
+
 

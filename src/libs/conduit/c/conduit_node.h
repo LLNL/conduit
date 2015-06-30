@@ -52,7 +52,7 @@
 #ifndef CONDUIT_NODE_H
 #define CONDUIT_NODE_H
 
-#include "Bitwidth_Style_Types.hpp"
+#include "Bitwidth_Style_Types.h"
 
 
 //-----------------------------------------------------------------------------
@@ -97,7 +97,7 @@ double       *conduit_node_as_double_ptr(conduit_node *cnode);
 
 
 //-----------------------------------------------------------------------------
-int          conduit_node_is_root(conduit_node *cnode);
+int           conduit_node_is_root(conduit_node *cnode);
 
 //-----------------------------------------------------------------------------
 void          conduit_node_print(conduit_node *cnode);

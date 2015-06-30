@@ -113,7 +113,7 @@ conduit_node_fetch(conduit_node *cnode,
 //-----------------------------------------------------------------------------
 void
 conduit_node_set_int(conduit_node *cnode, 
-                       int value)
+                     int value)
 {
     cpp_node(cnode)->set(value);
 }
@@ -121,7 +121,7 @@ conduit_node_set_int(conduit_node *cnode,
 //-----------------------------------------------------------------------------
 void
 conduit_node_set_double(conduit_node *cnode, 
-                         double value)
+                        double value)
 {
     cpp_node(cnode)->set(value);
 }
