@@ -48,8 +48,8 @@
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_BITWIDTH_STYLE_TYPES_HPP
-#define CONDUIT_BITWIDTH_STYLE_TYPES_HPP
+#ifndef CONDUIT_BITWIDTH_STYLE_TYPES_H
+#define CONDUIT_BITWIDTH_STYLE_TYPES_H
 
 //-----------------------------------------------------------------------------
 // -- standard lib includes -- 
@@ -59,7 +59,7 @@
 //-----------------------------------------------------------------------------
 // -- include sizes from cmake configure tests -- 
 //-----------------------------------------------------------------------------
-#include "Conduit_Config.hpp"
+#include "Conduit_Config.h"
 
 //-----------------------------------------------------------------------------
 /// Bit width annotated Style Standard Data Types
