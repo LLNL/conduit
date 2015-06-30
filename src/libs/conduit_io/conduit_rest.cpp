@@ -204,7 +204,7 @@ public:
             mg_get_var(post_data, post_data_len, "cpath", cpath, sizeof(cpath));
 
             mg_printf(conn, "{ \"datavalue\": %s }",
-                      m_node->fetch(cpath).to_json(false).c_str());
+                      m_node->fetch(cpath).to_json().c_str());
             return true;
         }
 
@@ -214,7 +214,7 @@ public:
         bool handle_get_base64_json(CivetServer *server,
                                     struct mg_connection *conn)
         {
-            std::string b64_json = m_node->to_base64_json();
+            std::string b64_json = m_node->to_json("base64_json");
             mg_printf(conn, "%s",b64_json.c_str());
             return true;
         }

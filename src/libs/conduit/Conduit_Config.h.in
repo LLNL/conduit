@@ -44,12 +44,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Conduit_Config.hpp
+/// file: Conduit_Config.h
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_CONFIG_HPP
-#define CONDUIT_CONFIG_HPP
+#ifndef CONDUIT_CONFIG_H
+#define CONDUIT_CONFIG_H
 
 //-----------------------------------------------------------------------------
 // byte widths of native types

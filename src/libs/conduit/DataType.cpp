@@ -836,6 +836,10 @@ DataType::c_type_name_to_id(const std::string &dtype_name)
         return CONDUIT_NATIVE_INT_DATATYPE_ID;
     else if(dtype_name == "long")
         return CONDUIT_NATIVE_LONG_DATATYPE_ID;
+#ifdef CONDUIT_USE_LONG_LONG
+    else if(dtype_name == "long long")
+        return CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID;
+#endif
     else if(dtype_name == "unsigned char")
         return CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID;
     else if(dtype_name == "unsigned short")
@@ -844,10 +848,18 @@ DataType::c_type_name_to_id(const std::string &dtype_name)
         return CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID;
     else if(dtype_name == "unsigned long")
         return CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID;
+#ifdef CONDUIT_USE_LONG_LONG
+    else if(dtype_name == "unsigned long long")
+        return CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID;
+#endif
     else if(dtype_name == "float")
         return CONDUIT_NATIVE_FLOAT_DATATYPE_ID;
     else if(dtype_name == "double")
         return CONDUIT_NATIVE_DOUBLE_DATATYPE_ID;
+#ifdef CONDUIT_USE_LONG_DOUBLE
+    else if(dtype_name == "long double")
+        return CONDUIT_NATIVE_LONG_DOUBLE_DATATYPE_ID;
+#endif
     else if(dtype_name == "char8_str")
         return CHAR8_STR_T;
     return EMPTY_T;
