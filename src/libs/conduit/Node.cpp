@@ -464,7 +464,7 @@ Node::mmap(const Schema &schema,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(const Node &node)
+Node::set_node(const Node &node)
 {
     if(node.dtype().id() == DataType::OBJECT_T)
     {
@@ -511,14 +511,28 @@ Node::set(const Node &node)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(const DataType &dtype)
+Node::set(const Node &node)
+{
+    set_node(node);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_dtype(const DataType &dtype)
 {
     init(dtype);
 }
 
 //---------------------------------------------------------------------------//
+void 
+Node::set(const DataType &dtype)
+{
+    set_dtype(dtype);
+}
+
+//---------------------------------------------------------------------------//
 void
-Node::set(const Schema &schema)
+Node::set_schema(const Schema &schema)
 {
     release();
     m_schema->set(schema);
@@ -530,7 +544,16 @@ Node::set(const Schema &schema)
 
 //---------------------------------------------------------------------------//
 void
-Node::set(const Schema &schema, void *data)
+Node::set(const Schema &schema)
+{
+    set_schema(schema);
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::set_data_using_schema(const Schema &schema,
+                            void *data)
 {
     release();
     m_schema->set(schema);   
@@ -541,7 +564,16 @@ Node::set(const Schema &schema, void *data)
 
 //---------------------------------------------------------------------------//
 void
-Node::set(const DataType &dtype, void *data)
+Node::set(const Schema &schema,
+          void *data)
+{
+    set_data_using_schema(schema,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_data_using_dtype(const DataType &dtype,
+                           void *data)
 {
     release();
     m_schema->set(dtype);
@@ -550,6 +582,12 @@ Node::set(const DataType &dtype, void *data)
     walk_schema(this,m_schema,data);
 }
 
+//---------------------------------------------------------------------------//
+void
+Node::set(const DataType &dtype, void *data)
+{
+    set_data_using_dtype(dtype,data);
+}
 
 //-----------------------------------------------------------------------------
 // -- set for scalar types ---
@@ -560,38 +598,64 @@ Node::set(const DataType &dtype, void *data)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
-Node::set(int8 data)
+void
+Node::set_int8(int8 data)
 {
     init(DataType::int8());
+    // TODO IMP: use element_ptr() ?
     *(int8*)((char*)m_data + schema().element_index(0)) = data;
 }
 
+//---------------------------------------------------------------------------//
+void
+Node::set(int8 data)
+{
+    set_int8(data);
+}
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(int16 data)
+Node::set_int16(int16 data)
 {
     init(DataType::int16());
     *(int16*)((char*)m_data + schema().element_index(0)) = data;
 }
 
+//---------------------------------------------------------------------------//
+void 
+Node::set(int16 data)
+{
+    set_int16(data);
+}
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(int32 data)
+Node::set_int32(int32 data)
 {
     init(DataType::int32());
     *(int32*)((char*)m_data + schema().element_index(0)) = data;
 }
 
+//---------------------------------------------------------------------------//
+void 
+Node::set(int32 data)
+{
+    set_int32(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_int64(int64 data)
+{
+    init(DataType::int64());
+    *(int64*)((char*)m_data + schema().element_index(0)) = data;
+}
 
 //---------------------------------------------------------------------------//
 void 
 Node::set(int64 data)
 {
-    init(DataType::int64());
-    *(int64*)((char*)m_data + schema().element_index(0)) = data;
+    set_int64(data);
 }
 
 //-----------------------------------------------------------------------------
@@ -600,37 +664,62 @@ Node::set(int64 data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(uint8 data)
+Node::set_uint8(uint8 data)
 {
     init(DataType::uint8());
     *(uint8*)((char*)m_data + schema().element_index(0)) = data;
 }
 
+//---------------------------------------------------------------------------//
+void 
+Node::set(uint8 data)
+{
+    set_uint8(data);
+}
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(uint16 data)
+Node::set_uint16(uint16 data)
 {
     init(DataType::uint16());
     *(uint16*)((char*)m_data + schema().element_index(0)) = data;
 }
 
+//---------------------------------------------------------------------------//
+void 
+Node::set(uint16 data)
+{
+    set_uint16(data);
+}
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(uint32 data)
+Node::set_uint32(uint32 data)
 {
     init(DataType::uint32());
     *(uint32*)((char*)m_data + schema().element_index(0)) = data;
 }
 
+//---------------------------------------------------------------------------//
+void 
+Node::set(uint32 data)
+{
+    set_uint32(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_uint64(uint64 data)
+{
+    init(DataType::uint64());
+    *(uint64*)((char*)m_data + schema().element_index(0)) = data;
+}
 
 //---------------------------------------------------------------------------//
 void 
 Node::set(uint64 data)
 {
-    init(DataType::uint64());
-    *(uint64*)((char*)m_data + schema().element_index(0)) = data;
+    set_uint64(data);
 }
 
 //-----------------------------------------------------------------------------
@@ -639,177 +728,32 @@ Node::set(uint64 data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(float32 data)
+Node::set_float32(float32 data)
 {
     init(DataType::float32());
     *(float32*)((char*)m_data + schema().element_index(0)) = data;
 }
 
+//---------------------------------------------------------------------------//
+void 
+Node::set(float32 data)
+{
+    set_float32(data);
+}
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(float64 data)
+Node::set_float64(float64 data)
 {
     init(DataType::float64());
     *(float64*)((char*)m_data + schema().element_index(0)) = data;
 }
 
-
-//-----------------------------------------------------------------------------
-// -- set for std::vector types ---
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// signed integer array types via std::vector
-//-----------------------------------------------------------------------------
-
 //---------------------------------------------------------------------------//
 void 
-Node::set(const std::vector<int8>  &data)
+Node::set(float64 data)
 {
-    DataType vec_t(DataType::INT8_T,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(int8),
-                   sizeof(int8),
-                   Endianness::DEFAULT_T);
-    init(vec_t);
-    memcpy(m_data,&data[0],sizeof(int8)*data.size());
-}
-
-//---------------------------------------------------------------------------//
-void 
-Node::set(const std::vector<int16>  &data)
-{
-    DataType vec_t(DataType::INT16_T,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(int16),
-                   sizeof(int16),
-                   Endianness::DEFAULT_T);
-    init(vec_t);
-    memcpy(m_data,&data[0],sizeof(int16)*data.size());
-}
-
-//---------------------------------------------------------------------------//
-void 
-Node::set(const std::vector<int32>  &data)
-{
-    DataType vec_t(DataType::INT32_T,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(int32),
-                   sizeof(int32),
-                   Endianness::DEFAULT_T);
-    init(vec_t);
-    memcpy(m_data,&data[0],sizeof(int32)*data.size());
-}
-
-//---------------------------------------------------------------------------//
-void 
-Node::set(const std::vector<int64>  &data)
-{
-    DataType vec_t(DataType::INT64_T,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(int64),
-                   sizeof(int64),
-                   Endianness::DEFAULT_T);
-    init(vec_t);
-    memcpy(m_data,&data[0],sizeof(int64)*data.size());
-}
-
-
-//-----------------------------------------------------------------------------
-// unsigned integer array types via std::vector
-//-----------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------//
-void 
-Node::set(const std::vector<uint8>  &data)
-{
-    DataType vec_t(DataType::UINT8_T,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(uint8),
-                   sizeof(uint8),
-                   Endianness::DEFAULT_T);
-    init(vec_t);
-    memcpy(m_data,&data[0],sizeof(uint8)*data.size());
-}
-
-//---------------------------------------------------------------------------//
-void 
-Node::set(const std::vector<uint16>  &data)
-{
-    DataType vec_t(DataType::UINT16_T,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(uint16),
-                   sizeof(uint16),
-                   Endianness::DEFAULT_T);
-    init(vec_t);
-    memcpy(m_data,&data[0],sizeof(uint16)*data.size());
-}
-
-//---------------------------------------------------------------------------//
-void 
-Node::set(const std::vector<uint32>  &data)
-{
-    DataType vec_t(DataType::UINT32_T,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(uint32),
-                   sizeof(uint32),
-                   Endianness::DEFAULT_T);
-    init(vec_t);
-    memcpy(m_data,&data[0],sizeof(uint32)*data.size());
-}
-
-//---------------------------------------------------------------------------//
-void 
-Node::set(const std::vector<uint64>  &data)
-{
-    DataType vec_t(DataType::UINT64_T,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(uint64),
-                   sizeof(uint64),
-                   Endianness::DEFAULT_T);
-    init(vec_t);
-    memcpy(m_data,&data[0],sizeof(uint64)*data.size());
-}
-
-//-----------------------------------------------------------------------------
-// floating point array types via std::vector
-//-----------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------//
-void 
-Node::set(const std::vector<float32>  &data)
-{
-    DataType vec_t(DataType::FLOAT32_T,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(float32),
-                   sizeof(float32),
-                   Endianness::DEFAULT_T);
-    init(vec_t);
-    memcpy(m_data,&data[0],sizeof(float32)*data.size());
-}
-
-//---------------------------------------------------------------------------//
-void 
-Node::set(const std::vector<float64>  &data)
-{
-    DataType vec_t(DataType::FLOAT64_T,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(float64),
-                   sizeof(float64),
-                   Endianness::DEFAULT_T);
-    init(vec_t);
-    memcpy(m_data,&data[0],sizeof(float64)*data.size());
+    set_float64(data);
 }
 
 //-----------------------------------------------------------------------------
@@ -822,7 +766,7 @@ Node::set(const std::vector<float64>  &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(const int8_array  &data)
+Node::set_int8_array(const int8_array &data)
 {
     init(DataType::int8(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
@@ -830,7 +774,14 @@ Node::set(const int8_array  &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(const int16_array  &data)
+Node::set(const int8_array &data)
+{
+    set_int8_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_int16_array(const int16_array &data)
 {
     init(DataType::int16(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
@@ -838,7 +789,14 @@ Node::set(const int16_array  &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(const int32_array  &data)
+Node::set(const int16_array &data)
+{
+    set_int16_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_int32_array(const int32_array &data)
 {
     init(DataType::int32(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
@@ -846,12 +804,25 @@ Node::set(const int32_array  &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(const int64_array  &data)
+Node::set(const int32_array &data)
+{
+    set_int32_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_int64_array(const int64_array &data)
 {
     init(DataType::int64(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
 }
 
+//---------------------------------------------------------------------------//
+void 
+Node::set(const int64_array &data)
+{
+    set_int64_array(data);
+}
 
 //-----------------------------------------------------------------------------
 // unsigned integer array types via conduit::DataArray
@@ -859,7 +830,7 @@ Node::set(const int64_array  &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(const uint8_array  &data)
+Node::set_uint8_array(const uint8_array &data)
 {
     init(DataType::uint8(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
@@ -867,7 +838,14 @@ Node::set(const uint8_array  &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(const uint16_array  &data)
+Node::set(const uint8_array &data)
+{
+    set_uint8_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_uint16_array(const uint16_array &data)
 {
     init(DataType::uint16(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
@@ -875,7 +853,14 @@ Node::set(const uint16_array  &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(const uint32_array  &data)
+Node::set(const uint16_array &data)
+{
+    set_uint16_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_uint32_array(const uint32_array  &data)
 {
     init(DataType::uint32(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
@@ -883,11 +868,25 @@ Node::set(const uint32_array  &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(const uint64_array  &data)
+Node::set(const uint32_array &data)
+{
+    set_uint32_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_uint64_array(const uint64_array &data)
 {
     init(DataType::uint64(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
 }
+//---------------------------------------------------------------------------//
+void 
+Node::set(const uint64_array  &data)
+{
+    set_uint64_array(data);
+}
+
 
 //-----------------------------------------------------------------------------
 // floating point array types via conduit::DataArray
@@ -895,7 +894,7 @@ Node::set(const uint64_array  &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(const float32_array  &data)
+Node::set_float32_array(const float32_array &data)
 {
     init(DataType::float32(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
@@ -903,10 +902,24 @@ Node::set(const float32_array  &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(const float64_array  &data)
+Node::set(const float32_array &data)
+{
+    set_float32_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_float64_array(const float64_array &data)
 {
     init(DataType::float64(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set(const float64_array &data)
+{
+    set_float64_array(data);
 }
 
 //-----------------------------------------------------------------------------
@@ -918,9 +931,10 @@ Node::set(const float64_array  &data)
 // char8_str use cases
 //-----------------------------------------------------------------------------
 
+
 //---------------------------------------------------------------------------//
 void 
-Node::set(const std::string  &data)
+Node::set_string(const std::string &data)
 {
     release();
     // size including the null term
@@ -933,6 +947,13 @@ Node::set(const std::string  &data)
                    Endianness::DEFAULT_T);
     init(str_t);
     memcpy(m_data,data.c_str(),sizeof(char)*str_size_with_term);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set(const std::string &data)
+{
+    set_string(data);
 }
 
 //---------------------------------------------------------------------------//
@@ -952,6 +973,235 @@ Node::set_char8_str(const char *data)
                    memcpy(m_data,data,sizeof(char)*str_size_with_term);
 }
 
+
+//-----------------------------------------------------------------------------
+// -- set for std::vector types ---
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// signed integer array types via std::vector
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_int8_vector(const std::vector<int8> &data)
+{
+    DataType vec_t(DataType::INT8_T,
+                   (index_t)data.size(),
+                   0,
+                   sizeof(int8),
+                   sizeof(int8),
+                   Endianness::DEFAULT_T);
+    init(vec_t);
+    memcpy(m_data,&data[0],sizeof(int8)*data.size());
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set(const std::vector<int8> &data)
+{
+    set_int8_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_int16_vector(const std::vector<int16> &data)
+{
+    DataType vec_t(DataType::INT16_T,
+                   (index_t)data.size(),
+                   0,
+                   sizeof(int16),
+                   sizeof(int16),
+                   Endianness::DEFAULT_T);
+    init(vec_t);
+    memcpy(m_data,&data[0],sizeof(int16)*data.size());
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set(const std::vector<int16> &data)
+{
+    set_int16_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_int32_vector(const std::vector<int32> &data)
+{
+    DataType vec_t(DataType::INT32_T,
+                   (index_t)data.size(),
+                   0,
+                   sizeof(int32),
+                   sizeof(int32),
+                   Endianness::DEFAULT_T);
+    init(vec_t);
+    memcpy(m_data,&data[0],sizeof(int32)*data.size());
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set(const std::vector<int32> &data)
+{
+    set_int32_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_int64_vector(const std::vector<int64> &data)
+{
+    DataType vec_t(DataType::INT64_T,
+                   (index_t)data.size(),
+                   0,
+                   sizeof(int64),
+                   sizeof(int64),
+                   Endianness::DEFAULT_T);
+    init(vec_t);
+    memcpy(m_data,&data[0],sizeof(int64)*data.size());
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set(const std::vector<int64> &data)
+{
+    set_int64_vector(data);
+}
+
+//-----------------------------------------------------------------------------
+// unsigned integer array types via std::vector
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_uint8_vector(const std::vector<uint8> &data)
+{
+    DataType vec_t(DataType::UINT8_T,
+                   (index_t)data.size(),
+                   0,
+                   sizeof(uint8),
+                   sizeof(uint8),
+                   Endianness::DEFAULT_T);
+    init(vec_t);
+    memcpy(m_data,&data[0],sizeof(uint8)*data.size());
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set(const std::vector<uint8> &data)
+{
+    set_uint8_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_uint16_vector(const std::vector<uint16> &data)
+{
+    DataType vec_t(DataType::UINT16_T,
+                   (index_t)data.size(),
+                   0,
+                   sizeof(uint16),
+                   sizeof(uint16),
+                   Endianness::DEFAULT_T);
+    init(vec_t);
+    memcpy(m_data,&data[0],sizeof(uint16)*data.size());
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set(const std::vector<uint16> &data)
+{
+    set_uint16_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_uint32_vector(const std::vector<uint32> &data)
+{
+    DataType vec_t(DataType::UINT32_T,
+                   (index_t)data.size(),
+                   0,
+                   sizeof(uint32),
+                   sizeof(uint32),
+                   Endianness::DEFAULT_T);
+    init(vec_t);
+    memcpy(m_data,&data[0],sizeof(uint32)*data.size());
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set(const std::vector<uint32> &data)
+{
+    set_uint32_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_uint64_vector(const std::vector<uint64> &data)
+{
+    DataType vec_t(DataType::UINT64_T,
+                   (index_t)data.size(),
+                   0,
+                   sizeof(uint64),
+                   sizeof(uint64),
+                   Endianness::DEFAULT_T);
+    init(vec_t);
+    memcpy(m_data,&data[0],sizeof(uint64)*data.size());
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set(const std::vector<uint64> &data)
+{
+     set_uint64_vector(data);
+}
+
+//-----------------------------------------------------------------------------
+// floating point array types via std::vector
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_float32_vector(const std::vector<float32> &data)
+{
+    DataType vec_t(DataType::FLOAT32_T,
+                   (index_t)data.size(),
+                   0,
+                   sizeof(float32),
+                   sizeof(float32),
+                   Endianness::DEFAULT_T);
+    init(vec_t);
+    memcpy(m_data,&data[0],sizeof(float32)*data.size());
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set(const std::vector<float32> &data)
+{
+    set_float32_vector(data);
+}
+
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_float64_vector(const std::vector<float64> &data)
+{
+    DataType vec_t(DataType::FLOAT64_T,
+                   (index_t)data.size(),
+                   0,
+                   sizeof(float64),
+                   sizeof(float64),
+                   Endianness::DEFAULT_T);
+    init(vec_t);
+    memcpy(m_data,&data[0],sizeof(float64)*data.size());
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set(const std::vector<float64> &data)
+{
+    set_float64_vector(data);
+}
+
+
 //-----------------------------------------------------------------------------
 // -- set via pointers (scalar and array types) -- 
 //-----------------------------------------------------------------------------
@@ -962,12 +1212,12 @@ Node::set_char8_str(const char *data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(int8  *data,
-          index_t num_elements,
-          index_t offset,
-          index_t stride,
-          index_t element_bytes,
-          index_t endianness)
+Node::set_int8_ptr(int8  *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
 {
     set(int8_array(data,DataType::int8(num_elements,
                                                offset,
@@ -976,6 +1226,33 @@ Node::set(int8  *data,
                                                endianness)));
 }
 
+//---------------------------------------------------------------------------//
+void 
+Node::set(int8  *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
+{
+    set_int8_ptr(data,num_elements,offset,stride,element_bytes,endianness);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_int16_ptr(int16 *data, 
+                    index_t num_elements,
+                    index_t offset,
+                    index_t stride,
+                    index_t element_bytes,
+                    index_t endianness)
+{
+    set(int16_array(data,DataType::int16(num_elements,
+                                         offset,
+                                         stride,
+                                         element_bytes,
+                                         endianness)));    
+}
 
 //---------------------------------------------------------------------------//
 void 
@@ -986,11 +1263,23 @@ Node::set(int16 *data,
           index_t element_bytes,
           index_t endianness)
 {
-    set(int16_array(data,DataType::int16(num_elements,
-                                                 offset,
-                                                 stride,
-                                                 element_bytes,
-                                                 endianness)));    
+    set_int16_ptr(data,num_elements,offset,stride,element_bytes,endianness);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_int32_ptr(int32 *data,
+                    index_t num_elements,
+                    index_t offset,
+                    index_t stride,
+                    index_t element_bytes,
+                    index_t endianness)
+{
+    set(int32_array(data,DataType::int32(num_elements,
+                                         offset,
+                                         stride,
+                                         element_bytes,
+                                         endianness)));        
 }
 
 //---------------------------------------------------------------------------//
@@ -1002,12 +1291,25 @@ Node::set(int32 *data,
          index_t element_bytes,
          index_t endianness)
 {
-    set(int32_array(data,DataType::int32(num_elements,
-                                                 offset,
-                                                 stride,
-                                                 element_bytes,
-                                                 endianness)));        
+    set_int32_ptr(data,num_elements,offset,stride,element_bytes,endianness);
 }
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_int64_ptr(int64 *data,
+                    index_t num_elements,
+                    index_t offset,
+                    index_t stride,
+                    index_t element_bytes,
+                    index_t endianness)
+{
+    set(int64_array(data,DataType::int64(num_elements,
+                                         offset,
+                                         stride,
+                                         element_bytes,
+                                         endianness)));
+}
+
 //---------------------------------------------------------------------------//
 void 
 Node::set(int64 *data,
@@ -1017,18 +1319,29 @@ Node::set(int64 *data,
          index_t element_bytes,
          index_t endianness)
 {
-    set(int64_array(data,DataType::int64(num_elements,
-                                                 offset,
-                                                 stride,
-                                                 element_bytes,
-                                                 endianness)));
+    set_int64_ptr(data,num_elements,offset,stride,element_bytes,endianness);
 }
-
 
 //-----------------------------------------------------------------------------
 // unsigned integer pointer cases
 //-----------------------------------------------------------------------------
 
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_uint8_ptr(uint8  *data,
+                    index_t num_elements,
+                    index_t offset,
+                    index_t stride,
+                    index_t element_bytes,
+                    index_t endianness)
+{
+    set(uint8_array(data,DataType::uint8(num_elements,
+                                         offset,
+                                         stride,
+                                         element_bytes,
+                                         endianness)));
+}
 
 //---------------------------------------------------------------------------//
 void 
@@ -1039,13 +1352,24 @@ Node::set(uint8  *data,
           index_t element_bytes,
           index_t endianness)
 {
-    set(uint8_array(data,DataType::uint8(num_elements,
-                                                 offset,
-                                                 stride,
-                                                 element_bytes,
-                                                 endianness)));
+    set_uint8_ptr(data,num_elements,offset,stride,element_bytes,endianness);
 }
 
+//---------------------------------------------------------------------------//
+void 
+Node::set_uint16_ptr(uint16 *data,
+                     index_t num_elements,
+                     index_t offset,
+                     index_t stride,
+                     index_t element_bytes,
+                     index_t endianness)
+{
+    set(uint16_array(data,DataType::uint16(num_elements,
+                                           offset,
+                                           stride,
+                                           element_bytes,
+                                           endianness)));
+}
 
 //---------------------------------------------------------------------------//
 void 
@@ -1056,11 +1380,22 @@ Node::set(uint16 *data,
          index_t element_bytes,
          index_t endianness)
 {
-    set(uint16_array(data,DataType::uint16(num_elements,
-                                                   offset,
-                                                   stride,
-                                                   element_bytes,
-                                                   endianness)));
+    set_uint16_ptr(data,num_elements,offset,stride,element_bytes,endianness);
+}
+//---------------------------------------------------------------------------//
+void 
+Node::set_uint32_ptr(uint32 *data, 
+                     index_t num_elements,
+                     index_t offset,
+                     index_t stride,
+                     index_t element_bytes,
+                     index_t endianness)
+{
+    set(uint32_array(data,DataType::uint32(num_elements,
+                                           offset,
+                                           stride,
+                                           element_bytes,
+                                           endianness))); 
 }
 
 //---------------------------------------------------------------------------//
@@ -1072,33 +1407,57 @@ Node::set(uint32 *data,
          index_t element_bytes,
          index_t endianness)
 {
-    set(uint32_array(data,DataType::uint32(num_elements,
-                                                   offset,
-                                                   stride,
-                                                   element_bytes,
-                                                   endianness))); 
+    set_uint32_ptr(data,num_elements,offset,stride,element_bytes,endianness);
 }
                
 //---------------------------------------------------------------------------//   
 void 
-Node::set(uint64 *data,
-         index_t num_elements,
-         index_t offset,
-         index_t stride,
-         index_t element_bytes,
-         index_t endianness)
+Node::set_uint64_ptr(uint64 *data,
+                     index_t num_elements,
+                     index_t offset,
+                     index_t stride,
+                     index_t element_bytes,
+                     index_t endianness)
 {
     set(uint64_array(data,DataType::uint64(num_elements,
-                                                   offset,
-                                                   stride,
-                                                   element_bytes,
-                                                   endianness)));     
+                                           offset,
+                                           stride,
+                                           element_bytes,
+                                           endianness)));     
     
+}
+
+//---------------------------------------------------------------------------//   
+void 
+Node::set(uint64 *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
+{
+    set_uint64_ptr(data,num_elements,offset,stride,element_bytes,endianness);
 }
 
 //-----------------------------------------------------------------------------
 // floating point pointer cases
 //-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_float32_ptr(float32 *data,
+                      index_t num_elements,
+                      index_t offset,
+                      index_t stride,
+                      index_t element_bytes,
+                      index_t endianness)
+{
+    set(float32_array(data,DataType::float32(num_elements,
+                                             offset,
+                                             stride,
+                                             element_bytes,
+                                             endianness)));
+}
 
 //---------------------------------------------------------------------------//
 void 
@@ -1109,27 +1468,35 @@ Node::set(float32 *data,
          index_t element_bytes,
          index_t endianness)
 {
-    set(float32_array(data,DataType::float32(num_elements,
-                                                     offset,
-                                                     stride,
-                                                     element_bytes,
-                                                     endianness)));
+    set_float32_ptr(data,num_elements,offset,stride,element_bytes,endianness);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_float64_ptr(float64 *data, 
+                      index_t num_elements,
+                      index_t offset,
+                      index_t stride,
+                      index_t element_bytes,
+                      index_t endianness)
+{
+    set(float64_array(data,DataType::float64(num_elements,
+                                             offset,
+                                             stride,
+                                             element_bytes,
+                                             endianness)));
 }
 
 //---------------------------------------------------------------------------//
 void 
 Node::set(float64 *data, 
-         index_t num_elements,
-         index_t offset,
-         index_t stride,
-         index_t element_bytes,
-         index_t endianness)
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
 {
-    set(float64_array(data,DataType::float64(num_elements,
-                                                     offset,
-                                                     stride,
-                                                     element_bytes,
-                                                     endianness)));
+    set_float64_ptr(data,num_elements,offset,stride,element_bytes,endianness);
 }
 
 //-----------------------------------------------------------------------------
@@ -1152,18 +1519,43 @@ Node::set(float64 *data,
 
 //---------------------------------------------------------------------------//
 void
+Node::set_path_node(const std::string &path,
+                    const Node& data) 
+{
+    fetch(path).set_node(data);    
+}
+
+//---------------------------------------------------------------------------//
+void
 Node::set_path(const std::string &path,
                const Node& data) 
 {
-    fetch(path).set(data);
+    set_path_node(path,data);
 }
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_dtype(const std::string &path,
+                     const DataType& dtype)
+{
+    fetch(path).set_dtype(dtype);
+}
+
 
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
                const DataType& dtype)
 {
-    fetch(path).set(dtype);
+    set_path_dtype(path,dtype);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_schema(const std::string &path,
+                      const Schema &schema)
+{
+    fetch(path).set_schema(schema);
 }
 
 //---------------------------------------------------------------------------//
@@ -1171,7 +1563,16 @@ void
 Node::set_path(const std::string &path,
                const Schema &schema)
 {
-    fetch(path).set(schema);
+    set_path_schema(path,schema);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_data_using_schema(const std::string &path,
+                                 const Schema &schema,
+                                 void *data)
+{
+    fetch(path).set_data_using_schema(schema,data);
 }
 
 //---------------------------------------------------------------------------//
@@ -1180,7 +1581,16 @@ Node::set_path(const std::string &path,
                const Schema &schema,
                void *data)
 {
-    fetch(path).set(schema,data);
+    set_path_data_using_schema(path,schema,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_data_using_dtype(const std::string &path,
+                                const DataType &dtype,
+                                void *data)
+{
+    fetch(path).set_data_using_dtype(dtype,data);
 }
 
 //---------------------------------------------------------------------------//
@@ -1189,9 +1599,8 @@ Node::set_path(const std::string &path,
                const DataType &dtype,
                void *data)
 {
-    fetch(path).set(dtype,data);
+    set_path_data_using_dtype(path,dtype,data);
 }
-
 
 //-----------------------------------------------------------------------------
 // -- set_path for scalar types ---
@@ -1203,28 +1612,57 @@ Node::set_path(const std::string &path,
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,int8 data)
+Node::set_path_int8(const std::string &path,
+                    int8 data)
 {
-    fetch(path).set(data);
+    fetch(path).set_int8(data);
 }
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,int16 data)
+Node::set_path(const std::string &path,
+               int8 data)
 {
-    fetch(path).set(data);
+    set_path_int8(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_int16(const std::string &path,
+                     int16 data)
+{
+    fetch(path).set_int16(data);
 }
  
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,int32 data)
+Node::set_path(const std::string &path,
+               int16 data)
 {
-    fetch(path).set(data);
+    set_path_int16(path,data);
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_int32(const std::string &path,
+                     int32 data)
+{
+    fetch(path).set_int32(data);
 }
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,int64 data)
+Node::set_path(const std::string &path,
+               int32 data)
+{
+    set_path_int32(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path(const std::string &path,
+               int64 data)
 {
     fetch(path).set(data);
 }
@@ -1235,30 +1673,66 @@ Node::set_path(const std::string &path,int64 data)
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,uint8 data)
+Node::set_path_uint8(const std::string &path,
+                     uint8 data)
 {
-    fetch(path).set(data);
+    fetch(path).set_uint8(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path(const std::string &path,
+               uint8 data)
+{
+    set_path_uint8(path,data);
 }
  
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,uint16 data)
+Node::set_path_uint16(const std::string &path,
+                      uint16 data)
 {
-    fetch(path).set(data);
+    fetch(path).set_uint16(data);
 }
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,uint32 data)
+Node::set_path(const std::string &path,
+               uint16 data)
 {
-    fetch(path).set(data);
+    set_path_uint16(path,data);
 }
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,uint64 data)
+Node::set_path_uint32(const std::string &path,
+                      uint32 data)
 {
-    fetch(path).set(data);
+    fetch(path).set_uint32(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path(const std::string &path,
+               uint32 data)
+{
+    set_path_uint32(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_uint64(const std::string &path,
+                      uint64 data)
+{
+    fetch(path).set_uint64(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path(const std::string &path,
+               uint64 data)
+{
+    set_path_uint64(path,data);
 }
 
 //-----------------------------------------------------------------------------
@@ -1267,102 +1741,34 @@ Node::set_path(const std::string &path,uint64 data)
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,float32 data)
+Node::set_path_float32(const std::string &path,
+                       float32 data)
 {
-    fetch(path).set(data);
+    fetch(path).set_float32(data);
 }
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,float64 data)
+Node::set_path(const std::string &path,
+               float32 data)
 {
-    fetch(path).set(data);
-}
-
-//-----------------------------------------------------------------------------
-// -- set_path for std::vector types ---
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// signed integer array types via std::vector
-//-----------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------//
-void
-Node::set_path(const std::string &path,const std::vector<int8>   &data)
-{
-    fetch(path).set(data);
+    set_path_float32(path,data);
 }
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,const std::vector<int16>  &data)
+Node::set_path_float64(const std::string &path,
+                       float64 data)
 {
-    fetch(path).set(data);
+    fetch(path).set_float64(data);
 }
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,const std::vector<int32>  &data)
+Node::set_path(const std::string &path,
+               float64 data)
 {
-    fetch(path).set(data);
-}
-
-//---------------------------------------------------------------------------//
-void
-Node::set_path(const std::string &path,const std::vector<int64>  &data)
-{
-    fetch(path).set(data);
-}
-
-//-----------------------------------------------------------------------------
-// unsigned integer array types via std::vector
-//-----------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------//
-void
-Node::set_path(const std::string &path,const std::vector<uint8>   &data)
-{
-    fetch(path).set(data);
-}
-
-//---------------------------------------------------------------------------//
-void
-Node::set_path(const std::string &path,const std::vector<uint16>  &data)
-{
-    fetch(path).set(data);
-}
-
-//---------------------------------------------------------------------------//
-void
-Node::set_path(const std::string &path,const std::vector<uint32>  &data)
-{
-    fetch(path).set(data);
-}
-
-//---------------------------------------------------------------------------//
-void
-Node::set_path(const std::string &path,const std::vector<uint64>  &data)
-{
-    fetch(path).set(data);
-}
-
-//-----------------------------------------------------------------------------
-// floating point array types via std::vector
-//-----------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------//
-void
-Node::set_path(const std::string &path,const std::vector<float32> &data)
-{
-    fetch(path).set(data);
-}
-
-//---------------------------------------------------------------------------//
-void
-Node::set_path(const std::string &path,const std::vector<float64> &data)
-{
-    fetch(path).set(data);
+    set_path_float64(path,data);
 }
 
 //-----------------------------------------------------------------------------
@@ -1375,30 +1781,66 @@ Node::set_path(const std::string &path,const std::vector<float64> &data)
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,const int8_array  &data)
+Node::set_path_int8_array(const std::string &path,
+                          const int8_array &data)
 {
-    fetch(path).set(data);
+    fetch(path).set_int8_array(data);
 }
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,const int16_array &data)
+Node::set_path(const std::string &path,
+               const int8_array &data)
 {
-    fetch(path).set(data);
+    set_path_int8_array(path,data);
 }
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,const int32_array &data)
+Node::set_path_int16_array(const std::string &path,
+                           const int16_array &data)
 {
-    fetch(path).set(data);
+    fetch(path).set_int16_array(data);
 }
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,const int64_array &data)
+Node::set_path(const std::string &path,
+               const int16_array &data)
 {
-    fetch(path).set(data);
+    set_path_int16_array(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_int32_array(const std::string &path,
+                           const int32_array &data)
+{
+    fetch(path).set_int32_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path(const std::string &path,
+               const int32_array &data)
+{
+    set_path_int32_array(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_int64_array(const std::string &path,
+                           const int64_array &data)
+{
+    fetch(path).set_int64_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path(const std::string &path,
+               const int64_array &data)
+{
+    set_path_int64_array(path,data);
 }
 
 //-----------------------------------------------------------------------------
@@ -1407,30 +1849,66 @@ Node::set_path(const std::string &path,const int64_array &data)
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,const uint8_array  &data)
+Node::set_path_uint8_array(const std::string &path,
+                           const uint8_array &data)
 {
-    fetch(path).set(data);
+    fetch(path).set_uint8_array(data);
 }
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,const uint16_array &data)
+Node::set_path(const std::string &path,
+               const uint8_array &data)
 {
-    fetch(path).set(data);
+    set_path_uint8_array(path,data);
 }
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,const uint32_array &data)
+Node::set_path_uint16_array(const std::string &path,
+                            const uint16_array &data)
 {
-    fetch(path).set(data);
+    fetch(path).set_uint16_array(data);
 }
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,const uint64_array &data)
+Node::set_path(const std::string &path,
+               const uint16_array &data)
 {
-    fetch(path).set(data);
+    set_path_uint16_array(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_uint32_array(const std::string &path,
+                            const uint32_array &data)
+{
+    fetch(path).set_uint32_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path(const std::string &path,
+               const uint32_array &data)
+{
+    set_path_uint32_array(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_uint64_array(const std::string &path,
+                            const uint64_array &data)
+{
+    fetch(path).set_uint64_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path(const std::string &path,
+               const uint64_array &data)
+{
+    set_path_uint64_array(path,data);    
 }
 
 //-----------------------------------------------------------------------------
@@ -1439,16 +1917,34 @@ Node::set_path(const std::string &path,const uint64_array &data)
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,const float32_array &data)
+Node::set_path_float32_array(const std::string &path,
+                             const float32_array &data)
 {
-fetch(path).set(data);
+    fetch(path).set_float32_array(data);
 }
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path(const std::string &path,const float64_array &data)
+Node::set_path(const std::string &path,
+               const float32_array &data)
 {
-fetch(path).set(data);
+    set_path_float32_array(path,data);    
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_float64_array(const std::string &path,
+                             const float64_array &data)
+{
+    fetch(path).set_float64_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path(const std::string &path,
+               const float64_array &data)
+{
+    set_path_float64_array(path,data);    
 }
 
 //-----------------------------------------------------------------------------
@@ -1457,12 +1953,19 @@ fetch(path).set(data);
 
 //---------------------------------------------------------------------------//
 void
+Node::set_path_string(const std::string &path,
+                      const std::string &data)
+{
+    fetch(path).set_string(data);
+}
+
+//---------------------------------------------------------------------------//
+void
 Node::set_path(const std::string &path,
                const std::string &data)
 {
-    fetch(path).set(data);
+    set_path_string(path,data);    
 }
-
 //---------------------------------------------------------------------------//
 void
 Node::set_path_char8_str(const std::string &path,
@@ -1471,6 +1974,182 @@ Node::set_path_char8_str(const std::string &path,
     fetch(path).set_char8_str(data);
 }
 
+
+//-----------------------------------------------------------------------------
+// -- set_path for std::vector types ---
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// signed integer array types via std::vector
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_int8_vector(const std::string &path,
+                           const std::vector<int8> &data)
+{
+    fetch(path).set_int8_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path(const std::string &path,
+               const std::vector<int8> &data)
+{
+    set_path_int8_vector(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_int16_vector(const std::string &path,
+                            const std::vector<int16> &data)
+{
+    fetch(path).set_int16_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path(const std::string &path,
+               const std::vector<int16> &data)
+{
+    set_path_int16_vector(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_int32_vector(const std::string &path,
+                            const std::vector<int32> &data)
+{
+    fetch(path).set_int32_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path(const std::string &path,
+               const std::vector<int32> &data)
+{
+    set_path_int32_vector(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_int64_vector(const std::string &path,
+                            const std::vector<int64> &data)
+{
+    fetch(path).set_int64_vector(data);    
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path(const std::string &path,
+               const std::vector<int64> &data)
+{
+    set_path_int64_vector(path,data);
+}
+
+//-----------------------------------------------------------------------------
+// unsigned integer array types via std::vector
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_uint8_vector(const std::string &path,
+                            const std::vector<uint8> &data)
+{
+    fetch(path).set_uint8_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path(const std::string &path,
+               const std::vector<uint8> &data)
+{
+    set_path_uint8_vector(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_uint16_vector(const std::string &path,
+                             const std::vector<uint16> &data)
+{
+    fetch(path).set_uint16_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path(const std::string &path,
+               const std::vector<uint16>  &data)
+{
+    set_path_uint16_vector(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_uint32_vector(const std::string &path,
+                             const std::vector<uint32> &data)
+{
+    fetch(path).set_uint32_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path(const std::string &path,
+               const std::vector<uint32>  &data)
+{
+    set_path_uint32_vector(path,data);
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_uint64_vector(const std::string &path,
+                             const std::vector<uint64> &data)
+{
+    fetch(path).set_uint64_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path(const std::string &path,
+               const std::vector<uint64>  &data)
+{
+    set_path_uint64_vector(path,data);
+}
+
+//-----------------------------------------------------------------------------
+// floating point array types via std::vector
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_float32_vector(const std::string &path,
+                              const std::vector<float32> &data)
+{
+    fetch(path).set_float32_vector(data);
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path(const std::string &path,const std::vector<float32> &data)
+{
+    set_path_float32_vector(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_float64_vector(const std::string &path,
+                              const std::vector<float64> &data)
+{
+    fetch(path).set_float64_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path(const std::string &path,const std::vector<float64> &data)
+{
+    set_path_float64_vector(path,data);
+}
 
 
 //-----------------------------------------------------------------------------
@@ -1483,6 +2162,24 @@ Node::set_path_char8_str(const std::string &path,
 
 //---------------------------------------------------------------------------//
 void
+Node::set_path_int8_ptr(const std::string &path,
+                       int8  *data,
+                       index_t num_elements,
+                       index_t offset,
+                       index_t stride,
+                       index_t element_bytes,
+                       index_t endianness)
+{
+    fetch(path).set_int8_ptr(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+
+//---------------------------------------------------------------------------//
+void
 Node::set_path(const std::string &path,
                int8  *data,
                index_t num_elements,
@@ -1491,12 +2188,31 @@ Node::set_path(const std::string &path,
                index_t element_bytes,
                index_t endianness)
 {
-    fetch(path).set(data,
-                    num_elements,
-                    offset,
-                    stride,
-                    element_bytes,
-                    endianness);
+    set_path_int8_ptr(path,
+                      data,
+                      num_elements,
+                      offset,
+                      stride,
+                      element_bytes,
+                      endianness);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_int16_ptr(const std::string &path,
+                         int16 *data, 
+                         index_t num_elements,
+                         index_t offset,
+                         index_t stride,
+                         index_t element_bytes,
+                         index_t endianness)
+{
+    fetch(path).set_int16_ptr(data,
+                              num_elements,
+                              offset,
+                              stride,
+                              element_bytes,
+                              endianness);
 }
 
 //---------------------------------------------------------------------------//
@@ -1509,12 +2225,31 @@ Node::set_path(const std::string &path,
                index_t element_bytes,
                index_t endianness)
 {
-    fetch(path).set(data,
-                    num_elements,
-                    offset,
-                    stride,
-                    element_bytes,
-                    endianness);
+    set_path_int16_ptr(path,
+                       data,
+                       num_elements,
+                       offset,
+                       stride,
+                       element_bytes,
+                       endianness);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_int32_ptr(const std::string &path,
+                         int32 *data,
+                         index_t num_elements,
+                         index_t offset,
+                         index_t stride,
+                         index_t element_bytes,
+                         index_t endianness)
+{
+    fetch(path).set_int32_ptr(data,
+                              num_elements,
+                              offset,
+                              stride,
+                              element_bytes,
+                              endianness);
 }
 
 //---------------------------------------------------------------------------//
@@ -1527,12 +2262,31 @@ Node::set_path(const std::string &path,
                index_t element_bytes,
                index_t endianness)
 {
-    fetch(path).set(data,
-                    num_elements,
-                    offset,
-                    stride,
-                    element_bytes,
-                    endianness);
+    set_path_int32_ptr(path,
+                       data,
+                       num_elements,
+                       offset,
+                       stride,
+                       element_bytes,
+                       endianness);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_int64_ptr(const std::string &path,
+                         int64 *data,
+                         index_t num_elements,
+                         index_t offset,
+                         index_t stride,
+                         index_t element_bytes,
+                         index_t endianness)
+{
+    fetch(path).set_int64_ptr(data,
+                              num_elements,
+                              offset,
+                              stride,
+                              element_bytes,
+                              endianness);
 }
 
 //---------------------------------------------------------------------------//
@@ -1545,14 +2299,16 @@ Node::set_path(const std::string &path,
                index_t element_bytes,
                index_t endianness)
 {
-    fetch(path).set(data,
-                    num_elements,
-                    offset,
-                    stride,
-                    element_bytes,
-                    endianness);
+    set_path_int64_ptr(path,
+                       data,
+                       num_elements,
+                       offset,
+                       stride,
+                       element_bytes,
+                       endianness);
 }
-        //----------------------------------------------------------------------------- 
+
+//----------------------------------------------------------------------------- 
 // unsigned integer pointer cases
 //-----------------------------------------------------------------------------
 
@@ -1576,6 +2332,42 @@ Node::set_path(const std::string &path,
 
 //---------------------------------------------------------------------------//
 void
+Node::set_path_uint8_ptr(const std::string &path,
+                         uint8  *data,
+                         index_t num_elements,
+                         index_t offset,
+                         index_t stride,
+                         index_t element_bytes,
+                         index_t endianness)
+{
+    fetch(path).set_uint8_ptr(data,
+                              num_elements,
+                              offset,
+                              stride,
+                              element_bytes,
+                              endianness);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_uint16_ptr(const std::string &path,
+                          uint16 *data,
+                          index_t num_elements,
+                          index_t offset,
+                          index_t stride,
+                          index_t element_bytes,
+                          index_t endianness)
+{
+    fetch(path).set_uint16_ptr(data,
+                               num_elements,
+                               offset,
+                               stride,
+                               element_bytes,
+                               endianness);
+}
+
+//---------------------------------------------------------------------------//
+void
 Node::set_path(const std::string &path,
                uint16 *data,
                index_t num_elements,
@@ -1584,14 +2376,32 @@ Node::set_path(const std::string &path,
                index_t element_bytes,
                index_t endianness)
 {
-    fetch(path).set(data,
-                    num_elements,
-                    offset,
-                    stride,
-                    element_bytes,
-                    endianness);
+    set_path_uint16_ptr(path,
+                        data,
+                        num_elements,
+                        offset,
+                        stride,
+                        element_bytes,
+                        endianness);
 }
 
+//---------------------------------------------------------------------------//
+void
+Node::set_path_uint32_ptr(const std::string &path,
+                          uint32 *data, 
+                          index_t num_elements,
+                          index_t offset,
+                          index_t stride,
+                          index_t element_bytes,
+                          index_t endianness)
+{
+    fetch(path).set_uint32_ptr(data,
+                               num_elements,
+                               offset,
+                               stride,
+                               element_bytes,
+                               endianness);
+}
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
@@ -1602,12 +2412,31 @@ Node::set_path(const std::string &path,
                index_t element_bytes,
                index_t endianness)
 {
-    fetch(path).set(data,
-                    num_elements,
-                    offset,
-                    stride,
-                    element_bytes,
-                    endianness);
+    set_path_uint32_ptr(path,
+                        data,
+                        num_elements,
+                        offset,
+                        stride,
+                        element_bytes,
+                        endianness);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_uint64_ptr(const std::string &path,
+                          uint64 *data,
+                          index_t num_elements,
+                          index_t offset,
+                          index_t stride,
+                          index_t element_bytes,
+                          index_t endianness)
+{
+    fetch(path).set_uint64_ptr(data,
+                               num_elements,
+                               offset,
+                               stride,
+                               element_bytes,
+                               endianness);
 }
 
 //---------------------------------------------------------------------------//
@@ -1620,17 +2449,36 @@ Node::set_path(const std::string &path,
                index_t element_bytes,
                index_t endianness)
 {
-    fetch(path).set(data,
-                    num_elements,
-                    offset,
-                    stride,
-                    element_bytes,
-                    endianness);
+    set_path_uint64_ptr(path,
+                        data,
+                        num_elements,
+                        offset,
+                        stride,
+                        element_bytes,
+                        endianness);
 }
 
 //-----------------------------------------------------------------------------
 // floating point integer pointer cases
 //-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_float32_ptr(const std::string &path,
+                           float32 *data,
+                           index_t num_elements,
+                           index_t offset,
+                           index_t stride,
+                           index_t element_bytes,
+                           index_t endianness)
+{   
+    fetch(path).set_float32_ptr(data,
+                                num_elements,
+                                offset,
+                                stride,
+                                element_bytes,
+                                endianness);
+}
 
 //---------------------------------------------------------------------------//
 void
@@ -1642,14 +2490,32 @@ Node::set_path(const std::string &path,
                index_t element_bytes,
                index_t endianness)
 {   
-    fetch(path).set(data,
-                    num_elements,
-                    offset,
-                    stride,
-                    element_bytes,
-                    endianness);
+    set_path_float32_ptr(path,
+                         data,
+                         num_elements,
+                         offset,
+                         stride,
+                         element_bytes,
+                         endianness);
 }
 
+//---------------------------------------------------------------------------//
+void
+Node::set_path_float64_ptr(const std::string &path,
+                           float64 *data, 
+                           index_t num_elements,
+                           index_t offset,
+                           index_t stride,
+                           index_t element_bytes,
+                           index_t endianness)
+{
+    fetch(path).set_float64_ptr(data,
+                                num_elements,
+                                offset,
+                                stride,
+                                element_bytes,
+                                endianness);
+}
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
@@ -1660,12 +2526,13 @@ Node::set_path(const std::string &path,
                index_t element_bytes,
                index_t endianness)
 {
-    fetch(path).set(data,
-                    num_elements,
-                    offset,
-                    stride,
-                    element_bytes,
-                    endianness);
+    set_path_float64_ptr(path,
+                         data,
+                         num_elements,
+                         offset,
+                         stride,
+                         element_bytes,
+                         endianness);
 }
 
 //-----------------------------------------------------------------------------
@@ -1686,7 +2553,7 @@ Node::set_path(const std::string &path,
 
 //---------------------------------------------------------------------------//
 void
-Node::set_external(Node &node)
+Node::set_external_node(Node &node)
 {
     reset();
     m_schema->set(node.schema());
@@ -1695,7 +2562,15 @@ Node::set_external(Node &node)
 
 //---------------------------------------------------------------------------//
 void
-Node::set_external(const Schema &schema, void *data)
+Node::set_external(Node &node)
+{
+    set_external_node(node);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_external_data_using_schema(const Schema &schema,
+                                     void *data)
 {
     reset();
     m_schema->set(schema);
@@ -1704,13 +2579,29 @@ Node::set_external(const Schema &schema, void *data)
 
 //---------------------------------------------------------------------------//
 void
-Node::set_external(const DataType &dtype, void *data)
+Node::set_external(const Schema &schema,
+                   void *data)
+{
+    set_external_data_using_schema(schema,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_external_data_using_dtype(const DataType &dtype,
+                                    void *data)
 {
     reset();
     m_data    = data;
     m_schema->set(dtype);
 }
 
+//---------------------------------------------------------------------------//
+void
+Node::set_external(const DataType &dtype,
+                   void *data)
+{
+    set_external_data_using_dtype(dtype,data);
+}
 
 //-----------------------------------------------------------------------------
 // -- set_external via pointers (scalar and array types) -- 
@@ -1722,6 +2613,24 @@ Node::set_external(const DataType &dtype, void *data)
 
 //---------------------------------------------------------------------------//
 void 
+Node::set_external_int8_ptr(int8 *data,
+                            index_t num_elements,
+                            index_t offset,
+                            index_t stride,
+                            index_t element_bytes,
+                            index_t endianness)
+{
+    release();
+    m_schema->set(DataType::int8(num_elements,
+                                 offset,
+                                 stride,
+                                 element_bytes,
+                                 endianness));
+    m_data  = data;
+}
+
+//---------------------------------------------------------------------------//
+void 
 Node::set_external(int8 *data,
                    index_t num_elements,
                    index_t offset,
@@ -1729,12 +2638,29 @@ Node::set_external(int8 *data,
                    index_t element_bytes,
                    index_t endianness)
 {
+    set_external_int8_ptr(data,
+                          num_elements,
+                          offset,
+                          stride,
+                          element_bytes,
+                          endianness);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_int16_ptr(int16 *data,
+                             index_t num_elements,
+                             index_t offset,
+                             index_t stride,
+                             index_t element_bytes,
+                             index_t endianness)
+{
     release();
-    m_schema->set(DataType::int8(num_elements,
-                                         offset,
-                                         stride,
-                                         element_bytes,
-                                         endianness));
+    m_schema->set(DataType::int16(num_elements,
+                                  offset,
+                                  stride,
+                                  element_bytes,
+                                  endianness));
     m_data  = data;
 }
 
@@ -1747,12 +2673,30 @@ Node::set_external(int16 *data,
                    index_t element_bytes,
                    index_t endianness)
 {
+    set_external_int16_ptr(data,
+                           num_elements,
+                           offset,
+                           stride,
+                           element_bytes,
+                           endianness);
+}
+
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_int32_ptr(int32 *data,
+                             index_t num_elements,
+                             index_t offset,
+                             index_t stride,
+                             index_t element_bytes,
+                             index_t endianness)
+{
     release();
-    m_schema->set(DataType::int16(num_elements,
-                                          offset,
-                                          stride,
-                                          element_bytes,
-                                          endianness));
+    m_schema->set(DataType::int32(num_elements,
+                                  offset,
+                                  stride,
+                                  element_bytes,
+                                  endianness));
     m_data  = data;
 }
 
@@ -1765,15 +2709,31 @@ Node::set_external(int32 *data,
                    index_t element_bytes,
                    index_t endianness)
 {
-    release();
-    m_schema->set(DataType::int32(num_elements,
-                                          offset,
-                                          stride,
-                                          element_bytes,
-                                          endianness));
-    m_data  = data;
+    set_external_int32_ptr(data,
+                           num_elements,
+                           offset,
+                           stride,
+                           element_bytes,
+                           endianness);
 }
 
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_int64_ptr(int64 *data,
+                             index_t num_elements,
+                             index_t offset,
+                             index_t stride,
+                             index_t element_bytes,
+                             index_t endianness)
+{
+    release();
+    m_schema->set(DataType::int64(num_elements,
+                                  offset,
+                                  stride,
+                                  element_bytes,
+                                  endianness));
+    m_data  = data;
+}
 
 //---------------------------------------------------------------------------//
 void 
@@ -1784,15 +2744,13 @@ Node::set_external(int64 *data,
                    index_t element_bytes,
                    index_t endianness)
 {
-    release();
-    m_schema->set(DataType::int64(num_elements,
-                                          offset,
-                                          stride,
-                                          element_bytes,
-                                          endianness));
-    m_data  = data;
+    set_external_int64_ptr(data,
+                           num_elements,
+                           offset,
+                           stride,
+                           element_bytes,
+                           endianness);
 }
-
 
 
 //-----------------------------------------------------------------------------
@@ -1801,12 +2759,12 @@ Node::set_external(int64 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(uint8 *data,
-                   index_t num_elements,
-                   index_t offset,
-                   index_t stride,
-                   index_t element_bytes,
-                   index_t endianness)
+Node::set_external_uint8_ptr(uint8 *data,
+                             index_t num_elements,
+                             index_t offset,
+                             index_t stride,
+                             index_t element_bytes,
+                             index_t endianness)
 {
     release();
     m_schema->set(DataType::uint8(num_elements,
@@ -1817,16 +2775,33 @@ Node::set_external(uint8 *data,
     m_data  = data;
 }
 
-
-
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(uint16 *data,
+Node::set_external(uint8 *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
                    index_t element_bytes,
                    index_t endianness)
+{
+    set_external_uint8_ptr(data,
+                           num_elements,
+                           offset,
+                           stride,
+                           element_bytes,
+                           endianness);
+}
+
+
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_uint16_ptr(uint16 *data,
+                              index_t num_elements,
+                              index_t offset,
+                              index_t stride,
+                              index_t element_bytes,
+                              index_t endianness)
 {
     release();
     m_schema->set(DataType::uint16(num_elements,
@@ -1840,6 +2815,42 @@ Node::set_external(uint16 *data,
 
 //---------------------------------------------------------------------------//
 void 
+Node::set_external(uint16 *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    set_external_uint16_ptr(data,
+                            num_elements,
+                            offset,
+                            stride,
+                            element_bytes,
+                            endianness);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_uint32_ptr(uint32 *data,
+                             index_t num_elements,
+                             index_t offset,
+                             index_t stride,
+                             index_t element_bytes,
+                             index_t endianness)
+{
+    release();
+    m_schema->set(DataType::uint32(num_elements,
+                                   offset,
+                                   stride,
+                                   element_bytes,
+                                   endianness));
+    m_data  = data;
+}
+
+
+//---------------------------------------------------------------------------//
+void 
 Node::set_external(uint32 *data,
                    index_t num_elements,
                    index_t offset,
@@ -1847,14 +2858,32 @@ Node::set_external(uint32 *data,
                    index_t element_bytes,
                    index_t endianness)
 {
+    set_external_uint32_ptr(data,
+                            num_elements,
+                            offset,
+                            stride,
+                            element_bytes,
+                            endianness);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_uint64_ptr(uint64 *data,
+                              index_t num_elements,
+                              index_t offset,
+                              index_t stride,
+                              index_t element_bytes,
+                              index_t endianness)
+{
     release();
-    m_schema->set(DataType::uint32(num_elements,
-                                           offset,
-                                           stride,
-                                           element_bytes,
-                                           endianness));
+    m_schema->set(DataType::uint64(num_elements,
+                                   offset,
+                                   stride,
+                                   element_bytes,
+                                   endianness));
     m_data  = data;
 }
+
 
 //---------------------------------------------------------------------------//
 void 
@@ -1865,18 +2894,34 @@ Node::set_external(uint64 *data,
                    index_t element_bytes,
                    index_t endianness)
 {
-    release();
-    m_schema->set(DataType::uint64(num_elements,
-                                           offset,
-                                           stride,
-                                           element_bytes,
-                                           endianness));
-    m_data  = data;
+    set_external_uint64_ptr(data,
+                            num_elements,
+                            offset,
+                            stride,
+                            element_bytes,
+                            endianness);
 }
-
 //-----------------------------------------------------------------------------
 // floating point pointer cases
 //-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_float32_ptr(float32 *data,
+                               index_t num_elements,
+                               index_t offset,
+                               index_t stride,
+                               index_t element_bytes,
+                               index_t endianness)
+{
+    release();
+    m_schema->set(DataType::float32(num_elements,
+                                    offset,
+                                    stride,
+                                    element_bytes,
+                                    endianness));
+    m_data  = data;
+}
 
 //---------------------------------------------------------------------------//
 void 
@@ -1887,16 +2932,32 @@ Node::set_external(float32 *data,
                    index_t element_bytes,
                    index_t endianness)
 {
-    release();
-    m_schema->set(DataType::float32(num_elements,
-                                            offset,
-                                            stride,
-                                            element_bytes,
-                                            endianness));
-    m_data  = data;
+    set_external_float32_ptr(data,
+                            num_elements,
+                            offset,
+                            stride,
+                            element_bytes,
+                            endianness);
 }
 
-
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_float64_ptr(float64 *data,
+                               index_t num_elements,
+                               index_t offset,
+                               index_t stride,
+                               index_t element_bytes,
+                               index_t endianness)
+{
+    release();
+    m_schema->set(DataType::float64(num_elements,
+                                    offset,
+                                    stride,
+                                    element_bytes,
+                                    endianness));
+    m_data  = data;
+}
+    
 //---------------------------------------------------------------------------//
 void 
 Node::set_external(float64 *data,
@@ -1906,129 +2967,15 @@ Node::set_external(float64 *data,
                    index_t element_bytes,
                    index_t endianness)
 {
-    release();
-    m_schema->set(DataType::float64(num_elements,
-                                            offset,
-                                            stride,
-                                            element_bytes,
-                                            endianness));
-    m_data  = data;
-}
-    
-
-
-
-//-----------------------------------------------------------------------------
-// -- set_external for std::vector types ---
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// signed integer array types via std::vector
-//-----------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------//
-void 
-Node::set_external(std::vector<int8>  &data)
-{
-    release();
-    m_schema->set(DataType::int8((index_t)data.size()));
-    m_data  = &data[0];
-}
-    
-
-//---------------------------------------------------------------------------//
-void 
-Node::set_external(std::vector<int16>  &data)
-{
-    release();
-    m_schema->set(DataType::int16((index_t)data.size()));
-    m_data  = &data[0];
-}
-
-//---------------------------------------------------------------------------//
-void 
-Node::set_external(std::vector<int32>  &data)
-{
-    release();
-    m_schema->set(DataType::int32((index_t)data.size()));
-    m_data  = &data[0];
-}
-
-//---------------------------------------------------------------------------//
-void 
-Node::set_external(std::vector<int64>  &data)
-{
-    release();
-    m_schema->set(DataType::int64((index_t)data.size()));
-    m_data  = &data[0];
+    set_external_float64_ptr(data,
+                            num_elements,
+                            offset,
+                            stride,
+                            element_bytes,
+                            endianness);
 }
 
 //-----------------------------------------------------------------------------
-// unsigned integer array types via std::vector
-//-----------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------//
-void 
-Node::set_external(std::vector<uint8>  &data)
-{
-    release();
-    m_schema->set(DataType::uint8((index_t)data.size()));
-    m_data  = &data[0];
-}
-
-
-//---------------------------------------------------------------------------//
-void 
-Node::set_external(std::vector<uint16>  &data)
-{
-    release();
-    m_schema->set(DataType::uint16((index_t)data.size()));
-    m_data  = &data[0];
-}
-
-
-//---------------------------------------------------------------------------//
-void 
-Node::set_external(std::vector<uint32>  &data)
-{
-    release();
-    m_schema->set(DataType::uint32((index_t)data.size()));
-    m_data  = &data[0];
-}
-
-//---------------------------------------------------------------------------//
-void 
-Node::set_external(std::vector<uint64>  &data)
-{
-    release();
-    m_schema->set(DataType::uint64((index_t)data.size()));
-    m_data  = &data[0];
-}
-
-//-----------------------------------------------------------------------------
-// floating point array types via std::vector
-//-----------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------//
-void 
-Node::set_external(std::vector<float32>  &data)
-{
-    release();
-    m_schema->set(DataType::float32((index_t)data.size()));
-    m_data  = &data[0];
-}
-
-//---------------------------------------------------------------------------//
-void 
-Node::set_external(std::vector<float64>  &data)
-{
-    release();
-    m_schema->set(DataType::float64((index_t)data.size()));
-    m_data  = &data[0];
-}
-
-
-    //-----------------------------------------------------------------------------
 // -- set_external for conduit::DataArray types ---
 //-----------------------------------------------------------------------------
 
@@ -2038,7 +2985,7 @@ Node::set_external(std::vector<float64>  &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(const int8_array  &data)
+Node::set_external_int8_array(const int8_array &data)
 {
     release();
     m_schema->set(data.dtype());
@@ -2047,7 +2994,14 @@ Node::set_external(const int8_array  &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(const int16_array  &data)
+Node::set_external(const int8_array &data)
+{
+    set_external_int8_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_int16_array(const int16_array &data)
 {
     release();
     m_schema->set(data.dtype());
@@ -2056,7 +3010,14 @@ Node::set_external(const int16_array  &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(const int32_array  &data)
+Node::set_external(const int16_array &data)
+{
+    set_external_int16_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_int32_array(const int32_array &data)
 {
     release();
     m_schema->set(data.dtype());
@@ -2065,11 +3026,25 @@ Node::set_external(const int32_array  &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(const int64_array  &data)
+Node::set_external(const int32_array &data)
+{
+    set_external_int32_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_int64_array(const int64_array &data)
 {
     release();
     m_schema->set(data.dtype());
     m_data  = data.data_ptr();
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external(const int64_array &data)
+{
+    set_external_int64_array(data);
 }
 
 //-----------------------------------------------------------------------------
@@ -2078,7 +3053,7 @@ Node::set_external(const int64_array  &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(const uint8_array  &data)
+Node::set_external_uint8_array(const uint8_array &data)
 {
     release();
     m_schema->set(data.dtype());
@@ -2087,7 +3062,14 @@ Node::set_external(const uint8_array  &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(const uint16_array  &data)
+Node::set_external(const uint8_array &data)
+{
+    set_external_uint8_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_uint16_array(const uint16_array &data)
 {
     release();
     m_schema->set(data.dtype());
@@ -2096,7 +3078,14 @@ Node::set_external(const uint16_array  &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(const uint32_array  &data)
+Node::set_external(const uint16_array &data)
+{
+    set_external_uint16_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_uint32_array(const uint32_array &data)
 {
     release();
     m_schema->set(data.dtype());
@@ -2105,13 +3094,26 @@ Node::set_external(const uint32_array  &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(const uint64_array  &data)
+Node::set_external(const uint32_array &data)
+{
+    set_external_uint32_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_uint64_array(const uint64_array &data)
 {
     release();
     m_schema->set(data.dtype());
     m_data  = data.data_ptr();
 }
 
+//---------------------------------------------------------------------------//
+void 
+Node::set_external(const uint64_array &data)
+{
+    set_external_uint64_array(data);
+}
 
 //-----------------------------------------------------------------------------
 // floating point array types via conduit::DataArray
@@ -2119,7 +3121,7 @@ Node::set_external(const uint64_array  &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(const float32_array  &data)
+Node::set_external_float32_array(const float32_array &data)
 {
     release();
     m_schema->set(data.dtype());
@@ -2128,11 +3130,25 @@ Node::set_external(const float32_array  &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(const float64_array  &data)
+Node::set_external(const float32_array &data)
+{
+    set_external_float32_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_float64_array(const float64_array &data)
 {
     release();
     m_schema->set(data.dtype());
     m_data  = data.data_ptr();
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external(const float64_array &data)
+{
+    set_external_float64_array(data);
 }
 
 
@@ -2155,6 +3171,181 @@ Node::set_external_char8_str(char *data)
     m_data  = data;
 }
 
+//-----------------------------------------------------------------------------
+// -- set_external for std::vector types ---
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// signed integer array types via std::vector
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_int8_vector(std::vector<int8> &data)
+{
+    release();
+    m_schema->set(DataType::int8((index_t)data.size()));
+    m_data  = &data[0];
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external(std::vector<int8> &data)
+{
+    set_external_int8_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_int16_vector(std::vector<int16> &data)
+{
+    release();
+    m_schema->set(DataType::int16((index_t)data.size()));
+    m_data  = &data[0];
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external(std::vector<int16> &data)
+{
+    set_external_int16_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_int32_vector(std::vector<int32> &data)
+{
+    release();
+    m_schema->set(DataType::int32((index_t)data.size()));
+    m_data  = &data[0];
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external(std::vector<int32> &data)
+{
+    set_external_int32_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_int64_vector(std::vector<int64> &data)
+{
+    release();
+    m_schema->set(DataType::int64((index_t)data.size()));
+    m_data  = &data[0];
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external(std::vector<int64> &data)
+{
+    set_external_int64_vector(data);
+}
+
+//-----------------------------------------------------------------------------
+// unsigned integer array types via std::vector
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_uint8_vector(std::vector<uint8> &data)
+{
+    release();
+    m_schema->set(DataType::uint8((index_t)data.size()));
+    m_data  = &data[0];
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external(std::vector<uint8> &data)
+{
+    set_external_uint8_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_uint16_vector(std::vector<uint16> &data)
+{
+    release();
+    m_schema->set(DataType::uint16((index_t)data.size()));
+    m_data  = &data[0];
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external(std::vector<uint16> &data)
+{
+    set_external_uint16_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_uint32_vector(std::vector<uint32> &data)
+{
+    release();
+    m_schema->set(DataType::uint32((index_t)data.size()));
+    m_data  = &data[0];
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external(std::vector<uint32> &data)
+{
+    set_external_uint32_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_uint64_vector(std::vector<uint64> &data)
+{
+    release();
+    m_schema->set(DataType::uint64((index_t)data.size()));
+    m_data  = &data[0];
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external(std::vector<uint64> &data)
+{
+    set_external_uint64_vector(data);
+}
+
+//-----------------------------------------------------------------------------
+// floating point array types via std::vector
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_float32_vector(std::vector<float32> &data)
+{
+    release();
+    m_schema->set(DataType::float32((index_t)data.size()));
+    m_data  = &data[0];
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external(std::vector<float32> &data)
+{
+    set_external_float32_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external_float64_vector(std::vector<float64> &data)
+{
+    release();
+    m_schema->set(DataType::float64((index_t)data.size()));
+    m_data  = &data[0];
+}
+
+//---------------------------------------------------------------------------//
+void 
+Node::set_external(std::vector<float64> &data)
+{
+    set_external_float64_vector(data);
+}
 
 //-----------------------------------------------------------------------------
 //
@@ -2176,11 +3367,29 @@ Node::set_external_char8_str(char *data)
 
 //---------------------------------------------------------------------------//
 void
+Node::set_path_external_data_using_schema(const std::string &path,
+                                          const Schema &schema,
+                                          void *data)
+{
+    fetch(path).set_external_data_using_schema(schema,data);
+}
+
+//---------------------------------------------------------------------------//
+void
 Node::set_path_external(const std::string &path,
                         const Schema &schema,
                         void *data)
 {
-    fetch(path).set_external(schema,data);
+    set_path_external_data_using_schema(path,schema,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_data_using_dtype(const std::string &path,
+                                         const DataType &dtype,
+                                         void *data)
+{
+    fetch(path).set_external_data_using_dtype(dtype,data);
 }
 
 //---------------------------------------------------------------------------//
@@ -2189,7 +3398,7 @@ Node::set_path_external(const std::string &path,
                         const DataType &dtype,
                         void *data)
 {
-    fetch(path).set_external(dtype,data);
+    set_path_external_data_using_dtype(path,dtype,data);
 }
 
 //-----------------------------------------------------------------------------
@@ -2202,6 +3411,24 @@ Node::set_path_external(const std::string &path,
 
 //---------------------------------------------------------------------------//
 void
+Node::set_path_external_int8_ptr(const std::string &path,
+                                 int8  *data,
+                                 index_t num_elements,
+                                 index_t offset,
+                                 index_t stride,
+                                 index_t element_bytes,
+                                 index_t endianness)
+{
+    fetch(path).set_external_int8_ptr(data,
+                                      num_elements,
+                                      offset,
+                                      stride,
+                                      element_bytes,
+                                      endianness);
+}
+
+//---------------------------------------------------------------------------//
+void
 Node::set_path_external(const std::string &path,
                         int8  *data,
                         index_t num_elements,
@@ -2210,12 +3437,31 @@ Node::set_path_external(const std::string &path,
                         index_t element_bytes,
                         index_t endianness)
 {
-    fetch(path).set_external(data,
-                             num_elements,
-                             offset,
-                             stride,
-                             element_bytes,
-                             endianness);
+    set_path_external_int8_ptr(path,
+                               data,
+                               num_elements,
+                               offset,
+                               stride,
+                               element_bytes,
+                               endianness);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_int16_ptr(const std::string &path,
+                                  int16 *data, 
+                                  index_t num_elements,
+                                  index_t offset,
+                                  index_t stride,
+                                  index_t element_bytes,
+                                  index_t endianness)
+{
+    fetch(path).set_external_int16_ptr(data,
+                                       num_elements,
+                                       offset,
+                                       stride,
+                                       element_bytes,
+                                       endianness);
 }
 
 //---------------------------------------------------------------------------//
@@ -2228,12 +3474,31 @@ Node::set_path_external(const std::string &path,
                         index_t element_bytes,
                         index_t endianness)
 {
-    fetch(path).set_external(data,
-                             num_elements,
-                             offset,
-                             stride,
-                             element_bytes,
-                             endianness);
+    set_path_external_int16_ptr(path,
+                                data,
+                                num_elements,
+                                offset,
+                                stride,
+                                element_bytes,
+                                endianness);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_int32_ptr(const std::string &path,
+                                  int32 *data,
+                                  index_t num_elements,
+                                  index_t offset,
+                                  index_t stride,
+                                  index_t element_bytes,
+                                  index_t endianness)
+{
+    fetch(path).set_external_int32_ptr(data,
+                                       num_elements,
+                                       offset,
+                                       stride,
+                                       element_bytes,
+                                       endianness);
 }
 
 //---------------------------------------------------------------------------//
@@ -2246,12 +3511,31 @@ Node::set_path_external(const std::string &path,
            index_t element_bytes,
            index_t endianness)
 {
-    fetch(path).set_external(data,
-                             num_elements,
-                             offset,
-                             stride,
-                             element_bytes,
-                             endianness);
+    set_path_external_int32_ptr(path,
+                                data,
+                                num_elements,
+                                offset,
+                                stride,
+                                element_bytes,
+                                endianness);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_int64_ptr(const std::string &path,
+                                  int64 *data,
+                                  index_t num_elements,
+                                  index_t offset,
+                                  index_t stride,
+                                  index_t element_bytes,
+                                  index_t endianness)
+{
+    fetch(path).set_external_int64_ptr(data,
+                                       num_elements,
+                                       offset,
+                                       stride,
+                                       element_bytes,
+                                       endianness);
 }
 
 //---------------------------------------------------------------------------//
@@ -2264,18 +3548,36 @@ Node::set_path_external(const std::string &path,
                         index_t element_bytes,
                         index_t endianness)
 {
-    fetch(path).set_external(data,
-                             num_elements,
-                             offset,
-                             stride,
-                             element_bytes,
-                             endianness);
+    set_path_external_int64_ptr(path,
+                                data,
+                                num_elements,
+                                offset,
+                                stride,
+                                element_bytes,
+                                endianness);
 }
 
 //-----------------------------------------------------------------------------
 // unsigned integer pointer cases
 //-----------------------------------------------------------------------------
 
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_uint8_ptr(const std::string &path,
+                                  uint8  *data,
+                                  index_t num_elements,
+                                  index_t offset,
+                                  index_t stride,
+                                  index_t element_bytes,
+                                  index_t endianness)
+{
+    fetch(path).set_external_uint8_ptr(data,
+                                       num_elements,
+                                       offset,
+                                       stride,
+                                       element_bytes,
+                                       endianness);
+}
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
@@ -2286,12 +3588,31 @@ Node::set_path_external(const std::string &path,
                         index_t element_bytes,
                         index_t endianness)
 {
-    fetch(path).set_external(data,
-                             num_elements,
-                             offset,
-                             stride,
-                             element_bytes,
-                             endianness);
+    set_path_external_uint8_ptr(path,
+                                data,
+                                num_elements,
+                                offset,
+                                stride,
+                                element_bytes,
+                                endianness);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_uint16_ptr(const std::string &path,
+                                   uint16 *data,
+                                   index_t num_elements,
+                                   index_t offset,
+                                   index_t stride,
+                                   index_t element_bytes,
+                                   index_t endianness)
+{
+    fetch(path).set_external_uint16_ptr(data,
+                                        num_elements,
+                                        offset,
+                                        stride,
+                                        element_bytes,
+                                        endianness);
 }
 
 //---------------------------------------------------------------------------//
@@ -2304,12 +3625,31 @@ Node::set_path_external(const std::string &path,
                         index_t element_bytes,
                         index_t endianness)
 {
-    fetch(path).set_external(data,
-                             num_elements,
-                             offset,
-                             stride,
-                             element_bytes,
-                             endianness);
+    set_path_external_uint16_ptr(path,
+                                 data,
+                                 num_elements,
+                                 offset,
+                                 stride,
+                                 element_bytes,
+                                 endianness);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_uint32_ptr(const std::string &path,
+                                   uint32 *data, 
+                                   index_t num_elements,
+                                   index_t offset,
+                                   index_t stride,
+                                   index_t element_bytes,
+                                   index_t endianness)
+{
+    fetch(path).set_external_uint32_ptr(data,
+                                        num_elements,
+                                        offset,
+                                        stride,
+                                        element_bytes,
+                                        endianness);
 }
 
 //---------------------------------------------------------------------------//
@@ -2322,12 +3662,32 @@ Node::set_path_external(const std::string &path,
                         index_t element_bytes,
                         index_t endianness)
 {
-    fetch(path).set_external(data,
-                             num_elements,
-                             offset,
-                             stride,
-                             element_bytes,
-                             endianness);
+    set_path_external_uint32_ptr(path,
+                                 data,
+                                 num_elements,
+                                 offset,
+                                 stride,
+                                 element_bytes,
+                                 endianness);
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_uint64_ptr(const std::string &path,
+                                   uint64 *data,
+                                   index_t num_elements,
+                                   index_t offset,
+                                   index_t stride,
+                                   index_t element_bytes,
+                                   index_t endianness)
+{
+    fetch(path).set_external_uint64_ptr(data,
+                                        num_elements,
+                                        offset,
+                                        stride,
+                                        element_bytes,
+                                        endianness);
 }
 
 //---------------------------------------------------------------------------//
@@ -2340,12 +3700,13 @@ Node::set_path_external(const std::string &path,
                         index_t element_bytes,
                         index_t endianness)
 {
-    fetch(path).set_external(data,
-                             num_elements,
-                             offset,
-                             stride,
-                             element_bytes,
-                             endianness);
+    set_path_external_uint64_ptr(path,
+                                 data,
+                                 num_elements,
+                                 offset,
+                                 stride,
+                                 element_bytes,
+                                 endianness);
 }
 
 //-----------------------------------------------------------------------------
@@ -2354,21 +3715,61 @@ Node::set_path_external(const std::string &path,
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path_external(const std::string &path,
-           float32 *data,
-           index_t num_elements,
-           index_t offset,
-           index_t stride,
-           index_t element_bytes,
-           index_t endianness)
+Node::set_path_external_float32_ptr(const std::string &path,
+                                    float32 *data,
+                                    index_t num_elements,
+                                    index_t offset,
+                                    index_t stride,
+                                    index_t element_bytes,
+                                    index_t endianness)
 {
-    fetch(path).set_external(data,
-                             num_elements,
-                             offset,
-                             stride,
-                             element_bytes,
-                             endianness);
+    fetch(path).set_external_float32_ptr(data,
+                                         num_elements,
+                                         offset,
+                                         stride,
+                                         element_bytes,
+                                         endianness);
 }
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external(const std::string &path,
+                       float32 *data,
+                       index_t num_elements,
+                       index_t offset,
+                       index_t stride,
+                       index_t element_bytes,
+                       index_t endianness)
+{
+    set_path_external_float32_ptr(path,
+                                 data,
+                                 num_elements,
+                                 offset,
+                                 stride,
+                                 element_bytes,
+                                 endianness);
+}
+
+
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_float64_ptr(const std::string &path,
+                                    float64 *data, 
+                                    index_t num_elements,
+                                    index_t offset,
+                                    index_t stride,
+                                    index_t element_bytes,
+                                    index_t endianness)
+{
+    fetch(path).set_external_float64_ptr(data,
+                                         num_elements,
+                                         offset,
+                                         stride,
+                                         element_bytes,
+                                         endianness);
+}
+
 
 //---------------------------------------------------------------------------//
 void
@@ -2380,14 +3781,203 @@ Node::set_path_external(const std::string &path,
                         index_t element_bytes,
                         index_t endianness)
 {
-    fetch(path).set_external(data,
-                             num_elements,
-                             offset,
-                             stride,
-                             element_bytes,
-                             endianness);
+    set_path_external_float64_ptr(path,
+                                 data,
+                                 num_elements,
+                                 offset,
+                                 stride,
+                                 element_bytes,
+                                 endianness);
 }
 
+//-----------------------------------------------------------------------------
+// -- set_path_external for conduit::DataArray types ---
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// signed integer array types via conduit::DataArray
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_int8_array(const std::string &path,
+                                   const int8_array  &data)
+{
+    fetch(path).set_external_int8_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external(const std::string &path,
+                        const int8_array  &data)
+{
+    set_path_external_int8_array(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_int16_array(const std::string &path,
+                                    const int16_array &data)
+{
+    fetch(path).set_external_int16_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external(const std::string &path,
+                        const int16_array &data)
+{
+    set_path_external_int16_array(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_int32_array(const std::string &path,
+                                    const int32_array &data)
+{
+    fetch(path).set_external_int32_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external(const std::string &path,
+                        const int32_array &data)
+{
+    set_path_external_int32_array(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_int64_array(const std::string &path,
+                                    const int64_array &data)
+{
+    fetch(path).set_external(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external(const std::string &path,
+                        const int64_array &data)
+{
+    set_path_external_int64_array(path,data);
+}
+
+//-----------------------------------------------------------------------------
+// unsigned integer array types via conduit::DataArray
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_uint8_array(const std::string &path,
+                                    const uint8_array  &data)
+{
+    fetch(path).set_external_uint8_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external(const std::string &path,
+                        const uint8_array  &data)
+{
+    set_path_external_uint8_array(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_uint16_array(const std::string &path,
+                                     const uint16_array &data)
+{
+    fetch(path).set_external_uint16_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external(const std::string &path,
+                        const uint16_array &data)
+{
+    set_path_external_uint16_array(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_uint32_array(const std::string &path,
+                        const uint32_array &data)
+{
+    fetch(path).set_external_uint32_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external(const std::string &path,
+                        const uint32_array &data)
+{
+    set_path_external_uint32_array(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_uint64_array(const std::string &path,
+                                     const uint64_array &data)
+{
+    fetch(path).set_external(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external(const std::string &path,
+                       const uint64_array &data)
+{
+    set_path_external_uint64_array(path,data);
+}
+
+//-----------------------------------------------------------------------------
+// floating point array types via conduit::DataArray
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_float32_array(const std::string &path,
+                                      const float32_array &data)
+{
+    fetch(path).set_external_float32_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external(const std::string &path,
+                        const float32_array &data)
+{
+    set_path_external_float32_array(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_float64_array(const std::string &path,
+                                      const float64_array &data)
+{
+    fetch(path).set_external_float64_array(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external(const std::string &path,
+                        const float64_array &data)
+{
+    set_path_external_float64_array(path,data);
+}
+
+
+//-----------------------------------------------------------------------------
+// -- set_external for string types ---
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_char8_str(const std::string &path,
+                                 char *data)
+{
+    fetch(path).set_external_char8_str(data);
+}
 
 //-----------------------------------------------------------------------------
 // -- set_path_external for std::vector types ---
@@ -2399,10 +3989,26 @@ Node::set_path_external(const std::string &path,
 
 //---------------------------------------------------------------------------//
 void
+Node::set_path_external_int8_vector(const std::string &path,
+                                   std::vector<int8> &data)
+{
+    fetch(path).set_external_int8_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void
 Node::set_path_external(const std::string &path,
                         std::vector<int8> &data)
 {
-    fetch(path).set_external(data);
+    set_path_external_int8_vector(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_int16_vector(const std::string &path,
+                                     std::vector<int16> &data)
+{
+    fetch(path).set_external_int16_vector(data);
 }
 
 //---------------------------------------------------------------------------//
@@ -2410,7 +4016,15 @@ void
 Node::set_path_external(const std::string &path,
                         std::vector<int16> &data)
 {
-    fetch(path).set_external(data);
+    set_path_external_int16_vector(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_int32_vector(const std::string &path,
+                                     std::vector<int32> &data)
+{
+    fetch(path).set_external_int32_vector(data);
 }
 
 //---------------------------------------------------------------------------//
@@ -2418,7 +4032,15 @@ void
 Node::set_path_external(const std::string &path,
                         std::vector<int32> &data)
 {
-    fetch(path).set_external(data);
+    set_path_external_int32_vector(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_int64_vector(const std::string &path,
+                        std::vector<int64> &data)
+{
+    fetch(path).set_external_int64_vector(data);
 }
 
 //---------------------------------------------------------------------------//
@@ -2426,7 +4048,7 @@ void
 Node::set_path_external(const std::string &path,
                         std::vector<int64> &data)
 {
-    fetch(path).set_external(data);
+    set_path_external_int64_vector(path,data);
 }
 
 //-----------------------------------------------------------------------------
@@ -2435,34 +4057,67 @@ Node::set_path_external(const std::string &path,
 
 //---------------------------------------------------------------------------//
 void
-Node::set_path_external(const std::string &path,
-                        std::vector<uint8>   &data)
+Node::set_path_external_uint8_vector(const std::string &path,
+                                     std::vector<uint8> &data)
 {
-    fetch(path).set_external(data);
+    fetch(path).set_external_uint8_vector(data);
 }
 
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        std::vector<uint16>  &data)
+                        std::vector<uint8> &data)
 {
-    fetch(path).set_external(data);
+    set_path_external_uint8_vector(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_uint16_vector(const std::string &path,
+                                      std::vector<uint16> &data)
+{
+    fetch(path).set_external_uint16_vector(data);
 }
 
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        std::vector<uint32>  &data)
+                        std::vector<uint16> &data)
 {
-    fetch(path).set_external(data);
+    set_path_external_uint16_vector(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_uint32_vector(const std::string &path,
+                                      std::vector<uint32> &data)
+{
+    fetch(path).set_external_uint32_vector(data);
 }
 
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        std::vector<uint64>  &data)
+                        std::vector<uint32> &data)
 {
-    fetch(path).set_external(data);
+    set_path_external_uint32_vector(path,data);
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_uint64_vector(const std::string &path,
+                                      std::vector<uint64> &data)
+{
+    fetch(path).set_external_uint64_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external(const std::string &path,
+                        std::vector<uint64> &data)
+{
+    set_path_external_uint64_vector(path,data);
 }
 
 //-----------------------------------------------------------------------------
@@ -2471,122 +4126,35 @@ Node::set_path_external(const std::string &path,
 
 //---------------------------------------------------------------------------//
 void
+Node::set_path_external_float32_vector(const std::string &path,
+                                       std::vector<float32> &data)
+{
+    fetch(path).set_external_float32_vector(data);
+}
+
+//---------------------------------------------------------------------------//
+void
 Node::set_path_external(const std::string &path,
                         std::vector<float32> &data)
 {
-    fetch(path).set_external(data);
+    set_path_external_float32_vector(path,data);
 }
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_float64_vector(const std::string &path,
+                                       std::vector<float64> &data)
+{
+    fetch(path).set_external_float64_vector(data);
+}
+
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
                         std::vector<float64> &data)
 {
-    fetch(path).set_external(data);
+    set_path_external_float64_vector(path,data);
 }
-
-    //-----------------------------------------------------------------------------
-// -- set_path_external for conduit::DataArray types ---
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// signed integer array types via conduit::DataArray
-//-----------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------//
-void
-Node::set_path_external(const std::string &path,
-                       const int8_array  &data)
-{
-        fetch(path).set_external(data);
-}
-
-//---------------------------------------------------------------------------//
-void
-Node::set_path_external(const std::string &path,
-                       const int16_array &data)
-{
-        fetch(path).set_external(data);
-}
-
-//---------------------------------------------------------------------------//
-void
-Node::set_path_external(const std::string &path,
-                       const int32_array &data)
-{
-        fetch(path).set_external(data);
-}
-//---------------------------------------------------------------------------//
-void
-Node::set_path_external(const std::string &path,
-                       const int64_array &data)
-{
-        fetch(path).set_external(data);
-}
-
-//-----------------------------------------------------------------------------
-// unsigned integer array types via conduit::DataArray
-//-----------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------//
-void
-Node::set_path_external(const std::string &path,
-                       const uint8_array  &data)
-{
-        fetch(path).set_external(data);
-}
-
-//---------------------------------------------------------------------------//
-void
-Node::set_path_external(const std::string &path,
-                       const uint16_array &data)
-{
-        fetch(path).set_external(data);
-}
-
-//---------------------------------------------------------------------------//
-void
-Node::set_path_external(const std::string &path,
-                       const uint32_array &data)
-{
-        fetch(path).set_external(data);
-}
-void
-Node::set_path_external(const std::string &path,
-                       const uint64_array &data)
-{
-        fetch(path).set_external(data);
-}
-
-//-----------------------------------------------------------------------------
-// floating point array types via conduit::DataArray
-//-----------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------//
-void
-Node::set_path_external(const std::string &path,
-                       const float32_array &data)
-{
-        fetch(path).set_external(data);
-}
-void
-Node::set_path_external(const std::string &path,
-                       const float64_array &data)
-{
-        fetch(path).set_external(data);
-}
-
-//-----------------------------------------------------------------------------
-// -- set_external for string types ---
-//-----------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------//
-void
-Node::set_path_external_char8_str(const std::string &path,
-                                 char *data)
-{
-        fetch(path).set_external_char8_str(data);
-}
-
 
 //-----------------------------------------------------------------------------
 //
@@ -2866,7 +4434,7 @@ Node::operator=(const int64_array &data)
 }
 
 //-----------------------------------------------------------------------------
-// unsigned integer array ttypes via conduit::DataArray
+// unsigned integer array types via conduit::DataArray
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
@@ -5509,59 +7077,171 @@ Node::Value::operator double_array() const
 // -- JSON construction methods ---
 //-----------------------------------------------------------------------------
 
-//---------------------------------------------------------------------------//
-std::string 
-Node::to_json(bool detailed,
+//-----------------------------------------------------------------------------
+std::string
+Node::to_json(const std::string &protocol, 
               index_t indent, 
               index_t depth,
               const std::string &pad,
               const std::string &eoe) const
 {
+    if(protocol == "json")
+    {
+        return to_pure_json(indent,depth,pad,eoe);
+    }
+    else if(protocol == "conduit")
+    {
+        return to_detailed_json(indent,depth,pad,eoe);
+    }
+    else if(protocol == "base64_json")
+    {
+        return to_base64_json(indent,depth,pad,eoe);        
+    }
+    else
+    {
+        CONDUIT_ERROR("Unknown to_json protocol:" << protocol);
+    }
+
+    return "{}";
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::json_to_stream(const std::string &stream_path,
+                     const std::string &protocol,
+                     index_t indent, 
+                     index_t depth,
+                     const std::string &pad,
+                     const std::string &eoe) const
+{
+    if(protocol == "json")
+    {
+        return to_pure_json(stream_path,indent,depth,pad,eoe);
+    }
+    else if(protocol == "conduit")
+    {
+        return to_detailed_json(stream_path,indent,depth,pad,eoe);
+    }
+    else if(protocol == "base64_json")
+    {
+        return to_base64_json(stream_path,indent,depth,pad,eoe);        
+    }
+    else
+    {
+        CONDUIT_ERROR("Unknown to_json protocol:" << protocol);
+    }
+}
+//-----------------------------------------------------------------------------
+void
+Node::json_to_stream(std::ostream &os,
+                     const std::string &protocol,
+                     index_t indent, 
+                     index_t depth,
+                     const std::string &pad,
+                     const std::string &eoe) const
+{
+    if(protocol == "json")
+    {
+        return to_pure_json(os,indent,depth,pad,eoe);
+    }
+    else if(protocol == "conduit")
+    {
+        return to_detailed_json(os,indent,depth,pad,eoe);
+    }
+    else if(protocol == "base64_json")
+    {
+        return to_base64_json(os,indent,depth,pad,eoe);        
+    }
+    else
+    {
+        CONDUIT_ERROR("Unknown to_json protocol:" << protocol);
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::json_to_stream(std::ostringstream &oss,
+                     const std::string &protocol,
+                     index_t indent, 
+                     index_t depth,
+                     const std::string &pad,
+                     const std::string &eoe) const
+{
+    if(protocol == "json")
+    {
+        return to_pure_json(oss,indent,depth,pad,eoe);
+    }
+    else if(protocol == "conduit")
+    {
+        return to_detailed_json(oss,indent,depth,pad,eoe);
+    }
+    else if(protocol == "base64_json")
+    {
+        return to_base64_json(oss,indent,depth,pad,eoe);        
+    }
+    else
+    {
+        CONDUIT_ERROR("Unknown to_json protocol:" << protocol);
+    }
+}
+
+//---------------------------------------------------------------------------//
+// Private to_json helpers
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+std::string 
+Node::to_json_generic(bool detailed,
+                      index_t indent, 
+                      index_t depth,
+                      const std::string &pad,
+                      const std::string &eoe) const
+{
    std::ostringstream oss;
-   to_json(oss,detailed,indent,depth,pad,eoe);
+   to_json_generic(oss,detailed,indent,depth,pad,eoe);
    return oss.str();
 }
 
 
 //---------------------------------------------------------------------------//
 void
-Node::to_json(const std::string &stream_path,
-              bool detailed, 
-              index_t indent, 
-              index_t depth,
-              const std::string &pad,
-              const std::string &eoe) const
+Node::to_json_generic(const std::string &stream_path,
+                      bool detailed, 
+                      index_t indent, 
+                      index_t depth,
+                      const std::string &pad,
+                      const std::string &eoe) const
 {
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
         CONDUIT_ERROR("<Node::to_json> failed to open: " << stream_path);
-    to_json(ofs,detailed,indent,depth,pad,eoe);
+    to_json_generic(ofs,detailed,indent,depth,pad,eoe);
     ofs.close();
 }
 
 //---------------------------------------------------------------------------//
 void
-Node::to_json(std::ostream &os,
-              bool detailed, 
-              index_t indent, 
-              index_t depth,
-              const std::string &pad,
-              const std::string &eoe) const
+Node::to_json_generic(std::ostream &os,
+                      bool detailed, 
+                      index_t indent, 
+                      index_t depth,
+                      const std::string &pad,
+                      const std::string &eoe) const
 {
     std::ostringstream oss;
-    to_json(oss,detailed,indent,depth,pad,eoe);
+    to_json_generic(oss,detailed,indent,depth,pad,eoe);
     os << oss.str();
 }
 
 //---------------------------------------------------------------------------//
 void
-Node::to_json(std::ostringstream &oss,
-              bool detailed, 
-              index_t indent, 
-              index_t depth,
-              const std::string &pad,
-              const std::string &eoe) const
+Node::to_json_generic(std::ostringstream &oss,
+                      bool detailed, 
+                      index_t indent, 
+                      index_t depth,
+                      const std::string &pad,
+                      const std::string &eoe) const
 {
     if(dtype().id() == DataType::OBJECT_T)
     {
@@ -5574,12 +7254,12 @@ Node::to_json(std::ostringstream &oss,
         {
             utils::indent(oss,indent,depth+1,pad);
             oss << "\""<< m_schema->object_order()[i] << "\": ";
-            m_children[i]->to_json(oss,
-                                   detailed,
-                                   indent,
-                                   depth+1,
-                                   pad,
-                                   eoe);
+            m_children[i]->to_json_generic(oss,
+                                           detailed,
+                                           indent,
+                                           depth+1,
+                                           pad,
+                                           eoe);
             if(i < nchildren-1)
                 oss << ",";
             oss << eoe;
@@ -5597,12 +7277,12 @@ Node::to_json(std::ostringstream &oss,
         for(index_t i=0; i < nchildren;i++)
         {
             utils::indent(oss,indent,depth+1,pad);
-            m_children[i]->to_json(oss,
-                                   detailed,
-                                   indent,
-                                   depth+1,
-                                   pad,
-                                   eoe);
+            m_children[i]->to_json_generic(oss,
+                                           detailed,
+                                           indent,
+                                           depth+1,
+                                           pad,
+                                           eoe);
             if(i < nchildren-1)
                 oss << ",";
             oss << eoe;
@@ -5668,7 +7348,7 @@ Node::to_pure_json(index_t indent,
                    const std::string &pad,
                    const std::string &eoe) const
 {
-    return to_json(false,indent,depth,pad,eoe);
+    return to_json_generic(false,indent,depth,pad,eoe);
 }
 
 //---------------------------------------------------------------------------//
@@ -5683,7 +7363,7 @@ Node::to_pure_json(const std::string &stream_path,
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
         CONDUIT_ERROR("<Node::to_pure_json> failed to open: " << stream_path);
-    to_json(ofs,false,indent,depth,pad,eoe);
+    to_json_generic(ofs,false,indent,depth,pad,eoe);
     ofs.close();
 }
 
@@ -5695,7 +7375,7 @@ Node::to_pure_json(std::ostream &os,
                    const std::string &pad,
                    const std::string &eoe) const
 {
-    to_json(os,false,indent,depth,pad,eoe);
+    to_json_generic(os,false,indent,depth,pad,eoe);
 }
 
 //---------------------------------------------------------------------------//
@@ -5706,7 +7386,7 @@ Node::to_pure_json(std::ostringstream &oss,
                    const std::string &pad,
                    const std::string &eoe) const
 {
-    to_json(oss,false,indent,depth,pad,eoe);
+    to_json_generic(oss,false,indent,depth,pad,eoe);
 }
 
 //---------------------------------------------------------------------------//
@@ -5716,7 +7396,7 @@ Node::to_detailed_json(index_t indent,
                        const std::string &pad,
                        const std::string &eoe) const
 {
-    return to_json(true,indent,depth,pad,eoe);
+    return to_json_generic(true,indent,depth,pad,eoe);
 }
 
 //---------------------------------------------------------------------------//
@@ -5731,7 +7411,7 @@ Node::to_detailed_json(const std::string &stream_path,
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
         CONDUIT_ERROR("<Node::to_pure_json> failed to open: " << stream_path);
-    to_json(ofs,true,indent,depth,pad,eoe);
+    to_json_generic(ofs,true,indent,depth,pad,eoe);
     ofs.close();
 }
 
@@ -5744,7 +7424,7 @@ Node::to_detailed_json(std::ostream &os,
                        const std::string &pad,
                        const std::string &eoe) const
 {
-    to_json(os,true,indent,depth,pad,eoe);
+    to_json_generic(os,true,indent,depth,pad,eoe);
 }
 
 //---------------------------------------------------------------------------//
@@ -5755,7 +7435,7 @@ Node::to_detailed_json(std::ostringstream &oss,
                        const std::string &pad,
                        const std::string &eoe) const
 {
-    to_json(oss,true,indent,depth,pad,eoe);
+    to_json_generic(oss,true,indent,depth,pad,eoe);
 }
 
 //---------------------------------------------------------------------------//
@@ -5919,11 +7599,29 @@ Node::info(Node &res) const
 Node
 Node::info()const
 {
-    // NOTE: very ineff w/o move semantics
+    // NOTE: this very inefficient w/o move semantics!
     Node res;
     info(res);
     return res;
 }
+
+//-----------------------------------------------------------------------------
+// -- stdout print methods ---
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void
+Node::print() const
+{
+    json_to_stream(std::cout);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::print_detailed() const
+{
+    json_to_stream(std::cout,"conduit");
+}
+
 
 //-----------------------------------------------------------------------------
 //

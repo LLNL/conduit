@@ -74,7 +74,7 @@ about()
 {
     Node n;
     blueprint::about(n);
-    return n.to_pure_json();
+    return n.to_json();
 }
 
 //---------------------------------------------------------------------------//

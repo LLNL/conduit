@@ -49,13 +49,13 @@
 
 ENABLE_WARNINGS()
 
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_Config.hpp.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.hpp")
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_Config.h.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h")
 #
 # Specify all headers
 #            
 set(conduit_headers
-    Bitwidth_Style_Types.hpp
+    Bitwidth_Style_Types.h
     DataArray.hpp
     Endianness.hpp
     Node.hpp
@@ -68,7 +68,7 @@ set(conduit_headers
     Schema.hpp
     Utils.hpp
     Conduit_Exports.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h
     )
 
 #

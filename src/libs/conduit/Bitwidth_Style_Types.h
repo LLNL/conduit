@@ -48,8 +48,8 @@
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_BITWIDTH_STYLE_TYPES_HPP
-#define CONDUIT_BITWIDTH_STYLE_TYPES_HPP
+#ifndef CONDUIT_BITWIDTH_STYLE_TYPES_H
+#define CONDUIT_BITWIDTH_STYLE_TYPES_H
 
 //-----------------------------------------------------------------------------
 // -- standard lib includes -- 
@@ -59,7 +59,7 @@
 //-----------------------------------------------------------------------------
 // -- include sizes from cmake configure tests -- 
 //-----------------------------------------------------------------------------
-#include "Conduit_Config.hpp"
+#include "Conduit_Config.h"
 
 //-----------------------------------------------------------------------------
 /// Bit width annotated Style Standard Data Types
@@ -117,7 +117,28 @@ typedef double              conduit_double;
 #endif
 #endif
 
-
+//-----------------------------------------------------------------------------
+/// conduit_datatype_type_id is an Enumeration used to describe the type 
+/// roles supported by conduit:
+//-----------------------------------------------------------------------------
+typedef enum
+{
+    CONDUIT_EMPTY_T = 0, // empty (default type)
+    CONDUIT_OBJECT_T,    // object
+    CONDUIT_LIST_T,      // list
+    CONDUIT_INT8_T,      // int8 and int8_array
+    CONDUIT_INT16_T,     // int16 and int16_array
+    CONDUIT_INT32_T,     // int32 and int32_array
+    CONDUIT_INT64_T,     // int64 and int64_array
+    CONDUIT_UINT8_T,     // int8 and int8_array
+    CONDUIT_UINT16_T,    // uint16 and uint16_array
+    CONDUIT_UINT32_T,    // uint32 and uint32_array
+    CONDUIT_UINT64_T,    // uint64 and uint64_array
+    CONDUIT_FLOAT32_T,   // float32 and float32_array
+    CONDUIT_FLOAT64_T,   // float64 and float64_array
+    CONDUIT_CHAR8_STR_T, // char8 string (incore c-string)
+} conduit_datatype_type_id;
+    
 //-----------------------------------------------------------------------------
 // bytes to bits size definitions
 //-----------------------------------------------------------------------------
@@ -155,8 +176,8 @@ typedef double              conduit_double;
     // native mapping defs for long
     #define CONDUIT_NATIVE_LONG conduit_int8
     #define CONDUIT_NATIVE_UNSIGNED_LONG conduit_uint8
-    #define CONDUIT_NATIVE_LONG_DATATYPE_ID DataType::INT8_T
-    #define CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID DataType::UINT8_T
+    #define CONDUIT_NATIVE_LONG_DATATYPE_ID CONDUIT_INT8_T
+    #define CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID CONDUIT_UINT8_T
 #elif CONDUIT_BITSOF_LONG == 16
     #define CONDUIT_INT16 CONDUIT_LONG
     #define CONDUIT_UINT16 CONDUIT_ULONG
@@ -167,8 +188,8 @@ typedef double              conduit_double;
     // native mapping defs for long
     #define CONDUIT_NATIVE_LONG conduit_int16
     #define CONDUIT_NATIVE_UNSIGNED_LONG conduit_uint16
-    #define CONDUIT_NATIVE_LONG_DATATYPE_ID DataType::INT16_T
-    #define CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID DataType::UINT16_T
+    #define CONDUIT_NATIVE_LONG_DATATYPE_ID CONDUIT_INT16_T
+    #define CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID CONDUIT_UINT16_T
 #elif CONDUIT_BITSOF_LONG == 32
     #define CONDUIT_INT32 CONDUIT_LONG
     #define CONDUIT_UINT32 CONDUIT_ULONG
@@ -179,8 +200,8 @@ typedef double              conduit_double;
     // native mapping defs for long
     #define CONDUIT_NATIVE_LONG conduit_int32
     #define CONDUIT_NATIVE_UNSIGNED_LONG conduit_uint32
-    #define CONDUIT_NATIVE_LONG_DATATYPE_ID DataType::INT32_T
-    #define CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID DataType::UINT32_T
+    #define CONDUIT_NATIVE_LONG_DATATYPE_ID CONDUIT_INT32_T
+    #define CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID CONDUIT_UINT32_T
 #elif CONDUIT_BITSOF_LONG == 64
     #define CONDUIT_INT64 CONDUIT_LONG
     #define CONDUIT_UINT64 CONDUIT_ULONG
@@ -191,8 +212,8 @@ typedef double              conduit_double;
     // native mapping defs for long
     #define CONDUIT_NATIVE_LONG conduit_int64
     #define CONDUIT_NATIVE_UNSIGNED_LONG conduit_uint64
-    #define CONDUIT_NATIVE_LONG_DATATYPE_ID DataType::INT64_T
-    #define CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID DataType::UINT64_T
+    #define CONDUIT_NATIVE_LONG_DATATYPE_ID CONDUIT_INT64_T
+    #define CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID CONDUIT_UINT64_T
 #endif
 
 //-----------------------------------------------------------------------------
@@ -212,8 +233,8 @@ typedef double              conduit_double;
     #ifndef CONDUIT_NATIVE_LONG_LONG
         #define CONDUIT_NATIVE_LONG_LONG conduit_int8
         #define CONDUIT_NATIVE_UNSIGNED_LONG_LONG conduit_uint8
-        #define CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID DataType::INT8_T
-        #define CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID DataType::UINT8_T
+        #define CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID CONDUIT_INT8_T
+        #define CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID CONDUIT_UINT8_T
     #endif
 #elif CONDUIT_BITSOF_LONG_LONG == 16
     #ifndef CONDUIT_INT16
@@ -229,8 +250,8 @@ typedef double              conduit_double;
         #define CONDUIT_USE_LONG_LONG
         #define CONDUIT_NATIVE_LONG_LONG conduit_int16
         #define CONDUIT_NATIVE_UNSIGNED_LONG_LONG conduit_uint16
-        #define CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID DataType::INT16_T
-        #define CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID DataType::UINT16_T
+        #define CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID CONDUIT_INT16_T
+        #define CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID CONDUIT_UINT16_T
     #endif
 #elif CONDUIT_BITSOF_LONG_LONG == 32
     #ifndef CONDUIT_INT32
@@ -246,8 +267,8 @@ typedef double              conduit_double;
         #define CONDUIT_USE_LONG_LONG
         #define CONDUIT_NATIVE_LONG_LONG conduit_int32
         #define CONDUIT_NATIVE_UNSIGNED_LONG_LONG conduit_uint32
-        #define CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID DataType::INT32_T
-        #define CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID DataType::UINT32_T
+        #define CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID CONDUIT_INT32_T
+        #define CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID CONDUIT_UINT32_T
     #endif
 #elif CONDUIT_BITSOF_LONG_LONG == 64
     #ifndef CONDUIT_INT64
@@ -262,8 +283,8 @@ typedef double              conduit_double;
     #ifndef CONDUIT_NATIVE_LONG_LONG
         #define CONDUIT_NATIVE_LONG_LONG conduit_int64
         #define CONDUIT_NATIVE_UNSIGNED_LONG_LONG conduit_uint64
-        #define CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID DataType::INT64_T
-        #define CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID DataType::UINT64_T
+        #define CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID CONDUIT_INT64_T
+        #define CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID CONDUIT_UINT64_T
     #endif
 #endif
 #endif 
@@ -284,8 +305,8 @@ typedef double              conduit_double;
     #ifndef CONDUIT_NATIVE_INT
         #define CONDUIT_NATIVE_INT conduit_int8
         #define CONDUIT_NATIVE_UNSIGNED_INT conduit_uint8
-        #define CONDUIT_NATIVE_INT_DATATYPE_ID DataType::INT8_T
-        #define CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID DataType::UINT8_T
+        #define CONDUIT_NATIVE_INT_DATATYPE_ID CONDUIT_INT8_T
+        #define CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID CONDUIT_UINT8_T
     #endif
 #elif CONDUIT_BITSOF_INT == 16
     #ifndef CONDUIT_INT16
@@ -299,8 +320,8 @@ typedef double              conduit_double;
     #ifndef CONDUIT_NATIVE_INT
         #define CONDUIT_NATIVE_INT conduit_int16
         #define CONDUIT_NATIVE_UNSIGNED_INT conduit_uint16
-        #define CONDUIT_NATIVE_INT_DATATYPE_ID DataType::INT16_T
-        #define CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID DataType::UINT16_T
+        #define CONDUIT_NATIVE_INT_DATATYPE_ID CONDUIT_INT16_T
+        #define CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID CONDUIT_UINT16_T
     #endif
 
 #elif CONDUIT_BITSOF_INT == 32
@@ -315,8 +336,8 @@ typedef double              conduit_double;
     #ifndef CONDUIT_NATIVE_INT
         #define CONDUIT_NATIVE_INT conduit_int32
         #define CONDUIT_NATIVE_UNSIGNED_INT conduit_uint32
-        #define CONDUIT_NATIVE_INT_DATATYPE_ID DataType::INT32_T
-        #define CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID DataType::UINT32_T
+        #define CONDUIT_NATIVE_INT_DATATYPE_ID CONDUIT_INT32_T
+        #define CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID CONDUIT_UINT32_T
     #endif
                 
 #elif CONDUIT_BITSOF_INT == 64
@@ -331,8 +352,8 @@ typedef double              conduit_double;
     #ifndef CONDUIT_NATIVE_INT
         #define CONDUIT_NATIVE_INT conduit_int64
         #define CONDUIT_NATIVE_UNSIGNED_INT conduit_uint64
-        #define CONDUIT_NATIVE_INT_DATATYPE_ID DataType::INT64_T
-        #define CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID DataType::UINT64_T
+        #define CONDUIT_NATIVE_INT_DATATYPE_ID CONDUIT_INT64_T
+        #define CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID CONDUIT_UINT64_T
     #endif
 #endif
 
@@ -352,8 +373,8 @@ typedef double              conduit_double;
     #ifndef CONDUIT_NATIVE_SHORT
         #define CONDUIT_NATIVE_SHORT conduit_int8
         #define CONDUIT_NATIVE_UNSIGNED_SHORT conduit_uint8
-        #define CONDUIT_NATIVE_SHORT_DATATYPE_ID DataType::INT8_T
-        #define CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID DataType::UINT8_T
+        #define CONDUIT_NATIVE_SHORT_DATATYPE_ID CONDUIT_INT8_T
+        #define CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID CONDUIT_UINT8_T
     #endif
 #elif CONDUIT_BITSOF_SHORT == 16
     #ifndef CONDUIT_INT16
@@ -367,8 +388,8 @@ typedef double              conduit_double;
     #ifndef CONDUIT_NATIVE_SHORT
         #define CONDUIT_NATIVE_SHORT conduit_int16
         #define CONDUIT_NATIVE_UNSIGNED_SHORT conduit_uint16
-        #define CONDUIT_NATIVE_SHORT_DATATYPE_ID DataType::INT16_T
-        #define CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID DataType::UINT16_T
+        #define CONDUIT_NATIVE_SHORT_DATATYPE_ID CONDUIT_INT16_T
+        #define CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID CONDUIT_UINT16_T
     #endif
 #elif CONDUIT_BITSOF_SHORT == 32
     #ifndef CONDUIT_INT32
@@ -382,8 +403,8 @@ typedef double              conduit_double;
     #ifndef CONDUIT_NATIVE_SHORT
         #define CONDUIT_NATIVE_SHORT conduit_int32
         #define CONDUIT_NATIVE_UNSIGNED_SHORT conduit_uint32
-        #define CONDUIT_NATIVE_SHORT_DATATYPE_ID DataType::INT32_T
-        #define CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID DataType::UINT32_T
+        #define CONDUIT_NATIVE_SHORT_DATATYPE_ID CONDUIT_INT32_T
+        #define CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID CONDUIT_UINT32_T
     #endif
 #elif CONDUIT_BITSOF_SHORT == 64
     #ifndef CONDUIT_INT64
@@ -397,8 +418,8 @@ typedef double              conduit_double;
     #ifndef CONDUIT_NATIVE_SHORT
         #define CONDUIT_NATIVE_SHORT conduit_int64
         #define CONDUIT_NATIVE_UNSIGNED_SHORT conduit_uint64
-        #define CONDUIT_NATIVE_SHORT_DATATYPE_ID DataType::INT64_T
-        #define CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID DataType::UINT64_T
+        #define CONDUIT_NATIVE_SHORT_DATATYPE_ID CONDUIT_INT64_T
+        #define CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID CONDUIT_UINT64_T
     #endif
 #endif
 
@@ -418,8 +439,8 @@ typedef double              conduit_double;
     #ifndef CONDUIT_NATIVE_CHAR
         #define CONDUIT_NATIVE_CHAR conduit_int8
         #define CONDUIT_NATIVE_UNSIGNED_CHAR conduit_uint8
-        #define CONDUIT_NATIVE_CHAR_DATATYPE_ID DataType::INT8_T
-        #define CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID DataType::UINT8_T
+        #define CONDUIT_NATIVE_CHAR_DATATYPE_ID CONDUIT_INT8_T
+        #define CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID CONDUIT_UINT8_T
     #endif
 #elif CONDUIT_BITSOF_CHAR == 16
     #ifndef CONDUIT_INT16
@@ -433,8 +454,8 @@ typedef double              conduit_double;
     #ifndef CONDUIT_NATIVE_CHAR    
         #define CONDUIT_NATIVE_CHAR conduit_int16
         #define CONDUIT_NATIVE_UNSIGNED_CHAR conduit_uint16
-        #define CONDUIT_NATIVE_CHAR_DATATYPE_ID DataType::INT16_T
-        #define CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID DataType::UINT16_T
+        #define CONDUIT_NATIVE_CHAR_DATATYPE_ID CONDUIT_INT16_T
+        #define CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID CONDUIT_UINT16_T
     #endif
 #elif CONDUIT_BITSOF_CHAR == 32
     #ifndef CONDUIT_INT32
@@ -448,8 +469,8 @@ typedef double              conduit_double;
     #ifndef CONDUIT_NATIVE_CHAR
         #define CONDUIT_NATIVE_CHAR conduit_int32
         #define CONDUIT_NATIVE_UNSIGNED_CHAR conduit_uint32
-        #define CONDUIT_NATIVE_CHAR_DATATYPE_ID DataType::INT32_T
-        #define CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID DataType::UINT32_T
+        #define CONDUIT_NATIVE_CHAR_DATATYPE_ID CONDUIT_INT32_T
+        #define CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID CONDUIT_UINT32_T
     #endif
 #elif CONDUIT_BITSOF_CHAR == 64
     #ifndef CONDUIT_INT64
@@ -463,8 +484,8 @@ typedef double              conduit_double;
     #ifndef CONDUIT_NATIVE_CHAR
         #define CONDUIT_NATIVE_CHAR conduit_int64
         #define CONDUIT_NATIVE_UNSIGNED_CHAR conduit_uint64
-        #define CONDUIT_NATIVE_CHAR_DATATYPE_ID DataType::INT64_T
-        #define CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID DataType::UINT64_T
+        #define CONDUIT_NATIVE_CHAR_DATATYPE_ID CONDUIT_INT64_T
+        #define CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID CONDUIT_UINT64_T
     #endif
 #endif
 
@@ -480,7 +501,7 @@ typedef double              conduit_double;
     #endif
     #ifndef CONDUIT_NATIVE_DOUBLE
         #define CONDUIT_NATIVE_DOUBLE conduit_float32
-        #define CONDUIT_NATIVE_DOUBLE_DATATYPE_ID DataType::FLOAT32_T        
+        #define CONDUIT_NATIVE_DOUBLE_DATATYPE_ID CONDUIT_FLOAT32_T        
     #endif
 #elif CONDUIT_BITSOF_DOUBLE == 64
     #ifndef CONDUIT_FLOAT64
@@ -490,7 +511,7 @@ typedef double              conduit_double;
     #endif
     #ifndef CONDUIT_NATIVE_DOUBLE
         #define CONDUIT_NATIVE_DOUBLE conduit_float64
-        #define CONDUIT_NATIVE_DOUBLE_DATATYPE_ID DataType::FLOAT64_T
+        #define CONDUIT_NATIVE_DOUBLE_DATATYPE_ID CONDUIT_FLOAT64_T
     #endif
 #elif CONDUIT_BITSOF_DOUBLE == 80
     #ifndef CONDUIT_FLOAT80
@@ -536,7 +557,7 @@ typedef double              conduit_double;
     #endif
     #ifndef CONDUIT_NATIVE_FLOAT
         #define CONDUIT_NATIVE_FLOAT conduit_float32
-        #define CONDUIT_NATIVE_FLOAT_DATATYPE_ID DataType::FLOAT32_T
+        #define CONDUIT_NATIVE_FLOAT_DATATYPE_ID CONDUIT_FLOAT32_T
     #endif
 #elif CONDUIT_BITSOF_FLOAT == 64
     #ifndef CONDUIT_FLOAT64
@@ -546,7 +567,7 @@ typedef double              conduit_double;
     #endif
     #ifndef CONDUIT_NATIVE_FLOAT
         #define CONDUIT_NATIVE_FLOAT conduit_float64
-        #define CONDUIT_NATIVE_FLOAT_DATATYPE_ID DataType::FLOAT64_T
+        #define CONDUIT_NATIVE_FLOAT_DATATYPE_ID CONDUIT_FLOAT64_T
     #endif
 #elif CONDUIT_BITSOF_FLOAT == 80
     #ifndef CONDUIT_FLOAT80
@@ -593,7 +614,7 @@ typedef double              conduit_double;
     #endif
     #ifndef CONDUIT_NATIVE_LONG_DOUBLE
         #define CONDUIT_NATIVE_LONG_DOUBLE conduit_float32
-        #define CONDUIT_NATIVE_LONG_DOUBLE_DATATYPE_ID DataType::FLOAT32_T
+        #define CONDUIT_NATIVE_LONG_DOUBLE_DATATYPE_ID CONDUIT_FLOAT32_T
     #endif
 #elif CONDUIT_BITSOF_LONG_DOUBLE == 64
     #ifndef CONDUIT_FLOAT64
@@ -604,7 +625,7 @@ typedef double              conduit_double;
     #endif
     #ifndef CONDUIT_NATIVE_LONG_DOUBLE
         #define CONDUIT_NATIVE_LONG_DOUBLE conduit_float64
-        #define CONDUIT_NATIVE_LONG_DOUBLE_DATATYPE_ID DataType::FLOAT64_T
+        #define CONDUIT_NATIVE_LONG_DOUBLE_DATATYPE_ID CONDUIT_FLOAT64_T
     #endif
 #elif CONDUIT_BITSOF_LONG_DOUBLE == 80
     #ifndef CONDUIT_FLOAT80

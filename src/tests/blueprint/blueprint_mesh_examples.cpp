@@ -68,37 +68,37 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
     Node uniform;
     blueprint::mesh::examples::braid("uniform",20,20,0,uniform);
     uniform.print();
-    uniform.to_pure_json("braid_uniform_example.json");
+    uniform.json_to_stream("braid_uniform_example.json");
 
     Node rect;
     blueprint::mesh::examples::braid("rectilinear",20,20,0,rect);
     rect.print();
-    rect.to_pure_json("braid_rect_example.json");
+    rect.json_to_stream("braid_rect_example.json");
 
     Node tris;
     blueprint::mesh::examples::braid("tris",20,20,0,tris);
     tris.print();
-    tris.to_pure_json("braid_quads_example.json");
+    tris.json_to_stream("braid_quads_example.json");
 
     Node quads;
     blueprint::mesh::examples::braid("quads",20,20,0,quads);
     quads.print();
-    quads.to_pure_json("braid_quads_example.json");
+    quads.json_to_stream("braid_quads_example.json");
 
     Node rect_expanded;
     blueprint::mesh::expand(rect,rect_expanded);
     rect_expanded.print();
-    rect_expanded.to_pure_json("braid_rect_expanded_example.json");
+    rect_expanded.json_to_stream("braid_rect_expanded_example.json");
 
     Node tris_expanded;
     blueprint::mesh::expand(tris,tris_expanded);
     tris_expanded.print();
-    tris_expanded.to_pure_json("braid_tris_expanded_example.json");
+    tris_expanded.json_to_stream("braid_tris_expanded_example.json");
 
     Node quads_expanded;
     blueprint::mesh::expand(quads,quads_expanded);
     quads_expanded.print();
-    quads_expanded.to_pure_json("braid_quads_expanded_example.json");
+    quads_expanded.json_to_stream("braid_quads_expanded_example.json");
     
     if(silo_enabled)
     {

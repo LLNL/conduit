@@ -89,7 +89,7 @@ TEST(conduit_json, to_json_2)
     n["arr"].set_external(DataType::uint32(5),arr);
 
 
-    std::string pure_json = n.to_json(false);
+    std::string pure_json = n.to_json();
 
     n.print_detailed();
     n.print();
@@ -354,7 +354,7 @@ TEST(conduit_json, to_base64_json)
     n["b"] = b_val;
     n["arr"].set_external(DataType::uint32(5),arr);
  
-    std::string base64_json = n.to_base64_json();
+    std::string base64_json = n.to_json("base64_json");
     std::cout << base64_json << std::endl;
     
     Node nparse;

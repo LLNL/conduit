@@ -75,7 +75,7 @@ TEST(conduit_node_iterator, simple_1)
     NodeIterator itr = n.children();
     Node itr_info;
     itr.info(itr_info);
-    std::cout <<itr_info.to_json(true) << std::endl;
+    std::cout <<itr_info.to_json("conduit") << std::endl;
     
     index_t i = 0;
     while(itr.has_next())

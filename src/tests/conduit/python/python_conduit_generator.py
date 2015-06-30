@@ -71,7 +71,7 @@ def default_node():
 class Test_Conduit_Geneartor(unittest.TestCase):
     def test_simple(self):
         n = default_node()
-        n_schema = n.to_detailed_json();
+        n_schema = n.to_json("conduit");
         print "result detailed json", n_schema
         g = Generator(json_schema=n_schema);
         ng = Node();
@@ -95,7 +95,7 @@ class Test_Conduit_Geneartor(unittest.TestCase):
     def test_base64(self):
         n = default_node()
         print n
-        n_schema = n.to_base64_json();
+        n_schema = n.to_json("base64_json");
         print "result base64 json", n_schema
         g = Generator(n_schema,"base64_json");
         ng = Node();
