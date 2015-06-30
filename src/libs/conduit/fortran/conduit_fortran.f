@@ -53,11 +53,22 @@ module conduit
     type node
         type(C_PTR) cnode
     contains
-        procedure :: print => conduit_node_print
+
+        !----------------------------------------------------------------------
+        procedure :: set_int32  => conduit_node_set_int32
+        procedure :: as_int32   => conduit_node_as_int
+        !----------------------------------------------------------------------
+        procedure :: set_float64 => conduit_node_set_float64
+        procedure :: as_float64  => conduit_node_as_float64
+        !----------------------------------------------------------------------
         procedure :: set_int    => conduit_node_set_int
-        procedure :: set_double => conduit_node_set_double
         procedure :: as_int     => conduit_node_as_int
+        !----------------------------------------------------------------------
+        procedure :: set_double => conduit_node_set_double
         procedure :: as_double  => conduit_node_as_double
+        !----------------------------------------------------------------------
+        procedure :: print => conduit_node_print
+        procedure :: print_detailed => conduit_node_print_detailed
     end type node
 
 
@@ -78,6 +89,24 @@ module conduit
         implicit none
         type(C_PTR), value, intent(IN) :: obj
     end subroutine c_conduit_node_destroy
+
+    !--------------------------------------------------------------------------
+    subroutine c_conduit_node_set_int32(obj, val) &
+                   bind(C, name="conduit_node_set_int32")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: obj
+        integer(4), value, intent(IN) :: val
+    end subroutine c_conduit_node_set_int32
+
+    !--------------------------------------------------------------------------
+    pure function c_conduit_node_as_int32(self) result(res) &
+             bind(C, name="conduit_node_as_int32")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: self
+         integer(4) :: res
+    end function c_conduit_node_as_int32
     
     !--------------------------------------------------------------------------
     subroutine c_conduit_node_set_int(obj, val) &
@@ -116,12 +145,38 @@ module conduit
     end function c_conduit_node_as_double
 
     !--------------------------------------------------------------------------
+    subroutine c_conduit_node_set_float64(obj, val) &
+                   bind(C, name="conduit_node_set_float64")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: obj
+        real(8), value, intent(IN) :: val
+    end subroutine c_conduit_node_set_float64
+    
+    !--------------------------------------------------------------------------
+    pure function c_conduit_node_as_float64(self) result(res) &
+             bind(C, name="conduit_node_as_float64")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: self
+         real(8) :: res
+    end function c_conduit_node_as_float64
+
+    !--------------------------------------------------------------------------
     subroutine c_conduit_node_print(cnode) &
         bind(C, name="conduit_node_print")
         use iso_c_binding
         implicit none
         type(C_PTR), value, intent(IN) :: cnode
     end subroutine c_conduit_node_print
+
+    !--------------------------------------------------------------------------
+    subroutine c_conduit_node_print_detailed(cnode) &
+        bind(C, name="conduit_node_print_detailed")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+    end subroutine c_conduit_node_print_detailed
     end interface
 
 contains
@@ -142,6 +197,24 @@ contains
            call c_conduit_node_destroy(obj%cnode)
            obj%cnode = C_NULL_PTR
     end subroutine conduit_node_destroy
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_int32(obj, val)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        integer(4) :: val
+        call c_conduit_node_set_int32(obj%cnode, val)
+    end subroutine conduit_node_set_int32
+
+    !--------------------------------------------------------------------------
+    function conduit_node_as_int32(obj) result(res)
+           use iso_c_binding
+           implicit none
+           class(node) :: obj
+           integer(4) :: res
+           res = c_conduit_node_as_int32(obj%cnode)
+    end function conduit_node_as_int32
 
     !--------------------------------------------------------------------------
     subroutine conduit_node_set_int(obj, val)
@@ -180,12 +253,38 @@ contains
     end function conduit_node_as_double
 
     !--------------------------------------------------------------------------
+    subroutine conduit_node_set_float64(obj, val)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        real(8) :: val
+        call c_conduit_node_set_double(obj%cnode, val)
+    end subroutine conduit_node_set_float64
+
+    !--------------------------------------------------------------------------
+    function conduit_node_as_float64(obj) result(res)
+           use iso_c_binding
+           implicit none
+           class(node) :: obj
+           real(8) :: res
+           res = c_conduit_node_as_float64(obj%cnode)
+    end function conduit_node_as_float64
+
+    !--------------------------------------------------------------------------
     subroutine conduit_node_print(obj)
            use iso_c_binding
            implicit none
            class(node) :: obj
            call c_conduit_node_print(obj%cnode)
     end subroutine conduit_node_print
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_print_detailed(obj)
+           use iso_c_binding
+           implicit none
+           class(node) :: obj
+           call c_conduit_node_print_detailed(obj%cnode)
+    end subroutine conduit_node_print_detailed
 
 end module conduit
 

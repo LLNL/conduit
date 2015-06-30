@@ -112,8 +112,24 @@ conduit_node_fetch(conduit_node *cnode,
 
 //-----------------------------------------------------------------------------
 void
+conduit_node_set_int32(conduit_node *cnode, 
+                       conduit_int32 value)
+{
+    cpp_node(cnode)->set_int32(value);
+}
+
+//-----------------------------------------------------------------------------
+void
 conduit_node_set_int(conduit_node *cnode, 
                      int value)
+{
+    cpp_node(cnode)->set(value);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_float64(conduit_node *cnode, 
+                         conduit_float64 value)
 {
     cpp_node(cnode)->set(value);
 }
@@ -124,6 +140,13 @@ conduit_node_set_double(conduit_node *cnode,
                         double value)
 {
     cpp_node(cnode)->set(value);
+}
+
+//-----------------------------------------------------------------------------
+conduit_int32
+conduit_node_as_int32(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_int32();
 }
 
 //-----------------------------------------------------------------------------
@@ -154,6 +177,13 @@ conduit_node_as_double_ptr(conduit_node *cnode)
     return cpp_node(cnode)->as_double_ptr();
 }
 
+//-----------------------------------------------------------------------------
+conduit_float64
+conduit_node_as_float64(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_float64();
+}
+
 
 //-----------------------------------------------------------------------------
 int 
@@ -169,6 +199,12 @@ conduit_node_print(conduit_node *cnode)
     cpp_node(cnode)->print();
 }
 
+//-----------------------------------------------------------------------------
+void 
+conduit_node_print_detailed(conduit_node *cnode)
+{
+    cpp_node(cnode)->print_detailed();
+}
 
 
 }

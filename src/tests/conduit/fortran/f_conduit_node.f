@@ -62,25 +62,51 @@ contains
         
         obj = conduit_node_create()
         call obj%set_int(42)
-        call obj%print()
+        call obj%print_detailed()
         res = obj%as_int()
         call assert_equals (42, res)
         call conduit_node_destroy(obj)
         
     end subroutine t_create_node_int
 
+    subroutine t_create_node_int32
+        type(node) obj
+        integer(4) res
+        
+        obj = conduit_node_create()
+        call obj%set_int32(42)
+        call obj%print_detailed()
+        res = obj%as_int32()
+        call assert_equals (42, res)
+        call conduit_node_destroy(obj)
+        
+    end subroutine t_create_node_int32
+
     subroutine t_create_node_double
         type(node) obj
-        real(8) res
+        real(kind=8) res
         
         obj = conduit_node_create()
         call obj%set_double(3.1415d+0)
-        call obj%print()
+        call obj%print_detailed()
         res = obj%as_double()
         call assert_equals(3.1415d+0, res)
         call conduit_node_destroy(obj)
         
     end subroutine t_create_node_double
+
+    subroutine t_create_node_float64
+        type(node) obj
+        real(kind=8) res
+        
+        obj = conduit_node_create()
+        call obj%set_float64(3.1415d+0)
+        call obj%print_detailed()
+        res = obj%as_float64()
+        call assert_equals(3.1415d+0, res)
+        call conduit_node_destroy(obj)
+        
+    end subroutine t_create_node_float64
 
 
 !----------------------------------------------------------------------
@@ -96,7 +122,9 @@ function fortran_test() bind(C,name="fortran_test")
   call init_fruit
 
   call t_create_node_int
+  call t_create_node_int32
   call t_create_node_double
+  call t_create_node_float64
 
   call fruit_summary
   call fruit_finalize
