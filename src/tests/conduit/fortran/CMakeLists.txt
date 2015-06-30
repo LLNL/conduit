@@ -43,62 +43,21 @@
 ###############################################################################
 
 ################################
-# Conduit Unit Tests
+# Conduit C Interface Unit Tests
 ################################
 
 ################################
 # Core (conduit lib) Unit Tests
 ################################
-set(BASIC_TESTS conduit_smoke
-                conduit_endianness
-                conduit_char8_str
-                conduit_datatype_tests
-                conduit_node
-                conduit_node_parent
-                conduit_node_convert
-                conduit_serialize
-                conduit_array
-                conduit_list_of
-                conduit_node_binary_io
-                conduit_node_save_load
-                conduit_node_paths
-                conduit_node_set
-                conduit_to_string
-                conduit_json
-                conduit_json_sanitize
-                conduit_generator
-                conduit_node_update
-                conduit_node_compact
-                conduit_node_info
-                conduit_node_iterator)
-
+set(BASIC_FORTRAN_TESTS f_conduit_node)
 
 ################################
 # Add our tests
 ################################
-message(STATUS "Adding conduit lib unit tests")
-foreach(TEST ${BASIC_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit libb64 )
+message(STATUS "Adding conduit lib fortran interface unit tests")
+foreach(TEST ${BASIC_FORTRAN_TESTS})
+    add_fortran_test(TEST ${TEST} DEPENDS_ON conduit conduit_fortran)
 endforeach()
 
-################################
-# Add c interface tests
-################################
-add_subdirectory("c")
-
-################################
-# Add optional tests
-################################
-if(ENABLE_PYTHON)
-    add_subdirectory("python")
-else()
-    message(STATUS "Python disabled: Skipping conduit python module tests")
-endif()
-
-if(ENABLE_FORTRAN)
-    add_subdirectory("fortran")
-else()
-    message(STATUS "Fortran disabled: Skipping conduit fortran interface tests")
-endif()
 
 

@@ -42,68 +42,47 @@
 !* 
 !*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!*
 
+!------------------------------------------------------------------------------
 !
-! conduit_fortran.f
+! f_conduit_node.f
 !
-
-module conduit
-    use, intrinsic :: iso_c_binding, only : C_PTR
-    implicit none
-    
-    type node
-        type(C_PTR) cnode
-    contains
-        procedure :: print => conduit_node_print
-    end type node
-
-
-    interface
-
-    function c_conduit_node_create() result(obj) &
-             bind(C, name="conduit_node_create")
-         use iso_c_binding
-         implicit none
-         type(C_PTR) :: obj
-     end function c_conduit_node_create
-
-    subroutine c_conduit_node_destroy(obj) &
-            bind(C, name="conduit_node_destroy")
-        use iso_c_binding
-        implicit none
-        type(C_PTR), value, intent(IN) :: obj
-    end subroutine c_conduit_node_destroy
-        
-    subroutine c_conduit_node_print(cnode) &
-        bind(C, name="conduit_node_print")
-        use iso_c_binding
-        implicit none
-        type(C_PTR), value, intent(IN) :: cnode
-    end subroutine c_conduit_node_print
-    end interface
+!------------------------------------------------------------------------------
+module f_conduit_node
+  use iso_c_binding
+  use fruit
+  use conduit
+  implicit none
 
 contains
+!------------------------------------------------------------------------------
 
-    function conduit_node_create() result(obj)
-        use iso_c_binding
-        implicit none
-        type(node) :: obj
-        obj%cnode = c_conduit_node_create()
-    end function conduit_node_create
+    subroutine t_create_node
+        type(node) obj
+        
+        obj = conduit_node_create()
+        call obj%print()
+        call conduit_node_destroy(obj)
+        
+    end subroutine t_create_node
 
-    subroutine conduit_node_destroy(obj)
-           use iso_c_binding
-           implicit none
-           type(node) :: obj
-           call c_conduit_node_destroy(obj%cnode)
-           obj%cnode = C_NULL_PTR
-    end subroutine conduit_node_destroy
 
-    subroutine conduit_node_print(obj)
-           use iso_c_binding
-           implicit none
-           class(node) :: obj
-           call c_conduit_node_print(obj%cnode)
-    end subroutine conduit_node_print
+!----------------------------------------------------------------------
+end module f_conduit_node
+!----------------------------------------------------------------------
 
-end module conduit
+function fortran_test() bind(C,name="fortran_test")
+  use fruit
+  use f_conduit_node
+  implicit none
+  integer(C_INT) fortran_test
+
+  call init_fruit
+
+  call t_create_node
+
+  call fruit_summary
+  call fruit_finalize
+
+  fortran_test = 0
+end function fortran_test
 
