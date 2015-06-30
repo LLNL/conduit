@@ -75,8 +75,8 @@ set(conduit_headers
 # c interface headers
 #            
 set(conduit_c_headers
-    c/conduit.h
-    c/conduit_node.h
+    conduit.h
+    conduit_node.h
     )
 
 #
@@ -99,7 +99,7 @@ set(conduit_sources
 # c interface sources
 #            
 set(conduit_c_sources
-    c/conduit_node.cpp
+    conduit_node.cpp
     )
 
 #
