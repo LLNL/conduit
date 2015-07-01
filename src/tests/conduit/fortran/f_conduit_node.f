@@ -56,27 +56,42 @@ module f_conduit_node
 contains
 !------------------------------------------------------------------------------
 
-    !--------------------------------------------------------------------------
-    subroutine t_create_node_int
-        type(node) obj
-        integer res
-        
-        obj = conduit_node_create()
-        call obj%set_int(42)
-        call obj%print_detailed()
-        res = obj%as_int()
-        call assert_equals (42, res)
-        call conduit_node_destroy(obj)
-        
-    end subroutine t_create_node_int
+!------------------------------------------------------------------------------    
+!  Opaque Pointer Function Style test
+!------------------------------------------------------------------------------
 
     !--------------------------------------------------------------------------
-    subroutine t_fetch_node_int32
+    subroutine t_node_create
+        type(C_PTR) cnode
+        integer res
+
+        cnode = conduit_node_create()
+        call conduit_node_print_detailed(cnode)
+        call conduit_node_destroy(cnode)
+    
+    end subroutine t_node_create
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_set_int
+        type(C_PTR) cnode
+        integer res
+    
+        cnode = conduit_node_create()
+        call conduit_node_set_int(cnode,42)
+        call conduit_node_print_detailed(cnode)
+        res = conduit_node_as_int(cnode)
+        call assert_equals (42, res)
+        call conduit_node_destroy(cnode)
+        
+    end subroutine t_node_set_int
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_fetch_int32
         type(node) obj
         type(node) n1
         integer res
         
-        obj = conduit_node_create()
+        obj = conduit_node_obj_create()
         
         n1 = obj%fetch("my_sub")
         call n1%set_int32(42)
@@ -85,12 +100,12 @@ contains
         
         res = n1%as_int32()
         call assert_equals (42, res)
-        call conduit_node_destroy(obj)
+        call conduit_node_obj_destroy(obj)
         
-    end subroutine t_fetch_node_int32
+    end subroutine t_node_fetch_int32
 
     !--------------------------------------------------------------------------
-    subroutine t_append_nodes
+    subroutine t_node_append
         type(node) obj
         type(node) n1
         type(node) n2
@@ -100,7 +115,7 @@ contains
         real(8)    res_2
         integer    nchld
         
-        obj = conduit_node_create()
+        obj = conduit_node_obj_create()
         
         n1 = obj%append()
         n2 = obj%append()
@@ -125,55 +140,55 @@ contains
         
         call assert_equals (42, res_1)
         call assert_equals (3.1415d+0, res_2)
-        call conduit_node_destroy(obj)
+        call conduit_node_obj_destroy(obj)
         
-    end subroutine t_append_nodes
+    end subroutine t_node_append
 
 
     !--------------------------------------------------------------------------
-    subroutine t_create_node_int32
+    subroutine t_node_set_int32
         type(node) obj
         integer(4) res
         
-        obj = conduit_node_create()
+        obj = conduit_node_obj_create()
         call obj%set_int32(42)
         call obj%print_detailed()
         res = obj%as_int32()
         call assert_equals (42, res)
-        call conduit_node_destroy(obj)
+        call conduit_node_obj_destroy(obj)
         
-    end subroutine t_create_node_int32
+    end subroutine t_node_set_int32
 
     !--------------------------------------------------------------------------
-    subroutine t_create_node_double
+    subroutine t_node_set_double
         type(node) obj
         real(kind=8) res
         
-        obj = conduit_node_create()
+        obj = conduit_node_obj_create()
         call obj%set_double(3.1415d+0)
         call obj%print_detailed()
         res = obj%as_double()
         call assert_equals(3.1415d+0, res)
-        call conduit_node_destroy(obj)
+        call conduit_node_obj_destroy(obj)
         
-    end subroutine t_create_node_double
+    end subroutine t_node_set_double
 
     !--------------------------------------------------------------------------
-    subroutine t_create_node_float64
+    subroutine t_node_set_float64
         type(node) obj
         real(kind=8) res
         
-        obj = conduit_node_create()
+        obj = conduit_node_obj_create()
         call obj%set_float64(3.1415d+0)
         call obj%print_detailed()
         res = obj%as_float64()
         call assert_equals(3.1415d+0, res)
-        call conduit_node_destroy(obj)
+        call conduit_node_obj_destroy(obj)
         
-    end subroutine t_create_node_float64
+    end subroutine t_node_set_float64
 
     !--------------------------------------------------------------------------
-    subroutine t_set_node_int32_ptr
+    subroutine t_node_set_int32_ptr
         type(node) obj
         integer(4), dimension(5) :: data
         integer i
@@ -182,13 +197,162 @@ contains
             data(i) = i
         enddo
          
-        obj = conduit_node_create()
+        obj = conduit_node_obj_create()
         call obj%print_detailed()
         call obj%set_int32_ptr(data,5_8)
         call obj%print_detailed()
-        call conduit_node_destroy(obj)
+        call conduit_node_obj_destroy(obj)
         
-    end subroutine t_set_node_int32_ptr
+    end subroutine t_node_set_int32_ptr
+
+
+!------------------------------------------------------------------------------
+!  Obj Style Tests
+!------------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    subroutine t_node_obj_create
+        type(node) obj
+        integer res
+    
+        obj = conduit_node_obj_create()
+        call obj%print_detailed()
+        call conduit_node_obj_destroy(obj)
+    
+    end subroutine t_node_obj_create
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_obj_set_int
+        type(node) obj
+        integer res
+        
+        obj = conduit_node_obj_create()
+        call obj%set_int(42)
+        call obj%print_detailed()
+        res = obj%as_int()
+        call assert_equals (42, res)
+        call conduit_node_obj_destroy(obj)
+        
+    end subroutine t_node_obj_set_int
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_obj_fetch_int32
+        type(node) obj
+        type(node) n1
+        integer res
+        
+        obj = conduit_node_obj_create()
+        
+        n1 = obj%fetch("my_sub")
+        call n1%set_int32(42)
+        
+        call obj%print_detailed()
+        
+        res = n1%as_int32()
+        call assert_equals (42, res)
+        call conduit_node_obj_destroy(obj)
+        
+    end subroutine t_node_obj_fetch_int32
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_obj_append
+        type(node) obj
+        type(node) n1
+        type(node) n2
+        type(node) na
+        type(node) nb
+        integer(4) res_1
+        real(8)    res_2
+        integer    nchld
+        
+        obj = conduit_node_obj_create()
+        
+        n1 = obj%append()
+        n2 = obj%append()
+        
+        nchld = obj%number_of_children()
+        
+        call assert_equals(nchld, 2)
+        
+        call n1%set_int32(42)
+        call n2%set_float64(3.1415d+0)
+        
+        call obj%print_detailed()
+        
+        ! TODO: these crash?
+        na  = obj%child(0_8)
+        nb  = obj%child(1_8)
+        
+        call obj%print_detailed()
+                
+        res_1 = n1%as_int32()
+        res_2 = n2%as_float64()
+        
+        call assert_equals (42, res_1)
+        call assert_equals (3.1415d+0, res_2)
+        call conduit_node_obj_destroy(obj)
+        
+    end subroutine t_node_obj_append
+
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_obj_set_int32
+        type(node) obj
+        integer(4) res
+        
+        obj = conduit_node_obj_create()
+        call obj%set_int32(42)
+        call obj%print_detailed()
+        res = obj%as_int32()
+        call assert_equals (42, res)
+        call conduit_node_obj_destroy(obj)
+        
+    end subroutine t_node_obj_set_int32
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_obj_set_double
+        type(node) obj
+        real(kind=8) res
+        
+        obj = conduit_node_obj_create()
+        call obj%set_double(3.1415d+0)
+        call obj%print_detailed()
+        res = obj%as_double()
+        call assert_equals(3.1415d+0, res)
+        call conduit_node_obj_destroy(obj)
+        
+    end subroutine t_node_obj_set_double
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_obj_set_float64
+        type(node) obj
+        real(kind=8) res
+        
+        obj = conduit_node_obj_create()
+        call obj%set_float64(3.1415d+0)
+        call obj%print_detailed()
+        res = obj%as_float64()
+        call assert_equals(3.1415d+0, res)
+        call conduit_node_obj_destroy(obj)
+        
+    end subroutine t_node_obj_set_float64
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_obj_set_int32_ptr
+        type(node) obj
+        integer(4), dimension(5) :: data
+        integer i
+        
+        do i = 1,5
+            data(i) = i
+        enddo
+         
+        obj = conduit_node_obj_create()
+        call obj%print_detailed()
+        call obj%set_int32_ptr(data,5_8)
+        call obj%print_detailed()
+        call conduit_node_obj_destroy(obj)
+        
+    end subroutine t_node_obj_set_int32_ptr
 
 
 !----------------------------------------------------------------------
@@ -203,13 +367,24 @@ function fortran_test() bind(C,name="fortran_test")
 
   call init_fruit
 
-  call t_create_node_int
-  call t_create_node_int32
-  call t_create_node_double
-  call t_create_node_float64
-  call t_fetch_node_int32
-  call t_append_nodes
-  call t_set_node_int32_ptr
+  call t_node_create
+  call t_node_set_int
+  call t_node_set_int32
+  call t_node_set_double
+  call t_node_set_float64
+  call t_node_fetch_int32
+  call t_node_append
+  call t_node_set_int32_ptr
+
+  call t_node_obj_create
+  call t_node_obj_set_int
+  call t_node_obj_set_int32
+  call t_node_obj_set_double
+  call t_node_obj_set_float64
+  call t_node_obj_fetch_int32
+  call t_node_obj_append
+  call t_node_obj_set_int32_ptr
+
   
   call fruit_summary
   call fruit_finalize
