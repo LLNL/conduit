@@ -61,8 +61,12 @@ module conduit
         procedure :: number_of_children => conduit_node_obj_number_of_children
         !----------------------------------------------------------------------
         procedure :: set_int32_ptr => conduit_node_obj_set_int32_ptr
-        procedure :: set_int32  => conduit_node_obj_set_int32
+        procedure :: set_int32  => conduit_node_obj_set_int32        
         procedure :: as_int32   => conduit_node_obj_as_int
+        !----------------------------------------------------------------------
+        procedure :: set_path_int32 => conduit_node_obj_set_path_int32
+        procedure :: fetch_path_as_int32 => conduit_node_obj_fetch_path_as_int32
+    
         !----------------------------------------------------------------------
         procedure :: set_float64 => conduit_node_obj_set_float64
         procedure :: as_float64  => conduit_node_obj_as_float64
@@ -152,6 +156,26 @@ module conduit
         integer(4), intent (out), dimension (*) :: data
         integer(C_SIZE_T), value, intent(in) :: num_elements
     end subroutine conduit_node_set_int32_ptr
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_path_int32(cnode, path, val) &
+                   bind(C, name="conduit_node_set_path_int32")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: path(*)
+        integer(4), value, intent(IN) :: val
+    end subroutine conduit_node_set_path_int32
+
+    !--------------------------------------------------------------------------
+    pure function conduit_node_fetch_path_as_int32(cnode, path) result(res) &
+                   bind(C, name="conduit_node_fetch_path_as_int32")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: path(*)
+        integer(4) :: res
+    end function conduit_node_fetch_path_as_int32
 
     !--------------------------------------------------------------------------
     pure function conduit_node_as_int32(cnode) result(res) &
@@ -312,7 +336,7 @@ contains
         integer(C_SIZE_T) :: num_elements
         call conduit_node_set_int32_ptr(obj%cnode,data,num_elements)
     end subroutine conduit_node_obj_set_int32_ptr
-
+    
     !--------------------------------------------------------------------------
     function conduit_node_obj_as_int32(obj) result(res)
            use iso_c_binding
@@ -321,6 +345,26 @@ contains
            integer(4) :: res
            res = conduit_node_as_int32(obj%cnode)
     end function conduit_node_obj_as_int32
+    
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_set_path_int32(obj, path, val)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        character(*) :: path
+        integer(4) :: val
+        call conduit_node_set_path_int32(obj%cnode, trim(path) // C_NULL_CHAR, val)
+    end subroutine conduit_node_obj_set_path_int32
+
+    !--------------------------------------------------------------------------
+    function conduit_node_obj_fetch_path_as_int32(obj,path) result(res)
+           use iso_c_binding
+           implicit none
+           class(node) :: obj
+           character(*) :: path
+           integer(4) :: res
+           res = conduit_node_fetch_path_as_int32(obj%cnode, trim(path) // C_NULL_CHAR)
+    end function conduit_node_obj_fetch_path_as_int32
 
     !--------------------------------------------------------------------------
     subroutine conduit_node_obj_set_int(obj, val)

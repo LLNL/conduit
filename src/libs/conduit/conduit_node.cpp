@@ -148,6 +148,16 @@ conduit_node_set_int32_ptr(conduit_node *cnode,
 
 //-----------------------------------------------------------------------------
 void
+conduit_node_set_path_int32(conduit_node *cnode, 
+                            const char *path,
+                            conduit_int32 value)
+{
+    cpp_node(cnode)->set_path_int32(std::string(path),value);
+}
+
+
+//-----------------------------------------------------------------------------
+void
 conduit_node_set_int(conduit_node *cnode, 
                      int value)
 {
@@ -175,6 +185,14 @@ conduit_int32
 conduit_node_as_int32(conduit_node *cnode)
 {
     return cpp_node(cnode)->as_int32();
+}
+
+//-----------------------------------------------------------------------------
+conduit_int32
+conduit_node_fetch_path_as_int32(conduit_node *cnode,
+                                 const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_int32();
 }
 
 //-----------------------------------------------------------------------------
