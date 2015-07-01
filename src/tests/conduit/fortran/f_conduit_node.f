@@ -131,7 +131,9 @@ contains
     subroutine t_node_set_int32_ptr
         type(C_PTR) cnode
         integer(4), dimension(5) :: data
+        integer nele
         integer i
+
         
         do i = 1,5
             data(i) = i
@@ -140,9 +142,63 @@ contains
         cnode = conduit_node_create()
         call conduit_node_set_int32_ptr(cnode,data,5_8)
         call conduit_node_print_detailed(cnode)
+        nele = conduit_node_number_of_elements(cnode)
+        call assert_equals(nele,5)
         call conduit_node_destroy(cnode)
         
     end subroutine t_node_set_int32_ptr
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_as_int32_ptr
+        type(C_PTR) cnode
+        integer(4), dimension(5) :: data
+        integer nele
+        integer i
+        integer(4), pointer :: f_arr(:)
+        
+        do i = 1,5
+            data(i) = i
+        enddo
+         
+        cnode = conduit_node_create()
+        call conduit_node_set_int32_ptr(cnode,data,5_8)
+        call conduit_node_print_detailed(cnode)
+        
+        nele = conduit_node_number_of_elements(cnode)
+        call assert_equals(nele,5)
+        call conduit_node_as_int32_ptr(cnode,f_arr)
+        
+        do i = 1,5
+            call assert_equals(f_arr(i),data(i))
+        enddo
+
+        call conduit_node_destroy(cnode)
+        
+    end subroutine t_node_as_int32_ptr
+
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_as_int32_ptr_read_scalar
+        type(C_PTR) cnode
+        integer nele
+        integer i
+        integer(4), pointer :: f_arr(:)
+                 
+        cnode = conduit_node_create()
+        
+        call conduit_node_set_int32(cnode,42)
+        call conduit_node_print_detailed(cnode)
+        
+        nele = conduit_node_number_of_elements(cnode)
+        call assert_equals(nele,1)
+        
+        call conduit_node_as_int32_ptr(cnode,f_arr)
+        
+        call assert_equals(f_arr(1),42)
+
+        call conduit_node_destroy(cnode)
+        
+    end subroutine t_node_as_int32_ptr_read_scalar
 
     !--------------------------------------------------------------------------
     subroutine t_node_fetch_int32
@@ -237,6 +293,8 @@ function fortran_test() bind(C,name="fortran_test")
   call t_node_set_float64
   call t_node_fetch_int32
   call t_node_set_int32_ptr
+  call t_node_as_int32_ptr
+  call t_node_as_int32_ptr_read_scalar
   call t_node_set_fetch_path_int32
   call t_node_append
   

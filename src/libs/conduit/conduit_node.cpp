@@ -130,6 +130,13 @@ conduit_node_number_of_children(conduit_node *cnode)
 }
 
 //-----------------------------------------------------------------------------
+size_t
+conduit_node_number_of_elements(conduit_node *cnode)
+{
+    return cpp_node(cnode)->dtype().number_of_elements();
+}
+
+//-----------------------------------------------------------------------------
 void
 conduit_node_set_int32(conduit_node *cnode, 
                        conduit_int32 value)
@@ -208,6 +215,14 @@ conduit_node_as_int_ptr(conduit_node *cnode)
 {
     return cpp_node(cnode)->as_int_ptr();
 }
+
+//-----------------------------------------------------------------------------
+conduit_int32 *
+conduit_node_as_int32_ptr(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_int32_ptr();
+}
+
 
 //-----------------------------------------------------------------------------
 double

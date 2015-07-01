@@ -132,6 +132,7 @@ contains
     subroutine t_node_obj_set_int32_ptr
         type(node) obj
         integer(4), dimension(5) :: data
+        integer nele
         integer i
         
         do i = 1,5
@@ -142,9 +143,62 @@ contains
         call obj%print_detailed()
         call obj%set_int32_ptr(data,5_8)
         call obj%print_detailed()
+        nele = obj%number_of_elements()
+        call assert_equals(nele,5)
         call conduit_node_obj_destroy(obj)
         
     end subroutine t_node_obj_set_int32_ptr
+    
+    !--------------------------------------------------------------------------
+    subroutine t_node_obj_as_int32_ptr
+        type(node) obj
+        integer(4), dimension(5) :: data
+        integer nele
+        integer i
+        integer(4), pointer :: f_arr(:)
+        
+        do i = 1,5
+            data(i) = i
+        enddo
+         
+        obj = conduit_node_obj_create()
+        call obj%print_detailed()
+        call obj%set_int32_ptr(data,5_8)
+        call obj%print_detailed()
+        nele = obj%number_of_elements()
+        call assert_equals(nele,5)
+        call obj%as_int32_ptr(f_arr)
+        
+        do i = 1,5
+            call assert_equals(f_arr(i),data(i))
+        enddo
+        
+        call conduit_node_obj_destroy(obj)
+        
+    end subroutine t_node_obj_as_int32_ptr
+    
+    !--------------------------------------------------------------------------
+    subroutine t_node_obj_as_int32_ptr_read_scalar
+        type(node) obj
+        integer nele
+        integer i
+        integer(4), pointer :: f_arr(:)
+                 
+        obj = conduit_node_obj_create()
+        
+        call obj%set_int32(42)
+        call obj%print_detailed()
+        
+        nele = obj%number_of_elements()
+        call assert_equals(nele,1)
+        
+        call obj%as_int32_ptr(f_arr)
+        
+        call assert_equals(f_arr(1),42)
+
+        call conduit_node_obj_destroy(obj)
+        
+    end subroutine t_node_obj_as_int32_ptr_read_scalar
     
     !--------------------------------------------------------------------------
     subroutine t_node_obj_fetch_int32

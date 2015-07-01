@@ -101,14 +101,23 @@ module conduit
            type(C_PTR) :: res
        end function conduit_node_child
 
-       !--------------------------------------------------------------------------
-       function conduit_node_number_of_children(cnode) result(res) &
-                bind(C, name="conduit_node_number_of_children")
-            use iso_c_binding
-            implicit none
-            type(C_PTR), value, intent(IN) :: cnode
-            integer(C_SIZE_T) :: res
-        end function conduit_node_number_of_children
+    !--------------------------------------------------------------------------
+    function conduit_node_number_of_elements(cnode) result(res) &
+            bind(C, name="conduit_node_number_of_elements")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        integer(C_SIZE_T) :: res
+    end function conduit_node_number_of_elements
+
+    !--------------------------------------------------------------------------
+    function conduit_node_number_of_children(cnode) result(res) &
+             bind(C, name="conduit_node_number_of_children")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         integer(C_SIZE_T) :: res
+     end function conduit_node_number_of_children
 
     !--------------------------------------------------------------------------
     subroutine conduit_node_set_int32(cnode, val) &
@@ -229,8 +238,38 @@ module conduit
     end subroutine conduit_node_print_detailed
 
     !--------------------------------------------------------------------------
+    function c_conduit_node_as_int32_ptr(cnode) result(int32_ptr) &
+             bind(C, name="conduit_node_as_int32_ptr")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         type(C_PTR) :: int32_ptr
+     end function c_conduit_node_as_int32_ptr
+
+    !--------------------------------------------------------------------------
     end interface
     !--------------------------------------------------------------------------
+
+!------------------------------------------------------------------------------
+!
+contains
+!
+!------------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_as_int32_ptr(cnode,f_out)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        integer(4), pointer :: f_out(:)
+        !---
+        integer n
+        type(C_PTR) :: int32_c_ptr
+        n = conduit_node_number_of_elements(cnode)
+        int32_c_ptr = c_conduit_node_as_int32_ptr(cnode)
+        call c_f_pointer(int32_c_ptr, f_out, (/n/))    
+
+    end subroutine conduit_node_as_int32_ptr
 
 !------------------------------------------------------------------------------
 end module conduit

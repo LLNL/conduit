@@ -63,10 +63,12 @@ module conduit_obj
         procedure :: append => conduit_node_obj_append
         procedure :: child  => conduit_node_obj_child
         procedure :: number_of_children => conduit_node_obj_number_of_children
+        procedure :: number_of_elements => conduit_node_obj_number_of_elements
         !----------------------------------------------------------------------
+        procedure :: set_int32     => conduit_node_obj_set_int32        
         procedure :: set_int32_ptr => conduit_node_obj_set_int32_ptr
-        procedure :: set_int32  => conduit_node_obj_set_int32        
-        procedure :: as_int32   => conduit_node_obj_as_int
+        procedure :: as_int32      => conduit_node_obj_as_int
+        procedure :: as_int32_ptr  => conduit_node_obj_as_int32_ptr
         !----------------------------------------------------------------------
         procedure :: set_path_int32 => conduit_node_obj_set_path_int32
         procedure :: fetch_path_as_int32 => conduit_node_obj_fetch_path_as_int32
@@ -149,6 +151,15 @@ contains
     end function conduit_node_obj_number_of_children
 
     !--------------------------------------------------------------------------
+    function conduit_node_obj_number_of_elements(obj) result(res)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        integer(C_SIZE_T) :: res
+        res = conduit_node_number_of_elements(obj%cnode)
+    end function conduit_node_obj_number_of_elements
+
+    !--------------------------------------------------------------------------
     subroutine conduit_node_obj_set_int32(obj, val)
         use iso_c_binding
         implicit none
@@ -175,6 +186,15 @@ contains
            integer(4) :: res
            res = conduit_node_as_int32(obj%cnode)
     end function conduit_node_obj_as_int32
+    
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_as_int32_ptr(obj,f_out)
+           use iso_c_binding
+           implicit none
+           class(node) :: obj
+           integer(4), pointer :: f_out(:)
+           call conduit_node_as_int32_ptr(obj%cnode,f_out)
+    end subroutine conduit_node_obj_as_int32_ptr
     
     !--------------------------------------------------------------------------
     subroutine conduit_node_obj_set_path_int32(obj, path, val)

@@ -93,6 +93,9 @@ conduit_node *conduit_node_child(conduit_node *cnode,
 //-----------------------------------------------------------------------------
 size_t        conduit_node_number_of_children(conduit_node *cnode);
 
+//-----------------------------------------------------------------------------
+size_t        conduit_node_number_of_elements(conduit_node *cnode);
+
 
 //-----------------------------------------------------------------------------
 void          conduit_node_set_int32(conduit_node *cnode, 
@@ -124,6 +127,7 @@ int            *conduit_node_as_int_ptr(conduit_node *cnode);
 
 //-----------------------------------------------------------------------------
 conduit_int32  conduit_node_as_int32(conduit_node *cnode);
+conduit_int32 *conduit_node_as_int32_ptr(conduit_node *cnode);
 
 conduit_int32  conduit_node_fetch_path_as_int32(conduit_node *cnode,
                                                 const char *path);
