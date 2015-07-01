@@ -49,7 +49,9 @@
 ################################
 # Core (conduit lib) Unit Tests
 ################################
-set(BASIC_FORTRAN_TESTS f_conduit_node)
+set(BASIC_FORTRAN_TESTS 
+    f_conduit_node
+    f_conduit_node_obj)
 
 ################################
 # Add our tests
@@ -58,6 +60,7 @@ message(STATUS "Adding conduit lib fortran interface unit tests")
 foreach(TEST ${BASIC_FORTRAN_TESTS})
     add_fortran_test(TEST ${TEST} DEPENDS_ON conduit conduit_fortran)
 endforeach()
+
 
 
 

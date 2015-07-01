@@ -53,7 +53,8 @@ ENABLE_WARNINGS()
 # Specify fortran sources
 #
 set(conduit_fortran_sources
-    conduit_fortran.f)
+    conduit_fortran.f
+    conduit_fortran_obj.f)
 
 #
 # Note: headers are added here so they show up in project file generators
