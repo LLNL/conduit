@@ -115,8 +115,8 @@ contains
         call obj%print_detailed()
         
         ! TODO: these crash?
-        !na  = obj%child(0_8)
-        !nb  = obj%child(1_8)
+        na  = obj%child(0_8)
+        nb  = obj%child(1_8)
         
         call obj%print_detailed()
                 
@@ -175,14 +175,15 @@ contains
     !--------------------------------------------------------------------------
     subroutine t_set_node_int32_ptr
         type(node) obj
-        integer(4), dimension(0:4) :: data
+        integer(4), dimension(5) :: data
         integer i
         
         do i = 1,5
             data(i) = i
         enddo
-        
+         
         obj = conduit_node_create()
+        call obj%print_detailed()
         call obj%set_int32_ptr(data,5_8)
         call obj%print_detailed()
         call conduit_node_destroy(obj)

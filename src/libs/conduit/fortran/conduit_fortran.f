@@ -121,7 +121,7 @@ module conduit
            use iso_c_binding
            implicit none
            type(C_PTR), value, intent(IN) :: obj
-           integer(C_SIZE_T) :: idx
+           integer(C_SIZE_T), value, intent(in) :: idx
            type(C_PTR) :: res
        end function c_conduit_node_child
 
@@ -150,7 +150,7 @@ module conduit
         implicit none
         type(C_PTR), value, intent(IN) :: obj
         integer(4), intent (out), dimension (*) :: data
-        integer(C_SIZE_T) :: num_elements
+        integer(C_SIZE_T), value, intent(in) :: num_elements
     end subroutine c_conduit_node_set_int32_ptr
 
     !--------------------------------------------------------------------------
