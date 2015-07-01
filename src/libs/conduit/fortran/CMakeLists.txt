@@ -41,54 +41,42 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
+
+
+################################
+# Add our library
+################################
+
+ENABLE_WARNINGS()
+
 #
+# Specify fortran sources
 #
-# CMake Cache Seed file for naples (Cyrus' laptop)
+set(conduit_fortran_sources
+    conduit_fortran.f
+    conduit_fortran_obj.f)
+
 #
+# Note: headers are added here so they show up in project file generators
+# (such as xcode, eclipse, etc)
+#
+add_library(conduit_fortran SHARED 
+            ${conduit_fortran_sources}
+            )
 
-# use clang compilers
-set(CMAKE_C_COMPILER "clang" CACHE PATH "")
-set(CMAKE_CXX_COMPILER "clang++" CACHE PATH "")
+target_link_libraries(conduit_fortran  conduit)
 
-set(ENABLE_FORTRAN ON CACHE PATH "")
+set_target_properties(conduit_fortran PROPERTIES Fortran_FORMAT "FREE")
 
-# Enable mpi for conduit-mpi
-set(ENABLE_MPI ON CACHE PATH "")
+##################################
+# Install Targets for conduit lib
+##################################
 
-set(MPIEXEC /Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thirdparty_shared/visit/mpich/3.0.4/darwin-x86_64/bin/mpiexec CACHE PATH "")
-
-set(MPI_CC_COMPILER /Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thirdparty_shared/visit/mpich/3.0.4/darwin-x86_64/bin/mpicc CACHE PATH "")
-
-set(MPI_CXX_COMPILER /Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thirdparty_shared/visit/mpich/3.0.4/darwin-x86_64/bin/mpicc CACHE PATH "")
-
-#######
-# uberenv host-config for conduit
-#######
-# cmake from uberenv
-# cmake exectuable path: /Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/cmake@3.0.2/bin/cmake
-
-# Enable python module builds
-set(ENABLE_PYTHON ON CACHE PATH "")
-
-# python from uberenv
-set(PYTHON_EXECUTABLE "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/python@2.7.8/bin/python" CACHE PATH "")
-
-# sphinx from uberenv
-set(SPHINX_EXECUTABLE "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/python@2.7.8/bin/sphinx-build" CACHE PATH "")
-
-# I/O Packages
-
-# Enable Silo Support in conduit_io
-set(ENABLE_SILO ON CACHE PATH "")
-
-# szip from uberenv
-set(SZIP_DIR "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/szip@2.1" CACHE PATH "")
-
-# hdf5 from uberenv
-set(HDF5_DIR "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/hdf5@1.8.7-83ab1427" CACHE PATH "")
-
-# silo from uberenv
-set(SILO_DIR "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/silo@4.10.1-f5eccf8d" CACHE PATH "")
-
+install(TARGETS conduit_fortran
+  EXPORT conduit
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION lib
+)
 
 

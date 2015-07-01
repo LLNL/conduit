@@ -72,6 +72,14 @@ set(conduit_headers
     )
 
 #
+# c interface headers
+#            
+set(conduit_c_headers
+    conduit.h
+    conduit_node.h
+    )
+
+#
 # Specify all sources
 #
 set(conduit_sources
@@ -88,10 +96,21 @@ set(conduit_sources
     )
 
 #
+# c interface sources
+#            
+set(conduit_c_sources
+    conduit_node.cpp
+    )
+
+#
 # Note: headers are added here so they show up in project file generators
 # (such as xcode, eclipse, etc)
 #
-add_library(conduit SHARED ${conduit_sources} ${conduit_headers})
+add_library(conduit SHARED 
+            ${conduit_sources} 
+            ${conduit_c_sources} 
+            ${conduit_headers}
+            ${conduit_c_headers})
 
 target_link_libraries(conduit libb64)
 
@@ -102,6 +121,15 @@ target_link_libraries(conduit libb64)
 if(ENABLE_PYTHON)
     add_subdirectory(python)
 endif()
+
+#################################
+# Add fortran interface lib 
+# if fortran support was selected
+#################################
+if(ENABLE_FORTRAN)
+    add_subdirectory(fortran)
+endif()
+
 
 ##################################
 # Install Targets for conduit lib

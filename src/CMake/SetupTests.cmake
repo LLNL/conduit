@@ -138,5 +138,36 @@ function(add_python_test TEST)
 endfunction(add_python_test)
 
 
+##------------------------------------------------------------------------------
+## - Adds a fortran based unit test
+##
+## add_fortran_test( TEST test DEPENDS_ON dep1 dep2... )
+##------------------------------------------------------------------------------
+macro(add_fortran_test)
+    set(options)
+    set(singleValueArgs TEST)
+    set(multiValueArgs DEPENDS_ON)
+
+    # parse our arguments
+    cmake_parse_arguments(arg
+                         "${options}" 
+                         "${singleValueArgs}" 
+                         "${multiValueArgs}" ${ARGN} )
+
+    message(STATUS " [*] Adding Fortran Unit Test: ${arg_TEST}")
+    set(fortran_driver_source
+        ${CMAKE_SOURCE_DIR}/thirdparty_builtin/fruit-3.3.9/gtest_fortran_driver.cpp)
+
+    add_executable( ${arg_TEST} ${arg_TEST}.f ${fortran_driver_source})
+    set_target_properties(${arg_TEST} PROPERTIES Fortran_FORMAT "FREE")
+
+    target_link_libraries( ${arg_TEST} fruit)
+    target_link_libraries( ${arg_TEST} ${UNIT_TEST_BASE_LIBS})
+    target_link_libraries( ${arg_TEST} "${arg_DEPENDS_ON}" )
+
+    add_test( ${arg_TEST} ${arg_TEST})
+
+endmacro(add_fortran_test)
+
 
 

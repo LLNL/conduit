@@ -54,6 +54,7 @@ cmake_policy(SET CMP0042 OLD)
 ################################
 
 project(conduit)
+enable_language(Fortran OPTIONAL)
 
 ################################
 # Build Options
@@ -63,12 +64,18 @@ option(ENABLE_GPREF_TOOLS "Build with google perftools" OFF)
 option(ENABLE_PYTHON      "Build Python Support"        OFF)
 option(ENABLE_MPI         "Build MPI Support"           OFF)
 option(ENABLE_SILO        "Build Silo Support"          OFF)
+option(ENABLE_FORTRAN     "Build Fortran  support"      OFF)
 
 
 ################################
 # Set some standard cmake opts
 ################################
 include(CMake/CMakeBasics.cmake)
+
+################################
+# Fortran Support
+################################
+include(CMake/SetupFortran.cmake)
 
 ################################
 # Checks for type sizes, etc

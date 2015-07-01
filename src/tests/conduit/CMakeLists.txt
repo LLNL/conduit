@@ -82,12 +82,23 @@ foreach(TEST ${BASIC_TESTS})
 endforeach()
 
 ################################
+# Add c interface tests
+################################
+add_subdirectory("c")
+
+################################
 # Add optional tests
 ################################
 if(ENABLE_PYTHON)
     add_subdirectory("python")
 else()
     message(STATUS "Python disabled: Skipping conduit python module tests")
+endif()
+
+if(ENABLE_FORTRAN)
+    add_subdirectory("fortran")
+else()
+    message(STATUS "Fortran disabled: Skipping conduit fortran interface tests")
 endif()
 
 
