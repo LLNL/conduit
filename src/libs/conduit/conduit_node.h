@@ -80,6 +80,10 @@ void          conduit_node_destroy(conduit_node *cnode);
 
 
 //-----------------------------------------------------------------------------
+// -- object and list interface methods -- 
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 conduit_node *conduit_node_fetch(conduit_node *cnode,
                                  const char *path);
 
@@ -96,8 +100,22 @@ size_t        conduit_node_number_of_children(conduit_node *cnode);
 //-----------------------------------------------------------------------------
 size_t        conduit_node_number_of_elements(conduit_node *cnode);
 
+//-----------------------------------------------------------------------------
+// -- node info -- 
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+int           conduit_node_is_root(conduit_node *cnode);
+
+//-----------------------------------------------------------------------------
+void          conduit_node_print(conduit_node *cnode);
+void          conduit_node_print_detailed(conduit_node *cnode);
+
+
+//-----------------------------------------------------------------------------
+// -- leaf set --
+//-----------------------------------------------------------------------------
+
 void          conduit_node_set_int32(conduit_node *cnode, 
                                      conduit_int32 value);
 
@@ -111,41 +129,49 @@ void          conduit_node_set_int32_ptr(conduit_node *cnode,
                                          conduit_int32 *data,
                                          size_t num_elements);
 
+//-----------------------------------------------------------------------------
+void          conduit_node_set_external_int32_ptr(conduit_node *cnode, 
+                                                  conduit_int32 *data,
+                                                  size_t num_elements);
 
-void          conduit_node_set_int(conduit_node *cnode, 
-                                   int value);
-
+//-----------------------------------------------------------------------------
 void          conduit_node_set_float64(conduit_node *cnode, 
                                        conduit_float64 value);
 
+//-----------------------------------------------------------------------------
+void          conduit_node_set_int(conduit_node *cnode, 
+                                   int value);
+
+//-----------------------------------------------------------------------------
 void          conduit_node_set_double(conduit_node *cnode, 
                                       double value);
 
 //-----------------------------------------------------------------------------
+// leaf value access
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
 int            conduit_node_as_int(conduit_node *cnode);
+//-----------------------------------------------------------------------------
 int            *conduit_node_as_int_ptr(conduit_node *cnode);
 
 //-----------------------------------------------------------------------------
 conduit_int32  conduit_node_as_int32(conduit_node *cnode);
+//-----------------------------------------------------------------------------
 conduit_int32 *conduit_node_as_int32_ptr(conduit_node *cnode);
 
+//-----------------------------------------------------------------------------
 conduit_int32  conduit_node_fetch_path_as_int32(conduit_node *cnode,
                                                 const char *path);
 
 //-----------------------------------------------------------------------------
 double        conduit_node_as_double(conduit_node *cnode);
+//-----------------------------------------------------------------------------
 double       *conduit_node_as_double_ptr(conduit_node *cnode);
 
-
+//-----------------------------------------------------------------------------
 conduit_float64 conduit_node_as_float64(conduit_node *cnode);
-
-
-//-----------------------------------------------------------------------------
-int           conduit_node_is_root(conduit_node *cnode);
-
-//-----------------------------------------------------------------------------
-void          conduit_node_print(conduit_node *cnode);
-void          conduit_node_print_detailed(conduit_node *cnode);
 
 
 #ifdef __cplusplus

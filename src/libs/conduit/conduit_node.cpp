@@ -155,6 +155,16 @@ conduit_node_set_int32_ptr(conduit_node *cnode,
 
 //-----------------------------------------------------------------------------
 void
+conduit_node_set_external_int32_ptr(conduit_node *cnode, 
+                                    conduit_int32 *data,
+                                    size_t num_elements)
+{
+    cpp_node(cnode)->set_external_int32_ptr(data,num_elements);
+}
+
+
+//-----------------------------------------------------------------------------
+void
 conduit_node_set_path_int32(conduit_node *cnode, 
                             const char *path,
                             conduit_int32 value)

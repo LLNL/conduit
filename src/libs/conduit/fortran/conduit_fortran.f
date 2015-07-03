@@ -139,6 +139,16 @@ module conduit
     end subroutine conduit_node_set_int32_ptr
 
     !--------------------------------------------------------------------------
+    subroutine conduit_node_set_external_int32_ptr(cnode, data, num_elements) &
+                   bind(C, name="conduit_node_set_external_int32_ptr")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        integer(4), intent (out), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+    end subroutine conduit_node_set_external_int32_ptr
+    
+    !--------------------------------------------------------------------------
     subroutine conduit_node_set_path_int32(cnode, path, val) &
                    bind(C, name="conduit_node_set_path_int32")
         use iso_c_binding

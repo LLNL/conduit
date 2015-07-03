@@ -67,6 +67,7 @@ module conduit_obj
         !----------------------------------------------------------------------
         procedure :: set_int32     => conduit_node_obj_set_int32        
         procedure :: set_int32_ptr => conduit_node_obj_set_int32_ptr
+        procedure :: set_external_int32_ptr => conduit_node_obj_set_external_int32_ptr
         procedure :: as_int32      => conduit_node_obj_as_int
         procedure :: as_int32_ptr  => conduit_node_obj_as_int32_ptr
         !----------------------------------------------------------------------
@@ -177,6 +178,17 @@ contains
         integer(C_SIZE_T) :: num_elements
         call conduit_node_set_int32_ptr(obj%cnode,data,num_elements)
     end subroutine conduit_node_obj_set_int32_ptr
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_set_external_int32_ptr(obj, data, num_elements) 
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        integer(4), intent (out), dimension (*) :: data
+        integer(C_SIZE_T) :: num_elements
+        call conduit_node_set_external_int32_ptr(obj%cnode,data,num_elements)
+    end subroutine conduit_node_obj_set_external_int32_ptr
+
     
     !--------------------------------------------------------------------------
     function conduit_node_obj_as_int32(obj) result(res)
