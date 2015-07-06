@@ -51,6 +51,15 @@
 #include "Error.hpp"
 
 //-----------------------------------------------------------------------------
+// -- libb64 includes -- 
+//-----------------------------------------------------------------------------
+#define BUFFERSIZE 65536
+#include "b64/encode.h"
+#include "b64/decode.h"
+using namespace base64;
+
+
+//-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
@@ -303,8 +312,49 @@ indent(std::ostringstream &oss,
     }
 }
     
+
+//-----------------------------------------------------------------------------
+void base64_encode(const void *src,
+                   index_t src_nbytes,
+                   void *dest)
+{
+    int nbytes = (int)src_nbytes;    
+    base64_encodestate enc_state;
+    base64_init_encodestate(&enc_state);
+    const char *src_ptr = (const char*)src;
+    char *des_ptr       = (char*)dest;
+    memset(des_ptr,0,nbytes*2);
+    
+    int code_len = base64_encode_block(src_ptr,
+                                       nbytes,
+                                       des_ptr,
+                                       &enc_state);
+    des_ptr += code_len;
+    code_len = base64_encode_blockend(des_ptr, &enc_state);
+    des_ptr += code_len;
+
+    // for some reason libb64 adds a newline
+    des_ptr[-1] = 0;
 }
 
+//-----------------------------------------------------------------------------
+void base64_decode(const void *src,
+                   index_t src_nbytes,
+                   void *dest)
+{
+    base64_decodestate dec_state;
+    int src_len = src_nbytes;
+    base64_init_decodestate(&dec_state);
+    const char *src_ptr = (const char*)src;
+    char *des_ptr = (char*)dest;
+    int code_len = base64_decode_block(src_ptr,
+                                       src_len,
+                                       des_ptr,
+                                       &dec_state);
+}
+
+
+}
 //-----------------------------------------------------------------------------
 // -- end conduit::utils --
 //-----------------------------------------------------------------------------
@@ -313,4 +363,5 @@ indent(std::ostringstream &oss,
 //-----------------------------------------------------------------------------
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
+
 

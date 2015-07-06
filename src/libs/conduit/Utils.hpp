@@ -178,6 +178,18 @@ namespace utils
                                  std::string &curr,
                                  std::string &next);
 
+
+//-----------------------------------------------------------------------------
+/// Base64 Encoding of Buffers 
+//-----------------------------------------------------------------------------
+    void CONDUIT_API base64_encode(const void *src,
+                                   index_t src_nbytes,
+                                   void *dest);
+
+    void CONDUIT_API base64_decode(const void *src,
+                                   index_t src_nbytes,
+                                   void *dest);
+
 //-----------------------------------------------------------------------------
      std::string CONDUIT_API json_sanitize(const std::string &json);
      
