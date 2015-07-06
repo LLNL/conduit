@@ -61,13 +61,6 @@
 #include "rapidjson/error/en.h"
 
 //-----------------------------------------------------------------------------
-// -- libb64 includes -- 
-//-----------------------------------------------------------------------------
-#define BUFFERSIZE 65536
-#include "b64/decode.h"
-using namespace base64;
-
-//-----------------------------------------------------------------------------
 // -- conduit library includes -- 
 //-----------------------------------------------------------------------------
 #include "Error.hpp"
@@ -1008,15 +1001,13 @@ Generator::Parser::parse_base64(Node *node,
         }
         
         node->set(s);
-        base64_decodestate dec_state;
+
+        const char *src_ptr = base64_str.c_str();
         int src_len = base64_str.length();
-        base64_init_decodestate(&dec_state);
-        const char *src_ptr = (const char*)base64_str.c_str();
-        char *des_ptr = (char*)node->data_ptr();
-        int code_len = base64_decode_block(src_ptr,
-                                           src_len,
-                                           des_ptr,
-                                           &dec_state);
+        void *dest_ptr = node->data_ptr();
+        
+        utils::base64_decode(src_ptr,src_len,dest_ptr);
+
     }
     else
     {

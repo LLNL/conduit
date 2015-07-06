@@ -74,13 +74,6 @@
 #endif
 
 //-----------------------------------------------------------------------------
-// -- libb64 includes -- 
-//-----------------------------------------------------------------------------
-#define BUFFERSIZE 65536
-#include "b64/encode.h"
-using namespace base64;
-    
-//-----------------------------------------------------------------------------
 // -- conduit includes -- 
 //-----------------------------------------------------------------------------
 #include "Utils.hpp"
@@ -7494,25 +7487,34 @@ Node::to_base64_json(std::ostringstream &oss,
     
     // use libb64 to encode the data
     
+
+    
     index_t nbytes = n.schema().total_bytes();
     Node bb64_data;
     bb64_data.set(DataType::char8_str(nbytes*2));
-    base64_encodestate enc_state;
-    base64_init_encodestate(&enc_state);
-    const char *src_ptr = (const char*)n.data_ptr();
-    char *des_ptr       = (char*)bb64_data.data_ptr();
-    memset(des_ptr,0,nbytes*2);
     
-    int code_len = base64_encode_block(src_ptr,
-                                       nbytes,
-                                       des_ptr,
-                                       &enc_state);
-    des_ptr += code_len;
-    code_len = base64_encode_blockend(des_ptr, &enc_state);
-    des_ptr += code_len;
-    // for some reason end adds a newline or something else evil
-    // 
-    des_ptr[-1] = 0;
+    const char *src_ptr = (const char*)n.data_ptr();
+    char *dest_ptr       = (char*)bb64_data.data_ptr();
+    memset(dest_ptr,0,nbytes*2);
+
+    utils::base64_encode(src_ptr,nbytes,dest_ptr);
+    //
+    // base64_encodestate enc_state;
+    // base64_init_encodestate(&enc_state);
+    // const char *src_ptr = (const char*)n.data_ptr();
+    // char *des_ptr       = (char*)bb64_data.data_ptr();
+    // memset(des_ptr,0,nbytes*2);
+    //
+    // int code_len = base64_encode_block(src_ptr,
+    //                                    nbytes,
+    //                                    des_ptr,
+    //                                    &enc_state);
+    // des_ptr += code_len;
+    // code_len = base64_encode_blockend(des_ptr, &enc_state);
+    // des_ptr += code_len;
+    // // for some reason end adds a newline or something else evil
+    // //
+    // des_ptr[-1] = 0;
     
     // create the resulting json
     
