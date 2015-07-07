@@ -46,6 +46,12 @@
 # CMake Cache Seed file for LLNL's surface cluster
 #
 
+set(CMAKE_C_COMPILER "/usr/apps/gnu/4.7.1/bin/gcc" CACHE PATH "")
+set(CMAKE_CXX_COMPILER "/usr/apps/gnu/4.7.1/bin/g++" CACHE PATH "")
+
+set(ENABLE_FORTRAN ON CACHE PATH "")
+set(CMAKE_Fortran_COMPILER "/usr/apps/gnu/4.7.1/bin/gfortran" CACHE PATH "")
+
 # Enable Silo Support in conduit_io
 set(ENABLE_SILO ON CACHE PATH "")
 
