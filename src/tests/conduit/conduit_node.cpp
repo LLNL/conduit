@@ -650,21 +650,4 @@ TEST(conduit_node, check_as_value_default_after_error)
     conduit::utils::set_error_handler(conduit::utils::default_error_handler);
 }
 
-//-----------------------------------------------------------------------------
-TEST(conduit_node, check_json_percison)
-{
-
-    Node n;
-    float64 d_v = (float64)32.02321121; 
-    n.set(d_v);
-    n.print_detailed();
-    std::cout << std::endl;
-
-    std::ostringstream oss;
-    oss.precision(10);
-    
-    n.to_json_stream(oss);
-    std::cout << oss.str() << std::endl;
-}
-
 

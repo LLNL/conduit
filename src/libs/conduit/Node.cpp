@@ -7196,6 +7196,7 @@ Node::to_json_generic(std::ostream &os,
                       const std::string &pad,
                       const std::string &eoe) const
 {
+    os.precision(15);
     if(dtype().id() == DataType::OBJECT_T)
     {
         os << eoe;
@@ -7257,6 +7258,7 @@ Node::to_json_generic(std::ostream &os,
                                 dtype_open,
                                 dtype_rest);
             os<< dtype_open;
+            os << ", value: ";
         }
 
         switch(dtype().id())
@@ -7420,6 +7422,8 @@ Node::to_base64_json(std::ostream &os,
                      const std::string &pad,
                      const std::string &eoe) const
 {
+    os.precision(15);
+        
     // we need compact data
     Node n;
     compact_to(n);
