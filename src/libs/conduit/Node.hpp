@@ -2087,21 +2087,14 @@ public:
                                 const std::string &pad=" ",
                                 const std::string &eoe="\n") const;
 
-    void                json_to_stream(std::ostream &os,
+    void                to_json_stream(std::ostream &os,
                                        const std::string &protocol="json",
                                        index_t indent=2, 
                                        index_t depth=0,
                                        const std::string &pad=" ",
                                        const std::string &eoe="\n") const;
 
-    void                json_to_stream(std::ostringstream &oss,
-                                       const std::string &protocol,
-                                       index_t indent=2, 
-                                       index_t depth=0,
-                                       const std::string &pad=" ",
-                                       const std::string &eoe="\n") const;
-
-    void                json_to_stream(const std::string &stream_path,
+    void                to_json_stream(const std::string &stream_path,
                                        const std::string &protocol="json",
                                        index_t indent=2, 
                                        index_t depth=0,
@@ -2559,7 +2552,14 @@ private:
     void              info(Node &res,
                            const std::string &curr_path) const;
 
+//-----------------------------------------------------------------------------
+//
+// -- private to_json helpers --
+//
+//-----------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
     // the generic to_json methods are used by the specialized cases 
+    //-------------------------------------------------------------------------
     std::string         to_json_generic(bool detailed, 
                                         index_t indent=2, 
                                         index_t depth=0,
@@ -2579,15 +2579,10 @@ private:
                                         index_t depth=0,
                                         const std::string &pad=" ",
                                         const std::string &eoe="\n") const;
-
-    void                to_json_generic(std::ostringstream &oss,
-                                        bool detailed, 
-                                        index_t indent=2, 
-                                        index_t depth=0,
-                                        const std::string &pad=" ",
-                                        const std::string &eoe="\n") const;
-
+   
+    //-------------------------------------------------------------------------
     // transforms the node to json without any conduit schema constructs
+    //-------------------------------------------------------------------------
     std::string      to_pure_json(index_t indent=2,
                                   index_t depth=0,
                                   const std::string &pad=" ",
@@ -2605,14 +2600,9 @@ private:
                                   const std::string &pad=" ",
                                   const std::string &eoe="\n") const;
 
-    void             to_pure_json(std::ostringstream &oss,
-                                  index_t indent=2,
-                                  index_t depth=0,
-                                  const std::string &pad=" ",
-                                  const std::string &eoe="\n") const;
-
-
+    //-------------------------------------------------------------------------
     // transforms the node to json that contains conduit schema constructs
+    //-------------------------------------------------------------------------
     std::string      to_detailed_json(index_t indent=2, 
                                       index_t depth=0,
                                       const std::string &pad=" ",
@@ -2629,14 +2619,10 @@ private:
                                       index_t depth=0,
                                       const std::string &pad=" ",
                                       const std::string &eoe="\n") const;
-
-    void             to_detailed_json(std::ostringstream &oss,
-                                      index_t indent=2, 
-                                      index_t depth=0,
-                                      const std::string &pad=" ",
-                                      const std::string &eoe="\n") const;
-
+                                             
+    //-------------------------------------------------------------------------
     // transforms the node to json with data payload encoded using base64
+    //-------------------------------------------------------------------------
     std::string      to_base64_json(index_t indent=2,
                                     index_t depth=0,
                                     const std::string &pad=" ",
@@ -2654,11 +2640,6 @@ private:
                                     const std::string &pad=" ",
                                     const std::string &eoe="\n") const;
 
-    void             to_base64_json(std::ostringstream &oss,
-                                    index_t indent=2,
-                                    index_t depth=0,
-                                    const std::string &pad=" ",
-                                    const std::string &eoe="\n") const;
 
 //-----------------------------------------------------------------------------
 //

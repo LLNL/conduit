@@ -7100,7 +7100,7 @@ Node::to_json(const std::string &protocol,
 
 //-----------------------------------------------------------------------------
 void
-Node::json_to_stream(const std::string &stream_path,
+Node::to_json_stream(const std::string &stream_path,
                      const std::string &protocol,
                      index_t indent, 
                      index_t depth,
@@ -7126,7 +7126,7 @@ Node::json_to_stream(const std::string &stream_path,
 }
 //-----------------------------------------------------------------------------
 void
-Node::json_to_stream(std::ostream &os,
+Node::to_json_stream(std::ostream &os,
                      const std::string &protocol,
                      index_t indent, 
                      index_t depth,
@@ -7144,33 +7144,6 @@ Node::json_to_stream(std::ostream &os,
     else if(protocol == "base64_json")
     {
         return to_base64_json(os,indent,depth,pad,eoe);        
-    }
-    else
-    {
-        CONDUIT_ERROR("Unknown to_json protocol:" << protocol);
-    }
-}
-
-//-----------------------------------------------------------------------------
-void
-Node::json_to_stream(std::ostringstream &oss,
-                     const std::string &protocol,
-                     index_t indent, 
-                     index_t depth,
-                     const std::string &pad,
-                     const std::string &eoe) const
-{
-    if(protocol == "json")
-    {
-        return to_pure_json(oss,indent,depth,pad,eoe);
-    }
-    else if(protocol == "conduit")
-    {
-        return to_detailed_json(oss,indent,depth,pad,eoe);
-    }
-    else if(protocol == "base64_json")
-    {
-        return to_base64_json(oss,indent,depth,pad,eoe);        
     }
     else
     {
@@ -7213,6 +7186,7 @@ Node::to_json_generic(const std::string &stream_path,
     ofs.close();
 }
 
+
 //---------------------------------------------------------------------------//
 void
 Node::to_json_generic(std::ostream &os,
@@ -7222,115 +7196,117 @@ Node::to_json_generic(std::ostream &os,
                       const std::string &pad,
                       const std::string &eoe) const
 {
-    std::ostringstream oss;
-    to_json_generic(oss,detailed,indent,depth,pad,eoe);
-    os << oss.str();
-}
-
-//---------------------------------------------------------------------------//
-void
-Node::to_json_generic(std::ostringstream &oss,
-                      bool detailed, 
-                      index_t indent, 
-                      index_t depth,
-                      const std::string &pad,
-                      const std::string &eoe) const
-{
+    os.precision(15);
     if(dtype().id() == DataType::OBJECT_T)
     {
-        oss << eoe;
-        utils::indent(oss,indent,depth,pad);
-        oss << "{" << eoe;
+        os << eoe;
+        utils::indent(os,indent,depth,pad);
+        os << "{" << eoe;
     
         index_t nchildren = m_children.size();
         for(index_t i=0; i < nchildren;i++)
         {
-            utils::indent(oss,indent,depth+1,pad);
-            oss << "\""<< m_schema->object_order()[i] << "\": ";
-            m_children[i]->to_json_generic(oss,
+            utils::indent(os,indent,depth+1,pad);
+            os << "\""<< m_schema->object_order()[i] << "\": ";
+            m_children[i]->to_json_generic(os,
                                            detailed,
                                            indent,
                                            depth+1,
                                            pad,
                                            eoe);
             if(i < nchildren-1)
-                oss << ",";
-            oss << eoe;
+                os << ",";
+            os << eoe;
         }
-        utils::indent(oss,indent,depth,pad);
-        oss << "}";
+        utils::indent(os,indent,depth,pad);
+        os << "}";
     }
     else if(dtype().id() == DataType::LIST_T)
     {
-        oss << eoe;
-        utils::indent(oss,indent,depth,pad);
-        oss << "[" << eoe;
+        os << eoe;
+        utils::indent(os,indent,depth,pad);
+        os << "[" << eoe;
         
         index_t nchildren = m_children.size();
         for(index_t i=0; i < nchildren;i++)
         {
-            utils::indent(oss,indent,depth+1,pad);
-            m_children[i]->to_json_generic(oss,
+            utils::indent(os,indent,depth+1,pad);
+            m_children[i]->to_json_generic(os,
                                            detailed,
                                            indent,
                                            depth+1,
                                            pad,
                                            eoe);
             if(i < nchildren-1)
-                oss << ",";
-            oss << eoe;
+                os << ",";
+            os << eoe;
         }
-        utils::indent(oss,indent,depth,pad);
-        oss << "]";      
+        utils::indent(os,indent,depth,pad);
+        os << "]";      
     }
     else // assume leaf data type
     {
-        std::ostringstream value_oss; 
+        if(detailed)
+        {
+            std::string dtype_json = dtype().to_json();
+            std::string dtype_open;
+            std::string dtype_rest;
+
+            // trim the last "}"
+            utils::split_string(dtype_json,
+                                "}",
+                                dtype_open,
+                                dtype_rest);
+            os<< dtype_open;
+            os << ", value: ";
+        }
+
         switch(dtype().id())
         {
             // ints 
             case DataType::INT8_T:
-                as_int8_array().to_json(value_oss);
+                as_int8_array().to_json(os);
                 break;
             case DataType::INT16_T:
-                as_int16_array().to_json(value_oss);
+                as_int16_array().to_json(os);
                 break;
             case DataType::INT32_T:
-                as_int32_array().to_json(value_oss);
+                as_int32_array().to_json(os);
                 break;
             case DataType::INT64_T:
-                as_int64_array().to_json(value_oss);
+                as_int64_array().to_json(os);
                 break;
             // uints 
             case DataType::UINT8_T:
-                as_uint8_array().to_json(value_oss);
+                as_uint8_array().to_json(os);
                 break;
             case DataType::UINT16_T: 
-                as_uint16_array().to_json(value_oss);
+                as_uint16_array().to_json(os);
                 break;
             case DataType::UINT32_T:
-                as_uint32_array().to_json(value_oss);
+                as_uint32_array().to_json(os);
                 break;
             case DataType::UINT64_T:
-                as_uint64_array().to_json(value_oss);
+                as_uint64_array().to_json(os);
                 break;
             // floats 
             case DataType::FLOAT32_T:
-                as_float32_array().to_json(value_oss);
+                as_float32_array().to_json(os);
                 break;
             case DataType::FLOAT64_T:
-                as_float64_array().to_json(value_oss);
+                as_float64_array().to_json(os);
                 break;
             // char8_str
             case DataType::CHAR8_STR_T: 
-                value_oss << "\"" << as_char8_str() << "\""; 
+                os << "\"" << as_char8_str() << "\""; 
                 break;
         }
 
-        if(!detailed)
-            oss << value_oss.str();
-        else
-            dtype().to_json(oss,value_oss.str());
+        if(detailed)
+        {
+            // complete json entry 
+            os << "}";
+        }
     }  
 }
 
@@ -7372,17 +7348,6 @@ Node::to_pure_json(std::ostream &os,
 }
 
 //---------------------------------------------------------------------------//
-void
-Node::to_pure_json(std::ostringstream &oss,
-                   index_t indent,
-                   index_t depth,
-                   const std::string &pad,
-                   const std::string &eoe) const
-{
-    to_json_generic(oss,false,indent,depth,pad,eoe);
-}
-
-//---------------------------------------------------------------------------//
 std::string
 Node::to_detailed_json(index_t indent, 
                        index_t depth,
@@ -7421,17 +7386,6 @@ Node::to_detailed_json(std::ostream &os,
 }
 
 //---------------------------------------------------------------------------//
-void
-Node::to_detailed_json(std::ostringstream &oss,
-                       index_t indent, 
-                       index_t depth,
-                       const std::string &pad,
-                       const std::string &eoe) const
-{
-    to_json_generic(oss,true,indent,depth,pad,eoe);
-}
-
-//---------------------------------------------------------------------------//
 std::string
 Node::to_base64_json(index_t indent,
                      index_t depth,
@@ -7459,6 +7413,7 @@ Node::to_base64_json(const std::string &stream_path,
     ofs.close();
 }
 
+
 //---------------------------------------------------------------------------//
 void
 Node::to_base64_json(std::ostream &os,
@@ -7467,28 +7422,13 @@ Node::to_base64_json(std::ostream &os,
                      const std::string &pad,
                      const std::string &eoe) const
 {
-    std::ostringstream oss;
-    to_base64_json(oss,indent,depth,pad,eoe);
-    os << oss.str();
-}
-
-
-//---------------------------------------------------------------------------//
-void
-Node::to_base64_json(std::ostringstream &oss,
-                    index_t indent,
-                    index_t depth,
-                    const std::string &pad,
-                    const std::string &eoe) const
-{
+    os.precision(15);
+        
     // we need compact data
     Node n;
     compact_to(n);
     
     // use libb64 to encode the data
-    
-
-    
     index_t nbytes = n.schema().total_bytes();
     Node bb64_data;
     bb64_data.set(DataType::char8_str(nbytes*2));
@@ -7498,48 +7438,31 @@ Node::to_base64_json(std::ostringstream &oss,
     memset(dest_ptr,0,nbytes*2);
 
     utils::base64_encode(src_ptr,nbytes,dest_ptr);
-    //
-    // base64_encodestate enc_state;
-    // base64_init_encodestate(&enc_state);
-    // const char *src_ptr = (const char*)n.data_ptr();
-    // char *des_ptr       = (char*)bb64_data.data_ptr();
-    // memset(des_ptr,0,nbytes*2);
-    //
-    // int code_len = base64_encode_block(src_ptr,
-    //                                    nbytes,
-    //                                    des_ptr,
-    //                                    &enc_state);
-    // des_ptr += code_len;
-    // code_len = base64_encode_blockend(des_ptr, &enc_state);
-    // des_ptr += code_len;
-    // // for some reason end adds a newline or something else evil
-    // //
-    // des_ptr[-1] = 0;
     
     // create the resulting json
     
-    oss << eoe;
-    utils::indent(oss,indent,depth,pad);
-    oss << "{" << eoe;
-    utils::indent(oss,indent,depth+1,pad);
-    oss << "\"schema\": ";
+    os << eoe;
+    utils::indent(os,indent,depth,pad);
+    os << "{" << eoe;
+    utils::indent(os,indent,depth+1,pad);
+    os << "\"schema\": ";
 
-    n.schema().to_json(oss,true,indent,depth+1,pad,eoe);
+    n.schema().to_json(os,true,indent,depth+1,pad,eoe);
 
-    oss  << "," << eoe;
+    os  << "," << eoe;
     
-    utils::indent(oss,indent,depth+1,pad);
-    oss << "\"data\": " << eoe;
-    utils::indent(oss,indent,depth+1,pad);
-    oss << "{" << eoe;
-    utils::indent(oss,indent,depth+2,pad);
-    oss << "\"base64\": ";
-    bb64_data.to_pure_json(oss,0,0,"","");
-    oss << eoe;
-    utils::indent(oss,indent,depth+1,pad);
-    oss << "}" << eoe;
-    utils::indent(oss,indent,depth,pad);
-    oss << "}";
+    utils::indent(os,indent,depth+1,pad);
+    os << "\"data\": " << eoe;
+    utils::indent(os,indent,depth+1,pad);
+    os << "{" << eoe;
+    utils::indent(os,indent,depth+2,pad);
+    os << "\"base64\": ";
+    bb64_data.to_pure_json(os,0,0,"","");
+    os << eoe;
+    utils::indent(os,indent,depth+1,pad);
+    os << "}" << eoe;
+    utils::indent(os,indent,depth,pad);
+    os << "}";
 }
 
 
@@ -7614,14 +7537,14 @@ Node::info()const
 void
 Node::print() const
 {
-    json_to_stream(std::cout);
+    to_json_stream(std::cout);
 }
 
 //-----------------------------------------------------------------------------
 void
 Node::print_detailed() const
 {
-    json_to_stream(std::cout,"conduit");
+    to_json_stream(std::cout,"conduit");
 }
 
 

@@ -143,40 +143,40 @@ DataArray<T>::to_json() const
 //---------------------------------------------------------------------------//
 template <typename T> 
 void            
-DataArray<T>::to_json(std::ostringstream &oss) const 
+DataArray<T>::to_json(std::ostream &os) const 
 { 
     index_t nele = number_of_elements();
     if(nele > 1)
-        oss << "[";
+        os << "[";
 
     bool first=true;
     for(index_t idx = 0; idx < nele; idx++)
     {
         if(!first)
-            oss << ", ";
+            os << ", ";
         switch(m_dtype.id())
         {
             /// TODO: This could be orged better
             /* ints */
-            case DataType::INT8_T:  oss << (int64) element(idx); break;
-            case DataType::INT16_T: oss << (int64) element(idx); break;
-            case DataType::INT32_T: oss << (int64) element(idx); break;
-            case DataType::INT64_T: oss << (int64) element(idx); break;
+            case DataType::INT8_T:  os << (int64) element(idx); break;
+            case DataType::INT16_T: os << (int64) element(idx); break;
+            case DataType::INT32_T: os << (int64) element(idx); break;
+            case DataType::INT64_T: os << (int64) element(idx); break;
             /* uints */
-            case DataType::UINT8_T:  oss << (uint64) element(idx); break;
-            case DataType::UINT16_T: oss << (uint64) element(idx); break;
-            case DataType::UINT32_T: oss << (uint64) element(idx); break;
-            case DataType::UINT64_T: oss << (uint64) element(idx); break;
+            case DataType::UINT8_T:  os << (uint64) element(idx); break;
+            case DataType::UINT16_T: os << (uint64) element(idx); break;
+            case DataType::UINT32_T: os << (uint64) element(idx); break;
+            case DataType::UINT64_T: os << (uint64) element(idx); break;
             /* floats */
-            case DataType::FLOAT32_T: oss << (float64) element(idx); break;
-            case DataType::FLOAT64_T: oss << (float64) element(idx); break;
+            case DataType::FLOAT32_T: os << (float64) element(idx); break;
+            case DataType::FLOAT64_T: os << (float64) element(idx); break;
         
         }
         first=false;
     }
 
     if(nele > 1)
-        oss << "]";
+        os << "]";
 }
 
 

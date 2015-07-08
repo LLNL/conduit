@@ -183,7 +183,7 @@ public:
 // Transforms
 //-----------------------------------------------------------------------------
     std::string     to_json() const;
-    void            to_json(std::ostringstream &oss) const;
+    void            to_json(std::ostream &os) const;
     void            compact_elements_to(uint8 *data) const;
     
 //-----------------------------------------------------------------------------

@@ -329,7 +329,7 @@ Schema::to_json(bool detailed,
 
 //---------------------------------------------------------------------------//
 void
-Schema::to_json(std::ostringstream &oss,
+Schema::to_json(std::ostream &os,
               bool detailed, 
               index_t indent, 
               index_t depth,
@@ -338,44 +338,44 @@ Schema::to_json(std::ostringstream &oss,
 {
     if(m_dtype.id() == DataType::OBJECT_T)
     {
-        oss << eoe;
-        utils::indent(oss,indent,depth,pad);
-        oss << "{" << eoe;
+        os << eoe;
+        utils::indent(os,indent,depth,pad);
+        os << "{" << eoe;
     
         index_t nchildren = children().size();
         for(index_t i=0; i < nchildren;i++)
         {
-            utils::indent(oss,indent,depth+1,pad);
-            oss << "\""<< object_order()[i] << "\": ";
-            children()[i]->to_json(oss,detailed,indent,depth+1,pad,eoe);
+            utils::indent(os,indent,depth+1,pad);
+            os << "\""<< object_order()[i] << "\": ";
+            children()[i]->to_json(os,detailed,indent,depth+1,pad,eoe);
             if(i < nchildren-1)
-                oss << ",";
-            oss << eoe;
+                os << ",";
+            os << eoe;
         }
-        utils::indent(oss,indent,depth,pad);
-        oss << "}";
+        utils::indent(os,indent,depth,pad);
+        os << "}";
     }
     else if(m_dtype.id() == DataType::LIST_T)
     {
-        oss << eoe;
-        utils::indent(oss,indent,depth,pad);
-        oss << "[" << eoe;
+        os << eoe;
+        utils::indent(os,indent,depth,pad);
+        os << "[" << eoe;
         
         index_t nchildren = children().size();
         for(index_t i=0; i < nchildren;i++)
         {
-            utils::indent(oss,indent,depth+1,pad);
-            children()[i]->to_json(oss,detailed,indent,depth+1,pad,eoe);
+            utils::indent(os,indent,depth+1,pad);
+            children()[i]->to_json(os,detailed,indent,depth+1,pad,eoe);
             if(i < nchildren-1)
-                oss << ",";
-            oss << eoe;
+                os << ",";
+            os << eoe;
         }
-        utils::indent(oss,indent,depth,pad);
-        oss << "]";      
+        utils::indent(os,indent,depth,pad);
+        os << "]";      
     }
     else // assume leaf data type
     {
-        m_dtype.to_json(oss);
+        m_dtype.to_json(os);
     }
 }
 

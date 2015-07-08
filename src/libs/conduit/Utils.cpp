@@ -116,7 +116,7 @@ handle_error(const std::string &msg,
 
 //-----------------------------------------------------------------------------
 void     
-split_string(const std::string &path,
+split_string(const std::string &str,
              const std::string &sep,
              std::string &curr,
              std::string &next)
@@ -124,22 +124,22 @@ split_string(const std::string &path,
     curr.clear();
     next.clear();
 
-    std::size_t found = path.find(sep);
+    std::size_t found = str.find(sep);
     if (found != std::string::npos)
     {
-        curr = path.substr(0,found);
-        if(found != path.size()-1)
-            next = path.substr(found+1,path.size()-(found-1));
+        curr = str.substr(0,found);
+        if(found != str.size()-1)
+            next = str.substr(found+1,str.size()-(found-1));
     }
     else
     {
-        curr = path;
+        curr = str;
     }
 }
 
 //-----------------------------------------------------------------------------
 void     
-rsplit_string(const std::string &path,
+rsplit_string(const std::string &str,
               const std::string &sep,
               std::string &curr,
               std::string &next)
@@ -147,16 +147,16 @@ rsplit_string(const std::string &path,
     curr.clear();
     next.clear();
 
-    std::size_t found = path.rfind(sep);
+    std::size_t found = str.rfind(sep);
     if (found != std::string::npos)
     {
-        next = path.substr(0,found);
-        if(found != path.size()-1)
-             curr = path.substr(found+1,path.size()-(found-1));
+        next = str.substr(0,found);
+        if(found != str.size()-1)
+             curr = str.substr(found+1,str.size()-(found-1));
     }
     else
     {
-        curr = path;
+        curr = str;
     }
 }
 
@@ -304,7 +304,7 @@ json_sanitize(const std::string &json)
 
 //-----------------------------------------------------------------------------
 void 
-indent(std::ostringstream &oss,
+indent(std::ostream &os,
        index_t indent,
        index_t depth,
        const std::string &pad)
@@ -313,7 +313,7 @@ indent(std::ostringstream &oss,
     {
         for(index_t j=0;j<indent;j++)
         {
-            oss << pad;
+            os << pad;
         }
     }
 }
