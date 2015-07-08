@@ -164,12 +164,12 @@ namespace utils
 //-----------------------------------------------------------------------------
 /// Helpers for common string splitting operations. 
 //-----------------------------------------------------------------------------
-    void CONDUIT_API split_string(const std::string &path,
+    void CONDUIT_API split_string(const std::string &str,
                                   const std::string &sep,
                                   std::string &curr,
                                   std::string &next);
 
-    void CONDUIT_API rsplit_string(const std::string &path,
+    void CONDUIT_API rsplit_string(const std::string &str,
                                    const std::string &sep,
                                    std::string &curr,
                                    std::string &next);
@@ -203,7 +203,7 @@ namespace utils
      }
 
 //-----------------------------------------------------------------------------
-     void CONDUIT_API indent(std:: ostringstream &oss,
+     void CONDUIT_API indent(std::ostream &os,
                              index_t indent,
                              index_t depth,
                              const std::string &pad);

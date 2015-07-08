@@ -128,7 +128,7 @@ void
     n["file"] = m_file;
     n["line"] = m_line;
     n["message"] = m_msg;
-    n.json_to_stream(oss);
+    n.to_json_stream(oss);
     oss << std::endl;
 }
     

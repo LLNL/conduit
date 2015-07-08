@@ -184,7 +184,7 @@ public:
                             const std::string &pad=" ",
                             const std::string &eoe="\n") const;
 
-    void            to_json(std::ostringstream &oss,
+    void            to_json(std::ostream &os,
                             bool detailed=true, 
                             index_t indent=2, 
                             index_t depth=0,

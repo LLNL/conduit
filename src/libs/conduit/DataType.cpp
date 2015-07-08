@@ -971,32 +971,30 @@ DataType::to_json() const
 
 //---------------------------------------------------------------------------// 
 void
-DataType::to_json(std::ostringstream &oss,
-                  const std::string &value) const
+DataType::to_json(std::ostream &os) const
 {
-    oss << "{\"dtype\":";
+    os << "{\"dtype\":";
     if(m_id == EMPTY_T)
     {
-        oss << "\"[empty]\"";
+        os << "\"[empty]\"";
     }
     else if(m_id == OBJECT_T)
     {
-        oss << "\"[object]\"";
+        os << "\"[object]\"";
     }
     else if(m_id == LIST_T)
     {
-        oss << "\"[list]\"";
+        os << "\"[list]\"";
     }
     else
     {
-        oss << "\"" << id_to_name(m_id) << "\"";
-        oss << ", \"length\": " << m_num_ele;
-        if(value == "")
-        {
-            oss << ", \"offset\": " << m_offset;
-            oss << ", \"stride\": " << m_stride;
-            oss << ", \"element_bytes\": " << m_ele_bytes;
-        }
+        os << "\"" << id_to_name(m_id) << "\"";
+        os << ", \"length\": " << m_num_ele;
+        
+        os << ", \"offset\": " << m_offset;
+        os << ", \"stride\": " << m_stride;
+        os << ", \"element_bytes\": " << m_ele_bytes;
+
 
         std::string endian_str;
 
@@ -1009,14 +1007,10 @@ DataType::to_json(std::ostringstream &oss,
         {
             endian_str = Endianness::id_to_name(m_endianness);
         }
-        oss << ", \"endianness\": \"" << endian_str << "\"";            
-    }
-    if(value != "")
-    {
-        oss << ", \"value\": " << value;
+        os << ", \"endianness\": \"" << endian_str << "\"";            
     }
 
-    oss << "}";
+    os << "}";
 }
 
 //---------------------------------------------------------------------------//
