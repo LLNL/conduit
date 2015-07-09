@@ -76,23 +76,41 @@ class UberenvConduit(Package):
         
         
     def install(self, spec, prefix):
-        dest_dir = env["SPACK_DEBUG_LOG_DIR"]
+        dest_dir     = env["SPACK_DEBUG_LOG_DIR"]
+        c_compiler   = env["SPACK_CC"]
+        cpp_compiler = env["SPACK_CXX"]
+        sys_type     = spec.architecture
+        if env.has_key("SYS_TYPE"):
+            sys_type = env["SYS_TYPE"]
         cmake_exe        = pjoin(spec['cmake'].prefix.bin,"cmake")
         python_exe       = pjoin(spec['python'].prefix.bin,"python")
         sphinx_build_exe = pjoin(spec['python'].prefix.bin,"sphinx-build")
         # TODO: better name (use sys-type and compiler name ?)
         print "cmake executable: %s" % cmake_exe
         cfg = open(pjoin(dest_dir,"%s.cmake" % socket.gethostname()),"w")
-        cfg.write("#######\n")
+        cfg.write("##################################\n")
         cfg.write("# uberenv host-config for conduit\n")
-        cfg.write("#######\n")
+        cfg.write("##################################\n")
+        cfg.write("# %s-%s\n" % (sys_type,spec.compiler))
+        cfg.write("##################################\n\n")
+        # show path to cmake for reference
         cfg.write("# cmake from uberenv\n")
         cfg.write("# cmake exectuable path: %s\n\n" % cmake_exe)
+        # compiler settings
+        cfg.write("#######\n")
+        cfg.write("# using %s compiler spec\n" % spec.compiler)
+        cfg.write("#######\n\n")
+        cfg.write("# c compiler used by spack\n")
+        cfg.write('set(CMAKE_C_COMPILER "%s" CACHE PATH "")\n\n' % c_compiler)
+        cfg.write("# cpp compiler used by spack\n")
+        cfg.write('set(CMAKE_CXX_COMPILER "%s" CACHE PATH "")\n\n' % cpp_compiler)
+        #python packages
         cfg.write("# Enable python module builds\n")
         cfg.write('set(ENABLE_PYTHON ON CACHE PATH "")\n\n')
         cfg.write("# python from uberenv\n")
         cfg.write('set(PYTHON_EXECUTABLE "%s" CACHE PATH "")\n\n' % python_exe)
         cfg.write("# sphinx from uberenv\n")
+        # i/o packages
         cfg.write('set(SPHINX_EXECUTABLE "%s" CACHE PATH "")\n\n' % sphinx_build_exe)
         cfg.write("# I/O Packages\n\n")
         cfg.write("# Enable Silo Support in conduit_io\n")
@@ -104,7 +122,4 @@ class UberenvConduit(Package):
         cfg.write("# silo from uberenv\n")
         cfg.write('set(SILO_DIR "%s" CACHE PATH "")\n\n' % spec['silo'].prefix)
         cfg.close()
-
-        
-        
         

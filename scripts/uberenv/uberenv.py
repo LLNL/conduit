@@ -87,11 +87,13 @@ def main():
     clones and runs spack to setup our third_party libs and
     creates a host-config.cmake file that can be used by conduit.
     """
+    spack_extra_args = ""
     if "darwin" in platform.system().lower():
         dep_tgt = platform.mac_ver()[0]
         dep_tgt = dep_tgt[:dep_tgt.rfind(".")]
         print "[setting MACOSX_DEPLOYMENT_TARGET to %s]" % dep_tgt
         env["MACOSX_DEPLOYMENT_TARGET"] = dep_tgt
+        spack_extra_args = " %clang"
     # parse args from command line
     opts, extras = parse_args()
     # get the current working path, and the glob used to identify the 
@@ -115,7 +117,7 @@ def main():
     # hot-copy our packages into spack
     sexe("cp -Rf %s %s" % (pkgs,dest_spack_pkgs))
     # use the uberenv package to trigger the right builds and build an host-config.cmake file
-    sexe("spack/bin/spack install uberenv-conduit")
+    sexe("spack/bin/spack install uberenv-conduit" + spack_extra_args)
     host_cfg = "%s.cmake" % socket.gethostname()
     if os.path.isfile(host_cfg):
         print "[result host-config file: %s]" % os.path.abspath(host_cfg)

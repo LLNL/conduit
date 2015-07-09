@@ -46,11 +46,7 @@
 # CMake Cache Seed file for naples (Cyrus' laptop)
 #
 
-# use clang compilers
-set(CMAKE_C_COMPILER "clang" CACHE PATH "")
-set(CMAKE_CXX_COMPILER "clang++" CACHE PATH "")
-
-set(ENABLE_FORTRAN OFF CACHE PATH "")
+set(ENABLE_FORTRAN ON CACHE PATH "")
 
 # Enable mpi for conduit-mpi
 set(ENABLE_MPI ON CACHE PATH "")
@@ -61,20 +57,33 @@ set(MPI_CC_COMPILER /Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x8
 
 set(MPI_CXX_COMPILER /Users/harrison37/Work/masonry/build-mb-2.9.1-darwin-10.9-x86_64/thirdparty_shared/visit/mpich/3.0.4/darwin-x86_64/bin/mpicc CACHE PATH "")
 
-#######
+##################################
 # uberenv host-config for conduit
-#######
+##################################
+# macosx_10.9_x86_64-clang@3.4svn
+##################################
+
 # cmake from uberenv
-# cmake exectuable path: /Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/cmake@3.0.2/bin/cmake
+# cmake exectuable path: /Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/clang@3.4svn/cmake@3.0.2/bin/cmake
+
+#######
+# using clang@3.4svn compiler spec
+#######
+
+# c compiler used by spack
+set(CMAKE_C_COMPILER "/usr/bin/clang" CACHE PATH "")
+
+# cpp compiler used by spack
+set(CMAKE_CXX_COMPILER "/usr/bin/clang++" CACHE PATH "")
 
 # Enable python module builds
 set(ENABLE_PYTHON ON CACHE PATH "")
 
 # python from uberenv
-set(PYTHON_EXECUTABLE "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/python@2.7.8/bin/python" CACHE PATH "")
+set(PYTHON_EXECUTABLE "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/clang@3.4svn/python@2.7.8/bin/python" CACHE PATH "")
 
 # sphinx from uberenv
-set(SPHINX_EXECUTABLE "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/python@2.7.8/bin/sphinx-build" CACHE PATH "")
+set(SPHINX_EXECUTABLE "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/clang@3.4svn/python@2.7.8/bin/sphinx-build" CACHE PATH "")
 
 # I/O Packages
 
@@ -82,13 +91,11 @@ set(SPHINX_EXECUTABLE "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/mac
 set(ENABLE_SILO ON CACHE PATH "")
 
 # szip from uberenv
-set(SZIP_DIR "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/szip@2.1" CACHE PATH "")
+set(SZIP_DIR "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/clang@3.4svn/szip@2.1" CACHE PATH "")
 
 # hdf5 from uberenv
-set(HDF5_DIR "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/hdf5@1.8.7-83ab1427" CACHE PATH "")
+set(HDF5_DIR "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/clang@3.4svn/hdf5@1.8.7-7d43c2f1" CACHE PATH "")
 
 # silo from uberenv
-set(SILO_DIR "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/gcc@4.2.1/silo@4.10.1-f5eccf8d" CACHE PATH "")
-
-
+set(SILO_DIR "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/clang@3.4svn/silo@4.10.1-ac9a3e3c" CACHE PATH "")
 
