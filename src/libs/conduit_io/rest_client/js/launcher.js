@@ -85,3 +85,26 @@ b64_req.onerror = function ()
 
 b64_req.send();
 
+function websocket_test()
+{
+    var wsproto = (location.protocol === 'https:') ? 'wss:' : 'ws:';
+    connection = new WebSocket(wsproto + '//' + window.location.host + '/websocket');
+    
+    connection.onmessage = function (msg) 
+    {
+        console.log('WebSocket message' + msg.data);
+        connection.send('{"type":"info","message":"response from browser"}');
+    }
+      
+    connection.onerror = function (error)
+    {
+        console.log('WebSocket error');
+        connection.close();
+    }
+}
+
+websocket_test();
+
+
+
+

@@ -61,6 +61,8 @@ set(civetweb_sources
     src/CivetServer.cpp
     )
 
+add_definitions(-DUSE_WEBSOCKET)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 add_library(civetweb STATIC ${civetweb_sources} ${civetweb_headers})

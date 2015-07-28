@@ -58,11 +58,12 @@
 #include "Conduit_IO_Exports.hpp"
 
 //
-// forward declare CivetServer so we don't need the civetweb headers in our
-// public interface. 
+// forward declare CivetServer and mg_connection so we don't need the 
+// civetweb headers in our public interface. 
 // 
 
 class CivetServer;
+struct mg_connection;
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -91,12 +92,16 @@ void CONDUIT_IO_API serve(Node *n,
                           index_t port = 8080);
 
 
+
 //-----------------------------------------------------------------------------
 // -- REST Server Interface -
 //-----------------------------------------------------------------------------
 
+// forward declare websocket interface class
+class WebSocket;
+
 // forward declare internal handler class
-class RESTHandler;
+class RequestHandler;
 
 class CONDUIT_IO_API RESTServer
 {
@@ -104,22 +109,52 @@ public:
 
              RESTServer();
     virtual ~RESTServer();
-
+    
+    // note: this is a bit too special purpose.
     void     serve(Node *data,
                    bool block=false,
                    index_t port = 8080);
 
     void     shutdown();
     bool     is_running() const;
+    
+    // Block for the next websocket connection.
+    // WebSocket *next_websocket();
 
 private:
     
-    CivetServer   *m_server;
-    RESTHandler   *m_handler;
-    std::string    m_port;
-    bool           m_running;
-    
+    CivetServer            *m_server;
+    RequestHandler         *m_handler;
+    std::string             m_port;
+    bool                    m_running;
 };
+
+//-----------------------------------------------------------------------------
+/// -- WebSocket Connection Interface -
+//-----------------------------------------------------------------------------
+//
+/// The lifetimes of our WebSocket instances are managed by the 
+/// RESTServer and its RequestHandler instance
+// 
+class CONDUIT_IO_API WebSocket
+{
+public:
+    friend class RequestHandler;
+    
+    void           send(const Node &data,
+                        const std::string &protocol="json");
+
+    bool           is_connected() const;
+
+private:
+             WebSocket();
+    virtual ~WebSocket();
+    
+    void     set_connection(mg_connection *connection);
+
+    mg_connection  *m_connection;
+};
+
 
 };
 //-----------------------------------------------------------------------------
