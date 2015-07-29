@@ -53,7 +53,7 @@ if(SILO_FOUND)
   SET(CONDUIT_IO_ENABLE_SILO TRUE)
 endif()
 
-set(CONDUIT_REST_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/rest_client)
+set(CONDUIT_WEB_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/web_clients)
 
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_IO_Config.hpp.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/Conduit_IO_Config.hpp")

@@ -71,13 +71,18 @@ int base64_encode_block(const char* plaintext_in, int length_in, char* code_out,
 			*codechar++ = base64_encode_value(result);
 			result  = (fragment & 0x03f) >> 0;
 			*codechar++ = base64_encode_value(result);
-			
-			++(state_in->stepcount);
-			if (state_in->stepcount == CHARS_PER_LINE/4)
-			{
-				*codechar++ = '\n';
-				state_in->stepcount = 0;
-			}
+
+            //////////////////////////////////////////////////////
+            // Cyrus' Note: 
+            // We don't want newlines in our messages
+            // avoid adding them. 
+            //////////////////////////////////////////////////////
+            // ++(state_in->stepcount);
+            // if (state_in->stepcount == CHARS_PER_LINE/4)
+            // {
+            //     *codechar++ = '\n';
+            //     state_in->stepcount = 0;
+            // }
 		}
 	}
 	/* control should not reach here */

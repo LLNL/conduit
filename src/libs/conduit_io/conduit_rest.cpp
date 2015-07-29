@@ -51,12 +51,6 @@
 //-----------------------------------------------------------------------------
 // std lib includes
 //-----------------------------------------------------------------------------
-#if defined(CONDUIT_PLATFORM_WINDOWS)
-#include <Windows.h>
-#else
-#include <unistd.h>
-#endif
-
 #include <string.h>
 
 //-----------------------------------------------------------------------------
@@ -64,9 +58,6 @@
 //-----------------------------------------------------------------------------
 #include "civetweb.h"
 #include "CivetServer.h"
-
-#define BUFFERSIZE 65536
-#include "b64/encode.h"
 
 //-----------------------------------------------------------------------------
 // conduit includes
@@ -117,10 +108,9 @@ class RequestHandler : public CivetHandler
 public:
         
         //---------------------------------------------------------------------------//
-        RequestHandler(RESTServer &server,
-                       Node *node)
+        RequestHandler(RESTServer &server)
         : m_server(&server),
-          m_node(node)
+          m_node(NULL)
         {
             // empty
         }
@@ -135,6 +125,13 @@ public:
             }
         }
         
+        //---------------------------------------------------------------------------//
+        // Bridge to preserve our old interface
+        //---------------------------------------------------------------------------//
+        void set_node(Node *node)
+        {
+            m_node = node;
+        }
         
         //---------------------------------------------------------------------------//
         // Main handler, dispatches to proper api handlers. 
@@ -201,8 +198,11 @@ public:
         handle_rest_get_schema(CivetServer *server,
                           struct mg_connection *conn)
         {
-            mg_printf(conn, "%s",m_node->schema().to_json(true).c_str());
-            return 1;
+            if(m_node != NULL)
+            {
+                mg_printf(conn, "%s",m_node->schema().to_json(true).c_str());
+            }
+            return true;
         }
 
         //---------------------------------------------------------------------------//
@@ -212,16 +212,19 @@ public:
         handle_rest_get_value(CivetServer *server,
                               struct mg_connection *conn)
         {
-            // TODO size checks?
-            char post_data[2048];
-            char cpath[2048];
+            if(m_node != NULL)
+            {
+                // TODO size checks?
+                char post_data[2048];
+                char cpath[2048];
 
-            int post_data_len = mg_read(conn, post_data, sizeof(post_data));
+                int post_data_len = mg_read(conn, post_data, sizeof(post_data));
 
-            mg_get_var(post_data, post_data_len, "cpath", cpath, sizeof(cpath));
+                mg_get_var(post_data, post_data_len, "cpath", cpath, sizeof(cpath));
 
-            mg_printf(conn, "{ \"datavalue\": %s }",
-                      m_node->fetch(cpath).to_json().c_str());
+                mg_printf(conn, "{ \"datavalue\": %s }",
+                          m_node->fetch(cpath).to_json().c_str());
+            }
             return true;
         }
 
@@ -233,8 +236,11 @@ public:
         handle_rest_get_base64_json(CivetServer *server,
                                     struct mg_connection *conn)
         {
-            std::string b64_json = m_node->to_json("base64_json");
-            mg_printf(conn, "%s",b64_json.c_str());
+            if(m_node != NULL)
+            {
+                std::string b64_json = m_node->to_json("base64_json");
+                mg_printf(conn, "%s",b64_json.c_str());
+            }
             return true;
         }
 
@@ -400,6 +406,87 @@ public:
             return res;
         }
 
+        //---------------------------------------------------------------------------//
+        // returns the first active websocket. 
+        // waits for a new websocket connection if none are active.
+        //---------------------------------------------------------------------------//
+        WebSocket *
+        websocket(index_t ms_poll,
+                  index_t ms_timeout)
+        {
+            WebSocket *res = NULL;
+            
+            // check if an active websocket exists
+            m_server->lock_context();
+            {
+                for(size_t i=0; i < m_sockets.size() && res == NULL; i++)
+                {
+                    if(m_sockets[i]->is_connected())
+                    {
+                        res = m_sockets[i];
+                    }
+                }
+            }
+            m_server->unlock_context();
+            
+            // if we don't have a websocket connected, wait for one
+            if(res == NULL)
+            {
+                res = accept_websocket(ms_poll,ms_timeout);
+            }
+            
+            return res;
+        }
+
+        //---------------------------------------------------------------------------//
+        // waits for a new websocket connection
+        //---------------------------------------------------------------------------//
+        WebSocket *
+        accept_websocket(index_t ms_poll,
+                         index_t ms_timeout)
+        {
+            WebSocket *res = NULL;
+
+            index_t ms_total = 0;
+            size_t  start_num_sockets = 0;
+            size_t  curr_num_sockets  = 0;
+
+            // check for bad or un-inited context
+            if(m_server->context() == NULL)
+            {
+                return NULL;
+            }
+
+            // we will need to lock the context while we check for new websocket
+            m_server->lock_context();
+            {
+                start_num_sockets = m_sockets.size();
+            }
+            m_server->unlock_context();
+
+            curr_num_sockets = start_num_sockets;
+
+            while(curr_num_sockets == start_num_sockets && 
+                  ms_total <= ms_timeout)
+            {
+                utils::sleep(ms_poll);
+                ms_total += ms_poll;
+
+                m_server->lock_context();
+                {
+                    curr_num_sockets = m_sockets.size();
+                    if(curr_num_sockets != start_num_sockets)
+                    {
+                        // we will return the last socket added
+                        res = m_sockets[curr_num_sockets-1];
+                    }
+                }
+                m_server->unlock_context();
+            }
+
+            return res;
+        }
+
 
   private:
       RESTServer                 *m_server;
@@ -478,7 +565,7 @@ RESTServer::RESTServer()
   m_port(""),
   m_running(false)
 {
-    
+    m_handler = new RequestHandler(*this);
 }
 
 //-----------------------------------------------------------------------------
@@ -495,9 +582,75 @@ RESTServer::is_running() const
 }
 
 //-----------------------------------------------------------------------------
+WebSocket *
+RESTServer::websocket(index_t ms_poll,
+                      index_t ms_timeout)
+{
+    return m_handler->websocket(ms_poll,ms_timeout);
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+void
+RESTServer::lock_context()
+{
+    struct mg_context *ctx = context();
+    if(ctx != NULL)
+    {
+        mg_lock_context(ctx);
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+RESTServer::unlock_context()
+{
+    struct mg_context *ctx = context();
+    if(ctx != NULL)
+    {
+        mg_unlock_context(ctx);
+    }
+}
+
+
+
+
+//-----------------------------------------------------------------------------
 void
 RESTServer::serve(Node *node,
                   bool block,
+                  index_t port)
+{
+    m_handler->set_node(node);
+
+    // call general serve routine
+    serve(utils::join_file_path(CONDUIT_WEB_CLIENT_ROOT,"rest_client"),
+          port);
+    
+    if(block)
+    {
+        // wait for shutdown()
+        while(is_running()) 
+        {
+            utils::sleep(100);
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+mg_context *
+RESTServer::context()
+{
+    // NOTE: casting away const here.
+    return (struct mg_context *) m_server->getContext();
+}
+
+//-----------------------------------------------------------------------------
+void
+RESTServer::serve(const std::string &doc_root,
                   index_t port)
 {
     if(is_running())
@@ -506,28 +659,23 @@ RESTServer::serve(Node *node,
         return;
     }
 
-    // create our request handler
-    m_handler = new RequestHandler(*this,node);
-
     // civetweb takes strings as arguments
     // convert the port number to a string.
     std::ostringstream oss;
     oss << port;
     m_port = oss.str();
 
-    // setup
-    const char *options[] = { "document_root", CONDUIT_REST_CLIENT_ROOT,
+    CONDUIT_INFO("Starting RESTServer instance with doc root = " << doc_root);
+
+    // setup civetweb options
+    const char *options[] = { "document_root",   doc_root.c_str(),
                               "listening_ports", m_port.c_str(),
-                              "num_threads", "2",
+                              "num_threads",     "2",
                                NULL};
-
-
 
     try
     {
-    
         m_server = new CivetServer(options);
-
     }
     catch(CivetException except)
     {
@@ -537,7 +685,7 @@ RESTServer::serve(Node *node,
     }
     
     // check for valid context    
-    const struct mg_context *ctx = m_server->getContext();
+    mg_context *ctx = context();
     if(ctx == NULL)
     {
          CONDUIT_ERROR("RESTServer failed to bind civet server on port " 
@@ -551,10 +699,8 @@ RESTServer::serve(Node *node,
     // setup REST handlers
     m_server->addHandler("/api/*",m_handler);
     
-    //
     // setup web socket handlers
-    //
-    mg_set_websocket_handler((struct mg_context*)ctx,
+    mg_set_websocket_handler(ctx,
                              "/websocket",
                              // static handlers for the web socket case
                              RequestHandler::handle_websocket_connect,
@@ -568,17 +714,6 @@ RESTServer::serve(Node *node,
     // signal we are valid
     m_running = true;
 
-    if(block)
-    {
-        while(is_running()) // wait for shutdown()
-        {
-#if defined(CONDUIT_PLATFORM_WINDOWS)
-        Sleep(1000);
-#else
-        sleep(10);
-#endif
-        }
-    }
 }
 
 //-----------------------------------------------------------------------------

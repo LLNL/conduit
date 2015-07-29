@@ -178,6 +178,10 @@ namespace utils
                                  std::string &curr,
                                  std::string &next);
 
+//-----------------------------------------------------------------------------
+     std::string CONDUIT_API join_file_path(const std::string &left,
+                                            const std::string &right);
+
 
 //-----------------------------------------------------------------------------
 /// Base64 Encoding of Buffers 
@@ -207,7 +211,12 @@ namespace utils
                              index_t indent,
                              index_t depth,
                              const std::string &pad);
-     
+                             
+//-----------------------------------------------------------------------------
+     void CONDUIT_API sleep(index_t milliseconds);
+
+
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::utils --

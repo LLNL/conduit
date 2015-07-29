@@ -60,7 +60,7 @@
 
 
 // this path points to the web client js code tree
-#cmakedefine CONDUIT_REST_CLIENT_ROOT      "@CONDUIT_REST_CLIENT_ROOT@"
+#cmakedefine CONDUIT_WEB_CLIENT_ROOT      "@CONDUIT_WEB_CLIENT_ROOT@"
 
 #endif
 

@@ -53,6 +53,22 @@
 //-----------------------------------------------------------------------------
 // -- standard lib includes -- 
 //-----------------------------------------------------------------------------
+
+// for sleep funcs
+#if defined(CONDUIT_PLATFORM_WINDOWS)
+#include <Windows.h>
+#else
+#include <time.h>
+#endif
+
+// define for path sep
+#if defined(CONDUIT_PLATFORM_WINDOWS)
+const char CONDUIT_UTILS_FILE_PATH_SEPARATOR='\\';
+#else
+const char CONDUIT_UTILS_FILE_PATH_SEPARATOR='/';
+#endif
+
+
 #include <string.h>
 
 
@@ -168,6 +184,25 @@ split_path(const std::string &path,
 {
     split_string(path,std::string("/"),curr,next);
 }
+
+//-----------------------------------------------------------------------------
+     std::string CONDUIT_API join_path(const std::string &left,
+                                       const std::string &right);
+
+//-----------------------------------------------------------------------------
+std::string 
+join_file_path(const std::string &left,
+               const std::string &right)
+{
+    std::string res = left;
+    if(res.size() > 0 && res[-1] != CONDUIT_UTILS_FILE_PATH_SEPARATOR)
+    {
+        res += CONDUIT_UTILS_FILE_PATH_SEPARATOR;
+    }
+    res += right;
+    return res;
+}
+
 
 //-----------------------------------------------------------------------------
 bool 
@@ -317,7 +352,21 @@ indent(std::ostream &os,
         }
     }
 }
-    
+
+//-----------------------------------------------------------------------------
+void sleep(index_t milliseconds)
+{
+
+#if defined(CONDUIT_PLATFORM_WINDOWS)
+    Sleep(milliseconds);
+#else // unix, etc
+    struct timespec ts;
+    ts.tv_sec = milliseconds / 1000;
+    ts.tv_nsec = (milliseconds % 1000) * 1000000;
+    nanosleep(&ts, NULL);
+#endif
+
+}
 
 //-----------------------------------------------------------------------------
 void base64_encode(const void *src,
