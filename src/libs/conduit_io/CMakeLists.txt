@@ -63,7 +63,7 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_IO_Config.hpp.in"
 #            
 set(conduit_io_headers 
     conduit_io.hpp
-    conduit_rest.hpp
+    conduit_web.hpp
     Conduit_IO_Exports.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/Conduit_IO_Config.hpp)
 
@@ -72,7 +72,7 @@ set(conduit_io_headers
 #
 set(conduit_io_sources 
     conduit_io.cpp
-    conduit_rest.cpp)
+    conduit_web.cpp)
     
 
 if(SILO_FOUND)

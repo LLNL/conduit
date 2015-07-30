@@ -92,10 +92,14 @@ namespace rest
 void CONDUIT_IO_API serve(Node *n,
                           index_t port = 8080);
 
+};
+//-----------------------------------------------------------------------------
+// -- end conduit::io::rest --
+//-----------------------------------------------------------------------------
 
 
 //-----------------------------------------------------------------------------
-// -- REST Server Interface -
+// -- Web Server Interface -
 //-----------------------------------------------------------------------------
 
 // forward declare websocket interface class
@@ -104,12 +108,12 @@ class WebSocket;
 // forward declare internal handler class
 class RequestHandler;
 
-class CONDUIT_IO_API RESTServer
+class CONDUIT_IO_API WebServer
 {
 public:
 
-                RESTServer();
-    virtual    ~RESTServer();
+                WebServer();
+    virtual    ~WebServer();
     
     void        serve(const std::string &doc_root,
                       index_t port = 8080);
@@ -137,7 +141,6 @@ public:
 private:
 
 
-    
     CivetServer            *m_server;
     RequestHandler         *m_handler;
     std::string             m_port;
@@ -149,7 +152,7 @@ private:
 //-----------------------------------------------------------------------------
 //
 /// The lifetimes of our WebSocket instances are managed by the 
-/// RESTServer and its RequestHandler instance
+/// WebServer and its RequestHandler instance
 // 
 class CONDUIT_IO_API WebSocket
 {
@@ -171,10 +174,6 @@ private:
 };
 
 
-};
-//-----------------------------------------------------------------------------
-// -- end conduit::io::rest --
-//-----------------------------------------------------------------------------
 
 
 

@@ -54,19 +54,19 @@
 
 using namespace conduit;
 using namespace conduit::utils;
-using namespace conduit::io::rest;
+using namespace conduit::io;
 
 
 bool launch_server = false;
 
-TEST(conduit_io_rest, rest_server)
+TEST(conduit_io_websocket, websocket_test)
 {
     if(! launch_server)
     {
         return;
     }
 
-    RESTServer svr;
+
     
     // read png data into a string.
     // in the real example, we should have the png in memory
@@ -113,6 +113,8 @@ TEST(conduit_io_rest, rest_server)
     msg["count"] = 0;
     
     msg.to_json_stream("test.json","json");
+    
+    WebServer svr;
     
     // start our server
     svr.serve(wsock_path);

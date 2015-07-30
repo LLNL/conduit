@@ -62,7 +62,7 @@
 //-----------------------------------------------------------------------------
 // conduit includes
 //-----------------------------------------------------------------------------
-#include "conduit_rest.hpp"
+#include "conduit_web.hpp"
 #include "Conduit_IO_Config.hpp"
 
 //-----------------------------------------------------------------------------
@@ -93,10 +93,14 @@ serve(Node *n,
       index_t port)
 
 {
-    RESTServer srv;
+    WebServer srv;
     srv.serve(n,true,port);
 }
 
+};
+//-----------------------------------------------------------------------------
+// -- end conduit::io::rest --
+//-----------------------------------------------------------------------------
 
 
 //-----------------------------------------------------------------------------
@@ -108,7 +112,7 @@ class RequestHandler : public CivetHandler
 public:
         
         //---------------------------------------------------------------------------//
-        RequestHandler(RESTServer &server)
+        RequestHandler(WebServer &server)
         : m_server(&server),
           m_node(NULL)
         {
@@ -269,7 +273,7 @@ public:
         handle_websocket_connect(const struct mg_connection *conn,
                                  void *cbdata)
         {
-            CONDUIT_INFO("conduit::io::RESTServer WebSocket Connected");
+            CONDUIT_INFO("conduit::io::WebServer WebSocket Connected");
             return 0;
         }
 
@@ -379,7 +383,7 @@ public:
                 CONDUIT_ERROR("Bad websocket state");
             }
 
-            CONDUIT_INFO("conduit::io::RESTServer WebSocket Disconnected");
+            CONDUIT_INFO("conduit::io::WebServer WebSocket Disconnected");
         }
         
         //---------------------------------------------------------------------------//
@@ -489,7 +493,7 @@ public:
 
 
   private:
-      RESTServer                 *m_server;
+      WebServer                 *m_server;
       Node                       *m_node;
       std::vector<WebSocket*>     m_sockets;
 };
@@ -555,11 +559,11 @@ WebSocket::send(const Node &data,
 
 
 //-----------------------------------------------------------------------------
-// RESTServer Class Implementation
+// WebServer Class Implementation
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-RESTServer::RESTServer()
+WebServer::WebServer()
 : m_server(NULL),
   m_handler(NULL),
   m_port(""),
@@ -569,21 +573,21 @@ RESTServer::RESTServer()
 }
 
 //-----------------------------------------------------------------------------
-RESTServer::~RESTServer()
+WebServer::~WebServer()
 {
     shutdown();
 }
 
 //-----------------------------------------------------------------------------
 bool
-RESTServer::is_running() const
+WebServer::is_running() const
 {
     return m_running;
 }
 
 //-----------------------------------------------------------------------------
 WebSocket *
-RESTServer::websocket(index_t ms_poll,
+WebServer::websocket(index_t ms_poll,
                       index_t ms_timeout)
 {
     return m_handler->websocket(ms_poll,ms_timeout);
@@ -594,7 +598,7 @@ RESTServer::websocket(index_t ms_poll,
 
 //-----------------------------------------------------------------------------
 void
-RESTServer::lock_context()
+WebServer::lock_context()
 {
     struct mg_context *ctx = context();
     if(ctx != NULL)
@@ -605,7 +609,7 @@ RESTServer::lock_context()
 
 //-----------------------------------------------------------------------------
 void
-RESTServer::unlock_context()
+WebServer::unlock_context()
 {
     struct mg_context *ctx = context();
     if(ctx != NULL)
@@ -619,7 +623,7 @@ RESTServer::unlock_context()
 
 //-----------------------------------------------------------------------------
 void
-RESTServer::serve(Node *node,
+WebServer::serve(Node *node,
                   bool block,
                   index_t port)
 {
@@ -642,7 +646,7 @@ RESTServer::serve(Node *node,
 
 //-----------------------------------------------------------------------------
 mg_context *
-RESTServer::context()
+WebServer::context()
 {
     // NOTE: casting away const here.
     return (struct mg_context *) m_server->getContext();
@@ -650,12 +654,12 @@ RESTServer::context()
 
 //-----------------------------------------------------------------------------
 void
-RESTServer::serve(const std::string &doc_root,
+WebServer::serve(const std::string &doc_root,
                   index_t port)
 {
     if(is_running())
     {
-        CONDUIT_INFO("RESTServer instance is already running");
+        CONDUIT_INFO("WebServer instance is already running");
         return;
     }
 
@@ -665,7 +669,7 @@ RESTServer::serve(const std::string &doc_root,
     oss << port;
     m_port = oss.str();
 
-    CONDUIT_INFO("Starting RESTServer instance with doc root = " << doc_root);
+    CONDUIT_INFO("Starting WebServer instance with doc root = " << doc_root);
 
     // setup civetweb options
     const char *options[] = { "document_root",   doc_root.c_str(),
@@ -680,7 +684,7 @@ RESTServer::serve(const std::string &doc_root,
     catch(CivetException except)
     {
         // Catch Civet Exception and use Conduit's error handling mech.
-        CONDUIT_ERROR("RESTServer failed to bind civet server on port " 
+        CONDUIT_ERROR("WebServer failed to bind civet server on port " 
                       << port);
     }
     
@@ -688,11 +692,11 @@ RESTServer::serve(const std::string &doc_root,
     mg_context *ctx = context();
     if(ctx == NULL)
     {
-         CONDUIT_ERROR("RESTServer failed to bind civet server on port " 
+         CONDUIT_ERROR("WebServer failed to bind civet server on port " 
                        << port);
     }else
     {
-        CONDUIT_INFO("conduit::io::RESTServer instance active on port: " 
+        CONDUIT_INFO("conduit::io::WebServer instance active on port: " 
                      << port);
     }
 
@@ -718,11 +722,11 @@ RESTServer::serve(const std::string &doc_root,
 
 //-----------------------------------------------------------------------------
 void     
-RESTServer::shutdown()
+WebServer::shutdown()
 {
     if(is_running())
     {
-        CONDUIT_INFO("closing conduit::io::RESTServer instance on port: " 
+        CONDUIT_INFO("closing conduit::io::WebServer instance on port: " 
                      << m_port);
         
         m_running = false;
@@ -737,10 +741,6 @@ RESTServer::shutdown()
 
 
 
-};
-//-----------------------------------------------------------------------------
-// -- end conduit::io::rest --
-//-----------------------------------------------------------------------------
 
 
 };
