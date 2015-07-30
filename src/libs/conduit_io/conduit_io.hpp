@@ -60,7 +60,7 @@
 #include "Conduit_IO_Config.hpp"
 
 
-#include "conduit_rest.hpp"
+#include "conduit_web.hpp"
 
 // include optional libs
 #ifdef CONDUIT_IO_ENABLE_SILO

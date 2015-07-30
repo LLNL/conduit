@@ -1,3 +1,4 @@
+/*
 ###############################################################################
 # Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 # 
@@ -41,33 +42,47 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
+*/
 
-################################
-# Conduit Unit Tests
-################################
+function websocket_test()
+{
+    var wsproto = (location.protocol === 'https:') ? 'wss:' : 'ws:';
+    connection = new WebSocket(wsproto + '//' + window.location.host + '/websocket');
+    
+    connection.onmessage = function (msg) 
+    {
+        var data;
+        try
+        {
+            data=JSON.parse(msg.data);
+        }
+        catch(e)
+        {
+            alert(e); //error in the above string(in this case,yes)!
+        }
 
-################################
-# conduit_io lib Unit Tests
-################################
-set(IO_TESTS conduit_io_smoke conduit_io_rest conduit_io_websocket)
-set(IO_SILO_TESTS conduit_io_silo)
+        if(data.type == "image")
+        {
+            $("#image_display").html("<img src='" + data.data + "'/>");
+            $("#image_display").show();
+            $("#count_display").text("Current Count = " +data.count);
+                        
+            var response = {type: "info",
+                            message: "response from browser, count = " + data.count};
+
+            connection.send(JSON.stringify(response));
+        }
+    }
+      
+    connection.onerror = function (error)
+    {
+        console.log('WebSocket error');
+        connection.close();
+    }
+}
+
+websocket_test();
 
 
-################################
-# Add our tests
-################################
-
-message(STATUS "Adding conduit_io lib unit tests")
-foreach(TEST ${IO_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_io )
-endforeach()
-
-
-if(ENABLE_SILO AND SILO_FOUND)
-    foreach(TEST ${IO_SILO_TESTS})
-        add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_io)
-        target_link_libraries(${TEST} ${SILO_LIBRARIES})
-    endforeach()
-endif()
 
 

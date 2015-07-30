@@ -58,11 +58,12 @@
 #include "Conduit_IO_Exports.hpp"
 
 //
-// forward declare CivetServer and mg_connection so we don't need the 
+// forward declare civetweb types so we don't need the 
 // civetweb headers in our public interface. 
 // 
 
 class CivetServer;
+struct mg_context;
 struct mg_connection;
 
 //-----------------------------------------------------------------------------
@@ -91,10 +92,14 @@ namespace rest
 void CONDUIT_IO_API serve(Node *n,
                           index_t port = 8080);
 
+};
+//-----------------------------------------------------------------------------
+// -- end conduit::io::rest --
+//-----------------------------------------------------------------------------
 
 
 //-----------------------------------------------------------------------------
-// -- REST Server Interface -
+// -- Web Server Interface -
 //-----------------------------------------------------------------------------
 
 // forward declare websocket interface class
@@ -103,26 +108,39 @@ class WebSocket;
 // forward declare internal handler class
 class RequestHandler;
 
-class CONDUIT_IO_API RESTServer
+class CONDUIT_IO_API WebServer
 {
 public:
 
-             RESTServer();
-    virtual ~RESTServer();
+                WebServer();
+    virtual    ~WebServer();
     
-    // note: this is a bit too special purpose.
-    void     serve(Node *data,
-                   bool block=false,
-                   index_t port = 8080);
+    void        serve(const std::string &doc_root,
+                      index_t port = 8080);
 
-    void     shutdown();
-    bool     is_running() const;
+    // note: this variant of serve is to specific to the 
+    // the visualizer client use case.
+    void        serve(Node *data,
+                      bool block=false,
+                      index_t port = 8080);
+
+    void        shutdown();
     
-    // Block for the next websocket connection.
-    // WebSocket *next_websocket();
+    bool        is_running() const;
+
+
+    // returns the first active websocket, if non are active, blocks
+    // until a websocket connection is established.
+    WebSocket  *websocket(index_t ms_poll = 100,
+                          index_t ms_timout = 60000);
+
+    mg_context *context();
+    void        lock_context();
+    void        unlock_context();
 
 private:
-    
+
+
     CivetServer            *m_server;
     RequestHandler         *m_handler;
     std::string             m_port;
@@ -134,7 +152,7 @@ private:
 //-----------------------------------------------------------------------------
 //
 /// The lifetimes of our WebSocket instances are managed by the 
-/// RESTServer and its RequestHandler instance
+/// WebServer and its RequestHandler instance
 // 
 class CONDUIT_IO_API WebSocket
 {
@@ -156,10 +174,6 @@ private:
 };
 
 
-};
-//-----------------------------------------------------------------------------
-// -- end conduit::io::rest --
-//-----------------------------------------------------------------------------
 
 
 
