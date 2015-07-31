@@ -47,13 +47,15 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+**Conduit: A Scientific Data Exchange Library for HPC Simulations**
+
+
 Introduction
 ============
 
 What is Conduit?
 ----------------
 
-**Conduit: A Scientific Data Exchange Library for HPC Simulations**
 
 Conduit is an open source project from Lawrence Livermore National Laboratory. It provides an intuitive model for describing hierarchical scientific data in C++, C, Fortran, and Python and is used for data coupling between packages in-core, serialization, and I/O tasks.
 
@@ -74,9 +76,7 @@ Conduit is under active development. The C++ API underpins the other language AP
 Unique Features
 ----------------
 
-Conduit was built around the concept that an intuitive in-core data description capability simplifies many other common tasks in the HPC simulation eco-system.
-
-To that aim, Conduit:
+Conduit was built around the concept that an intuitive in-core data description capability simplifies many other common tasks in the HPC simulation eco-system. To this aim, Conduit's Core API:
 
 - Provides a runtime focused in-core data description API that does not require repacking or code generation.
 - Supports a mix of externally owned and Conduit allocated memory semantics.
@@ -92,12 +92,15 @@ Core API
  - Provides Conduit's Core API in C++ and subsets of Core API in Python, C, and Fortran.
  - *Optionally depends on Python, NumPy, and Fortran*
 
-Additional libraries, early in development:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Additional Libraries 
+~~~~~~~~~~~~~~~~~~~~~
+These libraries provide higher-level services built on top of Conduit's Core API.
+
+*Caveat Emptor*: These libraries are young and their APIs are in flux.
 
 **conduit_io** 
- - Provides I/O functionally beyond binary file and memory mapped I/O and json text I/O.
- - Includes a light-weight webserver for REST and WebSocket clients. 
+ - Provides I/O functionally beyond binary file and memory mapped I/O and json-based text I/O.
+ - Includes a light-weight web server for REST and WebSocket clients. 
  - *Optionally depends on silo, hdf5, szip*
 
 **conduit_mpi** 
