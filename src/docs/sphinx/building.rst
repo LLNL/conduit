@@ -53,14 +53,14 @@ Getting Started
 
 Clone the Conduit repo:
 
-* Via Github
+* From Github
 
 .. code:: bash
     
     git clone https://github.com/cyrush/conduit.git
 
 
-* Via LLNL's CZ Stash (LLNL Users)
+* From LLNL's CZ Stash Instance (LLNL Users)
 
 .. code:: bash
     
