@@ -47,8 +47,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Conduit
-========
+Introduction
+============
 
 What is Conduit?
 ----------------
@@ -58,7 +58,7 @@ What is Conduit?
 Conduit is an open source project from Lawrence Livermore National Laboratory. It provides an intuitive model for describing hierarchical scientific data in C++, C, Fortran, and Python and is used for data coupling between packages in-core, serialization, and I/O tasks.
 
 
-Conduit includes:
+Conduit's Core API provides:
 
 - A flexible way to describe hierarchal data:
   
@@ -73,8 +73,40 @@ Conduit is under active development. The C++ API underpins the other language AP
 
 Unique Features
 ----------------
-- A runtime focused in-core data description API that does not require code generation.
-- Supports a mix of allocated and externally owned memory semantics.
+
+Conduit was built around the concept that an intuitive in-core data description capability simplifies many other common tasks in the HPC simulation eco-system.
+
+To that aim, Conduit:
+
+- Provides a runtime focused in-core data description API that does not require repacking or code generation.
+- Supports a mix of externally owned and Conduit allocated memory semantics.
+
+
+Conduit Libraries 
+------------------
+
+Core API
+~~~~~~~~~~
+
+**conduit**
+ - Provides Conduit's Core API in C++ and subsets of Core API in Python, C, and Fortran.
+ - *Optionally depends on Python, NumPy, and Fortran*
+
+Additional libraries, early in development:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**conduit_io** 
+ - Provides I/O functionally beyond binary file and memory mapped I/O and json text I/O.
+ - Includes a light-weight webserver for REST and WebSocket clients. 
+ - *Optionally depends on silo, hdf5, szip*
+
+**conduit_mpi** 
+ - Provides interfaces for MPI communication using conduit::Node instances as payloads. 
+ - *Depends on mpi*
+
+**blueprint**
+ - Provides interfaces for common higher-level conventions and data protocols (eg. describing a “mesh”) using Conduit.
+
 
 Contributors 
 ----------------
@@ -93,7 +125,6 @@ http://computation.llnl.gov/newsroom/hpc-partnership-harvey-mudd-college-and-liv
 
 
 
-
 Conduit Documentation
 ----------------------
 
@@ -103,12 +134,8 @@ Conduit Documentation
    user
    developer
 
-   
-
 Indices and tables
 ==================
 
 * :ref:`genindex`
 * :ref:`search`
-
-

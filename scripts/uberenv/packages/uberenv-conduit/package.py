@@ -73,8 +73,6 @@ class UberenvConduit(Package):
         url      = "file://" + dummy_tar_path
         return url
         
-        
-        
     def install(self, spec, prefix):
         dest_dir     = env["SPACK_DEBUG_LOG_DIR"]
         c_compiler   = env["SPACK_CC"]
@@ -110,8 +108,8 @@ class UberenvConduit(Package):
         cfg.write("# python from uberenv\n")
         cfg.write('set(PYTHON_EXECUTABLE "%s" CACHE PATH "")\n\n' % python_exe)
         cfg.write("# sphinx from uberenv\n")
-        # i/o packages
         cfg.write('set(SPHINX_EXECUTABLE "%s" CACHE PATH "")\n\n' % sphinx_build_exe)
+        # i/o packages
         cfg.write("# I/O Packages\n\n")
         cfg.write("# Enable Silo Support in conduit_io\n")
         cfg.write('set(ENABLE_SILO ON CACHE PATH "")\n\n')
