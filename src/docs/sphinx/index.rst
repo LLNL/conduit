@@ -55,27 +55,43 @@ What is Conduit?
 
 **Conduit: A Scientific Data Exchange Library for HPC Simulations**
 
-Conduit is used for data coupling between packages in-core, serialization, and I/O tasks.
+Conduit is an open source project from Lawrence Livermore National Laboratory. It provides an intuitive model for describing hierarchical scientific data in C++, C, Fortran, and Python and is used for data coupling between packages in-core, serialization, and I/O tasks.
 
-Conduit provides:
+
+Conduit includes:
 
 - A flexible way to describe hierarchal data:
   
-      A JSON-based schema for describing hierarchical in-core data structures.
+    A JSON-based schema for describing hierarchical in-core data structures.
 
 - A sane API to access hierarchal data:
 
-    A dynamic C++ API for rapid construction and consumption of hierarchical objects.
+    A dynamic API for rapid construction and consumption of hierarchical objects.
+
+Conduit is under active development. The C++ API underpins the other language APIs and currently has the most features. We are still filling out the C, Fortran, and Python APIs. 
 
 
 Unique Features
 ----------------
-- A runtime focused data description API that does not require code generation.
+- A runtime focused in-core data description API that does not require code generation.
 - Supports a mix of allocated and externally owned memory semantics.
 
 Contributors 
 ----------------
- Cyrus Harrison (LLNL), Brian Ryujin (LLNL), Adam Kunen (LLNL), George Aspesi (Harvey Mudd), Justin Bai (Harvey Mudd), Rupert Deese (Harvey Mudd), Linnea Shin (Harvey Mudd)
+- Cyrus Harrison (LLNL)
+- Brian Ryujin (LLNL)
+- Adam Kunen (LLNL)
+- Eric Brugger (LLNL)
+- George Aspesi (Harvey Mudd)
+- Justin Bai (Harvey Mudd)
+- Rupert Deese (Harvey Mudd)
+- Linnea Shin (Harvey Mudd) 
+
+ 
+In 2014 and 2015 LLNL sponsored a Harvey Mudd Computer Science Clinic project focused on using Conduit in HPC Proxy apps. You can read about more details about the clinic project from this LLNL article: 
+http://computation.llnl.gov/newsroom/hpc-partnership-harvey-mudd-college-and-livermore
+
+
 
 
 Conduit Documentation

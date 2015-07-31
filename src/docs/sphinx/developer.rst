@@ -78,23 +78,16 @@ Configuring with CMake
 
 See :ref:`building` in the User Documentation. 
 
-..
-.. Conduit uses a CMake based build system. You can run CMake directly to configure an out-of-source build, or use the "config-build.sh" helper script, which does the following:
-..
-.. - Creates a fresh *build-debug* folder.
-.. - Runs :bash:`cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install-debug` from within the *build-debug* folder.
-
-
 Important CMake Targets
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-- **make**: Builds the conduit library.
+- **make**: Builds the Conduit library.
 
-- **make test**: Runs conduit unit tests.
+- **make test**: Runs Conduit unit tests.
 
 - **make docs**: Builds sphinx and doxygen documentation.
 
-- **make install**: Installs the conduit library, headers, and documentation to `CMAKE_INSTALL_PREFIX`
+- **make install**: Installs conduit libraries, headers, and documentation to `CMAKE_INSTALL_PREFIX`
 
 Adding a Unit Test
 ~~~~~~~~~~~~~~~~~~~
@@ -105,7 +98,7 @@ Adding a Unit Test
 Git Development Workflow 
 ------------------------
 
-The master conduit source repository is hosted on LLNL's CZ Stash instance:
+The master Conduit source repository is hosted on LLNL's CZ Stash instance:
 
 https://lc.llnl.gov/stash/projects/CON
 
