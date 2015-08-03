@@ -9,7 +9,7 @@
 !* 
 !* This file is part of Conduit. 
 !* 
-!* For details, see https://lc.llnl.gov/conduit/.
+!* For details, see: http://cyrush.github.io/conduit.
 !* 
 !* Please also read conduit/LICENSE
 !* 
