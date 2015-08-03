@@ -57,7 +57,7 @@ The *Node* class provides two classes of functions that enable passing of data t
 
 .. # from conduit_tutorial_examples: mem_ownership_external
 
-.. literalinclude:: ../../tests/conduit/conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/conduit_tutorial_examples.cpp
    :lines: 438-456
    :language: cpp
    :dedent: 4

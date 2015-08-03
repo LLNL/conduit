@@ -46,7 +46,8 @@
 Tutorial
 ===========
 
-This short tutorial provides C++ examples that demonstrate conduit's features.
+This short tutorial provides C++ examples that demonstrate Conduit's features.
+
 
 .. toctree::
 

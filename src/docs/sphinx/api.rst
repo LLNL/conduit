@@ -46,6 +46,7 @@
 API Documentation 
 ======================
 
+This set of documentation is extracted using Doxygen.
 
 Node
 ---------

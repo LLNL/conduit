@@ -56,7 +56,8 @@ User Documentation
    tutorial
    building
    glossary
-   api
    licenses
 
+
+.. leave out the api docs for now, the doxygen comments are too sparse. 
 

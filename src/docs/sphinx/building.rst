@@ -51,14 +51,23 @@ Building
 Getting Started
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Clone conduit from LLNL's CZ Stash
+Clone the Conduit repo:
+
+* From Github
+
+.. code:: bash
+    
+    git clone https://github.com/cyrush/conduit.git
+
+
+* From LLNL's CZ Stash Instance (LLNL Users)
 
 .. code:: bash
     
     git clone https://{USER_NAME}@lc.llnl.gov/stash/scm/con/conduit.git
 
 
-Configure a build
+Configure a build:
 
 *config-build.sh* is a simple wrapper for the cmake call to configure conduit. 
 This creates a new out-of-source build directory *build-debug* and a directory for the install *install-debug*.
@@ -71,7 +80,7 @@ It will optionally include a *host-config.cmake* file with detailed configuratio
     ./config-build.sh
 
 
-Build, test, and install conduit:
+Build, test, and install Conduit:
 
 .. code:: bash
     
@@ -84,6 +93,8 @@ Build, test, and install conduit:
 
 Build Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The core Conduit library has no dependencies outside of the repo, however Conduit provides optional support for I/O and Communication (MPI) features that require externally built thirdparty libraries.  
 
 Conduit's build system supports the following CMake options:
 
@@ -139,7 +150,7 @@ These file use standard cmake commands. CMake *set* commands need to specify the
 Bootstrapping Thirdparty Dependencies 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can use *bootstrap-env.sh* (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses *scripts/uberenv*, which leverages **Spack** (https://scalability-llnl.github.io/spack) to build external thirdparty libraries and tools used by conduit.
+You can use *bootstrap-env.sh* (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses *scripts/uberenv*, which leverages **Spack** (https://scalability-llnl.github.io/spack) to build external thirdparty libraries and tools used by Conduit.
 It also writes a initial host-config file for you and adds the spack built cmake to your path, so can directly call the *config-build.sh* helper script to configure a conduit build.
 
 .. code:: bash

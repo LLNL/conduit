@@ -1,0 +1,1 @@
+JQuery uses a MIT License, see: https://jquery.org/license/

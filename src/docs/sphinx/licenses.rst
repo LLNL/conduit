@@ -66,9 +66,10 @@ C and C++ Libraries
 
 JavaScript Libraries
 =====================
-- *fattable*: src/conduit_viz/client/js/fattable/LICENSE (MIT License)
-- *pure*: src/conduit_viz/client/js/pure/LICENSE.md  (BSD Style License)
-- *d3*: src/conduit_viz/client/js/d3/LICENSE (BSD Style License)
+- *fattable*: src/libs/conduit_io/web_clients/rest_client/resources/fattable/LICENSE (MIT License)
+- *pure*: src/libs/conduit_io/web_clients/rest_client/resources/pure/LICENSE.md  (BSD Style License)
+- *d3*: src/libs/conduit_io/web_clients/rest_client/resources/d3/LICENSE (BSD Style License)
+- *jquery*: /src/libs/conduit_io/web_clients/wsock_test/resources/jquerty-license.txt (MIT License)
 
 Fortran Libraries
 =====================
