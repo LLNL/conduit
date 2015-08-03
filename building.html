@@ -1,0 +1,334 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Building &mdash; Conduit 0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="Conduit 0.1 documentation" href="index.html"/>
+        <link rel="up" title="User Documentation" href="user.html"/>
+        <link rel="next" title="Glossary" href="glossary.html"/>
+        <link rel="prev" title="Memory Ownership Semantics" href="tutorial_ownership.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="index.html" class="icon icon-home"> Conduit
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="user.html">User Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html">Tutorial</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_basics.html">Basic Concepts</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html#node-basics"><em>Node</em> basics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html#bitwidth-style-types">Bitwidth Style Types</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_numeric.html">Accessing Numeric Data</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_numeric.html#accessing-scalars-and-arrays">Accessing Scalars and Arrays</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_numeric.html#using-introspection-and-conversion">Using Introspection and Conversion</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_json.html">Generators</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_json.html#using-generator-instances-to-parse-json-schemas">Using <em>Generator</em> instances to parse JSON schemas</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_json.html#compacting-nodes">Compacting Nodes</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_ownership.html">Memory Ownership Semantics</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_ownership.html#set-vs-set-external"><em>set</em> vs <em>set_external</em></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Building</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#getting-started">Getting Started</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#build-options">Build Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#host-config-files">Host Config Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bootstrapping-thirdparty-dependencies">Bootstrapping Thirdparty Dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="glossary.html">Glossary</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="glossary.html#children">children</a></li>
+<li class="toctree-l3"><a class="reference internal" href="glossary.html#paths">paths</a></li>
+<li class="toctree-l3"><a class="reference internal" href="glossary.html#external">external</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="licenses.html">License Info</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="licenses.html#conduit-license">Conduit License</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="licenses.html#third-party-builtin-libraries">Third Party Builtin Libraries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="licenses.html#build-system">Build System</a></li>
+<li class="toctree-l4"><a class="reference internal" href="licenses.html#documentation">Documentation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer.html">Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="developer.html#source-code-repo-layout">Source Code Repo Layout</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer.html#build-system-info">Build System Info</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="developer.html#configuring-with-cmake">Configuring with CMake</a></li>
+<li class="toctree-l3"><a class="reference internal" href="developer.html#important-cmake-targets">Important CMake Targets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="developer.html#adding-a-unit-test">Adding a Unit Test</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="developer.html#git-development-workflow">Git Development Workflow</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">Conduit</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="user.html">User Documentation</a> &raquo;</li>
+      
+    <li>Building</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/building.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="building">
+<span id="id1"></span><h1>Building<a class="headerlink" href="#building" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h2>
+<p>Clone the Conduit repo:</p>
+<ul class="simple">
+<li>From Github</li>
+</ul>
+<div class="code bash highlight-python"><div class="highlight"><pre>git clone https://github.com/cyrush/conduit.git
+</pre></div>
+</div>
+<ul class="simple">
+<li>From LLNL&#8217;s CZ Stash Instance (LLNL Users)</li>
+</ul>
+<div class="code bash highlight-python"><div class="highlight"><pre>git clone https://{USER_NAME}@lc.llnl.gov/stash/scm/con/conduit.git
+</pre></div>
+</div>
+<p>Configure a build:</p>
+<p><em>config-build.sh</em> is a simple wrapper for the cmake call to configure conduit.
+This creates a new out-of-source build directory <em>build-debug</em> and a directory for the install <em>install-debug</em>.
+It will optionally include a <em>host-config.cmake</em> file with detailed configuration options.</p>
+<div class="code bash highlight-python"><div class="highlight"><pre>cd conduit
+./config-build.sh
+</pre></div>
+</div>
+<p>Build, test, and install Conduit:</p>
+<div class="code bash highlight-python"><div class="highlight"><pre>cd build-debug
+make -j 8
+make test
+make install
+</pre></div>
+</div>
+</div>
+<div class="section" id="build-options">
+<h2>Build Options<a class="headerlink" href="#build-options" title="Permalink to this headline">¶</a></h2>
+<p>The core Conduit library has no dependencies outside of the repo, however Conduit provides optional support for I/O and Communication (MPI) features that require externally built thirdparty libraries.</p>
+<p>Conduit&#8217;s build system supports the following CMake options:</p>
+<ul class="simple">
+<li><strong>ENABLE_TESTS</strong> - Controls if unit tests are built. <em>(default = ON)</em></li>
+<li><strong>ENABLE_PYTHON</strong> - Controls if the conduit Python module is built. <em>(default = OFF)</em></li>
+</ul>
+<p>To select a specific Python, set the CMake variable <strong>PYTHON_EXECUTABLE</strong> to path of the desired python binary.
+Conduit&#8217;s Python module requires Numpy. The selected Python install must provide Numpy, or PYTHONPATH must be set to include a Numpy install compatible with the selected Python install.</p>
+<ul class="simple">
+<li><strong>ENABLE_MPI</strong> - Controls if the conduit_mpi library is built. <em>(default = OFF)</em></li>
+</ul>
+<p>We are using CMake&#8217;s standard FindMPI logic. To select a specific MPI set the CMake variables <strong>MPI_C_COMPILER</strong> and <strong>MPI_CXX_COMPILER</strong>, or the other FindMPI option for MPI include paths and MPI libraries.</p>
+<p>For running mpi unit tests on LC platforms, you may also need change the CMake variables <strong>MPIEXEC</strong> and <strong>MPIEXEC_NUMPROC_FLAG</strong>, so you can use srun and select a partition. (see: src/host-configs/surface.cmake)</p>
+<ul class="simple">
+<li><strong>ENABLE_SILO</strong> - Controls if the Silo I/O support is built. <em>(default = OFF)</em></li>
+</ul>
+<p>If enabled, the following CMake variables must also be set:</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>SILO_DIR</strong> - Path to a silo install.</li>
+<li><strong>HDF5_DIR</strong> - Path to a hdf5 install.</li>
+<li><strong>SZIP_DIR</strong> - Path to a szip install.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="host-config-files">
+<h2>Host Config Files<a class="headerlink" href="#host-config-files" title="Permalink to this headline">¶</a></h2>
+<p>To handle build options, thirdparty library paths, etc we rely on CMake&#8217;s initial-cache file mechanism.</p>
+<div class="code bash highlight-python"><div class="highlight"><pre>cmake -C config_file.cmake
+</pre></div>
+</div>
+<p>We call these initial-cache files <em>host-config</em> files, since we typically create a file for each platform or specific hosts if necessary.</p>
+<p>The <em>config-build.sh</em> script will use your machine&#8217;s hostname, the SYS_TYPE environment variable, and your platform name (via <em>uname</em>) to look for an existing host config file in the <em>host-configs</em> directory at the root of the conduit repo. If found, it will pass the host config file to cmake via the <em>-C</em> command line option.</p>
+<div class="code bash highlight-python"><div class="highlight"><pre>cmake {other options} -C host-configs/{config_file}.cmake ../
+</pre></div>
+</div>
+<p>You can view several example files under the <em>host-configs</em> directory.</p>
+<p>These file use standard cmake commands. CMake <em>set</em> commands need to specify the root cache path as follows:</p>
+<div class="code cmake highlight-python"><div class="highlight"><pre>set(CMAKE_VARIABLE_NAME {VALUE} CACHE PATH &quot;&quot;)
+</pre></div>
+</div>
+</div>
+<div class="section" id="bootstrapping-thirdparty-dependencies">
+<h2>Bootstrapping Thirdparty Dependencies<a class="headerlink" href="#bootstrapping-thirdparty-dependencies" title="Permalink to this headline">¶</a></h2>
+<p>You can use <em>bootstrap-env.sh</em> (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses <em>scripts/uberenv</em>, which leverages <strong>Spack</strong> (<a class="reference external" href="https://scalability-llnl.github.io/spack">https://scalability-llnl.github.io/spack</a>) to build external thirdparty libraries and tools used by Conduit.
+It also writes a initial host-config file for you and adds the spack built cmake to your path, so can directly call the <em>config-build.sh</em> helper script to configure a conduit build.</p>
+<div class="code bash highlight-python"><div class="highlight"><pre>#build thirdparty libs using spack
+source bootstrap-env.sh
+
+#copy the generated host-config file into the standard location
+cp uberenv_libs/`hostname`.cmake to host-configs/
+
+# run the configure helper script
+./config-build.sh
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="glossary.html" class="btn btn-neutral float-right" title="Glossary" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="tutorial_ownership.html" class="btn btn-neutral" title="Memory Ownership Semantics" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014-2015, LLNS.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

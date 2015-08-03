@@ -1,0 +1,347 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Introduction &mdash; Conduit 0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="Conduit 0.1 documentation" href="#"/>
+        <link rel="next" title="User Documentation" href="user.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="#" class="icon icon-home"> Conduit
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="user.html">User Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html">Tutorial</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_basics.html">Basic Concepts</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html#node-basics"><em>Node</em> basics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html#bitwidth-style-types">Bitwidth Style Types</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_numeric.html">Accessing Numeric Data</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_numeric.html#accessing-scalars-and-arrays">Accessing Scalars and Arrays</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_numeric.html#using-introspection-and-conversion">Using Introspection and Conversion</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_json.html">Generators</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_json.html#using-generator-instances-to-parse-json-schemas">Using <em>Generator</em> instances to parse JSON schemas</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_json.html#compacting-nodes">Compacting Nodes</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_ownership.html">Memory Ownership Semantics</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_ownership.html#set-vs-set-external"><em>set</em> vs <em>set_external</em></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="building.html">Building</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="building.html#getting-started">Getting Started</a></li>
+<li class="toctree-l3"><a class="reference internal" href="building.html#build-options">Build Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="building.html#host-config-files">Host Config Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="building.html#bootstrapping-thirdparty-dependencies">Bootstrapping Thirdparty Dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="glossary.html">Glossary</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="glossary.html#children">children</a></li>
+<li class="toctree-l3"><a class="reference internal" href="glossary.html#paths">paths</a></li>
+<li class="toctree-l3"><a class="reference internal" href="glossary.html#external">external</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="licenses.html">License Info</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="licenses.html#conduit-license">Conduit License</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="licenses.html#third-party-builtin-libraries">Third Party Builtin Libraries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="licenses.html#build-system">Build System</a></li>
+<li class="toctree-l4"><a class="reference internal" href="licenses.html#documentation">Documentation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer.html">Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="developer.html#source-code-repo-layout">Source Code Repo Layout</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer.html#build-system-info">Build System Info</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="developer.html#configuring-with-cmake">Configuring with CMake</a></li>
+<li class="toctree-l3"><a class="reference internal" href="developer.html#important-cmake-targets">Important CMake Targets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="developer.html#adding-a-unit-test">Adding a Unit Test</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="developer.html#git-development-workflow">Git Development Workflow</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="#">Conduit</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="#">Docs</a> &raquo;</li>
+      
+    <li>Introduction</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/index.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <p><strong>Conduit: A Scientific Data Exchange Library for HPC Simulations</strong></p>
+<div class="section" id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="what-is-conduit">
+<h2>What is Conduit?<a class="headerlink" href="#what-is-conduit" title="Permalink to this headline">¶</a></h2>
+<p>Conduit is an open source project from Lawrence Livermore National Laboratory. It provides an intuitive model for describing hierarchical scientific data in C++, C, Fortran, and Python and is used for data coupling between packages in-core, serialization, and I/O tasks.</p>
+<p>Conduit&#8217;s Core API provides:</p>
+<ul>
+<li><p class="first">A flexible way to describe hierarchal data:</p>
+<blockquote>
+<div><p>A JSON-based schema for describing hierarchical in-core data structures.</p>
+</div></blockquote>
+</li>
+<li><p class="first">A sane API to access hierarchal data:</p>
+<blockquote>
+<div><p>A dynamic API for rapid construction and consumption of hierarchical objects.</p>
+</div></blockquote>
+</li>
+</ul>
+<p>Conduit is under active development. The C++ API underpins the other language APIs and currently has the most features. We are still filling out the C, Fortran, and Python APIs.</p>
+</div>
+<div class="section" id="unique-features">
+<h2>Unique Features<a class="headerlink" href="#unique-features" title="Permalink to this headline">¶</a></h2>
+<p>Conduit was built around the concept that an intuitive in-core data description capability simplifies many other common tasks in the HPC simulation eco-system. To this aim, Conduit&#8217;s Core API:</p>
+<ul class="simple">
+<li>Provides a runtime focused in-core data description API that does not require repacking or code generation.</li>
+<li>Supports a mix of externally owned and Conduit allocated memory semantics.</li>
+</ul>
+</div>
+<div class="section" id="conduit-libraries">
+<h2>Conduit Libraries<a class="headerlink" href="#conduit-libraries" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="core-api">
+<h3>Core API<a class="headerlink" href="#core-api" title="Permalink to this headline">¶</a></h3>
+<dl class="docutils">
+<dt><strong>conduit</strong></dt>
+<dd><ul class="first last simple">
+<li>Provides Conduit&#8217;s Core API in C++ and subsets of Core API in Python, C, and Fortran.</li>
+<li><em>Optionally depends on Python, NumPy, and Fortran</em></li>
+</ul>
+</dd>
+</dl>
+</div>
+<div class="section" id="additional-libraries">
+<h3>Additional Libraries<a class="headerlink" href="#additional-libraries" title="Permalink to this headline">¶</a></h3>
+<p>These libraries provide higher-level services built on top of Conduit&#8217;s Core API.</p>
+<p><em>Caveat Emptor</em>: These libraries are young and their APIs are in flux.</p>
+<dl class="docutils">
+<dt><strong>conduit_io</strong></dt>
+<dd><ul class="first last simple">
+<li>Provides I/O functionally beyond binary file and memory mapped I/O and json-based text I/O.</li>
+<li>Includes a light-weight web server for REST and WebSocket clients.</li>
+<li><em>Optionally depends on silo, hdf5, szip</em></li>
+</ul>
+</dd>
+<dt><strong>conduit_mpi</strong></dt>
+<dd><ul class="first last simple">
+<li>Provides interfaces for MPI communication using conduit::Node instances as payloads.</li>
+<li><em>Depends on mpi</em></li>
+</ul>
+</dd>
+<dt><strong>blueprint</strong></dt>
+<dd><ul class="first last simple">
+<li>Provides interfaces for common higher-level conventions and data protocols (eg. describing a “mesh”) using Conduit.</li>
+</ul>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="contributors">
+<h2>Contributors<a class="headerlink" href="#contributors" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Cyrus Harrison (LLNL)</li>
+<li>Brian Ryujin (LLNL)</li>
+<li>Adam Kunen (LLNL)</li>
+<li>Kathleen Biagas (LLNL)</li>
+<li>Eric Brugger (LLNL)</li>
+<li>George Aspesi (Harvey Mudd)</li>
+<li>Justin Bai (Harvey Mudd)</li>
+<li>Rupert Deese (Harvey Mudd)</li>
+<li>Linnea Shin (Harvey Mudd)</li>
+</ul>
+<p>In 2014 and 2015 LLNL sponsored a Harvey Mudd Computer Science Clinic project focused on using Conduit in HPC Proxy apps. You can read about more details about the clinic project from this LLNL article:
+<a class="reference external" href="http://computation.llnl.gov/newsroom/hpc-partnership-harvey-mudd-college-and-livermore">http://computation.llnl.gov/newsroom/hpc-partnership-harvey-mudd-college-and-livermore</a></p>
+</div>
+<div class="section" id="conduit-documentation">
+<h2>Conduit Documentation<a class="headerlink" href="#conduit-documentation" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="user.html">User Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="building.html">Building</a></li>
+<li class="toctree-l2"><a class="reference internal" href="glossary.html">Glossary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="licenses.html">License Info</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer.html">Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="developer.html#source-code-repo-layout">Source Code Repo Layout</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer.html#build-system-info">Build System Info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer.html#git-development-workflow">Git Development Workflow</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span>Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span>Search Page</span></a></li>
+</ul>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="user.html" class="btn btn-neutral float-right" title="User Documentation" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014-2015, LLNS.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

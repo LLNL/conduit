@@ -1,0 +1,289 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Glossary &mdash; Conduit 0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="Conduit 0.1 documentation" href="index.html"/>
+        <link rel="up" title="User Documentation" href="user.html"/>
+        <link rel="next" title="License Info" href="licenses.html"/>
+        <link rel="prev" title="Building" href="building.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="index.html" class="icon icon-home"> Conduit
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="user.html">User Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html">Tutorial</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_basics.html">Basic Concepts</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html#node-basics"><em>Node</em> basics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html#bitwidth-style-types">Bitwidth Style Types</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_numeric.html">Accessing Numeric Data</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_numeric.html#accessing-scalars-and-arrays">Accessing Scalars and Arrays</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_numeric.html#using-introspection-and-conversion">Using Introspection and Conversion</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_json.html">Generators</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_json.html#using-generator-instances-to-parse-json-schemas">Using <em>Generator</em> instances to parse JSON schemas</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_json.html#compacting-nodes">Compacting Nodes</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_ownership.html">Memory Ownership Semantics</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_ownership.html#set-vs-set-external"><em>set</em> vs <em>set_external</em></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="building.html">Building</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="building.html#getting-started">Getting Started</a></li>
+<li class="toctree-l3"><a class="reference internal" href="building.html#build-options">Build Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="building.html#host-config-files">Host Config Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="building.html#bootstrapping-thirdparty-dependencies">Bootstrapping Thirdparty Dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Glossary</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#children">children</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#paths">paths</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#external">external</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="licenses.html">License Info</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="licenses.html#conduit-license">Conduit License</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="licenses.html#third-party-builtin-libraries">Third Party Builtin Libraries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="licenses.html#build-system">Build System</a></li>
+<li class="toctree-l4"><a class="reference internal" href="licenses.html#documentation">Documentation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer.html">Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="developer.html#source-code-repo-layout">Source Code Repo Layout</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer.html#build-system-info">Build System Info</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="developer.html#configuring-with-cmake">Configuring with CMake</a></li>
+<li class="toctree-l3"><a class="reference internal" href="developer.html#important-cmake-targets">Important CMake Targets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="developer.html#adding-a-unit-test">Adding a Unit Test</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="developer.html#git-development-workflow">Git Development Workflow</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">Conduit</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="user.html">User Documentation</a> &raquo;</li>
+      
+    <li>Glossary</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/glossary.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="glossary">
+<h1>Glossary<a class="headerlink" href="#glossary" title="Permalink to this headline">¶</a></h1>
+<p>This page aims to provide succinct description of important concepts in Conduit.</p>
+<div class="section" id="children">
+<h2>children<a class="headerlink" href="#children" title="Permalink to this headline">¶</a></h2>
+<p>Used for Node instances in the <em>Object</em> and <em>List</em> role interfaces. A Node may hold a set of indexed children (List role), or indexed and named children (Object role). In both of these cases the children of the Node can be accessed, or removed via their index. Methods related to this concept include:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Node::number_of_children()</li>
+<li>Node::child(index_t)</li>
+<li>Node::child_ptr(index_t)</li>
+<li>Node::operator=(index_t)</li>
+<li>Node::remove(index_t)</li>
+<li>Schema::number_of_children()</li>
+<li>Schema::child(index_t)</li>
+<li>Schema::child_ptr(index_t)</li>
+<li>Schema::operator=(index_t)</li>
+<li>Schema::remove(index_t)</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="paths">
+<h2>paths<a class="headerlink" href="#paths" title="Permalink to this headline">¶</a></h2>
+<p>Used for Node instances in <em>Object</em> role interface. In the Object role, a Node has a collection of indexed and named children. Access by name is done via a <em>path</em>. The path is a foward-slash separated URI, where each segment maps to Node in a hierarchal tree. Methods related to this concept include:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Node::fetch(string)</li>
+<li>Node::fetch_ptr(string)</li>
+<li>Node::operator=(string)</li>
+<li>Node::has_path(string)</li>
+<li>Node::paths(vector of strings)</li>
+<li>Node::remove(string)</li>
+<li>Schema::fetch(string)</li>
+<li>Schema::fetch_child(string)</li>
+<li>Schema::fetch_ptr(string)</li>
+<li>Schema::operator=(string)</li>
+<li>Schema::has_path(string)</li>
+<li>Schema::paths(vector of strings)</li>
+<li>Schema::remove(string)</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="external">
+<h2>external<a class="headerlink" href="#external" title="Permalink to this headline">¶</a></h2>
+<p>Concept used throughout the Conduit API to specify ownership for passed data.
+When using Node constructors, Generators, or Node::set calls, you have the option of using an external variant. When external is specified, a Node does not own (or allocate) the memory for the data it holds.</p>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="licenses.html" class="btn btn-neutral float-right" title="License Info" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="building.html" class="btn btn-neutral" title="Building" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014-2015, LLNS.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
