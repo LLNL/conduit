@@ -54,7 +54,7 @@ You can access leaf types (numeric scalars or arrays) using Node's *as_{type}* m
 
 .. # from conduit_tutorial_examples: numeric_as_dtype
 
-.. literalinclude:: ../../tests/conduit/conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/conduit_tutorial_examples.cpp
    :lines: 159-162
    :language: cpp
    :dedent: 4
@@ -66,7 +66,7 @@ Or you can use Node::value(), which can infer the correct return type via a cast
 
 .. # from conduit_tutorial_examples: numeric_via_value
 
-.. literalinclude:: ../../tests/conduit/conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/conduit_tutorial_examples.cpp
    :lines: 171-177
    :language: cpp
    :dedent: 4
@@ -79,7 +79,7 @@ Accessing array data via pointers works the same way, using Node's *as_{type}* m
 
 .. # from conduit_tutorial_examples: numeric_ptr_as_dtype
 
-.. literalinclude:: ../../tests/conduit/conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/conduit_tutorial_examples.cpp
    :lines: 188-199
    :language: cpp
    :dedent: 4
@@ -92,7 +92,7 @@ Or using Node::value():
 
 .. # from conduit_tutorial_examples: numeric_ptr_via_value
 
-.. literalinclude:: ../../tests/conduit/conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/conduit_tutorial_examples.cpp
    :lines: 209-220
    :language: cpp
    :dedent: 4
@@ -106,7 +106,7 @@ For non-contiguous arrays, direct pointer access is complex due to the indexing 
 
 .. # from conduit_tutorial_examples: numeric_strided_data_array
 
-.. literalinclude:: ../../tests/conduit/conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/conduit_tutorial_examples.cpp
    :lines: 229-245
    :language: cpp
    :dedent: 4
@@ -125,7 +125,7 @@ to a contiguous double array.
 
 .. # from conduit_tutorial_examples: numeric_double_conversion
 
-.. literalinclude:: ../../tests/conduit/conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/conduit_tutorial_examples.cpp
    :lines: 255-313
    :language: cpp
 

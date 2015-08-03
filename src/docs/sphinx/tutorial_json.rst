@@ -55,7 +55,7 @@ The *Generator* class is used to parse conduit JSON schemas into a *Node*.
 
 .. # from conduit_tutorial_examples: json_generator_std
 
-.. literalinclude:: ../../tests/conduit/conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/conduit_tutorial_examples.cpp
    :lines: 326-335
    :language: cpp
    :dedent: 4
@@ -68,7 +68,7 @@ The *Generator* can also parse pure json. For leaf nodes: wide types such as *in
 
 .. # from conduit_tutorial_examples: json_generator_pure_json
 
-.. literalinclude:: ../../tests/conduit/conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/conduit_tutorial_examples.cpp
    :lines: 343-352
    :language: cpp
    :dedent: 4
@@ -80,7 +80,7 @@ Schemas can easily be bound to in-core data.
 
 .. # from conduit_tutorial_examples: json_generator_bind_to_incore
 
-.. literalinclude:: ../../tests/conduit/conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/conduit_tutorial_examples.cpp
    :lines: 360-366
    :language: cpp
    :dedent: 4
@@ -97,7 +97,7 @@ Compacting Nodes
 
 .. # from conduit_tutorial_examples: json_generator_compact
 
-.. literalinclude:: ../../tests/conduit/conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/conduit_tutorial_examples.cpp
    :lines: 384-429
    :language: cpp
    :dedent: 4
