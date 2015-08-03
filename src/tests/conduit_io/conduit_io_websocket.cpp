@@ -77,7 +77,7 @@ TEST(conduit_io_websocket, websocket_test)
                                                          "example.png");
 
     CONDUIT_INFO("png path:" << example_png_path);
-    std::ifstream file(example_png_path,
+    std::ifstream file(example_png_path.c_str(),
                        std::ios::binary);
 
     // find out how big the png file is
