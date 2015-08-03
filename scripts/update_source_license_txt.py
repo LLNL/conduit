@@ -72,7 +72,13 @@ patterns = {
     "hdr":"""
 .. ############################################################################
 """,
-    "st":".. # "}}
+    "st":".. # "},
+# Fortran Text style headers
+"fortran":{
+    "hdr":"""
+!*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*!
+""",
+    "st":"!* "}}
 
 
 def gen_formatted(lic_txt,hdr,st):
@@ -94,9 +100,8 @@ def update_lic(lic_file_old,lic_file_new,modify_files):
                                   v["hdr"][1:],
                                   v["st"])    
     all_files = []
-    updated   = []
     for root_path in ["../src",
-                      "../misc",
+                      "../scripts",
                       "../host-configs",
                       "../config-build.sh",
                       "../bootstrap-env.sh",
@@ -106,30 +111,38 @@ def update_lic(lic_file_old,lic_file_new,modify_files):
             for dirpath, dnames, fnames in os.walk(root_path):
                 for f in fnames:
                     full = os.path.abspath(os.path.join(dirpath, f))
-                    #if not full.count("thirdparty_builtin/") > 0:
                     all_files.append(full)
         else:
             all_files.append(os.path.abspath(root_path))
     print all_files
+    up_cnt    = {}
+    updated   = []
     for f in all_files:
+        curr_txt =  open(f).read()
         for k,v in patterns.items():
-            all_txt =  open(f).read()
-            cnt = all_txt.count(v["full"])
+            full_old_lic = v["full"]
+            cnt = curr_txt.count(full_old_lic)
             if cnt > 0:
-                print "[begin update to %s]" % full
-                print "[old - %s]" % full
-                print all_txt
-                ntxt = all_txt.replace(v["full"],
-                                        gen_formatted(lic_short_txt,
-                                                      v["hdr"][1:],
-                                                      v["st"]))
-                print "[new - %s]" % full
-                print ntxt
-                print "[end update to %s]" % full
+                print "[begin update to %s (style = %s)]" % (f,k)
+                print "[old - %s]" % f
+                print curr_txt
+                new_txt = curr_txt.replace(full_old_lic,
+                                           gen_formatted(lic_short_txt,
+                                                         v["hdr"][1:],
+                                                         v["st"]))
+                print "[new - %s]" % f
+                print new_txt
+                print "[end update to %s]" % f
                 updated.append(f)
+                if not f in up_cnt.keys():
+                    up_cnt[f] = 0
+                up_cnt[f] += 1
                 if modify_files:
-                    open(f,"w").write(ntxt)
-    print updated
+                    open(f,"w").write(new_txt)
+    print updated, len(updated)
+    for k,v in up_cnt.items():
+        print k,v
+
 
 if __name__ == "__main__":
     nargs = len(sys.argv)
