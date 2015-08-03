@@ -1,4 +1,4 @@
-!*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!*
+!*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*!
 !* Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 !* 
 !* Produced at the Lawrence Livermore National Laboratory
@@ -9,7 +9,7 @@
 !* 
 !* This file is part of Conduit. 
 !* 
-!* For details, see https://lc.llnl.gov/conduit/.
+!* For details, see: http://cyrush.github.io/conduit.
 !* 
 !* Please also read conduit/LICENSE
 !* 
@@ -40,7 +40,7 @@
 !* IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 !* POSSIBILITY OF SUCH DAMAGE.
 !* 
-!*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!*
+!*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*!
 
 !------------------------------------------------------------------------------
 ! conduit_fortran.f

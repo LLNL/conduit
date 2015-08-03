@@ -9,7 +9,7 @@
 .. # 
 .. # This file is part of Conduit. 
 .. # 
-.. # For details, see https://lc.llnl.gov/conduit/.
+.. # For details, see: http://cyrush.github.io/conduit.
 .. # 
 .. # Please also read conduit/LICENSE
 .. # 
@@ -116,6 +116,7 @@ Contributors
 - Cyrus Harrison (LLNL)
 - Brian Ryujin (LLNL)
 - Adam Kunen (LLNL)
+- Kathleen Biagas (LLNL)
 - Eric Brugger (LLNL)
 - George Aspesi (Harvey Mudd)
 - Justin Bai (Harvey Mudd)
