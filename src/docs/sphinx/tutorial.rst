@@ -46,8 +46,9 @@
 Tutorial
 ===========
 
-This short tutorial provides C++ examples that demonstrate Conduit's features.
-
+This short tutorial provides C++ examples that demonstrate the Conduit's Core 
+API. Conduit's unit tests (*src/tests/{library_name}/*) also provide a rich set 
+of examples for Conduit's Core API and additional libraries. 
 
 .. toctree::
 

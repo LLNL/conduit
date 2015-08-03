@@ -116,6 +116,7 @@ Contributors
 - Cyrus Harrison (LLNL)
 - Brian Ryujin (LLNL)
 - Adam Kunen (LLNL)
+- Kathleen Biagas (LLNL)
 - Eric Brugger (LLNL)
 - George Aspesi (Harvey Mudd)
 - Justin Bai (Harvey Mudd)
