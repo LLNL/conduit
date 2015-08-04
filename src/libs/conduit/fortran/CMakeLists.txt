@@ -72,6 +72,12 @@ set_target_properties(conduit_fortran PROPERTIES Fortran_FORMAT "FREE")
 # Install Targets for conduit lib
 ##################################
 
+install(FILES 
+        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit.mod
+        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_obj.mod
+        DESTINATION include)
+
+
 install(TARGETS conduit_fortran
   EXPORT conduit
   LIBRARY DESTINATION lib
