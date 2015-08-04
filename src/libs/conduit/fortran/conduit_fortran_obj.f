@@ -83,7 +83,6 @@ module conduit_obj
         procedure :: fetch_path_as_float64 => conduit_node_obj_fetch_path_as_float64
         !----------------------------------------------------------------------
         procedure :: set_path_char8_str => conduit_node_obj_set_path_char8_str
-        !procedure :: fetch_path_as_char8_str => conduit_node_obj_fetch_path_as_char8_str
         !----------------------------------------------------------------------
         procedure :: set_int    => conduit_node_obj_set_int
         procedure :: as_int     => conduit_node_obj_as_int
@@ -115,7 +114,7 @@ contains
     subroutine conduit_node_obj_destroy(obj)
         use iso_c_binding
         implicit none
-        type(node) :: obj
+        class(node) :: obj
         call conduit_node_destroy(obj%cnode)
         obj%cnode = C_NULL_PTR
     end subroutine conduit_node_obj_destroy
@@ -124,7 +123,7 @@ contains
     function conduit_node_obj_fetch(obj, path) result(res)
          use iso_c_binding
          implicit none
-         type(node) :: obj
+         class(node) :: obj
          character(*) :: path
          type(node) :: res
          res%cnode = conduit_node_fetch(obj%cnode, trim(path) // C_NULL_CHAR)
@@ -134,7 +133,7 @@ contains
     function conduit_node_obj_append(obj) result(res)
         use iso_c_binding
         implicit none
-        type(node) :: obj
+        class(node) :: obj
         type(node) :: res
         res%cnode = conduit_node_append(obj%cnode)
     end function conduit_node_obj_append
@@ -143,7 +142,7 @@ contains
     function conduit_node_obj_child(obj, idx) result(res)
         use iso_c_binding
         implicit none
-        type(node) :: obj
+        class(node) :: obj
         integer(C_SIZE_T) :: idx
         type(node) :: res
         res%cnode = conduit_node_child(obj%cnode, idx)
@@ -153,7 +152,7 @@ contains
     function conduit_node_obj_number_of_children(obj) result(res)
         use iso_c_binding
         implicit none
-        type(node) :: obj
+        class(node) :: obj
         integer(C_SIZE_T) :: res
         res = conduit_node_number_of_children(obj%cnode)
     end function conduit_node_obj_number_of_children
@@ -162,7 +161,7 @@ contains
     function conduit_node_obj_number_of_elements(obj) result(res)
         use iso_c_binding
         implicit none
-        type(node) :: obj
+        class(node) :: obj
         integer(C_SIZE_T) :: res
         res = conduit_node_number_of_elements(obj%cnode)
     end function conduit_node_obj_number_of_elements
@@ -171,7 +170,7 @@ contains
     subroutine conduit_node_obj_set_int32(obj, val)
         use iso_c_binding
         implicit none
-        type(node) :: obj
+        class(node) :: obj
         integer(4) :: val
         call conduit_node_set_int32(obj%cnode, val)
     end subroutine conduit_node_obj_set_int32
@@ -180,7 +179,7 @@ contains
     subroutine conduit_node_obj_set_int32_ptr(obj, data, num_elements) 
         use iso_c_binding
         implicit none
-        type(node) :: obj
+        class(node) :: obj
         integer(4), intent (out), dimension (*) :: data
         integer(C_SIZE_T) :: num_elements
         call conduit_node_set_int32_ptr(obj%cnode,data,num_elements)
@@ -190,7 +189,7 @@ contains
     subroutine conduit_node_obj_set_external_int32_ptr(obj, data, num_elements) 
         use iso_c_binding
         implicit none
-        type(node) :: obj
+        class(node) :: obj
         integer(4), intent (out), dimension (*) :: data
         integer(C_SIZE_T) :: num_elements
         call conduit_node_set_external_int32_ptr(obj%cnode,data,num_elements)
@@ -200,7 +199,7 @@ contains
     subroutine conduit_node_obj_set_path_external_float64_ptr(obj, path, data, num_elements) 
         use iso_c_binding
         implicit none
-        type(node) :: obj
+        class(node) :: obj
         character(*) :: path
         real(8), intent (out), dimension (*) :: data
         integer(C_SIZE_T) :: num_elements
@@ -209,27 +208,27 @@ contains
     
     !--------------------------------------------------------------------------
     function conduit_node_obj_as_int32(obj) result(res)
-           use iso_c_binding
-           implicit none
-           type(node) :: obj
-           integer(4) :: res
-           res = conduit_node_as_int32(obj%cnode)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        integer(4) :: res
+        res = conduit_node_as_int32(obj%cnode)
     end function conduit_node_obj_as_int32
     
     !--------------------------------------------------------------------------
     subroutine conduit_node_obj_as_int32_ptr(obj,f_out)
-           use iso_c_binding
-           implicit none
-           type(node) :: obj
-           integer(4), pointer :: f_out(:)
-           call conduit_node_as_int32_ptr(obj%cnode,f_out)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        integer(4), pointer :: f_out(:)
+        call conduit_node_as_int32_ptr(obj%cnode,f_out)
     end subroutine conduit_node_obj_as_int32_ptr
     
     !--------------------------------------------------------------------------
     subroutine conduit_node_obj_set_path_int32(obj, path, val)
         use iso_c_binding
         implicit none
-        type(node) :: obj
+        class(node) :: obj
         character(*) :: path
         integer(4) :: val
         call conduit_node_set_path_int32(obj%cnode, trim(path) // C_NULL_CHAR, val)
@@ -237,73 +236,73 @@ contains
 
     !--------------------------------------------------------------------------
     function conduit_node_obj_fetch_path_as_int32(obj,path) result(res)
-           use iso_c_binding
-           implicit none
-           type(node) :: obj
-           character(*) :: path
-           integer(4) :: res
-           res = conduit_node_fetch_path_as_int32(obj%cnode, trim(path) // C_NULL_CHAR)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        character(*) :: path
+        integer(4) :: res
+        res = conduit_node_fetch_path_as_int32(obj%cnode, trim(path) // C_NULL_CHAR)
     end function conduit_node_obj_fetch_path_as_int32
 
     !--------------------------------------------------------------------------
     subroutine conduit_node_obj_set_int(obj, val)
         use iso_c_binding
         implicit none
-        type(node) :: obj
+        class(node) :: obj
         integer(C_INT) :: val
         call conduit_node_set_int(obj%cnode, val)
     end subroutine conduit_node_obj_set_int
 
     !--------------------------------------------------------------------------
     function conduit_node_obj_as_int(obj) result(res)
-           use iso_c_binding
-           implicit none
-           type(node) :: obj
-           integer(C_INT) :: res
-           res = conduit_node_as_int(obj%cnode)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        integer(C_INT) :: res
+        res = conduit_node_as_int(obj%cnode)
     end function conduit_node_obj_as_int
 
     !--------------------------------------------------------------------------
     subroutine conduit_node_obj_set_double(obj, val)
         use iso_c_binding
         implicit none
-        type(node) :: obj
+        class(node) :: obj
         real(C_DOUBLE) :: val
         call conduit_node_set_double(obj%cnode, val)
     end subroutine conduit_node_obj_set_double
 
     !--------------------------------------------------------------------------
     function conduit_node_obj_as_double(obj) result(res)
-           use iso_c_binding
-           implicit none
-           type(node) :: obj
-           real(C_DOUBLE) :: res
-           res = conduit_node_as_double(obj%cnode)
+       use iso_c_binding
+       implicit none
+       class(node) :: obj
+       real(C_DOUBLE) :: res
+       res = conduit_node_as_double(obj%cnode)
     end function conduit_node_obj_as_double
 
     !--------------------------------------------------------------------------
     subroutine conduit_node_obj_set_float64(obj, val)
         use iso_c_binding
         implicit none
-        type(node) :: obj
+        class(node) :: obj
         real(8) :: val
         call conduit_node_set_double(obj%cnode, val)
     end subroutine conduit_node_obj_set_float64
 
     !--------------------------------------------------------------------------
     function conduit_node_obj_as_float64(obj) result(res)
-           use iso_c_binding
-           implicit none
-           type(node) :: obj
-           real(8) :: res
-           res = conduit_node_as_float64(obj%cnode)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        real(8) :: res
+        res = conduit_node_as_float64(obj%cnode)
     end function conduit_node_obj_as_float64
 
     !--------------------------------------------------------------------------
     subroutine conduit_node_obj_set_path_float64(obj, path, val)
         use iso_c_binding
         implicit none
-        type(node) :: obj
+        class(node) :: obj
         character(*) :: path
         real(8) :: val
         call conduit_node_set_path_float64(obj%cnode, trim(path) // C_NULL_CHAR, val)
@@ -311,19 +310,19 @@ contains
 
     !--------------------------------------------------------------------------
     function conduit_node_obj_fetch_path_as_float64(obj,path) result(res)
-           use iso_c_binding
-           implicit none
-           type(node) :: obj
-           character(*) :: path
-           real(8) :: res
-           res = conduit_node_fetch_path_as_float64(obj%cnode, trim(path) // C_NULL_CHAR)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        character(*) :: path
+        real(8) :: res
+        res = conduit_node_fetch_path_as_float64(obj%cnode, trim(path) // C_NULL_CHAR)
     end function conduit_node_obj_fetch_path_as_float64
 
     !--------------------------------------------------------------------------
     subroutine conduit_node_obj_set_path_char8_str(obj, path, val)
         use iso_c_binding
         implicit none
-        type(node) :: obj
+        class(node) :: obj
         character(*) :: path
         character(*) :: val
         call conduit_node_set_path_char8_str(obj%cnode, trim(path) // C_NULL_CHAR, trim(val) // C_NULL_CHAR)
@@ -331,18 +330,18 @@ contains
 
     !--------------------------------------------------------------------------
     subroutine conduit_node_obj_print(obj)
-           use iso_c_binding
-           implicit none
-           type(node) :: obj
-           call conduit_node_print(obj%cnode)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        call conduit_node_print(obj%cnode)
     end subroutine conduit_node_obj_print
 
     !--------------------------------------------------------------------------
     subroutine conduit_node_obj_print_detailed(obj)
-           use iso_c_binding
-           implicit none
-           type(node) :: obj
-           call conduit_node_print_detailed(obj%cnode)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        call conduit_node_print_detailed(obj%cnode)
     end subroutine conduit_node_obj_print_detailed
 
 !------------------------------------------------------------------------------
