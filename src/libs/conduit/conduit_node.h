@@ -125,6 +125,16 @@ void          conduit_node_set_path_int32(conduit_node *cnode,
                                           conduit_int32 value);
 
 //-----------------------------------------------------------------------------
+void          conduit_node_set_path_float64(conduit_node *cnode, 
+                                            const char *path,
+                                            conduit_float64 value);
+
+//-----------------------------------------------------------------------------
+void          conduit_node_set_path_char8_str(conduit_node *cnode, 
+                                              const char *path,
+                                              const char *value);
+
+//-----------------------------------------------------------------------------
 void          conduit_node_set_int32_ptr(conduit_node *cnode, 
                                          conduit_int32 *data,
                                          size_t num_elements);
@@ -133,6 +143,12 @@ void          conduit_node_set_int32_ptr(conduit_node *cnode,
 void          conduit_node_set_external_int32_ptr(conduit_node *cnode, 
                                                   conduit_int32 *data,
                                                   size_t num_elements);
+
+//-----------------------------------------------------------------------------
+void          conduit_node_set_path_external_float64_ptr(conduit_node *cnode, 
+                                                         const char *path,
+                                                         conduit_float64 *data,
+                                                         size_t num_elements);
 
 //-----------------------------------------------------------------------------
 void          conduit_node_set_float64(conduit_node *cnode, 
@@ -164,6 +180,14 @@ conduit_int32 *conduit_node_as_int32_ptr(conduit_node *cnode);
 //-----------------------------------------------------------------------------
 conduit_int32  conduit_node_fetch_path_as_int32(conduit_node *cnode,
                                                 const char *path);
+
+//-----------------------------------------------------------------------------
+conduit_float64 conduit_node_fetch_path_as_float64(conduit_node *cnode,
+                                                   const char *path);
+
+//-----------------------------------------------------------------------------
+char *        conduit_node_fetch_path_as_char8_str(conduit_node *cnode,
+                                                   const char *path);
 
 //-----------------------------------------------------------------------------
 double        conduit_node_as_double(conduit_node *cnode);
