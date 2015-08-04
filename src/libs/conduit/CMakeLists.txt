@@ -135,7 +135,7 @@ endif()
 # Install Targets for conduit lib
 ##################################
 
-install(FILES ${conduit_headers} DESTINATION include)
+install(FILES ${conduit_headers} ${conduit_c_headers} DESTINATION include)
 install(TARGETS conduit
   EXPORT conduit
   LIBRARY DESTINATION lib
