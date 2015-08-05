@@ -53,9 +53,11 @@ ENABLE_WARNINGS()
 # Specify fortran sources
 #
 set(conduit_fortran_sources
-    conduit_fortran.f
-    conduit_fortran_obj.f)
-
+    conduit_fortran.f)
+    
+if(ENABLE_FORTRAN_OBJ_INTERFACE)
+    list(APPEND conduit_fortran_sources conduit_fortran_obj.f)
+endif()
 #
 # Note: headers are added here so they show up in project file generators
 # (such as xcode, eclipse, etc)
@@ -72,9 +74,15 @@ set_target_properties(conduit_fortran PROPERTIES Fortran_FORMAT "FREE")
 # Install Targets for conduit lib
 ##################################
 
+set(conduit_fortran_modules
+    ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit.mod)
+
+if(ENABLE_FORTRAN_OBJ_INTERFACE)
+    list(APPEND conduit_fortran_modules ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_obj.mod)
+endif()
+
 install(FILES 
-        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit.mod
-        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_obj.mod
+        ${conduit_fortran_modules}
         DESTINATION include)
 
 
