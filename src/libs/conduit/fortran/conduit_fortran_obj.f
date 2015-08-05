@@ -121,12 +121,12 @@ contains
 
     !--------------------------------------------------------------------------
     function conduit_node_obj_fetch(obj, path) result(res)
-         use iso_c_binding
-         implicit none
-         class(node) :: obj
-         character(*) :: path
-         type(node) :: res
-         res%cnode = conduit_node_fetch(obj%cnode, trim(path) // C_NULL_CHAR)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        character(*) :: path
+        type(node) :: res
+        res%cnode = conduit_node_fetch(obj%cnode, trim(path) // C_NULL_CHAR)
      end function conduit_node_obj_fetch
 
     !--------------------------------------------------------------------------
@@ -203,7 +203,7 @@ contains
         character(*) :: path
         real(8), intent (out), dimension (*) :: data
         integer(C_SIZE_T) :: num_elements
-        call conduit_node_set_path_external_float64_ptr(obj%cnode,trim(path) // C_NULL_CHAR,data,num_elements)
+        call conduit_node_set_path_external_float64_ptr(obj%cnode,path,data,num_elements)
     end subroutine conduit_node_obj_set_path_external_float64_ptr
     
     !--------------------------------------------------------------------------
@@ -231,7 +231,7 @@ contains
         class(node) :: obj
         character(*) :: path
         integer(4) :: val
-        call conduit_node_set_path_int32(obj%cnode, trim(path) // C_NULL_CHAR, val)
+        call conduit_node_set_path_int32(obj%cnode, path, val)
     end subroutine conduit_node_obj_set_path_int32
 
     !--------------------------------------------------------------------------
@@ -273,11 +273,11 @@ contains
 
     !--------------------------------------------------------------------------
     function conduit_node_obj_as_double(obj) result(res)
-       use iso_c_binding
-       implicit none
-       class(node) :: obj
-       real(C_DOUBLE) :: res
-       res = conduit_node_as_double(obj%cnode)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        real(C_DOUBLE) :: res
+        res = conduit_node_as_double(obj%cnode)
     end function conduit_node_obj_as_double
 
     !--------------------------------------------------------------------------
@@ -305,7 +305,7 @@ contains
         class(node) :: obj
         character(*) :: path
         real(8) :: val
-        call conduit_node_set_path_float64(obj%cnode, trim(path) // C_NULL_CHAR, val)
+        call conduit_node_set_path_float64(obj%cnode, path, val)
     end subroutine conduit_node_obj_set_path_float64
 
     !--------------------------------------------------------------------------
@@ -325,7 +325,7 @@ contains
         class(node) :: obj
         character(*) :: path
         character(*) :: val
-        call conduit_node_set_path_char8_str(obj%cnode, trim(path) // C_NULL_CHAR, trim(val) // C_NULL_CHAR)
+        call conduit_node_set_path_char8_str(obj%cnode, path, val)
     end subroutine conduit_node_obj_set_path_char8_str
 
     !--------------------------------------------------------------------------
