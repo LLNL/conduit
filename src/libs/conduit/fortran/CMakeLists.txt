@@ -53,9 +53,11 @@ ENABLE_WARNINGS()
 # Specify fortran sources
 #
 set(conduit_fortran_sources
-    conduit_fortran.f
-    conduit_fortran_obj.f)
-
+    conduit_fortran.f)
+    
+if(ENABLE_FORTRAN_OBJ_INTERFACE)
+    list(APPEND conduit_fortran_sources conduit_fortran_obj.f)
+endif()
 #
 # Note: headers are added here so they show up in project file generators
 # (such as xcode, eclipse, etc)
