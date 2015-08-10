@@ -72,6 +72,8 @@ Conduit's Core API provides:
 
 Conduit is under active development. The C++ API underpins the other language APIs and currently has the most features. We are still filling out the C, Fortran, and Python APIs. 
 
+For more background, please see our :download:`Conduit Introduction <2015_conduit_intro.pdf>` presentation slides.
+
 
 Unique Features
 ----------------
