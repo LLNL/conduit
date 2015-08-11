@@ -56,25 +56,38 @@ before_install:
   - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
   - sudo apt-get update -qq
   - sudo apt-get install -qq gcc-4.8 g++-4.8 gfortran-4.8
-  # also update to a newer version of cmake
-  - mkdir travis-cmake-setup
-  - cd travis-cmake-setup
+  # download a newer version of cmake
   - wget http://www.cmake.org/files/v3.3/cmake-3.3.0-Linux-x86_64.sh
-  - ls
+  # prep to use miniconda to get python and numpy
+  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - chmod +x miniconda.sh
+  - ./miniconda.sh -b
+  - export PATH=/home/travis/miniconda/bin:$PATH
+  - conda update --yes conda
+install:
   - sudo sh cmake-3.3.0-Linux-x86_64.sh --skip-license --prefix=/usr
+  - conda install --yes python=2.7 numpy
 script:
   - cmake --version
   - cd $TRAVIS_BUILD_DIR
+  # create out-of-source build dir, and an install dir
   - mkdir travis-debug-build
   - mkdir travis-debug-install
   - cd    travis-debug-build
+  # build type and install loc
   - CMAKE_OPTS="-DCMAKE_BUILD_TYPE=Debug"
   - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../travis-debug-install"
+  # c & c++ compilers
   - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_C_COMPILER=${CONDUIT_CC}"
-  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_CXX_COMPILER=${CONDUIT_CXX}" 
+  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_CXX_COMPILER=${CONDUIT_CXX}"
+  # enable fortran support
   - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_Fortran_COMPILER=${CONDUIT_FC}"
   - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_FORTRAN=ON"
+  # enable python support
+  - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=ON"
+  # configure with cmake
   - cmake  ${CMAKE_OPTS} ../src
+  # build, test, and install
   - make
   - make test
   - make install
