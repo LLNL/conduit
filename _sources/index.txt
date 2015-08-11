@@ -9,7 +9,7 @@
 .. # 
 .. # This file is part of Conduit. 
 .. # 
-.. # For details, see: http://cyrush.github.io/conduit.
+.. # For details, see: http://scalability-llnl.github.io/conduit/.
 .. # 
 .. # Please also read conduit/LICENSE
 .. # 
@@ -72,6 +72,8 @@ Conduit's Core API provides:
 
 Conduit is under active development. The C++ API underpins the other language APIs and currently has the most features. We are still filling out the C, Fortran, and Python APIs. 
 
+For more background, please see our :download:`Conduit Introduction <2015_conduit_intro.pdf>` presentation slides.
+
 
 Unique Features
 ----------------
@@ -80,6 +82,11 @@ Conduit was built around the concept that an intuitive in-core data description 
 
 - Provides a runtime focused in-core data description API that does not require repacking or code generation.
 - Supports a mix of externally owned and Conduit allocated memory semantics.
+
+
+Conduit Resources
+------------------
+
 
 
 Conduit Libraries 
