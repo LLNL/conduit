@@ -9,7 +9,7 @@
 .. # 
 .. # This file is part of Conduit. 
 .. # 
-.. # For details, see: http://cyrush.github.io/conduit.
+.. # For details, see: http://scalability-llnl.github.io/conduit/.
 .. # 
 .. # Please also read conduit/LICENSE
 .. # 
@@ -82,6 +82,11 @@ Conduit was built around the concept that an intuitive in-core data description 
 
 - Provides a runtime focused in-core data description API that does not require repacking or code generation.
 - Supports a mix of externally owned and Conduit allocated memory semantics.
+
+
+Conduit Resources
+------------------
+
 
 
 Conduit Libraries 

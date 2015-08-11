@@ -9,7 +9,7 @@
 .. # 
 .. # This file is part of Conduit. 
 .. # 
-.. # For details, see: http://cyrush.github.io/conduit.
+.. # For details, see: http://scalability-llnl.github.io/conduit/.
 .. # 
 .. # Please also read conduit/LICENSE
 .. # 
@@ -57,7 +57,7 @@ Clone the Conduit repo:
 
 .. code:: bash
     
-    git clone https://github.com/cyrush/conduit.git
+    git clone https://github.com/scalability-llnl/conduit.git
 
 
 * From LLNL's CZ Stash Instance (LLNL Users)
