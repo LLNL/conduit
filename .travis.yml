@@ -59,7 +59,8 @@ before_install:
   - mkdir travis-cmake-setup
   - cd travis-cmake-setup
   - wget http://www.cmake.org/files/v3.3/cmake-3.3.0-Linux-x86_64.sh
-  - sudo ./cmake-3.3.0-Linux-x86_64.sh --skip-license --prefix=/usr
+  - ls
+  - sudo sh cmake-3.3.0-Linux-x86_64.sh --skip-license --prefix=/usr
 script:
   - cmake --version
   - mkdir travis-debug-build
