@@ -57,8 +57,7 @@ before_install:
   - sudo apt-get install -qq gcc-4.8 g++-4.8 gfortran-4.8
   # also update to a newer version of cmake
   - mkdir travis-cmake-setup
-  - cd ~/travis-cmake-setup
-  - wget http://www.cmake.org/files/v3.3/cmake-3.3.0-Linux-x86_64.tar.gz
+  - cd travis-cmake-setup
   - wget http://www.cmake.org/files/v3.3/cmake-3.3.0-Linux-x86_64.sh
   - sudo ./cmake-3.3.0-Linux-x86_64.sh --skip-license --prefix=/usr
 script:
