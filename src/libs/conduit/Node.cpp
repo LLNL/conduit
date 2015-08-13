@@ -378,25 +378,53 @@ Node::load(const Schema &schema,
 
 //---------------------------------------------------------------------------//
 void
-Node::load(const std::string &ibase)
+Node::load(const std::string &ibase,
+           const std::string &protocol)
 {
-    Schema s;
-    std::string ifschema = ibase + ".conduit_json";
-    std::string ifdata   = ibase + ".conduit_bin";
-    s.load(ifschema);
-    load(s,ifdata);
+    if(protocol == "conduit_pair")
+    {
+        // TODO: use generator?
+        Schema s;
+        std::string ifschema = ibase + ".conduit_json";
+        std::string ifdata   = ibase + ".conduit_bin";
+        s.load(ifschema);
+        load(s,ifdata);
+    }
+    // single file json cases
+    else
+    {
+        std::ifstream ifile;
+        ifile.open(ibase.c_str());
+        if(!ifile.is_open())
+            CONDUIT_ERROR("<Node::load> failed to open: " << ibase);
+        std::string json_data((std::istreambuf_iterator<char>(ifile)),
+                               std::istreambuf_iterator<char>());
+        
+        Generator g(json_data,protocol);
+        g.walk(*this);
+    }
+        
 }
 
 //---------------------------------------------------------------------------//
 void
-Node::save(const std::string &obase) const
+Node::save(const std::string &obase,
+           const std::string &protocol) const
 {
-    Node res;
-    compact_to(res);
-    std::string ofschema = obase + ".conduit_json";
-    std::string ofdata   = obase + ".conduit_bin";
-    res.schema().save(ofschema);
-    res.serialize(ofdata);
+    if(protocol == "conduit_pair")
+    {
+        Node res;
+        compact_to(res);
+        std::string ofschema = obase + ".conduit_json";
+        std::string ofdata   = obase + ".conduit_bin";
+        res.schema().save(ofschema);
+        res.serialize(ofdata);
+    }
+    // single file json cases
+    else
+    {
+        to_json_stream(obase,protocol);
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -7447,7 +7475,7 @@ Node::to_base64_json(std::ostream &os,
     utils::indent(os,indent,depth+1,pad);
     os << "\"schema\": ";
 
-    n.schema().to_json(os,true,indent,depth+1,pad,eoe);
+    n.schema().to_json_stream(os,true,indent,depth+1,pad,eoe);
 
     os  << "," << eoe;
     

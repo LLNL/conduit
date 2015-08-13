@@ -1849,19 +1849,23 @@ PyConduit_Generator_new(PyTypeObject *type,
                         PyObject *kwargs)
 {
     PyConduit_Generator *self = (PyConduit_Generator*)type->tp_alloc(type, 0);
-    return ((PyObject*)self);
-    
+
     if (self)
     {
         self->generator = 0;
     }
+
+    return ((PyObject*)self);
 }
 
 //---------------------------------------------------------------------------//
 static void
 PyConduit_Generator_dealloc(PyConduit_Generator *self)
 {
-    delete self->generator;
+    if(self->generator != NULL)
+    {
+        delete self->generator;
+    }
     self->ob_type->tp_free((PyObject*)self);
 }
 
@@ -2115,6 +2119,7 @@ PyConduit_Schema_new(PyTypeObject* type,
 {
 
     PyConduit_Schema* self = (PyConduit_Schema*)type->tp_alloc(type, 0);
+    
     if (self)
     {
         self->schema = 0;
@@ -2172,7 +2177,7 @@ PyConduit_Schema_init(PyConduit_Schema* self,
 static void
 PyConduit_Schema_dealloc(PyConduit_Schema* self)
 {
-    if (self->python_owns)
+    if (self->python_owns && self->schema != NULL)
     {
         delete self->schema;
     }
@@ -2183,8 +2188,9 @@ PyConduit_Schema_dealloc(PyConduit_Schema* self)
 static PyObject *
 PyConduit_Schema_str(PyConduit_Schema *self)
 {
-   std::string output = self->schema->to_json();
-   return (Py_BuildValue("s", output.c_str()));
+   std::ostringstream oss;
+   self->schema->to_json(oss);
+   return (Py_BuildValue("s", oss.str().c_str()));
 }
 
 
@@ -2909,8 +2915,9 @@ PyConduit_Node_dealloc(PyConduit_Node* self)
 static PyObject *
 PyConduit_Node_str(PyConduit_Node* self)
 {
-   std::string output = self->node->to_json();
-   return (Py_BuildValue("s", output.c_str()));
+   std::ostringstream oss;
+   self->node->to_json_stream(oss);
+   return (Py_BuildValue("s", oss.str().c_str()));
 }
 
 //---------------------------------------------------------------------------//

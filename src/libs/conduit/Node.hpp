@@ -244,13 +244,14 @@ public:
 /// description:
 ///
 //-----------------------------------------------------------------------------
+    void load(const std::string &stream_path,
+              const std::string &protocol="conduit_pair");
+
+    void save(const std::string &stream_path,
+              const std::string &protocol="conduit_pair") const;
+
     void load(const Schema &schema,
               const std::string &stream_path);
-
-    /// dual file (schema + data) load
-    void load(const std::string &ibase);
-
-    void save(const std::string &obase) const; 
 
     void mmap(const Schema &schema,
               const std::string &stream_path);
@@ -2133,6 +2134,9 @@ public:
     Schema          *schema_ptr() 
                         {return m_schema;}
 
+    // parent access
+    bool             is_data_external() const
+                        {return !m_alloced;}
 
     // parent access
     bool             is_root() const 

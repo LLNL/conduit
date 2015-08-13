@@ -442,7 +442,7 @@ public:
 // Transforms
 //-----------------------------------------------------------------------------
     std::string         to_json() const;  
-    void                to_json(std::ostream &os)const;
+    void                to_json_stream(std::ostream &os) const;
 
     void                compact_to(DataType &dtype) const;
 

@@ -317,24 +317,24 @@ Schema::compact_to(Schema &s_dest) const
 //---------------------------------------------------------------------------//
 std::string
 Schema::to_json(bool detailed,
-              index_t indent, 
-              index_t depth,
-              const std::string &pad,
-              const std::string &eoe) const
+               index_t indent, 
+               index_t depth,
+               const std::string &pad,
+               const std::string &eoe) const
 {
    std::ostringstream oss;
-   to_json(oss,detailed,indent,depth,pad,eoe);
+   to_json_stream(oss,detailed,indent,depth,pad,eoe);
    return oss.str();
 }
 
 //---------------------------------------------------------------------------//
 void
-Schema::to_json(std::ostream &os,
-              bool detailed, 
-              index_t indent, 
-              index_t depth,
-              const std::string &pad,
-              const std::string &eoe) const
+Schema::to_json_stream(std::ostream &os,
+                       bool detailed, 
+                       index_t indent, 
+                       index_t depth,
+                       const std::string &pad,
+                       const std::string &eoe) const
 {
     if(m_dtype.id() == DataType::OBJECT_T)
     {
@@ -347,7 +347,7 @@ Schema::to_json(std::ostream &os,
         {
             utils::indent(os,indent,depth+1,pad);
             os << "\""<< object_order()[i] << "\": ";
-            children()[i]->to_json(os,detailed,indent,depth+1,pad,eoe);
+            children()[i]->to_json_stream(os,detailed,indent,depth+1,pad,eoe);
             if(i < nchildren-1)
                 os << ",";
             os << eoe;
@@ -365,7 +365,7 @@ Schema::to_json(std::ostream &os,
         for(index_t i=0; i < nchildren;i++)
         {
             utils::indent(os,indent,depth+1,pad);
-            children()[i]->to_json(os,detailed,indent,depth+1,pad,eoe);
+            children()[i]->to_json_stream(os,detailed,indent,depth+1,pad,eoe);
             if(i < nchildren-1)
                 os << ",";
             os << eoe;
@@ -375,7 +375,7 @@ Schema::to_json(std::ostream &os,
     }
     else // assume leaf data type
     {
-        m_dtype.to_json(os);
+        m_dtype.to_json_stream(os);
     }
 }
 
@@ -396,7 +396,7 @@ Schema::save(const std::string &ofname,
 {
     // TODO: this is ineff, get base class rep correct?
     std::ostringstream oss;
-    to_json(oss,detailed,indent,depth,pad,eoe);    
+    to_json_stream(oss,detailed,indent,depth,pad,eoe);    
 
     std::ofstream ofile;
     ofile.open(ofname.c_str());
@@ -407,17 +407,17 @@ Schema::save(const std::string &ofname,
 }
 
 //---------------------------------------------------------------------------//
-void            
+void
 Schema::load(const std::string &ifname)
 {
-    std::ostringstream oss;
     std::ifstream ifile;
     ifile.open(ifname.c_str());
     if(!ifile.is_open())
         CONDUIT_ERROR("<Schema::load> failed to open: " << ifname);
-    std::string res((std::istreambuf_iterator<char>(ifile)), std::istreambuf_iterator<char>());
+    std::string res((std::istreambuf_iterator<char>(ifile)),
+                     std::istreambuf_iterator<char>());
     set(res);
-}            
+}
 
 
 
@@ -431,7 +431,6 @@ Schema::load(const std::string &ifname)
 index_t 
 Schema::number_of_children() const 
 {
-    // LIST_T only for now, overload for OBJECT_T
     if(m_dtype.id() != DataType::LIST_T  &&
        m_dtype.id() != DataType::OBJECT_T)
         return 0;

@@ -122,6 +122,54 @@ TEST(conduit_node_save_load, bin_simple_file)
     delete [] data;
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node_save_load, other_protocols)
+{
+
+    int32   a_val  = 10;
+    int32   b_val  = 20;
+    
+    Node n;
+    Node nsrc;
+    
+    nsrc["a"] = a_val;
+    nsrc["b"] = b_val;
+    
+    nsrc.save("tout_conduit_io_other_protos_json.json",
+              "json");
+
+    n.load("tout_conduit_io_other_protos_json.json",
+           "json");
+    
+    n.print_detailed();
+
+    EXPECT_EQ(n["a"].to_int32(), a_val);
+    EXPECT_EQ(n["b"].to_int32(), b_val);
+
+    nsrc.save("tout_conduit_io_other_protos_conduit.json",
+              "conduit");
+
+    n.load("tout_conduit_io_other_protos_conduit.json",
+           "conduit");
+    
+    n.print_detailed();
+
+    EXPECT_EQ(n["a"].as_int32(), a_val);
+    EXPECT_EQ(n["b"].as_int32(), b_val);
+
+    nsrc.save("tout_conduit_io_other_protos_base64_json.json",
+              "base64_json");
+
+    n.load("tout_conduit_io_other_protos_base64_json.json",
+           "base64_json");
+    
+    n.print_detailed();
+
+    EXPECT_EQ(n["a"].as_int32(), a_val);
+    EXPECT_EQ(n["b"].as_int32(), b_val);
+
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node_save_load, mmap_simple_file)

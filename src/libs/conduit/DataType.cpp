@@ -965,13 +965,13 @@ std::string
 DataType::to_json() const
 {
     std::ostringstream oss;
-    to_json(oss);
+    to_json_stream(oss);
     return oss.str();
 }
 
 //---------------------------------------------------------------------------// 
 void
-DataType::to_json(std::ostream &os) const
+DataType::to_json_stream(std::ostream &os) const
 {
     os << "{\"dtype\":";
     if(m_id == EMPTY_T)

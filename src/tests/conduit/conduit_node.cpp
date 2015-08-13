@@ -71,6 +71,9 @@ TEST(conduit_node, simple)
     EXPECT_EQ(n["a"].as_uint32(),a_val);
     EXPECT_EQ(n["b"].as_uint32(),b_val);
     EXPECT_EQ(n["c"].as_float64(),c_val);
+    // data should be owned by the conduit Node
+    EXPECT_FALSE(n["a"].is_data_external());
+    
 }
 
 TEST(conduit_node, nested)
@@ -260,6 +263,9 @@ TEST(conduit_node, in_place)
     n["a"] = b_val;
     n["b"] = a_val;
     n["c"] = d_val;
+
+    // data shouldn't be owned by the conduit Node
+    EXPECT_TRUE(n["a"].is_data_external());
 
     EXPECT_EQ(n["a"].as_uint32(), b_val);
     EXPECT_EQ(n["b"].as_uint32(), a_val);
