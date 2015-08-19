@@ -84,9 +84,20 @@ Conduit was built around the concept that an intuitive in-core data description 
 - Supports a mix of externally owned and Conduit allocated memory semantics.
 
 
-Conduit Resources
-------------------
+Conduit Project Resources
+--------------------------
 
+**Online Documentation**
+
+http://scalability-llnl.github.io/conduit/index.html
+
+**Github Source Repo**
+
+https://github.com/scalability-llnl/conduit
+
+**LLNL Collaboration Zone Stash Source Repo (LLNL Users)**
+
+https://lc.llnl.gov/stash/projects/CON/repos/conduit/browse
 
 
 Conduit Libraries 
