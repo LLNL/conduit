@@ -243,7 +243,7 @@ public:
             if(m_node != NULL)
             {
                 std::ostringstream oss;
-                std::string b64_json = m_node->to_json("base64_json",oss);
+                m_node->to_json_stream(oss,"base64_json");
                 mg_printf(conn, "%s",oss.str().c_str());
             }
             return true;
