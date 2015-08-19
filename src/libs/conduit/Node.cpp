@@ -345,8 +345,8 @@ Node::generate_external(const std::string &json_schema,
 
 //---------------------------------------------------------------------------//
 void 
-Node::load(const Schema &schema,
-           const std::string &stream_path)
+Node::load(const std::string &stream_path,
+           const Schema &schema)
 {
     index_t dsize = schema.total_bytes();
 
@@ -388,7 +388,7 @@ Node::load(const std::string &ibase,
         std::string ifschema = ibase + ".conduit_json";
         std::string ifdata   = ibase + ".conduit_bin";
         s.load(ifschema);
-        load(s,ifdata);
+        load(ifdata,s);
     }
     // single file json cases
     else
@@ -429,20 +429,21 @@ Node::save(const std::string &obase,
 
 //---------------------------------------------------------------------------//
 void
-Node::mmap(const std::string &ibase)
+Node::mmap(const std::string &stream_path)
 {
+    std::string ifschema = stream_path + ".conduit_json";
+    std::string ifdata   = stream_path + ".conduit_bin";
+
     Schema s;
-    std::string ifschema = ibase + ".conduit_json";
-    std::string ifdata   = ibase + ".conduit_bin";
     s.load(ifschema);
-    mmap(s,ifdata);
+    mmap(ifdata,s);
 }
 
 
 //---------------------------------------------------------------------------//
 void 
-Node::mmap(const Schema &schema,
-           const std::string &stream_path)
+Node::mmap(const std::string &stream_path,
+           const Schema &schema)
 {
     reset();
     index_t dsize = schema.total_bytes();
@@ -7613,8 +7614,15 @@ Node::fetch(const std::string &path)
     // check for parent
     if(p_curr == "..")
     {
-        if(m_parent != NULL) // TODO: check for error (no parent) ?
-           return m_parent->fetch(p_next);
+        if(m_parent == NULL)
+        {
+            CONDUIT_ERROR("Tried to fetch non-existent parent Node")
+        }
+        else
+        {
+            return m_parent->fetch(p_next);
+        }
+        
     }
 
     // if this node doesn't exist yet, we need to create it and

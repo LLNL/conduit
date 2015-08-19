@@ -2994,7 +2994,7 @@ PyConduit_Node_value(PyConduit_Node* self)
 //---------------------------------------------------------------------------//
 static PyObject *
 PyConduit_Node_generate(PyConduit_Node* self,
-                       PyObject* args)
+                        PyObject* args)
 {
     /// TODO: sigs to support
     /// json_schema
@@ -3016,41 +3016,108 @@ PyConduit_Node_generate(PyConduit_Node* self,
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduit_Node_save(PyConduit_Node* self,
-                   PyObject* args)
-{
-     const char *obase;     
-     if (!PyArg_ParseTuple(args, "s", &obase))
-     {
-         PyErr_SetString(PyExc_TypeError, "Save file path must be a string");
-         return NULL;
-     }
-     
-     self->node->save(std::string(obase));
-     Py_RETURN_NONE;
+PyConduit_Node_save(PyConduit_Node *self,
+                    PyObject *args,
+                    PyObject *kwargs)
+{   
+    const char *path      = NULL;
+    const char *protocol  = NULL;
+    
+    // support:
+    // path
+    // path, protocol
+    
+    static const char *kwlist[] = {"path","protocol", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "s|s",
+                                     const_cast<char**>(kwlist),
+                                     &path,&protocol))
+    {
+        return NULL;
+    }
+    
+    std::string path_str(path);
+    std::string protocol_str("conduit_pair");
+    
+    if(protocol != NULL)
+    {
+        protocol_str = std::string(protocol);
+    }
+    
+    self->node->save(path_str,protocol_str);
+    Py_RETURN_NONE;
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduit_Node_load(PyConduit_Node* self,
-                   PyObject* args)
+PyConduit_Node_load(PyConduit_Node *self,
+                    PyObject *args,
+                    PyObject *kwargs)
 {
-    /// TODO: sigs to support via kwargs: path, or path and schema
-    const char *ibase;     
-    if (!PyArg_ParseTuple(args, "s", &ibase))
+    PyObject   *py_schema = NULL;
+    const char *path      = NULL;
+    const char *protocol  = NULL;
+    
+    // support:
+    // path
+    // path, schema
+    // path, protocol
+    
+    static const char *kwlist[] = {"path","schema","protocol", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "s|Os",
+                                     const_cast<char**>(kwlist),
+                                     &path,&py_schema, &protocol))
     {
-        PyErr_SetString(PyExc_TypeError, "Load file path must be a string");
         return NULL;
     }
+    
 
-    self->node->load(std::string(ibase));
+    if(py_schema != NULL)
+    {
+        if(!PyConduit_Schema_Check(py_schema))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "Node::load 'schema' argument must be a "
+                            "Conduit::Schema");
+            return NULL;
+        }
+    }
+    
+    std::string path_str(path);
+    
+    if(py_schema != NULL)
+    {
+        Schema *schema_ptr = ((PyConduit_Schema*)py_schema)->schema;
+        self->node->load(path_str,
+                         *schema_ptr);
+    }
+    else
+    {
+        std::string protocol_str("conduit_pair");
+        
+        if( protocol != NULL)
+        {
+            protocol_str =  std::string(protocol);
+        }
+        
+        self->node->load(path_str,
+                         protocol_str);
+        
+    }
+
+    
     Py_RETURN_NONE;
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
 PyConduit_Node_mmap(PyConduit_Node* self,
-                   PyObject* args)
+                    PyObject* args)
 {
     /// TODO: sigs to support via kwargs: path, or path and schema
     const char *ibase;     
@@ -3166,8 +3233,8 @@ PyConduit_Node_append(PyConduit_Node* self)
 //---------------------------------------------------------------------------//
 static PyObject * 
 PyConduit_Node_remove(PyConduit_Node *self,
-                     PyObject *args,
-                     PyObject *kwargs)
+                      PyObject *args,
+                      PyObject *kwargs)
 {
     Py_ssize_t idx;
     const char *path = NULL;
@@ -3509,18 +3576,18 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
     //-----------------------------------------------------------------------//
     {"save",
      (PyCFunction)PyConduit_Node_save,
-     METH_VARARGS, 
+     METH_KEYWORDS, 
      "Saves a node to a file pair"},
     //-----------------------------------------------------------------------//
     {"load",
      (PyCFunction)PyConduit_Node_load,
-     METH_VARARGS,  // will become kwargs
-     "Loads a node from a file pair"},
+     METH_KEYWORDS,
+     "Loads a node from a file pair, file with schema, or file with protocol"},
     //-----------------------------------------------------------------------//
     {"mmap",
      (PyCFunction)PyConduit_Node_mmap,
      METH_VARARGS, // will become kwargs
-     "Memory Maps a node from a file pair"},
+     "Memory Maps a node from a file pair, file with schema, or file with protocol"},
     //-----------------------------------------------------------------------//
     {"set_path",
      (PyCFunction)PyConduit_Node_set_path,

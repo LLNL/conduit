@@ -220,7 +220,7 @@ TEST(conduit_node_save_load, mmap_simple_file)
     // standard read
     
     Node ntest;
-    ntest.load(schema,"tout_conduit_mmap_x2.conduit_bin");
+    ntest.load("tout_conduit_mmap_x2.conduit_bin",schema);
     EXPECT_EQ(ntest[0]["a"].as_int32(), 100);
     EXPECT_EQ(ntest[0]["b"].as_int32(), 200);
 

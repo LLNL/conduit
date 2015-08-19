@@ -203,7 +203,7 @@ public:
                          const std::string &pad=" ",
                          const std::string &eoe="\n") const;
 
-    void            load(const std::string &ifname);
+    void            load(const std::string &stream_path);
 
 
 //-----------------------------------------------------------------------------
