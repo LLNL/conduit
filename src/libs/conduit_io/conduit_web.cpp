@@ -242,8 +242,9 @@ public:
         {
             if(m_node != NULL)
             {
-                std::string b64_json = m_node->to_json("base64_json");
-                mg_printf(conn, "%s",b64_json.c_str());
+                std::ostringstream oss;
+                std::string b64_json = m_node->to_json("base64_json",oss);
+                mg_printf(conn, "%s",oss.str().c_str());
             }
             return true;
         }
@@ -288,22 +289,25 @@ public:
             RequestHandler *handler = (RequestHandler *)cbdata;
 
             // lock context while we add a new websocket
+            WebSocket *ws = NULL;
             mg_lock_context(ctx);
             {
-            
-                WebSocket *ws = new WebSocket();
+                ws = new WebSocket();
                 ws->set_connection(conn);
                 handler->m_sockets.push_back(ws);
-
-                // send connection successful message
-                // TODO: locking semantics for WebSocket::send ?
-                Node n;
-                n["type"] = "info";
-                n["message"] = "websocket ready!";
-                ws->send(n);
             }
             // unlock context
             mg_unlock_context(ctx);
+            
+            if(ws != NULL)
+            {
+                // send connection successful message
+                // TODO: locking semantics for WebSocket::send ?
+                Node n;
+                n["type"]    = "status";
+                n["message"] = "WebSocket ready!";
+                ws->send(n);
+            }
         }
 
         //---------------------------------------------------------------------------//
@@ -319,39 +323,28 @@ public:
             struct mg_context *ctx  = mg_get_context(conn);
             RequestHandler *handler = (RequestHandler *)cbdata;
             
-            //lock context as we search
-            WebSocket *ws = NULL;
-            mg_lock_context(ctx);
-            {
-                ws = handler->find_socket_for_connection(conn);
-                // TODO: call future recv handler.
-                
-                std::string schema(data,len);
-                try
-                {
-                    // parse with pure json parser first
-                    // 
-                    // this will be what we want in most cases
-                    //
-                    Generator g(schema,"json");
-                    Node n;
-                    g.walk(n);
-
-                    CONDUIT_INFO("WebSocket rcvd message:" << n.to_json());
-                }
-                catch(conduit::Error e)
-                {
-                    CONDUIT_INFO("Error parsing JSON response from browser\n" 
-                                 << e.message());
-                }
-
-            }// unlock context
-            mg_unlock_context(ctx);
+            std::string json_schema(data,len);
             
-            if(ws == NULL)
+            try
             {
-                CONDUIT_ERROR("Bad websocket state");
+                // parse with pure json parser first
+                // 
+                // this will be what we want in most cases
+                //
+                Node n;
+                n.generate(json_schema,"json");
+                
+                CONDUIT_INFO("WebSocket received message:" << n.to_json());
+                
+                // TODO: Call recv handler callback.
+                
             }
+            catch(conduit::Error e)
+            {
+                CONDUIT_INFO("Error parsing JSON response from browser\n" 
+                             << e.message());
+            }
+
             return 1;
         }
         
@@ -370,6 +363,7 @@ public:
             mg_lock_context(ctx);
             {
                 ws = handler->find_socket_for_connection(conn);
+                // TODO, actually clean up websocket
                 if(ws != NULL)
                 {
                     ws->set_connection(NULL);
@@ -380,7 +374,7 @@ public:
             
             if(ws == NULL)
             {
-                CONDUIT_ERROR("Bad websocket state");
+                CONDUIT_ERROR("Bad WebSocket state");
             }
 
             CONDUIT_INFO("conduit::io::WebServer WebSocket Disconnected");
@@ -401,7 +395,8 @@ public:
                 // the passed civet connection 
                 for(size_t i=0; i< m_sockets.size();i++)
                 {
-                    if(m_sockets[i]->m_connection == conn)
+                    if(m_sockets[i] != NULL && 
+                       m_sockets[i]->m_connection == conn)
                     {
                         res = m_sockets[i];
                     }
@@ -493,7 +488,7 @@ public:
 
 
   private:
-      WebServer                 *m_server;
+      WebServer                  *m_server;
       Node                       *m_node;
       std::vector<WebSocket*>     m_sockets;
 };
@@ -547,7 +542,7 @@ WebSocket::send(const Node &data,
     data.to_json_stream(oss,protocol);
     
     // get a pointer to our message data and its length
-    const char   *msg = oss.str().c_str();
+    const char   *msg     = oss.str().c_str();
     size_t        msg_len = oss.str().size();
     
     // send our message
@@ -588,7 +583,7 @@ WebServer::is_running() const
 //-----------------------------------------------------------------------------
 WebSocket *
 WebServer::websocket(index_t ms_poll,
-                      index_t ms_timeout)
+                     index_t ms_timeout)
 {
     return m_handler->websocket(ms_poll,ms_timeout);
 }
@@ -624,8 +619,8 @@ WebServer::unlock_context()
 //-----------------------------------------------------------------------------
 void
 WebServer::serve(Node *node,
-                  bool block,
-                  index_t port)
+                 bool block,
+                 index_t port)
 {
     m_handler->set_node(node);
 

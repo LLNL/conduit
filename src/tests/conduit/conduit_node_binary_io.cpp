@@ -81,7 +81,7 @@ TEST(conduit_node_binary_io, read_write)
     
    
     Node n;
-    n.load(schema,"tout_conduit.bin");
+    n.load("tout_conduit.bin",schema);
     
     n.schema().print();
     n.print_detailed();
@@ -125,7 +125,7 @@ TEST(conduit_node_binary_io, mmap_simple)
     
    
     Node nmmap;
-    nmmap.mmap(schema,"tout_conduit_mmap.bin");
+    nmmap.mmap("tout_conduit_mmap.bin",schema);
     
     nmmap.schema().print();
     nmmap.print_detailed();
@@ -151,7 +151,7 @@ TEST(conduit_node_binary_io, mmap_simple)
     // standard read
     
     Node ntest;
-    ntest.load(schema,"tout_conduit_mmap.bin");
+    ntest.load("tout_conduit_mmap.bin",schema);
 
     EXPECT_EQ(ntest[0]["a"].as_int32(), 100);
     EXPECT_EQ(ntest[0]["b"].as_int32(), 200);

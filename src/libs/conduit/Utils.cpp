@@ -402,10 +402,10 @@ void base64_decode(const void *src,
     base64_init_decodestate(&dec_state);
     const char *src_ptr = (const char*)src;
     char *des_ptr = (char*)dest;
-    int code_len = base64_decode_block(src_ptr,
-                                       src_len,
-                                       des_ptr,
-                                       &dec_state);
+    base64_decode_block(src_ptr,
+                        src_len,
+                        des_ptr,
+                        &dec_state);
 }
 
 

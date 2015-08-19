@@ -110,6 +110,16 @@ class Test_Conduit_Node(unittest.TestCase):
         nl = Node()
         nl.load("test_pyconduit_node_save_load")
         self.assertEqual(nl['a'][99], 99)
+        
+        n.save("test_pyconduit_node_json_save_load",protocol="json")
+        nl = Node()
+        nl.load("test_pyconduit_node_json_save_load", protocol="json")
+        
+        n.save("test_pyconduit_node_base64_json_save_load", protocol="base64_json")
+        nl = Node()
+        nl.load("test_pyconduit_node_base64_json_save_load", protocol="base64_json")
+
+        self.assertEqual(nl['a'][99], 99)
 
     def test_parent(self):
         vec = array(range(100), uint32)

@@ -345,8 +345,8 @@ Node::generate_external(const std::string &json_schema,
 
 //---------------------------------------------------------------------------//
 void 
-Node::load(const Schema &schema,
-           const std::string &stream_path)
+Node::load(const std::string &stream_path,
+           const Schema &schema)
 {
     index_t dsize = schema.total_bytes();
 
@@ -378,43 +378,72 @@ Node::load(const Schema &schema,
 
 //---------------------------------------------------------------------------//
 void
-Node::load(const std::string &ibase)
+Node::load(const std::string &ibase,
+           const std::string &protocol)
 {
-    Schema s;
-    std::string ifschema = ibase + ".conduit_json";
-    std::string ifdata   = ibase + ".conduit_bin";
-    s.load(ifschema);
-    load(s,ifdata);
+    if(protocol == "conduit_pair")
+    {
+        // TODO: use generator?
+        Schema s;
+        std::string ifschema = ibase + ".conduit_json";
+        std::string ifdata   = ibase + ".conduit_bin";
+        s.load(ifschema);
+        load(ifdata,s);
+    }
+    // single file json cases
+    else
+    {
+        std::ifstream ifile;
+        ifile.open(ibase.c_str());
+        if(!ifile.is_open())
+            CONDUIT_ERROR("<Node::load> failed to open: " << ibase);
+        std::string json_data((std::istreambuf_iterator<char>(ifile)),
+                               std::istreambuf_iterator<char>());
+        
+        Generator g(json_data,protocol);
+        g.walk(*this);
+    }
+        
 }
 
 //---------------------------------------------------------------------------//
 void
-Node::save(const std::string &obase) const
+Node::save(const std::string &obase,
+           const std::string &protocol) const
 {
-    Node res;
-    compact_to(res);
-    std::string ofschema = obase + ".conduit_json";
-    std::string ofdata   = obase + ".conduit_bin";
-    res.schema().save(ofschema);
-    res.serialize(ofdata);
+    if(protocol == "conduit_pair")
+    {
+        Node res;
+        compact_to(res);
+        std::string ofschema = obase + ".conduit_json";
+        std::string ofdata   = obase + ".conduit_bin";
+        res.schema().save(ofschema);
+        res.serialize(ofdata);
+    }
+    // single file json cases
+    else
+    {
+        to_json_stream(obase,protocol);
+    }
 }
 
 //---------------------------------------------------------------------------//
 void
-Node::mmap(const std::string &ibase)
+Node::mmap(const std::string &stream_path)
 {
+    std::string ifschema = stream_path + ".conduit_json";
+    std::string ifdata   = stream_path + ".conduit_bin";
+
     Schema s;
-    std::string ifschema = ibase + ".conduit_json";
-    std::string ifdata   = ibase + ".conduit_bin";
     s.load(ifschema);
-    mmap(s,ifdata);
+    mmap(ifdata,s);
 }
 
 
 //---------------------------------------------------------------------------//
 void 
-Node::mmap(const Schema &schema,
-           const std::string &stream_path)
+Node::mmap(const std::string &stream_path,
+           const Schema &schema)
 {
     reset();
     index_t dsize = schema.total_bytes();
@@ -7447,7 +7476,7 @@ Node::to_base64_json(std::ostream &os,
     utils::indent(os,indent,depth+1,pad);
     os << "\"schema\": ";
 
-    n.schema().to_json(os,true,indent,depth+1,pad,eoe);
+    n.schema().to_json_stream(os,true,indent,depth+1,pad,eoe);
 
     os  << "," << eoe;
     
@@ -7585,8 +7614,15 @@ Node::fetch(const std::string &path)
     // check for parent
     if(p_curr == "..")
     {
-        if(m_parent != NULL) // TODO: check for error (no parent) ?
-           return m_parent->fetch(p_next);
+        if(m_parent == NULL)
+        {
+            CONDUIT_ERROR("Tried to fetch non-existent parent Node")
+        }
+        else
+        {
+            return m_parent->fetch(p_next);
+        }
+        
     }
 
     // if this node doesn't exist yet, we need to create it and

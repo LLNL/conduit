@@ -244,19 +244,21 @@ public:
 /// description:
 ///
 //-----------------------------------------------------------------------------
-    void load(const Schema &schema,
-              const std::string &stream_path);
+    void load(const std::string &stream_path,
+              const std::string &protocol="conduit_pair");
 
-    /// dual file (schema + data) load
-    void load(const std::string &ibase);
+    void load(const std::string &stream_path,
+              const Schema &schema);
 
-    void save(const std::string &obase) const; 
+    void save(const std::string &stream_path,
+              const std::string &protocol="conduit_pair") const;
 
-    void mmap(const Schema &schema,
-              const std::string &stream_path);
+    void mmap(const std::string &stream_path);
 
-    /// dual file (schema + data) mmap load
-    void mmap(const std::string &ibase);
+    void mmap(const std::string &stream_path,
+              const Schema &schema);
+
+
 
 //-----------------------------------------------------------------------------
 ///@}
@@ -2133,11 +2135,14 @@ public:
     Schema          *schema_ptr() 
                         {return m_schema;}
 
-
-    // parent access
+    // check if data owned by this node is externally
+    // allocated.
+    bool             is_data_external() const
+                        {return !m_alloced;}
+    // check if this node is the root of a tree nodes.
     bool             is_root() const 
                         {return m_parent == NULL;}
-
+    // parent access
     Node            *parent() 
                         {return m_parent;}
     
