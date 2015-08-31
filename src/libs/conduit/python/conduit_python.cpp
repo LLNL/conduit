@@ -1741,7 +1741,7 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_unsigned_int",
-     (PyCFunction)PyConduit_DataType_c_unsigned_short,
+     (PyCFunction)PyConduit_DataType_c_unsigned_int,
      METH_KEYWORDS | METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
@@ -3415,6 +3415,111 @@ PyConduit_Node_set(PyConduit_Node* self,
 
 //---------------------------------------------------------------------------//
 static PyObject *
+PyConduit_Node_set_external(PyConduit_Node* self,
+                   PyObject* args)
+{
+    PyObject* value = NULL;
+
+    if (!PyArg_ParseTuple(args, "O", &value))
+    {
+        return (NULL);
+    }
+
+    if (!PyArray_Check(value)) {
+        PyErr_SetString(PyExc_TypeError, "set_external requires a numpy array");
+        return (NULL);
+    }
+
+    PyArray_Descr *desc = PyArray_DESCR((PyArrayObject*)value);
+    PyArrayObject *py_arr = (PyArrayObject*)value;
+    npy_intp num_ele = PyArray_SIZE(py_arr);
+    int elsize = desc->elsize;
+    int offset = 0;
+    int stride = PyArray_STRIDE(py_arr, 0)*elsize;
+    int nd = PyArray_NDIM(py_arr);
+
+    if (nd > 1) {
+        PyErr_SetString(PyExc_TypeError, "set_external does not handle multidimensional numpy arrays");
+        return (NULL);
+    }
+
+    Node& node = *self->node;
+
+    switch (desc->type_num) 
+    {
+        case NPY_UINT8 :
+        {
+            uint8 *numpy_data = (uint8*)PyArray_BYTES(py_arr);
+            node.set_external(numpy_data, num_ele, offset, stride);
+            break;
+        }
+        case NPY_UINT16 :
+        {
+            uint16 *numpy_data = (uint16*)PyArray_BYTES(py_arr);
+            node.set_external(numpy_data, num_ele, offset, stride);
+            break;
+        }
+        case NPY_UINT32 :
+        {
+            uint32 *numpy_data = (uint32*)PyArray_BYTES(py_arr);
+            node.set_external(numpy_data, num_ele, offset, stride);
+            break;
+        }
+        case NPY_UINT64 :
+        {
+            uint64 *numpy_data = (uint64*)PyArray_BYTES(py_arr);
+            node.set_external(numpy_data, num_ele, offset, stride);
+            break;
+        }
+        case NPY_INT8 :
+        {
+            int8 *numpy_data = (int8*)PyArray_BYTES(py_arr);
+            node.set_external(numpy_data, num_ele, offset, stride);
+            break;
+        }
+        case NPY_INT16 :
+        {
+            int16 *numpy_data = (int16*)PyArray_BYTES(py_arr);
+            node.set_external(numpy_data, num_ele, offset, stride);
+            break;
+        }
+        case NPY_INT32 :
+        {
+            int32 *numpy_data = (int32*)PyArray_BYTES(py_arr);
+            node.set_external(numpy_data, num_ele, offset, stride);
+            break;
+        }
+        case NPY_INT64 :
+        {
+            int64 *numpy_data = (int64*)PyArray_BYTES(py_arr);
+            node.set_external(numpy_data, num_ele, offset, stride);
+            break;
+        }
+        case NPY_FLOAT32 :
+        {
+            float32 *numpy_data = (float32*)PyArray_BYTES(py_arr);
+            node.set_external(numpy_data, num_ele, offset, stride);
+            break;
+        }
+        case NPY_FLOAT64 :
+        {
+            float64 *numpy_data = (float64*)PyArray_BYTES(py_arr);
+            node.set_external(numpy_data, num_ele, offset, stride);
+            break;
+        }
+        default :
+        {
+            PyErr_SetString(PyExc_TypeError, "Unsupported type");
+            return (NULL);
+        }
+    }
+
+    Py_RETURN_NONE;
+
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
 PyConduit_Node_set_path(PyConduit_Node* self,
                        PyObject* args)
 {
@@ -3523,6 +3628,10 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      (PyCFunction)PyConduit_Node_set,
      METH_VARARGS,
      "Sets the node"},
+    {"set_external",
+     (PyCFunction)PyConduit_Node_set_external,
+     METH_VARARGS,
+     "Sets the node's data to an external numpy array"},
     //-----------------------------------------------------------------------//
     {"fetch",
      (PyCFunction)PyConduit_Node_fetch,
