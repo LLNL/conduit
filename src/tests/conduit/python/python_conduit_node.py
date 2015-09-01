@@ -161,7 +161,6 @@ class Test_Conduit_Node(unittest.TestCase):
         n2_c.set(2)
         self.assertEqual(n2.child(0).value(),2)
         
-
     def test_remove(self):
         n = Node()
         n['a'] = 1
@@ -187,6 +186,34 @@ class Test_Conduit_Node(unittest.TestCase):
         #print ni
         self.assertEqual(ni["total_bytes"],n.total_bytes())
 
+    def test_set_external(self):
+        types = ['uint8', 'uint16', 'uint32', 'uint64', 'float32', 'float64']
+        for type in types:
+            ext_data = array(xrange(10), dtype=type)
+            n = Node()
+            n.set_external(ext_data)
+            for i in xrange(len(ext_data)):
+                self.assertEqual(n.value()[i], ext_data[i])
+            ext_data[5] = 11
+            n.value()[8] = 77
+            n.value()[2] = 8
+            for i in xrange(len(ext_data)):
+                self.assertEqual(n.value()[i], ext_data[i])
+
+    def test_set_external_basic_slice(self):
+        types = ['uint8', 'uint16', 'uint32', 'uint64', 'float32', 'float64']
+        for type in types:
+            base_data = array(xrange(20), dtype=type)
+            ext_data  = base_data[1:16]
+            n = Node()
+            n.set_external(ext_data)
+            for i in xrange(len(ext_data)):
+                self.assertEqual(n.value()[i], ext_data[i])
+            ext_data[5] = 11
+            n.value()[6] = 77
+            n.value()[2] = 8
+            for i in xrange(len(ext_data)):
+                self.assertEqual(n.value()[i], ext_data[i])
 
 if __name__ == '__main__':
     unittest.main()
