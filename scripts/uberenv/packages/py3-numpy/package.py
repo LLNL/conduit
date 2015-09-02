@@ -1,4 +1,3 @@
-#!/bin/bash
 ###############################################################################
 # Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 # 
@@ -10,7 +9,7 @@
 # 
 # This file is part of Conduit. 
 # 
-# For details, see https://lc.llnl.gov/conduit/.
+# For details, see: http://scalability-llnl.github.io/conduit/.
 # 
 # Please also read conduit/LICENSE
 # 
@@ -42,43 +41,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
+from spack import *
 
-#
-# file: bootstrap-env.sh
-#
+class Py3Numpy(Package):
+    """array processing for numbers, strings, records, and objects."""
+    homepage = "https://pypi.python.org/pypi/numpy"
+    url      = "https://pypi.python.org/packages/source/n/numpy/numpy-1.9.1.tar.gz"
 
-#
-# Takes you from zero to an env  with TPLS needed to develop conduit on OSX
-# and linux.
-#
+    version('1.9.1', '78842b73560ec378142665e712ae4ad9')
 
-export ALL_ARGS="$@"
+    extends('python3')
 
-function info
-{
-    echo "$@"
-}
-
-function uberenv
-{
-    python scripts/uberenv/uberenv.py "$ALL_ARGS"
-}
-
-function main
-{
-    uberenv
-
-    BOOSTRAP_CWD=`pwd`
-    SPACK_CMAKE_PREFIX=`ls -d $BOOSTRAP_CWD/uberenv_libs/spack/opt/*/*/cmake*`
-    SPACK_CMAKE=`ls $SPACK_CMAKE_PREFIX/bin/cmake`
-
-    # Only add to PATH if `which cmake` isn't our CMake
-    CMAKE_CURRENT=`which cmake`
-    if [[ "$CMAKE_CURRENT" != "$SPACK_CMAKE" ]] ; then
-        export PATH=$SPACK_CMAKE_PREFIX/bin:$PATH
-    fi
-    
-    info "[Active CMake:" `which cmake` "]"
-}
-
-main
+    def install(self, spec, prefix):
+        # don't
+        python('setup.py', 'install')
