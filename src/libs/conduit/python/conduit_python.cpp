@@ -48,6 +48,11 @@
 //-----------------------------------------------------------------------------
 #include <Python.h>
 #include <structmember.h>
+#include "bytesobject.h"
+
+#if PY_MAJOR_VERSION >= 3
+#define IS_PY3K
+#endif
 
 //-----------------------------------------------------------------------------
 // -- standard lib includes -- 
