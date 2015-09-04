@@ -41,7 +41,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
-
+sudo: false
 language: cpp
 compiler:
   - gcc
@@ -51,13 +51,18 @@ env:
     - CONDUIT_CC=gcc-4.8
     - CONDUIT_CXX=g++-4.8
     - CONDUIT_FC=gfortran-4.8
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+       - gcc-4.8 
+       - g++-4.8 
+       - gfortran-4.8
 before_install:
-  # install gcc 4.8 compilers
-  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq gcc-4.8 g++-4.8 gfortran-4.8
   # download a newer version of cmake
   - wget http://www.cmake.org/files/v3.3/cmake-3.3.0-Linux-x86_64.sh
+  - export PATH=/home/travis/cmake/bin:$PATH
   # prep to use miniconda to get python and numpy
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
@@ -65,7 +70,7 @@ before_install:
   - export PATH=/home/travis/miniconda/bin:$PATH
   - conda update --yes conda
 install:
-  - sudo sh cmake-3.3.0-Linux-x86_64.sh --skip-license --prefix=/usr
+  - sh cmake-3.3.0-Linux-x86_64.sh --skip-license --prefix=/home/travis/cmake/
   - conda install --yes python=2.7 numpy
 script:
   - cmake --version
@@ -95,6 +100,5 @@ notifications:
   email:
     recipients:
       - cyrush@llnl.gov
-    on_success: [never]
-    on_failure: [always]
-
+    on_success: always
+    on_failure: always
