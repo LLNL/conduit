@@ -55,6 +55,88 @@
 #endif
 
 //-----------------------------------------------------------------------------
+// Functions to help with Python 2/3 Compatibility.
+//-----------------------------------------------------------------------------
+
+#if defined(IS_PY3K)
+
+//-----------------------------------------------------------------------------
+int
+PyString_Check(PyObject *o)
+{
+    return PyUnicode_Check(o);
+}
+
+//-----------------------------------------------------------------------------
+char *
+PyString_AsString(PyObject *py_obj)
+{
+    char *res = NULL;
+    if(PyUnicode_Check(py_obj))
+    {
+        PyObject * temp_bytes = PyUnicode_AsEncodedString(py_obj,
+                                                          "ASCII",
+                                                          "strict"); // Owned reference
+        if(temp_bytes != NULL)
+        {
+            res = strdup(PyBytes_AS_STRING(temp_bytes));
+            Py_DECREF(temp_bytes);
+        }
+        else
+        {
+            // TODO: Error
+        }
+    }
+    else if(PyBytes_Check(py_obj))
+    {
+        res = strdup(PyBytes_AS_STRING(py_obj));
+    }
+    else
+    {
+        // TODO: ERROR or auto convert?
+    }
+    
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+PyObject *
+PyString_FromString(const char *s)
+{
+    return PyUnicode_FromString(s);
+}
+
+//-----------------------------------------------------------------------------
+void
+PyString_AsString_Cleanup(char *bytes)
+{
+    free(bytes);
+}
+
+
+//-----------------------------------------------------------------------------
+int
+PyInt_Check(PyObject *o)
+{
+    return PyLong_Check(o);
+}
+
+//-----------------------------------------------------------------------------
+long
+PyInt_AsLong(PyObject *o)
+{
+    return PyLong_AsLong(o);
+}
+
+#else // python 2.6+
+
+//-----------------------------------------------------------------------------
+#define PyString_AsString_Cleanup(c) { /* noop */ }
+
+#endif
+
+
+//-----------------------------------------------------------------------------
 // -- standard lib includes -- 
 //-----------------------------------------------------------------------------
 #include <iostream>
@@ -354,7 +436,7 @@ PyConduit_DataType_init(PyConduit_DataType* self,
 static void
 PyConduit_DataType_dealloc(PyConduit_DataType *self)
 {
-    self->ob_type->tp_free((PyObject*)self);
+    Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 //---------------------------------------------------------------------------//
@@ -1773,8 +1855,7 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 static PyTypeObject PyConduit_DataType_TYPE = {
-   PyObject_HEAD_INIT(NULL)
-   0,
+   PyVarObject_HEAD_INIT(NULL, 0)
    "DataType",
    sizeof(PyConduit_DataType),  /* tp_basicsize */
    0, /* tp_itemsize */
@@ -1871,7 +1952,8 @@ PyConduit_Generator_dealloc(PyConduit_Generator *self)
     {
         delete self->generator;
     }
-    self->ob_type->tp_free((PyObject*)self);
+    
+    Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 
@@ -2040,8 +2122,7 @@ static PyMethodDef PyConduit_Generator_METHODS[] = {
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 static PyTypeObject PyConduit_Generator_TYPE = {
-   PyObject_HEAD_INIT(NULL)
-   0,
+   PyVarObject_HEAD_INIT(NULL, 0)
    "Generator",
    sizeof(PyConduit_Generator),  /* tp_basicsize */
    0, /* tp_itemsize */
@@ -2159,7 +2240,9 @@ PyConduit_Schema_init(PyConduit_Schema* self,
          }
          else if (PyString_Check(value))
          {
-             self->schema = new Schema(PyString_AsString(value));
+             char *cstr = PyString_AsString(value);
+             self->schema = new Schema(cstr);
+             PyString_AsString_Cleanup(cstr);
          }
          else
          {
@@ -2186,7 +2269,8 @@ PyConduit_Schema_dealloc(PyConduit_Schema* self)
     {
         delete self->schema;
     }
-    self->ob_type->tp_free((PyObject*)self);
+    
+    Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 //---------------------------------------------------------------------------//
@@ -2404,8 +2488,7 @@ static PyMethodDef PyConduit_Schema_METHODS[] = {
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 static PyTypeObject PyConduit_Schema_TYPE = {
-   PyObject_HEAD_INIT(NULL)
-   0,
+   PyVarObject_HEAD_INIT(NULL, 0)
    "Schema",
    sizeof(PyConduit_Schema),  /* tp_basicsize */
    0, /* tp_itemsize */
@@ -2506,7 +2589,7 @@ PyConduit_NodeIterator_init(PyConduit_Schema* self,
 static void
 PyConduit_NodeIterator_dealloc(PyConduit_NodeIterator *self)
 {
-    self->ob_type->tp_free((PyObject*)self);
+    Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 //---------------------------------------------------------------------------//
@@ -2757,8 +2840,7 @@ static PyMethodDef PyConduit_NodeIterator_METHODS[] = {
 
 //---------------------------------------------------------------------------//
 static PyTypeObject PyConduit_NodeIterator_TYPE = {
-   PyObject_HEAD_INIT(NULL)
-   0,
+   PyVarObject_HEAD_INIT(NULL, 0)
    "Schema",
    sizeof(PyConduit_NodeIterator),  /* tp_basicsize */
    0, /* tp_itemsize */
@@ -2913,7 +2995,7 @@ PyConduit_Node_dealloc(PyConduit_Node* self)
        delete self->node;
     }
 
-    self->ob_type->tp_free((PyObject*)self);
+    Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 //---------------------------------------------------------------------------//
@@ -2947,6 +3029,9 @@ PyConduit_Node_GetItem(PyConduit_Node* self,
     {
         retval = PyConduit_Node_python_wrap(&(*self->node)[ckey],0);
     }
+    
+    PyString_AsString_Cleanup(ckey);
+    
     return (retval);
 }
 
@@ -3379,7 +3464,7 @@ static int PyConduit_Node_SetItem(PyConduit_Node *self,
 
     char* ckey = PyString_AsString(key);
     Node& node = (*self->node)[ckey];
-
+    PyString_AsString_Cleanup(ckey);
     return (PyConduit_Node_SetFromPython(node, value));
 }
 
@@ -3767,9 +3852,7 @@ static PyMappingMethods node_as_mapping = {
 
 //---------------------------------------------------------------------------//
 static PyTypeObject PyConduit_Node_TYPE = {
-   PyObject_HEAD_INIT(NULL)
-   0,
-   //PyObject_VAR_HEAD
+   PyVarObject_HEAD_INIT(NULL, 0)
    "Node",
    sizeof(PyConduit_Node),  /* tp_basicsize */
    0, /* tp_itemsize */
@@ -3998,7 +4081,9 @@ PyConduit_Node_SetFromPython(Node &node,
     }
     else if (PyString_Check(value))
     {
-        node = PyString_AsString(value);
+        char *cstr = PyString_AsString(value);
+        node = cstr;
+        PyString_AsString_Cleanup(cstr);
     }
     else if (PyInt_Check(value))
     {
