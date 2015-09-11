@@ -3928,85 +3928,6 @@ static PyMethodDef conduit_python_funcs[] =
     {NULL, NULL, METH_VARARGS, NULL}
 };
 
-//---------------------------------------------------------------------------//
-// Main entry point
-//---------------------------------------------------------------------------//
-extern "C" void
-CONDUIT_PYTHON_API initconduit_python(void)
-{    
-    //-----------------------------------------------------------------------//
-    // create our main module
-    //-----------------------------------------------------------------------//
-
-    PyObject *conduit_module =  Py_InitModule("conduit_python",
-                                              conduit_python_funcs);
-    
-    //-----------------------------------------------------------------------//
-    // init our custom types
-    //-----------------------------------------------------------------------//
-
-    if (PyType_Ready(&PyConduit_DataType_TYPE) < 0)
-        return;
-
-    if (PyType_Ready(&PyConduit_Schema_TYPE) < 0)
-        return;
-
-    if (PyType_Ready(&PyConduit_Generator_TYPE) < 0)
-        return;
-
-    if (PyType_Ready(&PyConduit_NodeIterator_TYPE) < 0)
-        return;
-
-    if (PyType_Ready(&PyConduit_Node_TYPE) < 0)
-        return;
-
-    //-----------------------------------------------------------------------//
-    // add DataType
-    //-----------------------------------------------------------------------//
-    
-    Py_INCREF(&PyConduit_DataType_TYPE);
-    PyModule_AddObject(conduit_module,
-                       "DataType",
-                       (PyObject*)&PyConduit_DataType_TYPE);
-    //-----------------------------------------------------------------------//
-    // add Schema
-    //-----------------------------------------------------------------------//
-
-    Py_INCREF(&PyConduit_Schema_TYPE);
-    PyModule_AddObject(conduit_module,
-                       "Schema",
-                       (PyObject*)&PyConduit_Schema_TYPE);
-
-    //-----------------------------------------------------------------------//
-    // add Generator
-    //-----------------------------------------------------------------------//
-
-    Py_INCREF(&PyConduit_Generator_TYPE);
-    PyModule_AddObject(conduit_module,
-                       "Generator",
-                       (PyObject*)&PyConduit_Generator_TYPE);
-
-    //-----------------------------------------------------------------------//
-    // add NodeIterator
-    //-----------------------------------------------------------------------//
-
-    Py_INCREF(&PyConduit_NodeIterator_TYPE);
-    PyModule_AddObject(conduit_module,
-                       "NodeIterator",
-                       (PyObject*)&PyConduit_NodeIterator_TYPE);
-
-    //-----------------------------------------------------------------------//
-    // add Node
-    //-----------------------------------------------------------------------//
-
-    Py_INCREF(&PyConduit_Node_TYPE);
-    PyModule_AddObject(conduit_module,
-                       "Node",
-                       (PyObject*)&PyConduit_Node_TYPE);
-
-    // req setup for numpy
-    import_array();
-}
 
 //---------------------------------------------------------------------------//
 static int
@@ -4342,3 +4263,195 @@ PyConduit_convertNodeToPython(Node& node)
 
     return (retval);
 }
+
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+// Module Init Code
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+
+struct module_state {
+    PyObject *error;
+};
+
+#if defined(IS_PY3K)
+#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
+#else
+#define GETSTATE(m) (&_state)
+static struct module_state _state;
+#endif
+
+
+#if defined(IS_PY3K)
+//---------------------------------------------------------------------------//
+static int
+conduit_python_traverse(PyObject *m, visitproc visit, void *arg)
+{
+    Py_VISIT(GETSTATE(m)->error);
+    return 0;
+}
+
+//---------------------------------------------------------------------------//
+static int 
+conduit_python_clear(PyObject *m)
+{
+    Py_CLEAR(GETSTATE(m)->error);
+    return 0;
+}
+
+//---------------------------------------------------------------------------//
+static struct PyModuleDef conduit_python_module_def = 
+{
+        PyModuleDef_HEAD_INIT,
+        "conduit_python",
+        NULL,
+        sizeof(struct module_state),
+        conduit_python_funcs,
+        NULL,
+        conduit_python_traverse,
+        conduit_python_clear,
+        NULL
+};
+#endif
+
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+#if defined(IS_PY3K)
+#define PY_MODULE_INIT_RETURN_ERROR return NULL
+#else
+#define PY_MODULE_INIT_RETURN_ERROR return
+#endif
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+
+//
+// void
+// initmyextension(void)
+// #endif
+// {
+// #if PY_MAJOR_VERSION >= 3
+//     PyObject *module = PyModule_Create(&moduledef);
+// #else
+//     PyObject *module = Py_InitModule("myextension", myextension_methods);
+// #endif
+//
+//     if (module == NULL)
+//         INITERROR;
+//     struct module_state *st = GETSTATE(module);
+//
+//     st->error = PyErr_NewException("myextension.Error", NULL, NULL);
+//     if (st->error == NULL) {
+//         Py_DECREF(module);
+//         INITERROR;
+//     }
+//
+// #if PY_MAJOR_VERSION >= 3
+//     return module;
+// #endif
+// }
+
+//---------------------------------------------------------------------------//
+// Main entry point
+//---------------------------------------------------------------------------//
+extern "C" 
+#if defined(IS_PY3K)
+PyObject *CONDUIT_PYTHON_API PyInit_conduit_python(void)
+#else    
+void CONDUIT_PYTHON_API initconduit_python(void)
+#endif
+{    
+    //-----------------------------------------------------------------------//
+    // create our main module
+    //-----------------------------------------------------------------------//
+
+#if defined(IS_PY3K)
+    PyObject *conduit_module = PyModule_Create(&conduit_python_module_def);
+#else
+    PyObject *conduit_module = Py_InitModule("conduit_python",
+                                             conduit_python_funcs);
+#endif
+                                              
+    if (conduit_module == NULL)
+        PY_MODULE_INIT_RETURN_ERROR;
+
+    struct module_state *st = GETSTATE(conduit_module);
+    
+    st->error = PyErr_NewException("conduit_python.Error", NULL, NULL);
+    if (st->error == NULL)
+    {
+        Py_DECREF(conduit_module);
+        PY_MODULE_INIT_RETURN_ERROR;
+    }
+
+    //-----------------------------------------------------------------------//
+    // init our custom types
+    //-----------------------------------------------------------------------//
+
+    if (PyType_Ready(&PyConduit_DataType_TYPE) < 0)
+        PY_MODULE_INIT_RETURN_ERROR;
+
+    if (PyType_Ready(&PyConduit_Schema_TYPE) < 0)
+        PY_MODULE_INIT_RETURN_ERROR;
+
+    if (PyType_Ready(&PyConduit_Generator_TYPE) < 0)
+        PY_MODULE_INIT_RETURN_ERROR;
+
+    if (PyType_Ready(&PyConduit_NodeIterator_TYPE) < 0)
+        PY_MODULE_INIT_RETURN_ERROR;
+
+    if (PyType_Ready(&PyConduit_Node_TYPE) < 0)
+        PY_MODULE_INIT_RETURN_ERROR;
+
+    //-----------------------------------------------------------------------//
+    // add DataType
+    //-----------------------------------------------------------------------//
+    
+    Py_INCREF(&PyConduit_DataType_TYPE);
+    PyModule_AddObject(conduit_module,
+                       "DataType",
+                       (PyObject*)&PyConduit_DataType_TYPE);
+    //-----------------------------------------------------------------------//
+    // add Schema
+    //-----------------------------------------------------------------------//
+
+    Py_INCREF(&PyConduit_Schema_TYPE);
+    PyModule_AddObject(conduit_module,
+                       "Schema",
+                       (PyObject*)&PyConduit_Schema_TYPE);
+
+    //-----------------------------------------------------------------------//
+    // add Generator
+    //-----------------------------------------------------------------------//
+
+    Py_INCREF(&PyConduit_Generator_TYPE);
+    PyModule_AddObject(conduit_module,
+                       "Generator",
+                       (PyObject*)&PyConduit_Generator_TYPE);
+
+    //-----------------------------------------------------------------------//
+    // add NodeIterator
+    //-----------------------------------------------------------------------//
+
+    Py_INCREF(&PyConduit_NodeIterator_TYPE);
+    PyModule_AddObject(conduit_module,
+                       "NodeIterator",
+                       (PyObject*)&PyConduit_NodeIterator_TYPE);
+
+    //-----------------------------------------------------------------------//
+    // add Node
+    //-----------------------------------------------------------------------//
+
+    Py_INCREF(&PyConduit_Node_TYPE);
+    PyModule_AddObject(conduit_module,
+                       "Node",
+                       (PyObject*)&PyConduit_Node_TYPE);
+
+    // req setup for numpy
+    import_array();
+    
+#if defined(IS_PY3K)
+    return conduit_module;
+#endif
+
+}
+
