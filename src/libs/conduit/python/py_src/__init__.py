@@ -46,8 +46,7 @@
 # file: __init__.py
 # Purpose: Main init for the conduit module.
 ###############################################################################
-
-from conduit_python import *
+from .conduit_python import *
 
 
 

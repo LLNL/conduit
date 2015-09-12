@@ -1749,102 +1749,102 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
     //-----------------------------------------------------------------------//
     {"int8",
      (PyCFunction)PyConduit_DataType_int8,
-     METH_KEYWORDS | METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"int16",
      (PyCFunction)PyConduit_DataType_int16,
-     METH_KEYWORDS | METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"int32",
      (PyCFunction)PyConduit_DataType_int32,
-     METH_KEYWORDS | METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"int64",
      (PyCFunction)PyConduit_DataType_int64,
-     METH_KEYWORDS | METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"uint8",
      (PyCFunction)PyConduit_DataType_uint8,
-     METH_KEYWORDS | METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"uint16",
      (PyCFunction)PyConduit_DataType_uint16,
-     METH_KEYWORDS | METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"uint32",
      (PyCFunction)PyConduit_DataType_uint32,
-     METH_KEYWORDS | METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"uint64",
      (PyCFunction)PyConduit_DataType_uint64,
-     METH_KEYWORDS | METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"float32",
      (PyCFunction)PyConduit_DataType_float32,
-     METH_KEYWORDS | METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"float64",
      (PyCFunction)PyConduit_DataType_float64,
-     METH_KEYWORDS | METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_char",
      (PyCFunction)PyConduit_DataType_c_char,
-     METH_KEYWORDS | METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_short",
      (PyCFunction)PyConduit_DataType_c_short,
-     METH_KEYWORDS | METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_int",
      (PyCFunction)PyConduit_DataType_c_int,
-     METH_KEYWORDS | METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_long",
      (PyCFunction)PyConduit_DataType_c_long,
-     METH_KEYWORDS | METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_unsigned_char",
      (PyCFunction)PyConduit_DataType_c_unsigned_char,
-     METH_KEYWORDS | METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_unsigned_short",
      (PyCFunction)PyConduit_DataType_c_unsigned_short,
-     METH_KEYWORDS | METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_unsigned_int",
      (PyCFunction)PyConduit_DataType_c_unsigned_int,
-     METH_KEYWORDS | METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_unsigned_long",
      (PyCFunction)PyConduit_DataType_c_unsigned_long,
-     METH_KEYWORDS | METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_float",
      (PyCFunction)PyConduit_DataType_c_float,
-     METH_KEYWORDS | METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_double",
      (PyCFunction)PyConduit_DataType_c_double,
-     METH_KEYWORDS | METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     // end DataType methods table
@@ -3758,9 +3758,9 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      METH_NOARGS, 
      "Appends a node (coarse to conduit list)"},
     //-----------------------------------------------------------------------//
-    {"remove", // PyCFunctionWithKeywords ?
+    {"remove", 
      (PyCFunction)PyConduit_Node_remove,
-     METH_KEYWORDS, 
+     METH_VARARGS | METH_KEYWORDS, 
      "Remove as node at a given index or path."},
     //-----------------------------------------------------------------------//
     {"value",
@@ -3775,12 +3775,12 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
     //-----------------------------------------------------------------------//
     {"save",
      (PyCFunction)PyConduit_Node_save,
-     METH_KEYWORDS, 
+     METH_VARARGS | METH_KEYWORDS, 
      "Saves a node to a file pair"},
     //-----------------------------------------------------------------------//
     {"load",
      (PyCFunction)PyConduit_Node_load,
-     METH_KEYWORDS,
+     METH_VARARGS | METH_KEYWORDS, 
      "Loads a node from a file pair, file with schema, or file with protocol"},
     //-----------------------------------------------------------------------//
     {"mmap",
@@ -4274,14 +4274,18 @@ struct module_state {
     PyObject *error;
 };
 
+//---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
 #define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
 #else
 #define GETSTATE(m) (&_state)
 static struct module_state _state;
 #endif
+//---------------------------------------------------------------------------//
 
-
+//---------------------------------------------------------------------------//
+// Extra Module Setup Logic for Python3
+//---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
 //---------------------------------------------------------------------------//
 static int
@@ -4315,6 +4319,8 @@ static struct PyModuleDef conduit_python_module_def =
 #endif
 
 //---------------------------------------------------------------------------//
+// The module init function signature is different between py2 and py3
+// This macro simplifies the process of returning when an init error occurs.
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
 #define PY_MODULE_INIT_RETURN_ERROR return NULL
@@ -4322,43 +4328,19 @@ static struct PyModuleDef conduit_python_module_def =
 #define PY_MODULE_INIT_RETURN_ERROR return
 #endif
 //---------------------------------------------------------------------------//
-//---------------------------------------------------------------------------//
 
-//
-// void
-// initmyextension(void)
-// #endif
-// {
-// #if PY_MAJOR_VERSION >= 3
-//     PyObject *module = PyModule_Create(&moduledef);
-// #else
-//     PyObject *module = Py_InitModule("myextension", myextension_methods);
-// #endif
-//
-//     if (module == NULL)
-//         INITERROR;
-//     struct module_state *st = GETSTATE(module);
-//
-//     st->error = PyErr_NewException("myextension.Error", NULL, NULL);
-//     if (st->error == NULL) {
-//         Py_DECREF(module);
-//         INITERROR;
-//     }
-//
-// #if PY_MAJOR_VERSION >= 3
-//     return module;
-// #endif
-// }
 
 //---------------------------------------------------------------------------//
 // Main entry point
 //---------------------------------------------------------------------------//
 extern "C" 
+//---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
 PyObject *CONDUIT_PYTHON_API PyInit_conduit_python(void)
-#else    
+#else
 void CONDUIT_PYTHON_API initconduit_python(void)
 #endif
+//---------------------------------------------------------------------------//
 {    
     //-----------------------------------------------------------------------//
     // create our main module
@@ -4370,9 +4352,11 @@ void CONDUIT_PYTHON_API initconduit_python(void)
     PyObject *conduit_module = Py_InitModule("conduit_python",
                                              conduit_python_funcs);
 #endif
-                                              
-    if (conduit_module == NULL)
+
+    if(conduit_module == NULL)
+    {
         PY_MODULE_INIT_RETURN_ERROR;
+    }
 
     struct module_state *st = GETSTATE(conduit_module);
     
@@ -4388,19 +4372,29 @@ void CONDUIT_PYTHON_API initconduit_python(void)
     //-----------------------------------------------------------------------//
 
     if (PyType_Ready(&PyConduit_DataType_TYPE) < 0)
+    {
         PY_MODULE_INIT_RETURN_ERROR;
+    }
 
     if (PyType_Ready(&PyConduit_Schema_TYPE) < 0)
+    {
         PY_MODULE_INIT_RETURN_ERROR;
+    }
 
     if (PyType_Ready(&PyConduit_Generator_TYPE) < 0)
+    {
         PY_MODULE_INIT_RETURN_ERROR;
+    }
 
     if (PyType_Ready(&PyConduit_NodeIterator_TYPE) < 0)
+    {
         PY_MODULE_INIT_RETURN_ERROR;
+    }
 
     if (PyType_Ready(&PyConduit_Node_TYPE) < 0)
+    {
         PY_MODULE_INIT_RETURN_ERROR;
+    }
 
     //-----------------------------------------------------------------------//
     // add DataType

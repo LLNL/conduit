@@ -72,9 +72,9 @@ class Test_Conduit_Node(unittest.TestCase):
         self.assertFalse(itr.has_next())
         itr = n.children()
         self.assertTrue(itr.has_next())
-        print itr.has_next();
+        print(itr.has_next());
         for v in itr:
-            print v.path(), v.node()
+            print(v.path(), v.node())
             idx = v.index()
             if idx == 0:
                 self.assertEqual(v.node().value(),a_val)
