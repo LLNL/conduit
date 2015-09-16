@@ -559,7 +559,9 @@ Node::set_schema(const Schema &schema)
     release();
     m_schema->set(schema);
     // allocate data
-    allocate(m_schema->total_bytes());
+    index_t nbytes = m_schema->total_bytes();
+    allocate(nbytes);
+    memset(m_data,0,nbytes);
     // call walk w/ internal data pointer
     walk_schema(this,m_schema,m_data);
 }
@@ -9463,6 +9465,8 @@ Node::mirror_node(Node   *node,
 void
 Node::compact_to(uint8 *data, index_t curr_offset) const
 {
+    CONDUIT_ASSERT( (m_schema != NULL) , "Corrupt schema found in compact_to call");
+    
     index_t dtype_id = dtype().id();
     if(dtype_id == DataType::OBJECT_T ||
        dtype_id == DataType::LIST_T)
