@@ -79,11 +79,18 @@ set(CMAKE_CXX_COMPILER "/usr/bin/clang++" CACHE PATH "")
 # Enable python module builds
 set(ENABLE_PYTHON ON CACHE PATH "")
 
-# python from uberenv
-set(PYTHON_EXECUTABLE "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/clang@3.4svn/python@2.7.8/bin/python" CACHE PATH "")
+# python3 from uberenv
+set(PYTHON_EXECUTABLE "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/clang@3.4svn/python3@3.4.3/bin/python3" CACHE PATH "")
 
 # sphinx from uberenv
-set(SPHINX_EXECUTABLE "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/clang@3.4svn/python@2.7.8/bin/sphinx-build" CACHE PATH "")
+set(SPHINX_EXECUTABLE "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/clang@3.4svn/python3@3.4.3/bin/sphinx-build" CACHE PATH "")
+
+
+# python from uberenv
+#set(PYTHON_EXECUTABLE "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/clang@3.4svn/python@2.7.8/bin/python" CACHE PATH "")
+
+# sphinx from uberenv
+#set(SPHINX_EXECUTABLE "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/macosx_10.9_x86_64/clang@3.4svn/python@2.7.8/bin/sphinx-build" CACHE PATH "")
 
 # I/O Packages
 

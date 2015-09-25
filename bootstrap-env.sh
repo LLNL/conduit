@@ -10,7 +10,7 @@
 # 
 # This file is part of Conduit. 
 # 
-# For details, see: http://scalability-llnl.github.io/conduit/.
+# For details, see https://lc.llnl.gov/conduit/.
 # 
 # Please also read conduit/LICENSE
 # 
@@ -52,6 +52,8 @@
 # and linux.
 #
 
+export ALL_ARGS="$@"
+
 function info
 {
     echo "$@"
@@ -59,9 +61,8 @@ function info
 
 function uberenv
 {
-    python scripts/uberenv/uberenv.py
+    python scripts/uberenv/uberenv.py "$ALL_ARGS"
 }
-
 
 function main
 {

@@ -66,15 +66,15 @@ class Test_Conduit_Node(unittest.TestCase):
         n['a'] = a_val
         n['b'] = b_val
         n['c'] = c_val
-        print n
+        print(n)
         d = n.fetch('a').dtype()
         self.assertEqual(d.id(),DataType.name_to_id("uint32"))
-        print d
+        print(d)
 
     def test_id_to_name(self):
-        names = [DataType.id_to_name(i) for i in xrange(14)]
+        names = [DataType.id_to_name(i) for i in range(14)]
         ids   = [DataType.name_to_id(n) for n in names]
-        self.assertEqual(ids,range(14))
+        self.assertEqual(ids,list(range(14)))
 
     def test_explicit_set(self):
         d = DataType()
@@ -83,7 +83,7 @@ class Test_Conduit_Node(unittest.TestCase):
               offset = 0,
               stride = 4,
               element_bytes = 4)
-        print d
+        print(d)
         self.assertEqual(d.id(),DataType.name_to_id("uint32"))
         self.assertEqual(d.number_of_elements(),1)
         self.assertEqual(d.offset(),0)
@@ -126,41 +126,41 @@ class Test_Conduit_Node(unittest.TestCase):
         self.assertEqual(dt2.element_bytes(),dt3.element_bytes())
         self.assertEqual(dt2.endianness(),dt3.endianness())
         
-        print dt
-        print dt2
-        print dt3
+        print(dt)
+        print(dt2)
+        print(dt3)
 
     def test_constructor_helpers(self):
         # objs
-        print DataType.empty();
-        print DataType.object();
-        print DataType.list();
+        print(DataType.empty());
+        print(DataType.object());
+        print(DataType.list());
         # signed integers
-        print DataType.int8();
-        print DataType.int16();
-        print DataType.int32();
-        print DataType.int64();
+        print(DataType.int8());
+        print(DataType.int16());
+        print(DataType.int32());
+        print(DataType.int64());
         # unsigned integers
-        print DataType.uint8();
-        print DataType.uint16();
-        print DataType.uint32();
-        print DataType.uint64();
+        print(DataType.uint8());
+        print(DataType.uint16());
+        print(DataType.uint32());
+        print(DataType.uint64());
         # floating point
-        print DataType.float32();
-        print DataType.float64();
+        print(DataType.float32());
+        print(DataType.float64());
         # signed integers
-        print DataType.c_char();
-        print DataType.c_short();
-        print DataType.c_int();
-        print DataType.c_long();
+        print(DataType.c_char());
+        print(DataType.c_short());
+        print(DataType.c_int());
+        print(DataType.c_long());
         # unsigned integers
-        print DataType.c_unsigned_char();
-        print DataType.c_unsigned_short();
-        print DataType.c_unsigned_int();
-        print DataType.c_unsigned_long();
+        print(DataType.c_unsigned_char());
+        print(DataType.c_unsigned_short());
+        print(DataType.c_unsigned_int());
+        print(DataType.c_unsigned_long());
         # floating point
-        print DataType.c_float();
-        print DataType.c_double();
+        print(DataType.c_float());
+        print(DataType.c_double());
 
 
 

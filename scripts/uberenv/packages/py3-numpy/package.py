@@ -41,13 +41,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
+from spack import *
 
-###############################################################################
-# file: __init__.py
-# Purpose: Main init for the conduit module.
-###############################################################################
-from .conduit_python import *
+class Py3Numpy(Package):
+    """array processing for numbers, strings, records, and objects."""
+    homepage = "https://pypi.python.org/pypi/numpy"
+    url      = "https://pypi.python.org/packages/source/n/numpy/numpy-1.9.1.tar.gz"
 
+    version('1.9.1', '78842b73560ec378142665e712ae4ad9')
 
+    extends('python3')
 
-
+    def install(self, spec, prefix):
+        # don't
+        python('setup.py', 'install')

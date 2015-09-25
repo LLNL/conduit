@@ -72,45 +72,45 @@ class Test_Conduit_Geneartor(unittest.TestCase):
     def test_simple(self):
         n = default_node()
         n_schema = n.to_json("conduit");
-        print "result detailed json", n_schema
+        print("result detailed json", n_schema)
         g = Generator(json_schema=n_schema);
         ng = Node();
         sg = Schema()
         g.walk(node=ng);
         g.walk(schema=sg);
-        print ng
-        print sg
+        print(ng)
+        print(sg)
         for p in ["a","b","c"]:
             orig = n.fetch(p).value()
             curr = ng.fetch(p).value()
-            print ng
-            print p, orig, curr
+            print(ng)
+            print(p, orig, curr)
             orig = n[p]
             curr = ng[p]
-            print ng
-            print p, orig, curr
+            print(ng)
+            print(p, orig, curr)
             self.assertEqual(orig,curr)
         
 
     def test_base64(self):
         n = default_node()
-        print n
+        print(n)
         n_schema = n.to_json("base64_json");
-        print "result base64 json", n_schema
+        print("result base64 json", n_schema)
         g = Generator(n_schema,"base64_json");
         ng = Node();
         g.walk(node=ng);
-        print "Generator result"
-        print ng
+        print("Generator result")
+        print(ng)
         for p in ["a","b","c"]:
             orig = n.fetch(p).value()
             curr = ng.fetch(p).value()
-            print ng
-            print p, orig, curr
+            print(ng)
+            print(p, orig, curr)
             orig = n[p]
             curr = ng[p]
-            print ng
-            print p, orig, curr
+            print(ng)
+            print(p, orig, curr)
             self.assertEqual(orig,curr)
 
 

@@ -75,7 +75,7 @@ class Test_Conduit_Node(unittest.TestCase):
         val = uint32(10)
         n = Node()
         n['a']['b'] = val
-        print n['a']['b']
+        print(n['a']['b'])
         self.assertEqual(n['a']['b'],val)
 
     def test_vector(self):
@@ -189,30 +189,30 @@ class Test_Conduit_Node(unittest.TestCase):
     def test_set_external(self):
         types = ['uint8', 'uint16', 'uint32', 'uint64', 'float32', 'float64']
         for type in types:
-            ext_data = array(xrange(10), dtype=type)
+            ext_data = array(range(10), dtype=type)
             n = Node()
             n.set_external(ext_data)
-            for i in xrange(len(ext_data)):
+            for i in range(len(ext_data)):
                 self.assertEqual(n.value()[i], ext_data[i])
             ext_data[5] = 11
             n.value()[8] = 77
             n.value()[2] = 8
-            for i in xrange(len(ext_data)):
+            for i in range(len(ext_data)):
                 self.assertEqual(n.value()[i], ext_data[i])
 
     def test_set_external_basic_slice(self):
         types = ['uint8', 'uint16', 'uint32', 'uint64', 'float32', 'float64']
         for type in types:
-            base_data = array(xrange(20), dtype=type)
+            base_data = array(range(20), dtype=type)
             ext_data  = base_data[1:16]
             n = Node()
             n.set_external(ext_data)
-            for i in xrange(len(ext_data)):
+            for i in range(len(ext_data)):
                 self.assertEqual(n.value()[i], ext_data[i])
             ext_data[5] = 11
             n.value()[6] = 77
             n.value()[2] = 8
-            for i in xrange(len(ext_data)):
+            for i in range(len(ext_data)):
                 self.assertEqual(n.value()[i], ext_data[i])
 
 if __name__ == '__main__':

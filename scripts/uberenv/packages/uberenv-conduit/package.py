@@ -56,10 +56,16 @@ class UberenvConduit(Package):
     version('0.1', '8d378ef62dedc2df5db447b029b71200')
     
     # all of these packages are custom
+    depends_on("python3")
+    depends_on("py3-sphinx")
+    depends_on("py3-breathe")
+    depends_on("py3-numpy")
+
     depends_on("python")
     depends_on("py-sphinx")
     depends_on("py-breathe")
     depends_on("py-numpy")
+    
     depends_on("cmake")
     # i/o packages
     depends_on("szip")
@@ -83,6 +89,8 @@ class UberenvConduit(Package):
         cmake_exe        = pjoin(spec['cmake'].prefix.bin,"cmake")
         python_exe       = pjoin(spec['python'].prefix.bin,"python")
         sphinx_build_exe = pjoin(spec['python'].prefix.bin,"sphinx-build")
+        python3_exe      = pjoin(spec['python3'].prefix.bin,"python3")
+        py3_sphinx_build_exe = pjoin(spec['python3'].prefix.bin,"sphinx-build")
         # TODO: better name (use sys-type and compiler name ?)
         print "cmake executable: %s" % cmake_exe
         cfg = open(pjoin(dest_dir,"%s.cmake" % socket.gethostname()),"w")
@@ -109,6 +117,13 @@ class UberenvConduit(Package):
         cfg.write('set(PYTHON_EXECUTABLE "%s" CACHE PATH "")\n\n' % python_exe)
         cfg.write("# sphinx from uberenv\n")
         cfg.write('set(SPHINX_EXECUTABLE "%s" CACHE PATH "")\n\n' % sphinx_build_exe)
+
+        cfg.write("# python3 from uberenv\n")
+        cfg.write('#set(PYTHON_EXECUTABLE "%s" CACHE PATH "")\n\n' % python3_exe)
+        cfg.write("# sphinx from uberenv\n")
+        cfg.write('#set(SPHINX_EXECUTABLE "%s" CACHE PATH "")\n\n' % py3_sphinx_build_exe)
+
+
         # i/o packages
         cfg.write("# I/O Packages\n\n")
         cfg.write("# Enable Silo Support in conduit_io\n")

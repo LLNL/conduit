@@ -41,13 +41,18 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
+from spack import *
 
-###############################################################################
-# file: __init__.py
-# Purpose: Main init for the conduit module.
-###############################################################################
-from .conduit_python import *
+class Py3Sphinx(Package):
+    """Sphinx Documentation Generator."""
 
+    homepage = "http://sphinx-doc.org/"
+    url      = "https://pypi.python.org/packages/source/S/Sphinx/Sphinx-1.3.1.tar.gz#md5=8786a194acf9673464c5455b11fd4332"
 
+    version('1.3.1', '8786a194acf9673464c5455b11fd4332')
 
+    extends('python3')
 
+    def install(self, spec, prefix):
+        # simply install to the spack python
+        python('setup.py', 'install') #, '--prefix=%s' % prefix)
