@@ -96,16 +96,11 @@ typedef conduit_float32 float32;
 typedef conduit_float64 float64;
 
 /// index typedefs
-typedef uint32 index32_t;
-typedef uint64 index64_t;
-
-/// index_t typedef
-/// use a 64-bit index, unless CONDUIT_INDEX_32 is defined.
-#ifdef CONDUIT_INDEX_32
-typedef index32_t index_t;
-#else
-typedef index64_t index_t;
-#endif 
+typedef conduit_index32_t index32_t;
+typedef conduit_index32_t index64_t;
+// conduit_index_t is defined in Bitwidth_Style_Types.h
+// it will be index64_t, unless CONDUIT_INDEX_32 is defined
+typedef conduit_index_t   index_t;
 
 //-----------------------------------------------------------------------------
 /// The about methods construct human readable info about how conduit was

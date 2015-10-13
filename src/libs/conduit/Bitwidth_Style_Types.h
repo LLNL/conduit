@@ -671,6 +671,21 @@ typedef enum
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+/// Index Types
+//-----------------------------------------------------------------------------
+
+/// index typedefs
+typedef conduit_uint32 conduit_index32_t;
+typedef conduit_uint64 conduit_index64_t;
+
+/// use a 64-bit index, unless CONDUIT_INDEX_32 is defined.
+#ifdef CONDUIT_INDEX_32
+typedef conduit_index32_t conduit_index_t;
+#else
+typedef conduit_index64_t conduit_index_t;
+#endif 
+
+//-----------------------------------------------------------------------------
 /// Bit-width type map sanity checks
 //-----------------------------------------------------------------------------
 

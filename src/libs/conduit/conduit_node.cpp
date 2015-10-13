@@ -137,21 +137,614 @@ conduit_node_number_of_elements(conduit_node *cnode)
 }
 
 //-----------------------------------------------------------------------------
+// -- set for generic types --
+//-----------------------------------------------------------------------------
 void
-conduit_node_set_int32(conduit_node *cnode, 
-                       conduit_int32 value)
+conduit_set_node(conduit_node *cnode,
+                conduit_node *data)
 {
-    cpp_node(cnode)->set_int32(value);
+    cpp_node(cnode)->set_node(*cpp_node(data));
+}
+
+
+//-----------------------------------------------------------------------------
+// -- set for scalar bitwidth style types ---
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// signed integer scalar types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_int8(conduit_node *cnode,
+                      conduit_int8 value)
+{
+    cpp_node(cnode)->set_int8(value);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_int16(conduit_node *cnode,
+                       conduit_int16 value)
+{
+    cpp_node(cnode)->set_int16(value);
 }
 
 //-----------------------------------------------------------------------------
 void
-conduit_node_set_int32_ptr(conduit_node *cnode, 
+conduit_node_set_int32(conduit_node *cnode,
+                       conduit_int32 value)
+{
+    cpp_node(cnode)->set_int32(value);    
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_int64(conduit_node *cnode,
+                       conduit_int64 value)
+{
+    cpp_node(cnode)->set_int64(value);
+}
+
+
+//-----------------------------------------------------------------------------
+// unsigned integer scalar types
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_uint8(conduit_node *cnode,
+                       conduit_uint8 value)
+{
+    cpp_node(cnode)->set_uint8(value);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_uint16(conduit_node *cnode,
+                        conduit_uint16 value)
+{
+    cpp_node(cnode)->set_uint16(value);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_uint32(conduit_node *cnode,
+                        conduit_uint32 value)
+{
+    cpp_node(cnode)->set_uint32(value);
+}
+
+void
+conduit_node_set_uint64(conduit_node *cnode,
+                        conduit_uint64 value)
+{
+    cpp_node(cnode)->set_uint64(value);
+}
+
+
+//-----------------------------------------------------------------------------
+// floating point scalar types
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_float32(conduit_node *cnode,
+                         conduit_float32 value)
+{
+    cpp_node(cnode)->set_float32(value);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_float64(conduit_node *cnode,
+                         conduit_float64 value)
+{
+    cpp_node(cnode)->set_float64(value);
+}
+
+//-----------------------------------------------------------------------------
+// string case
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_char8_str(conduit_node *cnode, 
+                           const char *value)
+{
+    cpp_node(cnode)->set_char8_str(value);
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// -- set via bitwidth style pointers for (scalar and array types) -- 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// signed integer pointer cases
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_int8_ptr(conduit_node *cnode,
+                          conduit_int8 *data,
+                          conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set_int8_ptr(data,num_elements);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_int8_ptr_detailed(conduit_node *cnode,
+                                   conduit_int8 *data,
+                                   conduit_index_t num_elements,
+                                   conduit_index_t offset,
+                                   conduit_index_t stride,
+                                   conduit_index_t element_bytes,
+                                   conduit_index_t endianness)
+{
+    cpp_node(cnode)->set_int8_ptr(data,
+                                  num_elements,
+                                  offset,
+                                  stride,
+                                  element_bytes,
+                                  endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_int16_ptr(conduit_node *cnode,
+                           conduit_int16 *data,
+                           conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set_int16_ptr(data,num_elements);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_int16_ptr_detailed(conduit_node *cnode,
+                                    conduit_int16 *data,
+                                    conduit_index_t num_elements,
+                                    conduit_index_t offset,
+                                    conduit_index_t stride,
+                                    conduit_index_t element_bytes,
+                                    conduit_index_t endianness)
+{
+    cpp_node(cnode)->set_int16_ptr(data,
+                                   num_elements,
+                                   offset,
+                                   stride,
+                                   element_bytes,
+                                   endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_int32_ptr(conduit_node *cnode,
                            conduit_int32 *data,
-                           size_t num_elements)
+                           conduit_index_t num_elements)
 {
     cpp_node(cnode)->set_int32_ptr(data,num_elements);
 }
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_int32_ptr_detailed(conduit_node *cnode,
+                                    conduit_int32 *data,
+                                    conduit_index_t num_elements,
+                                    conduit_index_t offset,
+                                    conduit_index_t stride,
+                                    conduit_index_t element_bytes,
+                                    conduit_index_t endianness)
+{
+    cpp_node(cnode)->set_int32_ptr(data,
+                                   num_elements,
+                                   offset,
+                                   stride,
+                                   element_bytes,
+                                   endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_int64_ptr(conduit_node *cnode,
+                           conduit_int64 *data,
+                           conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set_int64_ptr(data,num_elements);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_int64_ptr_detailed(conduit_node *cnode,
+                                    conduit_int64 *data,
+                                    conduit_index_t num_elements,
+                                    conduit_index_t offset,
+                                    conduit_index_t stride,
+                                    conduit_index_t element_bytes,
+                                    conduit_index_t endianness)
+{
+    cpp_node(cnode)->set_int64_ptr(data,
+                                   num_elements,
+                                   offset,
+                                   stride,
+                                   element_bytes,
+                                   endianness);
+}
+
+
+//-----------------------------------------------------------------------------
+// unsigned signed integer pointer cases
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_uint8_ptr(conduit_node *cnode,
+                           conduit_uint8 *data,
+                           conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set_uint8_ptr(data,num_elements);
+}
+
+//-----------------------------------------------------------------------------
+void conduit_node_set_uint8_ptr_detailed(conduit_node *cnode,
+                                         conduit_uint8 *data,
+                                         conduit_index_t num_elements,
+                                         conduit_index_t offset,
+                                         conduit_index_t stride,
+                                         conduit_index_t element_bytes,
+                                         conduit_index_t endianness)
+{
+    cpp_node(cnode)->set_uint8_ptr(data,
+                                   num_elements,
+                                   offset,
+                                   stride,
+                                   element_bytes,
+                                   endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_uint16_ptr(conduit_node *cnode,
+                            conduit_uint16 *data,
+                            conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set_uint16_ptr(data,num_elements);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_uint16_ptr_detailed(conduit_node *cnode,
+                                     conduit_uint16 *data,
+                                     conduit_index_t num_elements,
+                                     conduit_index_t offset,
+                                     conduit_index_t stride,
+                                     conduit_index_t element_bytes,
+                                     conduit_index_t endianness)
+{
+    cpp_node(cnode)->set_uint16_ptr(data,
+                                    num_elements,
+                                    offset,
+                                    stride,
+                                    element_bytes,
+                                    endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_uint32_ptr(conduit_node *cnode,
+                            conduit_uint32 *data,
+                            conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set_uint32_ptr(data,num_elements);
+}
+    
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_uint32_ptr_detailed(conduit_node *cnode,
+                                     conduit_uint32 *data,
+                                     conduit_index_t num_elements,
+                                     conduit_index_t offset,
+                                     conduit_index_t stride,
+                                     conduit_index_t element_bytes,
+                                     conduit_index_t endianness)
+{
+    cpp_node(cnode)->set_uint32_ptr(data,
+                                    num_elements,
+                                    offset,
+                                    stride,
+                                    element_bytes,
+                                    endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_uint64_ptr(conduit_node *cnode,
+                            conduit_uint64 *data,
+                            conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set_uint64_ptr(data,num_elements);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_uint64_ptr_detailed(conduit_node *cnode,
+                                     conduit_uint64 *data,
+                                     conduit_index_t num_elements,
+                                     conduit_index_t offset,
+                                     conduit_index_t stride,
+                                     conduit_index_t element_bytes,
+                                     conduit_index_t endianness)
+{
+    cpp_node(cnode)->set_uint64_ptr(data,
+                                    num_elements,
+                                    offset,
+                                    stride,
+                                    element_bytes,
+                                    endianness);
+}
+
+//-----------------------------------------------------------------------------
+// floating point pointer cases
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_float32_ptr(conduit_node *cnode,
+                             conduit_float32 *data,
+                             conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set_float32_ptr(data,num_elements);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_float32_ptr_detailed(conduit_node *cnode,
+                                      conduit_float32 *data,
+                                      conduit_index_t num_elements,
+                                      conduit_index_t offset,
+                                      conduit_index_t stride,
+                                      conduit_index_t element_bytes,
+                                      conduit_index_t endianness)
+{
+    cpp_node(cnode)->set_float32_ptr(data,
+                                     num_elements,
+                                     offset,
+                                     stride,
+                                     element_bytes,
+                                     endianness);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_float64_ptr(conduit_node *cnode,
+                             conduit_float64 *data,
+                             conduit_index_t  num_elements)
+{
+    cpp_node(cnode)->set_float64_ptr(data,num_elements);
+}
+
+
+//-------------------------------------------------------------------------
+void
+conduit_node_set_float64_ptr_detailed(conduit_node *cnode,
+                                      conduit_float64 *data,
+                                      conduit_index_t num_elements,
+                                      conduit_index_t offset,
+                                      conduit_index_t stride,
+                                      conduit_index_t element_bytes,
+                                      conduit_index_t endianness)
+{
+    cpp_node(cnode)->set_float64_ptr(data,
+                                     num_elements,
+                                     offset,
+                                     stride,
+                                     element_bytes,
+                                     endianness);
+}
+
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// leaf value access
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// signed integer scalar types
+//-----------------------------------------------------------------------------
+conduit_int8
+conduit_node_as_int8(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_int8();
+}
+    
+//-----------------------------------------------------------------------------
+conduit_int16
+conduit_node_as_int16(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_int16();
+}
+
+//-----------------------------------------------------------------------------
+conduit_int32
+conduit_node_as_int32(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_int32();
+}
+
+
+//-----------------------------------------------------------------------------
+conduit_int64
+conduit_node_as_int64(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_int64();
+}
+
+
+//-----------------------------------------------------------------------------
+// unsigned integer scalar types
+//-----------------------------------------------------------------------------
+conduit_uint8
+conduit_node_as_uint8(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_uint8();
+}
+
+//-----------------------------------------------------------------------------
+conduit_uint16
+conduit_node_as_uint16(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_uint16();
+}
+
+
+//-----------------------------------------------------------------------------
+conduit_uint32
+conduit_node_as_uint32(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_uint32();
+}
+
+
+//-----------------------------------------------------------------------------
+conduit_uint64
+conduit_node_as_uint64(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_uint64();
+}
+
+
+//-----------------------------------------------------------------------------
+// floating point scalar types
+//-----------------------------------------------------------------------------
+conduit_float32
+conduit_node_as_float32(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_float32();
+}
+
+//-----------------------------------------------------------------------------
+conduit_float64
+conduit_node_as_float64(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_float64();
+}
+
+
+//-----------------------------------------------------------------------------
+// signed integer pointer access
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+conduit_int8 *
+conduit_node_as_int8_ptr(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_int8_ptr();
+}
+
+
+//-----------------------------------------------------------------------------
+conduit_int16 *
+conduit_node_as_int16_ptr(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_int16_ptr();
+}
+
+
+//-----------------------------------------------------------------------------
+conduit_int32 *
+conduit_node_as_int32_ptr(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_int32_ptr();
+}
+
+
+//-----------------------------------------------------------------------------
+conduit_int64 *
+conduit_node_as_int64_ptr(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_int64_ptr();
+}
+
+
+//-----------------------------------------------------------------------------
+// unsigned integer pointer access
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+conduit_uint8 *
+conduit_node_as_uint8_ptr(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_uint8_ptr();
+}
+
+
+//-----------------------------------------------------------------------------
+conduit_uint16 *
+conduit_node_as_uint16_ptr(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_uint16_ptr();
+}
+
+
+//-----------------------------------------------------------------------------
+conduit_uint32 *
+conduit_node_as_uint32_ptr(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_uint32_ptr();
+}
+
+//-----------------------------------------------------------------------------
+conduit_uint64 *
+conduit_node_as_uint64_ptr(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_uint64_ptr();
+}
+
+
+//-----------------------------------------------------------------------------
+// floating point pointer access
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+conduit_float32 *
+conduit_node_as_float32_ptr(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_float32_ptr();
+}
+
+
+//-----------------------------------------------------------------------------
+conduit_float64 *
+conduit_node_as_float64_ptr(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_float64_ptr();
+}
+
+
+
+
+
+//-----------------------------------------------------------------------------
+// old demo interface
+//-----------------------------------------------------------------------------
+
+
+
+// //-----------------------------------------------------------------------------
+// void
+// conduit_node_set_int32(conduit_node *cnode,
+//                        conduit_int32 value)
+// {
+//     cpp_node(cnode)->set_int32(value);
+// }
+//
+// //-----------------------------------------------------------------------------
+// void
+// conduit_node_set_int32_ptr(conduit_node *cnode,
+//                            conduit_int32 *data,
+//                            size_t num_elements)
+// {
+//     cpp_node(cnode)->set_int32_ptr(data,num_elements);
+// }
 
 //-----------------------------------------------------------------------------
 void
@@ -212,13 +805,13 @@ conduit_node_set_int(conduit_node *cnode,
     cpp_node(cnode)->set(value);
 }
 
-//-----------------------------------------------------------------------------
-void
-conduit_node_set_float64(conduit_node *cnode, 
-                         conduit_float64 value)
-{
-    cpp_node(cnode)->set(value);
-}
+// //-----------------------------------------------------------------------------
+// void
+// conduit_node_set_float64(conduit_node *cnode,
+//                          conduit_float64 value)
+// {
+//     cpp_node(cnode)->set(value);
+// }
 
 //-----------------------------------------------------------------------------
 void
@@ -228,12 +821,12 @@ conduit_node_set_double(conduit_node *cnode,
     cpp_node(cnode)->set(value);
 }
 
-//-----------------------------------------------------------------------------
-conduit_int32
-conduit_node_as_int32(conduit_node *cnode)
-{
-    return cpp_node(cnode)->as_int32();
-}
+// //-----------------------------------------------------------------------------
+// conduit_int32
+// conduit_node_as_int32(conduit_node *cnode)
+// {
+//     return cpp_node(cnode)->as_int32();
+// }
 
 //-----------------------------------------------------------------------------
 conduit_int32
@@ -273,12 +866,12 @@ conduit_node_as_int_ptr(conduit_node *cnode)
     return cpp_node(cnode)->as_int_ptr();
 }
 
-//-----------------------------------------------------------------------------
-conduit_int32 *
-conduit_node_as_int32_ptr(conduit_node *cnode)
-{
-    return cpp_node(cnode)->as_int32_ptr();
-}
+// //-----------------------------------------------------------------------------
+// conduit_int32 *
+// conduit_node_as_int32_ptr(conduit_node *cnode)
+// {
+//     return cpp_node(cnode)->as_int32_ptr();
+// }
 
 
 //-----------------------------------------------------------------------------
@@ -295,12 +888,12 @@ conduit_node_as_double_ptr(conduit_node *cnode)
     return cpp_node(cnode)->as_double_ptr();
 }
 
-//-----------------------------------------------------------------------------
-conduit_float64
-conduit_node_as_float64(conduit_node *cnode)
-{
-    return cpp_node(cnode)->as_float64();
-}
+// //-----------------------------------------------------------------------------
+// conduit_float64
+// conduit_node_as_float64(conduit_node *cnode)
+// {
+//     return cpp_node(cnode)->as_float64();
+// }
 
 //-----------------------------------------------------------------------------
 int 
