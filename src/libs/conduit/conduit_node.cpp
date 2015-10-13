@@ -719,7 +719,16 @@ conduit_node_as_float64_ptr(conduit_node *cnode)
     return cpp_node(cnode)->as_float64_ptr();
 }
 
+//-----------------------------------------------------------------------------
+// string access
+//-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+char *
+conduit_node_as_char8_str(conduit_node *cnode)
+{
+    return cpp_node(cnode)->as_char8_str();
+}
 
 
 

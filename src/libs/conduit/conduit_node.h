@@ -56,7 +56,7 @@
 #include <stddef.h>
     
 #include "Bitwidth_Style_Types.h"
-
+#include "Endianness_Types.h"
 
 //-----------------------------------------------------------------------------
 // -- begin extern C
@@ -709,17 +709,17 @@ void          conduit_node_set_double(conduit_node *cnode,
     conduit_int32  conduit_node_as_int32(conduit_node *cnode);
     conduit_int64  conduit_node_as_int64(conduit_node *cnode);
 
-   //-------------------------------------------------------------------------
-   // unsigned integer scalar access
-   //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    // unsigned integer scalar access
+    //-------------------------------------------------------------------------
     conduit_uint8   conduit_node_as_uint8(conduit_node *cnode);
     conduit_uint16  conduit_node_as_uint16(conduit_node *cnode);
     conduit_uint32  conduit_node_as_uint32(conduit_node *cnode);
     conduit_uint64  conduit_node_as_uint64(conduit_node *cnode);
 
-   //-------------------------------------------------------------------------
-   // floating point scalar access
-   //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    // floating point scalar access
+    //-------------------------------------------------------------------------
     conduit_float32  conduit_node_as_float32(conduit_node *cnode);
     conduit_float64  conduit_node_as_float64(conduit_node *cnode);
 
@@ -731,20 +731,24 @@ void          conduit_node_set_double(conduit_node *cnode,
     conduit_int32  *conduit_node_as_int32_ptr(conduit_node *cnode);
     conduit_int64  *conduit_node_as_int64_ptr(conduit_node *cnode);
 
-   //-------------------------------------------------------------------------
-   // unsigned integer pointer access
-   //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    // unsigned integer pointer access
+    //-------------------------------------------------------------------------
     conduit_uint8   *conduit_node_as_uint8_ptr(conduit_node *cnode);
     conduit_uint16  *conduit_node_as_uint16_ptr(conduit_node *cnode);
     conduit_uint32  *conduit_node_as_uint32_ptr(conduit_node *cnode);
     conduit_uint64  *conduit_node_as_uint64_ptr(conduit_node *cnode);
 
-   //-------------------------------------------------------------------------
-   // floating point pointer access
-   //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    // floating point pointer access
+    //-------------------------------------------------------------------------
     conduit_float32  *conduit_node_as_float32_ptr(conduit_node *cnode);
     conduit_float64  *conduit_node_as_float64_ptr(conduit_node *cnode);
 
+    //-------------------------------------------------------------------------
+    // string access
+    //-------------------------------------------------------------------------
+    char * conduit_node_as_char8_str(conduit_node *cnode);
 
 //-----------------------------------------------------------------------------
 // leaf value access

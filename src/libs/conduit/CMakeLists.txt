@@ -56,6 +56,7 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_Config.h.in"
 #            
 set(conduit_headers
     Bitwidth_Style_Types.h
+    Endianness_Types.h
     DataArray.hpp
     Endianness.hpp
     Node.hpp
