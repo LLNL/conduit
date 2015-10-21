@@ -21,6 +21,18 @@
 #ifndef RAPIDJSON_DOCUMENT_H_
 #define RAPIDJSON_DOCUMENT_H_
 
+/*----------------------------------------------------------------------------
+------------------------------------------------------------------------------
+Warning suppression deals with issues on BG/Q compilers, we suppressing 
+are for cases where we would like to keep warnings as errors. 
+------------------------------------------------------------------------------
+-----------------------------------------------------------------------------*/
+#ifdef _GNUC_
+#pragma GCC diagnostic ignored "-Wtype-limits"
+#pragma GCC diagnostic push
+#endif
+
+
 /*! \file document.h */
 
 #include "reader.h"
