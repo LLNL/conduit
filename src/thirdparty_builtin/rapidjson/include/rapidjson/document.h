@@ -34,6 +34,10 @@ RAPIDJSON_DIAG_OFF(4127) // conditional expression is constant
 #elif defined(__GNUC__)
 RAPIDJSON_DIAG_PUSH
 RAPIDJSON_DIAG_OFF(effc++)
+/*----------------------------------------------------------------------------
+MOD FOR CONDUIT: This warning suppression deals with issue w/ gcc on BG/Q.
+-----------------------------------------------------------------------------*/
+RAPIDJSON_DIAG_OFF(type-limits)
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
