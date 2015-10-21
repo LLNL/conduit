@@ -299,7 +299,7 @@ public:
     void set(const DataType &dtype, void *data);
 
 //-----------------------------------------------------------------------------
-// -- set for scalar types ---
+// -- set for bitwidth style scalar types ---
 //-----------------------------------------------------------------------------
     // signed integer scalar types
     void set_int8(int8 data);
@@ -380,7 +380,7 @@ public:
     void set_char8_str(const char *data);
 
 //-----------------------------------------------------------------------------
-// -- set for std::vector types ---
+// -- set for bitwidth style std::vector types ---
 //  TODO IMP: move std::vector cases
 //-----------------------------------------------------------------------------
     //-------------------------------------------------------------------------
@@ -432,7 +432,7 @@ public:
 
 
 //-----------------------------------------------------------------------------
-// -- set via pointers (scalar and array types) -- 
+// -- set via bitwidth style pointers (scalar and array types) -- 
 //-----------------------------------------------------------------------------
     //-------------------------------------------------------------------------
     // signed integer pointer cases
@@ -653,7 +653,7 @@ public:
                   void *data);
 
 //-----------------------------------------------------------------------------
-// -- set_path for scalar types ---
+// -- set_path for bitwidth style scalar types ---
 //-----------------------------------------------------------------------------
     //-------------------------------------------------------------------------
     // signed integer scalar types
@@ -790,7 +790,7 @@ public:
 
 
 //-----------------------------------------------------------------------------
-// -- set_path for std::vector types ---
+// -- set_path for bitwidth style std::vector types ---
 //-----------------------------------------------------------------------------
     //-------------------------------------------------------------------------
     // signed integer array types via std::vector
@@ -859,7 +859,7 @@ public:
     void set_path(const std::string &path, const std::vector<float64> &data);
 
 //-----------------------------------------------------------------------------
-// -- set_path via pointers (scalar and array types) -- 
+// -- set_path via bitwidth style pointers (scalar and array types) -- 
 //----------------------------------------------------------------------------- 
     //-------------------------------------------------------------------------
     // signed integer pointer cases
@@ -1078,7 +1078,7 @@ public:
                       void *data);
 
 //-----------------------------------------------------------------------------
-// -- set_external via pointers (scalar and array types) -- 
+// -- set_external via bitwidth style pointers (scalar and array types) -- 
 //-----------------------------------------------------------------------------
     //-------------------------------------------------------------------------
     // signed integer pointer cases
@@ -1292,7 +1292,7 @@ public:
     void set_external_char8_str(char *data);
 
 //-----------------------------------------------------------------------------
-// -- set_external for std::vector types ---
+// -- set_external for bitwidth style std::vector types ---
 //----------------------------------------------------------------------------- 
 
     //-------------------------------------------------------------------------
@@ -1393,7 +1393,7 @@ public:
                               void *data);
 
 //-----------------------------------------------------------------------------
-// -- set_path_external via pointers (scalar and array types) -- 
+// -- set_path_external via bitwidth style pointers (scalar and array types) -- 
 //-----------------------------------------------------------------------------
     //-------------------------------------------------------------------------
     // signed integer pointer cases
@@ -1659,7 +1659,7 @@ public:
     void set_path_external_char8_str(const std::string &path, char *data);
 
 //-----------------------------------------------------------------------------
-// -- set_path_external for std::vector types ---
+// -- set_path_external for bitwidth style std::vector types ---
 //-----------------------------------------------------------------------------
     
     //-------------------------------------------------------------------------

@@ -299,6 +299,26 @@ TEST(conduit_node_set, set_float_ptr)
     }
     EXPECT_NEAR(f32av_ptr[3],-6.4,0.001);
     
+    
+    // float32 detailed
+    conduit_node_set_float32_ptr_detailed(n,
+                                          f32av,
+                                          4,
+                                          0,
+                                          sizeof(conduit_float32),
+                                          sizeof(conduit_float32),
+                                          CONDUIT_ENDIANNESS_DEFAULT_T);
+    conduit_node_print(n);
+
+    f32av_ptr = conduit_node_as_float32_ptr(n);
+    for(conduit_index_t i=0;i<4;i++)
+    {
+        EXPECT_NEAR(f32av_ptr[i],f32av[i],0.001);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&f32av_ptr[i],&f32av[i]); 
+    }
+    EXPECT_NEAR(f32av_ptr[3],-6.4,0.001);
+    
     // float64
     conduit_node_set_float64_ptr(n,f64av,4);
     conduit_node_print(n);
@@ -311,6 +331,26 @@ TEST(conduit_node_set, set_float_ptr)
         EXPECT_NE(&f64av_ptr[i],&f64av[i]);
     }
     EXPECT_NEAR(f64av_ptr[3],-6.4,0.001);
+
+    // float64 detailed
+    conduit_node_set_float64_ptr_detailed(n,
+                                          f64av,
+                                          4,
+                                          0,
+                                          sizeof(conduit_float64),
+                                          sizeof(conduit_float64),
+                                          CONDUIT_ENDIANNESS_DEFAULT_T);
+    conduit_node_print(n);
+
+    f64av_ptr = conduit_node_as_float64_ptr(n);
+    for(conduit_index_t i=0;i<4;i++)
+    {
+        EXPECT_NEAR(f64av_ptr[i],f64av[i],0.001);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&f64av_ptr[i],&f64av[i]);
+    }
+    EXPECT_NEAR(f64av_ptr[3],-6.4,0.001);
+
 
     conduit_node_destroy(n);
 }

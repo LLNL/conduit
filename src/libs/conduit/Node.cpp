@@ -1685,6 +1685,14 @@ Node::set_path(const std::string &path,
 
 //---------------------------------------------------------------------------//
 void
+Node::set_path_int64(const std::string &path,
+                     int64 data)
+{
+    fetch(path).set_int64(data);
+}
+
+//---------------------------------------------------------------------------//
+void
 Node::set_path(const std::string &path,
                int64 data)
 {
