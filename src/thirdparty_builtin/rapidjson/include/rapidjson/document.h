@@ -21,18 +21,6 @@
 #ifndef RAPIDJSON_DOCUMENT_H_
 #define RAPIDJSON_DOCUMENT_H_
 
-/*----------------------------------------------------------------------------
-------------------------------------------------------------------------------
-Warning suppression deals with issues on BG/Q compilers, we suppressing 
-are for cases where we would like to keep warnings as errors. 
-------------------------------------------------------------------------------
------------------------------------------------------------------------------*/
-#ifdef _GNUC_
-#pragma GCC diagnostic ignored "-Wtype-limits"
-#pragma GCC diagnostic push
-#endif
-
-
 /*! \file document.h */
 
 #include "reader.h"
@@ -46,6 +34,10 @@ RAPIDJSON_DIAG_OFF(4127) // conditional expression is constant
 #elif defined(__GNUC__)
 RAPIDJSON_DIAG_PUSH
 RAPIDJSON_DIAG_OFF(effc++)
+/*----------------------------------------------------------------------------
+MOD FOR CONDUIT: This warning suppression deals with issue w/ gcc on BG/Q.
+-----------------------------------------------------------------------------*/
+RAPIDJSON_DIAG_OFF(type-limits)
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////

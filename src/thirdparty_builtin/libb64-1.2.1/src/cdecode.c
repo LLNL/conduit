@@ -6,12 +6,9 @@ For details, see http://sourceforge.net/projects/libb64
 */
 
 /*----------------------------------------------------------------------------
-------------------------------------------------------------------------------
-Warning suppression deals with issues on BG/Q compilers, we suppressing 
-are for cases where we would like to keep warnings as errors. 
-------------------------------------------------------------------------------
+MOD FOR CONDUIT: This warning suppression deals with issue w/ gcc on BG/Q.
 -----------------------------------------------------------------------------*/
-#ifdef _GNUC_
+#ifdef __GNUC__
 #pragma GCC diagnostic ignored "-Wtype-limits"
 #pragma GCC diagnostic push
 #endif
