@@ -115,9 +115,8 @@ TEST(conduit_io_websocket, websocket_test)
     msg.to_json_stream("test.json","json");
     
     WebServer svr;
-    
     // start our server
-    svr.serve(wsock_path);
+    svr.serve(wsock_path,8081);
 
     // this loop won't be necessary in the strawman lib.    
     while(svr.is_running()) 
