@@ -718,55 +718,22 @@ void          conduit_node_print_detailed(conduit_node *cnode);
 
 
 //-----------------------------------------------------------------------------
-// Demo set Interface
+// leaf value access (generic)
 //-----------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    // data pointer access
+    //-------------------------------------------------------------------------
+    // direct data pointer access 
+    void *conduit_node_data_ptr(conduit_node *cnode);
 
-//-----------------------------------------------------------------------------
-void          conduit_node_set_path_int32(conduit_node *cnode,
-                                          const char *path,
-                                          conduit_int32 value);
-
-//-----------------------------------------------------------------------------
-void          conduit_node_set_path_float64(conduit_node *cnode,
-                                            const char *path,
-                                            conduit_float64 value);
-
-//-----------------------------------------------------------------------------
-void          conduit_node_set_path_char8_str(conduit_node *cnode,
-                                              const char *path,
-                                              const char *value);
-
-//-----------------------------------------------------------------------------
-void          conduit_node_set_int32_ptr(conduit_node *cnode,
-                                         conduit_int32 *data,
-                                         size_t num_elements);
-
-//-----------------------------------------------------------------------------
-void          conduit_node_set_external_int32_ptr(conduit_node *cnode,
-                                                  conduit_int32 *data,
-                                                  size_t num_elements);
-
-//-----------------------------------------------------------------------------
-void          conduit_node_set_path_external_float64_ptr(conduit_node *cnode,
-                                                         const char *path,
-                                                         conduit_float64 *data,
-                                                         size_t num_elements);
-
-//-----------------------------------------------------------------------------
-void          conduit_node_set_float64(conduit_node *cnode,
-                                       conduit_float64 value);
-
-//-----------------------------------------------------------------------------
-void          conduit_node_set_int(conduit_node *cnode,
-                                   int value);
-
-//-----------------------------------------------------------------------------
-void          conduit_node_set_double(conduit_node *cnode,
-                                      double value);
+    // element pointer access 
+    void *conduit_node_element_ptr(conduit_node *cnode,
+                                   conduit_index_t idx);
 
 //-----------------------------------------------------------------------------
 // leaf value access (bitwidth style types)
 //-----------------------------------------------------------------------------
+
     //-------------------------------------------------------------------------
     // signed integer scalar access
     //-------------------------------------------------------------------------
@@ -816,15 +783,79 @@ void          conduit_node_set_double(conduit_node *cnode,
     //-------------------------------------------------------------------------
     char *conduit_node_as_char8_str(conduit_node *cnode);
 
-    //-------------------------------------------------------------------------
-    // data pointer access
-    //-------------------------------------------------------------------------
-    // direct data pointer access 
-    void *conduit_node_data_ptr(conduit_node *cnode);
+//-----------------------------------------------------------------------------
+// leaf value access via path (bitwidth style types)
+//-----------------------------------------------------------------------------
 
-    // element pointer access 
-    void *conduit_node_element_ptr(conduit_node *cnode,
-                                   conduit_index_t idx);
+    //-------------------------------------------------------------------------
+    // signed integer scalar access
+    //-------------------------------------------------------------------------
+    conduit_int8   conduit_node_fetch_path_as_int8(conduit_node *cnode,
+                                                   const char *path);
+    conduit_int16  conduit_node_fetch_path_as_int16(conduit_node *cnode,
+                                                    const char *path);
+    conduit_int32  conduit_node_fetch_path_as_int32(conduit_node *cnode,
+                                                    const char *path);
+    conduit_int64  conduit_node_fetch_path_as_int64(conduit_node *cnode,
+                                                    const char *path);
+
+    //-------------------------------------------------------------------------
+    // unsigned integer scalar access
+    //-------------------------------------------------------------------------
+    conduit_uint8   conduit_node_fetch_path_as_uint8(conduit_node *cnode,
+                                                     const char *path);
+    conduit_uint16  conduit_node_fetch_path_as_uint16(conduit_node *cnode,
+                                                      const char *path);
+    conduit_uint32  conduit_node_fetch_path_as_uint32(conduit_node *cnode,
+                                                      const char *path);
+    conduit_uint64  conduit_node_fetch_path_as_uint64(conduit_node *cnode,
+                                                      const char *path);
+
+    //-------------------------------------------------------------------------
+    // floating point scalar access
+    //-------------------------------------------------------------------------
+    conduit_float32  conduit_node_fetch_path_as_float32(conduit_node *cnode,
+                                                        const char *path);
+    conduit_float64  conduit_node_fetch_path_as_float64(conduit_node *cnode,
+                                                        const char *path);
+
+    //-------------------------------------------------------------------------
+    // signed integer pointer access
+    //-------------------------------------------------------------------------
+    conduit_int8   *conduit_node_fetch_path_as_int8_ptr(conduit_node *cnode,
+                                                        const char *path);
+    conduit_int16  *conduit_node_fetch_path_as_int16_ptr(conduit_node *cnode,
+                                                         const char *path);
+    conduit_int32  *conduit_node_fetch_path_as_int32_ptr(conduit_node *cnode,
+                                                         const char *path);
+    conduit_int64  *conduit_node_fetch_path_as_int64_ptr(conduit_node *cnode,
+                                                         const char *path);
+
+    //-------------------------------------------------------------------------
+    // unsigned integer pointer access
+    //-------------------------------------------------------------------------
+    conduit_uint8   *conduit_node_fetch_path_as_uint8_ptr(conduit_node *cnode,
+                                                          const char *path);
+    conduit_uint16  *conduit_node_fetch_path_as_uint16_ptr(conduit_node *cnode,
+                                                           const char *path);
+    conduit_uint32  *conduit_node_fetch_path_as_uint32_ptr(conduit_node *cnode,
+                                                           const char *path);
+    conduit_uint64  *conduit_node_fetch_path_as_uint64_ptr(conduit_node *cnode,
+                                                           const char *path);
+
+    //-------------------------------------------------------------------------
+    // floating point pointer access
+    //-------------------------------------------------------------------------
+    conduit_float32  *conduit_node_fetch_path_as_float32_ptr(conduit_node *cnode,
+                                                             const char *path);
+    conduit_float64  *conduit_node_fetch_path_as_float64_ptr(conduit_node *cnode,
+                                                             const char *path);
+
+    //-------------------------------------------------------------------------
+    // string access
+    //-------------------------------------------------------------------------
+    char *conduit_node_fetch_path_as_char8_str(conduit_node *cnode,
+                                               const char *path);
 
 //-----------------------------------------------------------------------------
 // leaf value access (native c style types)
@@ -873,7 +904,124 @@ void          conduit_node_set_double(conduit_node *cnode,
     float   *conduit_node_as_float_ptr(conduit_node *cnode);
     double  *conduit_node_as_double_ptr(conduit_node *cnode);
 
+//-----------------------------------------------------------------------------
+// leaf value access via path (native c style types)
+//-----------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    // signed integer scalar access
+    //-------------------------------------------------------------------------
+    char  conduit_node_fetch_path_as_char(conduit_node *cnode,
+                                          const char *path);
+    short conduit_node_fetch_path_as_short(conduit_node *cnode,
+                                          const char *path);
+    int   conduit_node_fetch_path_as_int(conduit_node *cnode,
+                                          const char *path);
+    long  conduit_node_fetch_path_as_long(conduit_node *cnode,
+                                          const char *path);
 
+    //-------------------------------------------------------------------------
+    // unsigned integer scalar access
+    //-------------------------------------------------------------------------
+    unsigned char   conduit_node_fetch_path_as_unsigned_char(conduit_node *cnode,
+                                                             const char *path);
+    unsigned short  conduit_node_fetch_path_as_unsigned_short(conduit_node *cnode,
+                                                              const char *path);
+    unsigned int    conduit_node_fetch_path_as_unsigned_int(conduit_node *cnode,
+                                                            const char *path);
+    unsigned long   conduit_node_fetch_path_as_unsigned_long(conduit_node *cnode,
+                                                             const char *path);
+
+    //-------------------------------------------------------------------------
+    // floating point scalar access
+    //-------------------------------------------------------------------------
+    float  conduit_node_fetch_path_as_float(conduit_node *cnode,
+                                            const char *path);
+    double conduit_node_fetch_path_as_double(conduit_node *cnode,
+                                             const char *path);
+
+    //-------------------------------------------------------------------------
+    // signed integer pointer access
+    //-------------------------------------------------------------------------
+    char   *conduit_node_fetch_path_as_char_ptr(conduit_node *cnode,
+                                                 const char *path);
+    short  *conduit_node_fetch_path_as_short_ptr(conduit_node *cnode,
+                                                 const char *path);
+    int    *conduit_node_fetch_path_as_int_ptr(conduit_node *cnode,
+                                               const char *path);
+    long   *conduit_node_fetch_path_as_long_ptr(conduit_node *cnode,
+                                                const char *path);
+
+    //-------------------------------------------------------------------------
+    // unsigned integer pointer access
+    //-------------------------------------------------------------------------
+    unsigned char   *conduit_node_fetch_path_as_unsigned_char_ptr(conduit_node *cnode,
+                                                                  const char *path);
+    unsigned short  *conduit_node_fetch_path_as_unsigned_short_ptr(conduit_node *cnode,
+                                                                   const char *path);
+    unsigned int    *conduit_node_fetch_path_as_unsigned_int_ptr(conduit_node *cnode,
+                                                                  const char *path);
+    unsigned long   *conduit_node_fetch_path_as_unsigned_long_ptr(conduit_node *cnode,
+                                                                  const char *path);
+
+    //-------------------------------------------------------------------------
+    // floating point pointer access
+    //-------------------------------------------------------------------------
+    float   *conduit_node_fetch_path_as_float_ptr(conduit_node *cnode,
+                                                  const char *path);
+    double  *conduit_node_fetch_path_as_double_ptr(conduit_node *cnode,
+                                                  const char *path);
+    //-------------------------------------------------------------------------
+    // string  access
+    //-------------------------------------------------------------------------
+    char *conduit_node_fetch_path_as_char8_str(conduit_node *cnode,
+                                               const char *path);
+
+//-----------------------------------------------------------------------------
+// Demo set Interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void          conduit_node_set_path_int32(conduit_node *cnode,
+                                          const char *path,
+                                          conduit_int32 value);
+
+//-----------------------------------------------------------------------------
+void          conduit_node_set_path_float64(conduit_node *cnode,
+                                            const char *path,
+                                            conduit_float64 value);
+
+//-----------------------------------------------------------------------------
+void          conduit_node_set_path_char8_str(conduit_node *cnode,
+                                              const char *path,
+                                              const char *value);
+
+//-----------------------------------------------------------------------------
+void          conduit_node_set_int32_ptr(conduit_node *cnode,
+                                         conduit_int32 *data,
+                                         size_t num_elements);
+
+//-----------------------------------------------------------------------------
+void          conduit_node_set_external_int32_ptr(conduit_node *cnode,
+                                                  conduit_int32 *data,
+                                                  size_t num_elements);
+
+//-----------------------------------------------------------------------------
+void          conduit_node_set_path_external_float64_ptr(conduit_node *cnode,
+                                                         const char *path,
+                                                         conduit_float64 *data,
+                                                         size_t num_elements);
+
+//-----------------------------------------------------------------------------
+void          conduit_node_set_float64(conduit_node *cnode,
+                                       conduit_float64 value);
+
+//-----------------------------------------------------------------------------
+void          conduit_node_set_int(conduit_node *cnode,
+                                   int value);
+
+//-----------------------------------------------------------------------------
+void          conduit_node_set_double(conduit_node *cnode,
+                                      double value);
 //-----------------------------------------------------------------------------
 // leaf value access
 //-----------------------------------------------------------------------------

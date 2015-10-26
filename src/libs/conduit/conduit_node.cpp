@@ -136,6 +136,26 @@ conduit_node_number_of_elements(conduit_node *cnode)
     return cpp_node(cnode)->dtype().number_of_elements();
 }
 
+//-----------------------------------------------------------------------------
+int 
+conduit_node_is_root(conduit_node *cnode)
+{
+    return cpp_node(cnode)->is_root();
+}
+
+//-----------------------------------------------------------------------------
+void 
+conduit_node_print(conduit_node *cnode)
+{
+    cpp_node(cnode)->print();
+}
+
+//-----------------------------------------------------------------------------
+void 
+conduit_node_print_detailed(conduit_node *cnode)
+{
+    cpp_node(cnode)->print_detailed();
+}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -1056,8 +1076,195 @@ conduit_node_as_double_ptr(conduit_node *cnode)
     return cpp_node(cnode)->as_double_ptr();
 }
 
+//-----------------------------------------------------------------------------
+// leaf value access via path (native c style types)
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// signed integer scalar access
+//-----------------------------------------------------------------------------
+char
+conduit_node_fetch_path_as_char(conduit_node *cnode,
+                                const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_char();
+}
+
+//-----------------------------------------------------------------------------
+short
+conduit_node_fetch_path_as_short(conduit_node *cnode,
+                                 const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_short();
+}
+
+//-----------------------------------------------------------------------------
+int
+conduit_node_fetch_path_as_int(conduit_node *cnode,
+                               const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_int();
+}
+
+//-----------------------------------------------------------------------------
+long
+conduit_node_fetch_path_as_long(conduit_node *cnode,
+                                const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_long();
+}
+
+//-----------------------------------------------------------------------------
+// unsigned integer scalar access
+//-----------------------------------------------------------------------------
+unsigned char
+conduit_node_fetch_path_as_unsigned_char(conduit_node *cnode,
+                                         const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_unsigned_char();
+}
 
 
+//-----------------------------------------------------------------------------
+unsigned short
+conduit_node_fetch_path_as_unsigned_short(conduit_node *cnode,
+                                          const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_unsigned_short();
+}
+
+//-----------------------------------------------------------------------------
+unsigned int
+conduit_node_fetch_path_as_unsigned_int(conduit_node *cnode,
+                                        const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_unsigned_int();
+}
+
+
+//-----------------------------------------------------------------------------
+unsigned long
+conduit_node_fetch_path_as_unsigned_long(conduit_node *cnode,
+                                         const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_unsigned_long();
+}
+
+//-------------------------------------------------------------------------
+// floating point scalar access
+//-------------------------------------------------------------------------
+float
+conduit_node_fetch_path_as_float(conduit_node *cnode,
+                                const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_float();
+}
+
+//-------------------------------------------------------------------------
+double
+conduit_node_fetch_path_as_double(conduit_node *cnode,
+                                  const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_double();
+}
+
+//-------------------------------------------------------------------------
+// signed integer pointer access
+//-------------------------------------------------------------------------
+char *
+conduit_node_fetch_path_as_char_ptr(conduit_node *cnode,
+                                    const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_char_ptr();
+}
+
+//-------------------------------------------------------------------------
+short *
+conduit_node_fetch_path_as_short_ptr(conduit_node *cnode,
+                                     const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_short_ptr();
+}
+
+//-------------------------------------------------------------------------
+int *
+conduit_node_fetch_path_as_int_ptr(conduit_node *cnode,
+                                   const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_int_ptr();
+}
+
+
+//-------------------------------------------------------------------------
+long *
+conduit_node_fetch_path_as_long_ptr(conduit_node *cnode,
+                                    const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_long_ptr();
+}
+
+//-------------------------------------------------------------------------
+// unsigned integer pointer access
+//-------------------------------------------------------------------------
+unsigned char *
+conduit_node_fetch_path_as_unsigned_char_ptr(conduit_node *cnode,
+                                             const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_unsigned_char_ptr();
+}
+
+//-------------------------------------------------------------------------
+unsigned short *
+conduit_node_fetch_path_as_unsigned_short_ptr(conduit_node *cnode,
+                                              const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_unsigned_short_ptr();
+}
+
+
+//-------------------------------------------------------------------------
+unsigned int *
+conduit_node_fetch_path_as_unsigned_int_ptr(conduit_node *cnode,
+                                            const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_unsigned_int_ptr();
+}
+
+//-------------------------------------------------------------------------
+unsigned long *
+conduit_node_fetch_path_as_unsigned_long_ptr(conduit_node *cnode,
+                                             const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_unsigned_long_ptr();
+}
+
+//-------------------------------------------------------------------------
+// floating point pointer access
+//-------------------------------------------------------------------------
+float *
+conduit_node_fetch_path_as_float_ptr(conduit_node *cnode,
+                                     const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_float_ptr();
+}
+
+
+//-------------------------------------------------------------------------
+double *
+conduit_node_fetch_path_as_double_ptr(conduit_node *cnode,
+                                      const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_double_ptr();
+}
+
+//-----------------------------------------------------------------------------
+// string pointer access
+//-----------------------------------------------------------------------------
+char *
+conduit_node_fetch_path_as_char8_str(conduit_node *cnode,
+                                     const char *path)
+{
+    return cpp_node(cnode)->fetch(path).as_char8_str();
+}
 
 
 //-----------------------------------------------------------------------------
@@ -1070,24 +1277,6 @@ conduit_node_as_double_ptr(conduit_node *cnode)
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-
-
-// //-----------------------------------------------------------------------------
-// void
-// conduit_node_set_int32(conduit_node *cnode,
-//                        conduit_int32 value)
-// {
-//     cpp_node(cnode)->set_int32(value);
-// }
-//
-// //-----------------------------------------------------------------------------
-// void
-// conduit_node_set_int32_ptr(conduit_node *cnode,
-//                            conduit_int32 *data,
-//                            size_t num_elements)
-// {
-//     cpp_node(cnode)->set_int32_ptr(data,num_elements);
-// }
 
 //-----------------------------------------------------------------------------
 void
@@ -1110,36 +1299,6 @@ conduit_node_set_path_external_float64_ptr(conduit_node *cnode,
 }
 
 
-// //-----------------------------------------------------------------------------
-// void
-// conduit_node_set_path_int32(conduit_node *cnode,
-//                             const char *path,
-//                             conduit_int32 value)
-// {
-//     cpp_node(cnode)->set_path_int32(std::string(path),value);
-// }
-//
-//
-// //-----------------------------------------------------------------------------
-// void
-// conduit_node_set_path_float64(conduit_node *cnode,
-//                               const char *path,
-//                               conduit_float64 value)
-// {
-//     cpp_node(cnode)->set_path_float64(std::string(path),value);
-// }
-
-
-// //-----------------------------------------------------------------------------
-// void
-// conduit_node_set_path_char8_str(conduit_node *cnode,
-//                                 const char *path,
-//                                 const char *value)
-// {
-//     cpp_node(cnode)->set_path_char8_str(std::string(path),value);
-// }
-
-
 //-----------------------------------------------------------------------------
 void
 conduit_node_set_int(conduit_node *cnode, 
@@ -1148,13 +1307,6 @@ conduit_node_set_int(conduit_node *cnode,
     cpp_node(cnode)->set(value);
 }
 
-// //-----------------------------------------------------------------------------
-// void
-// conduit_node_set_float64(conduit_node *cnode,
-//                          conduit_float64 value)
-// {
-//     cpp_node(cnode)->set(value);
-// }
 
 //-----------------------------------------------------------------------------
 void
@@ -1164,12 +1316,6 @@ conduit_node_set_double(conduit_node *cnode,
     cpp_node(cnode)->set(value);
 }
 
-// //-----------------------------------------------------------------------------
-// conduit_int32
-// conduit_node_as_int32(conduit_node *cnode)
-// {
-//     return cpp_node(cnode)->as_int32();
-// }
 
 //-----------------------------------------------------------------------------
 conduit_int32
@@ -1187,77 +1333,6 @@ conduit_node_fetch_path_as_float64(conduit_node *cnode,
     return cpp_node(cnode)->fetch(path).as_float64();
 }
 
-//-----------------------------------------------------------------------------
-char *
-conduit_node_fetch_path_as_char8_str(conduit_node *cnode,
-                                     const char *path)
-{
-    return cpp_node(cnode)->fetch(path).as_char8_str();
-}
-
-// //-----------------------------------------------------------------------------
-// int
-// conduit_node_as_int(conduit_node *cnode)
-// {
-//     return cpp_node(cnode)->as_int();
-// }
-//
-// //-----------------------------------------------------------------------------
-// int *
-// conduit_node_as_int_ptr(conduit_node *cnode)
-// {
-//     return cpp_node(cnode)->as_int_ptr();
-// }
-//
-// // //-----------------------------------------------------------------------------
-// // conduit_int32 *
-// // conduit_node_as_int32_ptr(conduit_node *cnode)
-// // {
-// //     return cpp_node(cnode)->as_int32_ptr();
-// // }
-//
-//
-// //-----------------------------------------------------------------------------
-// double
-// conduit_node_as_double(conduit_node *cnode)
-// {
-//     return cpp_node(cnode)->as_double();
-// }
-//
-// //-----------------------------------------------------------------------------
-// double *
-// conduit_node_as_double_ptr(conduit_node *cnode)
-// {
-//     return cpp_node(cnode)->as_double_ptr();
-// }
-
-// //-----------------------------------------------------------------------------
-// conduit_float64
-// conduit_node_as_float64(conduit_node *cnode)
-// {
-//     return cpp_node(cnode)->as_float64();
-// }
-
-//-----------------------------------------------------------------------------
-int 
-conduit_node_is_root(conduit_node *cnode)
-{
-    return cpp_node(cnode)->is_root();
-}
-
-//-----------------------------------------------------------------------------
-void 
-conduit_node_print(conduit_node *cnode)
-{
-    cpp_node(cnode)->print();
-}
-
-//-----------------------------------------------------------------------------
-void 
-conduit_node_print_detailed(conduit_node *cnode)
-{
-    cpp_node(cnode)->print_detailed();
-}
 
 
 }

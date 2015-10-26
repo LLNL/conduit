@@ -52,28 +52,6 @@
 #define CONDUIT_CONFIG_H
 
 //-----------------------------------------------------------------------------
-// byte widths of native types
-//-----------------------------------------------------------------------------
-
-#define CONDUIT_SIZEOF_BYTE        1
-
-#cmakedefine CONDUIT_SIZEOF_CHAR        @CONDUIT_SIZEOF_CHAR@
-#cmakedefine CONDUIT_SIZEOF_SHORT       @CONDUIT_SIZEOF_SHORT@
-#cmakedefine CONDUIT_SIZEOF_INT         @CONDUIT_SIZEOF_INT@
-#cmakedefine CONDUIT_SIZEOF_LONG        @CONDUIT_SIZEOF_LONG@
-#cmakedefine CONDUIT_SIZEOF_LONG_LONG   @CONDUIT_SIZEOF_LONG_LONG@
-
-#cmakedefine CONDUIT_SIZEOF_FLOAT       @CONDUIT_SIZEOF_FLOAT@
-#cmakedefine CONDUIT_SIZEOF_DOUBLE      @CONDUIT_SIZEOF_DOUBLE@
-#cmakedefine CONDUIT_SIZEOF_LONG_DOUBLE @CONDUIT_SIZEOF_LONG_DOUBLE@
-
-#cmakedefine CONDUIT_SIZEOF_VOID_P      @CONDUIT_SIZEOF_VOID_P@
-
-// defines that let us know if the compiler supports long long and long double
-#cmakedefine CONDUIT_HAS_LONG_LONG      @CONDUIT_HAS_LONG_LONG@
-#cmakedefine CONDUIT_HAS_LONG_DOUBLE    @CONDUIT_HAS_LONG_LONG@
-
-//-----------------------------------------------------------------------------
 //
 // #define platform check helpers
 //

@@ -49,11 +49,17 @@
 
 ENABLE_WARNINGS()
 
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Bitwidth_Style_Types.inc.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/Bitwidth_Style_Types.inc")
+
+# Allow fortran compiler to include the Bitwidth_Style_Types.inc file
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
 #
 # Specify fortran sources
 #
 set(conduit_fortran_sources
-    conduit_fortran.f)
+    conduit_fortran.F)
     
 if(ENABLE_FORTRAN_OBJ_INTERFACE)
     list(APPEND conduit_fortran_sources conduit_fortran_obj.f)
@@ -81,6 +87,7 @@ if(ENABLE_FORTRAN_OBJ_INTERFACE)
     list(APPEND conduit_fortran_modules ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_obj.mod)
 endif()
 
+# Note: We don't need to install the .inc file
 install(FILES 
         ${conduit_fortran_modules}
         DESTINATION include)
