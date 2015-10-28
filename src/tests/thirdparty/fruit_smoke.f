@@ -69,15 +69,22 @@ function fortran_test() bind(C,name="fortran_test")
   use fruit_smoke
   implicit none
   integer(C_INT) fortran_test
+  logical res
 
   call init_fruit
 !----------
 ! Our tests
   call simple_test
 !----------
+
   call fruit_summary
   call fruit_finalize
-
-  fortran_test = 0
+  call is_all_successful(res)
+  if (res) then
+     fortran_test = 0
+  else
+     fortran_test = 1
+  endif
+  
 end function fortran_test
 

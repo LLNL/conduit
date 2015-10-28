@@ -53,6 +53,7 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Bitwidth_Style_Types.inc.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/Bitwidth_Style_Types.inc")
 
 # Allow fortran compiler to include the Bitwidth_Style_Types.inc file
+# Note: Unlike .h files, the .inc file will not be needed by client code
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 #

@@ -49,6 +49,9 @@
 
 function fortran_test() bind(C,name="fortran_test")
   print *, "No Smoke?"
+  
+  fortran_test = 0
+  
 end function fortran_test
     
 
