@@ -3400,6 +3400,24 @@ Node::set_external(std::vector<float64> &data)
 
 //---------------------------------------------------------------------------//
 void
+Node::set_path_external_node(const std::string &path,
+                             Node &node)
+{
+    fetch(path).set_external_node(node);
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external(const std::string &path,
+                        Node &node)
+{
+    set_path_external_node(path,node);
+}
+
+
+//---------------------------------------------------------------------------//
+void
 Node::set_path_external_data_using_schema(const std::string &path,
                                           const Schema &schema,
                                           void *data)
