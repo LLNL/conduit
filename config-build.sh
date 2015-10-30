@@ -117,7 +117,7 @@ cd ../
 # add extended builds when a non host config argument is passed
 #------------------------------------------------------------------------------
 if [ $# -ge 1 ]; then
-    if [ ${1: -6} == ".cmake" ]; then
+    if [ "${1: -6}" == ".cmake" ]; then
         # skip this case
         echo ""
     else
