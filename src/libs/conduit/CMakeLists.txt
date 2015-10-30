@@ -61,7 +61,6 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Bitwidth_Style_Types.h.in"
 # Specify all headers
 #            
 set(conduit_headers
-    Bitwidth_Style_Types.h
     Endianness_Types.h
     DataArray.hpp
     Endianness.hpp
