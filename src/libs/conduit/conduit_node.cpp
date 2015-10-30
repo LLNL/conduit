@@ -1685,7 +1685,7 @@ void
 conduit_node_set_char(conduit_node *cnode,
                       char value)
 {
-    cpp_node(cnode)->set(value);
+    cpp_node(cnode)->set((conduit_byte)value);
 }
 
 //-----------------------------------------------------------------------------
@@ -1717,7 +1717,7 @@ conduit_node_set_long(conduit_node *cnode,
 //-----------------------------------------------------------------------------
 void
 conduit_node_set_unsigned_char(conduit_node *cnode,
-                                             unsigned char value)
+                               unsigned char value)
 {
     cpp_node(cnode)->set(value);
 }
@@ -1725,7 +1725,7 @@ conduit_node_set_unsigned_char(conduit_node *cnode,
 //-----------------------------------------------------------------------------
 void
 conduit_node_set_unsigned_short(conduit_node *cnode,
-                                              unsigned short value)
+                                unsigned short value)
 {
     cpp_node(cnode)->set(value);
 }
@@ -1774,7 +1774,7 @@ conduit_node_set_char_ptr(conduit_node *cnode,
                           char *data,
                           conduit_index_t num_elements)
 {
-    cpp_node(cnode)->set((signed char*)data,num_elements);
+    cpp_node(cnode)->set((conduit_byte*)data,num_elements);
 }
 
 //-------------------------------------------------------------------------
@@ -1787,7 +1787,7 @@ conduit_node_set_char_ptr_detailed(conduit_node *cnode,
                                    conduit_index_t element_bytes,
                                    conduit_index_t endianness)
 {
-    cpp_node(cnode)->set((signed char*)data,
+    cpp_node(cnode)->set((conduit_byte*)data,
                          num_elements,
                          offset,
                          stride,
@@ -1884,7 +1884,9 @@ void
 conduit_node_set_unsigned_char_ptr(conduit_node *cnode,
                                    unsigned char *data,
                                    conduit_index_t num_elements)
-{}
+{
+    cpp_node(cnode)->set(data,num_elements);
+}
 
 //-------------------------------------------------------------------------
 void
@@ -2040,6 +2042,1011 @@ conduit_node_set_double_ptr_detailed(conduit_node *cnode,
                          stride,
                          element_bytes,
                          endianness);
+}
+
+
+//-----------------------------------------------------------------------------
+// -- set_path for scalar cstyle types ---
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// set_path cstyle signed integer scalar types
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_char(conduit_node *cnode,
+                           const char *path,
+                           char value)
+{
+    cpp_node(cnode)->set(value);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_short(conduit_node *cnode,
+                            const char *path,
+                            short value)
+{
+    cpp_node(cnode)->set(value);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_int(conduit_node *cnode,
+                          const char *path,
+                          int value)
+{
+    cpp_node(cnode)->set(value);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_long(conduit_node *cnode,
+                           const char *path,
+                           long value)
+{
+    cpp_node(cnode)->set(value);
+}
+
+//-----------------------------------------------------------------------------
+// set_path cstyle unsigned integer scalar types
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_unsigned_char(conduit_node *cnode,
+                                    const char *path,
+                                    unsigned char value)
+{
+    cpp_node(cnode)->set(value);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_unsigned_short(conduit_node *cnode,
+                                     const char *path,
+                                     unsigned short value)
+{
+    cpp_node(cnode)->set(value);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_unsigned_int(conduit_node *cnode,
+                                   const char *path,
+                                   unsigned int value)
+{
+    cpp_node(cnode)->set(value);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_unsigned_long(conduit_node *cnode,
+                                    const char *path,
+                                    unsigned long value)
+{
+    cpp_node(cnode)->set(value);
+}
+
+//-----------------------------------------------------------------------------
+// set_path cstyle floating point scalar types
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_float(conduit_node *cnode,
+                            const char *path,
+                            float value)
+{
+    cpp_node(cnode)->set(value);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_double(conduit_node *cnode,
+                             const char *path,
+                             double value)
+{
+    cpp_node(cnode)->set(value);
+}
+
+//-----------------------------------------------------------------------------
+// -- set_path via cstyle pointers for (scalar and array types) -- 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// set_path cstyle signed integer pointer cases
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_char_ptr(conduit_node *cnode,
+                               const char *path,
+                               char *data,
+                               conduit_index_t num_elements)
+
+{
+    cpp_node(cnode)->set((conduit_byte*)data,num_elements);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_char_ptr_detailed(conduit_node *cnode,
+                                        const char *path,
+                                        char *data,
+                                        conduit_index_t num_elements,
+                                        conduit_index_t offset,
+                                        conduit_index_t stride,
+                                        conduit_index_t element_bytes,
+                                        conduit_index_t endianness)
+{    
+    cpp_node(cnode)->set_path(path,
+                              (conduit_byte*)data,
+                              num_elements,
+                              offset,
+                              stride,
+                              element_bytes,
+                              endianness);
+}
+
+//-------------------------------------------------------------------------
+void
+conduit_node_set_path_short_ptr(conduit_node *cnode,
+                                const char *path,
+                                short *data,
+                                conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set(data,num_elements);
+}
+
+//-------------------------------------------------------------------------
+void
+conduit_node_set_path_short_ptr_detailed(conduit_node *cnode,
+                                         const char *path,
+                                         short *data,
+                                         conduit_index_t num_elements,
+                                         conduit_index_t offset,
+                                         conduit_index_t stride,
+                                         conduit_index_t element_bytes,
+                                         conduit_index_t endianness)
+{    
+    cpp_node(cnode)->set_path(path,
+                              data,
+                              num_elements,
+                              offset,
+                              stride,
+                              element_bytes,
+                              endianness);
+}
+
+//-------------------------------------------------------------------------
+void
+conduit_node_set_path_int_ptr(conduit_node *cnode,
+                              const char *path,
+                              int *data,
+                              conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set(data,num_elements);
+}
+
+//-------------------------------------------------------------------------
+void
+conduit_node_set_path_int_ptr_detailed(conduit_node *cnode,
+                                       const char *path,
+                                       int *data,
+                                       conduit_index_t num_elements,
+                                       conduit_index_t offset,
+                                       conduit_index_t stride,
+                                       conduit_index_t element_bytes,
+                                       conduit_index_t endianness)
+{    
+    cpp_node(cnode)->set_path(path,
+                              data,
+                              num_elements,
+                              offset,
+                              stride,
+                              element_bytes,
+                              endianness);
+}
+
+//-------------------------------------------------------------------------
+void
+conduit_node_set_path_long_ptr(conduit_node *cnode,
+                               const char *path,
+                               long *data,
+                               conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set(data,num_elements);
+}
+
+//-------------------------------------------------------------------------
+void
+conduit_node_set_path_long_ptr_detailed(conduit_node *cnode,
+                                        const char *path,
+                                        long *data,
+                                        conduit_index_t num_elements,
+                                        conduit_index_t offset,
+                                        conduit_index_t stride,
+                                        conduit_index_t element_bytes,
+                                        conduit_index_t endianness)
+{    
+    cpp_node(cnode)->set_path(path,
+                              data,
+                              num_elements,
+                              offset,
+                              stride,
+                              element_bytes,
+                              endianness);
+}
+
+//-------------------------------------------------------------------------
+// set_path cstyle unsigned integer pointer cases
+//-------------------------------------------------------------------------
+void
+conduit_node_set_path_unsigned_char_ptr(conduit_node *cnode,
+                                        const char *path,
+                                        unsigned char *data,
+                                        conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set(data,num_elements);
+}
+
+//-------------------------------------------------------------------------
+void
+conduit_node_set_path_unsigned_char_ptr_detailed(conduit_node *cnode,
+                                                 const char *path,
+                                                 unsigned char *data,
+                                                 conduit_index_t num_elements,
+                                                 conduit_index_t offset,
+                                                 conduit_index_t stride,
+                                                 conduit_index_t element_bytes,
+                                                 conduit_index_t endianness)
+{    
+    cpp_node(cnode)->set_path(path,
+                              data,
+                              num_elements,
+                              offset,
+                              stride,
+                              element_bytes,
+                              endianness);
+}
+
+//-------------------------------------------------------------------------
+void
+conduit_node_set_path_unsigned_short_ptr(conduit_node *cnode,
+                                         const char *path,
+                                         unsigned short *data,
+                                         conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set(data,num_elements);
+}
+
+//-------------------------------------------------------------------------
+void
+conduit_node_set_path_unsigned_short_ptr_detailed(conduit_node *cnode,
+                                                  const char *path,
+                                                  unsigned short *data,
+                                                  conduit_index_t num_elements,
+                                                  conduit_index_t offset,
+                                                  conduit_index_t stride,
+                                                  conduit_index_t element_bytes,
+                                                  conduit_index_t endianness)
+{    
+    cpp_node(cnode)->set_path(path,
+                              data,
+                              num_elements,
+                              offset,
+                              stride,
+                              element_bytes,
+                              endianness);
+}
+
+//-------------------------------------------------------------------------
+void
+conduit_node_set_path_unsigned_int_ptr(conduit_node *cnode,
+                                       const char *path,
+                                       unsigned int *data,
+                                       conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set(data,num_elements);
+}
+
+//-------------------------------------------------------------------------
+void
+conduit_node_set_path_unsigned_int_ptr_detailed(conduit_node *cnode,
+                                                const char *path,
+                                                unsigned int *data,
+                                                conduit_index_t num_elements,
+                                                conduit_index_t offset,
+                                                conduit_index_t stride,
+                                                conduit_index_t element_bytes,
+                                                conduit_index_t endianness)
+{    
+    cpp_node(cnode)->set_path(path,
+                              data,
+                              num_elements,
+                              offset,
+                              stride,
+                              element_bytes,
+                              endianness);
+}
+
+//-------------------------------------------------------------------------
+void
+conduit_node_set_path_unsigned_long_ptr(conduit_node *cnode,
+                                        const char *path,
+                                        unsigned long *data,
+                                        conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set(data,num_elements);
+}
+
+//-------------------------------------------------------------------------
+void
+conduit_node_set_path_unsigned_long_ptr_detailed(conduit_node *cnode,
+                                                 const char *path,
+                                                 unsigned long *data,
+                                                 conduit_index_t num_elements,
+                                                 conduit_index_t offset,
+                                                 conduit_index_t stride,
+                                                 conduit_index_t element_bytes,
+                                                 conduit_index_t endianness)
+{    
+    cpp_node(cnode)->set_path(path,
+                              data,
+                              num_elements,
+                              offset,
+                              stride,
+                              element_bytes,
+                              endianness);
+}
+
+//-------------------------------------------------------------------------
+// set_path cstyle floating point pointer cases
+//-------------------------------------------------------------------------
+void
+conduit_node_set_path_float_ptr(conduit_node *cnode,
+                                const char *path,
+                                float *data,
+                                conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set(data,num_elements);
+}
+
+//-------------------------------------------------------------------------
+void
+conduit_node_set_path_float_ptr_detailed(conduit_node *cnode,
+                                         const char *path,
+                                         float *data,
+                                         conduit_index_t num_elements,
+                                         conduit_index_t offset,
+                                         conduit_index_t stride,
+                                         conduit_index_t element_bytes,
+                                         conduit_index_t endianness)
+{    
+    cpp_node(cnode)->set_path(path,
+                              data,
+                              num_elements,
+                              offset,
+                              stride,
+                              element_bytes,
+                              endianness);
+}
+
+//-------------------------------------------------------------------------
+void
+conduit_node_set_path_double_ptr(conduit_node *cnode,
+                                 const char *path,
+                                 double *data,
+                                 conduit_index_t  num_elements)
+{
+    cpp_node(cnode)->set(data,num_elements);
+}
+
+//-------------------------------------------------------------------------
+void
+conduit_node_set_path_double_ptr_detailed(conduit_node *cnode,
+                                          const char *path,
+                                          double *data,
+                                          conduit_index_t num_elements,
+                                          conduit_index_t offset,
+                                          conduit_index_t stride,
+                                          conduit_index_t element_bytes,
+                                          conduit_index_t endianness)
+{    
+    cpp_node(cnode)->set_path(path,
+                              data,
+                              num_elements,
+                              offset,
+                              stride,
+                              element_bytes,
+                              endianness);
+}
+
+
+//-----------------------------------------------------------------------------
+// -- set_external via cstyle pointers for (scalar and array types) -- 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// set_external cstyle signed integer pointer cases
+//-----------------------------------------------------------------------------
+void conduit_node_set_external_char_ptr(conduit_node *cnode,
+                                        char *data,
+                                        conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set_external((conduit_byte*)data,num_elements);
+}
+
+//-----------------------------------------------------------------------------
+void conduit_node_set_external_char_ptr_detailed(conduit_node *cnode,
+                                                 char *data,
+                                                 conduit_index_t num_elements,
+                                                 conduit_index_t offset,
+                                                 conduit_index_t stride,
+                                                 conduit_index_t element_bytes,
+                                                 conduit_index_t endianness)
+{    
+    cpp_node(cnode)->set_external((conduit_byte*)data,
+                                  num_elements,
+                                  offset,
+                                  stride,
+                                  element_bytes,
+                                  endianness);
+}
+
+//-----------------------------------------------------------------------------
+void conduit_node_set_external_short_ptr(conduit_node *cnode,
+                                         short *data,
+                                         conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set_external(data,num_elements);
+}
+
+//-----------------------------------------------------------------------------
+void conduit_node_set_external_short_ptr_detailed(conduit_node *cnode,
+                                                  short *data,
+                                                  conduit_index_t num_elements,
+                                                  conduit_index_t offset,
+                                                  conduit_index_t stride,
+                                                  conduit_index_t element_bytes,
+                                                  conduit_index_t endianness)
+{    
+    cpp_node(cnode)->set_external(data,
+                                  num_elements,
+                                  offset,
+                                  stride,
+                                  element_bytes,
+                                  endianness);
+}
+
+//-----------------------------------------------------------------------------
+void conduit_node_set_external_int_ptr(conduit_node *cnode,
+                                       int *data,
+                                       conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set_external(data,num_elements);
+}
+
+//-----------------------------------------------------------------------------
+void conduit_node_set_external_int_ptr_detailed(conduit_node *cnode,
+                                                int *data,
+                                                conduit_index_t num_elements,
+                                                conduit_index_t offset,
+                                                conduit_index_t stride,
+                                                conduit_index_t element_bytes,
+                                                conduit_index_t endianness)
+{    
+    cpp_node(cnode)->set_external(data,
+                                  num_elements,
+                                  offset,
+                                  stride,
+                                  element_bytes,
+                                  endianness);
+}
+
+
+//-----------------------------------------------------------------------------
+void conduit_node_set_external_long_ptr(conduit_node *cnode,
+                                        long *data,
+                                        conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set_external(data,num_elements);
+}
+
+//-----------------------------------------------------------------------------
+void conduit_node_set_external_long_ptr_detailed(conduit_node *cnode,
+                                                 long *data,
+                                                 conduit_index_t num_elements,
+                                                 conduit_index_t offset,
+                                                 conduit_index_t stride,
+                                                 conduit_index_t element_bytes,
+                                                 conduit_index_t endianness)
+{    
+    cpp_node(cnode)->set_external(data,
+                                  num_elements,
+                                  offset,
+                                  stride,
+                                  element_bytes,
+                                  endianness);
+}
+
+
+//-----------------------------------------------------------------------------
+// set_external cstyle unsigned integer pointer cases
+//-----------------------------------------------------------------------------
+void conduit_node_set_external_unsigned_char_ptr(conduit_node *cnode,
+                                                 unsigned char *data,
+                                                 conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set_external(data,num_elements);
+}
+
+//-----------------------------------------------------------------------------
+void conduit_node_set_external_unsigned_char_ptr_detailed(conduit_node *cnode,
+                                                          unsigned char *data,
+                                                          conduit_index_t num_elements,
+                                                          conduit_index_t offset,
+                                                          conduit_index_t stride,
+                                                          conduit_index_t element_bytes,
+                                                          conduit_index_t endianness)
+{    
+    cpp_node(cnode)->set_external(data,
+                                  num_elements,
+                                  offset,
+                                  stride,
+                                  element_bytes,
+                                  endianness);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_external_unsigned_short_ptr(conduit_node *cnode,
+                                                  unsigned short *data,
+                                                  conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set_external(data,num_elements);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_external_unsigned_short_ptr_detailed(conduit_node *cnode,
+                                                      unsigned short *data,
+                                                      conduit_index_t num_elements,
+                                                      conduit_index_t offset,
+                                                      conduit_index_t stride,
+                                                      conduit_index_t element_bytes,
+                                                      conduit_index_t endianness)
+{    
+    cpp_node(cnode)->set_external(data,
+                                  num_elements,
+                                  offset,
+                                  stride,
+                                  element_bytes,
+                                  endianness);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_external_unsigned_int_ptr(conduit_node *cnode,
+                                                unsigned int *data,
+                                                conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set_external(data,num_elements);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_external_unsigned_int_ptr_detailed(conduit_node *cnode,
+                                                    unsigned int *data,
+                                                    conduit_index_t num_elements,
+                                                    conduit_index_t offset,
+                                                    conduit_index_t stride,
+                                                    conduit_index_t element_bytes,
+                                                    conduit_index_t endianness)
+{    
+    cpp_node(cnode)->set_external(data,
+                                  num_elements,
+                                  offset,
+                                  stride,
+                                  element_bytes,
+                                  endianness);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_external_unsigned_long_ptr(conduit_node *cnode,
+                                                 unsigned long *data,
+                                                 conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set_external(data,num_elements);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_external_unsigned_long_ptr_detailed(conduit_node *cnode,
+                                                     unsigned long *data,
+                                                     conduit_index_t num_elements,
+                                                     conduit_index_t offset,
+                                                     conduit_index_t stride,
+                                                     conduit_index_t element_bytes,
+                                                     conduit_index_t endianness)
+{    
+    cpp_node(cnode)->set_external(data,
+                                  num_elements,
+                                  offset,
+                                  stride,
+                                  element_bytes,
+                                  endianness);
+}
+
+
+//-----------------------------------------------------------------------------
+// set_external cstyle floating point pointer cases
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_external_float_ptr(conduit_node *cnode,
+                                         float *data,
+                                         conduit_index_t num_elements)
+{
+    cpp_node(cnode)->set_external(data,num_elements);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_external_float_ptr_detailed(conduit_node *cnode,
+                                             float *data,
+                                             conduit_index_t num_elements,
+                                             conduit_index_t offset,
+                                             conduit_index_t stride,
+                                             conduit_index_t element_bytes,
+                                             conduit_index_t endianness)
+{    
+    cpp_node(cnode)->set_external(data,
+                                  num_elements,
+                                  offset,
+                                  stride,
+                                  element_bytes,
+                                  endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_external_double_ptr(conduit_node *cnode,
+                                          double *data,
+                                          conduit_index_t  num_elements)
+{
+    cpp_node(cnode)->set_external(data,num_elements);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_external_double_ptr_detailed(conduit_node *cnode,
+                                              double *data,
+                                              conduit_index_t num_elements,
+                                              conduit_index_t offset,
+                                              conduit_index_t stride,
+                                              conduit_index_t element_bytes,
+                                              conduit_index_t endianness)
+{    
+    cpp_node(cnode)->set_external(data,
+                                  num_elements,
+                                  offset,
+                                  stride,
+                                  element_bytes,
+                                  endianness);
+}
+
+
+
+//-----------------------------------------------------------------------------
+// -- set_path_external via cstyle pointers for (scalar and array types) -- 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// set_path_external cstyle signed integer pointer cases
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_char_ptr(conduit_node *cnode,
+                                             const char *path,
+                                             char *data,
+                                             conduit_index_t num_elements)
+{
+    cpp_node(cnode)->fetch(path).set_external((conduit_byte*)data,num_elements);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_char_ptr_detailed(conduit_node *cnode,
+                                                      const char *path,
+                                                      char *data,
+                                                      conduit_index_t num_elements,
+                                                      conduit_index_t offset,
+                                                      conduit_index_t stride,
+                                                      conduit_index_t element_bytes,
+                                                      conduit_index_t endianness)
+{    
+    cpp_node(cnode)->fetch(path).set_external((conduit_byte*)data,
+                                              num_elements,
+                                              offset,
+                                              stride,
+                                              element_bytes,
+                                              endianness);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_short_ptr(conduit_node *cnode,
+                                              const char *path,
+                                              short *data,
+                                              conduit_index_t num_elements)
+{
+    cpp_node(cnode)->fetch(path).set_external(data,num_elements);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_short_ptr_detailed(conduit_node *cnode,
+                                                       const char *path,
+                                                       short *data,
+                                                       conduit_index_t num_elements,
+                                                       conduit_index_t offset,
+                                                       conduit_index_t stride,
+                                                       conduit_index_t element_bytes,
+                                                       conduit_index_t endianness)
+{    
+    cpp_node(cnode)->fetch(path).set_external(data,
+                                              num_elements,
+                                              offset,
+                                              stride,
+                                              element_bytes,
+                                              endianness);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_int_ptr(conduit_node *cnode,
+                                            const char *path,
+                                            int *data,
+                                            conduit_index_t num_elements)
+{
+    cpp_node(cnode)->fetch(path).set_external(data,num_elements);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_int_ptr_detailed(conduit_node *cnode,
+                                                     const char *path,
+                                                     int *data,
+                                                     conduit_index_t num_elements,
+                                                     conduit_index_t offset,
+                                                     conduit_index_t stride,
+                                                     conduit_index_t element_bytes,
+                                                     conduit_index_t endianness)
+{    
+    cpp_node(cnode)->fetch(path).set_external(data,
+                                              num_elements,
+                                              offset,
+                                              stride,
+                                              element_bytes,
+                                              endianness);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_long_ptr(conduit_node *cnode,
+                                             const char *path,
+                                             long *data,
+                                             conduit_index_t num_elements)
+{
+    cpp_node(cnode)->fetch(path).set_external(data,num_elements);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_long_ptr_detailed(conduit_node *cnode,
+                                                      const char *path,
+                                                      long *data,
+                                                      conduit_index_t num_elements,
+                                                      conduit_index_t offset,
+                                                      conduit_index_t stride,
+                                                      conduit_index_t element_bytes,
+                                                      conduit_index_t endianness)
+{    
+    cpp_node(cnode)->fetch(path).set_external(data,
+                                              num_elements,
+                                              offset,
+                                              stride,
+                                              element_bytes,
+                                              endianness);
+}
+
+
+
+//-----------------------------------------------------------------------------
+// set_path cstyle unsigned integer pointer cases
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_unsigned_char_ptr(conduit_node *cnode,
+                                                      const char *path,
+                                                      unsigned char *data,
+                                                      conduit_index_t num_elements)
+{
+    cpp_node(cnode)->fetch(path).set_external(data,num_elements);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_unsigned_char_ptr_detailed(conduit_node *cnode,
+                                                               const char *path,
+                                                               unsigned char *data,
+                                                               conduit_index_t num_elements,
+                                                               conduit_index_t offset,
+                                                               conduit_index_t stride,
+                                                               conduit_index_t element_bytes,
+                                                               conduit_index_t endianness)
+{    
+    cpp_node(cnode)->fetch(path).set_external(data,
+                                              num_elements,
+                                              offset,
+                                              stride,
+                                              element_bytes,
+                                              endianness);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_unsigned_short_ptr(conduit_node *cnode,
+                                                       const char *path,
+                                                       unsigned short *data,
+                                                       conduit_index_t num_elements)
+{
+    cpp_node(cnode)->fetch(path).set_external(data,num_elements);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_unsigned_short_ptr_detailed(conduit_node *cnode,
+                                                                const char *path,
+                                                                unsigned short *data,
+                                                                conduit_index_t num_elements,
+                                                                conduit_index_t offset,
+                                                                conduit_index_t stride,
+                                                                conduit_index_t element_bytes,
+                                                                conduit_index_t endianness)
+{    
+    cpp_node(cnode)->fetch(path).set_external(data,
+                                              num_elements,
+                                              offset,
+                                              stride,
+                                              element_bytes,
+                                              endianness);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_unsigned_int_ptr(conduit_node *cnode,
+                                                     const char *path,
+                                                     unsigned int *data,
+                                                     conduit_index_t num_elements)
+{
+    cpp_node(cnode)->fetch(path).set_external(data,num_elements);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_unsigned_int_ptr_detailed(conduit_node *cnode,
+                                                              const char *path,
+                                                              unsigned int *data,
+                                                              conduit_index_t num_elements,
+                                                              conduit_index_t offset,
+                                                              conduit_index_t stride,
+                                                              conduit_index_t element_bytes,
+                                                              conduit_index_t endianness)
+{    
+    cpp_node(cnode)->fetch(path).set_external(data,
+                                              num_elements,
+                                              offset,
+                                              stride,
+                                              element_bytes,
+                                              endianness);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_unsigned_long_ptr(conduit_node *cnode,
+                                                      const char *path,
+                                                      unsigned long *data,
+                                                      conduit_index_t num_elements)
+{
+    cpp_node(cnode)->fetch(path).set_external(data,num_elements);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_unsigned_long_ptr_detailed(conduit_node *cnode,
+                                                               const char *path,
+                                                               unsigned long *data,
+                                                               conduit_index_t num_elements,
+                                                               conduit_index_t offset,
+                                                               conduit_index_t stride,
+                                                               conduit_index_t element_bytes,
+                                                               conduit_index_t endianness)
+{    
+    cpp_node(cnode)->fetch(path).set_external(data,
+                                              num_elements,
+                                              offset,
+                                              stride,
+                                              element_bytes,
+                                              endianness);
+}
+
+
+//-----------------------------------------------------------------------------
+// set_path cstyle floating point pointer cases
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_float_ptr(conduit_node *cnode,
+                                              const char *path,
+                                              float *data,
+                                              conduit_index_t num_elements)
+{
+    cpp_node(cnode)->fetch(path).set_external(data,num_elements);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_float_ptr_detailed(conduit_node *cnode,
+                                                       const char *path,
+                                                       float *data,
+                                                       conduit_index_t num_elements,
+                                                       conduit_index_t offset,
+                                                       conduit_index_t stride,
+                                                       conduit_index_t element_bytes,
+                                                       conduit_index_t endianness)
+{    
+    cpp_node(cnode)->fetch(path).set_external(data,
+                                              num_elements,
+                                              offset,
+                                              stride,
+                                              element_bytes,
+                                              endianness);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_double_ptr(conduit_node *cnode,
+                                               const char *path,
+                                               double *data,
+                                               conduit_index_t  num_elements)
+{
+    cpp_node(cnode)->fetch(path).set_external(data,num_elements);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_double_ptr_detailed(conduit_node *cnode,
+                                                        const char *path,
+                                                        double *data,
+                                                        conduit_index_t num_elements,
+                                                        conduit_index_t offset,
+                                                        conduit_index_t stride,
+                                                        conduit_index_t element_bytes,
+                                                        conduit_index_t endianness)
+{    
+    cpp_node(cnode)->fetch(path).set_external(data,
+                                              num_elements,
+                                              offset,
+                                              stride,
+                                              element_bytes,
+                                              endianness);
 }
 
 //-----------------------------------------------------------------------------
