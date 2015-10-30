@@ -49,13 +49,20 @@
 
 ENABLE_WARNINGS()
 
+include("CMake/BitwidthChecks.cmake")
+
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_Config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h")
+
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Bitwidth_Style_Types.h.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/Bitwidth_Style_Types.h")
+
 #
 # Specify all headers
 #            
 set(conduit_headers
     Bitwidth_Style_Types.h
+    Endianness_Types.h
     DataArray.hpp
     Endianness.hpp
     Node.hpp
@@ -69,6 +76,7 @@ set(conduit_headers
     Utils.hpp
     Conduit_Exports.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h
+    ${CMAKE_CURRENT_BINARY_DIR}/Bitwidth_Style_Types.h
     )
 
 #

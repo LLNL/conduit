@@ -1,0 +1,189 @@
+!*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*!
+!* Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
+!* 
+!* Produced at the Lawrence Livermore National Laboratory
+!* 
+!* LLNL-CODE-666778
+!* 
+!* All rights reserved.
+!* 
+!* This file is part of Conduit. 
+!* 
+!* For details, see: http://scalability-llnl.github.io/conduit/.
+!* 
+!* Please also read conduit/LICENSE
+!* 
+!* Redistribution and use in source and binary forms, with or without 
+!* modification, are permitted provided that the following conditions are met:
+!* 
+!* * Redistributions of source code must retain the above copyright notice, 
+!*   this list of conditions and the disclaimer below.
+!* 
+!* * Redistributions in binary form must reproduce the above copyright notice,
+!*   this list of conditions and the disclaimer (as noted below) in the
+!*   documentation and/or other materials provided with the distribution.
+!* 
+!* * Neither the name of the LLNS/LLNL nor the names of its contributors may
+!*   be used to endorse or promote products derived from this software without
+!*   specific prior written permission.
+!* 
+!* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+!* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+!* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+!* ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
+!* LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
+!* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+!* DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+!* OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+!* HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+!* STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+!* IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+!* POSSIBILITY OF SUCH DAMAGE.
+!* 
+!*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*!
+
+
+!------------------------------------------------------------------------------
+! file: Bitwidth_Style_Types.inc
+!------------------------------------------------------------------------------
+
+!------------------------------------------------------------------------------
+!------------------------------------------------------------------------------
+
+!------------------------------------------------------------------------------
+! generic types
+!------------------------------------------------------------------------------
+#define F_CONDUIT_EMPTY_T  @CONDUIT_EMPTY_T@
+#define F_CONDUIT_OBJECT_T @CONDUIT_OBJECT_T@
+#define F_CONDUIT_LIST_T   @CONDUIT_LIST_T@
+!------------------------------------------------------------------------------
+! signed integer types
+!------------------------------------------------------------------------------
+#define F_CONDUIT_INT8_T  @CONDUIT_INT8_T@
+#define F_CONDUIT_INT16_T @CONDUIT_INT16_T@
+#define F_CONDUIT_INT32_T @CONDUIT_INT32_T@
+#define F_CONDUIT_INT64_T @CONDUIT_INT64_T@
+!------------------------------------------------------------------------------
+! unsigned integer types
+!------------------------------------------------------------------------------
+#define F_CONDUIT_UINT8_T  @CONDUIT_UINT8_T@
+#define F_CONDUIT_UINT16_T @CONDUIT_UINT16_T@
+#define F_CONDUIT_UINT32_T @CONDUIT_UINT32_T@
+#define F_CONDUIT_UINT64_T @CONDUIT_UINT64_T@
+!------------------------------------------------------------------------------
+! floating point integer types
+!------------------------------------------------------------------------------
+#define F_CONDUIT_FLOAT32_T @CONDUIT_FLOAT32_T@
+#define F_CONDUIT_FLOAT64_T @CONDUIT_FLOAT64_T@
+!------------------------------------------------------------------------------
+! string  types 
+!------------------------------------------------------------------------------
+#define  F_CONDUIT_CHAR8_STR_T @CONDUIT_CHAR8_STR_T@
+
+
+!------------------------------------------------------------------------------
+! -- bitwidth style signed integer types --
+!------------------------------------------------------------------------------
+#define F_CONDUIT_INT8_NATIVE_TYPENAME  "@CONDUIT_INT8_NATIVE_TYPE_NAME@"
+#define F_CONDUIT_INT16_NATIVE_TYPENAME "@CONDUIT_INT16_NATIVE_TYPE_NAME@"
+#define F_CONDUIT_INT32_NATIVE_TYPENAME "@CONDUIT_INT32_NATIVE_TYPE_NAME@"
+#define F_CONDUIT_INT64_NATIVE_TYPENAME "@CONDUIT_INT64_NATIVE_TYPE_NAME@"
+
+!------------------------------------------------------------------------------
+! -- bitwidth style unsigned integer types --
+!------------------------------------------------------------------------------
+#define F_CONDUIT_UINT8_NATIVE_TYPENAME  "@CONDUIT_UINT8_NATIVE_TYPE_NAME@"
+#define F_CONDUIT_UINT16_NATIVE_TYPENAME "@CONDUIT_UINT16_NATIVE_TYPE_NAME@"
+#define F_CONDUIT_UINT32_NATIVE_TYPENAME "@CONDUIT_UINT32_NATIVE_TYPE_NAME@"
+#define F_CONDUIT_UINT64_NATIVE_TYPENAME "@CONDUIT_UINT64_NATIVE_TYPE_NAME@"
+
+
+!------------------------------------------------------------------------------
+! -- bitwidth style floating point types
+!------------------------------------------------------------------------------
+#define F_CONDUIT_FLOAT32_NATIVE_TYPENAME "@CONDUIT_FLOAT32_NATIVE_TYPE_NAME@"
+#define F_CONDUIT_FLOAT64_NATIVE_TYPENAME "@CONDUIT_FLOAT64_NATIVE_TYPE_NAME@"
+
+
+!------------------------------------------------------------------------------
+! -- c style signed integer type maps --
+!------------------------------------------------------------------------------
+#define F_CONDUIT_NATIVE_CHAR_DATATYPE_ID  @CONDUIT_NATIVE_CHAR_TYPE_ID@
+#define F_CONDUIT_NATIVE_SHORT_DATATYPE_ID @CONDUIT_NATIVE_SHORT_TYPE_ID@
+#define F_CONDUIT_NATIVE_INT_DATATYPE_ID   @CONDUIT_NATIVE_INT_TYPE_ID@
+#define F_CONDUIT_NATIVE_LONG_DATATYPE_ID  @CONDUIT_NATIVE_LONG_TYPE_ID@
+
+!------------------------------------------------------------------------------
+! -- c style unsigned integer type maps --
+!------------------------------------------------------------------------------
+#define F_CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID  @CONDUIT_NATIVE_UNSIGNED_CHAR_TYPE_ID@
+#define F_CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID @CONDUIT_NATIVE_UNSIGNED_SHORT_TYPE_ID@
+#define F_CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID   @CONDUIT_NATIVE_UNSIGNED_INT_TYPE_ID@
+#define F_CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID  @CONDUIT_NATIVE_UNSIGNED_LONG_TYPE_ID@
+
+
+!------------------------------------------------------------------------------
+! -- c style floating point type maps --
+!------------------------------------------------------------------------------
+#define F_CONDUIT_NATIVE_FLOAT_DATATYPE_ID  @CONDUIT_NATIVE_FLOAT_TYPE_ID@
+#define F_CONDUIT_NATIVE_DOUBLE_DATATYPE_ID @CONDUIT_NATIVE_DOUBLE_TYPE_ID@
+
+!------------------------------------------------------------------------------
+! Bit-width type map sanity checks
+!------------------------------------------------------------------------------
+!------------------------------------------------------------------------------
+! check that we were able to resolve all of the bitwidth style types we want
+! to support
+!------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------
+!signed ints
+#ifndef F_CONDUIT_INT8_NATIVE_TYPENAME
+#error Bitwidth Style Types: no native type found that maps to int8
+#endif
+
+#ifndef F_CONDUIT_INT16_NATIVE_TYPENAME
+#error Bitwidth Style Types: no native type found that maps to int16
+#endif
+
+#ifndef F_CONDUIT_INT32_NATIVE_TYPENAME
+#error Bitwidth Style Types: no native type found that maps to int32
+#endif
+
+#ifndef F_CONDUIT_INT64_NATIVE_TYPENAME
+#error Bitwidth Style Types: no native type found that maps to int64
+#endif
+
+!-----------------------------------------------------------------------------
+! unsigned ints
+#ifndef F_CONDUIT_UINT8_NATIVE_TYPENAME
+#error Bitwidth Style Types: no native type found that maps to uint8
+#endif
+
+#ifndef F_CONDUIT_UINT16_NATIVE_TYPENAME
+#error Bitwidth Style Types: no native type found that maps to uint16
+#endif
+
+#ifndef F_CONDUIT_UINT32_NATIVE_TYPENAME
+#error Bitwidth Style Types: no native type found that maps to uint32
+#endif
+
+#ifndef F_CONDUIT_UINT64_NATIVE_TYPENAME
+#error Bitwidth Style Types: no native type found that maps to uint64
+#endif
+
+!-----------------------------------------------------------------------------
+! floating points numbers
+#ifndef F_CONDUIT_FLOAT32_NATIVE_TYPENAME
+#error Bitwidth Style Types: no native type found that maps to float32
+#endif
+
+#ifndef F_CONDUIT_FLOAT64_NATIVE_TYPENAME
+#error Bitwidth Style Types: no native type found that maps to float64
+#endif
+
+!-----------------------------------------------------------------------------
+!End Bit-width type map sanity checks
+!-----------------------------------------------------------------------------
+
+

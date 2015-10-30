@@ -50,6 +50,7 @@
 # Core (conduit lib) Unit Tests
 ################################
 set(BASIC_FORTRAN_TESTS 
+    f_type_sizes
     f_conduit_node)
 
 if(ENABLE_FORTRAN_OBJ_INTERFACE)

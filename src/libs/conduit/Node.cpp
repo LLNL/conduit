@@ -53,6 +53,7 @@
 // -- standard cpp lib includes -- 
 //-----------------------------------------------------------------------------
 #include <iostream>
+#include <map>
 
 //-----------------------------------------------------------------------------
 // -- standard c lib includes -- 
@@ -1681,6 +1682,14 @@ Node::set_path(const std::string &path,
                int32 data)
 {
     set_path_int32(path,data);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_int64(const std::string &path,
+                     int64 data)
+{
+    fetch(path).set_int64(data);
 }
 
 //---------------------------------------------------------------------------//
@@ -3387,6 +3396,24 @@ Node::set_external(std::vector<float64> &data)
 //-----------------------------------------------------------------------------
 // -- set_external for generic types --
 //-----------------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external_node(const std::string &path,
+                             Node &node)
+{
+    fetch(path).set_external_node(node);
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::set_path_external(const std::string &path,
+                        Node &node)
+{
+    set_path_external_node(path,node);
+}
 
 
 //---------------------------------------------------------------------------//

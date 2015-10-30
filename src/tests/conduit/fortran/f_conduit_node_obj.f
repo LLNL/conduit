@@ -411,7 +411,7 @@ function fortran_test() bind(C,name="fortran_test")
   use f_conduit_node
   implicit none
   integer(C_INT) fortran_test
-
+  logical res
   call init_fruit
   !----------------------------------------------------------------------------
   ! call our test routines
@@ -427,11 +427,15 @@ function fortran_test() bind(C,name="fortran_test")
   call t_node_obj_append
   call t_node_obj_set_fetch_path_int32
 
-  
   call fruit_summary
   call fruit_finalize
+  call is_all_successful(res)
+  if (res) then
+     fortran_test = 0
+  else
+     fortran_test = 1
+  endif
 
-  fortran_test = 0
   
 !------------------------------------------------------------------------------
 end function fortran_test
