@@ -62,30 +62,45 @@ export CMAKE_OPTS=" -DCMAKE_BUILD_TYPE=Debug"
 export CMAKE_OPTS="$CMAKE_OPTS -DCMAKE_INSTALL_PREFIX=../install-debug"
 
 #------------------------------------------------------------------------------
-# include an initial cmake settings file if appropriate
+# Check if a host config was direclty passed
 #------------------------------------------------------------------------------
-
-# first look for a specific config for this machine
-export HOST_CONFIG=../host-configs/`hostname`.cmake
-echo "Looking for host-config file: $HOST_CONFIG"
-if [[ -e  "$HOST_CONFIG" ]]; then
-    echo "FOUND: $HOST_CONFIG"
-    export CMAKE_OPTS="$CMAKE_OPTS -C $HOST_CONFIG"
-# then check for a sys-type based config
-elif [[ "$SYS_TYPE" != "" ]]; then
-    export HOST_CONFIG=../host-configs/$SYS_TYPE.cmake
-    echo "Looking for SYS_TYPE based host-config file: $HOST_CONFIG"
-    if [[ -e  "$HOST_CONFIG" ]]; then
-        echo "FOUND: $HOST_CONFIG"
-        export CMAKE_OPTS="$CMAKE_OPTS -C $HOST_CONFIG"
+if [ $# -ge 1 ]; then
+    echo $1
+    if [ ${1: -6} == ".cmake" ]; then
+        export HOST_CONFIG=../$1
+        echo "Looking for host-config file: $HOST_CONFIG"
+        if [[ -e  "$HOST_CONFIG" ]]; then
+            echo "FOUND: $HOST_CONFIG"
+            export CMAKE_OPTS="$CMAKE_OPTS -C $HOST_CONFIG"
+        fi
     fi
-else 
-    # fallback to simple a uname based config (Linux / Darwin / etc)
-    export HOST_CONFIG=../host-configs/`uname`.cmake
-    echo "Looking for uname based host-config file: $HOST_CONFIG"
+else
+#------------------------------------------------------------------------------
+# if no host config was passed, try include an initial cmake settings file 
+# if appropriate
+#------------------------------------------------------------------------------
+    # first look for a specific config for this machine
+    export HOST_CONFIG=../host-configs/`hostname`.cmake
+    echo "Looking for host-config file: $HOST_CONFIG"
     if [[ -e  "$HOST_CONFIG" ]]; then
         echo "FOUND: $HOST_CONFIG"
         export CMAKE_OPTS="$CMAKE_OPTS -C $HOST_CONFIG"
+    # then check for a sys-type based config
+    elif [[ "$SYS_TYPE" != "" ]]; then
+        export HOST_CONFIG=../host-configs/$SYS_TYPE.cmake
+        echo "Looking for SYS_TYPE based host-config file: $HOST_CONFIG"
+        if [[ -e  "$HOST_CONFIG" ]]; then
+            echo "FOUND: $HOST_CONFIG"
+            export CMAKE_OPTS="$CMAKE_OPTS -C $HOST_CONFIG"
+        fi
+    else 
+        # fallback to simple a uname based config (Linux / Darwin / etc)
+        export HOST_CONFIG=../host-configs/`uname`.cmake
+        echo "Looking for uname based host-config file: $HOST_CONFIG"
+        if [[ -e  "$HOST_CONFIG" ]]; then
+            echo "FOUND: $HOST_CONFIG"
+            export CMAKE_OPTS="$CMAKE_OPTS -C $HOST_CONFIG"
+        fi
     fi
 fi
 
@@ -99,16 +114,21 @@ cmake  $CMAKE_OPTS \
 cd ../
 
 #------------------------------------------------------------------------------
-# add extended builds when an argument is passed
+# add extended builds when a non host config argument is passed
 #------------------------------------------------------------------------------
-
 if [ $# -ge 1 ]; then
-    # also create an xcode build for debugging on osx
-    if [ "$TERM_PROGRAM" = "Apple_Terminal" ]; then
-        rm -rf build-debug-xcode
-        mkdir build-debug-xcode
-        cd build-debug-xcode
-        cmake -G Xcode $CMAKE_OPTS ../src 
-        cd ../
+    if [ "${1: -6}" == ".cmake" ]; then
+        # skip this case
+        echo ""
+    else
+        # also create an xcode build for debugging on osx
+        if [ "$TERM_PROGRAM" = "Apple_Terminal" ]; then
+            rm -rf build-debug-xcode
+            mkdir build-debug-xcode
+            cd build-debug-xcode
+            cmake -G Xcode $CMAKE_OPTS ../src 
+            cd ../
+        fi
     fi
 fi
+
