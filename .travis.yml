@@ -51,6 +51,8 @@ env:
     - CONDUIT_CC=gcc-4.8
     - CONDUIT_CXX=g++-4.8
     - CONDUIT_FC=gfortran-4.8
+    # we need to know the root dir for our 3rd party lib installs
+    - TRAVIS_HOME=`pwd`
 addons:
   apt:
     sources:
@@ -62,16 +64,16 @@ addons:
 before_install:
   # download a newer version of cmake
   - wget --no-check-certificate http://www.cmake.org/files/v3.3/cmake-3.3.0-Linux-x86_64.sh
-  - mkdir /home/travis/cmake/
-  - export PATH=/home/travis/cmake/bin:$PATH
+  - mkdir ${TRAVIS_HOME}/cmake/
+  - export PATH=${TRAVIS_HOME}/cmake/bin:$PATH
   # prep to use miniconda to get python and numpy
   - wget --no-check-certificate http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
   - ./miniconda.sh -b
-  - export PATH=/home/travis/miniconda/bin:$PATH
+  - export PATH=${TRAVIS_HOME}/miniconda/bin:$PATH
   - conda update --yes conda
 install:
-  - sh cmake-3.3.0-Linux-x86_64.sh --skip-license --prefix=/home/travis/cmake/
+  - sh cmake-3.3.0-Linux-x86_64.sh --skip-license --prefix=${TRAVIS_HOME}/cmake/
   - conda install --yes python=2.7 numpy
 script:
   - cmake --version
