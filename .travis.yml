@@ -61,11 +61,11 @@ addons:
        - gfortran-4.8
 before_install:
   # download a newer version of cmake
-  - wget http://www.cmake.org/files/v3.3/cmake-3.3.0-Linux-x86_64.sh
+  - wget --no-check-certificate http://www.cmake.org/files/v3.3/cmake-3.3.0-Linux-x86_64.sh
   - mkdir /home/travis/cmake/
   - export PATH=/home/travis/cmake/bin:$PATH
   # prep to use miniconda to get python and numpy
-  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - wget --no-check-certificate http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
   - ./miniconda.sh -b
   - export PATH=/home/travis/miniconda/bin:$PATH
