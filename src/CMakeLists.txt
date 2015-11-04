@@ -54,7 +54,6 @@ cmake_policy(SET CMP0042 OLD)
 ################################
 
 project(conduit)
-enable_language(Fortran OPTIONAL)
 
 ################################
 # Build Options
@@ -66,6 +65,14 @@ option(ENABLE_MPI         "Build MPI Support"           OFF)
 option(ENABLE_SILO        "Build Silo Support"          OFF)
 option(ENABLE_FORTRAN     "Build Fortran  support"      OFF)
 
+
+################################
+# Invoke CMake Fortran setup
+# if ENABLE_FORTRAN == ON
+################################
+if(ENABLE_FORTRAN)
+    enable_language(Fortran)
+endif()
 
 ################################
 # Set some standard cmake opts
