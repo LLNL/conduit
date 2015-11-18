@@ -7,7 +7,7 @@ class Hdf5(Package):
     """
 
     homepage = "http://www.hdfgroup.org/HDF5/"
-    url      = "http://50.56.174.237/svn/visit/trunk/third_party/hdf5-1.8.7.tar.gz"
+    url      = "https://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.7/src/hdf5-1.8.7.tar.gz"
 
     version('1.8.7', '37711d4bcb72997e93d495f97c76c33a')
 
