@@ -527,6 +527,41 @@ WebSocket::is_connected() const
 }
 
 //-----------------------------------------------------------------------------
+mg_context *
+WebSocket::context()
+{
+    struct mg_context *ctx  = NULL;
+    if(m_connection != NULL)
+    {
+        ctx = mg_get_context(m_connection);
+    }
+
+    return ctx;
+}
+
+//-----------------------------------------------------------------------------
+void
+WebSocket::lock_context()
+{
+    struct mg_context *ctx  =context();
+    if(ctx != NULL)
+    {
+        mg_lock_context(ctx);
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+WebSocket::unlock_context()
+{
+    struct mg_context *ctx = context();
+    if(ctx != NULL)
+    {
+        mg_unlock_context(ctx);
+    }
+}
+
+//-----------------------------------------------------------------------------
 void
 WebSocket::send(const Node &data,
                 const std::string &protocol)
@@ -540,16 +575,19 @@ WebSocket::send(const Node &data,
     // convert our node to json using the requested conduit protocol
     std::ostringstream oss;
     data.to_json_stream(oss,protocol);
-    
     // get a pointer to our message data and its length
     const char   *msg     = oss.str().c_str();
     size_t        msg_len = oss.str().size();
-    
-    // send our message
-    mg_websocket_write(m_connection,
-                       WEBSOCKET_OPCODE_TEXT,
-                       msg,
-                       msg_len);
+
+    lock_context();
+    {
+        // send our message
+        mg_websocket_write(m_connection,
+                           WEBSOCKET_OPCODE_TEXT,
+                           msg,
+                           msg_len);
+    }
+    unlock_context();
 }
 
 
