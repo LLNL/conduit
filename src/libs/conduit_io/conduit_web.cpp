@@ -356,6 +356,13 @@ public:
                 bits &= 0x7f; // TODO, #def for these magic mask values
                 switch(bits)
                 {
+                    case WEBSOCKET_OPCODE_TEXT:
+                    {
+                        return handleWebSocketText(server,
+                                                   conn,
+                                                   data,
+                                                   data_len);
+                    }
                     case WEBSOCKET_OPCODE_PING:
                     {
                         CONDUIT_INFO("WEBSOCKET_OPCODE_PING");
@@ -373,16 +380,31 @@ public:
                         /* received PONG to our PING, no action */
                         return true;
                     }
-                    case WEBSOCKET_OPCODE_TEXT:
+                    case WEBSOCKET_OPCODE_CONNECTION_CLOSE:
                     {
-                        return handleWebSocketText(server,
-                                                   conn,
-                                                   data,
-                                                   data_len);
+                        CONDUIT_INFO("WEBSOCKET_OPCODE_CONNECTION_CLOSE");
+                        mg_websocket_write(conn,
+                                          WEBSOCKET_OPCODE_CONNECTION_CLOSE,
+                                          data,
+                                          data_len);
+                        return false;
+                    }
+                    //
+                    // these aren't correctly handled yet. 
+                    //
+                    case WEBSOCKET_OPCODE_CONTINUATION:
+                    {
+                        CONDUIT_INFO("WEBSOCKET_OPCODE_CONTINUATION");
+                        break;
+                    }
+                    case WEBSOCKET_OPCODE_BINARY:
+                    {
+                        CONDUIT_INFO("WEBSOCKET_OPCODE_BINARY");
+                        break;
                     }
                     default:
                     {
-                        CONDUIT_INFO("Unknown WebSocket bits flag" << bits);
+                        CONDUIT_INFO("Unknown WebSocket bits flag: " << bits);
                     }
                 }
             }
