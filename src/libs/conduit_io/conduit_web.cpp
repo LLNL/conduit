@@ -107,7 +107,8 @@ serve(Node *n,
 // -- Internal REST Server Interface Classes -
 //-----------------------------------------------------------------------------
 
-class RequestHandler : public CivetHandler
+class RequestHandler : public CivetHandler, 
+                       public CivetWebSocketHandler
 {
 public:
         
@@ -268,63 +269,56 @@ public:
         //---------------------------------------------------------------------------//
 
         //---------------------------------------------------------------------------//
-        // static callback used when a web socket initially connects
+        // callback used when a web socket initially connects
         //---------------------------------------------------------------------------//
-        static int 
-        handle_websocket_connect(const struct mg_connection *conn,
-                                 void *cbdata)
+        bool
+        handleConnection(CivetServer *server,
+                         const struct mg_connection *conn)
         {
             CONDUIT_INFO("conduit::io::WebServer WebSocket Connected");
-            return 0;
+            return true;
         }
 
         //---------------------------------------------------------------------------//
-        // static callback used when a web socket connection becomes active
+        // callback used when a web socket connection becomes active
         //---------------------------------------------------------------------------//
-        static void
-        handle_websocket_ready(struct mg_connection *conn,
-                               void *cbdata)
+        void
+        handleReadyState(CivetServer *server,
+                         struct mg_connection *conn)
         {
-            struct mg_context *ctx  = mg_get_context(conn);
-            RequestHandler *handler = (RequestHandler *)cbdata;
-
             // lock context while we add a new websocket
             WebSocket *ws = NULL;
-            mg_lock_context(ctx);
+            m_server->lock_context();
             {
                 ws = new WebSocket();
                 ws->set_connection(conn);
-                handler->m_sockets.push_back(ws);
+                m_sockets.push_back(ws);
             }
             // unlock context
-            mg_unlock_context(ctx);
+            m_server->unlock_context();
             
-            if(ws != NULL)
-            {
-                // send connection successful message
-                // TODO: locking semantics for WebSocket::send ?
-                Node n;
-                n["type"]    = "status";
-                n["message"] = "WebSocket ready!";
-                ws->send(n);
-            }
+            // if(ws != NULL)
+            // {
+            //     // send connection successful message
+            //     Node n;
+            //     n["type"]    = "status";
+            //     n["message"] = "WebSocket ready!";
+            //     ws->send(n);
+            // }
         }
-
+        
         //---------------------------------------------------------------------------//
-        // static callback used when a web socket connection drops
+        // callback used when a websocket receives a text payload
         //---------------------------------------------------------------------------//
-        static int
-        handle_websocket_recv(struct mg_connection *conn,
-                              int bits,
-                              char *data,
-                              size_t len,
-                              void *cbdata)
+        bool
+        handleWebSocketText(CivetServer *server,
+                            struct mg_connection *conn,
+                            char *data,
+                            size_t data_len)
         {
-            struct mg_context *ctx  = mg_get_context(conn);
-            RequestHandler *handler = (RequestHandler *)cbdata;
-            
-            std::string json_schema(data,len);
-            
+            // check for type of data ...
+            std::string json_schema(data,data_len);
+           
             try
             {
                 // parse with pure json parser first
@@ -333,36 +327,82 @@ public:
                 //
                 Node n;
                 n.generate(json_schema,"json");
-                
                 CONDUIT_INFO("WebSocket received message:" << n.to_json());
-                
                 // TODO: Call recv handler callback.
-                
             }
             catch(conduit::Error e)
             {
-                CONDUIT_INFO("Error parsing JSON response from browser\n" 
-                             << e.message());
+                 CONDUIT_INFO("Error parsing JSON response from browser\n" 
+                               << e.message());
+                 return false;
             }
+            
+            return true;
+        }
+        
 
-            return 1;
+        //---------------------------------------------------------------------------//
+        // callback used when a websocket receives data
+        //---------------------------------------------------------------------------//
+        bool
+        handleData(CivetServer *server,
+                   struct mg_connection *conn,
+                   int bits,
+                   char *data,
+                   size_t data_len)
+        {
+            if(bits& 0x80) // TODO, #def for these magic mask values
+            {
+                bits &= 0x7f; // TODO, #def for these magic mask values
+                switch(bits)
+                {
+                    case WEBSOCKET_OPCODE_PING:
+                    {
+                        CONDUIT_INFO("WEBSOCKET_OPCODE_PING");
+                        /* client sent PING, respond with PONG */
+                        mg_websocket_write(conn,
+                                           WEBSOCKET_OPCODE_PONG,
+                                           data,
+                                           data_len);
+                        return true;
+                    }
+                    case WEBSOCKET_OPCODE_PONG:
+                    {
+                        CONDUIT_INFO("WEBSOCKET_OPCODE_PONG");
+                        
+                        /* received PONG to our PING, no action */
+                        return true;
+                    }
+                    case WEBSOCKET_OPCODE_TEXT:
+                    {
+                        return handleWebSocketText(server,
+                                                   conn,
+                                                   data,
+                                                   data_len);
+                    }
+                    default:
+                    {
+                        CONDUIT_INFO("Unknown WebSocket bits flag" << bits);
+                    }
+                }
+            }
+            return true; // keep connection open
         }
         
         //---------------------------------------------------------------------------//
-        // static callback used when a web socket connection drops
+        // callback used when a websocket connection is closed
         //---------------------------------------------------------------------------//
-        static void
-        handle_websocket_close(const struct mg_connection *conn,
-                               void *cbdata)
+        void
+        handleClose(CivetServer *server,
+                    const struct mg_connection *conn)
         {
             struct mg_context *ctx  = mg_get_context(conn);
-            RequestHandler *handler = (RequestHandler *)cbdata;
             
             WebSocket *ws = NULL;
             // lock context while we cleanup the websocket
-            mg_lock_context(ctx);
+            m_server->lock_context();
             {
-                ws = handler->find_socket_for_connection(conn);
+                ws = find_socket_for_connection(conn);
                 // TODO, actually clean up websocket
                 if(ws != NULL)
                 {
@@ -370,7 +410,7 @@ public:
                 }
             }
             // unlock context
-            mg_unlock_context(ctx);
+            m_server->unlock_context();
             
             if(ws == NULL)
             {
@@ -381,7 +421,7 @@ public:
         }
         
         //---------------------------------------------------------------------------//
-        // loops over active web sockets and returns the instance
+        // loops over active websockets and returns the instance
         // that is linked to the given connection
         //---------------------------------------------------------------------------//
         WebSocket *
@@ -735,18 +775,10 @@ WebServer::serve(const std::string &doc_root,
 
     // setup REST handlers
     m_server->addHandler("/api/*",m_handler);
-    
-    // setup web socket handlers
-    mg_set_websocket_handler(ctx,
-                             "/websocket",
-                             // static handlers for the web socket case
-                             RequestHandler::handle_websocket_connect,
-                             RequestHandler::handle_websocket_ready,
-                             RequestHandler::handle_websocket_recv,
-                             RequestHandler::handle_websocket_close,
-                             // pass our handler instance as context for 
-                             // the static callbacks
-                             m_handler);
+
+    // setup web socket handler
+    m_server->addWebSocketHandler("/websocket", m_handler);
+
 
     // signal we are valid
     m_running = true;

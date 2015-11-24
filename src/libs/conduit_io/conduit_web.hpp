@@ -139,10 +139,9 @@ public:
     void        unlock_context();
 
 private:
-
-
     CivetServer            *m_server;
     RequestHandler         *m_handler;
+    
     std::string             m_port;
     bool                    m_running;
 };
