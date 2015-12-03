@@ -1253,7 +1253,8 @@ mg_atomic_inc(volatile int *addr)
 	 * (volatile unsigned int *) or (volatile LONG *),
 	 * so whatever you use, the other SDK is likely to raise a warning. */
 	ret = InterlockedIncrement((volatile long *)addr);
-#elif defined(__GNUC__)
+#elif defined(__GNUC__)                                                        \
+    && (__GNUC__ > 5 || (__GNUC__ == 4 && __GNUC_MINOR__ > 0))
 	ret = __sync_add_and_fetch(addr, 1);
 #else
 	ret = (++(*addr));
@@ -1270,7 +1271,8 @@ mg_atomic_dec(volatile int *addr)
 	 * (volatile unsigned int *) or (volatile LONG *),
 	 * so whatever you use, the other SDK is likely to raise a warning. */
 	ret = InterlockedDecrement((volatile long *)addr);
-#elif defined(__GNUC__)
+#elif defined(__GNUC__)                                                        \
+    && (__GNUC__ > 5 || (__GNUC__ == 4 && __GNUC_MINOR__ > 0))
 	ret = __sync_sub_and_fetch(addr, 1);
 #else
 	ret = (--(*addr));
@@ -2664,6 +2666,15 @@ mg_stat(struct mg_connection *conn, const char *path, struct file *filep)
 	memset(filep, 0, sizeof(*filep));
 
 	if (conn && is_file_in_memory(conn, path, filep)) {
+		/* filep->is_directory = 0; filep->gzipped = 0; .. already done by
+		 * memset */
+		last_modified = time(NULL);
+		/* last_modified = now ... assumes the file may change during runtime,
+		 * so every mg_fopen call may return different data */
+		/* last_modified = conn->ctx.start_time;
+		 * May be used it the data does not change during runtime. This allows
+		 * browser caching. Since we do not know, we have to assume the file
+		 * in memory may change. */
 		return 1;
 	}
 
@@ -8198,6 +8209,33 @@ mg_websocket_write(struct mg_connection *conn,
 	return mg_websocket_write_exec(conn, opcode, data, dataLen, 0);
 }
 
+
+static void
+mask_data(const char *in, size_t in_len, uint32_t masking_key, char *out)
+{
+	size_t i = 0;
+
+	i = 0;
+	if (((ptrdiff_t)in % 4) == 0) {
+		/* Convert in 32 bit words, if data is 4 byte aligned */
+		while (i < (in_len - 3)) {
+			*(uint32_t *)(void *)(out + i) =
+			    *(uint32_t *)(void *)(in + i) ^ masking_key;
+			i += 4;
+		}
+	}
+	if (i != in_len) {
+		/* convert 1-3 remaining bytes if ((dataLen % 4) != 0)*/
+		while (i < in_len) {
+			*(uint8_t *)(void *)(out + i) =
+			    *(uint8_t *)(void *)(in + i)
+			    ^ *(((uint8_t *)&masking_key) + (i % 4));
+			i++;
+		}
+	}
+}
+
+
 int
 mg_websocket_client_write(struct mg_connection *conn,
                           int opcode,
@@ -8205,7 +8243,6 @@ mg_websocket_client_write(struct mg_connection *conn,
                           size_t dataLen)
 {
 	int retval = -1;
-	size_t i = 0;
 	char *masked_data = (char *)mg_malloc(((dataLen + 7) / 4) * 4);
 	uint32_t masking_key;
 	static uint64_t lfsr = 0;
@@ -8237,26 +8274,8 @@ mg_websocket_client_write(struct mg_connection *conn,
 		return -1;
 	}
 
-	i = 0;
-	if (((ptrdiff_t)data % 4) == 0) {
-		/* Convert in 32 bit words, if data is 4 byte aligned */
-		while (i < (dataLen - 3)) {
-			*(uint32_t *)(void *)(masked_data + i) =
-			    *(uint32_t *)(void *)(data + i) ^ masking_key;
-			i += 4;
-		}
-	}
-	if (i != dataLen) {
-		/* convert 1-3 remaining bytes if ((dataLen % 4) != 0)*/
-		i -= 4;
-		while (i < dataLen) {
-			*(uint8_t *)(void *)(masked_data + i) =
-			    *(uint8_t *)(void *)(data + i)
-			    ^ *(((uint8_t *)&masking_key) + (i % 4));
-			i++;
-		}
-	}
-	/* TODO (high): Deal with ((dataLen % 4) != 0) and misalignment */
+	mask_data(data, dataLen, masking_key, masked_data);
+
 	retval = mg_websocket_write_exec(
 	    conn, opcode, masked_data, dataLen, masking_key);
 	mg_free(masked_data);
@@ -9754,12 +9773,14 @@ log_access(const struct mg_connection *conn)
 	            NULL, /* Ignore truncation in access log */
 	            buf,
 	            sizeof(buf),
-	            "%s - %s [%s] \"%s %s HTTP/%s\" %d %" INT64_FMT " %s %s",
+	            "%s - %s [%s] \"%s %s%s%s HTTP/%s\" %d %" INT64_FMT " %s %s",
 	            src_addr,
 	            ri->remote_user == NULL ? "-" : ri->remote_user,
 	            date,
 	            ri->request_method ? ri->request_method : "-",
 	            ri->request_uri ? ri->request_uri : "-",
+	            ri->query_string ? "?" : "",
+	            ri->query_string ? ri->query_string : "",
 	            ri->http_version,
 	            conn->status_code,
 	            conn->num_bytes_sent,

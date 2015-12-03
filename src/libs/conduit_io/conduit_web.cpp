@@ -637,16 +637,16 @@ WebSocket::send(const Node &data,
     // convert our node to json using the requested conduit protocol
     std::ostringstream oss;
     data.to_json_stream(oss,protocol);
-    // get a pointer to our message data and its length
-    const char   *msg     = oss.str().c_str();
+    
+    // get the length of our  message data.
     size_t        msg_len = oss.str().size();
 
     lock_context();
     {
-        // send our message
+        // send our message via civetweb's websocket interface
         mg_websocket_write(m_connection,
                            WEBSOCKET_OPCODE_TEXT,
-                           msg,
+                           oss.str().c_str(),
                            msg_len);
     }
     unlock_context();
