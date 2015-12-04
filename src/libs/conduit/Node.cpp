@@ -9277,7 +9277,9 @@ Node::mmap(const std::string &stream_path, index_t dsize)
     ///
     CONDUIT_ERROR("<Node::mmap> conduit does not yet support mmap on Windows");
 #else    
-    m_mmap_fd   = open(stream_path.c_str(),O_RDWR| O_CREAT);
+    m_mmap_fd   = open(stream_path.c_str(),
+                       (O_RDWR | O_CREAT),
+                       (S_IRUSR | S_IWUSR));
     m_data_size = dsize;
 
     if (m_mmap_fd == -1) 
