@@ -120,24 +120,24 @@ typedef double              conduit_double;
 -----------------------------------------------------------------------------*/
 typedef enum
 {
-    CONDUIT_EMPTY_T  = @CONDUIT_EMPTY_T@,  // empty (default type)
-    CONDUIT_OBJECT_T = @CONDUIT_OBJECT_T@, // object
-    CONDUIT_LIST_T   = @CONDUIT_LIST_T@,   // list
+    CONDUIT_EMPTY_ID  = @CONDUIT_EMPTY_ID@,  // empty (default type)
+    CONDUIT_OBJECT_ID = @CONDUIT_OBJECT_ID@, // object
+    CONDUIT_LIST_ID   = @CONDUIT_LIST_ID@,   // list
     /* signed integer types */
-    CONDUIT_INT8_T  = @CONDUIT_INT8_T@,   // int8 and int8_array
-    CONDUIT_INT16_T = @CONDUIT_INT16_T@,  // int16 and int16_array
-    CONDUIT_INT32_T = @CONDUIT_INT32_T@,  // int32 and int32_array
-    CONDUIT_INT64_T = @CONDUIT_INT64_T@,  // int64 and int64_array
+    CONDUIT_INT8_ID  = @CONDUIT_INT8_ID@,   // int8 and int8_array
+    CONDUIT_INT16_ID = @CONDUIT_INT16_ID@,  // int16 and int16_array
+    CONDUIT_INT32_ID = @CONDUIT_INT32_ID@,  // int32 and int32_array
+    CONDUIT_INT64_ID = @CONDUIT_INT64_ID@,  // int64 and int64_array
     /* unsigned integer types */
-    CONDUIT_UINT8_T  = @CONDUIT_UINT8_T@,  // int8 and int8_array
-    CONDUIT_UINT16_T = @CONDUIT_UINT16_T@, // uint16 and uint16_array
-    CONDUIT_UINT32_T = @CONDUIT_UINT32_T@, // uint32 and uint32_array
-    CONDUIT_UINT64_T = @CONDUIT_UINT64_T@, // uint64 and uint64_array
+    CONDUIT_UINT8_ID  = @CONDUIT_UINT8_ID@,  // int8 and int8_array
+    CONDUIT_UINT16_ID = @CONDUIT_UINT16_ID@, // uint16 and uint16_array
+    CONDUIT_UINT32_ID = @CONDUIT_UINT32_ID@, // uint32 and uint32_array
+    CONDUIT_UINT64_ID = @CONDUIT_UINT64_ID@, // uint64 and uint64_array
     /* floating point integer types */
-    CONDUIT_FLOAT32_T = @CONDUIT_FLOAT32_T@, // float32 and float32_array
-    CONDUIT_FLOAT64_T = @CONDUIT_FLOAT64_T@, // float64 and float64_array
+    CONDUIT_FLOAT32_ID = @CONDUIT_FLOAT32_ID@, // float32 and float32_array
+    CONDUIT_FLOAT64_ID = @CONDUIT_FLOAT64_ID@, // float64 and float64_array
     /* string  types */
-    CONDUIT_CHAR8_STR_T = @CONDUIT_CHAR8_STR_T@, // char8 string (incore c-string)
+    CONDUIT_CHAR8_STR_ID = @CONDUIT_CHAR8_STR_ID@, // char8 string (incore c-string)
 } conduit_datatype_type_id;
 
 
@@ -145,28 +145,30 @@ typedef enum
 //-----------------------------------------------------------------------------
 // -- bitwidth style signed integer types --
 //-----------------------------------------------------------------------------
-typedef @CONDUIT_INT8_TYPE@ conduit_int8;
+typedef @CONDUIT_INT8_TYPE@  conduit_int8;
 typedef @CONDUIT_INT16_TYPE@ conduit_int16;
 typedef @CONDUIT_INT32_TYPE@ conduit_int32;
 typedef @CONDUIT_INT64_TYPE@ conduit_int64;
 
-#define CONDUIT_INT8_NATIVE_TYPENAME  "@CONDUIT_INT8_NATIVE_TYPE_NAME@"
-#define CONDUIT_INT16_NATIVE_TYPENAME "@CONDUIT_INT16_NATIVE_TYPE_NAME@"
-#define CONDUIT_INT32_NATIVE_TYPENAME "@CONDUIT_INT32_NATIVE_TYPE_NAME@"
-#define CONDUIT_INT64_NATIVE_TYPENAME "@CONDUIT_INT64_NATIVE_TYPE_NAME@"
+// string defs
+#define CONDUIT_INT8_NATIVE_NAME  "@CONDUIT_INT8_NATIVE_TYPE@"
+#define CONDUIT_INT16_NATIVE_NAME "@CONDUIT_INT16_NATIVE_TYPE@"
+#define CONDUIT_INT32_NATIVE_NAME "@CONDUIT_INT32_NATIVE_TYPE@"
+#define CONDUIT_INT64_NATIVE_NAME "@CONDUIT_INT64_NATIVE_TYPE@"
 
 //-----------------------------------------------------------------------------
 // -- bitwidth style unsigned integer types --
 //-----------------------------------------------------------------------------
-typedef @CONDUIT_UINT8_TYPE@ conduit_uint8;
+typedef @CONDUIT_UINT8_TYPE@  conduit_uint8;
 typedef @CONDUIT_UINT16_TYPE@ conduit_uint16;
 typedef @CONDUIT_UINT32_TYPE@ conduit_uint32;
 typedef @CONDUIT_UINT64_TYPE@ conduit_uint64;
 
-#define CONDUIT_UINT8_NATIVE_TYPENAME  "@CONDUIT_UINT8_NATIVE_TYPE_NAME@"
-#define CONDUIT_UINT16_NATIVE_TYPENAME "@CONDUIT_UINT16_NATIVE_TYPE_NAME@"
-#define CONDUIT_UINT32_NATIVE_TYPENAME "@CONDUIT_UINT32_NATIVE_TYPE_NAME@"
-#define CONDUIT_UINT64_NATIVE_TYPENAME "@CONDUIT_UINT64_NATIVE_TYPE_NAME@"
+// string defs
+#define CONDUIT_UINT8_NATIVE_NAME  "@CONDUIT_UINT8_NATIVE_TYPE@"
+#define CONDUIT_UINT16_NATIVE_NAME "@CONDUIT_UINT16_NATIVE_TYPE@"
+#define CONDUIT_UINT32_NATIVE_NAME "@CONDUIT_UINT32_NATIVE_TYPE@"
+#define CONDUIT_UINT64_NATIVE_NAME "@CONDUIT_UINT64_NATIVE_TYPE@"
 
 
 //-----------------------------------------------------------------------------
@@ -175,8 +177,9 @@ typedef @CONDUIT_UINT64_TYPE@ conduit_uint64;
 typedef @CONDUIT_FLOAT32_TYPE@ conduit_float32;
 typedef @CONDUIT_FLOAT64_TYPE@ conduit_float64;
 
-#define CONDUIT_FLOAT32_NATIVE_TYPENAME "@CONDUIT_FLOAT32_NATIVE_TYPE_NAME@"
-#define CONDUIT_FLOAT64_NATIVE_TYPENAME "@CONDUIT_FLOAT64_NATIVE_TYPE_NAME@"
+// string defs
+#define CONDUIT_FLOAT32_NATIVE_NAME "@CONDUIT_FLOAT32_NATIVE_TYPE@"
+#define CONDUIT_FLOAT64_NATIVE_NAME "@CONDUIT_FLOAT64_NATIVE_TYPE@"
 
 
 //-----------------------------------------------------------------------------
@@ -188,11 +191,11 @@ typedef @CONDUIT_FLOAT64_TYPE@ conduit_float64;
 #define CONDUIT_NATIVE_LONG  @CONDUIT_NATIVE_LONG_TYPE@
 #cmakedefine CONDUIT_NATIVE_LONG_LONG  @CONDUIT_NATIVE_LONG_LONG_TYPE@
 
-#define CONDUIT_NATIVE_CHAR_DATATYPE_ID  @CONDUIT_NATIVE_CHAR_TYPE_ID@
-#define CONDUIT_NATIVE_SHORT_DATATYPE_ID @CONDUIT_NATIVE_SHORT_TYPE_ID@
-#define CONDUIT_NATIVE_INT_DATATYPE_ID   @CONDUIT_NATIVE_INT_TYPE_ID@
-#define CONDUIT_NATIVE_LONG_DATATYPE_ID  @CONDUIT_NATIVE_LONG_TYPE_ID@
-#cmakedefine CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID  @CONDUIT_NATIVE_LONG_LONG_TYPE_ID@
+#define CONDUIT_NATIVE_CHAR_ID  @CONDUIT_NATIVE_CHAR_ID@
+#define CONDUIT_NATIVE_SHORT_ID @CONDUIT_NATIVE_SHORT_ID@
+#define CONDUIT_NATIVE_INT_ID   @CONDUIT_NATIVE_INT_ID@
+#define CONDUIT_NATIVE_LONG_ID  @CONDUIT_NATIVE_LONG_ID@
+#cmakedefine CONDUIT_NATIVE_LONG_LONG_ID  @CONDUIT_NATIVE_LONG_LONG_ID@
 
 
 //-----------------------------------------------------------------------------
@@ -204,11 +207,11 @@ typedef @CONDUIT_FLOAT64_TYPE@ conduit_float64;
 #define CONDUIT_NATIVE_UNSIGNED_LONG  @CONDUIT_NATIVE_UNSIGNED_LONG_TYPE@
 #cmakedefine CONDUIT_NATIVE_UNSIGNED_LONG_LONG  @CONDUIT_NATIVE_UNSIGNED_LONG_LONG_TYPE@
 
-#define CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID  @CONDUIT_NATIVE_UNSIGNED_CHAR_TYPE_ID@
-#define CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID @CONDUIT_NATIVE_UNSIGNED_SHORT_TYPE_ID@
-#define CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID   @CONDUIT_NATIVE_UNSIGNED_INT_TYPE_ID@
-#define CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID  @CONDUIT_NATIVE_UNSIGNED_LONG_TYPE_ID@
-#cmakedefine CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID  @CONDUIT_NATIVE_UNSIGNED_LONG_LONG_TYPE_ID@
+#define CONDUIT_NATIVE_UNSIGNED_CHAR_ID  @CONDUIT_NATIVE_UNSIGNED_CHAR_ID@
+#define CONDUIT_NATIVE_UNSIGNED_SHORT_ID @CONDUIT_NATIVE_UNSIGNED_SHORT_ID@
+#define CONDUIT_NATIVE_UNSIGNED_INT_ID   @CONDUIT_NATIVE_UNSIGNED_INT_ID@
+#define CONDUIT_NATIVE_UNSIGNED_LONG_ID  @CONDUIT_NATIVE_UNSIGNED_LONG_ID@
+#cmakedefine CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID  @CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID@
 
 
 //-----------------------------------------------------------------------------
@@ -218,9 +221,9 @@ typedef @CONDUIT_FLOAT64_TYPE@ conduit_float64;
 #define CONDUIT_NATIVE_DOUBLE  @CONDUIT_NATIVE_DOUBLE_TYPE@
 #cmakedefine CONDUIT_NATIVE_LONG_DOUBLE  @CONDUIT_NATIVE_LONG_DOUBLE_TYPE@
 
-#define CONDUIT_NATIVE_FLOAT_DATATYPE_ID  @CONDUIT_NATIVE_FLOAT_TYPE_ID@
-#define CONDUIT_NATIVE_DOUBLE_DATATYPE_ID  @CONDUIT_NATIVE_DOUBLE_TYPE_ID@
-#cmakedefine CONDUIT_NATIVE_LONG_DOUBLE_DATATYPE_ID  @CONDUIT_NATIVE_LONG_DOUBLE_TYPE_ID@
+#define CONDUIT_NATIVE_FLOAT_ID  @CONDUIT_NATIVE_FLOAT_ID@
+#define CONDUIT_NATIVE_DOUBLE_ID  @CONDUIT_NATIVE_DOUBLE_ID@
+#cmakedefine CONDUIT_NATIVE_LONG_DOUBLE_ID  @CONDUIT_NATIVE_LONG_DOUBLE_ID@
 
 
 //-----------------------------------------------------------------------------
@@ -228,8 +231,8 @@ typedef @CONDUIT_FLOAT64_TYPE@ conduit_float64;
 //-----------------------------------------------------------------------------
 
 /// index typedefs
-typedef conduit_uint32 conduit_index32_t;
-typedef conduit_uint64 conduit_index64_t;
+typedef conduit_int32 conduit_index32_t;
+typedef conduit_int64 conduit_index64_t;
 
 /// use a 64-bit index, unless CONDUIT_INDEX_32 is defined.
 #ifdef CONDUIT_INDEX_32
@@ -247,45 +250,45 @@ typedef conduit_index64_t conduit_index_t;
 // to support
 
 // signed int
-#ifndef CONDUIT_INT8_NATIVE_TYPENAME
+#ifndef CONDUIT_INT8_NATIVE_NAME
 #error Bitwidth Style Types: no native type found that maps to int8
 #endif
 
-#ifndef CONDUIT_INT16_NATIVE_TYPENAME
+#ifndef CONDUIT_INT16_NATIVE_NAME
 #error Bitwidth Style Types: no native type found that maps to int16
 #endif
 
-#ifndef CONDUIT_INT32_NATIVE_TYPENAME
+#ifndef CONDUIT_INT32_NATIVE_NAME
 #error Bitwidth Style Types: no native type found that maps to int32
 #endif
 
-#ifndef CONDUIT_INT64_NATIVE_TYPENAME
+#ifndef CONDUIT_INT64_NATIVE_NAME
 #error Bitwidth Style Types: no native type found that maps to int64
 #endif
 
 // unsigned ints
-#ifndef CONDUIT_UINT8_NATIVE_TYPENAME
+#ifndef CONDUIT_UINT8_NATIVE_NAME
 #error Bitwidth Style Types: no native type found that maps to uint8
 #endif
 
-#ifndef CONDUIT_UINT16_NATIVE_TYPENAME
+#ifndef CONDUIT_UINT16_NATIVE_NAME
 #error Bitwidth Style Types: no native type found that maps to uint16
 #endif
 
-#ifndef CONDUIT_UINT32_NATIVE_TYPENAME
+#ifndef CONDUIT_UINT32_NATIVE_NAME
 #error Bitwidth Style Types: no native type found that maps to uint32
 #endif
 
-#ifndef CONDUIT_UINT64_NATIVE_TYPENAME
+#ifndef CONDUIT_UINT64_NATIVE_NAME
 #error Bitwidth Style Types: no native type found that maps to uint64
 #endif
 
 // floating points numbers
-#ifndef CONDUIT_FLOAT32_NATIVE_TYPENAME
+#ifndef CONDUIT_FLOAT32_NATIVE_NAME
 #error Bitwidth Style Types: no native type found that maps to float32
 #endif
 
-#ifndef CONDUIT_FLOAT64_NATIVE_TYPENAME
+#ifndef CONDUIT_FLOAT64_NATIVE_NAME
 #error Bitwidth Style Types: no native type found that maps to float64
 #endif
 

@@ -91,19 +91,19 @@ public:
 
 //-----------------------------------------------------------------------------
 /// EndianEnum is an Enumeration used to hold endian states:
-///  *DEFAULT_T - represents the current machine's endianness
-///  *BIG_T     - represents is big endian 
-///  *LITTLE_T  - represents little endian
+///  *DEFAULT_ID - represents the current machine's endianness
+///  *BIG_ID     - represents is big endian 
+///  *LITTLE_ID  - represents little endian
 //-----------------------------------------------------------------------------
     typedef enum
     {
-        DEFAULT_T = CONDUIT_ENDIANNESS_DEFAULT_T, // default
-        BIG_T     = CONDUIT_ENDIANNESS_BIG_T,
-        LITTLE_T  = CONDUIT_ENDIANNESS_LITTLE_T,
+        DEFAULT_ID = CONDUIT_ENDIANNESS_DEFAULT_ID, // default
+        BIG_ID     = CONDUIT_ENDIANNESS_BIG_ID,
+        LITTLE_ID  = CONDUIT_ENDIANNESS_LITTLE_ID,
     } EndianEnum;
 
 //-----------------------------------------------------------------------------
-/// Returns the current machine's endianness: BIG_T or LITTLE_T
+/// Returns the current machine's endianness: BIG_ID or LITTLE_ID
 //-----------------------------------------------------------------------------
     static index_t          machine_default();
 //-----------------------------------------------------------------------------

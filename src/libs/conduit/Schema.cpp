@@ -150,7 +150,7 @@ Schema::set(const Schema &schema)
 {
     bool init_children = false;
     index_t dt_id = schema.m_dtype.id();
-    if (dt_id == DataType::OBJECT_T)
+    if (dt_id == DataType::OBJECT_ID)
     {
        init_object();
        init_children = true;
@@ -158,7 +158,7 @@ Schema::set(const Schema &schema)
        object_map() = schema.object_map();
        object_order() = schema.object_order();
     } 
-    else if (dt_id == DataType::LIST_T)
+    else if (dt_id == DataType::LIST_ID)
     {
        init_list();
        init_children = true;
@@ -198,9 +198,9 @@ void
 Schema::set(const DataType &dtype)
 {
     reset();
-    if (dtype.id() == DataType::OBJECT_T) {
+    if (dtype.id() == DataType::OBJECT_ID) {
         init_object();
-    } else if (dtype.id() == DataType::LIST_T) {
+    } else if (dtype.id() == DataType::LIST_ID) {
         init_list();
     }
     m_dtype = dtype;
@@ -261,7 +261,7 @@ Schema::total_bytes() const
 {
     index_t res = 0;
     index_t dt_id = m_dtype.id();
-    if(dt_id == DataType::OBJECT_T || dt_id == DataType::LIST_T)
+    if(dt_id == DataType::OBJECT_ID || dt_id == DataType::LIST_ID)
     {
         const std::vector<Schema*> &lst = children();
         for (std::vector<Schema*>::const_iterator itr = lst.begin();
@@ -270,7 +270,7 @@ Schema::total_bytes() const
             res += (*itr)->total_bytes();
         }
     }
-    else if (dt_id != DataType::EMPTY_T)
+    else if (dt_id != DataType::EMPTY_ID)
     {
         res = m_dtype.total_bytes();
     }
@@ -283,7 +283,7 @@ Schema::total_bytes_compact() const
 {
     index_t res = 0;
     index_t dt_id = m_dtype.id();
-    if(dt_id == DataType::OBJECT_T || dt_id == DataType::LIST_T)
+    if(dt_id == DataType::OBJECT_ID || dt_id == DataType::LIST_ID)
     {
         const std::vector<Schema*> &lst = children();
         for (std::vector<Schema*>::const_iterator itr = lst.begin();
@@ -292,7 +292,7 @@ Schema::total_bytes_compact() const
             res += (*itr)->total_bytes_compact();
         }
     }
-    else if (dt_id != DataType::EMPTY_T)
+    else if (dt_id != DataType::EMPTY_ID)
     {
         res = m_dtype.total_bytes_compact();
     }
@@ -336,7 +336,7 @@ Schema::to_json_stream(std::ostream &os,
                        const std::string &pad,
                        const std::string &eoe) const
 {
-    if(m_dtype.id() == DataType::OBJECT_T)
+    if(m_dtype.id() == DataType::OBJECT_ID)
     {
         os << eoe;
         utils::indent(os,indent,depth,pad);
@@ -355,7 +355,7 @@ Schema::to_json_stream(std::ostream &os,
         utils::indent(os,indent,depth,pad);
         os << "}";
     }
-    else if(m_dtype.id() == DataType::LIST_T)
+    else if(m_dtype.id() == DataType::LIST_ID)
     {
         os << eoe;
         utils::indent(os,indent,depth,pad);
@@ -431,8 +431,8 @@ Schema::load(const std::string &ifname)
 index_t 
 Schema::number_of_children() const 
 {
-    if(m_dtype.id() != DataType::LIST_T  &&
-       m_dtype.id() != DataType::OBJECT_T)
+    if(m_dtype.id() != DataType::LIST_ID  &&
+       m_dtype.id() != DataType::OBJECT_ID)
         return 0;
     return children().size();
 }
@@ -467,9 +467,9 @@ void
 Schema::remove(index_t idx)
 {
     index_t dtype_id = m_dtype.id();
-    if(! (dtype_id == DataType::LIST_T || dtype_id == DataType::OBJECT_T))
+    if(! (dtype_id == DataType::LIST_ID || dtype_id == DataType::OBJECT_ID))
     {
-        CONDUIT_ERROR("<Schema::remove> Schema is not LIST_T or OBJECT_T, dtype is" 
+        CONDUIT_ERROR("<Schema::remove> Schema is not LIST_ID or OBJECT_ID, dtype is" 
                       << m_dtype.name());
     }
     
@@ -480,7 +480,7 @@ Schema::remove(index_t idx)
                     << idx << ">" << chldrn.size() <<  "(list_size)");
     }
 
-    if(dtype_id == DataType::OBJECT_T)
+    if(dtype_id == DataType::OBJECT_ID)
     {
         // any index above the current needs to shift down by one
         for (index_t i = idx; i < object_order().size(); i++)
@@ -521,9 +521,9 @@ Schema::operator[](index_t idx) const
 Schema&
 Schema::fetch_child(const std::string &path)
 {
-    // fetch w/ path forces OBJECT_T
-    if(m_dtype.id() != DataType::OBJECT_T)
-        CONDUIT_ERROR("<Schema::child[OBJECT_T]>: Schema is not OBJECT_T");
+    // fetch w/ path forces OBJECT_ID
+    if(m_dtype.id() != DataType::OBJECT_ID)
+        CONDUIT_ERROR("<Schema::child[OBJECT_ID]>: Schema is not OBJECT_ID");
 
     std::string p_curr;
     std::string p_next;
@@ -559,9 +559,9 @@ Schema::fetch_child(const std::string &path)
 const Schema &
 Schema::fetch_child(const std::string &path) const
 {
-    // fetch w/ path forces OBJECT_T
-    if(m_dtype.id() != DataType::OBJECT_T)
-        CONDUIT_ERROR("<Schema::child[OBJECT_T]>: Schema is not OBJECT_T");
+    // fetch w/ path forces OBJECT_ID
+    if(m_dtype.id() != DataType::OBJECT_ID)
+        CONDUIT_ERROR("<Schema::child[OBJECT_ID]>: Schema is not OBJECT_ID");
 
     std::string p_curr;
     std::string p_next;
@@ -600,7 +600,7 @@ Schema::child_index(const std::string &path) const
         ///
         /// TODO: Full path errors would be nice here. 
         ///
-        CONDUIT_ERROR("<Schema::child_index[OBJECT_T]>"
+        CONDUIT_ERROR("<Schema::child_index[OBJECT_ID]>"
                     << "Attempt to access invalid child:" << path);
                       
     }
@@ -612,7 +612,7 @@ Schema::child_index(const std::string &path) const
 Schema &
 Schema::fetch(const std::string &path)
 {
-    // fetch w/ path forces OBJECT_T
+    // fetch w/ path forces OBJECT_ID
     init_object();
         
     std::string p_curr;
@@ -676,10 +676,10 @@ Schema::operator[](const std::string &path)
 bool           
 Schema::has_path(const std::string &path) const
 {
-    if(m_dtype.id() == DataType::EMPTY_T)
+    if(m_dtype.id() == DataType::EMPTY_ID)
         return false;
-    if(m_dtype.id() != DataType::OBJECT_T)
-        CONDUIT_ERROR("<Schema::has_path[OBJECT_T]> Schema is not OBJECT_T");
+    if(m_dtype.id() != DataType::OBJECT_ID)
+        CONDUIT_ERROR("<Schema::has_path[OBJECT_ID]> Schema is not OBJECT_ID");
 
     std::string p_curr;
     std::string p_next;
@@ -719,8 +719,8 @@ Schema::paths(std::vector<std::string> &paths) const
 void    
 Schema::remove(const std::string &path)
 {
-    if(m_dtype.id() != DataType::OBJECT_T)
-        CONDUIT_ERROR("<Schema::remove[OBJECT_T]> Schema is not OBJECT_T");
+    if(m_dtype.id() != DataType::OBJECT_ID)
+        CONDUIT_ERROR("<Schema::remove[OBJECT_ID]> Schema is not OBJECT_ID");
 
     std::string p_curr;
     std::string p_next;
@@ -788,7 +788,7 @@ Schema::init_defaults()
 void
 Schema::init_object()
 {
-    if(dtype().id() != DataType::OBJECT_T)
+    if(dtype().id() != DataType::OBJECT_ID)
     {
         reset();
         m_dtype  = DataType::object();
@@ -800,7 +800,7 @@ Schema::init_object()
 void
 Schema::init_list()
 {
-    if(dtype().id() != DataType::LIST_T)
+    if(dtype().id() != DataType::LIST_ID)
     {
         reset();
         m_dtype  = DataType::list();
@@ -813,8 +813,8 @@ Schema::init_list()
 void
 Schema::release()
 {
-    if(dtype().id() == DataType::OBJECT_T ||
-       dtype().id() == DataType::LIST_T)
+    if(dtype().id() == DataType::OBJECT_ID ||
+       dtype().id() == DataType::LIST_ID)
     {
         std::vector<Schema*> chld = children();
         for(index_t i=0;i< chld.size();i++)
@@ -823,11 +823,11 @@ Schema::release()
         }
     }
     
-    if(dtype().id() == DataType::OBJECT_T)
+    if(dtype().id() == DataType::OBJECT_ID)
     { 
         delete object_hierarchy();
     }
-    else if(dtype().id() == DataType::LIST_T)
+    else if(dtype().id() == DataType::LIST_ID)
     { 
         delete list_hierarchy();
     }
@@ -852,7 +852,7 @@ Schema::compact_to(Schema &s_dest, index_t curr_offset) const
 {
     index_t dtype_id = m_dtype.id();
     
-    if(dtype_id == DataType::OBJECT_T )
+    if(dtype_id == DataType::OBJECT_ID )
     {
         index_t nchildren = children().size();
         for(index_t i=0; i < nchildren;i++)
@@ -863,7 +863,7 @@ Schema::compact_to(Schema &s_dest, index_t curr_offset) const
             curr_offset += cld_dest.total_bytes();
         }
     }
-    else if(dtype_id == DataType::LIST_T)
+    else if(dtype_id == DataType::LIST_ID)
     {
         index_t nchildren = children().size();
         for(index_t i=0; i < nchildren ;i++)
@@ -874,7 +874,7 @@ Schema::compact_to(Schema &s_dest, index_t curr_offset) const
             curr_offset += cld_dest.total_bytes();
         }
     }
-    else if (dtype_id != DataType::EMPTY_T)
+    else if (dtype_id != DataType::EMPTY_ID)
     {
         // create a compact data type
         m_dtype.compact_to(s_dest.m_dtype);
@@ -934,7 +934,7 @@ Schema::list_hierarchy() const
 std::vector<Schema*> &
 Schema::children()
 {
-    if (m_dtype.id() == DataType::OBJECT_T)
+    if (m_dtype.id() == DataType::OBJECT_ID)
     {
         return object_hierarchy()->children;
     } 
@@ -963,7 +963,7 @@ Schema::object_order()
 const std::vector<Schema*> &
 Schema::children() const
 {
-    if (m_dtype.id() == DataType::OBJECT_T)
+    if (m_dtype.id() == DataType::OBJECT_ID)
     {
         return object_hierarchy()->children;
     } 

@@ -77,12 +77,12 @@ TEST(conduit_array, array_stride_int8)
     }
     std::cout << std::endl;
  
-    DataType arr_t(DataType::INT8_T,
+    DataType arr_t(DataType::INT8_ID,
                    10,
                    0,
                    sizeof(int8)*2, // stride
                    sizeof(int8),
-                   Endianness::DEFAULT_T);
+                   Endianness::DEFAULT_ID);
     Node n;
     n["value"].set_external(arr_t,&data[0]);
 

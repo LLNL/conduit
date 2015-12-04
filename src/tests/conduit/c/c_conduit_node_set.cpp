@@ -307,7 +307,7 @@ TEST(conduit_node_set, set_bitwidth_float_ptr)
                                           0,
                                           sizeof(conduit_float32),
                                           sizeof(conduit_float32),
-                                          CONDUIT_ENDIANNESS_DEFAULT_T);
+                                          CONDUIT_ENDIANNESS_DEFAULT_ID);
     conduit_node_print(n);
 
     f32av_ptr = conduit_node_as_float32_ptr(n);
@@ -339,7 +339,7 @@ TEST(conduit_node_set, set_bitwidth_float_ptr)
                                           0,
                                           sizeof(conduit_float64),
                                           sizeof(conduit_float64),
-                                          CONDUIT_ENDIANNESS_DEFAULT_T);
+                                          CONDUIT_ENDIANNESS_DEFAULT_ID);
     conduit_node_print(n);
 
     f64av_ptr = conduit_node_as_float64_ptr(n);
@@ -614,7 +614,7 @@ TEST(conduit_node_set, set_native_float_ptr)
                                         0,
                                         sizeof(float),
                                         sizeof(float),
-                                        CONDUIT_ENDIANNESS_DEFAULT_T);
+                                        CONDUIT_ENDIANNESS_DEFAULT_ID);
     conduit_node_print(n);
 
     fav_ptr = conduit_node_as_float_ptr(n);
@@ -647,7 +647,7 @@ TEST(conduit_node_set, set_native_float_ptr)
                                          0,
                                          sizeof(double),
                                          sizeof(double),
-                                         CONDUIT_ENDIANNESS_DEFAULT_T);
+                                         CONDUIT_ENDIANNESS_DEFAULT_ID);
     conduit_node_print(n);
 
     dav_ptr = conduit_node_as_double_ptr(n);
