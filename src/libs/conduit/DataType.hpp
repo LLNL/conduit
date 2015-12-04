@@ -95,20 +95,20 @@ public:
 //-----------------------------------------------------------------------------
     typedef enum
     {
-        EMPTY_T     = CONDUIT_EMPTY_T,     // empty (default type)
-        OBJECT_T    = CONDUIT_OBJECT_T,    // object
-        LIST_T      = CONDUIT_LIST_T,      // list
-        INT8_T      = CONDUIT_INT8_T,      // int8 and int8_array
-        INT16_T     = CONDUIT_INT16_T,     // int16 and int16_array
-        INT32_T     = CONDUIT_INT32_T,     // int32 and int32_array
-        INT64_T     = CONDUIT_INT64_T,     // int64 and int64_array
-        UINT8_T     = CONDUIT_UINT8_T,     // int8 and int8_array
-        UINT16_T    = CONDUIT_UINT16_T,    // uint16 and uint16_array
-        UINT32_T    = CONDUIT_UINT32_T,    // uint32 and uint32_array
-        UINT64_T    = CONDUIT_UINT64_T,    // uint64 and uint64_array
-        FLOAT32_T   = CONDUIT_FLOAT32_T,   // float32 and float32_array
-        FLOAT64_T   = CONDUIT_FLOAT64_T,   // float64 and float64_array
-        CHAR8_STR_T = CONDUIT_CHAR8_STR_T, // char8 string (incore c-string)
+        EMPTY_ID     = CONDUIT_EMPTY_ID,     // empty (default type)
+        OBJECT_ID    = CONDUIT_OBJECT_ID,    // object
+        LIST_ID      = CONDUIT_LIST_ID,      // list
+        INT8_ID      = CONDUIT_INT8_ID,      // int8 and int8_array
+        INT16_ID     = CONDUIT_INT16_ID,     // int16 and int16_array
+        INT32_ID     = CONDUIT_INT32_ID,     // int32 and int32_array
+        INT64_ID     = CONDUIT_INT64_ID,     // int64 and int64_array
+        UINT8_ID     = CONDUIT_UINT8_ID,     // int8 and int8_array
+        UINT16_ID    = CONDUIT_UINT16_ID,    // uint16 and uint16_array
+        UINT32_ID    = CONDUIT_UINT32_ID,    // uint32 and uint32_array
+        UINT64_ID    = CONDUIT_UINT64_ID,    // uint64 and uint64_array
+        FLOAT32_ID   = CONDUIT_FLOAT32_ID,   // float32 and float32_array
+        FLOAT64_ID   = CONDUIT_FLOAT64_ID,   // float64 and float64_array
+        CHAR8_STR_ID = CONDUIT_CHAR8_STR_ID, // char8 string (incore c-string)
     } TypeID;
 
 //-----------------------------------------------------------------------------
@@ -139,69 +139,69 @@ public:
                          index_t offset = 0,
                          index_t stride = sizeof(conduit::int8),
                          index_t element_bytes = sizeof(conduit::int8),
-                         index_t endianness = Endianness::DEFAULT_T);
+                         index_t endianness = Endianness::DEFAULT_ID);
 
     static DataType int16(index_t num_elements=1,
                           index_t offset = 0,
                           index_t stride = sizeof(conduit::int16),
                           index_t element_bytes = sizeof(conduit::int16),
-                          index_t endianness = Endianness::DEFAULT_T);
+                          index_t endianness = Endianness::DEFAULT_ID);
 
     static DataType int32(index_t num_elements=1,
                           index_t offset = 0,
                           index_t stride = sizeof(conduit::int32),
                           index_t element_bytes = sizeof(conduit::int32),
-                          index_t endianness = Endianness::DEFAULT_T);
+                          index_t endianness = Endianness::DEFAULT_ID);
 
     static DataType int64(index_t num_elements=1,
                           index_t offset = 0,
                           index_t stride = sizeof(conduit::int64),
                           index_t element_bytes = sizeof(conduit::int64),
-                          index_t endianness = Endianness::DEFAULT_T);
+                          index_t endianness = Endianness::DEFAULT_ID);
 
     /// unsigned integer arrays
     static DataType uint8(index_t num_elements=1,
                           index_t offset = 0,
                           index_t stride = sizeof(conduit::uint8),
                           index_t element_bytes = sizeof(conduit::uint8),
-                          index_t endianness = Endianness::DEFAULT_T);
+                          index_t endianness = Endianness::DEFAULT_ID);
 
     static DataType uint16(index_t num_elements=1,
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::uint16),
                            index_t element_bytes = sizeof(conduit::uint16),
-                           index_t endianness = Endianness::DEFAULT_T);
+                           index_t endianness = Endianness::DEFAULT_ID);
 
     static DataType uint32(index_t num_elements=1,
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::uint32),
                            index_t element_bytes = sizeof(conduit::uint32),
-                           index_t endianness = Endianness::DEFAULT_T);
+                           index_t endianness = Endianness::DEFAULT_ID);
 
     static DataType uint64(index_t num_elements=1,
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::uint64),
                            index_t element_bytes = sizeof(conduit::uint64),
-                           index_t endianness = Endianness::DEFAULT_T);
+                           index_t endianness = Endianness::DEFAULT_ID);
 
     /// floating point arrays
     static DataType float32(index_t num_elements=1,
                             index_t offset = 0,
                             index_t stride = sizeof(conduit::float32),
                             index_t element_bytes=sizeof(conduit::float32),
-                            index_t endianness = Endianness::DEFAULT_T);
+                            index_t endianness = Endianness::DEFAULT_ID);
 
     static DataType float64(index_t num_elements=1,
                             index_t offset = 0,
                             index_t stride = sizeof(conduit::float64),
                             index_t element_bytes=sizeof(conduit::float64),
-                            index_t endianness = Endianness::DEFAULT_T);
+                            index_t endianness = Endianness::DEFAULT_ID);
 
     static DataType char8_str(index_t num_elements=1,
                               index_t offset = 0,
                               index_t stride = 1,
                               index_t element_bytes=1,
-                              index_t endianness = Endianness::DEFAULT_T);
+                              index_t endianness = Endianness::DEFAULT_ID);
 
 
 //-----------------------------------------------------------------------------
@@ -216,63 +216,63 @@ public:
                            index_t offset = 0,
                            index_t stride = sizeof(CONDUIT_NATIVE_CHAR),
                            index_t element_bytes = sizeof(CONDUIT_NATIVE_CHAR),
-                           index_t endianness = Endianness::DEFAULT_T);
+                           index_t endianness = Endianness::DEFAULT_ID);
 
     static DataType c_short(index_t num_elements=1,
                             index_t offset = 0,
                             index_t stride = sizeof(CONDUIT_NATIVE_SHORT),
                             index_t element_bytes = sizeof(CONDUIT_NATIVE_SHORT),
-                            index_t endianness = Endianness::DEFAULT_T);
+                            index_t endianness = Endianness::DEFAULT_ID);
 
     static DataType c_int(index_t num_elements=1,
                           index_t offset = 0,
                           index_t stride = sizeof(CONDUIT_NATIVE_INT),
                           index_t element_bytes = sizeof(CONDUIT_NATIVE_INT),
-                          index_t endianness = Endianness::DEFAULT_T);
+                          index_t endianness = Endianness::DEFAULT_ID);
 
     static DataType c_long(index_t num_elements=1,
                            index_t offset = 0,
                            index_t stride = sizeof(CONDUIT_NATIVE_LONG),
                            index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG),
-                           index_t endianness = Endianness::DEFAULT_T);
+                           index_t endianness = Endianness::DEFAULT_ID);
 
     /// unsigned integer arrays
     static DataType c_unsigned_char(index_t num_elements=1,
                                     index_t offset = 0,
                                     index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR),
                                     index_t element_bytes =  sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR),
-                                    index_t endianness = Endianness::DEFAULT_T);
+                                    index_t endianness = Endianness::DEFAULT_ID);
 
     static DataType c_unsigned_short(index_t num_elements=1,
                                      index_t offset = 0,
                                      index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT),
                                      index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT),
-                                     index_t endianness = Endianness::DEFAULT_T);
+                                     index_t endianness = Endianness::DEFAULT_ID);
 
     static DataType c_unsigned_int(index_t num_elements=1,
                                    index_t offset = 0,
                                    index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_INT),
                                    index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_INT),
-                                   index_t endianness = Endianness::DEFAULT_T);
+                                   index_t endianness = Endianness::DEFAULT_ID);
 
     static DataType c_unsigned_long(index_t num_elements=1,
                                     index_t offset = 0,
                                     index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
                                     index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
-                                    index_t endianness = Endianness::DEFAULT_T);
+                                    index_t endianness = Endianness::DEFAULT_ID);
 
     /// floating point arrays
     static DataType c_float(index_t num_elements=1,
                             index_t offset = 0,
                             index_t stride = sizeof(CONDUIT_NATIVE_FLOAT),
                             index_t element_bytes=sizeof(CONDUIT_NATIVE_FLOAT),
-                            index_t endianness = Endianness::DEFAULT_T);
+                            index_t endianness = Endianness::DEFAULT_ID);
 
     static DataType c_double(index_t num_elements=1,
                              index_t offset = 0,
                              index_t stride = sizeof(CONDUIT_NATIVE_DOUBLE),
                              index_t element_bytes=sizeof(CONDUIT_NATIVE_DOUBLE),
-                             index_t endianness = Endianness::DEFAULT_T);
+                             index_t endianness = Endianness::DEFAULT_ID);
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::DataType C Native Leaf Constructor Helpers 

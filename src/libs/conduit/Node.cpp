@@ -151,7 +151,7 @@ void
 Node::reset()
 {
     release();
-    m_schema->set(DataType::EMPTY_T);
+    m_schema->set(DataType::EMPTY_ID);
 }
 
 //-----------------------------------------------------------------------------
@@ -489,7 +489,7 @@ Node::mmap(const std::string &stream_path,
 void 
 Node::set_node(const Node &node)
 {
-    if(node.dtype().id() == DataType::OBJECT_T)
+    if(node.dtype().id() == DataType::OBJECT_ID)
     {
         init(DataType::object());
         std::vector<std::string> paths;
@@ -507,7 +507,7 @@ Node::set_node(const Node &node)
             this->append_node_ptr(curr_node);       
         }        
     }
-    else if(node.dtype().id() == DataType::LIST_T)       
+    else if(node.dtype().id() == DataType::LIST_ID)       
     {   
         init(DataType::list());
         for(index_t i=0;i<node.m_children.size();i++)
@@ -521,7 +521,7 @@ Node::set_node(const Node &node)
             this->append_node_ptr(curr_node);
         }
     }
-    else if (node.dtype().id() != DataType::EMPTY_T)
+    else if (node.dtype().id() != DataType::EMPTY_ID)
     {
         node.compact_to(*this);
     }
@@ -964,12 +964,12 @@ Node::set_string(const std::string &data)
     release();
     // size including the null term
     index_t str_size_with_term = data.length()+1;
-    DataType str_t(DataType::CHAR8_STR_T,
+    DataType str_t(DataType::CHAR8_STR_ID,
                    str_size_with_term,
                    0,
                    sizeof(char),
                    sizeof(char),
-                   Endianness::DEFAULT_T);
+                   Endianness::DEFAULT_ID);
     init(str_t);
     memcpy(m_data,data.c_str(),sizeof(char)*str_size_with_term);
 }
@@ -988,12 +988,12 @@ Node::set_char8_str(const char *data)
     release();
     // size including the null term
     index_t str_size_with_term = strlen(data)+1;
-    DataType str_t(DataType::CHAR8_STR_T,
+    DataType str_t(DataType::CHAR8_STR_ID,
                    str_size_with_term,
                    0,
                    sizeof(char),
                    sizeof(char),
-                   Endianness::DEFAULT_T);
+                   Endianness::DEFAULT_ID);
                    init(str_t);
                    memcpy(m_data,data,sizeof(char)*str_size_with_term);
 }
@@ -1011,12 +1011,12 @@ Node::set_char8_str(const char *data)
 void 
 Node::set_int8_vector(const std::vector<int8> &data)
 {
-    DataType vec_t(DataType::INT8_T,
+    DataType vec_t(DataType::INT8_ID,
                    (index_t)data.size(),
                    0,
                    sizeof(int8),
                    sizeof(int8),
-                   Endianness::DEFAULT_T);
+                   Endianness::DEFAULT_ID);
     init(vec_t);
     memcpy(m_data,&data[0],sizeof(int8)*data.size());
 }
@@ -1032,12 +1032,12 @@ Node::set(const std::vector<int8> &data)
 void 
 Node::set_int16_vector(const std::vector<int16> &data)
 {
-    DataType vec_t(DataType::INT16_T,
+    DataType vec_t(DataType::INT16_ID,
                    (index_t)data.size(),
                    0,
                    sizeof(int16),
                    sizeof(int16),
-                   Endianness::DEFAULT_T);
+                   Endianness::DEFAULT_ID);
     init(vec_t);
     memcpy(m_data,&data[0],sizeof(int16)*data.size());
 }
@@ -1053,12 +1053,12 @@ Node::set(const std::vector<int16> &data)
 void 
 Node::set_int32_vector(const std::vector<int32> &data)
 {
-    DataType vec_t(DataType::INT32_T,
+    DataType vec_t(DataType::INT32_ID,
                    (index_t)data.size(),
                    0,
                    sizeof(int32),
                    sizeof(int32),
-                   Endianness::DEFAULT_T);
+                   Endianness::DEFAULT_ID);
     init(vec_t);
     memcpy(m_data,&data[0],sizeof(int32)*data.size());
 }
@@ -1074,12 +1074,12 @@ Node::set(const std::vector<int32> &data)
 void 
 Node::set_int64_vector(const std::vector<int64> &data)
 {
-    DataType vec_t(DataType::INT64_T,
+    DataType vec_t(DataType::INT64_ID,
                    (index_t)data.size(),
                    0,
                    sizeof(int64),
                    sizeof(int64),
-                   Endianness::DEFAULT_T);
+                   Endianness::DEFAULT_ID);
     init(vec_t);
     memcpy(m_data,&data[0],sizeof(int64)*data.size());
 }
@@ -1099,12 +1099,12 @@ Node::set(const std::vector<int64> &data)
 void 
 Node::set_uint8_vector(const std::vector<uint8> &data)
 {
-    DataType vec_t(DataType::UINT8_T,
+    DataType vec_t(DataType::UINT8_ID,
                    (index_t)data.size(),
                    0,
                    sizeof(uint8),
                    sizeof(uint8),
-                   Endianness::DEFAULT_T);
+                   Endianness::DEFAULT_ID);
     init(vec_t);
     memcpy(m_data,&data[0],sizeof(uint8)*data.size());
 }
@@ -1120,12 +1120,12 @@ Node::set(const std::vector<uint8> &data)
 void 
 Node::set_uint16_vector(const std::vector<uint16> &data)
 {
-    DataType vec_t(DataType::UINT16_T,
+    DataType vec_t(DataType::UINT16_ID,
                    (index_t)data.size(),
                    0,
                    sizeof(uint16),
                    sizeof(uint16),
-                   Endianness::DEFAULT_T);
+                   Endianness::DEFAULT_ID);
     init(vec_t);
     memcpy(m_data,&data[0],sizeof(uint16)*data.size());
 }
@@ -1141,12 +1141,12 @@ Node::set(const std::vector<uint16> &data)
 void 
 Node::set_uint32_vector(const std::vector<uint32> &data)
 {
-    DataType vec_t(DataType::UINT32_T,
+    DataType vec_t(DataType::UINT32_ID,
                    (index_t)data.size(),
                    0,
                    sizeof(uint32),
                    sizeof(uint32),
-                   Endianness::DEFAULT_T);
+                   Endianness::DEFAULT_ID);
     init(vec_t);
     memcpy(m_data,&data[0],sizeof(uint32)*data.size());
 }
@@ -1162,12 +1162,12 @@ Node::set(const std::vector<uint32> &data)
 void 
 Node::set_uint64_vector(const std::vector<uint64> &data)
 {
-    DataType vec_t(DataType::UINT64_T,
+    DataType vec_t(DataType::UINT64_ID,
                    (index_t)data.size(),
                    0,
                    sizeof(uint64),
                    sizeof(uint64),
-                   Endianness::DEFAULT_T);
+                   Endianness::DEFAULT_ID);
     init(vec_t);
     memcpy(m_data,&data[0],sizeof(uint64)*data.size());
 }
@@ -1187,12 +1187,12 @@ Node::set(const std::vector<uint64> &data)
 void 
 Node::set_float32_vector(const std::vector<float32> &data)
 {
-    DataType vec_t(DataType::FLOAT32_T,
+    DataType vec_t(DataType::FLOAT32_ID,
                    (index_t)data.size(),
                    0,
                    sizeof(float32),
                    sizeof(float32),
-                   Endianness::DEFAULT_T);
+                   Endianness::DEFAULT_ID);
     init(vec_t);
     memcpy(m_data,&data[0],sizeof(float32)*data.size());
 }
@@ -1209,12 +1209,12 @@ Node::set(const std::vector<float32> &data)
 void 
 Node::set_float64_vector(const std::vector<float64> &data)
 {
-    DataType vec_t(DataType::FLOAT64_T,
+    DataType vec_t(DataType::FLOAT64_ID,
                    (index_t)data.size(),
                    0,
                    sizeof(float64),
                    sizeof(float64),
-                   Endianness::DEFAULT_T);
+                   Endianness::DEFAULT_ID);
     init(vec_t);
     memcpy(m_data,&data[0],sizeof(float64)*data.size());
 }
@@ -3193,12 +3193,12 @@ Node::set_external_char8_str(char *data)
     
     // size including the null term
     index_t str_size_with_term = strlen(data)+1;
-    DataType str_t(DataType::CHAR8_STR_T,
+    DataType str_t(DataType::CHAR8_STR_ID,
                    str_size_with_term,
                    0,
                    sizeof(char),
                    sizeof(char),
-                   Endianness::DEFAULT_T);
+                   Endianness::DEFAULT_ID);
 
     m_schema->set(str_t);
     m_data  = data;
@@ -4602,8 +4602,8 @@ void
 Node::serialize(std::ofstream &ofs) const
 {
     index_t dtype_id = dtype().id();
-    if( dtype_id == DataType::OBJECT_T ||
-        dtype_id == DataType::LIST_T)
+    if( dtype_id == DataType::OBJECT_ID ||
+        dtype_id == DataType::LIST_ID)
     {
         std::vector<Node*>::const_iterator itr;
         for(itr = m_children.begin(); itr < m_children.end(); ++itr)
@@ -4611,7 +4611,7 @@ Node::serialize(std::ofstream &ofs) const
             (*itr)->serialize(ofs);
         }
     }
-    else if( dtype_id != DataType::EMPTY_T)
+    else if( dtype_id != DataType::EMPTY_ID)
     {
         if(is_compact())
         {
@@ -4688,7 +4688,7 @@ Node::update(Node &n_src)
     /// arrays and non empty leafs will simply overwrite the current
     /// node, these semantics seem sensible, but we could revisit this
     index_t dtype_id = n_src.dtype().id();
-    if( dtype_id == DataType::OBJECT_T)
+    if( dtype_id == DataType::OBJECT_ID)
     {
         std::vector<std::string> src_paths;
         n_src.paths(src_paths);
@@ -4700,13 +4700,13 @@ Node::update(Node &n_src)
             fetch(ent_name).update(n_src.fetch(ent_name));
         }
     }
-    else if( dtype_id == DataType::LIST_T)
+    else if( dtype_id == DataType::LIST_ID)
     {
         // if we are already a list type, then call update on the children
         //  in the list
         index_t src_idx = 0;
         index_t src_num_children = n_src.number_of_children();
-        if( dtype().id() == DataType::LIST_T)
+        if( dtype().id() == DataType::LIST_ID)
         {
             index_t num_children = number_of_children();
             for(index_t idx=0; 
@@ -4724,7 +4724,7 @@ Node::update(Node &n_src)
             append().update(n_src.child(idx));
         }
     }
-    else if(dtype_id != DataType::EMPTY_T)
+    else if(dtype_id != DataType::EMPTY_ID)
     {
         if(this->dtype().is_compatible(n_src.dtype()))
         {
@@ -4761,7 +4761,7 @@ Node::endian_swap(index_t endianness)
 {
     index_t dtype_id = dtype().id();
 
-    if (dtype_id == DataType::OBJECT_T || dtype_id == DataType::LIST_T )
+    if (dtype_id == DataType::OBJECT_ID || dtype_id == DataType::LIST_ID )
     {
         for(index_t i=0;i<number_of_children();i++)
         {
@@ -4777,12 +4777,12 @@ Node::endian_swap(index_t endianness)
         index_t src_endian  = dtype().endianness();
         index_t dest_endian = endianness;
     
-        if(src_endian == Endianness::DEFAULT_T)
+        if(src_endian == Endianness::DEFAULT_ID)
         {
             src_endian = Endianness::machine_default();
         }
     
-        if(dest_endian == Endianness::DEFAULT_T)
+        if(dest_endian == Endianness::DEFAULT_ID)
         {
             dest_endian = Endianness::machine_default();
         }
@@ -4821,18 +4821,18 @@ Node::to_int8() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return as_int8();
-        case DataType::INT16_T: return (int8)as_int16();
-        case DataType::INT32_T: return (int8)as_int32();
-        case DataType::INT64_T: return (int8)as_int64();
+        case DataType::INT8_ID:  return as_int8();
+        case DataType::INT16_ID: return (int8)as_int16();
+        case DataType::INT32_ID: return (int8)as_int32();
+        case DataType::INT64_ID: return (int8)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (int8)as_uint8();
-        case DataType::UINT16_T: return (int8)as_uint16();
-        case DataType::UINT32_T: return (int8)as_uint32();
-        case DataType::UINT64_T: return (int8)as_uint64();
+        case DataType::UINT8_ID:  return (int8)as_uint8();
+        case DataType::UINT16_ID: return (int8)as_uint16();
+        case DataType::UINT32_ID: return (int8)as_uint32();
+        case DataType::UINT64_ID: return (int8)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (int8)as_float32();
-        case DataType::FLOAT64_T: return (int8)as_float64();
+        case DataType::FLOAT32_ID: return (int8)as_float32();
+        case DataType::FLOAT64_ID: return (int8)as_float64();
     }
     return 0;
 }
@@ -4845,18 +4845,18 @@ Node::to_int16() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (int16)as_int8();
-        case DataType::INT16_T: return as_int16();
-        case DataType::INT32_T: return (int16)as_int32();
-        case DataType::INT64_T: return (int16)as_int64();
+        case DataType::INT8_ID:  return (int16)as_int8();
+        case DataType::INT16_ID: return as_int16();
+        case DataType::INT32_ID: return (int16)as_int32();
+        case DataType::INT64_ID: return (int16)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (int16)as_uint8();
-        case DataType::UINT16_T: return (int16)as_uint16();
-        case DataType::UINT32_T: return (int16)as_uint32();
-        case DataType::UINT64_T: return (int16)as_uint64();
+        case DataType::UINT8_ID:  return (int16)as_uint8();
+        case DataType::UINT16_ID: return (int16)as_uint16();
+        case DataType::UINT32_ID: return (int16)as_uint32();
+        case DataType::UINT64_ID: return (int16)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (int16)as_float32();
-        case DataType::FLOAT64_T: return (int16)as_float64();
+        case DataType::FLOAT32_ID: return (int16)as_float32();
+        case DataType::FLOAT64_ID: return (int16)as_float64();
     }
     return 0;
 }
@@ -4868,18 +4868,18 @@ Node::to_int32() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (int32)as_int8();
-        case DataType::INT16_T: return (int32)as_int16();
-        case DataType::INT32_T: return as_int32();
-        case DataType::INT64_T: return (int32)as_int64();
+        case DataType::INT8_ID:  return (int32)as_int8();
+        case DataType::INT16_ID: return (int32)as_int16();
+        case DataType::INT32_ID: return as_int32();
+        case DataType::INT64_ID: return (int32)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (int32)as_uint8();
-        case DataType::UINT16_T: return (int32)as_uint16();
-        case DataType::UINT32_T: return (int32)as_uint32();
-        case DataType::UINT64_T: return (int32)as_uint64();
+        case DataType::UINT8_ID:  return (int32)as_uint8();
+        case DataType::UINT16_ID: return (int32)as_uint16();
+        case DataType::UINT32_ID: return (int32)as_uint32();
+        case DataType::UINT64_ID: return (int32)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (int32)as_float32();
-        case DataType::FLOAT64_T: return (int32)as_float64();
+        case DataType::FLOAT32_ID: return (int32)as_float32();
+        case DataType::FLOAT64_ID: return (int32)as_float64();
     }
     return 0;
 }
@@ -4891,18 +4891,18 @@ Node::to_int64() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (int64)as_int8();
-        case DataType::INT16_T: return (int64)as_int16();
-        case DataType::INT32_T: return (int64)as_int32();
-        case DataType::INT64_T: return as_int64();
+        case DataType::INT8_ID:  return (int64)as_int8();
+        case DataType::INT16_ID: return (int64)as_int16();
+        case DataType::INT32_ID: return (int64)as_int32();
+        case DataType::INT64_ID: return as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (int64)as_uint8();
-        case DataType::UINT16_T: return (int64)as_uint16();
-        case DataType::UINT32_T: return (int64)as_uint32();
-        case DataType::UINT64_T: return (int64)as_uint64();
+        case DataType::UINT8_ID:  return (int64)as_uint8();
+        case DataType::UINT16_ID: return (int64)as_uint16();
+        case DataType::UINT32_ID: return (int64)as_uint32();
+        case DataType::UINT64_ID: return (int64)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (int64)as_float32();
-        case DataType::FLOAT64_T: return (int64)as_float64();
+        case DataType::FLOAT32_ID: return (int64)as_float32();
+        case DataType::FLOAT64_ID: return (int64)as_float64();
     }
     return 0;
 }
@@ -4914,18 +4914,18 @@ Node::to_uint8() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (uint8)as_int8();
-        case DataType::INT16_T: return (uint8)as_int16();
-        case DataType::INT32_T: return (uint8)as_int32();
-        case DataType::INT64_T: return (uint8)as_int64();
+        case DataType::INT8_ID:  return (uint8)as_int8();
+        case DataType::INT16_ID: return (uint8)as_int16();
+        case DataType::INT32_ID: return (uint8)as_int32();
+        case DataType::INT64_ID: return (uint8)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return as_uint8();
-        case DataType::UINT16_T: return (uint8)as_uint16();
-        case DataType::UINT32_T: return (uint8)as_uint32();
-        case DataType::UINT64_T: return (uint8)as_uint64();
+        case DataType::UINT8_ID:  return as_uint8();
+        case DataType::UINT16_ID: return (uint8)as_uint16();
+        case DataType::UINT32_ID: return (uint8)as_uint32();
+        case DataType::UINT64_ID: return (uint8)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (uint8)as_float32();
-        case DataType::FLOAT64_T: return (uint8)as_float64();
+        case DataType::FLOAT32_ID: return (uint8)as_float32();
+        case DataType::FLOAT64_ID: return (uint8)as_float64();
     }
     return 0;
 }
@@ -4938,18 +4938,18 @@ Node::to_uint16() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (uint16)as_int8();
-        case DataType::INT16_T: return (uint16)as_int16();
-        case DataType::INT32_T: return (uint16)as_int32();
-        case DataType::INT64_T: return (uint16)as_int64();
+        case DataType::INT8_ID:  return (uint16)as_int8();
+        case DataType::INT16_ID: return (uint16)as_int16();
+        case DataType::INT32_ID: return (uint16)as_int32();
+        case DataType::INT64_ID: return (uint16)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (uint16)as_uint8();
-        case DataType::UINT16_T: return as_uint16();
-        case DataType::UINT32_T: return (uint16)as_uint32();
-        case DataType::UINT64_T: return (uint16)as_uint64();
+        case DataType::UINT8_ID:  return (uint16)as_uint8();
+        case DataType::UINT16_ID: return as_uint16();
+        case DataType::UINT32_ID: return (uint16)as_uint32();
+        case DataType::UINT64_ID: return (uint16)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (uint16)as_float32();
-        case DataType::FLOAT64_T: return (uint16)as_float64();
+        case DataType::FLOAT32_ID: return (uint16)as_float32();
+        case DataType::FLOAT64_ID: return (uint16)as_float64();
     }
     return 0;
 }
@@ -4961,18 +4961,18 @@ Node::to_uint32() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (uint32)as_int8();
-        case DataType::INT16_T: return (uint32)as_int16();
-        case DataType::INT32_T: return (uint32)as_int32();
-        case DataType::INT64_T: return (uint32)as_int64();
+        case DataType::INT8_ID:  return (uint32)as_int8();
+        case DataType::INT16_ID: return (uint32)as_int16();
+        case DataType::INT32_ID: return (uint32)as_int32();
+        case DataType::INT64_ID: return (uint32)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (uint32)as_uint8();
-        case DataType::UINT16_T: return (uint32)as_uint16();
-        case DataType::UINT32_T: return as_uint32();
-        case DataType::UINT64_T: return (uint32)as_uint64();
+        case DataType::UINT8_ID:  return (uint32)as_uint8();
+        case DataType::UINT16_ID: return (uint32)as_uint16();
+        case DataType::UINT32_ID: return as_uint32();
+        case DataType::UINT64_ID: return (uint32)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (uint32)as_float32();
-        case DataType::FLOAT64_T: return (uint32)as_float64();
+        case DataType::FLOAT32_ID: return (uint32)as_float32();
+        case DataType::FLOAT64_ID: return (uint32)as_float64();
     }
     return 0;
 }
@@ -4984,18 +4984,18 @@ Node::to_uint64() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (uint64)as_int8();
-        case DataType::INT16_T: return (uint64)as_int16();
-        case DataType::INT32_T: return (uint64)as_int32();
-        case DataType::INT64_T: return (uint64)as_int64();
+        case DataType::INT8_ID:  return (uint64)as_int8();
+        case DataType::INT16_ID: return (uint64)as_int16();
+        case DataType::INT32_ID: return (uint64)as_int32();
+        case DataType::INT64_ID: return (uint64)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (uint64)as_uint8();
-        case DataType::UINT16_T: return (uint64)as_uint16();
-        case DataType::UINT32_T: return (uint64)as_uint32();
-        case DataType::UINT64_T: return as_uint64();
+        case DataType::UINT8_ID:  return (uint64)as_uint8();
+        case DataType::UINT16_ID: return (uint64)as_uint16();
+        case DataType::UINT32_ID: return (uint64)as_uint32();
+        case DataType::UINT64_ID: return as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (uint64)as_float32();
-        case DataType::FLOAT64_T: return (uint64)as_float64();
+        case DataType::FLOAT32_ID: return (uint64)as_float32();
+        case DataType::FLOAT64_ID: return (uint64)as_float64();
     }
     return 0;
 }
@@ -5008,18 +5008,18 @@ Node::to_float32() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (float32)as_int8();
-        case DataType::INT16_T: return (float32)as_int16();
-        case DataType::INT32_T: return (float32)as_int32();
-        case DataType::INT64_T: return (float32)as_int64();
+        case DataType::INT8_ID:  return (float32)as_int8();
+        case DataType::INT16_ID: return (float32)as_int16();
+        case DataType::INT32_ID: return (float32)as_int32();
+        case DataType::INT64_ID: return (float32)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (float32)as_uint8();
-        case DataType::UINT16_T: return (float32)as_uint16();
-        case DataType::UINT32_T: return (float32)as_uint32();
-        case DataType::UINT64_T: return (float32)as_uint64();
+        case DataType::UINT8_ID:  return (float32)as_uint8();
+        case DataType::UINT16_ID: return (float32)as_uint16();
+        case DataType::UINT32_ID: return (float32)as_uint32();
+        case DataType::UINT64_ID: return (float32)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return as_float32();
-        case DataType::FLOAT64_T: return (float64)as_float64();
+        case DataType::FLOAT32_ID: return as_float32();
+        case DataType::FLOAT64_ID: return (float64)as_float64();
     }
     return 0.0;
 }
@@ -5032,18 +5032,18 @@ Node::to_float64() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (float64)as_int8();
-        case DataType::INT16_T: return (float64)as_int16();
-        case DataType::INT32_T: return (float64)as_int32();
-        case DataType::INT64_T: return (float64)as_int64();
+        case DataType::INT8_ID:  return (float64)as_int8();
+        case DataType::INT16_ID: return (float64)as_int16();
+        case DataType::INT32_ID: return (float64)as_int32();
+        case DataType::INT64_ID: return (float64)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (float64)as_uint8();
-        case DataType::UINT16_T: return (float64)as_uint16();
-        case DataType::UINT32_T: return (float64)as_uint32();
-        case DataType::UINT64_T: return (float64)as_uint64();
+        case DataType::UINT8_ID:  return (float64)as_uint8();
+        case DataType::UINT16_ID: return (float64)as_uint16();
+        case DataType::UINT32_ID: return (float64)as_uint32();
+        case DataType::UINT64_ID: return (float64)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (float64)as_float32();
-        case DataType::FLOAT64_T: return as_float64();
+        case DataType::FLOAT32_ID: return (float64)as_float32();
+        case DataType::FLOAT64_ID: return as_float64();
     }
     return 0.0;
 }
@@ -5056,18 +5056,18 @@ Node::to_index_t() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (index_t)as_int8();
-        case DataType::INT16_T: return (index_t)as_int16();
-        case DataType::INT32_T: return (index_t)as_int32();
-        case DataType::INT64_T: return (index_t)as_int64();
+        case DataType::INT8_ID:  return (index_t)as_int8();
+        case DataType::INT16_ID: return (index_t)as_int16();
+        case DataType::INT32_ID: return (index_t)as_int32();
+        case DataType::INT64_ID: return (index_t)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (index_t)as_uint8();
-        case DataType::UINT16_T: return (index_t)as_uint16();
-        case DataType::UINT32_T: return (index_t)as_uint32();
-        case DataType::UINT64_T: return (index_t)as_uint64();
+        case DataType::UINT8_ID:  return (index_t)as_uint8();
+        case DataType::UINT16_ID: return (index_t)as_uint16();
+        case DataType::UINT32_ID: return (index_t)as_uint32();
+        case DataType::UINT64_ID: return (index_t)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (index_t)as_float32();
-        case DataType::FLOAT64_T: return (index_t)as_float64();
+        case DataType::FLOAT32_ID: return (index_t)as_float32();
+        case DataType::FLOAT64_ID: return (index_t)as_float64();
     }
     return 0;
 }
@@ -5083,18 +5083,18 @@ Node::to_char() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (char)as_int8();
-        case DataType::INT16_T: return (char)as_int16();
-        case DataType::INT32_T: return (char)as_int32();
-        case DataType::INT64_T: return (char)as_int64();
+        case DataType::INT8_ID:  return (char)as_int8();
+        case DataType::INT16_ID: return (char)as_int16();
+        case DataType::INT32_ID: return (char)as_int32();
+        case DataType::INT64_ID: return (char)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (char)as_uint8();
-        case DataType::UINT16_T: return (char)as_uint16();
-        case DataType::UINT32_T: return (char)as_uint32();
-        case DataType::UINT64_T: return (char)as_uint64();
+        case DataType::UINT8_ID:  return (char)as_uint8();
+        case DataType::UINT16_ID: return (char)as_uint16();
+        case DataType::UINT32_ID: return (char)as_uint32();
+        case DataType::UINT64_ID: return (char)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (char)as_float32();
-        case DataType::FLOAT64_T: return (char)as_float64();
+        case DataType::FLOAT32_ID: return (char)as_float32();
+        case DataType::FLOAT64_ID: return (char)as_float64();
     }
     return 0;
 }
@@ -5106,18 +5106,18 @@ Node::to_short() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (short)as_int8();
-        case DataType::INT16_T: return (short)as_int16();
-        case DataType::INT32_T: return (short)as_int32();
-        case DataType::INT64_T: return (short)as_int64();
+        case DataType::INT8_ID:  return (short)as_int8();
+        case DataType::INT16_ID: return (short)as_int16();
+        case DataType::INT32_ID: return (short)as_int32();
+        case DataType::INT64_ID: return (short)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (short)as_uint8();
-        case DataType::UINT16_T: return (short)as_uint16();
-        case DataType::UINT32_T: return (short)as_uint32();
-        case DataType::UINT64_T: return (short)as_uint64();
+        case DataType::UINT8_ID:  return (short)as_uint8();
+        case DataType::UINT16_ID: return (short)as_uint16();
+        case DataType::UINT32_ID: return (short)as_uint32();
+        case DataType::UINT64_ID: return (short)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (short)as_float32();
-        case DataType::FLOAT64_T: return (short)as_float64();
+        case DataType::FLOAT32_ID: return (short)as_float32();
+        case DataType::FLOAT64_ID: return (short)as_float64();
     }
     return 0;
 }
@@ -5129,18 +5129,18 @@ Node::to_int() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (int)as_int8();
-        case DataType::INT16_T: return (int)as_int16();
-        case DataType::INT32_T: return (int)as_int32();
-        case DataType::INT64_T: return (int)as_int64();
+        case DataType::INT8_ID:  return (int)as_int8();
+        case DataType::INT16_ID: return (int)as_int16();
+        case DataType::INT32_ID: return (int)as_int32();
+        case DataType::INT64_ID: return (int)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (int)as_uint8();
-        case DataType::UINT16_T: return (int)as_uint16();
-        case DataType::UINT32_T: return (int)as_uint32();
-        case DataType::UINT64_T: return (int)as_uint64();
+        case DataType::UINT8_ID:  return (int)as_uint8();
+        case DataType::UINT16_ID: return (int)as_uint16();
+        case DataType::UINT32_ID: return (int)as_uint32();
+        case DataType::UINT64_ID: return (int)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (int)as_float32();
-        case DataType::FLOAT64_T: return (int)as_float64();
+        case DataType::FLOAT32_ID: return (int)as_float32();
+        case DataType::FLOAT64_ID: return (int)as_float64();
     }
     return 0;
     
@@ -5153,18 +5153,18 @@ Node::to_long() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (long)as_int8();
-        case DataType::INT16_T: return (long)as_int16();
-        case DataType::INT32_T: return (long)as_int32();
-        case DataType::INT64_T: return (long)as_int64();
+        case DataType::INT8_ID:  return (long)as_int8();
+        case DataType::INT16_ID: return (long)as_int16();
+        case DataType::INT32_ID: return (long)as_int32();
+        case DataType::INT64_ID: return (long)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (long)as_uint8();
-        case DataType::UINT16_T: return (long)as_uint16();
-        case DataType::UINT32_T: return (long)as_uint32();
-        case DataType::UINT64_T: return (long)as_uint64();
+        case DataType::UINT8_ID:  return (long)as_uint8();
+        case DataType::UINT16_ID: return (long)as_uint16();
+        case DataType::UINT32_ID: return (long)as_uint32();
+        case DataType::UINT64_ID: return (long)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (long)as_float32();
-        case DataType::FLOAT64_T: return (long)as_float64();
+        case DataType::FLOAT32_ID: return (long)as_float32();
+        case DataType::FLOAT64_ID: return (long)as_float64();
     }
     return 0;
 }
@@ -5178,18 +5178,18 @@ Node::to_long_long() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (long long)as_int8();
-        case DataType::INT16_T: return (long long)as_int16();
-        case DataType::INT32_T: return (long long)as_int32();
-        case DataType::INT64_T: return (long long)as_int64();
+        case DataType::INT8_ID:  return (long long)as_int8();
+        case DataType::INT16_ID: return (long long)as_int16();
+        case DataType::INT32_ID: return (long long)as_int32();
+        case DataType::INT64_ID: return (long long)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (long long)as_uint8();
-        case DataType::UINT16_T: return (long long)as_uint16();
-        case DataType::UINT32_T: return (long long)as_uint32();
-        case DataType::UINT64_T: return (long long)as_uint64();
+        case DataType::UINT8_ID:  return (long long)as_uint8();
+        case DataType::UINT16_ID: return (long long)as_uint16();
+        case DataType::UINT32_ID: return (long long)as_uint32();
+        case DataType::UINT64_ID: return (long long)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (long long)as_float32();
-        case DataType::FLOAT64_T: return (long long)as_float64();
+        case DataType::FLOAT32_ID: return (long long)as_float32();
+        case DataType::FLOAT64_ID: return (long long)as_float64();
     }
     return 0;
 }
@@ -5208,18 +5208,18 @@ Node::to_unsigned_char() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (unsigned char)as_int8();
-        case DataType::INT16_T: return (unsigned char)as_int16();
-        case DataType::INT32_T: return (unsigned char)as_int32();
-        case DataType::INT64_T: return (unsigned char)as_int64();
+        case DataType::INT8_ID:  return (unsigned char)as_int8();
+        case DataType::INT16_ID: return (unsigned char)as_int16();
+        case DataType::INT32_ID: return (unsigned char)as_int32();
+        case DataType::INT64_ID: return (unsigned char)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (unsigned char)as_uint8();
-        case DataType::UINT16_T: return (unsigned char)as_uint16();
-        case DataType::UINT32_T: return (unsigned char)as_uint32();
-        case DataType::UINT64_T: return (unsigned char)as_uint64();
+        case DataType::UINT8_ID:  return (unsigned char)as_uint8();
+        case DataType::UINT16_ID: return (unsigned char)as_uint16();
+        case DataType::UINT32_ID: return (unsigned char)as_uint32();
+        case DataType::UINT64_ID: return (unsigned char)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (unsigned char)as_float32();
-        case DataType::FLOAT64_T: return (unsigned char)as_float64();
+        case DataType::FLOAT32_ID: return (unsigned char)as_float32();
+        case DataType::FLOAT64_ID: return (unsigned char)as_float64();
     }
     return 0;
 }
@@ -5231,18 +5231,18 @@ Node::to_unsigned_short() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (unsigned short)as_int8();
-        case DataType::INT16_T: return (unsigned short)as_int16();
-        case DataType::INT32_T: return (unsigned short)as_int32();
-        case DataType::INT64_T: return (unsigned short)as_int64();
+        case DataType::INT8_ID:  return (unsigned short)as_int8();
+        case DataType::INT16_ID: return (unsigned short)as_int16();
+        case DataType::INT32_ID: return (unsigned short)as_int32();
+        case DataType::INT64_ID: return (unsigned short)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (unsigned short)as_uint8();
-        case DataType::UINT16_T: return (unsigned short)as_uint16();
-        case DataType::UINT32_T: return (unsigned short)as_uint32();
-        case DataType::UINT64_T: return (unsigned short)as_uint64();
+        case DataType::UINT8_ID:  return (unsigned short)as_uint8();
+        case DataType::UINT16_ID: return (unsigned short)as_uint16();
+        case DataType::UINT32_ID: return (unsigned short)as_uint32();
+        case DataType::UINT64_ID: return (unsigned short)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (unsigned short)as_float32();
-        case DataType::FLOAT64_T: return (unsigned short)as_float64();
+        case DataType::FLOAT32_ID: return (unsigned short)as_float32();
+        case DataType::FLOAT64_ID: return (unsigned short)as_float64();
     }
     return 0;
 }
@@ -5254,18 +5254,18 @@ Node::to_unsigned_int() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (unsigned int)as_int8();
-        case DataType::INT16_T: return (unsigned int)as_int16();
-        case DataType::INT32_T: return (unsigned int)as_int32();
-        case DataType::INT64_T: return (unsigned int)as_int64();
+        case DataType::INT8_ID:  return (unsigned int)as_int8();
+        case DataType::INT16_ID: return (unsigned int)as_int16();
+        case DataType::INT32_ID: return (unsigned int)as_int32();
+        case DataType::INT64_ID: return (unsigned int)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (unsigned int)as_uint8();
-        case DataType::UINT16_T: return (unsigned int)as_uint16();
-        case DataType::UINT32_T: return (unsigned int)as_uint32();
-        case DataType::UINT64_T: return (unsigned int)as_uint64();
+        case DataType::UINT8_ID:  return (unsigned int)as_uint8();
+        case DataType::UINT16_ID: return (unsigned int)as_uint16();
+        case DataType::UINT32_ID: return (unsigned int)as_uint32();
+        case DataType::UINT64_ID: return (unsigned int)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (unsigned int)as_float32();
-        case DataType::FLOAT64_T: return (unsigned int)as_float64();
+        case DataType::FLOAT32_ID: return (unsigned int)as_float32();
+        case DataType::FLOAT64_ID: return (unsigned int)as_float64();
     }
     return 0;
 }
@@ -5277,18 +5277,18 @@ Node::to_unsigned_long() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (unsigned long)as_int8();
-        case DataType::INT16_T: return (unsigned long)as_int16();
-        case DataType::INT32_T: return (unsigned long)as_int32();
-        case DataType::INT64_T: return (unsigned long)as_int64();
+        case DataType::INT8_ID:  return (unsigned long)as_int8();
+        case DataType::INT16_ID: return (unsigned long)as_int16();
+        case DataType::INT32_ID: return (unsigned long)as_int32();
+        case DataType::INT64_ID: return (unsigned long)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (unsigned long)as_uint8();
-        case DataType::UINT16_T: return (unsigned long)as_uint16();
-        case DataType::UINT32_T: return (unsigned long)as_uint32();
-        case DataType::UINT64_T: return (unsigned long)as_uint64();
+        case DataType::UINT8_ID:  return (unsigned long)as_uint8();
+        case DataType::UINT16_ID: return (unsigned long)as_uint16();
+        case DataType::UINT32_ID: return (unsigned long)as_uint32();
+        case DataType::UINT64_ID: return (unsigned long)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (unsigned long)as_float32();
-        case DataType::FLOAT64_T: return (unsigned long)as_float64();
+        case DataType::FLOAT32_ID: return (unsigned long)as_float32();
+        case DataType::FLOAT64_ID: return (unsigned long)as_float64();
     }
     return 0;
 }
@@ -5302,18 +5302,18 @@ Node::to_unsigned_long_long() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (unsigned long long)as_int8();
-        case DataType::INT16_T: return (unsigned long long)as_int16();
-        case DataType::INT32_T: return (unsigned long long)as_int32();
-        case DataType::INT64_T: return (unsigned long long)as_int64();
+        case DataType::INT8_ID:  return (unsigned long long)as_int8();
+        case DataType::INT16_ID: return (unsigned long long)as_int16();
+        case DataType::INT32_ID: return (unsigned long long)as_int32();
+        case DataType::INT64_ID: return (unsigned long long)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (unsigned long long)as_uint8();
-        case DataType::UINT16_T: return (unsigned long long)as_uint16();
-        case DataType::UINT32_T: return (unsigned long long)as_uint32();
-        case DataType::UINT64_T: return (unsigned long long)as_uint64();
+        case DataType::UINT8_ID:  return (unsigned long long)as_uint8();
+        case DataType::UINT16_ID: return (unsigned long long)as_uint16();
+        case DataType::UINT32_ID: return (unsigned long long)as_uint32();
+        case DataType::UINT64_ID: return (unsigned long long)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (unsigned long long)as_float32();
-        case DataType::FLOAT64_T: return (unsigned long long)as_float64();
+        case DataType::FLOAT32_ID: return (unsigned long long)as_float32();
+        case DataType::FLOAT64_ID: return (unsigned long long)as_float64();
     }
     return 0;
 }
@@ -5329,18 +5329,18 @@ Node::to_float() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (float)as_int8();
-        case DataType::INT16_T: return (float)as_int16();
-        case DataType::INT32_T: return (float)as_int32();
-        case DataType::INT64_T: return (float)as_int64();
+        case DataType::INT8_ID:  return (float)as_int8();
+        case DataType::INT16_ID: return (float)as_int16();
+        case DataType::INT32_ID: return (float)as_int32();
+        case DataType::INT64_ID: return (float)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (float)as_uint8();
-        case DataType::UINT16_T: return (float)as_uint16();
-        case DataType::UINT32_T: return (float)as_uint32();
-        case DataType::UINT64_T: return (float)as_uint64();
+        case DataType::UINT8_ID:  return (float)as_uint8();
+        case DataType::UINT16_ID: return (float)as_uint16();
+        case DataType::UINT32_ID: return (float)as_uint32();
+        case DataType::UINT64_ID: return (float)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (float)as_float32();
-        case DataType::FLOAT64_T: return (float)as_float64();
+        case DataType::FLOAT32_ID: return (float)as_float32();
+        case DataType::FLOAT64_ID: return (float)as_float64();
     }
     return 0;
 
@@ -5353,18 +5353,18 @@ Node::to_double() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (double)as_int8();
-        case DataType::INT16_T: return (double)as_int16();
-        case DataType::INT32_T: return (double)as_int32();
-        case DataType::INT64_T: return (double)as_int64();
+        case DataType::INT8_ID:  return (double)as_int8();
+        case DataType::INT16_ID: return (double)as_int16();
+        case DataType::INT32_ID: return (double)as_int32();
+        case DataType::INT64_ID: return (double)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (double)as_uint8();
-        case DataType::UINT16_T: return (double)as_uint16();
-        case DataType::UINT32_T: return (double)as_uint32();
-        case DataType::UINT64_T: return (double)as_uint64();
+        case DataType::UINT8_ID:  return (double)as_uint8();
+        case DataType::UINT16_ID: return (double)as_uint16();
+        case DataType::UINT32_ID: return (double)as_uint32();
+        case DataType::UINT64_ID: return (double)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (double)as_float32();
-        case DataType::FLOAT64_T: return (double)as_float64();
+        case DataType::FLOAT32_ID: return (double)as_float32();
+        case DataType::FLOAT64_ID: return (double)as_float64();
     }
 
     return 0; // TODO:: Error for Obj or list?
@@ -5379,18 +5379,18 @@ Node::to_long_double() const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:  return (long double)as_int8();
-        case DataType::INT16_T: return (long double)as_int16();
-        case DataType::INT32_T: return (long double)as_int32();
-        case DataType::INT64_T: return (long double)as_int64();
+        case DataType::INT8_ID:  return (long double)as_int8();
+        case DataType::INT16_ID: return (long double)as_int16();
+        case DataType::INT32_ID: return (long double)as_int32();
+        case DataType::INT64_ID: return (long double)as_int64();
         /* uints */
-        case DataType::UINT8_T:  return (long double)as_uint8();
-        case DataType::UINT16_T: return (long double)as_uint16();
-        case DataType::UINT32_T: return (long double)as_uint32();
-        case DataType::UINT64_T: return (long double)as_uint64();
+        case DataType::UINT8_ID:  return (long double)as_uint8();
+        case DataType::UINT16_ID: return (long double)as_uint16();
+        case DataType::UINT32_ID: return (long double)as_uint32();
+        case DataType::UINT64_ID: return (long double)as_uint64();
         /* floats */
-        case DataType::FLOAT32_T: return (long double)as_float32();
-        case DataType::FLOAT64_T: return (long double)as_float64();
+        case DataType::FLOAT32_ID: return (long double)as_float32();
+        case DataType::FLOAT64_ID: return (long double)as_float64();
     }
     return 0; // TODO:: Error for Obj or list?
 }
@@ -5412,54 +5412,54 @@ Node::to_int8_array(Node &res)  const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:
+        case DataType::INT8_ID:
         {   
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
         {
             res_array.set(this->as_int16_array());
             break;
         }
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
         {
             res_array.set(this->as_int32_array());
             break;
         }
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
         {
             res_array.set(this->as_int64_array());
             break;
         }
         /* uints */
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
         {
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_T: 
+        case DataType::UINT16_ID: 
         {
             res_array.set(this->as_uint16_array());
             break;
         }
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
         {
             res_array.set(this->as_uint32_array());
             break;
         }
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
         {
             res_array.set(this->as_uint64_array());
             break;
         }
         /* floats */
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
         {
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_T: 
+        case DataType::FLOAT64_ID: 
         {
             res_array.set(this->as_float64_array());
             break;
@@ -5486,54 +5486,54 @@ Node::to_int16_array(Node &res) const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:
+        case DataType::INT8_ID:
         {   
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
         {
             res_array.set(this->as_int16_array());
             break;
         }
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
         {
             res_array.set(this->as_int32_array());
             break;
         }
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
         {
             res_array.set(this->as_int64_array());
             break;
         }
         /* uints */
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
         {
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_T: 
+        case DataType::UINT16_ID: 
         {
             res_array.set(this->as_uint16_array());
             break;
         }
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
         {
             res_array.set(this->as_uint32_array());
             break;
         }
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
         {
             res_array.set(this->as_uint64_array());
             break;
         }
         /* floats */
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
         {
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_T: 
+        case DataType::FLOAT64_ID: 
         {
             res_array.set(this->as_float64_array());
             break;
@@ -5559,54 +5559,54 @@ Node::to_int32_array(Node &res) const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:
+        case DataType::INT8_ID:
         {   
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
         {
             res_array.set(this->as_int16_array());
             break;
         }
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
         {
             res_array.set(this->as_int32_array());
             break;
         }
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
         {
             res_array.set(this->as_int64_array());
             break;
         }
         /* uints */
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
         {
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_T: 
+        case DataType::UINT16_ID: 
         {
             res_array.set(this->as_uint16_array());
             break;
         }
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
         {
             res_array.set(this->as_uint32_array());
             break;
         }
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
         {
             res_array.set(this->as_uint64_array());
             break;
         }
         /* floats */
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
         {
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_T: 
+        case DataType::FLOAT64_ID: 
         {
             res_array.set(this->as_float64_array());
             break;
@@ -5632,54 +5632,54 @@ Node::to_int64_array(Node &res) const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:
+        case DataType::INT8_ID:
         {   
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
         {
             res_array.set(this->as_int16_array());
             break;
         }
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
         {
             res_array.set(this->as_int32_array());
             break;
         }
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
         {
             res_array.set(this->as_int64_array());
             break;
         }
         /* uints */
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
         {
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_T: 
+        case DataType::UINT16_ID: 
         {
             res_array.set(this->as_uint16_array());
             break;
         }
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
         {
             res_array.set(this->as_uint32_array());
             break;
         }
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
         {
             res_array.set(this->as_uint64_array());
             break;
         }
         /* floats */
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
         {
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_T: 
+        case DataType::FLOAT64_ID: 
         {
             res_array.set(this->as_float64_array());
             break;
@@ -5709,54 +5709,54 @@ Node::to_uint8_array(Node &res)  const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:
+        case DataType::INT8_ID:
         {   
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
         {
             res_array.set(this->as_int16_array());
             break;
         }
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
         {
             res_array.set(this->as_int32_array());
             break;
         }
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
         {
             res_array.set(this->as_int64_array());
             break;
         }
         /* uints */
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
         {
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_T: 
+        case DataType::UINT16_ID: 
         {
             res_array.set(this->as_uint16_array());
             break;
         }
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
         {
             res_array.set(this->as_uint32_array());
             break;
         }
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
         {
             res_array.set(this->as_uint64_array());
             break;
         }
         /* floats */
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
         {
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_T: 
+        case DataType::FLOAT64_ID: 
         {
             res_array.set(this->as_float64_array());
             break;
@@ -5782,54 +5782,54 @@ Node::to_uint16_array(Node &res) const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:
+        case DataType::INT8_ID:
         {   
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
         {
             res_array.set(this->as_int16_array());
             break;
         }
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
         {
             res_array.set(this->as_int32_array());
             break;
         }
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
         {
             res_array.set(this->as_int64_array());
             break;
         }
         /* uints */
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
         {
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_T: 
+        case DataType::UINT16_ID: 
         {
             res_array.set(this->as_uint16_array());
             break;
         }
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
         {
             res_array.set(this->as_uint32_array());
             break;
         }
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
         {
             res_array.set(this->as_uint64_array());
             break;
         }
         /* floats */
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
         {
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_T: 
+        case DataType::FLOAT64_ID: 
         {
             res_array.set(this->as_float64_array());
             break;
@@ -5855,54 +5855,54 @@ Node::to_uint32_array(Node &res) const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:
+        case DataType::INT8_ID:
         {   
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
         {
             res_array.set(this->as_int16_array());
             break;
         }
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
         {
             res_array.set(this->as_int32_array());
             break;
         }
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
         {
             res_array.set(this->as_int64_array());
             break;
         }
         /* uints */
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
         {
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_T: 
+        case DataType::UINT16_ID: 
         {
             res_array.set(this->as_uint16_array());
             break;
         }
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
         {
             res_array.set(this->as_uint32_array());
             break;
         }
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
         {
             res_array.set(this->as_uint64_array());
             break;
         }
         /* floats */
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
         {
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_T: 
+        case DataType::FLOAT64_ID: 
         {
             res_array.set(this->as_float64_array());
             break;
@@ -5929,54 +5929,54 @@ Node::to_uint64_array(Node &res) const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:
+        case DataType::INT8_ID:
         {   
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
         {
             res_array.set(this->as_int16_array());
             break;
         }
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
         {
             res_array.set(this->as_int32_array());
             break;
         }
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
         {
             res_array.set(this->as_int64_array());
             break;
         }
         /* uints */
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
         {
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_T: 
+        case DataType::UINT16_ID: 
         {
             res_array.set(this->as_uint16_array());
             break;
         }
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
         {
             res_array.set(this->as_uint32_array());
             break;
         }
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
         {
             res_array.set(this->as_uint64_array());
             break;
         }
         /* floats */
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
         {
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_T: 
+        case DataType::FLOAT64_ID: 
         {
             res_array.set(this->as_float64_array());
             break;
@@ -6005,54 +6005,54 @@ Node::to_float32_array(Node &res) const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:
+        case DataType::INT8_ID:
         {   
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
         {
             res_array.set(this->as_int16_array());
             break;
         }
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
         {
             res_array.set(this->as_int32_array());
             break;
         }
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
         {
             res_array.set(this->as_int64_array());
             break;
         }
         /* uints */
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
         {
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_T: 
+        case DataType::UINT16_ID: 
         {
             res_array.set(this->as_uint16_array());
             break;
         }
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
         {
             res_array.set(this->as_uint32_array());
             break;
         }
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
         {
             res_array.set(this->as_uint64_array());
             break;
         }
         /* floats */
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
         {
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_T: 
+        case DataType::FLOAT64_ID: 
         {
             res_array.set(this->as_float64_array());
             break;
@@ -6079,54 +6079,54 @@ Node::to_float64_array(Node &res) const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:
+        case DataType::INT8_ID:
         {   
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
         {
             res_array.set(this->as_int16_array());
             break;
         }
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
         {
             res_array.set(this->as_int32_array());
             break;
         }
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
         {
             res_array.set(this->as_int64_array());
             break;
         }
         /* uints */
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
         {
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_T: 
+        case DataType::UINT16_ID: 
         {
             res_array.set(this->as_uint16_array());
             break;
         }
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
         {
             res_array.set(this->as_uint32_array());
             break;
         }
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
         {
             res_array.set(this->as_uint64_array());
             break;
         }
         /* floats */
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
         {
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_T: 
+        case DataType::FLOAT64_ID: 
         {
             res_array.set(this->as_float64_array());
             break;
@@ -6156,54 +6156,54 @@ Node::to_char_array(Node &res) const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:
+        case DataType::INT8_ID:
         {   
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
         {
             res_array.set(this->as_int16_array());
             break;
         }
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
         {
             res_array.set(this->as_int32_array());
             break;
         }
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
         {
             res_array.set(this->as_int64_array());
             break;
         }
         /* uints */
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
         {
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_T: 
+        case DataType::UINT16_ID: 
         {
             res_array.set(this->as_uint16_array());
             break;
         }
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
         {
             res_array.set(this->as_uint32_array());
             break;
         }
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
         {
             res_array.set(this->as_uint64_array());
             break;
         }
         /* floats */
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
         {
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_T: 
+        case DataType::FLOAT64_ID: 
         {
             res_array.set(this->as_float64_array());
             break;
@@ -6229,54 +6229,54 @@ Node::to_short_array(Node &res) const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:
+        case DataType::INT8_ID:
         {   
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
         {
             res_array.set(this->as_int16_array());
             break;
         }
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
         {
             res_array.set(this->as_int32_array());
             break;
         }
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
         {
             res_array.set(this->as_int64_array());
             break;
         }
         /* uints */
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
         {
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_T: 
+        case DataType::UINT16_ID: 
         {
             res_array.set(this->as_uint16_array());
             break;
         }
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
         {
             res_array.set(this->as_uint32_array());
             break;
         }
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
         {
             res_array.set(this->as_uint64_array());
             break;
         }
         /* floats */
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
         {
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_T: 
+        case DataType::FLOAT64_ID: 
         {
             res_array.set(this->as_float64_array());
             break;
@@ -6302,54 +6302,54 @@ Node::to_int_array(Node &res) const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:
+        case DataType::INT8_ID:
         {   
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
         {
             res_array.set(this->as_int16_array());
             break;
         }
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
         {
             res_array.set(this->as_int32_array());
             break;
         }
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
         {
             res_array.set(this->as_int64_array());
             break;
         }
         /* uints */
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
         {
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_T: 
+        case DataType::UINT16_ID: 
         {
             res_array.set(this->as_uint16_array());
             break;
         }
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
         {
             res_array.set(this->as_uint32_array());
             break;
         }
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
         {
             res_array.set(this->as_uint64_array());
             break;
         }
         /* floats */
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
         {
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_T: 
+        case DataType::FLOAT64_ID: 
         {
             res_array.set(this->as_float64_array());
             break;
@@ -6375,54 +6375,54 @@ Node::to_long_array(Node &res) const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:
+        case DataType::INT8_ID:
         {   
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
         {
             res_array.set(this->as_int16_array());
             break;
         }
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
         {
             res_array.set(this->as_int32_array());
             break;
         }
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
         {
             res_array.set(this->as_int64_array());
             break;
         }
         /* uints */
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
         {
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_T: 
+        case DataType::UINT16_ID: 
         {
             res_array.set(this->as_uint16_array());
             break;
         }
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
         {
             res_array.set(this->as_uint32_array());
             break;
         }
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
         {
             res_array.set(this->as_uint64_array());
             break;
         }
         /* floats */
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
         {
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_T: 
+        case DataType::FLOAT64_ID: 
         {
             res_array.set(this->as_float64_array());
             break;
@@ -6451,54 +6451,54 @@ Node::to_unsigned_char_array(Node &res) const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:
+        case DataType::INT8_ID:
         {   
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
         {
             res_array.set(this->as_int16_array());
             break;
         }
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
         {
             res_array.set(this->as_int32_array());
             break;
         }
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
         {
             res_array.set(this->as_int64_array());
             break;
         }
         /* uints */
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
         {
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_T: 
+        case DataType::UINT16_ID: 
         {
             res_array.set(this->as_uint16_array());
             break;
         }
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
         {
             res_array.set(this->as_uint32_array());
             break;
         }
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
         {
             res_array.set(this->as_uint64_array());
             break;
         }
         /* floats */
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
         {
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_T: 
+        case DataType::FLOAT64_ID: 
         {
             res_array.set(this->as_float64_array());
             break;
@@ -6524,54 +6524,54 @@ Node::to_unsigned_short_array(Node &res) const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:
+        case DataType::INT8_ID:
         {   
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
         {
             res_array.set(this->as_int16_array());
             break;
         }
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
         {
             res_array.set(this->as_int32_array());
             break;
         }
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
         {
             res_array.set(this->as_int64_array());
             break;
         }
         /* uints */
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
         {
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_T: 
+        case DataType::UINT16_ID: 
         {
             res_array.set(this->as_uint16_array());
             break;
         }
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
         {
             res_array.set(this->as_uint32_array());
             break;
         }
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
         {
             res_array.set(this->as_uint64_array());
             break;
         }
         /* floats */
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
         {
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_T: 
+        case DataType::FLOAT64_ID: 
         {
             res_array.set(this->as_float64_array());
             break;
@@ -6597,54 +6597,54 @@ Node::to_unsigned_int_array(Node &res) const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:
+        case DataType::INT8_ID:
         {   
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
         {
             res_array.set(this->as_int16_array());
             break;
         }
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
         {
             res_array.set(this->as_int32_array());
             break;
         }
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
         {
             res_array.set(this->as_int64_array());
             break;
         }
         /* uints */
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
         {
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_T: 
+        case DataType::UINT16_ID: 
         {
             res_array.set(this->as_uint16_array());
             break;
         }
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
         {
             res_array.set(this->as_uint32_array());
             break;
         }
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
         {
             res_array.set(this->as_uint64_array());
             break;
         }
         /* floats */
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
         {
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_T: 
+        case DataType::FLOAT64_ID: 
         {
             res_array.set(this->as_float64_array());
             break;
@@ -6670,54 +6670,54 @@ Node::to_unsigned_long_array(Node &res) const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:
+        case DataType::INT8_ID:
         {   
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
         {
             res_array.set(this->as_int16_array());
             break;
         }
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
         {
             res_array.set(this->as_int32_array());
             break;
         }
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
         {
             res_array.set(this->as_int64_array());
             break;
         }
         /* uints */
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
         {
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_T: 
+        case DataType::UINT16_ID: 
         {
             res_array.set(this->as_uint16_array());
             break;
         }
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
         {
             res_array.set(this->as_uint32_array());
             break;
         }
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
         {
             res_array.set(this->as_uint64_array());
             break;
         }
         /* floats */
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
         {
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_T: 
+        case DataType::FLOAT64_ID: 
         {
             res_array.set(this->as_float64_array());
             break;
@@ -6744,54 +6744,54 @@ Node::to_float_array(Node &res) const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:
+        case DataType::INT8_ID:
         {   
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
         {
             res_array.set(this->as_int16_array());
             break;
         }
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
         {
             res_array.set(this->as_int32_array());
             break;
         }
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
         {
             res_array.set(this->as_int64_array());
             break;
         }
         /* uints */
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
         {
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_T: 
+        case DataType::UINT16_ID: 
         {
             res_array.set(this->as_uint16_array());
             break;
         }
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
         {
             res_array.set(this->as_uint32_array());
             break;
         }
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
         {
             res_array.set(this->as_uint64_array());
             break;
         }
         /* floats */
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
         {
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_T: 
+        case DataType::FLOAT64_ID: 
         {
             res_array.set(this->as_float64_array());
             break;
@@ -6817,54 +6817,54 @@ Node::to_double_array(Node &res) const
     switch(dtype().id())
     {
         /* ints */
-        case DataType::INT8_T:
+        case DataType::INT8_ID:
         {   
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
         {
             res_array.set(this->as_int16_array());
             break;
         }
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
         {
             res_array.set(this->as_int32_array());
             break;
         }
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
         {
             res_array.set(this->as_int64_array());
             break;
         }
         /* uints */
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
         {
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_T: 
+        case DataType::UINT16_ID: 
         {
             res_array.set(this->as_uint16_array());
             break;
         }
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
         {
             res_array.set(this->as_uint32_array());
             break;
         }
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
         {
             res_array.set(this->as_uint64_array());
             break;
         }
         /* floats */
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
         {
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_T: 
+        case DataType::FLOAT64_ID: 
         {
             res_array.set(this->as_float64_array());
             break;
@@ -7384,7 +7384,7 @@ Node::to_json_generic(std::ostream &os,
                       const std::string &eoe) const
 {
     os.precision(15);
-    if(dtype().id() == DataType::OBJECT_T)
+    if(dtype().id() == DataType::OBJECT_ID)
     {
         os << eoe;
         utils::indent(os,indent,depth,pad);
@@ -7408,7 +7408,7 @@ Node::to_json_generic(std::ostream &os,
         utils::indent(os,indent,depth,pad);
         os << "}";
     }
-    else if(dtype().id() == DataType::LIST_T)
+    else if(dtype().id() == DataType::LIST_ID)
     {
         os << eoe;
         utils::indent(os,indent,depth,pad);
@@ -7451,40 +7451,40 @@ Node::to_json_generic(std::ostream &os,
         switch(dtype().id())
         {
             // ints 
-            case DataType::INT8_T:
+            case DataType::INT8_ID:
                 as_int8_array().to_json(os);
                 break;
-            case DataType::INT16_T:
+            case DataType::INT16_ID:
                 as_int16_array().to_json(os);
                 break;
-            case DataType::INT32_T:
+            case DataType::INT32_ID:
                 as_int32_array().to_json(os);
                 break;
-            case DataType::INT64_T:
+            case DataType::INT64_ID:
                 as_int64_array().to_json(os);
                 break;
             // uints 
-            case DataType::UINT8_T:
+            case DataType::UINT8_ID:
                 as_uint8_array().to_json(os);
                 break;
-            case DataType::UINT16_T: 
+            case DataType::UINT16_ID: 
                 as_uint16_array().to_json(os);
                 break;
-            case DataType::UINT32_T:
+            case DataType::UINT32_ID:
                 as_uint32_array().to_json(os);
                 break;
-            case DataType::UINT64_T:
+            case DataType::UINT64_ID:
                 as_uint64_array().to_json(os);
                 break;
             // floats 
-            case DataType::FLOAT32_T:
+            case DataType::FLOAT32_ID:
                 as_float32_array().to_json(os);
                 break;
-            case DataType::FLOAT64_T:
+            case DataType::FLOAT64_ID:
                 as_float64_array().to_json(os);
                 break;
             // char8_str
-            case DataType::CHAR8_STR_T: 
+            case DataType::CHAR8_STR_ID: 
                 os << "\"" << as_char8_str() << "\""; 
                 break;
         }
@@ -7759,8 +7759,8 @@ Node::children()
 Node&
 Node::fetch(const std::string &path)
 {
-    // fetch w/ path forces OBJECT_T
-    if(dtype().id() != DataType::OBJECT_T)
+    // fetch w/ path forces OBJECT_ID
+    if(dtype().id() != DataType::OBJECT_ID)
     {
         init(DataType::object());
     }
@@ -8005,7 +8005,7 @@ int8
 Node::as_int8()  const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::INT8_T,
+                         DataType::INT8_ID,
                          "as_int8()",
                          0);
     return *((int8*)element_ptr(0));
@@ -8016,7 +8016,7 @@ int16
 Node::as_int16() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), 
-                         DataType::INT16_T,
+                         DataType::INT16_ID,
                          "as_int16()",
                          0);
     return *((int16*)element_ptr(0));
@@ -8027,7 +8027,7 @@ int32
 Node::as_int32() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::INT32_T,
+                         DataType::INT32_ID,
                          "as_int32()",
                          0);
     return *((int32*)element_ptr(0));
@@ -8038,7 +8038,7 @@ int64
 Node::as_int64() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::INT64_T,
+                         DataType::INT64_ID,
                          "as_int64()",
                          0);
     return *((int64*)element_ptr(0));
@@ -8053,7 +8053,7 @@ uint8
 Node::as_uint8() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), 
-                         DataType::UINT8_T,
+                         DataType::UINT8_ID,
                          "as_uint8()", 0);
     return *((uint8*)element_ptr(0));
 }
@@ -8063,7 +8063,7 @@ uint16
 Node::as_uint16() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::UINT16_T,
+                         DataType::UINT16_ID,
                          "as_uint16()",
                          0);
     return *((uint16*)element_ptr(0));
@@ -8074,7 +8074,7 @@ uint32
 Node::as_uint32() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::UINT32_T,
+                         DataType::UINT32_ID,
                          "as_uint32()",
                          0);
     return *((uint32*)element_ptr(0));
@@ -8085,7 +8085,7 @@ uint64
 Node::as_uint64() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::UINT64_T,
+                         DataType::UINT64_ID,
                          "as_uint64()",
                          0);
     return *((uint64*)element_ptr(0));
@@ -8100,7 +8100,7 @@ float32
 Node::as_float32() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), 
-                         DataType::FLOAT32_T,
+                         DataType::FLOAT32_ID,
                          "as_float32()",
                          0);
     return *((float32*)element_ptr(0));
@@ -8111,7 +8111,7 @@ float64
 Node::as_float64() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::FLOAT64_T,
+                         DataType::FLOAT64_ID,
                          "as_float64()",
                          0);
     return *((float64*)element_ptr(0));
@@ -8126,7 +8126,7 @@ int8 *
 Node::as_int8_ptr()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(), 
-                         DataType::INT8_T,
+                         DataType::INT8_ID,
                          "as_int8_ptr()",
                          NULL);
     return (int8*)element_ptr(0);
@@ -8137,7 +8137,7 @@ int16 *
 Node::as_int16_ptr()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::INT16_T,
+                         DataType::INT16_ID,
                          "as_int16_ptr()",
                          NULL);
     return (int16*)element_ptr(0);
@@ -8148,7 +8148,7 @@ int32 *
 Node::as_int32_ptr()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::INT32_T,
+                         DataType::INT32_ID,
                          "as_int32_ptr()",
                          NULL);
     return (int32*)element_ptr(0);
@@ -8159,7 +8159,7 @@ int64 *
 Node::as_int64_ptr()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::INT64_T,
+                         DataType::INT64_ID,
                          "as_int64_ptr()",
                          NULL);
     return (int64*)element_ptr(0);
@@ -8174,7 +8174,7 @@ uint8 *
 Node::as_uint8_ptr()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::UINT8_T,
+                         DataType::UINT8_ID,
                          "as_uint8_ptr()",
                          NULL);
     return (uint8*)element_ptr(0);
@@ -8185,7 +8185,7 @@ uint16 *
 Node::as_uint16_ptr()   
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::UINT16_T,
+                         DataType::UINT16_ID,
                          "as_uint16_ptr()",
                          NULL);
     return (uint16*)element_ptr(0);
@@ -8196,7 +8196,7 @@ uint32 *
 Node::as_uint32_ptr()   
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::UINT32_T,
+                         DataType::UINT32_ID,
                          "as_uint32_ptr()",
                          NULL);
     return (uint32*)element_ptr(0);
@@ -8207,7 +8207,7 @@ uint64 *
 Node::as_uint64_ptr()   
 {     
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::UINT64_T,
+                         DataType::UINT64_ID,
                          "as_uint64_ptr()",
                          NULL);
     return (uint64*)element_ptr(0);
@@ -8222,7 +8222,7 @@ float32 *
 Node::as_float32_ptr()  
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::FLOAT32_T,
+                         DataType::FLOAT32_ID,
                          "as_float32_ptr()",
                          NULL);
     return (float32*)element_ptr(0);
@@ -8233,7 +8233,7 @@ float64 *
 Node::as_float64_ptr()  
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::FLOAT64_T,
+                         DataType::FLOAT64_ID,
                          "as_float64_ptr()",
                          NULL);
     return (float64*)element_ptr(0);
@@ -8249,7 +8249,7 @@ const int8 *
 Node::as_int8_ptr() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::INT8_T,
+                         DataType::INT8_ID,
                          "as_int8_ptr()",
                          NULL);
     return (int8*)element_ptr(0);
@@ -8260,7 +8260,7 @@ const int16 *
 Node::as_int16_ptr() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::INT16_T,
+                         DataType::INT16_ID,
                          "as_int16_ptr()",
                          NULL);
     return (int16*)element_ptr(0);
@@ -8271,7 +8271,7 @@ const int32 *
 Node::as_int32_ptr() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::INT32_T,
+                         DataType::INT32_ID,
                          "as_int32_ptr()",
                          NULL);
     return (int32*)element_ptr(0);
@@ -8282,7 +8282,7 @@ const int64 *
 Node::as_int64_ptr() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::INT64_T,
+                         DataType::INT64_ID,
                          "as_int64_ptr()",
                          NULL);
     return (int64*)element_ptr(0);
@@ -8297,7 +8297,7 @@ const uint8 *
 Node::as_uint8_ptr() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::UINT8_T,
+                         DataType::UINT8_ID,
                          "as_uint8_ptr()",
                          NULL);
     return (uint8*)element_ptr(0);
@@ -8308,7 +8308,7 @@ const uint16 *
 Node::as_uint16_ptr() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::UINT16_T,
+                         DataType::UINT16_ID,
                          "as_uint16_ptr()",
                          NULL);
     return (uint16*)element_ptr(0);
@@ -8319,7 +8319,7 @@ const uint32 *
 Node::as_uint32_ptr() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::UINT32_T,
+                         DataType::UINT32_ID,
                          "as_uint32_ptr()",
                          NULL);
     return (uint32*)element_ptr(0);
@@ -8330,7 +8330,7 @@ const uint64 *
 Node::as_uint64_ptr() const
 {     
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::UINT64_T,
+                         DataType::UINT64_ID,
                          "as_uint64_ptr()",
                          NULL);
     return (uint64*)element_ptr(0);
@@ -8345,7 +8345,7 @@ const float32 *
 Node::as_float32_ptr() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::FLOAT32_T,
+                         DataType::FLOAT32_ID,
                          "as_float32_ptr()",
                          NULL);
     return (float32*)element_ptr(0);
@@ -8356,7 +8356,7 @@ const float64 *
 Node::as_float64_ptr() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::FLOAT64_T,
+                         DataType::FLOAT64_ID,
                          "as_float64_ptr()",
                          NULL);
     return (float64*)element_ptr(0);
@@ -8372,7 +8372,7 @@ int8_array
 Node::as_int8_array()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::INT8_T,
+                         DataType::INT8_ID,
                          "as_int8_array()",
                          int8_array());
     return int8_array(m_data,dtype());
@@ -8383,7 +8383,7 @@ int16_array
 Node::as_int16_array()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::INT16_T,
+                         DataType::INT16_ID,
                          "as_int16_array()",
                          int16_array());
     return int16_array(m_data,dtype());
@@ -8394,7 +8394,7 @@ int32_array
 Node::as_int32_array()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::INT32_T,
+                         DataType::INT32_ID,
                          "as_int32_array()",
                          int32_array());
     return int32_array(m_data,dtype());
@@ -8405,7 +8405,7 @@ int64_array
 Node::as_int64_array()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::INT64_T,
+                         DataType::INT64_ID,
                          "as_int64_array()",
                          int64_array());
     return int64_array(m_data,dtype());
@@ -8420,7 +8420,7 @@ uint8_array
 Node::as_uint8_array()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::UINT8_T,
+                         DataType::UINT8_ID,
                          "as_uint8_array()",
                          uint8_array());
     return uint8_array(m_data,dtype());
@@ -8431,7 +8431,7 @@ uint16_array
 Node::as_uint16_array()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::UINT16_T,
+                         DataType::UINT16_ID,
                          "as_uint16_array()",
                          uint16_array());
     return uint16_array(m_data,dtype());
@@ -8442,7 +8442,7 @@ uint32_array
 Node::as_uint32_array()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                          DataType::UINT32_T,
+                          DataType::UINT32_ID,
                           "as_uint32_array()",
                           uint32_array());
     return uint32_array(m_data,dtype());
@@ -8453,7 +8453,7 @@ uint64_array
 Node::as_uint64_array() 
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::UINT64_T,
+                         DataType::UINT64_ID,
                          "as_uint64_array()",
                          uint64_array());
     return uint64_array(m_data,dtype());
@@ -8468,7 +8468,7 @@ float32_array
 Node::as_float32_array()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::FLOAT32_T,
+                         DataType::FLOAT32_ID,
                          "as_float32_array()",
                          float32_array());
     return float32_array(m_data,dtype());
@@ -8479,7 +8479,7 @@ float64_array
 Node::as_float64_array()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::FLOAT64_T,
+                         DataType::FLOAT64_ID,
                          "as_float64_array()",
                          float64_array());
     return float64_array(m_data,dtype());
@@ -8494,7 +8494,7 @@ const int8_array
 Node::as_int8_array() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::INT8_T,
+                         DataType::INT8_ID,
                          "as_int8_array()",
                          int8_array());
     return int8_array(m_data,dtype());
@@ -8505,7 +8505,7 @@ const int16_array
 Node::as_int16_array() const 
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::INT16_T,
+                         DataType::INT16_ID,
                          "as_int16_array()",
                          int16_array());
     return int16_array(m_data,dtype());
@@ -8516,7 +8516,7 @@ const int32_array
 Node::as_int32_array() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::INT32_T,
+                         DataType::INT32_ID,
                          "as_int32_array()",
                          int32_array());
     return int32_array(m_data,dtype());
@@ -8527,7 +8527,7 @@ const int64_array
 Node::as_int64_array() const 
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::INT64_T,
+                         DataType::INT64_ID,
                          "as_int64_array()",
                          int64_array());
     return int64_array(m_data,dtype());
@@ -8543,7 +8543,7 @@ const uint8_array
 Node::as_uint8_array() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::UINT8_T,
+                         DataType::UINT8_ID,
                          "as_uint8_array()",
                          uint8_array());
     return uint8_array(m_data,dtype());
@@ -8554,7 +8554,7 @@ const uint16_array
 Node::as_uint16_array() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::UINT16_T,
+                         DataType::UINT16_ID,
                          "as_uint16_array()",
                          uint16_array());
     return uint16_array(m_data,dtype());
@@ -8565,7 +8565,7 @@ const uint32_array
 Node::as_uint32_array() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::UINT32_T,
+                         DataType::UINT32_ID,
                          "as_uint32_array()",
                          uint32_array());
     return uint32_array(m_data,dtype());
@@ -8576,7 +8576,7 @@ const uint64_array
 Node::as_uint64_array() const 
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::UINT64_T,
+                         DataType::UINT64_ID,
                          "as_uint64_array()",
                          uint64_array());
     return uint64_array(m_data,dtype());
@@ -8591,7 +8591,7 @@ const float32_array
 Node::as_float32_array() const 
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::FLOAT32_T,
+                         DataType::FLOAT32_ID,
                          "as_float32_array()",
                          float32_array());
     return float32_array(m_data,dtype());
@@ -8602,7 +8602,7 @@ const float64_array
 Node::as_float64_array() const 
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::FLOAT64_T,
+                         DataType::FLOAT64_ID,
                          "as_float64_array()",
                          float64_array());
     return float64_array(m_data,dtype());
@@ -8617,7 +8617,7 @@ char *
 Node::as_char8_str()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::CHAR8_STR_T,
+                         DataType::CHAR8_STR_ID,
                          "as_char8_str()",
                          NULL);
     return (char *)element_ptr(0);
@@ -8628,7 +8628,7 @@ const char *
 Node::as_char8_str() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::CHAR8_STR_T,
+                         DataType::CHAR8_STR_ID,
                          "as_char8_str()",
                          NULL);
     return (const char *)element_ptr(0);
@@ -8639,7 +8639,7 @@ std::string
 Node::as_string() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         DataType::CHAR8_STR_T,
+                         DataType::CHAR8_STR_ID,
                          "as_string()",
                          std::string());
     return std::string(as_char8_str());
@@ -8674,7 +8674,7 @@ char
 Node::as_char() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_CHAR_DATATYPE_ID,
+                         CONDUIT_NATIVE_CHAR_ID,
                          "as_char()",
                          0);
     return *((char*)element_ptr(0));
@@ -8685,7 +8685,7 @@ short
 Node::as_short() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_SHORT_DATATYPE_ID,
+                         CONDUIT_NATIVE_SHORT_ID,
                          "as_short()",
                          0);
     return *((short*)element_ptr(0));
@@ -8696,7 +8696,7 @@ int
 Node::as_int() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_INT_DATATYPE_ID,
+                         CONDUIT_NATIVE_INT_ID,
                          "as_int()",
                          0);
     return *((int*)element_ptr(0));
@@ -8707,7 +8707,7 @@ long
 Node::as_long()  const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_LONG_DATATYPE_ID,
+                         CONDUIT_NATIVE_LONG_ID,
                          "as_long()",
                          0);
     return *((long*)element_ptr(0));
@@ -8721,7 +8721,7 @@ long long
 Node::as_long_long()  const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID,
+                         CONDUIT_NATIVE_LONG_LONG_ID,
                          "as_long_long()",
                          0);
     return *((long long*)element_ptr(0));
@@ -8739,7 +8739,7 @@ unsigned char
 Node::as_unsigned_char() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
                          "as_unsigned_char()",
                          0);
     return *((unsigned char*)element_ptr(0));
@@ -8750,7 +8750,7 @@ unsigned short
 Node::as_unsigned_short() const 
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
                          "as_unsigned_short()",
                          0);
     return *((unsigned short*)element_ptr(0));
@@ -8761,7 +8761,7 @@ unsigned int
 Node::as_unsigned_int()const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_INT_ID,
                          "as_unsigned_int()",
                          0);
     return *((unsigned int*)element_ptr(0));
@@ -8772,7 +8772,7 @@ unsigned long
 Node::as_unsigned_long() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_LONG_ID,
                          "as_unsigned_long()",
                          0);
     return *(( unsigned long*)element_ptr(0));
@@ -8785,7 +8785,7 @@ unsigned long long
 Node::as_unsigned_long_long() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
                          "as_unsigned_long_long()",
                          0);
     return *(( unsigned long long*)element_ptr(0));
@@ -8803,7 +8803,7 @@ float
 Node::as_float() const 
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_FLOAT_DATATYPE_ID,
+                         CONDUIT_NATIVE_FLOAT_ID,
                          "as_float()",
                          0);
     return *((float*)element_ptr(0));
@@ -8814,7 +8814,7 @@ double
 Node::as_double() const 
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_DOUBLE_DATATYPE_ID,
+                         CONDUIT_NATIVE_DOUBLE_ID,
                          "as_double()",
                          0);
     return *((double*)element_ptr(0));
@@ -8827,7 +8827,7 @@ long double
 Node::as_long_double() const 
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_LONG_DOUBLE_DATATYPE_ID,
+                         CONDUIT_NATIVE_LONG_DOUBLE_ID,
                          "as_long_double()",
                          0);
     return *((long double*)element_ptr(0));
@@ -8845,7 +8845,7 @@ char *
 Node::as_char_ptr()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_CHAR_DATATYPE_ID,
+                         CONDUIT_NATIVE_CHAR_ID,
                          "as_char_ptr()",
                          NULL);
     return (char*)element_ptr(0);
@@ -8856,7 +8856,7 @@ short *
 Node::as_short_ptr()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_SHORT_DATATYPE_ID,
+                         CONDUIT_NATIVE_SHORT_ID,
                          "as_short_ptr()",
                          NULL);
     return (short*)element_ptr(0);
@@ -8867,7 +8867,7 @@ int *
 Node::as_int_ptr()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_INT_DATATYPE_ID,
+                         CONDUIT_NATIVE_INT_ID,
                          "as_int_ptr()",
                          NULL);
     return (int*)element_ptr(0);
@@ -8878,7 +8878,7 @@ long *
 Node::as_long_ptr()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_LONG_DATATYPE_ID,
+                         CONDUIT_NATIVE_LONG_ID,
                          "as_long_ptr()",
                          NULL);
     return (long*)element_ptr(0);
@@ -8892,7 +8892,7 @@ long long *
 Node::as_long_long_ptr()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID,
+                         CONDUIT_NATIVE_LONG_LONG_ID,
                          "as_long_long_ptr()",
                          NULL);
     return (long long*)element_ptr(0);
@@ -8910,7 +8910,7 @@ unsigned char *
 Node::as_unsigned_char_ptr()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
                          "as_unsigned_char_ptr()",
                          NULL);
     return (unsigned char*)element_ptr(0);
@@ -8921,7 +8921,7 @@ unsigned short *
 Node::as_unsigned_short_ptr()
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
                          "as_unsigned_short_ptr()",
                          NULL);
     return (unsigned short*)element_ptr(0);
@@ -8932,7 +8932,7 @@ unsigned int *
 Node::as_unsigned_int_ptr()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_INT_ID,
                          "as_unsigned_int_ptr()",
                          NULL);
     return (unsigned int*)element_ptr(0);
@@ -8943,7 +8943,7 @@ unsigned long *
 Node::as_unsigned_long_ptr()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_LONG_ID,
                          "as_unsigned_long_ptr()",
                          NULL);
     return (unsigned long*)element_ptr(0);
@@ -8957,7 +8957,7 @@ unsigned long long *
 Node::as_unsigned_long_long_ptr()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
                          "as_unsigned_long_long_ptr()",
                          NULL);
     return (unsigned long long*)element_ptr(0);
@@ -8976,7 +8976,7 @@ float *
 Node::as_float_ptr()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_FLOAT_DATATYPE_ID,
+                         CONDUIT_NATIVE_FLOAT_ID,
                          "as_float_ptr()",
                          NULL);
     return (float*)element_ptr(0);
@@ -8987,7 +8987,7 @@ double *
 Node::as_double_ptr()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_DOUBLE_DATATYPE_ID,
+                         CONDUIT_NATIVE_DOUBLE_ID,
                          "as_double_ptr()",
                          NULL);
     return (double*)element_ptr(0);
@@ -9001,7 +9001,7 @@ long double *
 Node::as_long_double_ptr()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_LONG_DOUBLE_DATATYPE_ID,
+                         CONDUIT_NATIVE_LONG_DOUBLE_ID,
                          "as_long_double_ptr()",
                          NULL);
     return (long double*)element_ptr(0);
@@ -9020,7 +9020,7 @@ const char *
 Node::as_char_ptr() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_CHAR_DATATYPE_ID,
+                         CONDUIT_NATIVE_CHAR_ID,
                          "as_char_ptr()",
                          NULL);
     return (char*)element_ptr(0);
@@ -9031,7 +9031,7 @@ const short *
 Node::as_short_ptr() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_SHORT_DATATYPE_ID,
+                         CONDUIT_NATIVE_SHORT_ID,
                          "as_short_ptr()",
                          NULL);
     return (short*)element_ptr(0);
@@ -9042,7 +9042,7 @@ const int *
 Node::as_int_ptr() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_INT_DATATYPE_ID,
+                         CONDUIT_NATIVE_INT_ID,
                          "as_int_ptr()",
                          NULL);
     return (int*)element_ptr(0);
@@ -9053,7 +9053,7 @@ const long *
 Node::as_long_ptr() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_LONG_DATATYPE_ID,
+                         CONDUIT_NATIVE_LONG_ID,
                          "as_long_ptr()",
                          NULL);
     return (long*)element_ptr(0);
@@ -9067,7 +9067,7 @@ const long long *
 Node::as_long_long_ptr() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID,
+                         CONDUIT_NATIVE_LONG_LONG_ID,
                          "as_long_long_ptr()",
                          NULL);
     return (long long*)element_ptr(0);
@@ -9087,7 +9087,7 @@ const unsigned char *
 Node::as_unsigned_char_ptr() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
                          "as_unsigned_char_ptr()",
                          NULL);
     return (unsigned char*)element_ptr(0);
@@ -9098,7 +9098,7 @@ const unsigned short *
 Node::as_unsigned_short_ptr() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
                          "as_unsigned_short_ptr()",
                          NULL);
     return (unsigned short*)element_ptr(0);
@@ -9109,7 +9109,7 @@ const unsigned int *
 Node::as_unsigned_int_ptr() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_INT_ID,
                          "as_unsigned_int_ptr()",
                          NULL);
     return (unsigned int*)element_ptr(0);
@@ -9120,7 +9120,7 @@ const unsigned long *
 Node::as_unsigned_long_ptr() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_LONG_ID,
                          "as_unsigned_long_ptr()",
                          NULL);
     return (unsigned long*)element_ptr(0);
@@ -9133,7 +9133,7 @@ const unsigned long long *
 Node::as_unsigned_long_long_ptr() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
                          "as_unsigned_long_long_ptr()",
                          NULL);
     return (unsigned long long*)element_ptr(0);
@@ -9153,7 +9153,7 @@ const float *
 Node::as_float_ptr() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_FLOAT_DATATYPE_ID,
+                         CONDUIT_NATIVE_FLOAT_ID,
                          "as_float_ptr()",
                          NULL);
     return (float*)element_ptr(0);
@@ -9164,7 +9164,7 @@ const double *
 Node::as_double_ptr() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_DOUBLE_DATATYPE_ID,
+                         CONDUIT_NATIVE_DOUBLE_ID,
                          "as_double_ptr()",
                          NULL);
     return (double*)element_ptr(0);
@@ -9178,7 +9178,7 @@ const long double *
 Node::as_long_double_ptr() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_LONG_DOUBLE_DATATYPE_ID,
+                         CONDUIT_NATIVE_LONG_DOUBLE_ID,
                          "as_long_double_ptr()",
                          NULL);
     return (long double*)element_ptr(0);
@@ -9197,7 +9197,7 @@ char_array
 Node::as_char_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_CHAR_DATATYPE_ID,
+                         CONDUIT_NATIVE_CHAR_ID,
                          "as_char_array()",
                          char_array());
     return char_array(m_data,dtype());
@@ -9208,7 +9208,7 @@ short_array
 Node::as_short_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_SHORT_DATATYPE_ID,
+                         CONDUIT_NATIVE_SHORT_ID,
                          "as_short_array()",
                          short_array());
     return short_array(m_data,dtype());
@@ -9219,7 +9219,7 @@ int_array
 Node::as_int_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_INT_DATATYPE_ID,
+                         CONDUIT_NATIVE_INT_ID,
                          "as_int_array()",
                          int_array());
     return int_array(m_data,dtype());
@@ -9230,7 +9230,7 @@ long_array
 Node::as_long_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_LONG_DATATYPE_ID,
+                         CONDUIT_NATIVE_LONG_ID,
                          "as_long_array()",
                          long_array());
     return long_array(m_data,dtype());
@@ -9244,7 +9244,7 @@ long_long_array
 Node::as_long_long_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID,
+                         CONDUIT_NATIVE_LONG_LONG_ID,
                          "as_long_long_array()",
                          long_long_array());
     return long_long_array(m_data,dtype());
@@ -9263,7 +9263,7 @@ unsigned_char_array
 Node::as_unsigned_char_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
                          "as_unsigned_char_array()",
                          unsigned_char_array());
     return unsigned_char_array(m_data,dtype());
@@ -9274,7 +9274,7 @@ unsigned_short_array
 Node::as_unsigned_short_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
                          "as_unsigned_short_array()",
                          unsigned_short_array());
     return unsigned_short_array(m_data,dtype());
@@ -9285,7 +9285,7 @@ unsigned_int_array
 Node::as_unsigned_int_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_INT_ID,
                          "as_unsigned_int_array()",
                          unsigned_int_array());
     return unsigned_int_array(m_data,dtype());
@@ -9296,7 +9296,7 @@ unsigned_long_array
 Node::as_unsigned_long_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_LONG_ID,
                          "as_unsigned_long_array()",
                          unsigned_long_array());
     return unsigned_long_array(m_data,dtype());
@@ -9310,7 +9310,7 @@ unsigned_long_long_array
 Node::as_unsigned_long_long_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
                          "as_unsigned_long_long_array()",
                          unsigned_long_long_array());
     return unsigned_long_long_array(m_data,dtype());
@@ -9330,7 +9330,7 @@ float_array
 Node::as_float_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_FLOAT_DATATYPE_ID,
+                         CONDUIT_NATIVE_FLOAT_ID,
                          "as_float_array()",
                          float_array());
     return float_array(m_data,dtype());
@@ -9341,7 +9341,7 @@ double_array
 Node::as_double_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_DOUBLE_DATATYPE_ID,
+                         CONDUIT_NATIVE_DOUBLE_ID,
                          "as_double_array()",
                          double_array());
     return double_array(m_data,dtype());
@@ -9354,7 +9354,7 @@ long_double_array
 Node::as_long_double_array()
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_LONG_DOUBLE_DATATYPE_ID,
+                         CONDUIT_NATIVE_LONG_DOUBLE_ID,
                          "as_long_double_array()",
                          long_double_array());
     return long_double_array(m_data,dtype());
@@ -9373,7 +9373,7 @@ const char_array
 Node::as_char_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_CHAR_DATATYPE_ID,
+                         CONDUIT_NATIVE_CHAR_ID,
                          "as_char_array()",
                          char_array());
     return char_array(m_data,dtype());
@@ -9384,7 +9384,7 @@ const short_array
 Node::as_short_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_SHORT_DATATYPE_ID,
+                         CONDUIT_NATIVE_SHORT_ID,
                          "as_short_array()",
                          short_array());
     return short_array(m_data,dtype());
@@ -9395,7 +9395,7 @@ const int_array
 Node::as_int_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_INT_DATATYPE_ID,
+                         CONDUIT_NATIVE_INT_ID,
                          "as_int_array()",
                          int_array());
     return int_array(m_data,dtype());
@@ -9406,7 +9406,7 @@ const long_array
 Node::as_long_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_LONG_DATATYPE_ID,
+                         CONDUIT_NATIVE_LONG_ID,
                          "as_long_array()",
                          long_array());
     return long_array(m_data,dtype());
@@ -9419,7 +9419,7 @@ const long_long_array
 Node::as_long_long_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID,
+                         CONDUIT_NATIVE_LONG_LONG_ID,
                          "as_long_long_array()",
                          long_long_array());
     return long_long_array(m_data,dtype());
@@ -9438,7 +9438,7 @@ const unsigned_char_array
 Node::as_unsigned_char_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
                          "as_unsigned_char_array()",
                          unsigned_char_array());
     return unsigned_char_array(m_data,dtype());
@@ -9449,7 +9449,7 @@ const unsigned_short_array
 Node::as_unsigned_short_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
                          "as_unsigned_short_array()",
                          unsigned_short_array());
     return unsigned_short_array(m_data,dtype());
@@ -9460,7 +9460,7 @@ const unsigned_int_array
 Node::as_unsigned_int_array() const
 { 
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_INT_ID,
                          "as_unsigned_int_array()",
                          unsigned_int_array());
     return unsigned_int_array(m_data,dtype());
@@ -9471,7 +9471,7 @@ const unsigned_long_array
 Node::as_unsigned_long_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_LONG_ID,
                          "as_unsigned_long_array()",
                          unsigned_long_array());
     return unsigned_long_array(m_data,dtype());
@@ -9485,7 +9485,7 @@ const unsigned_long_long_array
 Node::as_unsigned_long_long_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID,
+                         CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
                          "as_unsigned_long_long_array()",
                          unsigned_long_long_array());
     return unsigned_long_long_array(m_data,dtype());
@@ -9504,7 +9504,7 @@ const float_array
 Node::as_float_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_FLOAT_DATATYPE_ID,
+                         CONDUIT_NATIVE_FLOAT_ID,
                          "as_float_array()",
                          float_array());
     return float_array(m_data,dtype());
@@ -9515,7 +9515,7 @@ const double_array
 Node::as_double_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_DOUBLE_DATATYPE_ID,
+                         CONDUIT_NATIVE_DOUBLE_ID,
                          "as_double_array()",
                          double_array());
     return double_array(m_data,dtype());
@@ -9527,7 +9527,7 @@ const long_double_array
 Node::as_long_double_array() const
 {
     CONDUIT_ASSERT_DTYPE(dtype().id(),
-                         CONDUIT_NATIVE_LONG_DOUBLE_DATATYPE_ID,
+                         CONDUIT_NATIVE_LONG_DOUBLE_ID,
                          "as_long_double_array()",
                          long_double_array());
     return long_double_array(m_data,dtype());
@@ -9620,12 +9620,12 @@ Node::init(const DataType& dtype)
     }
 
     index_t dt_id = dtype.id();
-    if(dt_id == DataType::OBJECT_T ||
-       dt_id == DataType::LIST_T)
+    if(dt_id == DataType::OBJECT_ID ||
+       dt_id == DataType::LIST_ID)
     {
         m_children.clear();
     }
-    else if(dt_id != DataType::EMPTY_T)
+    else if(dt_id != DataType::EMPTY_ID)
     {
         allocate(dtype);
     }
@@ -9704,7 +9704,7 @@ Node::release()
         ///
         /// TODO: why do we need to check for empty here?
         ///
-        if(dtype().id() != DataType::EMPTY_T)
+        if(dtype().id() != DataType::EMPTY_ID)
         {   
             // clean up our storage
             free(m_data);
@@ -9746,7 +9746,7 @@ Node::cleanup()
     }
     else if(m_schema != NULL)
     {
-        m_schema->set(DataType::EMPTY_T);
+        m_schema->set(DataType::EMPTY_ID);
     }
 }
 
@@ -9779,7 +9779,7 @@ Node::init_defaults()
     m_mmaped    = false;
     m_mmap_fd   = -1;
 
-    m_schema = new Schema(DataType::EMPTY_T);
+    m_schema = new Schema(DataType::EMPTY_ID);
     m_owns_schema = true;
     
     m_parent = NULL;
@@ -9801,7 +9801,7 @@ Node::walk_schema(Node   *node,
 {
     // we can have an object, list, or leaf
     node->set_data_ptr(data);
-    if(schema->dtype().id() == DataType::OBJECT_T)
+    if(schema->dtype().id() == DataType::OBJECT_ID)
     {
         for(index_t i=0;i<schema->children().size();i++)
         {
@@ -9815,7 +9815,7 @@ Node::walk_schema(Node   *node,
             node->append_node_ptr(curr_node);
         }                   
     }
-    else if(schema->dtype().id() == DataType::LIST_T)
+    else if(schema->dtype().id() == DataType::LIST_ID)
     {
         index_t num_entries = schema->number_of_children();
         for(index_t i=0;i<num_entries;i++)
@@ -9841,7 +9841,7 @@ Node::mirror_node(Node   *node,
     // we can have an object, list, or leaf
     node->set_data_ptr(src->m_data);
     
-    if(schema->dtype().id() == DataType::OBJECT_T)
+    if(schema->dtype().id() == DataType::OBJECT_ID)
     {
         for(index_t i=0;i<schema->children().size();i++)
         {
@@ -9856,7 +9856,7 @@ Node::mirror_node(Node   *node,
             node->append_node_ptr(curr_node);
         }                   
     }
-    else if(schema->dtype().id() == DataType::LIST_T)
+    else if(schema->dtype().id() == DataType::LIST_ID)
     {
         index_t num_entries = schema->number_of_children();
         for(index_t i=0;i<num_entries;i++)
@@ -9887,8 +9887,8 @@ Node::compact_to(uint8 *data, index_t curr_offset) const
     CONDUIT_ASSERT( (m_schema != NULL) , "Corrupt schema found in compact_to call");
     
     index_t dtype_id = dtype().id();
-    if(dtype_id == DataType::OBJECT_T ||
-       dtype_id == DataType::LIST_T)
+    if(dtype_id == DataType::OBJECT_ID ||
+       dtype_id == DataType::LIST_ID)
     {
             std::vector<Node*>::const_iterator itr;
             for(itr = m_children.begin(); itr < m_children.end(); ++itr)
@@ -9909,9 +9909,9 @@ void
 Node::compact_elements_to(uint8 *data) const
 {
     index_t dtype_id = dtype().id();
-    if(dtype_id == DataType::OBJECT_T ||
-       dtype_id == DataType::LIST_T ||
-       dtype_id == DataType::EMPTY_T)
+    if(dtype_id == DataType::OBJECT_ID ||
+       dtype_id == DataType::LIST_ID ||
+       dtype_id == DataType::EMPTY_ID)
     {
         // TODO: error
     }
@@ -9936,8 +9936,8 @@ Node::compact_elements_to(uint8 *data) const
 void
 Node::serialize(uint8 *data,index_t curr_offset) const
 {
-    if(dtype().id() == DataType::OBJECT_T ||
-       dtype().id() == DataType::LIST_T)
+    if(dtype().id() == DataType::OBJECT_ID ||
+       dtype().id() == DataType::LIST_ID)
     {
         std::vector<Node*>::const_iterator itr;
         for(itr = m_children.begin(); itr < m_children.end(); ++itr)
@@ -9997,7 +9997,7 @@ Node::info(Node &res, const std::string &curr_path) const
     }
     
     index_t dtype_id = dtype().id();
-    if(dtype_id == DataType::OBJECT_T)
+    if(dtype_id == DataType::OBJECT_ID)
     {
         std::ostringstream oss;
         index_t nchildren = m_children.size();
@@ -10015,7 +10015,7 @@ Node::info(Node &res, const std::string &curr_path) const
             m_children[i]->info(res,oss.str());
         }
     }
-    else if(dtype_id == DataType::LIST_T)
+    else if(dtype_id == DataType::LIST_ID)
     {
         std::ostringstream oss;
         index_t nchildren = m_children.size();

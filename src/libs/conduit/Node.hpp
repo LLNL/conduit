@@ -441,14 +441,14 @@ public:
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::int8),
                       index_t element_bytes = sizeof(conduit::int8),
-                      index_t endianness = Endianness::DEFAULT_T);
+                      index_t endianness = Endianness::DEFAULT_ID);
 
     void set(int8  *data,
              index_t num_elements = 1,
              index_t offset = 0,
              index_t stride = sizeof(conduit::int8),
              index_t element_bytes = sizeof(conduit::int8),
-             index_t endianness = Endianness::DEFAULT_T);
+             index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     void set_int16_ptr(int16 *data, 
@@ -456,14 +456,14 @@ public:
                        index_t offset = 0,
                        index_t stride = sizeof(conduit::int16),
                        index_t element_bytes = sizeof(conduit::int16),
-                       index_t endianness = Endianness::DEFAULT_T);
+                       index_t endianness = Endianness::DEFAULT_ID);
 
     void set(int16 *data, 
              index_t num_elements = 1,
              index_t offset = 0,
              index_t stride = sizeof(conduit::int16),
              index_t element_bytes = sizeof(conduit::int16),
-             index_t endianness = Endianness::DEFAULT_T);
+             index_t endianness = Endianness::DEFAULT_ID);
     
     //-------------------------------------------------------------------------
     void set_int32_ptr(int32 *data,
@@ -471,14 +471,14 @@ public:
                        index_t offset = 0,
                        index_t stride = sizeof(conduit::int32),
                        index_t element_bytes = sizeof(conduit::int32),
-                       index_t endianness = Endianness::DEFAULT_T);
+                       index_t endianness = Endianness::DEFAULT_ID);
     
     void set(int32 *data,
              index_t num_elements = 1,
              index_t offset = 0,
              index_t stride = sizeof(conduit::int32),
              index_t element_bytes = sizeof(conduit::int32),
-             index_t endianness = Endianness::DEFAULT_T);
+             index_t endianness = Endianness::DEFAULT_ID);
 
 
     //-------------------------------------------------------------------------
@@ -487,14 +487,14 @@ public:
                        index_t offset = 0,
                        index_t stride = sizeof(conduit::int64),
                        index_t element_bytes = sizeof(conduit::int64),
-                       index_t endianness = Endianness::DEFAULT_T);
+                       index_t endianness = Endianness::DEFAULT_ID);
 
     void set(int64 *data,
              index_t num_elements = 1,
              index_t offset = 0,
              index_t stride = sizeof(conduit::int64),
              index_t element_bytes = sizeof(conduit::int64),
-             index_t endianness = Endianness::DEFAULT_T);
+             index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     // unsigned integer pointer cases
@@ -504,14 +504,14 @@ public:
                        index_t offset = 0,
                        index_t stride = sizeof(conduit::uint8),
                        index_t element_bytes = sizeof(conduit::uint8),
-                       index_t endianness = Endianness::DEFAULT_T);
+                       index_t endianness = Endianness::DEFAULT_ID);
 
     void set(uint8  *data,
              index_t num_elements = 1,
              index_t offset = 0,
              index_t stride = sizeof(conduit::uint8),
              index_t element_bytes = sizeof(conduit::uint8),
-             index_t endianness = Endianness::DEFAULT_T);
+             index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     void set_uint16_ptr(uint16 *data,
@@ -519,14 +519,14 @@ public:
                        index_t offset = 0,
                        index_t stride = sizeof(conduit::uint16),
                        index_t element_bytes = sizeof(conduit::uint16),
-                       index_t endianness = Endianness::DEFAULT_T);
+                       index_t endianness = Endianness::DEFAULT_ID);
 
     void set(uint16 *data,
              index_t num_elements = 1,
              index_t offset = 0,
              index_t stride = sizeof(conduit::uint16),
              index_t element_bytes = sizeof(conduit::uint16),
-             index_t endianness = Endianness::DEFAULT_T);
+             index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     void set_uint32_ptr(uint32 *data, 
@@ -534,14 +534,14 @@ public:
                         index_t offset = 0,
                         index_t stride = sizeof(conduit::uint32),
                         index_t element_bytes = sizeof(conduit::uint32),
-                        index_t endianness = Endianness::DEFAULT_T);
+                        index_t endianness = Endianness::DEFAULT_ID);
 
     void set(uint32 *data, 
              index_t num_elements = 1,
              index_t offset = 0,
              index_t stride = sizeof(conduit::uint32),
              index_t element_bytes = sizeof(conduit::uint32),
-             index_t endianness = Endianness::DEFAULT_T);
+             index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     void set_uint64_ptr(uint64 *data,
@@ -549,14 +549,14 @@ public:
                         index_t offset = 0,
                         index_t stride = sizeof(conduit::uint64),
                         index_t element_bytes = sizeof(conduit::uint64),
-                        index_t endianness = Endianness::DEFAULT_T);
+                        index_t endianness = Endianness::DEFAULT_ID);
 
     void set(uint64 *data,
              index_t num_elements = 1,
              index_t offset = 0,
              index_t stride = sizeof(conduit::uint64),
              index_t element_bytes = sizeof(conduit::uint64),
-             index_t endianness = Endianness::DEFAULT_T);
+             index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     // floating point pointer cases
@@ -566,14 +566,14 @@ public:
                          index_t offset = 0,
                          index_t stride = sizeof(conduit::float32),
                          index_t element_bytes = sizeof(conduit::float32),
-                         index_t endianness = Endianness::DEFAULT_T);
+                         index_t endianness = Endianness::DEFAULT_ID);
 
     void set(float32 *data,
              index_t num_elements = 1,
              index_t offset = 0,
              index_t stride = sizeof(conduit::float32),
              index_t element_bytes = sizeof(conduit::float32),
-             index_t endianness = Endianness::DEFAULT_T);
+             index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     void set_float64_ptr(float64 *data, 
@@ -581,14 +581,14 @@ public:
                          index_t offset = 0,
                          index_t stride = sizeof(conduit::float64),
                          index_t element_bytes = sizeof(conduit::float64),
-                         index_t endianness = Endianness::DEFAULT_T);
+                         index_t endianness = Endianness::DEFAULT_ID);
 
     void set(float64 *data, 
              index_t num_elements = 1,
              index_t offset = 0,
              index_t stride = sizeof(conduit::float64),
              index_t element_bytes = sizeof(conduit::float64),
-             index_t endianness = Endianness::DEFAULT_T);
+             index_t endianness = Endianness::DEFAULT_ID);
 
 //-----------------------------------------------------------------------------
 ///@}
@@ -868,14 +868,14 @@ public:
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::int8),
                            index_t element_bytes = sizeof(conduit::int8),
-                           index_t endianness = Endianness::DEFAULT_T);
+                           index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path(const std::string &path,int8  *data,
                   index_t num_elements = 1,
                   index_t offset = 0,
                   index_t stride = sizeof(conduit::int8),
                   index_t element_bytes = sizeof(conduit::int8),
-                  index_t endianness = Endianness::DEFAULT_T);
+                  index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     void set_path_int16_ptr(const std::string &path,
@@ -884,7 +884,7 @@ public:
                             index_t offset = 0,
                             index_t stride = sizeof(conduit::int16),
                             index_t element_bytes = sizeof(conduit::int16),
-                            index_t endianness = Endianness::DEFAULT_T);
+                            index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path(const std::string &path,
                   int16 *data, 
@@ -892,7 +892,7 @@ public:
                   index_t offset = 0,
                   index_t stride = sizeof(conduit::int16),
                   index_t element_bytes = sizeof(conduit::int16),
-                  index_t endianness = Endianness::DEFAULT_T);
+                  index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     void set_path_int32_ptr(const std::string &path,
@@ -901,7 +901,7 @@ public:
                             index_t offset = 0,
                             index_t stride = sizeof(conduit::int32),
                             index_t element_bytes = sizeof(conduit::int32),
-                            index_t endianness = Endianness::DEFAULT_T);
+                            index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path(const std::string &path,
                   int32 *data,
@@ -909,7 +909,7 @@ public:
                   index_t offset = 0,
                   index_t stride = sizeof(conduit::int32),
                   index_t element_bytes = sizeof(conduit::int32),
-                  index_t endianness = Endianness::DEFAULT_T);
+                  index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     void set_path_int64_ptr(const std::string &path,
@@ -918,7 +918,7 @@ public:
                             index_t offset = 0,
                             index_t stride = sizeof(conduit::int64),
                             index_t element_bytes = sizeof(conduit::int64),
-                            index_t endianness = Endianness::DEFAULT_T);
+                            index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path(const std::string &path,
                int64 *data,
@@ -926,7 +926,7 @@ public:
                index_t offset = 0,
                index_t stride = sizeof(conduit::int64),
                index_t element_bytes = sizeof(conduit::int64),
-               index_t endianness = Endianness::DEFAULT_T);
+               index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     // unsigned integer pointer cases
@@ -937,7 +937,7 @@ public:
                             index_t offset = 0,
                             index_t stride = sizeof(conduit::uint8),
                             index_t element_bytes = sizeof(conduit::uint8),
-                            index_t endianness = Endianness::DEFAULT_T);
+                            index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path(const std::string &path,
                   uint8  *data,
@@ -945,7 +945,7 @@ public:
                   index_t offset = 0,
                   index_t stride = sizeof(conduit::uint8),
                   index_t element_bytes = sizeof(conduit::uint8),
-                  index_t endianness = Endianness::DEFAULT_T);
+                  index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     void set_path_uint16_ptr(const std::string &path,
@@ -954,7 +954,7 @@ public:
                              index_t offset = 0,
                              index_t stride = sizeof(conduit::uint16),
                              index_t element_bytes = sizeof(conduit::uint16),
-                             index_t endianness = Endianness::DEFAULT_T);
+                             index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path(const std::string &path,
                   uint16 *data,
@@ -962,7 +962,7 @@ public:
                   index_t offset = 0,
                   index_t stride = sizeof(conduit::uint16),
                   index_t element_bytes = sizeof(conduit::uint16),
-                  index_t endianness = Endianness::DEFAULT_T);
+                  index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     void set_path_uint32_ptr(const std::string &path,
@@ -971,7 +971,7 @@ public:
                              index_t offset = 0,
                              index_t stride = sizeof(conduit::uint32),
                              index_t element_bytes = sizeof(conduit::uint32),
-                             index_t endianness = Endianness::DEFAULT_T);
+                             index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path(const std::string &path,
                   uint32 *data, 
@@ -979,7 +979,7 @@ public:
                   index_t offset = 0,
                   index_t stride = sizeof(conduit::uint32),
                   index_t element_bytes = sizeof(conduit::uint32),
-                  index_t endianness = Endianness::DEFAULT_T);
+                  index_t endianness = Endianness::DEFAULT_ID);
     
     //-------------------------------------------------------------------------
     void set_path_uint64_ptr(const std::string &path,
@@ -988,7 +988,7 @@ public:
                              index_t offset = 0,
                              index_t stride = sizeof(conduit::uint64),
                              index_t element_bytes = sizeof(conduit::uint64),
-                             index_t endianness = Endianness::DEFAULT_T);
+                             index_t endianness = Endianness::DEFAULT_ID);
     
     void set_path(const std::string &path,
                   uint64 *data,
@@ -996,7 +996,7 @@ public:
                   index_t offset = 0,
                   index_t stride = sizeof(conduit::uint64),
                   index_t element_bytes = sizeof(conduit::uint64),
-                  index_t endianness = Endianness::DEFAULT_T);
+                  index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     // floating point integer pointer cases
@@ -1007,7 +1007,7 @@ public:
                               index_t offset = 0,
                               index_t stride = sizeof(conduit::float32),
                               index_t element_bytes = sizeof(conduit::float32),
-                              index_t endianness = Endianness::DEFAULT_T);
+                              index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path(const std::string &path,
                   float32 *data,
@@ -1015,7 +1015,7 @@ public:
                   index_t offset = 0,
                   index_t stride = sizeof(conduit::float32),
                   index_t element_bytes = sizeof(conduit::float32),
-                  index_t endianness = Endianness::DEFAULT_T);
+                  index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     void set_path_float64_ptr(const std::string &path,
@@ -1024,7 +1024,7 @@ public:
                               index_t offset = 0,
                               index_t stride = sizeof(conduit::float64),
                               index_t element_bytes = sizeof(conduit::float64),
-                              index_t endianness = Endianness::DEFAULT_T);
+                              index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path(const std::string &path,
                   float64 *data, 
@@ -1032,7 +1032,7 @@ public:
                   index_t offset = 0,
                   index_t stride = sizeof(conduit::float64),
                   index_t element_bytes = sizeof(conduit::float64),
-                  index_t endianness = Endianness::DEFAULT_T);
+                  index_t endianness = Endianness::DEFAULT_ID);
 
 
 //-----------------------------------------------------------------------------
@@ -1087,14 +1087,14 @@ public:
                                index_t offset = 0,
                                index_t stride = sizeof(conduit::int8),
                                index_t element_bytes = sizeof(conduit::int8),
-                               index_t endianness = Endianness::DEFAULT_T);
+                               index_t endianness = Endianness::DEFAULT_ID);
 
     void set_external(int8  *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::int8),
                       index_t element_bytes = sizeof(conduit::int8),
-                      index_t endianness = Endianness::DEFAULT_T);
+                      index_t endianness = Endianness::DEFAULT_ID);
     
     //-------------------------------------------------------------------------
     void set_external_int16_ptr(int16 *data, 
@@ -1102,14 +1102,14 @@ public:
                                 index_t offset = 0,
                                 index_t stride = sizeof(conduit::int16),
                                 index_t element_bytes = sizeof(conduit::int16),
-                                index_t endianness = Endianness::DEFAULT_T);
+                                index_t endianness = Endianness::DEFAULT_ID);
 
     void set_external(int16 *data, 
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::int16),
                       index_t element_bytes = sizeof(conduit::int16),
-                      index_t endianness = Endianness::DEFAULT_T);
+                      index_t endianness = Endianness::DEFAULT_ID);
     
     //-------------------------------------------------------------------------
     void set_external_int32_ptr(int32 *data,
@@ -1117,14 +1117,14 @@ public:
                                 index_t offset = 0,
                                 index_t stride = sizeof(conduit::int32),
                                 index_t element_bytes = sizeof(conduit::int32),
-                                index_t endianness = Endianness::DEFAULT_T);
+                                index_t endianness = Endianness::DEFAULT_ID);
 
     void set_external(int32 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::int32),
                       index_t element_bytes = sizeof(conduit::int32),
-                      index_t endianness = Endianness::DEFAULT_T);
+                      index_t endianness = Endianness::DEFAULT_ID);
     
     //-------------------------------------------------------------------------
     void set_external_int64_ptr(int64 *data,
@@ -1132,14 +1132,14 @@ public:
                                 index_t offset = 0,
                                 index_t stride = sizeof(conduit::int64),
                                 index_t element_bytes = sizeof(conduit::int64),
-                                index_t endianness = Endianness::DEFAULT_T);
+                                index_t endianness = Endianness::DEFAULT_ID);
 
     void set_external(int64 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::int64),
                       index_t element_bytes = sizeof(conduit::int64),
-                      index_t endianness = Endianness::DEFAULT_T);
+                      index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     // unsigned integer pointer cases
@@ -1149,14 +1149,14 @@ public:
                                 index_t offset = 0,
                                 index_t stride = sizeof(conduit::uint8),
                                 index_t element_bytes = sizeof(conduit::uint8),
-                                index_t endianness = Endianness::DEFAULT_T);
+                                index_t endianness = Endianness::DEFAULT_ID);
 
     void set_external(uint8  *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::uint8),
                       index_t element_bytes = sizeof(conduit::uint8),
-                      index_t endianness = Endianness::DEFAULT_T);
+                      index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     void set_external_uint16_ptr(uint16 *data,
@@ -1164,14 +1164,14 @@ public:
                                  index_t offset = 0,
                                  index_t stride = sizeof(conduit::uint16),
                                  index_t element_bytes = sizeof(conduit::uint16),
-                                 index_t endianness = Endianness::DEFAULT_T);
+                                 index_t endianness = Endianness::DEFAULT_ID);
 
     void set_external(uint16 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::uint16),
                       index_t element_bytes = sizeof(conduit::uint16),
-                      index_t endianness = Endianness::DEFAULT_T);
+                      index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     void set_external_uint32_ptr(uint32 *data, 
@@ -1179,14 +1179,14 @@ public:
                                  index_t offset = 0,
                                  index_t stride = sizeof(conduit::uint32),
                                  index_t element_bytes = sizeof(conduit::uint32),
-                                 index_t endianness = Endianness::DEFAULT_T);
+                                 index_t endianness = Endianness::DEFAULT_ID);
 
     void set_external(uint32 *data, 
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::uint32),
                       index_t element_bytes = sizeof(conduit::uint32),
-                      index_t endianness = Endianness::DEFAULT_T);
+                      index_t endianness = Endianness::DEFAULT_ID);
                       
     //-------------------------------------------------------------------------
     void set_external_uint64_ptr(uint64 *data,
@@ -1194,14 +1194,14 @@ public:
                                  index_t offset = 0,
                                  index_t stride = sizeof(conduit::uint64),
                                  index_t element_bytes = sizeof(conduit::uint64),
-                                 index_t endianness = Endianness::DEFAULT_T);
+                                 index_t endianness = Endianness::DEFAULT_ID);
 
     void set_external(uint64 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::uint64),
                       index_t element_bytes = sizeof(conduit::uint64),
-                      index_t endianness = Endianness::DEFAULT_T);
+                      index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     // floating point pointer cases
@@ -1211,14 +1211,14 @@ public:
                                   index_t offset = 0,
                                   index_t stride = sizeof(conduit::float32),
                                   index_t element_bytes = sizeof(conduit::float32),
-                                  index_t endianness = Endianness::DEFAULT_T);
+                                  index_t endianness = Endianness::DEFAULT_ID);
 
     void set_external(float32 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::float32),
                       index_t element_bytes = sizeof(conduit::float32),
-                      index_t endianness = Endianness::DEFAULT_T);
+                      index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     void set_external_float64_ptr(float64 *data, 
@@ -1226,14 +1226,14 @@ public:
                                   index_t offset = 0,
                                   index_t stride = sizeof(conduit::float64),
                                   index_t element_bytes = sizeof(conduit::float64),
-                                  index_t endianness = Endianness::DEFAULT_T);
+                                  index_t endianness = Endianness::DEFAULT_ID);
 
     void set_external(float64 *data, 
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::float64),
                       index_t element_bytes = sizeof(conduit::float64),
-                      index_t endianness = Endianness::DEFAULT_T);
+                      index_t endianness = Endianness::DEFAULT_ID);
 
 //-----------------------------------------------------------------------------
 // -- set_external for conduit::DataArray types ---
@@ -1403,7 +1403,7 @@ public:
                                     index_t offset = 0,
                                     index_t stride = sizeof(conduit::int8),
                                     index_t element_bytes = sizeof(conduit::int8),
-                                    index_t endianness = Endianness::DEFAULT_T);
+                                    index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path_external(const std::string &path,
                            int8  *data,
@@ -1411,7 +1411,7 @@ public:
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::int8),
                            index_t element_bytes = sizeof(conduit::int8),
-                           index_t endianness = Endianness::DEFAULT_T);
+                           index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     void set_path_external_int16_ptr(const std::string &path,
@@ -1420,7 +1420,7 @@ public:
                                      index_t offset = 0,
                                      index_t stride = sizeof(conduit::int16),
                                      index_t element_bytes = sizeof(conduit::int16),
-                                     index_t endianness = Endianness::DEFAULT_T);
+                                     index_t endianness = Endianness::DEFAULT_ID);
 
 
     void set_path_external(const std::string &path,
@@ -1429,7 +1429,7 @@ public:
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::int16),
                            index_t element_bytes = sizeof(conduit::int16),
-                           index_t endianness = Endianness::DEFAULT_T);
+                           index_t endianness = Endianness::DEFAULT_ID);
  
     //-------------------------------------------------------------------------
     void set_path_external_int32_ptr(const std::string &path,
@@ -1438,7 +1438,7 @@ public:
                                      index_t offset = 0,
                                      index_t stride = sizeof(conduit::int32),
                                      index_t element_bytes = sizeof(conduit::int32),
-                                     index_t endianness = Endianness::DEFAULT_T);
+                                     index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path_external(const std::string &path,
                            int32 *data,
@@ -1446,7 +1446,7 @@ public:
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::int32),
                            index_t element_bytes = sizeof(conduit::int32),
-                           index_t endianness = Endianness::DEFAULT_T);
+                           index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     void set_path_external_int64_ptr(const std::string &path,
@@ -1455,7 +1455,7 @@ public:
                                      index_t offset = 0,
                                      index_t stride = sizeof(conduit::int64),
                                      index_t element_bytes = sizeof(conduit::int64),
-                                     index_t endianness = Endianness::DEFAULT_T);
+                                     index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path_external(const std::string &path,
                            int64 *data,
@@ -1463,7 +1463,7 @@ public:
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::int64),
                            index_t element_bytes = sizeof(conduit::int64),
-                           index_t endianness = Endianness::DEFAULT_T);
+                           index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     // unsigned integer pointer cases
@@ -1474,7 +1474,7 @@ public:
                                      index_t offset = 0,
                                      index_t stride = sizeof(conduit::uint8),
                                      index_t element_bytes = sizeof(conduit::uint8),
-                                     index_t endianness = Endianness::DEFAULT_T);
+                                     index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path_external(const std::string &path,
                            uint8  *data,
@@ -1482,7 +1482,7 @@ public:
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::uint8),
                            index_t element_bytes = sizeof(conduit::uint8),
-                           index_t endianness = Endianness::DEFAULT_T);
+                           index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     void set_path_external_uint16_ptr(const std::string &path,
@@ -1491,7 +1491,7 @@ public:
                                       index_t offset = 0,
                                       index_t stride = sizeof(conduit::uint16),
                                       index_t element_bytes = sizeof(conduit::uint16),
-                                      index_t endianness = Endianness::DEFAULT_T);
+                                      index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path_external(const std::string &path,
                            uint16 *data,
@@ -1499,7 +1499,7 @@ public:
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::uint16),
                            index_t element_bytes = sizeof(conduit::uint16),
-                           index_t endianness = Endianness::DEFAULT_T);
+                           index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     void set_path_external_uint32_ptr(const std::string &path,
@@ -1508,7 +1508,7 @@ public:
                                       index_t offset = 0,
                                       index_t stride = sizeof(conduit::uint32),
                                       index_t element_bytes = sizeof(conduit::uint32),
-                                      index_t endianness = Endianness::DEFAULT_T);
+                                      index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path_external(const std::string &path,
                            uint32 *data, 
@@ -1516,7 +1516,7 @@ public:
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::uint32),
                            index_t element_bytes = sizeof(conduit::uint32),
-                           index_t endianness = Endianness::DEFAULT_T);
+                           index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     void set_path_external_uint64_ptr(const std::string &path,
@@ -1525,7 +1525,7 @@ public:
                                       index_t offset = 0,
                                       index_t stride = sizeof(conduit::uint64),
                                       index_t element_bytes = sizeof(conduit::uint64),
-                                      index_t endianness = Endianness::DEFAULT_T);
+                                      index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path_external(const std::string &path,
                            uint64 *data,
@@ -1533,7 +1533,7 @@ public:
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::uint64),
                            index_t element_bytes = sizeof(conduit::uint64),
-                           index_t endianness = Endianness::DEFAULT_T);
+                           index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     // floating point pointer cases
@@ -1544,7 +1544,7 @@ public:
                                        index_t offset = 0,
                                        index_t stride = sizeof(conduit::float32),
                                        index_t element_bytes = sizeof(conduit::float32),
-                                       index_t endianness = Endianness::DEFAULT_T);
+                                       index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path_external(const std::string &path,
                            float32 *data,
@@ -1552,7 +1552,7 @@ public:
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::float32),
                            index_t element_bytes = sizeof(conduit::float32),
-                           index_t endianness = Endianness::DEFAULT_T);
+                           index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
     void set_path_external_float64_ptr(const std::string &path,
@@ -1561,7 +1561,7 @@ public:
                                        index_t offset = 0,
                                        index_t stride = sizeof(conduit::float64),
                                        index_t element_bytes = sizeof(conduit::float64),
-                                       index_t endianness = Endianness::DEFAULT_T);
+                                       index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path_external(const std::string &path,
                            float64 *data, 
@@ -1569,7 +1569,7 @@ public:
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::float64),
                            index_t element_bytes = sizeof(conduit::float64),
-                           index_t endianness = Endianness::DEFAULT_T);
+                           index_t endianness = Endianness::DEFAULT_ID);
 
 
 //-----------------------------------------------------------------------------
@@ -1893,13 +1893,13 @@ public:
     void endian_swap(index_t endianness);
 
     void endian_swap_to_machine_default()
-        {endian_swap(Endianness::DEFAULT_T);}
+        {endian_swap(Endianness::DEFAULT_ID);}
     
     void endian_swap_to_little()
-        {endian_swap(Endianness::LITTLE_T);}
+        {endian_swap(Endianness::LITTLE_ID);}
     
     void endian_swap_to_big()
-        {endian_swap(Endianness::BIG_T);}
+        {endian_swap(Endianness::BIG_ID);}
 
 
 //-----------------------------------------------------------------------------

@@ -161,7 +161,7 @@ public:
 index_t 
 Generator::Parser::json_to_numeric_dtype(const rapidjson::Value &jvalue)
 {
-    index_t res = DataType::EMPTY_T; 
+    index_t res = DataType::EMPTY_ID; 
     if(jvalue.IsNumber())
     {
         // TODO: We could have better logic for dealing with int vs uint
@@ -170,13 +170,13 @@ Generator::Parser::json_to_numeric_dtype(const rapidjson::Value &jvalue)
            jvalue.IsUint()   ||
            jvalue.IsInt())
         {
-            res  = DataType::INT64_T; // for int
+            res  = DataType::INT64_ID; // for int
         }
         else if(jvalue.IsDouble())
         {
-            res  = DataType::FLOAT64_T; // for float
+            res  = DataType::FLOAT64_ID; // for float
         } 
-        // else -- value already init to EMPTY_T
+        // else -- value already init to EMPTY_ID
     }
     
     return res;
@@ -191,25 +191,25 @@ Generator::Parser::check_homogenous_json_array(const rapidjson::Value &jvalue)
     // (this is a heuristic decision)
 
     if(jvalue.Size() == 0)
-        return DataType::EMPTY_T;
+        return DataType::EMPTY_ID;
 
     index_t val_type = json_to_numeric_dtype(jvalue[(rapidjson::SizeType)0]); 
-    bool homogenous  = (val_type != DataType::EMPTY_T);
+    bool homogenous  = (val_type != DataType::EMPTY_ID);
 
     for (rapidjson::SizeType i = 1; i < jvalue.Size() && homogenous; i++)
     {
         index_t curr_val_type = json_to_numeric_dtype(jvalue[i]);
-        if((val_type == DataType::INT64_T || val_type == DataType::INT64_T) &&
-           curr_val_type ==  DataType::FLOAT64_T)
+        if((val_type == DataType::INT64_ID || val_type == DataType::INT64_ID) &&
+           curr_val_type ==  DataType::FLOAT64_ID)
         {
             // promote to a double (may lose prec in some cases)
-            val_type = DataType::FLOAT64_T;
+            val_type = DataType::FLOAT64_ID;
         }
-        else if(curr_val_type == DataType::EMPTY_T)
+        else if(curr_val_type == DataType::EMPTY_ID)
         {
             // non hmg inline
             homogenous = false;
-            val_type = DataType::EMPTY_T;
+            val_type = DataType::EMPTY_ID;
         }
     }
 
@@ -239,36 +239,36 @@ Generator::Parser::parse_json_int64_array(const rapidjson::Value &jvalue,
     
     switch(node.dtype().id())
     {
-        case DataType::INT8_T:   
+        case DataType::INT8_ID:   
             node.as_int8_array().set(vals);
             break;
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
             node.as_int16_array().set(vals);
             break;
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
             node.as_int32_array().set(vals);
             break;
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
             node.as_int64_array().set(vals);
             break;
         // unsigned ints
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
             node.as_uint8_array().set(vals);
             break;
-        case DataType::UINT16_T:
+        case DataType::UINT16_ID:
             node.as_uint16_array().set(vals);
             break;
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
             node.as_uint32_array().set(vals);
             break;
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
             node.as_uint64_array().set(vals);
             break;  
         //floats
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
             node.as_float32_array().set(vals);
             break;
-        case DataType::FLOAT64_T:
+        case DataType::FLOAT64_ID:
             node.as_float64_array().set(vals);
             break;
     }
@@ -297,36 +297,36 @@ Generator::Parser::parse_json_uint64_array(const rapidjson::Value &jvalue,
     
     switch(node.dtype().id())
     {
-        case DataType::INT8_T:   
+        case DataType::INT8_ID:   
             node.as_int8_array().set(vals);
             break;
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
             node.as_int16_array().set(vals);
             break;
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
             node.as_int32_array().set(vals);
             break;
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
             node.as_int64_array().set(vals);
             break;
         // unsigned ints
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
             node.as_uint8_array().set(vals);
             break;
-        case DataType::UINT16_T:
+        case DataType::UINT16_ID:
             node.as_uint16_array().set(vals);
             break;
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
             node.as_uint32_array().set(vals);
             break;
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
             node.as_uint64_array().set(vals);
             break;  
         //floats
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
             node.as_float32_array().set(vals);
             break;
-        case DataType::FLOAT64_T:
+        case DataType::FLOAT64_ID:
             node.as_float64_array().set(vals);
             break;
     }
@@ -355,36 +355,36 @@ Generator::Parser::parse_json_float64_array(const rapidjson::Value &jvalue,
     
     switch(node.dtype().id())
     {
-        case DataType::INT8_T:   
+        case DataType::INT8_ID:   
             node.as_int8_array().set(vals);
             break;
-        case DataType::INT16_T: 
+        case DataType::INT16_ID: 
             node.as_int16_array().set(vals);
             break;
-        case DataType::INT32_T:
+        case DataType::INT32_ID:
             node.as_int32_array().set(vals);
             break;
-        case DataType::INT64_T:
+        case DataType::INT64_ID:
             node.as_int64_array().set(vals);
             break;
         // unsigned ints
-        case DataType::UINT8_T:
+        case DataType::UINT8_ID:
             node.as_uint8_array().set(vals);
             break;
-        case DataType::UINT16_T:
+        case DataType::UINT16_ID:
             node.as_uint16_array().set(vals);
             break;
-        case DataType::UINT32_T:
+        case DataType::UINT32_ID:
             node.as_uint32_array().set(vals);
             break;
-        case DataType::UINT64_T:
+        case DataType::UINT64_ID:
             node.as_uint64_array().set(vals);
             break;  
         //floats
-        case DataType::FLOAT32_T:
+        case DataType::FLOAT32_ID:
             node.as_float32_array().set(vals);
             break;
-        case DataType::FLOAT64_T:
+        case DataType::FLOAT64_ID:
             node.as_float64_array().set(vals);
             break;
     }
@@ -396,14 +396,14 @@ index_t
 Generator::Parser::parse_leaf_dtype_name(const std::string &dtype_name)
 {
     index_t dtype_id = DataType::name_to_id(dtype_name);
-    if(dtype_id == DataType::EMPTY_T)
+    if(dtype_id == DataType::EMPTY_ID)
     {
         // also try native type names
         dtype_id = DataType::c_type_name_to_id(dtype_name);
     }
 
     // do an explicit check for empty
-    if(dtype_id == DataType::EMPTY_T && dtype_name != "empty")
+    if(dtype_id == DataType::EMPTY_ID && dtype_name != "empty")
     {
         CONDUIT_ERROR("Generator parsing error: invalid leaf type "
                       << "\""  <<  dtype_name << "\"");
@@ -428,7 +428,7 @@ Generator::Parser::parse_leaf_dtype(const rapidjson::Value &jvalue,
                       offset,
                       ele_size,
                       ele_size,
-                      Endianness::DEFAULT_T);
+                      Endianness::DEFAULT_ID);
     }
     else if(jvalue.IsObject())
     {
@@ -458,17 +458,17 @@ Generator::Parser::parse_leaf_dtype(const rapidjson::Value &jvalue,
         // TODO: parse element_size
     
         // parse endianness
-        index_t endianness = Endianness::DEFAULT_T;
+        index_t endianness = Endianness::DEFAULT_ID;
         if(jvalue.HasMember("endianess") && jvalue["endianness"].IsString())
         {
             std::string end_val(jvalue["endianness"].GetString());
             if(end_val == "big")
             {
-                endianness = Endianness::BIG_T;
+                endianness = Endianness::BIG_ID;
             }
             else
             {
-                endianness = Endianness::LITTLE_T;
+                endianness = Endianness::LITTLE_ID;
             }
         
         }
@@ -506,7 +506,7 @@ Generator::Parser::parse_inline_leaf(const rapidjson::Value &jvalue,
 {
     if(jvalue.IsString())
     {
-        if(node.dtype().id() == DataType::CHAR8_STR_T)
+        if(node.dtype().id() == DataType::CHAR8_STR_ID)
         {
             std::string sval(jvalue.GetString());
             node.set(sval);
@@ -523,7 +523,7 @@ Generator::Parser::parse_inline_leaf(const rapidjson::Value &jvalue,
     else if(jvalue.IsBool())
     {
         //
-        if(node.dtype().id() == DataType::UINT8_T)
+        if(node.dtype().id() == DataType::UINT8_ID)
         {
             node.set((uint8)jvalue.GetBool());
         }
@@ -541,36 +541,36 @@ Generator::Parser::parse_inline_leaf(const rapidjson::Value &jvalue,
         switch(node.dtype().id())
         {
             // signed ints
-            case DataType::INT8_T:   
+            case DataType::INT8_ID:   
                 node.set((int8)jvalue.GetInt64());
                 break;
-            case DataType::INT16_T: 
+            case DataType::INT16_ID: 
                 node.set((int16)jvalue.GetInt64());
                 break;
-            case DataType::INT32_T:
+            case DataType::INT32_ID:
                 node.set((int32)jvalue.GetInt64());
                 break;
-            case DataType::INT64_T:
+            case DataType::INT64_ID:
                 node.set((int64)jvalue.GetInt64());
                 break;
             // unsigned ints
-            case DataType::UINT8_T:
+            case DataType::UINT8_ID:
                 node.set((uint8)jvalue.GetUint64());
                 break;
-            case DataType::UINT16_T:
+            case DataType::UINT16_ID:
                 node.set((uint16)jvalue.GetUint64());
                 break;
-            case DataType::UINT32_T:
+            case DataType::UINT32_ID:
                 node.set((uint32)jvalue.GetUint64());
                 break;
-            case DataType::UINT64_T:
+            case DataType::UINT64_ID:
                 node.set((uint64)jvalue.GetUint64());
                 break;  
             //floats
-            case DataType::FLOAT32_T:
+            case DataType::FLOAT32_ID:
                 node.set((float32)jvalue.GetDouble());
                 break;
-            case DataType::FLOAT64_T:
+            case DataType::FLOAT64_ID:
                 node.set((float64)jvalue.GetDouble());
                 break;
             // case default:
@@ -601,7 +601,7 @@ Generator::Parser::parse_inline_value(const rapidjson::Value &jvalue,
             // TODO: error
         }
         
-        if(hval_type == DataType::INT64_T)
+        if(hval_type == DataType::INT64_ID)
         {
             if(node.dtype().is_unsigned_integer())
             {
@@ -612,7 +612,7 @@ Generator::Parser::parse_inline_value(const rapidjson::Value &jvalue,
                 parse_json_int64_array(jvalue,node);
             }
         }
-        else if(hval_type == DataType::FLOAT64_T)
+        else if(hval_type == DataType::FLOAT64_ID)
         {
             parse_json_float64_array(jvalue,node);
         }
@@ -741,13 +741,13 @@ Generator::Parser::walk_pure_json_schema(Node  *node,
     else if (jvalue.IsArray()) 
     {
         index_t hval_type = check_homogenous_json_array(jvalue);
-        if(hval_type == DataType::INT64_T)
+        if(hval_type == DataType::INT64_ID)
         {
             std::vector<int64> res;
             parse_json_int64_array(jvalue,res);
             node->set(res);
         }
-        else if(hval_type == DataType::FLOAT64_T)
+        else if(hval_type == DataType::FLOAT64_ID)
         {
             std::vector<float64> res;
             parse_json_float64_array(jvalue,res);

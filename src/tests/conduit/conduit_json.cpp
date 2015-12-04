@@ -203,7 +203,7 @@ TEST(conduit_json, json_bool)
     Generator g(pure_json,"json");
     Node n(g,true);
     n.print_detailed();
-    EXPECT_EQ(n["value"].dtype().id(),DataType::UINT8_T);
+    EXPECT_EQ(n["value"].dtype().id(),DataType::UINT8_ID);
 
 }
 
@@ -231,9 +231,9 @@ TEST(conduit_json, load_from_json)
     s_dest.load(ofname);
     
     EXPECT_EQ(true,s_dest.has_path("a"));
-    EXPECT_EQ(DataType::UINT32_T,s_dest["a"].dtype().id());
+    EXPECT_EQ(DataType::UINT32_ID,s_dest["a"].dtype().id());
     EXPECT_EQ(true,s_dest.has_path("b"));
-    EXPECT_EQ(DataType::UINT32_T,s_dest["b"].dtype().id());
+    EXPECT_EQ(DataType::UINT32_ID,s_dest["b"].dtype().id());
     
 }
 

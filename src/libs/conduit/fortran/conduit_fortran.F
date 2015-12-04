@@ -63,33 +63,33 @@ module conduit
     !--------------------------------------------------------------------------
     ! generic types
     !--------------------------------------------------------------------------
-    integer, parameter :: CONDUIT_EMPTY_T  = F_CONDUIT_EMPTY_T
-    integer, parameter :: CONDUIT_OBJECT_T = F_CONDUIT_EMPTY_T
-    integer, parameter :: CONDUIT_LIST_T   = F_CONDUIT_LIST_T
+    integer, parameter :: CONDUIT_EMPTY_ID  = F_CONDUIT_EMPTY_ID
+    integer, parameter :: CONDUIT_OBJECT_ID = F_CONDUIT_EMPTY_ID
+    integer, parameter :: CONDUIT_LIST_ID   = F_CONDUIT_LIST_ID
     
     !--------------------------------------------------------------------------
     ! bitwidth style signed integer types
     !--------------------------------------------------------------------------
-    integer, parameter :: CONDUIT_INT8_T   = F_CONDUIT_INT8_T
-    integer, parameter :: CONDUIT_INT16_T  = F_CONDUIT_INT16_T
-    integer, parameter :: CONDUIT_INT32_T  = F_CONDUIT_INT32_T
-    integer, parameter :: CONDUIT_INT64_T  = F_CONDUIT_INT64_T
+    integer, parameter :: CONDUIT_INT8_ID   = F_CONDUIT_INT8_ID
+    integer, parameter :: CONDUIT_INT16_ID  = F_CONDUIT_INT16_ID
+    integer, parameter :: CONDUIT_INT32_ID  = F_CONDUIT_INT32_ID
+    integer, parameter :: CONDUIT_INT64_ID  = F_CONDUIT_INT64_ID
     !--------------------------------------------------------------------------
     ! bitwidth style unsigned integer types
     !--------------------------------------------------------------------------
-    integer, parameter :: CONDUIT_UINT8_T   = F_CONDUIT_UINT8_T
-    integer, parameter :: CONDUIT_UINT16_T  = F_CONDUIT_UINT16_T
-    integer, parameter :: CONDUIT_UINT32_T  = F_CONDUIT_UINT32_T
-    integer, parameter :: CONDUIT_UINT64_T  = F_CONDUIT_UINT64_T
+    integer, parameter :: CONDUIT_UINT8_ID   = F_CONDUIT_UINT8_ID
+    integer, parameter :: CONDUIT_UINT16_ID  = F_CONDUIT_UINT16_ID
+    integer, parameter :: CONDUIT_UINT32_ID  = F_CONDUIT_UINT32_ID
+    integer, parameter :: CONDUIT_UINT64_ID  = F_CONDUIT_UINT64_ID
     !--------------------------------------------------------------------------
     ! bitwidth style floating point integer types
     !--------------------------------------------------------------------------
-    integer, parameter :: CONDUIT_FLOAT32_T  = F_CONDUIT_FLOAT32_T
-    integer, parameter :: CONDUIT_FLOAT64_T  = F_CONDUIT_FLOAT64_T
+    integer, parameter :: CONDUIT_FLOAT32_ID  = F_CONDUIT_FLOAT32_ID
+    integer, parameter :: CONDUIT_FLOAT64_ID  = F_CONDUIT_FLOAT64_ID
     !--------------------------------------------------------------------------
     ! string  types 
     !--------------------------------------------------------------------------
-    integer, parameter :: CONDUIT_CHAR8_STR_T = F_CONDUIT_CHAR8_STR_T
+    integer, parameter :: CONDUIT_CHAR8_STR_ID = F_CONDUIT_CHAR8_STR_ID
 
     !--------------------------------------------------------------------------
     ! c style type ids
@@ -100,22 +100,22 @@ module conduit
     !--------------------------------------------------------------------------
     ! c style signed integer types
     !--------------------------------------------------------------------------
-    integer, parameter :: CONDUIT_CHAR_T  = F_CONDUIT_NATIVE_CHAR_DATATYPE_ID
-    integer, parameter :: CONDUIT_SHORT_T = F_CONDUIT_NATIVE_SHORT_DATATYPE_ID
-    integer, parameter :: CONDUIT_INT_T   = F_CONDUIT_NATIVE_INT_DATATYPE_ID
-    integer, parameter :: CONDUIT_LONG_T  = F_CONDUIT_NATIVE_LONG_DATATYPE_ID
+    integer, parameter :: CONDUIT_CHAR_ID  = F_CONDUIT_NATIVE_CHAR_ID
+    integer, parameter :: CONDUIT_SHORT_ID = F_CONDUIT_NATIVE_SHORT_ID
+    integer, parameter :: CONDUIT_INT_ID   = F_CONDUIT_NATIVE_INT_ID
+    integer, parameter :: CONDUIT_LONG_ID  = F_CONDUIT_NATIVE_LONG_ID
     !--------------------------------------------------------------------------
     ! c style unsigned integer types
     !--------------------------------------------------------------------------
-    integer, parameter :: CONDUIT_UCHAR_T  = F_CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID
-    integer, parameter :: CONDUIT_USHORT_T = F_CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID
-    integer, parameter :: CONDUIT_UINT_T   = F_CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID
-    integer, parameter :: CONDUIT_ULONG_T  = F_CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID
+    integer, parameter :: CONDUIT_UCHAR_ID  = F_CONDUIT_NATIVE_UNSIGNED_CHAR_ID
+    integer, parameter :: CONDUIT_USHORT_ID = F_CONDUIT_NATIVE_UNSIGNED_SHORT_ID
+    integer, parameter :: CONDUIT_UINT_ID   = F_CONDUIT_NATIVE_UNSIGNED_INT_ID
+    integer, parameter :: CONDUIT_ULONG_ID  = F_CONDUIT_NATIVE_UNSIGNED_LONG_ID
     !--------------------------------------------------------------------------
     ! c style floating point integer types
     !--------------------------------------------------------------------------
-    integer, parameter :: CONDUIT_FLOAT_T  = F_CONDUIT_NATIVE_FLOAT_DATATYPE_ID
-    integer, parameter :: CONDUIT_DOUBLE_T = F_CONDUIT_NATIVE_DOUBLE_DATATYPE_ID
+    integer, parameter :: CONDUIT_FLOAT_ID  = F_CONDUIT_NATIVE_FLOAT_ID
+    integer, parameter :: CONDUIT_DOUBLE_ID = F_CONDUIT_NATIVE_DOUBLE_ID
     !--------------------------------------------------------------------------
 
 

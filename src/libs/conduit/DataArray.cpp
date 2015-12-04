@@ -158,18 +158,18 @@ DataArray<T>::to_json(std::ostream &os) const
         {
             /// TODO: This could be orged better
             /* ints */
-            case DataType::INT8_T:  os << (int64) element(idx); break;
-            case DataType::INT16_T: os << (int64) element(idx); break;
-            case DataType::INT32_T: os << (int64) element(idx); break;
-            case DataType::INT64_T: os << (int64) element(idx); break;
+            case DataType::INT8_ID:  os << (int64) element(idx); break;
+            case DataType::INT16_ID: os << (int64) element(idx); break;
+            case DataType::INT32_ID: os << (int64) element(idx); break;
+            case DataType::INT64_ID: os << (int64) element(idx); break;
             /* uints */
-            case DataType::UINT8_T:  os << (uint64) element(idx); break;
-            case DataType::UINT16_T: os << (uint64) element(idx); break;
-            case DataType::UINT32_T: os << (uint64) element(idx); break;
-            case DataType::UINT64_T: os << (uint64) element(idx); break;
+            case DataType::UINT8_ID:  os << (uint64) element(idx); break;
+            case DataType::UINT16_ID: os << (uint64) element(idx); break;
+            case DataType::UINT32_ID: os << (uint64) element(idx); break;
+            case DataType::UINT64_ID: os << (uint64) element(idx); break;
             /* floats */
-            case DataType::FLOAT32_T: os << (float64) element(idx); break;
-            case DataType::FLOAT64_T: os << (float64) element(idx); break;
+            case DataType::FLOAT32_ID: os << (float64) element(idx); break;
+            case DataType::FLOAT64_ID: os << (float64) element(idx); break;
         
         }
         first=false;

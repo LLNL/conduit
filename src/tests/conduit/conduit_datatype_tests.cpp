@@ -66,10 +66,10 @@ void print_dt(const DataType &dtype)
 //-----------------------------------------------------------------------------
 TEST(type_tests, value_print)
 {
-    EXPECT_EQ(DataType::EMPTY_T,0);
-    EXPECT_EQ(DataType::id_to_name(DataType::EMPTY_T),"[empty]");
-    EXPECT_EQ(DataType::name_to_id("[empty]"),DataType::EMPTY_T);
-    EXPECT_TRUE( (DataType::EMPTY_T != DataType::OBJECT_T) );
+    EXPECT_EQ(DataType::EMPTY_ID,0);
+    EXPECT_EQ(DataType::id_to_name(DataType::EMPTY_ID),"[empty]");
+    EXPECT_EQ(DataType::name_to_id("[empty]"),DataType::EMPTY_ID);
+    EXPECT_TRUE( (DataType::EMPTY_ID != DataType::OBJECT_ID) );
 
     print_dt(DataType::empty());
     print_dt(DataType::object());

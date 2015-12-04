@@ -73,9 +73,9 @@ Endianness::machine_default()
     union{uint8  vbyte; uint32 vuint;} test;
     test.vuint = 1;
     if(test.vbyte ^ 1)
-        return BIG_T;
+        return BIG_ID;
     else
-        return LITTLE_T;
+        return LITTLE_ID;
 }
 
 //-----------------------------------------------------------------------------
@@ -87,10 +87,10 @@ index_t
 Endianness::name_to_id(const std::string &name)
 {
     if(name == "big")
-        return BIG_T;
+        return BIG_ID;
     else if(name =="little")
-        return LITTLE_T;
-    return DEFAULT_T;
+        return LITTLE_ID;
+    return DEFAULT_ID;
 
 }
 
@@ -99,9 +99,9 @@ std::string
 Endianness::id_to_name(index_t endianness)
 {
     std::string res = "default";
-    if(endianness == BIG_T) 
+    if(endianness == BIG_ID) 
         res = "big";
-    else if(endianness == LITTLE_T) 
+    else if(endianness == LITTLE_ID) 
         res = "little";
     return res;
 };

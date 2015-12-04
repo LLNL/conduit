@@ -62,7 +62,7 @@ TEST(conduit_endianness, simple_1)
     std::string machine_endian = Endianness::id_to_name(Endianness::machine_default());
     std::cout << "[host is " << machine_endian << "]" << std::endl;
 
-    if(Endianness::machine_default() == Endianness::BIG_T)
+    if(Endianness::machine_default() == Endianness::BIG_ID)
     {
         test.vbytes[0] =  0xff;
         test.vbytes[1] =  0xff;
@@ -89,7 +89,7 @@ TEST(conduit_endianness, swap_inplace)
     union{uint8  vbytes[4]; uint32 vuint32;} test32;
     union{uint8  vbytes[8]; uint64 vuint64;} test64;
         
-    if(Endianness::machine_default() == Endianness::BIG_T)
+    if(Endianness::machine_default() == Endianness::BIG_ID)
     {
      
         test16.vbytes[0] =  0x02;
@@ -158,20 +158,20 @@ TEST(conduit_endianness, node_swap)
 
     Node n;
 
-    if(Endianness::machine_default() == Endianness::BIG_T)
+    if(Endianness::machine_default() == Endianness::BIG_ID)
     {
         test16.vbytes[0] =  0x02;
         test16.vbytes[1] =  0x01;
 
         n["test16"].set_external(&test16.vuint16,1);
-        /// no swap if types match (machine default will be BIG_T)
-        n["test16"].endian_swap(Endianness::DEFAULT_T);
+        /// no swap if types match (machine default will be BIG_ID)
+        n["test16"].endian_swap(Endianness::DEFAULT_ID);
         EXPECT_EQ(0x0201,test16.vuint16);
-        /// no swap if types match (machine default will be BIG_T)
-        n["test16"].endian_swap(Endianness::BIG_T);
+        /// no swap if types match (machine default will be BIG_ID)
+        n["test16"].endian_swap(Endianness::BIG_ID);
         EXPECT_EQ(0x0201,test16.vuint16);
         /// swap
-        n["test16"].endian_swap(Endianness::LITTLE_T);
+        n["test16"].endian_swap(Endianness::LITTLE_ID);
         EXPECT_EQ(0x0102,test16.vuint16);
 
         test32.vbytes[0] =  0x04;
@@ -180,7 +180,7 @@ TEST(conduit_endianness, node_swap)
         test32.vbytes[3] =  0x01;
 
         n["test32"].set_external(&test32.vuint32,1);
-        n["test32"].endian_swap(Endianness::LITTLE_T);
+        n["test32"].endian_swap(Endianness::LITTLE_ID);
         EXPECT_EQ(0x01020304,test32.vuint32);
         
         test64.vbytes[0] =  0x08;
@@ -193,16 +193,16 @@ TEST(conduit_endianness, node_swap)
         test64.vbytes[7] =  0x01;
 
         n["test64"].set_external(&test64.vuint64,1);
-        n["test64"].endian_swap(Endianness::LITTLE_T);
+        n["test64"].endian_swap(Endianness::LITTLE_ID);
         EXPECT_EQ(0x0102030405060708,test64.vuint64);
 
         // swap all back back so we can do a full test on n
-        n["test16"].endian_swap(Endianness::BIG_T);
-        n["test32"].endian_swap(Endianness::BIG_T);
-        n["test64"].endian_swap(Endianness::BIG_T);
+        n["test16"].endian_swap(Endianness::BIG_ID);
+        n["test32"].endian_swap(Endianness::BIG_ID);
+        n["test64"].endian_swap(Endianness::BIG_ID);
         
         // full swap via n
-        n.endian_swap(Endianness::LITTLE_T);
+        n.endian_swap(Endianness::LITTLE_ID);
         
         EXPECT_EQ(0x0102,test16.vuint16);
         EXPECT_EQ(0x01020304,test32.vuint32);
@@ -215,14 +215,14 @@ TEST(conduit_endianness, node_swap)
         test16.vbytes[1] =  0x02;
 
         n["test16"].set_external(&test16.vuint16,1);
-        /// no swap if types match (machine default will be LITTLE_T)
-        n["test16"].endian_swap(Endianness::DEFAULT_T);
+        /// no swap if types match (machine default will be LITTLE_ID)
+        n["test16"].endian_swap(Endianness::DEFAULT_ID);
         EXPECT_EQ(0x0201,test16.vuint16);
-        /// no swap if types match (machine default will be LITTLE_T)
-        n["test16"].endian_swap(Endianness::LITTLE_T);
+        /// no swap if types match (machine default will be LITTLE_ID)
+        n["test16"].endian_swap(Endianness::LITTLE_ID);
         EXPECT_EQ(0x0201,test16.vuint16);
         /// swap
-        n["test16"].endian_swap(Endianness::BIG_T);
+        n["test16"].endian_swap(Endianness::BIG_ID);
         EXPECT_EQ(0x0102,test16.vuint16);
 
         test32.vbytes[0] =  0x01;
@@ -231,7 +231,7 @@ TEST(conduit_endianness, node_swap)
         test32.vbytes[3] =  0x04;
 
         n["test32"].set_external(&test32.vuint32,1);
-        n["test32"].endian_swap(Endianness::BIG_T);
+        n["test32"].endian_swap(Endianness::BIG_ID);
         EXPECT_EQ(0x01020304,test32.vuint32);
 
         test64.vbytes[0] =  0x01;
@@ -244,14 +244,14 @@ TEST(conduit_endianness, node_swap)
         test64.vbytes[7] =  0x08;
 
         n["test64"].set_external(&test64.vuint64,1);
-        n["test64"].endian_swap(Endianness::BIG_T);
+        n["test64"].endian_swap(Endianness::BIG_ID);
         EXPECT_EQ(0x0102030405060708,test64.vuint64);
 
         // swap all back back so we can do a full test on n
-        n["test16"].endian_swap(Endianness::LITTLE_T);
-        n["test32"].endian_swap(Endianness::LITTLE_T);
-        n["test64"].endian_swap(Endianness::LITTLE_T);
-        n.endian_swap(Endianness::BIG_T);
+        n["test16"].endian_swap(Endianness::LITTLE_ID);
+        n["test32"].endian_swap(Endianness::LITTLE_ID);
+        n["test64"].endian_swap(Endianness::LITTLE_ID);
+        n.endian_swap(Endianness::BIG_ID);
         
         // full swap via n
         EXPECT_EQ(0x0102,test16.vuint16);
@@ -270,7 +270,7 @@ TEST(conduit_endianness, node_swap_using_explicit_funcs)
 
     Node n;
 
-    if(Endianness::machine_default() == Endianness::BIG_T)
+    if(Endianness::machine_default() == Endianness::BIG_ID)
     {
         test16.vbytes[0] =  0x02;
         test16.vbytes[1] =  0x01;
@@ -280,7 +280,7 @@ TEST(conduit_endianness, node_swap_using_explicit_funcs)
                                  0, // offset
                                  2, // stride
                                  2, // elem_bytes
-                                 Endianness::LITTLE_T); // set not match
+                                 Endianness::LITTLE_ID); // set not match
         
         n["test16"].endian_swap_to_machine_default();
         EXPECT_EQ(0x0102,test16.vuint16);
@@ -295,7 +295,7 @@ TEST(conduit_endianness, node_swap_using_explicit_funcs)
                                  0, // offset
                                  4, // stride
                                  4, // elem_bytes
-                                 Endianness::LITTLE_T); // set not match
+                                 Endianness::LITTLE_ID); // set not match
 
         n["test32"].endian_swap_to_machine_default();
         EXPECT_EQ(0x01020304,test32.vuint32);
@@ -314,7 +314,7 @@ TEST(conduit_endianness, node_swap_using_explicit_funcs)
                                  0, // offset
                                  8, // stride
                                  8, // elem_bytes
-                                 Endianness::LITTLE_T); // set not match
+                                 Endianness::LITTLE_ID); // set not match
 
         n["test32"].endian_swap_to_machine_default();
         EXPECT_EQ(0x0102030405060708,test64.vuint64);
@@ -341,7 +341,7 @@ TEST(conduit_endianness, node_swap_using_explicit_funcs)
                                  0, // offset
                                  2, // stride
                                  2, // elem_bytes
-                                 Endianness::BIG_T); // set not match
+                                 Endianness::BIG_ID); // set not match
 
         /// swap
         n["test16"].endian_swap_to_machine_default();
@@ -357,7 +357,7 @@ TEST(conduit_endianness, node_swap_using_explicit_funcs)
                                  0, // offset
                                  4, // stride
                                  4, // elem_bytes
-                                 Endianness::BIG_T); // set not match
+                                 Endianness::BIG_ID); // set not match
 
         n["test32"].endian_swap_to_machine_default();
         EXPECT_EQ(0x01020304,test32.vuint32);
@@ -376,7 +376,7 @@ TEST(conduit_endianness, node_swap_using_explicit_funcs)
                                  0, // offset
                                  8, // stride
                                  8, // elem_bytes
-                                 Endianness::BIG_T); // set not match
+                                 Endianness::BIG_ID); // set not match
 
                                  
         

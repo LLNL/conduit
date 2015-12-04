@@ -64,19 +64,19 @@ namespace conduit
 DataType 
 DataType::empty()
 {
-    return DataType(EMPTY_T);
+    return DataType(EMPTY_ID);
 }
 
 DataType 
 DataType::object()
 {
-    return DataType(OBJECT_T);
+    return DataType(OBJECT_ID);
 }
 
 DataType 
 DataType::list()
 {
-    return DataType(LIST_T);
+    return DataType(LIST_ID);
 }
 
 
@@ -91,7 +91,7 @@ DataType::int8(index_t num_elements,
                index_t element_bytes,
                index_t endianness)
 {
-    return DataType(INT8_T,num_elements,offset,stride,element_bytes,endianness);
+    return DataType(INT8_ID,num_elements,offset,stride,element_bytes,endianness);
 }
 
 //---------------------------------------------------------------------------//
@@ -102,7 +102,7 @@ DataType::int16(index_t num_elements,
                 index_t element_bytes,
                 index_t endianness)
 {
-    return DataType(INT16_T,num_elements,offset,stride,element_bytes,endianness);
+    return DataType(INT16_ID,num_elements,offset,stride,element_bytes,endianness);
 }
 
 //---------------------------------------------------------------------------//
@@ -113,7 +113,7 @@ DataType::int32(index_t num_elements,
                 index_t element_bytes,
                 index_t endianness)
 {
-    return DataType(INT32_T,num_elements,offset,stride,element_bytes,endianness);
+    return DataType(INT32_ID,num_elements,offset,stride,element_bytes,endianness);
 }
 
 //---------------------------------------------------------------------------//
@@ -124,7 +124,7 @@ DataType::int64(index_t num_elements,
                 index_t element_bytes,
                 index_t endianness)
 {
-    return DataType(INT64_T,num_elements,offset,stride,element_bytes,endianness);
+    return DataType(INT64_ID,num_elements,offset,stride,element_bytes,endianness);
 }
 
 /// unsigned integer arrays
@@ -136,7 +136,7 @@ DataType::uint8(index_t num_elements,
                 index_t element_bytes,
                 index_t endianness)
 {
-    return DataType(UINT8_T,num_elements,offset,stride,element_bytes,endianness);
+    return DataType(UINT8_ID,num_elements,offset,stride,element_bytes,endianness);
 }
 
 //---------------------------------------------------------------------------//
@@ -147,7 +147,7 @@ DataType::uint16(index_t num_elements,
                  index_t element_bytes,
                  index_t endianness)
 {
-    return DataType(UINT16_T,num_elements,offset,stride,element_bytes,endianness);
+    return DataType(UINT16_ID,num_elements,offset,stride,element_bytes,endianness);
 }
 
 //---------------------------------------------------------------------------//
@@ -158,7 +158,7 @@ DataType::uint32(index_t num_elements,
                  index_t element_bytes,
                  index_t endianness)
 {
-    return DataType(UINT32_T,num_elements,offset,stride,element_bytes,endianness);
+    return DataType(UINT32_ID,num_elements,offset,stride,element_bytes,endianness);
 }
 
 //---------------------------------------------------------------------------//
@@ -169,7 +169,7 @@ DataType::uint64(index_t num_elements,
                  index_t element_bytes,
                  index_t endianness)
 {
-    return DataType(UINT64_T,num_elements,offset,stride,element_bytes,endianness);
+    return DataType(UINT64_ID,num_elements,offset,stride,element_bytes,endianness);
 }
 
  /// floating point arrays
@@ -181,7 +181,7 @@ DataType::float32(index_t num_elements,
                   index_t element_bytes,
                   index_t endianness)
 {
-    return DataType(FLOAT32_T,num_elements,offset,stride,element_bytes,endianness);
+    return DataType(FLOAT32_ID,num_elements,offset,stride,element_bytes,endianness);
 }
 
 //---------------------------------------------------------------------------//
@@ -192,7 +192,7 @@ DataType::float64(index_t num_elements,
                   index_t element_bytes,
                   index_t endianness)
 {
-    return DataType(FLOAT64_T,num_elements,offset,stride,element_bytes,endianness);
+    return DataType(FLOAT64_ID,num_elements,offset,stride,element_bytes,endianness);
 }
 
 //---------------------------------------------------------------------------//
@@ -203,7 +203,7 @@ DataType::char8_str(index_t num_elements,
                     index_t element_bytes,
                     index_t endianness)
 {
-    return DataType(CHAR8_STR_T,
+    return DataType(CHAR8_STR_ID,
                     num_elements,
                     offset,
                     stride,
@@ -222,7 +222,7 @@ DataType::c_char(index_t num_elements,
                  index_t element_bytes,
                  index_t endianness)
 {
-    return DataType(CONDUIT_NATIVE_CHAR_DATATYPE_ID,
+    return DataType(CONDUIT_NATIVE_CHAR_ID,
                     num_elements,offset,stride,element_bytes,endianness);
 }
 
@@ -234,7 +234,7 @@ DataType::c_short(index_t num_elements,
                   index_t element_bytes,
                   index_t endianness)
 {
-    return DataType(CONDUIT_NATIVE_SHORT_DATATYPE_ID,
+    return DataType(CONDUIT_NATIVE_SHORT_ID,
                     num_elements,offset,stride,element_bytes,endianness);
 }
 
@@ -246,7 +246,7 @@ DataType::c_int(index_t num_elements,
                 index_t element_bytes,
                 index_t endianness)
 {
-    return DataType(CONDUIT_NATIVE_INT_DATATYPE_ID,
+    return DataType(CONDUIT_NATIVE_INT_ID,
                     num_elements,offset,stride,element_bytes,endianness);
 }
 
@@ -258,7 +258,7 @@ DataType::c_long(index_t num_elements,
                  index_t element_bytes,
                  index_t endianness)
 {
-    return DataType(CONDUIT_NATIVE_LONG_DATATYPE_ID,
+    return DataType(CONDUIT_NATIVE_LONG_ID,
                     num_elements,offset,stride,element_bytes,endianness);
 }
 
@@ -271,7 +271,7 @@ DataType::c_unsigned_char(index_t num_elements,
                           index_t element_bytes,
                           index_t endianness)
 {
-    return DataType(CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID,
+    return DataType(CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
                     num_elements,offset,stride,element_bytes,endianness);
 }
 
@@ -283,7 +283,7 @@ DataType::c_unsigned_short(index_t num_elements,
                            index_t element_bytes,
                            index_t endianness)
 {
-    return DataType(CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID,
+    return DataType(CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
                     num_elements,offset,stride,element_bytes,endianness);
 }
 
@@ -295,7 +295,7 @@ DataType::c_unsigned_int(index_t num_elements,
                          index_t element_bytes,
                          index_t endianness)
 {
-    return DataType(CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID,
+    return DataType(CONDUIT_NATIVE_UNSIGNED_INT_ID,
                     num_elements,offset,stride,element_bytes,endianness);
 }
 
@@ -307,7 +307,7 @@ DataType::c_unsigned_long(index_t num_elements,
                           index_t element_bytes,
                           index_t endianness)
 {
-    return DataType(CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID,
+    return DataType(CONDUIT_NATIVE_UNSIGNED_LONG_ID,
                     num_elements,offset,stride,element_bytes,endianness);
 }
 
@@ -320,7 +320,7 @@ DataType::c_float(index_t num_elements,
                   index_t element_bytes,
                   index_t endianness)
 {
-    return DataType(CONDUIT_NATIVE_FLOAT_DATATYPE_ID,
+    return DataType(CONDUIT_NATIVE_FLOAT_ID,
                     num_elements,offset,stride,element_bytes,endianness);
 }
 
@@ -332,7 +332,7 @@ DataType::c_double(index_t num_elements,
                    index_t element_bytes,
                    index_t endianness)
 {
-    return DataType(CONDUIT_NATIVE_DOUBLE_DATATYPE_ID,
+    return DataType(CONDUIT_NATIVE_DOUBLE_ID,
                     num_elements,offset,stride,element_bytes,endianness);
 }
 
@@ -353,12 +353,12 @@ DataType::c_double(index_t num_elements,
 
 //---------------------------------------------------------------------------//
 DataType::DataType()
-: m_id(DataType::EMPTY_T),
+: m_id(DataType::EMPTY_ID),
   m_num_ele(0),
   m_offset(0),
   m_stride(0),
   m_ele_bytes(0),
-  m_endianness(Endianness::DEFAULT_T)
+  m_endianness(Endianness::DEFAULT_ID)
 {}
 
 //---------------------------------------------------------------------------// 
@@ -379,7 +379,7 @@ DataType::DataType(index_t id)
   m_offset(0),
   m_stride(0),
   m_ele_bytes(0),
-  m_endianness(Endianness::DEFAULT_T)
+  m_endianness(Endianness::DEFAULT_ID)
 {}
 
 //---------------------------------------------------------------------------// 
@@ -422,12 +422,12 @@ DataType::~DataType()
 void
 DataType::reset()
 {
-    m_id = EMPTY_T;
+    m_id = EMPTY_ID;
     m_num_ele = 0;
     m_offset = 0;
     m_stride = 0;
     m_ele_bytes = 0;
-    m_endianness = Endianness::DEFAULT_T;
+    m_endianness = Endianness::DEFAULT_ID;
     
 }
 
@@ -515,9 +515,9 @@ DataType::is_compatible(const DataType& dtype) const
 bool
 DataType::is_compact() const
 {
-    return ( (m_id != EMPTY_T) &&
-             (m_id != OBJECT_T) && 
-             (m_id != LIST_T) &&
+    return ( (m_id != EMPTY_ID) &&
+             (m_id != OBJECT_ID) && 
+             (m_id != LIST_ID) &&
              (total_bytes() == total_bytes_compact()));
 }
 
@@ -525,21 +525,21 @@ DataType::is_compact() const
 bool
 DataType::is_empty() const
 {
-    return m_id == EMPTY_T;
+    return m_id == EMPTY_ID;
 }
 
 //---------------------------------------------------------------------------//
 bool
 DataType::is_object() const
 {
-    return m_id == OBJECT_T;
+    return m_id == OBJECT_ID;
 }
 
 //---------------------------------------------------------------------------//
 bool
 DataType::is_list() const
 {
-    return m_id == LIST_T;
+    return m_id == LIST_ID;
 }
 
 //---------------------------------------------------------------------------//
@@ -554,8 +554,8 @@ DataType::is_number() const
 bool
 DataType::is_floating_point() const
 {
-    return ( (m_id == FLOAT32_T) ||
-             (m_id == FLOAT64_T));
+    return ( (m_id == FLOAT32_ID) ||
+             (m_id == FLOAT64_ID));
 }
 
 //---------------------------------------------------------------------------//
@@ -570,34 +570,34 @@ DataType::is_integer() const
 bool
 DataType::is_signed_integer() const
 {
-    return ( (m_id == INT8_T)  ||
-             (m_id == INT16_T) ||
-             (m_id == INT32_T) ||
-             (m_id == INT64_T));
+    return ( (m_id == INT8_ID)  ||
+             (m_id == INT16_ID) ||
+             (m_id == INT32_ID) ||
+             (m_id == INT64_ID));
 }
 
 //---------------------------------------------------------------------------//
 bool
 DataType::is_unsigned_integer() const
 {
-    return ( (m_id == UINT8_T)  ||
-             (m_id == UINT16_T) ||
-             (m_id == UINT32_T) ||
-             (m_id == UINT64_T));
+    return ( (m_id == UINT8_ID)  ||
+             (m_id == UINT16_ID) ||
+             (m_id == UINT32_ID) ||
+             (m_id == UINT64_ID));
 }
 
 //---------------------------------------------------------------------------//
 bool
 DataType::is_int8() const
 {
-    return m_id == INT8_T;
+    return m_id == INT8_ID;
 }
 
 //---------------------------------------------------------------------------//
 bool
 DataType::is_int16() const
 {
-    return m_id == INT16_T;
+    return m_id == INT16_ID;
 }
 
 
@@ -605,112 +605,112 @@ DataType::is_int16() const
 bool
 DataType::is_int32() const
 {
-    return m_id == INT32_T;
+    return m_id == INT32_ID;
 }
 
 //---------------------------------------------------------------------------//
 bool
 DataType::is_int64() const
 {
-    return m_id == INT64_T;
+    return m_id == INT64_ID;
 }
 
 //---------------------------------------------------------------------------//
 bool
 DataType::is_uint8() const
 {
-    return m_id == UINT8_T;
+    return m_id == UINT8_ID;
 }
 
 //---------------------------------------------------------------------------//
 bool
 DataType::is_uint16() const
 {
-    return m_id == UINT16_T;
+    return m_id == UINT16_ID;
 }
 
 //---------------------------------------------------------------------------//
 bool
 DataType::is_uint32() const
 {
-    return m_id == UINT32_T;
+    return m_id == UINT32_ID;
 }
 
 //---------------------------------------------------------------------------//
 bool
 DataType::is_uint64() const
 {
-    return m_id == UINT64_T;
+    return m_id == UINT64_ID;
 }
 
 //---------------------------------------------------------------------------//
 bool
 DataType::is_float32() const
 {
-    return m_id == FLOAT32_T;
+    return m_id == FLOAT32_ID;
 }
 
 //---------------------------------------------------------------------------//
 bool
 DataType::is_float64() const
 {
-    return m_id == FLOAT64_T;
+    return m_id == FLOAT64_ID;
 }
 
 //---------------------------------------------------------------------------//
 bool
 DataType::is_char() const
 {
-    return m_id == CONDUIT_NATIVE_CHAR_DATATYPE_ID;
+    return m_id == CONDUIT_NATIVE_CHAR_ID;
 }
 
 //---------------------------------------------------------------------------//
 bool
 DataType::is_short() const
 {
-    return m_id == CONDUIT_NATIVE_SHORT_DATATYPE_ID;
+    return m_id == CONDUIT_NATIVE_SHORT_ID;
 }
 
 //---------------------------------------------------------------------------//
 bool
 DataType::is_int() const
 {
-    return m_id == CONDUIT_NATIVE_INT_DATATYPE_ID;
+    return m_id == CONDUIT_NATIVE_INT_ID;
 }
 
 //---------------------------------------------------------------------------//
 bool
 DataType::is_long() const
 {
-    return m_id == CONDUIT_NATIVE_LONG_DATATYPE_ID;
+    return m_id == CONDUIT_NATIVE_LONG_ID;
 }
 
 //---------------------------------------------------------------------------//
 bool
 DataType::is_unsigned_char() const
 {
-    return m_id == CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID;
+    return m_id == CONDUIT_NATIVE_UNSIGNED_CHAR_ID;
 }
 
 //---------------------------------------------------------------------------//
 bool
 DataType::is_unsigned_short() const
 {
-    return m_id == CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID;
+    return m_id == CONDUIT_NATIVE_UNSIGNED_SHORT_ID;
 }
 
 //---------------------------------------------------------------------------//
 bool
 DataType::is_unsigned_int() const
 {
-    return m_id == CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID;
+    return m_id == CONDUIT_NATIVE_UNSIGNED_INT_ID;
 }
 
 //---------------------------------------------------------------------------//
 bool
 DataType::is_unsigned_long() const
 {
-    return m_id == CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID;
+    return m_id == CONDUIT_NATIVE_UNSIGNED_LONG_ID;
 }
 
 
@@ -718,14 +718,14 @@ DataType::is_unsigned_long() const
 bool
 DataType::is_float() const
 {
-    return m_id == CONDUIT_NATIVE_FLOAT_DATATYPE_ID;
+    return m_id == CONDUIT_NATIVE_FLOAT_ID;
 }
 
 //---------------------------------------------------------------------------//
 bool
 DataType::is_double() const
 {
-    return m_id == CONDUIT_NATIVE_DOUBLE_DATATYPE_ID;
+    return m_id == CONDUIT_NATIVE_DOUBLE_ID;
 }
 
 //---------------------------------------------------------------------------// 
@@ -743,21 +743,21 @@ DataType::element_index(index_t idx) const
 index_t 
 DataType::name_to_id(const std::string &dtype_name)
 {
-    if(dtype_name      == "[empty]") return EMPTY_T;
-    else if(dtype_name == "Object")  return OBJECT_T;
-    else if(dtype_name == "List")    return LIST_T;
-    else if(dtype_name == "int8")    return INT8_T;
-    else if(dtype_name == "int16")   return INT16_T;
-    else if(dtype_name == "int32")   return INT32_T;
-    else if(dtype_name == "int64")   return INT64_T;
-    else if(dtype_name == "uint8")   return UINT8_T;
-    else if(dtype_name == "uint16")  return UINT16_T;
-    else if(dtype_name == "uint32")  return UINT32_T;
-    else if(dtype_name == "uint64")  return UINT64_T;
-    else if(dtype_name == "float32") return FLOAT32_T;
-    else if(dtype_name == "float64") return FLOAT64_T;
-    else if(dtype_name == "char8_str") return CHAR8_STR_T;
-    return EMPTY_T;
+    if(dtype_name      == "[empty]") return EMPTY_ID;
+    else if(dtype_name == "Object")  return OBJECT_ID;
+    else if(dtype_name == "List")    return LIST_ID;
+    else if(dtype_name == "int8")    return INT8_ID;
+    else if(dtype_name == "int16")   return INT16_ID;
+    else if(dtype_name == "int32")   return INT32_ID;
+    else if(dtype_name == "int64")   return INT64_ID;
+    else if(dtype_name == "uint8")   return UINT8_ID;
+    else if(dtype_name == "uint16")  return UINT16_ID;
+    else if(dtype_name == "uint32")  return UINT32_ID;
+    else if(dtype_name == "uint64")  return UINT64_ID;
+    else if(dtype_name == "float32") return FLOAT32_ID;
+    else if(dtype_name == "float64") return FLOAT64_ID;
+    else if(dtype_name == "char8_str") return CHAR8_STR_ID;
+    return EMPTY_ID;
 }
 
 
@@ -767,26 +767,26 @@ std::string
 DataType::id_to_name(index_t dtype_id)
 {
     /// container types
-    if(dtype_id      == EMPTY_T)   return "[empty]";
-    else if(dtype_id == OBJECT_T)  return "Object";
-    else if(dtype_id == LIST_T)    return "List";
+    if(dtype_id      == EMPTY_ID)   return "[empty]";
+    else if(dtype_id == OBJECT_ID)  return "Object";
+    else if(dtype_id == LIST_ID)    return "List";
     /// signed integer types
-    else if(dtype_id == INT8_T)    return "int8";
-    else if(dtype_id == INT16_T)   return "int16";
-    else if(dtype_id == INT32_T)   return "int32";
-    else if(dtype_id == INT64_T)   return "int64";
+    else if(dtype_id == INT8_ID)    return "int8";
+    else if(dtype_id == INT16_ID)   return "int16";
+    else if(dtype_id == INT32_ID)   return "int32";
+    else if(dtype_id == INT64_ID)   return "int64";
 
     /// unsigned integer types
-    else if(dtype_id == UINT8_T)   return "uint8";
-    else if(dtype_id == UINT16_T)  return "uint16";
-    else if(dtype_id == UINT32_T)  return "uint32";
-    else if(dtype_id == UINT64_T)  return "uint64";
+    else if(dtype_id == UINT8_ID)   return "uint8";
+    else if(dtype_id == UINT16_ID)  return "uint16";
+    else if(dtype_id == UINT32_ID)  return "uint32";
+    else if(dtype_id == UINT64_ID)  return "uint64";
 
     /// floating point types
-    else if(dtype_id == FLOAT32_T) return "float32";
-    else if(dtype_id == FLOAT64_T) return "float64";
+    else if(dtype_id == FLOAT32_ID) return "float32";
+    else if(dtype_id == FLOAT64_ID) return "float64";
     /// string types
-    else if(dtype_id == CHAR8_STR_T) return "char8_str";
+    else if(dtype_id == CHAR8_STR_ID) return "char8_str";
     // default to empty
     return "[empty]";
 }
@@ -800,40 +800,40 @@ index_t
 DataType::c_type_name_to_id(const std::string &dtype_name)
 {
     if(dtype_name == "char")         
-        return CONDUIT_NATIVE_CHAR_DATATYPE_ID;
+        return CONDUIT_NATIVE_CHAR_ID;
     else if(dtype_name == "short")   
-        return CONDUIT_NATIVE_SHORT_DATATYPE_ID;
+        return CONDUIT_NATIVE_SHORT_ID;
     else if(dtype_name == "int")    
-        return CONDUIT_NATIVE_INT_DATATYPE_ID;
+        return CONDUIT_NATIVE_INT_ID;
     else if(dtype_name == "long")
-        return CONDUIT_NATIVE_LONG_DATATYPE_ID;
+        return CONDUIT_NATIVE_LONG_ID;
 #ifdef CONDUIT_USE_LONG_LONG
     else if(dtype_name == "long long")
-        return CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID;
+        return CONDUIT_NATIVE_LONG_LONG_ID;
 #endif
     else if(dtype_name == "unsigned char")
-        return CONDUIT_NATIVE_UNSIGNED_CHAR_DATATYPE_ID;
+        return CONDUIT_NATIVE_UNSIGNED_CHAR_ID;
     else if(dtype_name == "unsigned short")
-        return CONDUIT_NATIVE_UNSIGNED_SHORT_DATATYPE_ID;
+        return CONDUIT_NATIVE_UNSIGNED_SHORT_ID;
     else if(dtype_name == "unsigned int")
-        return CONDUIT_NATIVE_UNSIGNED_INT_DATATYPE_ID;
+        return CONDUIT_NATIVE_UNSIGNED_INT_ID;
     else if(dtype_name == "unsigned long")
-        return CONDUIT_NATIVE_UNSIGNED_LONG_DATATYPE_ID;
+        return CONDUIT_NATIVE_UNSIGNED_LONG_ID;
 #ifdef CONDUIT_USE_LONG_LONG
     else if(dtype_name == "unsigned long long")
-        return CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID;
+        return CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID;
 #endif
     else if(dtype_name == "float")
-        return CONDUIT_NATIVE_FLOAT_DATATYPE_ID;
+        return CONDUIT_NATIVE_FLOAT_ID;
     else if(dtype_name == "double")
-        return CONDUIT_NATIVE_DOUBLE_DATATYPE_ID;
+        return CONDUIT_NATIVE_DOUBLE_ID;
 #ifdef CONDUIT_USE_LONG_DOUBLE
     else if(dtype_name == "long double")
-        return CONDUIT_NATIVE_LONG_DOUBLE_DATATYPE_ID;
+        return CONDUIT_NATIVE_LONG_DOUBLE_ID;
 #endif
     else if(dtype_name == "char8_str")
-        return CHAR8_STR_T;
-    return EMPTY_T;
+        return CHAR8_STR_ID;
+    return EMPTY_ID;
 }
 
 
@@ -848,24 +848,24 @@ DataType::default_dtype(index_t dtype_id)
    switch (dtype_id)
    {
        /// container types
-       case OBJECT_T: return DataType::object();
-       case LIST_T :  return DataType::list();
+       case OBJECT_ID: return DataType::object();
+       case LIST_ID :  return DataType::list();
        
        /// signed integer types
-       case INT8_T :  return DataType::int8();
-       case INT16_T : return DataType::int16();
-       case INT32_T : return DataType::int32();
-       case INT64_T : return DataType::int64();
+       case INT8_ID :  return DataType::int8();
+       case INT16_ID : return DataType::int16();
+       case INT32_ID : return DataType::int32();
+       case INT64_ID : return DataType::int64();
        
        /// unsigned integer types
-       case UINT8_T :  return DataType::uint8();
-       case UINT16_T : return DataType::uint16();
-       case UINT32_T : return DataType::uint32();
-       case UINT64_T : return DataType::uint64();
+       case UINT8_ID :  return DataType::uint8();
+       case UINT16_ID : return DataType::uint16();
+       case UINT32_ID : return DataType::uint32();
+       case UINT64_ID : return DataType::uint64();
 
        /// floating point types
-       case FLOAT32_T : return DataType::float32();
-       case FLOAT64_T : return DataType::float64();
+       case FLOAT32_ID : return DataType::float32();
+       case FLOAT64_ID : return DataType::float64();
        /// note: there is no default dtype for char8_str
        
        /// default
@@ -894,22 +894,22 @@ DataType::default_bytes(index_t dtype_id)
    switch (dtype_id)
    {
        /// signed integer types
-       case INT8_T :  return sizeof(conduit::int8);
-       case INT16_T : return sizeof(conduit::int16);
-       case INT32_T : return sizeof(conduit::int32);
-       case INT64_T : return sizeof(conduit::int64);
+       case INT8_ID :  return sizeof(conduit::int8);
+       case INT16_ID : return sizeof(conduit::int16);
+       case INT32_ID : return sizeof(conduit::int32);
+       case INT64_ID : return sizeof(conduit::int64);
 
        /// unsigned integer types
-       case UINT8_T :  return sizeof(conduit::uint8);
-       case UINT16_T : return sizeof(conduit::uint16);
-       case UINT32_T : return sizeof(conduit::uint32);
-       case UINT64_T : return sizeof(conduit::uint64);
+       case UINT8_ID :  return sizeof(conduit::uint8);
+       case UINT16_ID : return sizeof(conduit::uint16);
+       case UINT32_ID : return sizeof(conduit::uint32);
+       case UINT64_ID : return sizeof(conduit::uint64);
        
        /// floating point types
-       case FLOAT32_T : return sizeof(conduit::float32);
-       case FLOAT64_T : return sizeof(conduit::float64);
+       case FLOAT32_ID : return sizeof(conduit::float32);
+       case FLOAT64_ID : return sizeof(conduit::float64);
        /// string types
-       case CHAR8_STR_T : return 1;
+       case CHAR8_STR_ID : return 1;
        /// note: there is no default bytes obj,list, or empty
        default : 
        {
@@ -945,15 +945,15 @@ void
 DataType::to_json_stream(std::ostream &os) const
 {
     os << "{\"dtype\":";
-    if(m_id == EMPTY_T)
+    if(m_id == EMPTY_ID)
     {
         os << "\"[empty]\"";
     }
-    else if(m_id == OBJECT_T)
+    else if(m_id == OBJECT_ID)
     {
         os << "\"[object]\"";
     }
-    else if(m_id == LIST_T)
+    else if(m_id == LIST_ID)
     {
         os << "\"[list]\"";
     }
@@ -969,7 +969,7 @@ DataType::to_json_stream(std::ostream &os) const
 
         std::string endian_str;
 
-        if(m_endianness == Endianness::DEFAULT_T)
+        if(m_endianness == Endianness::DEFAULT_ID)
         {
             // find this machine's actual endianness
             endian_str = Endianness::id_to_name(Endianness::machine_default());
