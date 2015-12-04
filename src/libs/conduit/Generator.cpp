@@ -233,7 +233,7 @@ void
 Generator::Parser::parse_json_int64_array(const rapidjson::Value &jvalue,
                                           Node &node)
 {
-    // TODO: we can make this more efficent 
+    // TODO: we can make this more efficient 
     std::vector<int64> vals;
     parse_json_int64_array(jvalue,vals);
     
@@ -291,7 +291,7 @@ void
 Generator::Parser::parse_json_uint64_array(const rapidjson::Value &jvalue,
                                            Node &node)
 {
-    // TODO: we can make this more efficent 
+    // TODO: we can make this more efficient 
     std::vector<uint64> vals;
     parse_json_uint64_array(jvalue,vals);
     
@@ -349,7 +349,7 @@ void
 Generator::Parser::parse_json_float64_array(const rapidjson::Value &jvalue,
                                             Node &node)
 {
-    // TODO: we can make this more efficent 
+    // TODO: we can make this more efficient 
     std::vector<float64> vals;
     parse_json_float64_array(jvalue,vals);
     
@@ -436,22 +436,34 @@ Generator::Parser::parse_leaf_dtype(const rapidjson::Value &jvalue,
         index_t length=0;
         if(jvalue.HasMember("length"))
         {
+            CONDUIT_ASSERT(jvalue["length"].IsNumber(),
+                            "JSON Parsing error:\n"
+                             << "'length' must be a number ");
             length = jvalue["length"].GetUint64();
         }
+
         index_t dtype_id  = parse_leaf_dtype_name(dtype_name);
         index_t ele_size  = DataType::default_bytes(dtype_id);
         index_t stride    = ele_size;
     
         //  parse offset (override offset if passed)
-        if(jvalue.HasMember("offset") && jvalue["offset"].IsNumber())
+        if(jvalue.HasMember("offset"))
         {
+            CONDUIT_ASSERT(jvalue["offset"].IsNumber(),
+                            "JSON Parsing error:\n"
+                             << "'offset' must be a number ");
+                                 
             offset = jvalue["offset"].GetUint64();
         }
 
 
         // parse stride
-        if(jvalue.HasMember("stride") && jvalue["stride"].IsNumber())
+        if(jvalue.HasMember("stride") )
         {
+            CONDUIT_ASSERT(jvalue["stride"].IsNumber(),
+                            "JSON Parsing error:\n"
+                             << "'stride' must be a number ");
+
             stride = jvalue["stride"].GetUint64();
         }
 
@@ -459,8 +471,12 @@ Generator::Parser::parse_leaf_dtype(const rapidjson::Value &jvalue,
     
         // parse endianness
         index_t endianness = Endianness::DEFAULT_ID;
-        if(jvalue.HasMember("endianess") && jvalue["endianness"].IsString())
+        if(jvalue.HasMember("endianess"))
         {
+            CONDUIT_ASSERT(jvalue["endianness"].IsString(),
+                            "JSON Parsing error:\n"
+                             << "'endianness' must be a string (\"big\" or \"little\")");
+
             std::string end_val(jvalue["endianness"].GetString());
             if(end_val == "big")
             {
@@ -495,7 +511,8 @@ Generator::Parser::parse_leaf_dtype(const rapidjson::Value &jvalue,
     }
     else
     {
-        /// TODO: Error
+        CONDUIT_ERROR("JSON Parsing error:\n"
+                       << "a leaf dtype entry must be a JSON string or JSON object.");
     }
 }
 
@@ -513,11 +530,14 @@ Generator::Parser::parse_inline_leaf(const rapidjson::Value &jvalue,
         }
         else
         {
-             /// TODO: ERROR
              // type incompat with char8_str
              // only allow strings to be assigned to a char8_str type
              // throw parsing error if our inline values
              // don't match what we expected
+
+            CONDUIT_ERROR("JSON Parsing error:\n"
+                           << "a JSON string can only be used as an inline"
+                           << " value for a Conduit CHAR8_STR Node.");
         }
     }
     else if(jvalue.IsBool())
@@ -529,11 +549,15 @@ Generator::Parser::parse_inline_leaf(const rapidjson::Value &jvalue,
         }
         else
         {
-             /// TODO: ERROR
              // type incompat with uint8
              // only allow json bools to be assigned to a uint8 type
              // throw parsing error if our inline values
              // don't match what we expected
+            
+            CONDUIT_ERROR("JSON Parsing error:\n"
+                           << "a JSON bool can only be used as an inline"
+                           << " value for a Conduit UINT8 Node.");
+            
         }
     }
     else if(jvalue.IsNumber())
@@ -573,14 +597,15 @@ Generator::Parser::parse_inline_leaf(const rapidjson::Value &jvalue,
             case DataType::FLOAT64_ID:
                 node.set((float64)jvalue.GetDouble());
                 break;
-            // case default:
-            //     /// TODO: ERROR
-            //     // type incompat with numeric
-            //     // only allow numeric to be assigned to a numeric type
-            //     // throw parsing error if our inline values
-            //     // don't match what we expected
-            //     ;
-            //     break;
+            default:
+                // type incompat with numeric
+                // only allow numeric to be assigned to a numeric type
+                // throw parsing error if our inline values
+                // don't match what we expected
+                CONDUIT_ERROR("JSON Parsing error:\n"
+                           << "a JSON number can only be used as an inline"
+                           << " value for a Conduit Numeric Node.");
+                break;
         }
     }
 }
@@ -595,17 +620,16 @@ Generator::Parser::parse_inline_value(const rapidjson::Value &jvalue,
         // we assume a "value" is a leaf or list of compatiable leafs
         index_t hval_type = check_homogenous_json_array(jvalue);
         
-        if(node.dtype().number_of_elements() < jvalue.Size())
-        {
-            std::cout << "ERROR" << std::endl;
-            // TODO: error
-        }
+        CONDUIT_ASSERT( (node.dtype().number_of_elements() >= jvalue.Size() ),
+                       "JSON Parsing error:\n" 
+                        << "number of elements in JSON array does is less"
+                        <<  "than dtype number of elements");
         
         if(hval_type == DataType::INT64_ID)
         {
             if(node.dtype().is_unsigned_integer())
             {
-                parse_json_uint64_array(jvalue,node);                
+                parse_json_uint64_array(jvalue,node);
             }
             else
             {
@@ -616,9 +640,12 @@ Generator::Parser::parse_inline_value(const rapidjson::Value &jvalue,
         {
             parse_json_float64_array(jvalue,node);
         }
-        else // error
+        else
         {
-            //TODO: Parsing Error, not hmg
+            // Parsing Error, not homogenous
+            CONDUIT_ERROR("JSON Parsing error:\n"
+                        << "a JSON array for value initialization"
+                        << " is not homogenous");
         }
     }
     else
@@ -851,7 +878,7 @@ Generator::Parser::walk_json_schema(Node   *node,
                 // we will create `length' # of objects of obj des by dt_value
                  
                 // TODO: we only need to parse this once, not leng # of times
-                // but this is the easiest way to start.                             
+                // but this is the easiest way to start.
                 for(index_t i=0;i< length;i++)
                 {
                     schema->append();
