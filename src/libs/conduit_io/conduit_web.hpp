@@ -132,17 +132,16 @@ public:
     // returns the first active websocket, if non are active, blocks
     // until a websocket connection is established.
     WebSocket  *websocket(index_t ms_poll = 100,
-                          index_t ms_timout = 60000);
+                          index_t ms_timeout = 60000);
 
     mg_context *context();
     void        lock_context();
     void        unlock_context();
 
 private:
-
-
     CivetServer            *m_server;
     RequestHandler         *m_handler;
+    
     std::string             m_port;
     bool                    m_running;
 };
@@ -163,6 +162,10 @@ public:
                         const std::string &protocol="json");
 
     bool           is_connected() const;
+
+    mg_context    *context();
+    void           lock_context();
+    void           unlock_context();
 
 private:
              WebSocket();

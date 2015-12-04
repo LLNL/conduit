@@ -55,29 +55,40 @@ function websocket_test()
         try
         {
             data=JSON.parse(msg.data);
+            if(data.type == "image")
+            {
+                $("#image_display").html("<img src='" + data.data + "'/>");
+                $("#image_display").show();
+                $("#count_display").text("Current Count = " +data.count);
+                $("#status_display").html("<font color=blue>[status=connected]</font>");
+
+                var response = {type: "info",
+                                message: "response from browser, count = " + data.count};
+
+                connection.send(JSON.stringify(response));
+            }
         }
         catch(e)
         {
-            alert(e); //error in the above string(in this case,yes)!
-        }
-
-        if(data.type == "image")
-        {
-            $("#image_display").html("<img src='" + data.data + "'/>");
-            $("#image_display").show();
-            $("#count_display").text("Current Count = " +data.count);
-                        
-            var response = {type: "info",
-                            message: "response from browser, count = " + data.count};
-
-            connection.send(JSON.stringify(response));
+             //caught an error in the above code, simply display to the status element
+            $("#status_display").html("<font color=red>[status=error] " + e + "</font>");
         }
     }
       
     connection.onerror = function (error)
     {
         console.log('WebSocket error');
+        console.log(error)
         connection.close();
+        $("#status_display").html("<font color=red>[status=error]</font>");
+    }
+    
+    connection.onclose = function (error)
+    {
+        console.log('WebSocket closed');
+        console.log(error)
+        connection.close();
+        $("#status_display").html("<font color=orange>[status=disconnected]</font>");
     }
 }
 
