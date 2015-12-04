@@ -110,7 +110,7 @@ public:
     static index_t check_homogenous_json_array(const rapidjson::Value &jvalue);
     
     static void    parse_json_int64_array(const rapidjson::Value &jvalue,
-                                         std::vector<int64> &res);
+                                          std::vector<int64> &res);
                                          
     static void    parse_json_int64_array(const rapidjson::Value &jvalue,
                                           Node &node);
@@ -176,7 +176,7 @@ Generator::Parser::json_to_numeric_dtype(const rapidjson::Value &jvalue)
         {
             res  = DataType::FLOAT64_ID; // for float
         } 
-        // else -- value already init to EMPTY_ID
+        // else -- value already inited to EMPTY_ID
     }
     
     return res;
@@ -199,15 +199,16 @@ Generator::Parser::check_homogenous_json_array(const rapidjson::Value &jvalue)
     for (rapidjson::SizeType i = 1; i < jvalue.Size() && homogenous; i++)
     {
         index_t curr_val_type = json_to_numeric_dtype(jvalue[i]);
-        if((val_type == DataType::INT64_ID || val_type == DataType::INT64_ID) &&
-           curr_val_type ==  DataType::FLOAT64_ID)
+        if((val_type == DataType::INT64_ID || 
+            val_type == DataType::INT64_ID) &&
+            curr_val_type ==  DataType::FLOAT64_ID)
         {
-            // promote to a double (may lose prec in some cases)
+            // promote to a double (may be lossy in some cases)
             val_type = DataType::FLOAT64_ID;
         }
         else if(curr_val_type == DataType::EMPTY_ID)
         {
-            // non hmg inline
+            // non homogenous inline
             homogenous = false;
             val_type = DataType::EMPTY_ID;
         }
@@ -239,10 +240,11 @@ Generator::Parser::parse_json_int64_array(const rapidjson::Value &jvalue,
     
     switch(node.dtype().id())
     {
-        case DataType::INT8_ID:   
+        // signed ints
+        case DataType::INT8_ID:
             node.as_int8_array().set(vals);
             break;
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
             node.as_int16_array().set(vals);
             break;
         case DataType::INT32_ID:
@@ -270,6 +272,11 @@ Generator::Parser::parse_json_int64_array(const rapidjson::Value &jvalue,
             break;
         case DataType::FLOAT64_ID:
             node.as_float64_array().set(vals);
+            break;
+        default:
+            CONDUIT_ERROR("JSON Generator error:\n"
+                           << "attempting to set non-numeric Node with"
+                           << " int64 array");
             break;
     }
 }
@@ -297,10 +304,11 @@ Generator::Parser::parse_json_uint64_array(const rapidjson::Value &jvalue,
     
     switch(node.dtype().id())
     {
-        case DataType::INT8_ID:   
+        // signed ints
+        case DataType::INT8_ID:
             node.as_int8_array().set(vals);
             break;
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
             node.as_int16_array().set(vals);
             break;
         case DataType::INT32_ID:
@@ -328,6 +336,11 @@ Generator::Parser::parse_json_uint64_array(const rapidjson::Value &jvalue,
             break;
         case DataType::FLOAT64_ID:
             node.as_float64_array().set(vals);
+            break;
+        default:
+            CONDUIT_ERROR("JSON Generator error:\n"
+                           << "attempting to set non-numeric Node with"
+                           << " uint64 array");
             break;
     }
 }
@@ -355,10 +368,10 @@ Generator::Parser::parse_json_float64_array(const rapidjson::Value &jvalue,
     
     switch(node.dtype().id())
     {
-        case DataType::INT8_ID:   
+        case DataType::INT8_ID:
             node.as_int8_array().set(vals);
             break;
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
             node.as_int16_array().set(vals);
             break;
         case DataType::INT32_ID:
@@ -387,6 +400,11 @@ Generator::Parser::parse_json_float64_array(const rapidjson::Value &jvalue,
         case DataType::FLOAT64_ID:
             node.as_float64_array().set(vals);
             break;
+        default:
+            CONDUIT_ERROR("JSON Generator error:\n"
+                           << "attempting to set non-numeric Node with"
+                           << " float64 array");
+            break;
     }
 }
 
@@ -405,8 +423,9 @@ Generator::Parser::parse_leaf_dtype_name(const std::string &dtype_name)
     // do an explicit check for empty
     if(dtype_id == DataType::EMPTY_ID && dtype_name != "empty")
     {
-        CONDUIT_ERROR("Generator parsing error: invalid leaf type "
-                      << "\""  <<  dtype_name << "\"");
+        CONDUIT_ERROR("JSON Generator error:\n"
+                       << "invalid leaf type "
+                       << "\""  <<  dtype_name << "\"");
     }
     return dtype_id;
 }
@@ -432,61 +451,125 @@ Generator::Parser::parse_leaf_dtype(const rapidjson::Value &jvalue,
     }
     else if(jvalue.IsObject())
     {
+        CONDUIT_ASSERT( ( jvalue.HasMember("dtype") && jvalue["dtype"].IsString() ),
+                        "JSON Generator error:\n"
+                         << "'dtype' must be a JSON string.");
+            
         std::string dtype_name(jvalue["dtype"].GetString());
+        
         index_t length=0;
-        if(jvalue.HasMember("length"))
+        
+        if(jvalue.HasMember("number_of_elements"))
         {
-            CONDUIT_ASSERT(jvalue["length"].IsNumber(),
-                            "JSON Parsing error:\n"
-                             << "'length' must be a number ");
-            length = jvalue["length"].GetUint64();
+            const rapidjson::Value &json_num_eles = jvalue["number_of_elements"];
+            if(json_num_eles.IsNumber())
+            {              
+                length = json_num_eles.GetUint64();
+            }
+            else
+            {
+                CONDUIT_ERROR("JSON Generator error:\n"
+                               << "'number_of_elements' must be a number ");
+            }
+        }
+        
+        else if(jvalue.HasMember("length"))
+        {
+            const rapidjson::Value &json_len = jvalue["length"];
+            if(json_len.IsNumber())
+            {              
+                length = json_len.GetUint64();
+            }
+            else
+            {
+                CONDUIT_ERROR("JSON Generator error:\n"
+                               << "'length' must be a number ");
+            }
         }
 
         index_t dtype_id  = parse_leaf_dtype_name(dtype_name);
         index_t ele_size  = DataType::default_bytes(dtype_id);
         index_t stride    = ele_size;
     
-        //  parse offset (override offset if passed)
+        //  parse offset (override default if passed)
         if(jvalue.HasMember("offset"))
         {
-            CONDUIT_ASSERT(jvalue["offset"].IsNumber(),
-                            "JSON Parsing error:\n"
-                             << "'offset' must be a number ");
-                                 
-            offset = jvalue["offset"].GetUint64();
-        }
-
-
-        // parse stride
-        if(jvalue.HasMember("stride") )
-        {
-            CONDUIT_ASSERT(jvalue["stride"].IsNumber(),
-                            "JSON Parsing error:\n"
-                             << "'stride' must be a number ");
-
-            stride = jvalue["stride"].GetUint64();
-        }
-
-        // TODO: parse element_size
-    
-        // parse endianness
-        index_t endianness = Endianness::DEFAULT_ID;
-        if(jvalue.HasMember("endianess"))
-        {
-            CONDUIT_ASSERT(jvalue["endianness"].IsString(),
-                            "JSON Parsing error:\n"
-                             << "'endianness' must be a string (\"big\" or \"little\")");
-
-            std::string end_val(jvalue["endianness"].GetString());
-            if(end_val == "big")
+            const rapidjson::Value &json_offset = jvalue["offset"];
+            
+            if(json_offset.IsNumber())
             {
-                endianness = Endianness::BIG_ID;
+                offset = json_offset.GetUint64();
             }
             else
             {
-                endianness = Endianness::LITTLE_ID;
+                CONDUIT_ERROR("JSON Generator error:\n"
+                              << "'offset' must be a number ");
             }
-        
+        }
+
+        // parse stride (override default if passed)
+        if(jvalue.HasMember("stride") )
+        {
+            const rapidjson::Value &json_stride = jvalue["stride"];
+            
+            if(json_stride.IsNumber())
+            {
+                stride = json_stride.GetUint64();
+            }
+            else
+            {
+                CONDUIT_ERROR("JSON Generator error:\n"
+                              << "'stride' must be a number ");
+            }
+        }
+
+        // parse element_bytes (override default if passed)
+        if(jvalue.HasMember("element_bytes") )
+        {
+            const rapidjson::Value &json_ele_bytes = jvalue["element_bytes"];
+            
+            if(json_ele_bytes.IsNumber())
+            {
+                ele_size = json_ele_bytes.GetUint64();
+            }
+            else
+            {
+                CONDUIT_ERROR("JSON Generator error:\n"
+                              << "'element_bytes' must be a number ");
+            }
+        }
+    
+    
+        // parse endianness (override default if passed)
+        index_t endianness = Endianness::DEFAULT_ID;
+        if(jvalue.HasMember("endianess"))
+        {
+            const rapidjson::Value &json_endianess = jvalue["endianess"];
+            if(json_endianess.IsString())
+            {
+                std::string end_val(json_endianess.GetString());
+                if(end_val == "big")
+                {
+                    endianness = Endianness::BIG_ID;
+                }
+                else if(end_val == "little")
+                {
+                    endianness = Endianness::LITTLE_ID;
+                }
+                else
+                {
+                    CONDUIT_ERROR("JSON Generator error:\n"
+                              << "'endianness' must be a string"
+                              << " (\"big\" or \"little\")"
+                              << " parsed value: " << end_val);
+                }
+            }
+            else
+            {
+                CONDUIT_ERROR("JSON Generator error:\n"
+                          << "'endianness' must be a string"
+                          << " (\"big\" or \"little\")");
+            }
         }
     
         if(length == 0)
@@ -496,7 +579,8 @@ Generator::Parser::parse_leaf_dtype(const rapidjson::Value &jvalue,
             {
                 length = jvalue["value"].Size();
             }
-            else if(!jvalue.HasMember("length")) // support explicit length 0 in a schema
+            // support explicit length 0 in a schema
+            else if(!jvalue.HasMember("length")) 
             {
                 length = 1;
             }
@@ -511,8 +595,9 @@ Generator::Parser::parse_leaf_dtype(const rapidjson::Value &jvalue,
     }
     else
     {
-        CONDUIT_ERROR("JSON Parsing error:\n"
-                       << "a leaf dtype entry must be a JSON string or JSON object.");
+        CONDUIT_ERROR("JSON Generator error:\n"
+                       << "a leaf dtype entry must be a JSON string or"
+                       <<  " JSON object.");
     }
 }
 
@@ -530,12 +615,12 @@ Generator::Parser::parse_inline_leaf(const rapidjson::Value &jvalue,
         }
         else
         {
-             // type incompat with char8_str
+             // JSON type incompatible with char8_str
              // only allow strings to be assigned to a char8_str type
              // throw parsing error if our inline values
              // don't match what we expected
 
-            CONDUIT_ERROR("JSON Parsing error:\n"
+            CONDUIT_ERROR("JSON Generator error:\n"
                            << "a JSON string can only be used as an inline"
                            << " value for a Conduit CHAR8_STR Node.");
         }
@@ -549,12 +634,12 @@ Generator::Parser::parse_inline_leaf(const rapidjson::Value &jvalue,
         }
         else
         {
-             // type incompat with uint8
-             // only allow json bools to be assigned to a uint8 type
+             // JSON type incompatible with uint8
+             // only allow JSON bools to be assigned to a uint8 type
              // throw parsing error if our inline values
              // don't match what we expected
             
-            CONDUIT_ERROR("JSON Parsing error:\n"
+            CONDUIT_ERROR("JSON Generator error:\n"
                            << "a JSON bool can only be used as an inline"
                            << " value for a Conduit UINT8 Node.");
             
@@ -598,13 +683,13 @@ Generator::Parser::parse_inline_leaf(const rapidjson::Value &jvalue,
                 node.set((float64)jvalue.GetDouble());
                 break;
             default:
-                // type incompat with numeric
+                // JSON type incompatible with numeric
                 // only allow numeric to be assigned to a numeric type
                 // throw parsing error if our inline values
                 // don't match what we expected
-                CONDUIT_ERROR("JSON Parsing error:\n"
-                           << "a JSON number can only be used as an inline"
-                           << " value for a Conduit Numeric Node.");
+                CONDUIT_ERROR("JSON Generator error:\n"
+                              << "a JSON number can only be used as an inline"
+                              << " value for a Conduit Numeric Node.");
                 break;
         }
     }
@@ -617,13 +702,13 @@ Generator::Parser::parse_inline_value(const rapidjson::Value &jvalue,
 {
     if(jvalue.IsArray())
     {
-        // we assume a "value" is a leaf or list of compatiable leafs
+        // we assume a "value" is a leaf or list of compatible leafs
         index_t hval_type = check_homogenous_json_array(jvalue);
         
         CONDUIT_ASSERT( (node.dtype().number_of_elements() >= jvalue.Size() ),
-                       "JSON Parsing error:\n" 
-                        << "number of elements in JSON array does is less"
-                        <<  "than dtype number of elements");
+                       "JSON Generator error:\n" 
+                        << "number of elements in JSON array is more"
+                        << "than dtype can hold");
         
         if(hval_type == DataType::INT64_ID)
         {
@@ -643,7 +728,7 @@ Generator::Parser::parse_inline_value(const rapidjson::Value &jvalue,
         else
         {
             // Parsing Error, not homogenous
-            CONDUIT_ERROR("JSON Parsing error:\n"
+            CONDUIT_ERROR("JSON Generator error:\n"
                         << "a JSON array for value initialization"
                         << " is not homogenous");
         }
@@ -673,16 +758,24 @@ Generator::Parser::walk_json_schema(Schema *schema,
                 int length =1;
                 if(jvalue.HasMember("length"))
                 {
-                    // TODO: Handle reference 
-                    if(jvalue["length"].IsObject() && 
-                       jvalue["length"].HasMember("reference"))
+                    const rapidjson::Value &len_value = jvalue["length"];
+                    if(len_value.IsObject() && 
+                       len_value.HasMember("reference"))
                     {
-                        // in some cases we shouldn't get here ...
-                        // TODO ref without "data" could be a problem
+                        CONDUIT_ERROR("JSON Generator error:\n"
+                                      << "'reference' option is not supported"
+                                      << " when parsing to a Schema because"
+                                      << " reference data does not exist.");
+                    }
+                    else if(len_value.IsNumber())
+                    {
+                        length = len_value.GetInt();
                     }
                     else
                     {
-                        length = jvalue["length"].GetInt();
+                        CONDUIT_ERROR("JSON Generator error:\n"
+                                      << "'length' must be a JSON Object or"
+                                      << " JSON number");
                     }
                 }
                 // we will create `length' # of objects of obj des by dt_value
@@ -721,7 +814,7 @@ Generator::Parser::walk_json_schema(Schema *schema,
         }
     }
     // List case 
-    else if (jvalue.IsArray()) 
+    else if(jvalue.IsArray()) 
     {
         for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
         {
@@ -738,6 +831,12 @@ Generator::Parser::walk_json_schema(Schema *schema,
         DataType dtype;
         parse_leaf_dtype(jvalue,curr_offset,dtype);
         schema->set(dtype);
+    }
+    else
+    {
+        CONDUIT_ERROR("JSON Generator error:\n"
+                      << "Invalid JSON type for parsing Schema."
+                      << "Expected: JSON Object, Array, or String");
     }
 }
 
@@ -778,7 +877,7 @@ Generator::Parser::walk_pure_json_schema(Node  *node,
         {
             std::vector<float64> res;
             parse_json_float64_array(jvalue,res);
-            node->set(res);            
+            node->set(res);
         }
         else // not numeric array
         {
@@ -831,6 +930,14 @@ Generator::Parser::walk_pure_json_schema(Node  *node,
         {
             node->set((float64)jvalue.GetDouble());
         }
+    }
+    else
+    {
+        // not sure if can an even land here, but catch error just in case.
+        CONDUIT_ERROR("JSON Generator error:\n"
+                      << "Invalid JSON type for parsing Node from pure JSON."
+                      << " Expected: JSON Object, Array, String, Null,"
+                      << " Boolean, or Number");
     }
 }
 
@@ -992,6 +1099,12 @@ Generator::Parser::walk_json_schema(Node   *node,
              // we need to dynamically alloc
              node->set(dtype);  // causes an init
         }
+    }
+    else
+    {
+        CONDUIT_ERROR("JSON Generator error:\n"
+                      << "Invalid JSON type for parsing Node."
+                      << " Expected: JSON Object, Array, or String");
     }
 }
 
