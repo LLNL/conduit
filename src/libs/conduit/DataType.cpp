@@ -685,16 +685,6 @@ DataType::is_long() const
     return m_id == CONDUIT_NATIVE_LONG_DATATYPE_ID;
 }
 
-
-#ifdef CONDUIT_USE_LONG_LONG
-//---------------------------------------------------------------------------//
-bool
-DataType::is_long_long() const
-{
-    return m_id == CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID;
-}
-#endif
-
 //---------------------------------------------------------------------------//
 bool
 DataType::is_unsigned_char() const
@@ -724,15 +714,6 @@ DataType::is_unsigned_long() const
 }
 
 
-#ifdef CONDUIT_USE_LONG_LONG
-//---------------------------------------------------------------------------//
-bool
-DataType::is_unsigned_long_long() const
-{
-    return m_id == CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID;
-}
-#endif
-
 //---------------------------------------------------------------------------//
 bool
 DataType::is_float() const
@@ -747,18 +728,8 @@ DataType::is_double() const
     return m_id == CONDUIT_NATIVE_DOUBLE_DATATYPE_ID;
 }
 
-
-#ifdef CONDUIT_USE_LONG_DOUBLE
-//---------------------------------------------------------------------------//
-bool
-DataType::is_long_double() const
-{
-    return m_id == CONDUIT_NATIVE_LONG_DOUBLE_DATATYPE_ID;
-}
-#endif
-
 //---------------------------------------------------------------------------// 
-index_t     
+index_t
 DataType::element_index(index_t idx) const
 {
     return m_offset + m_stride * idx;

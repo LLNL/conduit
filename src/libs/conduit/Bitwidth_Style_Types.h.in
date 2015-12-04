@@ -71,10 +71,13 @@
 
 // defines that let us know if the compiler supports long long and long double
 #cmakedefine CONDUIT_HAS_LONG_LONG      @CONDUIT_HAS_LONG_LONG@
-#cmakedefine CONDUIT_HAS_LONG_DOUBLE    @CONDUIT_HAS_LONG_LONG@
+#cmakedefine CONDUIT_HAS_LONG_DOUBLE    @CONDUIT_HAS_LONG_DOUBLE@
 
-#cmakedefine CONDUIT_USE_LONG_LONG      @CCONDUIT_USE_LONG_LONG@
-#cmakedefine CONDUIT_USE_LONG_DOUBLE    @CCONDUIT_USE_LONG_DOUBLE@
+
+// defines that let us know if we need to use long long or long double
+// to fill out support for our menu of bit-width style types
+#cmakedefine CONDUIT_USE_LONG_LONG      @CONDUIT_USE_LONG_LONG@
+#cmakedefine CONDUIT_USE_LONG_DOUBLE    @CONDUIT_USE_LONG_DOUBLE@
 
 
 //-----------------------------------------------------------------------------

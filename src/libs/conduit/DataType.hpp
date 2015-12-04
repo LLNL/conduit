@@ -393,26 +393,14 @@ public:
     bool        is_short()            const;
     bool        is_int()              const;
     bool        is_long()             const;
-
-#ifdef CONDUIT_USE_LONG_LONG
-    bool        is_long_long()        const;
-#endif
     
     bool        is_unsigned_char()    const;
     bool        is_unsigned_short()   const;
     bool        is_unsigned_int()     const;
     bool        is_unsigned_long()    const;
 
-#ifdef CONDUIT_USE_LONG_LONG
-    bool        is_unsigned_long_long()        const;
-#endif
-
     bool        is_float()          const;
     bool        is_double()         const;
-
-#ifdef CONDUIT_USE_LONG_DOUBLE
-    bool        is_long_double()    const;
-#endif
 
 
 //-----------------------------------------------------------------------------
