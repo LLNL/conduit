@@ -5170,6 +5170,34 @@ Node::to_long() const
 }
 
 //---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+long long
+Node::to_long_long() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (long long)as_int8();
+        case DataType::INT16_T: return (long long)as_int16();
+        case DataType::INT32_T: return (long long)as_int32();
+        case DataType::INT64_T: return (long long)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (long long)as_uint8();
+        case DataType::UINT16_T: return (long long)as_uint16();
+        case DataType::UINT32_T: return (long long)as_uint32();
+        case DataType::UINT64_T: return (long long)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (long long)as_float32();
+        case DataType::FLOAT64_T: return (long long)as_float64();
+    }
+    return 0;
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
 // -- std signed types -- //
 //---------------------------------------------------------------------------//
 
@@ -5265,6 +5293,34 @@ Node::to_unsigned_long() const
     return 0;
 }
 
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+unsigned long long
+Node::to_unsigned_long_long() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (unsigned long long)as_int8();
+        case DataType::INT16_T: return (unsigned long long)as_int16();
+        case DataType::INT32_T: return (unsigned long long)as_int32();
+        case DataType::INT64_T: return (unsigned long long)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (unsigned long long)as_uint8();
+        case DataType::UINT16_T: return (unsigned long long)as_uint16();
+        case DataType::UINT32_T: return (unsigned long long)as_uint32();
+        case DataType::UINT64_T: return (unsigned long long)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (unsigned long long)as_float32();
+        case DataType::FLOAT64_T: return (unsigned long long)as_float64();
+    }
+    return 0;
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
 
 //---------------------------------------------------------------------------//
 float
@@ -5313,6 +5369,34 @@ Node::to_double() const
 
     return 0; // TODO:: Error for Obj or list?
 }
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_DOUBLE
+//---------------------------------------------------------------------------//
+long double
+Node::to_long_double() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_T:  return (long double)as_int8();
+        case DataType::INT16_T: return (long double)as_int16();
+        case DataType::INT32_T: return (long double)as_int32();
+        case DataType::INT64_T: return (long double)as_int64();
+        /* uints */
+        case DataType::UINT8_T:  return (long double)as_uint8();
+        case DataType::UINT16_T: return (long double)as_uint16();
+        case DataType::UINT32_T: return (long double)as_uint32();
+        case DataType::UINT64_T: return (long double)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_T: return (long double)as_float32();
+        case DataType::FLOAT64_T: return (long double)as_float64();
+    }
+    return 0; // TODO:: Error for Obj or list?
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
 /// convert array to a signed integer arrays
@@ -6353,6 +6437,7 @@ Node::to_long_array(Node &res) const
     }
 }
 
+
 //---------------------------------------------------------------------------//
 /// convert array to c unsigned integer arrays
 //---------------------------------------------------------------------------//
@@ -6870,6 +6955,19 @@ Node::Value::operator long() const
 }
 
 //---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+Node::Value::operator long long() const
+{
+    if(m_coerse)
+        return m_node->to_long_long();
+    else
+        return m_node->as_long_long();
+}
+#endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
 Node::Value::operator unsigned char() const
 {
     if(m_coerse)
@@ -6906,6 +7004,20 @@ Node::Value::operator unsigned long() const
 }
 
 //---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned long long() const
+{
+    if(m_coerse)
+        return m_node->to_unsigned_long_long();
+    else
+        return m_node->as_unsigned_long_long();
+}
+#endif
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
 Node::Value::operator float() const
 {
     if(m_coerse)
@@ -6922,6 +7034,18 @@ Node::Value::operator double() const
     else
         return m_node->as_double();
 }
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_DOUBLE
+//---------------------------------------------------------------------------//
+Node::Value::operator long double() const
+{
+    if(m_coerse)
+        return m_node->to_long_double();
+    else
+        return m_node->as_long_double();
+}
+#endif
 
 //---------------------------------------------------------------------------//
 // -- pointer casts -- 
@@ -6959,6 +7083,17 @@ Node::Value::operator long*() const
 }
 
 //---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+Node::Value::operator long long*() const
+{
+    return m_node->as_long_long_ptr();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
 Node::Value::operator unsigned char*() const
 {
     return m_node->as_unsigned_char_ptr();
@@ -6983,6 +7118,17 @@ Node::Value::operator unsigned long*() const
 }
 
 //---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned long long*() const
+{
+    return m_node->as_unsigned_long_long_ptr();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
 Node::Value::operator float*() const
 {
     return m_node->as_float_ptr();
@@ -6993,6 +7139,17 @@ Node::Value::operator double*() const
 {
     return m_node->as_double_ptr();
 }
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_DOUBLE
+//---------------------------------------------------------------------------//
+Node::Value::operator long double*() const
+{
+    return m_node->as_long_double_ptr();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
 
 
 //---------------------------------------------------------------------------//
@@ -7024,6 +7181,16 @@ Node::Value::operator long_array() const
     return m_node->as_long_array();
 }
 
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+Node::Value::operator long_long_array() const
+{
+    return m_node->as_long_long_array();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
 Node::Value::operator unsigned_char_array() const
@@ -7049,6 +7216,17 @@ Node::Value::operator unsigned_long_array() const
     return m_node->as_unsigned_long_array();
 }
 
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned_long_long_array() const
+{
+    return m_node->as_unsigned_long_long_array();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
 
 //---------------------------------------------------------------------------//
 Node::Value::operator float_array() const
@@ -7062,67 +7240,18 @@ Node::Value::operator double_array() const
     return m_node->as_double_array();
 }
 
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_DOUBLE
+//---------------------------------------------------------------------------//
+Node::Value::operator long_double_array() const
+{
+    return m_node->as_long_double_array();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
 
-// //---------------------------------------------------------------------------//
-// Node::Value::operator int8_array() const
-// {
-//     return m_node->as_int8_array();
-// }
 
-// //---------------------------------------------------------------------------//
-// Node::Value::operator int16_array() const
-// {
-//     return m_node->as_int16_array();
-// }
-//
-// //---------------------------------------------------------------------------//
-// Node::Value::operator int32_array() const
-// {
-//     return m_node->as_int32_array();
-// }
-//
-// //---------------------------------------------------------------------------//
-// Node::Value::operator int64_array() const
-// {
-//     return m_node->as_int64_array();
-// }
-//
-//
-// //---------------------------------------------------------------------------//
-// Node::Value::operator uint8_array() const
-// {
-//     return m_node->as_uint8_array();
-// }
-//
-// //---------------------------------------------------------------------------//
-// Node::Value::operator uint16_array() const
-// {
-//     return m_node->as_uint16_array();
-// }
-//
-// //---------------------------------------------------------------------------//
-// Node::Value::operator uint32_array() const
-// {
-//     return m_node->as_uint32_array();
-// }
-//
-// //---------------------------------------------------------------------------//
-// Node::Value::operator uint64_array() const
-// {
-//     return m_node->as_uint64_array();
-// }
-//
-// //---------------------------------------------------------------------------//
-// Node::Value::operator float32_array() const
-// {
-//     return m_node->as_float32_array();
-// }
-//
-// //---------------------------------------------------------------------------//
-// Node::Value::operator float64_array() const
-// {
-//     return m_node->as_float64_array();
-// }
 
 //-----------------------------------------------------------------------------
 // -- JSON construction methods ---
@@ -8584,6 +8713,23 @@ Node::as_long()  const
     return *((long*)element_ptr(0));
 }
 
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+long long
+Node::as_long_long()  const
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID,
+                         "as_long_long()",
+                         0);
+    return *((long long*)element_ptr(0));
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
 //---------------------------------------------------------------------------//
 // unsigned integer scalars
 //---------------------------------------------------------------------------//
@@ -8633,6 +8779,22 @@ Node::as_unsigned_long() const
 }
 
 //---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+unsigned long long
+Node::as_unsigned_long_long() const
+{ 
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID,
+                         "as_unsigned_long_long()",
+                         0);
+    return *(( unsigned long long*)element_ptr(0));
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
 // floating point scalars
 //---------------------------------------------------------------------------//
 
@@ -8657,6 +8819,22 @@ Node::as_double() const
                          0);
     return *((double*)element_ptr(0));
 }
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_DOUBLE
+//---------------------------------------------------------------------------//
+long double
+Node::as_long_double() const 
+{ 
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_LONG_DOUBLE_DATATYPE_ID,
+                         "as_long_double()",
+                         0);
+    return *((long double*)element_ptr(0));
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
 // signed integers via pointers
@@ -8707,6 +8885,23 @@ Node::as_long_ptr()
 }
 
 //---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+long long *
+Node::as_long_long_ptr()
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID,
+                         "as_long_long_ptr()",
+                         NULL);
+    return (long long*)element_ptr(0);
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
 // unsigned integers via pointers
 //---------------------------------------------------------------------------//
 
@@ -8755,6 +8950,24 @@ Node::as_unsigned_long_ptr()
 }
 
 //---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+unsigned long long *
+Node::as_unsigned_long_long_ptr()
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID,
+                         "as_unsigned_long_long_ptr()",
+                         NULL);
+    return (unsigned long long*)element_ptr(0);
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
 // floating point via pointers
 //---------------------------------------------------------------------------//
 
@@ -8779,6 +8992,24 @@ Node::as_double_ptr()
                          NULL);
     return (double*)element_ptr(0);
 }
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_DOUBLE
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+long double *
+Node::as_long_double_ptr()
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_LONG_DOUBLE_DATATYPE_ID,
+                         "as_long_double_ptr()",
+                         NULL);
+    return (long double*)element_ptr(0);
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
 
 //---------------------------------------------------------------------------//
 // signed integers via pointers
@@ -8829,6 +9060,25 @@ Node::as_long_ptr() const
 }
 
 //---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+const long long *
+Node::as_long_long_ptr() const
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID,
+                         "as_long_long_ptr()",
+                         NULL);
+    return (long long*)element_ptr(0);
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
+
+//---------------------------------------------------------------------------//
 // unsigned integers via pointers
 //---------------------------------------------------------------------------//
 
@@ -8877,6 +9127,24 @@ Node::as_unsigned_long_ptr() const
 }
 
 //---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+const unsigned long long *
+Node::as_unsigned_long_long_ptr() const
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID,
+                         "as_unsigned_long_long_ptr()",
+                         NULL);
+    return (unsigned long long*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
 // floating point via pointers
 //---------------------------------------------------------------------------//
 
@@ -8902,6 +9170,22 @@ Node::as_double_ptr() const
     return (double*)element_ptr(0);
 }
 
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_DOUBLE
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+const long double *
+Node::as_long_double_ptr() const
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_LONG_DOUBLE_DATATYPE_ID,
+                         "as_long_double_ptr()",
+                         NULL);
+    return (long double*)element_ptr(0);
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
 
 
 //---------------------------------------------------------------------------//
@@ -8953,6 +9237,24 @@ Node::as_long_array()
 }
 
 //---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+long_long_array
+Node::as_long_long_array()
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID,
+                         "as_long_long_array()",
+                         long_long_array());
+    return long_long_array(m_data,dtype());
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
 // unsigned integer array types via conduit::DataArray
 //---------------------------------------------------------------------------//
 
@@ -9001,6 +9303,25 @@ Node::as_unsigned_long_array()
 }
 
 //---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+unsigned_long_long_array
+Node::as_unsigned_long_long_array()
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID,
+                         "as_unsigned_long_long_array()",
+                         unsigned_long_long_array());
+    return unsigned_long_long_array(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
 // floating point array types via conduit::DataArray
 //---------------------------------------------------------------------------//
 
@@ -9025,6 +9346,23 @@ Node::as_double_array()
                          double_array());
     return double_array(m_data,dtype());
 }
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_DOUBLE
+//---------------------------------------------------------------------------//
+long_double_array
+Node::as_long_double_array()
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_LONG_DOUBLE_DATATYPE_ID,
+                         "as_long_double_array()",
+                         long_double_array());
+    return long_double_array(m_data,dtype());
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
 
 //---------------------------------------------------------------------------//
 // signed integer array types via conduit::DataArray (const variants)
@@ -9075,6 +9413,23 @@ Node::as_long_array() const
 }
 
 //---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+const long_long_array
+Node::as_long_long_array() const
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_LONG_LONG_DATATYPE_ID,
+                         "as_long_long_array()",
+                         long_long_array());
+    return long_long_array(m_data,dtype());
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
 // unsigned integer array types via conduit::DataArray (const variants)
 //---------------------------------------------------------------------------//
 
@@ -9123,6 +9478,24 @@ Node::as_unsigned_long_array() const
 }
 
 //---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+const unsigned_long_long_array
+Node::as_unsigned_long_long_array() const
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_UNSIGNED_LONG_LONG_DATATYPE_ID,
+                         "as_unsigned_long_long_array()",
+                         unsigned_long_long_array());
+    return unsigned_long_long_array(m_data,dtype());
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
 // floating point array value via conduit::DataArray (const variants)
 //---------------------------------------------------------------------------//
 
@@ -9147,6 +9520,23 @@ Node::as_double_array() const
                          double_array());
     return double_array(m_data,dtype());
 }
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+const long_double_array
+Node::as_long_double_array() const
+{
+    CONDUIT_ASSERT_DTYPE(dtype().id(),
+                         CONDUIT_NATIVE_LONG_DOUBLE_DATATYPE_ID,
+                         "as_long_double_array()",
+                         long_double_array());
+    return long_double_array(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
 
 //-----------------------------------------------------------------------------
 //

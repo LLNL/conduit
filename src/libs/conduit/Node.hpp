@@ -1941,7 +1941,7 @@ public:
     unsigned short   to_unsigned_short() const;
     unsigned int     to_unsigned_int()   const;
     unsigned long    to_unsigned_long()  const;
-    
+
     /// convert to c floating point types
     float            to_float() const;
     double           to_double() const;
@@ -2006,16 +2006,27 @@ public:
             operator short()       const;
             operator int()         const;
             operator long()        const;
+            #ifdef CONDUIT_USE_LONG_LONG
+                operator long long()const;
+            #endif
+
 
             // cast operators for unsigned integers
             operator unsigned char()   const;
             operator unsigned short()  const;
             operator unsigned int()    const;
             operator unsigned long()   const;
+            #ifdef CONDUIT_USE_LONG_LONG
+                operator unsigned long long()const;
+            #endif
             
             // cast operators for floating point types
             operator float()  const;
             operator double() const;
+            #ifdef CONDUIT_USE_LONG_DOUBLE
+                operator long double()const;
+            #endif
+            
         
             // -- as pointer -- //
 
@@ -2027,16 +2038,27 @@ public:
             operator short*()       const;
             operator int*()         const;
             operator long*()        const;
+            #ifdef CONDUIT_USE_LONG_LONG
+                operator long long *()const;
+            #endif
 
             // as unsigned int ptr
             operator unsigned char*()  const;
             operator unsigned short*() const;
             operator unsigned int*()   const;
             operator unsigned long*()  const;
+            #ifdef CONDUIT_USE_LONG_LONG
+                operator unsigned long long *()const;
+            #endif
+
             
             // as floating point ptr
             operator float*()  const;
             operator double*() const;
+            #ifdef CONDUIT_USE_LONG_DOUBLE
+                operator long double *()const;
+            #endif
+
 
             // -- as array -- //
 
@@ -2044,14 +2066,26 @@ public:
             operator short_array() const;
             operator int_array()   const;
             operator long_array()  const;
+            #ifdef CONDUIT_USE_LONG_LONG
+                operator long_long_array()const;
+            #endif
+            
 
             operator unsigned_char_array()  const;
             operator unsigned_short_array() const;
             operator unsigned_int_array()   const;
             operator unsigned_long_array()  const;
+            #ifdef CONDUIT_USE_LONG_LONG
+                operator unsigned_long_long_array()const;
+            #endif
+
 
             operator float_array()  const;
             operator double_array() const;
+            #ifdef CONDUIT_USE_LONG_DOUBLE
+                operator long_double_array()const;
+            #endif
+
 
         private:
             // This is private we only want conduit::Node to create a 
@@ -2380,7 +2414,6 @@ public:
     float            as_float() const;
     double           as_double() const;
 
-
     // signed integers via pointers
     char            *as_char_ptr();
     short           *as_short_ptr();
@@ -2413,7 +2446,6 @@ public:
     const float           *as_float_ptr()  const;
     const double          *as_double_ptr() const;
 
-
     // signed integer array types via conduit::DataArray
     char_array       as_char_array();
     short_array      as_short_array();
@@ -2431,7 +2463,6 @@ public:
     double_array    as_double_array();
 
     // signed integer array types via conduit::DataArray (const variants)
-
     const char_array       as_char_array()  const;
     const short_array      as_short_array() const;
     const int_array        as_int_array()   const;
@@ -2442,7 +2473,6 @@ public:
     const unsigned_short_array   as_unsigned_short_array() const;
     const unsigned_int_array     as_unsigned_int_array()   const;
     const unsigned_long_array    as_unsigned_long_array()  const;
-
 
     // floating point array value via conduit::DataArray (const variants)
     const float_array     as_float_array()  const;
@@ -2500,6 +2530,120 @@ private:
 //-----------------------------------------------------------------------------
 //=============================================================================
 
+//-----------------------------------------------------------------------------
+// value access related to conditional long long and long double support
+//-----------------------------------------------------------------------------
+// We provide connivence methods for native c types, but we don't want to
+// provide them in the public api for long long and long double. 
+// Why? These types are ambiguous, if folks want a 64-bit integer, they should 
+// explicitly use conduit::int64, conduit::uint64, etc
+// The only place where long long and long double will appear in the public
+// interface is in the Node::Value() class, where it is needed for casting magic
+// to work for uint64, etc types.
+//-----------------------------------------------------------------------------
+    ///
+    /// These methods allow you to access a leaf as known type
+    /// (used in Node::Value())
+    
+     // signed integer scalars
+    #ifdef CONDUIT_USE_LONG_LONG
+    long long      as_long_long() const;
+    #endif
+
+    // unsigned integer scalars
+    #ifdef CONDUIT_USE_LONG_LONG
+    unsigned long long  as_unsigned_long_long() const;
+    #endif
+
+    // floating point scalars
+    #ifdef CONDUIT_USE_LONG_DOUBLE
+    long double      as_long_double() const;
+    #endif
+
+    // signed integers via pointers
+    #ifdef CONDUIT_USE_LONG_LONG
+    long long      *as_long_long_ptr() const;
+    #endif
+
+    // unsigned integers via pointers
+    #ifdef CONDUIT_USE_LONG_LONG
+    unsigned long long  *as_unsigned_long_long_ptr() const;
+    #endif
+
+
+    // floating point via pointers
+    #ifdef CONDUIT_USE_LONG_DOUBLE
+    long double     *as_long_double_ptr();
+    #endif
+
+    // signed integers via pointers (const variants)
+    #ifdef CONDUIT_USE_LONG_LONG
+    const long long  *as_long_long_ptr() const;
+    #endif
+
+    // unsigned integers via pointers (const variants)
+    #ifdef CONDUIT_USE_LONG_LONG
+    const unsigned long long  *as_unsigned_long_long_ptr() const;
+    #endif
+
+
+    // floating point via pointers (const variants)
+    #ifdef CONDUIT_USE_LONG_DOUBLE
+    const long double     *as_long_double_ptr() const;
+    #endif
+
+
+    // signed integer array types via conduit::DataArray
+    #ifdef CONDUIT_USE_LONG_LONG
+    long_long_array  as_long_long_array();
+    #endif
+
+    // unsigned integer array types via conduit::DataArray
+    #ifdef CONDUIT_USE_LONG_LONG
+    unsigned_long_long_array  as_unsigned_long_long_array();
+    #endif
+    
+
+    // floating point array types via conduit::DataArray
+    #ifdef CONDUIT_USE_LONG_DOUBLE
+    long_double_array  as_long_double_array();
+    #endif
+
+    // signed integer array types via conduit::DataArray (const variants)
+    #ifdef CONDUIT_USE_LONG_LONG
+    const long_long_array  as_long_long_array() const;
+    #endif
+
+    // unsigned integer array types via conduit::DataArray (const variants)
+    #ifdef CONDUIT_USE_LONG_LONG
+    const unsigned_long_long_array  as_unsigned_long_long_array() const;
+    #endif
+
+    // floating point array value via conduit::DataArray (const variants)
+    #ifdef CONDUIT_USE_LONG_DOUBLE
+    const long_double_array  as_long_double_array() const;
+    #endif
+
+    ///
+    /// These methods allow you to coerce a leaf type to another type.
+    /// (used in Node::Value())
+    
+    /// scalar coercion
+    /// convert to c signed integer types
+    #ifdef CONDUIT_USE_LONG_LONG
+    long long        to_long_long()  const;
+    #endif
+
+    /// convert to c unsigned integer types
+    #ifdef CONDUIT_USE_LONG_LONG
+    unsigned long long to_unsigned_long_long()  const;
+    #endif
+
+    
+    /// convert to c floating point types
+    #ifdef CONDUIT_USE_LONG_DOUBLE
+    long double      to_long_double() const;
+    #endif
 
 //-----------------------------------------------------------------------------
 //
