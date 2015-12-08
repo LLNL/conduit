@@ -133,7 +133,7 @@ def main():
          opts["force"] =  opts["force"] + " uberenv-conduit"
     # clone spack into the dest path
     os.chdir(dest_dir)
-    sexe("git clone https://github.com/scalability-llnl/spack.git")
+    sexe("git clone https://github.com/llnl/spack.git")
     # hot-copy our packages into spack
     sexe("cp -Rf %s %s" % (pkgs,dest_spack_pkgs))
     # for things we want to force: clean up stages and uninstall them
