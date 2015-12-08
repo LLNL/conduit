@@ -9,7 +9,7 @@
 .. # 
 .. # This file is part of Conduit. 
 .. # 
-.. # For details, see: http://scalability-llnl.github.io/conduit/.
+.. # For details, see: http://llnl.github.io/conduit/.
 .. # 
 .. # Please also read conduit/LICENSE
 .. # 
@@ -89,11 +89,11 @@ Conduit Project Resources
 
 **Online Documentation**
 
-http://scalability-llnl.github.io/conduit/index.html
+http://llnl.github.io/conduit/index.html
 
 **Github Source Repo**
 
-https://github.com/scalability-llnl/conduit
+https://github.com/llnl/conduit
 
 **LLNL Collaboration Zone Stash Source Repo (LLNL Users)**
 
