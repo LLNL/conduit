@@ -9,7 +9,7 @@
 .. # 
 .. # This file is part of Conduit. 
 .. # 
-.. # For details, see: http://scalability-llnl.github.io/conduit/.
+.. # For details, see: http://llnl.github.io/conduit/.
 .. # 
 .. # Please also read conduit/LICENSE
 .. # 
@@ -57,7 +57,7 @@ Clone the Conduit repo:
 
 .. code:: bash
     
-    git clone https://github.com/scalability-llnl/conduit.git
+    git clone https://github.com/llnl/conduit.git
 
 
 * From LLNL's CZ Stash Instance (LLNL Users)
@@ -150,7 +150,7 @@ These file use standard cmake commands. CMake *set* commands need to specify the
 Bootstrapping Thirdparty Dependencies 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can use *bootstrap-env.sh* (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses *scripts/uberenv*, which leverages **Spack** (https://scalability-llnl.github.io/spack) to build external thirdparty libraries and tools used by Conduit.
+You can use *bootstrap-env.sh* (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses *scripts/uberenv*, which leverages **Spack** (https://llnl.github.io/spack) to build external thirdparty libraries and tools used by Conduit.
 It also writes a initial host-config file for you and adds the spack built cmake to your path, so can directly call the *config-build.sh* helper script to configure a conduit build.
 
 .. code:: bash

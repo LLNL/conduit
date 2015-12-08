@@ -178,7 +178,7 @@
 <ul class="simple">
 <li>From Github</li>
 </ul>
-<div class="code bash highlight-python"><div class="highlight"><pre>git clone https://github.com/scalability-llnl/conduit.git
+<div class="code bash highlight-python"><div class="highlight"><pre>git clone https://github.com/llnl/conduit.git
 </pre></div>
 </div>
 <ul class="simple">
@@ -249,7 +249,7 @@ Conduit&#8217;s Python module requires Numpy. The selected Python install must p
 </div>
 <div class="section" id="bootstrapping-thirdparty-dependencies">
 <h2>Bootstrapping Thirdparty Dependencies<a class="headerlink" href="#bootstrapping-thirdparty-dependencies" title="Permalink to this headline">¶</a></h2>
-<p>You can use <em>bootstrap-env.sh</em> (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses <em>scripts/uberenv</em>, which leverages <strong>Spack</strong> (<a class="reference external" href="https://scalability-llnl.github.io/spack">https://scalability-llnl.github.io/spack</a>) to build external thirdparty libraries and tools used by Conduit.
+<p>You can use <em>bootstrap-env.sh</em> (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses <em>scripts/uberenv</em>, which leverages <strong>Spack</strong> (<a class="reference external" href="https://llnl.github.io/spack">https://llnl.github.io/spack</a>) to build external thirdparty libraries and tools used by Conduit.
 It also writes a initial host-config file for you and adds the spack built cmake to your path, so can directly call the <em>config-build.sh</em> helper script to configure a conduit build.</p>
 <div class="code bash highlight-python"><div class="highlight"><pre>#build thirdparty libs using spack
 source bootstrap-env.sh
