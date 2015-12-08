@@ -9,7 +9,7 @@
 .. # 
 .. # This file is part of Conduit. 
 .. # 
-.. # For details, see: http://scalability-llnl.github.io/conduit/.
+.. # For details, see: http://llnl.github.io/conduit/.
 .. # 
 .. # Please also read conduit/LICENSE
 .. # 
@@ -78,7 +78,7 @@ Fortran Libraries
 Build System
 ~~~~~~~~~~~~~~~
 - *CMake*: http://www.cmake.org/licensing/ (BSD Style License)
-- *Spack*: https://scalability-llnl.github.io/spack (LGPL License)
+- *Spack*: https://llnl.github.io/spack (LGPL License)
 
 
 Documentation
