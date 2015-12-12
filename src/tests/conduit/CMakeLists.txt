@@ -63,6 +63,7 @@ set(BASIC_TESTS conduit_smoke
                 conduit_node_save_load
                 conduit_node_paths
                 conduit_node_set
+                conduit_node_to_value
                 conduit_to_string
                 conduit_json
                 conduit_json_sanitize
