@@ -4726,13 +4726,11 @@ Node::update(Node &n_src)
     }
     else if(dtype_id != DataType::EMPTY_ID)
     {
-        if(this->dtype().is_compatible(n_src.dtype()))
-        {
-            memcpy(element_ptr(0),
-                   n_src.element_ptr(0), 
-                   m_schema->total_bytes());
-        }
-        else if( (this->dtype().id() == n_src.dtype().id()) &&
+        // don't use mem copy b/c we want to preserve striding holes
+        
+        // if you have the same type dtype, but less elements in the
+        // src, it will copy them
+        if( (this->dtype().id() == n_src.dtype().id()) &&
                  (this->dtype().number_of_elements() >=  
                    n_src.dtype().number_of_elements())) 
         {
@@ -4767,7 +4765,10 @@ Node::update_compatible(Node &n_src)
              itr < src_paths.end(); ++itr)
         {
             std::string ent_name = *itr;
-            fetch(ent_name).update_compatible(n_src.fetch(ent_name));
+            if(has_path(ent_name))
+            {
+                fetch(ent_name).update_compatible(n_src.fetch(ent_name));
+                }
         }
     }
     else if( dtype_id == DataType::LIST_ID)
@@ -4789,17 +4790,12 @@ Node::update_compatible(Node &n_src)
         }
     }
     else if(dtype_id != DataType::EMPTY_ID)
-    {
-        if(this->dtype().is_compatible(n_src.dtype()))
-        {
-            memcpy(element_ptr(0),
-                   n_src.element_ptr(0), 
-                   m_schema->total_bytes());
-        }
-        // this provides a loser def than "is_compatible"
+    {   
+        // don't use mem copy b/c we want to preserve striding holes
+        
         // if you have the same type dtype, but less elements in the
         // src, it will copy them 
-        else if( (this->dtype().id() == n_src.dtype().id()) &&
+        if( (this->dtype().id() == n_src.dtype().id()) &&
                  (this->dtype().number_of_elements() >=  
                    n_src.dtype().number_of_elements())) 
         {
@@ -9676,7 +9672,7 @@ Node::set_data_ptr(void *data)
 void
 Node::init(const DataType& dtype)
 {
-    if(this->dtype().is_compatible(dtype))
+    if(this->dtype().compatible(dtype))
         return;
     
     if(m_data != NULL)

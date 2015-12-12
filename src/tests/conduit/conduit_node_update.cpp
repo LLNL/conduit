@@ -128,6 +128,8 @@ TEST(conduit_node_update, update_realloc_like)
 
     Node n;
     n["a"].set(vals);
+    n["b"] = "test";
+    n.print();
     
     Node n2;
     n2["a"].set(DataType::uint32(15));
@@ -135,6 +137,8 @@ TEST(conduit_node_update, update_realloc_like)
     memset(n2["a"].data_ptr(),0,sizeof(uint32)*15);
     
     n2.update(n);
+    
+    n2.print();
 
     uint32 *n_v_ptr  = n["a"].as_uint32_ptr();    
     uint32 *n2_v_ptr = n2["a"].as_uint32_ptr();
@@ -148,6 +152,8 @@ TEST(conduit_node_update, update_realloc_like)
     {
         EXPECT_EQ(n2_v_ptr[i],0); // assumes zeroed-alloc
     }
+    
+    EXPECT_TRUE(n2.has_path("b"));
 }
 
 
@@ -184,7 +190,40 @@ TEST(conduit_node_update, update_compatible_realloc_like)
         EXPECT_EQ(n2_v_ptr[i],0); // assumes zeroed-alloc
     }
     
-    EXPECT_FALSE(n2.has_path("test"));
+    EXPECT_FALSE(n2.has_path("b"));
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_update, update_compatible)
+{
+    std::vector<uint32> vals;
+    for(index_t i=0;i<5;i++)
+    {
+        vals.push_back(i);
+    }
+
+    Node n;
+    n["a"].set(vals);
+    n["b"] = "test";
+    
+    Node n2;
+    n2["a"].set(DataType::uint32(5));
+    
+    // zero out the buffer just to be safe for this unit test
+    memset(n2["a"].data_ptr(),0,sizeof(uint32)*5);
+    
+    n2.update_compatible(n);
+
+    uint32 *n_v_ptr  = n["a"].as_uint32_ptr();    
+    uint32 *n2_v_ptr = n2["a"].as_uint32_ptr();
+
+    for(index_t i=0;i<5;i++)
+    {
+        EXPECT_EQ(n_v_ptr[i],n2_v_ptr[i]);
+    }    
+    
+    
+    EXPECT_FALSE(n2.has_path("b"));
 }
 
 

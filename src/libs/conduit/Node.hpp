@@ -2192,8 +2192,8 @@ public:
                         {return m_schema->is_compact();}
 
     /// is this node compatible with given node
-    bool             is_compatible(const Node &n) const
-                        {return m_schema->is_compatible(n.schema());}
+    bool             compatible(const Node &n) const
+                        {return m_schema->compatible(n.schema());}
 
     ///
     /// info() creates a node that contains metadata about the current

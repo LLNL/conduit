@@ -504,12 +504,24 @@ DataType::total_bytes_compact() const
     
 //---------------------------------------------------------------------------//
 bool
-DataType::is_compatible(const DataType& dtype) const
+DataType::compatible(const DataType& dtype) const
 {
     return ( (m_id == dtype.m_id ) &&
              (m_ele_bytes == dtype.m_ele_bytes) &&
-             (total_bytes() == dtype.total_bytes()));
+             (m_num_ele >= dtype.m_num_ele) );
 }
+
+//---------------------------------------------------------------------------//
+bool
+DataType::equal(const DataType& dtype) const
+{
+    return ( (m_id == dtype.m_id ) &&
+             (m_num_ele   == dtype.m_num_ele) &&
+             (m_offset    == dtype.m_offset) &&
+             (m_ele_bytes == dtype.m_ele_bytes) &&
+             (m_endianness == dtype.m_endianness));
+}
+
 
 //---------------------------------------------------------------------------//
 bool

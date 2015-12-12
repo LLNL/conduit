@@ -169,7 +169,11 @@ public:
     bool            is_compact() const;
 
     /// is this schema compatible with given schema
-    bool            is_compatible(const Schema &s) const;
+    bool            compatible(const Schema &s) const;
+
+    /// is this schema equal to given schema
+    bool            equal(const Schema &s) const;
+
 
 
     Schema         *parent()

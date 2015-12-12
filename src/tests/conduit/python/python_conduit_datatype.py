@@ -107,12 +107,6 @@ class Test_Conduit_Node(unittest.TestCase):
         self.assertEqual(dt.element_bytes(),dt2.element_bytes())        
         self.assertEqual(dt.endianness(),dt2.endianness())
 
-        # broken
-        # dt3 = DataType(dtype_name="uint32",
-        #        num_elements=10,
-        #        offset=0,
-        #        stride=4,
-        #        element_bytes=4)
         dt3 = DataType()
         dt3.set(dtype_name="uint32",
                 num_elements=10,

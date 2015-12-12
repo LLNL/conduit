@@ -356,7 +356,9 @@ public:
     index_t     total_bytes()   const;
     index_t     total_bytes_compact() const;
     bool        is_compact() const;
-    bool        is_compatible(const DataType& type) const;
+
+    bool        compatible(const DataType& type) const;
+    bool        equal(const DataType& type) const;
     
     index_t     number_of_elements()  const { return m_num_ele;}
     index_t     offset()              const { return m_offset;}
