@@ -94,6 +94,81 @@ namespace utils
 {
 
 //-----------------------------------------------------------------------------
+// default info message handler callback, simply prints to std::cout.
+void 
+default_info_handler(const std::string &msg,
+                     const std::string &file,
+                     int line)
+{
+    std::cout << "[" << file
+              << " : " << line  << "]"
+              << "\n " << msg << std::endl;
+}
+
+//-----------------------------------------------------------------------------
+// Private namespace member that holds our info message handler callback.
+void (*conduit_on_info)(const std::string &,
+                        const std::string &,
+                        int)= default_info_handler;
+
+//-----------------------------------------------------------------------------
+// Allows other libraries to provide an alternate error handler.
+void
+set_info_handler(void(*on_info)
+                 (const std::string&,
+                  const std::string&,
+                  int))
+{
+    conduit_on_info = on_info;
+}
+
+//-----------------------------------------------------------------------------
+void
+handle_info(const std::string &msg,
+            const std::string &file,
+            int line)
+{
+    conduit_on_info(msg,file,line);
+}
+
+//-----------------------------------------------------------------------------
+// default warning handler callback, simply throws a conduit::Error exception.
+void 
+default_warning_handler(const std::string &msg,
+                        const std::string &file,
+                        int line)
+{
+    throw conduit::Error( msg, file, line);
+}
+
+//-----------------------------------------------------------------------------
+// Private namespace member that holds our info message handler callback.
+void (*conduit_on_warning)(const std::string &,
+                           const std::string &,
+                           int)= default_warning_handler;
+
+//-----------------------------------------------------------------------------
+// Allows other libraries to provide an alternate warning handler.
+void
+set_warning_handler(void(*on_warning)
+                    (const std::string&,
+                     const std::string&,
+                     int))
+{
+    conduit_on_warning = on_warning;
+}
+
+//-----------------------------------------------------------------------------
+void
+handle_warning(const std::string &msg,
+               const std::string &file,
+               int line)
+{
+    conduit_on_warning(msg,file,line);
+}
+
+
+//-----------------------------------------------------------------------------
 // default error handler callback, simply throws a conduit::Error exception.
 void 
 default_error_handler(const std::string &msg,

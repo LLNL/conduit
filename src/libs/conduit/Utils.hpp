@@ -69,18 +69,40 @@
 //-----------------------------------------------------------------------------
 //
 /// The CONDUIT_INFO macro is the primary mechanism used to log basic messages.
-/// It currently simply prints the message to std::out.
+/// It calls conduit::utils::handle_info() which invokes 
+///
+/// The default info handler prints the message to std::out. 
+/// You can change the info handler via conduit::utils::set_info_handler().
 ///
 //-----------------------------------------------------------------------------
 #define CONDUIT_INFO( msg )                                         \
 {                                                                   \
     std::ostringstream conduit_oss_info;                            \
-    conduit_oss_info << "[" << std::string(__FILE__);               \
-    conduit_oss_info << " : " << __LINE__  << "]";                  \
-    conduit_oss_info << "\n " << msg;                               \
-    std::cout << conduit_oss_info.str() << std::endl;               \
+    conduit_oss_info << msg;                                        \
+    conduit::utils::handle_info( conduit_oss_info.str(),            \
+                                  std::string(__FILE__),            \
+                                  __LINE__);                        \
 }                                                                   \
 
+//-----------------------------------------------------------------------------
+//
+/// The CONDUIT_WARN macro is the primary mechanism used to capture warnings
+/// in conduit. It calls conduit::utils::handle_warning() which invokes 
+/// the currently configured warning handler. 
+///
+/// The default warning handler throws a c++ exception, in the form of a
+/// conduit::Error instance. You can change the error handler via
+/// conduit::utils::set_warning_handler().
+//
+//-----------------------------------------------------------------------------
+#define CONDUIT_WARN( msg )                                          \
+{                                                                    \
+    std::ostringstream conduit_oss_warn;                             \
+    conduit_oss_warn << msg;                                         \
+    conduit::utils::handle_warning( conduit_oss_warn.str(),          \
+                                    std::string(__FILE__),           \
+                                    __LINE__);                       \
+}                                                                    \
 
 //-----------------------------------------------------------------------------
 //
@@ -89,7 +111,7 @@
 /// the currently configured error handler. 
 ///
 /// The default error handler throws a c++ exception, in the form of a
-/// conduit::Error class. You can change the error handler via
+/// conduit::Error instance. You can change the error handler via
 /// conduit::utils::set_error_handler().
 //
 //-----------------------------------------------------------------------------
@@ -104,16 +126,16 @@
 
 //-----------------------------------------------------------------------------
 //
-/// The CONDUIT_ASSERT macro is the primary mechanism used to capture assert
-/// failures in conduit. It calls conduit::utils::handle_error() which invokes 
+/// The CONDUIT_ASSERT macro is the primary mechanism used to for asserts
+/// in conduit. It calls conduit::utils::handle_error() which invokes 
 /// the currently configured error handler. 
 ///
 /// The default error handler throws a c++ exception, in the form of a
-/// conduit::Error class. You can change the error handler via
+/// conduit::Error instance. You can change the error handler via
 /// conduit::utils::set_error_handler().
 //
 //-----------------------------------------------------------------------------
-#define CONDUIT_ASSERT( cond, msg)                                   \
+#define CONDUIT_ASSERT( cond, msg )                                  \
 {                                                                    \
     if(!cond)                                                        \
     {                                                                \
@@ -122,6 +144,29 @@
         conduit::utils::handle_error( conduit_oss_assert.str(),      \
                                       std::string(__FILE__),         \
                                       __LINE__);                     \
+    }                                                                \
+}                                                                    \
+
+//-----------------------------------------------------------------------------
+//
+/// The CONDUIT_CHECK macro is the mechanism used for checks in conduit.
+/// It calls conduit::utils::handle_warning() which invokes 
+/// the currently configured warning handler. 
+///
+/// The default warning handler throws a c++ exception, in the form of a
+/// conduit::Error instance. You can change the error handler via
+/// conduit::utils::set_warning_handler().
+//
+//-----------------------------------------------------------------------------
+#define CONDUIT_CHECK( cond, msg )                                   \
+{                                                                    \
+    if(!cond)                                                        \
+    {                                                                \
+        std::ostringstream conduit_oss_check;                        \
+        conduit_oss_check << msg;                                    \
+        conduit::utils::handle_warning( conduit_oss_check.str(),     \
+                                        std::string(__FILE__),       \
+                                        __LINE__);                   \
     }                                                                \
 }                                                                    \
 
@@ -136,6 +181,55 @@ namespace conduit
 //-----------------------------------------------------------------------------
 namespace utils
 {
+
+//-----------------------------------------------------------------------------
+/// Primary interface used by the conduit API when an info message is issued 
+/// This simply dispatches the message to the currently configured info handler.
+/// The default info handler prints a the message to std::cout;
+//-----------------------------------------------------------------------------
+    void CONDUIT_API handle_info(const std::string &msg,
+                                 const std::string &file,
+                                 int line);
+
+//-----------------------------------------------------------------------------
+/// Allows other libraries to provide an alternate info message handler.
+//-----------------------------------------------------------------------------
+    void CONDUIT_API set_info_handler( void(*on_info)
+                                       (const std::string &,
+                                        const std::string &,
+                                        int));
+
+//-----------------------------------------------------------------------------
+/// Default info message handler, which prints the message to std::cout;
+//-----------------------------------------------------------------------------
+   void CONDUIT_API default_info_handler(const std::string &msg,
+                                         const std::string &file,
+                                         int line);
+
+//-----------------------------------------------------------------------------
+/// Primary interface used by the conduit API when a warning is issued. 
+/// This simply dispatches the warning to the currently configured warning handler.
+/// The default warning handler throws a conduit::Error exception.
+//-----------------------------------------------------------------------------
+    void CONDUIT_API handle_warning(const std::string &msg,
+                                    const std::string &file,
+                                    int line);
+
+//-----------------------------------------------------------------------------
+/// Allows other libraries to provide an alternate warning handler.
+//-----------------------------------------------------------------------------
+    void CONDUIT_API set_warning_handler( void(*on_error)
+                                         (const std::string &,
+                                          const std::string &,
+                                          int));
+
+//-----------------------------------------------------------------------------
+/// Default warning handler, which throws a conduit::Error exception.
+//-----------------------------------------------------------------------------
+   void CONDUIT_API default_warning_handler(const std::string &msg,
+                                            const std::string &file,
+                                            int line);
+
 
 //-----------------------------------------------------------------------------
 /// Primary interface used by the conduit API when an error occurs. 
