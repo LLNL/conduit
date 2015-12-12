@@ -111,6 +111,18 @@ public:
     T              &element(index_t idx);
     T              &element(index_t idx) const;
 
+    void           *element_ptr(index_t idx)
+                    {
+                        return static_cast<char*>(m_data) +
+                            m_dtype.element_index(idx);
+                    };
+
+    const void     *element_ptr(index_t idx) const 
+                    {
+                         return static_cast<char*>(m_data) +
+                            m_dtype.element_index(idx);
+                    };
+
     index_t         number_of_elements() const 
                         {return m_dtype.number_of_elements();}
     const DataType &dtype()    const 
@@ -192,25 +204,10 @@ public:
     /// print a simplified json representation of the this node to std out
     void            print() const
                       {std::cout << to_json() << std::endl;}
-    
+
 
 private:
-//-----------------------------------------------------------------------------
-//
-// -- conduit::DataArray private methods --
-//
-//-----------------------------------------------------------------------------
-    void           *element_ptr(index_t idx)
-                    {
-                        return static_cast<char*>(m_data) +       
-                            m_dtype.element_index(idx);
-                    };
 
-    const void     *element_ptr(index_t idx) const 
-                    {
-                         return static_cast<char*>(m_data) +    
-                            m_dtype.element_index(idx);
-                    };
 //-----------------------------------------------------------------------------
 //
 // -- conduit::DataArray private data members --
