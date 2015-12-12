@@ -86,3 +86,338 @@ TEST(conduit_node_to_value, string_to_scalar)
     EXPECT_NEAR( n.to_float(),127,0.0001);
     EXPECT_NEAR( n.to_double(),127,0.0001);
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_to_value, uint8_to_scalar)
+{
+    Node n;
+    n.set_uint8(127);
+    
+    EXPECT_EQ( n.to_uint8(),127);
+    EXPECT_EQ( n.to_uint16(),127);
+    EXPECT_EQ( n.to_uint32(),127);
+    EXPECT_EQ( n.to_uint64(),127);
+
+    EXPECT_EQ( n.to_int8(),127);
+    EXPECT_EQ( n.to_int16(),127);
+    EXPECT_EQ( n.to_int32(),127);
+    EXPECT_EQ( n.to_int64(),127);
+
+    EXPECT_NEAR( n.to_float32(),127,0.0001);
+    EXPECT_NEAR( n.to_float64(),127,0.0001);
+
+    EXPECT_EQ( n.to_unsigned_char(),127);
+    EXPECT_EQ( n.to_unsigned_short(),127);
+    EXPECT_EQ( n.to_unsigned_int(),127);
+    EXPECT_EQ( n.to_unsigned_long(),127);
+
+    EXPECT_EQ( n.to_char(),127);
+    EXPECT_EQ( n.to_short(),127);
+    EXPECT_EQ( n.to_int(),127);
+    EXPECT_EQ( n.to_long(),127);
+    
+    EXPECT_NEAR( n.to_float(),127,0.0001);
+    EXPECT_NEAR( n.to_double(),127,0.0001);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_to_value, uint16_to_scalar)
+{
+    Node n;
+    n.set_uint16(127);
+    
+    EXPECT_EQ( n.to_uint8(),127);
+    EXPECT_EQ( n.to_uint16(),127);
+    EXPECT_EQ( n.to_uint32(),127);
+    EXPECT_EQ( n.to_uint64(),127);
+
+    EXPECT_EQ( n.to_int8(),127);
+    EXPECT_EQ( n.to_int16(),127);
+    EXPECT_EQ( n.to_int32(),127);
+    EXPECT_EQ( n.to_int64(),127);
+
+    EXPECT_NEAR( n.to_float32(),127,0.0001);
+    EXPECT_NEAR( n.to_float64(),127,0.0001);
+
+    EXPECT_EQ( n.to_unsigned_char(),127);
+    EXPECT_EQ( n.to_unsigned_short(),127);
+    EXPECT_EQ( n.to_unsigned_int(),127);
+    EXPECT_EQ( n.to_unsigned_long(),127);
+
+    EXPECT_EQ( n.to_char(),127);
+    EXPECT_EQ( n.to_short(),127);
+    EXPECT_EQ( n.to_int(),127);
+    EXPECT_EQ( n.to_long(),127);
+    
+    EXPECT_NEAR( n.to_float(),127,0.0001);
+    EXPECT_NEAR( n.to_double(),127,0.0001);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_to_value, uint32_to_scalar)
+{
+    Node n;
+    n.set_uint32(127);
+    
+    EXPECT_EQ( n.to_uint8(),127);
+    EXPECT_EQ( n.to_uint16(),127);
+    EXPECT_EQ( n.to_uint32(),127);
+    EXPECT_EQ( n.to_uint64(),127);
+
+    EXPECT_EQ( n.to_int8(),127);
+    EXPECT_EQ( n.to_int16(),127);
+    EXPECT_EQ( n.to_int32(),127);
+    EXPECT_EQ( n.to_int64(),127);
+
+    EXPECT_NEAR( n.to_float32(),127,0.0001);
+    EXPECT_NEAR( n.to_float64(),127,0.0001);
+
+    EXPECT_EQ( n.to_unsigned_char(),127);
+    EXPECT_EQ( n.to_unsigned_short(),127);
+    EXPECT_EQ( n.to_unsigned_int(),127);
+    EXPECT_EQ( n.to_unsigned_long(),127);
+
+    EXPECT_EQ( n.to_char(),127);
+    EXPECT_EQ( n.to_short(),127);
+    EXPECT_EQ( n.to_int(),127);
+    EXPECT_EQ( n.to_long(),127);
+    
+    EXPECT_NEAR( n.to_float(),127,0.0001);
+    EXPECT_NEAR( n.to_double(),127,0.0001);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_to_value, uint64_to_scalar)
+{
+    Node n;
+    n.set_uint64(127);
+    
+    EXPECT_EQ( n.to_uint8(),127);
+    EXPECT_EQ( n.to_uint16(),127);
+    EXPECT_EQ( n.to_uint32(),127);
+    EXPECT_EQ( n.to_uint64(),127);
+
+    EXPECT_EQ( n.to_int8(),127);
+    EXPECT_EQ( n.to_int16(),127);
+    EXPECT_EQ( n.to_int32(),127);
+    EXPECT_EQ( n.to_int64(),127);
+
+    EXPECT_NEAR( n.to_float32(),127,0.0001);
+    EXPECT_NEAR( n.to_float64(),127,0.0001);
+
+    EXPECT_EQ( n.to_unsigned_char(),127);
+    EXPECT_EQ( n.to_unsigned_short(),127);
+    EXPECT_EQ( n.to_unsigned_int(),127);
+    EXPECT_EQ( n.to_unsigned_long(),127);
+
+    EXPECT_EQ( n.to_char(),127);
+    EXPECT_EQ( n.to_short(),127);
+    EXPECT_EQ( n.to_int(),127);
+    EXPECT_EQ( n.to_long(),127);
+    
+    EXPECT_NEAR( n.to_float(),127,0.0001);
+    EXPECT_NEAR( n.to_double(),127,0.0001);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_to_value, int8_to_scalar)
+{
+    Node n;
+    n.set_int8(127);
+    
+    EXPECT_EQ( n.to_uint8(),127);
+    EXPECT_EQ( n.to_uint16(),127);
+    EXPECT_EQ( n.to_uint32(),127);
+    EXPECT_EQ( n.to_uint64(),127);
+
+    EXPECT_EQ( n.to_int8(),127);
+    EXPECT_EQ( n.to_int16(),127);
+    EXPECT_EQ( n.to_int32(),127);
+    EXPECT_EQ( n.to_int64(),127);
+
+    EXPECT_NEAR( n.to_float32(),127,0.0001);
+    EXPECT_NEAR( n.to_float64(),127,0.0001);
+
+    EXPECT_EQ( n.to_unsigned_char(),127);
+    EXPECT_EQ( n.to_unsigned_short(),127);
+    EXPECT_EQ( n.to_unsigned_int(),127);
+    EXPECT_EQ( n.to_unsigned_long(),127);
+
+    EXPECT_EQ( n.to_char(),127);
+    EXPECT_EQ( n.to_short(),127);
+    EXPECT_EQ( n.to_int(),127);
+    EXPECT_EQ( n.to_long(),127);
+    
+    EXPECT_NEAR( n.to_float(),127,0.0001);
+    EXPECT_NEAR( n.to_double(),127,0.0001);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_to_value, int16_to_scalar)
+{
+    Node n;
+    n.set_int16(127);
+    
+    EXPECT_EQ( n.to_uint8(),127);
+    EXPECT_EQ( n.to_uint16(),127);
+    EXPECT_EQ( n.to_uint32(),127);
+    EXPECT_EQ( n.to_uint64(),127);
+
+    EXPECT_EQ( n.to_int8(),127);
+    EXPECT_EQ( n.to_int16(),127);
+    EXPECT_EQ( n.to_int32(),127);
+    EXPECT_EQ( n.to_int64(),127);
+
+    EXPECT_NEAR( n.to_float32(),127,0.0001);
+    EXPECT_NEAR( n.to_float64(),127,0.0001);
+
+    EXPECT_EQ( n.to_unsigned_char(),127);
+    EXPECT_EQ( n.to_unsigned_short(),127);
+    EXPECT_EQ( n.to_unsigned_int(),127);
+    EXPECT_EQ( n.to_unsigned_long(),127);
+
+    EXPECT_EQ( n.to_char(),127);
+    EXPECT_EQ( n.to_short(),127);
+    EXPECT_EQ( n.to_int(),127);
+    EXPECT_EQ( n.to_long(),127);
+    
+    EXPECT_NEAR( n.to_float(),127,0.0001);
+    EXPECT_NEAR( n.to_double(),127,0.0001);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_to_value, int32_to_scalar)
+{
+    Node n;
+    n.set_int32(127);
+    
+    EXPECT_EQ( n.to_uint8(),127);
+    EXPECT_EQ( n.to_uint16(),127);
+    EXPECT_EQ( n.to_uint32(),127);
+    EXPECT_EQ( n.to_uint64(),127);
+
+    EXPECT_EQ( n.to_int8(),127);
+    EXPECT_EQ( n.to_int16(),127);
+    EXPECT_EQ( n.to_int32(),127);
+    EXPECT_EQ( n.to_int64(),127);
+
+    EXPECT_NEAR( n.to_float32(),127,0.0001);
+    EXPECT_NEAR( n.to_float64(),127,0.0001);
+
+    EXPECT_EQ( n.to_unsigned_char(),127);
+    EXPECT_EQ( n.to_unsigned_short(),127);
+    EXPECT_EQ( n.to_unsigned_int(),127);
+    EXPECT_EQ( n.to_unsigned_long(),127);
+
+    EXPECT_EQ( n.to_char(),127);
+    EXPECT_EQ( n.to_short(),127);
+    EXPECT_EQ( n.to_int(),127);
+    EXPECT_EQ( n.to_long(),127);
+    
+    EXPECT_NEAR( n.to_float(),127,0.0001);
+    EXPECT_NEAR( n.to_double(),127,0.0001);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_to_value, int64_to_scalar)
+{
+    Node n;
+    n.set_int64(127);
+    
+    EXPECT_EQ( n.to_uint8(),127);
+    EXPECT_EQ( n.to_uint16(),127);
+    EXPECT_EQ( n.to_uint32(),127);
+    EXPECT_EQ( n.to_uint64(),127);
+
+    EXPECT_EQ( n.to_int8(),127);
+    EXPECT_EQ( n.to_int16(),127);
+    EXPECT_EQ( n.to_int32(),127);
+    EXPECT_EQ( n.to_int64(),127);
+
+    EXPECT_NEAR( n.to_float32(),127,0.0001);
+    EXPECT_NEAR( n.to_float64(),127,0.0001);
+
+    EXPECT_EQ( n.to_unsigned_char(),127);
+    EXPECT_EQ( n.to_unsigned_short(),127);
+    EXPECT_EQ( n.to_unsigned_int(),127);
+    EXPECT_EQ( n.to_unsigned_long(),127);
+
+    EXPECT_EQ( n.to_char(),127);
+    EXPECT_EQ( n.to_short(),127);
+    EXPECT_EQ( n.to_int(),127);
+    EXPECT_EQ( n.to_long(),127);
+    
+    EXPECT_NEAR( n.to_float(),127,0.0001);
+    EXPECT_NEAR( n.to_double(),127,0.0001);
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_to_value, float32_to_scalar)
+{
+    Node n;
+    n.set_float32(127);
+    
+    EXPECT_EQ( n.to_uint8(),127);
+    EXPECT_EQ( n.to_uint16(),127);
+    EXPECT_EQ( n.to_uint32(),127);
+    EXPECT_EQ( n.to_uint64(),127);
+
+    EXPECT_EQ( n.to_int8(),127);
+    EXPECT_EQ( n.to_int16(),127);
+    EXPECT_EQ( n.to_int32(),127);
+    EXPECT_EQ( n.to_int64(),127);
+
+    EXPECT_NEAR( n.to_float32(),127,0.0001);
+    EXPECT_NEAR( n.to_float64(),127,0.0001);
+
+    EXPECT_EQ( n.to_unsigned_char(),127);
+    EXPECT_EQ( n.to_unsigned_short(),127);
+    EXPECT_EQ( n.to_unsigned_int(),127);
+    EXPECT_EQ( n.to_unsigned_long(),127);
+
+    EXPECT_EQ( n.to_char(),127);
+    EXPECT_EQ( n.to_short(),127);
+    EXPECT_EQ( n.to_int(),127);
+    EXPECT_EQ( n.to_long(),127);
+    
+    EXPECT_NEAR( n.to_float(),127,0.0001);
+    EXPECT_NEAR( n.to_double(),127,0.0001);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_to_value, float64_to_scalar)
+{
+    Node n;
+    n.set_float64(127);
+    
+    EXPECT_EQ( n.to_uint8(),127);
+    EXPECT_EQ( n.to_uint16(),127);
+    EXPECT_EQ( n.to_uint32(),127);
+    EXPECT_EQ( n.to_uint64(),127);
+
+    EXPECT_EQ( n.to_int8(),127);
+    EXPECT_EQ( n.to_int16(),127);
+    EXPECT_EQ( n.to_int32(),127);
+    EXPECT_EQ( n.to_int64(),127);
+
+    EXPECT_NEAR( n.to_float32(),127,0.0001);
+    EXPECT_NEAR( n.to_float64(),127,0.0001);
+
+    EXPECT_EQ( n.to_unsigned_char(),127);
+    EXPECT_EQ( n.to_unsigned_short(),127);
+    EXPECT_EQ( n.to_unsigned_int(),127);
+    EXPECT_EQ( n.to_unsigned_long(),127);
+
+    EXPECT_EQ( n.to_char(),127);
+    EXPECT_EQ( n.to_short(),127);
+    EXPECT_EQ( n.to_int(),127);
+    EXPECT_EQ( n.to_long(),127);
+    
+    EXPECT_NEAR( n.to_float(),127,0.0001);
+    EXPECT_NEAR( n.to_double(),127,0.0001);
+}
+
+
+
