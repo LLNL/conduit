@@ -71,7 +71,8 @@ set(BASIC_TESTS conduit_smoke
                 conduit_node_update
                 conduit_node_compact
                 conduit_node_info
-                conduit_node_iterator)
+                conduit_node_iterator
+                conduit_utils)
 
 
 ################################
