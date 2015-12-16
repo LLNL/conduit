@@ -4833,6 +4833,15 @@ Node::to_int8() const
         /* floats */
         case DataType::FLOAT32_ID: return (int8)as_float32();
         case DataType::FLOAT64_ID: return (int8)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            int16 res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return (int8)res;
+        }
+        
     }
     return 0;
 }
@@ -4857,6 +4866,15 @@ Node::to_int16() const
         /* floats */
         case DataType::FLOAT32_ID: return (int16)as_float32();
         case DataType::FLOAT64_ID: return (int16)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            int16 res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
+        
     }
     return 0;
 }
@@ -4880,6 +4898,15 @@ Node::to_int32() const
         /* floats */
         case DataType::FLOAT32_ID: return (int32)as_float32();
         case DataType::FLOAT64_ID: return (int32)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            int32 res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
+        
     }
     return 0;
 }
@@ -4903,6 +4930,14 @@ Node::to_int64() const
         /* floats */
         case DataType::FLOAT32_ID: return (int64)as_float32();
         case DataType::FLOAT64_ID: return (int64)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            int64 res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
     }
     return 0;
 }
@@ -4926,6 +4961,15 @@ Node::to_uint8() const
         /* floats */
         case DataType::FLOAT32_ID: return (uint8)as_float32();
         case DataType::FLOAT64_ID: return (uint8)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            uint16 res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return (uint8)res;
+
+        }
     }
     return 0;
 }
@@ -4950,6 +4994,14 @@ Node::to_uint16() const
         /* floats */
         case DataType::FLOAT32_ID: return (uint16)as_float32();
         case DataType::FLOAT64_ID: return (uint16)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            uint16 res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
     }
     return 0;
 }
@@ -4973,6 +5025,14 @@ Node::to_uint32() const
         /* floats */
         case DataType::FLOAT32_ID: return (uint32)as_float32();
         case DataType::FLOAT64_ID: return (uint32)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            uint32 res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
     }
     return 0;
 }
@@ -4996,6 +5056,14 @@ Node::to_uint64() const
         /* floats */
         case DataType::FLOAT32_ID: return (uint64)as_float32();
         case DataType::FLOAT64_ID: return (uint64)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            uint64 res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
     }
     return 0;
 }
@@ -5020,6 +5088,14 @@ Node::to_float32() const
         /* floats */
         case DataType::FLOAT32_ID: return as_float32();
         case DataType::FLOAT64_ID: return (float64)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            float32 res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
     }
     return 0.0;
 }
@@ -5044,6 +5120,15 @@ Node::to_float64() const
         /* floats */
         case DataType::FLOAT32_ID: return (float64)as_float32();
         case DataType::FLOAT64_ID: return as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            float64 res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
+        
     }
     return 0.0;
 }
@@ -5068,6 +5153,14 @@ Node::to_index_t() const
         /* floats */
         case DataType::FLOAT32_ID: return (index_t)as_float32();
         case DataType::FLOAT64_ID: return (index_t)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            index_t res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
     }
     return 0;
 }
@@ -5095,6 +5188,14 @@ Node::to_char() const
         /* floats */
         case DataType::FLOAT32_ID: return (char)as_float32();
         case DataType::FLOAT64_ID: return (char)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            int16 res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return (char)res;
+        }
     }
     return 0;
 }
@@ -5118,6 +5219,14 @@ Node::to_short() const
         /* floats */
         case DataType::FLOAT32_ID: return (short)as_float32();
         case DataType::FLOAT64_ID: return (short)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            short res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
     }
     return 0;
 }
@@ -5141,6 +5250,14 @@ Node::to_int() const
         /* floats */
         case DataType::FLOAT32_ID: return (int)as_float32();
         case DataType::FLOAT64_ID: return (int)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            int res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
     }
     return 0;
     
@@ -5165,6 +5282,14 @@ Node::to_long() const
         /* floats */
         case DataType::FLOAT32_ID: return (long)as_float32();
         case DataType::FLOAT64_ID: return (long)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            long res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
     }
     return 0;
 }
@@ -5190,6 +5315,15 @@ Node::to_long_long() const
         /* floats */
         case DataType::FLOAT32_ID: return (long long)as_float32();
         case DataType::FLOAT64_ID: return (long long)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            long long res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
+        
     }
     return 0;
 }
@@ -5220,6 +5354,15 @@ Node::to_unsigned_char() const
         /* floats */
         case DataType::FLOAT32_ID: return (unsigned char)as_float32();
         case DataType::FLOAT64_ID: return (unsigned char)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            uint16 res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return (unsigned char)res;
+        }
+        
     }
     return 0;
 }
@@ -5243,6 +5386,15 @@ Node::to_unsigned_short() const
         /* floats */
         case DataType::FLOAT32_ID: return (unsigned short)as_float32();
         case DataType::FLOAT64_ID: return (unsigned short)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            unsigned short res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
+        
     }
     return 0;
 }
@@ -5266,6 +5418,15 @@ Node::to_unsigned_int() const
         /* floats */
         case DataType::FLOAT32_ID: return (unsigned int)as_float32();
         case DataType::FLOAT64_ID: return (unsigned int)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            unsigned int res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
+        
     }
     return 0;
 }
@@ -5289,6 +5450,15 @@ Node::to_unsigned_long() const
         /* floats */
         case DataType::FLOAT32_ID: return (unsigned long)as_float32();
         case DataType::FLOAT64_ID: return (unsigned long)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            unsigned long res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
+        
     }
     return 0;
 }
@@ -5314,6 +5484,14 @@ Node::to_unsigned_long_long() const
         /* floats */
         case DataType::FLOAT32_ID: return (unsigned long long)as_float32();
         case DataType::FLOAT64_ID: return (unsigned long long)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            unsigned long long res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
     }
     return 0;
 }
@@ -5341,6 +5519,14 @@ Node::to_float() const
         /* floats */
         case DataType::FLOAT32_ID: return (float)as_float32();
         case DataType::FLOAT64_ID: return (float)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            float res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
     }
     return 0;
 
@@ -5365,6 +5551,14 @@ Node::to_double() const
         /* floats */
         case DataType::FLOAT32_ID: return (double)as_float32();
         case DataType::FLOAT64_ID: return (double)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            double res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
     }
 
     return 0; // TODO:: Error for Obj or list?
@@ -5391,6 +5585,14 @@ Node::to_long_double() const
         /* floats */
         case DataType::FLOAT32_ID: return (long double)as_float32();
         case DataType::FLOAT64_ID: return (long double)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            long double res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
     }
     return 0; // TODO:: Error for Obj or list?
 }
