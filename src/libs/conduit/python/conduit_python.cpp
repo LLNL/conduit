@@ -1421,8 +1421,8 @@ PyConduit_DataType_is_compact(PyConduit_DataType *self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduit_DataType_is_compatible(PyConduit_DataType *self,
-                                 PyObject *args)
+PyConduit_DataType_compatible(PyConduit_DataType *self,
+                              PyObject *args)
 {
     PyObject *py_dtype;
     if ( (!PyArg_ParseTuple(args, "O", &py_dtype)) || 
@@ -1433,7 +1433,7 @@ PyConduit_DataType_is_compatible(PyConduit_DataType *self,
     }
     
     
-    if(self->dtype.is_compatible( ((PyConduit_DataType*)py_dtype)->dtype))
+    if(self->dtype.compatible( ((PyConduit_DataType*)py_dtype)->dtype))
     {
         Py_RETURN_TRUE;
     }
@@ -1659,8 +1659,8 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
      METH_NOARGS,
      "{todo}"},
     //-----------------------------------------------------------------------//
-    {"is_compatible",
-     (PyCFunction)PyConduit_DataType_is_compatible,
+    {"compatible",
+     (PyCFunction)PyConduit_DataType_compatible,
      METH_VARARGS,
      "{todo}"},
     //-----------------------------------------------------------------------//

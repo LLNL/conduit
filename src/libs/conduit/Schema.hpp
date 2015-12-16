@@ -159,17 +159,28 @@ public:
     index_t         total_bytes() const;
     index_t         total_bytes_compact() const;
 
-    void            print() const
-                        {std::cout << to_json(false,2) << std::endl;}
-
     index_t         element_index(index_t idx) const 
                         {return m_dtype.element_index(idx);}
 
     bool            is_root() const
                         { return m_parent == NULL;}
 
+    /// returns if this schema represents are compact layout
+    bool            is_compact() const;
+
+    /// is this schema compatible with given schema
+    bool            compatible(const Schema &s) const;
+
+    /// is this schema equal to given schema
+    bool            equal(const Schema &s) const;
+
+
+
     Schema         *parent()
                         { return m_parent;}
+
+    void            print() const
+                        {std::cout << to_json(false,2) << std::endl;}
 
 //-----------------------------------------------------------------------------
 //

@@ -299,6 +299,140 @@ Schema::total_bytes_compact() const
     return res;
 }
 
+//---------------------------------------------------------------------------//
+bool
+Schema::is_compact() const
+{
+    return total_bytes_compact() == total_bytes();
+}
+
+//---------------------------------------------------------------------------//
+bool
+Schema::compatible(const Schema &s) const
+{
+    index_t dt_id   = m_dtype.id();
+    index_t s_dt_id = s.dtype().id();
+
+    if(dt_id != s_dt_id)
+        return false;
+    
+    bool res = true;
+    
+    if(dt_id == DataType::OBJECT_ID)
+    {
+        // each of s's entries that match paths must have dtypes that match
+        
+        std::map<std::string, index_t>::const_iterator itr;
+        
+        for(itr  = s.object_map().begin(); 
+            itr != s.object_map().end() && res;
+            itr++)
+        {
+            if(has_path(itr->first))
+            {
+                index_t s_idx = itr->second;
+                res = s.children()[s_idx]->compatible(fetch_child(itr->first));
+            }
+        }
+    }
+    else if(dt_id == DataType::LIST_ID) 
+    {
+        // each of s's entries dtypes must match
+        index_t s_n_chd = s.number_of_children();
+        
+        // can't be compatible in this case
+        if(number_of_children() < s_n_chd)
+            return false;
+
+        const std::vector<Schema*> &s_lst = s.children();
+        const std::vector<Schema*> &lst   = children();
+
+        for(index_t i = 0; i < s_n_chd && res; i++)
+        {
+            res = lst[i]->compatible(*s_lst[i]);
+        }
+    }
+    else
+    {
+        res = m_dtype.compatible(s.dtype());
+    }
+    return res;
+}
+
+//---------------------------------------------------------------------------//
+bool
+Schema::equal(const Schema &s) const
+{
+    index_t dt_id   = m_dtype.id();
+    index_t s_dt_id = s.dtype().id();
+
+    if(dt_id != s_dt_id)
+        return false;
+    
+    bool res = true;
+    
+    if(dt_id == DataType::OBJECT_ID)
+    {
+        // all entries must be equal
+        
+        std::map<std::string, index_t>::const_iterator itr;
+        
+        for(itr  = s.object_map().begin(); 
+            itr != s.object_map().end() && res;
+            itr++)
+        {
+            if(has_path(itr->first))
+            {
+                index_t s_idx = itr->second;
+                res = s.children()[s_idx]->equal(fetch_child(itr->first));
+            }
+            else
+            {
+                res = false;
+            }
+        }
+        
+        for(itr  = object_map().begin(); 
+            itr != object_map().end() && res;
+            itr++)
+        {
+            if(s.has_path(itr->first))
+            {
+                index_t idx = itr->second;
+                res = children()[idx]->equal(s.fetch_child(itr->first));
+            }
+            else
+            {
+                res = false;
+            }
+        }
+        
+    }
+    else if(dt_id == DataType::LIST_ID) 
+    {
+        // all entries must be equal
+        index_t s_n_chd = s.number_of_children();
+        
+        // can't be compatible in this case
+        if(number_of_children() != s_n_chd)
+            return false;
+
+        const std::vector<Schema*> &s_lst = s.children();
+        const std::vector<Schema*> &lst   = children();
+
+        for(index_t i = 0; i < s_n_chd && res; i++)
+        {
+            res = lst[i]->equal(*s_lst[i]);
+        }
+    }
+    else
+    {
+        res = m_dtype.equal(s.dtype());
+    }
+    return res;
+}
+
+
 
 //-----------------------------------------------------------------------------
 //

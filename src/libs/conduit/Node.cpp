@@ -4726,13 +4726,11 @@ Node::update(Node &n_src)
     }
     else if(dtype_id != DataType::EMPTY_ID)
     {
-        if(this->dtype().is_compatible(n_src.dtype()))
-        {
-            memcpy(element_ptr(0),
-                   n_src.element_ptr(0), 
-                   m_schema->total_bytes());
-        }
-        else if( (this->dtype().id() == n_src.dtype().id()) &&
+        // don't use mem copy b/c we want to preserve striding holes
+        
+        // if you have the same type dtype, but less elements in the
+        // src, it will copy them
+        if( (this->dtype().id() == n_src.dtype().id()) &&
                  (this->dtype().number_of_elements() >=  
                    n_src.dtype().number_of_elements())) 
         {
@@ -4751,6 +4749,69 @@ Node::update(Node &n_src)
         }
     }
 }
+
+//---------------------------------------------------------------------------//
+void
+Node::update_compatible(Node &n_src)
+{
+    // walk src and copy contents to this node if their entries match
+    index_t dtype_id = n_src.dtype().id();
+    if( dtype_id == DataType::OBJECT_ID)
+    {
+        std::vector<std::string> src_paths;
+        n_src.paths(src_paths);
+
+        for (std::vector<std::string>::const_iterator itr = src_paths.begin();
+             itr < src_paths.end(); ++itr)
+        {
+            std::string ent_name = *itr;
+            if(has_path(ent_name))
+            {
+                fetch(ent_name).update_compatible(n_src.fetch(ent_name));
+                }
+        }
+    }
+    else if( dtype_id == DataType::LIST_ID)
+    {
+        // if we are already a list type, then call update_compatible on 
+        // the children in the list
+        index_t src_idx = 0;
+        index_t src_num_children = n_src.number_of_children();
+        if( dtype().id() == DataType::LIST_ID)
+        {
+            index_t num_children = number_of_children();
+            for(index_t idx=0; 
+                (idx < num_children and idx < src_num_children); 
+                 idx++)
+            {
+                child(idx).update_compatible(n_src.child(idx));
+                src_idx++;
+            }
+        }
+    }
+    else if(dtype_id != DataType::EMPTY_ID)
+    {   
+        // don't use mem copy b/c we want to preserve striding holes
+        
+        // if you have the same type dtype, but less elements in the
+        // src, it will copy them 
+        if( (this->dtype().id() == n_src.dtype().id()) &&
+                 (this->dtype().number_of_elements() >=  
+                   n_src.dtype().number_of_elements())) 
+        {
+            for(index_t idx = 0;
+                idx < n_src.dtype().number_of_elements();
+                idx++)
+            {
+                memcpy(element_ptr(idx),
+                       n_src.element_ptr(idx), 
+                       this->dtype().element_bytes());
+            }
+        }
+    }
+}
+
+
 //-----------------------------------------------------------------------------
 // -- endian related --
 //-----------------------------------------------------------------------------
@@ -9813,7 +9874,7 @@ Node::set_data_ptr(void *data)
 void
 Node::init(const DataType& dtype)
 {
-    if(this->dtype().is_compatible(dtype))
+    if(this->dtype().compatible(dtype))
         return;
     
     if(m_data != NULL)

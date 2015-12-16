@@ -1884,8 +1884,10 @@ public:
     /// NOTE: The input should be const, but the lack of a const fetch prevents
     /// this for now.
     void        update(Node &n_src);
-    /// TODO: update_external?
 
+    /// update_compatible() copies data from the children in n_src that match
+    ///  the current Nodes children.
+    void        update_compatible(Node &n_src);
 
 //-----------------------------------------------------------------------------
 // -- endian related --
@@ -2187,7 +2189,12 @@ public:
 
     /// is this node using a compact data layout
     bool             is_compact() const 
-                        {return dtype().is_compact();}
+                        {return m_schema->is_compact();}
+
+    /// is this node compatible with given node
+    bool             compatible(const Node &n) const
+                        {return m_schema->compatible(n.schema());}
+
     ///
     /// info() creates a node that contains metadata about the current
     /// node's memory properties
