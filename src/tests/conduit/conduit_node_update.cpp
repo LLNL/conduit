@@ -239,23 +239,30 @@ TEST(conduit_node_update, update_external)
     Node n;
     n["a"].set_external(vals);
     n["b"].set_int64(-100);
-    
+    n.print();
     
     Node n2;
-    
+    n2["c"].set_int16(-127);
     n2.update_external(n);
+    
+    n2.print();
 
     uint32 *n_v_ptr  = n2["a"].value();
 
     for(index_t i=0;i<5;i++)
     {
         EXPECT_EQ(&n_v_ptr[i],&vals[i]);
+        EXPECT_EQ(n_v_ptr[i],i);
     }
 
     int64 *n_b_ptr   = n["b"].value();
     int64 *n2_b_ptr  = n2["b"].value();
     
     EXPECT_EQ(n_b_ptr,n2_b_ptr);
+
+    EXPECT_EQ(n2_b_ptr[0],-100);
+    
+    EXPECT_EQ(n2["c"].as_int16(),-127);
     
 }
 
