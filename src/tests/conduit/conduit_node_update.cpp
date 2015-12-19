@@ -227,3 +227,37 @@ TEST(conduit_node_update, update_compatible)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node_update, update_external)
+{
+    std::vector<uint32> vals;
+    for(index_t i=0;i<5;i++)
+    {
+        vals.push_back(i);
+    }
+
+    Node n;
+    n["a"].set_external(vals);
+    n["b"].set_int64(-100);
+    
+    
+    Node n2;
+    
+    n2.update_external(n);
+
+    uint32 *n_v_ptr  = n2["a"].value();
+
+    for(index_t i=0;i<5;i++)
+    {
+        EXPECT_EQ(&n_v_ptr[i],&vals[i]);
+    }
+
+    int64 *n_b_ptr   = n["b"].value();
+    int64 *n2_b_ptr  = n2["b"].value();
+    
+    EXPECT_EQ(n_b_ptr,n2_b_ptr);
+    
+}
+
+
+

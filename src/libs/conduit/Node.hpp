@@ -1889,6 +1889,11 @@ public:
     ///  the current Nodes children.
     void        update_compatible(Node &n_src);
 
+    /// update_external() sets this node to describe the data from the children 
+    //   in n_src.
+    void        update_external(Node &n_src);
+
+
 //-----------------------------------------------------------------------------
 // -- endian related --
 //-----------------------------------------------------------------------------
