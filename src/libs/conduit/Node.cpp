@@ -4726,6 +4726,8 @@ Node::update(Node &n_src)
     }
     else if(dtype_id != DataType::EMPTY_ID) // TODO: Empty nodes not propagated?
     {
+        // TODO: isn't this the same as a set?
+        
         // don't use mem copy b/c we want to preserve striding holes
         
         // if you have the same type dtype, but less elements in the
