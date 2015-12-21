@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Memory Ownership Semantics &mdash; Conduit 0.1 documentation</title>
+  <title>Data Ownership &mdash; Conduit 0.1 documentation</title>
   
 
   
@@ -32,7 +32,7 @@
   
     <link rel="top" title="Conduit 0.1 documentation" href="index.html"/>
         <link rel="up" title="Tutorial" href="tutorial.html"/>
-        <link rel="next" title="Building" href="building.html"/>
+        <link rel="next" title="Node Update Methods" href="tutorial_update.html"/>
         <link rel="prev" title="Generators" href="tutorial_json.html"/> 
 
   
@@ -78,6 +78,7 @@
 <li class="toctree-l3"><a class="reference internal" href="tutorial_basics.html">Basic Concepts</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html#node-basics"><em>Node</em> basics</a></li>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html#bitwidth-style-types">Bitwidth Style Types</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html#compatible-schemas">Compatible Schemas</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="tutorial_numeric.html">Accessing Numeric Data</a><ul>
@@ -90,10 +91,11 @@
 <li class="toctree-l4"><a class="reference internal" href="tutorial_json.html#compacting-nodes">Compacting Nodes</a></li>
 </ul>
 </li>
-<li class="toctree-l3 current"><a class="current reference internal" href="">Memory Ownership Semantics</a><ul>
+<li class="toctree-l3 current"><a class="current reference internal" href="">Data Ownership</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#set-vs-set-external"><em>set</em> vs <em>set_external</em></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_update.html">Node Update Methods</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="building.html">Building</a><ul>
@@ -159,7 +161,7 @@
       
           <li><a href="tutorial.html">Tutorial</a> &raquo;</li>
       
-    <li>Memory Ownership Semantics</li>
+    <li>Data Ownership</li>
       <li class="wy-breadcrumbs-aside">
         
           
@@ -172,13 +174,18 @@
 </div>
           <div role="main" class="document">
             
-  <div class="section" id="memory-ownership-semantics">
-<h1>Memory Ownership Semantics<a class="headerlink" href="#memory-ownership-semantics" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="data-ownership">
+<h1>Data Ownership<a class="headerlink" href="#data-ownership" title="Permalink to this headline">¶</a></h1>
+<p>The <em>Node</em> class provides two ways to hold data, the data is either <strong>owned</strong> or <strong>externally described</strong>:</p>
+<ul class="simple">
+<li>If a <em>Node</em> <strong>owns</strong> data, the <em>Node</em> allocated the memory holding the data and is responsible or deallocating it.</li>
+<li>If a <em>Node</em> <strong>externally describes</strong> data, the <em>Node</em> holds a pointer to the memory where the data resides and is not responsible for deallocating it.</li>
+</ul>
 <div class="section" id="set-vs-set-external">
 <h2><em>set</em> vs <em>set_external</em><a class="headerlink" href="#set-vs-set-external" title="Permalink to this headline">¶</a></h2>
-<p>The <em>Node</em> class provides two classes of functions that enable passing of data to a <em>Node</em>:</p>
+<p>The <strong>Node::set</strong> methods support creating <strong>owned</strong> data and coping data values in both the <strong>owned</strong> and <strong>externally described</strong> cases. The <strong>Node::set_external</strong> methods allow you to create <strong>externally described</strong> data:</p>
 <ul class="simple">
-<li><strong>set(...)</strong>: Makes a copy of the data passed into the <em>Node</em>. This will trigger an allocation if the current data type of the <em>Node</em> is incompatible with what was passed. The <em>Node</em> assignment operators use their respective <em>set</em> variants, so they follow the same copy semantics.</li>
+<li><strong>set(...)</strong>: Makes a copy of the data passed into the <em>Node</em>. This will trigger an allocation if the current data type of the <em>Node</em> is incompatible with what was passed. The <em>Node</em> assignment operators use their respective <strong>set</strong> variants, so they follow the same copy semantics.</li>
 <li><strong>set_external(...)</strong>: Sets up the <em>Node</em> to describe data passed and access the data externally. Does not copy the data.</li>
 </ul>
 <div class="highlight-cpp"><div class="highlight"><pre> 
@@ -242,7 +249,7 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="building.html" class="btn btn-neutral float-right" title="Building" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="tutorial_update.html" class="btn btn-neutral float-right" title="Node Update Methods" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="tutorial_json.html" class="btn btn-neutral" title="Generators" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>

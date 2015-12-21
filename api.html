@@ -75,6 +75,7 @@
 <li class="toctree-l3"><a class="reference internal" href="tutorial_basics.html">Basic Concepts</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html#node-basics"><em>Node</em> basics</a></li>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html#bitwidth-style-types">Bitwidth Style Types</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html#compatible-schemas">Compatible Schemas</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="tutorial_numeric.html">Accessing Numeric Data</a><ul>
@@ -87,10 +88,11 @@
 <li class="toctree-l4"><a class="reference internal" href="tutorial_json.html#compacting-nodes">Compacting Nodes</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_ownership.html">Memory Ownership Semantics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_ownership.html">Data Ownership</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_ownership.html#set-vs-set-external"><em>set</em> vs <em>set_external</em></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_update.html">Node Update Methods</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="building.html">Building</a><ul>
@@ -2152,10 +2154,21 @@
 </dd></dl>
 
 <dl class="function">
+<dt id="_CPPv2N7conduit4Node17update_compatibleER4Node">
+<span id="conduit::Node::update_compatible__NodeR"></span><span class="target" id="project0classconduit_1_1_node_1a1f1ee60698c80106d35aad1f1908040a"></span>void <code class="descname">update_compatible</code><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv2N7conduit4Node4NodeEv" title="conduit::Node::Node">Node</a> &amp;<em>n_src</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N7conduit4Node17update_compatibleER4Node" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#project0classconduit_1_1_node_1a1f1ee60698c80106d35aad1f1908040a"><span>update_compatible()</span></a> copies data from the children in n_src that match the current Nodes children. </p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N7conduit4Node15update_externalER4Node">
+<span id="conduit::Node::update_external__NodeR"></span><span class="target" id="project0classconduit_1_1_node_1a04854d1c9194e50fb71b7be228cb7a71"></span>void <code class="descname">update_external</code><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv2N7conduit4Node4NodeEv" title="conduit::Node::Node">Node</a> &amp;<em>n_src</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N7conduit4Node15update_externalER4Node" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#project0classconduit_1_1_node_1a04854d1c9194e50fb71b7be228cb7a71"><span>update_external()</span></a> sets this node to describe the data from the children </p>
+</dd></dl>
+
+<dl class="function">
 <dt id="_CPPv2N7conduit4Node11endian_swapE7index_t">
 <span id="conduit::Node::endian_swap__index_t"></span><span class="target" id="project0classconduit_1_1_node_1a3a65ae3a581a3f3cdc0d059585d22c4f"></span>void <code class="descname">endian_swap</code><span class="sig-paren">(</span>index_t <em>endianness</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N7conduit4Node11endian_swapE7index_t" title="Permalink to this definition">¶</a></dt>
-<dd><p>TODO: update_external? </p>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="function">
 <dt id="_CPPv2N7conduit4Node30endian_swap_to_machine_defaultEv">
@@ -2471,6 +2484,12 @@
 <dt id="_CPPv2N7conduit4Node10is_compactEv">
 <span id="conduit::Node::is_compact"></span><span class="target" id="project0classconduit_1_1_node_1acd2a62429c0d97fb117995796530f1c5"></span>bool <code class="descname">is_compact</code><span class="sig-paren">(</span><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit4Node10is_compactEv" title="Permalink to this definition">¶</a></dt>
 <dd><p>is this node using a compact data layout </p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N7conduit4Node10compatibleERK4Node">
+<span id="conduit::Node::compatible__NodeCR"></span><span class="target" id="project0classconduit_1_1_node_1aed658fe54ff3b8cbdb8c7ca2603641a1"></span>bool <code class="descname">compatible</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="#_CPPv2N7conduit4Node4NodeEv" title="conduit::Node::Node">Node</a> &amp;<em>n</em><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit4Node10compatibleERK4Node" title="Permalink to this definition">¶</a></dt>
+<dd><p>is this node compatible with given node </p>
 </dd></dl>
 
 <dl class="function">
@@ -3446,11 +3465,6 @@
 <dd></dd></dl>
 
 <dl class="function">
-<dt id="_CPPv2N7conduit6Schema5printEv">
-<span id="conduit::Schema::print"></span><span class="target" id="project0classconduit_1_1_schema_1a30fe5c0dee1c4d2369732706f9b2d48e"></span>void <code class="descname">print</code><span class="sig-paren">(</span><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit6Schema5printEv" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
 <dt id="_CPPv2N7conduit6Schema13element_indexE7index_t">
 <span id="conduit::Schema::element_index__index_t"></span><span class="target" id="project0classconduit_1_1_schema_1a3ed84366d0af3170c9a77c6ed3c12157"></span>index_t <code class="descname">element_index</code><span class="sig-paren">(</span>index_t <em>idx</em><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit6Schema13element_indexE7index_t" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -3461,8 +3475,31 @@
 <dd></dd></dl>
 
 <dl class="function">
+<dt id="_CPPv2N7conduit6Schema10is_compactEv">
+<span id="conduit::Schema::is_compact"></span><span class="target" id="project0classconduit_1_1_schema_1a7ffc087d0da59fcb8acd7c1547ee910f"></span>bool <code class="descname">is_compact</code><span class="sig-paren">(</span><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit6Schema10is_compactEv" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns if this schema represents are compact layout </p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N7conduit6Schema10compatibleERK6Schema">
+<span id="conduit::Schema::compatible__SchemaCR"></span><span class="target" id="project0classconduit_1_1_schema_1a201f6dd29473fc06f85424a45fe2e54c"></span>bool <code class="descname">compatible</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="#_CPPv2N7conduit6Schema6SchemaEv" title="conduit::Schema::Schema">Schema</a> &amp;<em>s</em><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit6Schema10compatibleERK6Schema" title="Permalink to this definition">¶</a></dt>
+<dd><p>is this schema compatible with given schema </p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N7conduit6Schema5equalERK6Schema">
+<span id="conduit::Schema::equal__SchemaCR"></span><span class="target" id="project0classconduit_1_1_schema_1a612eb3c1f209a2f76588f37b991809f1"></span>bool <code class="descname">equal</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="#_CPPv2N7conduit6Schema6SchemaEv" title="conduit::Schema::Schema">Schema</a> &amp;<em>s</em><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit6Schema5equalERK6Schema" title="Permalink to this definition">¶</a></dt>
+<dd><p>is this schema equal to given schema </p>
+</dd></dl>
+
+<dl class="function">
 <dt id="_CPPv2N7conduit6Schema6parentEv">
 <span id="conduit::Schema::parent"></span><span class="target" id="project0classconduit_1_1_schema_1a6402af307b3cc12ed8cae3ea960eada5"></span><a class="reference internal" href="#_CPPv2N7conduit6Schema6SchemaEv" title="conduit::Schema::Schema">Schema</a> *<code class="descname">parent</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N7conduit6Schema6parentEv" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N7conduit6Schema5printEv">
+<span id="conduit::Schema::print"></span><span class="target" id="project0classconduit_1_1_schema_1a30fe5c0dee1c4d2369732706f9b2d48e"></span>void <code class="descname">print</code><span class="sig-paren">(</span><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit6Schema5printEv" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -3813,8 +3850,13 @@
 <dd></dd></dl>
 
 <dl class="function">
-<dt id="_CPPv2N7conduit8DataType13is_compatibleERK8DataType">
-<span id="conduit::DataType::is_compatible__DataTypeCR"></span><span class="target" id="project0classconduit_1_1_data_type_1ac47b60408bd7d21985894fc38037a84b"></span>bool <code class="descname">is_compatible</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="#_CPPv2N7conduit8DataType8DataTypeEv" title="conduit::DataType::DataType">DataType</a> &amp;<em>type</em><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit8DataType13is_compatibleERK8DataType" title="Permalink to this definition">¶</a></dt>
+<dt id="_CPPv2N7conduit8DataType10compatibleERK8DataType">
+<span id="conduit::DataType::compatible__DataTypeCR"></span><span class="target" id="project0classconduit_1_1_data_type_1afa4af7b8c138d3856218b735fe898353"></span>bool <code class="descname">compatible</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="#_CPPv2N7conduit8DataType8DataTypeEv" title="conduit::DataType::DataType">DataType</a> &amp;<em>type</em><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit8DataType10compatibleERK8DataType" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N7conduit8DataType5equalERK8DataType">
+<span id="conduit::DataType::equal__DataTypeCR"></span><span class="target" id="project0classconduit_1_1_data_type_1aa5ef34a3b64589a7cbd13ff9d431a796"></span>bool <code class="descname">equal</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="#_CPPv2N7conduit8DataType8DataTypeEv" title="conduit::DataType::DataType">DataType</a> &amp;<em>type</em><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit8DataType5equalERK8DataType" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -4392,6 +4434,16 @@
 <dl class="function">
 <dt id="_CPPv2N7conduit9DataArrayI1TE7elementE7index_t">
 <span id="conduit::DataArray:T:::element__index_t"></span><span class="target" id="project0classconduit_1_1_data_array_1a448b3fcfcb45441e3ba9055e51fbb9dd"></span>T &amp;<code class="descname">element</code><span class="sig-paren">(</span>index_t <em>idx</em><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit9DataArrayI1TE7elementE7index_t" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N7conduit9DataArrayI1TE11element_ptrE7index_t">
+<span id="conduit::DataArray:T:::element_ptr__index_t"></span><span class="target" id="project0classconduit_1_1_data_array_1a255c8db388dd658effb093141a35ace5"></span>void *<code class="descname">element_ptr</code><span class="sig-paren">(</span>index_t <em>idx</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N7conduit9DataArrayI1TE11element_ptrE7index_t" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N7conduit9DataArrayI1TE11element_ptrE7index_t">
+<span id="conduit::DataArray:T:::element_ptr__index_t"></span><span class="target" id="project0classconduit_1_1_data_array_1ac4a12862dac46c543af6d7ed0e71048a"></span><em class="property">const</em> void *<code class="descname">element_ptr</code><span class="sig-paren">(</span>index_t <em>idx</em><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit9DataArrayI1TE11element_ptrE7index_t" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">

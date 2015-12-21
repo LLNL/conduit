@@ -78,6 +78,7 @@
 <li class="toctree-l3"><a class="reference internal" href="tutorial_basics.html">Basic Concepts</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html#node-basics"><em>Node</em> basics</a></li>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html#bitwidth-style-types">Bitwidth Style Types</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html#compatible-schemas">Compatible Schemas</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="tutorial_numeric.html">Accessing Numeric Data</a><ul>
@@ -90,10 +91,11 @@
 <li class="toctree-l4"><a class="reference internal" href="tutorial_json.html#compacting-nodes">Compacting Nodes</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_ownership.html">Memory Ownership Semantics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_ownership.html">Data Ownership</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_ownership.html#set-vs-set-external"><em>set</em> vs <em>set_external</em></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_update.html">Node Update Methods</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="building.html">Building</a><ul>
@@ -193,7 +195,7 @@
 </div>
 <div class="section" id="paths">
 <h2>paths<a class="headerlink" href="#paths" title="Permalink to this headline">¶</a></h2>
-<p>Used for Node instances in <em>Object</em> role interface. In the Object role, a Node has a collection of indexed and named children. Access by name is done via a <em>path</em>. The path is a foward-slash separated URI, where each segment maps to Node in a hierarchal tree. Methods related to this concept include:</p>
+<p>Used for Node instances in <em>Object</em> role interface. In the Object role, a Node has a collection of indexed and named children. Access by name is done via a <em>path</em>. The path is a forward-slash separated URI, where each segment maps to Node in a hierarchal tree. Methods related to this concept include:</p>
 <blockquote>
 <div><ul class="simple">
 <li>Node::fetch(string)</li>
@@ -215,7 +217,7 @@
 <div class="section" id="external">
 <h2>external<a class="headerlink" href="#external" title="Permalink to this headline">¶</a></h2>
 <p>Concept used throughout the Conduit API to specify ownership for passed data.
-When using Node constructors, Generators, or Node::set calls, you have the option of using an external variant. When external is specified, a Node does not own (or allocate) the memory for the data it holds.</p>
+When using Node constructors, Generators, or Node::set calls, you have the option of using an external variant. When external is specified, a Node does not own (allocate or deallocate) the memory for the data it holds.</p>
 </div>
 </div>
 

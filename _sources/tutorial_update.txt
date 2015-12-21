@@ -43,32 +43,31 @@
 .. ############################################################################
 
 ============================================
-Data Ownership
+Node Update Methods
 ============================================
 
-The *Node* class provides two ways to hold data, the data is either **owned** or **externally described**:
+The *Node* class provides three **update** methods which allow you to easily copy data or  the description of data from a source node. 
 
-- If a *Node* **owns** data, the *Node* allocated the memory holding the data and is responsible or deallocating it. 
--  If a *Node* **externally describes** data, the *Node* holds a pointer to the memory where the data resides and is not responsible for deallocating it. 
+- **Node::update(Node &source)**: 
+ This method behaves similar to a python dictionary update. Entires from the source Node are copied into the calling Node, here are more concrete details:
 
-*set* vs *set_external* 
---------------------------------
+ - **If the source describes an Object**: 
+ 
+   - Update copies the children of the source Node into the calling Node. Normal set semantics apply: if a compatible child with the same name already exists in the calling Node, the data will be copied.  If not, the calling Node will dynamically construct children to hold copies of each child of the source Node. 
 
-The **Node::set** methods support creating **owned** data and coping data values in both the **owned** and **externally described** cases. The **Node::set_external** methods allow you to create **externally described** data:
+ - **If the source describes a List**: 
+ 
+   - Update copies the children of the source Node into the calling Node. Normal set semantics apply: if a compatible child already exists in the same list order in the calling Node, the data will be copied.  If not, the calling Node will dynamically construct children to hold copies of each child of the source Node. 
 
-- **set(...)**: Makes a copy of the data passed into the *Node*. This will trigger an allocation if the current data type of the *Node* is incompatible with what was passed. The *Node* assignment operators use their respective **set** variants, so they follow the same copy semantics. 
+ - **If the source Node describes a leaf data type**: 
 
-- **set_external(...)**: Sets up the *Node* to describe data passed and access the data externally. Does not copy the data.
+   - Update works exactly like a **set** (not true yet).
 
-.. # from conduit_tutorial_examples: mem_ownership_external
+- **Node::update_compatible(Node &source)**: 
+ This method copies data from the children in the source Node that are compatible with children in the calling node. No changes are made where children are incompatible. 
 
-.. literalinclude:: ../../tests/docs/conduit_tutorial_examples.cpp
-   :lines: 438-456
-   :language: cpp
-   :dedent: 4
-
-.. literalinclude:: tutorial_examples_out.txt
-   :lines: 317-346
+- **Node::update_external(Node &source)**: 
+ This method creates children in the calling Node that externally describe the children in the source node. It differs from **Node::set_external(Node &source)** in that **set_external()** will clear the calling Node so it exactly match an external description of the source Node, whereas **update_external()** will only change the children in the calling Node that correspond to children in the source Node.
 
 
 

@@ -67,7 +67,7 @@ Used for Node instances in the *Object* and *List* role interfaces. A Node may h
 
 paths
 ~~~~~~~~~
-Used for Node instances in *Object* role interface. In the Object role, a Node has a collection of indexed and named children. Access by name is done via a *path*. The path is a foward-slash separated URI, where each segment maps to Node in a hierarchal tree. Methods related to this concept include:
+Used for Node instances in *Object* role interface. In the Object role, a Node has a collection of indexed and named children. Access by name is done via a *path*. The path is a forward-slash separated URI, where each segment maps to Node in a hierarchal tree. Methods related to this concept include:
 
  - Node::fetch(string)
  - Node::fetch_ptr(string)
@@ -87,6 +87,6 @@ Used for Node instances in *Object* role interface. In the Object role, a Node h
 external
 ~~~~~~~~~
 Concept used throughout the Conduit API to specify ownership for passed data.
-When using Node constructors, Generators, or Node::set calls, you have the option of using an external variant. When external is specified, a Node does not own (or allocate) the memory for the data it holds.
+When using Node constructors, Generators, or Node::set calls, you have the option of using an external variant. When external is specified, a Node does not own (allocate or deallocate) the memory for the data it holds.
 
 

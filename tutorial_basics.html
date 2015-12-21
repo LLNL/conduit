@@ -78,6 +78,7 @@
 <li class="toctree-l3 current"><a class="current reference internal" href="">Basic Concepts</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#node-basics"><em>Node</em> basics</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#bitwidth-style-types">Bitwidth Style Types</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compatible-schemas">Compatible Schemas</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="tutorial_numeric.html">Accessing Numeric Data</a><ul>
@@ -90,10 +91,11 @@
 <li class="toctree-l4"><a class="reference internal" href="tutorial_json.html#compacting-nodes">Compacting Nodes</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_ownership.html">Memory Ownership Semantics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_ownership.html">Data Ownership</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_ownership.html#set-vs-set-external"><em>set</em> vs <em>set_external</em></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_update.html">Node Update Methods</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="building.html">Building</a><ul>
@@ -330,6 +332,19 @@ are leafs that represent concrete data.</p>
 </ul>
 </dd>
 </dl>
+</div>
+<div class="section" id="compatible-schemas">
+<h2>Compatible Schemas<a class="headerlink" href="#compatible-schemas" title="Permalink to this headline">¶</a></h2>
+<p>When a <strong>set</strong> method is called on a Node, if the data passed to the <strong>set</strong> is compatible with the Node&#8217;s Schema the data is simply copied. No allocation or Schema changes occur. If the data is not compatible the Node will be reconfigured to store the passed data.</p>
+<p><strong>Schemas do not need to be identical to be compatible.</strong></p>
+<p>You can check if a Schema is compatible with another Schema using the <strong>Schema::compatible(Schema &amp;test)</strong> method. Here is the criteria for checking if two Schemas are compatible:</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>If the calling Schema describes an Object</strong> : The passed test Schema must describe an Object and the test Schema&#8217;s children must be compatible with the calling Schema&#8217;s children that have the same name.</li>
+<li><strong>If the calling Schema describes a List</strong>: The passed test Schema must describe a List, the calling Schema must have at least as many children as the test Schema, and when compared in list order each of the test Schema&#8217;s children must be compatible with the calling Schema&#8217;s children.</li>
+<li><strong>If the calling Schema describes a leaf data type</strong>: The calling Schema&#8217;s and test Schema&#8217;s <strong>dtype().id()</strong> and <strong>dtype().element_bytes()</strong> must match, and the calling Schema <strong>dtype().number_of_elements()</strong> must be greater than or equal than the test Schema&#8217;s.</li>
+</ul>
+</div></blockquote>
 </div>
 </div>
 

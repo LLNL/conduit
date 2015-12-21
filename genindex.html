@@ -76,6 +76,7 @@
 <li class="toctree-l3"><a class="reference internal" href="tutorial_basics.html">Basic Concepts</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html#node-basics"><em>Node</em> basics</a></li>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html#bitwidth-style-types">Bitwidth Style Types</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html#compatible-schemas">Compatible Schemas</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="tutorial_numeric.html">Accessing Numeric Data</a><ul>
@@ -88,10 +89,11 @@
 <li class="toctree-l4"><a class="reference internal" href="tutorial_json.html#compacting-nodes">Compacting Nodes</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_ownership.html">Memory Ownership Semantics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_ownership.html">Data Ownership</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_ownership.html#set-vs-set-external"><em>set</em> vs <em>set_external</em></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_update.html">Node Update Methods</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="building.html">Building</a><ul>
@@ -199,6 +201,10 @@
   </dt>
 
       
+  <dt><a href="api.html#_CPPv2N7conduit9DataArrayI1TE11element_ptrE7index_t">conduit::DataArray&lt;T&gt;::element_ptr (C++ function)</a>, <a href="api.html#_CPPv2N7conduit9DataArrayI1TE11element_ptrE7index_t">[1]</a>
+  </dt>
+
+      
   <dt><a href="api.html#_CPPv2N7conduit9DataArrayI1TE18number_of_elementsEv">conduit::DataArray&lt;T&gt;::number_of_elements (C++ function)</a>
   </dt>
 
@@ -287,6 +293,10 @@
   </dt>
 
       
+  <dt><a href="api.html#_CPPv2N7conduit8DataType10compatibleERK8DataType">conduit::DataType::compatible (C++ function)</a>
+  </dt>
+
+      
   <dt><a href="api.html#_CPPv2N7conduit8DataType8DataTypeE7index_t">conduit::DataType::DataType (C++ function)</a>, <a href="api.html#_CPPv2N7conduit8DataType8DataTypeE7index_t7index_t7index_t7index_t7index_t7index_t">[1]</a>, <a href="api.html#_CPPv2N7conduit8DataType8DataTypeERK8DataType">[2]</a>, <a href="api.html#_CPPv2N7conduit8DataType8DataTypeERKNSt6stringE7index_t7index_t7index_t7index_t7index_t">[3]</a>, <a href="api.html#_CPPv2N7conduit8DataType8DataTypeEv">[4]</a>
   </dt>
 
@@ -316,6 +326,10 @@
 
       
   <dt><a href="api.html#_CPPv2N7conduit8DataType10endiannessEv">conduit::DataType::endianness (C++ function)</a>
+  </dt>
+
+      
+  <dt><a href="api.html#_CPPv2N7conduit8DataType5equalERK8DataType">conduit::DataType::equal (C++ function)</a>
   </dt>
 
       
@@ -380,10 +394,6 @@
 
       
   <dt><a href="api.html#_CPPv2N7conduit8DataType10is_compactEv">conduit::DataType::is_compact (C++ function)</a>
-  </dt>
-
-      
-  <dt><a href="api.html#_CPPv2N7conduit8DataType13is_compatibleERK8DataType">conduit::DataType::is_compatible (C++ function)</a>
   </dt>
 
       
@@ -959,6 +969,10 @@
   </dt>
 
       
+  <dt><a href="api.html#_CPPv2N7conduit4Node10compatibleERK4Node">conduit::Node::compatible (C++ function)</a>
+  </dt>
+
+      
   <dt><a href="api.html#_CPPv2N7conduit4Node8data_ptrEv">conduit::Node::data_ptr (C++ function)</a>, <a href="api.html#_CPPv2N7conduit4Node8data_ptrEv">[1]</a>
   </dt>
 
@@ -1182,12 +1196,12 @@
   <dt><a href="api.html#_CPPv2N7conduit4Node24set_external_int64_arrayERK11int64_array">conduit::Node::set_external_int64_array (C++ function)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="api.html#_CPPv2N7conduit4Node22set_external_int64_ptrEP5int647index_t7index_t7index_t7index_t7index_t">conduit::Node::set_external_int64_ptr (C++ function)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="api.html#_CPPv2N7conduit4Node25set_external_int64_vectorERNSt6vectorI5int64EE">conduit::Node::set_external_int64_vector (C++ function)</a>
   </dt>
@@ -1945,6 +1959,14 @@
   </dt>
 
       
+  <dt><a href="api.html#_CPPv2N7conduit4Node17update_compatibleER4Node">conduit::Node::update_compatible (C++ function)</a>
+  </dt>
+
+      
+  <dt><a href="api.html#_CPPv2N7conduit4Node15update_externalER4Node">conduit::Node::update_external (C++ function)</a>
+  </dt>
+
+      
   <dt><a href="api.html#_CPPv2N7conduit4Node5ValueE">conduit::Node::Value (C++ class)</a>
   </dt>
 
@@ -2097,11 +2119,19 @@
   </dt>
 
       
+  <dt><a href="api.html#_CPPv2N7conduit6Schema10compatibleERK6Schema">conduit::Schema::compatible (C++ function)</a>
+  </dt>
+
+      
   <dt><a href="api.html#_CPPv2N7conduit6Schema5dtypeEv">conduit::Schema::dtype (C++ function)</a>, <a href="api.html#_CPPv2N7conduit6Schema5dtypeEv">[1]</a>
   </dt>
 
       
   <dt><a href="api.html#_CPPv2N7conduit6Schema13element_indexE7index_t">conduit::Schema::element_index (C++ function)</a>
+  </dt>
+
+      
+  <dt><a href="api.html#_CPPv2N7conduit6Schema5equalERK6Schema">conduit::Schema::equal (C++ function)</a>
   </dt>
 
       
@@ -2118,6 +2148,10 @@
 
       
   <dt><a href="api.html#_CPPv2N7conduit6Schema8has_pathERKNSt6stringE">conduit::Schema::has_path (C++ function)</a>
+  </dt>
+
+      
+  <dt><a href="api.html#_CPPv2N7conduit6Schema10is_compactEv">conduit::Schema::is_compact (C++ function)</a>
   </dt>
 
       
