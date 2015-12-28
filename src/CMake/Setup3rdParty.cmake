@@ -147,6 +147,19 @@ endif()
 
 
 ################################
+# Setup HDF5 if available 
+################################
+# Search for HDF5.
+if(ENABLE_HDF5)
+    include(CMake/thirdparty/FindHDF5.cmake)
+    include_directories(${HDF5_INCLUDE_DIRS})
+    # if we don't find HDF5, throw a fatal error
+    if(NOT HDF5_FOUND)
+        message(FATAL_ERROR "ENABLE_HDF5 is true, but HDF5 wasn't found.")
+    endif()
+endif()
+
+################################
 # Setup Silo if available 
 ################################
 # Search for Silo.
@@ -158,7 +171,6 @@ if(ENABLE_SILO)
         message(FATAL_ERROR "ENABLE_SILO is true, but Silo wasn't found.")
     endif()
 endif()
-
 
 ################################
 # Setup fruit (fortran uint testing framework) if fortran is enabled

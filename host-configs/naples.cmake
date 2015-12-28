@@ -94,6 +94,9 @@ set(SPHINX_EXECUTABLE "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/mac
 
 # I/O Packages
 
+# Enable HDF5 Support in conduit_io
+set(ENABLE_HDF5 ON CACHE PATH "")
+
 # Enable Silo Support in conduit_io
 set(ENABLE_SILO ON CACHE PATH "")
 

@@ -44,27 +44,54 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Conduit_IO_Config.hpp
+/// file: hdf5_smoke.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_IO_CONFIG_HPP
-#define CONDUIT_IO_CONFIG_HPP
+#include <hdf5.h>
+#include <iostream>
+#include "gtest/gtest.h"
+
+// adapted from hdf5 tutorial: h5_crtdata.c
 
 //-----------------------------------------------------------------------------
-//
-// #define optional i/o features
-//
-//-----------------------------------------------------------------------------
-#cmakedefine CONDUIT_IO_ENABLE_SILO
+TEST(hdf5_smoke, basic_use)
+{
+    /* identifiers  */
+    hid_t     file_id;
+    hid_t     dataset_id;
+    hid_t     dataspace_id;  
+    hsize_t   dims[2];
+    herr_t    status;
 
-#cmakedefine CONDUIT_IO_ENABLE_HDF5
+    /* Create a new file using default properties. */
+    file_id = H5Fcreate("hdf5_smoke_test.hdf5",
+                        H5F_ACC_TRUNC,
+                        H5P_DEFAULT, H5P_DEFAULT);
 
+    /* Create the data space for the dataset. */
+    dims[0] = 4; 
+    dims[1] = 6; 
+    dataspace_id = H5Screate_simple(2, dims, NULL);
 
-// this path points to the web client js code tree
-#cmakedefine CONDUIT_WEB_CLIENT_ROOT      "@CONDUIT_WEB_CLIENT_ROOT@"
+    /* Create the dataset. */
+    dataset_id = H5Dcreate2(file_id,
+                            "/dset",
+                            H5T_STD_I32BE,
+                            dataspace_id, 
+                            H5P_DEFAULT,
+                            H5P_DEFAULT,
+                            H5P_DEFAULT);
 
-#endif
+    /* End access to the dataset and release resources used by it. */
+    status = H5Dclose(dataset_id);
+    EXPECT_TRUE(status >= 0 );
 
+    /* Terminate access to the data space. */ 
+    status = H5Sclose(dataspace_id);
+    EXPECT_TRUE(status >= 0 );
 
-
+    /* Close the file. */
+    status = H5Fclose(file_id);
+    EXPECT_TRUE(status >= 0 );
+}

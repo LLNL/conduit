@@ -740,6 +740,42 @@ DataType::is_double() const
     return m_id == CONDUIT_NATIVE_DOUBLE_ID;
 }
 
+//---------------------------------------------------------------------------//
+bool
+DataType::is_string() const
+{
+    // we only support one string type
+    return is_char8_str();
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_char8_str() const
+{
+    return m_id == CHAR8_STR_ID;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_little_endian() const
+{
+    return ( (m_endianness == Endianness::LITTLE_ID) ||
+             (m_endianness ==  Endianness::DEFAULT_ID 
+                && Endianness::machine_is_little_endian())
+            );
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_big_endian() const
+{
+    return ( (m_endianness == Endianness::BIG_ID) ||
+             (m_endianness ==  Endianness::DEFAULT_ID 
+                && Endianness::machine_is_big_endian())
+            );
+}
+
+
 //---------------------------------------------------------------------------// 
 index_t
 DataType::element_index(index_t idx) const

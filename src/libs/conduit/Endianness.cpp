@@ -78,6 +78,21 @@ Endianness::machine_default()
         return LITTLE_ID;
 }
 
+//---------------------------------------------------------------------------//
+bool
+Endianness::machine_is_little_endian()
+{
+    return machine_default() == LITTLE_ID;
+}
+
+//---------------------------------------------------------------------------//
+bool
+Endianness::machine_is_big_endian()
+{
+    return machine_default() == BIG_ID;
+}
+
+
 //-----------------------------------------------------------------------------
 /// Enum id to string and string to enum id helpers.
 //-----------------------------------------------------------------------------

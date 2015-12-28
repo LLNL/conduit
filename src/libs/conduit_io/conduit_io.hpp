@@ -85,17 +85,53 @@ void CONDUIT_IO_API save(Node &node,
                          const std::string &path);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_IO_API load(const std::string &path,
-                         Node &node);
-
-//-----------------------------------------------------------------------------
 void CONDUIT_IO_API save(const std::string &protocol,
                          Node &node,
                          const std::string &path);
 
 //-----------------------------------------------------------------------------
+void CONDUIT_IO_API save(const std::string &protocol,
+                         Node &node,
+                         const std::string &file_path,
+                         const std::string &protocol_path);
+
+///
+/// ``load`` works like a 'set',the node is reset and then populated
+///
+
+//-----------------------------------------------------------------------------
+void CONDUIT_IO_API load(const std::string &path,
+                         Node &node);
+
+//-----------------------------------------------------------------------------
 void CONDUIT_IO_API load(const std::string &protocol,
                          const std::string &path,
+                         Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_IO_API load(const std::string &protocol,
+                         const std::string &file_path,
+                         const std::string &protocol_path,
+                         Node &node);
+
+
+///
+/// ``read`` works like an update, the ideas are read into the node
+///
+
+//-----------------------------------------------------------------------------
+void CONDUIT_IO_API read(const std::string &path,
+                         Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_IO_API read(const std::string &protocol,
+                         const std::string &path,
+                         Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_IO_API read(const std::string &protocol,
+                         const std::string &file_path,
+                         const std::string &protocol_path,
                          Node &node);
 
 //-----------------------------------------------------------------------------

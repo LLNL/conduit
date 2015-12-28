@@ -122,6 +122,16 @@ load(const std::string &path,
     load(protocol,path,node);
 }
 
+//---------------------------------------------------------------------------//
+void 
+read(const std::string &path,
+     Node &node)
+{
+    std::string protocol;
+    identify_protocol(path,protocol);
+    read(protocol,path,node);
+}
+
 
 //---------------------------------------------------------------------------//
 void 
@@ -191,6 +201,44 @@ load(const std::string &protocol,
 }
 
 //---------------------------------------------------------------------------//
+void
+read(const std::string &protocol,
+     const std::string &path,
+     Node &node)
+{
+
+    if(protocol == "conduit_bin")
+    {
+        Node n;
+        n.load(path);
+        // update into dest
+        node.update(n);
+    }
+    else if( protocol == "conduit_silo")
+    {
+#ifdef CONDUIT_IO_ENABLE_SILO
+        Node n;
+        silo_load(path,n);
+        node.update(n);
+#else
+        CONDUIT_ERROR("conduit_io lacks Silo support: " << 
+                    "Failed to load conduit node from path " << path);
+#endif
+    }
+    else if(protocol == "conduit_silo_mesh")
+    {
+        CONDUIT_ERROR("the conduit_io conduit_silo_mesh protocol does not "
+                      "support \"load\"");
+    }
+    else
+    {
+        CONDUIT_ERROR("conduit_io unknown protocol: " << protocol);
+        
+    }
+
+}
+
+//---------------------------------------------------------------------------//
 std::string
 about()
 {
@@ -225,6 +273,14 @@ about(Node &n)
 #else
     protos["conduit_silo_mesh"] = "disabled";
 #endif
+
+    // hdf5
+#ifdef CONDUIT_IO_ENABLE_HDF5
+    protos["conduit_hdf5"] = "enabled";
+#else
+    protos["conduit_hdf5"] = "disabled";
+#endif
+
 
 }
 

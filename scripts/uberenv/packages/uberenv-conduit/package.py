@@ -126,12 +126,14 @@ class UberenvConduit(Package):
 
         # i/o packages
         cfg.write("# I/O Packages\n\n")
-        cfg.write("# Enable Silo Support in conduit_io\n")
-        cfg.write('set(ENABLE_SILO ON CACHE PATH "")\n\n')
-        cfg.write("# szip from uberenv\n")
-        cfg.write('set(SZIP_DIR "%s" CACHE PATH "")\n\n' % spec['szip'].prefix)
+
+        cfg.write("# Enable HDF5 Support in conduit_io\n")
+        cfg.write('set(ENABLE_HDF5 ON CACHE PATH "")\n\n')
         cfg.write("# hdf5 from uberenv\n")
         cfg.write('set(HDF5_DIR "%s" CACHE PATH "")\n\n' % spec['hdf5'].prefix)
+                
+        cfg.write("# Enable Silo Support in conduit_io\n")
+        cfg.write('set(ENABLE_SILO ON CACHE PATH "")\n\n')
         cfg.write("# silo from uberenv\n")
         cfg.write('set(SILO_DIR "%s" CACHE PATH "")\n\n' % spec['silo'].prefix)
         cfg.close()
