@@ -139,12 +139,11 @@ end module f_type_sizes
 !------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------
-function fortran_test() bind(C,name="fortran_test")
+integer(C_INT) function fortran_test() bind(C,name="fortran_test")
 !------------------------------------------------------------------------------
   use fruit
   use f_type_sizes
   implicit none
-  integer(C_INT) fortran_test
   logical res
   
   call init_fruit
