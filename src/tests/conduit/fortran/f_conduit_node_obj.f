@@ -405,12 +405,11 @@ end module f_conduit_node
 !------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------
-function fortran_test() bind(C,name="fortran_test")
+integer(C_INT) function fortran_test() bind(C,name="fortran_test")
 !------------------------------------------------------------------------------
   use fruit
   use f_conduit_node
   implicit none
-  integer(C_INT) fortran_test
   logical res
   call init_fruit
   !----------------------------------------------------------------------------
@@ -435,7 +434,6 @@ function fortran_test() bind(C,name="fortran_test")
   else
      fortran_test = 1
   endif
-
   
 !------------------------------------------------------------------------------
 end function fortran_test

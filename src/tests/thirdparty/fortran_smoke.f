@@ -46,8 +46,9 @@
 ! fortran_smoke.f
 !
 
-
-function fortran_test() bind(C,name="fortran_test")
+!----------------------------------------------------------------------
+integer(C_INT) function fortran_test() bind(C,name="fortran_test")
+  use iso_c_binding
   print *, "No Smoke?"
   
   fortran_test = 0
