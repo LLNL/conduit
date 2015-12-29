@@ -90,7 +90,13 @@ TEST(conduit_io_hf5, conduit_hdf5_write_read)
     EXPECT_EQ(n_load_2["myobj/c"].as_uint32(), c_val);
 
 
-
+    Node n_load_3;
+    // read from root of hdf5 file
+    io::read("tout_hdf5_wr.hdf5",n_load_3);
+    
+    EXPECT_EQ(n_load_3["myobj/a"].as_uint32(), a_val);
+    EXPECT_EQ(n_load_3["myobj/b"].as_uint32(), b_val);
+    EXPECT_EQ(n_load_3["myobj/c"].as_uint32(), c_val);
 
 }
 

@@ -90,8 +90,8 @@ identify_protocol(const std::string &path,
     // find file extension to auto match
     conduit::utils::rsplit_string(file_path,
                                   std::string("."),
-                                  file_name_base,
-                                  file_name_ext);
+                                  file_name_ext,
+                                  file_name_base);
 
     if(file_name_ext == "hdf5" || 
        file_name_ext == "h5")
