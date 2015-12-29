@@ -84,22 +84,25 @@ identify_protocol(const std::string &path,
                                  file_path,
                                  obj_base);
 
-    if(obj_base.size() != 0)
+    std::string file_name_base;
+    std::string file_name_ext;
+
+    // find file extension to auto match
+    conduit::utils::rsplit_string(file_path,
+                                  std::string("."),
+                                  file_name_base,
+                                  file_name_ext);
+
+    if(file_name_ext == "hdf5" || 
+       file_name_ext == "h5")
     {
-        std::string file_name_base;
-        std::string file_name_ext;
-
-        // find file extension to auto match
-        conduit::utils::rsplit_string(file_path,
-                                      std::string("."),
-                                      file_name_base,
-                                      file_name_ext);
-
-        if(file_name_ext == "silo")
-        {
-            io_type = "conduit_silo";
-        }
+        io_type = "hdf5";
     }
+    else if(file_name_ext == "silo")
+    {
+        io_type = "conduit_silo";
+    }
+
 }
 
 //---------------------------------------------------------------------------//
@@ -143,6 +146,15 @@ save(const std::string &protocol,
     {
         node.save(path);
     }
+    else if( protocol == "hdf5")
+    {
+#ifdef CONDUIT_IO_ENABLE_HDF5
+        hdf5_write(node,path);
+#else
+        CONDUIT_ERROR("conduit_io lacks HDF5 support: " << 
+                      "Failed to save conduit node to path " << path);
+#endif
+    }
     else if( protocol == "conduit_silo")
     {
 #ifdef CONDUIT_IO_ENABLE_SILO
@@ -177,6 +189,16 @@ load(const std::string &protocol,
     if(protocol == "conduit_bin")
     {
         node.load(path);
+    }
+    else if( protocol == "hdf5")
+    {
+#ifdef CONDUIT_IO_ENABLE_HDF5
+        node.reset();
+        hdf5_read(path,node);
+#else
+        CONDUIT_ERROR("conduit_io lacks HDF5 support: " << 
+                      "Failed to load conduit node from path " << path);
+#endif
     }
     else if( protocol == "conduit_silo")
     {
@@ -213,6 +235,17 @@ read(const std::string &protocol,
         n.load(path);
         // update into dest
         node.update(n);
+    }
+    else if( protocol == "hdf5")
+    {
+#ifdef CONDUIT_IO_ENABLE_HDF5
+        Node n;
+        hdf5_read(path,n);
+        node.update(n);
+#else
+        CONDUIT_ERROR("conduit_io lacks HDF5 support: " << 
+                      "Failed to read conduit node from path " << path);
+#endif
     }
     else if( protocol == "conduit_silo")
     {
@@ -259,11 +292,21 @@ about(Node &n)
     
     // rest server
     protos["rest"] = "enabled";
+
+#ifdef CONDUIT_IO_ENABLE_HDF5
+    // straight hdf5 
+    protos["hdf5"] = "enabled";
+#else
+    // straight hdf5 
+    protos["hdf5"] = "disabled";
+#endif
     
     // silo
 #ifdef CONDUIT_IO_ENABLE_SILO
+    // node is packed into two silo objects
     protos["conduit_silo"] = "enabled";
 #else
+    // node is packed into two silo objects
     protos["conduit_silo"] = "disabled";
 #endif
     
@@ -272,13 +315,6 @@ about(Node &n)
     protos["conduit_silo_mesh"] = "enabled";
 #else
     protos["conduit_silo_mesh"] = "disabled";
-#endif
-
-    // hdf5
-#ifdef CONDUIT_IO_ENABLE_HDF5
-    protos["conduit_hdf5"] = "enabled";
-#else
-    protos["conduit_hdf5"] = "disabled";
 #endif
 
 
