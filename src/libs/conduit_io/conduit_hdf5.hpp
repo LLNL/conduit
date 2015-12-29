@@ -44,25 +44,22 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Endianness.hpp
+/// file: conduit_hdf5.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_ENDIANNESS_HPP
-#define CONDUIT_ENDIANNESS_HPP
+#ifndef CONDUIT_HDF5_HPP
+#define CONDUIT_HDF5_HPP
 
 //-----------------------------------------------------------------------------
-// -- standard lib includes -- 
+// external lib includes
 //-----------------------------------------------------------------------------
-#include <vector>
-#include <sstream>
+#include <hdf5.h>
 
 //-----------------------------------------------------------------------------
-// -- conduit includes -- 
+// conduit includes
 //-----------------------------------------------------------------------------
-#include "Endianness_Types.h"
-
-#include "Core.hpp"
+#include "conduit_io.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -71,80 +68,47 @@ namespace conduit
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::Endianness --
+// -- begin conduit::io --
 //-----------------------------------------------------------------------------
-///
-/// class: conduit::Endianness
-///
-/// description:
-///  Class for endian info and conversation. 
-///
-//-----------------------------------------------------------------------------
-class CONDUIT_API Endianness
+namespace io
 {
-public:
-//-----------------------------------------------------------------------------
-//
-// -- conduit::Endianness public members --
-//
-//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-/// EndianEnum is an Enumeration used to hold endian states:
-///  *DEFAULT_ID - represents the current machine's endianness
-///  *BIG_ID     - represents is big endian 
-///  *LITTLE_ID  - represents little endian
-//-----------------------------------------------------------------------------
-    typedef enum
-    {
-        DEFAULT_ID = CONDUIT_ENDIANNESS_DEFAULT_ID, // default
-        BIG_ID     = CONDUIT_ENDIANNESS_BIG_ID,
-        LITTLE_ID  = CONDUIT_ENDIANNESS_LITTLE_ID,
-    } EndianEnum;
+void CONDUIT_IO_API hdf5_write(const Node &node,
+                               const std::string &path);
+
+void CONDUIT_IO_API hdf5_write(const Node &node,
+                               const std::string &file_path,
+                               const std::string &hdf5_path);
+
+void CONDUIT_IO_API hdf5_write(const Node &node,
+                               hid_t hdf5_id,
+                               const std::string &hdf5_path);
 
 //-----------------------------------------------------------------------------
-/// Returns the current machine's endianness: BIG_ID or LITTLE_ID
-//-----------------------------------------------------------------------------
-    static index_t          machine_default();
-    
-//-----------------------------------------------------------------------------
-/// Convenience checks for machine endianness. 
-//-----------------------------------------------------------------------------
-    static bool             machine_is_little_endian();
-    static bool             machine_is_big_endian();
+void CONDUIT_IO_API hdf5_read(const std::string &path,
+                              Node &node);
 
-//-----------------------------------------------------------------------------
-/// Convert human readable string {big|little|default} to an EndianEnum id.
-//-----------------------------------------------------------------------------
-    static index_t          name_to_id(const std::string &name);
-//-----------------------------------------------------------------------------
-/// Converts an EndianEnum id to a human readable string.
-//-----------------------------------------------------------------------------
-    static std::string      id_to_name(index_t endianness);
-    
-//-----------------------------------------------------------------------------
-/// Helpers for endianness transforms
-//-----------------------------------------------------------------------------
-    /// swaps for 16 bit types
-    static void             swap16(void *data);
-    static void             swap16(void *src,void *dest);
+void CONDUIT_IO_API hdf5_read(const std::string &file_path,
+                              const std::string &hdf5_path,
+                              Node &node);
 
-    /// swaps for 32 bit types
-    static void             swap32(void *data);
-    static void             swap32(void *src,void *dest);
+void CONDUIT_IO_API hdf5_read(hid_t hdf5_id,
+                              const std::string &hdf5_path,
+                              Node &node);
 
-    /// swaps for 64 bit types    
-    static void             swap64(void *data);
-    static void             swap64(void *src,void *dest);
 
 };
 //-----------------------------------------------------------------------------
-// -- end conduit::Endianness --
+// -- end conduit::io --
 //-----------------------------------------------------------------------------
 
-}
+
+};
 //-----------------------------------------------------------------------------
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
 
+
 #endif
+

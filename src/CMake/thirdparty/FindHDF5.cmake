@@ -42,70 +42,28 @@
 # 
 ###############################################################################
 #
-# Setup Silo
-# This file defines:
-#  SILO_FOUND - If Silo was found
-#  SILO_INCLUDE_DIRS - The Silo include directories
-#  SILO_LIBRARIES - The libraries needed to use Silo
+# Setup HDF5
+#
 
-
-# first Check for SILO_DIR, HDF5_DIR
-
-if(NOT SILO_DIR)
-    MESSAGE(FATAL_ERROR "Silo support needs explicit SILO_DIR")
-endif()
+# first Check for HDF5_DIR
 
 if(NOT HDF5_DIR)
-    MESSAGE(FATAL_ERROR "Silo support needs explicit HDF5_DIR")
+    MESSAGE(FATAL_ERROR "HDF5 support needs explicit HDF5_DIR")
 endif()
 
+# CMake's FindHDF5 module uses the HDF5_ROOT env var
+set(HDF5_ROOT ${HDF5_DIR})
+set(ENV{HDF5_ROOT} ${HDF5_ROOT}/bin)
 
-find_path(SILO_INCLUDE_DIR silo.h
-          PATHS ${SILO_DIR}/include
-          NO_DEFAULT_PATH
-          NO_CMAKE_ENVIRONMENT_PATH
-          NO_CMAKE_PATH
-          NO_SYSTEM_ENVIRONMENT_PATH
-          NO_CMAKE_SYSTEM_PATH)
-        
+# Use CMake's FindHDF5 module, which uses hdf5's compiler wrappers to extract
+# all the info about the hdf5 install
+include(FindHDF5)
 
-find_library(SILO_LIBS NAMES siloh5
-             PATHS ${SILO_DIR}/lib
-             NO_DEFAULT_PATH
-             NO_CMAKE_ENVIRONMENT_PATH
-             NO_CMAKE_PATH
-             NO_SYSTEM_ENVIRONMENT_PATH
-             NO_CMAKE_SYSTEM_PATH)
+# FindHDF5 sets HDF5_DIR to it's installed CMake info if it exists
+# we want to keep HDF5_DIR as the root dir of the install to be 
+# consistent with other packages
 
-#
-# Silo Depends on libjson, hdf5 and szip:
-#             
-
-#
-# if json support is enabled, libjson is part of the silo build
-#
-find_library(SILO_JSON_LIBS NAMES json
-             PATHS ${SILO_DIR}/json/lib/
-             NO_DEFAULT_PATH
-             NO_CMAKE_ENVIRONMENT_PATH
-             NO_CMAKE_PATH
-             NO_SYSTEM_ENVIRONMENT_PATH
-             NO_CMAKE_SYSTEM_PATH)
-
-set(SILO_LIBRARIES  ${SILO_LIBS} ${HDF5_C_LIBRARIES})
-
-if(${SILO_JSON_LIBS})
-    list(APPEND SILO_LIBRARIES ${SILO_JSON_LIBS})
-endif()
-set(SILO_INCLUDE_DIRS ${SILO_INCLUDE_DIR} )
+set(HDF5_DIR ${HDF5_ROOT} CACHE PATH "" FORCE)
 
 
-include(FindPackageHandleStandardArgs)
-# handle the QUIETLY and REQUIRED arguments and set SILO_FOUND to TRUE
-# if all listed variables are TRUE
-find_package_handle_standard_args(Silo  DEFAULT_MSG
-                                  SILO_LIBRARIES SILO_INCLUDE_DIRS)
 
-mark_as_advanced(SILO_INCLUDE_DIR 
-                 SILO_LIBS 
-                 SILO_JSON_LIBS)

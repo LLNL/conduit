@@ -49,6 +49,10 @@
 
 ENABLE_WARNINGS()
 
+if(HDF5_FOUND)
+  SET(CONDUIT_IO_ENABLE_HDF5 TRUE)
+endif()
+
 if(SILO_FOUND)
   SET(CONDUIT_IO_ENABLE_SILO TRUE)
 endif()
@@ -74,12 +78,15 @@ set(conduit_io_sources
     conduit_io.cpp
     conduit_web.cpp)
     
-
+if(HDF5_FOUND)
+    list(APPEND conduit_io_headers conduit_hdf5.hpp)
+    list(APPEND conduit_io_sources conduit_hdf5.cpp)
+endif()
+    
 if(SILO_FOUND)
     list(APPEND conduit_io_headers conduit_silo.hpp)
     list(APPEND conduit_io_sources conduit_silo.cpp)
 endif()
-
 
 #
 # Note: headers are added here so they show up in project file generators
@@ -95,6 +102,11 @@ target_link_libraries(conduit_io conduit civetweb)
 if(SILO_FOUND)
     target_link_libraries(conduit_io conduit ${SILO_LIBRARIES})
 endif()
+
+if(HDF5_FOUND)
+    target_link_libraries(conduit_io conduit ${HDF5_LIBRARIES})
+endif()
+
 
 ##################################
 # Install Targets for conduit lib

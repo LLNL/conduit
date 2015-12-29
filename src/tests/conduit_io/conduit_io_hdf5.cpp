@@ -44,27 +44,63 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Conduit_IO_Config.hpp
+/// file: conduit_io_hdf5.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_IO_CONFIG_HPP
-#define CONDUIT_IO_CONFIG_HPP
+#include "conduit_io.hpp"
+#include <iostream>
+#include "gtest/gtest.h"
 
-//-----------------------------------------------------------------------------
-//
-// #define optional i/o features
-//
-//-----------------------------------------------------------------------------
-#cmakedefine CONDUIT_IO_ENABLE_SILO
-
-#cmakedefine CONDUIT_IO_ENABLE_HDF5
+using namespace conduit;
 
 
-// this path points to the web client js code tree
-#cmakedefine CONDUIT_WEB_CLIENT_ROOT      "@CONDUIT_WEB_CLIENT_ROOT@"
+TEST(conduit_io_hf5, conduit_hdf5_write_read)
+{
+    uint32 a_val = 20;
+    uint32 b_val = 8;
+    uint32 c_val = 13;
 
-#endif
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+
+    EXPECT_EQ(n["a"].as_uint32(), a_val);
+    EXPECT_EQ(n["b"].as_uint32(), b_val);
+    EXPECT_EQ(n["c"].as_uint32(), c_val);
+
+    // write our node as a group @ "myobj"
+    io::hdf5_write(n,"tout_hdf5_wr.hdf5:myobj");
+
+    // directly read our object
+    Node n_load;
+    io::hdf5_read("tout_hdf5_wr.hdf5:myobj",n_load);
+    
+    EXPECT_EQ(n_load["a"].as_uint32(), a_val);
+    EXPECT_EQ(n_load["b"].as_uint32(), b_val);
+    EXPECT_EQ(n_load["c"].as_uint32(), c_val);
+
+    Node n_load_2;
+    // read from root of hdf5 file
+    io::hdf5_read("tout_hdf5_wr.hdf5",n_load_2);
+    
+    EXPECT_EQ(n_load_2["myobj/a"].as_uint32(), a_val);
+    EXPECT_EQ(n_load_2["myobj/b"].as_uint32(), b_val);
+    EXPECT_EQ(n_load_2["myobj/c"].as_uint32(), c_val);
+
+
+    Node n_load_3;
+    // read from root of hdf5 file
+    io::read("tout_hdf5_wr.hdf5",n_load_3);
+    
+    EXPECT_EQ(n_load_3["myobj/a"].as_uint32(), a_val);
+    EXPECT_EQ(n_load_3["myobj/b"].as_uint32(), b_val);
+    EXPECT_EQ(n_load_3["myobj/c"].as_uint32(), c_val);
+
+}
+
+
 
 
 

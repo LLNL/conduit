@@ -60,7 +60,9 @@ set(TPL_TESTS gtest_smoke
 set(PYTHON_GPREF_TOOLS_TESTS gpref_smoke)
 set(PYTHON_TESTS numpy_smoke)
 set(MPI_TESTS mpi_smoke)
+set(HDF5_TESTS hdf5_smoke)
 set(SILO_TESTS silo_smoke)
+
 
 set(FORTRAN_TESTS fortran_smoke fruit_smoke)
 
@@ -105,6 +107,18 @@ if(ENABLE_MPI)
 else()
     message(STATUS "MPI disabled: Skipping related tests")
 endif()
+
+
+if(ENABLE_HDF5)
+    message(STATUS "HDF5 enabled: Adding related unit tests")
+    foreach(TEST ${HDF5_TESTS})
+        add_cpp_test(TEST ${TEST})
+        target_link_libraries(${TEST} ${HDF5_LIBRARIES})
+    endforeach()
+else()
+    message(STATUS "HDF5 disabled: Skipping related tests")
+endif()
+
 
 if(ENABLE_SILO)
     message(STATUS "Silo enabled: Adding related unit tests")

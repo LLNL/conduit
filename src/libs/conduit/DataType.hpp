@@ -367,9 +367,9 @@ public:
     index_t     endianness()          const { return m_endianness;}
     index_t     element_index(index_t idx) const;
 
-    bool        is_empty()           const;
-    bool        is_object()          const;
-    bool        is_list()            const;
+    bool        is_empty()            const;
+    bool        is_object()           const;
+    bool        is_list()             const;
 
     bool        is_number()           const;
     bool        is_floating_point()   const;
@@ -401,9 +401,14 @@ public:
     bool        is_unsigned_int()     const;
     bool        is_unsigned_long()    const;
 
-    bool        is_float()          const;
-    bool        is_double()         const;
+    bool        is_float()            const;
+    bool        is_double()           const;
+    
+    bool        is_string()           const;
+    bool        is_char8_str()        const;
 
+    bool        is_little_endian()    const;
+    bool        is_big_endian()       const;
 
 //-----------------------------------------------------------------------------
 // Helpers to convert TypeID Enum Values to human readable strings and 

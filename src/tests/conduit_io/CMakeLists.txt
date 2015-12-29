@@ -51,6 +51,7 @@
 ################################
 set(IO_TESTS conduit_io_smoke conduit_io_rest conduit_io_websocket)
 set(IO_SILO_TESTS conduit_io_silo)
+set(IO_HDF5_TESTS conduit_io_hdf5)
 
 
 ################################
@@ -63,11 +64,20 @@ foreach(TEST ${IO_TESTS})
 endforeach()
 
 
-if(ENABLE_SILO AND SILO_FOUND)
+if(ENABLE_SILO)
     foreach(TEST ${IO_SILO_TESTS})
         add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_io)
         target_link_libraries(${TEST} ${SILO_LIBRARIES})
     endforeach()
 endif()
+
+
+if(ENABLE_HDF5)
+    foreach(TEST ${IO_HDF5_TESTS})
+        add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_io)
+        target_link_libraries(${TEST} ${HDF5_LIBRARIES})
+    endforeach()
+endif()
+
 
 
