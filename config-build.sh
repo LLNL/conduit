@@ -65,8 +65,7 @@ export CMAKE_OPTS="$CMAKE_OPTS -DCMAKE_INSTALL_PREFIX=../install-debug"
 # Check if a host config was direclty passed
 #------------------------------------------------------------------------------
 if [ $# -ge 1 ]; then
-    echo $1
-    if [ ${1: -6} == ".cmake" ]; then
+    if [ "${1: -6}" == ".cmake" ]; then
         export HOST_CONFIG=../$1
         echo "Looking for host-config file: $HOST_CONFIG"
         if [[ -e  "$HOST_CONFIG" ]]; then
@@ -74,7 +73,9 @@ if [ $# -ge 1 ]; then
             export CMAKE_OPTS="$CMAKE_OPTS -C $HOST_CONFIG"
         fi
     fi
-else
+fi
+
+if [[ ! -e  "$HOST_CONFIG" ]]; then
 #------------------------------------------------------------------------------
 # if no host config was passed, try include an initial cmake settings file 
 # if appropriate
