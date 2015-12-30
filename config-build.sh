@@ -81,7 +81,8 @@ if [[ ! -e  "$HOST_CONFIG" ]]; then
 # if appropriate
 #------------------------------------------------------------------------------
     # first look for a specific config for this machine
-    export HOST_CONFIG=../host-configs/`hostname`.cmake
+    export HOSTNAME=`hostname`
+    export HOST_CONFIG=`ls ../host-configs/$HOSTNAME*.cmake`
     echo "Looking for host-config file: $HOST_CONFIG"
     if [[ -e  "$HOST_CONFIG" ]]; then
         echo "FOUND: $HOST_CONFIG"
