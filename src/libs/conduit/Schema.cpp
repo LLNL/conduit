@@ -869,7 +869,7 @@ Schema::remove(const std::string &path)
     else
     {
         // any index above the current needs to shift down by one
-        for (index_t i = idx; i < object_order().size(); i++)
+        for (index_t i = idx; i < (index_t) object_order().size(); i++)
         {
             object_map()[object_order()[i]]--;
         }
@@ -951,7 +951,7 @@ Schema::release()
        dtype().id() == DataType::LIST_ID)
     {
         std::vector<Schema*> chld = children();
-        for(index_t i=0;i< chld.size();i++)
+        for(index_t i=0; i< (index_t)chld.size(); i++)
         {
             delete chld[i];
         }

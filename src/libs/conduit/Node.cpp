@@ -10005,7 +10005,7 @@ void
 Node::release()
 {
     // delete all children
-    for (index_t i = 0; i < m_children.size(); i++)
+    for (index_t i = 0; i < (index_t) m_children.size(); i++)
     {
         Node* node = m_children[i];
         delete node;
