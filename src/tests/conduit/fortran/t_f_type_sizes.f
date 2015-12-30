@@ -69,7 +69,7 @@ contains
     ! bitwidth style types. 
     !--------------------------------------------------------------------------
     subroutine t_type_sizes
-        !---
+        !---- 
         integer(kind=1) int_1
         integer(kind=2) int_2
         integer(kind=4) int_4
@@ -84,9 +84,13 @@ contains
         integer(C_LONG_LONG)   c_long_long
         real(C_FLOAT)  c_float
         real(C_DOUBLE) c_double
-        
         !---
         integer check_kind, check_c
+
+        !----------------------------------------------------------------------
+        call set_case_name("t_type_sizes")
+        !----------------------------------------------------------------------
+
 
         check_kind = SIZEOF(c_char)
         check_c    = SIZEOF(int_1)

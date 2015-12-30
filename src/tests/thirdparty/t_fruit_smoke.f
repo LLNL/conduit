@@ -55,9 +55,10 @@ module fruit_smoke
 contains
 !------------------------------------------------------------------------------
 
-  subroutine simple_test
+  subroutine t_fruit_smoke
+        call set_case_name("t_fruit_smoke")
         call assert_equals (42, 42)
-  end subroutine simple_test
+  end subroutine t_fruit_smoke
 
 
 !----------------------------------------------------------------------
@@ -74,7 +75,7 @@ integer(C_INT) function fortran_test() bind(C,name="fortran_test")
   call init_fruit
 !----------
 ! Our tests
-  call simple_test
+  call t_fruit_smoke
 !----------
 
   call fruit_summary
