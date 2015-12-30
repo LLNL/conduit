@@ -107,7 +107,7 @@ Conduit's Python module will build for both Python2 and Python 3.To select a spe
 
 We are using CMake's standard FindMPI logic. To select a specific MPI set the CMake variables **MPI_C_COMPILER** and **MPI_CXX_COMPILER**, or the other FindMPI options for MPI include paths and MPI libraries.
 
-For running mpi unit tests on LLNL's LC platforms, you may also need change the CMake variables **MPIEXEC** and **MPIEXEC_NUMPROC_FLAG**, so you can use srun and select a partition. (see: src/host-configs/surface.cmake)
+To run the mpi unit tests on LLNL's LC platforms, you may also need change the CMake variables **MPIEXEC** and **MPIEXEC_NUMPROC_FLAG**, so you can use srun and select a partition. (see: src/host-configs/chaos_5_x86_64.cmake)
 
 * **ENABLE_HDF5** - Controls if the HDF5 I/O support is built. *(default = OFF)*
 

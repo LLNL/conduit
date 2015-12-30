@@ -29,12 +29,6 @@ compilers:
             cxx: /usr/bin/clang++
             f77: /sw/bin/gfortran
             fc:  /sw/bin/gfortran
-    macosx_10.9_x86_64:
-        clang@3.4svn:
-            cc:  /usr/bin/clang
-            cxx: /usr/bin/clang++
-            f77: /sw/bin/gfortran
-            fc:  /sw/bin/gfortran
 
 
 
