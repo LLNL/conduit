@@ -69,6 +69,11 @@ contains
     subroutine t_node_create
         type(C_PTR) cnode
         integer res
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_create")
+        !----------------------------------------------------------------------
+        
         !--------------
         ! c++ ~equiv:
         !--------------
@@ -84,6 +89,11 @@ contains
     subroutine t_node_set_int
         type(C_PTR) cnode
         integer res
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_int")
+        !----------------------------------------------------------------------
+
         !--------------
         ! c++ ~equiv:
         !--------------
@@ -104,6 +114,11 @@ contains
     subroutine t_node_set_int32
         type(C_PTR) cnode
         integer(4) res
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_int32")
+        !----------------------------------------------------------------------
+
         !--------------
         ! c++ ~equiv:
         !--------------
@@ -124,6 +139,11 @@ contains
     subroutine t_node_set_double
         type(C_PTR) cnode
         real(kind=8) res
+        
+        !--------------
+        call set_case_name("t_node_set_double")
+        !--------------
+        
         !--------------
         ! c++ ~equiv:
         !--------------
@@ -144,6 +164,11 @@ contains
     subroutine t_node_set_float64
         type(C_PTR) cnode
         real(kind=8) res
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_float64")
+        !----------------------------------------------------------------------
+        
         !--------------
         ! c++ ~equiv:
         !--------------
@@ -166,7 +191,11 @@ contains
         integer(4), dimension(5) :: data
         integer nele
         integer i
-
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_int32_ptr")
+        !----------------------------------------------------------------------
+        
         ! fill our 32-bit x5 integer array
         do i = 1,5
             data(i) = i
@@ -195,6 +224,10 @@ contains
         integer res
         integer i
         integer(4), pointer :: f_arr(:)
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_external_int32_ptr")
+        !----------------------------------------------------------------------
         
         ! fill our 32-bit x5 integer array
         do i = 1,5
@@ -238,6 +271,10 @@ contains
         integer i
         integer(4), pointer :: f_arr(:)
         
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_as_int32_ptr")
+        !----------------------------------------------------------------------
+        
         ! fill our 32-bit x5 integer array
         do i = 1,5
             data(i) = i
@@ -274,7 +311,11 @@ contains
         integer nele
         integer i
         integer(4), pointer :: f_arr(:)
-
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_as_int32_ptr_read_scalar")
+        !----------------------------------------------------------------------
+                
         !--------------
         ! c++ ~equiv:
         !--------------
@@ -301,7 +342,11 @@ contains
         type(C_PTR) cnode
         type(C_PTR) n1
         integer res
-
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_fetch_int32")
+        !----------------------------------------------------------------------
+                
         !--------------
         ! c++ ~equiv:
         !--------------
@@ -328,6 +373,10 @@ contains
         type(C_PTR) cnode
         type(C_PTR) n1
         integer res
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_fetch_path_int32")
+        !----------------------------------------------------------------------
         
         !--------------
         ! c++ ~equiv:
@@ -357,6 +406,10 @@ contains
         integer(4) res_1
         real(8)    res_2
         integer    nchld
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_append")
+        !----------------------------------------------------------------------
         
         !--------------
         ! c++ ~equiv:
