@@ -1548,8 +1548,7 @@ PyConduit_DataType_element_index(PyConduit_DataType *self,
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduit_DataType_name_to_id(PyObject *cls,
-                              PyObject *args)
+PyConduit_DataType_name_to_id(PyObject *args)
 {
     const char *dtype_name;
     if (!PyArg_ParseTuple(args, "s", &dtype_name))
@@ -1563,8 +1562,7 @@ PyConduit_DataType_name_to_id(PyObject *cls,
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduit_DataType_id_to_name(PyObject *cls,
-                              PyObject *args)
+PyConduit_DataType_id_to_name(PyObject *args)
 {
     Py_ssize_t dtype_id;
 
@@ -1911,8 +1909,8 @@ PyConduit_DataType_check(PyObject *obj)
 //---------------------------------------------------------------------------//
 static PyObject * 
 PyConduit_Generator_new(PyTypeObject *type,
-                        PyObject *args,
-                        PyObject *kwargs)
+                        PyObject*, // args -- unused
+                        PyObject*) // kwds -- unused
 {
     PyConduit_Generator *self = (PyConduit_Generator*)type->tp_alloc(type, 0);
 
@@ -2180,8 +2178,8 @@ PyConduit_Generator_check(PyObject* obj)
 //---------------------------------------------------------------------------//
 static PyObject * 
 PyConduit_Schema_new(PyTypeObject* type,
-                     PyObject* args,
-                     PyObject* kwds)
+                     PyObject*, // args -- unused
+                     PyObject*) // kwds -- unused
 {
 
     PyConduit_Schema* self = (PyConduit_Schema*)type->tp_alloc(type, 0);
