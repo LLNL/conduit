@@ -238,14 +238,14 @@ module conduit
     end subroutine c_conduit_node_set_path_int32
 
     !--------------------------------------------------------------------------
-    pure function conduit_node_fetch_path_as_int32(cnode, path) result(res) &
+    pure function c_conduit_node_fetch_path_as_int32(cnode, path) result(res) &
                    bind(C, name="conduit_node_fetch_path_as_int32")
         use iso_c_binding
         implicit none
         type(C_PTR), value, intent(IN) :: cnode
         character(kind=C_CHAR), intent(IN) :: path(*)
         integer(4) :: res
-    end function conduit_node_fetch_path_as_int32
+    end function c_conduit_node_fetch_path_as_int32
 
     !--------------------------------------------------------------------------
     pure function conduit_node_as_int32(cnode) result(res) &
@@ -432,14 +432,26 @@ contains
         implicit none
         type(C_PTR), value, intent(IN) :: cnode
         integer(4), pointer :: f_out(:)
-        !---
         integer n
         type(C_PTR) :: int32_c_ptr
+        !---
         n = conduit_node_number_of_elements(cnode)
         int32_c_ptr = c_conduit_node_as_int32_ptr(cnode)
-        call c_f_pointer(int32_c_ptr, f_out, (/n/))    
-
+        call c_f_pointer(int32_c_ptr, f_out, (/n/))
     end subroutine conduit_node_as_int32_ptr
+
+    !--------------------------------------------------------------------------
+    function conduit_node_fetch_path_as_int32(cnode, path) result(res)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        integer(4) :: res
+        !---
+        res =  c_conduit_node_fetch_path_as_int32(cnode, trim(path) // C_NULL_CHAR)
+    end function conduit_node_fetch_path_as_int32
+
+
 
 !------------------------------------------------------------------------------
 end module conduit
