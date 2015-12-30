@@ -55,8 +55,10 @@ include_directories(${PROJECT_SOURCE_DIR}/libs/conduit
 include_directories(${PROJECT_SOURCE_DIR}/libs/conduit_io 
                     ${PROJECT_BINARY_DIR}/libs/conduit_io)
 
-include_directories(${PROJECT_SOURCE_DIR}/libs/conduit_mpi 
-                    ${PROJECT_BINARY_DIR}/libs/conduit_mpi)
+if(ENABLE_MPI)
+    include_directories(${PROJECT_SOURCE_DIR}/libs/conduit_mpi 
+                        ${PROJECT_BINARY_DIR}/libs/conduit_mpi)
+endif()
 
 include_directories(${PROJECT_SOURCE_DIR}/libs/blueprint 
                     ${PROJECT_BINARY_DIR}/libs/blueprint)
