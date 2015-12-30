@@ -510,7 +510,7 @@ Node::set_node(const Node &node)
     else if(node.dtype().id() == DataType::LIST_ID)       
     {   
         init(DataType::list());
-        for(index_t i=0;i<node.m_children.size();i++)
+        for(index_t i=0;i< (index_t)node.m_children.size(); i++)
         {
             this->m_schema->append();
             Schema *curr_schema = this->m_schema->child_ptr(i);
@@ -7704,8 +7704,8 @@ Node::to_json_generic(std::ostream &os,
         utils::indent(os,indent,depth,pad);
         os << "{" << eoe;
     
-        index_t nchildren = m_children.size();
-        for(index_t i=0; i < nchildren;i++)
+        index_t nchildren = (index_t) m_children.size();
+        for(index_t i=0; i <  nchildren;i++)
         {
             utils::indent(os,indent,depth+1,pad);
             os << "\""<< m_schema->object_order()[i] << "\": ";
@@ -10117,7 +10117,7 @@ Node::walk_schema(Node   *node,
     node->set_data_ptr(data);
     if(schema->dtype().id() == DataType::OBJECT_ID)
     {
-        for(index_t i=0;i<schema->children().size();i++)
+        for(index_t i=0;i<(index_t)schema->children().size(); i++)
         {
     
             std::string curr_name = schema->object_order()[i];
@@ -10157,7 +10157,7 @@ Node::mirror_node(Node   *node,
     
     if(schema->dtype().id() == DataType::OBJECT_ID)
     {
-        for(index_t i=0;i<schema->children().size();i++)
+        for(index_t i=0;i< (index_t) schema->children().size(); i++)
         {
     
             std::string curr_name = schema->object_order()[i];
