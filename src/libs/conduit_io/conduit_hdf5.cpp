@@ -681,7 +681,7 @@ h5_group_check(h5_read_opdata *od,
 herr_t
 h5_literate_traverse_op_func(hid_t hdf5_id,
                              const char *hdf5_path,
-                             const H5L_info_t *hdf5_info,
+                             const H5L_info_t *,// hdf5_info -- unused
                              void *hdf5_operator_data)
 {
     herr_t h5_status = 0;

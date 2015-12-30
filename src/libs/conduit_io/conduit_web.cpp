@@ -141,8 +141,7 @@ public:
         //---------------------------------------------------------------------------//
         // Main handler, dispatches to proper api handlers. 
         //---------------------------------------------------------------------------//
-        bool handle_request(CivetServer *server,
-                            struct mg_connection *conn) 
+        bool handle_request(struct mg_connection *conn) 
         {
             const struct mg_request_info *req_info = mg_get_request_info(conn);
             
@@ -153,19 +152,19 @@ public:
             
             if(uri_cmd == "get-schema")
             {
-                return handle_rest_get_schema(server,conn);
+                return handle_rest_get_schema(conn);
             }
             else if(uri_cmd == "get-value")
             {
-                return handle_rest_get_value(server,conn);                
+                return handle_rest_get_value(conn);                
             }
             else if(uri_cmd == "get-base64-json")
             {
-                return handle_rest_get_base64_json(server,conn);
+                return handle_rest_get_base64_json(conn);
             }
             else if(uri_cmd == "kill-server")
             {
-                return handle_rest_shutdown(server,conn);
+                return handle_rest_shutdown(conn);
             }
             else
             {
@@ -180,28 +179,27 @@ public:
         // wire all CivetHandler handlers to "handle_request"
         //---------------------------------------------------------------------------//
         bool
-        handlePost(CivetServer *server,
+        handlePost(CivetServer *, // server -- unused
                    struct mg_connection *conn) 
         {
-            return handle_request(server,conn);
+            return handle_request(conn);
         }
         
         //---------------------------------------------------------------------------//
         // wire all CivetHandler handlers to "handle_request"
         //---------------------------------------------------------------------------//
         bool
-        handleGet(CivetServer *server,
+        handleGet(CivetServer *, // server -- unused
                   struct mg_connection *conn) 
         {
-            return handle_request(server,conn);
+            return handle_request(conn);
         }
         
         //---------------------------------------------------------------------------//
         // Handles a request from the client for the node's schema.
         //---------------------------------------------------------------------------//
         bool
-        handle_rest_get_schema(CivetServer *server,
-                          struct mg_connection *conn)
+        handle_rest_get_schema(struct mg_connection *conn)
         {
             if(m_node != NULL)
             {
@@ -214,8 +212,7 @@ public:
         // Handles a request from the client for a specific value in the node.
         //---------------------------------------------------------------------------//
         bool
-        handle_rest_get_value(CivetServer *server,
-                              struct mg_connection *conn)
+        handle_rest_get_value(struct mg_connection *conn)
         {
             if(m_node != NULL)
             {
@@ -238,8 +235,7 @@ public:
         // of the node.
         //---------------------------------------------------------------------------//
         bool
-        handle_rest_get_base64_json(CivetServer *server,
-                                    struct mg_connection *conn)
+        handle_rest_get_base64_json(struct mg_connection *conn)
         {
             if(m_node != NULL)
             {
@@ -254,8 +250,7 @@ public:
         // Handles a request from the client to shutdown the REST server
         //---------------------------------------------------------------------------//
         bool
-        handle_rest_shutdown(CivetServer *server,
-                             struct mg_connection *conn)
+        handle_rest_shutdown(struct mg_connection *conn)
         {
             m_server->shutdown();
             return true;
@@ -272,7 +267,7 @@ public:
         // callback used when a web socket initially connects
         //---------------------------------------------------------------------------//
         bool
-        handleConnection(CivetServer *server,
+        handleConnection(CivetServer *, // server -- unused
                          const struct mg_connection *conn)
         {
             CONDUIT_INFO("conduit::io::WebServer WebSocket Connected");
@@ -283,7 +278,7 @@ public:
         // callback used when a web socket connection becomes active
         //---------------------------------------------------------------------------//
         void
-        handleReadyState(CivetServer *server,
+        handleReadyState(CivetServer *, // server -- unused
                          struct mg_connection *conn)
         {
             // lock context while we add a new websocket
@@ -311,8 +306,7 @@ public:
         // callback used when a websocket receives a text payload
         //---------------------------------------------------------------------------//
         bool
-        handleWebSocketText(CivetServer *server,
-                            struct mg_connection *conn,
+        handleWebSocketText(struct mg_connection *conn,
                             char *data,
                             size_t data_len)
         {
@@ -358,8 +352,7 @@ public:
                 {
                     case WEBSOCKET_OPCODE_TEXT:
                     {
-                        return handleWebSocketText(server,
-                                                   conn,
+                        return handleWebSocketText(conn,
                                                    data,
                                                    data_len);
                     }
@@ -384,9 +377,9 @@ public:
                     {
                         CONDUIT_INFO("WEBSOCKET_OPCODE_CONNECTION_CLOSE");
                         mg_websocket_write(conn,
-                                          WEBSOCKET_OPCODE_CONNECTION_CLOSE,
-                                          data,
-                                          data_len);
+                                           WEBSOCKET_OPCODE_CONNECTION_CLOSE,
+                                           data,
+                                           data_len);
                         return false;
                     }
                     //
@@ -415,7 +408,7 @@ public:
         // callback used when a websocket connection is closed
         //---------------------------------------------------------------------------//
         void
-        handleClose(CivetServer *server,
+        handleClose(CivetServer *, // server -- unused
                     const struct mg_connection *conn)
         {
             struct mg_context *ctx  = mg_get_context(conn);
