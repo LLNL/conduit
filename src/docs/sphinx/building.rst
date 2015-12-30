@@ -99,24 +99,22 @@ The core Conduit library has no dependencies outside of the repo, however Condui
 Conduit's build system supports the following CMake options:
 
 * **ENABLE_TESTS** - Controls if unit tests are built. *(default = ON)* 
-* **ENABLE_PYTHON** - Controls if the conduit Python module is built. *(default = OFF)*
+* **ENABLE_PYTHON** - Controls if the Conduit Python module is built. *(default = OFF)*
 
-Conduit's Python module will build for both Python2 and Python 3.To select a specific Python, set the CMake variable **PYTHON_EXECUTABLE** to path of the desired python binary. Conduit's Python module requires Numpy. The selected Python install must provide Numpy, or PYTHONPATH must be set to include a Numpy install compatible with the selected Python install. 
+ The Conduit Python module will build for both Python2 and Python3. To select a specific Python, set the CMake variable **PYTHON_EXECUTABLE** to path of the desired python binary. The Conduit Python module requires Numpy. The selected Python install must provide Numpy, or PYTHONPATH must be set to include a Numpy install compatible with the selected Python install. 
 
 * **ENABLE_MPI** - Controls if the conduit_mpi library is built. *(default = OFF)*
+ We are using CMake's standard FindMPI logic. To select a specific MPI set the CMake variables **MPI_C_COMPILER** and **MPI_CXX_COMPILER**, or the other FindMPI options for MPI include paths and MPI libraries.
 
-We are using CMake's standard FindMPI logic. To select a specific MPI set the CMake variables **MPI_C_COMPILER** and **MPI_CXX_COMPILER**, or the other FindMPI options for MPI include paths and MPI libraries.
-
-To run the mpi unit tests on LLNL's LC platforms, you may also need change the CMake variables **MPIEXEC** and **MPIEXEC_NUMPROC_FLAG**, so you can use srun and select a partition. (see: src/host-configs/chaos_5_x86_64.cmake)
+ To run the mpi unit tests on LLNL's LC platforms, you may also need change the CMake variables **MPIEXEC** and **MPIEXEC_NUMPROC_FLAG**, so you can use srun and select a partition. (see: src/host-configs/chaos_5_x86_64.cmake)
 
 * **ENABLE_HDF5** - Controls if the HDF5 I/O support is built. *(default = OFF)*
+ If enabled, the following CMake variables must also be set:
 
  * **HDF5_DIR** - Path to a hdf5 install. 
 
 * **ENABLE_SILO** - Controls if the Silo I/O support is built. *(default = OFF)*
-
-
-If enabled, the following CMake variables must also be set:
+ If enabled, the following CMake variables must also be set:
 
  * **SILO_DIR** - Path to a silo install. 
  * **HDF5_DIR** - Path to a hdf5 install. 
