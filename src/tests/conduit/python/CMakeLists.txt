@@ -42,26 +42,15 @@
 # 
 ###############################################################################
 
-# ####################################
-# # Helper to add Python Module Tests
-# ####################################
-# function(add_python_unit_test TEST)
-#     message(STATUS " [*] Adding Python-based Unit Test: ${TEST}")
-#     add_test(NAME ${TEST} COMMAND
-#              ${PYTHON_EXECUTABLE} -B -m unittest -v ${TEST})
-#     # make sure python can pick up the modules we built
-#     set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${CMAKE_BINARY_DIR}/python-modules/:${CMAKE_CURRENT_SOURCE_DIR}")
-# endfunction(add_python_unit_test)
-
 ####################################
 # Add Python Module Tests
 ####################################
-set(PYTHON_MODULE_TESTS python_conduit_smoke
-                        python_conduit_node
-                        python_conduit_schema
-                        python_conduit_datatype
-                        python_conduit_generator
-                        python_conduit_node_iterator)
+set(PYTHON_MODULE_TESTS t_python_conduit_smoke
+                        t_python_conduit_node
+                        t_python_conduit_schema
+                        t_python_conduit_datatype
+                        t_python_conduit_generator
+                        t_python_conduit_node_iterator)
 
 
 foreach(TEST ${PYTHON_MODULE_TESTS})

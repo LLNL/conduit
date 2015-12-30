@@ -49,9 +49,12 @@
 ################################
 # conduit_io lib Unit Tests
 ################################
-set(IO_TESTS conduit_io_smoke conduit_io_rest conduit_io_websocket)
-set(IO_SILO_TESTS conduit_io_silo)
-set(IO_HDF5_TESTS conduit_io_hdf5)
+set(IO_TESTS t_conduit_io_smoke 
+             t_conduit_io_rest 
+             t_conduit_io_websocket)
+             
+set(IO_SILO_TESTS t_conduit_io_silo)
+set(IO_HDF5_TESTS t_conduit_io_hdf5)
 
 
 ################################

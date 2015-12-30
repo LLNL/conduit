@@ -49,8 +49,8 @@
 ################################
 # blueprint lib Unit Tests
 ################################
-set(BLUEPRINT_TESTS blueprint_smoke 
-                    blueprint_mesh_examples)
+set(BLUEPRINT_TESTS t_blueprint_smoke 
+                    t_blueprint_mesh_examples)
 
 
 ################################

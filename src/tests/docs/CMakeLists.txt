@@ -49,7 +49,7 @@
 ################################
 # Docs Related Unit Tests
 ################################
-set(DOCS_TESTS conduit_tutorial_examples)
+set(DOCS_TESTS t_conduit_tutorial_examples)
 
 
 ################################
