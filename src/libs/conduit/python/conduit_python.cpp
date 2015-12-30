@@ -489,7 +489,7 @@ PyConduit_DataType_Parse_Standard_Set_Keyword_Args(PyObject *args,
 
 //-----------------------------------------------------------------------------
 static PyObject *
-PyConduit_DataType_empty()
+PyConduit_DataType_empty(PyObject *) // cls -- unused
 {
     PyConduit_DataType *res = PyConduit_DataType_python_create();
     res->dtype.set_id(DataType::EMPTY_ID);
@@ -498,7 +498,7 @@ PyConduit_DataType_empty()
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_object()
+PyConduit_DataType_object(PyObject *) // cls -- unused
 {
     PyConduit_DataType *res = PyConduit_DataType_python_create();
     res->dtype.set_id(DataType::OBJECT_ID);
@@ -507,7 +507,7 @@ PyConduit_DataType_object()
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_list()
+PyConduit_DataType_list(PyObject *) // cls -- unused
 {
     PyConduit_DataType *res = PyConduit_DataType_python_create();
     res->dtype.set_id(DataType::LIST_ID);
@@ -520,7 +520,8 @@ PyConduit_DataType_list()
 
 //-----------------------------------------------------------------------------
 static PyObject *
-PyConduit_DataType_int8(PyObject *args,
+PyConduit_DataType_int8(PyObject *, // cls -- unused
+                        PyObject *args,
                         PyObject *kwargs)
 {
     // default args for int8
@@ -555,7 +556,8 @@ PyConduit_DataType_int8(PyObject *args,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_int16(PyObject *args,
+PyConduit_DataType_int16(PyObject *, // cls -- unused
+                         PyObject *args,
                          PyObject *kwargs)
 {
     // default args for int16
@@ -591,7 +593,8 @@ PyConduit_DataType_int16(PyObject *args,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_int32(PyObject *args,
+PyConduit_DataType_int32(PyObject *, // cls -- unused
+                         PyObject *args,
                          PyObject *kwargs)
 {
     // default args for int32
@@ -624,7 +627,8 @@ PyConduit_DataType_int32(PyObject *args,
 }
 //-----------------------------------------------------------------------------
 static PyObject *
-PyConduit_DataType_int64(PyObject *args,
+PyConduit_DataType_int64(PyObject *, // cls -- unused
+                         PyObject *args,
                          PyObject *kwargs)
 {
     // default args for int64
@@ -664,7 +668,8 @@ PyConduit_DataType_int64(PyObject *args,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_uint8(PyObject *args,
+PyConduit_DataType_uint8(PyObject *, // cls -- unused
+                         PyObject *args,
                          PyObject *kwargs)
 {
     // default args for uint8
@@ -700,7 +705,8 @@ PyConduit_DataType_uint8(PyObject *args,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_uint16(PyObject *args,
+PyConduit_DataType_uint16(PyObject *, // cls -- unused
+                          PyObject *args,
                           PyObject *kwargs)
 {
     // default args for uint16
@@ -734,7 +740,8 @@ PyConduit_DataType_uint16(PyObject *args,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_uint32(PyObject *args,
+PyConduit_DataType_uint32(PyObject *, // cls -- unused
+                          PyObject *args,
                           PyObject *kwargs)
 {
     // default args for uint32
@@ -767,7 +774,8 @@ PyConduit_DataType_uint32(PyObject *args,
 }
 //-----------------------------------------------------------------------------
 static PyObject *
-PyConduit_DataType_uint64(PyObject *args,
+PyConduit_DataType_uint64(PyObject *, // cls -- unused
+                          PyObject *args,
                           PyObject *kwargs)
 {
     // default args for uint64
@@ -806,7 +814,8 @@ PyConduit_DataType_uint64(PyObject *args,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_float32(PyObject *args,
+PyConduit_DataType_float32(PyObject *, // cls -- unused
+                           PyObject *args,
                            PyObject *kwargs)
 {
     // default args for float32
@@ -840,7 +849,8 @@ PyConduit_DataType_float32(PyObject *args,
 }
 //-----------------------------------------------------------------------------
 static PyObject *
-PyConduit_DataType_float64(PyObject *args,
+PyConduit_DataType_float64(PyObject *, // cls -- unused
+                           PyObject *args,
                            PyObject *kwargs)
 {
     // default args for float64
@@ -878,7 +888,8 @@ PyConduit_DataType_float64(PyObject *args,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_c_char(PyObject *args,
+PyConduit_DataType_c_char(PyObject *, // cls -- unused
+                          PyObject *args,
                           PyObject *kwargs)
 {
     // default args for c_char
@@ -912,7 +923,8 @@ PyConduit_DataType_c_char(PyObject *args,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_c_short(PyObject *args,
+PyConduit_DataType_c_short(PyObject *, // cls -- unused
+                           PyObject *args,
                            PyObject *kwargs)
 {
     // default args for c_short
@@ -946,7 +958,8 @@ PyConduit_DataType_c_short(PyObject *args,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_c_int(PyObject *args,
+PyConduit_DataType_c_int(PyObject *, // cls -- unused
+                         PyObject *args,
                          PyObject *kwargs)
 {
     // default args for c_int
@@ -979,7 +992,8 @@ PyConduit_DataType_c_int(PyObject *args,
 }
 //-----------------------------------------------------------------------------
 static PyObject *
-PyConduit_DataType_c_long(PyObject *args,
+PyConduit_DataType_c_long(PyObject *, // cls -- unused
+                          PyObject *args,
                           PyObject *kwargs)
 {
     // default args for c_long
@@ -1018,7 +1032,8 @@ PyConduit_DataType_c_long(PyObject *args,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_c_unsigned_char(PyObject *args,
+PyConduit_DataType_c_unsigned_char(PyObject *, // cls -- unused
+                                   PyObject *args,
                                    PyObject *kwargs)
 {
     // default args for c_unsigned_char
@@ -1053,7 +1068,8 @@ PyConduit_DataType_c_unsigned_char(PyObject *args,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_c_unsigned_short(PyObject *args,
+PyConduit_DataType_c_unsigned_short(PyObject *, // cls -- unused
+                                    PyObject *args,
                                     PyObject *kwargs)
 {
     // default args for c_unsigned_short
@@ -1087,7 +1103,8 @@ PyConduit_DataType_c_unsigned_short(PyObject *args,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_c_unsigned_int(PyObject *args,
+PyConduit_DataType_c_unsigned_int(PyObject *, // cls -- unused
+                                  PyObject *args,
                                   PyObject *kwargs)
 {
     // default args for c_unsigned_int
@@ -1122,7 +1139,8 @@ PyConduit_DataType_c_unsigned_int(PyObject *args,
 
 //-----------------------------------------------------------------------------
 static PyObject *
-PyConduit_DataType_c_unsigned_long(PyObject *args,
+PyConduit_DataType_c_unsigned_long(PyObject *, // cls -- unused
+                                   PyObject *args,
                                    PyObject *kwargs)
 {
     // default args for c_unsigned_long
@@ -1159,7 +1177,8 @@ PyConduit_DataType_c_unsigned_long(PyObject *args,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_c_float(PyObject *args,
+PyConduit_DataType_c_float(PyObject *, // cls -- unused
+                           PyObject *args,
                            PyObject *kwargs)
 {
     // default args for c_float
@@ -1194,7 +1213,8 @@ PyConduit_DataType_c_float(PyObject *args,
 
 //-----------------------------------------------------------------------------
 static PyObject *
-PyConduit_DataType_c_double(PyObject *args,
+PyConduit_DataType_c_double(PyObject *, // cls -- unused
+                            PyObject *args,
                             PyObject *kwargs)
 {
     // default args for c_double
@@ -1548,7 +1568,8 @@ PyConduit_DataType_element_index(PyConduit_DataType *self,
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduit_DataType_name_to_id(PyObject *args)
+PyConduit_DataType_name_to_id(PyObject *, // cls -- unused
+                              PyObject *args)
 {
     const char *dtype_name;
     if (!PyArg_ParseTuple(args, "s", &dtype_name))
@@ -1562,7 +1583,8 @@ PyConduit_DataType_name_to_id(PyObject *args)
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduit_DataType_id_to_name(PyObject *args)
+PyConduit_DataType_id_to_name(PyObject *, // cls -- unused
+                              PyObject *args)
 {
     Py_ssize_t dtype_id;
 
@@ -1947,8 +1969,8 @@ PyConduit_Generator_init(PyConduit_Generator *self,
                                    // "data",
                                     NULL};
 
-     char *json_schema = NULL;
-     char *protocol = NULL;
+    char *json_schema = NULL;
+    char *protocol = NULL;
  
 
     if (!PyArg_ParseTupleAndKeywords(args,
@@ -2543,7 +2565,7 @@ PyConduit_NodeIterator_new(PyTypeObject *type,
 
 //---------------------------------------------------------------------------//
 static int
-PyConduit_NodeIterator_init(PyConduit_Schema* self,
+PyConduit_NodeIterator_init(PyConduit_NodeIterator* self,
                             PyObject* args,
                             PyObject* kwds)
 {
@@ -2559,6 +2581,14 @@ PyConduit_NodeIterator_init(PyConduit_Schema* self,
     {
         return 0;
     }
+    
+    if (value)
+    {
+        if (PyConduit_Node_Check(value))
+        {
+            self->itr = NodeIterator(((PyConduit_Node*)value)->node);
+        }
+    }
 
     return (0);
 }
@@ -2571,11 +2601,14 @@ PyConduit_NodeIterator_dealloc(PyConduit_NodeIterator *self)
 }
 
 //---------------------------------------------------------------------------//
-///TODO: imp
 static PyObject *
 PyConduit_NodeIterator_str(PyConduit_NodeIterator *self)
 {
-    Py_RETURN_NONE;
+    Node n;
+    self->itr.info(n);
+    std::ostringstream oss;
+    n.to_json_stream(oss);
+    return (Py_BuildValue("s", oss.str().c_str()));
 }
 
 //---------------------------------------------------------------------------//
@@ -3884,7 +3917,7 @@ static PyTypeObject PyConduit_Node_TYPE = {
 // conduit:::about
 //---------------------------------------------------------------------------//
 static PyObject*
-PyConduit_about(PyObject *self)
+PyConduit_about()
 {
     return PyString_FromString(conduit::about().c_str());
 }
