@@ -193,15 +193,13 @@ struct PyConduit_Node {
 
 //---------------------------------------------------------------------------//
 static PyConduit_DataType *PyConduit_DataType_python_create();
-static int       PyConduit_DataType_check(PyObject* obj);
+static int       PyConduit_DataType_Check(PyObject* obj);
 
 //---------------------------------------------------------------------------//
-static PyConduit_Generator *PyConduit_Generator_python_create();
-static int       PyConduit_Generator_check(PyObject* obj);
+static int       PyConduit_Generator_Check(PyObject* obj);
 
 
 //---------------------------------------------------------------------------//
-static PyConduit_Schema* PyConduit_Schema_python_create();
 static PyObject* PyConduit_Schema_python_wrap(Schema *schema,int python_owns);
 static int       PyConduit_Schema_Check(PyObject* obj);
 
@@ -290,7 +288,7 @@ PyConduit_DataType_Set_Parse_Args(PyConduit_DataType* self,
             if(py_obj)
             {
                 // check for object
-                if(PyConduit_DataType_check(py_obj))
+                if(PyConduit_DataType_Check(py_obj))
                 {
                     parse_case = 0;
                 }
@@ -352,7 +350,7 @@ PyConduit_DataType_Set_Parse_Args(PyConduit_DataType* self,
             return false;
         }
         
-        if(!PyConduit_DataType_check(py_obj))
+        if(!PyConduit_DataType_Check(py_obj))
         {
             // TODO: Set Error?
             return false;
@@ -1426,7 +1424,7 @@ PyConduit_DataType_compatible(PyConduit_DataType *self,
 {
     PyObject *py_dtype;
     if ( (!PyArg_ParseTuple(args, "O", &py_dtype)) || 
-         (!PyConduit_DataType_check(py_dtype)) )
+         (!PyConduit_DataType_Check(py_dtype)) )
     {
          PyErr_SetString(PyExc_TypeError, "is_compatible needs a DataType arg");
          return (NULL);
@@ -1914,7 +1912,7 @@ PyConduit_DataType_python_create()
 
 //---------------------------------------------------------------------------//
 static int
-PyConduit_DataType_check(PyObject *obj)
+PyConduit_DataType_Check(PyObject *obj)
 {
     return (PyObject_TypeCheck(obj, &PyConduit_DataType_TYPE));
 }
@@ -2171,17 +2169,10 @@ static PyTypeObject PyConduit_Generator_TYPE = {
    0
 };
 
-//---------------------------------------------------------------------------//
-static PyConduit_Generator *
-PyConduit_Generator_python_create()
-{
-    PyTypeObject* type = (PyTypeObject*)&PyConduit_Generator_TYPE;
-    return (PyConduit_Generator*)type->tp_alloc(type,0);
-}
 
 //---------------------------------------------------------------------------//
 static int
-PyConduit_Generator_check(PyObject* obj)
+PyConduit_Generator_Check(PyObject* obj)
 {
     return (PyObject_TypeCheck(obj, &PyConduit_Generator_TYPE));
 }
@@ -2581,7 +2572,6 @@ PyConduit_NodeIterator_init(PyConduit_NodeIterator* self,
     {
         return 0;
     }
-    
     if (value)
     {
         if (PyConduit_Node_Check(value))
@@ -3097,6 +3087,7 @@ static PyObject *
 PyConduit_Node_generate(PyConduit_Node* self,
                         PyObject* args)
 {
+    bool err = false;
     /// TODO: sigs to support
     /// json_schema
     /// json_schema, protocol
@@ -3104,15 +3095,36 @@ PyConduit_Node_generate(PyConduit_Node* self,
     /// json_schema, data
     /// json_schema, protocol, data
         
-     const char *json_schema;
-     if (!PyArg_ParseTuple(args, "s", &json_schema))
-     {
-         PyErr_SetString(PyExc_TypeError, "JSON schema must be a string");
-         return NULL;
-     }
-     
-     self->node->generate(std::string(json_schema));
-     Py_RETURN_NONE;
+    PyObject   *py_gen      = NULL;
+    const char *json_schema = NULL;
+
+    if(PyArg_ParseTuple(args, "O", &py_gen))
+    {
+        if(!PyConduit_Generator_Check(py_gen))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "Node::generate() argument must be a "
+                            "Conduit::Generator or a JSON schema string.");
+            return NULL;
+        }
+        
+         Generator *gen_ptr = ((PyConduit_Generator*)py_gen)->generator;
+         self->node->generate(*gen_ptr);
+    }
+    else if(PyArg_ParseTuple(args, "s", &json_schema))
+    {
+        self->node->generate(std::string(json_schema));
+    }
+    else
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "Node::generate() argument must be a "
+                        "Conduit::Generator or a JSON schema string.");
+        return NULL;
+
+    }
+
+    Py_RETURN_NONE;
 }
 
 //---------------------------------------------------------------------------//
@@ -3958,15 +3970,6 @@ PyConduit_Schema_python_wrap(Schema *schema, int python_owns)
     retval->schema = schema;
     retval->python_owns = python_owns;
     return ((PyObject*)retval);
-}
-
-//---------------------------------------------------------------------------//
-static PyConduit_Schema *
-PyConduit_Schema_python_create()
-{
-    Schema *schema = new Schema();
-    // python_owns = 1
-    return (PyConduit_Schema *)PyConduit_Schema_python_wrap(schema,1); 
 }
 
 
