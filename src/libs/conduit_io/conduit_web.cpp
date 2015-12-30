@@ -250,7 +250,7 @@ public:
         // Handles a request from the client to shutdown the REST server
         //---------------------------------------------------------------------------//
         bool
-        handle_rest_shutdown(struct mg_connection *conn)
+        handle_rest_shutdown(struct mg_connection *) // conn -- unused
         {
             m_server->shutdown();
             return true;
@@ -268,7 +268,7 @@ public:
         //---------------------------------------------------------------------------//
         bool
         handleConnection(CivetServer *, // server -- unused
-                         const struct mg_connection *conn)
+                         const struct mg_connection *) // conn -- unused
         {
             CONDUIT_INFO("conduit::io::WebServer WebSocket Connected");
             return true;
@@ -306,7 +306,7 @@ public:
         // callback used when a websocket receives a text payload
         //---------------------------------------------------------------------------//
         bool
-        handleWebSocketText(struct mg_connection *conn,
+        handleWebSocketText(struct mg_connection *,  // conn -- unused
                             char *data,
                             size_t data_len)
         {
@@ -339,7 +339,7 @@ public:
         // callback used when a websocket receives data
         //---------------------------------------------------------------------------//
         bool
-        handleData(CivetServer *server,
+        handleData(CivetServer *, // server -- unused
                    struct mg_connection *conn,
                    int bits,
                    char *data,
@@ -411,8 +411,6 @@ public:
         handleClose(CivetServer *, // server -- unused
                     const struct mg_connection *conn)
         {
-            struct mg_context *ctx  = mg_get_context(conn);
-            
             WebSocket *ws = NULL;
             // lock context while we cleanup the websocket
             m_server->lock_context();
