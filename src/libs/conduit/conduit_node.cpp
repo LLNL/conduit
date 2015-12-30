@@ -2056,7 +2056,7 @@ conduit_node_set_path_char(conduit_node *cnode,
                            const char *path,
                            char value)
 {
-    cpp_node(cnode)->set(value);
+    cpp_node(cnode)->set_path(path,value);
 }
 
 //-----------------------------------------------------------------------------
@@ -2065,7 +2065,7 @@ conduit_node_set_path_short(conduit_node *cnode,
                             const char *path,
                             short value)
 {
-    cpp_node(cnode)->set(value);
+    cpp_node(cnode)->set_path(path,value);
 }
 
 //-----------------------------------------------------------------------------
@@ -2074,7 +2074,7 @@ conduit_node_set_path_int(conduit_node *cnode,
                           const char *path,
                           int value)
 {
-    cpp_node(cnode)->set(value);
+    cpp_node(cnode)->set_path(path,value);
 }
 
 //-----------------------------------------------------------------------------
@@ -2083,7 +2083,7 @@ conduit_node_set_path_long(conduit_node *cnode,
                            const char *path,
                            long value)
 {
-    cpp_node(cnode)->set(value);
+    cpp_node(cnode)->set_path(path,value);
 }
 
 //-----------------------------------------------------------------------------
@@ -2094,7 +2094,7 @@ conduit_node_set_path_unsigned_char(conduit_node *cnode,
                                     const char *path,
                                     unsigned char value)
 {
-    cpp_node(cnode)->set(value);
+    cpp_node(cnode)->set_path(path,value);
 }
 
 //-----------------------------------------------------------------------------
@@ -2103,7 +2103,7 @@ conduit_node_set_path_unsigned_short(conduit_node *cnode,
                                      const char *path,
                                      unsigned short value)
 {
-    cpp_node(cnode)->set(value);
+    cpp_node(cnode)->set_path(path,value);
 }
 
 //-----------------------------------------------------------------------------
@@ -2112,7 +2112,7 @@ conduit_node_set_path_unsigned_int(conduit_node *cnode,
                                    const char *path,
                                    unsigned int value)
 {
-    cpp_node(cnode)->set(value);
+    cpp_node(cnode)->set_path(path,value);
 }
 
 //-----------------------------------------------------------------------------
@@ -2121,7 +2121,7 @@ conduit_node_set_path_unsigned_long(conduit_node *cnode,
                                     const char *path,
                                     unsigned long value)
 {
-    cpp_node(cnode)->set(value);
+    cpp_node(cnode)->set_path(path,value);
 }
 
 //-----------------------------------------------------------------------------
@@ -2132,7 +2132,7 @@ conduit_node_set_path_float(conduit_node *cnode,
                             const char *path,
                             float value)
 {
-    cpp_node(cnode)->set(value);
+    cpp_node(cnode)->set_path(path,value);
 }
 
 //-----------------------------------------------------------------------------
@@ -2141,7 +2141,7 @@ conduit_node_set_path_double(conduit_node *cnode,
                              const char *path,
                              double value)
 {
-    cpp_node(cnode)->set(value);
+    cpp_node(cnode)->set_path(path,value);
 }
 
 //-----------------------------------------------------------------------------
@@ -2157,7 +2157,7 @@ conduit_node_set_path_char_ptr(conduit_node *cnode,
                                conduit_index_t num_elements)
 
 {
-    cpp_node(cnode)->set((conduit_byte*)data,num_elements);
+    cpp_node(cnode)->set_path(path,(conduit_byte*)data,num_elements);
 }
 
 //-----------------------------------------------------------------------------
@@ -2187,7 +2187,7 @@ conduit_node_set_path_short_ptr(conduit_node *cnode,
                                 short *data,
                                 conduit_index_t num_elements)
 {
-    cpp_node(cnode)->set(data,num_elements);
+    cpp_node(cnode)->set_path(path,data,num_elements);
 }
 
 //-------------------------------------------------------------------------
@@ -2217,7 +2217,7 @@ conduit_node_set_path_int_ptr(conduit_node *cnode,
                               int *data,
                               conduit_index_t num_elements)
 {
-    cpp_node(cnode)->set(data,num_elements);
+    cpp_node(cnode)->set_path(path,data,num_elements);
 }
 
 //-------------------------------------------------------------------------
@@ -2247,7 +2247,7 @@ conduit_node_set_path_long_ptr(conduit_node *cnode,
                                long *data,
                                conduit_index_t num_elements)
 {
-    cpp_node(cnode)->set(data,num_elements);
+    cpp_node(cnode)->set_path(path,data,num_elements);
 }
 
 //-------------------------------------------------------------------------
@@ -2279,7 +2279,7 @@ conduit_node_set_path_unsigned_char_ptr(conduit_node *cnode,
                                         unsigned char *data,
                                         conduit_index_t num_elements)
 {
-    cpp_node(cnode)->set(data,num_elements);
+    cpp_node(cnode)->set_path(path,data,num_elements);
 }
 
 //-------------------------------------------------------------------------
@@ -2309,7 +2309,7 @@ conduit_node_set_path_unsigned_short_ptr(conduit_node *cnode,
                                          unsigned short *data,
                                          conduit_index_t num_elements)
 {
-    cpp_node(cnode)->set(data,num_elements);
+    cpp_node(cnode)->set_path(path,data,num_elements);
 }
 
 //-------------------------------------------------------------------------
@@ -2339,7 +2339,7 @@ conduit_node_set_path_unsigned_int_ptr(conduit_node *cnode,
                                        unsigned int *data,
                                        conduit_index_t num_elements)
 {
-    cpp_node(cnode)->set(data,num_elements);
+    cpp_node(cnode)->set_path(path,data,num_elements);
 }
 
 //-------------------------------------------------------------------------
@@ -2369,7 +2369,7 @@ conduit_node_set_path_unsigned_long_ptr(conduit_node *cnode,
                                         unsigned long *data,
                                         conduit_index_t num_elements)
 {
-    cpp_node(cnode)->set(data,num_elements);
+    cpp_node(cnode)->set_path(path,data,num_elements);
 }
 
 //-------------------------------------------------------------------------
@@ -2401,7 +2401,7 @@ conduit_node_set_path_float_ptr(conduit_node *cnode,
                                 float *data,
                                 conduit_index_t num_elements)
 {
-    cpp_node(cnode)->set(data,num_elements);
+    cpp_node(cnode)->set_path(path,data,num_elements);
 }
 
 //-------------------------------------------------------------------------
@@ -2431,7 +2431,7 @@ conduit_node_set_path_double_ptr(conduit_node *cnode,
                                  double *data,
                                  conduit_index_t  num_elements)
 {
-    cpp_node(cnode)->set(data,num_elements);
+    cpp_node(cnode)->set_path(path,data,num_elements);
 }
 
 //-------------------------------------------------------------------------
