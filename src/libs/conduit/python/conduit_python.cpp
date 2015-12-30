@@ -3087,7 +3087,6 @@ static PyObject *
 PyConduit_Node_generate(PyConduit_Node* self,
                         PyObject* args)
 {
-    bool err = false;
     /// TODO: sigs to support
     /// json_schema
     /// json_schema, protocol
