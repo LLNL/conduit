@@ -50,8 +50,8 @@
 # Core (conduit lib) Unit Tests
 ################################
 set(BASIC_C_TESTS
-    c_conduit_node
-    c_conduit_node_set)
+    t_c_conduit_node
+    t_c_conduit_node_set)
 
 ################################
 # Add our tests

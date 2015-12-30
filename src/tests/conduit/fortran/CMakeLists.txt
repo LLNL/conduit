@@ -50,11 +50,11 @@
 # Core (conduit lib) Unit Tests
 ################################
 set(BASIC_FORTRAN_TESTS 
-    f_type_sizes
-    f_conduit_node)
+    t_f_type_sizes
+    t_f_conduit_node)
 
 if(ENABLE_FORTRAN_OBJ_INTERFACE)
-    list(APPEND BASIC_FORTRAN_TESTS f_conduit_node_obj)
+    list(APPEND BASIC_FORTRAN_TESTS t_f_conduit_node_obj)
 endif()
 
 ################################

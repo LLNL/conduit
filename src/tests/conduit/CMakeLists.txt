@@ -49,30 +49,30 @@
 ################################
 # Core (conduit lib) Unit Tests
 ################################
-set(BASIC_TESTS conduit_smoke
-                conduit_endianness
-                conduit_char8_str
-                conduit_datatype_tests
-                conduit_node
-                conduit_node_parent
-                conduit_node_convert
-                conduit_serialize
-                conduit_array
-                conduit_list_of
-                conduit_node_binary_io
-                conduit_node_save_load
-                conduit_node_paths
-                conduit_node_set
-                conduit_node_to_value
-                conduit_to_string
-                conduit_json
-                conduit_json_sanitize
-                conduit_generator
-                conduit_node_update
-                conduit_node_compact
-                conduit_node_info
-                conduit_node_iterator
-                conduit_utils)
+set(BASIC_TESTS t_conduit_smoke
+                t_conduit_endianness
+                t_conduit_char8_str
+                t_conduit_datatype_tests
+                t_conduit_node
+                t_conduit_node_parent
+                t_conduit_node_convert
+                t_conduit_serialize
+                t_conduit_array
+                t_conduit_list_of
+                t_conduit_node_binary_io
+                t_conduit_node_save_load
+                t_conduit_node_paths
+                t_conduit_node_set
+                t_conduit_node_to_value
+                t_conduit_to_string
+                t_conduit_json
+                t_conduit_json_sanitize
+                t_conduit_generator
+                t_conduit_node_update
+                t_conduit_node_compact
+                t_conduit_node_info
+                t_conduit_node_iterator
+                t_conduit_utils)
 
 
 ################################

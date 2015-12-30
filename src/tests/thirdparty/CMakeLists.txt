@@ -49,22 +49,22 @@
 ################################
 # Core (conduit lib) Unit Tests
 ################################
-set(TPL_TESTS gtest_smoke
-              rapidjson_smoke
-              libb64_smoke)
+set(TPL_TESTS t_gtest_smoke
+              t_rapidjson_smoke
+              t_libb64_smoke)
 
 
 ################################
 # Optional Unit Tests
 ################################
-set(PYTHON_GPREF_TOOLS_TESTS gpref_smoke)
-set(PYTHON_TESTS numpy_smoke)
-set(MPI_TESTS mpi_smoke)
-set(HDF5_TESTS hdf5_smoke)
-set(SILO_TESTS silo_smoke)
+set(GPREF_TOOLS_TESTS t_pref_smoke)
+set(PYTHON_TESTS      t_numpy_smoke)
+set(MPI_TESTS         t_mpi_smoke)
+set(HDF5_TESTS        t_hdf5_smoke)
+set(SILO_TESTS        t_silo_smoke)
 
 
-set(FORTRAN_TESTS fortran_smoke fruit_smoke)
+set(FORTRAN_TESTS t_fortran_smoke t_fruit_smoke)
 
 ################################
 # Add our Main Unit Tests
