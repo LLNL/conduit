@@ -69,7 +69,7 @@ function main
     uberenv
 
     BOOSTRAP_CWD=`pwd`
-    SPACK_CMAKE_PREFIX=`ls -d $BOOSTRAP_CWD/uberenv_libs/spack/opt/*/*/cmake*`
+    SPACK_CMAKE_PREFIX=`ls -d $BOOSTRAP_CWD/uberenv_libs/spack/opt/spack/*/*/cmake*`
     SPACK_CMAKE=`ls $SPACK_CMAKE_PREFIX/bin/cmake`
 
     # Only add to PATH if `which cmake` isn't our CMake

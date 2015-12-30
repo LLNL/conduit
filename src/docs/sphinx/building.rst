@@ -101,22 +101,25 @@ Conduit's build system supports the following CMake options:
 * **ENABLE_TESTS** - Controls if unit tests are built. *(default = ON)* 
 * **ENABLE_PYTHON** - Controls if the conduit Python module is built. *(default = OFF)*
 
-To select a specific Python, set the CMake variable **PYTHON_EXECUTABLE** to path of the desired python binary.
-Conduit's Python module requires Numpy. The selected Python install must provide Numpy, or PYTHONPATH must be set to include a Numpy install compatible with the selected Python install. 
+Conduit's Python module will build for both Python2 and Python 3.To select a specific Python, set the CMake variable **PYTHON_EXECUTABLE** to path of the desired python binary. Conduit's Python module requires Numpy. The selected Python install must provide Numpy, or PYTHONPATH must be set to include a Numpy install compatible with the selected Python install. 
 
 * **ENABLE_MPI** - Controls if the conduit_mpi library is built. *(default = OFF)*
 
-We are using CMake's standard FindMPI logic. To select a specific MPI set the CMake variables **MPI_C_COMPILER** and **MPI_CXX_COMPILER**, or the other FindMPI option for MPI include paths and MPI libraries.
+We are using CMake's standard FindMPI logic. To select a specific MPI set the CMake variables **MPI_C_COMPILER** and **MPI_CXX_COMPILER**, or the other FindMPI options for MPI include paths and MPI libraries.
 
-For running mpi unit tests on LC platforms, you may also need change the CMake variables **MPIEXEC** and **MPIEXEC_NUMPROC_FLAG**, so you can use srun and select a partition. (see: src/host-configs/surface.cmake)
+For running mpi unit tests on LLNL's LC platforms, you may also need change the CMake variables **MPIEXEC** and **MPIEXEC_NUMPROC_FLAG**, so you can use srun and select a partition. (see: src/host-configs/surface.cmake)
+
+* **ENABLE_HDF5** - Controls if the HDF5 I/O support is built. *(default = OFF)*
+
+ * **HDF5_DIR** - Path to a hdf5 install. 
 
 * **ENABLE_SILO** - Controls if the Silo I/O support is built. *(default = OFF)*
+
 
 If enabled, the following CMake variables must also be set:
 
  * **SILO_DIR** - Path to a silo install. 
  * **HDF5_DIR** - Path to a hdf5 install. 
- * **SZIP_DIR** - Path to a szip install. 
 
 Host Config Files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -140,7 +143,7 @@ The *config-build.sh* script will use your machine's hostname, the SYS_TYPE envi
 
 You can view several example files under the *host-configs* directory. 
 
-These file use standard cmake commands. CMake *set* commands need to specify the root cache path as follows:
+These files use standard CMake commands. CMake *set* commands need to specify the root cache path as follows:
 
 .. code:: cmake
 
@@ -151,7 +154,7 @@ Bootstrapping Thirdparty Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can use *bootstrap-env.sh* (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses *scripts/uberenv*, which leverages **Spack** (https://llnl.github.io/spack) to build external thirdparty libraries and tools used by Conduit.
-It also writes a initial host-config file for you and adds the spack built cmake to your path, so can directly call the *config-build.sh* helper script to configure a conduit build.
+It also writes a initial host-config file for you and adds the spack built CMake binary to your PATH, so can directly call the *config-build.sh* helper script to configure a conduit build.
 
 .. code:: bash
     
@@ -159,10 +162,15 @@ It also writes a initial host-config file for you and adds the spack built cmake
     source bootstrap-env.sh
     
     #copy the generated host-config file into the standard location
-    cp uberenv_libs/`hostname`.cmake to host-configs/
+    cp uberenv_libs/`hostname`*.cmake to host-configs/
     
     # run the configure helper script
     ./config-build.sh
+
+    # or you can run the configure helper script and give it the 
+    # path to a host-config file 
+    ./config-build.sh uberenv_libs/`hostname`*.cmake
+
 
 
 
