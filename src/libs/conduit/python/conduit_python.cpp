@@ -193,15 +193,13 @@ struct PyConduit_Node {
 
 //---------------------------------------------------------------------------//
 static PyConduit_DataType *PyConduit_DataType_python_create();
-static int       PyConduit_DataType_check(PyObject* obj);
+static int       PyConduit_DataType_Check(PyObject* obj);
 
 //---------------------------------------------------------------------------//
-static PyConduit_Generator *PyConduit_Generator_python_create();
-static int       PyConduit_Generator_check(PyObject* obj);
+static int       PyConduit_Generator_Check(PyObject* obj);
 
 
 //---------------------------------------------------------------------------//
-static PyConduit_Schema* PyConduit_Schema_python_create();
 static PyObject* PyConduit_Schema_python_wrap(Schema *schema,int python_owns);
 static int       PyConduit_Schema_Check(PyObject* obj);
 
@@ -290,7 +288,7 @@ PyConduit_DataType_Set_Parse_Args(PyConduit_DataType* self,
             if(py_obj)
             {
                 // check for object
-                if(PyConduit_DataType_check(py_obj))
+                if(PyConduit_DataType_Check(py_obj))
                 {
                     parse_case = 0;
                 }
@@ -352,7 +350,7 @@ PyConduit_DataType_Set_Parse_Args(PyConduit_DataType* self,
             return false;
         }
         
-        if(!PyConduit_DataType_check(py_obj))
+        if(!PyConduit_DataType_Check(py_obj))
         {
             // TODO: Set Error?
             return false;
@@ -489,7 +487,7 @@ PyConduit_DataType_Parse_Standard_Set_Keyword_Args(PyObject *args,
 
 //-----------------------------------------------------------------------------
 static PyObject *
-PyConduit_DataType_empty()
+PyConduit_DataType_empty(PyObject *) // cls -- unused
 {
     PyConduit_DataType *res = PyConduit_DataType_python_create();
     res->dtype.set_id(DataType::EMPTY_ID);
@@ -498,7 +496,7 @@ PyConduit_DataType_empty()
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_object(PyObject *cls)
+PyConduit_DataType_object(PyObject *) // cls -- unused
 {
     PyConduit_DataType *res = PyConduit_DataType_python_create();
     res->dtype.set_id(DataType::OBJECT_ID);
@@ -507,7 +505,7 @@ PyConduit_DataType_object(PyObject *cls)
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_list(PyObject *cls)
+PyConduit_DataType_list(PyObject *) // cls -- unused
 {
     PyConduit_DataType *res = PyConduit_DataType_python_create();
     res->dtype.set_id(DataType::LIST_ID);
@@ -520,7 +518,7 @@ PyConduit_DataType_list(PyObject *cls)
 
 //-----------------------------------------------------------------------------
 static PyObject *
-PyConduit_DataType_int8(PyObject *cls,
+PyConduit_DataType_int8(PyObject *, // cls -- unused
                         PyObject *args,
                         PyObject *kwargs)
 {
@@ -556,7 +554,7 @@ PyConduit_DataType_int8(PyObject *cls,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_int16(PyObject *cls,
+PyConduit_DataType_int16(PyObject *, // cls -- unused
                          PyObject *args,
                          PyObject *kwargs)
 {
@@ -593,7 +591,7 @@ PyConduit_DataType_int16(PyObject *cls,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_int32(PyObject *cls,
+PyConduit_DataType_int32(PyObject *, // cls -- unused
                          PyObject *args,
                          PyObject *kwargs)
 {
@@ -627,7 +625,7 @@ PyConduit_DataType_int32(PyObject *cls,
 }
 //-----------------------------------------------------------------------------
 static PyObject *
-PyConduit_DataType_int64(PyObject *cls,
+PyConduit_DataType_int64(PyObject *, // cls -- unused
                          PyObject *args,
                          PyObject *kwargs)
 {
@@ -668,7 +666,7 @@ PyConduit_DataType_int64(PyObject *cls,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_uint8(PyObject *cls,
+PyConduit_DataType_uint8(PyObject *, // cls -- unused
                          PyObject *args,
                          PyObject *kwargs)
 {
@@ -705,9 +703,9 @@ PyConduit_DataType_uint8(PyObject *cls,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_uint16(PyObject *cls,
-                         PyObject *args,
-                         PyObject *kwargs)
+PyConduit_DataType_uint16(PyObject *, // cls -- unused
+                          PyObject *args,
+                          PyObject *kwargs)
 {
     // default args for uint16
     Py_ssize_t num_elements = 1;
@@ -740,9 +738,9 @@ PyConduit_DataType_uint16(PyObject *cls,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_uint32(PyObject *cls,
-                         PyObject *args,
-                         PyObject *kwargs)
+PyConduit_DataType_uint32(PyObject *, // cls -- unused
+                          PyObject *args,
+                          PyObject *kwargs)
 {
     // default args for uint32
     Py_ssize_t num_elements = 1;
@@ -774,7 +772,7 @@ PyConduit_DataType_uint32(PyObject *cls,
 }
 //-----------------------------------------------------------------------------
 static PyObject *
-PyConduit_DataType_uint64(PyObject *cls,
+PyConduit_DataType_uint64(PyObject *, // cls -- unused
                           PyObject *args,
                           PyObject *kwargs)
 {
@@ -814,7 +812,7 @@ PyConduit_DataType_uint64(PyObject *cls,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_float32(PyObject *cls,
+PyConduit_DataType_float32(PyObject *, // cls -- unused
                            PyObject *args,
                            PyObject *kwargs)
 {
@@ -849,7 +847,7 @@ PyConduit_DataType_float32(PyObject *cls,
 }
 //-----------------------------------------------------------------------------
 static PyObject *
-PyConduit_DataType_float64(PyObject *cls,
+PyConduit_DataType_float64(PyObject *, // cls -- unused
                            PyObject *args,
                            PyObject *kwargs)
 {
@@ -888,7 +886,7 @@ PyConduit_DataType_float64(PyObject *cls,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_c_char(PyObject *cls,
+PyConduit_DataType_c_char(PyObject *, // cls -- unused
                           PyObject *args,
                           PyObject *kwargs)
 {
@@ -923,7 +921,7 @@ PyConduit_DataType_c_char(PyObject *cls,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_c_short(PyObject *cls,
+PyConduit_DataType_c_short(PyObject *, // cls -- unused
                            PyObject *args,
                            PyObject *kwargs)
 {
@@ -958,7 +956,7 @@ PyConduit_DataType_c_short(PyObject *cls,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_c_int(PyObject *cls,
+PyConduit_DataType_c_int(PyObject *, // cls -- unused
                          PyObject *args,
                          PyObject *kwargs)
 {
@@ -992,7 +990,7 @@ PyConduit_DataType_c_int(PyObject *cls,
 }
 //-----------------------------------------------------------------------------
 static PyObject *
-PyConduit_DataType_c_long(PyObject *cls,
+PyConduit_DataType_c_long(PyObject *, // cls -- unused
                           PyObject *args,
                           PyObject *kwargs)
 {
@@ -1032,7 +1030,7 @@ PyConduit_DataType_c_long(PyObject *cls,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_c_unsigned_char(PyConduit_DataType *cls,
+PyConduit_DataType_c_unsigned_char(PyObject *, // cls -- unused
                                    PyObject *args,
                                    PyObject *kwargs)
 {
@@ -1068,7 +1066,7 @@ PyConduit_DataType_c_unsigned_char(PyConduit_DataType *cls,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_c_unsigned_short(PyConduit_DataType *cls,
+PyConduit_DataType_c_unsigned_short(PyObject *, // cls -- unused
                                     PyObject *args,
                                     PyObject *kwargs)
 {
@@ -1103,7 +1101,7 @@ PyConduit_DataType_c_unsigned_short(PyConduit_DataType *cls,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_c_unsigned_int(PyConduit_DataType *cls,
+PyConduit_DataType_c_unsigned_int(PyObject *, // cls -- unused
                                   PyObject *args,
                                   PyObject *kwargs)
 {
@@ -1139,7 +1137,7 @@ PyConduit_DataType_c_unsigned_int(PyConduit_DataType *cls,
 
 //-----------------------------------------------------------------------------
 static PyObject *
-PyConduit_DataType_c_unsigned_long(PyConduit_DataType *cls,
+PyConduit_DataType_c_unsigned_long(PyObject *, // cls -- unused
                                    PyObject *args,
                                    PyObject *kwargs)
 {
@@ -1177,7 +1175,7 @@ PyConduit_DataType_c_unsigned_long(PyConduit_DataType *cls,
 
 //-----------------------------------------------------------------------------
 PyObject *
-PyConduit_DataType_c_float(PyConduit_DataType *cls,
+PyConduit_DataType_c_float(PyObject *, // cls -- unused
                            PyObject *args,
                            PyObject *kwargs)
 {
@@ -1213,7 +1211,7 @@ PyConduit_DataType_c_float(PyConduit_DataType *cls,
 
 //-----------------------------------------------------------------------------
 static PyObject *
-PyConduit_DataType_c_double(PyConduit_DataType *cls,
+PyConduit_DataType_c_double(PyObject *, // cls -- unused
                             PyObject *args,
                             PyObject *kwargs)
 {
@@ -1426,7 +1424,7 @@ PyConduit_DataType_compatible(PyConduit_DataType *self,
 {
     PyObject *py_dtype;
     if ( (!PyArg_ParseTuple(args, "O", &py_dtype)) || 
-         (!PyConduit_DataType_check(py_dtype)) )
+         (!PyConduit_DataType_Check(py_dtype)) )
     {
          PyErr_SetString(PyExc_TypeError, "is_compatible needs a DataType arg");
          return (NULL);
@@ -1568,7 +1566,7 @@ PyConduit_DataType_element_index(PyConduit_DataType *self,
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduit_DataType_name_to_id(PyObject *cls,
+PyConduit_DataType_name_to_id(PyObject *, // cls -- unused
                               PyObject *args)
 {
     const char *dtype_name;
@@ -1583,7 +1581,7 @@ PyConduit_DataType_name_to_id(PyObject *cls,
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduit_DataType_id_to_name(PyObject *cls,
+PyConduit_DataType_id_to_name(PyObject *, // cls -- unused
                               PyObject *args)
 {
     Py_ssize_t dtype_id;
@@ -1719,132 +1717,132 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
      METH_VARARGS,
      "{todo}"},
     //-----------------------------------------------------------------------//
-    // --- class methods --- ///
+    // --- static methods --- ///
     //-----------------------------------------------------------------------//
     //-----------------------------------------------------------------------//
     {"name_to_id",
      (PyCFunction)PyConduit_DataType_name_to_id,
-     METH_VARARGS | METH_CLASS,
+     METH_VARARGS | METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"id_to_name",
      (PyCFunction)PyConduit_DataType_id_to_name,
-     METH_VARARGS | METH_CLASS,
+     METH_VARARGS | METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"empty",
      (PyCFunction)PyConduit_DataType_empty,
-     METH_NOARGS | METH_CLASS,
+     METH_NOARGS | METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"object",
      (PyCFunction)PyConduit_DataType_object,
-     METH_NOARGS | METH_CLASS,
+     METH_NOARGS | METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"list",
      (PyCFunction)PyConduit_DataType_list,
-     METH_NOARGS | METH_CLASS,
+     METH_NOARGS | METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"int8",
      (PyCFunction)PyConduit_DataType_int8,
-     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"int16",
      (PyCFunction)PyConduit_DataType_int16,
-     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"int32",
      (PyCFunction)PyConduit_DataType_int32,
-     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"int64",
      (PyCFunction)PyConduit_DataType_int64,
-     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"uint8",
      (PyCFunction)PyConduit_DataType_uint8,
-     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"uint16",
      (PyCFunction)PyConduit_DataType_uint16,
-     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"uint32",
      (PyCFunction)PyConduit_DataType_uint32,
-     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"uint64",
      (PyCFunction)PyConduit_DataType_uint64,
-     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"float32",
      (PyCFunction)PyConduit_DataType_float32,
-     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"float64",
      (PyCFunction)PyConduit_DataType_float64,
-     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_char",
      (PyCFunction)PyConduit_DataType_c_char,
-     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_short",
      (PyCFunction)PyConduit_DataType_c_short,
-     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_int",
      (PyCFunction)PyConduit_DataType_c_int,
-     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_long",
      (PyCFunction)PyConduit_DataType_c_long,
-     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_unsigned_char",
      (PyCFunction)PyConduit_DataType_c_unsigned_char,
-     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_unsigned_short",
      (PyCFunction)PyConduit_DataType_c_unsigned_short,
-     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_unsigned_int",
      (PyCFunction)PyConduit_DataType_c_unsigned_int,
-     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_unsigned_long",
      (PyCFunction)PyConduit_DataType_c_unsigned_long,
-     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_float",
      (PyCFunction)PyConduit_DataType_c_float,
-     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"c_double",
      (PyCFunction)PyConduit_DataType_c_double,
-     METH_VARARGS | METH_KEYWORDS| METH_CLASS,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
     //-----------------------------------------------------------------------//
     // end DataType methods table
@@ -1914,7 +1912,7 @@ PyConduit_DataType_python_create()
 
 //---------------------------------------------------------------------------//
 static int
-PyConduit_DataType_check(PyObject *obj)
+PyConduit_DataType_Check(PyObject *obj)
 {
     return (PyObject_TypeCheck(obj, &PyConduit_DataType_TYPE));
 }
@@ -1931,8 +1929,8 @@ PyConduit_DataType_check(PyObject *obj)
 //---------------------------------------------------------------------------//
 static PyObject * 
 PyConduit_Generator_new(PyTypeObject *type,
-                        PyObject *args,
-                        PyObject *kwargs)
+                        PyObject*, // args -- unused
+                        PyObject*) // kwds -- unused
 {
     PyConduit_Generator *self = (PyConduit_Generator*)type->tp_alloc(type, 0);
 
@@ -1969,8 +1967,8 @@ PyConduit_Generator_init(PyConduit_Generator *self,
                                    // "data",
                                     NULL};
 
-     char *json_schema = NULL;
-     char *protocol = NULL;
+    char *json_schema = NULL;
+    char *protocol = NULL;
  
 
     if (!PyArg_ParseTupleAndKeywords(args,
@@ -2171,17 +2169,10 @@ static PyTypeObject PyConduit_Generator_TYPE = {
    0
 };
 
-//---------------------------------------------------------------------------//
-static PyConduit_Generator *
-PyConduit_Generator_python_create()
-{
-    PyTypeObject* type = (PyTypeObject*)&PyConduit_Generator_TYPE;
-    return (PyConduit_Generator*)type->tp_alloc(type,0);
-}
 
 //---------------------------------------------------------------------------//
 static int
-PyConduit_Generator_check(PyObject* obj)
+PyConduit_Generator_Check(PyObject* obj)
 {
     return (PyObject_TypeCheck(obj, &PyConduit_Generator_TYPE));
 }
@@ -2200,8 +2191,8 @@ PyConduit_Generator_check(PyObject* obj)
 //---------------------------------------------------------------------------//
 static PyObject * 
 PyConduit_Schema_new(PyTypeObject* type,
-                     PyObject* args,
-                     PyObject* kwds)
+                     PyObject*, // args -- unused
+                     PyObject*) // kwds -- unused
 {
 
     PyConduit_Schema* self = (PyConduit_Schema*)type->tp_alloc(type, 0);
@@ -2565,7 +2556,7 @@ PyConduit_NodeIterator_new(PyTypeObject *type,
 
 //---------------------------------------------------------------------------//
 static int
-PyConduit_NodeIterator_init(PyConduit_Schema* self,
+PyConduit_NodeIterator_init(PyConduit_NodeIterator* self,
                             PyObject* args,
                             PyObject* kwds)
 {
@@ -2581,6 +2572,13 @@ PyConduit_NodeIterator_init(PyConduit_Schema* self,
     {
         return 0;
     }
+    if (value)
+    {
+        if (PyConduit_Node_Check(value))
+        {
+            self->itr = NodeIterator(((PyConduit_Node*)value)->node);
+        }
+    }
 
     return (0);
 }
@@ -2593,11 +2591,14 @@ PyConduit_NodeIterator_dealloc(PyConduit_NodeIterator *self)
 }
 
 //---------------------------------------------------------------------------//
-///TODO: imp
 static PyObject *
 PyConduit_NodeIterator_str(PyConduit_NodeIterator *self)
 {
-    Py_RETURN_NONE;
+    Node n;
+    self->itr.info(n);
+    std::ostringstream oss;
+    n.to_json_stream(oss);
+    return (Py_BuildValue("s", oss.str().c_str()));
 }
 
 //---------------------------------------------------------------------------//
@@ -3093,15 +3094,36 @@ PyConduit_Node_generate(PyConduit_Node* self,
     /// json_schema, data
     /// json_schema, protocol, data
         
-     const char *json_schema;
-     if (!PyArg_ParseTuple(args, "s", &json_schema))
-     {
-         PyErr_SetString(PyExc_TypeError, "JSON schema must be a string");
-         return NULL;
-     }
-     
-     self->node->generate(std::string(json_schema));
-     Py_RETURN_NONE;
+    PyObject   *py_gen      = NULL;
+    const char *json_schema = NULL;
+
+    if(PyArg_ParseTuple(args, "O", &py_gen))
+    {
+        if(!PyConduit_Generator_Check(py_gen))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "Node::generate() argument must be a "
+                            "Conduit::Generator or a JSON schema string.");
+            return NULL;
+        }
+        
+         Generator *gen_ptr = ((PyConduit_Generator*)py_gen)->generator;
+         self->node->generate(*gen_ptr);
+    }
+    else if(PyArg_ParseTuple(args, "s", &json_schema))
+    {
+        self->node->generate(std::string(json_schema));
+    }
+    else
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "Node::generate() argument must be a "
+                        "Conduit::Generator or a JSON schema string.");
+        return NULL;
+
+    }
+
+    Py_RETURN_NONE;
 }
 
 //---------------------------------------------------------------------------//
@@ -3906,7 +3928,7 @@ static PyTypeObject PyConduit_Node_TYPE = {
 // conduit:::about
 //---------------------------------------------------------------------------//
 static PyObject*
-PyConduit_about(PyObject *self)
+PyConduit_about()
 {
     return PyString_FromString(conduit::about().c_str());
 }
@@ -3947,15 +3969,6 @@ PyConduit_Schema_python_wrap(Schema *schema, int python_owns)
     retval->schema = schema;
     retval->python_owns = python_owns;
     return ((PyObject*)retval);
-}
-
-//---------------------------------------------------------------------------//
-static PyConduit_Schema *
-PyConduit_Schema_python_create()
-{
-    Schema *schema = new Schema();
-    // python_owns = 1
-    return (PyConduit_Schema *)PyConduit_Schema_python_wrap(schema,1); 
 }
 
 
@@ -4349,7 +4362,7 @@ void CONDUIT_PYTHON_API initconduit_python(void)
 #if defined(IS_PY3K)
     PyObject *conduit_module = PyModule_Create(&conduit_python_module_def);
 #else
-    PyObject *conduit_module = Py_InitModule("conduit_python",
+    PyObject *conduit_module = Py_InitModule((char*)"conduit_python",
                                              conduit_python_funcs);
 #endif
 
@@ -4360,7 +4373,9 @@ void CONDUIT_PYTHON_API initconduit_python(void)
 
     struct module_state *st = GETSTATE(conduit_module);
     
-    st->error = PyErr_NewException("conduit_python.Error", NULL, NULL);
+    st->error = PyErr_NewException((char*)"conduit_python.Error",
+                                   NULL,
+                                   NULL);
     if (st->error == NULL)
     {
         Py_DECREF(conduit_module);

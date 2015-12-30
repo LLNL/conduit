@@ -176,9 +176,8 @@ reduce(Node &send_node,
        MPI_Comm mpi_comm) 
 {
 
-    int temp;
-    MPI_Comm_rank(MPI_COMM_WORLD, &temp);
-    const unsigned int rank = temp;
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     Schema schema_c;
     send_node.schema().compact_to(schema_c);

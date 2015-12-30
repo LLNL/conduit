@@ -173,7 +173,7 @@ Schema::set(const Schema &schema)
     {
        std::vector<Schema*> &my_children = children();
        const std::vector<Schema*> &their_children = schema.children();
-       for (index_t i = 0; i < their_children.size(); i++) 
+       for (index_t i = 0; i < (index_t)their_children.size(); i++) 
        {
            Schema *child_schema = new Schema(*their_children[i]);
            child_schema->m_parent = this;
@@ -476,7 +476,7 @@ Schema::to_json_stream(std::ostream &os,
         utils::indent(os,indent,depth,pad);
         os << "{" << eoe;
     
-        index_t nchildren = children().size();
+        index_t nchildren = (index_t) children().size();
         for(index_t i=0; i < nchildren;i++)
         {
             utils::indent(os,indent,depth+1,pad);
@@ -495,7 +495,7 @@ Schema::to_json_stream(std::ostream &os,
         utils::indent(os,indent,depth,pad);
         os << "[" << eoe;
         
-        index_t nchildren = children().size();
+        index_t nchildren = (index_t) children().size();
         for(index_t i=0; i < nchildren;i++)
         {
             utils::indent(os,indent,depth+1,pad);
@@ -568,7 +568,7 @@ Schema::number_of_children() const
     if(m_dtype.id() != DataType::LIST_ID  &&
        m_dtype.id() != DataType::OBJECT_ID)
         return 0;
-    return children().size();
+    return (index_t)children().size();
 }
 
 
@@ -608,7 +608,7 @@ Schema::remove(index_t idx)
     }
     
     std::vector<Schema*>  &chldrn = children();
-    if(idx > chldrn.size())
+    if(idx > (index_t) chldrn.size())
     {
         CONDUIT_ERROR("<Schema::remove> Invalid index:" 
                     << idx << ">" << chldrn.size() <<  "(list_size)");
@@ -617,7 +617,7 @@ Schema::remove(index_t idx)
     if(dtype_id == DataType::OBJECT_ID)
     {
         // any index above the current needs to shift down by one
-        for (index_t i = idx; i < object_order().size(); i++)
+        for (index_t i = idx; i < (index_t) object_order().size(); i++)
         {
             object_map()[object_order()[i]]--;
         }
@@ -869,7 +869,7 @@ Schema::remove(const std::string &path)
     else
     {
         // any index above the current needs to shift down by one
-        for (index_t i = idx; i < object_order().size(); i++)
+        for (index_t i = idx; i < (index_t) object_order().size(); i++)
         {
             object_map()[object_order()[i]]--;
         }
@@ -951,7 +951,7 @@ Schema::release()
        dtype().id() == DataType::LIST_ID)
     {
         std::vector<Schema*> chld = children();
-        for(index_t i=0;i< chld.size();i++)
+        for(index_t i=0; i< (index_t)chld.size(); i++)
         {
             delete chld[i];
         }
