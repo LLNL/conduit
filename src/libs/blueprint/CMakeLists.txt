@@ -68,7 +68,11 @@ set(blueprint_sources
 # Note: headers are added here so they show up in project file generators
 # (such as xcode, eclipse, etc)
 #
-add_library(blueprint SHARED ${blueprint_sources} ${blueprint_headers})
+if(BUILD_SHARED_LIBS)
+    add_library(blueprint SHARED ${blueprint_sources} ${blueprint_headers})
+else()
+    add_library(blueprint STATIC ${blueprint_sources} ${blueprint_headers})
+endif()
 
 #
 # Link with conduit

@@ -57,6 +57,7 @@ set(libb64_sources
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+# we always build libb64 as a static lib
 add_library(libb64 STATIC ${libb64_sources} )
 
 #############################################

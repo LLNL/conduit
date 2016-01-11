@@ -69,9 +69,15 @@ endif()
 # Note: headers are added here so they show up in project file generators
 # (such as xcode, eclipse, etc)
 #
-add_library(conduit_fortran SHARED 
-            ${conduit_fortran_sources}
-            )
+if(BUILD_SHARED_LIBS)
+    add_library(conduit_fortran SHARED 
+                ${conduit_fortran_sources}
+                ) 
+else()
+    add_library(conduit_fortran STATIC 
+                ${conduit_fortran_sources}
+                )
+endif()
 
 target_link_libraries(conduit_fortran  conduit)
 

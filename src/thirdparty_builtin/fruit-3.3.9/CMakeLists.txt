@@ -52,6 +52,7 @@
 set(fruit_sources
     fruit.f90)
 
+# we always build fruit as a static lib
 add_library(fruit STATIC ${fruit_sources})
 
 

@@ -67,12 +67,18 @@ include_directories(${MPI_CXX_INCLUDE_PATH})
 # Note: headers are added here so they show up in project file generators
 # (such as xcode, eclipse, etc)
 #
-add_library(conduit_mpi SHARED ${conduit_mpi_sources} ${conduit_mpi_headers})
+
+if(BUILD_SHARED_LIBS)
+    add_library(conduit_mpi SHARED ${conduit_mpi_sources} ${conduit_mpi_headers})
+else()
+    add_library(conduit_mpi STATIC ${conduit_mpi_sources} ${conduit_mpi_headers})
+endif()
+        
 
 # guard against empty mpi params
 if(NOT "${MPI_CXX_COMPILE_FLAGS}" STREQUAL "")
     set_target_properties(conduit_mpi 
-                                PROPERTIES COMPILE_FLAGS            
+                                PROPERTIES COMPILE_FLAGS
                                 ${MPI_CXX_COMPILE_FLAGS} )
 endif()
 
