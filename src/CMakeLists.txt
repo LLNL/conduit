@@ -58,6 +58,7 @@ project(conduit)
 ################################
 # Build Options
 ################################
+option(BUILD_SHARED_LIBS  "Build shared libraries"      ON)
 option(ENABLE_TESTS       "Build conduit tests"         ON)
 option(ENABLE_GPREF_TOOLS "Build with google perftools" OFF)
 

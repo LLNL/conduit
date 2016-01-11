@@ -65,6 +65,7 @@ add_definitions(-DUSE_WEBSOCKET)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+# we always build civetweb as a static lib
 add_library(civetweb STATIC ${civetweb_sources} ${civetweb_headers})
 
 ##################################

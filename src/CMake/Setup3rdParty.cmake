@@ -50,7 +50,21 @@ if(ENABLE_TESTS)
     ################################
     # Enable GTest
     ################################
+    
+    #
+    # We always want to build gtest as a static lib, however
+    # it shares our "BUILD_SHARED_LIBS" option, so we need
+    # to force this value to OFF, and then restore the 
+    # previous setting.
+    #
+
+    set(BSL_ORIG_VALUE ${BUILD_SHARED_LIBS})
+    
+    set(BUILD_SHARED_LIBS OFF)
     add_subdirectory(thirdparty_builtin/gtest-1.7.0)
+    
+    set(BUILD_SHARED_LIBS ${BSL_ORIG_VALUE})
+    
     enable_testing()
     include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 endif()

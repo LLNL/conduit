@@ -92,7 +92,11 @@ endif()
 # Note: headers are added here so they show up in project file generators
 # (such as xcode, eclipse, etc)
 #
-add_library(conduit_io SHARED ${conduit_io_sources} ${conduit_io_headers})
+if(BUILD_SHARED_LIBS)
+    add_library(conduit_io SHARED ${conduit_io_sources} ${conduit_io_headers})
+else()
+    add_library(conduit_io STATIC ${conduit_io_sources} ${conduit_io_headers})
+endif()
 
 #
 # Link with conduit and silo (if enabled)

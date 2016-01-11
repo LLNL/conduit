@@ -109,15 +109,26 @@ set(conduit_c_sources
     conduit_node.cpp
     )
 
-#
+
+    #
 # Note: headers are added here so they show up in project file generators
 # (such as xcode, eclipse, etc)
 #
-add_library(conduit SHARED 
-            ${conduit_sources} 
-            ${conduit_c_sources} 
-            ${conduit_headers}
-            ${conduit_c_headers})
+
+if(BUILD_SHARED_LIBS)
+    add_library(conduit SHARED 
+                ${conduit_sources} 
+                ${conduit_c_sources} 
+                ${conduit_headers}
+                ${conduit_c_headers})
+else()
+    add_library(conduit STATIC
+                ${conduit_sources} 
+                ${conduit_c_sources} 
+                ${conduit_headers}
+                ${conduit_c_headers})
+endif()
+
 
 target_link_libraries(conduit libb64)
 

@@ -71,6 +71,17 @@ macro(ENABLE_WARNINGS)
     endif()
 endmacro()
 
+
+################################
+# Shared vs Static Libs
+################################
+if(BUILD_SHARED_LIBS)
+    message(STATUS "Building shared libraries (BUILD_SHARED_LIBS == ON)")
+else()
+    message(STATUS "Building static libraries (BUILD_SHARED_LIBS == OFF)")
+endif()
+
+
 ################################
 # RPath Settings
 ################################
