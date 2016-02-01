@@ -52,6 +52,7 @@
 //-----------------------------------------------------------------------------
 // conduit includes
 //-----------------------------------------------------------------------------
+#include "Utils.hpp"
 #include "Schema.hpp"
 
 //-----------------------------------------------------------------------------
@@ -780,6 +781,15 @@ DataType::is_big_endian() const
 index_t
 DataType::element_index(index_t idx) const
 {
+    /// TODO: This will be an expensive check, placed this in 
+    /// to help us ferret out some places were we are creating default 
+    /// datatypes that have stride == 0.
+
+    if(idx > 0 && m_stride == 0)
+    {
+        CONDUIT_WARN("Node index calculation with with stride = 0");
+    }
+    
     return m_offset + m_stride * idx;
 }
 

@@ -54,8 +54,8 @@
 
 using namespace conduit;
 
-
-TEST(conduit_io_hf5, conduit_hdf5_write_read)
+//-----------------------------------------------------------------------------
+TEST(conduit_io_hdf5, conduit_hdf5_write_read)
 {
     uint32 a_val = 20;
     uint32 b_val = 8;
@@ -90,15 +90,83 @@ TEST(conduit_io_hf5, conduit_hdf5_write_read)
     EXPECT_EQ(n_load_2["myobj/c"].as_uint32(), c_val);
 
 
-    Node n_load_3;
+    Node n_load_generic;
     // read from root of hdf5 file
-    io::read("tout_hdf5_wr.hdf5",n_load_3);
+    io::read("tout_hdf5_wr.hdf5",n_load_generic);
     
-    EXPECT_EQ(n_load_3["myobj/a"].as_uint32(), a_val);
-    EXPECT_EQ(n_load_3["myobj/b"].as_uint32(), b_val);
-    EXPECT_EQ(n_load_3["myobj/c"].as_uint32(), c_val);
+    EXPECT_EQ(n_load_generic["myobj/a"].as_uint32(), a_val);
+    EXPECT_EQ(n_load_generic["myobj/b"].as_uint32(), b_val);
+    EXPECT_EQ(n_load_generic["myobj/c"].as_uint32(), c_val);
+    
+    
+    // save load from generic io interface 
+    io::save(n_load_generic,"tout_hdf5_wr_generic.hdf5:myobj");
+    io::read("tout_hdf5_wr_generic.hdf5",n_load_generic);
+    
+    EXPECT_EQ(n_load_generic["myobj/a"].as_uint32(), a_val);
+    EXPECT_EQ(n_load_generic["myobj/b"].as_uint32(), b_val);
+    EXPECT_EQ(n_load_generic["myobj/c"].as_uint32(), c_val);
+    
+    
 
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_io_hdf5, conduit_hdf5_write_read_string)
+{
+    uint32 a_val = 20;
+    
+    std::string s_val = "{string value!}";
+
+    Node n;
+    n["a"] = a_val;
+    n["s"] = s_val;
+
+    EXPECT_EQ(n["a"].as_uint32(), a_val);
+    EXPECT_EQ(n["s"].as_string(), s_val);
+
+    // write our node as a group @ "myobj"
+    io::hdf5_write(n,"tout_hdf5_wr_string.hdf5:myobj");
+
+    Node n_out;
+    
+    io::hdf5_read("tout_hdf5_wr_string.hdf5:myobj",n_out);
+    
+    EXPECT_EQ(n_out["a"].as_uint32(), a_val);
+    EXPECT_EQ(n_out["s"].as_string(), s_val);
+    
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_io_hdf5, conduit_hdf5_write_read_array)
+{
+    Node n_in(DataType::float64(10));
+    
+    float64_array val_in = n_in.value();
+    
+    for(index_t i=0;i<10;i++)
+    {
+        val_in[i] = 3.1415 * i;
+    }
+
+    // write our node as a group @ "myobj"
+    io::hdf5_write(n_in,"tout_hdf5_wr_array.hdf5:myobj");
+
+    Node n_out;
+    
+    io::hdf5_read("tout_hdf5_wr_array.hdf5:myobj",n_out);
+    
+    float64_array val_out = n_out.value();
+    
+    
+    for(index_t i=0;i<10;i++)
+    {
+        EXPECT_EQ(val_in[i],val_out[i]);
+    }
+
+}
+
 
 
 
