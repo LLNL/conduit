@@ -172,43 +172,44 @@ hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
     // little endian
     if(H5Tequal(hdf5_dtype_id,H5T_STD_I8LE))
     {
-        res.set_id(DataType::UINT8_ID);
+        res = DataType::int8(num_elems);
         res.set_endianness(Endianness::LITTLE_ID);
     }
     else if(H5Tequal(hdf5_dtype_id,H5T_STD_I16LE))
     {
-        res.set_id(DataType::UINT16_ID);
+        res = DataType::int16(num_elems);
         res.set_endianness(Endianness::LITTLE_ID);
     }
     else if(H5Tequal(hdf5_dtype_id,H5T_STD_I32LE))
     {
-        res.set_id(DataType::UINT32_ID);
+        res = DataType::int32(num_elems);
         res.set_endianness(Endianness::LITTLE_ID);
     }
     else if(H5Tequal(hdf5_dtype_id,H5T_STD_I64LE))
     {
+        res = DataType::int64(num_elems);
         res.set_id(DataType::UINT64_ID);
         res.set_endianness(Endianness::LITTLE_ID);
     }
      // big endian
     else if(H5Tequal(hdf5_dtype_id,H5T_STD_I8BE))
     {
-        res.set_id(DataType::UINT8_ID);
+        res = DataType::int8(num_elems);
         res.set_endianness(Endianness::BIG_ID);
     }
     else if(H5Tequal(hdf5_dtype_id,H5T_STD_I16BE))
     {
-        res.set_id(DataType::UINT16_ID);
+        res = DataType::int16(num_elems);
         res.set_endianness(Endianness::BIG_ID);
     }
     else if(H5Tequal(hdf5_dtype_id,H5T_STD_I32BE))
     {
-        res.set_id(DataType::UINT32_ID);
+        res = DataType::int32(num_elems);
         res.set_endianness(Endianness::BIG_ID);
     }
     else if(H5Tequal(hdf5_dtype_id,H5T_STD_I64BE))
     {
-        res.set_id(DataType::UINT64_ID);
+        res = DataType::int64(num_elems);
         res.set_endianness(Endianness::BIG_ID);
     }
     //-----------------------------------------------
@@ -217,43 +218,43 @@ hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
     // little endian
     else if(H5Tequal(hdf5_dtype_id,H5T_STD_U8LE))
     {
-        res.set_id(DataType::UINT8_ID);
+        res = DataType::uint8(num_elems);
         res.set_endianness(Endianness::LITTLE_ID);
     }
     else if(H5Tequal(hdf5_dtype_id,H5T_STD_U16LE))
     {
-        res.set_id(DataType::UINT16_ID);
+        res = DataType::uint16(num_elems);
         res.set_endianness(Endianness::LITTLE_ID);
     }
     else if(H5Tequal(hdf5_dtype_id,H5T_STD_U32LE))
     {
-        res.set_id(DataType::UINT32_ID);
+        res = DataType::uint32(num_elems);
         res.set_endianness(Endianness::LITTLE_ID);
     }
     else if(H5Tequal(hdf5_dtype_id,H5T_STD_U64LE))
     {
-        res.set_id(DataType::UINT64_ID);
+        res = DataType::uint64(num_elems);
         res.set_endianness(Endianness::LITTLE_ID);
     }
     // big endian
     else if(H5Tequal(hdf5_dtype_id,H5T_STD_U8BE))
     {
-        res.set_id(DataType::UINT8_ID);
+        res = DataType::uint8(num_elems);
         res.set_endianness(Endianness::BIG_ID);
     }
     else if(H5Tequal(hdf5_dtype_id,H5T_STD_U16BE))
     {
-        res.set_id(DataType::UINT16_ID);
+        res = DataType::uint16(num_elems);
         res.set_endianness(Endianness::BIG_ID);
     }
     else if(H5Tequal(hdf5_dtype_id,H5T_STD_U32BE))
     {
-        res.set_id(DataType::UINT32_ID);
+        res = DataType::uint32(num_elems);
         res.set_endianness(Endianness::BIG_ID);
     }
     else if(H5Tequal(hdf5_dtype_id,H5T_STD_U64BE))
     {
-        res.set_id(DataType::UINT64_ID);
+        res = DataType::uint64(num_elems);
         res.set_endianness(Endianness::BIG_ID);
     }
     //-----------------------------------------------
@@ -262,23 +263,23 @@ hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
     // little endian
     else if(H5Tequal(hdf5_dtype_id,H5T_IEEE_F32LE))
     {
-        res.set_id(DataType::FLOAT32_ID);
+        res = DataType::float32(num_elems);
         res.set_endianness(Endianness::LITTLE_ID);
     }
     else if(H5Tequal(hdf5_dtype_id,H5T_IEEE_F64LE))
     {
-        res.set_id(DataType::FLOAT64_ID);
+        res = DataType::float64(num_elems);
         res.set_endianness(Endianness::LITTLE_ID);
     }
     // big endian
     else if(H5Tequal(hdf5_dtype_id,H5T_IEEE_F32BE))
     {
-        res.set_id(DataType::FLOAT32_ID);
+        res = DataType::float32(num_elems);
         res.set_endianness(Endianness::BIG_ID);
     }
     else if(H5Tequal(hdf5_dtype_id,H5T_IEEE_F64BE))
     {
-        res.set_id(DataType::FLOAT64_ID);
+        res = DataType::float64(num_elems);
         res.set_endianness(Endianness::BIG_ID);
     }
     //-----------------------------------------------
@@ -286,8 +287,7 @@ hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
     //-----------------------------------------------
     else if(H5Tequal(hdf5_dtype_id,H5T_C_S1))
     {
-        res.set_id(DataType::CHAR8_STR_ID);
-        res.set_endianness(Endianness::DEFAULT_ID);
+        res = DataType::char8_str(num_elems);
     }
     else
     {
