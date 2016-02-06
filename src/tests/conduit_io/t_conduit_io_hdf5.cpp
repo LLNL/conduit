@@ -92,7 +92,7 @@ TEST(conduit_io_hdf5, conduit_hdf5_write_read)
 
     Node n_load_generic;
     // read from root of hdf5 file
-    io::read("tout_hdf5_wr.hdf5",n_load_generic);
+    io::load("tout_hdf5_wr.hdf5",n_load_generic);
     
     EXPECT_EQ(n_load_generic["myobj/a"].as_uint32(), a_val);
     EXPECT_EQ(n_load_generic["myobj/b"].as_uint32(), b_val);
@@ -101,7 +101,7 @@ TEST(conduit_io_hdf5, conduit_hdf5_write_read)
     
     // save load from generic io interface 
     io::save(n_load_generic,"tout_hdf5_wr_generic.hdf5:myobj");
-    io::read("tout_hdf5_wr_generic.hdf5",n_load_generic);
+    io::load_merged("tout_hdf5_wr_generic.hdf5",n_load_generic);
     
     EXPECT_EQ(n_load_generic["myobj/a"].as_uint32(), a_val);
     EXPECT_EQ(n_load_generic["myobj/b"].as_uint32(), b_val);

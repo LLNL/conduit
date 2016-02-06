@@ -62,11 +62,13 @@
 
 #include "conduit_web.hpp"
 
+
+// include optional libs
+
 #ifdef CONDUIT_IO_ENABLE_HDF5
 #include "conduit_hdf5.hpp"
 #endif
 
-// include optional libs
 #ifdef CONDUIT_IO_ENABLE_SILO
 #include "conduit_silo.hpp"
 #endif
@@ -82,6 +84,10 @@ namespace conduit
 //-----------------------------------------------------------------------------
 namespace io
 {
+
+///
+/// ``save`` works like a 'set' to the file.
+///
 
 //-----------------------------------------------------------------------------
 void CONDUIT_IO_API save(Node &node,
@@ -99,7 +105,26 @@ void CONDUIT_IO_API save(const std::string &protocol,
                          const std::string &protocol_path);
 
 ///
-/// ``load`` works like a 'set',the node is reset and then populated
+/// ``save_merged`` works like an update to the file.
+///
+
+//-----------------------------------------------------------------------------
+void CONDUIT_IO_API save_merged(Node &node,
+                                const std::string &path);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_IO_API save_merged(const std::string &protocol,
+                                Node &node,
+                                const std::string &path);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_IO_API save_merged(const std::string &protocol,
+                                Node &node,
+                                const std::string &file_path,
+                                const std::string &protocol_path);
+
+///
+/// ``load`` works like a 'set', the node is reset and then populated
 ///
 
 //-----------------------------------------------------------------------------
@@ -119,24 +144,25 @@ void CONDUIT_IO_API load(const std::string &protocol,
 
 
 ///
-/// ``read`` works like an update, for the object case, entries are read into 
-///  the node. If the node is already in the OBJECT_T role, children are added
+/// ``load_merged`` works like an update, for the object case, entries are read
+///  into the node. If the node is already in the OBJECT_T role, children are 
+///  added
 ///
 
 //-----------------------------------------------------------------------------
-void CONDUIT_IO_API read(const std::string &path,
-                         Node &node);
+void CONDUIT_IO_API load_merged(const std::string &path,
+                                Node &node);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_IO_API read(const std::string &protocol,
-                         const std::string &path,
-                         Node &node);
+void CONDUIT_IO_API load_merged(const std::string &protocol,
+                                const std::string &path,
+                                Node &node);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_IO_API read(const std::string &protocol,
-                         const std::string &file_path,
-                         const std::string &protocol_path,
-                         Node &node);
+void CONDUIT_IO_API load_merged(const std::string &protocol,
+                                const std::string &file_path,
+                                const std::string &protocol_path,
+                                Node &node);
 
 //-----------------------------------------------------------------------------
 /// The about methods construct human readable info about how conduit_io was
