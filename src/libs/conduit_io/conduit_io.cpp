@@ -168,7 +168,7 @@ save(const std::string &protocol,
     else if( protocol == "conduit_silo")
     {
 #ifdef CONDUIT_IO_ENABLE_SILO
-        silo_save(node,path);
+        silo_write(node,path);
 #else
         CONDUIT_ERROR("conduit_io lacks Silo support: " << 
                       "Failed to save conduit node to path " << path);
@@ -177,7 +177,7 @@ save(const std::string &protocol,
     else if(protocol == "conduit_silo_mesh")
     {
 #ifdef CONDUIT_IO_ENABLE_SILO
-        silo_save_mesh(node,path);
+        silo_mesh_write(node,path);
 #else
         CONDUIT_ERROR("conduit_io lacks Silo support: " << 
                       "Failed to save conduit mesh node to path " << path);
@@ -215,9 +215,9 @@ save_merged(const std::string &protocol,
     {
 #ifdef CONDUIT_IO_ENABLE_SILO
         Node n;
-        silo_load(path,n);
+        silo_read(path,n);
         n.update(node);
-        silo_save(n,path);
+        silo_write(n,path);
 #else
         CONDUIT_ERROR("conduit_io lacks Silo support: " << 
                       "Failed to save conduit node to path " << path);
@@ -226,8 +226,8 @@ save_merged(const std::string &protocol,
     else if(protocol == "conduit_silo_mesh")
     {
 #ifdef CONDUIT_IO_ENABLE_SILO
-        /// TODO .. 
-        silo_save_mesh(node,path);
+        /// TODO .. ?
+        silo_mesh_write(node,path);
 #else
         CONDUIT_ERROR("conduit_io lacks Silo support: " << 
                       "Failed to save conduit mesh node to path " << path);
@@ -264,7 +264,7 @@ load(const std::string &protocol,
     else if( protocol == "conduit_silo")
     {
 #ifdef CONDUIT_IO_ENABLE_SILO
-        silo_load(path,node);
+        silo_read(path,node);
 #else
         CONDUIT_ERROR("conduit_io lacks Silo support: " << 
                     "Failed to load conduit node from path " << path);
@@ -312,7 +312,7 @@ load_merged(const std::string &protocol,
     {
 #ifdef CONDUIT_IO_ENABLE_SILO
         Node n;
-        silo_load(path,n);
+        silo_read(path,n);
         node.update(n);
 #else
         CONDUIT_ERROR("conduit_io lacks Silo support: " << 
