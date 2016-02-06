@@ -67,7 +67,15 @@ foreach(TEST ${IO_TESTS})
 endforeach()
 
 
-if(ENABLE_SILO)
+if(HDF5_FOUND)
+    foreach(TEST ${IO_HDF5_TESTS})
+        add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_io)
+        target_link_libraries(${TEST} ${HDF5_LIBRARIES})
+    endforeach()
+endif()
+
+
+if(SILO_FOUND)
     foreach(TEST ${IO_SILO_TESTS})
         add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_io)
         target_link_libraries(${TEST} ${SILO_LIBRARIES})
@@ -75,12 +83,6 @@ if(ENABLE_SILO)
 endif()
 
 
-if(ENABLE_HDF5)
-    foreach(TEST ${IO_HDF5_TESTS})
-        add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_io)
-        target_link_libraries(${TEST} ${HDF5_LIBRARIES})
-    endforeach()
-endif()
 
 
 

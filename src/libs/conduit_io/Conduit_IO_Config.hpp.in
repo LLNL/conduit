@@ -56,9 +56,9 @@
 // #define optional i/o features
 //
 //-----------------------------------------------------------------------------
-#cmakedefine CONDUIT_IO_ENABLE_SILO
+#cmakedefine CONDUIT_IO_HDF5_ENABLED
 
-#cmakedefine CONDUIT_IO_ENABLE_HDF5
+#cmakedefine CONDUIT_IO_SILO_ENABLED
 
 
 // this path points to the web client js code tree

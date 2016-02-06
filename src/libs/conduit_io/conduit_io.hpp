@@ -62,12 +62,12 @@
 
 #include "conduit_web.hpp"
 
-#ifdef CONDUIT_IO_ENABLE_HDF5
+#ifdef CONDUIT_IO_HDF5_ENABLED
 #include "conduit_hdf5.hpp"
 #endif
 
 // include optional libs
-#ifdef CONDUIT_IO_ENABLE_SILO
+#ifdef CONDUIT_IO_SILO_ENABLED
 #include "conduit_silo.hpp"
 #endif
 

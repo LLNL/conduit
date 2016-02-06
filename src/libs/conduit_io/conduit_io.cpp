@@ -148,7 +148,7 @@ save(const std::string &protocol,
     }
     else if( protocol == "hdf5")
     {
-#ifdef CONDUIT_IO_ENABLE_HDF5
+#ifdef CONDUIT_IO_HDF5_ENABLED
         hdf5_write(node,path);
 #else
         CONDUIT_ERROR("conduit_io lacks HDF5 support: " << 
@@ -157,7 +157,7 @@ save(const std::string &protocol,
     }
     else if( protocol == "conduit_silo")
     {
-#ifdef CONDUIT_IO_ENABLE_SILO
+#ifdef CONDUIT_IO_SILO_ENABLED
         silo_save(node,path);
 #else
         CONDUIT_ERROR("conduit_io lacks Silo support: " << 
@@ -166,7 +166,7 @@ save(const std::string &protocol,
     }
     else if(protocol == "conduit_silo_mesh")
     {
-#ifdef CONDUIT_IO_ENABLE_SILO
+#ifdef CONDUIT_IO_SILO_ENABLED
         silo_save_mesh(node,path);
 #else
         CONDUIT_ERROR("conduit_io lacks Silo support: " << 
@@ -192,7 +192,7 @@ load(const std::string &protocol,
     }
     else if( protocol == "hdf5")
     {
-#ifdef CONDUIT_IO_ENABLE_HDF5
+#ifdef CONDUIT_IO_HDF5_ENABLED
         node.reset();
         hdf5_read(path,node);
 #else
@@ -202,7 +202,7 @@ load(const std::string &protocol,
     }
     else if( protocol == "conduit_silo")
     {
-#ifdef CONDUIT_IO_ENABLE_SILO
+#ifdef CONDUIT_IO_SILO_ENABLED
         silo_load(path,node);
 #else
         CONDUIT_ERROR("conduit_io lacks Silo support: " << 
@@ -238,7 +238,7 @@ read(const std::string &protocol,
     }
     else if( protocol == "hdf5")
     {
-#ifdef CONDUIT_IO_ENABLE_HDF5
+#ifdef CONDUIT_IO_HDF5_ENABLED
         Node n;
         hdf5_read(path,n);
         node.update(n);
@@ -249,7 +249,7 @@ read(const std::string &protocol,
     }
     else if( protocol == "conduit_silo")
     {
-#ifdef CONDUIT_IO_ENABLE_SILO
+#ifdef CONDUIT_IO_SILO_ENABLED
         Node n;
         silo_load(path,n);
         node.update(n);
@@ -293,7 +293,7 @@ about(Node &n)
     // rest server
     protos["rest"] = "enabled";
 
-#ifdef CONDUIT_IO_ENABLE_HDF5
+#ifdef CONDUIT_IO_HDF5_ENABLED
     // straight hdf5 
     protos["hdf5"] = "enabled";
 #else
@@ -302,7 +302,7 @@ about(Node &n)
 #endif
     
     // silo
-#ifdef CONDUIT_IO_ENABLE_SILO
+#ifdef CONDUIT_IO_SILO_ENABLED
     // node is packed into two silo objects
     protos["conduit_silo"] = "enabled";
 #else
@@ -311,7 +311,7 @@ about(Node &n)
 #endif
     
     // silo mesh aware
-#ifdef CONDUIT_IO_ENABLE_SILO
+#ifdef CONDUIT_IO_SILO_ENABLED
     protos["conduit_silo_mesh"] = "enabled";
 #else
     protos["conduit_silo_mesh"] = "disabled";
