@@ -66,9 +66,6 @@ option(ENABLE_PYTHON      "Build Python Support"        OFF)
 option(ENABLE_FORTRAN     "Build Fortran  support"      OFF)
 
 option(ENABLE_MPI         "Build MPI Support"           OFF)
-option(ENABLE_SILO        "Build Silo Support"          OFF)
-option(ENABLE_HDF5        "Build HDF5 Support"          OFF)
-
 
 ################################
 # Invoke CMake Fortran setup

@@ -65,11 +65,12 @@
 
 // include optional libs
 
-#ifdef CONDUIT_IO_ENABLE_HDF5
+#ifdef CONDUIT_IO_HDF5_ENABLED
 #include "conduit_hdf5.hpp"
 #endif
 
-#ifdef CONDUIT_IO_ENABLE_SILO
+// include optional libs
+#ifdef CONDUIT_IO_SILO_ENABLED
 #include "conduit_silo.hpp"
 #endif
 

@@ -158,7 +158,7 @@ save(const std::string &protocol,
     }
     else if( protocol == "hdf5")
     {
-#ifdef CONDUIT_IO_ENABLE_HDF5
+#ifdef CONDUIT_IO_HDF5_ENABLED
         hdf5_write(node,path);
 #else
         CONDUIT_ERROR("conduit_io lacks HDF5 support: " << 
@@ -167,7 +167,7 @@ save(const std::string &protocol,
     }
     else if( protocol == "conduit_silo")
     {
-#ifdef CONDUIT_IO_ENABLE_SILO
+#ifdef CONDUIT_IO_SILO_ENABLED
         silo_write(node,path);
 #else
         CONDUIT_ERROR("conduit_io lacks Silo support: " << 
@@ -176,7 +176,7 @@ save(const std::string &protocol,
     }
     else if(protocol == "conduit_silo_mesh")
     {
-#ifdef CONDUIT_IO_ENABLE_SILO
+#ifdef CONDUIT_IO_SILO_ENABLED
         silo_mesh_write(node,path);
 #else
         CONDUIT_ERROR("conduit_io lacks Silo support: " << 
@@ -204,7 +204,7 @@ save_merged(const std::string &protocol,
     }
     else if( protocol == "hdf5")
     {
-#ifdef CONDUIT_IO_ENABLE_HDF5
+#ifdef CONDUIT_IO_HDF5_ENABLED
         hdf5_write(node,path);
 #else
         CONDUIT_ERROR("conduit_io lacks HDF5 support: " << 
@@ -213,7 +213,7 @@ save_merged(const std::string &protocol,
     }
     else if( protocol == "conduit_silo")
     {
-#ifdef CONDUIT_IO_ENABLE_SILO
+#ifdef CONDUIT_IO_SILO_ENABLED
         Node n;
         silo_read(path,n);
         n.update(node);
@@ -225,7 +225,7 @@ save_merged(const std::string &protocol,
     }
     else if(protocol == "conduit_silo_mesh")
     {
-#ifdef CONDUIT_IO_ENABLE_SILO
+#ifdef CONDUIT_IO_SILO_ENABLED
         /// TODO .. ?
         silo_mesh_write(node,path);
 #else
@@ -253,7 +253,7 @@ load(const std::string &protocol,
     }
     else if( protocol == "hdf5")
     {
-#ifdef CONDUIT_IO_ENABLE_HDF5
+#ifdef CONDUIT_IO_HDF5_ENABLED
         node.reset();
         hdf5_read(path,node);
 #else
@@ -263,7 +263,7 @@ load(const std::string &protocol,
     }
     else if( protocol == "conduit_silo")
     {
-#ifdef CONDUIT_IO_ENABLE_SILO
+#ifdef CONDUIT_IO_SILO_ENABLED
         silo_read(path,node);
 #else
         CONDUIT_ERROR("conduit_io lacks Silo support: " << 
@@ -299,7 +299,7 @@ load_merged(const std::string &protocol,
     }
     else if( protocol == "hdf5")
     {
-#ifdef CONDUIT_IO_ENABLE_HDF5
+#ifdef CONDUIT_IO_HDF5_ENABLED
         Node n;
         hdf5_read(path,n);
         node.update(n);
@@ -310,7 +310,7 @@ load_merged(const std::string &protocol,
     }
     else if( protocol == "conduit_silo")
     {
-#ifdef CONDUIT_IO_ENABLE_SILO
+#ifdef CONDUIT_IO_SILO_ENABLED
         Node n;
         silo_read(path,n);
         node.update(n);
@@ -354,7 +354,7 @@ about(Node &n)
     // rest server
     protos["rest"] = "enabled";
 
-#ifdef CONDUIT_IO_ENABLE_HDF5
+#ifdef CONDUIT_IO_HDF5_ENABLED
     // straight hdf5 
     protos["hdf5"] = "enabled";
 #else
@@ -363,7 +363,7 @@ about(Node &n)
 #endif
     
     // silo
-#ifdef CONDUIT_IO_ENABLE_SILO
+#ifdef CONDUIT_IO_SILO_ENABLED
     // node is packed into two silo objects
     protos["conduit_silo"] = "enabled";
 #else
@@ -372,7 +372,7 @@ about(Node &n)
 #endif
     
     // silo mesh aware
-#ifdef CONDUIT_IO_ENABLE_SILO
+#ifdef CONDUIT_IO_SILO_ENABLED
     protos["conduit_silo_mesh"] = "enabled";
 #else
     protos["conduit_silo_mesh"] = "disabled";

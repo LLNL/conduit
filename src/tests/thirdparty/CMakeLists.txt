@@ -109,7 +109,7 @@ else()
 endif()
 
 
-if(ENABLE_HDF5)
+if(HDF5_FOUND)
     message(STATUS "HDF5 enabled: Adding related unit tests")
     foreach(TEST ${HDF5_TESTS})
         add_cpp_test(TEST ${TEST})
@@ -120,7 +120,7 @@ else()
 endif()
 
 
-if(ENABLE_SILO)
+if(SILO_FOUND)
     message(STATUS "Silo enabled: Adding related unit tests")
     foreach(TEST ${SILO_TESTS})
         add_cpp_test(TEST ${TEST})
