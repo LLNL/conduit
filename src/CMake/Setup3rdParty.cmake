@@ -164,12 +164,12 @@ endif()
 # Setup HDF5 if available 
 ################################
 # Search for HDF5.
-if(ENABLE_HDF5)
+if(HDF5_DIR)
     include(CMake/thirdparty/FindHDF5.cmake)
     include_directories(${HDF5_INCLUDE_DIRS})
     # if we don't find HDF5, throw a fatal error
     if(NOT HDF5_FOUND)
-        message(FATAL_ERROR "ENABLE_HDF5 is true, but HDF5 wasn't found.")
+        message(FATAL_ERROR "HDF5_DIR is set, but HDF5 wasn't found.")
     endif()
 endif()
 
@@ -177,12 +177,12 @@ endif()
 # Setup Silo if available 
 ################################
 # Search for Silo.
-if(ENABLE_SILO)
+if(SILO_DIR)
     include(CMake/thirdparty/FindSilo.cmake)
     include_directories(${SILO_INCLUDE_DIRS})
     # if we don't find silo, throw a fatal error
     if(NOT SILO_FOUND)
-        message(FATAL_ERROR "ENABLE_SILO is true, but Silo wasn't found.")
+        message(FATAL_ERROR "SILO_DIR is set, but Silo wasn't found.")
     endif()
 endif()
 
