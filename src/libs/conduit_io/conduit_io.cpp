@@ -117,6 +117,16 @@ save(Node &node,
 
 //---------------------------------------------------------------------------//
 void 
+save_merged(Node &node,
+            const std::string &path)
+{
+    std::string protocol;
+    identify_protocol(path,protocol);
+    save_merged(protocol,node,path);
+}
+
+//---------------------------------------------------------------------------//
+void 
 load(const std::string &path,
      Node &node)
 {
@@ -127,12 +137,12 @@ load(const std::string &path,
 
 //---------------------------------------------------------------------------//
 void 
-read(const std::string &path,
-     Node &node)
+load_merged(const std::string &path,
+            Node &node)
 {
     std::string protocol;
     identify_protocol(path,protocol);
-    read(protocol,path,node);
+    load_merged(protocol,path,node);
 }
 
 
@@ -158,7 +168,7 @@ save(const std::string &protocol,
     else if( protocol == "conduit_silo")
     {
 #ifdef CONDUIT_IO_SILO_ENABLED
-        silo_save(node,path);
+        silo_write(node,path);
 #else
         CONDUIT_ERROR("conduit_io lacks Silo support: " << 
                       "Failed to save conduit node to path " << path);
@@ -167,7 +177,7 @@ save(const std::string &protocol,
     else if(protocol == "conduit_silo_mesh")
     {
 #ifdef CONDUIT_IO_SILO_ENABLED
-        silo_save_mesh(node,path);
+        silo_mesh_write(node,path);
 #else
         CONDUIT_ERROR("conduit_io lacks Silo support: " << 
                       "Failed to save conduit mesh node to path " << path);
@@ -178,6 +188,57 @@ save(const std::string &protocol,
         CONDUIT_ERROR("conduit_io unknown protocol: " << protocol);
     }
 }
+
+//---------------------------------------------------------------------------//
+void 
+save_merged(const std::string &protocol,
+            Node &node,
+            const std::string &path)
+{
+    if(protocol == "conduit_bin")
+    {
+        Node n;
+        n.load(path);
+        n.update(node);
+        n.save(path);
+    }
+    else if( protocol == "hdf5")
+    {
+#ifdef CONDUIT_IO_HDF5_ENABLED
+        hdf5_write(node,path);
+#else
+        CONDUIT_ERROR("conduit_io lacks HDF5 support: " << 
+                      "Failed to save conduit node to path " << path);
+#endif
+    }
+    else if( protocol == "conduit_silo")
+    {
+#ifdef CONDUIT_IO_SILO_ENABLED
+        Node n;
+        silo_read(path,n);
+        n.update(node);
+        silo_write(n,path);
+#else
+        CONDUIT_ERROR("conduit_io lacks Silo support: " << 
+                      "Failed to save conduit node to path " << path);
+#endif
+    }
+    else if(protocol == "conduit_silo_mesh")
+    {
+#ifdef CONDUIT_IO_SILO_ENABLED
+        /// TODO .. ?
+        silo_mesh_write(node,path);
+#else
+        CONDUIT_ERROR("conduit_io lacks Silo support: " << 
+                      "Failed to save conduit mesh node to path " << path);
+#endif
+    }
+    else
+    {
+        CONDUIT_ERROR("conduit_io unknown protocol: " << protocol);
+    }
+}
+
 
 //---------------------------------------------------------------------------//
 void
@@ -203,7 +264,7 @@ load(const std::string &protocol,
     else if( protocol == "conduit_silo")
     {
 #ifdef CONDUIT_IO_SILO_ENABLED
-        silo_load(path,node);
+        silo_read(path,node);
 #else
         CONDUIT_ERROR("conduit_io lacks Silo support: " << 
                     "Failed to load conduit node from path " << path);
@@ -224,9 +285,9 @@ load(const std::string &protocol,
 
 //---------------------------------------------------------------------------//
 void
-read(const std::string &protocol,
-     const std::string &path,
-     Node &node)
+load_merged(const std::string &protocol,
+            const std::string &path,
+            Node &node)
 {
 
     if(protocol == "conduit_bin")
@@ -251,7 +312,7 @@ read(const std::string &protocol,
     {
 #ifdef CONDUIT_IO_SILO_ENABLED
         Node n;
-        silo_load(path,n);
+        silo_read(path,n);
         node.update(n);
 #else
         CONDUIT_ERROR("conduit_io lacks Silo support: " << 

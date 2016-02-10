@@ -93,8 +93,8 @@ namespace io
 
 //---------------------------------------------------------------------------//
 void 
-silo_save(const  Node &node,
-          const std::string &path)
+silo_write(const  Node &node,
+           const std::string &path)
 {
     // check for ":" split
     std::string file_path;
@@ -110,12 +110,12 @@ silo_save(const  Node &node,
         CONDUIT_ERROR("Invalid path for save: " << path);
     }
 
-    silo_save(node,file_path,silo_obj_base);
+    silo_write(node,file_path,silo_obj_base);
 }
 
 //---------------------------------------------------------------------------//
 void
-silo_load(const std::string &path,
+silo_read(const std::string &path,
           Node &node)
 {
     // check for ":" split    
@@ -132,14 +132,14 @@ silo_load(const std::string &path,
         CONDUIT_ERROR("Invalid path for load: " << path);
     }
 
-    silo_load(file_path,silo_obj_base,node);
+    silo_read(file_path,silo_obj_base,node);
 }
 
 
 //---------------------------------------------------------------------------//
-void silo_save(const  Node &node,
-               const std::string &file_path,
-               const std::string &silo_obj_path)
+void silo_write(const  Node &node,
+                const std::string &file_path,
+                const std::string &silo_obj_path)
 {
     DBfile *dbfile = DBCreate(file_path.c_str(),
                               DB_CLOBBER,
@@ -149,7 +149,7 @@ void silo_save(const  Node &node,
 
     if(dbfile)
     {
-        silo_save(node,dbfile,silo_obj_path);
+        silo_write(node,dbfile,silo_obj_path);
     }
     else 
     {
@@ -164,7 +164,7 @@ void silo_save(const  Node &node,
 }
 
 //---------------------------------------------------------------------------//
-void silo_load(const std::string &file_path,
+void silo_read(const std::string &file_path,
                const std::string &silo_obj_path,
                Node &n)
 {
@@ -172,7 +172,7 @@ void silo_load(const std::string &file_path,
 
     if(dbfile)
     {
-        silo_load(dbfile,silo_obj_path,n);
+        silo_read(dbfile,silo_obj_path,n);
     }
     else 
     {
@@ -187,9 +187,9 @@ void silo_load(const std::string &file_path,
 
 
 //---------------------------------------------------------------------------//
-void silo_save(const  Node &node,
-               DBfile *dbfile,
-               const std::string &silo_obj_path)
+void silo_write(const  Node &node,
+                DBfile *dbfile,
+                const std::string &silo_obj_path)
 {
     Schema schema_c;
     node.schema().compact_to(schema_c);
@@ -225,7 +225,7 @@ void silo_save(const  Node &node,
 
 
 //---------------------------------------------------------------------------//
-void CONDUIT_IO_API silo_load(DBfile *dbfile,
+void CONDUIT_IO_API silo_read(DBfile *dbfile,
                               const std::string &silo_obj_path,
                               Node &node)
 {
@@ -295,10 +295,10 @@ silo_generate_state_optlist(Node &n)
 
 //---------------------------------------------------------------------------//
 void 
-silo_save_field(DBfile *dbfile, 
-                const std::string &var_name,
-                Node &n_var,
-                Node &n_mesh_info)
+silo_write_field(DBfile *dbfile, 
+                 const std::string &var_name,
+                 Node &n_var,
+                 Node &n_mesh_info)
 {
 
 
@@ -450,10 +450,10 @@ silo_save_field(DBfile *dbfile,
 
 //---------------------------------------------------------------------------//
 void 
-silo_save_ucd_zonelist(DBfile *dbfile, 
-                       const std::string &topo_name,
-                       Node &n_topo,
-                       Node &n_mesh_info)
+silo_write_ucd_zonelist(DBfile *dbfile, 
+                        const std::string &topo_name,
+                        Node &n_topo,
+                        Node &n_mesh_info)
 {
     // zoo will have to be a different path
     int shapetype[1] = {0};
@@ -529,11 +529,11 @@ mesh_topology_basics(const std::string &topo_name,
 
 //---------------------------------------------------------------------------//
 void 
-silo_save_ucd_mesh(DBfile *dbfile, 
-                   const std::string &topo_name,
-                   Node &n_coords,
-                   DBoptlist *state_optlist,
-                   Node &n_mesh_info)
+silo_write_ucd_mesh(DBfile *dbfile, 
+                    const std::string &topo_name,
+                    Node &n_coords,
+                    DBoptlist *state_optlist,
+                    Node &n_mesh_info)
 {
     // also support interleaved:
     // xy, xyz 
@@ -623,11 +623,11 @@ silo_save_ucd_mesh(DBfile *dbfile,
 
 //---------------------------------------------------------------------------//
 void 
-silo_save_quad_rect_mesh(DBfile *dbfile, 
-                        const std::string &topo_name,
-                        Node &n_coords,
-                        DBoptlist *state_optlist,
-                        Node &n_mesh_info)
+silo_write_quad_rect_mesh(DBfile *dbfile, 
+                          const std::string &topo_name,
+                          Node &n_coords,
+                          DBoptlist *state_optlist,
+                          Node &n_mesh_info)
 {
     // TODO: also support interleaved:
     // xy, xyz 
@@ -731,9 +731,9 @@ silo_save_quad_rect_mesh(DBfile *dbfile,
 
 //---------------------------------------------------------------------------//
 void 
-silo_save_mesh(Node &n,
-               DBfile *dbfile,
-               const std::string &silo_obj_path)
+silo_mesh_write(Node &n,
+                DBfile *dbfile,
+                const std::string &silo_obj_path)
 {
     int silo_error = 0;
     char silo_prev_dir[256];
@@ -765,7 +765,7 @@ silo_save_mesh(Node &n,
         // we need a zone list for a ucd mesh
         if(topo_type == "quads" || topo_type == "tris")
         {
-            silo_save_ucd_zonelist(dbfile,
+            silo_write_ucd_zonelist(dbfile,
                                    topo_name,
                                    n_topo,
                                    n_mesh_info);
@@ -796,7 +796,7 @@ silo_save_mesh(Node &n,
     
         if(topo_type == "quads" || topo_type == "tris")
         {
-            silo_save_ucd_mesh(dbfile,
+            silo_write_ucd_mesh(dbfile,
                                topo_name,
                                n_coords,
                                state_optlist,
@@ -804,7 +804,7 @@ silo_save_mesh(Node &n,
         }
         else if (topo_type == "rectilinear")
         {
-            silo_save_quad_rect_mesh(dbfile,
+            silo_write_quad_rect_mesh(dbfile,
                                      topo_name,
                                      n_coords,
                                      state_optlist,
@@ -812,15 +812,15 @@ silo_save_mesh(Node &n,
         }
         else if (topo_type == "uniform")
         {
-            //silo_save_quad_uniform_mesh(dbfile,...)
+            //silo_write_quad_uniform_mesh(dbfile,...)
         }
         else if (topo_type == "structured")
         {
-            //silo_save_quad_structured_mesh(dbfile,...)
+            //silo_write_quad_structured_mesh(dbfile,...)
         }
         else if (topo_type == "point")
         {
-            //silo_save_point_mesh(dbfile,...)
+            //silo_write_point_mesh(dbfile,...)
         }
     }
 
@@ -842,10 +842,10 @@ silo_save_mesh(Node &n,
         {
             Node &n_var = itr.next();
             std::string var_name = itr.path();
-            silo_save_field(dbfile,
-                            var_name,
-                            n_var,
-                            n_mesh_info);
+            silo_write_field(dbfile,
+                             var_name,
+                             n_var,
+                             n_mesh_info);
             
         }
     }
@@ -859,8 +859,8 @@ silo_save_mesh(Node &n,
 
 //---------------------------------------------------------------------------//
 void 
-silo_save_mesh(Node &node,
-               const std::string &path)
+silo_mesh_write(Node &node,
+                const std::string &path)
 {
     // check for ":" split
     std::string file_path;
@@ -876,14 +876,14 @@ silo_save_mesh(Node &node,
         CONDUIT_ERROR("Invalid path for save: " << path);
     }
 
-    silo_save_mesh(node,file_path,silo_obj_base);
+    silo_mesh_write(node,file_path,silo_obj_base);
 }
 
 
 //---------------------------------------------------------------------------//
-void silo_save_mesh(Node &node,
-                   const std::string &file_path,
-                   const std::string &silo_obj_path)
+void silo_mesh_write(Node &node,
+                     const std::string &file_path,
+                     const std::string &silo_obj_path)
 {
     DBfile *dbfile = DBCreate(file_path.c_str(),
                               DB_CLOBBER,
@@ -893,7 +893,7 @@ void silo_save_mesh(Node &node,
 
     if(dbfile)
     {
-        silo_save_mesh(node,dbfile,silo_obj_path);
+        silo_mesh_write(node,dbfile,silo_obj_path);
     }
     else 
     {
