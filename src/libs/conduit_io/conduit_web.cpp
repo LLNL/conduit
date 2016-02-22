@@ -741,7 +741,8 @@ WebServer::context()
 //-----------------------------------------------------------------------------
 void
 WebServer::serve(const std::string &doc_root,
-                  index_t port)
+                 index_t port,
+                 const std::string &ssl_cert_file)
 {
     if(is_running())
     {
@@ -749,11 +750,22 @@ WebServer::serve(const std::string &doc_root,
         return;
     }
 
+    m_ssl_cert_file = ssl_cert_file;
+
+    bool use_ssl = m_ssl_cert_file.size() > 0;
+
     // civetweb takes strings as arguments
     // convert the port number to a string.
     std::ostringstream oss;
     oss << port;
+    // civetweb use s suffix for https servers
+    if(use_ssl)
+    {
+        oss << "s";
+    }
+    
     m_port = oss.str();
+
 
     CONDUIT_INFO("Starting WebServer instance with doc root = " << doc_root);
 
@@ -761,7 +773,13 @@ WebServer::serve(const std::string &doc_root,
     const char *options[] = { "document_root",   doc_root.c_str(),
                               "listening_ports", m_port.c_str(),
                               "num_threads",     "2",
+                               NULL, NULL,
                                NULL};
+    if(use_ssl)
+    {
+        options[6] = "ssl_certificate";
+        options[7] = m_ssl_cert_file.c_str();
+    }
 
     try
     {
@@ -771,7 +789,7 @@ WebServer::serve(const std::string &doc_root,
     {
         // Catch Civet Exception and use Conduit's error handling mech.
         CONDUIT_ERROR("WebServer failed to bind civet server on port " 
-                      << port);
+                      << m_port);
     }
     
     // check for valid context    
@@ -779,11 +797,11 @@ WebServer::serve(const std::string &doc_root,
     if(ctx == NULL)
     {
          CONDUIT_ERROR("WebServer failed to bind civet server on port " 
-                       << port);
+                       << m_port);
     }else
     {
         CONDUIT_INFO("conduit::io::WebServer instance active on port: " 
-                     << port);
+                     << m_port);
     }
 
     // setup REST handlers

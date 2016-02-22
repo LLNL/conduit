@@ -46,6 +46,13 @@
 # Conduit Unit Tests
 ################################
 
+# this header allows us to easily use the cmake source and binary paths in
+# our unit tests
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/t_config.hpp.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/t_config.hpp")
+
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
 add_subdirectory("conduit")
 add_subdirectory("conduit_io")
 add_subdirectory("conduit_mpi")

@@ -114,9 +114,11 @@ public:
 
                 WebServer();
     virtual    ~WebServer();
-    
+
     void        serve(const std::string &doc_root,
-                      index_t port = 8080);
+                      index_t port = 8080,
+                      const std::string &m_ssl_cert_file = std::string(""));
+
 
     // note: this variant of serve is to specific to the 
     // the visualizer client use case.
@@ -143,6 +145,7 @@ private:
     RequestHandler         *m_handler;
     
     std::string             m_port;
+    std::string             m_ssl_cert_file;
     bool                    m_running;
 };
 
