@@ -131,8 +131,11 @@ public:
     bool        is_running() const;
 
 
-    // returns the first active websocket, if non are active, blocks
-    // until a websocket connection is established.
+    /// returns the first active websocket, if none are active, blocks
+    /// until a websocket connection is established.
+    ///
+    ///  ms_poll specifies the number of microseconds for each poll attempt
+    ///  ms_timeout specifies the total time out in microseconds
     WebSocket  *websocket(index_t ms_poll = 100,
                           index_t ms_timeout = 60000);
 

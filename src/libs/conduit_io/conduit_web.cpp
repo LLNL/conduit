@@ -221,9 +221,11 @@ public:
                 char cpath[2048];
 
                 int post_data_len = mg_read(conn, post_data, sizeof(post_data));
-
+                
+                // TODO: path instead of cpath?
+                
                 mg_get_var(post_data, post_data_len, "cpath", cpath, sizeof(cpath));
-
+                // TODO: value instead of datavalue
                 mg_printf(conn, "{ \"datavalue\": %s }",
                           m_node->fetch(cpath).to_json().c_str());
             }
@@ -259,12 +261,10 @@ public:
         
         //---------------------------------------------------------------------------//
         // Handlers for WebSockets
-        // These aren't exposed via the CivetWeb C++ interface, so the 
-        // process is a bit more complex.
         //---------------------------------------------------------------------------//
 
         //---------------------------------------------------------------------------//
-        // callback used when a web socket initially connects
+        // handler used when a web socket initially connects
         //---------------------------------------------------------------------------//
         bool
         handleConnection(CivetServer *, // server -- unused
@@ -275,7 +275,7 @@ public:
         }
 
         //---------------------------------------------------------------------------//
-        // callback used when a web socket connection becomes active
+        // handler used when a web socket connection becomes active
         //---------------------------------------------------------------------------//
         void
         handleReadyState(CivetServer *, // server -- unused
@@ -291,19 +291,10 @@ public:
             }
             // unlock context
             m_server->unlock_context();
-            
-            // if(ws != NULL)
-            // {
-            //     // send connection successful message
-            //     Node n;
-            //     n["type"]    = "status";
-            //     n["message"] = "WebSocket ready!";
-            //     ws->send(n);
-            // }
         }
         
         //---------------------------------------------------------------------------//
-        // callback used when a websocket receives a text payload
+        // handler used when a websocket receives a text payload
         //---------------------------------------------------------------------------//
         bool
         handleWebSocketText(struct mg_connection *,  // conn -- unused
@@ -336,7 +327,7 @@ public:
         
 
         //---------------------------------------------------------------------------//
-        // callback used when a websocket receives data
+        // handler used when a websocket receives data
         //---------------------------------------------------------------------------//
         bool
         handleData(CivetServer *, // server -- unused
@@ -405,7 +396,7 @@ public:
         }
         
         //---------------------------------------------------------------------------//
-        // callback used when a websocket connection is closed
+        // handler used when a websocket connection is closed
         //---------------------------------------------------------------------------//
         void
         handleClose(CivetServer *, // server -- unused
@@ -621,7 +612,7 @@ WebSocket::send(const Node &data,
 {
     if(m_connection == NULL)
     {
-        CONDUIT_INFO("attempt to write to bad websocket connection");
+        CONDUIT_WARN("attempt to write to bad websocket connection");
         return;
     }
 
@@ -653,6 +644,7 @@ WebServer::WebServer()
 : m_server(NULL),
   m_handler(NULL),
   m_port(""),
+  m_ssl_cert_file(""),
   m_running(false)
 {
     m_handler = new RequestHandler(*this);
@@ -678,8 +670,6 @@ WebServer::websocket(index_t ms_poll,
 {
     return m_handler->websocket(ms_poll,ms_timeout);
 }
-
-
 
 
 //-----------------------------------------------------------------------------
@@ -800,8 +790,16 @@ WebServer::serve(const std::string &doc_root,
                        << m_port);
     }else
     {
-        CONDUIT_INFO("conduit::io::WebServer instance active on port: " 
-                     << m_port);
+        if(!use_ssl)
+        {
+            CONDUIT_INFO("conduit::io::WebServer http server instance "
+                         "active on port: " << m_port);
+        }
+        else
+        {
+            CONDUIT_INFO("conduit::io::WebServer https server instance "
+                         "active on port: " << m_port);
+        }
     }
 
     // setup REST handlers
@@ -824,14 +822,14 @@ WebServer::shutdown()
     {
         CONDUIT_INFO("closing conduit::io::WebServer instance on port: " 
                      << m_port);
-        
+
         m_running = false;
+
         delete m_server;
         delete m_handler;
 
-
-        m_handler = NULL;
         m_server  = NULL;
+        m_handler = NULL;
     }
 }
 
