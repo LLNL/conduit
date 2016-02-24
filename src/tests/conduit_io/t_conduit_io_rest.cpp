@@ -79,26 +79,21 @@ TEST(conduit_io_rest, rest_server)
     {
         if(!use_ssl)
         {
-            io::rest::serve(n);
+            conduit::io::WebServer *svr = conduit::io::VisualizerServer::serve(n,
+                                                                               true,
+                                                                               8080);
+            delete svr;
         }
         else // ssl path
         {   
-            std::string rest_path = utils::join_file_path(CONDUIT_WEB_CLIENT_ROOT,
-                                                          "rest_client");
-            conduit::io::WebServer svr; 
-            std::string cert_path = utils::join_file_path(CONDUIT_T_SRC_DIR,"conduit_io");
-            cert_path = utils::join_file_path(cert_path,"t_ssl_cert.pem");
-             
-            svr.set_node(n);
-            // start our server
-            svr.serve(rest_path,
-                      8080,
-                      cert_path);
-
-            while(svr.is_running()) 
-            {
-                utils::sleep(1);
-            }
+            std::string cert_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"conduit_io");
+            cert_file = utils::join_file_path(cert_file,"t_ssl_cert.pem");
+            
+            conduit::io::WebServer *svr = conduit::io::VisualizerServer::serve(n,
+                                                                               true,
+                                                                               8080,
+                                                                               cert_file);
+            delete svr;
         }
     }
     else

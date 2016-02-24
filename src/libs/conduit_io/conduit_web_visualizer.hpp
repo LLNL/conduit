@@ -44,12 +44,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_web.hpp
+/// file: conduit_web_visualizer.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_WEB_HPP
-#define CONDUIT_WEB_HPP
+#ifndef CONDUIT_WEB_VISUALIZER_HPP
+#define CONDUIT_WEB_VISUALIZER_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
@@ -57,14 +57,7 @@
 #include "conduit.hpp"
 #include "Conduit_IO_Exports.hpp"
 
-//
-// forward declare civetweb types so we don't need the 
-// civetweb headers in our public interface. 
-// 
-
-class CivetServer;
-struct mg_context;
-struct mg_connection;
+#include "conduit_web.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -79,123 +72,47 @@ namespace conduit
 namespace io 
 {
 
-
 //-----------------------------------------------------------------------------
-// -- Web Server Request Handler Interface -
+// -- Visualizer Web Request Handler  -
 //-----------------------------------------------------------------------------
-
-// forward declare WebServer class
-class WebServer;
-
-// interface used to create concrete server instances.  
-class CONDUIT_IO_API WebRequestHandler
+class CONDUIT_IO_API VisualizerRequestHandler : public WebRequestHandler
 {
 public:
-                  WebRequestHandler();
-    virtual      ~WebRequestHandler();
+                   VisualizerRequestHandler(Node *node);
+                  ~VisualizerRequestHandler();
+    
+    virtual bool   handle_post(WebServer *server,
+                               struct mg_connection *conn);
 
-    virtual bool  handle_post(WebServer *server,
+    virtual bool   handle_get(WebServer *server,
                               struct mg_connection *conn);
 
-    virtual bool  handle_get(WebServer *server,
-                             struct mg_connection *conn);
+private:
+    // catch all, used for any post or get
+    bool           handle_request(WebServer *server,
+                                  struct mg_connection *conn);
+    // handlers for specific commands 
+    bool           handle_get_schema(struct mg_connection *conn);
+    bool           handle_get_value(struct mg_connection *conn);
+    bool           handle_get_base64_json(struct mg_connection *conn);
+    bool           handle_shutdown(WebServer *server);
+
+    // holds the node to visualize 
+    Node          *m_node;
 };
 
 //-----------------------------------------------------------------------------
-// -- Web Server Interface -
+// -- Visualizer Web Request Handler  -
 //-----------------------------------------------------------------------------
 
-// forward declare websocket interface class
-class WebSocket;
-// forward declare internal handler class
-class CivetDispatchHandler;
-
-class CONDUIT_IO_API WebServer
+class CONDUIT_IO_API VisualizerServer
 {
 public:
-
-                WebServer();
-    virtual    ~WebServer();
-
-    void        serve(const std::string &doc_root,
-                      WebRequestHandler *dispatch, // takes ownership?
-                      index_t port = 8080,
-                      const std::string &ssl_cert_file = std::string(""));
-
-
-    // // note: this variant of serve is to specific to the
-    // // the visualizer client use case.
-    // void        serve(Node *data,
-    //                   bool block=false,
-    //                   index_t port = 8080);
-    //
-    // void        set_node(Node *data);
-    
-    void        shutdown();
-    
-    bool        is_running() const;
-
-    /// returns the first active websocket, if none are active, blocks
-    /// until a websocket connection is established.
-    ///
-    ///  ms_poll specifies the number of microseconds for each poll attempt
-    ///  ms_timeout specifies the total time out in microseconds
-    WebSocket  *websocket(index_t ms_poll = 100,
-                          index_t ms_timeout = 60000);
-
-    WebRequestHandler *handler();
-    
-    mg_context *context();
-    void        lock_context();
-    void        unlock_context();
-
-private:
-    WebRequestHandler      *m_handler;
-    
-    std::string             m_doc_root;
-    std::string             m_port;
-    std::string             m_ssl_cert_file;
-    bool                    m_running;
-
-    CivetServer            *m_server;
-    CivetDispatchHandler   *m_dispatch;
-
+    static WebServer  *serve(Node *data,
+                             bool block=false,
+                             index_t port = 8080,
+                             const std::string &ssl_cert_file = std::string(""));
 };
-
-//-----------------------------------------------------------------------------
-/// -- WebSocket Connection Interface -
-//-----------------------------------------------------------------------------
-//
-/// The lifetimes of our WebSocket instances are managed by the 
-/// WebServer and its RequestHandler instance
-// 
-class CONDUIT_IO_API WebSocket
-{
-public:
-    friend class CivetDispatchHandler;
-    
-    void           send(const Node &data,
-                        const std::string &protocol="json");
-
-    // todo: receive? 
-
-    bool           is_connected() const;
-
-    mg_context    *context();
-    void           lock_context();
-    void           unlock_context();
-
-private:
-                   WebSocket();
-    virtual       ~WebSocket();
-
-    void           set_connection(mg_connection *connection);
-
-    mg_connection  *m_connection;
-};
-
-
-
 
 
 };

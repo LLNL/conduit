@@ -68,6 +68,7 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_IO_Config.hpp.in"
 set(conduit_io_headers 
     conduit_io.hpp
     conduit_web.hpp
+    conduit_web_visualizer.hpp
     Conduit_IO_Exports.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/Conduit_IO_Config.hpp)
 
@@ -76,7 +77,8 @@ set(conduit_io_headers
 #
 set(conduit_io_sources 
     conduit_io.cpp
-    conduit_web.cpp)
+    conduit_web.cpp
+    conduit_web_visualizer.cpp)
     
 if(HDF5_FOUND)
     list(APPEND conduit_io_headers conduit_hdf5.hpp)

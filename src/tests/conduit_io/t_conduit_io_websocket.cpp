@@ -121,13 +121,16 @@ TEST(conduit_io_websocket, websocket_test)
     // start our server
     if(!use_ssl)
     {
-        svr.serve(wsock_path,8081);
+        svr.serve(wsock_path,
+                  new WebRequestHandler(),
+                  8081);
     }
     else
     {   
         std::string cert_path = utils::join_file_path(CONDUIT_T_SRC_DIR,"conduit_io");
         cert_path = utils::join_file_path(cert_path,"t_ssl_cert.pem");
         svr.serve(wsock_path,
+                  new WebRequestHandler(),
                   8081,
                   cert_path);
     }
