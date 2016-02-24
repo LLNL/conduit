@@ -126,6 +126,8 @@ public:
                       bool block=false,
                       index_t port = 8080);
 
+    void        set_node(Node *data);
+    
     void        shutdown();
     
     bool        is_running() const;

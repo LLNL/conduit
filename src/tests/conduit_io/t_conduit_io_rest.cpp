@@ -57,6 +57,8 @@
 using namespace conduit;
 
 bool launch_server = false;
+bool use_ssl = false;
+
 
 TEST(conduit_io_rest, rest_server)
 {
@@ -75,7 +77,29 @@ TEST(conduit_io_rest, rest_server)
     
     if(launch_server)
     {
-        io::rest::serve(n);
+        if(!use_ssl)
+        {
+            io::rest::serve(n);
+        }
+        else // ssl path
+        {   
+            std::string rest_path = utils::join_file_path(CONDUIT_WEB_CLIENT_ROOT,
+                                                          "rest_client");
+            conduit::io::WebServer svr; 
+            std::string cert_path = utils::join_file_path(CONDUIT_T_SRC_DIR,"conduit_io");
+            cert_path = utils::join_file_path(cert_path,"t_ssl_cert.pem");
+             
+            svr.set_node(n);
+            // start our server
+            svr.serve(rest_path,
+                      8080,
+                      cert_path);
+
+            while(svr.is_running()) 
+            {
+                utils::sleep(1);
+            }
+        }
     }
     else
     {
@@ -86,49 +110,49 @@ TEST(conduit_io_rest, rest_server)
 
     delete n;
 }
-
-TEST(conduit_io_rest, rest_server_ssl)
-{
-    uint32 a_val = 20;
-    uint32 b_val = 8;
-    uint32 c_val = 13;
-
-    Node *n = new Node();
-    n->fetch("a") = a_val;
-    n->fetch("b") = b_val;
-    n->fetch("c") = c_val;
-
-    EXPECT_EQ(n->fetch("a").as_uint32(), a_val);
-    EXPECT_EQ(n->fetch("b").as_uint32(), b_val);
-    EXPECT_EQ(n->fetch("c").as_uint32(), c_val);
-    
-    if(launch_server)
-    {
-        std::string rest_path = utils::join_file_path(CONDUIT_WEB_CLIENT_ROOT,
-                                                       "rest_client");
-        conduit::io::WebServer svr;
-        std::string cert_path = utils::join_file_path(CONDUIT_T_SRC_DIR,"conduit_io");
-        cert_path = utils::join_file_path(cert_path,"t_ssl_cert.pem");
-             
-        // start our server
-        svr.serve(rest_path,
-                  8082,
-                  cert_path);
-
-        while(svr.is_running()) 
-        {
-            utils::sleep(1);
-        }
-    }
-    else
-    {
-        std::cout << "provide \"launch\" as a command line arg "
-                  << "to launch a conduit::Node REST test server at "
-                  << "https://localhost:8082s" << std::endl;
-    }
-
-    delete n;
-}
+//
+// TEST(conduit_io_rest, rest_server_ssl)
+// {
+//     uint32 a_val = 20;
+//     uint32 b_val = 8;
+//     uint32 c_val = 13;
+//
+//     Node *n = new Node();
+//     n->fetch("a") = a_val;
+//     n->fetch("b") = b_val;
+//     n->fetch("c") = c_val;
+//
+//     EXPECT_EQ(n->fetch("a").as_uint32(), a_val);
+//     EXPECT_EQ(n->fetch("b").as_uint32(), b_val);
+//     EXPECT_EQ(n->fetch("c").as_uint32(), c_val);
+//
+//     if(launch_server)
+//     {
+//         std::string rest_path = utils::join_file_path(CONDUIT_WEB_CLIENT_ROOT,
+//                                                        "rest_client");
+//         conduit::io::WebServer svr;
+//         std::string cert_path = utils::join_file_path(CONDUIT_T_SRC_DIR,"conduit_io");
+//         cert_path = utils::join_file_path(cert_path,"t_ssl_cert.pem");
+//
+//         // start our server
+//         svr.serve(rest_path,
+//                   8082,
+//                   cert_path);
+//
+//         while(svr.is_running())
+//         {
+//             utils::sleep(1);
+//         }
+//     }
+//     else
+//     {
+//         std::cout << "provide \"launch\" as a command line arg "
+//                   << "to launch a conduit::Node REST test server at "
+//                   << "https://localhost:8082s" << std::endl;
+//     }
+//
+//     delete n;
+// }
 
 
 //-----------------------------------------------------------------------------
@@ -144,6 +168,10 @@ int main(int argc, char* argv[])
         if(arg_str == "launch")
         {
             launch_server = true;;
+        }
+        else if(arg_str == "ssl")
+        {
+            use_ssl = true;
         }
     }
 

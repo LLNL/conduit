@@ -52,12 +52,15 @@
 #include <iostream>
 #include "gtest/gtest.h"
 
+#include "t_config.hpp"
+
 using namespace conduit;
 using namespace conduit::utils;
 using namespace conduit::io;
 
 
 bool launch_server = false;
+bool use_ssl = false;
 
 TEST(conduit_io_websocket, websocket_test)
 {
@@ -116,7 +119,19 @@ TEST(conduit_io_websocket, websocket_test)
     
     WebServer svr;
     // start our server
-    svr.serve(wsock_path,8081);
+    if(!use_ssl)
+    {
+        svr.serve(wsock_path,8081);
+    }
+    else
+    {   
+        std::string cert_path = utils::join_file_path(CONDUIT_T_SRC_DIR,"conduit_io");
+        cert_path = utils::join_file_path(cert_path,"t_ssl_cert.pem");
+        svr.serve(wsock_path,
+                  8081,
+                  cert_path);
+    }
+        
 
     // this loop won't be necessary in the strawman lib.    
     while(svr.is_running()) 
@@ -145,7 +160,11 @@ int main(int argc, char* argv[])
         std::string arg_str(argv[i]);
         if(arg_str == "launch")
         {
-            launch_server = true;;
+            launch_server = true;
+        }
+        else if(arg_str == "ssl")
+        {
+            use_ssl = true;
         }
     }
 

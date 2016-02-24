@@ -205,6 +205,11 @@ public:
             {
                 mg_printf(conn, "%s",m_node->schema().to_json(true).c_str());
             }
+            else
+            {
+                CONDUIT_WARN("rest request for schema of NULL Node");
+                return false;
+            }
             return true;
         }
 
@@ -229,6 +234,11 @@ public:
                 mg_printf(conn, "{ \"datavalue\": %s }",
                           m_node->fetch(cpath).to_json().c_str());
             }
+            else
+            {
+                CONDUIT_WARN("rest request for value of NULL Node");
+                return false;
+            }
             return true;
         }
 
@@ -245,6 +255,12 @@ public:
                 m_node->to_json_stream(oss,"base64_json");
                 mg_printf(conn, "%s",oss.str().c_str());
             }
+            else
+            {
+                CONDUIT_WARN("rest request for base64 json of NULL Node");
+                return false;
+            }
+            
             return true;
         }
 
@@ -717,6 +733,13 @@ WebServer::serve(Node *node,
             utils::sleep(100);
         }
     }
+}
+
+//-----------------------------------------------------------------------------
+void
+WebServer::set_node(Node *node)
+{
+    m_handler->set_node(node);
 }
 
 
