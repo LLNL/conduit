@@ -61,7 +61,7 @@
 
 
 #include "conduit_web.hpp"
-
+#include "conduit_web_visualizer.hpp"
 
 // include optional libs
 

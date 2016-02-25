@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_rest.cpp
+/// file: conduit_web.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -63,6 +63,7 @@
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "conduit_web.hpp"
+#include "conduit_web_visualizer.hpp"
 #include "Conduit_IO_Config.hpp"
 
 //-----------------------------------------------------------------------------
@@ -79,49 +80,52 @@ namespace io
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::io::rest --
+// WebRequestHandler Interface
 //-----------------------------------------------------------------------------
-
-namespace rest 
+WebRequestHandler::WebRequestHandler()
 {
-    
-//-----------------------------------------------------------------------------
-// simple interface to launch a blocking REST server    
-//-----------------------------------------------------------------------------
-void
-serve(Node *n,
-      index_t port)
 
-{
-    WebServer srv;
-    srv.serve(n,true,port);
 }
 
-};
 //-----------------------------------------------------------------------------
-// -- end conduit::io::rest --
-//-----------------------------------------------------------------------------
+WebRequestHandler::~WebRequestHandler()
+{
 
+}
 
 //-----------------------------------------------------------------------------
-// -- Internal REST Server Interface Classes -
-//-----------------------------------------------------------------------------
+bool
+WebRequestHandler::handle_post(WebServer *server,
+                               struct mg_connection *conn)
+{
+    return true;
+}
 
-class RequestHandler : public CivetHandler, 
-                       public CivetWebSocketHandler
+//-----------------------------------------------------------------------------
+bool
+WebRequestHandler::handle_get(WebServer *server,
+                              struct mg_connection *conn)
+{
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+// -- Internal Server Interface Classes -
+//-----------------------------------------------------------------------------
+class CivetDispatchHandler : public CivetHandler, 
+                             public CivetWebSocketHandler
 {
 public:
         
         //---------------------------------------------------------------------------//
-        RequestHandler(WebServer &server)
-        : m_server(&server),
-          m_node(NULL)
+        CivetDispatchHandler(WebServer &server)
+        : m_server(&server)
         {
             // empty
         }
 
         //---------------------------------------------------------------------------//
-        ~RequestHandler()
+        ~CivetDispatchHandler()
         {
             // cleanup any alloced web socket instances
             for(size_t i=0; i < m_sockets.size(); i++)
@@ -130,51 +134,11 @@ public:
             }
         }
         
-        //---------------------------------------------------------------------------//
-        // Bridge to preserve our old interface
-        //---------------------------------------------------------------------------//
-        void set_node(Node *node)
+        void set_handler(WebRequestHandler *handler)
         {
-            m_node = node;
+            m_handler = handler;
         }
-        
-        //---------------------------------------------------------------------------//
-        // Main handler, dispatches to proper api handlers. 
-        //---------------------------------------------------------------------------//
-        bool handle_request(struct mg_connection *conn) 
-        {
-            const struct mg_request_info *req_info = mg_get_request_info(conn);
-            
-            std::string uri(req_info->uri);
-            std::string uri_cmd;
-            std::string uri_next;
-            utils::rsplit_string(uri,"/",uri_cmd,uri_next);
-            
-            if(uri_cmd == "get-schema")
-            {
-                return handle_rest_get_schema(conn);
-            }
-            else if(uri_cmd == "get-value")
-            {
-                return handle_rest_get_value(conn);                
-            }
-            else if(uri_cmd == "get-base64-json")
-            {
-                return handle_rest_get_base64_json(conn);
-            }
-            else if(uri_cmd == "kill-server")
-            {
-                return handle_rest_shutdown(conn);
-            }
-            else
-            {
-                CONDUIT_INFO("Unknown REST request uri:" << uri_cmd );
-                // TODO: what behavior does returning false this trigger?
-                return false;
-            }
-            return true;
-        }
-        
+
         //---------------------------------------------------------------------------//
         // wire all CivetHandler handlers to "handle_request"
         //---------------------------------------------------------------------------//
@@ -182,7 +146,7 @@ public:
         handlePost(CivetServer *, // server -- unused
                    struct mg_connection *conn) 
         {
-            return handle_request(conn);
+            return m_server->handler()->handle_post(m_server,conn);
         }
         
         //---------------------------------------------------------------------------//
@@ -192,79 +156,16 @@ public:
         handleGet(CivetServer *, // server -- unused
                   struct mg_connection *conn) 
         {
-            return handle_request(conn);
-        }
-        
-        //---------------------------------------------------------------------------//
-        // Handles a request from the client for the node's schema.
-        //---------------------------------------------------------------------------//
-        bool
-        handle_rest_get_schema(struct mg_connection *conn)
-        {
-            if(m_node != NULL)
-            {
-                mg_printf(conn, "%s",m_node->schema().to_json(true).c_str());
-            }
-            return true;
-        }
-
-        //---------------------------------------------------------------------------//
-        // Handles a request from the client for a specific value in the node.
-        //---------------------------------------------------------------------------//
-        bool
-        handle_rest_get_value(struct mg_connection *conn)
-        {
-            if(m_node != NULL)
-            {
-                // TODO size checks?
-                char post_data[2048];
-                char cpath[2048];
-
-                int post_data_len = mg_read(conn, post_data, sizeof(post_data));
-
-                mg_get_var(post_data, post_data_len, "cpath", cpath, sizeof(cpath));
-
-                mg_printf(conn, "{ \"datavalue\": %s }",
-                          m_node->fetch(cpath).to_json().c_str());
-            }
-            return true;
-        }
-
-        //---------------------------------------------------------------------------//
-        // Handles a request from the client for a compact, base64 encoded version
-        // of the node.
-        //---------------------------------------------------------------------------//
-        bool
-        handle_rest_get_base64_json(struct mg_connection *conn)
-        {
-            if(m_node != NULL)
-            {
-                std::ostringstream oss;
-                m_node->to_json_stream(oss,"base64_json");
-                mg_printf(conn, "%s",oss.str().c_str());
-            }
-            return true;
-        }
-
-        //---------------------------------------------------------------------------//
-        // Handles a request from the client to shutdown the REST server
-        //---------------------------------------------------------------------------//
-        bool
-        handle_rest_shutdown(struct mg_connection *) // conn -- unused
-        {
-            m_server->shutdown();
-            return true;
+            return m_server->handler()->handle_get(m_server,conn);
         }
         
         
         //---------------------------------------------------------------------------//
         // Handlers for WebSockets
-        // These aren't exposed via the CivetWeb C++ interface, so the 
-        // process is a bit more complex.
         //---------------------------------------------------------------------------//
 
         //---------------------------------------------------------------------------//
-        // callback used when a web socket initially connects
+        // handler used when a web socket initially connects
         //---------------------------------------------------------------------------//
         bool
         handleConnection(CivetServer *, // server -- unused
@@ -275,7 +176,7 @@ public:
         }
 
         //---------------------------------------------------------------------------//
-        // callback used when a web socket connection becomes active
+        // handler used when a web socket connection becomes active
         //---------------------------------------------------------------------------//
         void
         handleReadyState(CivetServer *, // server -- unused
@@ -291,19 +192,10 @@ public:
             }
             // unlock context
             m_server->unlock_context();
-            
-            // if(ws != NULL)
-            // {
-            //     // send connection successful message
-            //     Node n;
-            //     n["type"]    = "status";
-            //     n["message"] = "WebSocket ready!";
-            //     ws->send(n);
-            // }
         }
         
         //---------------------------------------------------------------------------//
-        // callback used when a websocket receives a text payload
+        // handler used when a websocket receives a text payload
         //---------------------------------------------------------------------------//
         bool
         handleWebSocketText(struct mg_connection *,  // conn -- unused
@@ -336,7 +228,7 @@ public:
         
 
         //---------------------------------------------------------------------------//
-        // callback used when a websocket receives data
+        // handler used when a websocket receives data
         //---------------------------------------------------------------------------//
         bool
         handleData(CivetServer *, // server -- unused
@@ -405,7 +297,7 @@ public:
         }
         
         //---------------------------------------------------------------------------//
-        // callback used when a websocket connection is closed
+        // handler used when a websocket connection is closed
         //---------------------------------------------------------------------------//
         void
         handleClose(CivetServer *, // server -- unused
@@ -542,7 +434,7 @@ public:
 
   private:
       WebServer                  *m_server;
-      Node                       *m_node;
+      WebRequestHandler          *m_handler;
       std::vector<WebSocket*>     m_sockets;
 };
 
@@ -621,7 +513,7 @@ WebSocket::send(const Node &data,
 {
     if(m_connection == NULL)
     {
-        CONDUIT_INFO("attempt to write to bad websocket connection");
+        CONDUIT_WARN("attempt to write to bad websocket connection");
         return;
     }
 
@@ -650,12 +542,15 @@ WebSocket::send(const Node &data,
 
 //-----------------------------------------------------------------------------
 WebServer::WebServer()
-: m_server(NULL),
-  m_handler(NULL),
+: m_handler(NULL),
+  m_doc_root(""),
   m_port(""),
-  m_running(false)
+  m_ssl_cert_file(""),
+  m_running(false),
+  m_server(NULL),
+  m_dispatch(NULL)
 {
-    m_handler = new RequestHandler(*this);
+    // empty
 }
 
 //-----------------------------------------------------------------------------
@@ -676,10 +571,8 @@ WebSocket *
 WebServer::websocket(index_t ms_poll,
                      index_t ms_timeout)
 {
-    return m_handler->websocket(ms_poll,ms_timeout);
+    return m_dispatch->websocket(ms_poll,ms_timeout);
 }
-
-
 
 
 //-----------------------------------------------------------------------------
@@ -704,31 +597,12 @@ WebServer::unlock_context()
     }
 }
 
-
-
-
 //-----------------------------------------------------------------------------
-void
-WebServer::serve(Node *node,
-                 bool block,
-                 index_t port)
+WebRequestHandler *
+WebServer::handler()
 {
-    m_handler->set_node(node);
-
-    // call general serve routine
-    serve(utils::join_file_path(CONDUIT_WEB_CLIENT_ROOT,"rest_client"),
-          port);
-    
-    if(block)
-    {
-        // wait for shutdown()
-        while(is_running()) 
-        {
-            utils::sleep(100);
-        }
-    }
+    return m_handler;
 }
-
 
 //-----------------------------------------------------------------------------
 mg_context *
@@ -741,19 +615,38 @@ WebServer::context()
 //-----------------------------------------------------------------------------
 void
 WebServer::serve(const std::string &doc_root,
-                  index_t port)
+                 WebRequestHandler *handler,
+                 index_t port,
+                 const std::string &ssl_cert_file)
 {
     if(is_running())
     {
         CONDUIT_INFO("WebServer instance is already running");
         return;
     }
+    
+    m_dispatch = new CivetDispatchHandler(*this);
+    
+    m_handler = handler;
+
+    m_doc_root = doc_root;
+    // TODO: check for null?
+    m_ssl_cert_file = ssl_cert_file;
+
+    bool use_ssl = m_ssl_cert_file.size() > 0;
 
     // civetweb takes strings as arguments
     // convert the port number to a string.
     std::ostringstream oss;
     oss << port;
+    // civetweb use s suffix for https servers
+    if(use_ssl)
+    {
+        oss << "s";
+    }
+    
     m_port = oss.str();
+
 
     CONDUIT_INFO("Starting WebServer instance with doc root = " << doc_root);
 
@@ -761,7 +654,13 @@ WebServer::serve(const std::string &doc_root,
     const char *options[] = { "document_root",   doc_root.c_str(),
                               "listening_ports", m_port.c_str(),
                               "num_threads",     "2",
+                               NULL, NULL,
                                NULL};
+    if(use_ssl)
+    {
+        options[6] = "ssl_certificate";
+        options[7] = m_ssl_cert_file.c_str();
+    }
 
     try
     {
@@ -771,7 +670,7 @@ WebServer::serve(const std::string &doc_root,
     {
         // Catch Civet Exception and use Conduit's error handling mech.
         CONDUIT_ERROR("WebServer failed to bind civet server on port " 
-                      << port);
+                      << m_port);
     }
     
     // check for valid context    
@@ -779,18 +678,26 @@ WebServer::serve(const std::string &doc_root,
     if(ctx == NULL)
     {
          CONDUIT_ERROR("WebServer failed to bind civet server on port " 
-                       << port);
+                       << m_port);
     }else
     {
-        CONDUIT_INFO("conduit::io::WebServer instance active on port: " 
-                     << port);
+        if(!use_ssl)
+        {
+            CONDUIT_INFO("conduit::io::WebServer http server instance "
+                         "active on port: " << m_port);
+        }
+        else
+        {
+            CONDUIT_INFO("conduit::io::WebServer https server instance "
+                         "active on port: " << m_port);
+        }
     }
 
     // setup REST handlers
-    m_server->addHandler("/api/*",m_handler);
+    m_server->addHandler("/api/*",m_dispatch);
 
     // setup web socket handler
-    m_server->addWebSocketHandler("/websocket", m_handler);
+    m_server->addWebSocketHandler("/websocket", m_dispatch);
 
 
     // signal we are valid
@@ -806,19 +713,18 @@ WebServer::shutdown()
     {
         CONDUIT_INFO("closing conduit::io::WebServer instance on port: " 
                      << m_port);
-        
+
         m_running = false;
+
         delete m_server;
         delete m_handler;
+        delete m_dispatch;
 
-
-        m_handler = NULL;
-        m_server  = NULL;
+        m_server   = NULL;
+        m_handler  = NULL;
+        m_dispatch = NULL;
     }
 }
-
-
-
 
 
 };
