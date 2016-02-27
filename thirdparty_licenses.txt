@@ -1,4 +1,0 @@
-
-For a list of software components used in Conduit and their respective licenses refer to:
-  src/docs/sphinx/licenses.rst 
-

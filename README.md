@@ -12,7 +12,7 @@ Conduit is an open source project from Lawrence Livermore National Laboratory. I
 Documentation
 =================
 
-To get started building and using Conduit, see Conduit's Documentation:
+To get started building and using Conduit, check out the full documentation:
 
 http://llnl.github.io/conduit/
 
@@ -20,7 +20,7 @@ http://llnl.github.io/conduit/
 Source Repo
 =================
 
-Conduit's source is hosted on github:
+Conduit's source is hosted on GitHub:
 
 https://github.com/llnl/conduit
 
@@ -33,8 +33,8 @@ Conduit is released under a BSD-style license - for detailed license info, refer
 http://llnl.github.io/conduit/licenses.html
 
 or the following files in the Conduit source tree:
-- LICENSE
-- thirdparty_licenses.txt
+- [LICENSE](/LICENSE)
+- [thirdparty_licenses.txt](/thirdparty_licenses.txt)
 
 
 
