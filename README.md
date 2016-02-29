@@ -14,7 +14,7 @@ Documentation
 
 To get started building and using Conduit, check out the full documentation:
 
-http://llnl.github.io/conduit/
+http://software.llnl.gov/conduit/
 
 
 Source Repo
@@ -30,11 +30,11 @@ License
 
 Conduit is released under a BSD-style license - for detailed license info, refer to:
 
-http://llnl.github.io/conduit/licenses.html
+http://software.llnl.gov/conduit/licenses.html
 
 or the following files in the Conduit source tree:
 - [LICENSE](/LICENSE)
-- [thirdparty_licenses.txt](/thirdparty_licenses.txt)
+- [thirdparty_licenses.md](/thirdparty_licenses.md)
 
 
 
