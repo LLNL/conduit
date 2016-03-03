@@ -55,7 +55,7 @@ include_directories(${PROJECT_SOURCE_DIR}/libs/conduit
 include_directories(${PROJECT_SOURCE_DIR}/libs/conduit_io 
                     ${PROJECT_BINARY_DIR}/libs/conduit_io)
 
-if(ENABLE_MPI)
+if(MPI_FOUND)
     include_directories(${PROJECT_SOURCE_DIR}/libs/conduit_mpi 
                         ${PROJECT_BINARY_DIR}/libs/conduit_mpi)
 endif()

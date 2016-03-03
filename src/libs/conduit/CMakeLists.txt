@@ -136,7 +136,7 @@ target_link_libraries(conduit libb64)
 # Add python wrappers if python
 # support was selected
 ################################
-if(ENABLE_PYTHON)
+if(PYTHON_FOUND)
     add_subdirectory(python)
 endif()
 
@@ -144,7 +144,7 @@ endif()
 # Add fortran interface lib 
 # if fortran support was selected
 #################################
-if(ENABLE_FORTRAN)
+if(FORTRAN_FOUND)
     add_subdirectory(fortran)
 endif()
 

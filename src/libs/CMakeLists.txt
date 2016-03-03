@@ -60,7 +60,7 @@ add_subdirectory(blueprint)
 ################################
 # Add the conduit-mpi lib 
 ################################
-if(ENABLE_MPI)
+if(MPI_FOUND)
     add_subdirectory(conduit_mpi)
 endif()
 

@@ -79,7 +79,7 @@ endforeach()
 # Add our Optional Unit Tests
 ################################
 
-if(ENABLE_GPREF_TOOLS)
+if(GPREF_TOOLS_FOUND)
     message(STATUS "Google perftools enabled: Adding related unit tests")
     foreach(TEST ${GPERF_TOOLS_TESTS})
         add_cpp_test(TEST_NAME ${TEST})
@@ -88,7 +88,7 @@ else()
     message(STATUS "Google perftools disabled: Skipping related tests")
 endif()
 
-if(ENABLE_PYTHON)
+if(PYTHON_FOUND)
     message(STATUS "Python enabled: Adding related unit tests")
     foreach(TEST ${PYTHON_TESTS})
         add_cpp_test(TEST ${TEST})
@@ -98,7 +98,7 @@ else()
 endif()
 
 
-if(ENABLE_MPI)
+if(MPI_FOUND)
     message(STATUS "MPI enabled: Adding related unit tests")
     foreach(TEST ${MPI_TESTS})
         # this uses 2 procs
@@ -131,7 +131,7 @@ else()
 endif()
 
 
-if(ENABLE_FORTRAN)
+if(FORTRAN_FOUND)
     message(STATUS "Fortran enabled: Adding related unit tests")
     foreach(TEST ${FORTRAN_TESTS})
         add_fortran_test(TEST ${TEST})

@@ -65,7 +65,11 @@ if(ENABLE_FORTRAN)
         set(ENABLE_FORTRAN OFF)
     else()
         MESSAGE(FATAL_ERROR "ENABLE_FORTRAN is true, but a Fortran compiler wasn't found.")
-    endif()    
+    endif()
+    # a this point, if ENABLE_FORTRAN is still on, we have found a Fortran compiler
+    if(ENABLE_FORTRAN)
+        set(FORTRAN_FOUND 1)
+    endif()
 endif()
 
 

@@ -56,7 +56,7 @@ set(CONDUIT_MPI_TESTS t_conduit_mpi_smoke t_conduit_mpi_test)
 # Add our Optional Unit Tests
 ################################
 
-if(ENABLE_MPI)
+if(MPI_FOUND)
     message(STATUS "MPI enabled: Adding conduit_mpi unit tests")
     foreach(TEST ${CONDUIT_MPI_TESTS})
         # this uses 2 procs

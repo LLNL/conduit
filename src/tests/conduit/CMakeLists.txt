@@ -91,13 +91,13 @@ add_subdirectory("c")
 ################################
 # Add optional tests
 ################################
-if(ENABLE_PYTHON)
+if(PYTHON_FOUND)
     add_subdirectory("python")
 else()
     message(STATUS "Python disabled: Skipping conduit python module tests")
 endif()
 
-if(ENABLE_FORTRAN)
+if(FORTRAN_FOUND)
     add_subdirectory("fortran")
 else()
     message(STATUS "Fortran disabled: Skipping conduit fortran interface tests")
