@@ -23,7 +23,7 @@
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
 // 
-// * Neither the name of the LLNS/LL    set(ENABLE_FORTRAN ON CACHE PATH "")NL nor the names of its contributors may
+// * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
 // 

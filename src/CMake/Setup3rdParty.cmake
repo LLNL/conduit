@@ -122,6 +122,8 @@ if(ENABLE_GPERFTOOLS)
     if(CMAKE_COMPILER_IS_GNUCXX)
         set(CMAKE_CXX_FLAGS "-fno-omit-frame-pointer") 
     endif()
+    
+    set(GPERFTOOLS_FOUND 1)
 endif()
 
 if(ENABLE_PYTHON)
@@ -189,7 +191,7 @@ endif()
 ################################
 # Setup fruit (fortran uint testing framework) if fortran is enabled
 ################################
-if(ENABLE_FORTRAN)
+if(FORTRAN_FOUND)
     add_subdirectory(thirdparty_builtin/fruit-3.3.9)
 endif()
 
