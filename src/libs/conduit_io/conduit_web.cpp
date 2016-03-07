@@ -613,6 +613,22 @@ WebServer::context()
 }
 
 //-----------------------------------------------------------------------------
+// convenience case that uses the default request handler 
+//-----------------------------------------------------------------------------
+void
+WebServer::serve(const std::string &doc_root,
+                 index_t port,
+                 const std::string &ssl_cert_file)
+{
+    WebRequestHandler *handler = new WebRequestHandler();
+
+    serve(doc_root,
+          handler,
+          port,
+          ssl_cert_file);
+}
+
+//-----------------------------------------------------------------------------
 void
 WebServer::serve(const std::string &doc_root,
                  WebRequestHandler *handler,

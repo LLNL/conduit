@@ -117,19 +117,16 @@ public:
                 WebServer();
     virtual    ~WebServer();
 
+    /// convenience case that uses the default request handler
+    void        serve(const std::string &doc_root,
+                      index_t port = 8080,
+                      const std::string &ssl_cert_file = std::string(""));
+
+    /// general case, supporting a user provided request handler
     void        serve(const std::string &doc_root,
                       WebRequestHandler *dispatch, // takes ownership?
                       index_t port = 8080,
                       const std::string &ssl_cert_file = std::string(""));
-
-
-    // // note: this variant of serve is to specific to the
-    // // the visualizer client use case.
-    // void        serve(Node *data,
-    //                   bool block=false,
-    //                   index_t port = 8080);
-    //
-    // void        set_node(Node *data);
     
     void        shutdown();
     
