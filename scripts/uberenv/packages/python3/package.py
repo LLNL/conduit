@@ -54,11 +54,14 @@ import spack
 class Python3(Package):
     """The Python programming language. (3 Series)"""
     homepage = "http://www.python.org"
-    url      = "https://www.python.org/ftp/python/3.4.3/Python-3.4.3.tar.xz"
+    url      = "https://www.python.org/ftp/python/3.4.3/Python-3.4.3.tgz"
 
     extendable = True
 
+    version('3.5.1', 'be78e48cdfc1a7ad90efff146dce6cfe')
+    version('3.5.0', 'a56c0c0b45d75a0ec9c6dee933c41c36')
     version('3.4.3', '7d092d1bba6e17f0d9bd21b49e441dd5')
+    
 
     def install(self, spec, prefix):
         # Need this to allow python build to find the Python installation.

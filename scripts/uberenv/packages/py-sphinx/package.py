@@ -42,6 +42,7 @@
 # 
 ###############################################################################
 from spack import *
+from spack.hooks.sbang import filter_shebang
 
 class PySphinx(Package):
     """Sphinx Documentation Generator."""
@@ -56,3 +57,15 @@ class PySphinx(Package):
     def install(self, spec, prefix):
         # simply install to the spack python
         python('setup.py', 'install') #, '--prefix=%s' % prefix)
+        # sphinx_build lives in python's bin dir
+        sphinx_scripts = ["sphinx-apidoc",
+                          "sphinx-autogen",
+                          "sphinx-build",
+                          "sphinx-quickstart"]
+        for script in sphinx_scripts:
+            script_path = join_path(spec["python"].prefix,"bin",script)
+            # use spack sbang to fix issues with shebang that is too long
+            filter_shebang(script_path)
+
+
+
