@@ -341,3 +341,44 @@ TEST(conduit_node_save_load, io_explicit_zero_length_vector_restore)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node_save_load, io_reset_before_load)
+{
+    float one   = 1;
+    float two   = 2;
+    float three = 3;
+    float four  = 4;
+
+    Node n1;
+    n1["one"].set_external(&one);
+    n1["two"].set_external(&two);
+    n1["three"].set_external(&three);
+    n1["four"].set_external(&four);
+
+    n1.print_detailed();
+   
+    n1.save("tout_node_load_reset");
+
+
+    EXPECT_EQ(n1.schema()["one"].dtype().number_of_elements(),1);
+    
+    // load into a node with some existing structure was 
+    // crashing, test that we resolved that here.
+
+    Node n2;
+    n2["here"].set(one);
+    n2["there"].set(two);
+    n2.load("tout_node_load_reset");
+
+    std::cout << "n2 load result" << std::endl;
+
+    n2.print_detailed();
+            
+    EXPECT_EQ(n1.schema()["one"].dtype().number_of_elements(),
+              n2.schema()["one"].dtype().number_of_elements());
+    EXPECT_EQ(n2.schema()["one"].dtype().number_of_elements(),1);
+}
+
+
+
+
