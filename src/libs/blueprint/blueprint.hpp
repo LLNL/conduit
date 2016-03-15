@@ -57,7 +57,9 @@
 #include "conduit.hpp"
 
 #include "Blueprint_Exports.hpp"
+
 #include "blueprint_mesh.hpp"
+#include "blueprint_mesh_examples.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin blueprint:: --
@@ -75,13 +77,23 @@ void        BLUEPRINT_API about(conduit::Node &n);
 //-----------------------------------------------------------------------------
 /// Experimental blueprint interface
 //-----------------------------------------------------------------------------
-bool veritfy(const std::string &protocol,
-             conduit::Node &n);
+
 //-----------------------------------------------------------------------------
-bool transform(const std::string &protocol,
-               conduit::Node &src,
-               conduit::Node &actions,
-               conduit::Node &dest);
+bool BLUEPRINT_API verify(const std::string &protocol,
+                          conduit::Node &n,
+                          conduit::Node &info);
+
+//-----------------------------------------------------------------------------
+bool BLUEPRINT_API annotate(const std::string &protocol,
+                            conduit::Node &n,
+                            conduit::Node &info);
+
+//-----------------------------------------------------------------------------
+bool BLUEPRINT_API transform(const std::string &protocol,
+                             conduit::Node &src,
+                             conduit::Node &actions,
+                             conduit::Node &dest,
+                             conduit::Node &info);
 
 };
 //-----------------------------------------------------------------------------

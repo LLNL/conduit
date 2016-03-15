@@ -113,11 +113,12 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
     
     while(itr.has_next())
     {
+        Node info;
         Node &mesh = itr.next();
-        mesh.print();
+        //mesh.print();
         std::string name = itr.path();
-        std::cout << "expanding 2d example '" << name << std::endl;
-        blueprint::mesh::expand(mesh,expanded[name]);
+        std::cout << "expanding 2d example '" << name << "'" << std::endl;
+        blueprint::mesh::expand(mesh,expanded[name],info);
 
     }
     
@@ -129,7 +130,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
         while(itr.has_next())
         {
             Node &mesh = itr.next();
-            mesh.print();
+            //mesh.print();
             std::string name = itr.path();
             std::cout << "saving 2d example '" << name << "' to silo" << std::endl;
             io::save("conduit_silo_mesh",mesh,"braid_2d_" + name +  "_example.silo:mesh");
@@ -196,23 +197,23 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
     
     while(itr.has_next())
     {
+        Node info;
         Node &mesh = itr.next();
-        mesh.print();
+        //mesh.print();
         std::string name = itr.path();
-        std::cout << "expanding 3d example '" << name << std::endl;
-        blueprint::mesh::expand(mesh,expanded[name]);
-
+        std::cout << "expanding 3d example '" << name << "'" << std::endl;
+        blueprint::mesh::expand(mesh,expanded[name],info);
     }
     
     if(silo_enabled)
     {
     
         itr = expanded.children();
-    
+        
         while(itr.has_next())
         {
             Node &mesh = itr.next();
-            mesh.print();
+            //mesh.print();
             std::string name = itr.path();
             std::cout << "saving 3d example '" << name << "' to silo" << std::endl;
             io::save("conduit_silo_mesh",mesh,"braid_3d_" + name +  "_example.silo:mesh");

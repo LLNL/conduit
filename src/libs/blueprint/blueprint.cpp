@@ -58,6 +58,7 @@
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "blueprint.hpp"
+#include "blueprint_mesh.hpp"
 
 using namespace conduit;
 
@@ -92,9 +93,34 @@ verify(const std::string &protocol,
        Node &n,
        Node &info)
 {
+    bool res = false;
     info.reset();
-    return false;
+
+    if(protocol == "mesh")
+    {
+        res = mesh::annotate(n,info);
+    }
+    
+    return res;
 }
+
+//---------------------------------------------------------------------------//
+bool
+annotate(const std::string &protocol,
+         Node &n,
+         Node &info)
+{
+    bool res = false;
+    info.reset();
+
+    if(protocol == "mesh")
+    {
+        res = mesh::annotate(n,info);
+    }
+    
+    return res;
+}
+
 
 
 //---------------------------------------------------------------------------//
@@ -105,9 +131,16 @@ transform(const std::string &protocol,
           Node &des,
           Node &info)
 {
+    bool res = false;
     des.reset();
     info.reset();
-    return false;
+
+    if(protocol == "mesh")
+    {
+        res = mesh::transform(src,actions,des,info);
+    }
+    
+    return res;
 }
 
 

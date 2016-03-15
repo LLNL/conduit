@@ -424,7 +424,6 @@ silo_write_field(DBfile *dbfile,
                 pts_dims[2] = ele_dims[2] + 1;
             }
             
-            n_mesh_info.print();
 
             int *dims = ele_dims;
             if(centering == DB_NODECENT)
@@ -917,7 +916,6 @@ silo_write_quad_uniform_mesh(DBfile *dbfile,
     float64 dy =1;
     float64 dz =1;
     
-    n_coords.print();
     if(!n_coords.has_path("dims"))
     {
         CONDUIT_ERROR("uniform mesh missing 'dims'")
@@ -1138,7 +1136,6 @@ silo_write_structured_mesh(DBfile *dbfile,
     n_mesh_info[topo_name]["elements/i"] = ele_dims[0];
     n_mesh_info[topo_name]["elements/j"] = ele_dims[1];
     
-    n_mesh_info.print();
     
     if(num_coords == 3)
     {
