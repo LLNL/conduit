@@ -349,6 +349,8 @@ void
 Node::load(const std::string &stream_path,
            const Schema &schema)
 {
+    // clear out any existing structure
+    reset();
     index_t dsize = schema.total_bytes();
 
     allocate(dsize);
