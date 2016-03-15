@@ -54,11 +54,12 @@ import spack
 class Python(Package):
     """The Python programming language."""
     homepage = "http://www.python.org"
-    url      = "http://www.python.org/ftp/python/2.7.8/Python-2.7.8.tar.xz"
+    url      = "http://www.python.org/ftp/python/2.7.8/Python-2.7.8.tgz"
 
     extendable = True
 
-    version('2.7.8', 'd235bdfa75b8396942e360a70487ee00')
+    version('2.7.8',  'd235bdfa75b8396942e360a70487ee00')
+    version('2.7.11', '6b6076ec9e93f05dd63e47eb9c15728b', preferred=True)
 
     def install(self, spec, prefix):
         # Need this to allow python build to find the Python installation.

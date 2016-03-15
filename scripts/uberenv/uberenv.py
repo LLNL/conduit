@@ -45,7 +45,7 @@
 """
  file: uberenv.py
 
- description: uses spack to install the external third party libs use by conduit.
+ description: uses spack to install the external third party libs used by a project.
 
 """
 
@@ -55,17 +55,28 @@ import subprocess
 import shutil
 import socket
 import platform
-
-from os import environ as env
+import json
 
 from optparse import OptionParser
+
+from os import environ as env
 from os.path import join as pjoin
 
 
-def sexe(cmd):
-    "Basic shell call helper."
-    print "[sexe:%s ]" % cmd
-    subprocess.call(cmd,shell=True)
+def sexe(cmd,ret_output=False,echo = False):
+    """ Helper for executing shell commands. """
+    if echo:
+        print "[exe: %s]" % cmd
+    if ret_output:
+        p = subprocess.Popen(cmd,
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT)
+        res =p.communicate()[0]
+        return p.returncode,res
+    else:
+        return subprocess.call(cmd,shell=True)
+
 
 def parse_args():
     "Parses args from command line"
@@ -80,16 +91,19 @@ def parse_args():
                       dest="spec",
                       default=None,
                       help="spack compiler spec")
-    # try to use openmp support
-    parser.add_option("--python3",
-                      dest="python3",
-                      action="store_true",
-                      help="use python3 instead of python2")
-    # try to use openmp support
+    # force rebuild of these packages
     parser.add_option("--force",
                       dest="force",
-                      default="uberenv-conduit",
-                      help="force rebuild of these packages")   
+                      default=False,
+                      action='store_true',
+                      help="force rebuild of uberenv packages")
+    # a file that holds settings for a specific project 
+    # using uberenv.py 
+    parser.add_option("--package_json",
+                      dest="package_json",
+                      default=pjoin(uberenv_script_dir(),"uberenv_package.json"),
+                      help="uberenv package info json file")
+
     # parse args
     opts, extras = parser.parse_args()
     # we want a dict b/c the values could 
@@ -97,9 +111,47 @@ def parse_args():
     opts = vars(opts)
     return opts, extras
 
+def uberenv_script_dir():
+    # returns the directory of the uberenv.py script
+    return os.path.dirname(os.path.abspath(__file__))
+
+def uberenv_package_info(package_json):
+    # reads package info from json file
+    return json.load(open(package_json))
+
+def spack_package_is_installed(pkg,spec):
+    # TODO: We need a better way to check this
+    # the term colors are undermining me 
+    # ( I was trying to check for z installed pacakges, with z > 0
+    rcode, output = sexe("spack/bin/spack find " + pkg + spec,
+                         ret_output=True,echo=True)
+    lines = output.split("\n")
+    return len(lines) > 1
+
+def spack_package_deps(pkg,spec):
+    # TODO: In the future, we will can use uninstall by hash
+    # and we won't need this
+    rcode, output = sexe("spack/bin/spack find --deps %s %s" % (pkg,spec),
+                         ret_output=True,
+                         echo=True)
+    lines = [ l.strip() for l in output.split("\n") if l.strip() != ""] 
+    lines = [ l[1:] for l in lines if l.startswith("^")]
+    # remove term colors that spack uses
+    lines = [ l.replace("\x1b[0;36m","") for l in lines]
+    lines = [ l.replace("\x1b[0;94m","") for l in lines]
+    lines = [ l.replace("\x1b[0m","") for l in lines]
+    pkgs = set(lines)
+    res = [ pkg + spec for pkg in pkgs]
+    return res    
+
+def spack_uninstall_and_clean(pkg):
+    print "[forcing uninstall of %s]" % pkg
+    sexe("spack/bin/spack uninstall -f %s" % pkg,echo=True)
+    sexe("spack/bin/spack clean %s" % pkg,echo=True)
+
 def uberenv_compilers_yaml_file():
     # path to compilers.yaml, which we will for compiler setup for spack
-    compilers_yaml = pjoin(os.path.split(os.path.abspath(__file__))[0],
+    compilers_yaml = pjoin(uberenv_script_dir(),
                            "compilers.yaml")
     if not os.path.isfile(compilers_yaml):
         print "[failed to find uberenv 'compilers.yaml' file]"
@@ -122,17 +174,25 @@ def patch_spack(spack_dir,compilers_yaml,pkgs):
     if not os.path.isdir(spack_etc):
         os.mkdir(spack_etc)
     sexe("cp %s spack/etc/spack" % compilers_yaml)
-    dest_spack_pkgs = pjoin(spack_dir,"var","spack","packages")
+    dest_spack_pkgs = pjoin(spack_dir,"var","spack","repos","builtin","packages")
     # hot-copy our packages into spack
     sexe("cp -Rf %s %s" % (pkgs,dest_spack_pkgs))
+
 
 def main():
     """
     clones and runs spack to setup our third_party libs and
-    creates a host-config.cmake file that can be used by strawman.
-    """
+    creates a host-config.cmake file that can be used by 
+    our project.
+    """ 
     # parse args from command line
     opts, extras = parse_args()
+    
+    pkg_info = uberenv_package_info(opts["package_json"])
+    print pkg_info
+    uberenv_pkg_name = pkg_info["uberenv_package_name"]
+    
+    # setup osx deployment target
     print "[uberenv options: %s]" % str(opts)
     if "darwin" in platform.system().lower():
         dep_tgt = platform.mac_ver()[0]
@@ -150,10 +210,8 @@ def main():
     uberenv_path = os.path.split(os.path.abspath(__file__))[0]
     pkgs = pjoin(uberenv_path, "packages","*")
     # setup destination paths
-    dest_dir = os.path.abspath(os.path.abspath(opts["prefix"]))
-    print dest_dir
+    dest_dir = os.path.abspath(opts["prefix"])
     dest_spack = pjoin(dest_dir,"spack")
-    dest_spack_pkgs = pjoin(dest_spack,"var","spack","packages")
     # print a warning if the dest path already exists
     if not os.path.isdir(dest_dir):
         os.mkdir(dest_dir)
@@ -161,24 +219,32 @@ def main():
         print "[info: destination '%s' already exists]"  % dest_dir
     if os.path.isdir(dest_spack):
         print "[info: destination '%s' already exists]"  % dest_spack
-    if not opts["force"].count("uberenv-conduit") == 1:
-         opts["force"] =  opts["force"] + " uberenv-conduit"
     compilers_yaml = uberenv_compilers_yaml_file()
-    # clone spack into the dest path
+    if not os.path.isdir("spack"):
+        print "[info: cloning spack from github]"
+        os.chdir(dest_dir)
+        # clone spack into the dest path
+        sexe("git clone -b develop https://github.com/llnl/spack.git")
+    else:
+        print "[info: updating spack from github]"
+        # if we already have a checkout, clean and update it
+        os.chdir(pjoin(dest_dir,"spack"))
+        sexe("git clean -f")
+        sexe("git pull origin develop")
     os.chdir(dest_dir)
-    sexe("git clone https://github.com/llnl/spack.git")
     # twist spack's arms 
     patch_spack(dest_spack,compilers_yaml,pkgs)
-    # for things we want to force: clean up stages and uninstall them
-    force = [ f + opts["spec"] for f in opts["force"].split()]
-    force = " ".join(force)
-    print "[forcing uninstall of %s]" % force
-    sexe("spack/bin/spack clean %s" % force)
-    sexe("spack/bin/spack uninstall %s" % force)
+    if opts["force"]:
+        deps = spack_package_deps(uberenv_pkg_name,opts["spec"])
+        for dep in deps:
+            spack_uninstall_and_clean(dep)
+    if spack_package_is_installed(uberenv_pkg_name,opts["spec"]):
+        spack_uninstall_and_clean(uberenv_pkg_name + opts["spec"])
     # use the uberenv package to trigger the right builds and build an host-config.cmake file
-    sexe("spack/bin/spack install uberenv-conduit " + opts["spec"])
+    sexe("spack/bin/spack install " + uberenv_pkg_name + opts["spec"],echo=True)
 
 
 if __name__ == "__main__":
     main()
+
 

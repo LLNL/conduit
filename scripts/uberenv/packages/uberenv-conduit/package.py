@@ -59,8 +59,6 @@ class UberenvConduit(Package):
     #######################
     # standard spack packages
     #######################
-    depends_on("cmake")
-
     #on osx, build mpich for mpi support
     if "darwin" in platform.system().lower():
         depends_on("mpich")
@@ -69,6 +67,11 @@ class UberenvConduit(Package):
     # uberenv custom packages
     #######################
 
+    #######################
+    # CMake
+    #######################
+    depends_on("cmake~ncurses~openssl@3.3.1")
+    
     #######################
     # python
     #######################
