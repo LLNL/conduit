@@ -44,26 +44,22 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint.hpp
+/// file: blueprint_mca_examples.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_HPP
-#define BLUEPRINT_HPP
+//-----------------------------------------------------------------------------
+// std lib includes
+//-----------------------------------------------------------------------------
+#include <string.h>
+#include <math.h>
 
 //-----------------------------------------------------------------------------
-// conduit lib includes
+// conduit includes
 //-----------------------------------------------------------------------------
-#include "conduit.hpp"
-
-#include "Blueprint_Exports.hpp"
-
 #include "blueprint_mesh.hpp"
-#include "blueprint_mesh_examples.hpp"
 
-#include "blueprint_mca.hpp"
-#include "blueprint_mca_examples.hpp"
-
+using namespace conduit;
 
 //-----------------------------------------------------------------------------
 // -- begin blueprint:: --
@@ -72,39 +68,91 @@ namespace blueprint
 {
 
 //-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how blueprint was
-/// configured.
-//-----------------------------------------------------------------------------
-std::string BLUEPRINT_API about();
-void        BLUEPRINT_API about(conduit::Node &n);
-
-//-----------------------------------------------------------------------------
-/// Experimental blueprint interface
+// -- begin blueprint::mca --
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-bool BLUEPRINT_API verify(const std::string &protocol,
-                          conduit::Node &n,
-                          conduit::Node &info);
+namespace mca
+{
 
 //-----------------------------------------------------------------------------
-bool BLUEPRINT_API annotate(const std::string &protocol,
-                            conduit::Node &n,
-                            conduit::Node &info);
-
+// -- begin blueprint::mca::examples --
 //-----------------------------------------------------------------------------
-bool BLUEPRINT_API transform(const std::string &protocol,
-                             conduit::Node &src,
-                             conduit::Node &actions,
-                             conduit::Node &dest,
-                             conduit::Node &info);
+
+namespace examples
+{
+
+//---------------------------------------------------------------------------//
+void
+xyz_interleaved(index_t npts, // total number of points
+                Node &res)
+{
+    res.reset();
+    // TODO!
+}
+
+//---------------------------------------------------------------------------//
+void
+xyz_separate(index_t npts, // total number of points
+             Node &res)
+{
+    res.reset();
+    // TODO!
+}
+
+//---------------------------------------------------------------------------//
+void
+xyz_contiguous(index_t npts, // total number of points
+               Node &res)
+{
+    res.reset();
+    // TODO!
+}
+
+
+
+//---------------------------------------------------------------------------//
+void
+xyz(const std::string &mca_type,
+    index_t npts, // total number of points
+    Node &res)
+{
+
+    if(mca_type == "interleaved")
+    {
+        xyz_interleaved(npts,res);
+    }
+    else if(mca_type == "separate")
+    {
+        xyz_separate(npts,res);
+    }
+    else if(mca_type == "contiguous")
+    {
+        xyz_contiguous(npts,res);
+    }
+    else
+    {
+        CONDUIT_ERROR("unknown mca_type = " << mca_type);
+    }
+}
+
+
+
+
+};
+//-----------------------------------------------------------------------------
+// -- end blueprint::mca::examples --
+//-----------------------------------------------------------------------------
+
+
+
+};
+//-----------------------------------------------------------------------------
+// -- end blueprint::mca --
+//-----------------------------------------------------------------------------
+
+
 
 };
 //-----------------------------------------------------------------------------
 // -- end blueprint:: --
 //-----------------------------------------------------------------------------
-
-#endif 
-
-
-

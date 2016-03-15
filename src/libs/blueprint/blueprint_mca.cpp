@@ -44,26 +44,22 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint.hpp
+/// file: blueprint_mca.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_HPP
-#define BLUEPRINT_HPP
+//-----------------------------------------------------------------------------
+// std lib includes
+//-----------------------------------------------------------------------------
+#include <string.h>
+#include <math.h>
 
 //-----------------------------------------------------------------------------
-// conduit lib includes
+// conduit includes
 //-----------------------------------------------------------------------------
-#include "conduit.hpp"
-
-#include "Blueprint_Exports.hpp"
-
-#include "blueprint_mesh.hpp"
-#include "blueprint_mesh_examples.hpp"
-
 #include "blueprint_mca.hpp"
-#include "blueprint_mca_examples.hpp"
 
+using namespace conduit;
 
 //-----------------------------------------------------------------------------
 // -- begin blueprint:: --
@@ -72,39 +68,80 @@ namespace blueprint
 {
 
 //-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how blueprint was
-/// configured.
-//-----------------------------------------------------------------------------
-std::string BLUEPRINT_API about();
-void        BLUEPRINT_API about(conduit::Node &n);
-
-//-----------------------------------------------------------------------------
-/// Experimental blueprint interface
+// -- begin blueprint::mca --
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-bool BLUEPRINT_API verify(const std::string &protocol,
-                          conduit::Node &n,
-                          conduit::Node &info);
+namespace mca
+{
 
 //-----------------------------------------------------------------------------
-bool BLUEPRINT_API annotate(const std::string &protocol,
-                            conduit::Node &n,
-                            conduit::Node &info);
+bool
+verify(Node &n,
+       Node &info)
+{
+    return false;
+}
 
 //-----------------------------------------------------------------------------
-bool BLUEPRINT_API transform(const std::string &protocol,
-                             conduit::Node &src,
-                             conduit::Node &actions,
-                             conduit::Node &dest,
-                             conduit::Node &info);
+bool
+annotate(Node &n,
+         Node &info)
+{
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+bool
+transform(Node &src,
+          Node &actions,
+          Node &dest,
+          Node &info)
+{
+   // TODO: list vs object case?
+   // list example:
+   //
+   // ["expand"]
+   // obj example
+   // [ {name: expand, opts: ... }]
+   //
+   // blueprint::actions::expand(actions,adest);
+   
+   NodeIterator itr = actions.children();
+   
+   while(itr.has_next())
+   {
+       Node &curr = itr.next();
+       std::string action_name = curr["name"].as_string();
+       // TODO: wire in any mca methods
+       // if( action_name == "expand")
+       // {
+       //     bool res = expand(src,dest,info.append());
+       //     if(!res)
+       //     {
+       //         return res;
+       //     }
+       // }
+       // else
+       // {
+           std::ostringstream oss;
+           oss << "blueprint::mca, unsupported action:" << action_name;
+           info.set(oss.str());
+           return false;
+       // }
+   }
+   
+   return true;
+
+}
+
+};
+//-----------------------------------------------------------------------------
+// -- end blueprint::mesh --
+//-----------------------------------------------------------------------------
+
+
 
 };
 //-----------------------------------------------------------------------------
 // -- end blueprint:: --
 //-----------------------------------------------------------------------------
-
-#endif 
-
-
-

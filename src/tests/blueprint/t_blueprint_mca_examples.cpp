@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -9,7 +9,7 @@
 // 
 // This file is part of Conduit. 
 // 
-// For details, see: http://llnl.github.io/conduit/.
+// For details, see https://lc.llnl.gov/conduit/.
 // 
 // Please also read conduit/LICENSE
 // 
@@ -44,109 +44,47 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint_mesh.cpp
+/// file: conduit_blueprint_mesh_examples.cpp
 ///
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-// std lib includes
-//-----------------------------------------------------------------------------
-#include <string.h>
-#include <math.h>
-
-//-----------------------------------------------------------------------------
-// conduit includes
-//-----------------------------------------------------------------------------
+#include "conduit.hpp"
 #include "blueprint.hpp"
-#include "blueprint_mesh.hpp"
+#include "conduit_io.hpp"
+
+#include <iostream>
+#include "gtest/gtest.h"
 
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
-// -- begin blueprint:: --
-//-----------------------------------------------------------------------------
-namespace blueprint
+TEST(conduit_blueprint_mca_examples, mca_xyz)
 {
+    Node io_protos;
+    io::about(io_protos);
 
-
-//---------------------------------------------------------------------------//
-std::string
-about()
-{
-    Node n;
-    blueprint::about(n);
-    return n.to_json();
-}
-
-//---------------------------------------------------------------------------//
-void
-about(Node &n)
-{
-    n.reset();
-    n["protocols/mesh"] = "enabled";
-    n["protocols/mca"]  = "enabled";
-}
-
-
-//---------------------------------------------------------------------------//
-bool
-verify(const std::string &protocol,
-       Node &n,
-       Node &info)
-{
-    bool res = false;
-    info.reset();
-
-    if(protocol == "mesh")
-    {
-        res = mesh::annotate(n,info);
-    }
+    // we are using one node to hold group of example mcas purely out of convenience
+    Node dsets;
+    index_t npts = 100;
     
-    return res;
-}
+    blueprint::mca::examples::xyz("interleaved",
+                                  npts,
+                                  dsets["interleaved"]);
 
-//---------------------------------------------------------------------------//
-bool
-annotate(const std::string &protocol,
-         Node &n,
-         Node &info)
-{
-    bool res = false;
-    info.reset();
+    blueprint::mca::examples::xyz("separate",
+                                  npts,
+                                  dsets["separate"]);
 
-    if(protocol == "mesh")
-    {
-        res = mesh::annotate(n,info);
-    }
+    blueprint::mca::examples::xyz("contiguous",
+                                  npts,
+                                  dsets["contiguous"]);
+    NodeIterator itr = dsets.children();
     
-    return res;
-}
-
-
-
-//---------------------------------------------------------------------------//
-bool
-transform(const std::string &protocol,
-          Node &src,
-          Node &actions,
-          Node &des,
-          Node &info)
-{
-    bool res = false;
-    des.reset();
-    info.reset();
-
-    if(protocol == "mesh")
+    while(itr.has_next())
     {
-        res = mesh::transform(src,actions,des,info);
+        Node info;
+        Node &mca = itr.next();
+        std::string name = itr.path();
+        // TODO: tests!
     }
-    
-    return res;
 }
-
-
-};
-
-//-----------------------------------------------------------------------------
-// -- end blueprint:: --
-//-----------------------------------------------------------------------------

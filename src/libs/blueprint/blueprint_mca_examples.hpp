@@ -44,25 +44,18 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint.hpp
+/// file: blueprint_mca_examples.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_HPP
-#define BLUEPRINT_HPP
+#ifndef BLUEPRINT_MCA_EXAMPLES_HPP
+#define BLUEPRINT_MCA_EXAMPLES_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-
 #include "Blueprint_Exports.hpp"
-
-#include "blueprint_mesh.hpp"
-#include "blueprint_mesh_examples.hpp"
-
-#include "blueprint_mca.hpp"
-#include "blueprint_mca_examples.hpp"
 
 
 //-----------------------------------------------------------------------------
@@ -72,32 +65,35 @@ namespace blueprint
 {
 
 //-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how blueprint was
-/// configured.
-//-----------------------------------------------------------------------------
-std::string BLUEPRINT_API about();
-void        BLUEPRINT_API about(conduit::Node &n);
-
-//-----------------------------------------------------------------------------
-/// Experimental blueprint interface
+// -- begin blueprint::mca --
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-bool BLUEPRINT_API verify(const std::string &protocol,
-                          conduit::Node &n,
-                          conduit::Node &info);
+// NOTE: MCA is an intentionally bad name, which we hope to change.
+
+namespace mca 
+{
 
 //-----------------------------------------------------------------------------
-bool BLUEPRINT_API annotate(const std::string &protocol,
-                            conduit::Node &n,
-                            conduit::Node &info);
-
+/// Methods that generate example multi-component arrays.
 //-----------------------------------------------------------------------------
-bool BLUEPRINT_API transform(const std::string &protocol,
-                             conduit::Node &src,
-                             conduit::Node &actions,
-                             conduit::Node &dest,
-                             conduit::Node &info);
+namespace examples
+{
+    // creates mca array with num pts * 3 components. 
+    void BLUEPRINT_API xyz(const std::string &mca_type,
+                           conduit::index_t npts, // total number of points
+                           conduit::Node &res);
+};
+//-----------------------------------------------------------------------------
+// -- end blueprint::mesh::examples --
+//-----------------------------------------------------------------------------
+
+
+};
+//-----------------------------------------------------------------------------
+// -- end blueprint::mca --
+//-----------------------------------------------------------------------------
+
+
 
 };
 //-----------------------------------------------------------------------------
