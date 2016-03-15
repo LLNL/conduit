@@ -64,48 +64,159 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
     io::about(io_protos);
 
     bool silo_enabled = io_protos["protocols/conduit_silo"].as_string() == "enabled";
-        
-    Node uniform;
-    blueprint::mesh::examples::braid("uniform",20,20,0,uniform);
-    uniform.print();
-    uniform.to_json_stream("braid_uniform_example.json");
 
-    Node rect;
-    blueprint::mesh::examples::braid("rectilinear",20,20,0,rect);
-    rect.print();
-    rect.to_json_stream("braid_rect_example.json");
+    // we are using one node to hold group of example meshes purely out of convenience  
+    Node dsets;
+    index_t npts_x = 11;
+    index_t npts_y = 11;
+    index_t npts_z = 1; // 2D examples ...
+    
+    blueprint::mesh::examples::braid("uniform",
+                                      npts_x,
+                                      npts_y,
+                                      npts_y,
+                                      dsets["uniform"]);
 
-    Node tris;
-    blueprint::mesh::examples::braid("tris",20,20,0,tris);
-    tris.print();
-    tris.to_json_stream("braid_quads_example.json");
+    blueprint::mesh::examples::braid("rectilinear",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["rect"]);
 
-    Node quads;
-    blueprint::mesh::examples::braid("quads",20,20,0,quads);
-    quads.print();
-    quads.to_json_stream("braid_quads_example.json");
+    blueprint::mesh::examples::braid("structured",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["struct"]);
+                                     
+    blueprint::mesh::examples::braid("tris",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["tris"]);
+                                     
+    blueprint::mesh::examples::braid("quads",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["quads"]);
 
-    Node rect_expanded;
-    blueprint::mesh::expand(rect,rect_expanded);
-    rect_expanded.print();
-    rect_expanded.to_json_stream("braid_rect_expanded_example.json");
+    blueprint::mesh::examples::braid("points_explicit",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["points_explicit"]);
 
-    Node tris_expanded;
-    blueprint::mesh::expand(tris,tris_expanded);
-    tris_expanded.print();
-    tris_expanded.to_json_stream("braid_tris_expanded_example.json");
+    Node expanded;
+    
+    NodeIterator itr = dsets.children();
+    
+    while(itr.has_next())
+    {
+        Node &mesh = itr.next();
+        mesh.print();
+        std::string name = itr.path();
+        std::cout << "expanding 2d example '" << name << std::endl;
+        blueprint::mesh::expand(mesh,expanded[name]);
 
-    Node quads_expanded;
-    blueprint::mesh::expand(quads,quads_expanded);
-    quads_expanded.print();
-    quads_expanded.to_json_stream("braid_quads_expanded_example.json");
+    }
     
     if(silo_enabled)
     {
-        // conduit::io::save("conduit_silo_mesh",uniform,"braid_uniform_example.silo:uniform2d");
-        io::save("conduit_silo_mesh",rect_expanded,"braid_rect_example.silo:rect2d");
-        io::save("conduit_silo_mesh",tris_expanded,"braid_tris_example.silo:tris");
-        io::save("conduit_silo_mesh",quads_expanded,"braid_quads_example.silo:quad");
+    
+        itr = expanded.children();
+    
+        while(itr.has_next())
+        {
+            Node &mesh = itr.next();
+            mesh.print();
+            std::string name = itr.path();
+            std::cout << "saving 2d example '" << name << "' to silo" << std::endl;
+            io::save("conduit_silo_mesh",mesh,"braid_2d_" + name +  "_example.silo:mesh");
+        }
+    }
+    
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, mesh_3d)
+{
+    Node io_protos;
+    io::about(io_protos);
+
+    bool silo_enabled = io_protos["protocols/conduit_silo"].as_string() == "enabled";
+
+    // we are using one node to hold group of example meshes purely out of convenience  
+    Node dsets;
+    index_t npts_x = 11;
+    index_t npts_y = 11;
+    index_t npts_z = 11; // 3D examples ...
+    
+    blueprint::mesh::examples::braid("uniform",
+                                      npts_x,
+                                      npts_y,
+                                      npts_y,
+                                      dsets["uniform"]);
+
+    blueprint::mesh::examples::braid("rectilinear",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["rect"]);
+
+    blueprint::mesh::examples::braid("structured",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["struct"]);
+
+    blueprint::mesh::examples::braid("points_explicit",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["points_explicit"]);
+
+    blueprint::mesh::examples::braid("tets",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["tets"]);
+
+    blueprint::mesh::examples::braid("hexs",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["hexs"]);
+
+
+    Node expanded;
+    
+    NodeIterator itr = dsets.children();
+    
+    while(itr.has_next())
+    {
+        Node &mesh = itr.next();
+        mesh.print();
+        std::string name = itr.path();
+        std::cout << "expanding 3d example '" << name << std::endl;
+        blueprint::mesh::expand(mesh,expanded[name]);
+
+    }
+    
+    if(silo_enabled)
+    {
+    
+        itr = expanded.children();
+    
+        while(itr.has_next())
+        {
+            Node &mesh = itr.next();
+            mesh.print();
+            std::string name = itr.path();
+            std::cout << "saving 3d example '" << name << "' to silo" << std::endl;
+            io::save("conduit_silo_mesh",mesh,"braid_3d_" + name +  "_example.silo:mesh");
+        }
     }
     
 }
