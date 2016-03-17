@@ -63,21 +63,11 @@ TEST(conduit_blueprint_mca_examples, mca_test_to_contig)
     
     Node n;
 
-    n["x"].set(DataType::float64(5));
-    n["y"].set(DataType::float64(5));
-    n["z"].set(DataType::float64(5));
+    index_t nvals = 100; // Number of "tuples"
     
-    float64_array x_a = n["x"].value();
-    float64_array y_a = n["y"].value();
-    float64_array z_a = n["z"].value();
-    
-    
-    for(index_t i=0;i<5;i++)
-    {
-        x_a[i] = 1.0;
-        y_a[i] = 2.0;
-        z_a[i] = 3.0;
-    }
+    blueprint::mca::examples::xyz("separate",
+                                  nvals,
+                                  n);
     
     n.print();
     
