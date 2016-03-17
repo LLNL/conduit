@@ -3545,9 +3545,8 @@ PyConduit_Node_set_external(PyConduit_Node* self,
     PyArray_Descr *desc = PyArray_DESCR((PyArrayObject*)value);
     PyArrayObject *py_arr = (PyArrayObject*)value;
     npy_intp num_ele = PyArray_SIZE(py_arr);
-    int elsize = desc->elsize;
     int offset = 0;
-    int stride = PyArray_STRIDE(py_arr, 0)*elsize;
+    int stride = PyArray_STRIDE(py_arr, 0);
     int nd = PyArray_NDIM(py_arr);
 
     if (nd > 1) {
@@ -4200,6 +4199,12 @@ PyConduit_createNumpyType(Node& node,
     else 
     {
         retval = PyArray_SimpleNewFromData(1, &len, type, data);
+
+        // Since there doesn't appear to be a constructor that takes data
+        // and a descriptor, we'll just modify the strides appropriately.
+        // This should be OK since we only support 1D arrays currently.
+        npy_intp * strides = PyArray_STRIDES((PyArrayObject*)retval);
+        strides[0] = dtype.stride();
     }
     return (retval);
 }
