@@ -111,7 +111,9 @@ public:
     static WebServer  *serve(Node *data,
                              bool block=false,
                              index_t port = 8080,
-                             const std::string &ssl_cert_file = std::string(""));
+                             const std::string &ssl_cert_file = std::string(""),
+                             const std::string &auth_domain   = std::string(""),
+                             const std::string &auth_file     = std::string(""));
 };
 
 
