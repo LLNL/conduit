@@ -93,6 +93,10 @@ bool BLUEPRINT_API transform(conduit::Node &src,
 bool BLUEPRINT_API to_contiguous(conduit::Node &src,
                                  conduit::Node &dest);
 
+//-----------------------------------------------------------------------------
+bool BLUEPRINT_API to_interleaved(conduit::Node &src,
+                                  conduit::Node &dest);
+
 
 //-----------------------------------------------------------------------------
 // mca blueprint methods
