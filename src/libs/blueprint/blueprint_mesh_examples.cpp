@@ -661,14 +661,14 @@ braid_hexs(index_t npts_x,
             for(index_t i = 0; i < nele_x; i++)
             {
                 conn[idx+0] = zoff + yoff + i;
-                conn[idx+1] = zoff + yoff_n + i;
+                conn[idx+1] = zoff + yoff + i + 1;
                 conn[idx+2] = zoff + yoff_n + i + 1;
-                conn[idx+3] = zoff + yoff + i + 1;
+                conn[idx+3] = zoff + yoff_n + i;
 
                 conn[idx+4] = zoff_n + yoff + i;
-                conn[idx+5] = zoff_n + yoff_n + i;
+                conn[idx+5] = zoff_n + yoff + i + 1;
                 conn[idx+6] = zoff_n + yoff_n + i + 1;
-                conn[idx+7] = zoff_n + yoff + i + 1;
+                conn[idx+7] = zoff_n + yoff_n + i;
 
                 idx+=8;
             }
