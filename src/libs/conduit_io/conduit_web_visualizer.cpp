@@ -238,7 +238,9 @@ WebServer *
 VisualizerServer::serve(Node *data,
                         bool block,
                         index_t port,
-                        const std::string &ssl_cert_file)
+                        const std::string &ssl_cert_file,
+                        const std::string &auth_domain,
+                        const std::string &auth_file)
 {
     VisualizerRequestHandler *rhandler = new VisualizerRequestHandler(data);
     
@@ -247,7 +249,9 @@ VisualizerServer::serve(Node *data,
     res->serve(utils::join_file_path(CONDUIT_WEB_CLIENT_ROOT,"rest_client"),
                rhandler,
                port,
-               ssl_cert_file);
+               ssl_cert_file,
+               auth_domain,
+               auth_file);
     
     if(block)
     {
