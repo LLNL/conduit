@@ -83,11 +83,32 @@ namespace examples
 
 //---------------------------------------------------------------------------//
 void
-xyz_interleaved(index_t npts, // total number of points
+xyz_interleaved(index_t nvals, // total number of "tuples"
                 Node &res)
 {
     res.reset();
-    // TODO!
+    
+    // create x,y,z
+    
+    index_t stride = sizeof(conduit::float64) * 3;
+    Schema s;
+    s["x"].set(DataType::float64(nvals,0,stride));
+    s["y"].set(DataType::float64(nvals,1,stride));
+    s["z"].set(DataType::float64(nvals,2,stride));
+    
+    // init the output
+    res.set(s);
+    
+    float64_array x_a = res["x"].value();
+    float64_array y_a = res["y"].value();
+    float64_array z_a = res["z"].value();
+    
+    for(index_t i=0;i<nvals;i++)
+    {
+        x_a[i] = 1.0;
+        y_a[i] = 2.0;
+        z_a[i] = 3.0;
+    }
 }
 
 //---------------------------------------------------------------------------//
