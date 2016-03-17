@@ -60,7 +60,8 @@ using namespace conduit::io;
 
 
 bool launch_server = false;
-bool use_ssl = false;
+bool use_ssl       = false;
+bool use_auth      = false;
 
 TEST(conduit_io_websocket, websocket_test)
 {
@@ -69,17 +70,14 @@ TEST(conduit_io_websocket, websocket_test)
         return;
     }
 
-
-    
     // read png data into a string.
-    // in the real example, we should have the png in memory
     std::string wsock_path = utils::join_file_path(CONDUIT_WEB_CLIENT_ROOT,
                                                    "wsock_test");
 
     std::string example_png_path = utils::join_file_path(wsock_path,
                                                          "example.png");
 
-    CONDUIT_INFO("png path:" << example_png_path);
+    CONDUIT_INFO("Reading Example PNG file:" << example_png_path);
     std::ifstream file(example_png_path.c_str(),
                        std::ios::binary);
 
@@ -97,7 +95,7 @@ TEST(conduit_io_websocket, websocket_test)
     if(!file.read(png_raw_ptr, png_raw_bytes))
     {
         // ERROR!
-        CONDUIT_ERROR("DIDN'T READ ANYTHING");
+        CONDUIT_ERROR("Failed to read PNG file:" << example_png_path);
     }
 
     // base64 encode the raw png data
@@ -119,24 +117,31 @@ TEST(conduit_io_websocket, websocket_test)
     
     WebServer svr;
     // start our server
-    if(!use_ssl)
+    
+    std::string cert_file   = std::string("");
+    std::string auth_domain = std::string("");
+    std::string auth_file   = std::string("");
+                  
+    if(use_ssl)
     {
-        svr.serve(wsock_path,
-                  new WebRequestHandler(),
-                  8081);
+        cert_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"conduit_io");
+        cert_file = utils::join_file_path(cert_file,"t_ssl_cert.pem");
     }
-    else
-    {   
-        std::string cert_path = utils::join_file_path(CONDUIT_T_SRC_DIR,"conduit_io");
-        cert_path = utils::join_file_path(cert_path,"t_ssl_cert.pem");
-        svr.serve(wsock_path,
-                  new WebRequestHandler(),
-                  8081,
-                  cert_path);
-    }
-        
 
-    // this loop won't be necessary in the strawman lib.    
+    if(use_auth)
+    {
+        auth_domain = "test";
+        auth_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"conduit_io");
+        auth_file = utils::join_file_path(auth_file,"t_htpasswd.txt");
+    }
+
+    svr.serve(wsock_path,
+              new WebRequestHandler(),
+              8081,
+              cert_file,
+              auth_domain,
+              auth_file);
+
     while(svr.is_running()) 
     {
         utils::sleep(1000);
@@ -163,12 +168,21 @@ int main(int argc, char* argv[])
         std::string arg_str(argv[i]);
         if(arg_str == "launch")
         {
+            // actually launch the server
             launch_server = true;
         }
         else if(arg_str == "ssl")
         {
+            // test using ssl server cert
             use_ssl = true;
         }
+        else if(arg_str == "auth")
+        {
+            // test using htpasswd auth
+            // the user name and password for this example are both "test"
+            use_auth = true;
+        }
+        
     }
 
     result = RUN_ALL_TESTS();

@@ -117,16 +117,23 @@ public:
                 WebServer();
     virtual    ~WebServer();
 
+    /// TODO: too many default args here, may want to change the interface
+    /// to make things cleaner in the future.
+    
     /// convenience case that uses the default request handler
     void        serve(const std::string &doc_root,
                       index_t port = 8080,
-                      const std::string &ssl_cert_file = std::string(""));
+                      const std::string &ssl_cert_file = std::string(""),
+                      const std::string &auth_domain   = std::string(""),
+                      const std::string &auth_file     = std::string(""));
 
     /// general case, supporting a user provided request handler
     void        serve(const std::string &doc_root,
                       WebRequestHandler *dispatch, // takes ownership?
                       index_t port = 8080,
-                      const std::string &ssl_cert_file = std::string(""));
+                      const std::string &ssl_cert_file = std::string(""),
+                      const std::string &auth_domain   = std::string(""),
+                      const std::string &auth_file     = std::string(""));
     
     void        shutdown();
     
@@ -152,6 +159,8 @@ private:
     std::string             m_doc_root;
     std::string             m_port;
     std::string             m_ssl_cert_file;
+    std::string             m_auth_domain;
+    std::string             m_auth_file;
     bool                    m_running;
 
     CivetServer            *m_server;
