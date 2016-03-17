@@ -789,7 +789,7 @@ braid_tets(index_t npts_x,
                                             nele_hexs_y,
                                             nele_hexs_z,
                                             fields["radial_ec"],
-                                            2);
+                                            tets_per_hex);
 }
 
 
