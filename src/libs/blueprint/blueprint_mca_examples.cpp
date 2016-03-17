@@ -101,11 +101,34 @@ xyz_separate(index_t npts, // total number of points
 
 //---------------------------------------------------------------------------//
 void
-xyz_contiguous(index_t npts, // total number of points
+xyz_contiguous(index_t nvals, // total number of "tuples"
                Node &res)
 {
     res.reset();
-    // TODO!
+    
+    // create x,y,z
+    
+    index_t offset = 0;
+    Schema s;
+    s["x"].set(DataType::float64(nvals));
+    offset += s["x"].dtype().total_bytes();
+    s["y"].set(DataType::float64(nvals,offset));
+    offset += s["y"].dtype().total_bytes();
+    s["z"].set(DataType::float64(nvals,offset));
+    
+    // init the output
+    res.set(s);
+    
+    float64_array x_a = res["x"].value();
+    float64_array y_a = res["y"].value();
+    float64_array z_a = res["z"].value();
+    
+    for(index_t i=0;i<nvals;i++)
+    {
+        x_a[i] = 1.0;
+        y_a[i] = 2.0;
+        z_a[i] = 3.0;
+    }
 }
 
 

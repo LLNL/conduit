@@ -134,6 +134,55 @@ transform(Node &src,
 
 }
 
+
+//-----------------------------------------------------------------------------
+bool
+to_contiguous(conduit::Node &src,
+              conduit::Node &dest)
+{
+    // goal is to setup dest with children with the same names as src
+    // that point into the desired layout
+    //index_t num_dest_elems = src.child(0).number_of_elements() * num_comps;
+    
+    Schema s_dest;
+    NodeIterator itr = src.children();
+    
+    index_t curr_offset = 0;
+    
+    while(itr.has_next())
+    {
+        // get the next child
+        Node &chld = itr.next();
+        // get the next child's name
+        std::string name = itr.path();
+        
+        // use the child's data type to see our desired data type
+        DataType curr_dt = chld.dtype();
+
+        // get the proper number of bytes for this data type, so we can use it
+        // as the stride
+        index_t elem_bytes = DataType::default_dtype(curr_dt.id()).element_bytes();
+        
+        // set the stride and offset
+        curr_dt.set_stride(elem_bytes);
+        curr_dt.set_offset(curr_offset);
+        
+        // put the dtype into our schema with the correct name
+        s_dest[name] = curr_dt;
+        
+        // update the offset for the next component
+        curr_offset += elem_bytes * curr_dt.number_of_elements();
+    }
+    
+    // allocate using our schema
+    dest.set(s_dest);
+    // copy the data from the source
+    dest.update(src);
+    
+    return true; // we always work!
+}
+
+
 };
 //-----------------------------------------------------------------------------
 // -- end blueprint::mesh --
