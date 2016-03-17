@@ -482,10 +482,6 @@ braid_points_explicit(index_t npts_x,
 {
     res.reset();
     
-    index_t nele_x = npts_x -1;
-    index_t nele_y = npts_y -1;
-    index_t nele_z = npts_z -1;
-    
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
@@ -660,6 +656,8 @@ braid_hexs(index_t npts_x,
 
             for(index_t i = 0; i < nele_x; i++)
             {
+                // ordering is same as VTK_HEXAHEDRON
+
                 conn[idx+0] = zoff + yoff + i;
                 conn[idx+1] = zoff + yoff + i + 1;
                 conn[idx+2] = zoff + yoff_n + i + 1;
@@ -702,15 +700,20 @@ braid_tets(index_t npts_x,
     index_t nele_hexs_z = npts_z - 1;
     index_t nele_hexs = nele_hexs_x * nele_hexs_y * nele_hexs_z;
     
+    index_t tets_per_hex = 6;
+    index_t verts_per_tet = 4;
+    index_t n_tets_verts = nele_hexs * tets_per_hex * verts_per_tet;
+
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  npts_z,
                                  res["coords"]);
   
+
     res["topology/type"] = "unstructured";
     res["topology/elements/shape"] = "tets";
-    res["topology/elements/connectivity"].set(DataType::int32(nele_hexs*8));
+    res["topology/elements/connectivity"].set(DataType::int32(n_tets_verts));
     int32 *conn = res["topology/elements/connectivity"].value();
 
 
@@ -728,18 +731,49 @@ braid_tets(index_t npts_x,
 
             for(index_t i = 0; i < nele_hexs_z; i++)
             {
-                // start with 2 tets
-                conn[idx+0] = zoff + yoff + i;
-                conn[idx+1] = zoff_n + yoff_n + i;
-                conn[idx+2] = zoff + yoff_n + i + 1;
-                conn[idx+3] = zoff_n + yoff + i + 1;
+                // Create a local array of the vertex indices
+                // ordering is same as VTK_HEXAHEDRON
+                index_t vidx[8] = {zoff + yoff + i
+                                  ,zoff + yoff + i + 1
+                                  ,zoff + yoff_n + i + 1
+                                  ,zoff + yoff_n + i
+                                  ,zoff_n + yoff + i
+                                  ,zoff_n + yoff + i + 1
+                                  ,zoff_n + yoff_n + i + 1
+                                  ,zoff_n + yoff_n + i};
 
-                
-                conn[idx+4] = zoff_n + yoff + i;
-                conn[idx+5] = zoff + yoff_n + i;
-                conn[idx+6] = zoff_n + yoff_n + i + 1;
-                conn[idx+7] = zoff + yoff + i + 1;
-                idx+=8;
+                // Create six tets all sharing diagonal from vertex 0 to 6
+				// Uses SILO convention for vertex order (normals point in)
+                conn[idx++] = vidx[0];
+                conn[idx++] = vidx[2];
+                conn[idx++] = vidx[1];
+                conn[idx++] = vidx[6];
+
+                conn[idx++] = vidx[0];
+                conn[idx++] = vidx[3];
+                conn[idx++] = vidx[2];
+                conn[idx++] = vidx[6];
+
+                conn[idx++] = vidx[0];
+                conn[idx++] = vidx[7];
+                conn[idx++] = vidx[3];
+                conn[idx++] = vidx[6];
+
+                conn[idx++] = vidx[0];
+                conn[idx++] = vidx[4];
+                conn[idx++] = vidx[7];
+                conn[idx++] = vidx[6];
+
+                conn[idx++] = vidx[0];
+                conn[idx++] = vidx[5];
+                conn[idx++] = vidx[4];
+                conn[idx++] = vidx[6];
+
+                conn[idx++] = vidx[0];
+                conn[idx++] = vidx[1];
+                conn[idx++] = vidx[5];
+                conn[idx++] = vidx[6];
+
             }
         }
     }
