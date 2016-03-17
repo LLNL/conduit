@@ -58,6 +58,48 @@
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mca_examples, mca_test_to_contig)
+{
+    
+    Node n;
+
+    n["x"].set(DataType::float64(5));
+    n["y"].set(DataType::float64(5));
+    n["z"].set(DataType::float64(5));
+    
+    float64_array x_a = n["x"].value();
+    float64_array y_a = n["y"].value();
+    float64_array z_a = n["z"].value();
+    
+    
+    for(index_t i=0;i<5;i++)
+    {
+        x_a[i] = 1.0;
+        y_a[i] = 2.0;
+        z_a[i] = 3.0;
+    }
+    
+    n.print();
+    
+    n.info().print();
+    
+    Node n_info;
+    n.info(n_info);
+    EXPECT_EQ(n_info["mem_spaces"].number_of_children(),3);
+    
+    Node n_out;
+    blueprint::mca::to_contiguous(n,n_out);
+    n_out.print();
+    n_out.info().print();
+    
+    n_out.info(n_info);
+    
+    EXPECT_EQ(n_info["mem_spaces"].number_of_children(),1);
+    
+    
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mca_examples, mca_xyz)
 {
     Node io_protos;
