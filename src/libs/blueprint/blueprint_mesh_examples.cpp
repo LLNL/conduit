@@ -587,6 +587,8 @@ braid_quads_and_tris(index_t npts_x,
     int count   = 0;
     int ielem   = 0;
     std::vector< int32 > stream_ids_buffer;
+    std::vector< int32 > stream_lengths;
+
     for(index_t j = 0; j < nele_x ; j++)
     {
         for(index_t i = 0; i < nele_y; i++)
@@ -595,6 +597,7 @@ braid_quads_and_tris(index_t npts_x,
              {
                  // QUAD
                  stream_ids_buffer.push_back( 9 );
+                 stream_lengths.push_back( 1 );
                  count += 4;
                  ++ielem;
              }
@@ -605,26 +608,30 @@ braid_quads_and_tris(index_t npts_x,
                  count += 3;
                  ++ielem;
 
-                 stream_ids_buffer.push_back( 5 );
                  count += 3;
                  ++ielem;
+
+                 stream_lengths.push_back( 2 );
              }
 
         } // END for all i
 
     } // END for all j
 
-    // Sanity check
-    assert( ielem == static_cast< int32 >( stream_ids_buffer.size() ) );
-    int32 new_nele = static_cast< int32 >( stream_ids_buffer.size() );
-
-    elems["stream_shapes/stream_ids"].set( DataType::int32(new_nele) );
+    int32 nstreamids = static_cast< int32 >( stream_ids_buffer.size() );
+    elems["stream_index/stream_ids"].set( DataType::int32( nstreamids ) );
     int32* stream_ids = elems["stream_shapes/stream_ids"].value();
-    memcpy(stream_ids, &stream_ids_buffer[0], new_nele*sizeof(int32) );
+    memcpy(stream_ids, &stream_ids_buffer[0], nstreamids*sizeof(int32) );
     stream_ids_buffer.clear();
 
+    int32 nstreamlen = static_cast< int32 >( stream_lengths.size() );
+    elems["stream_index/stream_lengths"].set( DataType::int32( nstreamlen ) );
+    int32* stream_len = elems["stream_index/stream_lengths"].value();
+    memcpy(stream_len, &stream_lengths[0], nstreamlen*sizeof(int32) );
+    stream_lengths.clear();
+
     // Allocate connectivity array
-    elems["stream_shapes/stream"].set(DataType::int32(count));
+    elems["stream"].set(DataType::int32(count));
     int32* conn = elems["stream_shapes/stream"].value();
 
     // Fill in connectivity array
