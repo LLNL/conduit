@@ -86,6 +86,8 @@ TEST(conduit_blueprint_mca_examples, mca_test_to_contig)
     
     EXPECT_EQ(n_info["mem_spaces"].number_of_children(),1);
     
+    EXPECT_TRUE(blueprint::mca::is_contiguous(n_out));
+    
     Node n_test;
     n_test.set_external((float64*)n_out.data_ptr(),15);
     n_test.print();
@@ -106,6 +108,8 @@ TEST(conduit_blueprint_mca_examples, mca_test_to_contig)
     {
         EXPECT_NEAR(n_test_ptr[i],3.0,1e-5);
     }
+    
+
     
 }
 
@@ -137,6 +141,7 @@ TEST(conduit_blueprint_mca_examples, mca_test_to_interleaved)
     
     EXPECT_EQ(n_info["mem_spaces"].number_of_children(),1);
     
+    EXPECT_FALSE(blueprint::mca::is_contiguous(n_out));
     
     Node n_test;
     n_test.set_external((float64*)n_out.data_ptr(),15);
