@@ -92,9 +92,10 @@ xyz_interleaved(index_t nvals, // total number of "tuples"
     
     index_t stride = sizeof(conduit::float64) * 3;
     Schema s;
+    index_t size = sizeof(conduit::float64);
     s["x"].set(DataType::float64(nvals,0,stride));
-    s["y"].set(DataType::float64(nvals,1,stride));
-    s["z"].set(DataType::float64(nvals,2,stride));
+    s["y"].set(DataType::float64(nvals,size,stride));
+    s["z"].set(DataType::float64(nvals,size*2,stride));
     
     // init the output
     res.set(s);
