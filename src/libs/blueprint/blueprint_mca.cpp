@@ -238,7 +238,8 @@ to_interleaved(conduit::Node &src,
 bool verify_mca(conduit::Node &n)
 {
     NodeIterator itr = n.children();
-    bool ok = true;
+    
+    bool ok = !n.dtype().is_empty();
     
     index_t num_elems = 0;
     
