@@ -63,6 +63,38 @@ TEST(conduit_blueprint_mca_examples, mca_test_to_contig)
     
     Node n;
 
+    index_t nvals = 100; // Number of "tuples"
+    
+    blueprint::mca::examples::xyz("separate",
+                                  nvals,
+                                  n);
+    
+    n.print();
+    
+    n.info().print();
+    
+    Node n_info;
+    n.info(n_info);
+    EXPECT_EQ(n_info["mem_spaces"].number_of_children(),3);
+    
+    Node n_out;
+    blueprint::mca::to_contiguous(n,n_out);
+    n_out.print();
+    n_out.info().print();
+    
+    n_out.info(n_info);
+    
+    EXPECT_EQ(n_info["mem_spaces"].number_of_children(),1);
+    
+    
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mca_examples, mca_test_to_interleaved)
+{
+    
+    Node n;
+
     n["x"].set(DataType::float64(5));
     n["y"].set(DataType::float64(5));
     n["z"].set(DataType::float64(5));
@@ -88,7 +120,7 @@ TEST(conduit_blueprint_mca_examples, mca_test_to_contig)
     EXPECT_EQ(n_info["mem_spaces"].number_of_children(),3);
     
     Node n_out;
-    blueprint::mca::to_contiguous(n,n_out);
+    blueprint::mca::to_interleaved(n,n_out);
     n_out.print();
     n_out.info().print();
     
@@ -97,6 +129,15 @@ TEST(conduit_blueprint_mca_examples, mca_test_to_contig)
     EXPECT_EQ(n_info["mem_spaces"].number_of_children(),1);
     
     
+    Node n_test;
+    n_test.set_external((float64*)n_out.data_ptr(),15);
+    n_test.print();
+    
+    float64 *n_test_ptr  = n_test.value();
+    
+    EXPECT_NEAR(n_test_ptr[0],1.0,1e-5);
+    EXPECT_NEAR(n_test_ptr[1],2.0,1e-5);
+    EXPECT_NEAR(n_test_ptr[2],3.0,1e-5);
 }
 
 //-----------------------------------------------------------------------------
