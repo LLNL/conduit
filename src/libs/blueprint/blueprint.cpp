@@ -99,7 +99,11 @@ verify(const std::string &protocol,
 
     if(protocol == "mesh")
     {
-        res = mesh::annotate(n,info);
+        res = mesh::verify(n,info);
+    }
+    else if(protocol == "mca")
+    {
+        res = mca::verify(n,info);
     }
     
     return res;
@@ -117,6 +121,10 @@ annotate(const std::string &protocol,
     if(protocol == "mesh")
     {
         res = mesh::annotate(n,info);
+    }
+    else if(protocol == "mca")
+    {
+        res = mca::annotate(n,info);
     }
     
     return res;
@@ -139,6 +147,10 @@ transform(const std::string &protocol,
     if(protocol == "mesh")
     {
         res = mesh::transform(src,actions,des,info);
+    }
+    else if(protocol == "mca")
+    {
+        res = mca::transform(src,actions,des,info);
     }
     
     return res;

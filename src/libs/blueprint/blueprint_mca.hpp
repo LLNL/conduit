@@ -100,6 +100,9 @@ bool BLUEPRINT_API to_interleaved(conduit::Node &src,
 
 
 //----------------------------------------------------------------------------
+bool BLUEPRINT_API verify_mca(conduit::Node &n);
+
+//----------------------------------------------------------------------------
 bool BLUEPRINT_API is_contiguous(conduit::Node &n);
 
 //----------------------------------------------------------------------------
