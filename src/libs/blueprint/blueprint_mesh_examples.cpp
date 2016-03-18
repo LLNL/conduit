@@ -792,6 +792,196 @@ braid_tets(index_t npts_x,
                                             tets_per_hex);
 }
 
+//---------------------------------------------------------------------------//
+void
+braid_hexs_and_tets(index_t npts_x,
+           index_t npts_y,
+           index_t npts_z,
+           Node &res)
+{
+
+    // WARNING -- The code below is UNTESTED.
+    //            The SILO writer is missing an implementation for
+    //            unstructured indexed_stream meshes in 3D.
+
+    res.reset();
+
+    index_t nele_hexs_x = npts_x - 1;
+    index_t nele_hexs_y = npts_y - 1;
+    index_t nele_hexs_z = npts_z - 1;
+    index_t nele_hexs = nele_hexs_x * nele_hexs_y * nele_hexs_z;
+
+
+    // Set the number of voxels containing hexs and tets
+    index_t n_hex_hexs = (nele_hexs > 1)? nele_hexs / 2 : nele_hexs;
+    index_t n_hex_tets = nele_hexs - n_hex_hexs;
+
+    // Compute the sizes of the connectivity array for each element type
+    index_t hexs_per_hex = 1;
+    index_t verts_per_hex = 8;
+    index_t n_hexs_verts = n_hex_hexs * hexs_per_hex * verts_per_hex;
+
+    index_t tets_per_hex = 6;
+    index_t verts_per_tet = 4;
+    index_t n_tets_verts = n_hex_tets * tets_per_hex * verts_per_tet;
+
+
+    braid_init_example_state(res);
+    braid_init_explicit_coordset(npts_x,
+                                 npts_y,
+                                 npts_z,
+                                 res["coords"]);
+
+    // Setup mesh as unstructured indexed_stream mesh of hexs and tets
+    res["topology/type"] = "unstructured";
+
+    res["topology/elements/stream_shapes/hexs/stream_id"] = 0;
+    res["topology/elements/stream_shapes/hexs/shape"] = "hexs";
+
+    res["topology/elements/stream_shapes/tets/stream_id"] = 1;
+    res["topology/elements/stream_shapes/tets/shape"] = "tets";
+
+    res["topology/elements/stream_index/stream_ids"].set(DataType::int32(4));
+    res["topology/elements/stream_index/stream_lengths"].set(DataType::int32(4));
+
+    int32* sidx_ids = res["topology/elements/stream_index/stream_ids"].value();
+    int32* sidx_lengths = res["topology/elements/stream_index/stream_lengths"].value();
+
+    // There are four groups -- alternating between hexs and tets
+    sidx_ids[0] = 0;
+    sidx_ids[1] = 1;
+    sidx_ids[2] = 0;
+    sidx_ids[3] = 1;
+
+    // Set the lengths of the groups
+    // The first two groups have at most length 1
+    // The last two groups have the balance of the elements
+    switch(nele_hexs)
+    {
+    case 0:
+        sidx_lengths[0] = 0;  sidx_lengths[1] = 0;
+        sidx_lengths[2] = 0;  sidx_lengths[3] = 0;
+        break;
+    case 1:
+        sidx_lengths[0] = 1;  sidx_lengths[1] = 0;
+        sidx_lengths[2] = 0;  sidx_lengths[3] = 0;
+        break;
+    case 2:
+        sidx_lengths[0] = 1;  sidx_lengths[1] = 1;
+        sidx_lengths[2] = 0;  sidx_lengths[3] = 0;
+        break;
+    case 3:
+        sidx_lengths[0] = 1;  sidx_lengths[1] = 1;
+        sidx_lengths[2] = 1;  sidx_lengths[3] = 0;
+        break;
+    default:
+        sidx_lengths[0] = 1;
+        sidx_lengths[1] = 1;
+        sidx_lengths[2] = n_hex_hexs-1;
+        sidx_lengths[3] = n_hex_tets-1;
+        break;
+    }
+
+    res["topology/elements/stream"].set( DataType::int32(n_hexs_verts + n_tets_verts) );
+    int32* conn = res["topology/elements/stream"].value();
+
+    index_t idx = 0;
+    index_t elem_count = 0;
+    for(index_t k = 0; k < nele_hexs_z ; k++)
+    {
+        index_t zoff = k * (nele_hexs_x+1)*(nele_hexs_y+1);
+        index_t zoff_n = (k+1) * (nele_hexs_x+1)*(nele_hexs_y+1);
+
+        for(index_t j = 0; j < nele_hexs_y ; j++)
+        {
+            index_t yoff = j * (nele_hexs_x+1);
+            index_t yoff_n = (j+1) * (nele_hexs_x+1);
+
+
+            for(index_t i = 0; i < nele_hexs_z; i++)
+            {
+                // Create a local array of the vertex indices
+                // ordering is same as VTK_HEXAHEDRON
+                index_t vidx[8] = {zoff + yoff + i
+                                  ,zoff + yoff + i + 1
+                                  ,zoff + yoff_n + i + 1
+                                  ,zoff + yoff_n + i
+                                  ,zoff_n + yoff + i
+                                  ,zoff_n + yoff + i + 1
+                                  ,zoff_n + yoff_n + i + 1
+                                  ,zoff_n + yoff_n + i};
+
+                bool isHex = (elem_count == 0)
+                          || (elem_count > 1 && elem_count <= n_hex_hexs);
+
+
+                if(isHex)
+                {
+                    conn[idx++] = vidx[0];
+                    conn[idx++] = vidx[1];
+                    conn[idx++] = vidx[2];
+                    conn[idx++] = vidx[3];
+
+                    conn[idx++] = vidx[4];
+                    conn[idx++] = vidx[5];
+                    conn[idx++] = vidx[6];
+                    conn[idx++] = vidx[7];
+                }
+                else // it is a tet
+                {
+                    // Create six tets all sharing diagonal from vertex 0 to 6
+                    // Uses SILO convention for vertex order (normals point in)
+                    conn[idx++] = vidx[0];
+                    conn[idx++] = vidx[2];
+                    conn[idx++] = vidx[1];
+                    conn[idx++] = vidx[6];
+
+                    conn[idx++] = vidx[0];
+                    conn[idx++] = vidx[3];
+                    conn[idx++] = vidx[2];
+                    conn[idx++] = vidx[6];
+
+                    conn[idx++] = vidx[0];
+                    conn[idx++] = vidx[7];
+                    conn[idx++] = vidx[3];
+                    conn[idx++] = vidx[6];
+
+                    conn[idx++] = vidx[0];
+                    conn[idx++] = vidx[4];
+                    conn[idx++] = vidx[7];
+                    conn[idx++] = vidx[6];
+
+                    conn[idx++] = vidx[0];
+                    conn[idx++] = vidx[5];
+                    conn[idx++] = vidx[4];
+                    conn[idx++] = vidx[6];
+
+                    conn[idx++] = vidx[0];
+                    conn[idx++] = vidx[1];
+                    conn[idx++] = vidx[5];
+                    conn[idx++] = vidx[6];
+                }
+
+                elem_count++;
+            }
+        }
+    }
+
+    Node &fields = res["fields"];
+
+    braid_init_example_point_scalar_field(npts_x,
+                                          npts_y,
+                                          npts_z,
+                                          fields["braid_pc"]);
+
+//    // Omit for now -- the function assumes a uniform element type
+//    braid_init_example_element_scalar_field(nele_hexs_x,
+//                                            nele_hexs_y,
+//                                            nele_hexs_z,
+//                                            fields["radial_ec"],
+//                                            tets_per_hex);
+}
+
 
 
 //---------------------------------------------------------------------------//
@@ -830,6 +1020,10 @@ braid(const std::string &mesh_type,
     else if(mesh_type == "hexs")
     {
         braid_hexs(npts_x,npts_y,npts_z,res);
+    }
+    else if(mesh_type == "hexs_and_tets")
+    {
+        braid_hexs_and_tets(npts_x,npts_y,npts_z,res);
     }
     else if(mesh_type == "points_explicit")
     {
