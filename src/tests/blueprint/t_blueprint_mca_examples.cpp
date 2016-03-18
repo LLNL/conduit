@@ -63,7 +63,7 @@ TEST(conduit_blueprint_mca_examples, mca_test_to_contig)
     
     Node n;
 
-    index_t nvals = 100; // Number of "tuples"
+    index_t nvals = 5; // Number of "tuples"
     
     blueprint::mca::examples::xyz("separate",
                                   nvals,
@@ -86,6 +86,26 @@ TEST(conduit_blueprint_mca_examples, mca_test_to_contig)
     
     EXPECT_EQ(n_info["mem_spaces"].number_of_children(),1);
     
+    Node n_test;
+    n_test.set_external((float64*)n_out.data_ptr(),15);
+    n_test.print();
+    
+    float64 *n_test_ptr  = n_test.value();
+    
+    for(index_t i=0;i<5;i++)
+    {
+        EXPECT_NEAR(n_test_ptr[i],1.0,1e-5);
+    }
+
+    for(index_t i=5;i<10;i++)
+    {
+        EXPECT_NEAR(n_test_ptr[i],2.0,1e-5);
+    }
+
+    for(index_t i=10;i<15;i++)
+    {
+        EXPECT_NEAR(n_test_ptr[i],3.0,1e-5);
+    }
     
 }
 
@@ -94,22 +114,11 @@ TEST(conduit_blueprint_mca_examples, mca_test_to_interleaved)
 {
     
     Node n;
-
-    n["x"].set(DataType::float64(5));
-    n["y"].set(DataType::float64(5));
-    n["z"].set(DataType::float64(5));
     
-    float64_array x_a = n["x"].value();
-    float64_array y_a = n["y"].value();
-    float64_array z_a = n["z"].value();
-    
-    
-    for(index_t i=0;i<5;i++)
-    {
-        x_a[i] = 1.0;
-        y_a[i] = 2.0;
-        z_a[i] = 3.0;
-    }
+    index_t nvals = 5; // Number of "tuples"
+    blueprint::mca::examples::xyz("separate",
+                                  nvals,
+                                  n);
     
     n.print();
     
@@ -135,10 +144,118 @@ TEST(conduit_blueprint_mca_examples, mca_test_to_interleaved)
     
     float64 *n_test_ptr  = n_test.value();
     
-    EXPECT_NEAR(n_test_ptr[0],1.0,1e-5);
-    EXPECT_NEAR(n_test_ptr[1],2.0,1e-5);
-    EXPECT_NEAR(n_test_ptr[2],3.0,1e-5);
+    
+    for(index_t i=0;i<5;i++)
+    {
+        EXPECT_NEAR(n_test_ptr[i*3+0],1.0,1e-5);
+        EXPECT_NEAR(n_test_ptr[i*3+1],2.0,1e-5);
+        EXPECT_NEAR(n_test_ptr[i*3+2],3.0,1e-5);
+    }
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mca_examples, mca_aos_to_contigious)
+{
+    struct uvw
+    {
+        float64 u;
+        float64 v;
+        float64 w;
+    };
+    
+    
+    uvw vel[5];
+    
+    for(index_t i=0;i<5;i++)
+    {
+        vel[i].u  = 1.0;
+        vel[i].v  = 2.0;
+        vel[i].w  = 3.0;
+    }
+    
+    index_t stride = sizeof(uvw);
+    CONDUIT_INFO("aos stride: " << stride);
+    Node n;
+    
+    n["u"].set_external(&vel[0].u,5,0,stride);
+    n["v"].set_external(&vel[0].v,5,0,stride);
+    n["w"].set_external(&vel[0].w,5,0,stride);
+    
+    n.print();
+    
+    Node n_out;
+    blueprint::mca::to_contiguous(n,n_out);
+    n_out.print();
+    
+    Node n_test;
+    n_test.set_external((float64*)n_out.data_ptr(),15);
+    n_test.print();
+    
+    float64 *n_test_ptr  = n_test.value();
+    
+    for(index_t i=0;i<5;i++)
+    {
+        EXPECT_NEAR(n_test_ptr[i],1.0,1e-5);
+    }
+
+    for(index_t i=5;i<10;i++)
+    {
+        EXPECT_NEAR(n_test_ptr[i],2.0,1e-5);
+    }
+
+    for(index_t i=10;i<15;i++)
+    {
+        EXPECT_NEAR(n_test_ptr[i],3.0,1e-5);
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mca_examples, mca_soa_to_interleaved)
+{
+
+    struct uvw
+    {
+        float64 us[5];
+        float64 vs[5];
+        float64 ws[5];
+    };
+    
+    uvw vel;
+    
+    for(index_t i=0;i<5;i++)
+    {
+        vel.us[i] = 1.0;
+        vel.vs[i] = 2.0;
+        vel.ws[i] = 3.0;
+    }
+
+    Node n;
+    
+    n["u"].set_external(vel.us,5);
+    n["v"].set_external(vel.vs,5);
+    n["w"].set_external(vel.ws,5);
+    
+    n.print();
+    
+    Node n_out;
+    blueprint::mca::to_interleaved(n,n_out);
+    n_out.print();
+    
+    Node n_test;
+    n_test.set_external((float64*)n_out.data_ptr(),15);
+    n_test.print();
+    
+    float64 *n_test_ptr  = n_test.value();
+    
+    for(index_t i=0;i<5;i++)
+    {
+        EXPECT_NEAR(n_test_ptr[i*3+0],1.0,1e-5);
+        EXPECT_NEAR(n_test_ptr[i*3+1],2.0,1e-5);
+        EXPECT_NEAR(n_test_ptr[i*3+2],3.0,1e-5);
+    }
+}
+
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mca_examples, mca_xyz)
@@ -146,7 +263,8 @@ TEST(conduit_blueprint_mca_examples, mca_xyz)
     Node io_protos;
     io::about(io_protos);
 
-    // we are using one node to hold group of example mcas purely out of convenience
+    // we are using one node to hold group of example mcas purely out of 
+    // convenience
     Node dsets;
     index_t npts = 100;
     
