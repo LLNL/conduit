@@ -166,7 +166,39 @@ xyz_contiguous(index_t nvals, // total number of "tuples"
     }
 }
 
-
+//---------------------------------------------------------------------------//
+void
+xyz_interleaved_mixed_type(index_t nvals, // total number of "tuples"
+                           Node &res)
+{
+    res.reset();
+    
+    // create x,y,z
+    
+    index_t stride = sizeof(conduit::float32);
+    stride += sizeof(conduit::float64);
+    stride += sizeof(conduit::uint8);
+    Schema s;
+    s["x"].set(DataType::float32(nvals,0,stride));
+    s["y"].set(DataType::float64(nvals,1,stride));
+    s["z"].set(DataType::uint8(nvals,2,stride));
+    
+    // init the output
+    res.set(s);
+    
+    float32_array x_a = res["x"].value();
+    float64_array y_a = res["y"].value();
+    uint8_array z_a = res["z"].value();
+    
+    for(index_t i=0;i<nvals;i++)
+    {
+        x_a[i] = 1.0;
+        y_a[i] = 2.0;
+        z_a[i] = 3;
+    }
+    res.reset();
+    
+}
 
 //---------------------------------------------------------------------------//
 void
@@ -186,6 +218,10 @@ xyz(const std::string &mca_type,
     else if(mca_type == "contiguous")
     {
         xyz_contiguous(npts,res);
+    }
+    else if(mca_type == "interleaved mixed types")
+    {
+        xyz_interleaved_mixed_type(npts,res); 
     }
     else
     {
