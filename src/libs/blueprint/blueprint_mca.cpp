@@ -234,6 +234,34 @@ to_interleaved(conduit::Node &src,
     return true; // we always work!
 }
 
+
+//----------------------------------------------------------------------------
+bool BLUEPRINT_API is_contiguous(conduit::Node &n)
+{
+    // TODO: Implement
+    
+    // Conditions:
+    // is_compact()
+    // 1) address + offset for each comp can back tracks to start address
+    //    (comp address + offset - func(comp index) == start address)
+    // 2) is_compact()
+    
+    return false;
+}
+
+//----------------------------------------------------------------------------
+bool BLUEPRINT_API is_interleaved(conduit::Node &n)
+{
+    // TODO: Implement
+
+    // Conditions:
+    // 1) address + offset for each comp can back tracks to start address
+    //    (comp address + offset - func(comp index) == start address)
+    // 2) strides are the same as ~ (element bytes * num comps)
+    
+    return false;
+}
+
 };
 //-----------------------------------------------------------------------------
 // -- end blueprint::mesh --
