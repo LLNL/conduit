@@ -331,7 +331,7 @@ bool BLUEPRINT_API is_interleaved(conduit::Node &n)
         starting_data_ptr = (uint8*) child.element_ptr(0);
         stride = child.dtype().stride();
       }
-
+      std::cout<<"Pointer "<<(uint64*)child.element_ptr(0)<<std::endl;
       ok = (total_bytes_per_tuple == ((uint8*)child.element_ptr(0) - starting_data_ptr));
       if(ok) ok = (stride == child.dtype().stride());
       total_bytes_per_tuple += child.dtype().element_bytes(); 

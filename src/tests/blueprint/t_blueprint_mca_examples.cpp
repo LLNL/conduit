@@ -360,7 +360,7 @@ TEST(conduit_blueprint_mca_examples, mca_soa_to_interleaved)
 TEST(conduit_blueprint_mca_examples, mca_xyz_contiguous_mixed_types)
 {
     Node n;
-    blueprint::mca::examples::xyz("interleaved mixed types",
+    blueprint::mca::examples::xyz("interleaved_mixed",
                                   10,
                                   n);
     EXPECT_TRUE(blueprint::mca::is_interleaved(n));    

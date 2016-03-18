@@ -180,9 +180,12 @@ xyz_interleaved_mixed_type(index_t nvals, // total number of "tuples"
     stride += sizeof(conduit::uint8);
     Schema s;
     s["x"].set(DataType::float32(nvals,0,stride));
-    s["y"].set(DataType::float64(nvals,1,stride));
-    s["z"].set(DataType::uint8(nvals,2,stride));
+    index_t offset = sizeof(conduit::float32);
+    s["y"].set(DataType::float64(nvals,offset,stride));
+    offset=  sizeof(conduit::float32) + sizeof(conduit::float64);
+    s["z"].set(DataType::uint8(nvals,offset,stride));
     
+    s.print();
     // init the output
     res.set(s);
     
@@ -196,7 +199,6 @@ xyz_interleaved_mixed_type(index_t nvals, // total number of "tuples"
         y_a[i] = 2.0;
         z_a[i] = 3;
     }
-    res.reset();
     
 }
 
@@ -219,7 +221,7 @@ xyz(const std::string &mca_type,
     {
         xyz_contiguous(npts,res);
     }
-    else if(mca_type == "interleaved mixed types")
+    else if(mca_type == "interleaved_mixed")
     {
         xyz_interleaved_mixed_type(npts,res); 
     }
