@@ -314,9 +314,29 @@ bool BLUEPRINT_API is_interleaved(conduit::Node &n)
     // Conditions:
     // 1) address + offset for each comp can back tracks to start address
     //    (comp address + offset - func(comp index) == start address)
-    // 2) strides are the same as ~ (element bytes * num comps)
+    // 2) strides are the same 
+    bool ok = true;
+
+    uint8 *starting_data_ptr = NULL;
+
+    NodeIterator itr = n.children();
+    index_t stride = 0;
+    index_t total_bytes_per_tuple = 0;
     
-    return false;
+    while(itr.has_next() && ok)
+    {
+      Node &child = itr.next();
+      if(starting_data_ptr == NULL)
+      {
+        starting_data_ptr = (uint8*) child.element_ptr(0);
+        stride = child.dtype().stride();
+      }
+
+      ok = (total_bytes_per_tuple == ((uint8*)child.element_ptr(0) - starting_data_ptr));
+      if(ok) ok = (stride == child.dtype().stride());
+      total_bytes_per_tuple += child.dtype().element_bytes(); 
+    }
+    return ok; 
 }
 
 };
