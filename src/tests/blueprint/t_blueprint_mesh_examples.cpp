@@ -101,6 +101,12 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
                                      npts_z,
                                      dsets["quads"]);
 
+    blueprint::mesh::examples::braid("quads_and_tris",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["quads_and_tris"]);
+
     blueprint::mesh::examples::braid("points_explicit",
                                      npts_x,
                                      npts_y,

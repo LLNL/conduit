@@ -53,6 +53,7 @@
 //-----------------------------------------------------------------------------
 #include <string.h>
 #include <math.h>
+#include <cassert>
 
 //-----------------------------------------------------------------------------
 // conduit includes
@@ -559,6 +560,138 @@ braid_quads(index_t npts_x,
 
 //---------------------------------------------------------------------------//
 void
+braid_quads_and_tris(index_t npts_x,
+            index_t npts_y,
+            Node &res)
+{
+    res.reset();
+    
+    index_t nele_x = npts_x - 1;
+    index_t nele_y = npts_y - 1;
+    
+    braid_init_example_state(res);
+    braid_init_explicit_coordset(npts_x,
+                                 npts_y,
+                                 1,
+                                 res["coords"]);
+  
+    res["topology/type"] = "unstructured";
+
+    Node& elems = res["topology/elements"];
+    elems["stream_shapes/quads/stream_id"] = 9; // VTK_QUAD
+    elems["stream_shapes/quads/shape"]     = "quads";
+    elems["stream_shapes/tris/stream_id"]  = 5; // VTK_TRIANGLE
+    elems["stream_shapes/tris/shape"]      = "tris";
+
+    // Fill in stream IDs and calculate size of the connectivity array
+    int count   = 0;
+    int ielem   = 0;
+    std::vector< int32 > stream_ids_buffer;
+    std::vector< int32 > stream_lengths;
+
+    for(index_t j = 0; j < nele_x ; j++)
+    {
+        for(index_t i = 0; i < nele_y; i++)
+        {
+             if ( ielem % 2 == 0 )
+             {
+                 // QUAD
+                 stream_ids_buffer.push_back( 9 );
+                 stream_lengths.push_back( 1 );
+                 count += 4;
+                 ++ielem;
+             }
+             else
+             {
+                 // TRIANGLE
+                 stream_ids_buffer.push_back( 5 );
+                 count += 3;
+                 ++ielem;
+
+                 count += 3;
+                 ++ielem;
+
+                 stream_lengths.push_back( 2 );
+             }
+
+        } // END for all i
+
+    } // END for all j
+
+    int32 nstreamids = static_cast< int32 >( stream_ids_buffer.size() );
+    elems["stream_index/stream_ids"].set( DataType::int32( nstreamids ) );
+    int32* stream_ids = elems["stream_shapes/stream_ids"].value();
+    memcpy(stream_ids, &stream_ids_buffer[0], nstreamids*sizeof(int32) );
+    stream_ids_buffer.clear();
+
+    int32 nstreamlen = static_cast< int32 >( stream_lengths.size() );
+    elems["stream_index/stream_lengths"].set( DataType::int32( nstreamlen ) );
+    int32* stream_len = elems["stream_index/stream_lengths"].value();
+    memcpy(stream_len, &stream_lengths[0], nstreamlen*sizeof(int32) );
+    stream_lengths.clear();
+
+    // Allocate connectivity array
+    elems["stream"].set(DataType::int32(count));
+    int32* conn = elems["stream_shapes/stream"].value();
+
+    // Fill in connectivity array
+    index_t idx = 0;
+    int32 elem  = 0;
+    for(index_t j = 0; j < nele_x ; j++)
+    {
+        index_t yoff = j * (nele_x+1);
+
+        for(index_t i = 0; i < nele_y; i++)
+        {
+            index_t n1 = yoff + i;
+            index_t n2 = n1 + (nele_x+1);
+            index_t n3 = n1 + 1 + (nele_x+1);
+            index_t n4 = n1 + 1;
+
+            if ( elem % 2 == 0 )
+            {
+                conn[idx  ] = n1;
+                conn[idx+1] = n2;
+                conn[idx+2] = n3;
+                conn[idx+3] = n4;
+                idx+=4;
+                ++elem;
+            }
+            else
+            {
+               conn[idx   ] = n1;
+               conn[idx+1 ] = n2;
+               conn[idx+2 ] = n4;
+               idx+=3;
+               ++elem;
+
+               conn[idx   ] = n2;
+               conn[idx+1 ] = n3;
+               conn[idx+2 ] = n4;
+               idx+=3;
+               ++elem;
+            }
+
+        } // END for all i
+
+    } // END for all j
+
+
+    Node &fields = res["fields"];
+
+    braid_init_example_point_scalar_field(npts_x,
+                                          npts_y,
+                                          1,
+                                          fields["braid_pc"]);
+
+    braid_init_example_element_scalar_field(nele_x,
+                                            nele_y,
+                                            0,
+                                            fields["radial_ec"]);
+}
+
+//---------------------------------------------------------------------------//
+void
 braid_tris(index_t npts_x,
            index_t npts_y,
            Node &res)
@@ -1012,6 +1145,10 @@ braid(const std::string &mesh_type,
     else if(mesh_type == "quads")
     {
         braid_quads(npts_x,npts_y,res);
+    }
+    else if(mesh_type == "quads_and_tris")
+    {
+        braid_quads_and_tris(npts_x,npts_y,res);
     }
     else if(mesh_type == "tets")
     {
