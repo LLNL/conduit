@@ -57,6 +57,102 @@
 
 using namespace conduit;
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mca_examples, verify_mca)
+{
+    ///
+    /// cases we expect to fail
+    ///
+    
+    
+    Node n;
+    n["here/there"]     = 10;
+    n["here/everywhere"] = 10;
+    
+    EXPECT_FALSE(blueprint::mca::verify_mca(n));
+
+    n.reset();
+    n["x"].set(DataType::float64(10));
+    n["y"].set(DataType::float64(5));
+    
+    EXPECT_FALSE(blueprint::mca::verify_mca(n));
+
+    ///
+    /// cases we expect to work
+    ///
+    
+    n.reset();
+    n["x"].set(DataType::float64(10));
+    EXPECT_TRUE(blueprint::mca::verify_mca(n));
+
+    n["y"].set(DataType::float64(10));
+    EXPECT_TRUE(blueprint::mca::verify_mca(n));
+    
+    blueprint::mca::examples::xyz("separate",
+                                  5,
+                                  n);
+    EXPECT_TRUE(blueprint::mca::verify_mca(n));
+
+    blueprint::mca::examples::xyz("interleaved",
+                                  5,
+                                  n);
+    EXPECT_TRUE(blueprint::mca::verify_mca(n));
+
+    blueprint::mca::examples::xyz("contiguous",
+                                  5,
+                                  n);
+    EXPECT_TRUE(blueprint::mca::verify_mca(n));
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mca_examples, verify_mca_generic)
+{
+    ///
+    /// cases we expect to fail
+    ///
+    
+    
+    Node n, info;
+    n["here/there"]     = 10;
+    n["here/everywhere"] = 10;
+    
+    EXPECT_FALSE(blueprint::verify("mca",n,info));
+
+    n.reset();
+    n["x"].set(DataType::float64(10));
+    n["y"].set(DataType::float64(5));
+    
+    EXPECT_FALSE(blueprint::verify("mca",n,info));
+
+    ///
+    /// cases we expect to work
+    ///
+    
+    n.reset();
+    n["x"].set(DataType::float64(10));
+    EXPECT_TRUE(blueprint::verify("mca",n,info));
+
+    n["y"].set(DataType::float64(10));
+    EXPECT_TRUE(blueprint::verify("mca",n,info));
+    
+    blueprint::mca::examples::xyz("separate",
+                                  5,
+                                  n);
+    EXPECT_TRUE(blueprint::verify("mca",n,info));
+
+    blueprint::mca::examples::xyz("interleaved",
+                                  5,
+                                  n);
+    EXPECT_TRUE(blueprint::verify("mca",n,info));
+
+    blueprint::mca::examples::xyz("contiguous",
+                                  5,
+                                  n);
+    EXPECT_TRUE(blueprint::verify("mca",n,info));
+}
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mca_examples, mca_test_to_contig)
 {
@@ -108,9 +204,6 @@ TEST(conduit_blueprint_mca_examples, mca_test_to_contig)
     {
         EXPECT_NEAR(n_test_ptr[i],3.0,1e-5);
     }
-    
-
-    
 }
 
 //-----------------------------------------------------------------------------

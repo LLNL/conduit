@@ -79,7 +79,7 @@ bool
 verify(Node &n,
        Node &info)
 {
-    return false;
+    return verify_mca(n);
 }
 
 //-----------------------------------------------------------------------------
@@ -232,6 +232,34 @@ to_interleaved(conduit::Node &src,
     dest.update(src);
     
     return true; // we always work!
+}
+
+//----------------------------------------------------------------------------
+bool verify_mca(conduit::Node &n)
+{
+    NodeIterator itr = n.children();
+    bool ok = true;
+    
+    index_t num_elems = 0;
+    
+    while(itr.has_next() && ok)
+    {
+        // get the next child
+        Node &chld = itr.next();
+        
+        ok = chld.dtype().is_number();
+        if(ok)
+        {
+            if(num_elems == 0)
+            {
+                num_elems = chld.dtype().number_of_elements();
+            }
+
+            ok = ( chld.dtype().number_of_elements() == num_elems);
+        }
+    }
+    
+    return ok;
 }
 
 
