@@ -80,7 +80,7 @@ class Test_Conduit_Schema(unittest.TestCase):
         self.assertTrue(s.is_root())
         self.assertFalse(n.fetch('a').schema().is_root())
 
-    def test_stride_in_schema(self):
+    def test_create_node_using_schema_object(self):
         s = Schema()
         s["a"] = DataType.float64(10)
         s["b"] = DataType.float32(10)
