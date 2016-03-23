@@ -2386,6 +2386,62 @@ PyConduit_Schema_parent(PyConduit_Schema* self)
     }
 }
 
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_get_item(PyConduit_Schema* self,
+                         PyObject* key)
+{
+    if (!PyString_Check(key))
+    {
+        PyErr_SetString(PyExc_TypeError, "Key must be a string");
+        return (NULL);
+    }
+
+    PyObject* retval = NULL;
+    char* ckey = PyString_AsString(key);
+
+    retval = PyConduit_Schema_python_wrap(self->schema->fetch_ptr(ckey),
+                                          0); // schema owns
+    
+    PyString_AsString_Cleanup(ckey);
+    
+    return (retval);
+}
+
+//---------------------------------------------------------------------------//
+static int PyConduit_Schema_set_item(PyConduit_Schema *self,
+                                     PyObject *key,
+                                     PyObject *value)
+{
+    if (!PyString_Check(key))
+    {
+        PyErr_SetString(PyExc_TypeError, "Key must be a string");
+        return (-1);
+    }
+    // value must be a data type or schema
+
+    char* ckey = PyString_AsString(key);
+    
+    if(PyConduit_Schema_Check(value))
+    {
+        self->schema->fetch_ptr(ckey)->set(*((PyConduit_Schema*)value)->schema);
+    }
+    else if(PyConduit_DataType_Check(value))
+    {
+        self->schema->fetch_ptr(ckey)->set(((PyConduit_DataType*)value)->dtype);
+    }
+    else
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "value must be a Conduit Schema or DataType");
+        return (-1);
+    }
+    
+    
+    PyString_AsString_Cleanup(ckey);
+    return (0);
+}
+
 
 
 //-----------------------------------------------------------------------------
@@ -2477,6 +2533,13 @@ static PyMethodDef PyConduit_Schema_METHODS[] = {
 };
 
 //---------------------------------------------------------------------------//
+static PyMappingMethods PyConduit_Schema_as_mapping = {
+   (lenfunc)0,    // len operator is not supported
+   (binaryfunc)PyConduit_Schema_get_item,
+   (objobjargproc)PyConduit_Schema_set_item
+};
+
+//---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 static PyTypeObject PyConduit_Schema_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
@@ -2491,7 +2554,7 @@ static PyTypeObject PyConduit_Schema_TYPE = {
    0, /* tp_repr */
    0, /* tp_as_number */
    0, /* tp_as_sequence */
-   0, /* as_mapping */
+   &PyConduit_Schema_as_mapping, /* as_mapping */
    0, /* hash */
    0, /* call */
    (reprfunc)PyConduit_Schema_str, /* str */
