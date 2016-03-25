@@ -618,21 +618,13 @@ braid_quads_and_tris(index_t npts_x,
 
     } // END for all j
 
-    int32 nstreamids = static_cast< int32 >( stream_ids_buffer.size() );
-    elems["stream_index/stream_ids"].set( DataType::int32( nstreamids ) );
-    int32* stream_ids = elems["stream_shapes/stream_ids"].value();
-    memcpy(stream_ids, &stream_ids_buffer[0], nstreamids*sizeof(int32) );
-    stream_ids_buffer.clear();
 
-    int32 nstreamlen = static_cast< int32 >( stream_lengths.size() );
-    elems["stream_index/stream_lengths"].set( DataType::int32( nstreamlen ) );
-    int32* stream_len = elems["stream_index/stream_lengths"].value();
-    memcpy(stream_len, &stream_lengths[0], nstreamlen*sizeof(int32) );
-    stream_lengths.clear();
+    elems["stream_index/stream_ids"].set(stream_ids_buffer);
+    elems["stream_index/stream_ids"].set(stream_lengths);
 
     // Allocate connectivity array
     elems["stream"].set(DataType::int32(count));
-    int32* conn = elems["stream_shapes/stream"].value();
+    int32* conn = elems["stream"].value();
 
     // Fill in connectivity array
     index_t idx = 0;
@@ -684,10 +676,10 @@ braid_quads_and_tris(index_t npts_x,
                                           1,
                                           fields["braid_pc"]);
 
-    braid_init_example_element_scalar_field(nele_x,
-                                            nele_y,
-                                            0,
-                                            fields["radial_ec"]);
+    // braid_init_example_element_scalar_field(nele_x,
+    //                                         nele_y,
+    //                                         0,
+    //                                         fields["radial_ec"]);
 }
 
 //---------------------------------------------------------------------------//
@@ -813,10 +805,15 @@ braid_hexs(index_t npts_x,
                                           npts_z,
                                           fields["braid_pc"]);
 
-    braid_init_example_element_scalar_field(nele_x,
-                                            nele_y,
-                                            nele_z,
-                                            fields["radial_ec"]);
+    // skip for now, we need a helper that generates 
+    // one value for each quad, then two for each tri
+    // we can't do this b/c the current ele_scalar_file function
+    // is to simplistic. 
+    //
+    // braid_init_example_element_scalar_field(nele_x,
+    //                                         nele_y,
+    //                                         nele_z,
+    //                                         fields["radial_ec"]);
 }
 
 //---------------------------------------------------------------------------//
@@ -876,7 +873,7 @@ braid_tets(index_t npts_x,
                                   ,zoff_n + yoff_n + i};
 
                 // Create six tets all sharing diagonal from vertex 0 to 6
-				// Uses SILO convention for vertex order (normals point in)
+                // Uses SILO convention for vertex order (normals point in)
                 conn[idx++] = vidx[0];
                 conn[idx++] = vidx[2];
                 conn[idx++] = vidx[1];
