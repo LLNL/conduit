@@ -42,23 +42,74 @@
 .. # 
 .. ############################################################################
 
-.. Conduit documentation master file, created by
-   sphinx-quickstart on Thu Oct 16 11:23:46 2014.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+===================
+mesh
+===================
 
-================================
-User Documentation
-================================
+Protocol
+----------
 
-.. toctree::
+Coordinate Sets
+~~~~~~~~~~~~~~~~~~~~~
 
-   conduit
-   blueprint
-   building
-   glossary
-   licenses
+* uniform 
+
+* rectilinear 
+
+* explicit
 
 
-.. leave out the api docs for now, the doxygen comments are too sparse. 
+Toplogies
+~~~~~~~~~~~~~~~~~~~~~
+
+Implicit 
+==========
+
+* uniform
+
+
+* rectilinear
+
+
+* structured
+
+
+Explicit (Unstructured)
+========================
+
+Element Shape Names
+************************
+
+* supported: point, line, tri, quad, tet, hex
+
+* future: polygon, polyhedron
+
+Single Shape Topology
+************************
+
+
+
+Mixed Shape Toplogies 
+************************
+* list
+* object
+* stream
+ (specifying stream ids and stream connectivity)
+
+Indexed Streams
+^^^^^^^^^^^^^^^^^^^
+
+* element_stream
+* segment_stream
+
+
+
+Transforms
+------------------
+
+Coordinate Sets
+~~~~~~~~~~~~~~~~~~~~~
+
+Toplogies
+~~~~~~~~~~~~~~~~~~~~~
 
