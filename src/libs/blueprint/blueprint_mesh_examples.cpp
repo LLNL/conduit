@@ -620,7 +620,7 @@ braid_quads_and_tris(index_t npts_x,
 
 
     elems["stream_index/stream_ids"].set(stream_ids_buffer);
-    elems["stream_index/stream_ids"].set(stream_lengths);
+    elems["stream_index/stream_lengths"].set(stream_lengths);
 
     // Allocate connectivity array
     elems["stream"].set(DataType::int32(count));
