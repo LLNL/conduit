@@ -107,6 +107,12 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
                                      npts_z,
                                      dsets["quads_and_tris"]);
 
+    blueprint::mesh::examples::braid("quads_and_tris_offsets",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["quads_and_tris_offsets"]);
+
     blueprint::mesh::examples::braid("points_explicit",
                                      npts_x,
                                      npts_y,
@@ -145,9 +151,12 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
             //              std::string topo_shape = shape_block->fetch("shape").as_string();
             // which does not exist for indexed_stream meshes.
             // The silo writer needs to be updated for this case.
-            if(name == "quads_and_tris")
+
+            if( name == "quads_and_tris" || name == "quads_and_tris_offsets" )
             {
-                std::cout<<"\tskipping output to SILO -- this is not implemented yet for indexed_stream meshes."<< std::endl;
+                std::cout <<"\tNOTE: skipping output to SILO -- ";
+                std::cout << "feature is unavailable for mixed element meshes";
+                std::cout << std::endl;
                 continue;
             }
 
