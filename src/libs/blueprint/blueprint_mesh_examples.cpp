@@ -599,20 +599,16 @@ braid_quads_and_tris(index_t npts_x,
                  stream_ids_buffer.push_back( 9 );
                  stream_lengths.push_back( 1 );
                  count += 4;
-                 ++ielem;
              }
              else
              {
                  // TRIANGLE
                  stream_ids_buffer.push_back( 5 );
-                 count += 3;
-                 ++ielem;
-
-                 count += 3;
-                 ++ielem;
-
+                 count += 6;
                  stream_lengths.push_back( 2 );
              }
+
+             ++ielem;
 
         } // END for all i
 
@@ -620,7 +616,7 @@ braid_quads_and_tris(index_t npts_x,
 
 
     elems["stream_index/stream_ids"].set(stream_ids_buffer);
-    elems["stream_index/stream_ids"].set(stream_lengths);
+    elems["stream_index/stream_lengths"].set(stream_lengths);
 
     // Allocate connectivity array
     elems["stream"].set(DataType::int32(count));
@@ -647,7 +643,6 @@ braid_quads_and_tris(index_t npts_x,
                 conn[idx+2] = n3;
                 conn[idx+3] = n4;
                 idx+=4;
-                ++elem;
             }
             else
             {
@@ -655,14 +650,14 @@ braid_quads_and_tris(index_t npts_x,
                conn[idx+1 ] = n2;
                conn[idx+2 ] = n4;
                idx+=3;
-               ++elem;
 
                conn[idx   ] = n2;
                conn[idx+1 ] = n3;
                conn[idx+2 ] = n4;
                idx+=3;
-               ++elem;
             }
+
+            ++elem;
 
         } // END for all i
 
