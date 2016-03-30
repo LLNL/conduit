@@ -131,7 +131,7 @@ void
     n.to_json_stream(oss);
     oss << std::endl;
 }
-    
+
 
 
 }

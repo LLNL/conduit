@@ -546,6 +546,8 @@ WebServer::WebServer()
   m_doc_root(""),
   m_port(""),
   m_ssl_cert_file(""),
+  m_auth_domain(""),
+  m_auth_file(""),
   m_running(false),
   m_server(NULL),
   m_dispatch(NULL)
@@ -618,14 +620,18 @@ WebServer::context()
 void
 WebServer::serve(const std::string &doc_root,
                  index_t port,
-                 const std::string &ssl_cert_file)
+                 const std::string &ssl_cert_file,
+                 const std::string &auth_domain,
+                 const std::string &auth_file)
 {
     WebRequestHandler *handler = new WebRequestHandler();
 
     serve(doc_root,
           handler,
           port,
-          ssl_cert_file);
+          ssl_cert_file,
+          auth_domain,
+          auth_file);
 }
 
 //-----------------------------------------------------------------------------
@@ -633,7 +639,9 @@ void
 WebServer::serve(const std::string &doc_root,
                  WebRequestHandler *handler,
                  index_t port,
-                 const std::string &ssl_cert_file)
+                 const std::string &ssl_cert_file,
+                 const std::string &auth_domain,
+                 const std::string &auth_file)
 {
     if(is_running())
     {
@@ -646,16 +654,21 @@ WebServer::serve(const std::string &doc_root,
     m_handler = handler;
 
     m_doc_root = doc_root;
-    // TODO: check for null?
+
     m_ssl_cert_file = ssl_cert_file;
+    m_auth_domain   = auth_domain;
+    m_auth_file     = auth_file;
 
     bool use_ssl = m_ssl_cert_file.size() > 0;
+    bool use_auth_domain = m_auth_domain.size() > 0;
+    bool use_auth_file   = m_auth_file.size() > 0;
+    
 
     // civetweb takes strings as arguments
     // convert the port number to a string.
     std::ostringstream oss;
     oss << port;
-    // civetweb use s suffix for https servers
+    // civetweb uses the suffix 's' on port ars for the with https case
     if(use_ssl)
     {
         oss << "s";
@@ -670,12 +683,30 @@ WebServer::serve(const std::string &doc_root,
     const char *options[] = { "document_root",   doc_root.c_str(),
                               "listening_ports", m_port.c_str(),
                               "num_threads",     "2",
+                               // for ssl, auth domain and auth file options
+                               NULL, NULL, 
+                               NULL, NULL,
                                NULL, NULL,
                                NULL};
+
+    index_t options_idx  = 6;
+    
     if(use_ssl)
     {
-        options[6] = "ssl_certificate";
-        options[7] = m_ssl_cert_file.c_str();
+        options[options_idx++] = "ssl_certificate";
+        options[options_idx++] = m_ssl_cert_file.c_str();
+    }
+    
+    if(use_auth_domain)
+    {
+        options[options_idx++] = "authentication_domain";
+        options[options_idx++] = m_auth_domain.c_str();
+    }
+    
+    if(use_auth_file)
+    {
+        options[options_idx++] = "global_auth_file";
+        options[options_idx++] = m_auth_file.c_str();
     }
 
     try
@@ -743,13 +774,13 @@ WebServer::shutdown()
 }
 
 
-};
+}
 //-----------------------------------------------------------------------------
 // -- end conduit::io --
 //-----------------------------------------------------------------------------
 
 
-};
+}
 //-----------------------------------------------------------------------------
 // -- end conduit:: --
 //-----------------------------------------------------------------------------

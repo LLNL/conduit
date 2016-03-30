@@ -108,7 +108,7 @@ public:
         UINT64_ID    = CONDUIT_UINT64_ID,    // uint64 and uint64_array
         FLOAT32_ID   = CONDUIT_FLOAT32_ID,   // float32 and float32_array
         FLOAT64_ID   = CONDUIT_FLOAT64_ID,   // float64 and float64_array
-        CHAR8_STR_ID = CONDUIT_CHAR8_STR_ID, // char8 string (incore c-string)
+        CHAR8_STR_ID = CONDUIT_CHAR8_STR_ID  // char8 string (incore c-string)
     } TypeID;
 
 //-----------------------------------------------------------------------------
@@ -461,9 +461,9 @@ private:
 //-----------------------------------------------------------------------------
 
 
-};
+}
 //-----------------------------------------------------------------------------
-// -- begin conduit:: --
+// -- end conduit:: --
 //-----------------------------------------------------------------------------
 
 #endif

@@ -51,7 +51,7 @@ import sys
 import unittest
 
 from conduit import Node
-from conduit import Schema
+from conduit import Schema, DataType
 
 from numpy import *
 
@@ -79,6 +79,18 @@ class Test_Conduit_Schema(unittest.TestCase):
         s = n.schema();
         self.assertTrue(s.is_root())
         self.assertFalse(n.fetch('a').schema().is_root())
+
+    def test_create_node_using_schema_object(self):
+        s = Schema()
+        s["a"] = DataType.float64(10)
+        s["b"] = DataType.float32(10)
+        n = Node()
+        n.set(s)
+        sr = n.schema()
+        self.assertEqual(sr.total_bytes(), 8 * 10 + 4 * 10)
+        self.assertEqual(sr["a"].total_bytes(),8 * 10)
+        self.assertEqual(sr["b"].total_bytes(),4 * 10)
+
 
 
 if __name__ == '__main__':

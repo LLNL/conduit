@@ -270,7 +270,7 @@ join_file_path(const std::string &left,
                const std::string &right)
 {
     std::string res = left;
-    if(res.size() > 0 && res[-1] != CONDUIT_UTILS_FILE_PATH_SEPARATOR)
+    if(res.size() > 0 && res[res.size()-1] != CONDUIT_UTILS_FILE_PATH_SEPARATOR)
     {
         res += CONDUIT_UTILS_FILE_PATH_SEPARATOR;
     }

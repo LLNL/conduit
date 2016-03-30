@@ -215,6 +215,21 @@ class Test_Conduit_Node(unittest.TestCase):
             for i in range(len(ext_data)):
                 self.assertEqual(n.value()[i], ext_data[i])
 
+    def test_set_external_basic_strides(self):
+        types = ['uint8', 'uint16', 'uint32', 'uint64', 'float32', 'float64']
+        for type in types:
+            base_data = array(range(20), dtype=type)
+            ext_data  = base_data[1:16:2]
+            n = Node()
+            n.set_external(ext_data)
+            for i in range(len(ext_data)):
+                self.assertEqual(n.value()[i], ext_data[i])
+            ext_data[5] = 11
+            n.value()[6] = 77
+            n.value()[2] = 8
+            for i in range(len(ext_data)):
+                self.assertEqual(n.value()[i], ext_data[i])
+
 if __name__ == '__main__':
     unittest.main()
 
