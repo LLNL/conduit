@@ -67,7 +67,7 @@ macro(ENABLE_WARNINGS)
             "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR 
             "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
             # use these flags for clang, gcc, or icc
-            add_definitions(-Wall -Wcheck)
+            add_definitions(-Wall -Wextra)
         endif()
     endif()
 endmacro()
