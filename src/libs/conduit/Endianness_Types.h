@@ -59,7 +59,7 @@ typedef enum
 {
     CONDUIT_ENDIANNESS_DEFAULT_ID  = 0, // (machine default)
     CONDUIT_ENDIANNESS_BIG_ID,          // big endian
-    CONDUIT_ENDIANNESS_LITTLE_ID,       // little endian
+    CONDUIT_ENDIANNESS_LITTLE_ID        // little endian
 } conduit_endianness_type_id;
 
 
