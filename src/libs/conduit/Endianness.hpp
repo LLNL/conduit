@@ -99,7 +99,7 @@ public:
     {
         DEFAULT_ID = CONDUIT_ENDIANNESS_DEFAULT_ID, // default
         BIG_ID     = CONDUIT_ENDIANNESS_BIG_ID,
-        LITTLE_ID  = CONDUIT_ENDIANNESS_LITTLE_ID,
+        LITTLE_ID  = CONDUIT_ENDIANNESS_LITTLE_ID
     } EndianEnum;
 
 //-----------------------------------------------------------------------------
