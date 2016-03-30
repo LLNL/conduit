@@ -42,23 +42,29 @@
 .. # 
 .. ############################################################################
 
-.. Conduit documentation master file, created by
-   sphinx-quickstart on Thu Oct 16 11:23:46 2014.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+===================
+Blueprint
+===================
 
-================================
-User Documentation
-================================
+The flexibly of the Conduit Node allows it to be used to represent a wide range of scientific data. Unconstrained, this flexibly can lead to many application specific choices for common types of data that could potentially be shared between applications.
+
+The goal of Blueprint is to help facilite a set of shared higher-level conventions for using Conduit Nodes to hold common simulation data structures. The Blueprint library in Conduit provides methods to verify if a Conduit Node instance conforms to a known convention and methods that provide common transforms that can be used with these conventions.
+
+For now, Blueprint is focused on conventions for two important types of data:
+
+*  Multi-Component Arrays
+
+    A multi-component array is a collection of fixed-sized numeric tuples. 
+    They are used in the context computational meshes to represent coordinate data or field data, such as the three directional components of a 3D velocity field. There are a few common in-core data layouts used by several APIs to accept multi-component array data, these include:  row-major vs column-major layouts, or the use of arrays of struct vs struct of arrays in C-style languages. Blueprint provides transforms that convert any multi-component array to these common data layouts.
+
+*  Computational Meshes
+
+    Many taxonomies and concrete mesh data models have been developed to allow computational meshes to be used in software. Blueprint's conventions for representing mesh data were formed by negotiating with simulation application teams at LLNL and from a survey of existing projects that provide scientific mesh-related APIs including: ADIOS,  Damaris, EAVL, MFEM, Silo, VTK, VTKm, and Xdmf. Blueprint's mesh conventions are  not a replacement for existing mesh data models or APIs. Our explicit goal is to outline a comprehensive, but small set of options for describing meshes in-core that  simplifies the process of adapting data to several existing mesh-aware APIs.
+
+
 
 .. toctree::
+    blueprint_mcarray
+    blueprint_mesh
 
-   conduit
-   blueprint
-   building
-   glossary
-   licenses
-
-
-.. leave out the api docs for now, the doxygen comments are too sparse. 
 

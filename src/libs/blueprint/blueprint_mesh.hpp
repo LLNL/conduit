@@ -57,7 +57,6 @@
 #include "conduit.hpp"
 #include "Blueprint_Exports.hpp"
 
-
 //-----------------------------------------------------------------------------
 // -- begin blueprint:: --
 //-----------------------------------------------------------------------------
@@ -72,34 +71,36 @@ namespace mesh
 {
 
 //-----------------------------------------------------------------------------
-/// Methods that generate example meshes.
-/// We should move these to a better place in the future.
-//-----------------------------------------------------------------------------
-namespace examples
-{
-    
-    void BLUEPRINT_API braid(const std::string &mesh_type,
-                             conduit::index_t nx,
-                             conduit::index_t ny,
-                             conduit::index_t nz,  // not implemented ... 
-                             conduit::Node &res);
-};
-//-----------------------------------------------------------------------------
-// -- end blueprint::mesh::examples --
+// blueprint protocol interface
 //-----------------------------------------------------------------------------
 
-void expand(conduit::Node &src,
-            conduit::Node &des);
+//-----------------------------------------------------------------------------
+bool BLUEPRINT_API verify(conduit::Node &n,
+                          conduit::Node &info);
 
 
-};
+//-----------------------------------------------------------------------------
+bool BLUEPRINT_API transform(conduit::Node &src,
+                             conduit::Node &actions,
+                             conduit::Node &dest,
+                             conduit::Node &info);
+
+//-----------------------------------------------------------------------------
+// mesh blueprint methods
+//-----------------------------------------------------------------------------
+bool BLUEPRINT_API expand(conduit::Node &src,
+                          conduit::Node &des,
+                          conduit::Node &info);
+
+
+}
 //-----------------------------------------------------------------------------
 // -- end blueprint::mesh --
 //-----------------------------------------------------------------------------
 
 
 
-};
+}
 //-----------------------------------------------------------------------------
 // -- end blueprint:: --
 //-----------------------------------------------------------------------------

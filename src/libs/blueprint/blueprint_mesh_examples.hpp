@@ -44,25 +44,18 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint.hpp
+/// file: blueprint_mesh_examples.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_HPP
-#define BLUEPRINT_HPP
+#ifndef BLUEPRINT_MESH_EXAMPLES_HPP
+#define BLUEPRINT_MESH_EXAMPLES_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-
 #include "Blueprint_Exports.hpp"
-
-#include "blueprint_mesh.hpp"
-#include "blueprint_mesh_examples.hpp"
-
-#include "blueprint_mca.hpp"
-#include "blueprint_mca_examples.hpp"
 
 
 //-----------------------------------------------------------------------------
@@ -72,27 +65,36 @@ namespace blueprint
 {
 
 //-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how blueprint was
-/// configured.
-//-----------------------------------------------------------------------------
-std::string BLUEPRINT_API about();
-void        BLUEPRINT_API about(conduit::Node &n);
-
-//-----------------------------------------------------------------------------
-/// Experimental blueprint interface
+// -- begin blueprint::mesh --
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-bool BLUEPRINT_API verify(const std::string &protocol,
-                          conduit::Node &n,
-                          conduit::Node &info);
+namespace mesh 
+{
 
 //-----------------------------------------------------------------------------
-bool BLUEPRINT_API transform(const std::string &protocol,
-                             conduit::Node &src,
-                             conduit::Node &actions,
-                             conduit::Node &dest,
-                             conduit::Node &info);
+/// Methods that generate example meshes.
+/// We should move these to a better place in the future.
+//-----------------------------------------------------------------------------
+namespace examples
+{
+    
+    void BLUEPRINT_API braid(const std::string &mesh_type,
+                             conduit::index_t nx,
+                             conduit::index_t ny,
+                             conduit::index_t nz,  // not implemented ... 
+                             conduit::Node &res);
+}
+//-----------------------------------------------------------------------------
+// -- end blueprint::mesh::examples --
+//-----------------------------------------------------------------------------
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end blueprint::mesh --
+//-----------------------------------------------------------------------------
+
+
 
 }
 //-----------------------------------------------------------------------------

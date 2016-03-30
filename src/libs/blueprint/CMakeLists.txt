@@ -55,6 +55,9 @@ ENABLE_WARNINGS()
 set(blueprint_headers 
     blueprint.hpp
     blueprint_mesh.hpp
+    blueprint_mesh_examples.hpp
+    blueprint_mca.hpp
+    blueprint_mca_examples.hpp
     Blueprint_Exports.hpp)
 
 #
@@ -62,7 +65,10 @@ set(blueprint_headers
 #
 set(blueprint_sources 
     blueprint.cpp
-    blueprint_mesh.cpp)
+    blueprint_mesh.cpp
+    blueprint_mesh_examples.cpp
+    blueprint_mca.cpp
+    blueprint_mca_examples.cpp)
 
 #
 # Note: headers are added here so they show up in project file generators

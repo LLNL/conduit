@@ -50,7 +50,8 @@
 # blueprint lib Unit Tests
 ################################
 set(BLUEPRINT_TESTS t_blueprint_smoke 
-                    t_blueprint_mesh_examples)
+                    t_blueprint_mesh_examples
+                    t_blueprint_mca_examples)
 
 
 ################################

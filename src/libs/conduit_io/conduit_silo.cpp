@@ -325,8 +325,8 @@ silo_write_field(DBfile *dbfile,
         }
 
         std::string mesh_type = n_mesh_info[topo_name]["type"].as_string();
-        int num_elems = n_mesh_info[topo_name]["num_elems"].value();
-        int num_pts   = n_mesh_info[topo_name]["num_pts"].value();;
+        int num_elems = n_mesh_info[topo_name]["num_elems"].to_value();
+        int num_pts   = n_mesh_info[topo_name]["num_pts"].to_value();;
 
 
         int centering  = 0;
@@ -389,7 +389,7 @@ silo_write_field(DBfile *dbfile,
 
         int silo_error = 0;
     
-        if(mesh_type == "quads" || mesh_type == "tris")
+        if(mesh_type == "unstructured")
         {
             silo_error = DBPutUcdvar1(dbfile, 
                                       var_name.c_str(), 
@@ -402,29 +402,34 @@ silo_write_field(DBfile *dbfile,
                                       centering,
                                       NULL);
         }
-        else if(mesh_type == "rectilinear" || mesh_type == "uniform")
+        else if(mesh_type == "rectilinear" ||
+                mesh_type == "uniform" ||
+                mesh_type == "structured")
         {
-            int dims[3] = {0,0,0};
+            int ele_dims[3] = {0,0,0};
+            int pts_dims[3] = {1,1,1};
+            
             int num_dims = 2;
-            dims[0] = n_mesh_info[topo_name]["dims/i"].value();
-            dims[1] = n_mesh_info[topo_name]["dims/j"].value();
+            
+            ele_dims[0] = n_mesh_info[topo_name]["elements/i"].value();
+            ele_dims[1] = n_mesh_info[topo_name]["elements/j"].value();
+            
+            pts_dims[0] = ele_dims[0] + 1;
+            pts_dims[1] = ele_dims[1] + 1;
 
-            if(n_mesh_info[topo_name]["dims"].has_path("k"))
+            if(n_mesh_info[topo_name]["elements"].has_path("k"))
             {
                 num_dims = 3;
-                dims[2] = n_mesh_info[topo_name]["dims/k"].value();
+                ele_dims[2] = n_mesh_info[topo_name]["elements/k"].value();
+                pts_dims[2] = ele_dims[2] + 1;
             }
+            
 
-            if(centering == DB_ZONECENT)
+            int *dims = ele_dims;
+            if(centering == DB_NODECENT)
             {
-                dims[0]--;
-                dims[1]--;
-                if(num_dims ==3)
-                {
-                    dims[2]--;
-                }
+                dims = pts_dims;
             }
-        
 
             silo_error = DBPutQuadvar1(dbfile, 
                                        var_name.c_str(), 
@@ -438,6 +443,17 @@ silo_write_field(DBfile *dbfile,
                                        centering,
                                        NULL);
         }
+        else if( mesh_type == "points")
+        {
+            
+            silo_error = DBPutPointvar1(dbfile,            // dbfile Database file pointer.
+                                        var_name.c_str(),  // variable name
+                                        topo_name.c_str(), // mesh name 
+                                        vals_ptr,          // data values 
+                                        num_pts,           // Number of elements (points).
+                                        vals_type,         // Datatype of the variable.
+                                        NULL);
+        }
         else
         {
             CONDUIT_ERROR( "only DBPutQuadvar1 + DBPutUcdvar1 var are supported");
@@ -449,57 +465,210 @@ silo_write_field(DBfile *dbfile,
 }
 
 //---------------------------------------------------------------------------//
+void
+silo_write_pointmesh(DBfile *dbfile, 
+                     const std::string &topo_name,
+                     Node &n_coords,
+                     DBoptlist *state_optlist,
+                     Node &n_mesh_info)
+{
+    // expects explicit coords
+    
+    int num_dims = 2;    
+    if(!n_coords.has_path("x"))
+    {
+        CONDUIT_ERROR( "mesh coordset missing: x");
+    }
+    if(!n_coords.has_path("y"))
+    {
+        CONDUIT_ERROR( "mesh coordset missing: y");
+    }
+    if(n_coords.has_path("z"))
+    {
+        num_dims = 3;
+    }
+
+    Node n_coords_compact;
+    // compaction is necessary to support ragged arrays
+    n_coords.compact_to(n_coords_compact);
+
+    int num_pts = n_coords_compact["x"].dtype().number_of_elements();
+    
+    n_mesh_info[topo_name]["num_pts"].set(num_pts);
+    n_mesh_info[topo_name]["num_elems"].set(num_pts);
+
+    int coords_dtype = 0;
+    void *coords_ptrs[3] = {NULL, NULL, NULL};
+
+    // assume x,y,z are all the same type
+    DataType dtype = n_coords_compact["x"].dtype();
+
+    if( dtype.is_float() )
+    {
+        coords_dtype = DB_FLOAT;
+        coords_ptrs[0] = (void*)n_coords_compact["x"].as_float_ptr();
+        coords_ptrs[1] = (void*)n_coords_compact["y"].as_float_ptr();
+        if(num_dims == 3)
+        {
+            coords_ptrs[2] = (void*)n_coords_compact["z"].as_float_ptr();
+        }
+    }
+    else if( dtype.is_double() )
+
+    {
+        coords_dtype = DB_DOUBLE;
+        coords_ptrs[0] = (void*)n_coords_compact["x"].as_double_ptr();
+        coords_ptrs[1] = (void*)n_coords_compact["y"].as_double_ptr();
+        if(num_dims == 3)
+        {
+            coords_ptrs[2] = (void*)n_coords_compact["z"].as_double_ptr();
+        }
+    }
+    else
+    {
+        // n_coords["x"].to_double_array(n_convert["x"]);
+        // n_coords["y"].to_double_array(n_convert["y"]);
+        CONDUIT_ERROR("coords data type not implemented, found " << 
+                      dtype.name());
+    }
+    
+
+    int silo_error = DBPutPointmesh(dbfile, // silo file ptr
+                                    topo_name.c_str(), // mesh name
+                                    num_dims, // num_dims
+                                    coords_ptrs, // coords values
+                                    num_pts, // num eles = num pts
+                                    coords_dtype, // type of data array
+                                    state_optlist); // opt list
+
+    CONDUIT_CHECK_SILO_ERROR(silo_error,
+                             " after saving DBPutPointmesh");
+}
+
+//---------------------------------------------------------------------------//
 void 
 silo_write_ucd_zonelist(DBfile *dbfile, 
                         const std::string &topo_name,
                         Node &n_topo,
                         Node &n_mesh_info)
 {
-    // zoo will have to be a different path
-    int shapetype[1] = {0};
-    int shapesize[1] = {0};
-    int shapecnt[1]  = {0};
-    int conn_len  = 0;
-    int *conn_ptr = NULL;
-    int num_elems = 0;
+    Node ucd_zlist;
     
-    std::string topo_type = n_topo["type"].as_string();
+    index_t num_shapes = 0;
+    ucd_zlist["shapetype"].set(DataType::c_int(1));
+    ucd_zlist["shapesize"].set(DataType::c_int(1));
+    ucd_zlist["shapecnt"].set(DataType::c_int(1));
+    
+    Node &n_elements = n_topo["elements"];
     std::string coordset_name = n_topo["coordset"].as_string();
     
-    Node &n_mesh_conn = n_topo["connectivity"];
-
-    // convert to compact ints ... 
+    bool shape_list = true;
+    
+    if(n_elements.dtype().is_object())
+    {
+        // simple path case
+        num_shapes = 1;
+    }
+    else if(n_elements.dtype().is_list())
+    {
+        shape_list = false;
+        num_shapes = n_elements.number_of_children();
+    }
+    else
+    {
+        CONDUIT_ERROR("Invalid elements for 'unstructured' case");
+    }
+    
+    
+    int *shapetype = ucd_zlist["shapetype"].value();
+    int *shapesize = ucd_zlist["shapesize"].value();
+    int *shapecnt  = ucd_zlist["shapecnt"].value();
+    
+    int total_conn_len  = 0;
+    int total_num_elems = 0;
+    
+    
+    
+    Node *shape_block = &n_elements;
     Node n_conn;
-    n_mesh_conn.compact_to(n_conn);
-
-    if( topo_type == "quads")
+    
+    for(index_t i=0;i < num_shapes;i++)
     {
-        num_elems    = n_conn.dtype().number_of_elements() / 4;
-        shapetype[0] = DB_ZONETYPE_QUAD;
-        shapesize[0] = 4;
-        shapecnt[0]  = num_elems;
-        conn_len     = n_conn.dtype().number_of_elements();
-        conn_ptr     = n_conn.value();
+        if(shape_list)
+        {
+            Node *shape_block = n_elements.child_ptr(i);
+        }
+       
+        std::string topo_shape = shape_block->fetch("shape").as_string();
 
+        Node &n_mesh_conn = shape_block->fetch("connectivity");
+
+        // convert to compact ints ... 
+        if(shape_list)
+        {
+            n_mesh_conn.compact_to(n_conn.append());
+        }
+        else
+        {
+            n_mesh_conn.compact_to(n_conn);
+        }
+
+
+        if( topo_shape == "quads")
+        {
+            // TODO: check for explicit # of elems
+            int num_elems    = n_mesh_conn.dtype().number_of_elements() / 4;
+            shapetype[i] = DB_ZONETYPE_QUAD;
+            shapesize[i] = 4;
+            shapecnt[i]  = num_elems;
+            total_num_elems  += num_elems;
+
+        }
+        else  if( topo_shape == "tris")
+        {
+            // TODO: check for explicit # of elems
+            int num_elems  = n_mesh_conn.dtype().number_of_elements() / 3;
+            shapetype[i]   = DB_ZONETYPE_TRIANGLE;
+            shapesize[i]   = 3;
+            shapecnt[i]    = num_elems;
+            total_num_elems += num_elems;
+        }
+        else if( topo_shape == "hexs")
+        {
+            // TODO: check for explicit # of elems
+            int num_elems    = n_mesh_conn.dtype().number_of_elements() / 8;
+            shapetype[i] = DB_ZONETYPE_HEX;
+            shapesize[i] = 8;
+            shapecnt[i]  = num_elems;
+            total_num_elems  += num_elems;
+
+        }
+        else  if( topo_shape == "tets")
+        {
+            // TODO: check for explicit # of elems
+            int num_elems  = n_mesh_conn.dtype().number_of_elements() / 4;
+            shapetype[i]   = DB_ZONETYPE_TET;
+            shapesize[i]   = 4;
+            shapecnt[i]    = num_elems;
+            total_num_elems += num_elems;
+        }
     }
-    else  if( topo_type == "tris")
-    {
-        num_elems    = n_conn.dtype().number_of_elements() / 3;
-        shapetype[0] = DB_ZONETYPE_TRIANGLE;
-        shapesize[0] = 3;
-        shapecnt[0]  = num_elems;
-        conn_len     = n_conn.dtype().number_of_elements();
-        conn_ptr     = n_conn.value();
+    
+    // Final Compaction
+    Node n_conn_final;
+    n_conn.compact_to(n_conn_final);
 
-    }
+    int  conn_len = n_conn_final.total_bytes() / sizeof(int);
+    int *conn_ptr = (int*) n_conn_final.data_ptr();
 
-    n_mesh_info[topo_name]["num_elems"].set(num_elems);
+
+    n_mesh_info[topo_name]["num_elems"].set(total_num_elems);
 
     std::string zlist_name = topo_name + "_connectivity";
 
     int silo_error = DBPutZonelist2(dbfile,  // silo file
                                     zlist_name.c_str() ,  // silo obj name
-                                    num_elems,  // number of elements
+                                    total_num_elems,  // number of elements
                                     2,  // spatial dims
                                     conn_ptr,  // connectivity array 
                                     conn_len, // len of connectivity array
@@ -509,21 +678,13 @@ silo_write_ucd_zonelist(DBfile *dbfile,
                                     shapetype, // list of shapes ids
                                     shapesize, // number of points per shape id
                                     shapecnt,  // number of elements each shape id is used for
-                                    1,  // number of shapes ids
+                                    num_shapes,  // number of shapes ids
                                     NULL); // optlist
 
     CONDUIT_CHECK_SILO_ERROR(silo_error,
                              " after saving ucd quad topology");
 
-}
 
-// we don't need this info .. 
-//---------------------------------------------------------------------------//
-void
-mesh_topology_basics(const std::string &topo_name,
-                     Node &n_topo,
-                     Node &n_mesh_info)
-{
 }
 
 
@@ -619,6 +780,7 @@ silo_write_ucd_mesh(DBfile *dbfile,
     CONDUIT_CHECK_SILO_ERROR(silo_error,
                              " DBPutUcdmesh");
 
+
 }
 
 //---------------------------------------------------------------------------//
@@ -657,26 +819,27 @@ silo_write_quad_rect_mesh(DBfile *dbfile,
     n_coords_rect.compact_to(n_coords_compact);
 
 
-    int dims[3];
-    dims[0] = n_coords_compact["x"].dtype().number_of_elements();
-    dims[1] = n_coords_compact["y"].dtype().number_of_elements();
-    dims[2] = 0;
+    int pts_dims[3];
+    pts_dims[0] = n_coords_compact["x"].dtype().number_of_elements();
+    pts_dims[1] = n_coords_compact["y"].dtype().number_of_elements();
+    pts_dims[2] = 1;
     
-    int num_pts = dims[0]* dims[1];
-    int num_elems = (dims[0]-1)*(dims[1]-1);
+    int num_pts = pts_dims[0]* pts_dims[1];
+    int num_elems = (pts_dims[0]-1)*(pts_dims[1]-1);
     if(num_coords == 3)
     {
-        num_pts   = num_pts * dims[2];
-        num_elems = num_elems * (dims[2]-1);
+        pts_dims[2] = n_coords_compact["z"].dtype().number_of_elements();
+        num_pts   = num_pts * pts_dims[2];
+        num_elems = num_elems * (pts_dims[2]-1);
     }
     
     n_mesh_info[topo_name]["num_pts"].set(num_pts);
     n_mesh_info[topo_name]["num_elems"].set(num_elems);
-    n_mesh_info[topo_name]["dims/i"] = dims[0];
-    n_mesh_info[topo_name]["dims/j"] = dims[1];
+    n_mesh_info[topo_name]["elements/i"] = pts_dims[0]-1;
+    n_mesh_info[topo_name]["elements/j"] = pts_dims[1]-1;
     if(num_coords == 3)
     {
-        n_mesh_info[topo_name]["dims/k"] = dims[2];
+        n_mesh_info[topo_name]["elements/k"] = pts_dims[2]-1;
     }
     
     int coords_dtype = 0;
@@ -717,7 +880,7 @@ silo_write_quad_rect_mesh(DBfile *dbfile,
                                    topo_name.c_str(), // mesh name
                                    (char**)&coordnames[0], // coord names
                                    coords_ptrs, // coords values
-                                   dims, //dims vals
+                                   pts_dims, //dims vals
                                    num_coords, // number of dims
                                    coords_dtype, // type of data array
                                    DB_COLLINEAR, // DB_COLLINEAR or DB_NONCOLLINEAR
@@ -725,8 +888,276 @@ silo_write_quad_rect_mesh(DBfile *dbfile,
 
     CONDUIT_CHECK_SILO_ERROR(silo_error,
                              " DBPutUcdmesh");
+}
+
+//---------------------------------------------------------------------------//
+void 
+silo_write_quad_uniform_mesh(DBfile *dbfile, 
+                             const std::string &topo_name,
+                             Node &n_coords,
+                             DBoptlist *state_optlist,
+                             Node &n_mesh_info)
+{
+    // TODO: USE XFORM expand uniform coords to rect-style
+
+    // silo doesn't have a direct path for a uniform mesh
+    // we need to convert its implicit uniform coords to 
+    // implicit rectilinear coords 
+    
+    index_t npts_x = 0;
+    index_t npts_y = 0;
+    index_t npts_z = 0;
+    
+    float64 x0 = 0.0;
+    float64 y0 = 0.0;
+    float64 z0 = 0.0;
+    
+    float64 dx =1;
+    float64 dy =1;
+    float64 dz =1;
+    
+    if(!n_coords.has_path("dims"))
+    {
+        CONDUIT_ERROR("uniform mesh missing 'dims'")
+    }
+    
+    Node &n_dims = n_coords["dims"];
+    
+    if( n_dims.has_path("i") )
+    {
+        npts_x = n_dims["i"].to_value();
+    }
+
+    if( n_dims.has_path("j") )
+    {
+        npts_y = n_dims["j"].to_value();
+    }
+    
+    if( n_dims.has_path("k") )
+    {
+        npts_z = n_dims["k"].to_value();
+    }
+    
+
+    if(n_coords.has_path("origin"))
+    {
+        Node &n_origin = n_coords["origin"];
+        
+        if( n_origin.has_path("x") )
+        {
+            x0 = n_origin["x"].to_value();
+        }
+
+        if( n_origin.has_path("y") )
+        {
+            y0 = n_origin["y"].to_value();
+        }
+        
+        if( n_origin.has_path("z") )
+        {
+            z0 = n_origin["z"].to_value();
+        }
+    }
+    
+    if(n_coords.has_path("spacing"))
+    {
+        Node &n_spacing = n_coords["spacing"];
+        
+        if( n_spacing.has_path("dx") )
+        {
+            dx = n_spacing["dx"].to_value();
+        }
+
+        if( n_spacing.has_path("dy") )
+        {
+            dy = n_spacing["dy"].to_value();
+        }
+        
+        if( n_spacing.has_path("dz") )
+        {
+            dz = n_spacing["dz"].to_value();
+        }
+    }
+    
+    Node n_rect_coords;
+    
+
+    n_rect_coords["type"] = "rectilinear";
+    n_rect_coords["x"].set(DataType::float64(npts_x));
+    n_rect_coords["y"].set(DataType::float64(npts_y));
+    
+    if(npts_z > 1)
+    {
+        n_rect_coords["z"].set(DataType::float64(npts_z));
+    }
+    
+    
+    float64 *x_coords_ptr = n_rect_coords["x"].value();
+    float64 *y_coords_ptr = n_rect_coords["y"].value();
+    float64 *z_coords_ptr = NULL;
+    
+    if(npts_z > 1)
+    {
+        z_coords_ptr = n_rect_coords["z"].value();
+    }
+    
+    float64 cv = x0;
+    for(index_t i=0; i < npts_x; i++)
+    {
+        x_coords_ptr[i] = cv;
+        cv += dx;
+    }
+        
+    cv = y0;
+    for(index_t i=0; i < npts_y; i++)
+    {
+        y_coords_ptr[i] = cv;
+        cv += dy;
+    }
+
+    if(npts_z > 1)
+    {
+        cv = z0;
+        for(index_t i=0; i < npts_z; i++)
+        {
+            z_coords_ptr[i] = cv;
+            cv += dz;
+        }
+    }
+        
+    
+    silo_write_quad_rect_mesh(dbfile,
+                              topo_name,
+                              n_rect_coords,
+                              state_optlist,
+                              n_mesh_info);
 
 }
+
+
+//---------------------------------------------------------------------------//
+void 
+silo_write_structured_mesh(DBfile *dbfile, 
+                           const std::string &topo_name,
+                           Node &n_topo,
+                           Node &n_coords,
+                           DBoptlist *state_optlist,
+                           Node &n_mesh_info)
+{
+    // also support interleaved:
+    // xy, xyz 
+    // convert these to separate coord arrays for silo 
+
+    // check if we are 2d or 3d
+    int num_coords = 2;    
+    if(!n_coords.has_path("x"))
+    {
+        CONDUIT_ERROR( "mesh coordset missing: x");
+    }
+    if(!n_coords.has_path("y"))
+    {
+        CONDUIT_ERROR( "mesh coordset missing: y");
+    }
+    if(n_coords.has_path("z"))
+    {
+        num_coords = 3;
+    }
+
+    // blueprint::transmute(n_coords,,n_coords_compact)
+
+    const char* coordnames[3] = {"x", "y", "z"};
+
+    Node n_coords_compact;
+    // compaction is necessary to support ragged arrays
+    n_coords.compact_to(n_coords_compact);
+
+    int num_pts = n_coords_compact["x"].dtype().number_of_elements();
+    // TODO: check that y & z have the same number of points
+
+    n_mesh_info[topo_name]["num_pts"].set(num_pts);
+
+    int coords_dtype = 0;
+    void *coords_ptrs[3] = {NULL, NULL, NULL};
+
+    // assume x,y,z are all the same type
+    DataType dtype = n_coords_compact["x"].dtype();
+
+    if( dtype.is_float() )
+    {
+        coords_dtype = DB_FLOAT;
+        coords_ptrs[0] = (void*)n_coords_compact["x"].as_float_ptr();
+        coords_ptrs[1] = (void*)n_coords_compact["y"].as_float_ptr();
+        if(num_coords == 3)
+        {
+            coords_ptrs[2] = (void*)n_coords_compact["z"].as_float_ptr();
+        }
+    }
+    else if( dtype.is_double() )
+
+    {
+        coords_dtype = DB_DOUBLE;
+        coords_ptrs[0] = (void*)n_coords_compact["x"].as_double_ptr();
+        coords_ptrs[1] = (void*)n_coords_compact["y"].as_double_ptr();
+        if(num_coords == 3)
+        {
+            coords_ptrs[2] = (void*)n_coords_compact["z"].as_double_ptr();
+        }
+    }
+    else
+    {
+        // n_coords["x"].to_double_array(n_convert["x"]);
+        // n_coords["y"].to_double_array(n_convert["y"]);
+        CONDUIT_ERROR("coords data type not implemented, found " << 
+                      dtype.name());
+    }
+    
+    int ele_dims[3];
+    ele_dims[0] = n_topo["elements/dims/i"].to_value();
+    ele_dims[1] = n_topo["elements/dims/j"].to_value();
+    ele_dims[2] = 0;
+
+    index_t num_elems =  ele_dims[0]* ele_dims[1];
+
+    if( n_topo["elements/dims"].has_path("k") )
+    {
+        ele_dims[2] = n_topo["elements/dims/k"].to_value();
+        num_elems *= ele_dims[2];
+    }
+
+    // silo needs the node dims to define a structured grid
+    int pts_dims[3];
+    
+    pts_dims[0] = ele_dims[0]+1;
+    pts_dims[1] = ele_dims[1]+1;
+    pts_dims[2] = 1;
+     
+    n_mesh_info[topo_name]["num_pts"].set(num_pts);
+    n_mesh_info[topo_name]["num_elems"].set(num_elems);
+    n_mesh_info[topo_name]["elements/i"] = ele_dims[0];
+    n_mesh_info[topo_name]["elements/j"] = ele_dims[1];
+    
+    
+    if(num_coords == 3)
+    {
+        n_mesh_info[topo_name]["elements/k"] = ele_dims[2];
+        pts_dims[2] = ele_dims[2]+1;
+    }
+
+    
+    int silo_error = DBPutQuadmesh(dbfile, // silo file ptr
+                                   topo_name.c_str(), // mesh name
+                                   (char**)&coordnames[0], // coord names
+                                   coords_ptrs, // coords values
+                                   pts_dims, //dims vals
+                                   num_coords, // number of dims
+                                   coords_dtype, // type of data array
+                                   DB_NONCOLLINEAR, // DB_COLLINEAR or DB_NONCOLLINEAR
+                                   state_optlist); // opt list
+
+    CONDUIT_CHECK_SILO_ERROR(silo_error,
+                             " DBPutQuadmesh");
+}
+
 
 
 //---------------------------------------------------------------------------//
@@ -762,13 +1193,14 @@ silo_mesh_write(Node &n,
         n_mesh_info[topo_name]["type"].set(topo_type);
         
 
+        
         // we need a zone list for a ucd mesh
-        if(topo_type == "quads" || topo_type == "tris")
+        if(topo_type == "unstructured")
         {
             silo_write_ucd_zonelist(dbfile,
-                                   topo_name,
-                                   n_topo,
-                                   n_mesh_info);
+                                    topo_name,
+                                    n_topo,
+                                    n_mesh_info);
         }
 
         // make sure we have coordsets
@@ -794,36 +1226,49 @@ silo_mesh_write(Node &n,
     
         Node &n_coords = n["coordsets"][coordset_name];
     
-        if(topo_type == "quads" || topo_type == "tris")
+        if(topo_type == "unstructured")
         {
             silo_write_ucd_mesh(dbfile,
-                               topo_name,
-                               n_coords,
-                               state_optlist,
-                               n_mesh_info);
+                                topo_name,
+                                n_coords,
+                                state_optlist,
+                                n_mesh_info);
         }
         else if (topo_type == "rectilinear")
         {
             silo_write_quad_rect_mesh(dbfile,
-                                     topo_name,
-                                     n_coords,
-                                     state_optlist,
-                                     n_mesh_info);
+                                      topo_name,
+                                      n_coords,
+                                      state_optlist,
+                                      n_mesh_info);
         }
         else if (topo_type == "uniform")
         {
-            //silo_write_quad_uniform_mesh(dbfile,...)
+            silo_write_quad_uniform_mesh(dbfile,
+                                         topo_name,
+                                         n_coords,
+                                         state_optlist,
+                                         n_mesh_info);
+
         }
         else if (topo_type == "structured")
         {
-            //silo_write_quad_structured_mesh(dbfile,...)
+            silo_write_structured_mesh(dbfile,
+                                       topo_name,
+                                       n_topo,
+                                       n_coords,
+                                       state_optlist,
+                                       n_mesh_info);
         }
-        else if (topo_type == "point")
+        else if (topo_type == "points")
         {
-            //silo_write_point_mesh(dbfile,...)
+            silo_write_pointmesh(dbfile,
+                                 topo_name,
+                                 n_coords,
+                                 state_optlist,
+                                 n_mesh_info);
         }
     }
-
     
     
     if(state_optlist)

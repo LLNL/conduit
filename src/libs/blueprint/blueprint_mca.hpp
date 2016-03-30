@@ -44,26 +44,18 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint.hpp
+/// file: blueprint_mca.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_HPP
-#define BLUEPRINT_HPP
+#ifndef BLUEPRINT_MCA_HPP
+#define BLUEPRINT_MCA_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-
 #include "Blueprint_Exports.hpp"
-
-#include "blueprint_mesh.hpp"
-#include "blueprint_mesh_examples.hpp"
-
-#include "blueprint_mca.hpp"
-#include "blueprint_mca_examples.hpp"
-
 
 //-----------------------------------------------------------------------------
 // -- begin blueprint:: --
@@ -72,27 +64,62 @@ namespace blueprint
 {
 
 //-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how blueprint was
-/// configured.
-//-----------------------------------------------------------------------------
-std::string BLUEPRINT_API about();
-void        BLUEPRINT_API about(conduit::Node &n);
-
-//-----------------------------------------------------------------------------
-/// Experimental blueprint interface
+// -- begin blueprint::mesh --
 //-----------------------------------------------------------------------------
 
+namespace mca 
+{
+
 //-----------------------------------------------------------------------------
-bool BLUEPRINT_API verify(const std::string &protocol,
-                          conduit::Node &n,
+// blueprint protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool BLUEPRINT_API verify(conduit::Node &n,
                           conduit::Node &info);
 
+
 //-----------------------------------------------------------------------------
-bool BLUEPRINT_API transform(const std::string &protocol,
-                             conduit::Node &src,
+bool BLUEPRINT_API transform(conduit::Node &src,
                              conduit::Node &actions,
                              conduit::Node &dest,
                              conduit::Node &info);
+
+
+//-----------------------------------------------------------------------------
+bool BLUEPRINT_API to_contiguous(conduit::Node &src,
+                                 conduit::Node &dest);
+
+
+//-----------------------------------------------------------------------------
+bool BLUEPRINT_API to_interleaved(conduit::Node &src,
+                                  conduit::Node &dest);
+
+
+//----------------------------------------------------------------------------
+bool BLUEPRINT_API verify_mca(conduit::Node &n);
+
+//----------------------------------------------------------------------------
+bool BLUEPRINT_API is_contiguous(conduit::Node &n);
+
+//----------------------------------------------------------------------------
+bool BLUEPRINT_API is_interleaved(conduit::Node &n);
+
+
+//-----------------------------------------------------------------------------
+// mca blueprint methods
+//-----------------------------------------------------------------------------
+
+
+// TODO: (weave, unweave, etc ... )
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end blueprint::mesh --
+//-----------------------------------------------------------------------------
+
+
 
 }
 //-----------------------------------------------------------------------------
