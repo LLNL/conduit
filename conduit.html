@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Node Update Methods &mdash; Conduit 0.1 documentation</title>
+  <title>Conduit &mdash; Conduit 0.1 documentation</title>
   
 
   
@@ -31,9 +31,9 @@
 
   
     <link rel="top" title="Conduit 0.1 documentation" href="index.html"/>
-        <link rel="up" title="Conduit" href="conduit.html"/>
-        <link rel="next" title="Blueprint" href="blueprint.html"/>
-        <link rel="prev" title="Data Ownership" href="tutorial_ownership.html"/> 
+        <link rel="up" title="User Documentation" href="user.html"/>
+        <link rel="next" title="Basic Concepts" href="tutorial_basics.html"/>
+        <link rel="prev" title="User Documentation" href="user.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -84,13 +84,13 @@
             
                 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="user.html">User Documentation</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="conduit.html">Conduit</a><ul class="current">
-<li class="toctree-l3 current"><a class="reference internal" href="conduit.html#tutorial">Tutorial</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="">Conduit</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#tutorial">Tutorial</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html">Basic Concepts</a></li>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_numeric.html">Accessing Numeric Data</a></li>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_json.html">Generators</a></li>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_ownership.html">Data Ownership</a></li>
-<li class="toctree-l4 current"><a class="current reference internal" href="">Node Update Methods</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_update.html">Node Update Methods</a></li>
 </ul>
 </li>
 </ul>
@@ -134,13 +134,11 @@
       
           <li><a href="user.html">User Documentation</a> &raquo;</li>
       
-          <li><a href="conduit.html">Conduit</a> &raquo;</li>
-      
-    <li>Node Update Methods</li>
+    <li>Conduit</li>
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="_sources/tutorial_update.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/conduit.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -150,39 +148,39 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="node-update-methods">
-<h1>Node Update Methods<a class="headerlink" href="#node-update-methods" title="Permalink to this headline">¶</a></h1>
-<p>The <em>Node</em> class provides three <strong>update</strong> methods which allow you to easily copy data or  the description of data from a source node.</p>
-<ul class="simple">
-<li><strong>Node::update(Node &amp;source)</strong>:</li>
-</ul>
-<blockquote>
-<div><p>This method behaves similar to a python dictionary update. Entires from the source Node are copied into the calling Node, here are more concrete details:</p>
-<ul class="simple">
-<li><strong>If the source describes an Object</strong>:<ul>
-<li>Update copies the children of the source Node into the calling Node. Normal set semantics apply: if a compatible child with the same name already exists in the calling Node, the data will be copied.  If not, the calling Node will dynamically construct children to hold copies of each child of the source Node.</li>
-</ul>
-</li>
-<li><strong>If the source describes a List</strong>:<ul>
-<li>Update copies the children of the source Node into the calling Node. Normal set semantics apply: if a compatible child already exists in the same list order in the calling Node, the data will be copied.  If not, the calling Node will dynamically construct children to hold copies of each child of the source Node.</li>
+  <div class="section" id="conduit">
+<h1>Conduit<a class="headerlink" href="#conduit" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="tutorial">
+<h2>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h2>
+<p>This short tutorial provides C++ examples that demonstrate the Conduit&#8217;s Core
+API. Conduit&#8217;s unit tests (<em>src/tests/{library_name}/</em>) also provide a rich set
+of examples for Conduit&#8217;s Core API and additional libraries.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_basics.html">Basic Concepts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_basics.html#node-basics"><em>Node</em> basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_basics.html#bitwidth-style-types">Bitwidth Style Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_basics.html#compatible-schemas">Compatible Schemas</a></li>
 </ul>
 </li>
-<li><strong>If the source Node describes a leaf data type</strong>:<ul>
-<li>Update works exactly like a <strong>set</strong> (not true yet).</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_numeric.html">Accessing Numeric Data</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_numeric.html#accessing-scalars-and-arrays">Accessing Scalars and Arrays</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_numeric.html#using-introspection-and-conversion">Using Introspection and Conversion</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_json.html">Generators</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_json.html#using-generator-instances-to-parse-json-schemas">Using <em>Generator</em> instances to parse JSON schemas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_json.html#compacting-nodes">Compacting Nodes</a></li>
 </ul>
-</div></blockquote>
-<ul class="simple">
-<li><strong>Node::update_compatible(Node &amp;source)</strong>:</li>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_ownership.html">Data Ownership</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_ownership.html#set-vs-set-external"><em>set</em> vs <em>set_external</em></a></li>
 </ul>
-<blockquote>
-<div>This method copies data from the children in the source Node that are compatible with children in the calling node. No changes are made where children are incompatible.</div></blockquote>
-<ul class="simple">
-<li><strong>Node::update_external(Node &amp;source)</strong>:</li>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_update.html">Node Update Methods</a></li>
 </ul>
-<blockquote>
-<div>This method creates children in the calling Node that externally describe the children in the source node. It differs from <strong>Node::set_external(Node &amp;source)</strong> in that <strong>set_external()</strong> will clear the calling Node so it exactly match an external description of the source Node, whereas <strong>update_external()</strong> will only change the children in the calling Node that correspond to children in the source Node.</div></blockquote>
+</div>
+</div>
 </div>
 
 
@@ -192,10 +190,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="blueprint.html" class="btn btn-neutral float-right" title="Blueprint" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="tutorial_basics.html" class="btn btn-neutral float-right" title="Basic Concepts" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="tutorial_ownership.html" class="btn btn-neutral" title="Data Ownership" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="user.html" class="btn btn-neutral" title="User Documentation" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

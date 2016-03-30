@@ -1,0 +1,433 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>mesh &mdash; Conduit 0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="Conduit 0.1 documentation" href="index.html"/>
+        <link rel="up" title="Blueprint" href="blueprint.html"/>
+        <link rel="next" title="Building" href="building.html"/>
+        <link rel="prev" title="mcarray" href="blueprint_mcarray.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Conduit
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="user.html">User Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="conduit.html">Conduit</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="blueprint.html">Blueprint</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="blueprint_mcarray.html">mcarray</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="">mesh</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#protocol">Protocol</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#transforms">Transforms</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="building.html">Building</a></li>
+<li class="toctree-l2"><a class="reference internal" href="glossary.html">Glossary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="licenses.html">License Info</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer.html">Developer Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">Conduit</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="user.html">User Documentation</a> &raquo;</li>
+      
+          <li><a href="blueprint.html">Blueprint</a> &raquo;</li>
+      
+    <li>mesh</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/blueprint_mesh.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="mesh">
+<h1>mesh<a class="headerlink" href="#mesh" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="protocol">
+<h2>Protocol<a class="headerlink" href="#protocol" title="Permalink to this headline">¶</a></h2>
+<p>The mesh blueprint protocol defines a computational mesh using a Coordinate Set (<em>coords</em>), a Topology (<em>topology</em>), zero or more Fields (<em>fields</em>), and optional State information (<em>state</em>).</p>
+<div class="section" id="coordinates">
+<h3>Coordinates<a class="headerlink" href="#coordinates" title="Permalink to this headline">¶</a></h3>
+<p>To define a computational mesh, the first required entry is a set of spatial coordinate tuples that can underpin a mesh topology.</p>
+<div class="section" id="coordinate-systems">
+<h4>Coordinate Systems<a class="headerlink" href="#coordinate-systems" title="Permalink to this headline">¶</a></h4>
+<p>The mesh blueprint protocol supports sets of spatial coordinates from the following three coordinate systems:</p>
+<ul class="simple">
+<li>Cartesian: {x,y,z}</li>
+<li>Cylindrical: {r,z}</li>
+<li>Spherical: {r,theta,phi}</li>
+</ul>
+</div>
+<div class="section" id="coordinate-sets">
+<h4>Coordinate Sets<a class="headerlink" href="#coordinate-sets" title="Permalink to this headline">¶</a></h4>
+<p>The mesh blueprint protocol supports three types of Coordinate Sets: <em>uniform</em>, <em>rectilinear</em>, and <em>explicit</em>.  To conform to the protocol, the path <strong>coords</strong> must be an <em>Object</em> that contains entries as outlined below:</p>
+<ul>
+<li><p class="first"><strong>uniform</strong></p>
+<blockquote>
+<div><p>An implicit coordinate set defined as the cartesian product of i,j,k dimensions starting at an <em>origin</em> (ex: {x,y,z}) using a given <em>spacing</em> (ex: {dx,dy,dz}).</p>
+</div></blockquote>
+<ul class="simple">
+<li>Cartesian<ul>
+<li>coords/type: “uniform”</li>
+<li>coords/dims/{i,j,k}</li>
+<li>coords/origin/{x,y,z} (optional, default = {0,0,0})</li>
+<li>coords/spacing/{dx,dy,dz} (optional, default = {1,1,1})</li>
+</ul>
+</li>
+<li>Cylindrical<ul>
+<li>coords/type: “uniform”</li>
+<li>coords/dims/{i,j}</li>
+<li>coords/origin/{r,z} (optional, default = {0,0})</li>
+<li>coords/spacing/{dr,dz} (optional, default = {1,1})</li>
+</ul>
+</li>
+<li>Spherical<ul>
+<li>coords/type: “uniform”</li>
+<li>coords/dims/{i,j}</li>
+<li>coords/origin/{r,theta,phi} (optional, default = {0,0,0})</li>
+<li>coords/spacing/{dr,dtheta, dphi} (optional, default = {1,1,1})</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p class="first"><strong>rectilinear</strong></p>
+<p>An implicit coordinate set defined as the cartesian product of passed coordinate arrays.</p>
+<ul class="simple">
+<li>Cartesian<ul>
+<li>coords/type: “rectilinear”</li>
+<li>coords/values/{x,y,z}</li>
+</ul>
+</li>
+<li>Cylindrical:<ul>
+<li>coords/type: “rectilinear”</li>
+<li>coords/values/{r,z}</li>
+</ul>
+</li>
+<li>Spherical<ul>
+<li>coords/type: “uniform”</li>
+<li>coords/values/{r,theta,phi}</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p class="first"><strong>explicit</strong></p>
+<p>An explicit set of coordinates, that conforms to the <strong>mcarray</strong> blueprint protocol.</p>
+<ul class="simple">
+<li>Cartesian<ul>
+<li>coords/type: “explicit”</li>
+<li>coords/values/{x,y,z}</li>
+</ul>
+</li>
+<li>Cylindrical<ul>
+<li>coords/type: “explicit”</li>
+<li>coords/values/{r,z}</li>
+</ul>
+</li>
+<li>Spherical<ul>
+<li>coords/type: “explicit”</li>
+<li>coords/values/{r,theta,phi}</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="toplogies">
+<h3>Toplogies<a class="headerlink" href="#toplogies" title="Permalink to this headline">¶</a></h3>
+<p>The next entry required to describe a computational mesh is the topology of the elements of the mesh. To conform to the protocol, the path <strong>topology</strong> must be an <em>Object</em> that contains one of the topology descriptions outlined below.</p>
+<p>(note on {nodes+zones} vs {vertices+cells} vs {points + elements})</p>
+<p>The mesh blueprint protocol uses {points,edges,faces,elements}</p>
+<ul class="simple">
+<li>supported: point, line, tri, quad, tet, hex</li>
+<li>future: polygon, polyhedron</li>
+</ul>
+<div class="section" id="implicit">
+<h4>Implicit<a class="headerlink" href="#implicit" title="Permalink to this headline">¶</a></h4>
+<p>The mesh blueprint protocol accepts three implicit ways to define a grid of elements on top of a coordinate set. For coordinate set with 1D coordinate tuples, <em>line</em> elements are used, for sets with 2D coordinate tuples <em>quad</em> elements are used, and for 3D coordinate tuples <em>hex</em> elements are used.</p>
+<ul>
+<li><p class="first"><strong>uniform</strong>: An implicit topology that defines a grid of elements on top of a <a href="#id1"><span class="problematic" id="id2">*</span></a>uniform * coordinate set.</p>
+<blockquote>
+<div><ul class="simple">
+<li>topology/type: “uniform”</li>
+<li>topology/elements/origin/{i0,j0,k0} (optional, default = {0,0,0})</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first"><strong>rectilinear</strong>: An implicit topology that defines a grid of elements on top of a <em>rectilinear</em> coordinate set.</p>
+<blockquote>
+<div><ul class="simple">
+<li>topology/type: “rectilinear”</li>
+<li>topology/elements/origin/{i0,j0,k0} (optional, default = {0,0,0})</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<div class="admonition attention">
+<p class="first admonition-title">Attention</p>
+<p>(can we collapse uniform + rectilinear?)</p>
+<ul class="last simple">
+<li>topology/type: “structured”</li>
+<li>topology/elements/dims: &#8220;implicit&#8221;</li>
+<li>topology/elements/origin/{i0,j0,k0} (optional, default = {0,0,0})</li>
+</ul>
+</div>
+<ul class="simple">
+<li><strong>structured</strong>: An implicit topology that defines a grid of elements on top of an <em>explicit</em> coordinate set.<ul>
+<li>topology/type = “structured”</li>
+<li>topology/elements/dims/{i,j,k}</li>
+<li>topology/elements/origin/{i0,j0,k0} (optional, default = {0,0,0})</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="explicit-unstructured">
+<h4>Explicit (Unstructured)<a class="headerlink" href="#explicit-unstructured" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="single-shape-topology">
+<h5>Single Shape Topology<a class="headerlink" href="#single-shape-topology" title="Permalink to this headline">¶</a></h5>
+<blockquote>
+<div><ul class="simple">
+<li>topology/type: “unstructured”</li>
+<li>topology/elements/shape: (shape name)</li>
+<li>topology/elements/connectivity: (index array)</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="mixed-shape-toplogies">
+<h5>Mixed Shape Toplogies<a class="headerlink" href="#mixed-shape-toplogies" title="Permalink to this headline">¶</a></h5>
+<ul class="simple">
+<li><strong>list</strong> - A Node in the <em>List</em> role, that contains a children that conform to the <em>Single Shape Topology</em> case.</li>
+<li><strong>object</strong> - A Node in the <em>Object</em> role, that contains a children that conform to the <em>Single Shape Topology</em> case.</li>
+<li><strong>stream</strong> - (strem description)
+(specifying stream ids and stream connectivity)<ul>
+<li>topology/elements/element_types: ()</li>
+<li>topology/elements/stream: ()</li>
+</ul>
+</li>
+</ul>
+<div class="section" id="indexed-streams">
+<h6>Indexed Streams<a class="headerlink" href="#indexed-streams" title="Permalink to this headline">¶</a></h6>
+<ul>
+<li><p class="first">Stream of Indexed Elements</p>
+<blockquote>
+<div><ul class="simple">
+<li>topology/elements/element_types: ()</li>
+<li>topology/elements/element_index/stream_ids: ()</li>
+<li>topology/elements/element_index/offsets: ()</li>
+<li>topology/elements/stream: ()</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first">Stream of Contiguous Segments of Element Types</p>
+<blockquote>
+<div><ul class="simple">
+<li>topology/elements/element_types: ()</li>
+<li>topology/elements/segment_index/stream_ids: ()</li>
+<li>topology/elements/segment_index/element_counts: ()</li>
+<li>topology/elements/stream: ()</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="fields">
+<h3>Fields<a class="headerlink" href="#fields" title="Permalink to this headline">¶</a></h3>
+<p>(fields intro). (path <strong>fields</strong>, is an <em>Object</em> with the following entries)</p>
+<p>(a field is a <strong>mcarray</strong> with extra metadata about how it is associated with elements of the topology)</p>
+</div>
+<div class="section" id="state">
+<h3>State<a class="headerlink" href="#state" title="Permalink to this headline">¶</a></h3>
+<p>(state intro). (path <strong>state</strong>, is an <em>Object</em> with the following entries)</p>
+</div>
+</div>
+<div class="section" id="transforms">
+<h2>Transforms<a class="headerlink" href="#transforms" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id3">
+<h3>Coordinate Sets<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="id4">
+<h3>Toplogies<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="building.html" class="btn btn-neutral float-right" title="Building" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="blueprint_mcarray.html" class="btn btn-neutral" title="mcarray" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014-2015, LLNS.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

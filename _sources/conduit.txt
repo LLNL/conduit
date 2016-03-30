@@ -42,23 +42,20 @@
 .. # 
 .. ############################################################################
 
-.. Conduit documentation master file, created by
-   sphinx-quickstart on Thu Oct 16 11:23:46 2014.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+===========
+Conduit
+===========
 
-================================
-User Documentation
-================================
+Tutorial
+---------------
+This short tutorial provides C++ examples that demonstrate the Conduit's Core 
+API. Conduit's unit tests (*src/tests/{library_name}/*) also provide a rich set 
+of examples for Conduit's Core API and additional libraries. 
 
 .. toctree::
 
-   conduit
-   blueprint
-   building
-   glossary
-   licenses
-
-
-.. leave out the api docs for now, the doxygen comments are too sparse. 
-
+   tutorial_basics
+   tutorial_numeric
+   tutorial_json
+   tutorial_ownership
+   tutorial_update

@@ -33,7 +33,7 @@
     <link rel="top" title="Conduit 0.1 documentation" href="index.html"/>
         <link rel="up" title="User Documentation" href="user.html"/>
         <link rel="next" title="Glossary" href="glossary.html"/>
-        <link rel="prev" title="Node Update Methods" href="tutorial_update.html"/> 
+        <link rel="prev" title="mesh" href="blueprint_mesh.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -84,7 +84,8 @@
             
                 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="user.html">User Documentation</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="conduit.html">Conduit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blueprint.html">Blueprint</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="">Building</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#getting-started">Getting Started</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#build-options">Build Options</a></li>
@@ -151,25 +152,25 @@
 <ul class="simple">
 <li>From Github</li>
 </ul>
-<div class="code bash highlight-python"><div class="highlight"><pre>git clone https://github.com/llnl/conduit.git
+<div class="code bash highlight-python"><div class="highlight"><pre><span></span>git clone https://github.com/llnl/conduit.git
 </pre></div>
 </div>
 <ul class="simple">
 <li>From LLNL&#8217;s CZ Stash Instance (LLNL Users)</li>
 </ul>
-<div class="code bash highlight-python"><div class="highlight"><pre>git clone https://{USER_NAME}@lc.llnl.gov/stash/scm/con/conduit.git
+<div class="code bash highlight-python"><div class="highlight"><pre><span></span>git clone https://{USER_NAME}@lc.llnl.gov/stash/scm/con/conduit.git
 </pre></div>
 </div>
 <p>Configure a build:</p>
 <p><em>config-build.sh</em> is a simple wrapper for the cmake call to configure conduit.
 This creates a new out-of-source build directory <em>build-debug</em> and a directory for the install <em>install-debug</em>.
 It will optionally include a <em>host-config.cmake</em> file with detailed configuration options.</p>
-<div class="code bash highlight-python"><div class="highlight"><pre>cd conduit
+<div class="code bash highlight-python"><div class="highlight"><pre><span></span>cd conduit
 ./config-build.sh
 </pre></div>
 </div>
 <p>Build, test, and install Conduit:</p>
-<div class="code bash highlight-python"><div class="highlight"><pre>cd build-debug
+<div class="code bash highlight-python"><div class="highlight"><pre><span></span>cd build-debug
 make -j 8
 make test
 make install
@@ -186,7 +187,7 @@ make install
 <li><strong>ENABLE_PYTHON</strong> - Controls if the Conduit Python module is built. <em>(default = OFF)</em></li>
 </ul>
 <blockquote>
-<div>The Conduit Python module will build for both Python2 and Python3. To select a specific Python, set the CMake variable <strong>PYTHON_EXECUTABLE</strong> to path of the desired python binary. The Conduit Python module requires Numpy. The selected Python install must provide Numpy, or PYTHONPATH must be set to include a Numpy install compatible with the selected Python install.</div></blockquote>
+<div>The Conduit Python module will build for both Python2 and Python3. To select a specific Python, set the CMake variable <strong>PYTHON_EXECUTABLE</strong> to path of the desired python binary. The Conduit Python module requires Numpy. The selected Python instance must provide Numpy, or PYTHONPATH must be set to include a Numpy install compatible with the selected Python install.</div></blockquote>
 <ul class="simple">
 <li><strong>ENABLE_MPI</strong> - Controls if the conduit_mpi library is built. <em>(default = OFF)</em></li>
 </ul>
@@ -195,39 +196,34 @@ make install
 <p>To run the mpi unit tests on LLNL&#8217;s LC platforms, you may also need change the CMake variables <strong>MPIEXEC</strong> and <strong>MPIEXEC_NUMPROC_FLAG</strong>, so you can use srun and select a partition. (see: src/host-configs/chaos_5_x86_64.cmake)</p>
 </div></blockquote>
 <ul class="simple">
-<li><strong>ENABLE_HDF5</strong> - Controls if the HDF5 I/O support is built. <em>(default = OFF)</em></li>
+<li><strong>HDF5_DIR</strong> - Path to a HDF5 install <em>(optional)</em>.</li>
 </ul>
 <blockquote>
-<div><p>If enabled, the following CMake variables must also be set:</p>
+<div>Controls if conduit_io HDF5 I/O support is built.</div></blockquote>
 <ul class="simple">
-<li><strong>HDF5_DIR</strong> - Path to a hdf5 install.</li>
-</ul>
-</div></blockquote>
-<ul class="simple">
-<li><strong>ENABLE_SILO</strong> - Controls if the Silo I/O support is built. <em>(default = OFF)</em></li>
+<li><strong>SILO_DIR</strong> - Path to a Silo install <em>(optional)</em>.</li>
 </ul>
 <blockquote>
-<div><p>If enabled, the following CMake variables must also be set:</p>
+<div><p>Controls if conduit_io Silo I/O support is built. When used, the following CMake variables must also be set:</p>
 <ul class="simple">
-<li><strong>SILO_DIR</strong> - Path to a silo install.</li>
-<li><strong>HDF5_DIR</strong> - Path to a hdf5 install.</li>
+<li><strong>HDF5_DIR</strong> - Path to a HDF5 install. (Silo support also depends on HDF5)</li>
 </ul>
 </div></blockquote>
 </div>
 <div class="section" id="host-config-files">
 <h2>Host Config Files<a class="headerlink" href="#host-config-files" title="Permalink to this headline">¶</a></h2>
 <p>To handle build options, thirdparty library paths, etc we rely on CMake&#8217;s initial-cache file mechanism.</p>
-<div class="code bash highlight-python"><div class="highlight"><pre>cmake -C config_file.cmake
+<div class="code bash highlight-python"><div class="highlight"><pre><span></span>cmake -C config_file.cmake
 </pre></div>
 </div>
 <p>We call these initial-cache files <em>host-config</em> files, since we typically create a file for each platform or specific hosts if necessary.</p>
 <p>The <em>config-build.sh</em> script will use your machine&#8217;s hostname, the SYS_TYPE environment variable, and your platform name (via <em>uname</em>) to look for an existing host config file in the <em>host-configs</em> directory at the root of the conduit repo. If found, it will pass the host config file to cmake via the <em>-C</em> command line option.</p>
-<div class="code bash highlight-python"><div class="highlight"><pre>cmake {other options} -C host-configs/{config_file}.cmake ../
+<div class="code bash highlight-python"><div class="highlight"><pre><span></span>cmake {other options} -C host-configs/{config_file}.cmake ../
 </pre></div>
 </div>
 <p>You can view several example files under the <em>host-configs</em> directory.</p>
 <p>These files use standard CMake commands. CMake <em>set</em> commands need to specify the root cache path as follows:</p>
-<div class="code cmake highlight-python"><div class="highlight"><pre>set(CMAKE_VARIABLE_NAME {VALUE} CACHE PATH &quot;&quot;)
+<div class="code cmake highlight-python"><div class="highlight"><pre><span></span>set(CMAKE_VARIABLE_NAME {VALUE} CACHE PATH &quot;&quot;)
 </pre></div>
 </div>
 </div>
@@ -235,7 +231,7 @@ make install
 <h2>Bootstrapping Thirdparty Dependencies<a class="headerlink" href="#bootstrapping-thirdparty-dependencies" title="Permalink to this headline">¶</a></h2>
 <p>You can use <em>bootstrap-env.sh</em> (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses <em>scripts/uberenv</em>, which leverages <strong>Spack</strong> (<a class="reference external" href="https://llnl.github.io/spack">https://llnl.github.io/spack</a>) to build external thirdparty libraries and tools used by Conduit.
 It also writes a initial host-config file for you and adds the spack built CMake binary to your PATH, so can directly call the <em>config-build.sh</em> helper script to configure a conduit build.</p>
-<div class="code bash highlight-python"><div class="highlight"><pre>#build thirdparty libs using spack
+<div class="code bash highlight-python"><div class="highlight"><pre><span></span>#build thirdparty libs using spack
 source bootstrap-env.sh
 
 #copy the generated host-config file into the standard location
@@ -262,7 +258,7 @@ cp uberenv_libs/`hostname`*.cmake to host-configs/
         <a href="glossary.html" class="btn btn-neutral float-right" title="Glossary" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="tutorial_update.html" class="btn btn-neutral" title="Node Update Methods" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="blueprint_mesh.html" class="btn btn-neutral" title="mesh" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

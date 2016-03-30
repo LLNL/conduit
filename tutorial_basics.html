@@ -31,9 +31,9 @@
 
   
     <link rel="top" title="Conduit 0.1 documentation" href="index.html"/>
-        <link rel="up" title="Tutorial" href="tutorial.html"/>
+        <link rel="up" title="Conduit" href="conduit.html"/>
         <link rel="next" title="Accessing Numeric Data" href="tutorial_numeric.html"/>
-        <link rel="prev" title="Tutorial" href="tutorial.html"/> 
+        <link rel="prev" title="Conduit" href="conduit.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -84,19 +84,18 @@
             
                 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="user.html">User Documentation</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="tutorial.html">Tutorial</a><ul class="current">
-<li class="toctree-l3 current"><a class="current reference internal" href="">Basic Concepts</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#node-basics"><em>Node</em> basics</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#bitwidth-style-types">Bitwidth Style Types</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#compatible-schemas">Compatible Schemas</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="conduit.html">Conduit</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="conduit.html#tutorial">Tutorial</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="">Basic Concepts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_numeric.html">Accessing Numeric Data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_json.html">Generators</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_ownership.html">Data Ownership</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_update.html">Node Update Methods</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_numeric.html">Accessing Numeric Data</a></li>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_json.html">Generators</a></li>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_ownership.html">Data Ownership</a></li>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_update.html">Node Update Methods</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="blueprint.html">Blueprint</a></li>
 <li class="toctree-l2"><a class="reference internal" href="building.html">Building</a></li>
 <li class="toctree-l2"><a class="reference internal" href="glossary.html">Glossary</a></li>
 <li class="toctree-l2"><a class="reference internal" href="licenses.html">License Info</a></li>
@@ -135,7 +134,7 @@
       
           <li><a href="user.html">User Documentation</a> &raquo;</li>
       
-          <li><a href="tutorial.html">Tutorial</a> &raquo;</li>
+          <li><a href="conduit.html">Conduit</a> &raquo;</li>
       
     <li>Basic Concepts</li>
       <li class="wy-breadcrumbs-aside">
@@ -157,13 +156,13 @@
 <h2><em>Node</em> basics<a class="headerlink" href="#node-basics" title="Permalink to this headline">¶</a></h2>
 <p>The <em>Node</em> class is the primary object in conduit.</p>
 <p>Think of it as a hierarchical variant object.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span>
-  <span class="s">&quot;my&quot;</span><span class="p">:</span> <span class="s">&quot;data&quot;</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;my&quot;</span><span class="p">:</span> <span class="s2">&quot;data&quot;</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <p>The <em>Node</em> class supports hierarchical construction.</p>
-<div class="highlight-python"><div class="highlight"><pre>{
+<div class="highlight-python"><div class="highlight"><pre><span></span>{
   &quot;my&quot;: &quot;data&quot;,
   &quot;a&quot;: 
   {
@@ -180,14 +179,14 @@ total bytes: 15
 <p>Borrowing form JSON (and other similar notations), collections of named nodes are
 called <em>Objects</em> and collections of unnamed nodes are called <em>Lists</em>, all other types
 are leafs that represent concrete data.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span>
-  <span class="s">&quot;object_example&quot;</span><span class="p">:</span> 
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;object_example&quot;</span><span class="p">:</span> 
   <span class="p">{</span>
-    <span class="s">&quot;val1&quot;</span><span class="p">:</span> <span class="s">&quot;data&quot;</span><span class="p">,</span>
-    <span class="s">&quot;val2&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
-    <span class="s">&quot;val3&quot;</span><span class="p">:</span> <span class="mf">3.1415</span>
+    <span class="s2">&quot;val1&quot;</span><span class="p">:</span> <span class="s2">&quot;data&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;val2&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;val3&quot;</span><span class="p">:</span> <span class="mf">3.1415</span>
   <span class="p">},</span>
-  <span class="s">&quot;list_example&quot;</span><span class="p">:</span> 
+  <span class="s2">&quot;list_example&quot;</span><span class="p">:</span> 
   <span class="p">[</span>
     <span class="mi">0</span><span class="p">,</span>
     <span class="mi">1</span><span class="p">,</span>
@@ -199,32 +198,32 @@ are leafs that represent concrete data.</p>
 </pre></div>
 </div>
 <p>Behind the scenes, <em>Node</em> instances manage a collection of memory spaces.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span>
-  <span class="s">&quot;mem_spaces&quot;</span><span class="p">:</span> 
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;mem_spaces&quot;</span><span class="p">:</span> 
   <span class="p">{</span>
-    <span class="s">&quot;0x7fd4cac05590&quot;</span><span class="p">:</span> 
+    <span class="s2">&quot;0x7fd4cac05590&quot;</span><span class="p">:</span> 
     <span class="p">{</span>
-      <span class="s">&quot;path&quot;</span><span class="p">:</span> <span class="s">&quot;my&quot;</span><span class="p">,</span>
-      <span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;alloced&quot;</span><span class="p">,</span>
-      <span class="s">&quot;bytes&quot;</span><span class="p">:</span> <span class="mi">5</span>
+      <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;my&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;alloced&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;bytes&quot;</span><span class="p">:</span> <span class="mi">5</span>
     <span class="p">},</span>
-    <span class="s">&quot;0x7fd4cac05bf0&quot;</span><span class="p">:</span> 
+    <span class="s2">&quot;0x7fd4cac05bf0&quot;</span><span class="p">:</span> 
     <span class="p">{</span>
-      <span class="s">&quot;path&quot;</span><span class="p">:</span> <span class="s">&quot;a/b/c&quot;</span><span class="p">,</span>
-      <span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;alloced&quot;</span><span class="p">,</span>
-      <span class="s">&quot;bytes&quot;</span><span class="p">:</span> <span class="mi">2</span>
+      <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;a/b/c&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;alloced&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;bytes&quot;</span><span class="p">:</span> <span class="mi">2</span>
     <span class="p">},</span>
-    <span class="s">&quot;0x7fd4cac05640&quot;</span><span class="p">:</span> 
+    <span class="s2">&quot;0x7fd4cac05640&quot;</span><span class="p">:</span> 
     <span class="p">{</span>
-      <span class="s">&quot;path&quot;</span><span class="p">:</span> <span class="s">&quot;a/b/e&quot;</span><span class="p">,</span>
-      <span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;alloced&quot;</span><span class="p">,</span>
-      <span class="s">&quot;bytes&quot;</span><span class="p">:</span> <span class="mi">8</span>
+      <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;a/b/e&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;alloced&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;bytes&quot;</span><span class="p">:</span> <span class="mi">8</span>
     <span class="p">}</span>
   <span class="p">},</span>
-  <span class="s">&quot;total_bytes&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span>
-  <span class="s">&quot;total_bytes_compact&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span>
-  <span class="s">&quot;total_bytes_alloced&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span>
-  <span class="s">&quot;total_bytes_mmaped&quot;</span><span class="p">:</span> <span class="mi">0</span>
+  <span class="s2">&quot;total_bytes&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span>
+  <span class="s2">&quot;total_bytes_compact&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span>
+  <span class="s2">&quot;total_bytes_alloced&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span>
+  <span class="s2">&quot;total_bytes_mmaped&quot;</span><span class="p">:</span> <span class="mi">0</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -233,14 +232,14 @@ are leafs that represent concrete data.</p>
 <h2>Bitwidth Style Types<a class="headerlink" href="#bitwidth-style-types" title="Permalink to this headline">¶</a></h2>
 <p>When sharing data in scientific codes, knowing the precision of the underlining types is very important.</p>
 <p>Conduit uses well defined bitwidth style types (inspired by NumPy) for leaf values.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span>
-  <span class="s">&quot;test&quot;</span><span class="p">:</span> <span class="mi">100</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="mi">100</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <p>Standard C++ numeric types will be mapped by the compiler to bitwidth style types.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span>
-  <span class="s">&quot;test&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;dtype&quot;</span><span class="p">:</span><span class="s">&quot;int32&quot;</span><span class="p">,</span> <span class="s">&quot;length&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s">&quot;endianness&quot;</span><span class="p">:</span> <span class="s">&quot;little&quot;</span><span class="p">,</span> <span class="s">&quot;value&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">}</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;dtype&quot;</span><span class="p">:</span><span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="s2">&quot;length&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;endianness&quot;</span><span class="p">:</span> <span class="s2">&quot;little&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -284,7 +283,7 @@ are leafs that represent concrete data.</p>
         <a href="tutorial_numeric.html" class="btn btn-neutral float-right" title="Accessing Numeric Data" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="tutorial.html" class="btn btn-neutral" title="Tutorial" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="conduit.html" class="btn btn-neutral" title="Conduit" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

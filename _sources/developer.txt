@@ -103,7 +103,7 @@ The master Conduit source repository is hosted on LLNL's CZ Stash instance:
 
 https://lc.llnl.gov/stash/projects/CON
 
-We we are using a **Github Flow** model, which is a simpler variant of the confusing similar sounding **Git Flow** model.
+We we are using a **Github Flow** model, which is a simpler variant of the confusingly similar sounding **Git Flow** model.
 
 
 Here are the basics: 

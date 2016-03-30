@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Tutorial &mdash; Conduit 0.1 documentation</title>
+  <title>mcarray &mdash; Conduit 0.1 documentation</title>
   
 
   
@@ -31,9 +31,9 @@
 
   
     <link rel="top" title="Conduit 0.1 documentation" href="index.html"/>
-        <link rel="up" title="User Documentation" href="user.html"/>
-        <link rel="next" title="Basic Concepts" href="tutorial_basics.html"/>
-        <link rel="prev" title="User Documentation" href="user.html"/> 
+        <link rel="up" title="Blueprint" href="blueprint.html"/>
+        <link rel="next" title="mesh" href="blueprint_mesh.html"/>
+        <link rel="prev" title="Blueprint" href="blueprint.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -84,12 +84,14 @@
             
                 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="user.html">User Documentation</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="">Tutorial</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_basics.html">Basic Concepts</a></li>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_numeric.html">Accessing Numeric Data</a></li>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_json.html">Generators</a></li>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_ownership.html">Data Ownership</a></li>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_update.html">Node Update Methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="conduit.html">Conduit</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="blueprint.html">Blueprint</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="">mcarray</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#protocol">Protocol</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#transforms">Transforms</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="blueprint_mesh.html">mesh</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="building.html">Building</a></li>
@@ -130,11 +132,13 @@
       
           <li><a href="user.html">User Documentation</a> &raquo;</li>
       
-    <li>Tutorial</li>
+          <li><a href="blueprint.html">Blueprint</a> &raquo;</li>
+      
+    <li>mcarray</li>
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="_sources/tutorial.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/blueprint_mcarray.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -144,35 +148,13 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="tutorial">
-<h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
-<p>This short tutorial provides C++ examples that demonstrate the Conduit&#8217;s Core
-API. Conduit&#8217;s unit tests (<em>src/tests/{library_name}/</em>) also provide a rich set
-of examples for Conduit&#8217;s Core API and additional libraries.</p>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="tutorial_basics.html">Basic Concepts</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorial_basics.html#node-basics"><em>Node</em> basics</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial_basics.html#bitwidth-style-types">Bitwidth Style Types</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial_basics.html#compatible-schemas">Compatible Schemas</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial_numeric.html">Accessing Numeric Data</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorial_numeric.html#accessing-scalars-and-arrays">Accessing Scalars and Arrays</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial_numeric.html#using-introspection-and-conversion">Using Introspection and Conversion</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial_json.html">Generators</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorial_json.html#using-generator-instances-to-parse-json-schemas">Using <em>Generator</em> instances to parse JSON schemas</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial_json.html#compacting-nodes">Compacting Nodes</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial_ownership.html">Data Ownership</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorial_ownership.html#set-vs-set-external"><em>set</em> vs <em>set_external</em></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial_update.html">Node Update Methods</a></li>
-</ul>
+  <div class="section" id="mcarray">
+<h1>mcarray<a class="headerlink" href="#mcarray" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="protocol">
+<h2>Protocol<a class="headerlink" href="#protocol" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="transforms">
+<h2>Transforms<a class="headerlink" href="#transforms" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
@@ -183,10 +165,10 @@ of examples for Conduit&#8217;s Core API and additional libraries.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="tutorial_basics.html" class="btn btn-neutral float-right" title="Basic Concepts" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="blueprint_mesh.html" class="btn btn-neutral float-right" title="mesh" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="user.html" class="btn btn-neutral" title="User Documentation" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="blueprint.html" class="btn btn-neutral" title="Blueprint" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

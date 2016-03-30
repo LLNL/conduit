@@ -31,7 +31,7 @@
 
   
     <link rel="top" title="Conduit 0.1 documentation" href="index.html"/>
-        <link rel="next" title="Tutorial" href="tutorial.html"/>
+        <link rel="next" title="Conduit" href="conduit.html"/>
         <link rel="prev" title="Introduction" href="index.html"/> 
 
   
@@ -83,7 +83,8 @@
             
                 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="">User Documentation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="conduit.html">Conduit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blueprint.html">Blueprint</a></li>
 <li class="toctree-l2"><a class="reference internal" href="building.html">Building</a></li>
 <li class="toctree-l2"><a class="reference internal" href="glossary.html">Glossary</a></li>
 <li class="toctree-l2"><a class="reference internal" href="licenses.html">License Info</a></li>
@@ -138,28 +139,69 @@
 <h1>User Documentation<a class="headerlink" href="#user-documentation" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorial_basics.html">Basic Concepts</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_basics.html#node-basics"><em>Node</em> basics</a></li>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_basics.html#bitwidth-style-types">Bitwidth Style Types</a></li>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_basics.html#compatible-schemas">Compatible Schemas</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conduit.html">Conduit</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="conduit.html#tutorial">Tutorial</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_basics.html">Basic Concepts</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html#node-basics"><em>Node</em> basics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html#bitwidth-style-types">Bitwidth Style Types</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html#compatible-schemas">Compatible Schemas</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial_numeric.html">Accessing Numeric Data</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_numeric.html#accessing-scalars-and-arrays">Accessing Scalars and Arrays</a></li>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_numeric.html#using-introspection-and-conversion">Using Introspection and Conversion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_numeric.html">Accessing Numeric Data</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_numeric.html#accessing-scalars-and-arrays">Accessing Scalars and Arrays</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_numeric.html#using-introspection-and-conversion">Using Introspection and Conversion</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial_json.html">Generators</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_json.html#using-generator-instances-to-parse-json-schemas">Using <em>Generator</em> instances to parse JSON schemas</a></li>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_json.html#compacting-nodes">Compacting Nodes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_json.html">Generators</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_json.html#using-generator-instances-to-parse-json-schemas">Using <em>Generator</em> instances to parse JSON schemas</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_json.html#compacting-nodes">Compacting Nodes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial_ownership.html">Data Ownership</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_ownership.html#set-vs-set-external"><em>set</em> vs <em>set_external</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_ownership.html">Data Ownership</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_ownership.html#set-vs-set-external"><em>set</em> vs <em>set_external</em></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial_update.html">Node Update Methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_update.html">Node Update Methods</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="blueprint.html">Blueprint</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="blueprint_mcarray.html">mcarray</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="blueprint_mcarray.html#protocol">Protocol</a></li>
+<li class="toctree-l3"><a class="reference internal" href="blueprint_mcarray.html#transforms">Transforms</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="blueprint_mesh.html">mesh</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="blueprint_mesh.html#protocol">Protocol</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="blueprint_mesh.html#coordinates">Coordinates</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="blueprint_mesh.html#coordinate-systems">Coordinate Systems</a></li>
+<li class="toctree-l5"><a class="reference internal" href="blueprint_mesh.html#coordinate-sets">Coordinate Sets</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="blueprint_mesh.html#toplogies">Toplogies</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="blueprint_mesh.html#implicit">Implicit</a></li>
+<li class="toctree-l5"><a class="reference internal" href="blueprint_mesh.html#explicit-unstructured">Explicit (Unstructured)</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="blueprint_mesh.html#single-shape-topology">Single Shape Topology</a></li>
+<li class="toctree-l6"><a class="reference internal" href="blueprint_mesh.html#mixed-shape-toplogies">Mixed Shape Toplogies</a><ul>
+<li class="toctree-l7"><a class="reference internal" href="blueprint_mesh.html#indexed-streams">Indexed Streams</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="blueprint_mesh.html#fields">Fields</a></li>
+<li class="toctree-l4"><a class="reference internal" href="blueprint_mesh.html#state">State</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="blueprint_mesh.html#transforms">Transforms</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="blueprint_mesh.html#id3">Coordinate Sets</a></li>
+<li class="toctree-l4"><a class="reference internal" href="blueprint_mesh.html#id4">Toplogies</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="building.html">Building</a><ul>
@@ -200,7 +242,7 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="tutorial.html" class="btn btn-neutral float-right" title="Tutorial" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="conduit.html" class="btn btn-neutral float-right" title="Conduit" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="index.html" class="btn btn-neutral" title="Introduction" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
