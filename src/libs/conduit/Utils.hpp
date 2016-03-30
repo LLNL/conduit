@@ -292,6 +292,10 @@ namespace utils
      std::string CONDUIT_API json_sanitize(const std::string &json);
      
 //----------------------------------------------------------------------------- 
+    // declare then define to avoid icc warnings
+     template< typename T >
+     std::string to_hex_string(T value);
+
      template< typename T >
      std::string to_hex_string(T value)
      {
