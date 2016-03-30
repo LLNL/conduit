@@ -99,7 +99,7 @@ bool BLUEPRINT_API transform(const std::string &protocol,
                              conduit::Node &dest,
                              conduit::Node &info);
 
-};
+}
 //-----------------------------------------------------------------------------
 // -- end blueprint:: --
 //-----------------------------------------------------------------------------
