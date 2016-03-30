@@ -78,9 +78,6 @@ namespace mca
 bool BLUEPRINT_API verify(conduit::Node &n,
                           conduit::Node &info);
 
-//-----------------------------------------------------------------------------
-bool BLUEPRINT_API annotate(conduit::Node &n,
-                            conduit::Node &info);
 
 //-----------------------------------------------------------------------------
 bool BLUEPRINT_API transform(conduit::Node &src,

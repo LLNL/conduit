@@ -109,28 +109,6 @@ verify(const std::string &protocol,
     return res;
 }
 
-//---------------------------------------------------------------------------//
-bool
-annotate(const std::string &protocol,
-         Node &n,
-         Node &info)
-{
-    bool res = false;
-    info.reset();
-
-    if(protocol == "mesh")
-    {
-        res = mesh::annotate(n,info);
-    }
-    else if(protocol == "mca")
-    {
-        res = mca::annotate(n,info);
-    }
-    
-    return res;
-}
-
-
 
 //---------------------------------------------------------------------------//
 bool

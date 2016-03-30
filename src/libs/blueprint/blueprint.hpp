@@ -88,11 +88,6 @@ bool BLUEPRINT_API verify(const std::string &protocol,
                           conduit::Node &info);
 
 //-----------------------------------------------------------------------------
-bool BLUEPRINT_API annotate(const std::string &protocol,
-                            conduit::Node &n,
-                            conduit::Node &info);
-
-//-----------------------------------------------------------------------------
 bool BLUEPRINT_API transform(const std::string &protocol,
                              conduit::Node &src,
                              conduit::Node &actions,

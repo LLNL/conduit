@@ -78,16 +78,12 @@ namespace mesh
 bool BLUEPRINT_API verify(conduit::Node &n,
                           conduit::Node &info);
 
-//-----------------------------------------------------------------------------
-bool BLUEPRINT_API annotate(conduit::Node &n,
-                            conduit::Node &info);
 
 //-----------------------------------------------------------------------------
 bool BLUEPRINT_API transform(conduit::Node &src,
                              conduit::Node &actions,
                              conduit::Node &dest,
                              conduit::Node &info);
-
 
 //-----------------------------------------------------------------------------
 // mesh blueprint methods
