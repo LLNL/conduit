@@ -44,76 +44,116 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_io_rest.cpp
+/// file: t_relay_websocket.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit_relay.hpp"
+#include "relay.hpp"
 #include <iostream>
 #include "gtest/gtest.h"
 
 #include "t_config.hpp"
 
 using namespace conduit;
+using namespace conduit::utils;
 using namespace conduit::relay;
+
 
 bool launch_server = false;
 bool use_ssl       = false;
 bool use_auth      = false;
 
-TEST(conduit_io_rest, rest_server)
+TEST(conduit_io_websocket, websocket_test)
 {
-    uint32 a_val = 20;
-    uint32 b_val = 8;
-    uint32 c_val = 13;
+    if(! launch_server)
+    {
+        return;
+    }
 
-    Node *n = new Node();
-    n->fetch("a") = a_val;
-    n->fetch("b") = b_val;
-    n->fetch("c") = c_val;
+    // read png data into a string.
+    std::string wsock_path = utils::join_file_path(CONDUIT_RELAY_WEB_CLIENT_ROOT,
+                                                   "wsock_test");
 
-    EXPECT_EQ(n->fetch("a").as_uint32(), a_val);
-    EXPECT_EQ(n->fetch("b").as_uint32(), b_val);
-    EXPECT_EQ(n->fetch("c").as_uint32(), c_val);
+    std::string example_png_path = utils::join_file_path(wsock_path,
+                                                         "example.png");
+
+    CONDUIT_INFO("Reading Example PNG file:" << example_png_path);
+    std::ifstream file(example_png_path.c_str(),
+                       std::ios::binary);
+
+    // find out how big the png file is
+    file.seekg(0, std::ios::end);
+    std::streamsize png_raw_bytes = file.tellg();
+    file.seekg(0, std::ios::beg);
     
-    if(launch_server)
+    // use a node to hold the buffers for raw and base64 encoded png data
+    Node png_data;
+    png_data["raw"].set(DataType::c_char(png_raw_bytes));
+    char *png_raw_ptr = png_data["raw"].value();
+    
+    // read in the raw png data
+    if(!file.read(png_raw_ptr, png_raw_bytes))
     {
-        
-        std::string cert_file   = std::string("");
-        std::string auth_domain = std::string("");
-        std::string auth_file   = std::string("");
+        // ERROR!
+        CONDUIT_ERROR("Failed to read PNG file:" << example_png_path);
+    }
+
+    // base64 encode the raw png data
+    png_data["encoded"].set(DataType::char8_str(png_raw_bytes*2));
+    
+    utils::base64_encode(png_raw_ptr,
+                         png_raw_bytes,
+                         png_data["encoded"].data_ptr());
+
+    // create the message we want to send.
+    Node msg;
+    msg["type"] = "image";
+    // the goal is to drop this directly into a <img> element in our web client
+    msg["data"] = "data:image/png;base64," + png_data["encoded"].as_string();
+    // we will update the count with every send
+    msg["count"] = 0;
+    
+    msg.to_json_stream("test.json","json");
+    
+    web::WebServer svr;
+    // start our server
+    
+    std::string cert_file   = std::string("");
+    std::string auth_domain = std::string("");
+    std::string auth_file   = std::string("");
                   
-        if(use_ssl)
-        {
-            cert_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"conduit_io");
-            cert_file = utils::join_file_path(cert_file,"t_ssl_cert.pem");
-        }
-
-        if(use_auth)
-        {
-            auth_domain = "test";
-            auth_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"conduit_io");
-            auth_file = utils::join_file_path(auth_file,"t_htpasswd.txt");
-        }
-        
-
-        web::WebServer *svr = web::VisualizerServer::serve(n,
-                                                           true,
-                                                           8080,
-                                                           cert_file,
-                                                           auth_domain,
-                                                           auth_file);
-        delete svr;
-    }
-    else
+    if(use_ssl)
     {
-        std::cout << "provide \"launch\" as a command line arg "
-                  << "to launch a conduit::Node REST test server at "
-                  << "http://localhost:8080" << std::endl;
+        cert_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"conduit_io");
+        cert_file = utils::join_file_path(cert_file,"t_ssl_cert.pem");
     }
 
-    delete n;
+    if(use_auth)
+    {
+        auth_domain = "test";
+        auth_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"conduit_io");
+        auth_file = utils::join_file_path(auth_file,"t_htpasswd.txt");
+    }
+
+    svr.serve(wsock_path,
+              8081,
+              cert_file,
+              auth_domain,
+              auth_file);
+
+    while(svr.is_running()) 
+    {
+        utils::sleep(1000);
+        
+        // websocket() returns the first active websocket
+        svr.websocket()->send(msg);
+        // or with a very short timeout
+        //svr.websocket(10,100)->send(msg);
+        
+        msg["count"] = msg["count"].to_int64() + 1;
+    }
 }
+
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
@@ -141,6 +181,7 @@ int main(int argc, char* argv[])
             // the user name and password for this example are both "test"
             use_auth = true;
         }
+        
     }
 
     result = RUN_ALL_TESTS();

@@ -44,11 +44,11 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_mpi_test.cpp
+/// file: t_relay_mpi_test.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit_mpi.hpp"
+#include "relay_mpi.hpp"
 #include <iostream>
 #include "gtest/gtest.h"
 

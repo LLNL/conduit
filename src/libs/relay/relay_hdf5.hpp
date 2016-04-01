@@ -44,31 +44,22 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_io.hpp
+/// file: relay_hdf5.hpp
 ///
 //-----------------------------------------------------------------------------
 
-
-#ifndef CONDUIT_IO_HPP
-#define CONDUIT_IO_HPP
+#ifndef CONDUIT_RELAY_HDF5_HPP
+#define CONDUIT_RELAY_HDF5_HPP
 
 //-----------------------------------------------------------------------------
-// conduit lib include 
+// external lib includes
 //-----------------------------------------------------------------------------
-#include "conduit.hpp"
-#include "conduit_relay_exports.hpp"
-#include "conduit_relay_config.hpp"
+#include <hdf5.h>
 
-// include optional libs
-
-#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-#include "conduit_hdf5.hpp"
-#endif
-
-// include optional libs
-#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
-#include "conduit_silo.hpp"
-#endif
+//-----------------------------------------------------------------------------
+// conduit includes
+//-----------------------------------------------------------------------------
+#include "relay_io.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -88,84 +79,29 @@ namespace relay
 namespace io
 {
 
-///
-/// ``save`` works like a 'set' to the file.
-///
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API hdf5_write(const Node &node,
+                                  const std::string &path);
+
+void CONDUIT_RELAY_API hdf5_write(const Node &node,
+                                  const std::string &file_path,
+                                  const std::string &hdf5_path);
+
+void CONDUIT_RELAY_API hdf5_write(const Node &node,
+                                  hid_t hdf5_id,
+                                  const std::string &hdf5_path);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(Node &node,
-                            const std::string &path);
+void CONDUIT_RELAY_API hdf5_read(const std::string &path,
+                                 Node &node);
 
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const std::string &protocol,
-                            Node &node,
-                            const std::string &path);
+void CONDUIT_RELAY_API hdf5_read(const std::string &file_path,
+                                 const std::string &hdf5_path,
+                                 Node &node);
 
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const std::string &protocol,
-                            Node &node,
-                            const std::string &file_path,
-                            const std::string &protocol_path);
-
-///
-/// ``save_merged`` works like an update to the file.
-///
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save_merged(Node &node,
-                                   const std::string &path);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save_merged(const std::string &protocol,
-                                   Node &node,
-                                   const std::string &path);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save_merged(const std::string &protocol,
-                                   Node &node,
-                                   const std::string &file_path,
-                                   const std::string &protocol_path);
-
-///
-/// ``load`` works like a 'set', the node is reset and then populated
-///
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load(const std::string &path,
-                            Node &node);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load(const std::string &protocol,
-                            const std::string &path,
-                            Node &node);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load(const std::string &protocol,
-                            const std::string &file_path,
-                            const std::string &protocol_path,
-                            Node &node);
-
-
-///
-/// ``load_merged`` works like an update, for the object case, entries are read
-///  into the node. If the node is already in the OBJECT_T role, children are 
-///  added
-///
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load_merged(const std::string &path,
-                                   Node &node);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load_merged(const std::string &protocol,
-                                   const std::string &path,
-                                   Node &node);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load_merged(const std::string &protocol,
-                                   const std::string &file_path,
-                                   const std::string &protocol_path,
-                                   Node &node);
+void CONDUIT_RELAY_API hdf5_read(hid_t hdf5_id,
+                                 const std::string &hdf5_path,
+                                 Node &node);
 
 
 }
@@ -177,7 +113,6 @@ void CONDUIT_RELAY_API load_merged(const std::string &protocol,
 //-----------------------------------------------------------------------------
 // -- end conduit::relay --
 //-----------------------------------------------------------------------------
-
 
 }
 //-----------------------------------------------------------------------------

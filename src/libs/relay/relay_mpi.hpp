@@ -44,13 +44,13 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_mpi.hpp
+/// file: relay_mpi.hpp
 ///
 //-----------------------------------------------------------------------------
 
 
-#ifndef CONDUIT_MPI_HPP
-#define CONDUIT_MPI_HPP
+#ifndef CONDUIT_RELAY_MPI_HPP
+#define CONDUIT_RELAY_MPI_HPP
 
 //-----------------------------------------------------------------------------
 // external lib includes
@@ -61,7 +61,7 @@
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-#include "Conduit_Relay_Exports.hpp"
+#include "relay_exports.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --

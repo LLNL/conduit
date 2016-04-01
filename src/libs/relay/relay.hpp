@@ -44,16 +44,26 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay.cpp
+/// file: relay.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit_relay.hpp"
+
+#ifndef CONDUIT_RELAY_HPP
+#define CONDUIT_RELAY_HPP
 
 //-----------------------------------------------------------------------------
-// standard lib includes
+// conduit lib include 
 //-----------------------------------------------------------------------------
-#include <iostream>
+#include "conduit.hpp"
+
+#include "relay_exports.hpp"
+#include "relay_config.hpp"
+
+#include "relay_io.hpp"
+#include "relay_web.hpp"
+#include "relay_web_visualizer.hpp"
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -67,62 +77,12 @@ namespace conduit
 namespace relay
 {
 
-
-//---------------------------------------------------------------------------//
-std::string
-about()
-{
-    Node n;
-    relay::about(n);
-    return n.to_json();
-}
-
-//---------------------------------------------------------------------------//
-void
-about(Node &n)
-{
-    n.reset();
-
-    n["web"] = "enabled";
-    Node &io_protos = n["io/protocols"];
-
-    // standard binary io
-    io_protos["conduit_bin"] = "enabled";
-
-#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-    // straight hdf5 
-    io_protos["hdf5"] = "enabled";
-#else
-    // straight hdf5 
-    io_protos["hdf5"] = "disabled";
-#endif
-    
-    // silo
-#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
-    // node is packed into two silo objects
-    io_protos["conduit_silo"] = "enabled";
-#else
-    // node is packed into two silo objects
-    io_protos["conduit_silo"] = "disabled";
-#endif
-    
-    // silo mesh aware
-#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
-    io_protos["conduit_silo_mesh"] = "enabled";
-#else
-    io_protos["conduit_silo_mesh"] = "disabled";
-#endif
-
-
-#ifdef CONDUIT_RELAY_MPI_ENABLED
-    n["mpi"] = "enabled";
-#else
-    n["mpi"] = "disabled";
-#endif
-
-
-}
-
+//-----------------------------------------------------------------------------
+/// The about methods construct human readable info about how relay was
+/// configured.
+//-----------------------------------------------------------------------------
+std::string CONDUIT_RELAY_API about();
+void        CONDUIT_RELAY_API about(conduit::Node &res);
 
 }
 //-----------------------------------------------------------------------------
@@ -135,4 +95,7 @@ about(Node &n)
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
 
+
+
+#endif
 

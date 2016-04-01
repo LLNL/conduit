@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_web_visualizer.cpp
+/// file: relay_web_visualizer.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -62,9 +62,9 @@
 //-----------------------------------------------------------------------------
 // conduit includes
 //-----------------------------------------------------------------------------
-#include "conduit_web.hpp"
-#include "conduit_web_visualizer.hpp"
-#include "Conduit_relay_config.hpp"
+#include "relay_web.hpp"
+#include "relay_web_visualizer.hpp"
+#include "relay_config.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --

@@ -50,7 +50,7 @@
 
 #include "conduit.hpp"
 #include "blueprint.hpp"
-#include "conduit_io.hpp"
+#include "relay.hpp"
 
 #include <iostream>
 #include "gtest/gtest.h"

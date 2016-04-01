@@ -67,37 +67,37 @@ endif()
 
 set(CONDUIT_RELAY_WEB_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/web_clients)
 
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_relay_config.hpp.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_config.hpp")
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/relay_config.hpp.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/relay_config.hpp")
 
 #
 # Specify all headers
 #            
 set(conduit_relay_headers 
-    conduit_relay.hpp
-    conduit_io.hpp
-    conduit_web.hpp
-    conduit_web_visualizer.hpp
-    conduit_relay_exports.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_config.hpp)
+    relay.hpp
+    relay_io.hpp
+    relay_web.hpp
+    relay_web_visualizer.hpp
+    relay_exports.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/relay_config.hpp)
 
 #
 # Specify all sources
 #
 set(conduit_relay_sources 
-    conduit_relay.cpp
-    conduit_io.cpp
-    conduit_web.cpp
-    conduit_web_visualizer.cpp)
+    relay.cpp
+    relay_io.cpp
+    relay_web.cpp
+    relay_web_visualizer.cpp)
     
 if(HDF5_FOUND)
-    list(APPEND conduit_relay_headers conduit_hdf5.hpp)
-    list(APPEND conduit_relay_sources conduit_hdf5.cpp)
+    list(APPEND conduit_relay_headers relay_hdf5.hpp)
+    list(APPEND conduit_relay_sources relay_hdf5.cpp)
 endif()
     
 if(SILO_FOUND)
-    list(APPEND conduit_relay_headers conduit_silo.hpp)
-    list(APPEND conduit_relay_sources conduit_silo.cpp)
+    list(APPEND conduit_relay_headers relay_silo.hpp)
+    list(APPEND conduit_relay_sources relay_silo.cpp)
 endif()
 
 #
@@ -150,13 +150,13 @@ if(MPI_FOUND)
 # Specify relay mpi headers
 #            
 set(conduit_relay_mpi_headers 
-    conduit_mpi.hpp
-    conduit_relay_exports.hpp)
+    relay_mpi.hpp
+    relay_exports.hpp)
 
 #
 # Specify relay mpi sources
 #
-set(conduit_relay_mpi_sources conduit_mpi.cpp)
+set(conduit_relay_mpi_sources relay_mpi.cpp)
 
 include_directories(${MPI_CXX_INCLUDE_PATH})
 

@@ -44,39 +44,65 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Conduit_Relay_Exports.hpp
+/// file: t_relay_io_silo.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_RELAY_EXPORTS_HPP
-#define CONDUIT_RELAY_EXPORTS_HPP
+#include "relay.hpp"
+#include <iostream>
+#include "gtest/gtest.h"
 
-//-----------------------------------------------------------------------------
-// -- define proper lib exports for various platforms -- 
-//-----------------------------------------------------------------------------
-#if defined(_WIN32)
-#if defined(CONDUIT_RELAY_EXPORTS) || defined(conduit_relay_EXPORTS) || defined(CONDUIT_RELAY_MPI_EXPORTS) || defined(conduit_relay_mpi_EXPORTS)
-#define CONDUIT_RELAY_API __declspec(dllexport)
-#else
-#define CONDUIT_RELAY_API __declspec(dllimport)
-#endif
-#if defined(_MSC_VER)
-// Turn off warning about lack of DLL interface
-#pragma warning(disable:4251)
-// Turn off warning non-dll class is base for dll-interface class.
-#pragma warning(disable:4275)
-// Turn off warning about identifier truncation
-#pragma warning(disable:4786)
-#endif
-#else
-# if __GNUC__ >= 4 && ( defined(CONDUIT_RELAY_EXPORTS) || defined(conduit_relay_EXPORTS) || defined(CONDUIT_RELAY_MPI_EXPORTS) || defined(conduit_relay_mpi_EXPORTS))
-#   define CONDUIT_RELAY_API __attribute__ ((visibility("default")))
-# else
-#   define CONDUIT_RELAY_API /* hidden by default */
-# endif
-#endif
-
-#endif
+using namespace conduit;
+using namespace conduit::relay;
 
 
+TEST(conduit_io_silo, conduit_silo_cold_storage)
+{
+    uint32 a_val = 20;
+    uint32 b_val = 8;
+    uint32 c_val = 13;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+
+    EXPECT_EQ(n["a"].as_uint32(), a_val);
+    EXPECT_EQ(n["b"].as_uint32(), b_val);
+    EXPECT_EQ(n["c"].as_uint32(), c_val);
+
+    io::silo_write(n,"tout_cold_storage_test.silo:myobj");
+
+    Node n_load;
+    io::silo_read("tout_cold_storage_test.silo:myobj",n_load);
+    
+    EXPECT_EQ(n_load["a"].as_uint32(), a_val);
+    EXPECT_EQ(n_load["b"].as_uint32(), b_val);
+    EXPECT_EQ(n_load["c"].as_uint32(), c_val);
+}
+
+TEST(conduit_io_silo, conduit_silo_cold_storage_generic_iface)
+{
+    uint32 a_val = 20;
+    uint32 b_val = 8;
+    uint32 c_val = 13;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+
+    EXPECT_EQ(n["a"].as_uint32(), a_val);
+    EXPECT_EQ(n["b"].as_uint32(), b_val);
+    EXPECT_EQ(n["c"].as_uint32(), c_val);
+
+    io::save(n, "tout_cold_storage_test_generic_iface.silo:myobj");
+
+    Node n_load;
+    io::load("tout_cold_storage_test_generic_iface.silo:myobj",n_load);
+    
+    EXPECT_EQ(n_load["a"].as_uint32(), a_val);
+    EXPECT_EQ(n_load["b"].as_uint32(), b_val);
+    EXPECT_EQ(n_load["c"].as_uint32(), c_val);
+}
 

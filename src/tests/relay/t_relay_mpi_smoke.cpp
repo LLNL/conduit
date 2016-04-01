@@ -44,65 +44,33 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_io_silo.cpp
+/// file: t_relay_mpi_smoke.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit_io.hpp"
+#include "relay_mpi.hpp"
 #include <iostream>
 #include "gtest/gtest.h"
 
 using namespace conduit;
 using namespace conduit::relay;
 
-
-TEST(conduit_io_silo, conduit_silo_cold_storage)
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_smoke, about)
 {
-    uint32 a_val = 20;
-    uint32 b_val = 8;
-    uint32 c_val = 13;
-
-    Node n;
-    n["a"] = a_val;
-    n["b"] = b_val;
-    n["c"] = c_val;
-
-    EXPECT_EQ(n["a"].as_uint32(), a_val);
-    EXPECT_EQ(n["b"].as_uint32(), b_val);
-    EXPECT_EQ(n["c"].as_uint32(), c_val);
-
-    io::silo_write(n,"tout_cold_storage_test.silo:myobj");
-
-    Node n_load;
-    io::silo_read("tout_cold_storage_test.silo:myobj",n_load);
-    
-    EXPECT_EQ(n_load["a"].as_uint32(), a_val);
-    EXPECT_EQ(n_load["b"].as_uint32(), b_val);
-    EXPECT_EQ(n_load["c"].as_uint32(), c_val);
+    std::cout << mpi::about() << std::endl;
 }
 
-TEST(conduit_io_silo, conduit_silo_cold_storage_generic_iface)
+//-----------------------------------------------------------------------------
+int main(int argc, char* argv[])
 {
-    uint32 a_val = 20;
-    uint32 b_val = 8;
-    uint32 c_val = 13;
+    int result = 0;
 
-    Node n;
-    n["a"] = a_val;
-    n["b"] = b_val;
-    n["c"] = c_val;
+    ::testing::InitGoogleTest(&argc, argv);
+    MPI_Init(&argc, &argv);
+    result = RUN_ALL_TESTS();
+    MPI_Finalize();
 
-    EXPECT_EQ(n["a"].as_uint32(), a_val);
-    EXPECT_EQ(n["b"].as_uint32(), b_val);
-    EXPECT_EQ(n["c"].as_uint32(), c_val);
-
-    io::save(n, "tout_cold_storage_test_generic_iface.silo:myobj");
-
-    Node n_load;
-    io::load("tout_cold_storage_test_generic_iface.silo:myobj",n_load);
-    
-    EXPECT_EQ(n_load["a"].as_uint32(), a_val);
-    EXPECT_EQ(n_load["b"].as_uint32(), b_val);
-    EXPECT_EQ(n_load["c"].as_uint32(), c_val);
+    return result;
 }
 

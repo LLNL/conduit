@@ -44,40 +44,95 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_io_smoke.cpp
+/// file: relay.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit_relay.hpp"
+#include "relay.hpp"
+
+//-----------------------------------------------------------------------------
+// standard lib includes
+//-----------------------------------------------------------------------------
 #include <iostream>
-#include "gtest/gtest.h"
 
-using namespace conduit;
-using namespace conduit::relay;
-
-
-
-TEST(conduit_io_smoke, basic_bin)
+//-----------------------------------------------------------------------------
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
+namespace conduit
 {
-    uint32 a_val = 20;
-    uint32 b_val = 8;
-    uint32 c_val = 13;
 
+//-----------------------------------------------------------------------------
+// -- begin conduit::relay --
+//-----------------------------------------------------------------------------
+namespace relay
+{
+
+
+//---------------------------------------------------------------------------//
+std::string
+about()
+{
     Node n;
-    n["a"] = a_val;
-    n["b"] = b_val;
-    n["c"] = c_val;
-
-    EXPECT_EQ(n["a"].as_uint32(), a_val);
-    EXPECT_EQ(n["b"].as_uint32(), b_val);
-    EXPECT_EQ(n["c"].as_uint32(), c_val);
-
-    io::save(n, "test_conduit_io_dump");
-
-    Node n_load;
-    io::load("test_conduit_io_dump",n_load);
-    
-    EXPECT_EQ(n_load["a"].as_uint32(), a_val);
-    EXPECT_EQ(n_load["b"].as_uint32(), b_val);
-    EXPECT_EQ(n_load["c"].as_uint32(), c_val);
+    relay::about(n);
+    return n.to_json();
 }
+
+//---------------------------------------------------------------------------//
+void
+about(Node &n)
+{
+    n.reset();
+
+    n["web"] = "enabled";
+    Node &io_protos = n["io/protocols"];
+
+    // standard binary io
+    io_protos["conduit_bin"] = "enabled";
+
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+    // straight hdf5 
+    io_protos["hdf5"] = "enabled";
+#else
+    // straight hdf5 
+    io_protos["hdf5"] = "disabled";
+#endif
+    
+    // silo
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
+    // node is packed into two silo objects
+    io_protos["conduit_silo"] = "enabled";
+#else
+    // node is packed into two silo objects
+    io_protos["conduit_silo"] = "disabled";
+#endif
+    
+    // silo mesh aware
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
+    io_protos["conduit_silo_mesh"] = "enabled";
+#else
+    io_protos["conduit_silo_mesh"] = "disabled";
+#endif
+
+
+#ifdef CONDUIT_RELAY_MPI_ENABLED
+    n["mpi"] = "enabled";
+#else
+    n["mpi"] = "disabled";
+#endif
+
+
+}
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::relay --
+//-----------------------------------------------------------------------------
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit:: --
+//-----------------------------------------------------------------------------
+
+
