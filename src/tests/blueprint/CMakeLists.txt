@@ -51,7 +51,7 @@
 ################################
 set(BLUEPRINT_TESTS t_blueprint_smoke 
                     t_blueprint_mesh_examples
-                    t_blueprint_mca_examples)
+                    t_blueprint_mcarray_examples)
 
 
 ################################
@@ -60,7 +60,7 @@ set(BLUEPRINT_TESTS t_blueprint_smoke
 
 message(STATUS "Adding blueprint lib unit tests")
 foreach(TEST ${BLUEPRINT_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit blueprint conduit_relay)
+    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_blueprint conduit_relay)
 endforeach()
 
 

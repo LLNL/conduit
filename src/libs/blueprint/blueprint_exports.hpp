@@ -55,7 +55,7 @@
 // -- define proper lib exports for various platforms -- 
 //-----------------------------------------------------------------------------
 #if defined(_WIN32)
-#if defined(BLUEPRINT_EXPORTS) || defined(blueprint_EXPORTS)
+#if defined(CONDUIT_BLUEPRINT_EXPORTS) || defined(conduit_blueprint_EXPORTS)
 #define BLUEPRINT_API __declspec(dllexport)
 #else
 #define BLUEPRINT_API __declspec(dllimport)
@@ -69,7 +69,7 @@
 #pragma warning(disable:4786)
 #endif
 #else
-# if __GNUC__ >= 4 && (defined(BLUEPRINT_EXPORTS) || defined(blueprint__EXPORTS))
+# if __GNUC__ >= 4 && (defined(CONDUIT_BLUEPRINT_EXPORTS) || defined(conduit_blueprint_EXPORTS))
 #   define BLUEPRINT_API __attribute__ ((visibility("default")))
 # else
 #   define BLUEPRINT_API /* hidden by default */

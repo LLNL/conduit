@@ -57,9 +57,8 @@
 
 using namespace conduit;
 
-
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mca_examples, verify_mca)
+TEST(conduit_blueprint_mcarray_examples, verify_mcarray)
 {
     ///
     /// cases we expect to fail
@@ -70,13 +69,13 @@ TEST(conduit_blueprint_mca_examples, verify_mca)
     n["here/there"]     = 10;
     n["here/everywhere"] = 10;
     
-    EXPECT_FALSE(blueprint::mca::verify_mca(n));
+    EXPECT_FALSE(blueprint::mcarray::verify_mcarray(n));
 
     n.reset();
     n["x"].set(DataType::float64(10));
     n["y"].set(DataType::float64(5));
     
-    EXPECT_FALSE(blueprint::mca::verify_mca(n));
+    EXPECT_FALSE(blueprint::mcarray::verify_mcarray(n));
 
     ///
     /// cases we expect to work
@@ -84,30 +83,30 @@ TEST(conduit_blueprint_mca_examples, verify_mca)
     
     n.reset();
     n["x"].set(DataType::float64(10));
-    EXPECT_TRUE(blueprint::mca::verify_mca(n));
+    EXPECT_TRUE(blueprint::mcarray::verify_mcarray(n));
 
     n["y"].set(DataType::float64(10));
-    EXPECT_TRUE(blueprint::mca::verify_mca(n));
+    EXPECT_TRUE(blueprint::mcarray::verify_mcarray(n));
     
-    blueprint::mca::examples::xyz("separate",
+    blueprint::mcarray::examples::xyz("separate",
                                   5,
                                   n);
-    EXPECT_TRUE(blueprint::mca::verify_mca(n));
+    EXPECT_TRUE(blueprint::mcarray::verify_mcarray(n));
 
-    blueprint::mca::examples::xyz("interleaved",
+    blueprint::mcarray::examples::xyz("interleaved",
                                   5,
                                   n);
-    EXPECT_TRUE(blueprint::mca::verify_mca(n));
+    EXPECT_TRUE(blueprint::mcarray::verify_mcarray(n));
 
-    blueprint::mca::examples::xyz("contiguous",
+    blueprint::mcarray::examples::xyz("contiguous",
                                   5,
                                   n);
-    EXPECT_TRUE(blueprint::mca::verify_mca(n));
+    EXPECT_TRUE(blueprint::mcarray::verify_mcarray(n));
 
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mca_examples, verify_mca_generic)
+TEST(conduit_blueprint_mcarray_examples, verify_mcarray_generic)
 {
     ///
     /// cases we expect to fail
@@ -118,13 +117,13 @@ TEST(conduit_blueprint_mca_examples, verify_mca_generic)
     n["here/there"]     = 10;
     n["here/everywhere"] = 10;
     
-    EXPECT_FALSE(blueprint::verify("mca",n,info));
+    EXPECT_FALSE(blueprint::verify("mcarray",n,info));
 
     n.reset();
     n["x"].set(DataType::float64(10));
     n["y"].set(DataType::float64(5));
     
-    EXPECT_FALSE(blueprint::verify("mca",n,info));
+    EXPECT_FALSE(blueprint::verify("mcarray",n,info));
 
     ///
     /// cases we expect to work
@@ -132,36 +131,36 @@ TEST(conduit_blueprint_mca_examples, verify_mca_generic)
     
     n.reset();
     n["x"].set(DataType::float64(10));
-    EXPECT_TRUE(blueprint::verify("mca",n,info));
+    EXPECT_TRUE(blueprint::verify("mcarray",n,info));
 
     n["y"].set(DataType::float64(10));
-    EXPECT_TRUE(blueprint::verify("mca",n,info));
+    EXPECT_TRUE(blueprint::verify("mcarray",n,info));
     
-    blueprint::mca::examples::xyz("separate",
+    blueprint::mcarray::examples::xyz("separate",
                                   5,
                                   n);
-    EXPECT_TRUE(blueprint::verify("mca",n,info));
+    EXPECT_TRUE(blueprint::verify("mcarray",n,info));
 
-    blueprint::mca::examples::xyz("interleaved",
+    blueprint::mcarray::examples::xyz("interleaved",
                                   5,
                                   n);
-    EXPECT_TRUE(blueprint::verify("mca",n,info));
+    EXPECT_TRUE(blueprint::verify("mcarray",n,info));
 
-    blueprint::mca::examples::xyz("contiguous",
+    blueprint::mcarray::examples::xyz("contiguous",
                                   5,
                                   n);
-    EXPECT_TRUE(blueprint::verify("mca",n,info));
+    EXPECT_TRUE(blueprint::verify("mcarray",n,info));
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mca_examples, mca_test_to_contig)
+TEST(conduit_blueprint_mcarray_examples, mcarray_test_to_contig)
 {
     
     Node n;
 
     index_t nvals = 5; // Number of "tuples"
     
-    blueprint::mca::examples::xyz("separate",
+    blueprint::mcarray::examples::xyz("separate",
                                   nvals,
                                   n);
     
@@ -174,7 +173,7 @@ TEST(conduit_blueprint_mca_examples, mca_test_to_contig)
     EXPECT_EQ(n_info["mem_spaces"].number_of_children(),3);
     
     Node n_out;
-    blueprint::mca::to_contiguous(n,n_out);
+    blueprint::mcarray::to_contiguous(n,n_out);
     n_out.print();
     n_out.info().print();
     
@@ -182,8 +181,8 @@ TEST(conduit_blueprint_mca_examples, mca_test_to_contig)
     
     EXPECT_EQ(n_info["mem_spaces"].number_of_children(),1);
     
-    EXPECT_TRUE(blueprint::mca::is_contiguous(n_out));
-    EXPECT_FALSE(blueprint::mca::is_interleaved(n_out));    
+    EXPECT_TRUE(blueprint::mcarray::is_contiguous(n_out));
+    EXPECT_FALSE(blueprint::mcarray::is_interleaved(n_out));    
     Node n_test;
     n_test.set_external((float64*)n_out.data_ptr(),15);
     n_test.print();
@@ -207,13 +206,13 @@ TEST(conduit_blueprint_mca_examples, mca_test_to_contig)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mca_examples, mca_test_to_interleaved)
+TEST(conduit_blueprint_mcarray_examples, mcarray_test_to_interleaved)
 {
     
     Node n;
     
     index_t nvals = 5; // Number of "tuples"
-    blueprint::mca::examples::xyz("separate",
+    blueprint::mcarray::examples::xyz("separate",
                                   nvals,
                                   n);
     
@@ -226,7 +225,7 @@ TEST(conduit_blueprint_mca_examples, mca_test_to_interleaved)
     EXPECT_EQ(n_info["mem_spaces"].number_of_children(),3);
     
     Node n_out;
-    blueprint::mca::to_interleaved(n,n_out);
+    blueprint::mcarray::to_interleaved(n,n_out);
     n_out.print();
     n_out.info().print();
     
@@ -234,8 +233,8 @@ TEST(conduit_blueprint_mca_examples, mca_test_to_interleaved)
     
     EXPECT_EQ(n_info["mem_spaces"].number_of_children(),1);
     
-    EXPECT_FALSE(blueprint::mca::is_contiguous(n_out));
-    EXPECT_TRUE(blueprint::mca::is_interleaved(n_out));    
+    EXPECT_FALSE(blueprint::mcarray::is_contiguous(n_out));
+    EXPECT_TRUE(blueprint::mcarray::is_interleaved(n_out));    
     
     Node n_test;
     n_test.set_external((float64*)n_out.data_ptr(),15);
@@ -253,7 +252,7 @@ TEST(conduit_blueprint_mca_examples, mca_test_to_interleaved)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mca_examples, mca_aos_to_contigious)
+TEST(conduit_blueprint_mcarray_examples, mcarray_aos_to_contigious)
 {
     struct uvw
     {
@@ -283,7 +282,7 @@ TEST(conduit_blueprint_mca_examples, mca_aos_to_contigious)
     n.print();
     
     Node n_out;
-    blueprint::mca::to_contiguous(n,n_out);
+    blueprint::mcarray::to_contiguous(n,n_out);
     n_out.print();
     
     Node n_test;
@@ -309,7 +308,7 @@ TEST(conduit_blueprint_mca_examples, mca_aos_to_contigious)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mca_examples, mca_soa_to_interleaved)
+TEST(conduit_blueprint_mcarray_examples, mcarray_soa_to_interleaved)
 {
 
     struct uvw
@@ -337,7 +336,7 @@ TEST(conduit_blueprint_mca_examples, mca_soa_to_interleaved)
     n.print();
     
     Node n_out;
-    blueprint::mca::to_interleaved(n,n_out);
+    blueprint::mcarray::to_interleaved(n,n_out);
     n_out.print();
     
     Node n_test;
@@ -357,34 +356,34 @@ TEST(conduit_blueprint_mca_examples, mca_soa_to_interleaved)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mca_examples, mca_xyz_contiguous_mixed_types)
+TEST(conduit_blueprint_mcarray_examples, mcarray_xyz_contiguous_mixed_types)
 {
     Node n;
-    blueprint::mca::examples::xyz("interleaved_mixed",
+    blueprint::mcarray::examples::xyz("interleaved_mixed",
                                   10,
                                   n);
-    EXPECT_TRUE(blueprint::mca::is_interleaved(n));    
-    EXPECT_FALSE(blueprint::mca::is_contiguous(n));    
+    EXPECT_TRUE(blueprint::mcarray::is_interleaved(n));    
+    EXPECT_FALSE(blueprint::mcarray::is_contiguous(n));    
 }
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mca_examples, mca_xyz)
+TEST(conduit_blueprint_mcarray_examples, mcarray_xyz)
 {
-    // we are using one node to hold group of example mcas purely out of 
+    // we are using one node to hold group of example mcarrays purely out of 
     // convenience
     Node dsets;
     index_t npts = 100;
     
-    blueprint::mca::examples::xyz("interleaved",
+    blueprint::mcarray::examples::xyz("interleaved",
                                   npts,
                                   dsets["interleaved"]);
 
-    blueprint::mca::examples::xyz("separate",
+    blueprint::mcarray::examples::xyz("separate",
                                   npts,
                                   dsets["separate"]);
 
-    blueprint::mca::examples::xyz("contiguous",
+    blueprint::mcarray::examples::xyz("contiguous",
                                   npts,
                                   dsets["contiguous"]);
     NodeIterator itr = dsets.children();
@@ -392,7 +391,7 @@ TEST(conduit_blueprint_mca_examples, mca_xyz)
     while(itr.has_next())
     {
         Node info;
-        Node &mca = itr.next();
+        Node &mcarray = itr.next();
         std::string name = itr.path();
         // TODO: tests!
     }

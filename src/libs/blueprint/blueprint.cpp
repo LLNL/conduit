@@ -58,12 +58,16 @@
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "blueprint.hpp"
-#include "blueprint_mesh.hpp"
 
-using namespace conduit;
 
 //-----------------------------------------------------------------------------
-// -- begin blueprint:: --
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
+namespace conduit
+{
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint --
 //-----------------------------------------------------------------------------
 namespace blueprint
 {
@@ -101,9 +105,9 @@ verify(const std::string &protocol,
     {
         res = mesh::verify(n,info);
     }
-    else if(protocol == "mca")
+    else if(protocol == "mcarray")
     {
-        res = mca::verify(n,info);
+        res = mcarray::verify(n,info);
     }
     
     return res;
@@ -126,9 +130,9 @@ transform(const std::string &protocol,
     {
         res = mesh::transform(src,actions,des,info);
     }
-    else if(protocol == "mca")
+    else if(protocol == "mcarray")
     {
-        res = mca::transform(src,actions,des,info);
+        res = mcarray::transform(src,actions,des,info);
     }
     
     return res;
@@ -137,5 +141,11 @@ transform(const std::string &protocol,
 
 }
 //-----------------------------------------------------------------------------
-// -- end blueprint:: --
+// -- end conduit::blueprint --
 //-----------------------------------------------------------------------------
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit:: --
+//-----------------------------------------------------------------------------
+

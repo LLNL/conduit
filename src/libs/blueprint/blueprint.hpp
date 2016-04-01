@@ -56,17 +56,23 @@
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
 
-#include "Blueprint_Exports.hpp"
+#include "blueprint_exports.hpp"
 
 #include "blueprint_mesh.hpp"
 #include "blueprint_mesh_examples.hpp"
 
-#include "blueprint_mca.hpp"
-#include "blueprint_mca_examples.hpp"
+#include "blueprint_mcarray.hpp"
+#include "blueprint_mcarray_examples.hpp"
 
 
 //-----------------------------------------------------------------------------
-// -- begin blueprint:: --
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
+namespace conduit
+{
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint --
 //-----------------------------------------------------------------------------
 namespace blueprint
 {
@@ -94,10 +100,19 @@ bool BLUEPRINT_API transform(const std::string &protocol,
                              conduit::Node &dest,
                              conduit::Node &info);
 
+
+//-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
-// -- end blueprint:: --
+// -- end conduit::blueprint --
 //-----------------------------------------------------------------------------
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit:: --
+//-----------------------------------------------------------------------------
+
 
 #endif 
 

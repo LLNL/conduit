@@ -57,7 +57,7 @@
 //-----------------------------------------------------------------------------
 TEST(blueprint_smoke, basic_use)
 {
-    std::cout << blueprint::about() << std::endl;
+    std::cout << conduit::blueprint::about() << std::endl;
 }
 
 

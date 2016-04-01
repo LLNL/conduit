@@ -44,12 +44,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint_mca_examples.hpp
+/// file: blueprint_mcarray.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_MCA_EXAMPLES_HPP
-#define BLUEPRINT_MCA_EXAMPLES_HPP
+#ifndef BLUEPRINT_MCA_HPP
+#define BLUEPRINT_MCA_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
@@ -59,46 +59,84 @@
 
 
 //-----------------------------------------------------------------------------
-// -- begin blueprint:: --
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
+namespace conduit
+{
+
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint --
 //-----------------------------------------------------------------------------
 namespace blueprint
 {
 
 //-----------------------------------------------------------------------------
-// -- begin blueprint::mca --
+// -- begin conduit::blueprint::mcarray --
 //-----------------------------------------------------------------------------
-
-// NOTE: MCA is an intentionally bad name, which we hope to change.
-
-namespace mca 
+namespace mcarray
 {
 
 //-----------------------------------------------------------------------------
-/// Methods that generate example multi-component arrays.
+// blueprint protocol interface
 //-----------------------------------------------------------------------------
-namespace examples
-{
-    // creates mca array with num pts * 3 components. 
-    void BLUEPRINT_API xyz(const std::string &mca_type,
-                           conduit::index_t npts, // total number of points
-                           conduit::Node &res);
+
+//-----------------------------------------------------------------------------
+bool BLUEPRINT_API verify(conduit::Node &n,
+                          conduit::Node &info);
+
+
+//-----------------------------------------------------------------------------
+bool BLUEPRINT_API transform(conduit::Node &src,
+                             conduit::Node &actions,
+                             conduit::Node &dest,
+                             conduit::Node &info);
+
+
+//-----------------------------------------------------------------------------
+// mcarray blueprint methods
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool BLUEPRINT_API to_contiguous(conduit::Node &src,
+                                 conduit::Node &dest);
+
+
+//-----------------------------------------------------------------------------
+bool BLUEPRINT_API to_interleaved(conduit::Node &src,
+                                  conduit::Node &dest);
+
+
+//----------------------------------------------------------------------------
+bool BLUEPRINT_API verify_mcarray(conduit::Node &n);
+
+
+//----------------------------------------------------------------------------
+bool BLUEPRINT_API is_contiguous(conduit::Node &n);
+
+//----------------------------------------------------------------------------
+bool BLUEPRINT_API is_interleaved(conduit::Node &n);
+
+
+
+//-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
-// -- end blueprint::mesh::examples --
+// -- end conduit::blueprint::mcarray --
 //-----------------------------------------------------------------------------
 
 
 }
 //-----------------------------------------------------------------------------
-// -- end blueprint::mca --
+// -- end conduit::blueprint --
 //-----------------------------------------------------------------------------
-
 
 
 }
 //-----------------------------------------------------------------------------
-// -- end blueprint:: --
+// -- end conduit:: --
 //-----------------------------------------------------------------------------
+
 
 #endif 
 
