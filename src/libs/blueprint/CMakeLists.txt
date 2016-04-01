@@ -58,7 +58,7 @@ set(blueprint_headers
     blueprint_mesh_examples.hpp
     blueprint_mcarray.hpp
     blueprint_mcarray_examples.hpp
-    Blueprint_Exports.hpp)
+    blueprint_exports.hpp)
 
 #
 # Specify all sources
