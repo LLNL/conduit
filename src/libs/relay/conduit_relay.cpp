@@ -44,22 +44,16 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_hdf5.hpp
+/// file: conduit_relay.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_HDF5_HPP
-#define CONDUIT_HDF5_HPP
+#include "conduit_relay.hpp"
 
 //-----------------------------------------------------------------------------
-// external lib includes
+// standard lib includes
 //-----------------------------------------------------------------------------
-#include <hdf5.h>
-
-//-----------------------------------------------------------------------------
-// conduit includes
-//-----------------------------------------------------------------------------
-#include "conduit_io.hpp"
+#include <iostream>
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -68,39 +62,71 @@ namespace conduit
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::io --
+// -- begin conduit::relay --
 //-----------------------------------------------------------------------------
-namespace io
+namespace relay
 {
 
-//-----------------------------------------------------------------------------
-void CONDUIT_IO_API hdf5_write(const Node &node,
-                               const std::string &path);
 
-void CONDUIT_IO_API hdf5_write(const Node &node,
-                               const std::string &file_path,
-                               const std::string &hdf5_path);
+//---------------------------------------------------------------------------//
+std::string
+about()
+{
+    Node n;
+    relay::about(n);
+    return n.to_json();
+}
 
-void CONDUIT_IO_API hdf5_write(const Node &node,
-                               hid_t hdf5_id,
-                               const std::string &hdf5_path);
+//---------------------------------------------------------------------------//
+void
+about(Node &n)
+{
+    n.reset();
 
-//-----------------------------------------------------------------------------
-void CONDUIT_IO_API hdf5_read(const std::string &path,
-                              Node &node);
+    n["web"] = "enabled";
+    Node &io_protos = n["io/protocols"];
 
-void CONDUIT_IO_API hdf5_read(const std::string &file_path,
-                              const std::string &hdf5_path,
-                              Node &node);
+    // standard binary io
+    io_protos["conduit_bin"] = "enabled";
 
-void CONDUIT_IO_API hdf5_read(hid_t hdf5_id,
-                              const std::string &hdf5_path,
-                              Node &node);
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+    // straight hdf5 
+    io_protos["hdf5"] = "enabled";
+#else
+    // straight hdf5 
+    io_protos["hdf5"] = "disabled";
+#endif
+    
+    // silo
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
+    // node is packed into two silo objects
+    io_protos["conduit_silo"] = "enabled";
+#else
+    // node is packed into two silo objects
+    io_protos["conduit_silo"] = "disabled";
+#endif
+    
+    // silo mesh aware
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
+    io_protos["conduit_silo_mesh"] = "enabled";
+#else
+    io_protos["conduit_silo_mesh"] = "disabled";
+#endif
+
+
+#ifdef CONDUIT_RELAY_MPI_ENABLED
+    n["mpi"] = "enabled";
+#else
+    n["mpi"] = "disabled";
+#endif
+
+
+}
 
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::io --
+// -- end conduit::relay --
 //-----------------------------------------------------------------------------
 
 
@@ -109,6 +135,4 @@ void CONDUIT_IO_API hdf5_read(hid_t hdf5_id,
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
 
-
-#endif
 

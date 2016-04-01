@@ -53,10 +53,11 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/t_config.hpp.in"
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
+add_subdirectory("thirdparty")
+
 add_subdirectory("conduit")
-add_subdirectory("conduit_io")
-add_subdirectory("conduit_mpi")
+add_subdirectory("relay")
 add_subdirectory("blueprint")
 add_subdirectory("docs")
-add_subdirectory("thirdparty")
+
 

@@ -44,39 +44,40 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Conduit_MPI_Exports.hpp
+/// file: conduit_io_smoke.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_MPI_EXPORTS_HPP
-#define CONDUIT_MPI_EXPORTS_HPP
+#include "conduit_relay.hpp"
+#include <iostream>
+#include "gtest/gtest.h"
 
-//-----------------------------------------------------------------------------
-// -- define proper lib exports for various platforms -- 
-//-----------------------------------------------------------------------------
-#if defined(_WIN32)
-#if defined(CONDUIT_MPI_EXPORTS) || defined(conduit_mpi_EXPORTS)
-#define CONDUIT_MPI_API __declspec(dllexport)
-#else
-#define CONDUIT_MPI_API __declspec(dllimport)
-#endif
-#if defined(_MSC_VER)
-// Turn off warning about lack of DLL interface
-#pragma warning(disable:4251)
-// Turn off warning non-dll class is base for dll-interface class.
-#pragma warning(disable:4275)
-// Turn off warning about identifier truncation
-#pragma warning(disable:4786)
-#endif
-#else
-# if __GNUC__ >= 4 && (defined(CONDUIT_MPI_EXPORTS) || defined(conduit_mpi_EXPORTS))
-#   define CONDUIT_MPI_API __attribute__ ((visibility("default")))
-# else
-#   define CONDUIT_MPI_API /* hidden by default */
-# endif
-#endif
-
-#endif
+using namespace conduit;
+using namespace conduit::relay;
 
 
 
+TEST(conduit_io_smoke, basic_bin)
+{
+    uint32 a_val = 20;
+    uint32 b_val = 8;
+    uint32 c_val = 13;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+
+    EXPECT_EQ(n["a"].as_uint32(), a_val);
+    EXPECT_EQ(n["b"].as_uint32(), b_val);
+    EXPECT_EQ(n["c"].as_uint32(), c_val);
+
+    io::save(n, "test_conduit_io_dump");
+
+    Node n_load;
+    io::load("test_conduit_io_dump",n_load);
+    
+    EXPECT_EQ(n_load["a"].as_uint32(), a_val);
+    EXPECT_EQ(n_load["b"].as_uint32(), b_val);
+    EXPECT_EQ(n_load["c"].as_uint32(), c_val);
+}

@@ -44,22 +44,26 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_silo.hpp
+/// file: relay.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_SILO_HPP
-#define CONDUIT_SILO_HPP
+
+#ifndef CONDUIT_RELAY_HPP
+#define CONDUIT_RELAY_HPP
 
 //-----------------------------------------------------------------------------
-// external lib includes
+// conduit lib include 
 //-----------------------------------------------------------------------------
-#include <silo.h>
+#include "conduit.hpp"
+#include "conduit_relay_exports.hpp"
+#include "conduit_relay_config.hpp"
 
-//-----------------------------------------------------------------------------
-// conduit includes
-//-----------------------------------------------------------------------------
+
 #include "conduit_io.hpp"
+#include "conduit_web.hpp"
+#include "conduit_web_visualizer.hpp"
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -68,55 +72,21 @@ namespace conduit
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::io --
+// -- begin conduit::relay --
 //-----------------------------------------------------------------------------
-namespace io
+namespace relay
 {
 
 //-----------------------------------------------------------------------------
-void CONDUIT_IO_API silo_write(const  Node &node,
-                               const std::string &path);
-
-void CONDUIT_IO_API silo_read(const std::string &path,
-                              Node &node);
-
+/// The about methods construct human readable info about how relay was
+/// configured.
 //-----------------------------------------------------------------------------
-void CONDUIT_IO_API silo_write(const  Node &node,
-                               const std::string &file_path,
-                               const std::string &silo_obj_path);
-
-void CONDUIT_IO_API silo_read(const std::string &file_path,
-                              const std::string &silo_obj_path,
-                              Node &node);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_IO_API silo_write(const  Node &node,
-                               DBfile *dbfile,
-                               const std::string &silo_obj_path);
-
-void CONDUIT_IO_API silo_read(DBfile *dbfile,
-                              const std::string &silo_obj_path,
-                              Node &node);
-
-
-//-----------------------------------------------------------------------------    
-void CONDUIT_IO_API silo_mesh_write(Node &mesh,
-                                    const std::string &path);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_IO_API silo_mesh_write(Node &mesh,
-                                    const std::string &file_path,
-                                    const std::string &silo_obj_path);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_IO_API silo_mesh_write(Node &mesh,
-                                    DBfile *dbfile,
-                                    const std::string &silo_obj_path);
-
+std::string CONDUIT_RELAY_API about();
+void        CONDUIT_RELAY_API about(conduit::Node &res);
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::io --
+// -- end conduit::relay --
 //-----------------------------------------------------------------------------
 
 
@@ -124,6 +94,7 @@ void CONDUIT_IO_API silo_mesh_write(Node &mesh,
 //-----------------------------------------------------------------------------
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
+
 
 
 #endif

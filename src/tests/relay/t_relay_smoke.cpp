@@ -44,27 +44,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Conduit_IO_Config.hpp
+/// file: t_relay_smoke.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_IO_CONFIG_HPP
-#define CONDUIT_IO_CONFIG_HPP
+#include "conduit_relay.hpp"
+#include <iostream>
+#include "gtest/gtest.h"
 
-//-----------------------------------------------------------------------------
-//
-// #define optional i/o features
-//
-//-----------------------------------------------------------------------------
-#cmakedefine CONDUIT_IO_HDF5_ENABLED
+using namespace conduit;
 
-#cmakedefine CONDUIT_IO_SILO_ENABLED
-
-
-// this path points to the web client js code tree
-#cmakedefine CONDUIT_WEB_CLIENT_ROOT      "@CONDUIT_WEB_CLIENT_ROOT@"
-
-#endif
-
-
-
+TEST(conduit_relay_smoke, about)
+{
+    std::cout << relay::about() << std::endl;
+}

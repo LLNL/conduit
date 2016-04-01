@@ -48,11 +48,13 @@
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit_io.hpp"
+#include "conduit_relay.hpp"
 #include <iostream>
 #include "gtest/gtest.h"
 
 using namespace conduit;
+using namespace conduit::relay;
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_io_hdf5, conduit_hdf5_write_read)

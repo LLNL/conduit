@@ -61,8 +61,14 @@
 namespace conduit
 {
 
-    //-----------------------------------------------------------------------------
-// -- begin conduit::io --
+//-----------------------------------------------------------------------------
+// -- begin conduit::relay --
+//-----------------------------------------------------------------------------
+namespace relay
+{
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::relay::io --
 //-----------------------------------------------------------------------------
 namespace io
 {
@@ -158,7 +164,7 @@ save(const std::string &protocol,
     }
     else if( protocol == "hdf5")
     {
-#ifdef CONDUIT_IO_HDF5_ENABLED
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
         hdf5_write(node,path);
 #else
         CONDUIT_ERROR("conduit_io lacks HDF5 support: " << 
@@ -167,7 +173,7 @@ save(const std::string &protocol,
     }
     else if( protocol == "conduit_silo")
     {
-#ifdef CONDUIT_IO_SILO_ENABLED
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
         silo_write(node,path);
 #else
         CONDUIT_ERROR("conduit_io lacks Silo support: " << 
@@ -176,7 +182,7 @@ save(const std::string &protocol,
     }
     else if(protocol == "conduit_silo_mesh")
     {
-#ifdef CONDUIT_IO_SILO_ENABLED
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
         silo_mesh_write(node,path);
 #else
         CONDUIT_ERROR("conduit_io lacks Silo support: " << 
@@ -204,7 +210,7 @@ save_merged(const std::string &protocol,
     }
     else if( protocol == "hdf5")
     {
-#ifdef CONDUIT_IO_HDF5_ENABLED
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
         hdf5_write(node,path);
 #else
         CONDUIT_ERROR("conduit_io lacks HDF5 support: " << 
@@ -213,7 +219,7 @@ save_merged(const std::string &protocol,
     }
     else if( protocol == "conduit_silo")
     {
-#ifdef CONDUIT_IO_SILO_ENABLED
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
         Node n;
         silo_read(path,n);
         n.update(node);
@@ -225,7 +231,7 @@ save_merged(const std::string &protocol,
     }
     else if(protocol == "conduit_silo_mesh")
     {
-#ifdef CONDUIT_IO_SILO_ENABLED
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
         /// TODO .. ?
         silo_mesh_write(node,path);
 #else
@@ -253,7 +259,7 @@ load(const std::string &protocol,
     }
     else if( protocol == "hdf5")
     {
-#ifdef CONDUIT_IO_HDF5_ENABLED
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
         node.reset();
         hdf5_read(path,node);
 #else
@@ -263,7 +269,7 @@ load(const std::string &protocol,
     }
     else if( protocol == "conduit_silo")
     {
-#ifdef CONDUIT_IO_SILO_ENABLED
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
         silo_read(path,node);
 #else
         CONDUIT_ERROR("conduit_io lacks Silo support: " << 
@@ -299,7 +305,7 @@ load_merged(const std::string &protocol,
     }
     else if( protocol == "hdf5")
     {
-#ifdef CONDUIT_IO_HDF5_ENABLED
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
         Node n;
         hdf5_read(path,n);
         node.update(n);
@@ -310,7 +316,7 @@ load_merged(const std::string &protocol,
     }
     else if( protocol == "conduit_silo")
     {
-#ifdef CONDUIT_IO_SILO_ENABLED
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
         Node n;
         silo_read(path,n);
         node.update(n);
@@ -332,61 +338,16 @@ load_merged(const std::string &protocol,
 
 }
 
-//---------------------------------------------------------------------------//
-std::string
-about()
-{
-    Node n;
-    io::about(n);
-    return n.to_json();
-}
-
-//---------------------------------------------------------------------------//
-void
-about(Node &n)
-{
-    n.reset();
-    Node &protos = n["protocols"];
-
-    // standard binary io
-    protos["conduit_bin"] = "enabled";
-    
-    // rest server
-    protos["rest"] = "enabled";
-
-#ifdef CONDUIT_IO_HDF5_ENABLED
-    // straight hdf5 
-    protos["hdf5"] = "enabled";
-#else
-    // straight hdf5 
-    protos["hdf5"] = "disabled";
-#endif
-    
-    // silo
-#ifdef CONDUIT_IO_SILO_ENABLED
-    // node is packed into two silo objects
-    protos["conduit_silo"] = "enabled";
-#else
-    // node is packed into two silo objects
-    protos["conduit_silo"] = "disabled";
-#endif
-    
-    // silo mesh aware
-#ifdef CONDUIT_IO_SILO_ENABLED
-    protos["conduit_silo_mesh"] = "enabled";
-#else
-    protos["conduit_silo_mesh"] = "disabled";
-#endif
-
-
-}
-
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::io --
+// -- end conduit::relay::io --
 //-----------------------------------------------------------------------------
 
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::relay --
+//-----------------------------------------------------------------------------
 
 
 }

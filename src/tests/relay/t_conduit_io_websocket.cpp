@@ -48,7 +48,7 @@
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit_io.hpp"
+#include "conduit_relay.hpp"
 #include <iostream>
 #include "gtest/gtest.h"
 
@@ -56,7 +56,7 @@
 
 using namespace conduit;
 using namespace conduit::utils;
-using namespace conduit::io;
+using namespace conduit::relay;
 
 
 bool launch_server = false;
@@ -71,7 +71,7 @@ TEST(conduit_io_websocket, websocket_test)
     }
 
     // read png data into a string.
-    std::string wsock_path = utils::join_file_path(CONDUIT_WEB_CLIENT_ROOT,
+    std::string wsock_path = utils::join_file_path(CONDUIT_RELAY_WEB_CLIENT_ROOT,
                                                    "wsock_test");
 
     std::string example_png_path = utils::join_file_path(wsock_path,
@@ -115,7 +115,7 @@ TEST(conduit_io_websocket, websocket_test)
     
     msg.to_json_stream("test.json","json");
     
-    WebServer svr;
+    web::WebServer svr;
     // start our server
     
     std::string cert_file   = std::string("");
@@ -136,7 +136,6 @@ TEST(conduit_io_websocket, websocket_test)
     }
 
     svr.serve(wsock_path,
-              new WebRequestHandler(),
               8081,
               cert_file,
               auth_domain,

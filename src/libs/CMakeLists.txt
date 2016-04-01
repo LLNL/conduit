@@ -48,19 +48,12 @@
 add_subdirectory(conduit)
 
 ################################
-# Add the conduit-io lib 
+# Add the conduit relay libs
 ################################
-add_subdirectory(conduit_io)
+add_subdirectory(relay)
 
 ################################
 # Add the blueprint lib 
 ################################
 add_subdirectory(blueprint)
-
-################################
-# Add the conduit-mpi lib 
-################################
-if(MPI_FOUND)
-    add_subdirectory(conduit_mpi)
-endif()
 

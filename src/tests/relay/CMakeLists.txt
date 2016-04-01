@@ -47,42 +47,65 @@
 ################################
 
 ################################
-# conduit_io lib Unit Tests
+# conduit relay Unit Tests
 ################################
-set(IO_TESTS t_conduit_io_smoke 
-             t_conduit_io_rest 
-             t_conduit_io_websocket)
-             
-set(IO_SILO_TESTS t_conduit_io_silo)
-set(IO_HDF5_TESTS t_conduit_io_hdf5)
+set(RELAY_TESTS t_relay_smoke
+                t_conduit_io_smoke 
+                t_conduit_io_rest 
+                t_conduit_io_websocket)
+
+################################
+# Optional Unit Tests
+################################
+set(RELAY_MPI_TESTS      t_conduit_mpi_smoke t_conduit_mpi_test)
+set(RELAY_SILO_TESTS     t_conduit_io_silo)
+set(RELAY_HDF5_TESTS     t_conduit_io_hdf5)
 
 
 ################################
 # Add our tests
 ################################
 
-message(STATUS "Adding conduit_io lib unit tests")
-foreach(TEST ${IO_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_io )
+message(STATUS "Adding conduit_relay unit tests")
+foreach(TEST ${RELAY_TESTS})
+    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_relay )
 endforeach()
 
 
+################################
+# Add our Optional Unit Tests
+################################
+
 if(HDF5_FOUND)
-    foreach(TEST ${IO_HDF5_TESTS})
-        add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_io)
-        target_link_libraries(${TEST} ${HDF5_LIBRARIES})
+    foreach(TEST ${RELAY_HDF5_TESTS})
+        add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_relay)
+        # target_link_libraries(${TEST} ${HDF5_LIBRARIES})
     endforeach()
+else()
+    message(STATUS "HDF5 disabled: Skipping conduit_relay hdf5 tests")
 endif()
 
 
 if(SILO_FOUND)
-    foreach(TEST ${IO_SILO_TESTS})
-        add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_io)
-        target_link_libraries(${TEST} ${SILO_LIBRARIES})
+    message(STATUS "Silo enabled: Adding conduit_relay Silo unit tests")
+    foreach(TEST ${RELAY_SILO_TESTS})
+        add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_relay)
+        # target_link_libraries(${TEST} ${SILO_LIBRARIES})
     endforeach()
+else()
+    message(STATUS "Silo disabled: Skipping conduit_relay silo tests")
 endif()
 
 
 
+if(MPI_FOUND)
+    message(STATUS "MPI enabled: Adding conduit_relay_mpi unit tests")
+    foreach(TEST ${RELAY_MPI_TESTS})
+        # this uses 2 procs
+        add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2 DEPENDS_ON conduit conduit_relay_mpi) 
+    endforeach()
+else()
+    message(STATUS "MPI disabled: Skipping conduit_relay_mpi tests")
+endif()
 
 

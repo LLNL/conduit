@@ -50,7 +50,7 @@
 
 #include "conduit.hpp"
 #include "blueprint.hpp"
-#include "conduit_io.hpp"
+#include "conduit_relay.hpp"
 
 #include <iostream>
 #include "gtest/gtest.h"
@@ -61,9 +61,9 @@ using namespace conduit;
 TEST(conduit_blueprint_mesh_examples, mesh_2d)
 {
     Node io_protos;
-    io::about(io_protos);
+    relay::about(io_protos);
 
-    bool silo_enabled = io_protos["protocols/conduit_silo"].as_string() == "enabled";
+    bool silo_enabled = io_protos["io/protocols/conduit_silo"].as_string() == "enabled";
 
     // we are using one node to hold group of example meshes purely out of convenience  
     Node dsets;
@@ -160,7 +160,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
                 continue;
             }
 
-            io::save("conduit_silo_mesh",mesh,"braid_2d_" + name +  "_example.silo:mesh");
+            relay::io::save("conduit_silo_mesh",mesh,"braid_2d_" + name +  "_example.silo:mesh");
         }
     }
     
@@ -171,9 +171,9 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
 TEST(conduit_blueprint_mesh_examples, mesh_3d)
 {
     Node io_protos;
-    io::about(io_protos);
+    relay::about(io_protos);
 
-    bool silo_enabled = io_protos["protocols/conduit_silo"].as_string() == "enabled";
+    bool silo_enabled = io_protos["io/protocols/conduit_silo"].as_string() == "enabled";
 
     // we are using one node to hold group of example meshes purely out of convenience  
     Node dsets;
@@ -261,7 +261,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
                 std::cout<<"\tskipping output to SILO -- this is not implemented yet for indexed_stream meshes."<< std::endl;
                 continue;
             }
-            io::save("conduit_silo_mesh",mesh,"braid_3d_" + name +  "_example.silo:mesh");
+            relay::io::save("conduit_silo_mesh",mesh,"braid_3d_" + name +  "_example.silo:mesh");
         }
     }
     

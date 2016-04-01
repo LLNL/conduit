@@ -55,7 +55,7 @@
 // conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-#include "Conduit_IO_Exports.hpp"
+#include "conduit_relay_exports.hpp"
 
 //
 // forward declare civetweb types so we don't need the 
@@ -73,10 +73,16 @@ namespace conduit
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::io --
+// -- begin conduit::relay --
 //-----------------------------------------------------------------------------
+namespace relay
+{
 
-namespace io 
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::relay::web --
+//-----------------------------------------------------------------------------
+namespace web
 {
 
 
@@ -88,7 +94,7 @@ namespace io
 class WebServer;
 
 // interface used to create concrete server instances.  
-class CONDUIT_IO_API WebRequestHandler
+class CONDUIT_RELAY_API WebRequestHandler
 {
 public:
                   WebRequestHandler();
@@ -110,7 +116,7 @@ class WebSocket;
 // forward declare internal handler class
 class CivetDispatchHandler;
 
-class CONDUIT_IO_API WebServer
+class CONDUIT_RELAY_API WebServer
 {
 public:
 
@@ -175,7 +181,7 @@ private:
 /// The lifetimes of our WebSocket instances are managed by the 
 /// WebServer and its RequestHandler instance
 // 
-class CONDUIT_IO_API WebSocket
+class CONDUIT_RELAY_API WebSocket
 {
 public:
     friend class CivetDispatchHandler;
@@ -201,14 +207,16 @@ private:
 };
 
 
-
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::relay::relay --
+//-----------------------------------------------------------------------------
 
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::io --
+// -- end conduit::relay --
 //-----------------------------------------------------------------------------
-
 
 
 }

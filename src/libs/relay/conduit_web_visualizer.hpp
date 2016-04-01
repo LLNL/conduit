@@ -44,35 +44,20 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_io.hpp
+/// file: conduit_web_visualizer.hpp
 ///
 //-----------------------------------------------------------------------------
 
-
-#ifndef CONDUIT_IO_HPP
-#define CONDUIT_IO_HPP
+#ifndef CONDUIT_WEB_VISUALIZER_HPP
+#define CONDUIT_WEB_VISUALIZER_HPP
 
 //-----------------------------------------------------------------------------
-// conduit lib include 
+// conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-#include "Conduit_IO_Exports.hpp"
-#include "Conduit_IO_Config.hpp"
-
+#include "conduit_relay_exports.hpp"
 
 #include "conduit_web.hpp"
-#include "conduit_web_visualizer.hpp"
-
-// include optional libs
-
-#ifdef CONDUIT_IO_HDF5_ENABLED
-#include "conduit_hdf5.hpp"
-#endif
-
-// include optional libs
-#ifdef CONDUIT_IO_SILO_ENABLED
-#include "conduit_silo.hpp"
-#endif
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -81,101 +66,71 @@ namespace conduit
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::io --
+// -- begin conduit::relay --
 //-----------------------------------------------------------------------------
-namespace io
+namespace relay 
 {
 
-///
-/// ``save`` works like a 'set' to the file.
-///
+//-----------------------------------------------------------------------------
+// -- begin conduit::relay::web --
+//-----------------------------------------------------------------------------
+namespace web
+{
 
 //-----------------------------------------------------------------------------
-void CONDUIT_IO_API save(Node &node,
-                         const std::string &path);
+// -- Visualizer Web Request Handler  -
+//-----------------------------------------------------------------------------
+class CONDUIT_RELAY_API VisualizerRequestHandler : public WebRequestHandler
+{
+public:
+                   VisualizerRequestHandler(Node *node);
+                  ~VisualizerRequestHandler();
+    
+    virtual bool   handle_post(WebServer *server,
+                               struct mg_connection *conn);
+
+    virtual bool   handle_get(WebServer *server,
+                              struct mg_connection *conn);
+
+private:
+    // catch all, used for any post or get
+    bool           handle_request(WebServer *server,
+                                  struct mg_connection *conn);
+    // handlers for specific commands 
+    bool           handle_get_schema(struct mg_connection *conn);
+    bool           handle_get_value(struct mg_connection *conn);
+    bool           handle_get_base64_json(struct mg_connection *conn);
+    bool           handle_shutdown(WebServer *server);
+
+    // holds the node to visualize 
+    Node          *m_node;
+};
 
 //-----------------------------------------------------------------------------
-void CONDUIT_IO_API save(const std::string &protocol,
-                         Node &node,
-                         const std::string &path);
-
+// -- Visualizer Web Request Handler  -
 //-----------------------------------------------------------------------------
-void CONDUIT_IO_API save(const std::string &protocol,
-                         Node &node,
-                         const std::string &file_path,
-                         const std::string &protocol_path);
 
-///
-/// ``save_merged`` works like an update to the file.
-///
-
-//-----------------------------------------------------------------------------
-void CONDUIT_IO_API save_merged(Node &node,
-                                const std::string &path);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_IO_API save_merged(const std::string &protocol,
-                                Node &node,
-                                const std::string &path);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_IO_API save_merged(const std::string &protocol,
-                                Node &node,
-                                const std::string &file_path,
-                                const std::string &protocol_path);
-
-///
-/// ``load`` works like a 'set', the node is reset and then populated
-///
-
-//-----------------------------------------------------------------------------
-void CONDUIT_IO_API load(const std::string &path,
-                         Node &node);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_IO_API load(const std::string &protocol,
-                         const std::string &path,
-                         Node &node);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_IO_API load(const std::string &protocol,
-                         const std::string &file_path,
-                         const std::string &protocol_path,
-                         Node &node);
-
-
-///
-/// ``load_merged`` works like an update, for the object case, entries are read
-///  into the node. If the node is already in the OBJECT_T role, children are 
-///  added
-///
-
-//-----------------------------------------------------------------------------
-void CONDUIT_IO_API load_merged(const std::string &path,
-                                Node &node);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_IO_API load_merged(const std::string &protocol,
-                                const std::string &path,
-                                Node &node);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_IO_API load_merged(const std::string &protocol,
-                                const std::string &file_path,
-                                const std::string &protocol_path,
-                                Node &node);
-
-//-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how conduit_io was
-/// configured.
-//-----------------------------------------------------------------------------
- std::string CONDUIT_IO_API about();
- void        CONDUIT_IO_API about(Node &);
+class CONDUIT_RELAY_API VisualizerServer
+{
+public:
+    static WebServer  *serve(Node *data,
+                             bool block=false,
+                             index_t port = 8080,
+                             const std::string &ssl_cert_file = std::string(""),
+                             const std::string &auth_domain   = std::string(""),
+                             const std::string &auth_file     = std::string(""));
+};
 
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::io --
+// -- end conduit::relay::web --
+//-----------------------------------------------------------------------------
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::relay --
 //-----------------------------------------------------------------------------
 
 
@@ -185,6 +140,7 @@ void CONDUIT_IO_API load_merged(const std::string &protocol,
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
 
+#endif 
 
-#endif
+
 

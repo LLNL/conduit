@@ -53,6 +53,7 @@
 #include "gtest/gtest.h"
 
 using namespace conduit;
+using namespace conduit::relay;
 
 
 TEST(conduit_io_silo, conduit_silo_cold_storage)

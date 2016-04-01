@@ -60,7 +60,7 @@ set(BLUEPRINT_TESTS t_blueprint_smoke
 
 message(STATUS "Adding blueprint lib unit tests")
 foreach(TEST ${BLUEPRINT_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit blueprint conduit_io)
+    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit blueprint conduit_relay)
 endforeach()
 
 

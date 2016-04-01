@@ -64,7 +64,7 @@
 //-----------------------------------------------------------------------------
 #include "conduit_web.hpp"
 #include "conduit_web_visualizer.hpp"
-#include "Conduit_IO_Config.hpp"
+#include "Conduit_relay_config.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -73,11 +73,17 @@ namespace conduit
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::io --
+// -- begin conduit::relay --
 //-----------------------------------------------------------------------------
-
-namespace io 
+namespace relay
 {
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::relay::web --
+//-----------------------------------------------------------------------------
+namespace web
+{
+
 
 //-----------------------------------------------------------------------------
 // -- Visualizer Request Handler  -
@@ -246,7 +252,7 @@ VisualizerServer::serve(Node *data,
     
     WebServer *res = new WebServer();
     // call general serve routine
-    res->serve(utils::join_file_path(CONDUIT_WEB_CLIENT_ROOT,"rest_client"),
+    res->serve(utils::join_file_path(CONDUIT_RELAY_WEB_CLIENT_ROOT,"rest_client"),
                rhandler,
                port,
                ssl_cert_file,
@@ -268,7 +274,13 @@ VisualizerServer::serve(Node *data,
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::io --
+// -- end conduit::relay::web --
+//-----------------------------------------------------------------------------
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::relay --
 //-----------------------------------------------------------------------------
 
 

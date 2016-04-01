@@ -371,9 +371,6 @@ TEST(conduit_blueprint_mca_examples, mca_xyz_contiguous_mixed_types)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mca_examples, mca_xyz)
 {
-    Node io_protos;
-    io::about(io_protos);
-
     // we are using one node to hold group of example mcas purely out of 
     // convenience
     Node dsets;

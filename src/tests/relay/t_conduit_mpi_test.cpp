@@ -53,6 +53,7 @@
 #include "gtest/gtest.h"
 
 using namespace conduit;
+using namespace conduit::relay;
 
 //-----------------------------------------------------------------------------
 TEST(conduit_mpi_test, allreduce) 

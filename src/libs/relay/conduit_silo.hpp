@@ -44,20 +44,22 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_web_visualizer.hpp
+/// file: conduit_silo.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_WEB_VISUALIZER_HPP
-#define CONDUIT_WEB_VISUALIZER_HPP
+#ifndef CONDUIT_SILO_HPP
+#define CONDUIT_SILO_HPP
 
 //-----------------------------------------------------------------------------
-// conduit lib includes
+// external lib includes
 //-----------------------------------------------------------------------------
-#include "conduit.hpp"
-#include "Conduit_IO_Exports.hpp"
+#include <silo.h>
 
-#include "conduit_web.hpp"
+//-----------------------------------------------------------------------------
+// conduit includes
+//-----------------------------------------------------------------------------
+#include "conduit_io.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -66,62 +68,68 @@ namespace conduit
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::io --
+// -- begin conduit::relay --
 //-----------------------------------------------------------------------------
-
-namespace io 
+namespace relay
 {
 
 //-----------------------------------------------------------------------------
-// -- Visualizer Web Request Handler  -
+// -- begin conduit::relay::io --
 //-----------------------------------------------------------------------------
-class CONDUIT_IO_API VisualizerRequestHandler : public WebRequestHandler
+namespace io
 {
-public:
-                   VisualizerRequestHandler(Node *node);
-                  ~VisualizerRequestHandler();
-    
-    virtual bool   handle_post(WebServer *server,
-                               struct mg_connection *conn);
-
-    virtual bool   handle_get(WebServer *server,
-                              struct mg_connection *conn);
-
-private:
-    // catch all, used for any post or get
-    bool           handle_request(WebServer *server,
-                                  struct mg_connection *conn);
-    // handlers for specific commands 
-    bool           handle_get_schema(struct mg_connection *conn);
-    bool           handle_get_value(struct mg_connection *conn);
-    bool           handle_get_base64_json(struct mg_connection *conn);
-    bool           handle_shutdown(WebServer *server);
-
-    // holds the node to visualize 
-    Node          *m_node;
-};
 
 //-----------------------------------------------------------------------------
-// -- Visualizer Web Request Handler  -
-//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API silo_write(const  Node &node,
+                                  const std::string &path);
 
-class CONDUIT_IO_API VisualizerServer
-{
-public:
-    static WebServer  *serve(Node *data,
-                             bool block=false,
-                             index_t port = 8080,
-                             const std::string &ssl_cert_file = std::string(""),
-                             const std::string &auth_domain   = std::string(""),
-                             const std::string &auth_file     = std::string(""));
-};
+void CONDUIT_RELAY_API silo_read(const std::string &path,
+                                 Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API silo_write(const  Node &node,
+                                  const std::string &file_path,
+                                  const std::string &silo_obj_path);
+
+void CONDUIT_RELAY_API silo_read(const std::string &file_path,
+                                 const std::string &silo_obj_path,
+                                 Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API silo_write(const  Node &node,
+                                  DBfile *dbfile,
+                                  const std::string &silo_obj_path);
+
+void CONDUIT_RELAY_API silo_read(DBfile *dbfile,
+                                 const std::string &silo_obj_path,
+                                 Node &node);
+
+
+//-----------------------------------------------------------------------------    
+void CONDUIT_RELAY_API silo_mesh_write(Node &mesh,
+                                       const std::string &path);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API silo_mesh_write(Node &mesh,
+                                       const std::string &file_path,
+                                       const std::string &silo_obj_path);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API silo_mesh_write(Node &mesh,
+                                       DBfile *dbfile,
+                                       const std::string &silo_obj_path);
 
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::io --
+// -- end conduit::relay::io --
 //-----------------------------------------------------------------------------
 
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::relay --
+//-----------------------------------------------------------------------------
 
 
 }
@@ -129,7 +137,6 @@ public:
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
 
-#endif 
 
-
+#endif
 

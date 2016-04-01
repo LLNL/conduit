@@ -48,13 +48,14 @@
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit_io.hpp"
+#include "conduit_relay.hpp"
 #include <iostream>
 #include "gtest/gtest.h"
 
 #include "t_config.hpp"
 
 using namespace conduit;
+using namespace conduit::relay;
 
 bool launch_server = false;
 bool use_ssl       = false;
@@ -96,12 +97,12 @@ TEST(conduit_io_rest, rest_server)
         }
         
 
-        conduit::io::WebServer *svr = conduit::io::VisualizerServer::serve(n,
-                                                                           true,
-                                                                           8080,
-                                                                           cert_file,
-                                                                           auth_domain,
-                                                                           auth_file);
+        web::WebServer *svr = web::VisualizerServer::serve(n,
+                                                           true,
+                                                           8080,
+                                                           cert_file,
+                                                           auth_domain,
+                                                           auth_file);
         delete svr;
     }
     else
