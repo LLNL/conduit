@@ -61,6 +61,8 @@ addons:
        - gcc-4.8 
        - g++-4.8 
        - gfortran-4.8
+       # also update gcov
+       - gcov
 before_install:
   # download a newer version of cmake
   - wget --no-check-certificate http://www.cmake.org/files/v3.3/cmake-3.3.0-Linux-x86_64.sh
