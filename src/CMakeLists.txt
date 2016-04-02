@@ -61,6 +61,7 @@ project(conduit)
 option(BUILD_SHARED_LIBS  "Build shared libraries"      ON)
 option(ENABLE_TESTS       "Build conduit tests"         ON)
 option(ENABLE_GPREF_TOOLS "Build with google perftools" OFF)
+option(ENABLE_COVERAGE    "Build with coverage flags"   OFF)
 
 option(ENABLE_PYTHON      "Build Python Support"        OFF)
 option(ENABLE_FORTRAN     "Build Fortran  support"      OFF)

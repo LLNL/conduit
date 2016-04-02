@@ -82,6 +82,16 @@ else()
     message(STATUS "Building static libraries (BUILD_SHARED_LIBS == OFF)")
 endif()
 
+################################
+# Coverage Flags
+################################
+if(ENABLE_COVERAGE)
+    message(STATUS "Building using coverage flags (ENABLE_COVERAGE == ON)")
+    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} --coverage")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+else()
+    message(STATUS "Building without coverage flags (ENABLE_COVERAGE == OFF)")
+endif()
 
 ################################
 # RPath Settings
