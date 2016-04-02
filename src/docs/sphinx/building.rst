@@ -104,16 +104,16 @@ Conduit's build system supports the following CMake options:
 
  The Conduit Python module will build for both Python2 and Python3. To select a specific Python, set the CMake variable **PYTHON_EXECUTABLE** to path of the desired python binary. The Conduit Python module requires Numpy. The selected Python instance must provide Numpy, or PYTHONPATH must be set to include a Numpy install compatible with the selected Python install. 
 
-* **ENABLE_MPI** - Controls if the conduit_mpi library is built. *(default = OFF)*
+* **ENABLE_MPI** - Controls if the conduit_relay_mpi library is built. *(default = OFF)*
  We are using CMake's standard FindMPI logic. To select a specific MPI set the CMake variables **MPI_C_COMPILER** and **MPI_CXX_COMPILER**, or the other FindMPI options for MPI include paths and MPI libraries.
 
- To run the mpi unit tests on LLNL's LC platforms, you may also need change the CMake variables **MPIEXEC** and **MPIEXEC_NUMPROC_FLAG**, so you can use srun and select a partition. (see: src/host-configs/chaos_5_x86_64.cmake)
+ To run the mpi unit tests on LLNL's LC platforms, you may also need change the CMake variables **MPIEXEC** and **MPIEXEC_NUMPROC_FLAG**, so you can use srun and select a partition. (for an example see: src/host-configs/chaos_5_x86_64.cmake)
 
 * **HDF5_DIR** - Path to a HDF5 install *(optional)*. 
- Controls if conduit_io HDF5 I/O support is built.
+ Controls if HDF5 I/O support is built into *conduit_relay*.
 
 * **SILO_DIR** - Path to a Silo install *(optional)*. 
- Controls if conduit_io Silo I/O support is built. When used, the following CMake variables must also be set:
+ Controls if Silo I/O support is built into *conduit_relay*. When used, the following CMake variables must also be set:
  
  * **HDF5_DIR** - Path to a HDF5 install. (Silo support also depends on HDF5) 
 
@@ -130,7 +130,7 @@ To handle build options, thirdparty library paths, etc we rely on CMake's initia
 
 We call these initial-cache files *host-config* files, since we typically create a file for each platform or specific hosts if necessary. 
 
-The *config-build.sh* script will use your machine's hostname, the SYS_TYPE environment variable, and your platform name (via *uname*) to look for an existing host config file in the *host-configs* directory at the root of the conduit repo. If found, it will pass the host config file to cmake via the *-C* command line option.
+The *config-build.sh* script will use your machine's hostname, the SYS_TYPE environment variable, and your platform name (via *uname*) to look for an existing host config file in the *host-configs* directory at the root of the conduit repo. If found, it will pass the host config file to CMake via the *-C* command line option.
 
 .. code:: bash
     
@@ -150,7 +150,7 @@ Bootstrapping Thirdparty Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can use *bootstrap-env.sh* (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses *scripts/uberenv*, which leverages **Spack** (https://llnl.github.io/spack) to build external thirdparty libraries and tools used by Conduit.
-It also writes a initial host-config file for you and adds the spack built CMake binary to your PATH, so can directly call the *config-build.sh* helper script to configure a conduit build.
+It also writes a initial host-config file for you and adds the Spack built CMake binary to your PATH, so can directly call the *config-build.sh* helper script to configure a conduit build.
 
 .. code:: bash
     

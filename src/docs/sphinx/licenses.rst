@@ -54,7 +54,7 @@ Conduit License
 Third Party Builtin Libraries
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Here is a list of the software components used by conduit in source from and the location of their respective license files in our source repo. 
+Here is a list of the software components used by conduit in source form and the location of their respective license files in our source repo. 
 
 C and C++ Libraries 
 =====================
