@@ -47,15 +47,13 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-**Conduit: A Scientific Data Exchange Library for HPC Simulations**
-
-
-Introduction
+Conduit
 ============
 
-What is Conduit?
-----------------
+**Conduit: A Scientific Data Exchange Library for HPC Simulations**
 
+Introduction
+------------
 
 Conduit is an open source project from Lawrence Livermore National Laboratory. It provides an intuitive model for describing hierarchical scientific data in C++, C, Fortran, and Python and is used for data coupling between packages in-core, serialization, and I/O tasks.
 
@@ -121,7 +119,7 @@ relay
    - I/O functionally beyond simple binary, memory mapped, and json-based text file I/O.
    - A light-weight web server for REST and WebSocket clients. 
    - Interfaces for MPI communication using conduit::Node instances as payloads.
- - *Optionally depends on silo, hdf5, szip, mpi*
+ - *Optionally depends on silo, hdf5, szip and mpi*
 
 blueprint
 ~~~~~~~~~~
