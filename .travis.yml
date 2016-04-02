@@ -62,8 +62,6 @@ addons:
        - gcc-4.8 
        - g++-4.8 
        - gfortran-4.8
-       # also update gcov
-       - gcov-4.8
 before_install:
   # download a newer version of cmake
   - wget --no-check-certificate http://www.cmake.org/files/v3.3/cmake-3.3.0-Linux-x86_64.sh
@@ -106,7 +104,7 @@ script:
   - make test
   - make install
 after_success:
-  coveralls --include src/libs/conduit  --gcov-options '\-lp' --root $TRAVIS_BUILD_DIR --build-root $TRAVIS_BUILD_DIR/travis-debug-build;
+  - coveralls --gcov /usr/bin/gcov-4.8 --include src/libs/conduit  --gcov-options '\-lp' --root $TRAVIS_BUILD_DIR --build-root $TRAVIS_BUILD_DIR/travis-debug-build;
 notifications:
   email:
     recipients:
