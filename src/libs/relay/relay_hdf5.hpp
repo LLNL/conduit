@@ -44,75 +44,81 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint_mesh_examples.hpp
+/// file: relay_hdf5.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_MESH_EXAMPLES_HPP
-#define BLUEPRINT_MESH_EXAMPLES_HPP
+#ifndef CONDUIT_RELAY_HDF5_HPP
+#define CONDUIT_RELAY_HDF5_HPP
 
 //-----------------------------------------------------------------------------
-// conduit lib includes
+// external lib includes
 //-----------------------------------------------------------------------------
-#include "conduit.hpp"
-#include "blueprint_exports.hpp"
+#include <hdf5.h>
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::--
+// conduit includes
+//-----------------------------------------------------------------------------
+#include "relay_io.hpp"
+
+//-----------------------------------------------------------------------------
+// -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
 {
 
-
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint --
+// -- begin conduit::relay --
 //-----------------------------------------------------------------------------
-namespace blueprint
+namespace relay
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mesh --
+// -- begin conduit::relay::io --
 //-----------------------------------------------------------------------------
-namespace mesh 
+namespace io
 {
 
 //-----------------------------------------------------------------------------
-/// Methods that generate example meshes.
-/// We should move these to a better place in the future.
-//-----------------------------------------------------------------------------
-namespace examples
-{
-    
-    void BLUEPRINT_API braid(const std::string &mesh_type,
-                             conduit::index_t nx,
-                             conduit::index_t ny,
-                             conduit::index_t nz,  // not implemented ... 
-                             conduit::Node &res);
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::examples --
-//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API hdf5_write(const Node &node,
+                                  const std::string &path);
 
+void CONDUIT_RELAY_API hdf5_write(const Node &node,
+                                  const std::string &file_path,
+                                  const std::string &hdf5_path);
+
+void CONDUIT_RELAY_API hdf5_write(const Node &node,
+                                  hid_t hdf5_id,
+                                  const std::string &hdf5_path);
 
 //-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh --
-//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API hdf5_read(const std::string &path,
+                                 Node &node);
 
+void CONDUIT_RELAY_API hdf5_read(const std::string &file_path,
+                                 const std::string &hdf5_path,
+                                 Node &node);
 
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint --
-//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API hdf5_read(hid_t hdf5_id,
+                                 const std::string &hdf5_path,
+                                 Node &node);
+
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit --
+// -- end conduit::relay::io --
+//-----------------------------------------------------------------------------
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::relay --
+//-----------------------------------------------------------------------------
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit:: --
 //-----------------------------------------------------------------------------
 
 
-#endif 
-
-
+#endif
 

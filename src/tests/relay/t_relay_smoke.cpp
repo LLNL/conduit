@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -9,7 +9,7 @@
 // 
 // This file is part of Conduit. 
 // 
-// For details, see https://lc.llnl.gov/conduit/.
+// For details, see: http://llnl.github.io/conduit/.
 // 
 // Please also read conduit/LICENSE
 // 
@@ -44,21 +44,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_smoke.cpp
+/// file: t_relay_smoke.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit.hpp"
-#include "blueprint.hpp"
-
+#include "relay.hpp"
 #include <iostream>
 #include "gtest/gtest.h"
 
-//-----------------------------------------------------------------------------
-TEST(blueprint_smoke, basic_use)
+using namespace conduit;
+
+TEST(conduit_relay_smoke, about)
 {
-    std::cout << conduit::blueprint::about() << std::endl;
+    std::cout << relay::about() << std::endl;
 }
-
-
-

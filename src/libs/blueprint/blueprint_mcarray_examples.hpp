@@ -44,12 +44,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint_mesh_examples.hpp
+/// file: blueprint_mcarray_examples.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_MESH_EXAMPLES_HPP
-#define BLUEPRINT_MESH_EXAMPLES_HPP
+#ifndef BLUEPRINT_MCA_EXAMPLES_HPP
+#define BLUEPRINT_MCA_EXAMPLES_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
@@ -57,12 +57,12 @@
 #include "conduit.hpp"
 #include "blueprint_exports.hpp"
 
+
 //-----------------------------------------------------------------------------
-// -- begin conduit::--
+// -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
 {
-
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint --
@@ -71,40 +71,42 @@ namespace blueprint
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mesh --
+// -- begin conduit::blueprint::mcarray --
 //-----------------------------------------------------------------------------
-namespace mesh 
+
+// NOTE: MCA is an intentionally bad name, which we hope to change.
+
+namespace mcarray
 {
 
 //-----------------------------------------------------------------------------
-/// Methods that generate example meshes.
-/// We should move these to a better place in the future.
+/// Methods that generate example multi-component arrays.
 //-----------------------------------------------------------------------------
 namespace examples
 {
-    
-    void BLUEPRINT_API braid(const std::string &mesh_type,
-                             conduit::index_t nx,
-                             conduit::index_t ny,
-                             conduit::index_t nz,  // not implemented ... 
-                             conduit::Node &res);
+    // creates mca array with num pts * 3 components. 
+    void BLUEPRINT_API xyz(const std::string &mca_type,
+                           conduit::index_t npts, // total number of points
+                           conduit::Node &res);
+
+//-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::examples --
 //-----------------------------------------------------------------------------
 
 
-//-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh --
+// -- end conduit::blueprint::mcarray --
 //-----------------------------------------------------------------------------
 
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint --
+// -- end conduit::blueprint:: --
 //-----------------------------------------------------------------------------
+
 
 }
 //-----------------------------------------------------------------------------

@@ -44,75 +44,146 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint_mesh_examples.hpp
+/// file: relay_io.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_MESH_EXAMPLES_HPP
-#define BLUEPRINT_MESH_EXAMPLES_HPP
+
+#ifndef CONDUIT_RELAY_IO_HPP
+#define CONDUIT_RELAY_IO_HPP
 
 //-----------------------------------------------------------------------------
-// conduit lib includes
+// conduit lib include 
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-#include "blueprint_exports.hpp"
+#include "relay_exports.hpp"
+#include "relay_config.hpp"
+
+// include optional libs
+
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+#include "relay_hdf5.hpp"
+#endif
+
+// include optional libs
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
+#include "relay_silo.hpp"
+#endif
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::--
+// -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
 {
 
-
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint --
+// -- begin conduit::relay --
 //-----------------------------------------------------------------------------
-namespace blueprint
+namespace relay
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mesh --
+// -- begin conduit::relay::io --
 //-----------------------------------------------------------------------------
-namespace mesh 
+namespace io
 {
 
+///
+/// ``save`` works like a 'set' to the file.
+///
+
 //-----------------------------------------------------------------------------
-/// Methods that generate example meshes.
-/// We should move these to a better place in the future.
+void CONDUIT_RELAY_API save(Node &node,
+                            const std::string &path);
+
 //-----------------------------------------------------------------------------
-namespace examples
-{
-    
-    void BLUEPRINT_API braid(const std::string &mesh_type,
-                             conduit::index_t nx,
-                             conduit::index_t ny,
-                             conduit::index_t nz,  // not implemented ... 
-                             conduit::Node &res);
+void CONDUIT_RELAY_API save(const std::string &protocol,
+                            Node &node,
+                            const std::string &path);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save(const std::string &protocol,
+                            Node &node,
+                            const std::string &file_path,
+                            const std::string &protocol_path);
+
+///
+/// ``save_merged`` works like an update to the file.
+///
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save_merged(Node &node,
+                                   const std::string &path);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save_merged(const std::string &protocol,
+                                   Node &node,
+                                   const std::string &path);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save_merged(const std::string &protocol,
+                                   Node &node,
+                                   const std::string &file_path,
+                                   const std::string &protocol_path);
+
+///
+/// ``load`` works like a 'set', the node is reset and then populated
+///
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load(const std::string &path,
+                            Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load(const std::string &protocol,
+                            const std::string &path,
+                            Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load(const std::string &protocol,
+                            const std::string &file_path,
+                            const std::string &protocol_path,
+                            Node &node);
+
+
+///
+/// ``load_merged`` works like an update, for the object case, entries are read
+///  into the node. If the node is already in the OBJECT_T role, children are 
+///  added
+///
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load_merged(const std::string &path,
+                                   Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load_merged(const std::string &protocol,
+                                   const std::string &path,
+                                   Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load_merged(const std::string &protocol,
+                                   const std::string &file_path,
+                                   const std::string &protocol_path,
+                                   Node &node);
+
+
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::examples --
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh --
-//-----------------------------------------------------------------------------
-
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint --
+// -- end conduit::relay::io --
 //-----------------------------------------------------------------------------
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit --
+// -- end conduit::relay --
 //-----------------------------------------------------------------------------
 
 
-#endif 
+}
+//-----------------------------------------------------------------------------
+// -- end conduit:: --
+//-----------------------------------------------------------------------------
 
 
+#endif
 

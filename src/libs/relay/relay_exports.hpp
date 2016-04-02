@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -9,7 +9,7 @@
 // 
 // This file is part of Conduit. 
 // 
-// For details, see https://lc.llnl.gov/conduit/.
+// For details, see: http://llnl.github.io/conduit/.
 // 
 // Please also read conduit/LICENSE
 // 
@@ -44,21 +44,39 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_smoke.cpp
+/// file: relay_exports.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit.hpp"
-#include "blueprint.hpp"
-
-#include <iostream>
-#include "gtest/gtest.h"
+#ifndef CONDUIT_RELAY_EXPORTS_HPP
+#define CONDUIT_RELAY_EXPORTS_HPP
 
 //-----------------------------------------------------------------------------
-TEST(blueprint_smoke, basic_use)
-{
-    std::cout << conduit::blueprint::about() << std::endl;
-}
+// -- define proper lib exports for various platforms -- 
+//-----------------------------------------------------------------------------
+#if defined(_WIN32)
+#if defined(CONDUIT_RELAY_EXPORTS) || defined(conduit_relay_EXPORTS) || defined(CONDUIT_RELAY_MPI_EXPORTS) || defined(conduit_relay_mpi_EXPORTS)
+#define CONDUIT_RELAY_API __declspec(dllexport)
+#else
+#define CONDUIT_RELAY_API __declspec(dllimport)
+#endif
+#if defined(_MSC_VER)
+// Turn off warning about lack of DLL interface
+#pragma warning(disable:4251)
+// Turn off warning non-dll class is base for dll-interface class.
+#pragma warning(disable:4275)
+// Turn off warning about identifier truncation
+#pragma warning(disable:4786)
+#endif
+#else
+# if __GNUC__ >= 4 && ( defined(CONDUIT_RELAY_EXPORTS) || defined(conduit_relay_EXPORTS) || defined(CONDUIT_RELAY_MPI_EXPORTS) || defined(conduit_relay_mpi_EXPORTS))
+#   define CONDUIT_RELAY_API __attribute__ ((visibility("default")))
+# else
+#   define CONDUIT_RELAY_API /* hidden by default */
+# endif
+#endif
+
+#endif
 
 
 

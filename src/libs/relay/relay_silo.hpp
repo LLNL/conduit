@@ -44,75 +44,99 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint_mesh_examples.hpp
+/// file: relay_silo.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_MESH_EXAMPLES_HPP
-#define BLUEPRINT_MESH_EXAMPLES_HPP
+#ifndef CONDUIT_RELAY_SILO_HPP
+#define CONDUIT_RELAY_SILO_HPP
 
 //-----------------------------------------------------------------------------
-// conduit lib includes
+// external lib includes
 //-----------------------------------------------------------------------------
-#include "conduit.hpp"
-#include "blueprint_exports.hpp"
+#include <silo.h>
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::--
+// conduit includes
+//-----------------------------------------------------------------------------
+#include "relay_io.hpp"
+
+//-----------------------------------------------------------------------------
+// -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
 {
 
-
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint --
+// -- begin conduit::relay --
 //-----------------------------------------------------------------------------
-namespace blueprint
+namespace relay
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mesh --
+// -- begin conduit::relay::io --
 //-----------------------------------------------------------------------------
-namespace mesh 
+namespace io
 {
 
 //-----------------------------------------------------------------------------
-/// Methods that generate example meshes.
-/// We should move these to a better place in the future.
+void CONDUIT_RELAY_API silo_write(const  Node &node,
+                                  const std::string &path);
+
+void CONDUIT_RELAY_API silo_read(const std::string &path,
+                                 Node &node);
+
 //-----------------------------------------------------------------------------
-namespace examples
-{
-    
-    void BLUEPRINT_API braid(const std::string &mesh_type,
-                             conduit::index_t nx,
-                             conduit::index_t ny,
-                             conduit::index_t nz,  // not implemented ... 
-                             conduit::Node &res);
+void CONDUIT_RELAY_API silo_write(const  Node &node,
+                                  const std::string &file_path,
+                                  const std::string &silo_obj_path);
+
+void CONDUIT_RELAY_API silo_read(const std::string &file_path,
+                                 const std::string &silo_obj_path,
+                                 Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API silo_write(const  Node &node,
+                                  DBfile *dbfile,
+                                  const std::string &silo_obj_path);
+
+void CONDUIT_RELAY_API silo_read(DBfile *dbfile,
+                                 const std::string &silo_obj_path,
+                                 Node &node);
+
+
+//-----------------------------------------------------------------------------    
+void CONDUIT_RELAY_API silo_mesh_write(Node &mesh,
+                                       const std::string &path);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API silo_mesh_write(Node &mesh,
+                                       const std::string &file_path,
+                                       const std::string &silo_obj_path);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API silo_mesh_write(Node &mesh,
+                                       DBfile *dbfile,
+                                       const std::string &silo_obj_path);
+
+
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::examples --
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh --
+// -- end conduit::relay::io --
 //-----------------------------------------------------------------------------
 
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint --
+// -- end conduit::relay --
 //-----------------------------------------------------------------------------
+
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit --
+// -- end conduit:: --
 //-----------------------------------------------------------------------------
 
 
-#endif 
-
-
+#endif
 

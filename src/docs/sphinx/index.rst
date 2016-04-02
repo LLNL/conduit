@@ -47,15 +47,13 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-**Conduit: A Scientific Data Exchange Library for HPC Simulations**
-
-
-Introduction
+Conduit
 ============
 
-What is Conduit?
-----------------
+**Conduit: A Scientific Data Exchange Library for HPC Simulations**
 
+Introduction
+------------
 
 Conduit is an open source project from Lawrence Livermore National Laboratory. It provides an intuitive model for describing hierarchical scientific data in C++, C, Fortran, and Python and is used for data coupling between packages in-core, serialization, and I/O tasks.
 
@@ -103,31 +101,32 @@ https://lc.llnl.gov/stash/projects/CON/repos/conduit/browse
 Conduit Libraries 
 ------------------
 
-Core API
-~~~~~~~~~~
+The *conduit* library provides Conduit's core data API. The *relay* and *blueprint* libraries provide higher-level services built on top of the core API. 
 
-**conduit**
+.. note::
+    **Caveat Emptor**: The APIs for *relay* and *blueprint* are still in flux.
+
+conduit
+~~~~~~~~
  - Provides Conduit's Core API in C++ and subsets of Core API in Python, C, and Fortran.
- - *Optionally depends on Python, NumPy, and Fortran*
+ - *Optionally depends on Python with NumPy and Fortran*
 
-Additional Libraries 
-~~~~~~~~~~~~~~~~~~~~~
-These libraries provide higher-level services built on top of Conduit's Core API.
+relay
+~~~~~~
+ - Provides:
+ 
+ 
+   - I/O functionally beyond simple binary, memory mapped, and json-based text file I/O.
+   - A light-weight web server for REST and WebSocket clients. 
+   - Interfaces for MPI communication using conduit::Node instances as payloads.
+ - *Optionally depends on silo, hdf5, szip and mpi*
 
-*Caveat Emptor*: These libraries are young and their APIs are in flux.
-
-**conduit_io** 
- - Provides I/O functionally beyond binary file and memory mapped I/O and json-based text I/O.
- - Includes a light-weight web server for REST and WebSocket clients. 
- - *Optionally depends on silo, hdf5, szip*
-
-**conduit_mpi** 
- - Provides interfaces for MPI communication using conduit::Node instances as payloads. 
- - *Depends on mpi*
-
-**blueprint**
+blueprint
+~~~~~~~~~~
  - Provides interfaces for common higher-level conventions and data protocols (eg. describing a “mesh”) using Conduit.
+ - *No optional dependancies* 
 
+See the :doc:`user` for more details on these libraries. 
 
 Contributors 
 ----------------
@@ -136,6 +135,10 @@ Contributors
 - Adam Kunen (LLNL)
 - Kathleen Biagas (LLNL)
 - Eric Brugger (LLNL)
+- Aaron Black (LLNL)
+- George Zagaris (LLNL)
+- Kenny Weiss (LLNL)
+- Matt Larsen (LLNL)
 - George Aspesi (Harvey Mudd)
 - Justin Bai (Harvey Mudd)
 - Rupert Deese (Harvey Mudd)

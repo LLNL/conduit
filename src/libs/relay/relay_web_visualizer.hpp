@@ -44,73 +44,101 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint_mesh_examples.hpp
+/// file: relay_web_visualizer.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_MESH_EXAMPLES_HPP
-#define BLUEPRINT_MESH_EXAMPLES_HPP
+#ifndef CONDUIT_RELAY_WEB_VISUALIZER_HPP
+#define CONDUIT_RELAY_WEB_VISUALIZER_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-#include "blueprint_exports.hpp"
+
+#include "relay_exports.hpp"
+#include "relay_web.hpp"
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::--
+// -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
 {
 
-
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint --
+// -- begin conduit::relay --
 //-----------------------------------------------------------------------------
-namespace blueprint
+namespace relay 
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mesh --
+// -- begin conduit::relay::web --
 //-----------------------------------------------------------------------------
-namespace mesh 
+namespace web
 {
 
 //-----------------------------------------------------------------------------
-/// Methods that generate example meshes.
-/// We should move these to a better place in the future.
+// -- Visualizer Web Request Handler  -
 //-----------------------------------------------------------------------------
-namespace examples
+class CONDUIT_RELAY_API VisualizerRequestHandler : public WebRequestHandler
 {
+public:
+                   VisualizerRequestHandler(Node *node);
+                  ~VisualizerRequestHandler();
     
-    void BLUEPRINT_API braid(const std::string &mesh_type,
-                             conduit::index_t nx,
-                             conduit::index_t ny,
-                             conduit::index_t nz,  // not implemented ... 
-                             conduit::Node &res);
+    virtual bool   handle_post(WebServer *server,
+                               struct mg_connection *conn);
+
+    virtual bool   handle_get(WebServer *server,
+                              struct mg_connection *conn);
+
+private:
+    // catch all, used for any post or get
+    bool           handle_request(WebServer *server,
+                                  struct mg_connection *conn);
+    // handlers for specific commands 
+    bool           handle_get_schema(struct mg_connection *conn);
+    bool           handle_get_value(struct mg_connection *conn);
+    bool           handle_get_base64_json(struct mg_connection *conn);
+    bool           handle_shutdown(WebServer *server);
+
+    // holds the node to visualize 
+    Node          *m_node;
+};
+
+//-----------------------------------------------------------------------------
+// -- Visualizer Web Request Handler  -
+//-----------------------------------------------------------------------------
+
+class CONDUIT_RELAY_API VisualizerServer
+{
+public:
+    static WebServer  *serve(Node *data,
+                             bool block=false,
+                             index_t port = 8080,
+                             const std::string &ssl_cert_file = std::string(""),
+                             const std::string &auth_domain   = std::string(""),
+                             const std::string &auth_file     = std::string(""));
+};
+
+
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::examples --
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh --
+// -- end conduit::relay::web --
 //-----------------------------------------------------------------------------
 
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint --
+// -- end conduit::relay --
 //-----------------------------------------------------------------------------
+
+
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit --
+// -- end conduit:: --
 //-----------------------------------------------------------------------------
-
 
 #endif 
 

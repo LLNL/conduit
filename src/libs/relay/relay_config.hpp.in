@@ -44,75 +44,28 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint_mesh_examples.hpp
+/// file: relay_config.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_MESH_EXAMPLES_HPP
-#define BLUEPRINT_MESH_EXAMPLES_HPP
+#ifndef CONDUIT_RELAY_CONFIG_HPP
+#define CONDUIT_RELAY_CONFIG_HPP
 
 //-----------------------------------------------------------------------------
-// conduit lib includes
+//
+// #define optional i/o features
+//
 //-----------------------------------------------------------------------------
-#include "conduit.hpp"
-#include "blueprint_exports.hpp"
+#cmakedefine CONDUIT_RELAY_IO_HDF5_ENABLED
 
-//-----------------------------------------------------------------------------
-// -- begin conduit::--
-//-----------------------------------------------------------------------------
-namespace conduit
-{
+#cmakedefine CONDUIT_RELAY_IO_SILO_ENABLED
 
+#cmakedefine CONDUIT_RELAY_MPI_ENABLED
 
-//-----------------------------------------------------------------------------
-// -- begin conduit::blueprint --
-//-----------------------------------------------------------------------------
-namespace blueprint
-{
+// this path points to the web client js code tree
+#cmakedefine CONDUIT_RELAY_WEB_CLIENT_ROOT      "@CONDUIT_RELAY_WEB_CLIENT_ROOT@"
 
-//-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mesh --
-//-----------------------------------------------------------------------------
-namespace mesh 
-{
-
-//-----------------------------------------------------------------------------
-/// Methods that generate example meshes.
-/// We should move these to a better place in the future.
-//-----------------------------------------------------------------------------
-namespace examples
-{
-    
-    void BLUEPRINT_API braid(const std::string &mesh_type,
-                             conduit::index_t nx,
-                             conduit::index_t ny,
-                             conduit::index_t nz,  // not implemented ... 
-                             conduit::Node &res);
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::examples --
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh --
-//-----------------------------------------------------------------------------
-
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint --
-//-----------------------------------------------------------------------------
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit --
-//-----------------------------------------------------------------------------
-
-
-#endif 
+#endif
 
 
 

@@ -44,75 +44,95 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint_mesh_examples.hpp
+/// file: relay.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_MESH_EXAMPLES_HPP
-#define BLUEPRINT_MESH_EXAMPLES_HPP
+#include "relay.hpp"
 
 //-----------------------------------------------------------------------------
-// conduit lib includes
+// standard lib includes
 //-----------------------------------------------------------------------------
-#include "conduit.hpp"
-#include "blueprint_exports.hpp"
+#include <iostream>
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::--
+// -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
 {
 
-
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint --
+// -- begin conduit::relay --
 //-----------------------------------------------------------------------------
-namespace blueprint
+namespace relay
 {
 
-//-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mesh --
-//-----------------------------------------------------------------------------
-namespace mesh 
-{
 
-//-----------------------------------------------------------------------------
-/// Methods that generate example meshes.
-/// We should move these to a better place in the future.
-//-----------------------------------------------------------------------------
-namespace examples
+//---------------------------------------------------------------------------//
+std::string
+about()
 {
+    Node n;
+    relay::about(n);
+    return n.to_json();
+}
+
+//---------------------------------------------------------------------------//
+void
+about(Node &n)
+{
+    n.reset();
+
+    n["web"] = "enabled";
+    Node &io_protos = n["io/protocols"];
+
+    // standard binary io
+    io_protos["conduit_bin"] = "enabled";
+
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+    // straight hdf5 
+    io_protos["hdf5"] = "enabled";
+#else
+    // straight hdf5 
+    io_protos["hdf5"] = "disabled";
+#endif
     
-    void BLUEPRINT_API braid(const std::string &mesh_type,
-                             conduit::index_t nx,
-                             conduit::index_t ny,
-                             conduit::index_t nz,  // not implemented ... 
-                             conduit::Node &res);
+    // silo
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
+    // node is packed into two silo objects
+    io_protos["conduit_silo"] = "enabled";
+#else
+    // node is packed into two silo objects
+    io_protos["conduit_silo"] = "disabled";
+#endif
+    
+    // silo mesh aware
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
+    io_protos["conduit_silo_mesh"] = "enabled";
+#else
+    io_protos["conduit_silo_mesh"] = "disabled";
+#endif
+
+
+#ifdef CONDUIT_RELAY_MPI_ENABLED
+    n["mpi"] = "enabled";
+#else
+    n["mpi"] = "disabled";
+#endif
+
+
+}
+
+
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::examples --
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh --
+// -- end conduit::relay --
 //-----------------------------------------------------------------------------
 
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint --
+// -- end conduit:: --
 //-----------------------------------------------------------------------------
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit --
-//-----------------------------------------------------------------------------
-
-
-#endif 
-
 
 

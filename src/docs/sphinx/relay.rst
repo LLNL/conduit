@@ -42,22 +42,26 @@
 .. # 
 .. ############################################################################
 
-===========
-Conduit
-===========
+===================
+Relay
+===================
 
-Tutorial
----------------
-This short tutorial provides C++ examples that demonstrate the Conduit's Core 
-API. Conduit's unit tests (*src/tests/{library_name}/*) also provide a rich set 
-of examples for Conduit's Core API and additional libraries. 
+.. note::
+    The **relay** APIs and docs are work in progress.
 
-.. toctree::
 
-   tutorial_basics
-   tutorial_numeric
-   tutorial_json
-   tutorial_ownership
-   tutorial_update
+Conduit Relay is an umbrella project for I/O and communication functionality built on top of Conduit's Core API. It includes three components:
 
-..    conduit_api
+* **io** - I/O functionally beyond binary, memory mapped, and json-based text file I/O. Includes optional Silo and HDF5 I/O support. 
+* **web** - An embedded web server (built using `CivetWeb <https://github.com/civetweb/civetweb>`_) that can host files and supports developing custom REST and WebSocket backends that use conduit::Node instances as payloads.
+* **mpi**  - Interfaces for MPI communication using conduit::Node instances as payloads.
+
+The **io** and **web** features are built into the *conduit_relay* library. To avoid include and linking issues for serial codes that want to use relay, the MPI functionality exists in a separate library *conduit_relay_mpi*.
+
+
+.. .. toctree::
+..     relay_io
+..    relay_web
+..     relay_mpi
+
+

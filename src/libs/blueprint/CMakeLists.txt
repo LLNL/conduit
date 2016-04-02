@@ -56,9 +56,9 @@ set(blueprint_headers
     blueprint.hpp
     blueprint_mesh.hpp
     blueprint_mesh_examples.hpp
-    blueprint_mca.hpp
-    blueprint_mca_examples.hpp
-    Blueprint_Exports.hpp)
+    blueprint_mcarray.hpp
+    blueprint_mcarray_examples.hpp
+    blueprint_exports.hpp)
 
 #
 # Specify all sources
@@ -67,30 +67,30 @@ set(blueprint_sources
     blueprint.cpp
     blueprint_mesh.cpp
     blueprint_mesh_examples.cpp
-    blueprint_mca.cpp
-    blueprint_mca_examples.cpp)
+    blueprint_mcarray.cpp
+    blueprint_mcarray_examples.cpp)
 
 #
 # Note: headers are added here so they show up in project file generators
 # (such as xcode, eclipse, etc)
 #
 if(BUILD_SHARED_LIBS)
-    add_library(blueprint SHARED ${blueprint_sources} ${blueprint_headers})
+    add_library(conduit_blueprint SHARED ${blueprint_sources} ${blueprint_headers})
 else()
-    add_library(blueprint STATIC ${blueprint_sources} ${blueprint_headers})
+    add_library(conduit_blueprint STATIC ${blueprint_sources} ${blueprint_headers})
 endif()
 
 #
 # Link with conduit
 #
-target_link_libraries(blueprint conduit)
+target_link_libraries(conduit_blueprint conduit)
 
 ##################################
 # Install Targets for conduit 
 ##################################
 
 install(FILES ${blueprint_headers} DESTINATION include)
-install(TARGETS blueprint
+install(TARGETS conduit_blueprint
   EXPORT conduit
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib

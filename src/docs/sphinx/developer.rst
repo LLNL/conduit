@@ -55,15 +55,13 @@ Source Code Repo Layout
 * **src/libs/**
 
  * **conduit/** - Main Conduit library source
- * **conduit_io/** - Conduit I/O library source
- * **conduit_mpi/** - Conduit MPI library source
+ * **relay/** - Relay libraries source
  * **blueprint/** - Blueprint library source
 
 * **src/tests/**
 
  * **conduit/** - Unit tests for the main Conduit library
- * **conduit_io/** - Unit tests for Conduit I/O library
- * **conduit_mpi/** - Unit tests for Conduit MPI library
+ * **relay/** - Unit tests for Conduit Relay libraries
  * **blueprint/** - Unit tests for Blueprint library
  * **thirdparty/** - Unit tests for thirdparty libraries
 

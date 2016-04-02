@@ -44,12 +44,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint_mesh_examples.hpp
+/// file: blueprint_mcarray.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_MESH_EXAMPLES_HPP
-#define BLUEPRINT_MESH_EXAMPLES_HPP
+#ifndef BLUEPRINT_MCA_HPP
+#define BLUEPRINT_MCA_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
@@ -57,8 +57,9 @@
 #include "conduit.hpp"
 #include "blueprint_exports.hpp"
 
+
 //-----------------------------------------------------------------------------
-// -- begin conduit::--
+// -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
 {
@@ -71,33 +72,57 @@ namespace blueprint
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mesh --
+// -- begin conduit::blueprint::mcarray --
 //-----------------------------------------------------------------------------
-namespace mesh 
+namespace mcarray
 {
 
 //-----------------------------------------------------------------------------
-/// Methods that generate example meshes.
-/// We should move these to a better place in the future.
+// blueprint protocol interface
 //-----------------------------------------------------------------------------
-namespace examples
-{
-    
-    void BLUEPRINT_API braid(const std::string &mesh_type,
-                             conduit::index_t nx,
-                             conduit::index_t ny,
-                             conduit::index_t nz,  // not implemented ... 
-                             conduit::Node &res);
-}
+
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::examples --
-//-----------------------------------------------------------------------------
+bool BLUEPRINT_API verify(conduit::Node &n,
+                          conduit::Node &info);
 
 
 //-----------------------------------------------------------------------------
+bool BLUEPRINT_API transform(conduit::Node &src,
+                             conduit::Node &actions,
+                             conduit::Node &dest,
+                             conduit::Node &info);
+
+
+//-----------------------------------------------------------------------------
+// mcarray blueprint methods
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool BLUEPRINT_API to_contiguous(conduit::Node &src,
+                                 conduit::Node &dest);
+
+
+//-----------------------------------------------------------------------------
+bool BLUEPRINT_API to_interleaved(conduit::Node &src,
+                                  conduit::Node &dest);
+
+
+//----------------------------------------------------------------------------
+bool BLUEPRINT_API verify_mcarray(conduit::Node &n);
+
+
+//----------------------------------------------------------------------------
+bool BLUEPRINT_API is_contiguous(conduit::Node &n);
+
+//----------------------------------------------------------------------------
+bool BLUEPRINT_API is_interleaved(conduit::Node &n);
+
+
+
+//-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh --
+// -- end conduit::blueprint::mcarray --
 //-----------------------------------------------------------------------------
 
 
@@ -106,9 +131,10 @@ namespace examples
 // -- end conduit::blueprint --
 //-----------------------------------------------------------------------------
 
+
 }
 //-----------------------------------------------------------------------------
-// -- end conduit --
+// -- end conduit:: --
 //-----------------------------------------------------------------------------
 
 

@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -9,7 +9,7 @@
 // 
 // This file is part of Conduit. 
 // 
-// For details, see https://lc.llnl.gov/conduit/.
+// For details, see: http://llnl.github.io/conduit/.
 // 
 // Please also read conduit/LICENSE
 // 
@@ -44,21 +44,65 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_smoke.cpp
+/// file: t_relay_io_silo.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit.hpp"
-#include "blueprint.hpp"
-
+#include "relay.hpp"
 #include <iostream>
 #include "gtest/gtest.h"
 
-//-----------------------------------------------------------------------------
-TEST(blueprint_smoke, basic_use)
+using namespace conduit;
+using namespace conduit::relay;
+
+
+TEST(conduit_io_silo, conduit_silo_cold_storage)
 {
-    std::cout << conduit::blueprint::about() << std::endl;
+    uint32 a_val = 20;
+    uint32 b_val = 8;
+    uint32 c_val = 13;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+
+    EXPECT_EQ(n["a"].as_uint32(), a_val);
+    EXPECT_EQ(n["b"].as_uint32(), b_val);
+    EXPECT_EQ(n["c"].as_uint32(), c_val);
+
+    io::silo_write(n,"tout_cold_storage_test.silo:myobj");
+
+    Node n_load;
+    io::silo_read("tout_cold_storage_test.silo:myobj",n_load);
+    
+    EXPECT_EQ(n_load["a"].as_uint32(), a_val);
+    EXPECT_EQ(n_load["b"].as_uint32(), b_val);
+    EXPECT_EQ(n_load["c"].as_uint32(), c_val);
 }
 
+TEST(conduit_io_silo, conduit_silo_cold_storage_generic_iface)
+{
+    uint32 a_val = 20;
+    uint32 b_val = 8;
+    uint32 c_val = 13;
 
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+
+    EXPECT_EQ(n["a"].as_uint32(), a_val);
+    EXPECT_EQ(n["b"].as_uint32(), b_val);
+    EXPECT_EQ(n["c"].as_uint32(), c_val);
+
+    io::save(n, "tout_cold_storage_test_generic_iface.silo:myobj");
+
+    Node n_load;
+    io::load("tout_cold_storage_test_generic_iface.silo:myobj",n_load);
+    
+    EXPECT_EQ(n_load["a"].as_uint32(), a_val);
+    EXPECT_EQ(n_load["b"].as_uint32(), b_val);
+    EXPECT_EQ(n_load["c"].as_uint32(), c_val);
+}
 

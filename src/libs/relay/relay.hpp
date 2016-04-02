@@ -44,75 +44,58 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint_mesh_examples.hpp
+/// file: relay.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_MESH_EXAMPLES_HPP
-#define BLUEPRINT_MESH_EXAMPLES_HPP
+
+#ifndef CONDUIT_RELAY_HPP
+#define CONDUIT_RELAY_HPP
 
 //-----------------------------------------------------------------------------
-// conduit lib includes
+// conduit lib include 
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-#include "blueprint_exports.hpp"
+
+#include "relay_exports.hpp"
+#include "relay_config.hpp"
+
+#include "relay_io.hpp"
+#include "relay_web.hpp"
+#include "relay_web_visualizer.hpp"
+
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::--
+// -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
 {
 
-
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint --
+// -- begin conduit::relay --
 //-----------------------------------------------------------------------------
-namespace blueprint
+namespace relay
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mesh --
+/// The about methods construct human readable info about how relay was
+/// configured.
 //-----------------------------------------------------------------------------
-namespace mesh 
-{
+std::string CONDUIT_RELAY_API about();
+void        CONDUIT_RELAY_API about(conduit::Node &res);
 
-//-----------------------------------------------------------------------------
-/// Methods that generate example meshes.
-/// We should move these to a better place in the future.
-//-----------------------------------------------------------------------------
-namespace examples
-{
-    
-    void BLUEPRINT_API braid(const std::string &mesh_type,
-                             conduit::index_t nx,
-                             conduit::index_t ny,
-                             conduit::index_t nz,  // not implemented ... 
-                             conduit::Node &res);
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::examples --
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh --
+// -- end conduit::relay --
 //-----------------------------------------------------------------------------
 
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint --
-//-----------------------------------------------------------------------------
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit --
+// -- end conduit:: --
 //-----------------------------------------------------------------------------
 
 
-#endif 
 
-
+#endif
 
