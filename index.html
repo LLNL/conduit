@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Introduction &mdash; Conduit 0.1 documentation</title>
+  <title>Conduit &mdash; Conduit 0.2.0.pre documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="Conduit 0.1 documentation" href="#"/>
+    <link rel="top" title="Conduit 0.2.0.pre documentation" href="#"/>
         <link rel="next" title="User Documentation" href="user.html"/> 
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                0.1
+                0.2.0.pre
               </div>
             
           
@@ -113,7 +113,7 @@
   <ul class="wy-breadcrumbs">
     <li><a href="#">Docs</a> &raquo;</li>
       
-    <li>Introduction</li>
+    <li>Conduit</li>
       <li class="wy-breadcrumbs-aside">
         
           
@@ -127,11 +127,11 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <p><strong>Conduit: A Scientific Data Exchange Library for HPC Simulations</strong></p>
+  <div class="section" id="conduit">
+<h1>Conduit<a class="headerlink" href="#conduit" title="Permalink to this headline">¶</a></h1>
+<p><strong>Conduit: A Scientific Data Exchange Library for HPC Simulations</strong></p>
 <div class="section" id="introduction">
-<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="what-is-conduit">
-<h2>What is Conduit?<a class="headerlink" href="#what-is-conduit" title="Permalink to this headline">¶</a></h2>
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
 <p>Conduit is an open source project from Lawrence Livermore National Laboratory. It provides an intuitive model for describing hierarchical scientific data in C++, C, Fortran, and Python and is used for data coupling between packages in-core, serialization, and I/O tasks.</p>
 <p>Conduit&#8217;s Core API provides:</p>
 <ul>
@@ -168,41 +168,43 @@
 </div>
 <div class="section" id="conduit-libraries">
 <h2>Conduit Libraries<a class="headerlink" href="#conduit-libraries" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="core-api">
-<h3>Core API<a class="headerlink" href="#core-api" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt><strong>conduit</strong></dt>
-<dd><ul class="first last simple">
-<li>Provides Conduit&#8217;s Core API in C++ and subsets of Core API in Python, C, and Fortran.</li>
-<li><em>Optionally depends on Python, NumPy, and Fortran</em></li>
-</ul>
-</dd>
-</dl>
+<p>The <em>conduit</em> library provides Conduit&#8217;s core data API. The <em>relay</em> and <em>blueprint</em> libraries provide higher-level services built on top of the core API.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><strong>Caveat Emptor</strong>: The APIs for <em>relay</em> and <em>blueprint</em> are still in flux.</p>
 </div>
-<div class="section" id="additional-libraries">
-<h3>Additional Libraries<a class="headerlink" href="#additional-libraries" title="Permalink to this headline">¶</a></h3>
-<p>These libraries provide higher-level services built on top of Conduit&#8217;s Core API.</p>
-<p><em>Caveat Emptor</em>: These libraries are young and their APIs are in flux.</p>
-<dl class="docutils">
-<dt><strong>conduit_io</strong></dt>
-<dd><ul class="first last simple">
-<li>Provides I/O functionally beyond binary file and memory mapped I/O and json-based text I/O.</li>
-<li>Includes a light-weight web server for REST and WebSocket clients.</li>
-<li><em>Optionally depends on silo, hdf5, szip</em></li>
+<div class="section" id="id1">
+<h3>conduit<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>Provides Conduit&#8217;s Core API in C++ and subsets of Core API in Python, C, and Fortran.</li>
+<li><em>Optionally depends on Python with NumPy and Fortran</em></li>
 </ul>
-</dd>
-<dt><strong>conduit_mpi</strong></dt>
-<dd><ul class="first last simple">
-<li>Provides interfaces for MPI communication using conduit::Node instances as payloads.</li>
-<li><em>Depends on mpi</em></li>
+</div></blockquote>
+</div>
+<div class="section" id="relay">
+<h3>relay<a class="headerlink" href="#relay" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>Provides:<ul>
+<li>I/O functionally beyond simple binary, memory mapped, and json-based text file I/O.</li>
+<li>A light-weight web server for REST and WebSocket clients.</li>
+<li>Interfaces for MPI communication using conduit::Node instances as payloads.</li>
 </ul>
-</dd>
-<dt><strong>blueprint</strong></dt>
-<dd><ul class="first last simple">
+</li>
+<li><em>Optionally depends on silo, hdf5, szip and mpi</em></li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="blueprint">
+<h3>blueprint<a class="headerlink" href="#blueprint" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
 <li>Provides interfaces for common higher-level conventions and data protocols (eg. describing a “mesh”) using Conduit.</li>
+<li><em>No optional dependancies</em></li>
 </ul>
-</dd>
-</dl>
+</div></blockquote>
+<p>See the <a class="reference internal" href="user.html"><em>User Documentation</em></a> for more details on these libraries.</p>
 </div>
 </div>
 <div class="section" id="contributors">
@@ -213,6 +215,10 @@
 <li>Adam Kunen (LLNL)</li>
 <li>Kathleen Biagas (LLNL)</li>
 <li>Eric Brugger (LLNL)</li>
+<li>Aaron Black (LLNL)</li>
+<li>George Zagaris (LLNL)</li>
+<li>Kenny Weiss (LLNL)</li>
+<li>Matt Larsen (LLNL)</li>
 <li>George Aspesi (Harvey Mudd)</li>
 <li>Justin Bai (Harvey Mudd)</li>
 <li>Rupert Deese (Harvey Mudd)</li>
@@ -227,6 +233,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="user.html">User Documentation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="conduit.html">Conduit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="relay.html">Relay</a></li>
 <li class="toctree-l2"><a class="reference internal" href="blueprint.html">Blueprint</a></li>
 <li class="toctree-l2"><a class="reference internal" href="building.html">Building</a></li>
 <li class="toctree-l2"><a class="reference internal" href="glossary.html">Glossary</a></li>
@@ -268,7 +275,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2014-2015, LLNS.
+        &copy; Copyright 2014-2016, LLNS.
 
     </p>
   </div>
@@ -290,7 +297,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.1',
+            VERSION:'0.2.0.pre',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

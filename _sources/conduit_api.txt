@@ -42,22 +42,45 @@
 .. # 
 .. ############################################################################
 
-===========
-Conduit
-===========
+======================
+API Documentation 
+======================
 
-Tutorial
----------------
-This short tutorial provides C++ examples that demonstrate the Conduit's Core 
-API. Conduit's unit tests (*src/tests/{library_name}/*) also provide a rich set 
-of examples for Conduit's Core API and additional libraries. 
+This set of documentation is extracted using Doxygen.
 
-.. toctree::
+Node
+---------
 
-   tutorial_basics
-   tutorial_numeric
-   tutorial_json
-   tutorial_ownership
-   tutorial_update
+.. doxygenclass:: conduit::Node
+   :members:
+   :undoc-members:
 
-..    conduit_api
+
+Schema
+---------
+
+.. doxygenclass:: conduit::Schema
+   :members:
+   :undoc-members:
+
+DataType
+---------
+
+.. doxygenclass:: conduit::DataType
+   :members:
+   :undoc-members:
+
+
+Generator
+---------
+.. doxygenclass:: conduit::Generator
+   :members:
+   :undoc-members:
+
+DataArray
+---------
+.. doxygenclass:: conduit::DataArray
+   :members:
+   :undoc-members:
+
+

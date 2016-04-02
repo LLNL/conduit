@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Blueprint &mdash; Conduit 0.1 documentation</title>
+  <title>Blueprint &mdash; Conduit 0.2.0.pre documentation</title>
   
 
   
@@ -30,10 +30,10 @@
   
 
   
-    <link rel="top" title="Conduit 0.1 documentation" href="index.html"/>
+    <link rel="top" title="Conduit 0.2.0.pre documentation" href="index.html"/>
         <link rel="up" title="User Documentation" href="user.html"/>
         <link rel="next" title="mcarray" href="blueprint_mcarray.html"/>
-        <link rel="prev" title="Node Update Methods" href="tutorial_update.html"/> 
+        <link rel="prev" title="Relay" href="relay.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                0.1
+                0.2.0.pre
               </div>
             
           
@@ -85,6 +85,7 @@
                 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="user.html">User Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="conduit.html">Conduit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="relay.html">Relay</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="">Blueprint</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="blueprint_mcarray.html">mcarray</a></li>
 <li class="toctree-l3"><a class="reference internal" href="blueprint_mesh.html">mesh</a></li>
@@ -144,6 +145,10 @@
             
   <div class="section" id="blueprint">
 <h1>Blueprint<a class="headerlink" href="#blueprint" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The <strong>blueprint</strong> API and docs are work in progress.</p>
+</div>
 <p>The flexibly of the Conduit Node allows it to be used to represent a wide range of scientific data. Unconstrained, this flexibly can lead to many application specific choices for common types of data that could potentially be shared between applications.</p>
 <p>The goal of Blueprint is to help facilite a set of shared higher-level conventions for using Conduit Nodes to hold common simulation data structures. The Blueprint library in Conduit provides methods to verify if a Conduit Node instance conforms to a known convention and methods that provide common transforms that can be used with these conventions.</p>
 <p>For now, Blueprint is focused on conventions for two important types of data:</p>
@@ -211,7 +216,7 @@ They are used in the context computational meshes to represent coordinate data o
         <a href="blueprint_mcarray.html" class="btn btn-neutral float-right" title="mcarray" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="tutorial_update.html" class="btn btn-neutral" title="Node Update Methods" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="relay.html" class="btn btn-neutral" title="Relay" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -220,7 +225,7 @@ They are used in the context computational meshes to represent coordinate data o
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2014-2015, LLNS.
+        &copy; Copyright 2014-2016, LLNS.
 
     </p>
   </div>
@@ -242,7 +247,7 @@ They are used in the context computational meshes to represent coordinate data o
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.1',
+            VERSION:'0.2.0.pre',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

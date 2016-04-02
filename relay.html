@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Node Update Methods &mdash; Conduit 0.2.0.pre documentation</title>
+  <title>Relay &mdash; Conduit 0.2.0.pre documentation</title>
   
 
   
@@ -31,9 +31,9 @@
 
   
     <link rel="top" title="Conduit 0.2.0.pre documentation" href="index.html"/>
-        <link rel="up" title="Conduit" href="conduit.html"/>
-        <link rel="next" title="Relay" href="relay.html"/>
-        <link rel="prev" title="Data Ownership" href="tutorial_ownership.html"/> 
+        <link rel="up" title="User Documentation" href="user.html"/>
+        <link rel="next" title="Blueprint" href="blueprint.html"/>
+        <link rel="prev" title="Node Update Methods" href="tutorial_update.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -84,18 +84,8 @@
             
                 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="user.html">User Documentation</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="conduit.html">Conduit</a><ul class="current">
-<li class="toctree-l3 current"><a class="reference internal" href="conduit.html#tutorial">Tutorial</a><ul class="current">
-<li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html">Basic Concepts</a></li>
-<li class="toctree-l4"><a class="reference internal" href="tutorial_numeric.html">Accessing Numeric Data</a></li>
-<li class="toctree-l4"><a class="reference internal" href="tutorial_json.html">Generators</a></li>
-<li class="toctree-l4"><a class="reference internal" href="tutorial_ownership.html">Data Ownership</a></li>
-<li class="toctree-l4 current"><a class="current reference internal" href="">Node Update Methods</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="relay.html">Relay</a></li>
+<li class="toctree-l2"><a class="reference internal" href="conduit.html">Conduit</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Relay</a></li>
 <li class="toctree-l2"><a class="reference internal" href="blueprint.html">Blueprint</a></li>
 <li class="toctree-l2"><a class="reference internal" href="building.html">Building</a></li>
 <li class="toctree-l2"><a class="reference internal" href="glossary.html">Glossary</a></li>
@@ -135,13 +125,11 @@
       
           <li><a href="user.html">User Documentation</a> &raquo;</li>
       
-          <li><a href="conduit.html">Conduit</a> &raquo;</li>
-      
-    <li>Node Update Methods</li>
+    <li>Relay</li>
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="_sources/tutorial_update.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/relay.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -151,39 +139,19 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="node-update-methods">
-<h1>Node Update Methods<a class="headerlink" href="#node-update-methods" title="Permalink to this headline">¶</a></h1>
-<p>The <em>Node</em> class provides three <strong>update</strong> methods which allow you to easily copy data or  the description of data from a source node.</p>
+  <div class="section" id="relay">
+<h1>Relay<a class="headerlink" href="#relay" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The <strong>relay</strong> APIs and docs are work in progress.</p>
+</div>
+<p>Conduit Relay is an umbrella project for I/O and communication functionality built on top of Conduit&#8217;s Core API. It includes three components:</p>
 <ul class="simple">
-<li><strong>Node::update(Node &amp;source)</strong>:</li>
+<li><strong>io</strong> - I/O functionally beyond binary, memory mapped, and json-based text file I/O. Includes optional Silo and HDF5 I/O support.</li>
+<li><strong>web</strong> - An embedded web server (built using <a class="reference external" href="https://github.com/civetweb/civetweb">CivetWeb</a>) that can host files and supports developing custom REST and WebSocket backends that use conduit::Node instances as payloads.</li>
+<li><strong>mpi</strong>  - Interfaces for MPI communication using conduit::Node instances as payloads.</li>
 </ul>
-<blockquote>
-<div><p>This method behaves similar to a python dictionary update. Entires from the source Node are copied into the calling Node, here are more concrete details:</p>
-<ul class="simple">
-<li><strong>If the source describes an Object</strong>:<ul>
-<li>Update copies the children of the source Node into the calling Node. Normal set semantics apply: if a compatible child with the same name already exists in the calling Node, the data will be copied.  If not, the calling Node will dynamically construct children to hold copies of each child of the source Node.</li>
-</ul>
-</li>
-<li><strong>If the source describes a List</strong>:<ul>
-<li>Update copies the children of the source Node into the calling Node. Normal set semantics apply: if a compatible child already exists in the same list order in the calling Node, the data will be copied.  If not, the calling Node will dynamically construct children to hold copies of each child of the source Node.</li>
-</ul>
-</li>
-<li><strong>If the source Node describes a leaf data type</strong>:<ul>
-<li>Update works exactly like a <strong>set</strong> (not true yet).</li>
-</ul>
-</li>
-</ul>
-</div></blockquote>
-<ul class="simple">
-<li><strong>Node::update_compatible(Node &amp;source)</strong>:</li>
-</ul>
-<blockquote>
-<div>This method copies data from the children in the source Node that are compatible with children in the calling node. No changes are made where children are incompatible.</div></blockquote>
-<ul class="simple">
-<li><strong>Node::update_external(Node &amp;source)</strong>:</li>
-</ul>
-<blockquote>
-<div>This method creates children in the calling Node that externally describe the children in the source node. It differs from <strong>Node::set_external(Node &amp;source)</strong> in that <strong>set_external()</strong> will clear the calling Node so it exactly match an external description of the source Node, whereas <strong>update_external()</strong> will only change the children in the calling Node that correspond to children in the source Node.</div></blockquote>
+<p>The <strong>io</strong> and <strong>web</strong> features are built into the <em>conduit_relay</em> library. To avoid include and linking issues for serial codes that want to use relay, the MPI functionality exists in a separate library <em>conduit_relay_mpi</em>.</p>
 </div>
 
 
@@ -193,10 +161,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="relay.html" class="btn btn-neutral float-right" title="Relay" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="blueprint.html" class="btn btn-neutral float-right" title="Blueprint" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="tutorial_ownership.html" class="btn btn-neutral" title="Data Ownership" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="tutorial_update.html" class="btn btn-neutral" title="Node Update Methods" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
