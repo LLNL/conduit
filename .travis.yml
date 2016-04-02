@@ -41,7 +41,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
-sudo: true
+sudo: requried
+dist: trusty
 language: cpp
 compiler:
   - gcc
