@@ -62,9 +62,9 @@ addons:
        - gcc-4.8 
        - g++-4.8 
        - gfortran-4.8
+       # also update gcov
+       - gcov-4.8
 before_install:
-  - sudo apt-get install -y -qq gcov-4.8
-  - sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-4.8 90
   # download a newer version of cmake
   - wget --no-check-certificate http://www.cmake.org/files/v3.3/cmake-3.3.0-Linux-x86_64.sh
   - mkdir ${TRAVIS_HOME}/cmake/
