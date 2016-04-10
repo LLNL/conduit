@@ -175,10 +175,16 @@ TEST(conduit_node_update, update_compatible_realloc_like)
     // zero out the buffer just to be safe for this unit test
     memset(n2["a"].data_ptr(),0,sizeof(uint32)*15);
     
+    uint32 *n2_v_ptr_pre_update = n2["a"].as_uint32_ptr();
+    
     n2.update_compatible(n);
 
     uint32 *n_v_ptr  = n["a"].as_uint32_ptr();    
     uint32 *n2_v_ptr = n2["a"].as_uint32_ptr();
+
+    // there should not be an alloc, so the n2 ptr should be the same
+
+    EXPECT_EQ(n2_v_ptr_pre_update,n2_v_ptr);
 
     for(index_t i=0;i<10;i++)
     {
@@ -212,10 +218,16 @@ TEST(conduit_node_update, update_compatible)
     // zero out the buffer just to be safe for this unit test
     memset(n2["a"].data_ptr(),0,sizeof(uint32)*5);
     
+    uint32 *n2_v_ptr_pre_update = n2["a"].as_uint32_ptr();
+    
     n2.update_compatible(n);
-
-    uint32 *n_v_ptr  = n["a"].as_uint32_ptr();    
+    
+    uint32 *n_v_ptr  = n["a"].as_uint32_ptr();
     uint32 *n2_v_ptr = n2["a"].as_uint32_ptr();
+
+    // there should not be an alloc, so the n2 ptr should be the same
+
+    EXPECT_EQ(n2_v_ptr_pre_update,n2_v_ptr);
 
     for(index_t i=0;i<5;i++)
     {
