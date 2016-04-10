@@ -656,4 +656,44 @@ TEST(conduit_node, check_as_value_default_after_warning)
     conduit::utils::set_warning_handler(conduit::utils::default_warning_handler);
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, check_contiguous)
+{   
+    uint8    u8av[6] = {2,4,8,16,32,64};
+    uint16  u16av[6] = {2,4,8,16,32,64};
+    uint32  u32av[6] = {2,4,8,16,32,64};
+    uint64  u64av[6] = {2,4,8,16,32,64};
+    
+    uint8_array  u8av_a(u8av,DataType::uint8(6));
+    uint16_array u16av_a(u16av,DataType::uint16(6));
+    uint32_array u32av_a(u32av,DataType::uint32(6));
+    uint64_array u64av_a(u64av,DataType::uint64(6));
+    
+    Node n;
+    n["a"] = u8av_a;
+    n["b"] = u16av_a;
+    n["c"] = u32av_a;
+    n["d"] = u64av_a;
+    
+    EXPECT_FALSE(n.is_contiguous());
+    
+    Node n2;
+    n.compact_to(n2);
+    EXPECT_TRUE(n2.is_contiguous());
+
+    // no longer contig
+    n2["e"] = 10;
+    EXPECT_FALSE(n2.is_contiguous());
+
+    Node n3;
+    n3["a"].set_external(u64av,3);
+    n3["b"].set_external(u64av,3,sizeof(uint64)*3);
+    EXPECT_TRUE(n3.is_contiguous());
+    
+    n3["c"].set_external(u64av,3,sizeof(uint64)*3);
+    EXPECT_FALSE(n3.is_contiguous());
+
+}
+
+
 

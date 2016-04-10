@@ -10280,6 +10280,70 @@ Node::serialize(uint8 *data,index_t curr_offset) const
 }
 
 //---------------------------------------------------------------------------//
+bool
+Node::is_contiguous() const
+{
+    return contiguous_after(NULL) != NULL;
+}
+
+//---------------------------------------------------------------------------//
+uint8 *
+Node::contiguous_after(uint8 *ptr) const
+{
+    uint8   *res_ptr = ptr;
+    index_t dtype_id = dtype().id();
+    
+    if(dtype_id == DataType::OBJECT_ID ||
+       dtype_id == DataType::LIST_ID)
+    {
+        std::vector<Node*>::const_iterator itr;
+        for(itr = m_children.begin();
+            itr < m_children.end();
+            ++itr)
+        {
+            uint8 *next_ptr = (*itr)->contiguous_after(res_ptr);
+            
+            if( next_ptr == NULL)
+            {
+                // bad
+                if(res_ptr != NULL)
+                {
+                    return NULL;
+                }
+                // else 
+                // we haven't found an initial ptr
+            }
+            else
+            {
+                // ok, advance
+                res_ptr = next_ptr;
+            }
+        }
+    }
+    else if(dtype_id != DataType::EMPTY_ID)
+    {
+        if(res_ptr != NULL)
+        {
+            if(res_ptr == element_ptr(0))
+            {
+                res_ptr = (uint8*)element_ptr(0) + total_bytes();
+            }
+            else // bad
+            {
+                return NULL;
+            }
+        }
+        else
+        {
+            res_ptr = (uint8*)element_ptr(0) + total_bytes();
+        }
+    }
+    
+    return res_ptr;
+}
+
+
+//---------------------------------------------------------------------------//
 void
 Node::info(Node &res, const std::string &curr_path) const
 {

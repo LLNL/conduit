@@ -112,9 +112,6 @@ bool BLUEPRINT_API verify_mcarray(conduit::Node &n);
 
 
 //----------------------------------------------------------------------------
-bool BLUEPRINT_API is_contiguous(conduit::Node &n);
-
-//----------------------------------------------------------------------------
 bool BLUEPRINT_API is_interleaved(conduit::Node &n);
 
 

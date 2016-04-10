@@ -2196,6 +2196,9 @@ public:
     bool             is_compact() const 
                         {return m_schema->is_compact();}
 
+    /// does this node have a contiguous data layout
+    bool             is_contiguous() const;
+
     /// is this node compatible with given node
     bool             compatible(const Node &n) const
                         {return m_schema->compatible(n.schema());}
@@ -2708,6 +2711,9 @@ private:
 
     void              serialize(uint8 *data,
                                 index_t curr_offset) const;
+
+    /// is this node contiguous to the passed address
+    uint8*            contiguous_after(uint8 *ptr) const;
 
     void              info(Node &res,
                            const std::string &curr_path) const;
