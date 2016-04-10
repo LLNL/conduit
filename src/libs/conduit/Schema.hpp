@@ -159,6 +159,8 @@ public:
     index_t         total_bytes() const;
     index_t         total_bytes_compact() const;
 
+    index_t         spanned_bytes() const;
+
     index_t         element_index(index_t idx) const 
                         {return m_dtype.element_index(idx);}
 

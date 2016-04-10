@@ -502,7 +502,14 @@ DataType::total_bytes_compact() const
 {
     return default_bytes(m_id) * m_num_ele;
 }
-    
+
+//---------------------------------------------------------------------------//
+index_t
+DataType::spanned_bytes() const
+{
+    return total_bytes() + m_offset;
+}
+
 //---------------------------------------------------------------------------//
 bool
 DataType::compatible(const DataType& dtype) const

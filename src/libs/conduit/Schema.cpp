@@ -307,6 +307,36 @@ Schema::is_compact() const
 }
 
 //---------------------------------------------------------------------------//
+index_t
+Schema::spanned_bytes() const
+{
+    index_t res = 0;
+
+    index_t dt_id = m_dtype.id();
+    if(dt_id == DataType::OBJECT_ID || dt_id == DataType::LIST_ID)
+    {
+        const std::vector<Schema*> &lst = children();
+        for (std::vector<Schema*>::const_iterator itr = lst.begin();
+             itr < lst.end(); ++itr)
+        {
+            // spanned bytes is the max of the spanned bytes of 
+            // all children
+            index_t curr_span = (*itr)->spanned_bytes();
+            if(curr_span > res)
+            {
+                res = curr_span;
+            }
+        }
+    }
+    else
+    {
+        res = m_dtype.spanned_bytes();
+    }
+    return res;
+}
+
+
+//---------------------------------------------------------------------------//
 bool
 Schema::compatible(const Schema &s) const
 {

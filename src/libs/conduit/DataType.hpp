@@ -355,6 +355,7 @@ public:
     std::string name()  const { return id_to_name(m_id);}
     index_t     total_bytes()   const;
     index_t     total_bytes_compact() const;
+    index_t     spanned_bytes() const;
     bool        is_compact() const;
 
     bool        compatible(const DataType& type) const;
