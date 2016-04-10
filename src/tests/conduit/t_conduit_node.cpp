@@ -674,24 +674,41 @@ TEST(conduit_node, check_contiguous)
     n["b"] = u16av_a;
     n["c"] = u32av_a;
     n["d"] = u64av_a;
-    
+
+    // compact
+    EXPECT_TRUE(n.is_compact());
+    // but not contig
     EXPECT_FALSE(n.is_contiguous());
     
+    // compact to create compact + contig
     Node n2;
     n.compact_to(n2);
+    EXPECT_TRUE(n2.is_compact());
     EXPECT_TRUE(n2.is_contiguous());
 
     // no longer contig
     n2["e"] = 10;
     EXPECT_FALSE(n2.is_contiguous());
+    // still compact
+    EXPECT_TRUE(n2.is_compact());
 
+    // contig & compact external
     Node n3;
-    n3["a"].set_external(u64av,3);
-    n3["b"].set_external(u64av,3,sizeof(uint64)*3);
+    n3["a"].set_external(u64av,2);
+    n3["b"].set_external(u64av,4,sizeof(uint64)*2);
     EXPECT_TRUE(n3.is_contiguous());
     
+    // make non contig
     n3["c"].set_external(u64av,3,sizeof(uint64)*3);
     EXPECT_FALSE(n3.is_contiguous());
+    
+    // contig but not compact
+    Node n4;
+    n4["a"].set_external(u64av,2);
+    n4["b"].set_external(u64av,2,sizeof(uint64)*2,sizeof(uint64)*2);
+    EXPECT_FALSE(n4.is_compact());
+    EXPECT_TRUE(n4.is_contiguous());
+
 
 }
 
