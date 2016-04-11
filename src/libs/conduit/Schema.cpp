@@ -358,10 +358,15 @@ Schema::compatible(const Schema &s) const
             itr != s.object_map().end() && res;
             itr++)
         {
+            // make sure we actually have the path
             if(has_path(itr->first))
             {
-                index_t s_idx = itr->second;
-                res = s.children()[s_idx]->compatible(fetch_child(itr->first));
+                // use index to fetch the child from the other schema
+                const Schema &s_chld = s.child(itr->second);
+                // fetch our child by name
+                const Schema &chld = fetch_child(itr->first);
+                // do compat check
+                res = chld.compatible(s_chld);
             }
         }
     }

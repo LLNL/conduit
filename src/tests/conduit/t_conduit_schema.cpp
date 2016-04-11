@@ -123,16 +123,18 @@ TEST(schema_basics, compatible_schemas)
     EXPECT_TRUE(s1.compatible(s2));
     EXPECT_TRUE(s1.equal(s2));
 
-
-    // TODO, look into  this case
-    // std::string s3_json  = "{ a: {dtype:int64, length:10 }, ";
-    // s3_json              += " b: {dtype:float64, length:40} }";
     //
-    //
-    // Schema s3(s3_json);
-    // EXPECT_FALSE(s1.compatible(s3));
-    // EXPECT_TRUE(s3.compatible(s1));
+    // a.compat(b) means:
+    //  "all the entries of b, can be copied into a without any new allocs"
+    // 
+    // in this case, s1.compat(s3) is not ok, but the reverse is
+    std::string s3_json  = "{ a: {dtype:int64, length:10 }, ";
+    s3_json              += " b: {dtype:float64, length:40} }";
     
+    
+    Schema s3(s3_json);
+    EXPECT_FALSE(s1.compatible(s3));
+    EXPECT_TRUE(s3.compatible(s1));
 }
 
 
