@@ -9,7 +9,7 @@
 # 
 # This file is part of Conduit. 
 # 
-# For details, see: http://llnl.github.io/conduit/.
+# For details, see: http://software.llnl.gov/conduit/.
 # 
 # Please also read conduit/LICENSE
 # 
