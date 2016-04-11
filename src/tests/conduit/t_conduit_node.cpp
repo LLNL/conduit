@@ -714,3 +714,39 @@ TEST(conduit_node, check_contiguous)
 
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, check_contiguous_with)
+{   
+    uint64  u64av[10] = {2,4,8,16,32,64,128,256,512,1024};
+    
+    Node n;
+    n["a"].set_external(u64av,5);
+    n["b"].set_external(u64av,5,5 * sizeof(uint64));
+
+    n.print();
+
+    // compact
+    EXPECT_TRUE(n.is_compact());
+    // and contig
+    EXPECT_TRUE(n.is_contiguous());
+
+    // we don't expect things to be contig with NULL
+    EXPECT_FALSE(n["a"].contiguous_with(NULL));
+    EXPECT_FALSE(n["b"].contiguous_with(NULL));
+    
+    // b should be contig with a
+    EXPECT_TRUE(n["b"].contiguous_with(n["a"]));
+    
+    // but the reverse is not the case (b comes after a ...)
+    EXPECT_FALSE(n["a"].contiguous_with(n["b"]));
+    
+    // b it should be contig with address at the end of a
+    // a.ele_ptr(5) should land us right at start of b
+    EXPECT_EQ(n["b"].element_ptr(0),n["a"].element_ptr(5));
+        
+    // b it should be contig with address at the end of a
+    EXPECT_TRUE(n["b"].contiguous_with(n["a"].element_ptr(5)));
+
+}
+
+

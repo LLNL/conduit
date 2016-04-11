@@ -138,5 +138,29 @@ TEST(schema_basics, compatible_schemas)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(schema_basics, schema_alloc)
+{
+    Schema s1;
+    s1["a"].set(DataType::int64(10));
+    s1["b"].set(DataType::float64(20,s1.total_bytes()));
+    // pad
+    s1["c"].set(DataType::float64(1,s1.total_bytes()+ 10));
+    
+    EXPECT_EQ(s1.total_bytes(), sizeof(int64) * 10  + sizeof(float64) * 21);
+
+    EXPECT_EQ(s1.spanned_bytes(), sizeof(int64) * 10  + sizeof(float64) * 21 + 10);
+    
+    Node n1(s1);
+
+    // this is what we need & this does work
+    EXPECT_EQ(n1.allocated_bytes(), s1.spanned_bytes());
+    
+    // but given this, the following is strange:
+    EXPECT_EQ(n1.total_bytes(), s1.total_bytes());
+    // total_bytes doesn't seem like a good name
+
+}
+
 
 

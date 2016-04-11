@@ -2198,6 +2198,16 @@ public:
 
     /// does this node have a contiguous data layout
     bool             is_contiguous() const;
+    
+    
+    /// true if node hierarchy's memory contiguously follows 
+    /// the given node's memory
+    bool             contiguous_with(const Node &n) const;
+
+    /// true if node hierarchy's memory contiguously follows 
+    /// the given address
+    bool             contiguous_with(void *address) const;
+    
 
     /// is this node compatible with given node
     bool             compatible(const Node &n) const
@@ -2401,6 +2411,10 @@ public:
     // direct data pointer access 
     void            *data_ptr();
     const void      *data_ptr() const;
+    
+    /// returns the number of bytes allocated or mmaped by this node
+    index_t          allocated_bytes() const
+                        {return m_data_size;}
 
     void  *element_ptr(index_t idx)
         {return static_cast<char*>(m_data) + dtype().element_index(idx);};
@@ -2410,7 +2424,7 @@ public:
 //-----------------------------------------------------------------------------
 /// description:
 ///  Direct access to data at leaf types (native c++ types)
-//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------`
      
      // signed integer scalars
     char           as_char()  const;
@@ -2712,8 +2726,9 @@ private:
     void              serialize(uint8 *data,
                                 index_t curr_offset) const;
 
-    /// is this node contiguous to the passed address
-    uint8*            contiguous_after(uint8 *ptr) const;
+    /// helper to implements check for if node  is 
+    ///  contiguous to the passed address
+    uint8*            check_contiguous_after(uint8 *ptr) const;
 
     void              info(Node &res,
                            const std::string &curr_path) const;

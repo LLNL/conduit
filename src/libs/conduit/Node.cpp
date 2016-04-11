@@ -561,8 +561,9 @@ Node::set_schema(const Schema &schema)
 {
     release();
     m_schema->set(schema);
-    // allocate data
-    index_t nbytes = m_schema->total_bytes();
+    // allocate data 
+    // for this case, we need the total bytes spanned by the schema
+    index_t nbytes = m_schema->spanned_bytes();
     allocate(nbytes);
     memset(m_data,0,nbytes);
     // call walk w/ internal data pointer
@@ -584,8 +585,10 @@ Node::set_data_using_schema(const Schema &schema,
 {
     release();
     m_schema->set(schema);   
-    allocate(m_schema->total_bytes());
-    memcpy(m_data, data, m_schema->total_bytes());
+    // for this case, we need the total bytes spanned by the schema
+    index_t nbytes = m_schema->spanned_bytes();
+    allocate(nbytes);
+    memcpy(m_data, data, nbytes);
     walk_schema(this,m_schema,data);
 }
 
@@ -10283,12 +10286,44 @@ Node::serialize(uint8 *data,index_t curr_offset) const
 bool
 Node::is_contiguous() const
 {
-    return contiguous_after(NULL) != NULL;
+    return check_contiguous_after(NULL) != NULL;
 }
 
 //---------------------------------------------------------------------------//
+bool
+Node::contiguous_with(void *address) const
+{
+    // not handling NULL as input will case an issue b/c NULL 
+    // is used to start recursion for the is_contiguous() case.
+    if(address == NULL)
+    {
+        return false;
+    }
+    
+    return check_contiguous_after((uint8*)address) != NULL;
+}
+
+
+//---------------------------------------------------------------------------//
+bool
+Node::contiguous_with(const Node &n) const
+{
+    // TODO: what are the proper semantics 
+    /// should this fail if n is not contig? it currently does
+    
+    // use check_contiguous_after to get final address
+    uint8* n_final_address = n.check_contiguous_after(NULL);
+
+    // if n_final_address is null, that means that n isn't  
+    // contig, and contiguous_with will fail
+
+    return contiguous_with(n_final_address);
+}
+
+
+//---------------------------------------------------------------------------//
 uint8 *
-Node::contiguous_after(uint8 *ptr) const
+Node::check_contiguous_after(uint8 *ptr) const
 {
     uint8   *res_ptr = ptr;
     index_t dtype_id = dtype().id();
@@ -10301,7 +10336,7 @@ Node::contiguous_after(uint8 *ptr) const
             itr < m_children.end();
             ++itr)
         {
-            uint8 *next_ptr = (*itr)->contiguous_after(res_ptr);
+            uint8 *next_ptr = (*itr)->check_contiguous_after(res_ptr);
             
             if( next_ptr == NULL)
             {
