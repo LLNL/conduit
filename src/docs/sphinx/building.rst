@@ -9,7 +9,7 @@
 .. # 
 .. # This file is part of Conduit. 
 .. # 
-.. # For details, see: http://llnl.github.io/conduit/.
+.. # For details, see: http://software.llnl.gov/conduit/.
 .. # 
 .. # Please also read conduit/LICENSE
 .. # 
@@ -149,7 +149,7 @@ These files use standard CMake commands. CMake *set* commands need to specify th
 Bootstrapping Thirdparty Dependencies 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can use *bootstrap-env.sh* (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses *scripts/uberenv*, which leverages **Spack** (https://llnl.github.io/spack) to build external thirdparty libraries and tools used by Conduit.
+You can use *bootstrap-env.sh* (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses *scripts/uberenv*, which leverages **Spack** (http://software.llnl.gov/spack) to build external thirdparty libraries and tools used by Conduit.
 It also writes a initial host-config file for you and adds the Spack built CMake binary to your PATH, so can directly call the *config-build.sh* helper script to configure a conduit build.
 
 .. code:: bash
