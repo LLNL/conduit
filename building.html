@@ -230,7 +230,7 @@ make install
 </div>
 <div class="section" id="bootstrapping-thirdparty-dependencies">
 <h2>Bootstrapping Thirdparty Dependencies<a class="headerlink" href="#bootstrapping-thirdparty-dependencies" title="Permalink to this headline">¶</a></h2>
-<p>You can use <em>bootstrap-env.sh</em> (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses <em>scripts/uberenv</em>, which leverages <strong>Spack</strong> (<a class="reference external" href="https://llnl.github.io/spack">https://llnl.github.io/spack</a>) to build external thirdparty libraries and tools used by Conduit.
+<p>You can use <em>bootstrap-env.sh</em> (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses <em>scripts/uberenv</em>, which leverages <strong>Spack</strong> (<a class="reference external" href="http://software.llnl.gov/spack">http://software.llnl.gov/spack</a>) to build external thirdparty libraries and tools used by Conduit.
 It also writes a initial host-config file for you and adds the Spack built CMake binary to your PATH, so can directly call the <em>config-build.sh</em> helper script to configure a conduit build.</p>
 <div class="code bash highlight-python"><div class="highlight"><pre><span></span>#build thirdparty libs using spack
 source bootstrap-env.sh
