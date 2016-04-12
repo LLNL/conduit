@@ -2726,8 +2726,22 @@ private:
     void              serialize(uint8 *data,
                                 index_t curr_offset) const;
 
-    /// helper to implements check for if node  is 
-    ///  contiguous to the passed address
+    /// implements recursive check for if node  is contiguous to the 
+    /// passed address
+    ///
+    /// this method  recursively traverse sa node hierarchy
+    ///
+    /// At each traversal step, it checks if the current Node is contiguous 
+    /// to the given address. 
+    ///
+    /// If contiguous: it returns input address for the next check
+    /// If NOT contiguous:  it returns NULL
+    ///
+    /// to start the traversal, we use NULL input as a special case.
+    ///
+    /// The direct address checks are only done for leaves with data,
+    /// nodes in the objects, lists, or empty roles don't directly 
+    /// advance the pointer.  
     uint8*            check_contiguous_after(uint8 *ptr) const;
 
     void              info(Node &res,
