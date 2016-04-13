@@ -56,33 +56,26 @@
 
 using namespace conduit;
 
+
 //-----------------------------------------------------------------------------
-TEST(schema_basics, total_vs_spanned_bytes)
+TEST(schema_basics, construction)
 {
-    Schema s;
+    Schema s1;
+    // const from dtype
+    Schema s_b(DataType::float64(20));
     
-    s.set(DataType::int64(10));
+    s1["a"].set(DataType::int64(10));
+    s1["b"] = s_b;
     
-    EXPECT_EQ(s.total_bytes(),sizeof(int64) * 10);
+    // copy const
+    Schema s2(s1);
     
-    s["a"].set(DataType::int64(10));
-    s["b"].set(DataType::int64(10,80));
-    s["c"].set(DataType::int64(10,160));
+    EXPECT_TRUE(s1.equals(s2));
     
+    EXPECT_EQ(s2[1].parent(),&s2);
     
-    EXPECT_EQ(s.total_bytes(),8 * 10 * 3);
-    EXPECT_EQ(s.spanned_bytes(),s.total_bytes());
-
-    // at this point, we have a compact layout
-    EXPECT_TRUE(s.is_compact());
+    EXPECT_EQ(s2.fetch_child("a").dtype().id(),DataType::INT64_ID);
     
-    // add a new child, with an offset further than the last array len
-    s["d"].set(DataType::int64(10,320));
-
-    // now our spanned bytes is wider than total_bytes
-    EXPECT_EQ(s.spanned_bytes(),400);
-    EXPECT_EQ(s.total_bytes(),8 * 10 * 4);
-    EXPECT_LT(s.total_bytes(),s.spanned_bytes());
 }
 
 
@@ -99,12 +92,12 @@ TEST(schema_basics, equal_schemas)
     s2["a"].set(DataType::int64(10));
     s2["b"].set(DataType::float64(20));
     
-    EXPECT_TRUE(s1.equal(s2));
+    EXPECT_TRUE(s1.equals(s2));
     
     
     s1["c"].set(DataType::uint8(20));
 
-    EXPECT_FALSE(s1.equal(s2));
+    EXPECT_FALSE(s1.equals(s2));
 }
 
 
@@ -121,7 +114,7 @@ TEST(schema_basics, compatible_schemas)
     Schema s2;
     s2 = s2_json;
     EXPECT_TRUE(s1.compatible(s2));
-    EXPECT_TRUE(s1.equal(s2));
+    EXPECT_TRUE(s1.equals(s2));
 
     //
     // a.compat(b) means:
@@ -148,13 +141,12 @@ TEST(schema_basics, schema_alloc)
     s1["c"].set(DataType::float64(1,s1.total_bytes()+ 10));
     
     EXPECT_EQ(s1.total_bytes(), sizeof(int64) * 10  + sizeof(float64) * 21);
-
-    EXPECT_EQ(s1.spanned_bytes(), sizeof(int64) * 10  + sizeof(float64) * 21 + 10);
     
     Node n1(s1);
 
     // this is what we need & this does work
-    EXPECT_EQ(n1.allocated_bytes(), s1.spanned_bytes());
+    EXPECT_EQ(n1.allocated_bytes(),
+              sizeof(int64) * 10  + sizeof(float64) * 21 + 10);
     
     // but given this, the following is strange:
     EXPECT_EQ(n1.total_bytes(), s1.total_bytes());
@@ -162,5 +154,38 @@ TEST(schema_basics, schema_alloc)
 
 }
 
+//-----------------------------------------------------------------------------
+///
+/// commented out b/c spanned_bytes is now private, 
+/// keeping if useful in future
+/// 
+//-----------------------------------------------------------------------------
+// TEST(schema_basics, total_vs_spanned_bytes)
+// {
+//     Schema s;
+//
+//     s.set(DataType::int64(10));
+//
+//     EXPECT_EQ(s.total_bytes(),sizeof(int64) * 10);
+//
+//     s["a"].set(DataType::int64(10));
+//     s["b"].set(DataType::int64(10,80));
+//     s["c"].set(DataType::int64(10,160));
+//
+//
+//     EXPECT_EQ(s.total_bytes(),8 * 10 * 3);
+//     EXPECT_EQ(s.spanned_bytes(),s.total_bytes());
+//
+//     // at this point, we have a compact layout
+//     EXPECT_TRUE(s.is_compact());
+//
+//     // add a new child, with an offset further than the last array len
+//     s["d"].set(DataType::int64(10,320));
+//
+//     // now our spanned bytes is wider than total_bytes
+//     EXPECT_EQ(s.spanned_bytes(),400);
+//     EXPECT_EQ(s.total_bytes(),8 * 10 * 4);
+//     EXPECT_LT(s.total_bytes(),s.spanned_bytes());
+// }
 
 

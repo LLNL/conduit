@@ -359,7 +359,7 @@ public:
     bool        is_compact() const;
 
     bool        compatible(const DataType& type) const;
-    bool        equal(const DataType& type) const;
+    bool        equals(const DataType& type) const;
     
     index_t     number_of_elements()  const { return m_num_ele;}
     index_t     offset()              const { return m_offset;}

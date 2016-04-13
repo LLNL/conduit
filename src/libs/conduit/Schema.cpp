@@ -396,7 +396,7 @@ Schema::compatible(const Schema &s) const
 
 //---------------------------------------------------------------------------//
 bool
-Schema::equal(const Schema &s) const
+Schema::equals(const Schema &s) const
 {
     index_t dt_id   = m_dtype.id();
     index_t s_dt_id = s.dtype().id();
@@ -419,7 +419,7 @@ Schema::equal(const Schema &s) const
             if(has_path(itr->first))
             {
                 index_t s_idx = itr->second;
-                res = s.children()[s_idx]->equal(fetch_child(itr->first));
+                res = s.children()[s_idx]->equals(fetch_child(itr->first));
             }
             else
             {
@@ -434,7 +434,7 @@ Schema::equal(const Schema &s) const
             if(s.has_path(itr->first))
             {
                 index_t idx = itr->second;
-                res = children()[idx]->equal(s.fetch_child(itr->first));
+                res = children()[idx]->equals(s.fetch_child(itr->first));
             }
             else
             {
@@ -457,12 +457,12 @@ Schema::equal(const Schema &s) const
 
         for(index_t i = 0; i < s_n_chd && res; i++)
         {
-            res = lst[i]->equal(*s_lst[i]);
+            res = lst[i]->equals(*s_lst[i]);
         }
     }
     else
     {
-        res = m_dtype.equal(s.dtype());
+        res = m_dtype.equals(s.dtype());
     }
     return res;
 }

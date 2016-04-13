@@ -521,7 +521,7 @@ DataType::compatible(const DataType& dtype) const
 
 //---------------------------------------------------------------------------//
 bool
-DataType::equal(const DataType& dtype) const
+DataType::equals(const DataType& dtype) const
 {
     return ( (m_id == dtype.m_id ) &&
              (m_num_ele   == dtype.m_num_ele) &&
