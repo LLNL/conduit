@@ -131,7 +131,8 @@ TEST(conduit_node_iterator, empty)
     n["c"]; // empty
 
 
-    NodeIterator itr = n.children();
+    NodeIterator itr(n.children());
+    
     while(itr.has_next())
     {
         Node &n = itr.next();
