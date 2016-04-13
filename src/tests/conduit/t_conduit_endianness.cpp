@@ -55,6 +55,28 @@
 
 using namespace conduit;
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_endianness, endianness_ids_and_names)
+{
+    if(Endianness::machine_is_big_endian())
+    {
+        EXPECT_TRUE(Endianness::machine_default() == Endianness::BIG_ID);
+    }
+    
+    if(Endianness::machine_is_little_endian())
+    {
+        EXPECT_TRUE(Endianness::machine_default() == Endianness::LITTLE_ID);
+    }
+
+    EXPECT_EQ(Endianness::name_to_id("big"),Endianness::BIG_ID );
+    EXPECT_EQ(Endianness::name_to_id("little"),Endianness::LITTLE_ID );
+
+    EXPECT_EQ(Endianness::id_to_name(Endianness::BIG_ID),"big");
+    EXPECT_EQ(Endianness::id_to_name(Endianness::LITTLE_ID),"little");
+
+}
+
 //-----------------------------------------------------------------------------
 TEST(conduit_endianness, simple_1)
 {
@@ -146,6 +168,86 @@ TEST(conduit_endianness, swap_inplace)
         Endianness::swap64(&test64.vuint64);
         EXPECT_EQ(0x0102030405060708,test64.vuint64);
 
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_endianness, swap_to)
+{
+    union{uint8  vbytes[2]; uint16 vuint16;} src_test16;
+    union{uint8  vbytes[4]; uint32 vuint32;} src_test32;
+    union{uint8  vbytes[8]; uint64 vuint64;} src_test64;
+    
+    uint16 dest_test16;
+    uint32 dest_test32;
+    uint64 dest_test64;
+        
+    if(Endianness::machine_default() == Endianness::BIG_ID)
+    {
+     
+        src_test16.vbytes[0] =  0x02;
+        src_test16.vbytes[1] =  0x01;
+
+        Endianness::swap16(&src_test16.vuint16,
+                           &dest_test16);
+                           
+        EXPECT_EQ(0x0102,dest_test16);
+
+        src_test32.vbytes[0] =  0x04;
+        src_test32.vbytes[1] =  0x03;
+        src_test32.vbytes[2] =  0x02;
+        src_test32.vbytes[3] =  0x01;
+
+        Endianness::swap32(&src_test32.vuint32,
+                           &dest_test32);
+
+        EXPECT_EQ(0x01020304,dest_test32);
+
+        src_test64.vbytes[0] =  0x08;
+        src_test64.vbytes[1] =  0x07;
+        src_test64.vbytes[2] =  0x06;
+        src_test64.vbytes[3] =  0x05;
+        src_test64.vbytes[4] =  0x04;
+        src_test64.vbytes[5] =  0x03;
+        src_test64.vbytes[6] =  0x02;
+        src_test64.vbytes[7] =  0x01;
+
+        Endianness::swap64(&src_test64.vuint64,
+                           &dest_test64);
+                           
+        EXPECT_EQ(0x0102030405060708,dest_test64);
+    }
+    else
+    {
+        src_test16.vbytes[0] =  0x01;
+        src_test16.vbytes[1] =  0x02;
+
+        Endianness::swap16(&src_test16.vuint16,
+                           &dest_test16);
+        EXPECT_EQ(0x0102,dest_test16);
+
+        src_test32.vbytes[0] =  0x01;
+        src_test32.vbytes[1] =  0x02;
+        src_test32.vbytes[2] =  0x03;
+        src_test32.vbytes[3] =  0x04;
+
+        Endianness::swap32(&src_test32.vuint32,
+                           &dest_test32);
+
+        EXPECT_EQ(0x01020304,dest_test32);
+
+        src_test64.vbytes[0] =  0x01;
+        src_test64.vbytes[1] =  0x02;
+        src_test64.vbytes[2] =  0x03;
+        src_test64.vbytes[3] =  0x04;
+        src_test64.vbytes[4] =  0x05;
+        src_test64.vbytes[5] =  0x06;
+        src_test64.vbytes[6] =  0x07;
+        src_test64.vbytes[7] =  0x08;
+
+        Endianness::swap64(&src_test64.vuint64,
+                           &dest_test64);
+        EXPECT_EQ(0x0102030405060708,dest_test64);
     }
 }
 
