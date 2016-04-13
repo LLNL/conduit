@@ -270,7 +270,7 @@ TEST(conduit_array, set_using_ptrs)
 
     // float32_array
     n["vfloat32"].set(DataType::float32(10));
-    n["vfloat32"].as_float32_array().set(&v_uint32[0],10);
+    n["vfloat32"].as_float32_array().set(&v_float32[0],10);
     float32 *n_float32_ptr = n["vfloat32"].value();
     for(index_t i=0;i<10;i++)
     {
@@ -279,7 +279,7 @@ TEST(conduit_array, set_using_ptrs)
 
     // float64_array
     n["vfloat64"].set(DataType::float64(10));
-    n["vfloat64"].as_float64_array().set(&v_uint64[0],10);
+    n["vfloat64"].as_float64_array().set(&v_float64[0],10);
     float64 *n_float64_ptr = n["vfloat64"].value();
     for(index_t i=0;i<10;i++)
     {
@@ -386,7 +386,7 @@ TEST(conduit_array, set_using_std_vectors)
 
     // float32_array
     n["vfloat32"].set(DataType::float32(10));
-    n["vfloat32"].as_float32_array().set(v_uint32);
+    n["vfloat32"].as_float32_array().set(v_float32);
     float32 *n_float32_ptr = n["vfloat32"].value();
     for(index_t i=0;i<10;i++)
     {
@@ -395,7 +395,7 @@ TEST(conduit_array, set_using_std_vectors)
 
     // float64_array
     n["vfloat64"].set(DataType::float64(10));
-    n["vfloat64"].as_float64_array().set(v_uint64);
+    n["vfloat64"].as_float64_array().set(v_float64);
     float64 *n_float64_ptr = n["vfloat64"].value();
     for(index_t i=0;i<10;i++)
     {
