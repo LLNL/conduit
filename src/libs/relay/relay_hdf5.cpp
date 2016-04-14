@@ -495,9 +495,14 @@ hdf5_write(const Node &node,
     if(dt.is_object())
     {
         hid_t h5_group_id;
+        herr_t status;
 
-        if (hdf5_path != ".")
+        // Create group if it doesn't exists, else use it.
+        status = H5Gget_objinfo (hdf5_id, hdf5_path.c_str(), 0, NULL);
+        if (status != 0)
         {
+        std::cerr << " Group " << hdf5_path << " doesn't exist." << std::endl;
+
             // Create a group named with the path name in the file.
             h5_group_id = H5Gcreate2(hdf5_id,
                                      hdf5_path.c_str(),
@@ -510,7 +515,10 @@ hdf5_write(const Node &node,
         }
         else
         {
-            h5_group_id = hdf5_id;
+        std::cerr << " Group " << hdf5_path << " exists." << std::endl;
+            h5_group_id = H5Gopen(hdf5_id,
+                                  hdf5_path.c_str(),
+                                  H5P_DEFAULT);
         }
 
         // strong dose of evil casting, but it's ok b/c we are grownups here?
@@ -526,13 +534,10 @@ hdf5_write(const Node &node,
                        itr.path());
         }
         
-        if (hdf5_path != ".")
-        {
-          // close the group.
-          herr_t h5_status = H5Gclose(h5_group_id);
-          CONDUIT_CHECK_HDF5_ERROR(h5_status,
-                                   "Error closing HDF5 Group: " << hdf5_path);
-        }
+        // close the group.
+        herr_t h5_status = H5Gclose(h5_group_id);
+        CONDUIT_CHECK_HDF5_ERROR(h5_status,
+                                 "Error closing HDF5 Group: " << hdf5_path);
     }
     else if(dt.is_number() || dt.is_string())
     {
@@ -799,21 +804,14 @@ hdf5_read_traverse_group(hid_t hdf5_id,
                          Node &dest)
 {
     hid_t h5_group_id;
-    if (std::string(hdf5_path) != std::string("."))
-    {
-        // open the desired group
-        h5_group_id = H5Gopen(hdf5_id,
-                              hdf5_path,
-                              H5P_DEFAULT);
+    // open the desired group
+    h5_group_id = H5Gopen(hdf5_id,
+                          hdf5_path,
+                          H5P_DEFAULT);
 
         CONDUIT_CHECK_HDF5_ERROR(h5_group_id,
                                  "Error opening HDF5 Group: " 
                                  << hdf5_id << ":" << hdf5_path);
-    }
-    else
-    {
-        h5_group_id = hdf5_id;
-    }
 
     // get info, we need to get the obj addr for cycle tracking
     H5O_info_t h5_info_buf;
@@ -842,12 +840,9 @@ hdf5_read_traverse_group(hid_t hdf5_id,
                              << hdf5_id << ":" << hdf5_path);
 
     // close the group
-    if (std::string(hdf5_path) != std::string("."))
-    {
-        h5_status = H5Gclose(h5_group_id);
-        CONDUIT_CHECK_HDF5_ERROR(h5_status,
-                             "Error closing HDF5 Group: " << h5_group_id);
-    }
+    h5_status = H5Gclose(h5_group_id);
+    CONDUIT_CHECK_HDF5_ERROR(h5_status,
+                            "Error closing HDF5 Group: " << h5_group_id);
 }
 
 //---------------------------------------------------------------------------//
