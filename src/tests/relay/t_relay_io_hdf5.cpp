@@ -49,6 +49,7 @@
 //-----------------------------------------------------------------------------
 
 #include "relay.hpp"
+#include "hdf5.h"
 #include <iostream>
 #include "gtest/gtest.h"
 
@@ -57,7 +58,7 @@ using namespace conduit::relay;
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_io_hdf5, conduit_hdf5_write_read)
+TEST(conduit_io_hdf5, conduit_hdf5_write_read_by_file_name)
 {
     uint32 a_val = 20;
     uint32 b_val = 8;
@@ -111,6 +112,74 @@ TEST(conduit_io_hdf5, conduit_hdf5_write_read)
     
     
 
+}
+
+//-----------------------------------------------------------------------------
+// This variant tests when a caller code has already opened a HDF5 file
+// and has a handle ready.
+TEST(conduit_io_hdf5, conduit_hdf5_write_read_by_file_handle)
+{
+    uint32 a_val = 20;
+    uint32 b_val = 8;
+    uint32 c_val = 13;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+
+    EXPECT_EQ(n["a"].as_uint32(), a_val);
+    EXPECT_EQ(n["b"].as_uint32(), b_val);
+    EXPECT_EQ(n["c"].as_uint32(), c_val);
+
+    std::string test_file_name = "tout_hdf5_write_read_by_file_handle.hdf5";
+    hid_t h5_file_id, h5_group_id;
+    herr_t status;
+
+    // Set up hdf5 file and group that caller code would already have.
+    h5_file_id = H5Fcreate(test_file_name.c_str(),
+                           H5F_ACC_TRUNC,
+                           H5P_DEFAULT,
+                           H5P_DEFAULT);
+
+    // Prepare group that caller code wants conduit to save it's tree to that
+    // group. (could also specify group name for conduit to create via
+    // hdf5_path argument to write call.
+    h5_group_id = H5Gcreate(h5_file_id,
+                            "sample_group_name",
+                            H5P_DEFAULT,
+                            H5P_DEFAULT,
+                            H5P_DEFAULT);
+
+    // It looks like the hdf5_write call modifies the passed in hid_t???
+    io::hdf5_write(n,h5_group_id,".");
+
+    // I can't close the group, the hdf5_write appears to have modified the h5_group_id.
+    // I get an error about it not being a group anymore.  If I comment out the hdf5_write
+    // call, I'm able to close the file.
+    status = H5Gclose(h5_group_id);
+    status = H5Fclose(h5_file_id);
+
+    h5_file_id = H5Fopen(test_file_name.c_str(),
+                         H5F_ACC_RDONLY,
+                         H5P_DEFAULT);
+
+    // Caller code switches to group it wants to read in. (could also
+    // specify group name for conduit to read out via hdf5_path arg to read
+    // call)
+    h5_group_id = H5Gopen(h5_file_id, "sample_group_name", 0);
+                          
+    Node n_load;
+
+    io::hdf5_read(h5_group_id, ".", n_load);
+    
+    status = H5Gclose(h5_group_id);
+    status = H5Fclose(h5_file_id);
+
+    EXPECT_EQ(n_load["a"].as_uint32(), a_val);
+    EXPECT_EQ(n_load["b"].as_uint32(), b_val);
+    EXPECT_EQ(n_load["c"].as_uint32(), c_val);
+    
 }
 
 //-----------------------------------------------------------------------------
