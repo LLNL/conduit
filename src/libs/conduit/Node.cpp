@@ -10331,9 +10331,11 @@ Node::check_contiguous_after(uint8 *ptr) const
     if(dtype_id == DataType::OBJECT_ID ||
        dtype_id == DataType::LIST_ID)
     {
+        bool ok = true;
+        
         std::vector<Node*>::const_iterator itr;
         for(itr = m_children.begin();
-            itr < m_children.end();
+            itr < m_children.end() && ok;
             ++itr)
         {
             uint8 *next_ptr = (*itr)->check_contiguous_after(res_ptr);
@@ -10343,10 +10345,13 @@ Node::check_contiguous_after(uint8 *ptr) const
                 // bad
                 if(res_ptr != NULL)
                 {
-                    return NULL;
+                    res_ptr = NULL;
+                    // no need to check more children
+                    ok = false;
                 }
                 // else 
-                // we haven't found an initial ptr
+                // we haven't found an initial ptr, keep iterating over 
+                // children
             }
             else
             {
@@ -10361,15 +10366,20 @@ Node::check_contiguous_after(uint8 *ptr) const
         {
             if(res_ptr == element_ptr(0))
             {
+                // ok, advance the ptr
                 res_ptr = (uint8*)element_ptr(0) + total_bytes();
             }
             else // bad
             {
-                return NULL;
+                res_ptr = NULL;
             }
         }
         else
         {
+            // this is the first leaf that actually has data
+            // 
+            // by definition it is contiguous, so we simply 
+            // advance the pointer
             res_ptr = (uint8*)element_ptr(0) + total_bytes();
         }
     }
