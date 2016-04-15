@@ -88,6 +88,9 @@ void CONDUIT_RELAY_API hdf5_write(const Node &node,
                                   const std::string &hdf5_path);
 
 void CONDUIT_RELAY_API hdf5_write(const Node &node,
+                                  hid_t hdf5_id );
+
+void CONDUIT_RELAY_API hdf5_write(const Node &node,
                                   hid_t hdf5_id,
                                   const std::string &hdf5_path);
 
@@ -99,11 +102,13 @@ void CONDUIT_RELAY_API hdf5_read(const std::string &file_path,
                                  const std::string &hdf5_path,
                                  Node &node);
 
+
 void CONDUIT_RELAY_API hdf5_read(hid_t hdf5_id,
                                  const std::string &hdf5_path,
                                  Node &node);
 
-
+void CONDUIT_RELAY_API hdf5_read(hid_t hdf5_id,
+                                 Node &node);
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::relay::io --

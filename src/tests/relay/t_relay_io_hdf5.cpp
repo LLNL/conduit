@@ -151,13 +151,21 @@ TEST(conduit_io_hdf5, conduit_hdf5_write_read_by_file_handle)
                             H5P_DEFAULT,
                             H5P_DEFAULT);
 
-    // It looks like the hdf5_write call modifies the passed in hid_t???
-    io::hdf5_write(n,h5_group_id,".");
-
-    // I can't close the group, the hdf5_write appears to have modified the h5_group_id.
-    // I get an error about it not being a group anymore.  If I comment out the hdf5_write
-    // call, I'm able to close the file.
+    io::hdf5_write(n,h5_group_id);
     status = H5Gclose(h5_group_id);
+
+    // Another variant of this - caller code has a pre-existing group they
+    // want to write into, but they want to use the 'group name' arg to do it
+    // Relay should be able to write into existing group.
+    h5_group_id = H5Gcreate(h5_file_id,
+                            "sample_group_name2",
+                            H5P_DEFAULT,
+                            H5P_DEFAULT,
+                            H5P_DEFAULT);
+    io::hdf5_write(n,h5_file_id, "sample_group_name2");
+
+    status = H5Gclose(h5_group_id);
+
     status = H5Fclose(h5_file_id);
 
     h5_file_id = H5Fopen(test_file_name.c_str(),
@@ -171,7 +179,7 @@ TEST(conduit_io_hdf5, conduit_hdf5_write_read_by_file_handle)
                           
     Node n_load;
 
-    io::hdf5_read(h5_group_id, ".", n_load);
+    io::hdf5_read(h5_group_id, n_load);
     
     status = H5Gclose(h5_group_id);
     status = H5Fclose(h5_file_id);
