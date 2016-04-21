@@ -167,7 +167,6 @@ void CONDUIT_RELAY_API hdf5_write(const Node &node,
 void CONDUIT_RELAY_API hdf5_write(const Node &node,
                                   hid_t hdf5_id);
 
-
 //-----------------------------------------------------------------------------
 /// Read hdf5 data from given path into the output node 
 /// 

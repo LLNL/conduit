@@ -80,7 +80,9 @@ TEST(conduit_io_hdf5, conduit_hdf5_write_read_by_file_name)
     // directly read our object
     Node n_load;
     io::hdf5_read("tout_hdf5_wr.hdf5:myobj",n_load);
-    
+
+    n_load.print_detailed();
+
     EXPECT_EQ(n_load["a"].as_uint32(), a_val);
     EXPECT_EQ(n_load["b"].as_uint32(), b_val);
     EXPECT_EQ(n_load["c"].as_uint32(), c_val);
@@ -376,6 +378,8 @@ TEST(conduit_io_hdf5, conduit_hdf5_write_read_leaf_arrays)
     
     n_load.print_detailed();
     
+    
+
     int8_array  v_int8_out  = n_load["v_int8"].value();
     int16_array v_int16_out = n_load["v_int16"].value();
     int32_array v_int32_out = n_load["v_int32"].value();
