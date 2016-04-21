@@ -343,6 +343,73 @@ TEST(conduit_io_hdf5, conduit_hdf5_write_to_existing_dset)
     
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_io_hdf5, conduit_hdf5_write_read_leaf_arrays)
+{
+    Node n;
+    
+    n["v_int8"].set(DataType::int8(5));
+    n["v_int16"].set(DataType::int16(5));
+    n["v_int32"].set(DataType::int32(5));
+    n["v_int64"].set(DataType::int64(5));
+    
+    n["v_uint8"].set(DataType::uint8(5));
+    n["v_uint16"].set(DataType::uint16(5));
+    n["v_uint32"].set(DataType::uint32(5));
+    n["v_uint64"].set(DataType::uint64(5));
+    
+    n["v_float32"].set(DataType::float32(5));
+    n["v_float64"].set(DataType::float64(5));
+    
+    n["v_string"].set("my_string");
+        
+    
+    n.print_detailed();
+    
+    io::hdf5_write(n,"tout_hdf5_wr_leaf_arrays.hdf5");
+    
+    
+    
+    Node n_load;
+    
+    io::hdf5_read("tout_hdf5_wr_leaf_arrays.hdf5",n_load);
+    
+    n_load.print_detailed();
+    
+    int8_array  v_int8_out  = n_load["v_int8"].value();
+    int16_array v_int16_out = n_load["v_int16"].value();
+    int32_array v_int32_out = n_load["v_int32"].value();
+    int64_array v_int64_out = n_load["v_int64"].value();
+    
+    EXPECT_EQ(v_int8_out.number_of_elements(),5);
+    EXPECT_EQ(v_int16_out.number_of_elements(),5);
+    EXPECT_EQ(v_int32_out.number_of_elements(),5);
+    EXPECT_EQ(v_int64_out.number_of_elements(),5);
+
+    uint8_array  v_uint8_out  = n_load["v_uint8"].value();
+    uint16_array v_uint16_out = n_load["v_uint16"].value();
+    uint32_array v_uint32_out = n_load["v_uint32"].value();
+    uint64_array v_uint64_out = n_load["v_uint64"].value();
+
+    EXPECT_EQ(v_uint8_out.number_of_elements(),5);
+    EXPECT_EQ(v_uint16_out.number_of_elements(),5);
+    EXPECT_EQ(v_uint32_out.number_of_elements(),5);
+    EXPECT_EQ(v_uint64_out.number_of_elements(),5);
+
+
+    float32_array v_float32_out = n_load["v_float32"].value();
+    float64_array v_float64_out = n_load["v_float64"].value();
+
+    EXPECT_EQ(v_float32_out.number_of_elements(),5);
+    EXPECT_EQ(v_float64_out.number_of_elements(),5);
+
+
+    std::string v_string_out = n_load["v_string"].as_string();
+    
+    EXPECT_EQ(v_string_out,"my_string");
+}
+
+
 
 
 

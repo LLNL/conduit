@@ -335,7 +335,6 @@ hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
     else if(H5Tequal(hdf5_dtype_id,H5T_STD_I64LE))
     {
         res = DataType::int64(num_elems);
-        res.set_id(DataType::UINT64_ID);
         res.set_endianness(Endianness::LITTLE_ID);
     }
      // big endian
