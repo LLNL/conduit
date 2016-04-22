@@ -519,16 +519,19 @@ check_if_conduit_object_is_compatible_with_hdf5_tree(const Node &node,
             // check if the HDF5 group has child with same name 
             // as the node's child
         
-            hid_t h5_child_id = H5Oopen(hdf5_id,
+            hid_t h5_child_obj = H5Oopen(hdf5_id,
                                         itr.path().c_str(),
                                         H5P_DEFAULT);
         
-            if( CONDUIT_HDF5_VALID_ID(h5_child_id) )
+            if( CONDUIT_HDF5_VALID_ID(h5_child_obj) )
             {
                 // if a child does exist, we need to make sure the child is 
                 // compatible with the conduit node
                 res = check_if_conduit_node_is_compatible_with_hdf5_tree(child,
-                                                                  h5_child_id);
+                                                                  h5_child_obj);
+            
+                CONDUIT_CHECK_HDF5_ERROR(H5Oclose(h5_child_obj),
+                             "Failed to close HDF5 Object: " << h5_child_obj);
             }
         
             // no child exists with this name,  we are ok (it can be created 
@@ -1047,7 +1050,7 @@ read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
 
     hid_t h5_gc_plist = H5Gget_create_plist(hdf5_group_id);
 
-    if( CONDUIT_HDF5_VALID_ID(h5_status) )
+    if( CONDUIT_HDF5_VALID_ID(h5_gc_plist) )
     {
         unsigned int h5_gc_flags = 0;
         h5_status = H5Pget_link_creation_order(h5_gc_plist,
@@ -1246,25 +1249,41 @@ hdf5_write(const Node &node,
            const std::string &file_path,
            const std::string &hdf5_path)
 {
-    herr_t h5_status = 0;
+    // preserve creation order
+    hid_t h5_file_plist = H5Pcreate(H5P_FILE_CREATE);
+
+    CONDUIT_CHECK_HDF5_ERROR(h5_file_plist,
+                     "Failed to create H5P_FILE_CREATE property "
+                     << " list");
+
+
+    herr_t h5_status = H5Pset_link_creation_order(h5_file_plist, 
+            ( H5P_CRT_ORDER_TRACKED |  H5P_CRT_ORDER_INDEXED) );
+
+    CONDUIT_CHECK_HDF5_ERROR(h5_status,
+                     "Failed to set creation order options for property "
+                     << "list");
 
     // open the hdf5 file for writing
     hid_t h5_file_id = H5Fcreate(file_path.c_str(),
                                  H5F_ACC_TRUNC,
-                                 H5P_DEFAULT,
+                                 h5_file_plist,
                                  H5P_DEFAULT);
 
     CONDUIT_CHECK_HDF5_ERROR(h5_file_id,
                              "Error opening HDF5 file for writing: " 
                              << file_path);
+
+    CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_file_plist),
+                         "Failed to close HDF5 H5P_GROUP_CREATE "
+                         << "property list: " << h5_file_plist);
     
     hdf5_write(node,
                h5_file_id,
                hdf5_path);
 
     // close the hdf5 file
-    h5_status = H5Fclose(h5_file_id);
-    CONDUIT_CHECK_HDF5_ERROR(h5_status,
+    CONDUIT_CHECK_HDF5_ERROR(H5Fclose(h5_file_id),
                              "Error closing HDF5 file: " << file_path);
 }
 
@@ -1427,8 +1446,7 @@ hdf5_read(const std::string &file_path,
               node);
     
     // close the hdf5 file
-    h5_status = H5Fclose(h5_file_id);
-    CONDUIT_CHECK_HDF5_ERROR(h5_status,
+    CONDUIT_CHECK_HDF5_ERROR(H5Fclose(h5_file_id),
                              "Error closing HDF5 file: " << file_path);
 }
 //---------------------------------------------------------------------------//
@@ -1446,10 +1464,13 @@ hdf5_read(hid_t hdf5_id,
                                   H5P_DEFAULT);
     
     CONDUIT_CHECK_HDF5_ERROR(h5_child_obj,
-                             "Error fetching HDF5 object from: "
+                             "Failed to fetch HDF5 object from: "
                              << hdf5_id << ":" << hdf5_path);
 
     read_hdf5_tree_into_conduit_node(h5_child_obj,dest);
+    
+    CONDUIT_CHECK_HDF5_ERROR(H5Oclose(h5_child_obj),
+                             "Failed to close HDF5 Object: " << h5_child_obj);
     
     // enable hdf5 error stack
 }

@@ -58,7 +58,7 @@ using namespace conduit::relay;
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_io_hdf5, conduit_hdf5_write_read_by_file_name)
+TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_by_file_name)
 {
     uint32 a_val = 20;
     uint32 b_val = 8;
@@ -125,7 +125,7 @@ TEST(conduit_io_hdf5, conduit_hdf5_write_read_by_file_name)
 //-----------------------------------------------------------------------------
 // This variant tests when a caller code has already opened a HDF5 file
 // and has a handle ready.
-TEST(conduit_io_hdf5, conduit_hdf5_write_read_by_file_handle)
+TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_by_file_handle)
 {
     uint32 a_val = 20;
     uint32 b_val = 8;
@@ -197,7 +197,7 @@ TEST(conduit_io_hdf5, conduit_hdf5_write_read_by_file_handle)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_io_hdf5, conduit_hdf5_write_read_special_paths)
+TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_special_paths)
 {
     uint32 a_val = 20;
     uint32 b_val = 8;
@@ -240,7 +240,7 @@ TEST(conduit_io_hdf5, conduit_hdf5_write_read_special_paths)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_io_hdf5, conduit_hdf5_write_read_string)
+TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_string)
 {
     uint32 a_val = 20;
     
@@ -267,7 +267,7 @@ TEST(conduit_io_hdf5, conduit_hdf5_write_read_string)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_io_hdf5, conduit_hdf5_write_read_array)
+TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_array)
 {
     Node n_in(DataType::float64(10));
     
@@ -294,9 +294,23 @@ TEST(conduit_io_hdf5, conduit_hdf5_write_read_array)
     }
 
 }
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, conduit_hdf5_read_dataset_from_handle)
+{
+    EXPECT_TRUE(false);
+
+}
 
 //-----------------------------------------------------------------------------
-TEST(conduit_io_hdf5, conduit_hdf5_write_to_existing_dset)
+TEST(conduit_relay_io_hdf5, conduit_hdf5_read_group_from_handle)
+{
+    EXPECT_TRUE(false);
+
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, conduit_hdf5_write_to_existing_dset)
 {
     Node n_in(DataType::uint32(2));
     
@@ -333,20 +347,40 @@ TEST(conduit_io_hdf5, conduit_hdf5_write_to_existing_dset)
     
     // check that the second set of values are the ones we get back
     
-    Node n_out;
+    Node n_read;
     
-    io::hdf5_read("tout_hdf5_wr_existing_dset.hdf5:myarray",n_out);
+    io::hdf5_read("tout_hdf5_wr_existing_dset.hdf5:myarray",n_read);
     
-    uint32_array val_out = n_out.value();
+    uint32_array val = n_read.value();
     
-    EXPECT_EQ(val_out[0],3);
-    EXPECT_EQ(val_out[1],4);
+    EXPECT_EQ(val[0],3);
+    EXPECT_EQ(val[1],4);
+    
+    Node n_w2;
+    n_w2["myarray"].set_external(n_read);
+    n_w2["a/b/c"].set_uint64(123);
+    
+    // this should be compatible 
+    io::hdf5_write(n_w2,"tout_hdf5_wr_existing_dset.hdf5");
+    
+    n_read.reset();
+    
+    io::hdf5_read("tout_hdf5_wr_existing_dset.hdf5",n_read);
+    
+    
+    uint32_array myarray_val = n_read["myarray"].value();
+    
+    uint64 a_b_c_val = n_read["a/b/c"].value();
+    
+    EXPECT_EQ(myarray_val[0],3);
+    EXPECT_EQ(myarray_val[1],4);
+    EXPECT_EQ(a_b_c_val,123);
     
     
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_io_hdf5, conduit_hdf5_write_read_leaf_arrays)
+TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_leaf_arrays)
 {
     Node n;
     
@@ -364,7 +398,36 @@ TEST(conduit_io_hdf5, conduit_hdf5_write_read_leaf_arrays)
     n["v_float64"].set(DataType::float64(5));
     
     n["v_string"].set("my_string");
-        
+    
+    
+    int8  *v_int8_ptr  = n["v_int8"].value();
+    int16 *v_int16_ptr = n["v_int16"].value();
+    int32 *v_int32_ptr = n["v_int32"].value();
+    int64 *v_int64_ptr = n["v_int64"].value();
+
+    uint8  *v_uint8_ptr  = n["v_uint8"].value();
+    uint16 *v_uint16_ptr = n["v_uint16"].value();
+    uint32 *v_uint32_ptr = n["v_uint32"].value();
+    uint64 *v_uint64_ptr = n["v_uint64"].value();
+
+    float32 *v_float32_ptr = n["v_float32"].value();
+    float64 *v_float64_ptr = n["v_float64"].value();
+
+    for(index_t i=0; i < 5; i++)
+    {
+        v_int8_ptr[i]  = -8;
+        v_int16_ptr[i] = -16;
+        v_int32_ptr[i] = -32;
+        v_int64_ptr[i] = -64;
+
+        v_uint8_ptr[i]  = 8;
+        v_uint16_ptr[i] = 16;
+        v_uint32_ptr[i] = 32;
+        v_uint64_ptr[i] = 64;
+
+        v_float32_ptr[i] = 32.0;
+        v_float64_ptr[i] = 64.0;
+    }
     
     n.print_detailed();
     
