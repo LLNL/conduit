@@ -123,80 +123,6 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_by_file_name)
 }
 
 //-----------------------------------------------------------------------------
-// This variant tests when a caller code has already opened a HDF5 file
-// and has a handle ready.
-TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_by_file_handle)
-{
-    uint32 a_val = 20;
-    uint32 b_val = 8;
-    uint32 c_val = 13;
-
-    Node n;
-    n["a"] = a_val;
-    n["b"] = b_val;
-    n["c"] = c_val;
-
-    EXPECT_EQ(n["a"].as_uint32(), a_val);
-    EXPECT_EQ(n["b"].as_uint32(), b_val);
-    EXPECT_EQ(n["c"].as_uint32(), c_val);
-
-    std::string test_file_name = "tout_hdf5_write_read_by_file_handle.hdf5";
-
-    // Set up hdf5 file and group that caller code would already have.
-    hid_t  h5_file_id = H5Fcreate(test_file_name.c_str(),
-                           H5F_ACC_TRUNC,
-                           H5P_DEFAULT,
-                           H5P_DEFAULT);
-
-    // Prepare group that caller code wants conduit to save it's tree to that
-    // group. (could also specify group name for conduit to create via
-    // hdf5_path argument to write call.
-    hid_t h5_group_id = H5Gcreate(h5_file_id,
-                            "sample_group_name",
-                            H5P_DEFAULT,
-                            H5P_DEFAULT,
-                            H5P_DEFAULT);
-
-    io::hdf5_write(n,h5_group_id);
-    hid_t status = H5Gclose(h5_group_id);
-
-    // Another variant of this - caller code has a pre-existing group they
-    // want to write into, but they want to use the 'group name' arg to do it
-    // Relay should be able to write into existing group.
-    h5_group_id = H5Gcreate(h5_file_id,
-                            "sample_group_name2",
-                            H5P_DEFAULT,
-                            H5P_DEFAULT,
-                            H5P_DEFAULT);
-    io::hdf5_write(n,h5_file_id, "sample_group_name2");
-
-    status = H5Gclose(h5_group_id);
-
-    status = H5Fclose(h5_file_id);
-
-    h5_file_id = H5Fopen(test_file_name.c_str(),
-                         H5F_ACC_RDONLY,
-                         H5P_DEFAULT);
-
-    // Caller code switches to group it wants to read in. (could also
-    // specify group name for conduit to read out via hdf5_path arg to read
-    // call)
-    h5_group_id = H5Gopen(h5_file_id, "sample_group_name", 0);
-                          
-    Node n_load;
-
-    io::hdf5_read(h5_group_id, n_load);
-    
-    status = H5Gclose(h5_group_id);
-    status = H5Fclose(h5_file_id);
-
-    EXPECT_EQ(n_load["a"].as_uint32(), a_val);
-    EXPECT_EQ(n_load["b"].as_uint32(), b_val);
-    EXPECT_EQ(n_load["c"].as_uint32(), c_val);
-    
-}
-
-//-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_special_paths)
 {
     uint32 a_val = 20;
@@ -294,18 +220,195 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_array)
     }
 
 }
+
+
 //-----------------------------------------------------------------------------
-TEST(conduit_relay_io_hdf5, conduit_hdf5_read_dataset_from_handle)
+TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_hdf5_dataset_handle)
 {
-    EXPECT_TRUE(false);
+    std::string ofname = "tout_hdf5_wr_conduit_leaf_to_hdf5_dataset_handle.hdf5";
+
+    hid_t h5_file_id = H5Fcreate(ofname.c_str(),
+                                 H5F_ACC_TRUNC,
+                                 H5P_DEFAULT,
+                                 H5P_DEFAULT);
+
+    // create a dataset for a 16-bit signed integer  array with 2 elements
+
+
+    hid_t h5_dtype = H5T_NATIVE_SHORT;
+
+    hsize_t num_eles = 2;
+    
+    hid_t   h5_dspace_id = H5Screate_simple(1,
+                                            &num_eles,
+                                            NULL);
+
+    // create new dataset
+    hid_t h5_dset_id  = H5Dcreate(h5_file_id,
+                                  "mydata",
+                                  h5_dtype,
+                                  h5_dspace_id,
+                                  H5P_DEFAULT,
+                                  H5P_DEFAULT,
+                                  H5P_DEFAULT);
+
+    Node n;
+    n.set(DataType::c_short(2));
+    short_array vals = n.value();
+
+    vals[0] = -16;
+    vals[1] = -16;
+
+    // this should succeed 
+    io::hdf5_write(n,h5_dset_id);
+    
+
+    // this should also succeed 
+    vals[1] = 16;
+    
+    io::hdf5_write(n,h5_dset_id);
+    
+    n.set(DataType::uint16(10));
+    // this should fail
+    EXPECT_THROW(io::hdf5_write(n,h5_dset_id),Error);
+
+    Node n_read;
+    io::hdf5_read(h5_dset_id,n_read);
+
+    // check values of data
+    short_array read_vals = n_read.value();
+    EXPECT_EQ(-16,read_vals[0]);
+    EXPECT_EQ(16,read_vals[1]);
+
+    H5Sclose(h5_dspace_id);
+    H5Dclose(h5_dset_id);
+    H5Fclose(h5_file_id);
+
 
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_relay_io_hdf5, conduit_hdf5_read_group_from_handle)
+TEST(conduit_relay_io_hdf5, write_conduit_object_to_hdf5_group_handle)
 {
-    EXPECT_TRUE(false);
+    std::string ofname = "tout_hdf5_wr_conduit_object_to_hdf5_group_handle.hdf5";
 
+    hid_t h5_file_id = H5Fcreate(ofname.c_str(),
+                                 H5F_ACC_TRUNC,
+                                 H5P_DEFAULT,
+                                 H5P_DEFAULT);
+
+    hid_t h5_group_id = H5Gcreate(h5_file_id,
+                                  "mygroup",
+                                  H5P_DEFAULT,
+                                  H5P_DEFAULT,
+                                  H5P_DEFAULT);
+    
+    
+    Node n;
+    n["a/b"].set(DataType::int16(2));
+    int16_array vals = n["a/b"].value();
+    vals[0] =-16;
+    vals[1] =-16;
+    
+    // this should succeed 
+    io::hdf5_write(n,h5_group_id);
+    
+    n["a/c"] = "mystring";
+    
+    // this should also succeed 
+    vals[1] = 16;
+    
+    io::hdf5_write(n,h5_group_id);
+    
+    n["a/b"].set(DataType::uint16(10));
+    // this should fail
+    EXPECT_THROW(io::hdf5_write(n,h5_group_id),Error);
+
+    Node n_read;
+    io::hdf5_read(h5_group_id,n_read);
+
+    // check values of data
+    int16_array read_vals = n_read["a/b"].value();
+    EXPECT_EQ(-16,read_vals[0]);
+    EXPECT_EQ(16,read_vals[1]);
+    EXPECT_EQ("mystring",n_read["a/c"].as_string());
+    
+    H5Gclose(h5_group_id);
+    H5Fclose(h5_file_id);
+}
+
+//-----------------------------------------------------------------------------
+// This variant tests when a caller code has already opened a HDF5 file
+// and has a handle ready.
+TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_by_file_handle)
+{
+    uint32 a_val = 20;
+    uint32 b_val = 8;
+    uint32 c_val = 13;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+
+    EXPECT_EQ(n["a"].as_uint32(), a_val);
+    EXPECT_EQ(n["b"].as_uint32(), b_val);
+    EXPECT_EQ(n["c"].as_uint32(), c_val);
+
+    std::string test_file_name = "tout_hdf5_write_read_by_file_handle.hdf5";
+
+    // Set up hdf5 file and group that caller code would already have.
+    hid_t  h5_file_id = H5Fcreate(test_file_name.c_str(),
+                           H5F_ACC_TRUNC,
+                           H5P_DEFAULT,
+                           H5P_DEFAULT);
+
+    // Prepare group that caller code wants conduit to save it's tree to that
+    // group. (could also specify group name for conduit to create via
+    // hdf5_path argument to write call.
+    hid_t h5_group_id = H5Gcreate(h5_file_id,
+                            "sample_group_name",
+                            H5P_DEFAULT,
+                            H5P_DEFAULT,
+                            H5P_DEFAULT);
+
+    io::hdf5_write(n,h5_group_id);
+    hid_t status = H5Gclose(h5_group_id);
+
+    // Another variant of this - caller code has a pre-existing group they
+    // want to write into, but they want to use the 'group name' arg to do it
+    // Relay should be able to write into existing group.
+    h5_group_id = H5Gcreate(h5_file_id,
+                            "sample_group_name2",
+                            H5P_DEFAULT,
+                            H5P_DEFAULT,
+                            H5P_DEFAULT);
+    io::hdf5_write(n,h5_file_id, "sample_group_name2");
+
+    status = H5Gclose(h5_group_id);
+
+    status = H5Fclose(h5_file_id);
+
+    h5_file_id = H5Fopen(test_file_name.c_str(),
+                         H5F_ACC_RDONLY,
+                         H5P_DEFAULT);
+
+    // Caller code switches to group it wants to read in. (could also
+    // specify group name for conduit to read out via hdf5_path arg to read
+    // call)
+    h5_group_id = H5Gopen(h5_file_id, "sample_group_name", 0);
+                          
+    Node n_load;
+
+    io::hdf5_read(h5_group_id, n_load);
+    
+    status = H5Gclose(h5_group_id);
+    status = H5Fclose(h5_file_id);
+
+    EXPECT_EQ(n_load["a"].as_uint32(), a_val);
+    EXPECT_EQ(n_load["b"].as_uint32(), b_val);
+    EXPECT_EQ(n_load["c"].as_uint32(), c_val);
+    
 }
 
 

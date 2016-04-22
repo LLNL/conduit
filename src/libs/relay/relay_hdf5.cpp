@@ -655,10 +655,6 @@ write_conduit_leaf_to_hdf5_dataset(const Node &node,
     CONDUIT_CHECK_HDF5_ERROR(h5_status,
                              "Failed to write to HDF5 Dataset " << hdf5_dset_id);
 
-    // close our dataset
-    CONDUIT_CHECK_HDF5_ERROR(H5Dclose(hdf5_dset_id),
-                             "Failed to close HDF5 Dataset " << hdf5_dset_id);
-
 }
 
 //---------------------------------------------------------------------------//
@@ -707,7 +703,9 @@ write_conduit_leaf_to_hdf5_group(const Node &node,
     // write the data
     write_conduit_leaf_to_hdf5_dataset(node,
                                        h5_child_id);
-
+    
+    CONDUIT_CHECK_HDF5_ERROR(H5Dclose(h5_child_id),
+                             "Failed to close HDF5 Dataset: " << h5_child_id);
 }
 
 //---------------------------------------------------------------------------//
