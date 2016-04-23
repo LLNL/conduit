@@ -10331,11 +10331,9 @@ Node::check_contiguous_after(uint8 *ptr) const
     if(dtype_id == DataType::OBJECT_ID ||
        dtype_id == DataType::LIST_ID)
     {
-        bool ok = true;
-        
         std::vector<Node*>::const_iterator itr;
         for(itr = m_children.begin();
-            itr < m_children.end() && ok;
+            itr < m_children.end();
             ++itr)
         {
             uint8 *next_ptr = (*itr)->check_contiguous_after(res_ptr);
@@ -10347,7 +10345,7 @@ Node::check_contiguous_after(uint8 *ptr) const
                 {
                     res_ptr = NULL;
                     // no need to check more children
-                    ok = false;
+                    break;
                 }
                 // else 
                 // we haven't found an initial ptr, keep iterating over 
