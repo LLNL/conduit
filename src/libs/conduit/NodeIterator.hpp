@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -9,7 +9,7 @@
 // 
 // This file is part of Conduit. 
 // 
-// For details, see: http://llnl.github.io/conduit/.
+// For details, see: http://software.llnl.gov/conduit/.
 // 
 // Please also read conduit/LICENSE
 // 
