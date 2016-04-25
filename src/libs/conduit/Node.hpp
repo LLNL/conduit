@@ -2192,11 +2192,27 @@ public:
     index_t          total_bytes_compact() const
                         { return m_schema->total_bytes_compact();}
 
-    /// is this node using a compact data layout
+    /// Is this node using a compact data layout?
     bool             is_compact() const 
                         {return m_schema->is_compact();}
 
-    /// does this node have a contiguous data layout
+    //-------------------------------------------------------------------------
+    /// contiguous checks
+    //-------------------------------------------------------------------------
+    /// A node is contiguous if the leaves of it children (traversed in a depth
+    /// first order) cover a contiguous chunk of the address space.
+    /// 
+    /// The direct address checks are only done for leaves with data,
+    /// nodes in the objects, lists, or empty roles don't directly 
+    /// advance the pointer.
+    ///
+    /// Checks use each leaf's offset and the total strided bytes
+    /// If leaves do not abut in address space, or if any leaf points to NULL
+    /// the Node is not contiguous.
+    ///
+    /// This check is agnostic to if the Node owns the data.
+
+    /// Does this node has a contiguous data layout?
     bool             is_contiguous() const;
     
     
@@ -2205,7 +2221,7 @@ public:
     bool             contiguous_with(const Node &n) const;
 
     /// true if node hierarchy's memory contiguously follows 
-    /// the given address
+    /// the given address. Note: contiguous with NULL is false.
     bool             contiguous_with(void *address) const;
     
 
@@ -2726,23 +2742,27 @@ private:
     void              serialize(uint8 *data,
                                 index_t curr_offset) const;
 
-    /// implements recursive check for if node  is contiguous to the 
-    /// passed address
+    /// Implements recursive check for if node is contiguous to the 
+    /// passed start address. If contiguous, returns true and the 
+    /// last address of the contiguous block.
     ///
-    /// this method  recursively traverse sa node hierarchy
+    /// this method recursively traverses a node hierarchy
     ///
     /// At each traversal step, it checks if the current Node is contiguous 
     /// to the given address. 
     ///
-    /// If contiguous: it returns input address for the next check
-    /// If NOT contiguous:  it returns NULL
+    /// If contiguous: it returns true and the last address of the 
+    /// contiguous block the ref pointer "end_addy"
+    ///
+    /// If NOT contiguous:  it returns false, and end_addy is set to NULL.
     ///
     /// to start the traversal, we use NULL input as a special case.
     ///
     /// The direct address checks are only done for leaves with data,
     /// nodes in the objects, lists, or empty roles don't directly 
-    /// advance the pointer.  
-    uint8*            check_contiguous_after(uint8 *ptr) const;
+    /// advance the pointer.
+    bool              contiguous_with(uint8  *start_addy,
+                                      uint8 *&end_addy) const;
 
     void              info(Node &res,
                            const std::string &curr_path) const;

@@ -10286,7 +10286,8 @@ Node::serialize(uint8 *data,index_t curr_offset) const
 bool
 Node::is_contiguous() const
 {
-    return check_contiguous_after(NULL) != NULL;
+    uint8 *end_addy= NULL;
+    return contiguous_with(NULL,end_addy);
 }
 
 //---------------------------------------------------------------------------//
@@ -10299,8 +10300,10 @@ Node::contiguous_with(void *address) const
     {
         return false;
     }
+
+    uint8 *end_addy= NULL;
     
-    return check_contiguous_after((uint8*)address) != NULL;
+    return contiguous_with((uint8*)address,end_addy);
 }
 
 
@@ -10308,24 +10311,22 @@ Node::contiguous_with(void *address) const
 bool
 Node::contiguous_with(const Node &n) const
 {
-    // TODO: what are the proper semantics 
-    /// should this fail if n is not contig? it currently does
+    uint8* end_addy=NULL;
     
-    // use check_contiguous_after to get final address
-    uint8* n_final_address = n.check_contiguous_after(NULL);
+    // use check_contiguous_after to get final address from passed node
+    // if the passed node isn't contiguous, this call returns false
 
-    // if n_final_address is null, that means that n isn't  
-    // contig, and contiguous_with will fail
-
-    return contiguous_with(n_final_address);
+    return n.contiguous_with(NULL,end_addy) && 
+           this->contiguous_with(end_addy);
 }
 
 
 //---------------------------------------------------------------------------//
-uint8 *
-Node::check_contiguous_after(uint8 *ptr) const
+bool
+Node::contiguous_with(uint8 *start_addy, uint8 *&end_addy) const
 {
-    uint8   *res_ptr = ptr;
+    bool res = true;
+    
     index_t dtype_id = dtype().id();
     
     if(dtype_id == DataType::OBJECT_ID ||
@@ -10336,53 +10337,55 @@ Node::check_contiguous_after(uint8 *ptr) const
             itr < m_children.end();
             ++itr)
         {
-            uint8 *next_ptr = (*itr)->check_contiguous_after(res_ptr);
+            res = (*itr)->contiguous_with(start_addy,
+                                          end_addy);
             
-            if( next_ptr == NULL)
+            if(res)
             {
-                // bad
-                if(res_ptr != NULL)
-                {
-                    res_ptr = NULL;
-                    // no need to check more children
-                    break;
-                }
-                // else 
-                // we haven't found an initial ptr, keep iterating over 
-                // children
+                // ok, advance
+                start_addy = end_addy;
             }
             else
             {
-                // ok, advance
-                res_ptr = next_ptr;
+                // no need to check more children
+                break;
             }
         }
     }
     else if(dtype_id != DataType::EMPTY_ID)
     {
-        if(res_ptr != NULL)
+        uint8 *curr_addy = (uint8*)element_ptr(0);
+        if(start_addy != NULL)
         {
-            if(res_ptr == element_ptr(0))
+            // make sure element ptr is not NULL
+            // and that it is our starting address
+            if(curr_addy != NULL && curr_addy == start_addy)
             {
-                // ok, advance the ptr
-                res_ptr = (uint8*)element_ptr(0) + total_bytes();
+                // ok, advance the end pointer
+                end_addy = curr_addy + total_bytes();
             }
             else // bad
             {
-                res_ptr = NULL;
+                res = false;
+                end_addy = NULL;
             }
         }
-        else
+        else if(curr_addy != NULL)
         {
             // this is the first leaf that actually has data
             // 
             // by definition it is contiguous, so we simply 
-            // advance the pointer
-            res_ptr = (uint8*)element_ptr(0) + total_bytes();
+            // advance the end pointer
+            end_addy  = curr_addy + total_bytes();
+        }
+        else // current address is NULL, nothing is contig with NULL
+        {
+            res = false;
+            end_addy = NULL;
         }
     }
     
-    return res_ptr;
+    return res;
 }
 
 
