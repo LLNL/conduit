@@ -430,6 +430,65 @@ TEST(dtype_tests, default_dtype_from_string)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(dtype_tests,dtype_id_from_c_type_names)
+{
+
+    EXPECT_EQ(CONDUIT_NATIVE_CHAR_ID,  DataType::c_type_name_to_id("char"));
+    EXPECT_EQ(CONDUIT_NATIVE_SHORT_ID, DataType::c_type_name_to_id("short"));
+    EXPECT_EQ(CONDUIT_NATIVE_INT_ID,   DataType::c_type_name_to_id("int"));
+    EXPECT_EQ(CONDUIT_NATIVE_LONG_ID,  DataType::c_type_name_to_id("long"));
+
+    EXPECT_EQ(CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
+              DataType::c_type_name_to_id("unsigned char"));
+
+    EXPECT_EQ(CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
+              DataType::c_type_name_to_id("unsigned short"));
+
+    EXPECT_EQ(CONDUIT_NATIVE_UNSIGNED_INT_ID,
+              DataType::c_type_name_to_id("unsigned int"));
+
+    EXPECT_EQ(CONDUIT_NATIVE_UNSIGNED_LONG_ID,
+              DataType::c_type_name_to_id("unsigned long"));
+
+    EXPECT_EQ(CONDUIT_NATIVE_FLOAT_ID, DataType::c_type_name_to_id("float"));
+    EXPECT_EQ(CONDUIT_NATIVE_DOUBLE_ID,DataType::c_type_name_to_id("double"));
+
+    EXPECT_EQ(CONDUIT_CHAR8_STR_ID,DataType::c_type_name_to_id("char8_str"));
+
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(dtype_tests,dtype_endianness_checks)
+{
+
+    DataType dt;
+    dt.set(DataType::UINT64_ID,
+           1,
+           0,
+           sizeof(uint64),
+           sizeof(uint64),
+           Endianness::DEFAULT_ID);
+
+    dt.set(DataType::UINT64_ID,
+           1,
+           0,
+           sizeof(uint64),
+           sizeof(uint64),
+           Endianness::BIG_ID);
+
+    EXPECT_TRUE(dt.is_big_endian());
+
+    dt.set(DataType::UINT64_ID,
+           1,
+           0,
+           sizeof(uint64),
+           sizeof(uint64),
+           Endianness::LITTLE_ID);
+
+    EXPECT_TRUE(dt.is_little_endian());
+}
 
 
 
