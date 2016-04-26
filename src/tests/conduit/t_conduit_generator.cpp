@@ -143,4 +143,195 @@ TEST(conduit_generator, simple_gen_schema)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_generator, gen_array_with_num_eles)
+{
+    Node n;
+
+    // signed ints
+    n.generate("{\"dtype\":\"int8\",\"number_of_elements\": 8}");
+    EXPECT_TRUE(n.dtype().is_int8());
+    EXPECT_EQ(8,n.dtype().number_of_elements());
+    
+    n.generate("{\"dtype\":\"int16\",\"number_of_elements\": 16}");
+    EXPECT_TRUE(n.dtype().is_int16());
+    EXPECT_EQ(16,n.dtype().number_of_elements());
+
+    n.generate("{\"dtype\":\"int32\",\"number_of_elements\": 32}");
+    EXPECT_TRUE(n.dtype().is_int32());
+    EXPECT_EQ(32,n.dtype().number_of_elements());
+    
+    n.generate("{\"dtype\":\"int64\",\"number_of_elements\": 64}");
+    EXPECT_TRUE(n.dtype().is_int64());
+    EXPECT_EQ(64,n.dtype().number_of_elements());
+
+    // unsigned ints
+    n.generate("{\"dtype\":\"uint8\",\"number_of_elements\": 8}");
+    EXPECT_TRUE(n.dtype().is_uint8());
+    EXPECT_EQ(8,n.dtype().number_of_elements());
+    
+    n.generate("{\"dtype\":\"uint16\",\"number_of_elements\": 16}");
+    EXPECT_TRUE(n.dtype().is_uint16());
+    EXPECT_EQ(16,n.dtype().number_of_elements());
+
+    n.generate("{\"dtype\":\"uint32\",\"number_of_elements\": 32}");
+    EXPECT_TRUE(n.dtype().is_uint32());
+    EXPECT_EQ(32,n.dtype().number_of_elements());
+    
+    n.generate("{\"dtype\":\"uint64\",\"number_of_elements\": 64}");
+    EXPECT_TRUE(n.dtype().is_uint64());
+    EXPECT_EQ(64,n.dtype().number_of_elements());
+    
+    n.generate("{\"dtype\":\"float32\",\"number_of_elements\": 32}");
+    EXPECT_TRUE(n.dtype().is_float32());
+    EXPECT_EQ(32,n.dtype().number_of_elements());
+    
+    n.generate("{\"dtype\":\"float64\",\"number_of_elements\": 64}");
+    EXPECT_TRUE(n.dtype().is_float64());
+    EXPECT_EQ(64,n.dtype().number_of_elements());
+    
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_generator, gen_array_with_data)
+{
+    Node n;
+    // signed ints
+    n.generate("{\"dtype\":\"int8\",\"length\": 2, \"value\": [-8,-8]}");
+    int8 *vint8_ptr = n.value();
+    EXPECT_EQ(-8,vint8_ptr[0]);
+    EXPECT_EQ(vint8_ptr[0],vint8_ptr[0]);
+
+    n.generate("{\"dtype\":\"int16\",\"length\": 2, \"value\": [-16,-16]}");
+    int16 *vint16_ptr = n.value();
+    EXPECT_EQ(-16,vint16_ptr[0]);
+    EXPECT_EQ(vint16_ptr[0],vint16_ptr[0]);
+
+    n.generate("{\"dtype\":\"int32\",\"length\": 2, \"value\": [-32,-32]}");
+    int32 *vint32_ptr = n.value();
+    EXPECT_EQ(-32,vint32_ptr[0]);
+    EXPECT_EQ(vint32_ptr[0],vint32_ptr[0]);
+
+    n.generate("{\"dtype\":\"int64\",\"length\": 2, \"value\": [-64,-64]}");
+    int64 *vint64_ptr = n.value();
+    EXPECT_EQ(-64,vint64_ptr[0]);
+    EXPECT_EQ(vint64_ptr[0],vint64_ptr[0]);
+    
+    // unsigned ints
+    n.generate("{\"dtype\":\"uint8\",\"length\": 2, \"value\": [8,8]}");
+    uint8 *vuint8_ptr = n.value();
+    EXPECT_EQ(8,vuint8_ptr[0]);
+    EXPECT_EQ(vuint8_ptr[0],vuint8_ptr[0]);
+
+    n.generate("{\"dtype\":\"uint16\",\"length\": 2, \"value\": [16,16]}");
+    uint16 *vuint16_ptr = n.value();
+    EXPECT_EQ(16,vuint16_ptr[0]);
+    EXPECT_EQ(vuint16_ptr[0],vuint16_ptr[0]);
+
+    n.generate("{\"dtype\":\"uint32\",\"length\": 2, \"value\": [32,32]}");
+    uint32 *vuint32_ptr = n.value();
+    EXPECT_EQ(32,vuint32_ptr[0]);
+    EXPECT_EQ(vuint32_ptr[0],vuint32_ptr[0]);
+
+    n.generate("{\"dtype\":\"uint64\",\"length\": 2, \"value\": [64,64]}");
+    uint64 *vuint64_ptr = n.value();
+    EXPECT_EQ(64,vuint64_ptr[0]);
+    EXPECT_EQ(vuint64_ptr[0],vuint64_ptr[0]);
+
+    // floating point
+    n.generate("{\"dtype\":\"float32\",\"length\": 2, \"value\": [32.0,32.0]}");
+    float32 *vfloat32_ptr = n.value();
+    EXPECT_NEAR(32,vfloat32_ptr[0],1e-10);
+    EXPECT_EQ(vuint32_ptr[0],vuint32_ptr[0]);
+
+    n.generate("{\"dtype\":\"float64\",\"length\": 2, \"value\": [64.0,64.0]}");
+    float64 *vfloat64_ptr = n.value();
+    EXPECT_NEAR(64,vfloat64_ptr[0],1e-10);
+    EXPECT_EQ(vuint64_ptr[0],vuint64_ptr[0]);
+
+    
+    
+    n.generate("{\"dtype\":\"char8_str\",\"value\": \"mystring\"}");
+    
+    EXPECT_EQ("mystring",n.as_string());
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_generator, gen_endianness)
+{
+    union{uint8  vbytes[4]; uint32 vuint;} data;
+
+    if(Endianness::machine_default() == Endianness::BIG_ID)
+    {
+        data.vbytes[0] =  0xff;
+        data.vbytes[1] =  0xff;
+        data.vbytes[2] =  0xff;
+        data.vbytes[3] =  0xfe;
+        
+      
+        EXPECT_EQ(0xfffffffe,data.vuint);
+        
+        CONDUIT_INFO("Gen as Big Endian (Machine Default)");
+        Generator g1("{\"dtype\":\"uint32\",\"length\": 1, \"endianness\": \"big\"}",
+                    &data.vbytes[0]);
+      
+        Node n;
+        n.generate_external(g1);
+        
+        EXPECT_EQ(0xfffffffe,n.as_uint32());
+        
+        
+        data.vbytes[0] =  0xfe;
+        data.vbytes[1] =  0xff;
+        data.vbytes[2] =  0xff;
+        data.vbytes[3] =  0xff;
+        
+        CONDUIT_INFO("Gen as Little Endian");
+        Generator g2("{\"dtype\":\"uint32\",\"length\": 1, \"endianness\": \"little\"}",
+                    &data.vbytes[0]);
+        
+        n.generate_external(g2);
+        n.endian_swap_to_machine_default();
+        EXPECT_EQ(0xfffffffe,n.as_uint32());
+        
+    }
+    else
+    {
+        data.vbytes[0] =  0xfe;
+        data.vbytes[1] =  0xff;
+        data.vbytes[2] =  0xff;
+        data.vbytes[3] =  0xff;
+      
+        EXPECT_EQ(0xfffffffe,data.vuint);
+        
+        CONDUIT_INFO("Gen as Little Endian (Machine Default)");
+        Generator g("{\"dtype\":\"uint32\",\"length\": 1, \"endianness\": \"little\"}",
+                    &data.vbytes[0]);
+      
+        Node n;
+        n.generate_external(g);
+        n.print_detailed();
+                
+        EXPECT_EQ(0xfffffffe,n.as_uint32());
+
+        data.vbytes[0] =  0xff;
+        data.vbytes[1] =  0xff;
+        data.vbytes[2] =  0xff;
+        data.vbytes[3] =  0xfe;
+    
+        Generator g2("{\"dtype\":\"uint32\",\"length\": 1, \"endianness\": \"big\"}",
+                     &data.vbytes[0]);
+        
+        CONDUIT_INFO("Gen as Big Endian");
+        n.generate_external(g2);
+        n.print_detailed();
+        n.endian_swap_to_machine_default();
+        EXPECT_EQ(0xfffffffe,n.as_uint32());
+        
+    }
+}
+
+
+
 

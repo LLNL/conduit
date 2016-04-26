@@ -542,12 +542,12 @@ Generator::Parser::parse_leaf_dtype(const rapidjson::Value &jvalue,
     
         // parse endianness (override default if passed)
         index_t endianness = Endianness::DEFAULT_ID;
-        if(jvalue.HasMember("endianess"))
+        if(jvalue.HasMember("endianness"))
         {
-            const rapidjson::Value &json_endianess = jvalue["endianess"];
-            if(json_endianess.IsString())
+            const rapidjson::Value &json_endianness = jvalue["endianness"];
+            if(json_endianness.IsString())
             {
-                std::string end_val(json_endianess.GetString());
+                std::string end_val(json_endianness.GetString());
                 if(end_val == "big")
                 {
                     endianness = Endianness::BIG_ID;
