@@ -802,8 +802,8 @@ index_t
 DataType::name_to_id(const std::string &dtype_name)
 {
     if(dtype_name      == "[empty]") return EMPTY_ID;
-    else if(dtype_name == "Object")  return OBJECT_ID;
-    else if(dtype_name == "List")    return LIST_ID;
+    else if(dtype_name == "object")  return OBJECT_ID;
+    else if(dtype_name == "list")    return LIST_ID;
     else if(dtype_name == "int8")    return INT8_ID;
     else if(dtype_name == "int16")   return INT16_ID;
     else if(dtype_name == "int32")   return INT32_ID;
@@ -826,8 +826,8 @@ DataType::id_to_name(index_t dtype_id)
 {
     /// container types
     if(dtype_id      == EMPTY_ID)   return "[empty]";
-    else if(dtype_id == OBJECT_ID)  return "Object";
-    else if(dtype_id == LIST_ID)    return "List";
+    else if(dtype_id == OBJECT_ID)  return "object";
+    else if(dtype_id == LIST_ID)    return "list";
     /// signed integer types
     else if(dtype_id == INT8_ID)    return "int8";
     else if(dtype_id == INT16_ID)   return "int16";
@@ -1036,7 +1036,7 @@ DataType::to_json_stream(std::ostream &os) const
         {
             endian_str = Endianness::id_to_name(m_endianness);
         }
-        os << ", \"endianness\": \"" << endian_str << "\"";            
+        os << ", \"endianness\": \"" << endian_str << "\"";
     }
 
     os << "}";
