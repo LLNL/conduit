@@ -67,7 +67,8 @@ addons:
        - gfortran-4.8
    coverity_scan:
        project:
-         name: "cyrush/conduit"
+         name: "LLNL/conduit"
+         description: "Scientific Data Exchange for HPC Simulations"
        notification_email: cyrush@llnl.gov
        build_command_prepend: "cd $TRAVIS_BUILD_DIR mkdir coverity-build && cd coverity-build && cmake ../src/"
        build_command: "make"
