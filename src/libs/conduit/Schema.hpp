@@ -172,7 +172,7 @@ public:
     bool            compatible(const Schema &s) const;
 
     /// is this schema equal to given schema
-    bool            equal(const Schema &s) const;
+    bool            equals(const Schema &s) const;
 
 
 
@@ -286,6 +286,16 @@ private:
     void        init_object();
     // cleanup any allocated memory.
     void        release();
+
+    /// helps with proper alloc size for:
+    /// Node::set_using_schema()and Node::set_data_using_schema
+    ///
+    /// this is private b/c, while it makes sense for a schema stand alone
+    /// the values don't always make sense for a Node with several allocs
+    ///
+    /// We could try to make this clear to folks, but we think there will
+    /// still be confusion, so we are just using it internally.
+    index_t     spanned_bytes() const;
 
 //-----------------------------------------------------------------------------
 //

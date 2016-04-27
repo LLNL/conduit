@@ -2192,9 +2192,38 @@ public:
     index_t          total_bytes_compact() const
                         { return m_schema->total_bytes_compact();}
 
-    /// is this node using a compact data layout
+    /// Is this node using a compact data layout?
     bool             is_compact() const 
                         {return m_schema->is_compact();}
+
+    //-------------------------------------------------------------------------
+    /// contiguous checks
+    //-------------------------------------------------------------------------
+    /// A node is contiguous if the leaves of it children (traversed in a depth
+    /// first order) cover a contiguous chunk of the address space.
+    /// 
+    /// The direct address checks are only done for leaves with data,
+    /// nodes in the objects, lists, or empty roles don't directly 
+    /// advance the pointer.
+    ///
+    /// Checks use each leaf's offset and the total strided bytes
+    /// If leaves do not abut in address space, or if any leaf points to NULL
+    /// the Node is not contiguous.
+    ///
+    /// This check is agnostic to if the Node owns the data.
+
+    /// Does this node has a contiguous data layout?
+    bool             is_contiguous() const;
+    
+    
+    /// true if node hierarchy's memory contiguously follows 
+    /// the given node's memory
+    bool             contiguous_with(const Node &n) const;
+
+    /// true if node hierarchy's memory contiguously follows 
+    /// the given address. Note: contiguous with NULL is false.
+    bool             contiguous_with(void *address) const;
+    
 
     /// is this node compatible with given node
     bool             compatible(const Node &n) const
@@ -2398,6 +2427,10 @@ public:
     // direct data pointer access 
     void            *data_ptr();
     const void      *data_ptr() const;
+    
+    /// returns the number of bytes allocated or mmaped by this node
+    index_t          allocated_bytes() const
+                        {return m_data_size;}
 
     void  *element_ptr(index_t idx)
         {return static_cast<char*>(m_data) + dtype().element_index(idx);};
@@ -2407,7 +2440,7 @@ public:
 //-----------------------------------------------------------------------------
 /// description:
 ///  Direct access to data at leaf types (native c++ types)
-//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------`
      
      // signed integer scalars
     char           as_char()  const;
@@ -2708,6 +2741,28 @@ private:
 
     void              serialize(uint8 *data,
                                 index_t curr_offset) const;
+
+    /// Implements recursive check for if node is contiguous to the 
+    /// passed start address. If contiguous, returns true and the 
+    /// last address of the contiguous block.
+    ///
+    /// this method recursively traverses a node hierarchy
+    ///
+    /// At each traversal step, it checks if the current Node is contiguous 
+    /// to the given address. 
+    ///
+    /// If contiguous: it returns true and the last address of the 
+    /// contiguous block the ref pointer "end_addy"
+    ///
+    /// If NOT contiguous:  it returns false, and end_addy is set to NULL.
+    ///
+    /// to start the traversal, we use NULL input as a special case.
+    ///
+    /// The direct address checks are only done for leaves with data,
+    /// nodes in the objects, lists, or empty roles don't directly 
+    /// advance the pointer.
+    bool              contiguous_with(uint8  *start_addy,
+                                      uint8 *&end_addy) const;
 
     void              info(Node &res,
                            const std::string &curr_path) const;
