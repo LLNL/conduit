@@ -656,4 +656,121 @@ TEST(conduit_node, check_as_value_default_after_warning)
     conduit::utils::set_warning_handler(conduit::utils::default_warning_handler);
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, check_contiguous)
+{   
+    uint8    u8av[6] = {2,4,8,16,32,64};
+    uint16  u16av[6] = {2,4,8,16,32,64};
+    uint32  u32av[6] = {2,4,8,16,32,64};
+    uint64  u64av[6] = {2,4,8,16,32,64};
+    
+    uint8_array  u8av_a(u8av,DataType::uint8(6));
+    uint16_array u16av_a(u16av,DataType::uint16(6));
+    uint32_array u32av_a(u32av,DataType::uint32(6));
+    uint64_array u64av_a(u64av,DataType::uint64(6));
+    
+    Node n;
+    n["a"] = u8av_a;
+    n["b"] = u16av_a;
+    n["c"] = u32av_a;
+    n["d"] = u64av_a;
+
+    // compact
+    EXPECT_TRUE(n.is_compact());
+    // but not contig
+    EXPECT_FALSE(n.is_contiguous());
+    
+    // compact to create compact + contig
+    Node n2;
+    n.compact_to(n2);
+    EXPECT_TRUE(n2.is_compact());
+    EXPECT_TRUE(n2.is_contiguous());
+
+    // no longer contig
+    n2["e"] = 10;
+    EXPECT_FALSE(n2.is_contiguous());
+    // still compact
+    EXPECT_TRUE(n2.is_compact());
+
+    // contig & compact external
+    Node n3;
+    n3["a"].set_external(u64av,2);
+    n3["b"].set_external(u64av,4,sizeof(uint64)*2);
+    EXPECT_TRUE(n3.is_contiguous());
+    
+    // make non contig
+    n3["c"].set_external(u64av,3,sizeof(uint64)*3);
+    EXPECT_FALSE(n3.is_contiguous());
+    
+    // contig but not compact
+    Node n4;
+    n4["a"].set_external(u64av,2);
+    n4["b"].set_external(u64av,2,sizeof(uint64)*2,sizeof(uint64)*2);
+    EXPECT_FALSE(n4.is_compact());
+    EXPECT_TRUE(n4.is_contiguous());
+
+
+}
+
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node, check_contiguous_with)
+{   
+    uint64  u64av[10] = {2,4,8,16,32,64,128,256,512,1024};
+    
+    Node n1;
+    n1["a"].set_external(u64av,5);
+    n1["b"].set_external(u64av,5,5 * sizeof(uint64));
+
+    n1.print();
+
+    // compact
+    EXPECT_TRUE(n1.is_compact());
+    // and contig
+    EXPECT_TRUE(n1.is_contiguous());
+
+    // we don't expect things to be contig with NULL
+    EXPECT_FALSE(n1["a"].contiguous_with(NULL));
+    EXPECT_FALSE(n1["b"].contiguous_with(NULL));
+    
+    // b should be contig with a
+    EXPECT_TRUE(n1["b"].contiguous_with(n1["a"]));
+    
+    // but the reverse is not the case (b comes after a ...)
+    EXPECT_FALSE(n1["a"].contiguous_with(n1["b"]));
+    
+    // b it should be contig with address at the end of a
+    // a.ele_ptr(5) should land us right at start of b
+    EXPECT_EQ(n1["b"].element_ptr(0),n1["a"].element_ptr(5));
+        
+    // b it should be contig with address at the end of a
+    EXPECT_TRUE(n1["b"].contiguous_with(n1["a"].element_ptr(5)));
+    
+    
+    Node n2;
+    n2["a"].set_external(u64av,5);
+    n2["b"].set_external(DataType::uint8(),NULL);
+    n2["c"].set_external(u64av,5,5 * sizeof(uint64));
+    
+    // we expect c to be contig with a
+    EXPECT_TRUE(n1["c"].contiguous_with(n1["a"]));
+    
+    // null leaf type in middle should break contig
+    EXPECT_FALSE(n2.is_contiguous());
+    
+    // should be contig if we removed the null leaf
+    n2.remove("b");
+    EXPECT_TRUE(n2.is_contiguous());
+    
+
+    // but an empy leaf type in middle shouldn't break contig
+    n2["a"].set_external(u64av,5);
+    n2["b"].set(DataType::empty());
+    n2["c"].set_external(u64av,5,5 * sizeof(uint64));
+    
+    EXPECT_TRUE(n2.is_contiguous());
+
+}
+
 

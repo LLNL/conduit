@@ -265,49 +265,6 @@ bool verify_mcarray(conduit::Node &n)
 
 
 //----------------------------------------------------------------------------
-bool BLUEPRINT_API is_contiguous(conduit::Node &n)
-{
-    // TODO: Implement
-    
-    // Conditions:
-    // is_compact()
-    // 1) address + offset for each comp can back tracks to start address
-    //    (comp address + offset - func(comp index) == start address)
-    // 2) is_compact()
-    
-    
-    uint8 *starting_data_ptr = NULL;
-    bool ok = true;
-    
-    index_t total_bytes = 0;
-    NodeIterator itr = n.children();
-        
-    while(itr.has_next() && ok)
-    {
-        // get the next child
-        Node &chld = itr.next();
-        
-        if(starting_data_ptr == NULL)
-        {
-           starting_data_ptr = (uint8*) chld.element_ptr(0);
-        }
-        
-        if(chld.is_compact())
-        {
-            uint8 *current_data_ptr = (uint8*) chld.element_ptr(0);
-            ok = ( (current_data_ptr - total_bytes) == starting_data_ptr );
-            total_bytes += chld.total_bytes();
-        }
-        else
-        {
-            ok = false;
-        }
-    }
-    
-    return ok;
-}
-
-//----------------------------------------------------------------------------
 bool BLUEPRINT_API is_interleaved(conduit::Node &n)
 {
     // TODO: Implement
