@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -53,10 +53,7 @@ env:
     - CONDUIT_FC=gfortran-4.8
     # we need to know the root dir for our 3rd party lib installs
     - TRAVIS_HOME=`pwd`
-    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
-    #   via the "travis encrypt" command using the project repo's public key
     - secure: "gEL8BuEWPLgqvUha7jMKrB1bn/H+tIBX+N3ovk4tqyBSliVG627Ln8gk87X25VroYBTrAOYO+V1Cp83M5qdiN+8ykSIAKvWQEvAD5ElTa6Yntcnh121j++4andUtBTihfw+2ncUSz1eMR1If6S1pCXD53sd8kVHVRfgiJ8I6nzVvEVbUTeD7Ll/TQyb9RGHPys03KUrceGUg7sj8+1RzycQP7EVbtWcy6WkhINW78fkD+oaJamxGw4ozlTao83DnNQmN0SdUpwkoTbo1VtoldI11eaBeqSzk/QELU4dGj49OpV+RvbH+2JiGKmj+81yYMFwaSa8giLGB1X6FWMOIDJAu4ZeGI7D5bLKXTC1hM59FdvG0tuj8H7QQRuTDUKzyCx+QVYbD4CIbELBHp+Dd0PYwlAhlHPTjZToXfROulV7+PTTKVNIanh9K1MneFwdT6rACyMsZFehKldf5kDXwNTJreXjanwllAVQueNhgcUK4CUUvjF4c2ZcbaL3O61UnCZdwjs5mwG5aXkinCCtero2GSEKi0ZijOLJ1dP7m2UIU5XFhftSRKLVrO7E+MZoOuMsQ9ngulPmV7iIQAo3QiDhtLj3lLnMQQgTn/rDEWQzbWmAO42+t6dtndH9r1eUynsmHL1RmFKY8Hx2FhiVNi3Ry4GHn3KGDZ8HZ7gfBtp0="
-    
 addons:
   apt:
     sources:
@@ -65,14 +62,13 @@ addons:
        - gcc-4.8 
        - g++-4.8 
        - gfortran-4.8
-   coverity_scan:
-       project:
-         name: "LLNL/conduit"
-         description: "Scientific Data Exchange for HPC Simulations"
-       notification_email: cyrush@llnl.gov
-       build_command_prepend: "cd $TRAVIS_BUILD_DIR mkdir coverity-build && cd coverity-build && cmake ../src/"
-       build_command: "make"
-       branch_pattern: coverity-scan
+  coverity_scan:
+     project:
+        name: "LLNL/conduit"
+     notification_email: "cyrush@llnl.gov"
+     build_command_prepend: "cd $TRAVIS_BUILD_DIR mkdir coverity-build && cd coverity-build && cmake ../src/"
+     build_command: "make"
+     branch_pattern: coverity-scan
 before_install:
   # download a newer version of cmake
   - wget --no-check-certificate http://www.cmake.org/files/v3.3/cmake-3.3.0-Linux-x86_64.sh
