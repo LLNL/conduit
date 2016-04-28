@@ -199,9 +199,8 @@ Generator::Parser::check_homogenous_json_array(const rapidjson::Value &jvalue)
     for (rapidjson::SizeType i = 1; i < jvalue.Size() && homogenous; i++)
     {
         index_t curr_val_type = json_to_numeric_dtype(jvalue[i]);
-        if((val_type == DataType::INT64_ID || 
-            val_type == DataType::INT64_ID) &&
-            curr_val_type ==  DataType::FLOAT64_ID)
+        if(val_type == DataType::INT64_ID  &&
+           curr_val_type ==  DataType::FLOAT64_ID)
         {
             // promote to a double (may be lossy in some cases)
             val_type = DataType::FLOAT64_ID;

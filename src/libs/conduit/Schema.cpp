@@ -759,6 +759,8 @@ Schema::fetch_child(const std::string &path) const
 index_t
 Schema::child_index(const std::string &path) const
 {
+    index_t res=0;
+
     // find p_curr with an iterator
     std::map<std::string, index_t>::const_iterator itr;
     itr = object_map().find(path);
@@ -771,10 +773,13 @@ Schema::child_index(const std::string &path) const
         ///
         CONDUIT_ERROR("<Schema::child_index[OBJECT_ID]>"
                     << "Attempt to access invalid child:" << path);
-                      
+    }
+    else
+    {
+        res = itr->second;
     }
 
-    return itr->second;
+    return res;
 }
 
 //---------------------------------------------------------------------------//
