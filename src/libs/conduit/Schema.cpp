@@ -307,6 +307,36 @@ Schema::is_compact() const
 }
 
 //---------------------------------------------------------------------------//
+index_t
+Schema::spanned_bytes() const
+{
+    index_t res = 0;
+
+    index_t dt_id = m_dtype.id();
+    if(dt_id == DataType::OBJECT_ID || dt_id == DataType::LIST_ID)
+    {
+        const std::vector<Schema*> &lst = children();
+        for (std::vector<Schema*>::const_iterator itr = lst.begin();
+             itr < lst.end(); ++itr)
+        {
+            // spanned bytes is the max of the spanned bytes of 
+            // all children
+            index_t curr_span = (*itr)->spanned_bytes();
+            if(curr_span > res)
+            {
+                res = curr_span;
+            }
+        }
+    }
+    else
+    {
+        res = m_dtype.spanned_bytes();
+    }
+    return res;
+}
+
+
+//---------------------------------------------------------------------------//
 bool
 Schema::compatible(const Schema &s) const
 {
@@ -328,10 +358,15 @@ Schema::compatible(const Schema &s) const
             itr != s.object_map().end() && res;
             itr++)
         {
+            // make sure we actually have the path
             if(has_path(itr->first))
             {
-                index_t s_idx = itr->second;
-                res = s.children()[s_idx]->compatible(fetch_child(itr->first));
+                // use index to fetch the child from the other schema
+                const Schema &s_chld = s.child(itr->second);
+                // fetch our child by name
+                const Schema &chld = fetch_child(itr->first);
+                // do compat check
+                res = chld.compatible(s_chld);
             }
         }
     }
@@ -361,7 +396,7 @@ Schema::compatible(const Schema &s) const
 
 //---------------------------------------------------------------------------//
 bool
-Schema::equal(const Schema &s) const
+Schema::equals(const Schema &s) const
 {
     index_t dt_id   = m_dtype.id();
     index_t s_dt_id = s.dtype().id();
@@ -384,7 +419,7 @@ Schema::equal(const Schema &s) const
             if(has_path(itr->first))
             {
                 index_t s_idx = itr->second;
-                res = s.children()[s_idx]->equal(fetch_child(itr->first));
+                res = s.children()[s_idx]->equals(fetch_child(itr->first));
             }
             else
             {
@@ -399,7 +434,7 @@ Schema::equal(const Schema &s) const
             if(s.has_path(itr->first))
             {
                 index_t idx = itr->second;
-                res = children()[idx]->equal(s.fetch_child(itr->first));
+                res = children()[idx]->equals(s.fetch_child(itr->first));
             }
             else
             {
@@ -422,12 +457,12 @@ Schema::equal(const Schema &s) const
 
         for(index_t i = 0; i < s_n_chd && res; i++)
         {
-            res = lst[i]->equal(*s_lst[i]);
+            res = lst[i]->equals(*s_lst[i]);
         }
     }
     else
     {
-        res = m_dtype.equal(s.dtype());
+        res = m_dtype.equals(s.dtype());
     }
     return res;
 }
@@ -724,6 +759,8 @@ Schema::fetch_child(const std::string &path) const
 index_t
 Schema::child_index(const std::string &path) const
 {
+    index_t res=0;
+
     // find p_curr with an iterator
     std::map<std::string, index_t>::const_iterator itr;
     itr = object_map().find(path);
@@ -736,10 +773,13 @@ Schema::child_index(const std::string &path) const
         ///
         CONDUIT_ERROR("<Schema::child_index[OBJECT_ID]>"
                     << "Attempt to access invalid child:" << path);
-                      
+    }
+    else
+    {
+        res = itr->second;
     }
 
-    return itr->second;
+    return res;
 }
 
 //---------------------------------------------------------------------------//

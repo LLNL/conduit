@@ -127,15 +127,21 @@ public:
 //-----------------------------------------------------------------------------
     /// swaps for 16 bit types
     static void             swap16(void *data);
-    static void             swap16(void *src,void *dest);
+    /// executes direct copy from src to dest. 
+    /// src and dest must not be the same location.
+    static void             swap16(void *src, void *dest);
 
     /// swaps for 32 bit types
     static void             swap32(void *data);
-    static void             swap32(void *src,void *dest);
+    /// executes direct copy from src to dest. 
+    /// src and dest must not be the same location.
+    static void             swap32(void *src, void *dest);
 
     /// swaps for 64 bit types    
     static void             swap64(void *data);
-    static void             swap64(void *src,void *dest);
+    /// executes direct copy from src to dest. 
+    /// src and dest must not be the same location.
+    static void             swap64(void *src, void *dest);
 
 };
 //-----------------------------------------------------------------------------

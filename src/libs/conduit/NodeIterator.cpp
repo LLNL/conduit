@@ -159,7 +159,14 @@ NodeIterator::has_next() const
 Node &
 NodeIterator::next() 
 {
-    m_index++;
+    if(has_next())
+    {
+        m_index++;
+    }
+    else
+    {
+        CONDUIT_ERROR("next() when has_next() == false");
+    }
     return m_node->child(m_index-1);
 }
 
@@ -173,6 +180,10 @@ NodeIterator::peek_next()
     {
         idx++;
     }
+    else
+    {
+        CONDUIT_ERROR("peek_next() when has_next() == false");
+    }
     return m_node->child(idx-1);
 }
 
@@ -181,7 +192,7 @@ NodeIterator::peek_next()
 void
 NodeIterator::to_back()
 {
-    m_index = m_num_children+1;
+    m_index = m_num_children;
 }
 
 //-----------------------------------------------------------------------------
@@ -204,6 +215,11 @@ NodeIterator::previous()
     {
         m_index--;
     }
+    else
+    {
+        CONDUIT_ERROR("previous() when has_previous() == false");
+    }
+    
     return m_node->child(m_index-1);
 }
 
@@ -215,6 +231,10 @@ NodeIterator::peek_previous()
     if(has_previous())
     {
         idx--;
+    }
+    else
+    {
+        CONDUIT_ERROR("peek_previous() when has_previous() == false");
     }
     return m_node->child(idx);
 }

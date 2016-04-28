@@ -126,7 +126,8 @@ public:
         
         //---------------------------------------------------------------------------//
         CivetDispatchHandler(WebServer &server)
-        : m_server(&server)
+        : m_server(&server),
+          m_handler(NULL)
         {
             // empty
         }
@@ -143,6 +144,10 @@ public:
         
         void set_handler(WebRequestHandler *handler)
         {
+            if(m_handler != NULL)
+            {
+                CONDUIT_WARN("Set request handler when one was already set");
+            }
             m_handler = handler;
         }
 

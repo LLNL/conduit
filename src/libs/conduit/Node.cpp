@@ -561,8 +561,9 @@ Node::set_schema(const Schema &schema)
 {
     release();
     m_schema->set(schema);
-    // allocate data
-    index_t nbytes = m_schema->total_bytes();
+    // allocate data 
+    // for this case, we need the total bytes spanned by the schema
+    index_t nbytes = m_schema->spanned_bytes();
     allocate(nbytes);
     memset(m_data,0,nbytes);
     // call walk w/ internal data pointer
@@ -584,8 +585,10 @@ Node::set_data_using_schema(const Schema &schema,
 {
     release();
     m_schema->set(schema);   
-    allocate(m_schema->total_bytes());
-    memcpy(m_data, data, m_schema->total_bytes());
+    // for this case, we need the total bytes spanned by the schema
+    index_t nbytes = m_schema->spanned_bytes();
+    allocate(nbytes);
+    memcpy(m_data, data, nbytes);
     walk_schema(this,m_schema,data);
 }
 
@@ -7699,6 +7702,7 @@ Node::to_json_generic(std::ostream &os,
                       const std::string &pad,
                       const std::string &eoe) const
 {
+    std::ios_base::fmtflags prev_stream_flags(os.flags());
     os.precision(15);
     if(dtype().id() == DataType::OBJECT_ID)
     {
@@ -7811,6 +7815,8 @@ Node::to_json_generic(std::ostream &os,
             os << "}";
         }
     }  
+    
+    os.flags(prev_stream_flags);
 }
 
 //---------------------------------------------------------------------------//
@@ -7925,6 +7931,7 @@ Node::to_base64_json(std::ostream &os,
                      const std::string &pad,
                      const std::string &eoe) const
 {
+    std::ios_base::fmtflags prev_stream_flags(os.flags());
     os.precision(15);
         
     // we need compact data
@@ -7966,6 +7973,8 @@ Node::to_base64_json(std::ostream &os,
     os << "}" << eoe;
     utils::indent(os,indent,depth,pad);
     os << "}";
+    
+    os.flags(prev_stream_flags);
 }
 
 
@@ -10278,6 +10287,113 @@ Node::serialize(uint8 *data,index_t curr_offset) const
        
     }
 }
+
+//---------------------------------------------------------------------------//
+bool
+Node::is_contiguous() const
+{
+    uint8 *end_addy= NULL;
+    return contiguous_with(NULL,end_addy);
+}
+
+//---------------------------------------------------------------------------//
+bool
+Node::contiguous_with(void *address) const
+{
+    // not handling NULL as input will case an issue b/c NULL 
+    // is used to start recursion for the is_contiguous() case.
+    if(address == NULL)
+    {
+        return false;
+    }
+
+    uint8 *end_addy= NULL;
+    
+    return contiguous_with((uint8*)address,end_addy);
+}
+
+
+//---------------------------------------------------------------------------//
+bool
+Node::contiguous_with(const Node &n) const
+{
+    uint8* end_addy=NULL;
+    
+    // use check_contiguous_after to get final address from passed node
+    // if the passed node isn't contiguous, this call returns false
+
+    return n.contiguous_with(NULL,end_addy) && 
+           this->contiguous_with(end_addy);
+}
+
+
+//---------------------------------------------------------------------------//
+bool
+Node::contiguous_with(uint8 *start_addy, uint8 *&end_addy) const
+{
+    bool res = true;
+    
+    index_t dtype_id = dtype().id();
+    
+    if(dtype_id == DataType::OBJECT_ID ||
+       dtype_id == DataType::LIST_ID)
+    {
+        std::vector<Node*>::const_iterator itr;
+        for(itr = m_children.begin();
+            itr < m_children.end();
+            ++itr)
+        {
+            res = (*itr)->contiguous_with(start_addy,
+                                          end_addy);
+            
+            if(res)
+            {
+                // ok, advance
+                start_addy = end_addy;
+            }
+            else
+            {
+                // no need to check more children
+                break;
+            }
+        }
+    }
+    else if(dtype_id != DataType::EMPTY_ID)
+    {
+        uint8 *curr_addy = (uint8*)element_ptr(0);
+        if(start_addy != NULL)
+        {
+            // make sure element ptr is not NULL
+            // and that it is our starting address
+            if(curr_addy != NULL && curr_addy == start_addy)
+            {
+                // ok, advance the end pointer
+                end_addy = curr_addy + total_bytes();
+            }
+            else // bad
+            {
+                res = false;
+                end_addy = NULL;
+            }
+        }
+        else if(curr_addy != NULL)
+        {
+            // this is the first leaf that actually has data
+            // 
+            // by definition it is contiguous, so we simply 
+            // advance the end pointer
+            end_addy  = curr_addy + total_bytes();
+        }
+        else // current address is NULL, nothing is contig with NULL
+        {
+            res = false;
+            end_addy = NULL;
+        }
+    }
+    
+    return res;
+}
+
 
 //---------------------------------------------------------------------------//
 void

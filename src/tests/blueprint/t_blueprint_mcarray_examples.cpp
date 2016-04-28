@@ -181,7 +181,7 @@ TEST(conduit_blueprint_mcarray_examples, mcarray_test_to_contig)
     
     EXPECT_EQ(n_info["mem_spaces"].number_of_children(),1);
     
-    EXPECT_TRUE(blueprint::mcarray::is_contiguous(n_out));
+    EXPECT_TRUE(n_out.is_contiguous());
     EXPECT_FALSE(blueprint::mcarray::is_interleaved(n_out));    
     Node n_test;
     n_test.set_external((float64*)n_out.data_ptr(),15);
@@ -233,7 +233,7 @@ TEST(conduit_blueprint_mcarray_examples, mcarray_test_to_interleaved)
     
     EXPECT_EQ(n_info["mem_spaces"].number_of_children(),1);
     
-    EXPECT_FALSE(blueprint::mcarray::is_contiguous(n_out));
+    EXPECT_FALSE(n_out.is_contiguous());
     EXPECT_TRUE(blueprint::mcarray::is_interleaved(n_out));    
     
     Node n_test;
@@ -362,8 +362,8 @@ TEST(conduit_blueprint_mcarray_examples, mcarray_xyz_contiguous_mixed_types)
     blueprint::mcarray::examples::xyz("interleaved_mixed",
                                   10,
                                   n);
-    EXPECT_TRUE(blueprint::mcarray::is_interleaved(n));    
-    EXPECT_FALSE(blueprint::mcarray::is_contiguous(n));    
+    EXPECT_TRUE(blueprint::mcarray::is_interleaved(n));
+    EXPECT_FALSE(n.is_contiguous());
 }
 
 
