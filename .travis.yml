@@ -47,26 +47,14 @@ compiler:
   - gcc
 env:
   global:
-    # std env vars CC + CXX get overridden
-    - CONDUIT_CC=gcc-4.8
-    - CONDUIT_CXX=g++-4.8
-    - CONDUIT_FC=gfortran-4.8
-    # we need to know the root dir for our 3rd party lib installs
     - TRAVIS_HOME=`pwd`
     - secure: "gEL8BuEWPLgqvUha7jMKrB1bn/H+tIBX+N3ovk4tqyBSliVG627Ln8gk87X25VroYBTrAOYO+V1Cp83M5qdiN+8ykSIAKvWQEvAD5ElTa6Yntcnh121j++4andUtBTihfw+2ncUSz1eMR1If6S1pCXD53sd8kVHVRfgiJ8I6nzVvEVbUTeD7Ll/TQyb9RGHPys03KUrceGUg7sj8+1RzycQP7EVbtWcy6WkhINW78fkD+oaJamxGw4ozlTao83DnNQmN0SdUpwkoTbo1VtoldI11eaBeqSzk/QELU4dGj49OpV+RvbH+2JiGKmj+81yYMFwaSa8giLGB1X6FWMOIDJAu4ZeGI7D5bLKXTC1hM59FdvG0tuj8H7QQRuTDUKzyCx+QVYbD4CIbELBHp+Dd0PYwlAhlHPTjZToXfROulV7+PTTKVNIanh9K1MneFwdT6rACyMsZFehKldf5kDXwNTJreXjanwllAVQueNhgcUK4CUUvjF4c2ZcbaL3O61UnCZdwjs5mwG5aXkinCCtero2GSEKi0ZijOLJ1dP7m2UIU5XFhftSRKLVrO7E+MZoOuMsQ9ngulPmV7iIQAo3QiDhtLj3lLnMQQgTn/rDEWQzbWmAO42+t6dtndH9r1eUynsmHL1RmFKY8Hx2FhiVNi3Ry4GHn3KGDZ8HZ7gfBtp0="
 addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-       - gcc-4.8 
-       - g++-4.8 
-       - gfortran-4.8
   coverity_scan:
      project:
         name: "LLNL/conduit"
      notification_email: "cyrush@llnl.gov"
-     build_command_prepend: "cd $TRAVIS_BUILD_DIR mkdir coverity-build && cd coverity-build && cmake ../src/"
+     build_command_prepend: "cd $TRAVIS_BUILD_DIR && mkdir coverity-build && cd coverity-build && cmake ../src/"
      build_command: "make"
      branch_pattern: coverity-scan
 before_install:
@@ -74,44 +62,11 @@ before_install:
   - wget --no-check-certificate http://www.cmake.org/files/v3.3/cmake-3.3.0-Linux-x86_64.sh
   - mkdir ${TRAVIS_HOME}/cmake/
   - export PATH=${TRAVIS_HOME}/cmake/bin:$PATH
-  # prep to use miniconda to get python and numpy
-  - wget --no-check-certificate http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
-  - chmod +x miniconda.sh
-  - ./miniconda.sh -b -p ${TRAVIS_HOME}/miniconda
-  - export PATH=${TRAVIS_HOME}/miniconda/bin:$PATH
-  - conda update --yes conda
 install:
   - sh cmake-3.3.0-Linux-x86_64.sh --skip-license --prefix=${TRAVIS_HOME}/cmake/
-  - conda install --yes python=2.7 numpy
-  - pip install cpp-coveralls
 script:
-  - cmake --version
   - cd $TRAVIS_BUILD_DIR
-  # create out-of-source build dir, and an install dir
-  - mkdir travis-debug-build
-  - mkdir travis-debug-install
-  - cd    travis-debug-build
-  # build type and install loc
-  - CMAKE_OPTS="-DCMAKE_BUILD_TYPE=Debug"
-  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../travis-debug-install"
-  # c & c++ compilers
-  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_C_COMPILER=${CONDUIT_CC}"
-  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_CXX_COMPILER=${CONDUIT_CXX}"
-  # enable fortran support
-  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_Fortran_COMPILER=${CONDUIT_FC}"
-  - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_FORTRAN=ON"
-  # enable python support
-  - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=ON"
-  # enable coverage
-  - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_COVERAGE=ON"
-  # configure with cmake
-  - cmake  ${CMAKE_OPTS} ../src
-  # build, test, and install
-  - make
-  - make test
-  - make install
-after_success:
-  - coveralls --gcov /usr/bin/gcov-4.8 --include src/libs/conduit  --gcov-options '\-lp' --root $TRAVIS_BUILD_DIR --build-root $TRAVIS_BUILD_DIR/travis-debug-build;
+  - echo "coverity-scan"
 notifications:
   email:
     recipients:
