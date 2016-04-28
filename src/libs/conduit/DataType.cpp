@@ -808,7 +808,7 @@ DataType::element_index(index_t idx) const
 index_t 
 DataType::name_to_id(const std::string &dtype_name)
 {
-    if(dtype_name      == "[empty]") return EMPTY_ID;
+    if(dtype_name      == "empty")   return EMPTY_ID;
     else if(dtype_name == "Object")  return OBJECT_ID;
     else if(dtype_name == "List")    return LIST_ID;
     else if(dtype_name == "int8")    return INT8_ID;
@@ -832,7 +832,7 @@ std::string
 DataType::id_to_name(index_t dtype_id)
 {
     /// container types
-    if(dtype_id      == EMPTY_ID)   return "[empty]";
+    if(dtype_id      == EMPTY_ID)   return "empty";
     else if(dtype_id == OBJECT_ID)  return "Object";
     else if(dtype_id == LIST_ID)    return "List";
     /// signed integer types
@@ -853,7 +853,7 @@ DataType::id_to_name(index_t dtype_id)
     /// string types
     else if(dtype_id == CHAR8_STR_ID) return "char8_str";
     // default to empty
-    return "[empty]";
+    return "empty";
 }
 
 //-----------------------------------------------------------------------------
@@ -1009,31 +1009,16 @@ DataType::to_json() const
 void
 DataType::to_json_stream(std::ostream &os) const
 {
-    os << "{\"dtype\":";
-    if(m_id == EMPTY_ID)
+    os << "{\"dtype\":" << "\"" << id_to_name(m_id) << "\"";
+
+    if(is_number() || is_string())
     {
-        os << "\"[empty]\"";
-    }
-    else if(m_id == OBJECT_ID)
-    {
-        os << "\"[object]\"";
-    }
-    else if(m_id == LIST_ID)
-    {
-        os << "\"[list]\"";
-    }
-    else
-    {
-        os << "\"" << id_to_name(m_id) << "\"";
-        os << ", \"length\": " << m_num_ele;
-        
+        os << ", \"number_of_elements\": " << m_num_ele;
         os << ", \"offset\": " << m_offset;
         os << ", \"stride\": " << m_stride;
         os << ", \"element_bytes\": " << m_ele_bytes;
 
-
         std::string endian_str;
-
         if(m_endianness == Endianness::DEFAULT_ID)
         {
             // find this machine's actual endianness
@@ -1043,7 +1028,7 @@ DataType::to_json_stream(std::ostream &os) const
         {
             endian_str = Endianness::id_to_name(m_endianness);
         }
-        os << ", \"endianness\": \"" << endian_str << "\"";            
+        os << ", \"endianness\": \"" << endian_str << "\"";
     }
 
     os << "}";
