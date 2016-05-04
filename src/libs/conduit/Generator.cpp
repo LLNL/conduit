@@ -471,7 +471,6 @@ Generator::Parser::parse_leaf_dtype(const rapidjson::Value &jvalue,
                                << "'number_of_elements' must be a number ");
             }
         }
-        
         else if(jvalue.HasMember("length"))
         {
             const rapidjson::Value &json_len = jvalue["length"];
@@ -579,7 +578,8 @@ Generator::Parser::parse_leaf_dtype(const rapidjson::Value &jvalue,
                 length = jvalue["value"].Size();
             }
             // support explicit length 0 in a schema
-            else if(!jvalue.HasMember("length")) 
+            else if(!jvalue.HasMember("length") && 
+                    !jvalue.HasMember("number_of_elements"))
             {
                 length = 1;
             }
