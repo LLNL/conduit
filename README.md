@@ -8,6 +8,7 @@ Conduit is an open source project from Lawrence Livermore National Laboratory. I
 
 [![Build Status](https://travis-ci.org/LLNL/conduit.png)](https://travis-ci.org/LLNL/conduit)
 [![Coverage Status](https://coveralls.io/repos/github/LLNL/conduit/badge.svg?branch=master)](https://coveralls.io/github/LLNL/conduit?branch=master)
+[![Static Analysis Status](https://scan.coverity.com/projects/8426/badge.svg?flat=1)](https://scan.coverity.com/projects/llnl-conduit)
 
 Documentation
 =================

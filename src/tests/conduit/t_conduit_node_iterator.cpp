@@ -131,7 +131,8 @@ TEST(conduit_node_iterator, empty)
     n["c"]; // empty
 
 
-    NodeIterator itr = n.children();
+    NodeIterator itr(n.children());
+    
     while(itr.has_next())
     {
         Node &n = itr.next();
@@ -139,6 +140,60 @@ TEST(conduit_node_iterator, empty)
     }
     
     itr = n["c"].children();
-    EXPECT_FALSE(itr.has_next());    
+    EXPECT_FALSE(itr.has_next());
     
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_iterator, move_cursor)
+{
+    uint32   a_val  = 10;
+    uint32   b_val  = 20;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = "myval";
+    
+
+    NodeIterator itr;
+    
+    itr = n.children();
+
+    itr.to_back();
+    EXPECT_FALSE(itr.has_next());
+    
+    // we are at the end,  check error capture
+    EXPECT_THROW(itr.next(),conduit::Error);
+    EXPECT_THROW(itr.peek_next(),conduit::Error);
+    
+    Node &last = itr.peek_previous();
+    EXPECT_EQ(last.as_string(),"myval");
+    
+    itr.to_front();
+    EXPECT_TRUE(itr.has_next());
+    
+    // we are at the beginning, check error capture
+    EXPECT_THROW(itr.previous(),conduit::Error);
+    EXPECT_THROW(itr.peek_previous(),conduit::Error);
+    
+    Node &first = itr.peek_next();
+    EXPECT_EQ(first.as_uint32(),a_val);
+
+    EXPECT_TRUE(itr.has_next());
+    EXPECT_EQ(itr.next().as_uint32(),a_val);
+    EXPECT_EQ(itr.path(),"a");
+    
+    EXPECT_TRUE(itr.has_next());
+    EXPECT_EQ(itr.next().as_uint32(),b_val);
+    EXPECT_EQ(itr.path(),"b");
+
+    EXPECT_TRUE(itr.has_next());
+    EXPECT_EQ(itr.next().as_string(),"myval");
+    EXPECT_EQ(itr.path(),"c");
+    
+    EXPECT_FALSE(itr.has_next());
+
+}
+

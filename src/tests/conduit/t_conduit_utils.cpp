@@ -103,6 +103,36 @@ my_error_handler(const std::string &msg,
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_utils, error_constructors)
+{
+    conduit::Error e("mymessage","myfile",10);
+    CONDUIT_INFO(e.message());
+    CONDUIT_INFO(e.what());
+        
+    try
+    {
+        utils::handle_warning("ERROR!",__FILE__,__LINE__);
+    }
+    catch(conduit::Error e)
+    {
+        conduit::Error ecpy(e);
+        CONDUIT_INFO(ecpy.message());
+    }
+    
+    try
+    {
+        utils::handle_warning("ERROR!",__FILE__,__LINE__);
+    }
+    catch(conduit::Error e)
+    {
+        conduit::Error ecpy;
+        ecpy = e;
+        CONDUIT_INFO(ecpy.message());
+    }
+}
+
+
+//-----------------------------------------------------------------------------
 TEST(conduit_utils, override_info)
 {
     utils::handle_info("INFO!",__FILE__,__LINE__);
@@ -153,5 +183,8 @@ TEST(conduit_utils, override_error)
                  conduit::Error);
     
 }
+
+
+
 
 

@@ -199,9 +199,8 @@ Generator::Parser::check_homogenous_json_array(const rapidjson::Value &jvalue)
     for (rapidjson::SizeType i = 1; i < jvalue.Size() && homogenous; i++)
     {
         index_t curr_val_type = json_to_numeric_dtype(jvalue[i]);
-        if((val_type == DataType::INT64_ID || 
-            val_type == DataType::INT64_ID) &&
-            curr_val_type ==  DataType::FLOAT64_ID)
+        if(val_type == DataType::INT64_ID  &&
+           curr_val_type ==  DataType::FLOAT64_ID)
         {
             // promote to a double (may be lossy in some cases)
             val_type = DataType::FLOAT64_ID;
@@ -541,12 +540,12 @@ Generator::Parser::parse_leaf_dtype(const rapidjson::Value &jvalue,
     
         // parse endianness (override default if passed)
         index_t endianness = Endianness::DEFAULT_ID;
-        if(jvalue.HasMember("endianess"))
+        if(jvalue.HasMember("endianness"))
         {
-            const rapidjson::Value &json_endianess = jvalue["endianess"];
-            if(json_endianess.IsString())
+            const rapidjson::Value &json_endianness = jvalue["endianness"];
+            if(json_endianness.IsString())
             {
-                std::string end_val(json_endianess.GetString());
+                std::string end_val(json_endianness.GetString());
                 if(end_val == "big")
                 {
                     endianness = Endianness::BIG_ID;

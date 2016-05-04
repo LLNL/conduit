@@ -132,6 +132,34 @@ TEST(schema_basics, compatible_schemas)
 
 
 //-----------------------------------------------------------------------------
+TEST(schema_basics, compatible_schemas_with_lists)
+{
+    Schema s1;
+    Schema &s1_a = s1.append();
+    Schema &s1_b = s1.append();
+    
+    s1_a.set(DataType::int8(10));
+    s1_b.set(DataType::int8(10));
+
+    Schema s2;
+    Schema &s2_a = s2.append();
+    Schema &s2_b = s2.append();
+    Schema &s2_c = s2.append();
+
+    s2_a.set(DataType::int8(10));
+    s2_b.set(DataType::int8(10));
+    s2_c.set(DataType::int8(10));
+    
+    EXPECT_FALSE(s1.compatible(s2));
+    EXPECT_TRUE(s2.compatible(s1));
+
+    EXPECT_FALSE(s1.equals(s2));
+    EXPECT_TRUE(s1.compatible(s1));
+
+
+}
+
+//-----------------------------------------------------------------------------
 TEST(schema_basics, schema_alloc)
 {
     Schema s1;

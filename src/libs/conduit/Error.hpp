@@ -112,8 +112,7 @@ public:
     /// passed output stream.
     void                message(std::ostringstream &oss) const;
     /// part of std::exception interface
-    virtual const char* what() const throw() 
-                        { return message().c_str(); }
+    virtual const char* what() const throw();
 
 private:
 //-----------------------------------------------------------------------------
@@ -127,6 +126,8 @@ private:
     std::string m_file;
     /// holds the line number in the source file where the error was raised.
     index_t     m_line;
+    /// holds the formatted error message for std::exception interface
+    std::string m_what;
     
 };
 //-----------------------------------------------------------------------------

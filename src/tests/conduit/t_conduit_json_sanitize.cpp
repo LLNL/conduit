@@ -92,7 +92,6 @@ TEST(conduit_json_sanitize, sanitize_quoteless)
 //-----------------------------------------------------------------------------
 TEST(conduit_json_sanitize, simple_quoteless_schema)
 {
-    return;
     uint32   a_val  = 10;
     uint32   b_val  = 20;
     float64  c_val  = 30.0;

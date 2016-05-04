@@ -74,16 +74,21 @@ namespace conduit
 Error::Error()
 :m_msg(""),
  m_file(""),
- m_line(0)
-{}
+ m_line(0),
+ m_what("")
+{
+    m_what = message();
+}
 
 //---------------------------------------------------------------------------//
 Error::Error(const Error &err)
 :m_msg(err.m_msg),
  m_file(err.m_file),
- m_line(err.m_line)
-
-{}
+ m_line(err.m_line),
+ m_what("")
+{
+    m_what = message();
+}
 
 //---------------------------------------------------------------------------//
 Error::Error(const std::string &msg,
@@ -91,12 +96,17 @@ Error::Error(const std::string &msg,
              index_t line)
 :m_msg(msg),
  m_file(file),
- m_line(line)
-{}
+ m_line(line),
+ m_what("")
+{
+    m_what = message();
+}
 
 //---------------------------------------------------------------------------//
 Error::~Error() throw()
-{}
+{
+    //empty
+}
 
 //-----------------------------------------------------------------------------
 // Methods used to access and display Error as a human readable string. 
@@ -122,7 +132,7 @@ Error::message() const
 
 //---------------------------------------------------------------------------//
 void
-    Error::message(std::ostringstream &oss) const
+Error::message(std::ostringstream &oss) const
 {
     Node n;
     n["file"] = m_file;
@@ -132,6 +142,12 @@ void
     oss << std::endl;
 }
 
+//---------------------------------------------------------------------------//
+const char* 
+Error::what() const throw()
+{
+    return m_what.c_str(); 
+}
 
 
 }

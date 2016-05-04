@@ -7702,6 +7702,7 @@ Node::to_json_generic(std::ostream &os,
                       const std::string &pad,
                       const std::string &eoe) const
 {
+    std::ios_base::fmtflags prev_stream_flags(os.flags());
     os.precision(15);
     if(dtype().id() == DataType::OBJECT_ID)
     {
@@ -7814,6 +7815,8 @@ Node::to_json_generic(std::ostream &os,
             os << "}";
         }
     }  
+    
+    os.flags(prev_stream_flags);
 }
 
 //---------------------------------------------------------------------------//
@@ -7928,6 +7931,7 @@ Node::to_base64_json(std::ostream &os,
                      const std::string &pad,
                      const std::string &eoe) const
 {
+    std::ios_base::fmtflags prev_stream_flags(os.flags());
     os.precision(15);
         
     // we need compact data
@@ -7969,6 +7973,8 @@ Node::to_base64_json(std::ostream &os,
     os << "}" << eoe;
     utils::indent(os,indent,depth,pad);
     os << "}";
+    
+    os.flags(prev_stream_flags);
 }
 
 
