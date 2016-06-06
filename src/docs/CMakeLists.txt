@@ -46,14 +46,12 @@
 # documentation targets
 ################################
 
-# add a target to generate API documentation with Doxygen
-
-
+# add a targets to generate API documentation with doxygen 
 if(DOXYGEN_FOUND)
     add_subdirectory(doxygen)
 endif()
 
-
+# add a targets to generate user and developer documentation with sphinx
 if(SPHINX_FOUND)
     add_subdirectory(sphinx)
 endif()

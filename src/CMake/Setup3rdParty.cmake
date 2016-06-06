@@ -95,10 +95,10 @@ include_directories(thirdparty_builtin/civetweb/include)
 ################################
 # Documentation Packages
 ################################
-
-find_package(Doxygen)
-include(CMake/thirdparty/FindSphinx.cmake)
-
+if(ENABLE_DOCS)
+    find_package(Doxygen)
+    include(CMake/thirdparty/FindSphinx.cmake)
+endif()
 
 if(ENABLE_GPERFTOOLS)
     ################################

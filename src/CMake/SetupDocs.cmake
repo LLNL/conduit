@@ -42,17 +42,23 @@
 # 
 ###############################################################################
 
+if(ENABLE_DOCS)
+
 add_custom_target(docs)
 
 if(DOXYGEN_FOUND)
     add_custom_target(doxygen_docs)
     add_dependencies(docs doxygen_docs)
+else()
+    message(STATUS "Warning: ENABLE_DOCS = ON, but Doxygen was not found.")
 endif()
 
 
 if(SPHINX_FOUND)
     add_custom_target(sphinx_docs)
     add_dependencies(docs sphinx_docs)
+else()
+    message(STATUS "Warning: ENABLE_DOCS = ON, but Sphinx was not found.")
 endif()
 
 
@@ -137,7 +143,6 @@ macro(add_sphinx_target sphinx_target_name )
             DESTINATION "docs/sphinx/${sphinx_target_name}")
 endmacro(add_sphinx_target)
 
-
-
+endif(ENABLE_DOCS) 
 
 
