@@ -263,6 +263,7 @@ public:
 
     bool              has_path(const std::string &path) const;
     void              paths(std::vector<std::string> &paths) const;
+    const std::vector<std::string> &paths() const;
     void              remove(const std::string &path);
     
 //-----------------------------------------------------------------------------

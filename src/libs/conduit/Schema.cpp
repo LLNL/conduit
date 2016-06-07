@@ -878,7 +878,6 @@ Schema::has_path(const std::string &path) const
     }
 }
 
-
 //---------------------------------------------------------------------------//
 void
 Schema::paths(std::vector<std::string> &paths) const
@@ -886,7 +885,12 @@ Schema::paths(std::vector<std::string> &paths) const
     paths = object_order();
 }
 
-
+//---------------------------------------------------------------------------//
+const std::vector<std::string>&
+Schema::paths() const
+{
+    return object_order();
+}
 
 //---------------------------------------------------------------------------//
 void    
