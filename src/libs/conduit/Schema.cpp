@@ -850,10 +850,9 @@ Schema::operator[](const std::string &path)
 bool           
 Schema::has_path(const std::string &path) const
 {
-    if(m_dtype.id() == DataType::EMPTY_ID)
-        return false;
+    // for the non-object case, has_path simply returns false
     if(m_dtype.id() != DataType::OBJECT_ID)
-        CONDUIT_ERROR("<Schema::has_path[OBJECT_ID]> Schema is not OBJECT_ID");
+        return false;
 
     std::string p_curr;
     std::string p_next;
