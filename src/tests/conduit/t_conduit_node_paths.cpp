@@ -51,7 +51,6 @@
 #include "conduit.hpp"
 
 #include <vector>
-#include <set>
 #include <string>
 #include <iostream>
 #include "gtest/gtest.h"
@@ -114,12 +113,9 @@ TEST(conduit_node_paths, simple_paths)
     std::cout << n.schema().to_json() << std::endl; 
     const std::vector<std::string>& npaths = n.paths();
     EXPECT_EQ(npaths.size(),3);
-    const std::set<std::string> npaths_set(npaths.begin(),npaths.end());
-    std::set<std::string> npaths_set_expected;
-    npaths_set_expected.insert("a");
-    npaths_set_expected.insert("b");
-    npaths_set_expected.insert("c");
-    EXPECT_EQ(npaths_set,npaths_set_expected);
+    EXPECT_EQ(npaths[0],"a");
+    EXPECT_EQ(npaths[1],"b");
+    EXPECT_EQ(npaths[2],"c");
 
     Schema schema2("{\"g\": {\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}}");
     Node n2(schema2,data,true);
