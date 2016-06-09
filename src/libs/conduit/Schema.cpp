@@ -1081,6 +1081,9 @@ Schema::walk_schema(const std::string &json_schema)
 Schema::Schema_Object_Hierarchy *
 Schema::object_hierarchy()
 {
+    if(m_dtype.id() != DataType::OBJECT_ID)
+        CONDUIT_ERROR("<Schema::object_hierarchy[OBJECT_ID]>: Schema is not OBJECT_ID");
+
     return static_cast<Schema_Object_Hierarchy*>(m_hierarchy_data);
 }
 
@@ -1096,6 +1099,9 @@ Schema::list_hierarchy()
 const Schema::Schema_Object_Hierarchy *
 Schema::object_hierarchy() const 
 {
+    if(m_dtype.id() != DataType::OBJECT_ID)
+        CONDUIT_ERROR("<Schema::object_hierarchy[OBJECT_ID]>: Schema is not OBJECT_ID");
+
     return static_cast<Schema_Object_Hierarchy*>(m_hierarchy_data);
 }
 
