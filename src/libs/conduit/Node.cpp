@@ -8181,7 +8181,6 @@ Node::number_of_children() const
     return m_schema->number_of_children();
 }
 
-
 //---------------------------------------------------------------------------//
 bool           
 Node::has_path(const std::string &path) const
@@ -8189,12 +8188,18 @@ Node::has_path(const std::string &path) const
     return m_schema->has_path(path);
 }
 
-
 //---------------------------------------------------------------------------//
 void
 Node::paths(std::vector<std::string> &paths) const
 {
     m_schema->paths(paths);
+}
+
+//---------------------------------------------------------------------------//
+const std::vector<std::string>&
+Node::paths() const
+{
+    return m_schema->paths();
 }
 
 //---------------------------------------------------------------------------//

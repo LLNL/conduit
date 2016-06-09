@@ -2290,11 +2290,13 @@ public:
 
     /// return the number of children (list and object interfaces)
     index_t number_of_children() const;
-    
+
     /// checks if given path exists in the Node hierarchy 
-    bool    has_path(const std::string &path) const;
+    bool        has_path(const std::string &path) const;
     /// returns the direct child paths for this node
-    void    paths(std::vector<std::string> &paths) const;
+    void        paths(std::vector<std::string> &paths) const;
+    /// returns the direct child paths for this node
+    const std::vector<std::string> &paths() const;
 
     /// adds an empty unnamed node to a list (list interface)
     /// TODO `append` is a strange name here, we want this interface
