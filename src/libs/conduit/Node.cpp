@@ -7594,7 +7594,7 @@ Node::to_json(const std::string &protocol,
     }
     else if(protocol == "base64_json")
     {
-        return to_base64_json(indent,depth,pad,eoe);        
+        return to_base64_json(indent,depth,pad,eoe);
     }
     else
     {
@@ -7765,7 +7765,7 @@ Node::to_json_generic(std::ostream &os,
                                 dtype_open,
                                 dtype_rest);
             os<< dtype_open;
-            os << ", value: ";
+            os << ", \"value\": ";
         }
 
         switch(dtype().id())
@@ -7807,6 +7807,11 @@ Node::to_json_generic(std::ostream &os,
             case DataType::CHAR8_STR_ID: 
                 os << "\"" << as_char8_str() << "\""; 
                 break;
+            // empty
+            case DataType::EMPTY_ID: 
+                os << "null";
+                break;
+
         }
 
         if(detailed)

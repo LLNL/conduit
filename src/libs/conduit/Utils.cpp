@@ -377,8 +377,11 @@ json_sanitize(const std::string &json)
                     else
                     {
                         in_id = false;
-                        /// check for true & false which we need to support in json
-                        if( !(cur_id == "true" || cur_id == "false"))
+                        /// check for true, false, and null 
+                        /// which we need to support in json
+                        if( !(cur_id == "true"  || 
+                              cur_id == "false" ||
+                              cur_id == "null" ))
                         {
                             /// emit cur_id
                             res += "\"" + cur_id + "\"";
