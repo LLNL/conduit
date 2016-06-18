@@ -380,5 +380,71 @@ TEST(conduit_node_save_load, io_reset_before_load)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node_save_load, load_save_with_empty)
+{
+
+    Node n;
+    n["path/to/a"] = 1;
+    n["path/to/empty"];
+    n["path/to/b"] = 2;
+    
+    n.print_detailed();
+   
+    n.save("tout_node_load_save_with_empty");
+
+    Node n_load;
+    n_load.load("tout_node_load_reset");
+    EXPECT_EQ(n["path/to/empty"].dtype().id(),
+              n_load["path/to/empty"].dtype().id());
+    
+    n_load.print_detailed();
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_save_load, load_save_with_childless_object)
+{
+
+    Node n;
+    n["path/to/a"] = 1;
+    n["path/to/empty"].set(DataType::object());
+    n["path/to/b"] = 2;
+    
+    n.print_detailed();
+   
+    n.save("tout_node_load_save_with_cl_object");
+
+    Node n_load;
+    n_load.load("tout_node_load_save_with_cl_object");
+    EXPECT_EQ(n["path/to/empty"].dtype().id(),
+              n_load["path/to/empty"].dtype().id());
+    
+    n_load.print_detailed();
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_save_load, load_save_with_childless_list)
+{
+
+    Node n;
+    n["path/to/a"] = 1;
+    n["path/to/empty"].set(DataType::list());
+    n["path/to/b"] = 2;
+    
+    n.print_detailed();
+   
+    n.save("tout_node_load_save_with_cl_list");
+
+    Node n_load;
+    n_load.load("tout_node_load_save_with_cl_list");
+    EXPECT_EQ(n["path/to/empty"].dtype().id(),
+              n_load["path/to/empty"].dtype().id());
+    
+    n_load.print_detailed();
+}
+
+
+
+
 
 
