@@ -140,6 +140,14 @@ install(TARGETS conduit_relay
 )
 
 
+################################
+# Add python wrappers if python
+# support was selected
+################################
+if(PYTHON_FOUND)
+    add_subdirectory(python)
+endif()
+
 ################################################################
 # If we have mpi, add the conduit relay mpi library
 ################################################################
