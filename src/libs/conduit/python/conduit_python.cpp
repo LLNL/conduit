@@ -155,62 +155,9 @@ PyInt_AsLong(PyObject *o)
 //---------------------------------------------------------------------------//
 #include "conduit.hpp"
 #include "Conduit_Python_Exports.hpp"
+#include "conduit_python.hpp"
 
 using namespace conduit;
-
-//---------------------------------------------------------------------------//
-struct PyConduit_DataType {
-    PyObject_HEAD
-    DataType dtype; // NoteIterator is light weight, we can deal with copies
-};
-
-//---------------------------------------------------------------------------//
-struct PyConduit_Generator {
-    PyObject_HEAD
-    Generator *generator;
-};
-
-//---------------------------------------------------------------------------//
-struct PyConduit_Schema {
-    PyObject_HEAD
-    Schema *schema;
-    int python_owns;
-};
-
-//---------------------------------------------------------------------------//
-struct PyConduit_NodeIterator {
-    PyObject_HEAD
-    NodeIterator itr; // NoteIterator is light weight, we can deal with copies
-};
-
-//---------------------------------------------------------------------------//
-struct PyConduit_Node {
-   PyObject_HEAD
-   Node *node;
-   int python_owns;
-};
-
-
-//---------------------------------------------------------------------------//
-static PyConduit_DataType *PyConduit_DataType_python_create();
-static int       PyConduit_DataType_Check(PyObject* obj);
-
-//---------------------------------------------------------------------------//
-static int       PyConduit_Generator_Check(PyObject* obj);
-
-
-//---------------------------------------------------------------------------//
-static PyObject* PyConduit_Schema_python_wrap(Schema *schema,int python_owns);
-static int       PyConduit_Schema_Check(PyObject* obj);
-
-
-//---------------------------------------------------------------------------//
-static PyConduit_Node* PyConduit_Node_python_create();
-static PyObject* PyConduit_Node_python_wrap(Node *node,int python_owns);
-static int       PyConduit_Node_Check(PyObject* obj);
-static int       PyConduit_Node_SetFromPython(Node& node, PyObject* value);
-static PyObject* PyConduit_createNumpyType(Node& node, int type);
-static PyObject* PyConduit_convertNodeToPython(Node& node);
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//

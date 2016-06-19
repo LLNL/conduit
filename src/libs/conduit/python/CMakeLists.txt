@@ -44,7 +44,7 @@
 
 # Specify the sources of the pure python and compiled portions of our module.
 SET(CONDUIT_PY_SOURCES     py_src/__init__.py)
-SET(CONDUIT_PY_CPP_SOURCES conduit_python.cpp)
+SET(CONDUIT_PY_CPP_SOURCES conduit_python.hpp conduit_python.cpp)
 
 # Make sure we have access to numpy
 include_directories(${NUMPY_INCLUDE_DIRS})
