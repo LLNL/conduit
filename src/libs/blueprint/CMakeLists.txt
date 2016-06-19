@@ -85,6 +85,16 @@ endif()
 #
 target_link_libraries(conduit_blueprint conduit)
 
+
+################################
+# Add python wrappers if python
+# support was selected
+################################
+if(PYTHON_FOUND)
+    add_subdirectory(python)
+endif()
+
+
 ##################################
 # Install Targets for conduit 
 ##################################

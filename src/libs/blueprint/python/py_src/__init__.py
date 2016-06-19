@@ -41,22 +41,13 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
-"""
- file: python_relay_smoke.py
- description: Simple unit test for the conduit relay python module interface.
 
-"""
+###############################################################################
+# file: __init__.py
+# Purpose: Main init for the conduit blueprint module.
+###############################################################################
+from .blueprint_python import *
 
-import sys
-import unittest
 
-import conduit.relay as relay
-
-class Test_Relay_Basic(unittest.TestCase):
-    def test_about(self):
-        print relay.about()
-
-if __name__ == '__main__':
-    unittest.main()
 
 

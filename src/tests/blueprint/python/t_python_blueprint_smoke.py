@@ -42,19 +42,19 @@
 # 
 ###############################################################################
 """
- file: python_relay_smoke.py
- description: Simple unit test for the conduit relay python module interface.
+ file: python_blueprint_smoke.py
+ description: Simple unit test for the conduit blueprint python module interface.
 
 """
 
 import sys
 import unittest
 
-import conduit.relay as relay
+import conduit.blueprint as blueprint
 
-class Test_Relay_Basic(unittest.TestCase):
+class Test_Blueprint_Basic(unittest.TestCase):
     def test_about(self):
-        print relay.about()
+        print blueprint.about()
 
 if __name__ == '__main__':
     unittest.main()

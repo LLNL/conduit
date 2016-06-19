@@ -41,22 +41,19 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
-"""
- file: python_relay_smoke.py
- description: Simple unit test for the conduit relay python module interface.
 
-"""
+# Specify the sources of the pure python and compiled portions of our module.
+SET(BLUEPRINT_PY_SOURCES     py_src/__init__.py)
+SET(BLUEPRINT_PY_CPP_SOURCES blueprint_python.cpp)
 
-import sys
-import unittest
+# Setup our module
+PYTHON_ADD_HYBRID_MODULE(blueprint_python
+                         python-modules
+                         conduit/blueprint
+                         setup.py
+                         "${BLUEPRINT_PY_SOURCES}"
+                         ${BLUEPRINT_PY_CPP_SOURCES})
 
-import conduit.relay as relay
-
-class Test_Relay_Basic(unittest.TestCase):
-    def test_about(self):
-        print relay.about()
-
-if __name__ == '__main__':
-    unittest.main()
-
+# link with the proper libs
+target_link_libraries(blueprint_python conduit conduit_blueprint ${PYTHON_LIBRARIES})
 

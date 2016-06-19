@@ -64,3 +64,13 @@ foreach(TEST ${BLUEPRINT_TESTS})
 endforeach()
 
 
+################################
+# Add optional tests
+################################
+if(PYTHON_FOUND)
+    add_subdirectory("python")
+else()
+    message(STATUS "Python disabled: Skipping conduit blueprint python module tests")
+endif()
+
+
