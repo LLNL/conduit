@@ -100,15 +100,14 @@ if(SILO_FOUND)
     list(APPEND conduit_relay_sources relay_silo.cpp)
 endif()
 
+
 #
-# Note: headers are added here so they show up in project file generators
-# (such as xcode, eclipse, etc)
+# setup conduit relay lib
 #
-if(BUILD_SHARED_LIBS)
-    add_library(conduit_relay SHARED ${conduit_relay_sources} ${conduit_relay_headers})
-else()
-    add_library(conduit_relay STATIC ${conduit_relay_sources} ${conduit_relay_headers})
-endif()
+add_compiled_library(NAME conduit_relay
+                     EXPORT conduit
+                     HEADERS ${conduit_relay_headers}
+                     SOURCES ${conduit_relay_sources})
 
 #
 # Link with conduit 
@@ -126,18 +125,6 @@ endif()
 if(HDF5_FOUND)
     target_link_libraries(conduit_relay conduit ${HDF5_LIBRARIES})
 endif()
-
-#########################################
-# Install Targets for conduit relay
-#########################################
-
-install(FILES ${conduit_relay_headers} DESTINATION include)
-install(TARGETS conduit_relay
-  EXPORT conduit
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION lib
-)
 
 
 ################################
@@ -169,46 +156,29 @@ set(conduit_relay_mpi_sources relay_mpi.cpp)
 include_directories(${MPI_CXX_INCLUDE_PATH})
 
 #
-# Note: headers are added here so they show up in project file generators
-# (such as xcode, eclipse, etc)
+# setup conduit relay mpi lib
 #
-if(BUILD_SHARED_LIBS)
-    add_library(conduit_relay_mpi SHARED ${conduit_relay_mpi_sources} ${conduit_relay_mpi_headers})
-else()
-    add_library(conduit_relay_mpi STATIC ${conduit_relay_mpi_sources} ${conduit_relay_mpi_headers})
-endif()
-        
+add_compiled_library(NAME conduit_relay_mpi 
+                     EXPORT conduit
+                     HEADERS ${conduit_relay_mpi_headers}
+                     SOURCES ${conduit_relay_mpi_sources} )
 
-# guard against empty mpi params
-if(NOT "${MPI_CXX_COMPILE_FLAGS}" STREQUAL "")
-    set_target_properties(conduit_relay_mpi 
-                                PROPERTIES COMPILE_FLAGS
-                                ${MPI_CXX_COMPILE_FLAGS} )
-endif()
 
-if(NOT "${MPI_CXX_LINK_FLAGS}" STREQUAL "")
-    set_target_properties(conduit_relay_mpi 
-                                PROPERTIES LINK_FLAGS
-                                ${MPI_CXX_LINK_FLAGS} )
-endif()
+#
+# add compile and link flags necessary to use mpi
+#
+add_target_compile_flags(TARGET conduit_relay_mpi
+                         FLAGS ${MPI_CXX_COMPILE_FLAGS})
+
+add_target_link_flags(TARGET conduit_relay_mpi
+                      FLAGS ${MPI_CXX_LINK_FLAGS})
+
 
 #
 # Link with conduit and MPI
 #
 target_link_libraries(conduit_relay_mpi conduit ${MPI_CXX_LIBRARIES})
 
-
-#########################################
-# Install Targets for conduit relay mpi
-#########################################
-
-install(FILES ${conduit_relay_mpi_headers} DESTINATION include)
-install(TARGETS conduit_relay_mpi
-  EXPORT conduit
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION lib
-)
 
 endif() # end if MPI_FOUND
 
