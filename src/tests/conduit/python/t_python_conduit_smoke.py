@@ -54,7 +54,7 @@ import conduit
 
 class Test_Condut_Basic(unittest.TestCase):
     def test_about(self):
-        conduit.about()
+        print conduit.about()
 
 if __name__ == '__main__':
     unittest.main()

@@ -147,10 +147,10 @@ TEST(conduit_node_save_load, other_protocols)
     EXPECT_EQ(n["b"].to_int32(), b_val);
 
     nsrc.save("tout_conduit_io_other_protos_conduit.json",
-              "conduit");
+              "conduit_json");
 
     n.load("tout_conduit_io_other_protos_conduit.json",
-           "conduit");
+           "conduit_json");
     
     n.print_detailed();
 
@@ -158,10 +158,10 @@ TEST(conduit_node_save_load, other_protocols)
     EXPECT_EQ(n["b"].as_int32(), b_val);
 
     nsrc.save("tout_conduit_io_other_protos_base64_json.json",
-              "base64_json");
+              "conduit_base64_json");
 
     n.load("tout_conduit_io_other_protos_base64_json.json",
-           "base64_json");
+           "conduit_base64_json");
     
     n.print_detailed();
 

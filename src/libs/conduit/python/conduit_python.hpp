@@ -86,16 +86,24 @@
 #define PyConduit_Node_Check_PROTO (PyObject* obj)
 
 //---------------------------------------------------------------------------//
+// PyNode_Object *PyConduit_Node_python_create();
+//---------------------------------------------------------------------------//
+#define PyConduit_Node_python_create_INDEX 1
+#define PyConduit_Node_python_create_RETURN PyObject*
+#define PyConduit_Node_python_create_PROTO ()
+
+
+//---------------------------------------------------------------------------//
 // Node     *PyConduit_Node_Get_Node_Ptr(PyObject* obj);
 //---------------------------------------------------------------------------//
-#define PyConduit_Node_Get_Node_Ptr_INDEX 1
+#define PyConduit_Node_Get_Node_Ptr_INDEX 2
 #define PyConduit_Node_Get_Node_Ptr_RETURN conduit::Node*
 #define PyConduit_Node_Get_Node_Ptr_PROTO (PyObject* obj)
 
 //---------------------------------------------------------------------------//
 // Total number of CAPI pointers
 //---------------------------------------------------------------------------//
-#define PyConduit_API_number_of_entries 2
+#define PyConduit_API_number_of_entries 3
 
 //---------------------------------------------------------------------------//
 #ifdef CONDUIT_MODULE
@@ -104,6 +112,8 @@
 //---------------------------------------------------------------------------//
 
 static PyConduit_Node_Check_RETURN PyConduit_Node_Check PyConduit_Node_Check_PROTO;
+
+static PyConduit_Node_python_create_RETURN PyConduit_Node_python_create PyConduit_Node_python_create_PROTO;
 
 static PyConduit_Node_Get_Node_Ptr_RETURN PyConduit_Node_Get_Node_Ptr PyConduit_Node_Get_Node_Ptr_PROTO;
 
@@ -119,6 +129,10 @@ static void **PyConduit_API;
 //---------------------------------------------------------------------------//
 #define PyConduit_Node_Check  \
  (*(PyConduit_Node_Check_RETURN (*)PyConduit_Node_Check_PROTO) PyConduit_API[PyConduit_Node_Check_INDEX])
+
+//---------------------------------------------------------------------------//
+#define PyConduit_Node_python_create  \
+ (*(PyConduit_Node_python_create_RETURN (*)PyConduit_Node_python_create_PROTO) PyConduit_API[PyConduit_Node_python_create_INDEX])
 
 //---------------------------------------------------------------------------//
 #define PyConduit_Node_Get_Node_Ptr  \

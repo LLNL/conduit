@@ -70,13 +70,58 @@ class Test_Relay_IO(unittest.TestCase):
         self.assertTrue(n['a'] == a_val)
         self.assertTrue(n['b'] == b_val)
         self.assertTrue(n['c'] == c_val)
-        relay.io.save(n,"tout_python_relay_io_save_load")
+        relay.io.save(n,"tout_python_relay_io_save_load.conduit_bin")
         #  now load the value
         n_load = Node()
-        relay.io.load(n_load,"tout_python_relay_io_save_load")
+        relay.io.load(n_load,"tout_python_relay_io_save_load.conduit_bin")
         self.assertTrue(n_load['a'] == a_val)
         self.assertTrue(n_load['b'] == b_val)
         self.assertTrue(n_load['c'] == c_val)
+
+    def test_load_save_protocols(self):
+        a_val = int64(10)
+        b_val = int64(20)
+        c_val = float64(30.0)
+        #
+        n = Node()
+        n['a'] = a_val
+        n['b'] = b_val
+        n['c'] = c_val
+        self.assertTrue(n['a'] == a_val)
+        self.assertTrue(n['b'] == b_val)
+        self.assertTrue(n['c'] == c_val)
+
+        protos = ["conduit_bin",
+                  "json",
+                  "conduit_json",
+                  "conduit_base64_json"]
+        
+        # only test hdf5 if relay was built with hdf5 support
+        if relay.about()["io/protocols/hdf5"] == "enabled":
+            protos.append("hdf5")
+        
+        for proto in protos:
+            print("testing protocol: ", proto)
+            ftest = "tout_python_relay_io_save_load_proto." + proto
+            relay.io.save(n,ftest)
+            #  now load the value
+            n_load = Node()
+            relay.io.load(n_load,ftest)
+            self.assertTrue(n_load['a'] == a_val)
+            self.assertTrue(n_load['b'] == b_val)
+            self.assertTrue(n_load['c'] == c_val)
+        # only test silo if relay was built with hdf5 support
+        if relay.about()["io/protocols/conduit_silo"] == "enabled":
+            # silo needs a subpath
+            print("testing protocol: silo")
+            ftest = "tout_python_relay_io_save_load_proto.silo:obj"
+            relay.io.save(n,ftest)
+            #  now load the value
+            n_load = Node()
+            relay.io.load(n_load,ftest)
+            self.assertTrue(n_load['a'] == a_val)
+            self.assertTrue(n_load['b'] == b_val)
+            self.assertTrue(n_load['c'] == c_val)
 
 
 if __name__ == '__main__':

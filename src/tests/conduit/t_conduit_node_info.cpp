@@ -88,7 +88,7 @@ TEST(conduit_node_info, simple_2)
     Node n(g,true);
     Node ninfo;
     n.info(ninfo);
-    std::cout << ninfo.to_json("conduit") << std::endl;;
+    std::cout << ninfo.to_json("conduit_json") << std::endl;;
     EXPECT_EQ(72,ninfo["total_bytes"].to_index_t());
     EXPECT_EQ(72,ninfo["total_bytes_compact"].to_index_t());
     EXPECT_EQ(72,ninfo["total_bytes_alloced"].to_index_t());
@@ -118,7 +118,7 @@ TEST(conduit_node_info, simple_3)
     EXPECT_EQ(42,val);
     
     n2.info(ninfo);
-    std::cout << ninfo.to_json("conduit") << std::endl;;
+    std::cout << ninfo.to_json("conduit_json") << std::endl;;
     EXPECT_EQ(4,ninfo["total_bytes"].to_index_t());
     EXPECT_EQ(0,ninfo["total_bytes_alloced"].to_index_t());
     

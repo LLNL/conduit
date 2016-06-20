@@ -191,7 +191,7 @@ PyRelay_io_save(PyObject *, //self
     
     if(protocol != NULL)
     {
-        relay::io::save(std::string(protocol),node,std::string(path));
+        relay::io::save(node, std::string(path),std::string(protocol));
     }
     else
     {
@@ -239,7 +239,7 @@ PyRelay_io_load(PyObject *, //self
     
     if(protocol != NULL)
     {
-        relay::io::load(std::string(protocol),std::string(path),node);
+        relay::io::load(std::string(path),std::string(protocol),node);
     }
     else
     {

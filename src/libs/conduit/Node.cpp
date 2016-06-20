@@ -384,12 +384,13 @@ void
 Node::load(const std::string &ibase,
            const std::string &protocol)
 {
-    if(protocol == "conduit_pair")
+    if(protocol == "conduit_bin")
     {
         // TODO: use generator?
         Schema s;
-        std::string ifschema = ibase + ".conduit_json";
         std::string ifdata   = ibase + ".conduit_bin";
+        std::string ifschema = ifdata + "_json";
+
         s.load(ifschema);
         load(ifdata,s);
     }
@@ -414,12 +415,13 @@ void
 Node::save(const std::string &obase,
            const std::string &protocol) const
 {
-    if(protocol == "conduit_pair")
+    if(protocol == "conduit_bin")
     {
         Node res;
         compact_to(res);
-        std::string ofschema = obase + ".conduit_json";
         std::string ofdata   = obase + ".conduit_bin";
+        std::string ofschema = ofdata + "_json";
+
         res.schema().save(ofschema);
         res.serialize(ofdata);
     }
@@ -434,8 +436,9 @@ Node::save(const std::string &obase,
 void
 Node::mmap(const std::string &stream_path)
 {
-    std::string ifschema = stream_path + ".conduit_json";
     std::string ifdata   = stream_path + ".conduit_bin";
+    std::string ifschema = ifdata + "_json";
+
 
     Schema s;
     s.load(ifschema);
@@ -7588,11 +7591,11 @@ Node::to_json(const std::string &protocol,
     {
         return to_pure_json(indent,depth,pad,eoe);
     }
-    else if(protocol == "conduit")
+    else if(protocol == "conduit_json")
     {
         return to_detailed_json(indent,depth,pad,eoe);
     }
-    else if(protocol == "base64_json")
+    else if(protocol == "conduit_base64_json")
     {
         return to_base64_json(indent,depth,pad,eoe);
     }
@@ -7617,11 +7620,11 @@ Node::to_json_stream(const std::string &stream_path,
     {
         return to_pure_json(stream_path,indent,depth,pad,eoe);
     }
-    else if(protocol == "conduit")
+    else if(protocol == "conduit_json")
     {
         return to_detailed_json(stream_path,indent,depth,pad,eoe);
     }
-    else if(protocol == "base64_json")
+    else if(protocol == "conduit_base64_json")
     {
         return to_base64_json(stream_path,indent,depth,pad,eoe);        
     }
@@ -7643,11 +7646,11 @@ Node::to_json_stream(std::ostream &os,
     {
         return to_pure_json(os,indent,depth,pad,eoe);
     }
-    else if(protocol == "conduit")
+    else if(protocol == "conduit_json")
     {
         return to_detailed_json(os,indent,depth,pad,eoe);
     }
-    else if(protocol == "base64_json")
+    else if(protocol == "conduit_base64_json")
     {
         return to_base64_json(os,indent,depth,pad,eoe);        
     }
@@ -8061,7 +8064,7 @@ Node::print() const
 void
 Node::print_detailed() const
 {
-    to_json_stream(std::cout,"conduit");
+    to_json_stream(std::cout,"conduit_json");
 }
 
 

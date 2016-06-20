@@ -214,7 +214,7 @@ static PyObject* PyConduit_Schema_python_wrap(Schema *schema,int python_owns);
 static int       PyConduit_Schema_Check(PyObject* obj);
 
 //---------------------------------------------------------------------------//
-static PyConduit_Node* PyConduit_Node_python_create();
+// static PyConduit_Node* PyConduit_Node_python_create();
 static PyObject* PyConduit_Node_python_wrap(Node *node,int python_owns);
 static int       PyConduit_Node_SetFromPython(Node& node, PyObject* value);
 static PyObject* PyConduit_createNumpyType(Node& node, int type);
@@ -2835,7 +2835,7 @@ static PyObject *
 PyConduit_NodeIterator_info(PyConduit_NodeIterator *self)
 {
     //create and return a node with the result of info
-    PyConduit_Node *retval = PyConduit_Node_python_create();
+    PyConduit_Node *retval = (PyConduit_Node *)PyConduit_Node_python_create();
     self->itr.info(*retval->node);
     return (PyObject*)retval;
 }
@@ -3222,7 +3222,7 @@ PyConduit_Node_save(PyConduit_Node *self,
     }
     
     std::string path_str(path);
-    std::string protocol_str("conduit_pair");
+    std::string protocol_str("conduit_bin");
     
     if(protocol != NULL)
     {
@@ -3281,7 +3281,7 @@ PyConduit_Node_load(PyConduit_Node *self,
     }
     else
     {
-        std::string protocol_str("conduit_pair");
+        std::string protocol_str("conduit_bin");
         
         if( protocol != NULL)
         {
@@ -3538,7 +3538,7 @@ PyConduit_Node_is_compact(PyConduit_Node *self)
 static PyObject * 
 PyConduit_Node_info(PyConduit_Node *self)
 {
-    PyConduit_Node *retval = PyConduit_Node_python_create();
+    PyConduit_Node *retval = (PyConduit_Node*)PyConduit_Node_python_create();
     self->node->info(*retval->node);
     return (PyObject*)retval;
 }
@@ -4000,7 +4000,11 @@ static PyTypeObject PyConduit_Node_TYPE = {
 static PyObject*
 PyConduit_about()
 {
-    return PyString_FromString(conduit::about().c_str());
+    //create and return a node with the result of about
+    PyObject *py_node_res = PyConduit_Node_python_create();
+    Node *node = PyConduit_Node_Get_Node_Ptr(py_node_res);
+    conduit::about(*node);
+    return (PyObject*)py_node_res;
 }
 
 
@@ -4068,12 +4072,12 @@ PyConduit_Node_python_wrap(Node *node, int python_owns)
 }
 
 //---------------------------------------------------------------------------//
-static PyConduit_Node *
+static PyObject*
 PyConduit_Node_python_create()
 {
     Node *node = new Node();
     // python_owns = 1
-    return (PyConduit_Node *)PyConduit_Node_python_wrap(node,1); 
+    return PyConduit_Node_python_wrap(node,1); 
 }
 
 
@@ -4542,6 +4546,7 @@ void CONDUIT_PYTHON_API initconduit_python(void)
 
     /* Initialize the C API pointer array */
     PyConduit_API[PyConduit_Node_Check_INDEX] = (void *)PyConduit_Node_Check;
+    PyConduit_API[PyConduit_Node_python_create_INDEX] = (void *)PyConduit_Node_python_create;
     PyConduit_API[PyConduit_Node_Get_Node_Ptr_INDEX] = (void *)PyConduit_Node_Get_Node_Ptr;
 
     /* Create a Capsule containing the API pointer array's address */

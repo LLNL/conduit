@@ -160,7 +160,9 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
                 continue;
             }
 
-            relay::io::save("conduit_silo_mesh",mesh,"braid_2d_" + name +  "_example.silo:mesh");
+            relay::io::save(mesh,
+                            "braid_2d_" + name +  "_example.silo:mesh",
+                            "conduit_silo_mesh");
         }
     }
     
@@ -261,7 +263,9 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
                 std::cout<<"\tskipping output to SILO -- this is not implemented yet for indexed_stream meshes."<< std::endl;
                 continue;
             }
-            relay::io::save("conduit_silo_mesh",mesh,"braid_3d_" + name +  "_example.silo:mesh");
+            relay::io::save(mesh,
+                            "braid_3d_" + name +  "_example.silo:mesh",
+                            "conduit_silo_mesh");
         }
     }
     

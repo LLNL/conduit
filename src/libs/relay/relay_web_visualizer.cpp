@@ -215,7 +215,7 @@ VisualizerRequestHandler::handle_get_base64_json(struct mg_connection *conn)
     if(m_node != NULL)
     {
         std::ostringstream oss;
-        m_node->to_json_stream(oss,"base64_json");
+        m_node->to_json_stream(oss,"conduit_base64_json");
         mg_printf(conn, "%s",oss.str().c_str());
     }
     else

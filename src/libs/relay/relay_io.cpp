@@ -99,6 +99,7 @@ identify_protocol(const std::string &path,
                                   file_name_ext,
                                   file_name_base);
 
+    
     if(file_name_ext == "hdf5" || 
        file_name_ext == "h5")
     {
@@ -108,6 +109,20 @@ identify_protocol(const std::string &path,
     {
         io_type = "conduit_silo";
     }
+    else if(file_name_ext == "json")
+    {
+        io_type = "json";
+    }
+    else if(file_name_ext == "conduit_json")
+    {
+        io_type = "conduit_json";
+    }
+    else if(file_name_ext == "conduit_base64_json")
+    {
+        io_type = "conduit_base64_json";
+    }
+    
+    // default to conduit_bin
 
 }
 
@@ -118,7 +133,7 @@ save(Node &node,
 {
     std::string protocol;
     identify_protocol(path,protocol);
-    save(protocol,node,path);
+    save(node,path,protocol);
 }
 
 //---------------------------------------------------------------------------//
@@ -128,7 +143,7 @@ save_merged(Node &node,
 {
     std::string protocol;
     identify_protocol(path,protocol);
-    save_merged(protocol,node,path);
+    save_merged(node,path,protocol);
 }
 
 //---------------------------------------------------------------------------//
@@ -138,7 +153,7 @@ load(const std::string &path,
 {
     std::string protocol;
     identify_protocol(path,protocol);
-    load(protocol,path,node);
+    load(path,protocol,node);
 }
 
 //---------------------------------------------------------------------------//
@@ -148,19 +163,24 @@ load_merged(const std::string &path,
 {
     std::string protocol;
     identify_protocol(path,protocol);
-    load_merged(protocol,path,node);
+    load_merged(path,protocol,node);
 }
 
 
 //---------------------------------------------------------------------------//
 void 
-save(const std::string &protocol,
-     Node &node,
-     const std::string &path)
+save(Node &node,
+     const std::string &path,
+     const std::string &protocol)
 {
-    if(protocol == "conduit_bin")
+    // support conduit::Node's basic save cases
+    if(protocol == "conduit_bin" ||
+       protocol == "json" || 
+       protocol == "conduit_json" ||
+       protocol == "conduit_base64_json" )
     {
-        node.save(path);
+
+        node.save(path,protocol);
     }
     else if( protocol == "hdf5")
     {
@@ -197,16 +217,20 @@ save(const std::string &protocol,
 
 //---------------------------------------------------------------------------//
 void 
-save_merged(const std::string &protocol,
-            Node &node,
-            const std::string &path)
+save_merged(Node &node,
+            const std::string &path,
+            const std::string &protocol)
 {
-    if(protocol == "conduit_bin")
+    // support conduit::Node's basic save cases
+    if(protocol == "conduit_bin" ||
+       protocol == "json" || 
+       protocol == "conduit_json" ||
+       protocol == "conduit_base64_json" )
     {
         Node n;
-        n.load(path);
+        n.load(path,protocol);
         n.update(node);
-        n.save(path);
+        n.save(path,protocol);
     }
     else if( protocol == "hdf5")
     {
@@ -248,14 +272,18 @@ save_merged(const std::string &protocol,
 
 //---------------------------------------------------------------------------//
 void
-load(const std::string &protocol,
-     const std::string &path,
+load(const std::string &path,
+     const std::string &protocol,
      Node &node)
 {
 
-    if(protocol == "conduit_bin")
+    // support conduit::Node's basic load cases
+    if(protocol == "conduit_bin" ||
+       protocol == "json" || 
+       protocol == "conduit_json" ||
+       protocol == "conduit_base64_json" )
     {
-        node.load(path);
+        node.load(path,protocol);
     }
     else if( protocol == "hdf5")
     {
@@ -291,17 +319,21 @@ load(const std::string &protocol,
 
 //---------------------------------------------------------------------------//
 void
-load_merged(const std::string &protocol,
-            const std::string &path,
+load_merged(const std::string &path,
+            const std::string &protocol,
             Node &node)
 {
-
-    if(protocol == "conduit_bin")
+    // support conduit::Node's basic load cases
+    if(protocol == "conduit_bin" ||
+       protocol == "json" || 
+       protocol == "conduit_json" ||
+       protocol == "conduit_base64_json" )
     {
         Node n;
-        n.load(path);
+        n.load(path,protocol);
         // update into dest
         node.update(n);
+
     }
     else if( protocol == "hdf5")
     {
