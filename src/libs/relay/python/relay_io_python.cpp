@@ -372,7 +372,7 @@ void RELAY_PYTHON_API initrelay_io_python(void)
         PY_MODULE_INIT_RETURN_ERROR;
     }
 
-    struct module_state *st = GETSTATE(relay_module);
+    struct module_state *st = GETSTATE(relay_io_module);
     
     st->error = PyErr_NewException((char*)"relay_io_python.Error",
                                    NULL,
