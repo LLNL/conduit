@@ -42,21 +42,34 @@
 # 
 ###############################################################################
 
-# Specify the sources of the pure python and compiled portions of our module.
-SET(RELAY_PY_SOURCES     py_src/__init__.py)
-SET(RELAY_PY_CPP_SOURCES relay_python.cpp)
 
-# Make sure we have access to numpy
-include_directories(${NUMPY_INCLUDE_DIRS})
-
-# Setup our module
+# Setup our modules
 PYTHON_ADD_HYBRID_MODULE(relay_python
                          python-modules
                          conduit/relay
+                         # python setup
                          setup.py
-                         "${RELAY_PY_SOURCES}"
-                         ${RELAY_PY_CPP_SOURCES})
+                         # python srcs
+                         py_src/__init__.py
+                         # c srcs
+                         relay_python.cpp)
 
 # link with the proper libs
 target_link_libraries(relay_python conduit conduit_relay ${PYTHON_LIBRARIES})
+
+# add relay io submodule
+PYTHON_ADD_MODULE(relay_io_python
+                  # c srcs
+                  relay_io_python.cpp)
+
+add_dependencies(relay_python_py_setup relay_io_python)
+
+
+SET_TARGET_PROPERTIES(relay_io_python PROPERTIES
+                      LIBRARY_OUTPUT_DIRECTORY   
+                      ${CMAKE_BINARY_DIR}/python-modules/conduit/relay/io)
+
+# link with the proper libs
+target_link_libraries(relay_io_python conduit conduit_relay ${PYTHON_LIBRARIES})
+
 

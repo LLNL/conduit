@@ -154,26 +154,118 @@ using namespace conduit;
 
 
 //---------------------------------------------------------------------------//
-// conduit::relay::about
+// conduit::relay::io::save
 //---------------------------------------------------------------------------//
-static PyObject*
-PyRelay_about()
+static PyObject * 
+PyRelay_io_save(PyObject *, //self
+                PyObject *args,
+                PyObject *kwargs)
 {
-    return PyString_FromString(conduit::relay::about().c_str());
+    PyObject   *py_node  = NULL;
+    const char *path     = NULL;
+    const char *protocol = NULL;
+    
+    static const char *kwlist[] = {"node","path","protocol", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "Os|s",
+                                     const_cast<char**>(kwlist),
+                                     &py_node, &path, &protocol))
+    {
+        return (NULL);
+    }
+    
+    if(py_node != NULL)
+    {
+        if(!PyConduit_Node_Check(py_node))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "relay::save 'node' argument must be a "
+                            "Conduit::Node");
+            return NULL;
+        }
+    }
+    
+    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+    
+    if(protocol != NULL)
+    {
+        relay::io::save(std::string(protocol),node,std::string(path));
+    }
+    else
+    {
+        relay::io::save(node,std::string(path));
+    }
+
+    Py_RETURN_NONE;
 }
+
+//---------------------------------------------------------------------------//
+// conduit::relay::io::save
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyRelay_io_load(PyObject *, //self
+                PyObject *args,
+                PyObject *kwargs)
+{
+    PyObject   *py_node  = NULL;
+    const char *path     = NULL;
+    const char *protocol = NULL;
+    
+    static const char *kwlist[] = {"node","path","protocol", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "Os|s",
+                                     const_cast<char**>(kwlist),
+                                     &py_node, &path, &protocol))
+    {
+        return (NULL);
+    }
+    
+    if(py_node != NULL)
+    {
+        if(!PyConduit_Node_Check(py_node))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "relay::load 'node' argument must be a "
+                            "Conduit::Node");
+            return NULL;
+        }
+    }
+    
+    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+    
+    if(protocol != NULL)
+    {
+        relay::io::load(std::string(protocol),std::string(path),node);
+    }
+    else
+    {
+        relay::io::load(std::string(path),node);
+    }
+
+    Py_RETURN_NONE;
+}
+
 
 //---------------------------------------------------------------------------//
 // Python Module Method Defs
 //---------------------------------------------------------------------------//
-static PyMethodDef relay_python_funcs[] =
+static PyMethodDef relay_io_python_funcs[] =
 {
     //-----------------------------------------------------------------------//
-    {"about",
-     (PyCFunction)PyRelay_about,
-      METH_NOARGS,
+    {"save",
+     (PyCFunction)PyRelay_io_save,
+      METH_VARARGS | METH_KEYWORDS,
+      NULL},
+    {"load",
+     (PyCFunction)PyRelay_io_load,
+      METH_VARARGS | METH_KEYWORDS,
       NULL},
     //-----------------------------------------------------------------------//
-    // end relay methods table
+    // end relay io methods table
     //-----------------------------------------------------------------------//
     {NULL, NULL, METH_VARARGS, NULL}
 };
@@ -203,7 +295,7 @@ static struct module_state _state;
 #if defined(IS_PY3K)
 //---------------------------------------------------------------------------//
 static int
-relay_python_traverse(PyObject *m, visitproc visit, void *arg)
+relay_io_python_traverse(PyObject *m, visitproc visit, void *arg)
 {
     Py_VISIT(GETSTATE(m)->error);
     return 0;
@@ -211,25 +303,26 @@ relay_python_traverse(PyObject *m, visitproc visit, void *arg)
 
 //---------------------------------------------------------------------------//
 static int 
-relay_python_clear(PyObject *m)
+relay_io_python_clear(PyObject *m)
 {
     Py_CLEAR(GETSTATE(m)->error);
     return 0;
 }
 
 //---------------------------------------------------------------------------//
-static struct PyModuleDef relay_python_module_def = 
+static struct PyModuleDef relay_io_python_module_def = 
 {
         PyModuleDef_HEAD_INIT,
-        "relay_python",
+        "relay_io_python",
         NULL,
         sizeof(struct module_state),
-        relay_python_funcs,
+        relay_io_python_funcs,
         NULL,
-        relay_python_traverse,
-        relay_python_clear,
+        relay_io_python_traverse,
+        relay_io_python_clear,
         NULL
 };
+
 
 
 #endif
@@ -252,9 +345,9 @@ static struct PyModuleDef relay_python_module_def =
 extern "C" 
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
-PyObject *RELAY_PYTHON_API PyInit_relay_python(void)
+PyObject *RELAY_PYTHON_API PyInit_relay_io_python(void)
 #else
-void RELAY_PYTHON_API initrelay_python(void)
+void RELAY_PYTHON_API initrelay_io_python(void)
 #endif
 //---------------------------------------------------------------------------//
 {    
@@ -263,26 +356,26 @@ void RELAY_PYTHON_API initrelay_python(void)
     //-----------------------------------------------------------------------//
 
 #if defined(IS_PY3K)
-    PyObject *relay_module = PyModule_Create(&relay_python_module_def);
+    PyObject *relay_io_module = PyModule_Create(&relay_io_python_module_def);
 #else
-    PyObject *relay_module = Py_InitModule((char*)"relay_python",
-                                             relay_python_funcs);
+    PyObject *relay_io_module = Py_InitModule((char*)"relay_io_python",
+                                              relay_io_python_funcs);
 #endif
 
 
-    if(relay_module == NULL)
+    if(relay_io_module == NULL)
     {
         PY_MODULE_INIT_RETURN_ERROR;
     }
 
     struct module_state *st = GETSTATE(relay_module);
     
-    st->error = PyErr_NewException((char*)"relay_python.Error",
+    st->error = PyErr_NewException((char*)"relay_io_python.Error",
                                    NULL,
                                    NULL);
     if (st->error == NULL)
     {
-        Py_DECREF(relay_module);
+        Py_DECREF(relay_io_module);
         PY_MODULE_INIT_RETURN_ERROR;
     }
 
@@ -291,7 +384,7 @@ void RELAY_PYTHON_API initrelay_python(void)
 
 
 #if defined(IS_PY3K)
-    return relay_module;
+    return relay_io_module;
 #endif
 
 }

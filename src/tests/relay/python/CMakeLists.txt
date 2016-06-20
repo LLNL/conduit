@@ -45,7 +45,8 @@
 ####################################
 # Add Python Module Tests
 ####################################
-set(PYTHON_MODULE_TESTS t_python_relay_smoke)
+set(PYTHON_MODULE_TESTS t_python_relay_smoke
+                        t_python_relay_io)
 
 
 foreach(TEST ${PYTHON_MODULE_TESTS})

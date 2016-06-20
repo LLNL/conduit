@@ -95,23 +95,23 @@ find_package_handle_standard_args(Python  DEFAULT_MSG
 
 FUNCTION(PYTHON_ADD_DISTUTILS_SETUP target_name dest_dir setup_file)
 MESSAGE(STATUS "Configuring python distutils setup: ${target_name}")
-    add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/build
+    add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${target_name}_build
             COMMAND ${PYTHON_EXECUTABLE} ${setup_file} -v
             build
-            --build-base=${CMAKE_CURRENT_BINARY_DIR}/build
+            --build-base=${CMAKE_CURRENT_BINARY_DIR}/${target_name}_build
             install
             --install-purelib=${CMAKE_BINARY_DIR}/${dest_dir}
             DEPENDS  ${setup_file} ${ARGN}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
     add_custom_target(${target_name} ALL DEPENDS 
-                      ${CMAKE_CURRENT_BINARY_DIR}/build)
+                      ${CMAKE_CURRENT_BINARY_DIR}/${target_name}_build)
     # also use distutils for the install ...
     INSTALL(CODE
         "
         EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
             COMMAND ${PYTHON_EXECUTABLE} ${setup_file} -v
-                build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/build_install
+                build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${target_name}_build_install
                 install --install-purelib=\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${dest_dir}
             OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
         MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")

@@ -42,6 +42,14 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+//-----------------------------------------------------------------------------
+///
+/// file: conduit_python.hpp
+///
+//-----------------------------------------------------------------------------
+
+#ifndef CONDUIT_PYTHON_HPP
+#define CONDUIT_PYTHON_HPP
 
 //-----------------------------------------------------------------------------
 // -- Python includes (these must be included first) -- 
@@ -54,63 +62,86 @@
 // conduit includes
 //---------------------------------------------------------------------------//
 #include "conduit.hpp"
-#include "Conduit_Python_Exports.hpp"
-
-using namespace conduit;
-
 
 //---------------------------------------------------------------------------//
-// external conduit python C api 
+// These methods are exposed via python capsule at conduit._C_API, 
+// which allows them called in other python C modules.
+//
+// This solution follows the example outlined here:
+//  https://docs.python.org/2/extending/extending.html#using-capsules 
+//  https://docs.python.org/3/extending/extending.html#using-capsules
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
-struct PyConduit_DataType {
-    PyObject_HEAD
-    DataType dtype; // DataType is light weight, we can deal with copies
-};
+//---------------------------------------------------------------------------//
+// conduit node methods
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
-struct PyConduit_Generator {
-    PyObject_HEAD
-    Generator *generator;
-};
+// int       PyConduit_Node_Check(PyObject* obj);
+//---------------------------------------------------------------------------//
+#define PyConduit_Node_Check_INDEX 0
+#define PyConduit_Node_Check_RETURN int
+#define PyConduit_Node_Check_PROTO (PyObject* obj)
 
 //---------------------------------------------------------------------------//
-struct PyConduit_Schema {
-    PyObject_HEAD
-    Schema *schema;
-    int python_owns;
-};
+// Node     *PyConduit_Node_Get_Node_Ptr(PyObject* obj);
+//---------------------------------------------------------------------------//
+#define PyConduit_Node_Get_Node_Ptr_INDEX 1
+#define PyConduit_Node_Get_Node_Ptr_RETURN conduit::Node*
+#define PyConduit_Node_Get_Node_Ptr_PROTO (PyObject* obj)
 
 //---------------------------------------------------------------------------//
-struct PyConduit_NodeIterator {
-    PyObject_HEAD
-    NodeIterator itr; // NoteIterator is light weight, we can deal with copies
-};
+// Total number of CAPI pointers
+//---------------------------------------------------------------------------//
+#define PyConduit_API_number_of_entries 2
 
 //---------------------------------------------------------------------------//
-struct PyConduit_Node {
-   PyObject_HEAD
-   Node *node;
-   int python_owns;
-};
+#ifdef CONDUIT_MODULE
+//---------------------------------------------------------------------------//
+// This section is used when compiling the conduit python module.
+//---------------------------------------------------------------------------//
+
+static PyConduit_Node_Check_RETURN PyConduit_Node_Check PyConduit_Node_Check_PROTO;
+
+static PyConduit_Node_Get_Node_Ptr_RETURN PyConduit_Node_Get_Node_Ptr PyConduit_Node_Get_Node_Ptr_PROTO;
 
 //---------------------------------------------------------------------------//
-static PyConduit_DataType *PyConduit_DataType_python_create();
-static int       PyConduit_DataType_Check(PyObject* obj);
+#else
+//---------------------------------------------------------------------------//
+// This section is used in modules that use conduit's python c api 
+//---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
-static int       PyConduit_Generator_Check(PyObject* obj);
+static void **PyConduit_API;
 
 //---------------------------------------------------------------------------//
-static PyObject* PyConduit_Schema_python_wrap(Schema *schema,int python_owns);
-static int       PyConduit_Schema_Check(PyObject* obj);
+#define PyConduit_Node_Check  \
+ (*(PyConduit_Node_Check_RETURN (*)PyConduit_Node_Check_PROTO) PyConduit_API[PyConduit_Node_Check_INDEX])
 
 //---------------------------------------------------------------------------//
-static PyConduit_Node* PyConduit_Node_python_create();
-static PyObject* PyConduit_Node_python_wrap(Node *node,int python_owns);
-static int       PyConduit_Node_Check(PyObject* obj);
-static int       PyConduit_Node_SetFromPython(Node& node, PyObject* value);
-static PyObject* PyConduit_createNumpyType(Node& node, int type);
-static PyObject* PyConduit_convertNodeToPython(Node& node);
+#define PyConduit_Node_Get_Node_Ptr  \
+ (*(PyConduit_Node_Get_Node_Ptr_RETURN (*)PyConduit_Node_Get_Node_Ptr_PROTO) PyConduit_API[PyConduit_Node_Get_Node_Ptr_INDEX])
+
+//---------------------------------------------------------------------------//
+// import_conduit()
+// called by client python modules in their C-API to use the functions 
+// outlined above.
+//
+// Return -1 on error, 0 on success.
+// PyCapsule_Import will set an exception if there's an error.
+//---------------------------------------------------------------------------//
+static int
+import_conduit(void)
+{
+    PyConduit_API = (void **)PyCapsule_Import("conduit._C_API", 0);
+    return (PyConduit_API != NULL) ? 0 : -1;
+}
+
+#endif
+
+#endif
+
+
 

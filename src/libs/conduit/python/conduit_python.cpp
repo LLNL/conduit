@@ -54,6 +54,9 @@
 #define IS_PY3K
 #endif
 
+#define CONDUIT_MODULE
+#include "conduit_python.hpp"
+
 //-----------------------------------------------------------------------------
 // Functions to help with Python 2/3 Compatibility.
 //-----------------------------------------------------------------------------
@@ -136,6 +139,13 @@ PyInt_AsLong(PyObject *o)
 #endif
 
 
+
+//-----------------------------------------------------------------------------
+// c api decls from conduit_python.hpp
+//-----------------------------------------------------------------------------
+//static int       PyConduit_Node_Check(PyObject* obj);
+//static Node     *PyConduit_Node_Get_Node_Ptr(PyObject* obj);
+
 //-----------------------------------------------------------------------------
 // -- standard lib includes -- 
 //-----------------------------------------------------------------------------
@@ -158,6 +168,57 @@ PyInt_AsLong(PyObject *o)
 #include "conduit_python.hpp"
 
 using namespace conduit;
+
+
+//---------------------------------------------------------------------------//
+struct PyConduit_DataType {
+    PyObject_HEAD
+    DataType dtype; // DataType is light weight, we can deal with copies
+};
+
+//---------------------------------------------------------------------------//
+struct PyConduit_Generator {
+    PyObject_HEAD
+    Generator *generator;
+};
+
+//---------------------------------------------------------------------------//
+struct PyConduit_Schema {
+    PyObject_HEAD
+    Schema *schema;
+    int python_owns;
+};
+
+//---------------------------------------------------------------------------//
+struct PyConduit_NodeIterator {
+    PyObject_HEAD
+    NodeIterator itr; // NoteIterator is light weight, we can deal with copies
+};
+
+//---------------------------------------------------------------------------//
+struct PyConduit_Node {
+   PyObject_HEAD
+   Node *node;
+   int python_owns;
+};
+
+//---------------------------------------------------------------------------//
+static PyConduit_DataType *PyConduit_DataType_python_create();
+static int       PyConduit_DataType_Check(PyObject* obj);
+
+//---------------------------------------------------------------------------//
+static int       PyConduit_Generator_Check(PyObject* obj);
+
+//---------------------------------------------------------------------------//
+static PyObject* PyConduit_Schema_python_wrap(Schema *schema,int python_owns);
+static int       PyConduit_Schema_Check(PyObject* obj);
+
+//---------------------------------------------------------------------------//
+static PyConduit_Node* PyConduit_Node_python_create();
+static PyObject* PyConduit_Node_python_wrap(Node *node,int python_owns);
+static int       PyConduit_Node_SetFromPython(Node& node, PyObject* value);
+static PyObject* PyConduit_createNumpyType(Node& node, int type);
+static PyObject* PyConduit_convertNodeToPython(Node& node);
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
@@ -3989,6 +4050,13 @@ PyConduit_Node_Check(PyObject *obj)
 }
 
 //---------------------------------------------------------------------------//
+static Node *
+PyConduit_Node_Get_Node_Ptr(PyObject *obj)
+{
+    return ((PyConduit_Node*)obj)->node;
+}
+
+//---------------------------------------------------------------------------//
 static PyObject *
 PyConduit_Node_python_wrap(Node *node, int python_owns)
 {
@@ -4469,6 +4537,20 @@ void CONDUIT_PYTHON_API initconduit_python(void)
     PyModule_AddObject(conduit_module,
                        "Node",
                        (PyObject*)&PyConduit_Node_TYPE);
+
+    static void *PyConduit_API[PyConduit_API_number_of_entries];
+
+    /* Initialize the C API pointer array */
+    PyConduit_API[PyConduit_Node_Check_INDEX] = (void *)PyConduit_Node_Check;
+    PyConduit_API[PyConduit_Node_Get_Node_Ptr_INDEX] = (void *)PyConduit_Node_Get_Node_Ptr;
+
+    /* Create a Capsule containing the API pointer array's address */
+    PyObject *py_c_api_capsule = PyCapsule_New((void *)PyConduit_API, "conduit._C_API", NULL);
+
+    if (py_c_api_capsule != NULL)
+    {
+        PyModule_AddObject(conduit_module, "_C_API", py_c_api_capsule);
+    }
 
     // req setup for numpy
     import_array();

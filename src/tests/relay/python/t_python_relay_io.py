@@ -41,14 +41,45 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
+"""
+ file: python_relay_smoke.py
+ description: Simple unit test for the conduit relay python module interface.
 
-###############################################################################
-# file: __init__.py
-# Purpose: Main init for the conduit relay module.
-###############################################################################
-from .relay_python import *
-import io
+"""
+
+import sys
+import unittest
+
+from numpy import *
+from conduit import Node
+
+import conduit
+import conduit.relay as relay
+import conduit.relay.io
+
+class Test_Relay_IO(unittest.TestCase):
+    def test_load_save(self):
+        a_val = uint32(10)
+        b_val = uint32(20)
+        c_val = float64(30.0)
+        #
+        n = Node()
+        n['a'] = a_val
+        n['b'] = b_val
+        n['c'] = c_val
+        self.assertTrue(n['a'] == a_val)
+        self.assertTrue(n['b'] == b_val)
+        self.assertTrue(n['c'] == c_val)
+        relay.io.save(n,"tout_python_relay_io_save_load")
+        #  now load the value
+        n_load = Node()
+        relay.io.load(n_load,"tout_python_relay_io_save_load")
+        self.assertTrue(n_load['a'] == a_val)
+        self.assertTrue(n_load['b'] == b_val)
+        self.assertTrue(n_load['c'] == c_val)
 
 
+if __name__ == '__main__':
+    unittest.main()
 
 

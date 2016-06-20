@@ -50,7 +50,9 @@
 # libs and in unit tests
 
 include_directories(${PROJECT_SOURCE_DIR}/libs/conduit 
+                    ${PROJECT_SOURCE_DIR}/libs/conduit/python
                     ${PROJECT_BINARY_DIR}/libs/conduit)
+
 
 include_directories(${PROJECT_SOURCE_DIR}/libs/relay 
                     ${PROJECT_BINARY_DIR}/libs/relay)

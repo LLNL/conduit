@@ -52,7 +52,6 @@ import unittest
 
 from conduit import Node
 
-
 from numpy import *
 
 
