@@ -388,11 +388,10 @@ Node::load(const std::string &ibase,
     {
         // TODO: use generator?
         Schema s;
-        std::string ifdata   = ibase + ".conduit_bin";
-        std::string ifschema = ifdata + "_json";
+        std::string ifschema = ibase + "_json";
 
         s.load(ifschema);
-        load(ifdata,s);
+        load(ibase,s);
     }
     // single file json cases
     else
@@ -419,11 +418,10 @@ Node::save(const std::string &obase,
     {
         Node res;
         compact_to(res);
-        std::string ofdata   = obase + ".conduit_bin";
-        std::string ofschema = ofdata + "_json";
+        std::string ofschema = obase + "_json";
 
         res.schema().save(ofschema);
-        res.serialize(ofdata);
+        res.serialize(obase);
     }
     // single file json cases
     else
@@ -436,13 +434,12 @@ Node::save(const std::string &obase,
 void
 Node::mmap(const std::string &stream_path)
 {
-    std::string ifdata   = stream_path + ".conduit_bin";
-    std::string ifschema = ifdata + "_json";
+    std::string ifschema = stream_path + "_json";
 
 
     Schema s;
     s.load(ifschema);
-    mmap(ifdata,s);
+    mmap(stream_path,s);
 }
 
 
