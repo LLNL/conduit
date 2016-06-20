@@ -54,6 +54,6 @@ PYTHON_ADD_HYBRID_MODULE(blueprint_python
                          "${blueprint_py_python_sources}"
                          ${blueprint_py_cpp_sources})
 
-# link with the proper libs
-target_link_libraries(blueprint_python conduit conduit_blueprint ${PYTHON_LIBRARIES})
+# link with the proper libs (beyond python)
+target_link_libraries(blueprint_python conduit conduit_blueprint)
 

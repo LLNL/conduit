@@ -42,40 +42,12 @@
 # 
 ###############################################################################
 
-
-# Setup our modules
-PYTHON_ADD_HYBRID_MODULE(relay_python
-                         python-modules
-                         conduit/relay
-                         # python setup
-                         setup.py
-                         # python srcs
-                         py_src/__init__.py
-                         # c srcs
-                         relay_python.cpp)
-
-# link with the proper libs
-target_link_libraries(relay_python conduit conduit_relay ${PYTHON_LIBRARIES})
-
-# add relay io submodule
-PYTHON_ADD_COMPILED_MODULE(relay_io_python
-                           # dest 
-                           python-modules/conduit/relay/io
-                           # c srcs
-                           relay_io_python.cpp)
+###############################################################################
+# file: __init__.py
+# Purpose: Main init for the conduit relay web module.
+###############################################################################
+from .relay_web_python import *
 
 
-# link with the proper libs (beyond python)
-target_link_libraries(relay_io_python conduit conduit_relay)
 
-
-# add relay web submodule
-PYTHON_ADD_COMPILED_MODULE(relay_web_python
-                           # dest 
-                           python-modules/conduit/relay/web
-                           # c srcs
-                           relay_web_python.cpp)
-
-# link with the proper libs (beyond python)
-target_link_libraries(relay_web_python conduit conduit_relay)
 

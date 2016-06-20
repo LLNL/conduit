@@ -54,11 +54,38 @@
 #define IS_PY3K
 #endif
 
+
+//-----------------------------------------------------------------------------
+// -- standard lib includes -- 
+//-----------------------------------------------------------------------------
+#include <iostream>
+#include <vector>
+
+//---------------------------------------------------------------------------//
+// include numpy
+//---------------------------------------------------------------------------//
+// TODO: Use 1.7 deprecated API, or not ?
+//---------------------------------------------------------------------------//
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+#include <numpy/arrayobject.h>
+
+//---------------------------------------------------------------------------//
+// conduit includes
+//---------------------------------------------------------------------------//
+#include "conduit.hpp"
+#include "Conduit_Python_Exports.hpp"
+
 #define CONDUIT_MODULE
 #include "conduit_python.hpp"
 
+
+using namespace conduit;
+
+
 //-----------------------------------------------------------------------------
-// Functions to help with Python 2/3 Compatibility.
+//-----------------------------------------------------------------------------
+// Begin Functions to help with Python 2/3 Compatibility.
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
 #if defined(IS_PY3K)
@@ -138,65 +165,44 @@ PyInt_AsLong(PyObject *o)
 
 #endif
 
-
-
 //-----------------------------------------------------------------------------
-// c api decls from conduit_python.hpp
 //-----------------------------------------------------------------------------
-//static int       PyConduit_Node_Check(PyObject* obj);
-//static Node     *PyConduit_Node_Get_Node_Ptr(PyObject* obj);
-
+// End Functions to help with Python 2/3 Compatibility.
 //-----------------------------------------------------------------------------
-// -- standard lib includes -- 
 //-----------------------------------------------------------------------------
-#include <iostream>
-#include <vector>
 
 //---------------------------------------------------------------------------//
-// include numpy
-//---------------------------------------------------------------------------//
-// TODO: Use 1.7 deprecated API, or not ?
-//---------------------------------------------------------------------------//
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-#include <numpy/arrayobject.h>
-
-//---------------------------------------------------------------------------//
-// conduit includes
-//---------------------------------------------------------------------------//
-#include "conduit.hpp"
-#include "Conduit_Python_Exports.hpp"
-#include "conduit_python.hpp"
-
-using namespace conduit;
-
-
-//---------------------------------------------------------------------------//
-struct PyConduit_DataType {
+struct PyConduit_DataType
+{
     PyObject_HEAD
     DataType dtype; // DataType is light weight, we can deal with copies
 };
 
 //---------------------------------------------------------------------------//
-struct PyConduit_Generator {
+struct PyConduit_Generator
+{
     PyObject_HEAD
     Generator *generator;
 };
 
 //---------------------------------------------------------------------------//
-struct PyConduit_Schema {
+struct PyConduit_Schema
+{
     PyObject_HEAD
     Schema *schema;
     int python_owns;
 };
 
 //---------------------------------------------------------------------------//
-struct PyConduit_NodeIterator {
+struct PyConduit_NodeIterator
+{
     PyObject_HEAD
     NodeIterator itr; // NoteIterator is light weight, we can deal with copies
 };
 
 //---------------------------------------------------------------------------//
-struct PyConduit_Node {
+struct PyConduit_Node
+{
    PyObject_HEAD
    Node *node;
    int python_owns;
@@ -219,6 +225,14 @@ static PyObject* PyConduit_Node_python_wrap(Node *node,int python_owns);
 static int       PyConduit_Node_SetFromPython(Node& node, PyObject* value);
 static PyObject* PyConduit_createNumpyType(Node& node, int type);
 static PyObject* PyConduit_convertNodeToPython(Node& node);
+
+//-----------------------------------------------------------------------------
+// c api decls from conduit_python.hpp
+//-----------------------------------------------------------------------------
+//static int       PyConduit_Node_Check(PyObject* obj);
+//static PyObject *PyConduit_Node_python_create();
+//static Node     *PyConduit_Node_Get_Node_Ptr(PyObject* obj);
+
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//

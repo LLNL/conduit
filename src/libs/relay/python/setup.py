@@ -52,10 +52,10 @@ class SkipEggInfo(install_egg_info):
 
 setup (name = 'conduit relay',
        description = 'conduit relay',
-       package_dir = {'conduit.relay':'py_src',
-                      'conduit.relay.io':'py_src/io' },
-       
-       packages=['conduit.relay','conduit.relay.io'],
+       package_dir = {'conduit.relay':'py_src'},
+       packages=['conduit.relay',
+                 'conduit.relay.io',
+                 'conduit.relay.web'],
        cmdclass={'install_egg_info': SkipEggInfo})
 
 

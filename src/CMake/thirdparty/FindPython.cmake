@@ -141,6 +141,9 @@ FUNCTION(PYTHON_ADD_COMPILED_MODULE target_name
                                          LIBRARY_OUTPUT_DIRECTORY
                                          ${CMAKE_BINARY_DIR}/${dest_dir})
 
+    # link with python
+    target_link_libraries(${target_name} ${PYTHON_LIBRARIES})
+
     install(TARGETS ${target_name}
             EXPORT  conduit
             LIBRARY DESTINATION ${dest_dir}
@@ -167,6 +170,9 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE target_name
     SET_TARGET_PROPERTIES(${target_name} PROPERTIES
                                          LIBRARY_OUTPUT_DIRECTORY
                                          ${CMAKE_BINARY_DIR}/${dest_dir}/${py_name})
+
+    # link with python
+    target_link_libraries(${target_name} ${PYTHON_LIBRARIES})
 
     install(TARGETS ${target_name}
             EXPORT  conduit

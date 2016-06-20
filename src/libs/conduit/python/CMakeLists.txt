@@ -59,7 +59,8 @@ PYTHON_ADD_HYBRID_MODULE(conduit_python
                          ${conduit_py_headers}
                          ${conduit_py_cpp_sources})
 
-# link with the proper libs
-target_link_libraries(conduit_python conduit ${PYTHON_LIBRARIES})
+# link with the proper libs (beyond python)
+target_link_libraries(conduit_python conduit)
+
 # install the capi header so other python modules can use it
 install(FILES ${conduit_py_headers} DESTINATION python-modules/conduit/)

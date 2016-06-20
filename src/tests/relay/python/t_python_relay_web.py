@@ -41,41 +41,29 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
+"""
+ file: python_relay_web.py
+ description: Unit tests for the conduit relay web python module interface.
+
+"""
+
+import sys
+import unittest
+
+from numpy import *
+from conduit import Node
+
+import conduit
+import conduit.relay as relay
+import conduit.relay.web
+
+class Test_Relay_Web(unittest.TestCase):
+    def test_webserver(self):
+        ws = relay.web.WebServer()
+        self.assertFalse(ws.is_running())
 
 
-# Setup our modules
-PYTHON_ADD_HYBRID_MODULE(relay_python
-                         python-modules
-                         conduit/relay
-                         # python setup
-                         setup.py
-                         # python srcs
-                         py_src/__init__.py
-                         # c srcs
-                         relay_python.cpp)
+if __name__ == '__main__':
+    unittest.main()
 
-# link with the proper libs
-target_link_libraries(relay_python conduit conduit_relay ${PYTHON_LIBRARIES})
-
-# add relay io submodule
-PYTHON_ADD_COMPILED_MODULE(relay_io_python
-                           # dest 
-                           python-modules/conduit/relay/io
-                           # c srcs
-                           relay_io_python.cpp)
-
-
-# link with the proper libs (beyond python)
-target_link_libraries(relay_io_python conduit conduit_relay)
-
-
-# add relay web submodule
-PYTHON_ADD_COMPILED_MODULE(relay_web_python
-                           # dest 
-                           python-modules/conduit/relay/web
-                           # c srcs
-                           relay_web_python.cpp)
-
-# link with the proper libs (beyond python)
-target_link_libraries(relay_web_python conduit conduit_relay)
 
