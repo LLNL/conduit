@@ -58,16 +58,17 @@ PYTHON_ADD_HYBRID_MODULE(relay_python
 target_link_libraries(relay_python conduit conduit_relay ${PYTHON_LIBRARIES})
 
 # add relay io submodule
-PYTHON_ADD_MODULE(relay_io_python
-                  # c srcs
-                  relay_io_python.cpp)
+PYTHON_ADD_COMPILED_MODULE(relay_io_python
+                           # dest 
+                           python-modules/conduit/relay/io
+                           # c srcs
+                           relay_io_python.cpp)
 
+#
+# TODO: Check if this is necessary:
+#
 add_dependencies(relay_python_py_setup relay_io_python)
 
-
-SET_TARGET_PROPERTIES(relay_io_python PROPERTIES
-                      LIBRARY_OUTPUT_DIRECTORY   
-                      ${CMAKE_BINARY_DIR}/python-modules/conduit/relay/io)
 
 # link with the proper libs
 target_link_libraries(relay_io_python conduit conduit_relay ${PYTHON_LIBRARIES})

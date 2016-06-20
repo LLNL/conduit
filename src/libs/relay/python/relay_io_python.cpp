@@ -147,8 +147,12 @@ PyInt_AsLong(PyObject *o)
 //---------------------------------------------------------------------------//
 #include "conduit.hpp"
 #include "relay.hpp"
-#include "conduit_python.hpp"
+
 #include "Relay_Python_Exports.hpp"
+
+// conduit python module capi header
+#include "conduit_python.hpp"
+
 
 using namespace conduit;
 
@@ -380,7 +384,10 @@ void RELAY_PYTHON_API initrelay_io_python(void)
     }
 
     // setup for conduit python c api
-    import_conduit();
+    if(import_conduit() < 0)
+    {
+        PY_MODULE_INIT_RETURN_ERROR;
+    }
 
 
 #if defined(IS_PY3K)

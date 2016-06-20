@@ -54,7 +54,7 @@ import conduit.relay as relay
 
 class Test_Relay_Basic(unittest.TestCase):
     def test_about(self):
-        print relay.about()
+        print(relay.about())
 
 if __name__ == '__main__':
     unittest.main()

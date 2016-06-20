@@ -54,7 +54,7 @@ import conduit.blueprint as blueprint
 
 class Test_Blueprint_Basic(unittest.TestCase):
     def test_about(self):
-        print blueprint.about()
+        print(blueprint.about())
 
 if __name__ == '__main__':
     unittest.main()

@@ -56,7 +56,7 @@
 //-----------------------------------------------------------------------------
 
 #if defined(_WIN32)
-#if defined(RELAY_PYTHON_EXPORTS) || defined(relay_python_EXPORTS)
+#if defined(RELAY_PYTHON_EXPORTS) || defined(RELAY_IO_PYTHON_EXPORTS) || defined(relay_python_EXPORTS) || defined(relay_io_python_EXPORTS)
 #define RELAY_PYTHON_API __declspec(dllexport)
 #else
 #define RELAY_PYTHON_API __declspec(dllimport)
@@ -70,7 +70,7 @@
 #pragma warning(disable:4786)
 #endif
 #else
-# if __GNUC__ >= 4 && (defined(RELAY_PYTHON_EXPORTS) || defined(relay_python_EXPORTS))
+# if __GNUC__ >= 4 && (defined(RELAY_PYTHON_EXPORTS) || defined(RELAY_IO_PYTHON_EXPORTS)  || defined(relay_python_EXPORTS) ||  defined(relay_io_python_EXPORTS))
 #   define RELAY_PYTHON_API __attribute__ ((visibility("default")))
 # else
 #   define RELAY_PYTHON_API /* hidden by default */

@@ -149,16 +149,23 @@ PyInt_AsLong(PyObject *o)
 #include "blueprint.hpp"
 #include "Blueprint_Python_Exports.hpp"
 
+// conduit python module capi header
+#include "conduit_python.hpp"
+
 using namespace conduit;
 
 
 //---------------------------------------------------------------------------//
 // conduit::blueprint::about
 //---------------------------------------------------------------------------//
-static PyObject*
-PyRelay_about()
+static PyObject *
+PyBlueprint_about()
 {
-    return PyString_FromString(conduit::blueprint::about().c_str());
+    //create and return a node with the result of about
+    PyObject *py_node_res = PyConduit_Node_python_create();
+    Node *node = PyConduit_Node_Get_Node_Ptr(py_node_res);
+    conduit::blueprint::about(*node);
+    return (PyObject*)py_node_res;
 }
 
 //---------------------------------------------------------------------------//
@@ -168,7 +175,7 @@ static PyMethodDef blueprint_python_funcs[] =
 {
     //-----------------------------------------------------------------------//
     {"about",
-     (PyCFunction)PyRelay_about,
+     (PyCFunction)PyBlueprint_about,
       METH_NOARGS,
       NULL},
     //-----------------------------------------------------------------------//
@@ -282,6 +289,13 @@ void BLUEPRINT_PYTHON_API initblueprint_python(void)
         Py_DECREF(blueprint_module);
         PY_MODULE_INIT_RETURN_ERROR;
     }
+
+    // setup for conduit python c api
+    if(import_conduit() < 0)
+    {
+        PY_MODULE_INIT_RETURN_ERROR;
+    }
+
 
 #if defined(IS_PY3K)
     return blueprint_module;
