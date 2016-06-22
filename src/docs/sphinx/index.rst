@@ -139,6 +139,7 @@ Contributors
 - George Zagaris (LLNL)
 - Kenny Weiss (LLNL)
 - Matt Larsen (LLNL)
+- Joe Ciurej (LLNL)
 - George Aspesi (Harvey Mudd)
 - Justin Bai (Harvey Mudd)
 - Rupert Deese (Harvey Mudd)
@@ -158,6 +159,8 @@ Conduit Documentation
 
    user
    developer
+   presentations
+   licenses
 
 Indices and tables
 ==================
