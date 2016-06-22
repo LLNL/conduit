@@ -82,6 +82,8 @@
                 <ul>
 <li class="toctree-l1"><a class="reference internal" href="user.html">User Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer.html">Developer Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="presentations.html">Presentations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="licenses.html">License Info</a></li>
 </ul>
 
             
@@ -2442,7 +2444,29 @@
 <dl class="function">
 <dt id="_CPPv2N7conduit4Node10is_compactEv">
 <span id="conduit::Node::is_compact"></span><span class="target" id="project0classconduit_1_1_node_1acd2a62429c0d97fb117995796530f1c5"></span>bool <code class="descname">is_compact</code><span class="sig-paren">(</span><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit4Node10is_compactEv" title="Permalink to this definition">¶</a></dt>
-<dd><p>is this node using a compact data layout </p>
+<dd><p>Is this node using a compact data layout? </p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N7conduit4Node13is_contiguousEv">
+<span id="conduit::Node::is_contiguous"></span><span class="target" id="project0classconduit_1_1_node_1ac747758ba6c99f6ef45dfb72e6b81394"></span>bool <code class="descname">is_contiguous</code><span class="sig-paren">(</span><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit4Node13is_contiguousEv" title="Permalink to this definition">¶</a></dt>
+<dd><p>contiguous checks </p>
+<p>A node is contiguous if the leaves of it children (traversed in a depth first order) cover a contiguous chunk of the address space.</p>
+<p>The direct address checks are only done for leaves with data, nodes in the objects, lists, or empty roles don&#8217;t directly advance the pointer.</p>
+<p>Checks use each leaf&#8217;s offset and the total strided bytes If leaves do not abut in address space, or if any leaf points to NULL the <a class="reference internal" href="#project0classconduit_1_1_node"><span>Node</span></a> is not contiguous.</p>
+<p>This check is agnostic to if the <a class="reference internal" href="#project0classconduit_1_1_node"><span>Node</span></a> owns the data. Does this node has a contiguous data layout? </p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N7conduit4Node15contiguous_withERK4Node">
+<span id="conduit::Node::contiguous_with__NodeCR"></span><span class="target" id="project0classconduit_1_1_node_1a95dabe95302d4cd6719d539650c5b52d"></span>bool <code class="descname">contiguous_with</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="#_CPPv2N7conduit4Node4NodeEv" title="conduit::Node::Node">Node</a> &amp;<em>n</em><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit4Node15contiguous_withERK4Node" title="Permalink to this definition">¶</a></dt>
+<dd><p>true if node hierarchy&#8217;s memory contiguously follows the given node&#8217;s memory </p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N7conduit4Node15contiguous_withEPv">
+<span id="conduit::Node::contiguous_with__voidP"></span><span class="target" id="project0classconduit_1_1_node_1a7b138c73d9819cbaa0922606de949106"></span>bool <code class="descname">contiguous_with</code><span class="sig-paren">(</span>void *<em>address</em><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit4Node15contiguous_withEPv" title="Permalink to this definition">¶</a></dt>
+<dd><p>true if node hierarchy&#8217;s memory contiguously follows the given address. Note: contiguous with NULL is false. </p>
 </dd></dl>
 
 <dl class="function">
@@ -2537,6 +2561,12 @@
 <dl class="function">
 <dt id="_CPPv2N7conduit4Node5pathsERNSt6vectorINSt6stringEEE">
 <span id="conduit::Node::paths__std::vector:ss:R"></span><span class="target" id="project0classconduit_1_1_node_1aba34b161341425a83a8b0f9b05441e29"></span>void <code class="descname">paths</code><span class="sig-paren">(</span>std::vector&lt;std::string&gt; &amp;<em>paths</em><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit4Node5pathsERNSt6vectorINSt6stringEEE" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the direct child paths for this node </p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N7conduit4Node5pathsEv">
+<span id="conduit::Node::paths"></span><span class="target" id="project0classconduit_1_1_node_1a7433d1b3fcd3605eb29c1e925f20abb2"></span><em class="property">const</em> std::vector&lt;std::string&gt; &amp;<code class="descname">paths</code><span class="sig-paren">(</span><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit4Node5pathsEv" title="Permalink to this definition">¶</a></dt>
 <dd><p>returns the direct child paths for this node </p>
 </dd></dl>
 
@@ -2847,6 +2877,12 @@
 <dt id="_CPPv2N7conduit4Node8data_ptrEv">
 <span id="conduit::Node::data_ptr"></span><span class="target" id="project0classconduit_1_1_node_1ab9c29ce8ee2faab65b2d925d8a660ce2"></span><em class="property">const</em> void *<code class="descname">data_ptr</code><span class="sig-paren">(</span><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit4Node8data_ptrEv" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N7conduit4Node15allocated_bytesEv">
+<span id="conduit::Node::allocated_bytes"></span><span class="target" id="project0classconduit_1_1_node_1aa926eb815c53c072cbb6d6f9aecf6d81"></span>index_t <code class="descname">allocated_bytes</code><span class="sig-paren">(</span><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit4Node15allocated_bytesEv" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the number of bytes allocated or mmaped by this node </p>
+</dd></dl>
 
 <dl class="function">
 <dt id="_CPPv2N7conduit4Node11element_ptrE7index_t">
@@ -3446,8 +3482,8 @@
 </dd></dl>
 
 <dl class="function">
-<dt id="_CPPv2N7conduit6Schema5equalERK6Schema">
-<span id="conduit::Schema::equal__SchemaCR"></span><span class="target" id="project0classconduit_1_1_schema_1a612eb3c1f209a2f76588f37b991809f1"></span>bool <code class="descname">equal</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="#_CPPv2N7conduit6Schema6SchemaEv" title="conduit::Schema::Schema">Schema</a> &amp;<em>s</em><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit6Schema5equalERK6Schema" title="Permalink to this definition">¶</a></dt>
+<dt id="_CPPv2N7conduit6Schema6equalsERK6Schema">
+<span id="conduit::Schema::equals__SchemaCR"></span><span class="target" id="project0classconduit_1_1_schema_1ad57c6726da4783ea8b54586b587ecfa7"></span>bool <code class="descname">equals</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="#_CPPv2N7conduit6Schema6SchemaEv" title="conduit::Schema::Schema">Schema</a> &amp;<em>s</em><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit6Schema6equalsERK6Schema" title="Permalink to this definition">¶</a></dt>
 <dd><p>is this schema equal to given schema </p>
 </dd></dl>
 
@@ -3577,6 +3613,11 @@
 <dl class="function">
 <dt id="_CPPv2N7conduit6Schema5pathsERNSt6vectorINSt6stringEEE">
 <span id="conduit::Schema::paths__std::vector:ss:R"></span><span class="target" id="project0classconduit_1_1_schema_1a91d8f68bafcbf3572974b890f1509e4b"></span>void <code class="descname">paths</code><span class="sig-paren">(</span>std::vector&lt;std::string&gt; &amp;<em>paths</em><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit6Schema5pathsERNSt6vectorINSt6stringEEE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N7conduit6Schema5pathsEv">
+<span id="conduit::Schema::paths"></span><span class="target" id="project0classconduit_1_1_schema_1ad2487d4e3ed55c189116555454f6961a"></span><em class="property">const</em> std::vector&lt;std::string&gt; &amp;<code class="descname">paths</code><span class="sig-paren">(</span><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit6Schema5pathsEv" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -3804,6 +3845,11 @@
 <dd></dd></dl>
 
 <dl class="function">
+<dt id="_CPPv2N7conduit8DataType13spanned_bytesEv">
+<span id="conduit::DataType::spanned_bytes"></span><span class="target" id="project0classconduit_1_1_data_type_1ad701cb0b346bffdc5902da894b9b7574"></span>index_t <code class="descname">spanned_bytes</code><span class="sig-paren">(</span><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit8DataType13spanned_bytesEv" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
 <dt id="_CPPv2N7conduit8DataType10is_compactEv">
 <span id="conduit::DataType::is_compact"></span><span class="target" id="project0classconduit_1_1_data_type_1a12e26d29f360d510efaa7307deec8cfd"></span>bool <code class="descname">is_compact</code><span class="sig-paren">(</span><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit8DataType10is_compactEv" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -3814,8 +3860,8 @@
 <dd></dd></dl>
 
 <dl class="function">
-<dt id="_CPPv2N7conduit8DataType5equalERK8DataType">
-<span id="conduit::DataType::equal__DataTypeCR"></span><span class="target" id="project0classconduit_1_1_data_type_1aa5ef34a3b64589a7cbd13ff9d431a796"></span>bool <code class="descname">equal</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="#_CPPv2N7conduit8DataType8DataTypeEv" title="conduit::DataType::DataType">DataType</a> &amp;<em>type</em><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit8DataType5equalERK8DataType" title="Permalink to this definition">¶</a></dt>
+<dt id="_CPPv2N7conduit8DataType6equalsERK8DataType">
+<span id="conduit::DataType::equals__DataTypeCR"></span><span class="target" id="project0classconduit_1_1_data_type_1acd929afdef992edd24f6165e52f91392"></span>bool <code class="descname">equals</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="#_CPPv2N7conduit8DataType8DataTypeEv" title="conduit::DataType::DataType">DataType</a> &amp;<em>type</em><span class="sig-paren">)</span> const<a class="headerlink" href="#_CPPv2N7conduit8DataType6equalsERK8DataType" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">

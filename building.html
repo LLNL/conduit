@@ -95,10 +95,11 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="glossary.html">Glossary</a></li>
-<li class="toctree-l2"><a class="reference internal" href="licenses.html">License Info</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="developer.html">Developer Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="presentations.html">Presentations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="licenses.html">License Info</a></li>
 </ul>
 
             
@@ -185,6 +186,8 @@ make install
 <ul class="simple">
 <li><strong>BUILD_SHARED_LIBS</strong> - Controls if shared (ON) or static (OFF) libraries are built. <em>(default = ON)</em></li>
 <li><strong>ENABLE_TESTS</strong> - Controls if unit tests are built. <em>(default = ON)</em></li>
+<li><strong>ENABLE_DOCS</strong> - Controls if the Conduit documentation is built (when sphinx and doxygen are found ). <em>(default = ON)</em></li>
+<li><strong>ENABLE_COVERAGE</strong> - Controls if code coverage compiler flags are used to build Conduit. <em>(default = OFF)</em></li>
 <li><strong>ENABLE_PYTHON</strong> - Controls if the Conduit Python module is built. <em>(default = OFF)</em></li>
 </ul>
 <blockquote>
@@ -207,7 +210,7 @@ make install
 <blockquote>
 <div><p>Controls if Silo I/O support is built into <em>conduit_relay</em>. When used, the following CMake variables must also be set:</p>
 <ul class="simple">
-<li><strong>HDF5_DIR</strong> - Path to a HDF5 install. (Silo support also depends on HDF5)</li>
+<li><strong>HDF5_DIR</strong> - Path to a HDF5 install. (Silo support depends on HDF5)</li>
 </ul>
 </div></blockquote>
 </div>

@@ -100,7 +100,10 @@ Conduit's build system supports the following CMake options:
 
 * **BUILD_SHARED_LIBS** - Controls if shared (ON) or static (OFF) libraries are built. *(default = ON)* 
 * **ENABLE_TESTS** - Controls if unit tests are built. *(default = ON)* 
+* **ENABLE_DOCS** - Controls if the Conduit documentation is built (when sphinx and doxygen are found ). *(default = ON)*
+* **ENABLE_COVERAGE** - Controls if code coverage compiler flags are used to build Conduit. *(default = OFF)*
 * **ENABLE_PYTHON** - Controls if the Conduit Python module is built. *(default = OFF)*
+
 
  The Conduit Python module will build for both Python2 and Python3. To select a specific Python, set the CMake variable **PYTHON_EXECUTABLE** to path of the desired python binary. The Conduit Python module requires Numpy. The selected Python instance must provide Numpy, or PYTHONPATH must be set to include a Numpy install compatible with the selected Python install. 
 
@@ -115,7 +118,7 @@ Conduit's build system supports the following CMake options:
 * **SILO_DIR** - Path to a Silo install *(optional)*. 
  Controls if Silo I/O support is built into *conduit_relay*. When used, the following CMake variables must also be set:
  
- * **HDF5_DIR** - Path to a HDF5 install. (Silo support also depends on HDF5) 
+ * **HDF5_DIR** - Path to a HDF5 install. (Silo support depends on HDF5) 
 
 Host Config Files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
