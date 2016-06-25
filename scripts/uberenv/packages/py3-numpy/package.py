@@ -48,6 +48,7 @@ class Py3Numpy(Package):
     homepage = "https://pypi.python.org/pypi/numpy"
     url      = "https://pypi.python.org/packages/source/n/numpy/numpy-1.9.1.tar.gz"
 
+    version('1.11.0', 'bc56fb9fc2895aa4961802ffbdb31d0b')
     version('1.9.1', '78842b73560ec378142665e712ae4ad9')
 
     extends('python3')

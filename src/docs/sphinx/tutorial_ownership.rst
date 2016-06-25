@@ -62,7 +62,7 @@ The **Node::set** methods support creating **owned** data and coping data values
 
 .. # from conduit_tutorial_examples: mem_ownership_external
 
-.. literalinclude:: ../../tests/docs/conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/t_conduit_tutorial_examples.cpp
    :lines: 438-456
    :language: cpp
    :dedent: 4
