@@ -966,7 +966,6 @@ Node::set(const float64_array &data)
 void 
 Node::set_string(const std::string &data)
 {
-    release();
     // size including the null term
     index_t str_size_with_term = data.length()+1;
     DataType str_t(DataType::CHAR8_STR_ID,
@@ -990,7 +989,6 @@ Node::set(const std::string &data)
 void 
 Node::set_char8_str(const char *data)
 {
-    release();
     // size including the null term
     index_t str_size_with_term = strlen(data)+1;
     DataType str_t(DataType::CHAR8_STR_ID,
@@ -999,8 +997,8 @@ Node::set_char8_str(const char *data)
                    sizeof(char),
                    sizeof(char),
                    Endianness::DEFAULT_ID);
-                   init(str_t);
-                   memcpy(m_data,data,sizeof(char)*str_size_with_term);
+    init(str_t);
+    memcpy(m_data,data,sizeof(char)*str_size_with_term);
 }
 
 
