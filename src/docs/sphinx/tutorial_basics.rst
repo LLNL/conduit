@@ -55,7 +55,7 @@ Think of it as a hierarchical variant object.
 
 .. # from conduit_tutorial_examples: basics_very_basic
 
-.. literalinclude:: ../../tests/docs/conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/t_conduit_tutorial_examples.cpp
    :lines: 63-66
    :language: cpp
    :dedent: 4
@@ -67,7 +67,7 @@ Think of it as a hierarchical variant object.
 
 The *Node* class supports hierarchical construction.
 
-.. literalinclude:: ../../tests/docs/conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/t_conduit_tutorial_examples.cpp
    :lines: 74-82
    :language: cpp
    :dedent: 4
@@ -82,7 +82,7 @@ are leafs that represent concrete data.
 
 .. # from conduit_tutorial_examples: basics_object_and_list
 
-.. literalinclude:: ../../tests/docs/conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/t_conduit_tutorial_examples.cpp
    :lines: 90-103
    :language: cpp
    :dedent: 4
@@ -94,7 +94,7 @@ Behind the scenes, *Node* instances manage a collection of memory spaces.
 
 .. # from conduit_tutorial_examples: basics_mem_spaces
 
-.. literalinclude:: ../../tests/docs/conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/t_conduit_tutorial_examples.cpp
    :lines: 112-120
    :language: cpp
    :dedent: 4
@@ -111,7 +111,7 @@ Conduit uses well defined bitwidth style types (inspired by NumPy) for leaf valu
 
 .. # from conduit_tutorial_examples: basics_bw_style
 
-.. literalinclude:: ../../tests/docs/conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/t_conduit_tutorial_examples.cpp
    :lines: 128-134
    :language: cpp
    :dedent: 4
@@ -124,7 +124,7 @@ Standard C++ numeric types will be mapped by the compiler to bitwidth style type
 
 .. # from conduit_tutorial_examples: basics_bw_style_from_native
 
-.. literalinclude:: ../../tests/docs/conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/t_conduit_tutorial_examples.cpp
    :lines: 143-147
    :language: cpp
    :dedent: 4
