@@ -42,6 +42,7 @@
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -91,7 +92,11 @@
 <li class="toctree-l3"><a class="reference internal" href="#getting-started">Getting Started</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#build-options">Build Options</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#host-config-files">Host Config Files</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#bootstrapping-thirdparty-dependencies">Bootstrapping Thirdparty Dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bootstrapping-thirdparty-dependencies">Bootstrapping Thirdparty Dependencies</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#compiler-settings-for-thirdparty-dependencies">Compiler Settings for Thirdparty Dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#building-with-spack">Building with Spack</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="glossary.html">Glossary</a></li>
@@ -126,20 +131,24 @@
 
 
 
+
+
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-          <li><a href="user.html">User Documentation</a> &raquo;</li>
+        <li><a href="user.html">User Documentation</a> &raquo;</li>
       
     <li>Building</li>
-      <li class="wy-breadcrumbs-aside">
-        
+    <li class="wy-breadcrumbs-aside">
+      
           
-            <a href="_sources/building.txt" rel="nofollow"> View page source</a>
-          
+          <a href="_sources/building.txt" rel="nofollow"> View page source</a>
         
-      </li>
+      
+    </li>
   </ul>
   <hr/>
 </div>
@@ -164,9 +173,9 @@
 </pre></div>
 </div>
 <p>Configure a build:</p>
-<p><em>config-build.sh</em> is a simple wrapper for the cmake call to configure conduit.
-This creates a new out-of-source build directory <em>build-debug</em> and a directory for the install <em>install-debug</em>.
-It will optionally include a <em>host-config.cmake</em> file with detailed configuration options.</p>
+<p><code class="docutils literal"><span class="pre">config-build.sh</span></code> is a simple wrapper for the cmake call to configure conduit.
+This creates a new out-of-source build directory <code class="docutils literal"><span class="pre">build-debug</span></code> and a directory for the install <code class="docutils literal"><span class="pre">install-debug</span></code>.
+It will optionally include a <code class="docutils literal"><span class="pre">host-config.cmake</span></code> file with detailed configuration options.</p>
 <div class="code bash highlight-python"><div class="highlight"><pre><span></span>cd conduit
 ./config-build.sh
 </pre></div>
@@ -191,7 +200,7 @@ make install
 <li><strong>ENABLE_PYTHON</strong> - Controls if the Conduit Python module is built. <em>(default = OFF)</em></li>
 </ul>
 <blockquote>
-<div>The Conduit Python module will build for both Python2 and Python3. To select a specific Python, set the CMake variable <strong>PYTHON_EXECUTABLE</strong> to path of the desired python binary. The Conduit Python module requires Numpy. The selected Python instance must provide Numpy, or PYTHONPATH must be set to include a Numpy install compatible with the selected Python install.</div></blockquote>
+<div>The Conduit Python module will build for both Python 2 and Python 3. To select a specific Python, set the CMake variable <strong>PYTHON_EXECUTABLE</strong> to path of the desired python binary. The Conduit Python module requires Numpy. The selected Python instance must provide Numpy, or PYTHONPATH must be set to include a Numpy install compatible with the selected Python install.</div></blockquote>
 <ul class="simple">
 <li><strong>ENABLE_MPI</strong> - Controls if the conduit_relay_mpi library is built. <em>(default = OFF)</em></li>
 </ul>
@@ -221,11 +230,11 @@ make install
 </pre></div>
 </div>
 <p>We call these initial-cache files <em>host-config</em> files, since we typically create a file for each platform or specific hosts if necessary.</p>
-<p>The <em>config-build.sh</em> script will use your machine&#8217;s hostname, the SYS_TYPE environment variable, and your platform name (via <em>uname</em>) to look for an existing host config file in the <em>host-configs</em> directory at the root of the conduit repo. If found, it will pass the host config file to CMake via the <em>-C</em> command line option.</p>
+<p>The <code class="docutils literal"><span class="pre">config-build.sh</span></code> script will use your machine&#8217;s hostname, the SYS_TYPE environment variable, and your platform name (via <em>uname</em>) to look for an existing host config file in the <code class="docutils literal"><span class="pre">host-configs</span></code> directory at the root of the conduit repo. If found, it will pass the host config file to CMake via the <cite>-C</cite> command line option.</p>
 <div class="code bash highlight-python"><div class="highlight"><pre><span></span>cmake {other options} -C host-configs/{config_file}.cmake ../
 </pre></div>
 </div>
-<p>You can view several example files under the <em>host-configs</em> directory.</p>
+<p>You can view several example files under the <code class="docutils literal"><span class="pre">host-configs</span></code> directory.</p>
 <p>These files use standard CMake commands. CMake <em>set</em> commands need to specify the root cache path as follows:</p>
 <div class="code cmake highlight-python"><div class="highlight"><pre><span></span>set(CMAKE_VARIABLE_NAME {VALUE} CACHE PATH &quot;&quot;)
 </pre></div>
@@ -233,8 +242,8 @@ make install
 </div>
 <div class="section" id="bootstrapping-thirdparty-dependencies">
 <h2>Bootstrapping Thirdparty Dependencies<a class="headerlink" href="#bootstrapping-thirdparty-dependencies" title="Permalink to this headline">¶</a></h2>
-<p>You can use <em>bootstrap-env.sh</em> (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses <em>scripts/uberenv</em>, which leverages <strong>Spack</strong> (<a class="reference external" href="http://software.llnl.gov/spack">http://software.llnl.gov/spack</a>) to build external thirdparty libraries and tools used by Conduit.
-It also writes a initial host-config file for you and adds the Spack built CMake binary to your PATH, so can directly call the <em>config-build.sh</em> helper script to configure a conduit build.</p>
+<p>You can use <code class="docutils literal"><span class="pre">bootstrap-env.sh</span></code> (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses <code class="docutils literal"><span class="pre">scripts/uberenv/uberenv.py</span></code>, which leverages <strong>Spack</strong> (<a class="reference external" href="http://software.llnl.gov/spack">http://software.llnl.gov/spack</a>) to build the external thirdparty libraries and tools used by Conduit.
+After building these libraries and tools, it writes an initial <em>host-config</em> file and adds the Spack built CMake binary to your PATH, so can immediately call the <code class="docutils literal"><span class="pre">config-build.sh</span></code> helper script to configure a conduit build.</p>
 <div class="code bash highlight-python"><div class="highlight"><pre><span></span>#build thirdparty libs using spack
 source bootstrap-env.sh
 
@@ -248,6 +257,28 @@ cp uberenv_libs/`hostname`*.cmake to host-configs/
 # path to a host-config file
 ./config-build.sh uberenv_libs/`hostname`*.cmake
 </pre></div>
+</div>
+<div class="section" id="compiler-settings-for-thirdparty-dependencies">
+<h3>Compiler Settings for Thirdparty Dependencies<a class="headerlink" href="#compiler-settings-for-thirdparty-dependencies" title="Permalink to this headline">¶</a></h3>
+<p>You can edit <code class="docutils literal"><span class="pre">scripts/uberenv/compilers.yaml</span></code> to change the compiler settings
+passed to Spack. See the <a class="reference external" href="http://software.llnl.gov/spack/basic_usage.html#manual-compiler-configuration">Spack Compiler Configuration</a>
+documentation for details.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The bootstrapping process ignores <code class="docutils literal"><span class="pre">~/.spack/compilers.yaml</span></code> to avoid conflicts
+and surprises from a user&#8217;s specific Spack settings on HPC platforms.</p>
+</div>
+</div>
+</div>
+<div class="section" id="building-with-spack">
+<h2>Building with Spack<a class="headerlink" href="#building-with-spack" title="Permalink to this headline">¶</a></h2>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Conduit developers use <code class="docutils literal"><span class="pre">scripts/uberenv/uberenv.py</span></code> to setup thirdparty libraries for Conduit
+development.  Due to this, the process builds more libraries than necessary for most use cases.
+For example, we build independent installs of Python 2 and Python 3 to make it easy
+to check Python C-API compatibility during development. In the near future, we plan to
+provide a Spack package to simplify deployment.</p>
 </div>
 </div>
 </div>

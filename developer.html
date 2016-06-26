@@ -41,6 +41,7 @@
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -92,6 +93,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#git-development-workflow">Git Development Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#github">Github</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="presentations.html">Presentations</a></li>
@@ -122,18 +124,22 @@
 
 
 
+
+
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
     <li>Developer Documentation</li>
-      <li class="wy-breadcrumbs-aside">
-        
+    <li class="wy-breadcrumbs-aside">
+      
           
-            <a href="_sources/developer.txt" rel="nofollow"> View page source</a>
-          
+          <a href="_sources/developer.txt" rel="nofollow"> View page source</a>
         
-      </li>
+      
+    </li>
   </ul>
   <hr/>
 </div>
@@ -188,14 +194,14 @@
 <div class="section" id="adding-a-unit-test">
 <h3>Adding a Unit Test<a class="headerlink" href="#adding-a-unit-test" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li>Create a test source file in <em>src/tests/{lib_name}/</em></li>
-<li>Add the test to build system by editing <em>src/tests/{lib_name}/CMakeLists.txt</em></li>
+<li>Create a test source file in <code class="docutils literal"><span class="pre">src/tests/{lib_name}/</span></code></li>
+<li>Add the test to build system by editing <code class="docutils literal"><span class="pre">src/tests/{lib_name}/CMakeLists.txt</span></code></li>
 </ul>
 </div>
 </div>
 <div class="section" id="git-development-workflow">
 <h2>Git Development Workflow<a class="headerlink" href="#git-development-workflow" title="Permalink to this headline">¶</a></h2>
-<p>The master Conduit source repository is hosted on LLNL&#8217;s CZ Stash instance:</p>
+<p>The primary Conduit source repository is hosted on LLNL&#8217;s CZ Stash instance:</p>
 <p><a class="reference external" href="https://lc.llnl.gov/stash/projects/CON">https://lc.llnl.gov/stash/projects/CON</a></p>
 <p>We we are using a <strong>Github Flow</strong> model, which is a simpler variant of the confusingly similar sounding <strong>Git Flow</strong> model.</p>
 <p>Here are the basics:</p>
@@ -211,6 +217,12 @@
 <li>You <em>can</em> merge your own pull requests.</li>
 <li>After completing all intended work on branch, please delete the remote branch after merging to master. (Stash has an option to do this when merging a pull request.)</li>
 </ul>
+</div>
+<div class="section" id="github">
+<h2>Github<a class="headerlink" href="#github" title="Permalink to this headline">¶</a></h2>
+<p>The <em>master</em> and <em>gh-pages</em> branches of Conduit are also available on github:</p>
+<p><a class="reference external" href="https://github.com/llnl/conduit">https://github.com/llnl/conduit</a></p>
+<p>We welcome issues and pull requests on github.</p>
 </div>
 </div>
 
