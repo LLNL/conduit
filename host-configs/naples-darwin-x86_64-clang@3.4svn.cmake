@@ -51,10 +51,10 @@ set(MPIEXEC "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/spack/darwin-
 # I/O Packages
 
 # hdf5 from uberenv
-set(HDF5_DIR "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/spack/darwin-x86_64/clang-3.4svn/hdf5-1.8.16-cnnhzbzr3ssaplydmehw7abbrpmpvb6q" CACHE PATH "")
+set(HDF5_DIR "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/spack/darwin-x86_64/clang-3.4svn/hdf5-1.8.17-pzxksxsggtm6ab72nbymwokfybp66boh" CACHE PATH "")
 
 # silo from uberenv
-set(SILO_DIR "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/spack/darwin-x86_64/clang-3.4svn/silo-4.10.1-w6uzqebhfd4oy36bjjucd7vd3fhlu5i3" CACHE PATH "")
+set(SILO_DIR "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/spack/darwin-x86_64/clang-3.4svn/silo-4.10.1-5rka7esxmogsporir2fkg5dkrkgnywtj" CACHE PATH "")
 
 ##################################
 # end uberenv host-config

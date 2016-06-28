@@ -185,6 +185,27 @@ TEST(conduit_utils, override_error)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, escape_special_chars)
+{
+    std::string test = "\"myvalue\":10";
+    std::string test_escaped   = utils::escape_special_chars(test);
+    std::string test_unescaped = utils::unescape_special_chars(test_escaped);
 
+    CONDUIT_INFO( test << " vs " << test_escaped);
+
+    EXPECT_EQ(test_escaped, "\\\"myvalue\\\":10");
+    EXPECT_EQ(test,test_unescaped);
+
+
+    test = "\" \\ / \n \t";
+    test_escaped   = utils::escape_special_chars(test);
+    test_unescaped = utils::unescape_special_chars(test_escaped);
+
+    CONDUIT_INFO( test << "\nvs\n" << test_escaped);
+
+    EXPECT_EQ(test_escaped, "\\\" \\\\ \\/ \\\n \\\t");
+    EXPECT_EQ(test,test_unescaped);
+}
 
 

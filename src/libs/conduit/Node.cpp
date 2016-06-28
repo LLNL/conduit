@@ -966,7 +966,6 @@ Node::set(const float64_array &data)
 void 
 Node::set_string(const std::string &data)
 {
-    release();
     // size including the null term
     index_t str_size_with_term = data.length()+1;
     DataType str_t(DataType::CHAR8_STR_ID,
@@ -990,7 +989,6 @@ Node::set(const std::string &data)
 void 
 Node::set_char8_str(const char *data)
 {
-    release();
     // size including the null term
     index_t str_size_with_term = strlen(data)+1;
     DataType str_t(DataType::CHAR8_STR_ID,
@@ -999,8 +997,8 @@ Node::set_char8_str(const char *data)
                    sizeof(char),
                    sizeof(char),
                    Endianness::DEFAULT_ID);
-                   init(str_t);
-                   memcpy(m_data,data,sizeof(char)*str_size_with_term);
+    init(str_t);
+    memcpy(m_data,data,sizeof(char)*str_size_with_term);
 }
 
 
@@ -7594,7 +7592,7 @@ Node::to_json(const std::string &protocol,
     }
     else if(protocol == "base64_json")
     {
-        return to_base64_json(indent,depth,pad,eoe);        
+        return to_base64_json(indent,depth,pad,eoe);
     }
     else
     {
@@ -7765,7 +7763,7 @@ Node::to_json_generic(std::ostream &os,
                                 dtype_open,
                                 dtype_rest);
             os<< dtype_open;
-            os << ", value: ";
+            os << ", \"value\": ";
         }
 
         switch(dtype().id())
@@ -7805,8 +7803,15 @@ Node::to_json_generic(std::ostream &os,
                 break;
             // char8_str
             case DataType::CHAR8_STR_ID: 
-                os << "\"" << as_char8_str() << "\""; 
+                os << "\"" 
+                   << utils::escape_special_chars(as_string())
+                   << "\""; 
                 break;
+            // empty
+            case DataType::EMPTY_ID: 
+                os << "null";
+                break;
+
         }
 
         if(detailed)
@@ -8181,7 +8186,6 @@ Node::number_of_children() const
     return m_schema->number_of_children();
 }
 
-
 //---------------------------------------------------------------------------//
 bool           
 Node::has_path(const std::string &path) const
@@ -8189,12 +8193,18 @@ Node::has_path(const std::string &path) const
     return m_schema->has_path(path);
 }
 
-
 //---------------------------------------------------------------------------//
 void
 Node::paths(std::vector<std::string> &paths) const
 {
     m_schema->paths(paths);
+}
+
+//---------------------------------------------------------------------------//
+const std::vector<std::string>&
+Node::paths() const
+{
+    return m_schema->paths();
 }
 
 //---------------------------------------------------------------------------//

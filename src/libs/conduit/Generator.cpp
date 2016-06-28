@@ -73,12 +73,12 @@
 /// errors related to rapidjson parsing.
 //
 //-----------------------------------------------------------------------------
-#define CONDUIT_JSON_PARSE_ERROR( document)                                 \
+#define CONDUIT_JSON_PARSE_ERROR( document )                                \
 {                                                                           \
     CONDUIT_ERROR("JSON parse error: \n"                                    \
                   << " offset: " << document.GetErrorOffset()               \
                   << "\n"                                                   \
-                  << " message: "                                           \
+                  << " message:\n"                                          \
                   << GetParseError_En(document.GetParseError())             \
                   << "\n");                                                 \
 }
@@ -471,7 +471,10 @@ Generator::Parser::parse_leaf_dtype(const rapidjson::Value &jvalue,
                                << "'number_of_elements' must be a number ");
             }
         }
-        
+        //
+        // DEPRECATE
+        //
+        // length is the old schema style, we should deprecate this path
         else if(jvalue.HasMember("length"))
         {
             const rapidjson::Value &json_len = jvalue["length"];
@@ -579,7 +582,8 @@ Generator::Parser::parse_leaf_dtype(const rapidjson::Value &jvalue,
                 length = jvalue["value"].Size();
             }
             // support explicit length 0 in a schema
-            else if(!jvalue.HasMember("length")) 
+            else if(!jvalue.HasMember("length") && 
+                    !jvalue.HasMember("number_of_elements"))
             {
                 length = 1;
             }
@@ -610,7 +614,7 @@ Generator::Parser::parse_inline_leaf(const rapidjson::Value &jvalue,
         if(node.dtype().id() == DataType::CHAR8_STR_ID)
         {
             std::string sval(jvalue.GetString());
-            node.set(sval);
+            node.set(utils::unescape_special_chars(sval));
         }
         else
         {
@@ -691,6 +695,11 @@ Generator::Parser::parse_inline_leaf(const rapidjson::Value &jvalue,
                               << " value for a Conduit Numeric Node.");
                 break;
         }
+    }
+    else if(jvalue.IsNull())
+    {
+        // empty data type
+        node.reset();
     }
 }
 
@@ -799,6 +808,11 @@ Generator::Parser::walk_json_schema(Schema *schema,
         }
         else
         {
+            // if we make it here and have an empty json object
+            // we still want the conduit schema to take on the
+            // object role
+            schema->set(DataType::object());
+            
             // loop over all entries
             for (rapidjson::Value::ConstMemberIterator itr =
                  jvalue.MemberBegin(); 
@@ -814,7 +828,12 @@ Generator::Parser::walk_json_schema(Schema *schema,
     }
     // List case 
     else if(jvalue.IsArray()) 
-    {
+    { 
+        // if we make it here and have an empty json list
+        // we still want the conduit schema to take on the
+        // list role
+        schema->set(DataType::list());
+
         for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
         {
 
@@ -848,6 +867,10 @@ Generator::Parser::walk_pure_json_schema(Node  *node,
     // object cases
     if(jvalue.IsObject())
     {
+        // if we make it here and have an empty json object
+        // we still want the conduit node to take on the
+        // object role
+        schema->set(DataType::object());
         // loop over all entries
         for (rapidjson::Value::ConstMemberIterator itr = jvalue.MemberBegin(); 
              itr != jvalue.MemberEnd(); ++itr)
@@ -880,6 +903,11 @@ Generator::Parser::walk_pure_json_schema(Node  *node,
         }
         else // not numeric array
         {
+            // if we make it here and have an empty json list
+            // we still want the conduit node to take on the
+            // list role
+            schema->set(DataType::list());
+            
             for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
             {
                 schema->append();
@@ -1032,8 +1060,9 @@ Generator::Parser::walk_json_schema(Node   *node,
                 }
             }
         }
-        else
+        else // object case
         {
+            schema->set(DataType::object());
             // standard object case - loop over all entries
             for (rapidjson::Value::ConstMemberIterator itr = 
                  jvalue.MemberBegin(); 
@@ -1060,6 +1089,8 @@ Generator::Parser::walk_json_schema(Node   *node,
     // List case 
     else if (jvalue.IsArray()) 
     {
+        schema->set(DataType::list());
+
         for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
         {
             schema->append();

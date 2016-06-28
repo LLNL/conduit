@@ -850,10 +850,9 @@ Schema::operator[](const std::string &path)
 bool           
 Schema::has_path(const std::string &path) const
 {
-    if(m_dtype.id() == DataType::EMPTY_ID)
-        return false;
+    // for the non-object case, has_path simply returns false
     if(m_dtype.id() != DataType::OBJECT_ID)
-        CONDUIT_ERROR("<Schema::has_path[OBJECT_ID]> Schema is not OBJECT_ID");
+        return false;
 
     std::string p_curr;
     std::string p_next;
@@ -879,7 +878,6 @@ Schema::has_path(const std::string &path) const
     }
 }
 
-
 //---------------------------------------------------------------------------//
 void
 Schema::paths(std::vector<std::string> &paths) const
@@ -887,7 +885,12 @@ Schema::paths(std::vector<std::string> &paths) const
     paths = object_order();
 }
 
-
+//---------------------------------------------------------------------------//
+const std::vector<std::string>&
+Schema::paths() const
+{
+    return object_order();
+}
 
 //---------------------------------------------------------------------------//
 void    
@@ -1028,6 +1031,7 @@ Schema::compact_to(Schema &s_dest, index_t curr_offset) const
     
     if(dtype_id == DataType::OBJECT_ID )
     {
+        s_dest.init_object();
         index_t nchildren = children().size();
         for(index_t i=0; i < nchildren;i++)
         {
@@ -1039,6 +1043,7 @@ Schema::compact_to(Schema &s_dest, index_t curr_offset) const
     }
     else if(dtype_id == DataType::LIST_ID)
     {
+        s_dest.init_list();
         index_t nchildren = children().size();
         for(index_t i=0; i < nchildren ;i++)
         {            
@@ -1078,6 +1083,9 @@ Schema::walk_schema(const std::string &json_schema)
 Schema::Schema_Object_Hierarchy *
 Schema::object_hierarchy()
 {
+    if(m_dtype.id() != DataType::OBJECT_ID)
+        CONDUIT_ERROR("<Schema::object_hierarchy[OBJECT_ID]>: Schema is not OBJECT_ID");
+
     return static_cast<Schema_Object_Hierarchy*>(m_hierarchy_data);
 }
 
@@ -1093,6 +1101,9 @@ Schema::list_hierarchy()
 const Schema::Schema_Object_Hierarchy *
 Schema::object_hierarchy() const 
 {
+    if(m_dtype.id() != DataType::OBJECT_ID)
+        CONDUIT_ERROR("<Schema::object_hierarchy[OBJECT_ID]>: Schema is not OBJECT_ID");
+
     return static_cast<Schema_Object_Hierarchy*>(m_hierarchy_data);
 }
 

@@ -60,7 +60,7 @@ project(conduit)
 ################################
 option(BUILD_SHARED_LIBS  "Build shared libraries"      ON)
 option(ENABLE_TESTS       "Build conduit tests"         ON)
-option(ENABLE_GPREF_TOOLS "Build with google perftools" OFF)
+option(ENABLE_DOCS        "Build conduit documentation" ON)
 option(ENABLE_COVERAGE    "Build with coverage flags"   OFF)
 
 option(ENABLE_PYTHON      "Build Python Support"        OFF)
@@ -119,14 +119,21 @@ add_subdirectory(libs)
 ################################
 # Add docs
 ################################
-add_subdirectory(docs)
+if(ENABLE_DOCS)
+    add_subdirectory(docs)
+else()
+    message(STATUS "Skipping documentation targets (ENABLE_DOCS = OFF)")
+endif()
 
 ################################
 # Add our tests
 ################################
 if(ENABLE_TESTS)
     add_subdirectory(tests)
+else()
+    message(STATUS "Skipping test targets (ENABLE_TESTS = OFF)")
 endif()
+
 
 ################################
 # Create CMake importable 

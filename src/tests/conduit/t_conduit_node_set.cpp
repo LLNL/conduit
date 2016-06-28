@@ -2495,3 +2495,17 @@ TEST(conduit_node_set, set_path_external_node)
     EXPECT_NEAR(f64av[1],-110.1,0.001);
     n.print();
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_string_multiple)
+{
+    Node n;
+    n.set_string("I am a long string");
+    EXPECT_EQ(n.as_string(),"I am a long string");
+    n.set_string("I am a longer string than before");  // OK
+    EXPECT_EQ(n.as_string(),"I am a longer string than before");
+    n.set_string("shorter");    // was crashing ..
+    EXPECT_EQ(n.as_string(),"shorter");
+}
+

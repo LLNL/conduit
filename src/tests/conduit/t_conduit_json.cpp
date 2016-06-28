@@ -208,7 +208,6 @@ TEST(conduit_json, json_bool)
 }
 
 
-
 //-----------------------------------------------------------------------------
 TEST(conduit_json, load_from_json)
 {
@@ -372,7 +371,154 @@ TEST(conduit_json, to_base64_json)
     {
         EXPECT_EQ(arr_vals[i],arr[i]);
     }
-
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_json, check_empty)
+{
+    Node n;
+    n["path/to/empty"];
+    n.print();
+    std::string json_txt = n.to_json();
+    
+    CONDUIT_INFO("json:" << std::endl << json_txt);
+    
+    Node nparse;
+    Generator g(json_txt,"json");
+    g.walk(nparse);
+    nparse.print();
+
+    EXPECT_EQ(n["path/to/empty"].dtype().id(),
+              nparse["path/to/empty"].dtype().id());
+
+
+    json_txt = n.to_json("conduit");
+    
+    CONDUIT_INFO("conduit:" << std::endl << json_txt);
+    
+    Generator g2(json_txt,"conduit");
+    g2.walk(nparse);
+    nparse.print();
+
+    EXPECT_EQ(n["path/to/empty"].dtype().id(),
+              nparse["path/to/empty"].dtype().id());
+
+
+    json_txt = n.to_json("base64_json");
+    
+    CONDUIT_INFO("base64_json:" << std::endl << json_txt);
+    
+    Generator g3(json_txt,"base64_json");
+    g3.walk(nparse);
+    nparse.print();
+
+    EXPECT_EQ(n["path/to/empty"].dtype().id(),
+              nparse["path/to/empty"].dtype().id());
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_json, check_childless_object)
+{
+    Node n;
+    n["path/to/empty"].set(DataType::object());
+    std::string json_txt = n.to_json();
+    CONDUIT_INFO("json:(input)" << std::endl << json_txt);
+    
+    Node nparse;
+    Generator g(json_txt,"json");
+    g.walk(nparse);
+    CONDUIT_INFO("json:(output)");
+    nparse.print();
+
+    EXPECT_EQ(n["path/to/empty"].dtype().id(),
+              nparse["path/to/empty"].dtype().id());
+
+
+    json_txt = n.to_json("conduit");
+    
+    CONDUIT_INFO("conduit:(input)" << std::endl << json_txt);
+    
+    Generator g2(json_txt,"conduit");
+    g2.walk(nparse);
+    CONDUIT_INFO("conduit:(output)");
+    nparse.print();
+
+    EXPECT_EQ(n["path/to/empty"].dtype().id(),
+              nparse["path/to/empty"].dtype().id());
+
+
+    json_txt = n.to_json("base64_json");
+    
+    CONDUIT_INFO("base64_json:(input)" << std::endl << json_txt);
+    
+    Generator g3(json_txt,"base64_json");
+    g3.walk(nparse);
+    CONDUIT_INFO("base64_json:(output)");
+    nparse.print();
+
+    EXPECT_EQ(n["path/to/empty"].dtype().id(),
+              nparse["path/to/empty"].dtype().id());
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_json, check_childless_list)
+{
+    Node n;
+    n["path/to/empty"].set(DataType::list());
+    std::string json_txt = n.to_json();
+    
+    CONDUIT_INFO("json:(input)" << std::endl << json_txt);
+    
+    Node nparse;
+    Generator g(json_txt,"json");
+    g.walk(nparse);
+    CONDUIT_INFO("json:(output)");
+    nparse.print();
+
+    EXPECT_EQ(n["path/to/empty"].dtype().id(),
+              nparse["path/to/empty"].dtype().id());
+
+
+    json_txt = n.to_json("conduit");
+    
+    CONDUIT_INFO("conduit:(input)" << std::endl << json_txt);
+    
+    Generator g2(json_txt,"conduit");
+    g2.walk(nparse);
+    CONDUIT_INFO("conduit:(output)");
+    nparse.print();
+
+    EXPECT_EQ(n["path/to/empty"].dtype().id(),
+              nparse["path/to/empty"].dtype().id());
+
+
+    json_txt = n.to_json("base64_json");
+    
+    CONDUIT_INFO("base64_json:(input)" << std::endl << json_txt);
+    
+    Generator g3(json_txt,"base64_json");
+    g3.walk(nparse);
+    CONDUIT_INFO("base64_json:(output)");
+    nparse.print();
+
+    EXPECT_EQ(n["path/to/empty"].dtype().id(),
+              nparse["path/to/empty"].dtype().id());
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_json, json_string_value_with_escapes)
+{
+    std::string pure_json = "{\"value\": \"\\\"mystring!\\\"\"}";
+    CONDUIT_INFO(pure_json);
+    Generator g(pure_json,"json");
+    Node n(g,true);
+    n.print_detailed();
+    EXPECT_EQ(n["value"].dtype().id(),DataType::CHAR8_STR_ID);
+    EXPECT_EQ(n["value"].as_string(),"\"mystring!\"");
+}
+
 
 

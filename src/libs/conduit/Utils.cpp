@@ -377,8 +377,11 @@ json_sanitize(const std::string &json)
                     else
                     {
                         in_id = false;
-                        /// check for true & false which we need to support in json
-                        if( !(cur_id == "true" || cur_id == "false"))
+                        /// check for true, false, and null 
+                        /// which we need to support in json
+                        if( !(cur_id == "true"  || 
+                              cur_id == "false" ||
+                              cur_id == "null" ))
                         {
                             /// emit cur_id
                             res += "\"" + cur_id + "\"";
@@ -442,6 +445,63 @@ void sleep(index_t milliseconds)
 #endif
 
 }
+
+
+//-----------------------------------------------------------------------------
+std::string
+escape_special_chars(const std::string &input)
+{
+    std::string res;
+    for(size_t i = 0; i < input.size(); ++i) 
+    {
+        // supported special chars
+        if(input[i] == '\"' || 
+           input[i] == '/'  ||
+           input[i] == '\\' ||
+           input[i] == '\n' ||
+           input[i] == '\t' )
+        {
+            res += '\\';
+        }
+
+        res += input[i];
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+std::string
+unescape_special_chars(const std::string &input)
+{
+    std::string res;
+    size_t input_size = input.size();
+    for(size_t i = 0; i < input_size; ++i) 
+    {
+        
+        if( input[i] == '\\'    &&
+            i < (input_size -1) &&
+            // supported special chars
+            ( input[i+1] == '\"' || 
+              input[i+1] == '/'  ||
+              input[i+1] == '\\' ||
+              input[i+1] == '\n' ||
+              input[i+1] == '\t' ) )
+        {
+            // skip escape char
+            // and emit next
+            res +=  input[i+1];
+            i++;
+        }
+        else
+        {
+          res += input[i];
+        }
+    }
+
+    return res;
+}
+
 
 //-----------------------------------------------------------------------------
 void base64_encode(const void *src,

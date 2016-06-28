@@ -41,14 +41,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
-
+import functools
+import glob
+import inspect
 import os
 import re
 from contextlib import closing
-from llnl.util.lang import match_predicate
 
-from spack import *
 import spack
+from llnl.util.lang import match_predicate
+from spack import *
+from spack.util.environment import *
 
 
 class Python(Package):
@@ -58,17 +61,40 @@ class Python(Package):
 
     extendable = True
 
-    version('2.7.8',  'd235bdfa75b8396942e360a70487ee00')
+    version('3.5.1', 'be78e48cdfc1a7ad90efff146dce6cfe')
+    version('3.5.0', 'a56c0c0b45d75a0ec9c6dee933c41c36')
     version('2.7.11', '6b6076ec9e93f05dd63e47eb9c15728b', preferred=True)
+    version('2.7.10', 'd7547558fd673bd9d38e2108c6b42521')
+    version('2.7.9', '5eebcaa0030dc4061156d3429657fb83')
+    version('2.7.8', 'd4bca0159acb0b44a781292b5231936f')
 
     def install(self, spec, prefix):
         # Need this to allow python build to find the Python installation.
         env['PYTHONHOME'] = prefix
+        env['MACOSX_DEPLOYMENT_TARGET'] = '10.6'
         # Rest of install is pretty standard.
-        configure("--prefix=%s" % prefix,
-                  "--enable-shared")
+        configure_args= ["--prefix=%s" % prefix,
+                         "--with-threads",
+                         "--enable-shared"]
+        if spec.satisfies('@3:'):
+            configure_args.append('--without-ensurepip')
+        configure(*configure_args)
         make()
         make("install")
+
+        # Modify compiler paths in configuration files. This is necessary for
+        # building site packages outside of spack
+        filter_file(r'([/s]=?)([\S=]*)/lib/spack/env(/[^\s/]*)?/(\S*)(\s)',
+                    (r'\4\5'),
+                    join_path(prefix.lib, 'python%d.%d' % self.version[:2], '_sysconfigdata.py'))
+
+        python3_version = ''
+        if spec.satisfies('@3:'):
+            python3_version = '-%d.%dm' % self.version[:2]
+        makefile_filepath = join_path(prefix.lib, 'python%d.%d' % self.version[:2], 'config%s' % python3_version, 'Makefile')
+        filter_file(r'([/s]=?)([\S=]*)/lib/spack/env(/[^\s/]*)?/(\S*)(\s)',
+                    (r'\4\5'),
+                    makefile_filepath)
 
 
     # ========================================================================
@@ -90,32 +116,46 @@ class Python(Package):
         return os.path.join(self.python_lib_dir, 'site-packages')
 
 
-    def setup_dependent_environment(self, module, spec, ext_spec):
-        """Called before python modules' install() methods.
+    def setup_dependent_environment(self, spack_env, run_env, extension_spec):
+        # TODO: do this only for actual extensions.
+
+        # Set PYTHONPATH to include site-packages dir for the
+        # extension and any other python extensions it depends on.
+        python_paths = []
+        for d in extension_spec.traverse():
+            if d.package.extends(self.spec):
+                python_paths.append(os.path.join(d.prefix, self.site_packages_dir))
+
+        pythonpath = ':'.join(python_paths)
+        spack_env.set('PYTHONPATH', pythonpath)
+
+        # For run time environment set only the path for extension_spec and prepend it to PYTHONPATH
+        if extension_spec.package.extends(self.spec):
+            run_env.prepend_path('PYTHONPATH', os.path.join(extension_spec.prefix, self.site_packages_dir))
+
+
+    def setup_dependent_package(self, module, ext_spec):
+        """
+        Called before python modules' install() methods.
 
         In most cases, extensions will only need to have one line::
 
-            python('setup.py', 'install', '--prefix=%s' % prefix)
+        python('setup.py', 'install', '--prefix=%s' % prefix)
         """
         # Python extension builds can have a global python executable function
-        module.python = Executable(join_path(spec.prefix.bin, 'python'))
+        if self.version >= Version("3.0.0") and self.version < Version("4.0.0"):
+            module.python = Executable(join_path(self.spec.prefix.bin, 'python3'))
+        else:
+            module.python = Executable(join_path(self.spec.prefix.bin, 'python'))
 
         # Add variables for lib/pythonX.Y and lib/pythonX.Y/site-packages dirs.
         module.python_lib_dir     = os.path.join(ext_spec.prefix, self.python_lib_dir)
         module.python_include_dir = os.path.join(ext_spec.prefix, self.python_include_dir)
         module.site_packages_dir  = os.path.join(ext_spec.prefix, self.site_packages_dir)
 
-        # Make the site packages directory if it does not exist already.
-        mkdirp(module.site_packages_dir)
-
-        # Set PYTHONPATH to include site-packages dir for the
-        # extension and any other python extensions it depends on.
-        python_paths = []
-        for d in ext_spec.traverse():
-            if d.package.extends(self.spec):
-                python_paths.append(os.path.join(d.prefix, self.site_packages_dir))
-        os.environ['PYTHONPATH'] = ':'.join(python_paths)
-
+        # Make the site packages directory for extensions, if it does not exist already.
+        if ext_spec.package.is_extension:
+            mkdirp(module.site_packages_dir)
 
     # ========================================================================
     # Handle specifics of activating and deactivating python modules.
@@ -130,7 +170,7 @@ class Python(Package):
 
         # Ignore pieces of setuptools installed by other packages.
         if ext_pkg.name != 'py-setuptools':
-            patterns.append(r'/site\.pyc?$')
+            patterns.append(r'/site[^/]*\.pyc?$')
             patterns.append(r'setuptools\.pth')
             patterns.append(r'bin/easy_install[^/]*$')
             patterns.append(r'setuptools.*egg$')
@@ -176,7 +216,9 @@ class Python(Package):
 
 
     def activate(self, ext_pkg, **args):
-        args.update(ignore=self.python_ignore(ext_pkg, args))
+        ignore=self.python_ignore(ext_pkg, args)
+        args.update(ignore=ignore)
+
         super(Python, self).activate(ext_pkg, **args)
 
         exts = spack.install_layout.extension_map(self.spec)

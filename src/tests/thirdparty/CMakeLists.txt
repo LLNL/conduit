@@ -57,7 +57,6 @@ set(TPL_TESTS t_gtest_smoke
 ################################
 # Optional Unit Tests
 ################################
-set(GPREF_TOOLS_TESTS t_pref_smoke)
 set(PYTHON_TESTS      t_numpy_smoke)
 set(MPI_TESTS         t_mpi_smoke)
 set(HDF5_TESTS        t_hdf5_smoke)
@@ -78,15 +77,6 @@ endforeach()
 ################################
 # Add our Optional Unit Tests
 ################################
-
-if(GPREF_TOOLS_FOUND)
-    message(STATUS "Google perftools enabled: Adding related unit tests")
-    foreach(TEST ${GPERF_TOOLS_TESTS})
-        add_cpp_test(TEST_NAME ${TEST})
-    endforeach()
-else()
-    message(STATUS "Google perftools disabled: Skipping related tests")
-endif()
 
 if(PYTHON_FOUND)
     message(STATUS "Python enabled: Adding related unit tests")
