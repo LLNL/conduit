@@ -446,6 +446,63 @@ void sleep(index_t milliseconds)
 
 }
 
+
+//-----------------------------------------------------------------------------
+std::string
+escape_special_chars(const std::string &input)
+{
+    std::string res;
+    for(size_t i = 0; i < input.size(); ++i) 
+    {
+        // supported special chars
+        if(input[i] == '\"' || 
+           input[i] == '/'  ||
+           input[i] == '\\' ||
+           input[i] == '\n' ||
+           input[i] == '\t' )
+        {
+            res += '\\';
+        }
+
+        res += input[i];
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+std::string
+unescape_special_chars(const std::string &input)
+{
+    std::string res;
+    size_t input_size = input.size();
+    for(size_t i = 0; i < input_size; ++i) 
+    {
+        
+        if( input[i] == '\\'    &&
+            i < (input_size -1) &&
+            // supported special chars
+            ( input[i+1] == '\"' || 
+              input[i+1] == '/'  ||
+              input[i+1] == '\\' ||
+              input[i+1] == '\n' ||
+              input[i+1] == '\t' ) )
+        {
+            // skip escape char
+            // and emit next
+            res +=  input[i+1];
+            i++;
+        }
+        else
+        {
+          res += input[i];
+        }
+    }
+
+    return res;
+}
+
+
 //-----------------------------------------------------------------------------
 void base64_encode(const void *src,
                    index_t src_nbytes,

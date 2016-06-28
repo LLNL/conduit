@@ -73,12 +73,12 @@
 /// errors related to rapidjson parsing.
 //
 //-----------------------------------------------------------------------------
-#define CONDUIT_JSON_PARSE_ERROR( document)                                 \
+#define CONDUIT_JSON_PARSE_ERROR( document )                                \
 {                                                                           \
     CONDUIT_ERROR("JSON parse error: \n"                                    \
                   << " offset: " << document.GetErrorOffset()               \
                   << "\n"                                                   \
-                  << " message: "                                           \
+                  << " message:\n"                                          \
                   << GetParseError_En(document.GetParseError())             \
                   << "\n");                                                 \
 }
@@ -614,7 +614,7 @@ Generator::Parser::parse_inline_leaf(const rapidjson::Value &jvalue,
         if(node.dtype().id() == DataType::CHAR8_STR_ID)
         {
             std::string sval(jvalue.GetString());
-            node.set(sval);
+            node.set(utils::unescape_special_chars(sval));
         }
         else
         {
