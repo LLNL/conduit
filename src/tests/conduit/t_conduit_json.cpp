@@ -208,7 +208,6 @@ TEST(conduit_json, json_bool)
 }
 
 
-
 //-----------------------------------------------------------------------------
 TEST(conduit_json, load_from_json)
 {
@@ -507,5 +506,19 @@ TEST(conduit_json, check_childless_list)
     EXPECT_EQ(n["path/to/empty"].dtype().id(),
               nparse["path/to/empty"].dtype().id());
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_json, json_string_value_with_escapes)
+{
+    std::string pure_json = "{\"value\": \"\\\"mystring!\\\"\"}";
+    CONDUIT_INFO(pure_json);
+    Generator g(pure_json,"json");
+    Node n(g,true);
+    n.print_detailed();
+    EXPECT_EQ(n["value"].dtype().id(),DataType::CHAR8_STR_ID);
+    EXPECT_EQ(n["value"].as_string(),"\"mystring!\"");
+}
+
 
 

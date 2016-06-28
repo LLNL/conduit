@@ -278,6 +278,22 @@ namespace utils
 
 
 //-----------------------------------------------------------------------------
+/// Helpers for escaping / unescaping special characters in strings.
+///
+/// These methods handle the following characters:
+///    " (quote)
+///    / (forward slash)
+///    \ (backward slash)
+///    \n (newline)
+///    \t (tab)
+///
+//-----------------------------------------------------------------------------
+    std::string CONDUIT_API escape_special_chars(const std::string &input);
+    std::string CONDUIT_API unescape_special_chars(const std::string &input);
+
+
+
+//-----------------------------------------------------------------------------
 /// Base64 Encoding of Buffers 
 //-----------------------------------------------------------------------------
     void CONDUIT_API base64_encode(const void *src,

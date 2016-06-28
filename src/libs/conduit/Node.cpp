@@ -7803,7 +7803,9 @@ Node::to_json_generic(std::ostream &os,
                 break;
             // char8_str
             case DataType::CHAR8_STR_ID: 
-                os << "\"" << as_char8_str() << "\""; 
+                os << "\"" 
+                   << utils::escape_special_chars(as_string())
+                   << "\""; 
                 break;
             // empty
             case DataType::EMPTY_ID: 
