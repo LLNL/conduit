@@ -520,5 +520,32 @@ TEST(conduit_json, json_string_value_with_escapes)
     EXPECT_EQ(n["value"].as_string(),"\"mystring!\"");
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_json, json_schema_string_value_with_escapes)
+{
+    // this tests roundtrip for a schema encoded as a json string
+    // and stored as a string value
+    // schemas include many special chars, so this is a good stress test
+    // and an important use case
+
+    int64 vals[] = {0,1,-1,2,-3,-4};
+    Node n;
+    n["a"].set(vals,5);
+    
+    Node s;
+    s.set(n.schema().to_json());
+    s.print_detailed();
+    
+    Generator g(s.to_json("conduit"));
+    Node s_load;
+    g.walk(s_load);
+    s_load.print();
+    
+    EXPECT_EQ(s_load.as_string(),s.as_string());
+    
+}
+
+
+
 
 
