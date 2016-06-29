@@ -454,17 +454,55 @@ escape_special_chars(const std::string &input)
     std::string res;
     for(size_t i = 0; i < input.size(); ++i) 
     {
+        char val = input[i];
         // supported special chars
-        if(input[i] == '\"' || 
-           input[i] == '/'  ||
-           input[i] == '\\' ||
-           input[i] == '\n' ||
-           input[i] == '\t' )
+        switch(val)
         {
-            res += '\\';
+            // quotes and slashes
+            case '\"':
+            case '/':
+            case '\\':
+            {
+                res += '\\';
+                res += val;
+                break;
+            }
+            // newline
+            case '\n':
+            {
+                res += "\\n";
+                break;
+            }
+            // tab
+            case '\t':
+            {
+                res += "\\t";
+                break;
+            }
+            // backspace
+            case '\b':
+            {
+                res += "\\b";
+                break;
+            }
+            // formfeed
+            case '\f':
+            {
+                res += "\\f";
+                break;
+            }
+            // carriage return
+            case '\r':
+            {
+                res += "\\r";
+                break;
+            }
+            
+            default:
+            {
+                res += val;
+            }
         }
-
-        res += input[i];
     }
 
     return res;
@@ -478,20 +516,71 @@ unescape_special_chars(const std::string &input)
     size_t input_size = input.size();
     for(size_t i = 0; i < input_size; ++i) 
     {
-        
-        if( input[i] == '\\'    &&
-            i < (input_size -1) &&
-            // supported special chars
-            ( input[i+1] == '\"' || 
-              input[i+1] == '/'  ||
-              input[i+1] == '\\' ||
-              input[i+1] == '\n' ||
-              input[i+1] == '\t' ) )
+        // check for escape char
+        if( input[i] == '\\' &&
+            i < (input_size -1))
         {
-            // skip escape char
-            // and emit next
-            res +=  input[i+1];
-            i++;
+            char val = input[i+1];
+            switch(val)
+            {
+                // quotes and slashes
+                case '\"':
+                case '\\':
+                case '/':
+                {
+                    res += val;
+                    // skip escape char
+                    i++;
+                    break;
+                }
+                // newline
+                case 'n':
+                {
+                    res += "\n";
+                    // skip escape char
+                    i++;
+                    break;
+                }
+                // tab
+                case 't':
+                {
+                    res += "\t";
+                    // skip escape char
+                    i++;
+                    break;
+                }
+                // backspace
+                case 'b':
+                {
+                    res += "\b";
+                    // skip escape char
+                    i++;
+                    break;
+                }
+                // formfeed
+                case 'f':
+                {
+                    res += "\f";
+                    // skip escape char
+                    i++;
+                    break;
+                }
+                // carriage return
+                case 'r':
+                {
+                    res += "\r";
+                    // skip escape char
+                    i++;
+                    break;
+                }
+                // \uFFFF & unknown escape strings
+                default:
+                {
+                    // simply emit
+                    res += val;
+                    break;
+                }
+            }
         }
         else
         {
