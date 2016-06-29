@@ -100,32 +100,6 @@ if(ENABLE_DOCS)
     include(CMake/thirdparty/FindSphinx.cmake)
 endif()
 
-if(ENABLE_GPERFTOOLS)
-    ################################
-    # Setup and build gperftools
-    ################################
-    set(GPREFTOOLS_DIR thirdparty_builtin/gperftools-2.2.1)
-    add_subdirectory(${GPREFTOOLS_DIR})
-    add_library(gperftools_lib STATIC IMPORTED)
-
-    set_target_properties(gperftools_lib PROPERTIES IMPORTED_LOCATION 
-                      ${CMAKE_BINARY_DIR}/${GPREFTOOLS_DIR}/build/lib/libtcmalloc_and_profiler.a)
-
-    add_dependencies( gperftools_lib gperftools_build )
-
-    include_directories(${CMAKE_BINARY_DIR}/${GPREFTOOLS_DIR}/build/include/)
-
-    #
-    # Note: We only want to do this when are using gperf profiling tools, 
-    # we may not want to use this in general
-    #
-    if(CMAKE_COMPILER_IS_GNUCXX)
-        set(CMAKE_CXX_FLAGS "-fno-omit-frame-pointer") 
-    endif()
-    
-    set(GPERFTOOLS_FOUND 1)
-endif()
-
 if(ENABLE_PYTHON)
     ################################
     # Setup includes for Python & Numpy

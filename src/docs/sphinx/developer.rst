@@ -90,14 +90,14 @@ Important CMake Targets
 
 Adding a Unit Test
 ~~~~~~~~~~~~~~~~~~~
-- Create a test source file in *src/tests/{lib_name}/*
-- Add the test to build system by editing *src/tests/{lib_name}/CMakeLists.txt*
+- Create a test source file in ``src/tests/{lib_name}/``
+- Add the test to build system by editing ``src/tests/{lib_name}/CMakeLists.txt``
 
 
 Git Development Workflow 
 ------------------------
 
-The master Conduit source repository is hosted on LLNL's CZ Stash instance:
+The primary Conduit source repository is hosted on LLNL's CZ Stash instance:
 
 https://lc.llnl.gov/stash/projects/CON
 
@@ -121,6 +121,16 @@ Here are some other rules to abide by:
 - You *can* merge your own pull requests.
 
 - After completing all intended work on branch, please delete the remote branch after merging to master. (Stash has an option to do this when merging a pull request.)
+
+Github 
+-------------------------
+The *master* and *gh-pages* branches of Conduit are also available on github:
+
+https://github.com/llnl/conduit
+
+We welcome issues and pull requests on github.
+
+
 
 
 
