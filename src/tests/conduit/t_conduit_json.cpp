@@ -536,7 +536,7 @@ TEST(conduit_json, json_schema_string_value_with_escapes)
     s.set(n.schema().to_json());
     s.print_detailed();
     
-    Generator g(s.to_json("conduit"));
+    Generator g(s.to_json("conduit_json"));
     Node s_load;
     g.walk(s_load);
     s_load.print();
