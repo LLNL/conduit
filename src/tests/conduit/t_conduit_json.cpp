@@ -546,6 +546,28 @@ TEST(conduit_json, json_schema_string_value_with_escapes)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_json, json_schema_preserve_floats)
+{
+    Node n;
+    n["i"].set_int64(10);
+    n["f"].set_float64(20.0);
+
+    std::string source_json= n.to_json();
+    
+    Generator g(source_json,"json");
+    Node n_parse;
+    g.walk(n_parse);
+    
+    std::string parsed_json = n.to_json();
+
+    CONDUIT_INFO(parsed_json);
+
+    EXPECT_TRUE(n_parse["i"].dtype().is_int64());
+    EXPECT_TRUE(n_parse["f"].dtype().is_float64());
+
+}
+
 
 
 
