@@ -70,7 +70,7 @@ const char CONDUIT_UTILS_FILE_PATH_SEPARATOR='/';
 
 
 #include <string.h>
-
+#include <stdio.h>
 
 //-----------------------------------------------------------------------------
 // -- libb64 includes -- 
@@ -432,7 +432,8 @@ indent(std::ostream &os,
 }
 
 //-----------------------------------------------------------------------------
-void sleep(index_t milliseconds)
+void
+sleep(index_t milliseconds)
 {
 
 #if defined(CONDUIT_PLATFORM_WINDOWS)
@@ -593,11 +594,12 @@ unescape_special_chars(const std::string &input)
 
 
 //-----------------------------------------------------------------------------
-void base64_encode(const void *src,
-                   index_t src_nbytes,
-                   void *dest)
+void
+base64_encode(const void *src,
+              index_t src_nbytes,
+              void *dest)
 {
-    int nbytes = (int)src_nbytes;    
+    int nbytes = (int)src_nbytes;
     base64_encodestate enc_state;
     base64_init_encodestate(&enc_state);
     const char *src_ptr = (const char*)src;
@@ -617,9 +619,10 @@ void base64_encode(const void *src,
 }
 
 //-----------------------------------------------------------------------------
-void base64_decode(const void *src,
-                   index_t src_nbytes,
-                   void *dest)
+void
+base64_decode(const void *src,
+              index_t src_nbytes,
+              void *dest)
 {
     base64_decodestate dec_state;
     int src_len = src_nbytes;
@@ -630,6 +633,24 @@ void base64_decode(const void *src,
                         src_len,
                         des_ptr,
                         &dec_state);
+}
+
+//-----------------------------------------------------------------------------
+std::string
+float64_to_string(float64 value)
+{
+    char buffer[64];
+    snprintf(buffer,64,"%.15g",value);
+
+    std::string res(buffer);
+
+    if(res.find('.') == std::string::npos &&
+       res.find('e') == std::string::npos )
+    {
+        res += ".0";
+    }
+
+    return res;
 }
 
 

@@ -327,6 +327,13 @@ namespace utils
            return  oss.str();
      }
 
+
+//-----------------------------------------------------------------------------
+// floating point to string helper, strikes a balance of what we want 
+// for format-wise for debug printing and json.
+//-----------------------------------------------------------------------------
+    std::string CONDUIT_API float64_to_string(float64 value);
+
 //-----------------------------------------------------------------------------
      void CONDUIT_API indent(std::ostream &os,
                              index_t indent,

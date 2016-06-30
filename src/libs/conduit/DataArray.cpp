@@ -54,6 +54,12 @@
 //-----------------------------------------------------------------------------
 #include <cstring>
 
+
+//-----------------------------------------------------------------------------
+// -- conduit includes -- 
+//-----------------------------------------------------------------------------
+#include "Utils.hpp"
+
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
@@ -156,21 +162,38 @@ DataArray<T>::to_json(std::ostream &os) const
             os << ", ";
         switch(m_dtype.id())
         {
-            /// TODO: This could be orged better
-            /* ints */
-            case DataType::INT8_ID:  os << (int64) element(idx); break;
-            case DataType::INT16_ID: os << (int64) element(idx); break;
-            case DataType::INT32_ID: os << (int64) element(idx); break;
-            case DataType::INT64_ID: os << (int64) element(idx); break;
-            /* uints */
-            case DataType::UINT8_ID:  os << (uint64) element(idx); break;
-            case DataType::UINT16_ID: os << (uint64) element(idx); break;
-            case DataType::UINT32_ID: os << (uint64) element(idx); break;
-            case DataType::UINT64_ID: os << (uint64) element(idx); break;
-            /* floats */
-            case DataType::FLOAT32_ID: os << (float64) element(idx); break;
-            case DataType::FLOAT64_ID: os << (float64) element(idx); break;
-        
+            // ints 
+            case DataType::INT8_ID:
+            case DataType::INT16_ID: 
+            case DataType::INT32_ID:
+            case DataType::INT64_ID:
+            {
+                 os << (int64) element(idx);
+                 break;
+            }
+            // uints
+            case DataType::UINT8_ID:
+            case DataType::UINT16_ID:
+            case DataType::UINT32_ID:
+            case DataType::UINT64_ID:
+            {
+                os << (uint64) element(idx);
+                break;
+            }
+            // floats 
+            case DataType::FLOAT32_ID: 
+            case DataType::FLOAT64_ID: 
+            {
+                os << utils::float64_to_string((float64) element(idx));
+                break;
+            }
+            default:
+            {
+                CONDUIT_ERROR("Leaf type \"" 
+                              <<  m_dtype.name()
+                              << "\"" 
+                              << "is not supported in conduit::DataArray.")
+            }
         }
         first=false;
     }

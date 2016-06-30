@@ -71,7 +71,7 @@ TEST(conduit_to_string, simple_1)
     Node n(schema,data,true);
     n.schema().print();
     n.print_detailed();
-    EXPECT_EQ(std::string("{\"a\": 10,\"b\": 20,\"c\": 30}"),n.to_json("json",0,0,"",""));
+    EXPECT_EQ(std::string("{\"a\": 10,\"b\": 20,\"c\": 30.0}"),n.to_json("json",0,0,"",""));
     
 
 
@@ -79,7 +79,7 @@ TEST(conduit_to_string, simple_1)
     Node n2(schema2,data,true);
     n2.schema().print();
     n.print_detailed();
-    EXPECT_EQ(std::string("{\"g\": {\"a\": 10,\"b\": 20,\"c\": 30}}"),n2.to_json("json",0,0,"",""));
+    EXPECT_EQ(std::string("{\"g\": {\"a\": 10,\"b\": 20,\"c\": 30.0}}"),n2.to_json("json",0,0,"",""));
 
     delete [] data;
 }

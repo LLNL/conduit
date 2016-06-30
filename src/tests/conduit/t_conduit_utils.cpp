@@ -208,4 +208,22 @@ TEST(conduit_utils, escape_special_chars)
     EXPECT_EQ(test,test_unescaped);
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, float64_to_string)
+{
+    
+
+    float64 v = 10.0;
+    
+    EXPECT_EQ("10.0",utils::float64_to_string(v));
+    
+    v = 10000000000000000;
+    EXPECT_EQ("1e+16",utils::float64_to_string(v));
+
+}
+
+
+    
+
+
 
