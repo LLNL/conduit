@@ -61,7 +61,7 @@ bool launch_server = false;
 bool use_ssl       = false;
 bool use_auth      = false;
 
-TEST(conduit_io_rest, rest_server)
+TEST(conduit_relay_web_rest, rest_server)
 {
     uint32 a_val = 20;
     uint32 b_val = 8;
@@ -85,14 +85,14 @@ TEST(conduit_io_rest, rest_server)
                   
         if(use_ssl)
         {
-            cert_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"conduit_io");
+            cert_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"relay");
             cert_file = utils::join_file_path(cert_file,"t_ssl_cert.pem");
         }
 
         if(use_auth)
         {
             auth_domain = "test";
-            auth_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"conduit_io");
+            auth_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"relay");
             auth_file = utils::join_file_path(auth_file,"t_htpasswd.txt");
         }
         

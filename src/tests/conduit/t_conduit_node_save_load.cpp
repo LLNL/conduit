@@ -99,10 +99,10 @@ TEST(conduit_node_save_load, bin_simple_file)
     Schema schema("{\"dtype\":{\"a\":\"int32\",\"b\":\"int32\"},\"length\":2}");
 
     Node nsrc(schema,data,true);
-    nsrc.save("tout_conduit_io_bin_simple_2_file.conduit_bin");
+    nsrc.save("tout_conduit_relay_io_bin_simple_2_file.conduit_bin");
 
     Node n;
-    n.load("tout_conduit_io_bin_simple_2_file.conduit_bin");
+    n.load("tout_conduit_relay_io_bin_simple_2_file.conduit_bin");
         
     n.schema().print();
     n.print_detailed();
@@ -135,10 +135,10 @@ TEST(conduit_node_save_load, other_protocols)
     nsrc["a"] = a_val;
     nsrc["b"] = b_val;
     
-    nsrc.save("tout_conduit_io_other_protos_json.json",
+    nsrc.save("tout_conduit_relay_io_other_protos_json.json",
               "json");
 
-    n.load("tout_conduit_io_other_protos_json.json",
+    n.load("tout_conduit_relay_io_other_protos_json.json",
            "json");
     
     n.print_detailed();
@@ -146,10 +146,10 @@ TEST(conduit_node_save_load, other_protocols)
     EXPECT_EQ(n["a"].to_int32(), a_val);
     EXPECT_EQ(n["b"].to_int32(), b_val);
 
-    nsrc.save("tout_conduit_io_other_protos_conduit.json",
+    nsrc.save("tout_conduit_relay_io_other_protos_conduit.json",
               "conduit_json");
 
-    n.load("tout_conduit_io_other_protos_conduit.json",
+    n.load("tout_conduit_relay_io_other_protos_conduit.json",
            "conduit_json");
     
     n.print_detailed();
@@ -157,10 +157,10 @@ TEST(conduit_node_save_load, other_protocols)
     EXPECT_EQ(n["a"].as_int32(), a_val);
     EXPECT_EQ(n["b"].as_int32(), b_val);
 
-    nsrc.save("tout_conduit_io_other_protos_base64_json.json",
+    nsrc.save("tout_conduit_relay_io_other_protos_base64_json.json",
               "conduit_base64_json");
 
-    n.load("tout_conduit_io_other_protos_base64_json.json",
+    n.load("tout_conduit_relay_io_other_protos_base64_json.json",
            "conduit_base64_json");
     
     n.print_detailed();

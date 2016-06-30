@@ -187,7 +187,7 @@ save(Node &node,
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
         hdf5_write(node,path);
 #else
-        CONDUIT_ERROR("conduit_io lacks HDF5 support: " << 
+        CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
                       "Failed to save conduit node to path " << path);
 #endif
     }
@@ -196,7 +196,7 @@ save(Node &node,
 #ifdef CONDUIT_RELAY_IO_SILO_ENABLED
         silo_write(node,path);
 #else
-        CONDUIT_ERROR("conduit_io lacks Silo support: " << 
+        CONDUIT_ERROR("conduit_relay lacks Silo support: " << 
                       "Failed to save conduit node to path " << path);
 #endif
     }
@@ -205,13 +205,13 @@ save(Node &node,
 #ifdef CONDUIT_RELAY_IO_SILO_ENABLED
         silo_mesh_write(node,path);
 #else
-        CONDUIT_ERROR("conduit_io lacks Silo support: " << 
+        CONDUIT_ERROR("conduit_relay lacks Silo support: " << 
                       "Failed to save conduit mesh node to path " << path);
 #endif
     }
     else
     {
-        CONDUIT_ERROR("conduit_io unknown protocol: " << protocol);
+        CONDUIT_ERROR("unknown conduit_relay protocol: " << protocol);
     }
 }
 
@@ -237,7 +237,7 @@ save_merged(Node &node,
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
         hdf5_write(node,path);
 #else
-        CONDUIT_ERROR("conduit_io lacks HDF5 support: " << 
+        CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
                       "Failed to save conduit node to path " << path);
 #endif
     }
@@ -249,7 +249,7 @@ save_merged(Node &node,
         n.update(node);
         silo_write(n,path);
 #else
-        CONDUIT_ERROR("conduit_io lacks Silo support: " << 
+        CONDUIT_ERROR("conduit_relay lacks Silo support: " << 
                       "Failed to save conduit node to path " << path);
 #endif
     }
@@ -259,13 +259,13 @@ save_merged(Node &node,
         /// TODO .. ?
         silo_mesh_write(node,path);
 #else
-        CONDUIT_ERROR("conduit_io lacks Silo support: " << 
+        CONDUIT_ERROR("conduit_relay lacks Silo support: " << 
                       "Failed to save conduit mesh node to path " << path);
 #endif
     }
     else
     {
-        CONDUIT_ERROR("conduit_io unknown protocol: " << protocol);
+        CONDUIT_ERROR("unknown conduit_relay protocol: " << protocol);
     }
 }
 
@@ -291,7 +291,7 @@ load(const std::string &path,
         node.reset();
         hdf5_read(path,node);
 #else
-        CONDUIT_ERROR("conduit_io lacks HDF5 support: " << 
+        CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
                       "Failed to load conduit node from path " << path);
 #endif
     }
@@ -300,18 +300,18 @@ load(const std::string &path,
 #ifdef CONDUIT_RELAY_IO_SILO_ENABLED
         silo_read(path,node);
 #else
-        CONDUIT_ERROR("conduit_io lacks Silo support: " << 
+        CONDUIT_ERROR("conduit_relay lacks Silo support: " << 
                     "Failed to load conduit node from path " << path);
 #endif
     }
     else if(protocol == "conduit_silo_mesh")
     {
-        CONDUIT_ERROR("the conduit_io conduit_silo_mesh protocol does not "
+        CONDUIT_ERROR("the conduit_relay conduit_silo_mesh protocol does not "
                       "support \"load\"");
     }
     else
     {
-        CONDUIT_ERROR("conduit_io unknown protocol: " << protocol);
+        CONDUIT_ERROR("unknown conduit_relay protocol: " << protocol);
         
     }
 
@@ -342,7 +342,7 @@ load_merged(const std::string &path,
         hdf5_read(path,n);
         node.update(n);
 #else
-        CONDUIT_ERROR("conduit_io lacks HDF5 support: " << 
+        CONDUIT_ERROR("relay lacks HDF5 support: " << 
                       "Failed to read conduit node from path " << path);
 #endif
     }
@@ -353,18 +353,18 @@ load_merged(const std::string &path,
         silo_read(path,n);
         node.update(n);
 #else
-        CONDUIT_ERROR("conduit_io lacks Silo support: " << 
+        CONDUIT_ERROR("relay lacks Silo support: " << 
                     "Failed to load conduit node from path " << path);
 #endif
     }
     else if(protocol == "conduit_silo_mesh")
     {
-        CONDUIT_ERROR("the conduit_io conduit_silo_mesh protocol does not "
+        CONDUIT_ERROR("the relay conduit_silo_mesh protocol does not "
                       "support \"load\"");
     }
     else
     {
-        CONDUIT_ERROR("conduit_io unknown protocol: " << protocol);
+        CONDUIT_ERROR("relay unknown protocol: " << protocol);
         
     }
 
