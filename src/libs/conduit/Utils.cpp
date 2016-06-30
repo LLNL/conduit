@@ -70,7 +70,7 @@ const char CONDUIT_UTILS_FILE_PATH_SEPARATOR='/';
 
 
 #include <string.h>
-
+#include <stdio.h>
 
 //-----------------------------------------------------------------------------
 // -- libb64 includes -- 
