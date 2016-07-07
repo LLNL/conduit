@@ -62,6 +62,327 @@ contains
 !------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------    
+! float32 tests
+!------------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_set_float32
+        type(C_PTR) cnode
+        real(4) res
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_float32")
+        !----------------------------------------------------------------------
+
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n;
+        cnode = conduit_node_create()
+        ! n.set_float32(3.1415);
+        call conduit_node_set_float32(cnode,3.1415)
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! float32 res = n.as_float32();
+        res = conduit_node_as_float32(cnode)
+        call assert_equals (3.1415, res)
+        call conduit_node_destroy(cnode)
+        
+    end subroutine t_node_set_float32
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_set_float32_ptr
+        type(C_PTR) cnode
+        real(4), dimension(5) :: data
+        integer nele
+        integer i
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_float32_ptr")
+        !----------------------------------------------------------------------
+        
+        ! fill our 32-bit x5 integer array
+        do i = 1,5
+            data(i) = i
+        enddo
+        
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n; 
+        cnode = conduit_node_create()
+        ! Node n.set_float32_ptr(data,5);
+        call conduit_node_set_float32_ptr(cnode,data,5_8)
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! index_t nele = n.dtype().number_of_elements();
+        nele = conduit_node_number_of_elements(cnode)
+        call assert_equals(nele,5)
+        call conduit_node_destroy(cnode)
+        
+    end subroutine t_node_set_float32_ptr
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_set_external_float32_ptr
+        type(C_PTR) cnode
+        real(4), dimension(5) :: data
+        real(4) res
+        integer i
+        real(4), pointer :: f_arr(:)
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_external_float32_ptr")
+        !----------------------------------------------------------------------
+        
+        ! fill our 32-bit x5 integer array
+        do i = 1,5
+            data(i) = i
+        enddo
+        
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n; 
+        cnode = conduit_node_create()
+        ! n.set_external_float32_ptr(data,5);
+        call conduit_node_set_external_float32_ptr(cnode,data,5_8)
+        ! change the first element in the array
+        ! so we can check the external semantics
+        data(1) = 3.1415
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! float32 res = n.as_float32()
+        res = conduit_node_as_float32(cnode)
+        call assert_equals(res,3.1415)
+        ! float32 *res_ptr = n.as_float32_ptr()
+        call conduit_node_as_float32_ptr(cnode,f_arr)
+        
+        call assert_equals(f_arr(1),3.1415)
+        
+        ! check array value equiv
+        do i = 1,5
+            call assert_equals(f_arr(i),data(i))
+        enddo
+
+        call conduit_node_destroy(cnode)
+        
+    end subroutine t_node_set_external_float32_ptr
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_as_float32
+        type(C_PTR) cnode
+        type(C_PTR) n1
+        real(4) res
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_as_float32")
+        !----------------------------------------------------------------------
+                
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n; 
+        cnode = conduit_node_create()
+        ! n.set_float32(3.1415)
+        call conduit_node_set_float32(cnode,3.1415)
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! float32 res = n.as_float32();
+        res = conduit_node_as_float32(cnode)
+        call assert_equals (3.1415, res)
+        call conduit_node_destroy(cnode)
+        
+    end subroutine t_node_as_float32
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_as_float32_ptr
+        type(C_PTR) cnode
+        real(4), dimension(5) :: data
+        integer nele
+        integer i
+        real(4), pointer :: f_arr(:)
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_as_float32_ptr")
+        !----------------------------------------------------------------------
+        
+        ! fill our 32-bit x5 integer array
+        do i = 1,5
+            data(i) = i
+        enddo
+        
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n; 
+        cnode = conduit_node_create()
+        ! n.set_external_float32_ptr(data,5);
+        call conduit_node_set_float32_ptr(cnode,data,5_8)
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! index_t nele = n.dtype().number_of_elements();
+        nele = conduit_node_number_of_elements(cnode)
+        call assert_equals(nele,5)
+        ! float32 *res_ptr = n.as_float32_ptr()
+        call conduit_node_as_float32_ptr(cnode,f_arr)
+        
+        ! check array value equiv
+        do i = 1,5
+            call assert_equals(f_arr(i),data(i))
+        enddo
+
+        call conduit_node_destroy(cnode)
+        
+    end subroutine t_node_as_float32_ptr
+
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_as_float32_ptr_read_scalar
+        type(C_PTR) cnode
+        integer nele
+        integer i
+        real(4), pointer :: f_arr(:)
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_as_float32_ptr_read_scalar")
+        !----------------------------------------------------------------------
+                
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n; 
+        cnode = conduit_node_create()
+        ! n.set_float32(3.1415);
+        call conduit_node_set_float32(cnode,3.1415)
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! index_t nele = n.dtype().number_of_elements();
+        nele = conduit_node_number_of_elements(cnode)
+        call assert_equals(nele,1)
+        ! float32 *ptr = n.as_float32_ptr();
+        call conduit_node_as_float32_ptr(cnode,f_arr)
+        ! check if ptr[0] == 3.1415
+        call assert_equals(f_arr(1),3.1415)
+
+        call conduit_node_destroy(cnode)
+        
+    end subroutine t_node_as_float32_ptr_read_scalar
+
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_set_and_fetch_path_float32
+        type(C_PTR) cnode
+        type(C_PTR) n1
+        real(4) res
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_and_fetch_path_float32")
+        !----------------------------------------------------------------------
+        
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n;     
+        cnode = conduit_node_create()
+        ! n["my_sub"].set_float32(3.1415)
+        ! // or
+        ! n.set_path_float32("my_sub",3.1415)
+        call conduit_node_set_path_float32(cnode,"my_sub",3.1415)
+        ! n.print_detailed()
+        call conduit_node_print_detailed(cnode)
+        ! float32 res = n["my_sub"].as_float32();
+        res = conduit_node_fetch_path_as_float32(cnode,"my_sub")
+        call assert_equals (3.1415, res)
+        call conduit_node_destroy(cnode)
+        
+    end subroutine t_node_set_and_fetch_path_float32
+
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_set_and_fetch_path_float32_ptr
+        type(C_PTR) cnode
+        real(4), dimension(5) :: data
+        real(4) res
+        integer i
+        real(4), pointer :: f_arr(:)
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_and_fetch_path_float32_ptr")
+        !----------------------------------------------------------------------
+        
+        ! fill our array
+        do i = 1,5
+            data(i) = i
+        enddo
+        
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n; 
+        cnode = conduit_node_create()
+        ! n.set_external_float32_ptr(data,5);
+        call conduit_node_set_path_float32_ptr(cnode,"my_sub",data,5_8)
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! float32 *res_ptr = n.as_float32_ptr()
+        call conduit_node_fetch_path_as_float32_ptr(cnode,"my_sub",f_arr)
+        ! check array value equiv
+        do i = 1,5
+            call assert_equals(f_arr(i),data(i))
+        enddo
+
+        call conduit_node_destroy(cnode)
+        
+    end subroutine t_node_set_and_fetch_path_float32_ptr
+
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_set_and_fetch_path_external_float32_ptr
+        type(C_PTR) cnode
+        real(4), dimension(5) :: data
+        real(4) res
+        integer i
+        real(4), pointer :: f_arr(:)
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_and_fetch_path_external_float32_ptr")
+        !----------------------------------------------------------------------
+        
+        ! fill our array
+        do i = 1,5
+            data(i) = i
+        enddo
+        
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n; 
+        cnode = conduit_node_create()
+        ! n.set_external_float32_ptr(data,5);
+        call conduit_node_set_path_external_float32_ptr(cnode,"my_sub",data,5_8)
+        ! change the first element in the array
+        ! so we can check the external semantics
+        data(1) = 3.1415
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! float32 res = n.as_float32()
+        res = conduit_node_fetch_path_as_float32(cnode,"my_sub")
+        call assert_equals(res,3.1415)
+        ! float32 *res_ptr = n.as_float32_ptr()
+        call conduit_node_fetch_path_as_float32_ptr(cnode,"my_sub",f_arr)
+        
+        call assert_equals(f_arr(1),3.1415)
+        
+        ! check array value equiv
+        do i = 1,5
+            call assert_equals(f_arr(i),data(i))
+        enddo
+
+        call conduit_node_destroy(cnode)
+        
+    end subroutine t_node_set_and_fetch_path_external_float32_ptr
+    
+!------------------------------------------------------------------------------    
 ! float64 tests
 !------------------------------------------------------------------------------
 
@@ -400,6 +721,18 @@ integer(C_INT) function fortran_test() bind(C,name="fortran_test")
   !----------------------------------------------------------------------------
   ! call our test routines
   !----------------------------------------------------------------------------
+  call t_node_set_float32
+  call t_node_set_float32_ptr
+  call t_node_set_external_float32_ptr
+
+  call t_node_as_float32
+  call t_node_as_float32_ptr
+  call t_node_as_float32_ptr_read_scalar
+ 
+  call t_node_set_and_fetch_path_float32
+  call t_node_set_and_fetch_path_float32_ptr
+  call t_node_set_and_fetch_path_external_float32_ptr
+
   call t_node_set_float64
   call t_node_set_float64_ptr
   call t_node_set_external_float64_ptr

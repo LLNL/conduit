@@ -383,6 +383,353 @@ contains
     end subroutine t_node_set_and_fetch_path_external_int32_ptr
 
 
+!------------------------------------------------------------------------------    
+! int64 tests
+!------------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_set_int64
+        type(C_PTR) cnode
+        integer(8) res
+    
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_int64")
+        !----------------------------------------------------------------------
+
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n;
+        cnode = conduit_node_create()
+        ! n.set_int64(42_8);
+        call conduit_node_set_int64(cnode,42_8)
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! int64 res = n.as_int64();
+        res = conduit_node_as_int64(cnode)
+        !call assert_equals (42_8, res)
+        call conduit_node_destroy(cnode)
+    
+    end subroutine t_node_set_int64
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_set_int64_ptr
+        type(C_PTR) cnode
+        integer(8), dimension(5) :: data
+        integer nele
+        integer i
+    
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_int64_ptr")
+        !----------------------------------------------------------------------
+    
+        ! fill our 32-bit x5 integer array
+        do i = 1,5
+            data(i) = i
+        enddo
+    
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n; 
+        cnode = conduit_node_create()
+        ! Node n.set_int64_ptr(data,5);
+        call conduit_node_set_int64_ptr(cnode,data,5_8)
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! index_t nele = n.dtype().number_of_elements();
+        nele = conduit_node_number_of_elements(cnode)
+        call assert_equals(nele,5)
+        call conduit_node_destroy(cnode)
+    
+    end subroutine t_node_set_int64_ptr
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_set_external_int64_ptr
+        type(C_PTR) cnode
+        integer(8), dimension(5) :: data
+        integer(8) res
+        integer i
+        integer(8), pointer :: f_arr(:)
+    
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_external_int64_ptr")
+        !----------------------------------------------------------------------
+    
+        ! fill our 32-bit x5 integer array
+        do i = 1,5
+            data(i) = i
+        enddo
+    
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n; 
+        cnode = conduit_node_create()
+        ! n.set_external_int64_ptr(data,5);
+        call conduit_node_set_external_int64_ptr(cnode,data,5_8)
+        ! change the first element in the array
+        ! so we can check the external semantics
+        data(1) = 42_8
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! int64 res = n.as_int64()
+        res = conduit_node_as_int64(cnode)
+        !=======
+        ! NOTE:  fruit doesn't support assert_equals with integer(8)
+        !=======
+        !call assert_equals(res,42_8)
+        print *,res, "vs", 42_8
+        ! int64 *res_ptr = n.as_int64_ptr()
+        call conduit_node_as_int64_ptr(cnode,f_arr)
+    
+        !call assert_equals(f_arr(1),42_8)
+    
+        ! check array value equiv
+        do i = 1,5
+            !=======
+            ! NOTE:  fruit doesn't support assert_equals with integer(8)
+            !=======
+            !call assert_equals(f_arr(i),data(i))
+            print *,f_arr(i)," vs ", data(i)
+        enddo
+
+        call conduit_node_destroy(cnode)
+    
+    end subroutine t_node_set_external_int64_ptr
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_as_int64
+        type(C_PTR) cnode
+        type(C_PTR) n1
+        integer(8) res
+    
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_as_int64")
+        !----------------------------------------------------------------------
+            
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n; 
+        cnode = conduit_node_create()
+        ! n.set_int64(42_8)
+        call conduit_node_set_int64(cnode,42_8)
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! int64 res = n.as_int64();
+        res = conduit_node_as_int64(cnode)
+        !call assert_equals (42_8, res)
+        call conduit_node_destroy(cnode)
+    
+    end subroutine t_node_as_int64
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_as_int64_ptr
+        type(C_PTR) cnode
+        integer(8), dimension(5) :: data
+        integer nele
+        integer i
+        integer(8), pointer :: f_arr(:)
+    
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_as_int64_ptr")
+        !----------------------------------------------------------------------
+    
+        ! fill our 32-bit x5 integer array
+        do i = 1,5
+            data(i) = i
+        enddo
+    
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n; 
+        cnode = conduit_node_create()
+        ! n.set_external_int64_ptr(data,5);
+        call conduit_node_set_int64_ptr(cnode,data,5_8)
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! index_t nele = n.dtype().number_of_elements();
+        nele = conduit_node_number_of_elements(cnode)
+        call assert_equals(nele,5)
+        ! int64 *res_ptr = n.as_int64_ptr()
+        call conduit_node_as_int64_ptr(cnode,f_arr)
+    
+        ! check array value equiv
+        do i = 1,5
+            !=======
+            ! NOTE:  fruit doesn't support assert_equals with integer(8)
+            !=======
+            !call assert_equals(f_arr(i),data(i))
+            print *,f_arr(i)," vs ", data(i)
+        enddo
+
+        call conduit_node_destroy(cnode)
+    
+    end subroutine t_node_as_int64_ptr
+
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_as_int64_ptr_read_scalar
+        type(C_PTR) cnode
+        integer nele
+        integer i
+        integer(8), pointer :: f_arr(:)
+    
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_as_int64_ptr_read_scalar")
+        !----------------------------------------------------------------------
+            
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n; 
+        cnode = conduit_node_create()
+        ! n.set_int64(42_8);
+        call conduit_node_set_int64(cnode,42_8)
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! index_t nele = n.dtype().number_of_elements();
+        nele = conduit_node_number_of_elements(cnode)
+        call assert_equals(nele,1)
+        ! int64 *ptr = n.as_int64_ptr();
+        call conduit_node_as_int64_ptr(cnode,f_arr)
+        ! check if ptr[0] == 42_8
+        !call assert_equals(f_arr(1),42_8)
+
+        call conduit_node_destroy(cnode)
+    
+    end subroutine t_node_as_int64_ptr_read_scalar
+
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_set_and_fetch_path_int64
+        type(C_PTR) cnode
+        type(C_PTR) n1
+        integer res
+    
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_and_fetch_path_int64")
+        !----------------------------------------------------------------------
+    
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n;     
+        cnode = conduit_node_create()
+        ! n["my_sub"].set_int64(42_8)
+        ! // or
+        ! n.set_path_int64("my_sub",42_8)
+        call conduit_node_set_path_int64(cnode,"my_sub",42_8)
+        ! n.print_detailed()
+        call conduit_node_print_detailed(cnode)
+        ! int64 res = n["my_sub"].as_int64();
+        res = conduit_node_fetch_path_as_int64(cnode,"my_sub")
+        !call assert_equals (42_8, res)
+        call conduit_node_destroy(cnode)
+    
+    end subroutine t_node_set_and_fetch_path_int64
+
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_set_and_fetch_path_int64_ptr
+        type(C_PTR) cnode
+        integer(8), dimension(5) :: data
+        integer(8) res
+        integer i
+        integer(8), pointer :: f_arr(:)
+    
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_and_fetch_path_int64_ptr")
+        !----------------------------------------------------------------------
+    
+        ! fill our 32-bit x5 integer array
+        do i = 1,5
+            data(i) = i
+        enddo
+    
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n; 
+        cnode = conduit_node_create()
+        ! n.set_external_int64_ptr(data,5);
+        call conduit_node_set_path_int64_ptr(cnode,"my_sub",data,5_8)
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! int64 *res_ptr = n.as_int64_ptr()
+        call conduit_node_fetch_path_as_int64_ptr(cnode,"my_sub",f_arr)
+        ! check array value equiv
+        do i = 1,5
+            !=======
+            ! NOTE:  fruit doesn't support assert_equals with integer(8)
+            !=======
+            !call assert_equals(f_arr(i),data(i))
+            print *,f_arr(i)," vs ", data(i)
+        enddo
+
+        call conduit_node_destroy(cnode)
+    
+    end subroutine t_node_set_and_fetch_path_int64_ptr
+
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_set_and_fetch_path_external_int64_ptr
+        type(C_PTR) cnode
+        integer(8), dimension(5) :: data
+        integer(8) res
+        integer i
+        integer(8), pointer :: f_arr(:)
+    
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_and_fetch_path_external_int64_ptr")
+        !----------------------------------------------------------------------
+    
+        ! fill our 32-bit x5 integer array
+        do i = 1,5
+            data(i) = i
+        enddo
+    
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n; 
+        cnode = conduit_node_create()
+        ! n.set_external_int64_ptr(data,5);
+        call conduit_node_set_path_external_int64_ptr(cnode,"my_sub",data,5_8)
+        ! change the first element in the array
+        ! so we can check the external semantics
+        data(1) = 42_8
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! int64 res = n.as_int64()
+        res = conduit_node_fetch_path_as_int64(cnode,"my_sub")
+        !=======
+        ! NOTE:  fruit doesn't support assert_equals with integer(8)
+        !=======
+        !call assert_equals(res,42)
+        print *, res, "vs", 42
+        ! int64 *res_ptr = n.as_int64_ptr()
+        call conduit_node_fetch_path_as_int64_ptr(cnode,"my_sub",f_arr)
+    
+        !call assert_equals(f_arr(1),42_8)
+    
+        ! check array value equiv
+        do i = 1,5
+            !=======
+            ! NOTE:  fruit doesn't support assert_equals with integer(8)
+            !=======
+            !call assert_equals(f_arr(i),data(i))
+            print *,f_arr(i)," vs ", data(i)
+        enddo
+
+        call conduit_node_destroy(cnode)
+    
+    end subroutine t_node_set_and_fetch_path_external_int64_ptr
+
+
+
 !------------------------------------------------------------------------------
 end module f_conduit_node_int32
 !------------------------------------------------------------------------------
@@ -411,7 +758,20 @@ integer(C_INT) function fortran_test() bind(C,name="fortran_test")
   call t_node_set_and_fetch_path_int32
   call t_node_set_and_fetch_path_int32_ptr
   call t_node_set_and_fetch_path_external_int32_ptr
+
+  call t_node_set_int64
+  call t_node_set_int64_ptr
+  call t_node_set_external_int64_ptr
+
+  call t_node_as_int64
+  call t_node_as_int64_ptr
+  call t_node_as_int64_ptr_read_scalar
+ 
+  call t_node_set_and_fetch_path_int64
+  call t_node_set_and_fetch_path_int64_ptr
+  call t_node_set_and_fetch_path_external_int64_ptr
     
+  
   
   call fruit_summary
   call fruit_finalize

@@ -461,6 +461,8 @@ contains
         type(node) obj
         type(node) n
         integer(4) val_int32
+        integer(8) val_int64
+        real(4)    val_float32
         real(8)    val_float64
         !----------------------------------------------------------------------
         call set_case_name("t_node_obj_set_fetch_generic")
@@ -468,12 +470,22 @@ contains
         
         obj = conduit_node_obj_create()
         call obj%set_path("my_int32",42)
+        call obj%set_path("my_int64",42_8)
+        call obj%set_path("my_float32",3.1415)
         call obj%set_path("my_float64",3.1415d+0)
         call obj%print_detailed()
 
         val_int32   = obj%fetch_path_as_int32("my_int32")
+        val_int64   = obj%fetch_path_as_int64("my_int64")
+        val_float32 = obj%fetch_path_as_float32("my_float32")
         val_float64 = obj%fetch_path_as_float64("my_float64")
         call assert_equals(42, val_int32)
+        !=======
+        ! NOTE:  fruit doesn't support assert_equals with integer(8)
+        !=======
+        !call assert_equals(42_8, val_int64)
+        print *,42_8,"vs",val_int64
+        call assert_equals(3.1415, val_float32)
         call assert_equals(3.1415d+0, val_float64)
         call conduit_node_obj_destroy(obj)
         
