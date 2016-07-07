@@ -714,7 +714,7 @@ contains
         implicit none
         type(C_PTR), value, intent(IN) :: cnode
         character(*), intent(IN) :: path
-        integer(4) :: res
+        real(8) :: res
         !---
         res =  c_conduit_node_fetch_path_as_float64(cnode, trim(path) // C_NULL_CHAR)
     end function conduit_node_fetch_path_as_float64

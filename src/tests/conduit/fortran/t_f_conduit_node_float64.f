@@ -79,13 +79,13 @@ contains
         !--------------
         ! Node n;
         cnode = conduit_node_create()
-        ! n.set_float64(42);
-        call conduit_node_set_float64(cnode,42.0d+0)
+        ! n.set_float64(3.1415d+0);
+        call conduit_node_set_float64(cnode,3.1415d+0)
         ! n.print_detailed();
         call conduit_node_print_detailed(cnode)
         ! float64 res = n.as_float64();
         res = conduit_node_as_float64(cnode)
-        call assert_equals (42.0d+0, res)
+        call assert_equals (3.1415d+0, res)
         call conduit_node_destroy(cnode)
         
     end subroutine t_node_set_float64
@@ -148,16 +148,16 @@ contains
         call conduit_node_set_external_float64_ptr(cnode,data,5_8)
         ! change the first element in the array
         ! so we can check the external semantics
-        data(1) = 42
+        data(1) = 3.1415d+0
         ! n.print_detailed();
         call conduit_node_print_detailed(cnode)
         ! float64 res = n.as_float64()
         res = conduit_node_as_float64(cnode)
-        call assert_equals(res,42.0d+0)
+        call assert_equals(res,3.1415d+0)
         ! float64 *res_ptr = n.as_float64_ptr()
         call conduit_node_as_float64_ptr(cnode,f_arr)
         
-        call assert_equals(f_arr(1),42.0d+0)
+        call assert_equals(f_arr(1),3.1415d+0)
         
         ! check array value equiv
         do i = 1,5
@@ -183,13 +183,13 @@ contains
         !--------------
         ! Node n; 
         cnode = conduit_node_create()
-        ! n.set_float64(42)
-        call conduit_node_set_float64(cnode,42.0d+0)
+        ! n.set_float64(3.1415d+0)
+        call conduit_node_set_float64(cnode,3.1415d+0)
         ! n.print_detailed();
         call conduit_node_print_detailed(cnode)
         ! float64 res = n.as_float64();
         res = conduit_node_as_float64(cnode)
-        call assert_equals (42.0d+0, res)
+        call assert_equals (3.1415d+0, res)
         call conduit_node_destroy(cnode)
         
     end subroutine t_node_as_float64
@@ -252,8 +252,8 @@ contains
         !--------------
         ! Node n; 
         cnode = conduit_node_create()
-        ! n.set_float64(42);
-        call conduit_node_set_float64(cnode,42.0d+0)
+        ! n.set_float64(3.1415d+0);
+        call conduit_node_set_float64(cnode,3.1415d+0)
         ! n.print_detailed();
         call conduit_node_print_detailed(cnode)
         ! index_t nele = n.dtype().number_of_elements();
@@ -261,8 +261,8 @@ contains
         call assert_equals(nele,1)
         ! float64 *ptr = n.as_float64_ptr();
         call conduit_node_as_float64_ptr(cnode,f_arr)
-        ! check if ptr[0] == 42
-        call assert_equals(f_arr(1),42.0d+0)
+        ! check if ptr[0] == 3.1415d+0
+        call assert_equals(f_arr(1),3.1415d+0)
 
         call conduit_node_destroy(cnode)
         
@@ -284,15 +284,15 @@ contains
         !--------------
         ! Node n;     
         cnode = conduit_node_create()
-        ! n["my_sub"].set_float64(42)
+        ! n["my_sub"].set_float64(3.1415d+0)
         ! // or
-        ! n.set_path_float64("my_sub",42)
-        call conduit_node_set_path_float64(cnode,"my_sub",42.0d+0)
+        ! n.set_path_float64("my_sub",3.1415d+0)
+        call conduit_node_set_path_float64(cnode,"my_sub",3.1415d+0)
         ! n.print_detailed()
         call conduit_node_print_detailed(cnode)
         ! float64 res = n["my_sub"].as_float64();
         res = conduit_node_fetch_path_as_float64(cnode,"my_sub")
-        call assert_equals (42.0d+0, res)
+        call assert_equals (3.1415d+0, res)
         call conduit_node_destroy(cnode)
         
     end subroutine t_node_set_and_fetch_path_float64
@@ -362,16 +362,16 @@ contains
         call conduit_node_set_path_external_float64_ptr(cnode,"my_sub",data,5_8)
         ! change the first element in the array
         ! so we can check the external semantics
-        data(1) = 42.0d+0
+        data(1) = 3.1415d+0
         ! n.print_detailed();
         call conduit_node_print_detailed(cnode)
         ! float64 res = n.as_float64()
         res = conduit_node_fetch_path_as_float64(cnode,"my_sub")
-        call assert_equals(res,42.0d+0)
+        call assert_equals(res,3.1415d+0)
         ! float64 *res_ptr = n.as_float64_ptr()
         call conduit_node_fetch_path_as_float64_ptr(cnode,"my_sub",f_arr)
         
-        call assert_equals(f_arr(1),42.0d+0)
+        call assert_equals(f_arr(1),3.1415d+0)
         
         ! check array value equiv
         do i = 1,5

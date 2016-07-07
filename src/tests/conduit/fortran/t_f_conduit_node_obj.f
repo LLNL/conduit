@@ -395,7 +395,7 @@ contains
         call conduit_node_obj_destroy(obj)
         
     end subroutine t_node_obj_set_fetch_path_int32
-    
+        
     !--------------------------------------------------------------------------
     subroutine t_node_obj_append
         type(node) obj
@@ -455,6 +455,68 @@ contains
         call conduit_node_obj_destroy(obj)
         
     end subroutine t_node_obj_append
+   
+    !--------------------------------------------------------------------------
+    subroutine t_node_obj_set_fetch_generic
+        type(node) obj
+        type(node) n
+        integer(4) val_int32
+        real(8)    val_float64
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_obj_set_fetch_generic")
+        !----------------------------------------------------------------------
+        
+        obj = conduit_node_obj_create()
+        call obj%set_path("my_int32",42)
+        call obj%set_path("my_float64",3.1415d+0)
+        call obj%print_detailed()
+
+        val_int32   = obj%fetch_path_as_int32("my_int32")
+        val_float64 = obj%fetch_path_as_float64("my_float64")
+        call assert_equals(42, val_int32)
+        call assert_equals(3.1415d+0, val_float64)
+        call conduit_node_obj_destroy(obj)
+        
+    end subroutine t_node_obj_set_fetch_generic
+
+   
+    !--------------------------------------------------------------------------
+    subroutine t_node_obj_set_generic_fetch_ptr
+        type(node) n
+        type(node) n_den
+        real(kind=8), dimension(4) :: den
+        real(kind=8), pointer :: d_arr(:)
+        character, pointer :: units(:)
+        integer i
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_obj_set_generic_fetch_ptr")
+        !----------------------------------------------------------------------
+        do i = 1,4
+            den(i) = 1.0
+        enddo
+  
+        n = conduit_node_obj_create()
+        call n%set_path_ptr("fields/density/values",den,4_8)
+        call n%set_path("fields/density/units","g/cc")
+    
+        n_den = n%fetch("fields/density")
+  
+        call n_den%fetch_path_as_float64_ptr("values",d_arr)
+  
+        call n_den%fetch_path_as_char8_str("units",units)
+  
+        do i = 1,4
+            call assert_equals(den(i), d_arr(i))
+        enddo
+  
+        call assert_equals(units(1),"g")
+        call assert_equals(units(2),"/")
+        call assert_equals(units(3),"c")
+        call assert_equals(units(4),"c")
+        
+        call conduit_node_obj_destroy(n)
+        
+    end subroutine t_node_obj_set_generic_fetch_ptr
 
 
 !------------------------------------------------------------------------------
@@ -482,6 +544,7 @@ integer(C_INT) function fortran_test() bind(C,name="fortran_test")
   call t_node_obj_set_external_int32_ptr
   call t_node_obj_append
   call t_node_obj_set_fetch_path_int32
+  call t_node_obj_set_fetch_generic
 
   call fruit_summary
   call fruit_finalize
