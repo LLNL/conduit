@@ -44,12 +44,12 @@
 
 !------------------------------------------------------------------------------
 !
-! f_conduit_node.f
+! f_conduit_node_float64.f
 !
 !------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------
-module f_conduit_node
+module f_conduit_node_char8_str
 !------------------------------------------------------------------------------
 
   use iso_c_binding
@@ -62,172 +62,108 @@ contains
 !------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------    
-!  Opaque Pointer Function Style test
+! char8_str tests
 !------------------------------------------------------------------------------
 
     !--------------------------------------------------------------------------
-    subroutine t_node_create
+    subroutine t_node_set_char8_str
         type(C_PTR) cnode
-        integer res
-        
+        character, pointer :: f_arr(:)
+    
         !----------------------------------------------------------------------
-        call set_case_name("t_node_create")
+        call set_case_name("t_node_set_char8_str")
         !----------------------------------------------------------------------
-        
+
         !--------------
         ! c++ ~equiv:
         !--------------
         ! Node n;
-        ! n.print_detailed();
         cnode = conduit_node_create()
+        ! n = "howdy");
+        call conduit_node_set_char8_str(cnode,"howdy")
+        ! n.print();
+        call conduit_node_print(cnode)
+        ! n.print_detailed();
         call conduit_node_print_detailed(cnode)
+
         call conduit_node_destroy(cnode)
     
-    end subroutine t_node_create
-
-
+    end subroutine t_node_set_char8_str
+    
     !--------------------------------------------------------------------------
-    subroutine t_node_append
+    subroutine t_node_as_char8_str
         type(C_PTR) cnode
-        type(C_PTR) n1
-        type(C_PTR) n2
-        type(C_PTR) na
-        type(C_PTR) nb
-        integer(4) res_1
-        real(8)    res_2
-        integer    nchld
+        character, pointer :: f_arr(:)
         
         !----------------------------------------------------------------------
-        call set_case_name("t_node_append")
-        !----------------------------------------------------------------------
-        
-        !--------------
-        ! c++ ~equiv:
-        !--------------
-        ! Node n;  
-        cnode = conduit_node_create()
-        
-        ! Node &n1 = n.append();
-        n1 = conduit_node_append(cnode)
-        ! Node &n2 = n.append();
-        n2 = conduit_node_append(cnode)
-        ! index_t nchld = n.number_of_children();
-        nchld = conduit_node_number_of_children(cnode)
-        
-        call assert_equals(nchld, 2)
-        ! n1.set_int32(42);
-        call conduit_node_set_int32(n1,42)
-        ! n1.set_float64(3.1415);
-        call conduit_node_set_float64(n2,3.1415d+0)
-        ! n.print_detailed();
-        call conduit_node_print_detailed(cnode)
-        
-        ! Node &na = n[0];
-        ! // or
-        ! Node &na = n.child(0);
-        na  = conduit_node_child(cnode,0_8)
-        ! Node &nb = n[1];
-        ! // or
-        ! Node &nb = n.child(1);
-        nb  = conduit_node_child(cnode,1_8)
-
-        !int32 res_1 = n.as_int32();
-        res_1 = conduit_node_as_int32(n1)
-        !int32 res_2 = n.as_float64();
-        res_2 = conduit_node_as_float64(n2)
-        
-        call assert_equals (42, res_1)
-        call assert_equals (3.1415d+0, res_2)
-        call conduit_node_destroy(cnode)
-        
-    end subroutine t_node_append
-
-
-    !--------------------------------------------------------------------------
-    subroutine t_node_set_int
-        type(C_PTR) cnode
-        integer res
-        
-        !----------------------------------------------------------------------
-        call set_case_name("t_node_set_int")
+        call set_case_name("t_node_as_char8_str")
         !----------------------------------------------------------------------
 
-        !--------------
-        ! c++ ~equiv:
-        !--------------
-        ! Node n;    
-        cnode = conduit_node_create()
-        ! n.set(42);
-        call conduit_node_set_int(cnode,42)
-        ! n.print_detailed();
-        call conduit_node_print_detailed(cnode)
-        ! int res = n.as_int();
-        res = conduit_node_as_int(cnode)
-        call assert_equals (42, res)
-        call conduit_node_destroy(cnode)
-        
-    end subroutine t_node_set_int
-
-    !--------------------------------------------------------------------------
-    subroutine t_node_set_double
-        type(C_PTR) cnode
-        real(kind=8) res
-        
-        !--------------
-        call set_case_name("t_node_set_double")
-        !--------------
-        
         !--------------
         ! c++ ~equiv:
         !--------------
         ! Node n;
         cnode = conduit_node_create()
-        ! n.set(3.1415);
-        call conduit_node_set_double(cnode,3.1415d+0)
+        ! n = "howdy");
+        call conduit_node_set_char8_str(cnode,"howdy")
+        ! n.print();
+        call conduit_node_print(cnode)
         ! n.print_detailed();
         call conduit_node_print_detailed(cnode)
-        ! double res = n.as_double();
-        res = conduit_node_as_double(cnode)
-        call assert_equals(3.1415d+0, res)
+        ! char * res = n.as_char8_str();
+        call conduit_node_as_char8_str(cnode,f_arr)
+        print *, f_arr
+        !
+        ! TODO: ptr to val compare
+        ! this wont work:
+        ! call assert_equals(f_arr, "howdy")
+        !
         call conduit_node_destroy(cnode)
         
-    end subroutine t_node_set_double
+    end subroutine t_node_as_char8_str
 
+    
     !--------------------------------------------------------------------------
-    subroutine t_node_set_float64
+    subroutine t_node_set_and_fetch_path_char8_str
         type(C_PTR) cnode
-        real(kind=8) res
+        character, pointer :: f_arr(:)
         
         !----------------------------------------------------------------------
-        call set_case_name("t_node_set_float64")
+        call set_case_name("t_node_set_and_fetch_path_char8_str")
         !----------------------------------------------------------------------
-        
+
         !--------------
         ! c++ ~equiv:
         !--------------
         ! Node n;
         cnode = conduit_node_create()
-        ! n.set_float64(3.1415);
-        call conduit_node_set_float64(cnode,3.1415d+0)
+        ! n = "howdy");
+        call conduit_node_set_path_char8_str(cnode,"my_sub","howdy")
+        ! n.print();
+        call conduit_node_print(cnode)
         ! n.print_detailed();
         call conduit_node_print_detailed(cnode)
-        ! float64 res = n.as_float64();
-        res = conduit_node_as_float64(cnode)
-        call assert_equals(3.1415d+0, res)
+        ! char * res = n.as_char8_str();
+        call conduit_node_fetch_path_as_char8_str(cnode,"my_sub",f_arr)
+        print *, f_arr
+        !
+        ! TODO: ptr to val compare
+        ! this wont work:
+        ! call assert_equals(f_arr, "howdy")
+        !
         call conduit_node_destroy(cnode)
-
-    end subroutine t_node_set_float64
-
+        
+    end subroutine t_node_set_and_fetch_path_char8_str
 
 !------------------------------------------------------------------------------
-end module f_conduit_node
+end module f_conduit_node_char8_str
 !------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------
 integer(C_INT) function fortran_test() bind(C,name="fortran_test")
 !------------------------------------------------------------------------------
   use fruit
-  use f_conduit_node
+  use f_conduit_node_char8_str
   implicit none
   logical res
   
@@ -236,11 +172,9 @@ integer(C_INT) function fortran_test() bind(C,name="fortran_test")
   !----------------------------------------------------------------------------
   ! call our test routines
   !----------------------------------------------------------------------------
-  call t_node_create
-  call t_node_append
-  call t_node_set_int
-  call t_node_set_double
-  call t_node_set_float64
+  call t_node_set_char8_str
+  call t_node_as_char8_str
+  call t_node_set_and_fetch_path_char8_str
 
   
   call fruit_summary

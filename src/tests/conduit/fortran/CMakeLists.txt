@@ -51,7 +51,10 @@
 ################################
 set(BASIC_FORTRAN_TESTS 
     t_f_type_sizes
-    t_f_conduit_node)
+    t_f_conduit_node
+    t_f_conduit_node_int
+    t_f_conduit_node_float
+    t_f_conduit_node_char8_str)
 
 if(ENABLE_FORTRAN_OBJ_INTERFACE)
     list(APPEND BASIC_FORTRAN_TESTS t_f_conduit_node_obj)

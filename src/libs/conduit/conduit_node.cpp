@@ -1186,7 +1186,7 @@ conduit_node_set_external_int64_ptr_detailed(conduit_node *cnode,
 
 
 //-----------------------------------------------------------------------------
-// set_external bitwdith unsigned signed integer pointer cases
+// set_external bitwidth unsigned signed integer pointer cases
 //-----------------------------------------------------------------------------
 void
 conduit_node_set_external_uint8_ptr(conduit_node *cnode,
@@ -1326,7 +1326,7 @@ conduit_node_set_external_float32_ptr_detailed(conduit_node *cnode,
 
 //-----------------------------------------------------------------------------
 void
-conduit_node_external_set_float64_ptr(conduit_node *cnode,
+conduit_node_set_external_float64_ptr(conduit_node *cnode,
                                       conduit_float64 *data,
                                       conduit_index_t  num_elements)
 {

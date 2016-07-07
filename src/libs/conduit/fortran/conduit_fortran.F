@@ -125,6 +125,9 @@ module conduit
     !--------------------------------------------------------------------------
 
     !--------------------------------------------------------------------------
+    ! construction and destruction
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
     function conduit_node_create() result(cnode) &
              bind(C, name="conduit_node_create")
          use iso_c_binding
@@ -140,6 +143,10 @@ module conduit
         type(C_PTR), value, intent(IN) :: cnode
     end subroutine conduit_node_destroy
 
+    !--------------------------------------------------------------------------
+    ! object and list interface
+    !--------------------------------------------------------------------------
+    
     !--------------------------------------------------------------------------
     function conduit_node_fetch(cnode, path) result(res) &
              bind(C, name="conduit_node_fetch")
@@ -170,6 +177,10 @@ module conduit
        end function conduit_node_child
 
     !--------------------------------------------------------------------------
+    ! node info methods
+    !--------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
     function conduit_node_number_of_elements(cnode) result(res) &
             bind(C, name="conduit_node_number_of_elements")
         use iso_c_binding
@@ -187,6 +198,36 @@ module conduit
          integer(C_SIZE_T) :: res
      end function conduit_node_number_of_children
 
+     !--------------------------------------------------------------------------
+     ! node print helpers
+     !--------------------------------------------------------------------------
+
+     !--------------------------------------------------------------------------
+     subroutine conduit_node_print(cnode) &
+         bind(C, name="conduit_node_print")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+     end subroutine conduit_node_print
+
+     !--------------------------------------------------------------------------
+     subroutine conduit_node_print_detailed(cnode) &
+         bind(C, name="conduit_node_print_detailed")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+     end subroutine conduit_node_print_detailed
+
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    ! BEGIN int32 methods
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
+    ! int32 set
     !--------------------------------------------------------------------------
     subroutine conduit_node_set_int32(cnode, val) &
                    bind(C, name="conduit_node_set_int32")
@@ -217,17 +258,9 @@ module conduit
     end subroutine conduit_node_set_external_int32_ptr
     
     !--------------------------------------------------------------------------
-    subroutine c_conduit_node_set_path_external_float64_ptr(cnode, path, data, num_elements) &
-                   bind(C, name="conduit_node_set_path_external_float64_ptr")
-        use iso_c_binding
-        implicit none
-        type(C_PTR), value, intent(IN) :: cnode
-        character(kind=C_CHAR), intent(IN) :: path(*)
-        real(8), intent (IN), dimension (*) :: data
-        integer(C_SIZE_T), value, intent(in) :: num_elements
-    end subroutine c_conduit_node_set_path_external_float64_ptr
-    
+    ! int32 set_path
     !--------------------------------------------------------------------------
+
     subroutine c_conduit_node_set_path_int32(cnode, path, val) &
                    bind(C, name="conduit_node_set_path_int32")
         use iso_c_binding
@@ -236,6 +269,53 @@ module conduit
         character(kind=C_CHAR), intent(IN) :: path(*)
         integer(4), value, intent(IN) :: val
     end subroutine c_conduit_node_set_path_int32
+
+
+    !--------------------------------------------------------------------------
+    subroutine c_conduit_node_set_path_int32_ptr(cnode, path, data, num_elements) &
+                   bind(C, name="conduit_node_set_path_int32_ptr")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: path(*)
+        integer(4), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+    end subroutine c_conduit_node_set_path_int32_ptr
+    
+    
+    !--------------------------------------------------------------------------
+    subroutine c_conduit_node_set_path_external_int32_ptr(cnode, path, data, num_elements) &
+                   bind(C, name="conduit_node_set_path_external_int32_ptr")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: path(*)
+        integer(4), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+    end subroutine c_conduit_node_set_path_external_int32_ptr
+    
+
+    !--------------------------------------------------------------------------
+    ! int32 as
+    !--------------------------------------------------------------------------
+    
+    !--------------------------------------------------------------------------
+    pure function conduit_node_as_int32(cnode) result(res) &
+             bind(C, name="conduit_node_as_int32")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         integer(4) :: res
+    end function conduit_node_as_int32
+
+    !--------------------------------------------------------------------------
+    function c_conduit_node_as_int32_ptr(cnode) result(int32_ptr) &
+             bind(C, name="conduit_node_as_int32_ptr")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         type(C_PTR) :: int32_ptr
+     end function c_conduit_node_as_int32_ptr
 
     !--------------------------------------------------------------------------
     pure function c_conduit_node_fetch_path_as_int32(cnode, path) result(res) &
@@ -248,15 +328,483 @@ module conduit
     end function c_conduit_node_fetch_path_as_int32
 
     !--------------------------------------------------------------------------
-    pure function conduit_node_as_int32(cnode) result(res) &
-             bind(C, name="conduit_node_as_int32")
+    function c_conduit_node_fetch_path_as_int32_ptr(cnode, path) result(int32_ptr) &
+             bind(C, name="conduit_node_fetch_path_as_int32_ptr")
          use iso_c_binding
          implicit none
          type(C_PTR), value, intent(IN) :: cnode
-         integer(4) :: res
-    end function conduit_node_as_int32
+         character(kind=C_CHAR), intent(IN) :: path(*)
+         type(C_PTR) :: int32_ptr
+     end function c_conduit_node_fetch_path_as_int32_ptr
+     
+
+
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    ! END int32 methods
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    ! BEGIN int64 methods
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
+    ! int64 set
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_int64(cnode, val) &
+                   bind(C, name="conduit_node_set_int64")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        integer(8), value, intent(IN) :: val
+    end subroutine conduit_node_set_int64
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_int64_ptr(cnode, data, num_elements) &
+                   bind(C, name="conduit_node_set_int64_ptr")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        integer(8), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+    end subroutine conduit_node_set_int64_ptr
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_external_int64_ptr(cnode, data, num_elements) &
+                   bind(C, name="conduit_node_set_external_int64_ptr")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        integer(8), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+    end subroutine conduit_node_set_external_int64_ptr
     
     !--------------------------------------------------------------------------
+    ! int64 set_path
+    !--------------------------------------------------------------------------
+
+    subroutine c_conduit_node_set_path_int64(cnode, path, val) &
+                   bind(C, name="conduit_node_set_path_int64")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: path(*)
+        integer(8), value, intent(IN) :: val
+    end subroutine c_conduit_node_set_path_int64
+
+
+    !--------------------------------------------------------------------------
+    subroutine c_conduit_node_set_path_int64_ptr(cnode, path, data, num_elements) &
+                   bind(C, name="conduit_node_set_path_int64_ptr")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: path(*)
+        integer(8), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+    end subroutine c_conduit_node_set_path_int64_ptr
+    
+    
+    !--------------------------------------------------------------------------
+    subroutine c_conduit_node_set_path_external_int64_ptr(cnode, path, data, num_elements) &
+                   bind(C, name="conduit_node_set_path_external_int64_ptr")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: path(*)
+        integer(8), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+    end subroutine c_conduit_node_set_path_external_int64_ptr
+    
+
+    !--------------------------------------------------------------------------
+    ! int64 as
+    !--------------------------------------------------------------------------
+    
+    !--------------------------------------------------------------------------
+    pure function conduit_node_as_int64(cnode) result(res) &
+             bind(C, name="conduit_node_as_int64")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         integer(8) :: res
+    end function conduit_node_as_int64
+
+    !--------------------------------------------------------------------------
+    function c_conduit_node_as_int64_ptr(cnode) result(int64_ptr) &
+             bind(C, name="conduit_node_as_int64_ptr")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         type(C_PTR) :: int64_ptr
+     end function c_conduit_node_as_int64_ptr
+
+    !--------------------------------------------------------------------------
+    pure function c_conduit_node_fetch_path_as_int64(cnode, path) result(res) &
+                   bind(C, name="conduit_node_fetch_path_as_int64")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: path(*)
+        integer(8) :: res
+    end function c_conduit_node_fetch_path_as_int64
+
+    !--------------------------------------------------------------------------
+    function c_conduit_node_fetch_path_as_int64_ptr(cnode, path) result(int64_ptr) &
+             bind(C, name="conduit_node_fetch_path_as_int64_ptr")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         character(kind=C_CHAR), intent(IN) :: path(*)
+         type(C_PTR) :: int64_ptr
+     end function c_conduit_node_fetch_path_as_int64_ptr
+     
+
+
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    ! END int64 methods
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+
+
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    ! BEGIN float32 methods
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
+    ! float32 set
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_float32(cnode, val) &
+                   bind(C, name="conduit_node_set_float32")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        real(4), value, intent(IN) :: val
+    end subroutine conduit_node_set_float32
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_float32_ptr(cnode, data, num_elements) &
+                   bind(C, name="conduit_node_set_float32_ptr")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        real(4), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+    end subroutine conduit_node_set_float32_ptr
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_external_float32_ptr(cnode, data, num_elements) &
+                   bind(C, name="conduit_node_set_external_float32_ptr")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        real(4), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+    end subroutine conduit_node_set_external_float32_ptr
+    
+    !--------------------------------------------------------------------------
+    ! float32 set_path
+    !--------------------------------------------------------------------------
+
+    subroutine c_conduit_node_set_path_float32(cnode, path, val) &
+                   bind(C, name="conduit_node_set_path_float32")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: path(*)
+        real(4), value, intent(IN) :: val
+    end subroutine c_conduit_node_set_path_float32
+
+
+    !--------------------------------------------------------------------------
+    subroutine c_conduit_node_set_path_float32_ptr(cnode, path, data, num_elements) &
+                   bind(C, name="conduit_node_set_path_float32_ptr")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: path(*)
+        real(4), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+    end subroutine c_conduit_node_set_path_float32_ptr
+    
+    
+    !--------------------------------------------------------------------------
+    subroutine c_conduit_node_set_path_external_float32_ptr(cnode, path, data, num_elements) &
+                   bind(C, name="conduit_node_set_path_external_float32_ptr")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: path(*)
+        real(4), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+    end subroutine c_conduit_node_set_path_external_float32_ptr
+    
+
+    !--------------------------------------------------------------------------
+    ! float32 as
+    !--------------------------------------------------------------------------
+    
+    !--------------------------------------------------------------------------
+    pure function conduit_node_as_float32(cnode) result(res) &
+             bind(C, name="conduit_node_as_float32")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         real(4) :: res
+    end function conduit_node_as_float32
+
+    !--------------------------------------------------------------------------
+    function c_conduit_node_as_float32_ptr(cnode) result(float32_ptr) &
+             bind(C, name="conduit_node_as_float32_ptr")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         type(C_PTR) :: float32_ptr
+     end function c_conduit_node_as_float32_ptr
+
+    !--------------------------------------------------------------------------
+    pure function c_conduit_node_fetch_path_as_float32(cnode, path) result(res) &
+                   bind(C, name="conduit_node_fetch_path_as_float32")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: path(*)
+        real(4) :: res
+    end function c_conduit_node_fetch_path_as_float32
+
+    !--------------------------------------------------------------------------
+    function c_conduit_node_fetch_path_as_float32_ptr(cnode, path) result(float32_ptr) &
+             bind(C, name="conduit_node_fetch_path_as_float32_ptr")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         character(kind=C_CHAR), intent(IN) :: path(*)
+         type(C_PTR) :: float32_ptr
+     end function c_conduit_node_fetch_path_as_float32_ptr
+     
+
+
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    ! END float32 methods
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    ! BEGIN float64 methods
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
+    ! float64 set
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_float64(cnode, val) &
+                   bind(C, name="conduit_node_set_float64")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        real(8), value, intent(IN) :: val
+    end subroutine conduit_node_set_float64
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_float64_ptr(cnode, data, num_elements) &
+                   bind(C, name="conduit_node_set_float64_ptr")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        real(8), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+    end subroutine conduit_node_set_float64_ptr
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_external_float64_ptr(cnode, data, num_elements) &
+                   bind(C, name="conduit_node_set_external_float64_ptr")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        real(8), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+    end subroutine conduit_node_set_external_float64_ptr
+    
+    !--------------------------------------------------------------------------
+    ! float64 set_path
+    !--------------------------------------------------------------------------
+
+    subroutine c_conduit_node_set_path_float64(cnode, path, val) &
+                   bind(C, name="conduit_node_set_path_float64")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: path(*)
+        real(8), value, intent(IN) :: val
+    end subroutine c_conduit_node_set_path_float64
+
+
+    !--------------------------------------------------------------------------
+    subroutine c_conduit_node_set_path_float64_ptr(cnode, path, data, num_elements) &
+                   bind(C, name="conduit_node_set_path_float64_ptr")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: path(*)
+        real(8), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+    end subroutine c_conduit_node_set_path_float64_ptr
+    
+    
+    !--------------------------------------------------------------------------
+    subroutine c_conduit_node_set_path_external_float64_ptr(cnode, path, data, num_elements) &
+                   bind(C, name="conduit_node_set_path_external_float64_ptr")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: path(*)
+        real(8), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+    end subroutine c_conduit_node_set_path_external_float64_ptr
+    
+
+    !--------------------------------------------------------------------------
+    ! float64 as
+    !--------------------------------------------------------------------------
+    
+    !--------------------------------------------------------------------------
+    pure function conduit_node_as_float64(cnode) result(res) &
+             bind(C, name="conduit_node_as_float64")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         real(8) :: res
+    end function conduit_node_as_float64
+
+    !--------------------------------------------------------------------------
+    function c_conduit_node_as_float64_ptr(cnode) result(float64_ptr) &
+             bind(C, name="conduit_node_as_float64_ptr")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         type(C_PTR) :: float64_ptr
+     end function c_conduit_node_as_float64_ptr
+
+    !--------------------------------------------------------------------------
+    pure function c_conduit_node_fetch_path_as_float64(cnode, path) result(res) &
+                   bind(C, name="conduit_node_fetch_path_as_float64")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: path(*)
+        real(8) :: res
+    end function c_conduit_node_fetch_path_as_float64
+
+    !--------------------------------------------------------------------------
+    function c_conduit_node_fetch_path_as_float64_ptr(cnode, path) result(float64_ptr) &
+             bind(C, name="conduit_node_fetch_path_as_float64_ptr")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         character(kind=C_CHAR), intent(IN) :: path(*)
+         type(C_PTR) :: float64_ptr
+     end function c_conduit_node_fetch_path_as_float64_ptr
+     
+
+
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    ! END float64 methods
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    ! BEGIN char8_str methods
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
+    ! char8_str set
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    subroutine c_conduit_node_set_char8_str(cnode,val) &
+                   bind(C, name="conduit_node_set_char8_str")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: val(*)
+    end subroutine c_conduit_node_set_char8_str
+
+    !--------------------------------------------------------------------------
+    ! char8_str set_path
+    !--------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
+    subroutine c_conduit_node_set_path_char8_str(cnode, path, val) &
+                   bind(C, name="conduit_node_set_path_char8_str")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: path(*)
+        character(kind=C_CHAR), intent(IN) :: val(*)
+    end subroutine c_conduit_node_set_path_char8_str
+
+    !--------------------------------------------------------------------------
+    ! char8_str as
+    !--------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
+    function c_conduit_node_as_char8_str(cnode) result(str_ptr) &
+             bind(C, name="conduit_node_as_char8_str")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         type(C_PTR) :: str_ptr
+     end function c_conduit_node_as_char8_str
+
+
+    !--------------------------------------------------------------------------
+    function c_conduit_node_fetch_path_as_char8_str(cnode, path) result(str_ptr) &
+             bind(C, name="conduit_node_fetch_path_as_char8_str")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         character(kind=C_CHAR), intent(IN) :: path(*)
+         type(C_PTR) :: str_ptr
+     end function c_conduit_node_fetch_path_as_char8_str
+
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    ! END char8_str methods
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    
+    
     subroutine conduit_node_set_int(cnode, val) &
                    bind(C, name="conduit_node_set_int")
         use iso_c_binding
@@ -292,88 +840,6 @@ module conduit
          real(C_DOUBLE) :: res
     end function conduit_node_as_double
 
-    !--------------------------------------------------------------------------
-    subroutine conduit_node_set_float64(cnode, val) &
-                   bind(C, name="conduit_node_set_float64")
-        use iso_c_binding
-        implicit none
-        type(C_PTR), value, intent(IN) :: cnode
-        real(8), value, intent(IN) :: val
-    end subroutine conduit_node_set_float64
-    
-    !--------------------------------------------------------------------------
-    pure function conduit_node_as_float64(cnode) result(res) &
-             bind(C, name="conduit_node_as_float64")
-         use iso_c_binding
-         implicit none
-         type(C_PTR), value, intent(IN) :: cnode
-         real(8) :: res
-    end function conduit_node_as_float64
-
-    !--------------------------------------------------------------------------
-    subroutine c_conduit_node_set_path_float64(cnode, path, val) &
-                   bind(C, name="conduit_node_set_path_float64")
-        use iso_c_binding
-        implicit none
-        type(C_PTR), value, intent(IN) :: cnode
-        character(kind=C_CHAR), intent(IN) :: path(*)
-        real(8), value, intent(IN) :: val
-    end subroutine c_conduit_node_set_path_float64
-
-    !--------------------------------------------------------------------------
-    pure function conduit_node_fetch_path_as_float64(cnode, path) result(res) &
-                   bind(C, name="conduit_node_fetch_path_as_float64")
-        use iso_c_binding
-        implicit none
-        type(C_PTR), value, intent(IN) :: cnode
-        character(kind=C_CHAR), intent(IN) :: path(*)
-        real(8) :: res
-    end function conduit_node_fetch_path_as_float64
-
-    !--------------------------------------------------------------------------
-    subroutine c_conduit_node_set_path_char8_str(cnode, path, val) &
-                   bind(C, name="conduit_node_set_path_char8_str")
-        use iso_c_binding
-        implicit none
-        type(C_PTR), value, intent(IN) :: cnode
-        character(kind=C_CHAR), intent(IN) :: path(*)
-        character(kind=C_CHAR), intent(IN) :: val(*)
-    end subroutine c_conduit_node_set_path_char8_str
-
-    !--------------------------------------------------------------------------
-    pure function conduit_node_fetch_path_as_char8_str(cnode, path) result(res) &
-                   bind(C, name="conduit_node_fetch_path_as_char8_str")
-        use iso_c_binding
-        implicit none
-        type(C_PTR), value, intent(IN) :: cnode
-        character(kind=C_CHAR), intent(IN) :: path(*)
-        character(kind=C_CHAR) :: res
-    end function conduit_node_fetch_path_as_char8_str
-
-    !--------------------------------------------------------------------------
-    subroutine conduit_node_print(cnode) &
-        bind(C, name="conduit_node_print")
-        use iso_c_binding
-        implicit none
-        type(C_PTR), value, intent(IN) :: cnode
-    end subroutine conduit_node_print
-
-    !--------------------------------------------------------------------------
-    subroutine conduit_node_print_detailed(cnode) &
-        bind(C, name="conduit_node_print_detailed")
-        use iso_c_binding
-        implicit none
-        type(C_PTR), value, intent(IN) :: cnode
-    end subroutine conduit_node_print_detailed
-
-    !--------------------------------------------------------------------------
-    function c_conduit_node_as_int32_ptr(cnode) result(int32_ptr) &
-             bind(C, name="conduit_node_as_int32_ptr")
-         use iso_c_binding
-         implicit none
-         type(C_PTR), value, intent(IN) :: cnode
-         type(C_PTR) :: int32_ptr
-     end function c_conduit_node_as_int32_ptr
 
     !--------------------------------------------------------------------------
     end interface
@@ -386,16 +852,7 @@ contains
 !------------------------------------------------------------------------------
 
     !--------------------------------------------------------------------------
-    subroutine conduit_node_set_path_external_float64_ptr(cnode, path, data, num_elements)
-        use iso_c_binding
-        implicit none
-        type(C_PTR), value, intent(IN) :: cnode
-        character(*), intent(IN) :: path
-        real(8), intent (IN), dimension (*) :: data
-        integer(C_SIZE_T), value, intent(in) :: num_elements
-        call c_conduit_node_set_path_external_float64_ptr(cnode, trim(path) // C_NULL_CHAR, data, num_elements)
-    end subroutine conduit_node_set_path_external_float64_ptr
-    
+    ! int32 subs
     !--------------------------------------------------------------------------
     subroutine conduit_node_set_path_int32(cnode, path, val)
         use iso_c_binding
@@ -403,28 +860,45 @@ contains
         type(C_PTR), value, intent(IN) :: cnode
         character(*), intent(IN) :: path
         integer(4), value, intent(IN) :: val
+        !---
         call c_conduit_node_set_path_int32(cnode, trim(path) // C_NULL_CHAR, val)
     end subroutine conduit_node_set_path_int32
 
     !--------------------------------------------------------------------------
-    subroutine conduit_node_set_path_float64(cnode, path, val)
+    subroutine conduit_node_set_path_int32_ptr(cnode, path, data, num_elements)
         use iso_c_binding
         implicit none
         type(C_PTR), value, intent(IN) :: cnode
         character(*), intent(IN) :: path
-        real(8), value, intent(IN) :: val
-        call c_conduit_node_set_path_float64(cnode, trim(path) // C_NULL_CHAR, val)
-    end subroutine conduit_node_set_path_float64
+        integer(4), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+        !---
+        call c_conduit_node_set_path_int32_ptr(cnode, trim(path) // C_NULL_CHAR, data, num_elements)
+    end subroutine conduit_node_set_path_int32_ptr
 
     !--------------------------------------------------------------------------
-    subroutine conduit_node_set_path_char8_str(cnode, path, val)
+    subroutine conduit_node_set_path_external_int32_ptr(cnode, path, data, num_elements)
         use iso_c_binding
         implicit none
         type(C_PTR), value, intent(IN) :: cnode
         character(*), intent(IN) :: path
-        character(*), intent(IN) :: val
-        call c_conduit_node_set_path_char8_str(cnode, trim(path) // C_NULL_CHAR, trim(val) // C_NULL_CHAR)
-    end subroutine conduit_node_set_path_char8_str
+        integer(4), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+        !---
+        call c_conduit_node_set_path_external_int32_ptr(cnode, trim(path) // C_NULL_CHAR, data, num_elements)
+    end subroutine conduit_node_set_path_external_int32_ptr
+    
+
+    !--------------------------------------------------------------------------
+    function conduit_node_fetch_path_as_int32(cnode, path) result(res)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        integer(4) :: res
+        !---
+        res =  c_conduit_node_fetch_path_as_int32(cnode, trim(path) // C_NULL_CHAR)
+    end function conduit_node_fetch_path_as_int32
 
     !--------------------------------------------------------------------------
     subroutine conduit_node_as_int32_ptr(cnode,f_out)
@@ -441,17 +915,309 @@ contains
     end subroutine conduit_node_as_int32_ptr
 
     !--------------------------------------------------------------------------
-    function conduit_node_fetch_path_as_int32(cnode, path) result(res)
+    subroutine conduit_node_fetch_path_as_int32_ptr(cnode, path, f_out)
         use iso_c_binding
         implicit none
         type(C_PTR), value, intent(IN) :: cnode
         character(*), intent(IN) :: path
-        integer(4) :: res
+        integer(4), pointer :: f_out(:)
+        integer n
+        type(C_PTR) :: int32_c_ptr
         !---
-        res =  c_conduit_node_fetch_path_as_int32(cnode, trim(path) // C_NULL_CHAR)
-    end function conduit_node_fetch_path_as_int32
+        n = conduit_node_number_of_elements(cnode)
+        int32_c_ptr = c_conduit_node_fetch_path_as_int32_ptr(cnode,trim(path) // C_NULL_CHAR)
+        call c_f_pointer(int32_c_ptr, f_out, (/n/))
+    end subroutine conduit_node_fetch_path_as_int32_ptr
+
+    !--------------------------------------------------------------------------
+    ! int64 subs
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_path_int64(cnode, path, val)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        integer(8), value, intent(IN) :: val
+        !---
+        call c_conduit_node_set_path_int64(cnode, trim(path) // C_NULL_CHAR, val)
+    end subroutine conduit_node_set_path_int64
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_path_int64_ptr(cnode, path, data, num_elements)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        integer(8), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+        !---
+        call c_conduit_node_set_path_int64_ptr(cnode, trim(path) // C_NULL_CHAR, data, num_elements)
+    end subroutine conduit_node_set_path_int64_ptr
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_path_external_int64_ptr(cnode, path, data, num_elements)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        integer(8), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+        !---
+        call c_conduit_node_set_path_external_int64_ptr(cnode, trim(path) // C_NULL_CHAR, data, num_elements)
+    end subroutine conduit_node_set_path_external_int64_ptr
+    
+
+    !--------------------------------------------------------------------------
+    function conduit_node_fetch_path_as_int64(cnode, path) result(res)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        integer(8) :: res
+        !---
+        res =  c_conduit_node_fetch_path_as_int64(cnode, trim(path) // C_NULL_CHAR)
+    end function conduit_node_fetch_path_as_int64
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_as_int64_ptr(cnode,f_out)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        integer(8), pointer :: f_out(:)
+        integer n
+        type(C_PTR) :: int64_c_ptr
+        !---
+        n = conduit_node_number_of_elements(cnode)
+        int64_c_ptr = c_conduit_node_as_int64_ptr(cnode)
+        call c_f_pointer(int64_c_ptr, f_out, (/n/))
+    end subroutine conduit_node_as_int64_ptr
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_fetch_path_as_int64_ptr(cnode, path, f_out)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        integer(8), pointer :: f_out(:)
+        integer n
+        type(C_PTR) :: int64_c_ptr
+        !---
+        n = conduit_node_number_of_elements(cnode)
+        int64_c_ptr = c_conduit_node_fetch_path_as_int64_ptr(cnode,trim(path) // C_NULL_CHAR)
+        call c_f_pointer(int64_c_ptr, f_out, (/n/))
+    end subroutine conduit_node_fetch_path_as_int64_ptr
 
 
+    !--------------------------------------------------------------------------
+    ! float 32 subs
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_path_float32(cnode, path, val)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        real(4), value, intent(IN) :: val
+        !---
+        call c_conduit_node_set_path_float32(cnode, trim(path) // C_NULL_CHAR, val)
+    end subroutine conduit_node_set_path_float32
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_path_float32_ptr(cnode, path, data, num_elements)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        real(4), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+        !---
+        call c_conduit_node_set_path_float32_ptr(cnode, trim(path) // C_NULL_CHAR, data, num_elements)
+    end subroutine conduit_node_set_path_float32_ptr
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_path_external_float32_ptr(cnode, path, data, num_elements)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        real(4), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+        !---
+        call c_conduit_node_set_path_external_float32_ptr(cnode, trim(path) // C_NULL_CHAR, data, num_elements)
+    end subroutine conduit_node_set_path_external_float32_ptr
+    
+
+    !--------------------------------------------------------------------------
+    function conduit_node_fetch_path_as_float32(cnode, path) result(res)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        real(4) :: res
+        !---
+        res =  c_conduit_node_fetch_path_as_float32(cnode, trim(path) // C_NULL_CHAR)
+    end function conduit_node_fetch_path_as_float32
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_as_float32_ptr(cnode,f_out)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        real(4), pointer :: f_out(:)
+        integer n
+        type(C_PTR) :: float32_c_ptr
+        !---
+        n = conduit_node_number_of_elements(cnode)
+        float32_c_ptr = c_conduit_node_as_float32_ptr(cnode)
+        call c_f_pointer(float32_c_ptr, f_out, (/n/))
+    end subroutine conduit_node_as_float32_ptr
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_fetch_path_as_float32_ptr(cnode, path, f_out)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        real(4), pointer :: f_out(:)
+        integer n
+        type(C_PTR) :: float32_c_ptr
+        !---
+        n = conduit_node_number_of_elements(cnode)
+        float32_c_ptr = c_conduit_node_fetch_path_as_float32_ptr(cnode,trim(path) // C_NULL_CHAR)
+        call c_f_pointer(float32_c_ptr, f_out, (/n/))
+    end subroutine conduit_node_fetch_path_as_float32_ptr
+
+
+
+    !--------------------------------------------------------------------------
+    ! float 64 subs
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_path_float64(cnode, path, val)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        real(8), value, intent(IN) :: val
+        !---
+        call c_conduit_node_set_path_float64(cnode, trim(path) // C_NULL_CHAR, val)
+    end subroutine conduit_node_set_path_float64
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_path_float64_ptr(cnode, path, data, num_elements)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        real(8), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+        !---
+        call c_conduit_node_set_path_float64_ptr(cnode, trim(path) // C_NULL_CHAR, data, num_elements)
+    end subroutine conduit_node_set_path_float64_ptr
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_path_external_float64_ptr(cnode, path, data, num_elements)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        real(8), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+        !---
+        call c_conduit_node_set_path_external_float64_ptr(cnode, trim(path) // C_NULL_CHAR, data, num_elements)
+    end subroutine conduit_node_set_path_external_float64_ptr
+    
+
+    !--------------------------------------------------------------------------
+    function conduit_node_fetch_path_as_float64(cnode, path) result(res)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        real(8) :: res
+        !---
+        res =  c_conduit_node_fetch_path_as_float64(cnode, trim(path) // C_NULL_CHAR)
+    end function conduit_node_fetch_path_as_float64
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_as_float64_ptr(cnode,f_out)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        real(8), pointer :: f_out(:)
+        integer n
+        type(C_PTR) :: float64_c_ptr
+        !---
+        n = conduit_node_number_of_elements(cnode)
+        float64_c_ptr = c_conduit_node_as_float64_ptr(cnode)
+        call c_f_pointer(float64_c_ptr, f_out, (/n/))
+    end subroutine conduit_node_as_float64_ptr
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_fetch_path_as_float64_ptr(cnode, path, f_out)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        real(8), pointer :: f_out(:)
+        integer n
+        type(C_PTR) :: float64_c_ptr
+        !---
+        n = conduit_node_number_of_elements(cnode)
+        float64_c_ptr = c_conduit_node_fetch_path_as_float64_ptr(cnode,trim(path) // C_NULL_CHAR)
+        call c_f_pointer(float64_c_ptr, f_out, (/n/))
+    end subroutine conduit_node_fetch_path_as_float64_ptr
+
+
+    !--------------------------------------------------------------------------
+    ! char8_str subs
+    !--------------------------------------------------------------------------
+    
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_char8_str(cnode,val)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: val
+        call c_conduit_node_set_char8_str(cnode,trim(val) // C_NULL_CHAR)
+    end subroutine conduit_node_set_char8_str
+    
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_path_char8_str(cnode, path, val)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        character(*), intent(IN) :: val
+        call c_conduit_node_set_path_char8_str(cnode, trim(path) // C_NULL_CHAR, trim(val) // C_NULL_CHAR)
+    end subroutine conduit_node_set_path_char8_str
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_as_char8_str(cnode, f_out)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character,pointer :: f_out(:)
+        integer n
+        type(C_PTR) :: str_c_ptr
+        !---
+        n = conduit_node_number_of_elements(cnode)
+        str_c_ptr = c_conduit_node_as_char8_str(cnode)
+        call c_f_pointer(str_c_ptr, f_out, (/n/))
+    end subroutine conduit_node_as_char8_str
+    
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_fetch_path_as_char8_str(cnode, path, f_out)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        character,pointer :: f_out(:)
+        integer n
+        type(C_PTR) :: str_c_ptr
+        !---
+        n = conduit_node_number_of_elements(cnode)
+        str_c_ptr = c_conduit_node_fetch_path_as_char8_str(cnode,trim(path) // C_NULL_CHAR)
+        call c_f_pointer(str_c_ptr, f_out, (/n/))
+    end subroutine conduit_node_fetch_path_as_char8_str
 
 !------------------------------------------------------------------------------
 end module conduit
