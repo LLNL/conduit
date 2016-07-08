@@ -57,19 +57,30 @@ set(libb64_sources
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# we always build libb64 as a static lib
-add_library(libb64 STATIC ${libb64_sources} )
+if(NOT WIN32)
+    # on non-win32, we always build libb64 as a static lib
+    add_library(libb64 STATIC ${libb64_sources} )
+else()
 
 #############################################
-# We don't really need to install libb64,
-# since we are using it as a static lib only
-# inside of conduit core. But if we don't export
-# CMake will yell b/c it is a dep of the 
-# exported conduit lib.
+# on windows, we don't mix static and shared
 #############################################
+    if(ENABLE_SHARED_LIBS)
+        add_library(libb64 SHARED ${libb64_sources} )
 
-install(TARGETS libb64
-  EXPORT conduit
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-)
+        #############################################
+        # If we are using shared libs on win32, 
+        # install libb64.
+        #############################################
+        install(TARGETS libb64
+          EXPORT conduit
+          LIBRARY DESTINATION lib
+          ARCHIVE DESTINATION lib
+        )
+
+    else()
+        add_library(libb64 STATIC ${libb64_sources} )
+    endif()
+
+
+endif()
