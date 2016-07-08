@@ -244,13 +244,13 @@ public:
 ///
 //-----------------------------------------------------------------------------
     void load(const std::string &stream_path,
-              const std::string &protocol="conduit_pair");
+              const std::string &protocol="conduit_bin");
 
     void load(const std::string &stream_path,
               const Schema &schema);
 
     void save(const std::string &stream_path,
-              const std::string &protocol="conduit_pair") const;
+              const std::string &protocol="conduit_bin") const;
 
     void mmap(const std::string &stream_path);
 
@@ -2121,8 +2121,8 @@ public:
 //-----------------------------------------------------------------------------
     // accepted protocols:
     //   "json"
-    //   "conduit"
-    //   "base64_json"
+    //   "conduit_json"
+    //   "conduit_base64_json"
     std::string         to_json(const std::string &protocol="json", 
                                 index_t indent=2, 
                                 index_t depth=0,

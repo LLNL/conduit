@@ -63,7 +63,7 @@ bool launch_server = false;
 bool use_ssl       = false;
 bool use_auth      = false;
 
-TEST(conduit_io_websocket, websocket_test)
+TEST(conduit_relay_web_websocket, websocket_test)
 {
     if(! launch_server)
     {
@@ -124,14 +124,14 @@ TEST(conduit_io_websocket, websocket_test)
                   
     if(use_ssl)
     {
-        cert_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"conduit_io");
+        cert_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"relay");
         cert_file = utils::join_file_path(cert_file,"t_ssl_cert.pem");
     }
 
     if(use_auth)
     {
         auth_domain = "test";
-        auth_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"conduit_io");
+        auth_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"relay");
         auth_file = utils::join_file_path(auth_file,"t_htpasswd.txt");
     }
 

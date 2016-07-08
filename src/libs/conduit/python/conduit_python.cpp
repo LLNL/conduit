@@ -54,8 +54,38 @@
 #define IS_PY3K
 #endif
 
+
 //-----------------------------------------------------------------------------
-// Functions to help with Python 2/3 Compatibility.
+// -- standard lib includes -- 
+//-----------------------------------------------------------------------------
+#include <iostream>
+#include <vector>
+
+//---------------------------------------------------------------------------//
+// include numpy
+//---------------------------------------------------------------------------//
+// TODO: Use 1.7 deprecated API, or not ?
+//---------------------------------------------------------------------------//
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+#include <numpy/arrayobject.h>
+
+//---------------------------------------------------------------------------//
+// conduit includes
+//---------------------------------------------------------------------------//
+#include "conduit.hpp"
+#include "Conduit_Python_Exports.hpp"
+
+#define CONDUIT_MODULE
+#include "conduit_python.hpp"
+
+
+using namespace conduit;
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Begin Functions to help with Python 2/3 Compatibility.
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
 #if defined(IS_PY3K)
@@ -135,61 +165,48 @@ PyInt_AsLong(PyObject *o)
 
 #endif
 
-
 //-----------------------------------------------------------------------------
-// -- standard lib includes -- 
 //-----------------------------------------------------------------------------
-#include <iostream>
-#include <vector>
+// End Functions to help with Python 2/3 Compatibility.
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-// include numpy
-//---------------------------------------------------------------------------//
-// TODO: Use 1.7 deprecated API, or not ?
-//---------------------------------------------------------------------------//
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-#include <numpy/arrayobject.h>
-
-//---------------------------------------------------------------------------//
-// conduit includes
-//---------------------------------------------------------------------------//
-#include "conduit.hpp"
-#include "Conduit_Python_Exports.hpp"
-
-using namespace conduit;
-
-//---------------------------------------------------------------------------//
-struct PyConduit_DataType {
+struct PyConduit_DataType
+{
     PyObject_HEAD
-    DataType dtype; // NoteIterator is light weight, we can deal with copies
+    DataType dtype; // DataType is light weight, we can deal with copies
 };
 
 //---------------------------------------------------------------------------//
-struct PyConduit_Generator {
+struct PyConduit_Generator
+{
     PyObject_HEAD
     Generator *generator;
 };
 
 //---------------------------------------------------------------------------//
-struct PyConduit_Schema {
+struct PyConduit_Schema
+{
     PyObject_HEAD
     Schema *schema;
     int python_owns;
 };
 
 //---------------------------------------------------------------------------//
-struct PyConduit_NodeIterator {
+struct PyConduit_NodeIterator
+{
     PyObject_HEAD
     NodeIterator itr; // NoteIterator is light weight, we can deal with copies
 };
 
 //---------------------------------------------------------------------------//
-struct PyConduit_Node {
+struct PyConduit_Node
+{
    PyObject_HEAD
    Node *node;
    int python_owns;
 };
-
 
 //---------------------------------------------------------------------------//
 static PyConduit_DataType *PyConduit_DataType_python_create();
@@ -198,19 +215,24 @@ static int       PyConduit_DataType_Check(PyObject* obj);
 //---------------------------------------------------------------------------//
 static int       PyConduit_Generator_Check(PyObject* obj);
 
-
 //---------------------------------------------------------------------------//
 static PyObject* PyConduit_Schema_python_wrap(Schema *schema,int python_owns);
 static int       PyConduit_Schema_Check(PyObject* obj);
 
-
 //---------------------------------------------------------------------------//
-static PyConduit_Node* PyConduit_Node_python_create();
+// static PyConduit_Node* PyConduit_Node_python_create();
 static PyObject* PyConduit_Node_python_wrap(Node *node,int python_owns);
-static int       PyConduit_Node_Check(PyObject* obj);
 static int       PyConduit_Node_SetFromPython(Node& node, PyObject* value);
 static PyObject* PyConduit_createNumpyType(Node& node, int type);
 static PyObject* PyConduit_convertNodeToPython(Node& node);
+
+//-----------------------------------------------------------------------------
+// c api decls from conduit_python.hpp
+//-----------------------------------------------------------------------------
+//static int       PyConduit_Node_Check(PyObject* obj);
+//static PyObject *PyConduit_Node_python_create();
+//static Node     *PyConduit_Node_Get_Node_Ptr(PyObject* obj);
+
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
@@ -2827,7 +2849,7 @@ static PyObject *
 PyConduit_NodeIterator_info(PyConduit_NodeIterator *self)
 {
     //create and return a node with the result of info
-    PyConduit_Node *retval = PyConduit_Node_python_create();
+    PyConduit_Node *retval = (PyConduit_Node *)PyConduit_Node_python_create();
     self->itr.info(*retval->node);
     return (PyObject*)retval;
 }
@@ -3073,6 +3095,15 @@ PyConduit_Node_str(PyConduit_Node* self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
+PyConduit_Node_repr(PyConduit_Node* self)
+{
+   std::ostringstream oss;
+   self->node->to_json_stream(oss,"conduit");
+   return (Py_BuildValue("s", oss.str().c_str()));
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
 PyConduit_Node_GetItem(PyConduit_Node* self,
                       PyObject* key)
 {
@@ -3214,7 +3245,7 @@ PyConduit_Node_save(PyConduit_Node *self,
     }
     
     std::string path_str(path);
-    std::string protocol_str("conduit_pair");
+    std::string protocol_str("conduit_bin");
     
     if(protocol != NULL)
     {
@@ -3273,7 +3304,7 @@ PyConduit_Node_load(PyConduit_Node *self,
     }
     else
     {
-        std::string protocol_str("conduit_pair");
+        std::string protocol_str("conduit_bin");
         
         if( protocol != NULL)
         {
@@ -3530,7 +3561,7 @@ PyConduit_Node_is_compact(PyConduit_Node *self)
 static PyObject * 
 PyConduit_Node_info(PyConduit_Node *self)
 {
-    PyConduit_Node *retval = PyConduit_Node_python_create();
+    PyConduit_Node *retval = (PyConduit_Node*)PyConduit_Node_python_create();
     self->node->info(*retval->node);
     return (PyObject*)retval;
 }
@@ -3945,7 +3976,7 @@ static PyTypeObject PyConduit_Node_TYPE = {
    0, /* tp_getattr */
    0, /* tp_setattr */
    0, /* tp_compare */
-   0, /* tp_repr */
+   (reprfunc)PyConduit_Node_repr, /* tp_repr */
    0, /* tp_as_number */
    0, /* tp_as_sequence */
    &node_as_mapping, /* as_mapping */
@@ -3992,7 +4023,11 @@ static PyTypeObject PyConduit_Node_TYPE = {
 static PyObject*
 PyConduit_about()
 {
-    return PyString_FromString(conduit::about().c_str());
+    //create and return a node with the result of about
+    PyObject *py_node_res = PyConduit_Node_python_create();
+    Node *node = PyConduit_Node_Get_Node_Ptr(py_node_res);
+    conduit::about(*node);
+    return (PyObject*)py_node_res;
 }
 
 
@@ -4042,6 +4077,13 @@ PyConduit_Node_Check(PyObject *obj)
 }
 
 //---------------------------------------------------------------------------//
+static Node *
+PyConduit_Node_Get_Node_Ptr(PyObject *obj)
+{
+    return ((PyConduit_Node*)obj)->node;
+}
+
+//---------------------------------------------------------------------------//
 static PyObject *
 PyConduit_Node_python_wrap(Node *node, int python_owns)
 {
@@ -4053,12 +4095,12 @@ PyConduit_Node_python_wrap(Node *node, int python_owns)
 }
 
 //---------------------------------------------------------------------------//
-static PyConduit_Node *
+static PyObject*
 PyConduit_Node_python_create()
 {
     Node *node = new Node();
     // python_owns = 1
-    return (PyConduit_Node *)PyConduit_Node_python_wrap(node,1); 
+    return PyConduit_Node_python_wrap(node,1); 
 }
 
 
@@ -4522,6 +4564,21 @@ void CONDUIT_PYTHON_API initconduit_python(void)
     PyModule_AddObject(conduit_module,
                        "Node",
                        (PyObject*)&PyConduit_Node_TYPE);
+
+    static void *PyConduit_API[PyConduit_API_number_of_entries];
+
+    /* Initialize the C API pointer array */
+    PyConduit_API[PyConduit_Node_Check_INDEX] = (void *)PyConduit_Node_Check;
+    PyConduit_API[PyConduit_Node_python_create_INDEX] = (void *)PyConduit_Node_python_create;
+    PyConduit_API[PyConduit_Node_Get_Node_Ptr_INDEX] = (void *)PyConduit_Node_Get_Node_Ptr;
+
+    /* Create a Capsule containing the API pointer array's address */
+    PyObject *py_c_api_capsule = PyCapsule_New((void *)PyConduit_API, "conduit._C_API", NULL);
+
+    if (py_c_api_capsule != NULL)
+    {
+        PyModule_AddObject(conduit_module, "_C_API", py_c_api_capsule);
+    }
 
     // req setup for numpy
     import_array();

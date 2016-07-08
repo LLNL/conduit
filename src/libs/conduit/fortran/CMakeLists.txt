@@ -49,6 +49,7 @@
 
 ENABLE_WARNINGS()
 
+# Create include file with bitwidth style mappings for fortran
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Bitwidth_Style_Types.inc.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/Bitwidth_Style_Types.inc")
 
@@ -61,50 +62,40 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 #
 set(conduit_fortran_sources
     conduit_fortran.F)
-    
+
+#  add oo interface if the fortran compiler supports it
 if(ENABLE_FORTRAN_OBJ_INTERFACE)
     list(APPEND conduit_fortran_sources conduit_fortran_obj.f)
 endif()
+
 #
-# Note: headers are added here so they show up in project file generators
-# (such as xcode, eclipse, etc)
+# Setup the conduit fortran lib
 #
-if(BUILD_SHARED_LIBS)
-    add_library(conduit_fortran SHARED 
-                ${conduit_fortran_sources}
-                ) 
-else()
-    add_library(conduit_fortran STATIC 
-                ${conduit_fortran_sources}
-                )
-endif()
+add_compiled_library(NAME   conduit_fortran
+                     EXPORT conduit
+                     SOURCES ${conduit_fortran_sources}
+                     )
 
 target_link_libraries(conduit_fortran  conduit)
-
 set_target_properties(conduit_fortran PROPERTIES Fortran_FORMAT "FREE")
 
-##################################
-# Install Targets for conduit lib
-##################################
+####################################################################
+# Special install targets for conduit fortran modules 
+####################################################################
 
 set(conduit_fortran_modules
     ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit.mod)
 
 if(ENABLE_FORTRAN_OBJ_INTERFACE)
-    list(APPEND conduit_fortran_modules ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_obj.mod)
+    list(APPEND conduit_fortran_modules
+                ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_obj.mod)
 endif()
 
-# Note: We don't need to install the .inc file
+# Setup install to copy the fortran modules 
 install(FILES 
         ${conduit_fortran_modules}
         DESTINATION include)
 
 
-install(TARGETS conduit_fortran
-  EXPORT conduit
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION lib
-)
 
 

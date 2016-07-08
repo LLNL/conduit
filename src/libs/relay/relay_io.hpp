@@ -97,15 +97,14 @@ void CONDUIT_RELAY_API save(Node &node,
                             const std::string &path);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const std::string &protocol,
-                            Node &node,
-                            const std::string &path);
+void CONDUIT_RELAY_API save(Node &node,
+                            const std::string &path,
+                            const std::string &protocol);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const std::string &protocol,
-                            Node &node,
-                            const std::string &file_path,
-                            const std::string &protocol_path);
+void CONDUIT_RELAY_API save(Node &node,
+                            const std::string &path,
+                            const std::string &protocol);
 
 ///
 /// ``save_merged`` works like an update to the file.
@@ -116,15 +115,10 @@ void CONDUIT_RELAY_API save_merged(Node &node,
                                    const std::string &path);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save_merged(const std::string &protocol,
-                                   Node &node,
-                                   const std::string &path);
+void CONDUIT_RELAY_API save_merged(Node &node,
+                                   const std::string &path,
+                                   const std::string &protocol);
 
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save_merged(const std::string &protocol,
-                                   Node &node,
-                                   const std::string &file_path,
-                                   const std::string &protocol_path);
 
 ///
 /// ``load`` works like a 'set', the node is reset and then populated
@@ -135,14 +129,8 @@ void CONDUIT_RELAY_API load(const std::string &path,
                             Node &node);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load(const std::string &protocol,
-                            const std::string &path,
-                            Node &node);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load(const std::string &protocol,
-                            const std::string &file_path,
-                            const std::string &protocol_path,
+void CONDUIT_RELAY_API load(const std::string &path,
+                            const std::string &protocol,
                             Node &node);
 
 
@@ -157,14 +145,8 @@ void CONDUIT_RELAY_API load_merged(const std::string &path,
                                    Node &node);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load_merged(const std::string &protocol,
-                                   const std::string &path,
-                                   Node &node);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load_merged(const std::string &protocol,
-                                   const std::string &file_path,
-                                   const std::string &protocol_path,
+void CONDUIT_RELAY_API load_merged(const std::string &path,
+                                   const std::string &protocol,
                                    Node &node);
 
 

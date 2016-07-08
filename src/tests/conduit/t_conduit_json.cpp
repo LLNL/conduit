@@ -353,11 +353,11 @@ TEST(conduit_json, to_base64_json)
     n["b"] = b_val;
     n["arr"].set_external(DataType::uint32(5),arr);
  
-    std::string base64_json = n.to_json("base64_json");
+    std::string base64_json = n.to_json("conduit_base64_json");
     std::cout << base64_json << std::endl;
     
     Node nparse;
-    Generator g(base64_json,"base64_json");
+    Generator g(base64_json,"conduit_base64_json");
     g.walk(nparse);
 
     nparse.print();
@@ -393,11 +393,11 @@ TEST(conduit_json, check_empty)
               nparse["path/to/empty"].dtype().id());
 
 
-    json_txt = n.to_json("conduit");
+    json_txt = n.to_json("conduit_json");
     
     CONDUIT_INFO("conduit:" << std::endl << json_txt);
     
-    Generator g2(json_txt,"conduit");
+    Generator g2(json_txt,"conduit_json");
     g2.walk(nparse);
     nparse.print();
 
@@ -405,11 +405,11 @@ TEST(conduit_json, check_empty)
               nparse["path/to/empty"].dtype().id());
 
 
-    json_txt = n.to_json("base64_json");
+    json_txt = n.to_json("conduit_base64_json");
     
-    CONDUIT_INFO("base64_json:" << std::endl << json_txt);
+    CONDUIT_INFO("conduit_base64_json:" << std::endl << json_txt);
     
-    Generator g3(json_txt,"base64_json");
+    Generator g3(json_txt,"conduit_base64_json");
     g3.walk(nparse);
     nparse.print();
 
@@ -435,11 +435,11 @@ TEST(conduit_json, check_childless_object)
               nparse["path/to/empty"].dtype().id());
 
 
-    json_txt = n.to_json("conduit");
+    json_txt = n.to_json("conduit_json");
     
     CONDUIT_INFO("conduit:(input)" << std::endl << json_txt);
     
-    Generator g2(json_txt,"conduit");
+    Generator g2(json_txt,"conduit_json");
     g2.walk(nparse);
     CONDUIT_INFO("conduit:(output)");
     nparse.print();
@@ -448,13 +448,13 @@ TEST(conduit_json, check_childless_object)
               nparse["path/to/empty"].dtype().id());
 
 
-    json_txt = n.to_json("base64_json");
+    json_txt = n.to_json("conduit_base64_json");
     
-    CONDUIT_INFO("base64_json:(input)" << std::endl << json_txt);
+    CONDUIT_INFO("conduit_base64_json:(input)" << std::endl << json_txt);
     
-    Generator g3(json_txt,"base64_json");
+    Generator g3(json_txt,"conduit_base64_json");
     g3.walk(nparse);
-    CONDUIT_INFO("base64_json:(output)");
+    CONDUIT_INFO("conduit_base64_json:(output)");
     nparse.print();
 
     EXPECT_EQ(n["path/to/empty"].dtype().id(),
@@ -481,11 +481,11 @@ TEST(conduit_json, check_childless_list)
               nparse["path/to/empty"].dtype().id());
 
 
-    json_txt = n.to_json("conduit");
+    json_txt = n.to_json("conduit_json");
     
     CONDUIT_INFO("conduit:(input)" << std::endl << json_txt);
     
-    Generator g2(json_txt,"conduit");
+    Generator g2(json_txt,"conduit_json");
     g2.walk(nparse);
     CONDUIT_INFO("conduit:(output)");
     nparse.print();
@@ -494,13 +494,13 @@ TEST(conduit_json, check_childless_list)
               nparse["path/to/empty"].dtype().id());
 
 
-    json_txt = n.to_json("base64_json");
+    json_txt = n.to_json("conduit_base64_json");
     
-    CONDUIT_INFO("base64_json:(input)" << std::endl << json_txt);
+    CONDUIT_INFO("conduit_base64_json:(input)" << std::endl << json_txt);
     
-    Generator g3(json_txt,"base64_json");
+    Generator g3(json_txt,"conduit_base64_json");
     g3.walk(nparse);
-    CONDUIT_INFO("base64_json:(output)");
+    CONDUIT_INFO("conduit_base64_json:(output)");
     nparse.print();
 
     EXPECT_EQ(n["path/to/empty"].dtype().id(),
@@ -536,7 +536,7 @@ TEST(conduit_json, json_schema_string_value_with_escapes)
     s.set(n.schema().to_json());
     s.print_detailed();
     
-    Generator g(s.to_json("conduit"));
+    Generator g(s.to_json("conduit_json"));
     Node s_load;
     g.walk(s_load);
     s_load.print();

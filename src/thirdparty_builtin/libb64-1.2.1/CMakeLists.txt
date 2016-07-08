@@ -61,11 +61,11 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_library(libb64 STATIC ${libb64_sources} )
 
 #############################################
-# We don't really need to install civetweb,
+# We don't really need to install libb64,
 # since we are using it as a static lib only
-# inside of conduit_io. But if we don't export
+# inside of conduit core. But if we don't export
 # CMake will yell b/c it is a dep of the 
-# exported conduit_io lib.
+# exported conduit lib.
 #############################################
 
 install(TARGETS libb64

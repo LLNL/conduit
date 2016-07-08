@@ -72,7 +72,7 @@ endif()
 ################################
 # Setup includes for RapidJSON
 ################################
-include(CMake/thirdparty/FindRapidJSON.cmake)
+include(CMake/thirdparty/SetupRapidJSON.cmake)
 message(STATUS "Using RapidJSON Include: ${RAPIDJSON_INCLUDE_DIR}")
 include_directories(${RAPIDJSON_INCLUDE_DIR})
 
@@ -104,7 +104,7 @@ if(ENABLE_PYTHON)
     ################################
     # Setup includes for Python & Numpy
     ################################
-    include(CMake/thirdparty/FindPython.cmake)
+    include(CMake/thirdparty/SetupPython.cmake)
     message(STATUS "Using Python Include: ${PYTHON_INCLUDE_DIRS}")
     include_directories(${PYTHON_INCLUDE_DIRS})
     # if we don't find python, throw a fatal error
@@ -141,7 +141,7 @@ endif()
 ################################
 # Search for HDF5.
 if(HDF5_DIR)
-    include(CMake/thirdparty/FindHDF5.cmake)
+    include(CMake/thirdparty/SetupHDF5.cmake)
     include_directories(${HDF5_INCLUDE_DIRS})
     # if we don't find HDF5, throw a fatal error
     if(NOT HDF5_FOUND)
@@ -154,7 +154,7 @@ endif()
 ################################
 # Search for Silo.
 if(SILO_DIR)
-    include(CMake/thirdparty/FindSilo.cmake)
+    include(CMake/thirdparty/SetupSilo.cmake)
     include_directories(${SILO_INCLUDE_DIRS})
     # if we don't find silo, throw a fatal error
     if(NOT SILO_FOUND)

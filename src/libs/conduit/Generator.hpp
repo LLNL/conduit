@@ -101,6 +101,12 @@ public:
               void *data);
     /// create a generator from json, using a given protocol name, which can 
     /// optionally be applied to a data pointer
+    ///
+    /// protocols:
+    ///   "json"
+    ///   "conduit_json"
+    ///   "conduit_base64_json"
+    ///
     Generator(const std::string &json_schema,
               const std::string &protocol,
               void *data = NULL);

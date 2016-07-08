@@ -86,9 +86,9 @@ endif()
 #############################################
 # We don't really need to install civetweb,
 # since we are using it as a static lib only
-# inside of conduit_io. But if we don't export
+# inside of conduit_relay. But if we don't export
 # CMake will yell b/c it is a dep of the 
-# exported conduit_io lib.
+# exported conduit_relay lib.
 #############################################
 
 install(TARGETS civetweb

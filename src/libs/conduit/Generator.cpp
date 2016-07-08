@@ -1156,7 +1156,7 @@ Generator::Parser::parse_base64(Node *node,
         }
         else
         {
-            CONDUIT_ERROR("base64_json protocol error: missing data/base64");
+            CONDUIT_ERROR("conduit_base64_json protocol error: missing data/base64");
         }
         
         if (jvalue.HasMember("schema"))
@@ -1167,7 +1167,7 @@ Generator::Parser::parse_base64(Node *node,
         }
         else
         {
-            CONDUIT_ERROR("base64_json protocol error: missing schema");
+            CONDUIT_ERROR("conduit_base64_json protocol error: missing schema");
         }
         
         node->set(s);
@@ -1181,7 +1181,7 @@ Generator::Parser::parse_base64(Node *node,
     }
     else
     {
-        CONDUIT_ERROR("base64_json protocol error: missing schema and data/base64");
+        CONDUIT_ERROR("conduit_base64_json protocol error: missing schema and data/base64");
     }
 }
 
@@ -1202,7 +1202,7 @@ Generator::Parser::parse_base64(Node *node,
 //---------------------------------------------------------------------------//
 Generator::Generator(const std::string &json_schema)
 :m_json_schema(json_schema),
- m_protocol("conduit"),
+ m_protocol("conduit_json"),
  m_data(NULL)
 {}
 
@@ -1211,7 +1211,7 @@ Generator::Generator(const std::string &json_schema)
 Generator::Generator(const std::string &json_schema,
                      void *data)
 :m_json_schema(json_schema),
- m_protocol("conduit"),
+ m_protocol("conduit_json"),
  m_data(data)
 {}
 
@@ -1274,7 +1274,7 @@ Generator::walk_external(Node &node) const
                                       node.schema_ptr(),
                                       document);
     }
-    else if( m_protocol == "base64_json")
+    else if( m_protocol == "conduit_base64_json")
     {
         rapidjson::Document document;
         std::string res = utils::json_sanitize(m_json_schema);
@@ -1286,7 +1286,7 @@ Generator::walk_external(Node &node) const
         Parser::parse_base64(&node,
                              document);
     }
-    else if( m_protocol == "conduit")
+    else if( m_protocol == "conduit_json")
     {
         rapidjson::Document document;
         std::string res = utils::json_sanitize(m_json_schema);

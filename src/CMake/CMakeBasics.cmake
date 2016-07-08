@@ -123,6 +123,69 @@ if(ENABLE_TESTS)
     include(CTest)
 endif()
 
+
+######################################################################################
+# Provide macros to simplify creating libs 
+######################################################################################
+macro(add_compiled_library)
+    set(options)
+    set(singleValuedArgs NAME EXPORT HEADERS_DEST_DIR LIB_DEST_DIR )
+    set(multiValuedArgs  HEADERS SOURCES)
+
+    ## parse the arguments to the macro
+    cmake_parse_arguments(args
+         "${options}" "${singleValuedArgs}" "${multiValuedArgs}" ${ARGN} )
+    
+    #############################
+    # add lib target
+    #############################
+
+    #
+    # Note: headers are added here so they show up in project file generators
+    # (such as xcode, eclipse, etc)
+    #
+    if(BUILD_SHARED_LIBS)
+        add_library(${args_NAME} SHARED 
+                    ${args_SOURCES}
+                    ${args_HEADERS})
+    else()
+        add_library(${args_NAME} STATIC 
+                    ${args_SOURCES}
+                    ${args_HEADERS})
+    endif()
+
+    #############################
+    # install and export setup
+    #############################
+    
+    # if we have headers, install them
+    if(NOT "${args_HEADERS}" STREQUAL "")
+        if(NOT "${args_HEADERS_DEST_DIR}" STREQUAL "")
+            install(FILES ${args_HEADERS} DESTINATION ${args_HEADERS_DEST_DIR})
+        else()
+            install(FILES ${args_HEADERS} DESTINATION include)
+        endif()
+    endif()
+    
+
+    # install our lib
+    if(NOT "${args_LIB_DEST}" STREQUAL "")
+        install(TARGETS ${args_NAME}
+                EXPORT ${args_EXPORT}
+                LIBRARY DESTINATION ${args_LIB_DEST_DIR}
+                ARCHIVE DESTINATION ${args_LIB_DEST_DIR}
+                RUNTIME DESTINATION ${args_LIB_DEST_DIRT})
+    else()
+        install(TARGETS ${args_NAME}
+                EXPORT ${args_EXPORT}
+                LIBRARY DESTINATION lib
+                ARCHIVE DESTINATION lib
+                RUNTIME DESTINATION lib)
+    endif()
+
+endmacro()
+
+
 ######################################################################################
 # Provide macros to simplify adding compile and link flags to a target
 ######################################################################################
