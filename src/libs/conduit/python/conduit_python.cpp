@@ -3095,6 +3095,15 @@ PyConduit_Node_str(PyConduit_Node* self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
+PyConduit_Node_repr(PyConduit_Node* self)
+{
+   std::ostringstream oss;
+   self->node->to_json_stream(oss,"conduit");
+   return (Py_BuildValue("s", oss.str().c_str()));
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
 PyConduit_Node_GetItem(PyConduit_Node* self,
                       PyObject* key)
 {
@@ -3967,7 +3976,7 @@ static PyTypeObject PyConduit_Node_TYPE = {
    0, /* tp_getattr */
    0, /* tp_setattr */
    0, /* tp_compare */
-   0, /* tp_repr */
+   (reprfunc)PyConduit_Node_repr, /* tp_repr */
    0, /* tp_as_number */
    0, /* tp_as_sequence */
    &node_as_mapping, /* as_mapping */
