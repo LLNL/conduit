@@ -57,7 +57,7 @@ from conduit import NodeIterator
 from numpy import *
 
 
-class Test_Conduit_Node(unittest.TestCase):
+class Test_Conduit_Node_Iterator(unittest.TestCase):
     def test_simple(self):
         a_val = uint32(10)
         b_val = uint32(20)
