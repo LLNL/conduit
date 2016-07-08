@@ -3098,7 +3098,7 @@ static PyObject *
 PyConduit_Node_repr(PyConduit_Node* self)
 {
    std::ostringstream oss;
-   self->node->to_json_stream(oss,"conduit");
+   self->node->to_json_stream(oss,"conduit_json");
    return (Py_BuildValue("s", oss.str().c_str()));
 }
 
