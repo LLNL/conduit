@@ -460,7 +460,6 @@ escape_special_chars(const std::string &input)
         {
             // quotes and slashes
             case '\"':
-            case '/':
             case '\\':
             {
                 res += '\\';
@@ -526,7 +525,9 @@ unescape_special_chars(const std::string &input)
                 // quotes and slashes
                 case '\"':
                 case '\\':
-                case '/':
+                // even though we don't escape forward slashes
+                // we support unescaping them.
+                case '/': 
                 {
                     res += val;
                     // skip escape char

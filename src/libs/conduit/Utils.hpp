@@ -281,12 +281,10 @@ namespace utils
 /// Helpers for escaping / unescaping special characters in strings.
 ///
 /// Our main use case for escaping is json, so we support the escape rules 
-/// outlined by the json standard (see: http://www.json.org/), except for 
-/// hex escapes (\uFFFF):
+/// outlined by the json standard (see: http://www.json.org/). 
 ///
 /// List of supported special characters. 
 ///    " (quote)
-///    / (forward slash)
 ///    \ (backward slash)
 ///    \n (newline)
 ///    \t (tab)
@@ -294,6 +292,12 @@ namespace utils
 ///    \f (form feed)
 ///    \r (carriage return)
 ///
+/// Special chars that are not escaped, but are unescaped:
+///    / (forward slash)
+///
+/// Special chars that are not escaped or unescaped:
+///    \u (for hex escapes: \uFFFF)
+/// 
 //-----------------------------------------------------------------------------
     std::string CONDUIT_API escape_special_chars(const std::string &input);
     std::string CONDUIT_API unescape_special_chars(const std::string &input);
