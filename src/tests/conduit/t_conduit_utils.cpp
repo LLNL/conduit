@@ -198,13 +198,13 @@ TEST(conduit_utils, escape_special_chars)
     EXPECT_EQ(test,test_unescaped);
 
 
-    test = "\" \\ / \n \t \b \f \r";
+    test = "\" \\ \n \t \b \f \r /";
     test_escaped   = utils::escape_special_chars(test);
     test_unescaped = utils::unescape_special_chars(test_escaped);
 
     CONDUIT_INFO( test << "\nvs\n" << test_escaped);
 
-    EXPECT_EQ(test_escaped, "\\\" \\\\ \\/ \\n \\t \\b \\f \\r");
+    EXPECT_EQ(test_escaped, "\\\" \\\\ \\n \\t \\b \\f \\r /");
     EXPECT_EQ(test,test_unescaped);
 }
 
