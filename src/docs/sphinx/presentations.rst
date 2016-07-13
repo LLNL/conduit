@@ -46,9 +46,11 @@
 Presentations 
 ================================
 
-Talks
+Slides
 ------------------
+* :download:`SciPy 2016 talk on Conduit (July 2016) <2016_07_13_scipy2016_conduit_slides.pdf>`
 * :download:`Conduit Introduction (February 2015) <2015_conduit_intro.pdf>`
+
 
 Interviews
 ------------------
