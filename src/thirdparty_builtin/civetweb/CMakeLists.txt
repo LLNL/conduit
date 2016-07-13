@@ -66,34 +66,11 @@ add_definitions(-DUSE_WEBSOCKET)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 
-
-
-
-if(NOT WIN32)
-    # on non-win32, always build civetweb as a static lib
-    add_library(civetweb STATIC ${civetweb_sources} ${civetweb_headers})
-else()
-
-#############################################
-# on windows, we don't mix static and shared
-#############################################
-    if(ENABLE_SHARED_LIBS)
-        add_library(civetweb SHARED ${civetweb_sources} ${civetweb_headers})
-
-        #############################################
-        # If we are using shared libs on win32, 
-        # install civetweb.
-        #############################################
-        install(TARGETS civetweb
-          EXPORT conduit
-          LIBRARY DESTINATION lib
-          ARCHIVE DESTINATION lib
-        )
-    else()
-        add_library(civetweb STATIC ${civetweb_sources} ${civetweb_headers})
-    endif()
-
-endif()
+add_compiled_library(NAME   civetweb
+                     INTERNAL
+                     EXPORT conduit
+                     HEADERS ${civetweb_headers}
+                     SOURCES ${civetweb_sources})
 
 ##################################
 # system dependencies for civetweb

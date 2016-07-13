@@ -57,30 +57,9 @@ set(libb64_sources
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-if(NOT WIN32)
-    # on non-win32, we always build libb64 as a static lib
-    add_library(libb64 STATIC ${libb64_sources} )
-else()
 
-#############################################
-# on windows, we don't mix static and shared
-#############################################
-    if(ENABLE_SHARED_LIBS)
-        add_library(libb64 SHARED ${libb64_sources} )
+add_compiled_library(NAME   libb64
+                     INTERNAL
+                     EXPORT conduit
+                     SOURCES ${libb64_sources})
 
-        #############################################
-        # If we are using shared libs on win32, 
-        # install libb64.
-        #############################################
-        install(TARGETS libb64
-          EXPORT conduit
-          LIBRARY DESTINATION lib
-          ARCHIVE DESTINATION lib
-        )
-
-    else()
-        add_library(libb64 STATIC ${libb64_sources} )
-    endif()
-
-
-endif()
