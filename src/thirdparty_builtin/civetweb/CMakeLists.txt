@@ -65,8 +65,12 @@ add_definitions(-DUSE_WEBSOCKET)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# we always build civetweb as a static lib
-add_library(civetweb STATIC ${civetweb_sources} ${civetweb_headers})
+
+add_compiled_library(NAME   civetweb
+                     INTERNAL
+                     EXPORT conduit
+                     HEADERS ${civetweb_headers}
+                     SOURCES ${civetweb_sources})
 
 ##################################
 # system dependencies for civetweb
@@ -78,23 +82,7 @@ if(UNIX AND NOT APPLE)
     target_link_libraries(civetweb dl rt)
 endif()
 
-##################################
-# Install Targets for civetweb
-##################################
 
 
-#############################################
-# We don't really need to install civetweb,
-# since we are using it as a static lib only
-# inside of conduit_relay. But if we don't export
-# CMake will yell b/c it is a dep of the 
-# exported conduit_relay lib.
-#############################################
-
-install(TARGETS civetweb
-  EXPORT conduit
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-)
 
 

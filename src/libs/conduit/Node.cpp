@@ -4713,7 +4713,7 @@ Node::update(Node &n_src)
         {
             index_t num_children = number_of_children();
             for(index_t idx=0; 
-                (idx < num_children and idx < src_num_children); 
+                (idx < num_children && idx < src_num_children); 
                 idx++)
             {
                 child(idx).update(n_src.child(idx));
@@ -4786,7 +4786,7 @@ Node::update_compatible(Node &n_src)
         {
             index_t num_children = number_of_children();
             for(index_t idx=0; 
-                (idx < num_children and idx < src_num_children); 
+                (idx < num_children && idx < src_num_children); 
                  idx++)
             {
                 child(idx).update_compatible(n_src.child(idx));
@@ -4844,7 +4844,7 @@ Node::update_external(Node &n_src)
         {
             index_t num_children = number_of_children();
             for(index_t idx=0; 
-                (idx < num_children and idx < src_num_children); 
+                (idx < num_children && idx < src_num_children); 
                 idx++)
             {
                 child(idx).update_external(n_src.child(idx));

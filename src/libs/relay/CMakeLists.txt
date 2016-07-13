@@ -112,18 +112,24 @@ add_compiled_library(NAME conduit_relay
 #
 # Link with conduit 
 #
-target_link_libraries(conduit_relay conduit civetweb)
+target_link_libraries(conduit_relay PUBLIC conduit)
+
+#
+# civetweb is a private dep, its not exposed in / required by
+# conduit relays' header files
+#
+target_link_libraries(conduit_relay PRIVATE civetweb)
 
 
 #
 # Link with silo and hdf5 if these are enabled
 #
 if(SILO_FOUND)
-    target_link_libraries(conduit_relay conduit ${SILO_LIBRARIES})
+    target_link_libraries(conduit_relay PUBLIC ${SILO_LIBRARIES})
 endif()
 
 if(HDF5_FOUND)
-    target_link_libraries(conduit_relay conduit ${HDF5_LIBRARIES})
+    target_link_libraries(conduit_relay PUBLIC ${HDF5_LIBRARIES})
 endif()
 
 

@@ -57,19 +57,9 @@ set(libb64_sources
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# we always build libb64 as a static lib
-add_library(libb64 STATIC ${libb64_sources} )
 
-#############################################
-# We don't really need to install libb64,
-# since we are using it as a static lib only
-# inside of conduit core. But if we don't export
-# CMake will yell b/c it is a dep of the 
-# exported conduit lib.
-#############################################
+add_compiled_library(NAME   libb64
+                     INTERNAL
+                     EXPORT conduit
+                     SOURCES ${libb64_sources})
 
-install(TARGETS libb64
-  EXPORT conduit
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-)
