@@ -61,7 +61,7 @@ C and C++ Libraries
 - *gtest*: thirdparty_builtin/gtest-1.7.0/LICENSE (BSD Style License)
 - *libb64*: thirdparty_builtin/libb64/LICENSE (Public Domain)
 - *rapidjson*: thirdparty_builtin/rapidjson/license.txt (MIT License)
-- *civetweb*: thirdparty_builtin/civetweb/license.txt (MIT License)
+- *civetweb*: thirdparty_builtin/civetweb-1.8/LICENSE.md (MIT License)
 
 JavaScript Libraries
 =====================
