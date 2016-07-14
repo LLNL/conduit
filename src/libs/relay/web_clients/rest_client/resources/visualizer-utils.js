@@ -58,7 +58,7 @@ var bytesToString = function (bytes) {
 var nodeSize = function (d) {
 	if (!d.size) {
 		if (d.leaf) {
-			d.size = d.length * d.element_bytes;
+			d.size = d.number_of_elements * d.element_bytes;
 		} else {
       var kids = d.children ? d.children : d._children;
       d.size = kids.map(nodeSize).reduce(function (a, b) { return a + b; });
