@@ -50,7 +50,7 @@ function SearchTable (root) {
 
 SearchTable.prototype = {
   // column names
-  columns: ["abbrpath", "dtype", "length", "size"],
+  columns: ["abbrpath", "dtype", "number_of_elements", "size"],
   // creates a table, bound to the #d3table div
   init: function (root) {
     var self = this;
@@ -88,7 +88,7 @@ SearchTable.prototype = {
       cpath: "Path",
       abbrpath: "Path",
       dtype: "Type",
-      length: "Length",
+      number_of_elements: "# of Elements",
       size: "Size",
       offset: "Offset",
       endianness: "Endianness"
@@ -129,6 +129,7 @@ SearchTable.prototype = {
     var cells = rows.selectAll("td")
       .data(function(row) {
         return self.columns.map(function(column) {
+            console.log(column);
           if (column == 'abbrpath') {
             split = row.cpath.split("/");
             if (split.length > 4) {

@@ -65,16 +65,16 @@ TEST(conduit_relay_web_rest, rest_server)
 {
     uint32 a_val = 20;
     uint32 b_val = 8;
-    uint32 c_val = 13;
+    
+    std::vector<float64> c_vals(5,3.14159);
 
     Node *n = new Node();
     n->fetch("a") = a_val;
     n->fetch("b") = b_val;
-    n->fetch("c") = c_val;
+    n->fetch("c") = c_vals;
 
     EXPECT_EQ(n->fetch("a").as_uint32(), a_val);
     EXPECT_EQ(n->fetch("b").as_uint32(), b_val);
-    EXPECT_EQ(n->fetch("c").as_uint32(), c_val);
     
     if(launch_server)
     {

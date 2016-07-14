@@ -183,7 +183,7 @@ public:
         handleConnection(CivetServer *, // server -- unused
                          const struct mg_connection *) // conn -- unused
         {
-            CONDUIT_INFO("conduit::io::WebServer WebSocket Connected");
+            CONDUIT_INFO("conduit::relay::web::WebServer WebSocket Connected");
             return true;
         }
 
@@ -334,7 +334,7 @@ public:
                 CONDUIT_ERROR("Bad WebSocket state");
             }
 
-            CONDUIT_INFO("conduit::io::WebServer WebSocket Disconnected");
+            CONDUIT_INFO("conduit::relay::web::WebServer WebSocket Disconnected");
         }
         
         //---------------------------------------------------------------------------//
@@ -742,12 +742,12 @@ WebServer::serve(const std::string &doc_root,
     {
         if(!use_ssl)
         {
-            CONDUIT_INFO("conduit::io::WebServer http server instance "
+            CONDUIT_INFO("conduit::relay::web::WebServer http server instance "
                          "active on port: " << m_port);
         }
         else
         {
-            CONDUIT_INFO("conduit::io::WebServer https server instance "
+            CONDUIT_INFO("conduit::relay::web::WebServer https server instance "
                          "active on port: " << m_port);
         }
     }
@@ -770,7 +770,7 @@ WebServer::shutdown()
 {
     if(is_running())
     {
-        CONDUIT_INFO("closing conduit::io::WebServer instance on port: " 
+        CONDUIT_INFO("closing conduit::relay::web::WebServer instance on port: " 
                      << m_port);
 
         m_running = false;
