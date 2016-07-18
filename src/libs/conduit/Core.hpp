@@ -102,7 +102,7 @@ typedef conduit_float64 float64;
 
 /// index typedefs
 typedef conduit_index32_t index32_t;
-typedef conduit_index32_t index64_t;
+typedef conduit_index64_t index64_t;
 // conduit_index_t is defined in Bitwidth_Style_Types.h
 // it will be index64_t, unless CONDUIT_INDEX_32 is defined
 typedef conduit_index_t   index_t;
