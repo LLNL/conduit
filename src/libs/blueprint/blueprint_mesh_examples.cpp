@@ -254,21 +254,22 @@ void braid_init_rectilinear_coordset(index_t npts_x,
                                      Node &coords)
 {
     coords["type"] = "rectilinear";
-    coords["x"].set(DataType::float64(npts_x));
-    coords["y"].set(DataType::float64(npts_y));
+    Node &coord_vals = coords["values"];
+    coord_vals["x"].set(DataType::float64(npts_x));
+    coord_vals["y"].set(DataType::float64(npts_y));
     
     if(npts_z > 1)
     {
-        coords["z"].set(DataType::float64(npts_z));
+        coord_vals["z"].set(DataType::float64(npts_z));
     }
 
-    float64 *x_vals = coords["x"].value();
-    float64 *y_vals = coords["y"].value();
+    float64 *x_vals = coord_vals["x"].value();
+    float64 *y_vals = coord_vals["y"].value();
     float64 *z_vals = NULL;
 
     if(npts_z > 1)
     {
-        z_vals = coords["z"].value();
+        z_vals = coord_vals["z"].value();
     }
 
 
@@ -312,21 +313,22 @@ braid_init_explicit_coordset(index_t npts_x,
     index_t npts = npts_x * npts_y * npts_z;
 
     // also support interleaved
-    coords["x"].set(DataType::float64(npts));
-    coords["y"].set(DataType::float64(npts));
+    Node &coord_vals = coords["values"];
+    coord_vals["x"].set(DataType::float64(npts));
+    coord_vals["y"].set(DataType::float64(npts));
 
     if(npts_z > 1)
     {
-        coords["z"].set(DataType::float64(npts));
+        coord_vals["z"].set(DataType::float64(npts));
     }
 
-    float64 *x_vals = coords["x"].value();
-    float64 *y_vals = coords["y"].value();
+    float64 *x_vals = coord_vals["x"].value();
+    float64 *y_vals = coord_vals["y"].value();
     float64 *z_vals = NULL;
     
     if(npts_z > 1)
     {
-        z_vals = coords["z"].value();
+        z_vals = coord_vals["z"].value();
     }
 
     float dx = 20.0 / float64(npts_x-1);
@@ -583,7 +585,7 @@ braid_quads_and_tris(index_t npts_x,
   
     res["topology/type"] = "unstructured";
 
-    Node& elems = res["topology/elements"];
+    Node &elems = res["topology/elements"];
     elems["stream_shapes/quads/stream_id"] = 9; // VTK_QUAD
     elems["stream_shapes/quads/shape"]     = "quads";
     elems["stream_shapes/tris/stream_id"]  = 5; // VTK_TRIANGLE
@@ -703,7 +705,7 @@ braid_quads_and_tris_offsets(index_t npts_x,
 
     res["topology/type"] = "unstructured";
 
-    Node& elems = res["topology/elements"];
+    Node &elems = res["topology/elements"];
     elems["stream_shapes/quads/stream_id"] = 9; // VTK_QUAD
     elems["stream_shapes/quads/shape"]     = "quads";
     elems["stream_shapes/tris/stream_id"]  = 5; // VTK_TRIANGLE
