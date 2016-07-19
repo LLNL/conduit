@@ -55,6 +55,16 @@
 //-----------------------------------------------------------------------------
 #include <iostream>
 
+// includes for optional features
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+#include "relay_hdf5.hpp"
+#endif
+
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
+#include "relay_silo.hpp"
+#endif
+
+
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------

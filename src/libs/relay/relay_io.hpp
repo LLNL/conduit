@@ -59,17 +59,6 @@
 #include "relay_exports.hpp"
 #include "relay_config.hpp"
 
-// include optional libs
-
-#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-#include "relay_hdf5.hpp"
-#endif
-
-// include optional libs
-#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
-#include "relay_silo.hpp"
-#endif
-
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
