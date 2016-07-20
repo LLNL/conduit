@@ -54,7 +54,6 @@ User Documentation
    blueprint
    building
    glossary
-   licenses
 
 
 .. leave out the api docs for now, the doxygen comments are too sparse. 

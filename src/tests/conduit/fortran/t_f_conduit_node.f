@@ -85,316 +85,6 @@ contains
     
     end subroutine t_node_create
 
-    !--------------------------------------------------------------------------
-    subroutine t_node_set_int
-        type(C_PTR) cnode
-        integer res
-        
-        !----------------------------------------------------------------------
-        call set_case_name("t_node_set_int")
-        !----------------------------------------------------------------------
-
-        !--------------
-        ! c++ ~equiv:
-        !--------------
-        ! Node n;    
-        cnode = conduit_node_create()
-        ! n.set(42);
-        call conduit_node_set_int(cnode,42)
-        ! n.print_detailed();
-        call conduit_node_print_detailed(cnode)
-        ! int res = n.as_int();
-        res = conduit_node_as_int(cnode)
-        call assert_equals (42, res)
-        call conduit_node_destroy(cnode)
-        
-    end subroutine t_node_set_int
-
-    !--------------------------------------------------------------------------
-    subroutine t_node_set_int32
-        type(C_PTR) cnode
-        integer(4) res
-        
-        !----------------------------------------------------------------------
-        call set_case_name("t_node_set_int32")
-        !----------------------------------------------------------------------
-
-        !--------------
-        ! c++ ~equiv:
-        !--------------
-        ! Node n;
-        cnode = conduit_node_create()
-        ! n.set_int32(42);
-        call conduit_node_set_int32(cnode,42)
-        ! n.print_detailed();
-        call conduit_node_print_detailed(cnode)
-        ! int32 res = n.as_int32();
-        res = conduit_node_as_int32(cnode)
-        call assert_equals (42, res)
-        call conduit_node_destroy(cnode)
-        
-    end subroutine t_node_set_int32
-
-    !--------------------------------------------------------------------------
-    subroutine t_node_set_double
-        type(C_PTR) cnode
-        real(kind=8) res
-        
-        !--------------
-        call set_case_name("t_node_set_double")
-        !--------------
-        
-        !--------------
-        ! c++ ~equiv:
-        !--------------
-        ! Node n;
-        cnode = conduit_node_create()
-        ! n.set(3.1415);
-        call conduit_node_set_double(cnode,3.1415d+0)
-        ! n.print_detailed();
-        call conduit_node_print_detailed(cnode)
-        ! double res = n.as_double();
-        res = conduit_node_as_double(cnode)
-        call assert_equals(3.1415d+0, res)
-        call conduit_node_destroy(cnode)
-        
-    end subroutine t_node_set_double
-
-    !--------------------------------------------------------------------------
-    subroutine t_node_set_float64
-        type(C_PTR) cnode
-        real(kind=8) res
-        
-        !----------------------------------------------------------------------
-        call set_case_name("t_node_set_float64")
-        !----------------------------------------------------------------------
-        
-        !--------------
-        ! c++ ~equiv:
-        !--------------
-        ! Node n;
-        cnode = conduit_node_create()
-        ! n.set_float64(3.1415);
-        call conduit_node_set_float64(cnode,3.1415d+0)
-        ! n.print_detailed();
-        call conduit_node_print_detailed(cnode)
-        ! float64 res = n.as_float64();
-        res = conduit_node_as_float64(cnode)
-        call assert_equals(3.1415d+0, res)
-        call conduit_node_destroy(cnode)
-                
-    end subroutine t_node_set_float64
-
-    !--------------------------------------------------------------------------
-    subroutine t_node_set_int32_ptr
-        type(C_PTR) cnode
-        integer(4), dimension(5) :: data
-        integer nele
-        integer i
-        
-        !----------------------------------------------------------------------
-        call set_case_name("t_node_set_int32_ptr")
-        !----------------------------------------------------------------------
-        
-        ! fill our 32-bit x5 integer array
-        do i = 1,5
-            data(i) = i
-        enddo
-        
-        !--------------
-        ! c++ ~equiv:
-        !--------------
-        ! Node n; 
-        cnode = conduit_node_create()
-        ! Node n.set_int32_ptr(data,5);
-        call conduit_node_set_int32_ptr(cnode,data,5_8)
-        ! n.print_detailed();
-        call conduit_node_print_detailed(cnode)
-        ! index_t nele = n.dtype().number_of_elements();
-        nele = conduit_node_number_of_elements(cnode)
-        call assert_equals(nele,5)
-        call conduit_node_destroy(cnode)
-        
-    end subroutine t_node_set_int32_ptr
-
-    !--------------------------------------------------------------------------
-    subroutine t_node_set_external_int32_ptr
-        type(C_PTR) cnode
-        integer(4), dimension(5) :: data
-        integer res
-        integer i
-        integer(4), pointer :: f_arr(:)
-        
-        !----------------------------------------------------------------------
-        call set_case_name("t_node_set_external_int32_ptr")
-        !----------------------------------------------------------------------
-        
-        ! fill our 32-bit x5 integer array
-        do i = 1,5
-            data(i) = i
-        enddo
-        
-        !--------------
-        ! c++ ~equiv:
-        !--------------
-        ! Node n; 
-        cnode = conduit_node_create()
-        ! n.set_external_int32_ptr(data,5);
-        call conduit_node_set_external_int32_ptr(cnode,data,5_8)
-        ! change the first element in the array
-        ! so we can check the external semantics
-        data(1) = 42
-        ! n.print_detailed();
-        call conduit_node_print_detailed(cnode)
-        ! int32 res = n.as_int32()
-        res = conduit_node_as_int32(cnode)
-        call assert_equals(res,42)
-        ! int32 *res_ptr = n.as_int32_ptr()
-        call conduit_node_as_int32_ptr(cnode,f_arr)
-        
-        call assert_equals(f_arr(1),42)
-        
-        ! check array value equiv
-        do i = 1,5
-            call assert_equals(f_arr(i),data(i))
-        enddo
-
-        call conduit_node_destroy(cnode)
-        
-    end subroutine t_node_set_external_int32_ptr
-
-    !--------------------------------------------------------------------------
-    subroutine t_node_as_int32_ptr
-        type(C_PTR) cnode
-        integer(4), dimension(5) :: data
-        integer nele
-        integer i
-        integer(4), pointer :: f_arr(:)
-        
-        !----------------------------------------------------------------------
-        call set_case_name("t_node_as_int32_ptr")
-        !----------------------------------------------------------------------
-        
-        ! fill our 32-bit x5 integer array
-        do i = 1,5
-            data(i) = i
-        enddo
-        
-        !--------------
-        ! c++ ~equiv:
-        !--------------
-        ! Node n; 
-        cnode = conduit_node_create()
-        ! n.set_external_int32_ptr(data,5);
-        call conduit_node_set_int32_ptr(cnode,data,5_8)
-        ! n.print_detailed();
-        call conduit_node_print_detailed(cnode)
-        ! index_t nele = n.dtype().number_of_elements();
-        nele = conduit_node_number_of_elements(cnode)
-        call assert_equals(nele,5)
-        ! int32 *res_ptr = n.as_int32_ptr()
-        call conduit_node_as_int32_ptr(cnode,f_arr)
-        
-        ! check array value equiv
-        do i = 1,5
-            call assert_equals(f_arr(i),data(i))
-        enddo
-
-        call conduit_node_destroy(cnode)
-        
-    end subroutine t_node_as_int32_ptr
-
-
-    !--------------------------------------------------------------------------
-    subroutine t_node_as_int32_ptr_read_scalar
-        type(C_PTR) cnode
-        integer nele
-        integer i
-        integer(4), pointer :: f_arr(:)
-        
-        !----------------------------------------------------------------------
-        call set_case_name("t_node_as_int32_ptr_read_scalar")
-        !----------------------------------------------------------------------
-                
-        !--------------
-        ! c++ ~equiv:
-        !--------------
-        ! Node n; 
-        cnode = conduit_node_create()
-        ! n.set_int32(42);
-        call conduit_node_set_int32(cnode,42)
-        ! n.print_detailed();
-        call conduit_node_print_detailed(cnode)
-        ! index_t nele = n.dtype().number_of_elements();
-        nele = conduit_node_number_of_elements(cnode)
-        call assert_equals(nele,1)
-        ! int32 *ptr = n.as_int32_ptr();
-        call conduit_node_as_int32_ptr(cnode,f_arr)
-        ! check if ptr[0] == 42
-        call assert_equals(f_arr(1),42)
-
-        call conduit_node_destroy(cnode)
-        
-    end subroutine t_node_as_int32_ptr_read_scalar
-
-    !--------------------------------------------------------------------------
-    subroutine t_node_fetch_int32
-        type(C_PTR) cnode
-        type(C_PTR) n1
-        integer res
-        
-        !----------------------------------------------------------------------
-        call set_case_name("t_node_fetch_int32")
-        !----------------------------------------------------------------------
-                
-        !--------------
-        ! c++ ~equiv:
-        !--------------
-        ! Node n; 
-        cnode = conduit_node_create()
-        
-        ! Node &my_sub = n.fetch("my_sub");
-        ! //or
-        ! Node &my_sub = n["my_sub"];
-        n1 = conduit_node_fetch(cnode,"my_sub")
-        ! my_sub.set_int32(42)
-        call conduit_node_set_int32(n1,42)
-        ! n.print_detailed();
-        call conduit_node_print_detailed(cnode)
-        ! int32 res = n.as_int32();
-        res = conduit_node_as_int32(n1)
-        call assert_equals (42, res)
-        call conduit_node_destroy(cnode)
-        
-    end subroutine t_node_fetch_int32
-
-    !--------------------------------------------------------------------------
-    subroutine t_node_set_fetch_path_int32
-        type(C_PTR) cnode
-        type(C_PTR) n1
-        integer res
-        
-        !----------------------------------------------------------------------
-        call set_case_name("t_node_set_fetch_path_int32")
-        !----------------------------------------------------------------------
-        
-        !--------------
-        ! c++ ~equiv:
-        !--------------
-        ! Node n;     
-        cnode = conduit_node_create()
-        ! n["my_sub"].set_int32(42)
-        ! // or
-        ! n.set_path_int32("my_sub",42)
-        call conduit_node_set_path_int32(cnode,"my_sub",42)
-        ! n.print_detailed()
-        call conduit_node_print_detailed(cnode)
-        ! int32 res = n["my_sub"].as_int32();
-        res = conduit_node_fetch_path_as_int32(cnode,"my_sub")
-        call assert_equals (42, res)
-        call conduit_node_destroy(cnode)
-        
-    end subroutine t_node_set_fetch_path_int32
 
     !--------------------------------------------------------------------------
     subroutine t_node_append
@@ -453,6 +143,82 @@ contains
     end subroutine t_node_append
 
 
+    !--------------------------------------------------------------------------
+    subroutine t_node_set_int
+        type(C_PTR) cnode
+        integer res
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_int")
+        !----------------------------------------------------------------------
+
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n;    
+        cnode = conduit_node_create()
+        ! n.set(42);
+        call conduit_node_set_int(cnode,42)
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! int res = n.as_int();
+        res = conduit_node_as_int(cnode)
+        call assert_equals (42, res)
+        call conduit_node_destroy(cnode)
+        
+    end subroutine t_node_set_int
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_set_double
+        type(C_PTR) cnode
+        real(kind=8) res
+        
+        !--------------
+        call set_case_name("t_node_set_double")
+        !--------------
+        
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n;
+        cnode = conduit_node_create()
+        ! n.set(3.1415);
+        call conduit_node_set_double(cnode,3.1415d+0)
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! double res = n.as_double();
+        res = conduit_node_as_double(cnode)
+        call assert_equals(3.1415d+0, res)
+        call conduit_node_destroy(cnode)
+        
+    end subroutine t_node_set_double
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_set_float64
+        type(C_PTR) cnode
+        real(kind=8) res
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_float64")
+        !----------------------------------------------------------------------
+        
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n;
+        cnode = conduit_node_create()
+        ! n.set_float64(3.1415);
+        call conduit_node_set_float64(cnode,3.1415d+0)
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! float64 res = n.as_float64();
+        res = conduit_node_as_float64(cnode)
+        call assert_equals(3.1415d+0, res)
+        call conduit_node_destroy(cnode)
+
+    end subroutine t_node_set_float64
+
+
 !------------------------------------------------------------------------------
 end module f_conduit_node
 !------------------------------------------------------------------------------
@@ -471,17 +237,11 @@ integer(C_INT) function fortran_test() bind(C,name="fortran_test")
   ! call our test routines
   !----------------------------------------------------------------------------
   call t_node_create
+  call t_node_append
   call t_node_set_int
-  call t_node_set_int32
   call t_node_set_double
   call t_node_set_float64
-  call t_node_fetch_int32
-  call t_node_set_int32_ptr
-  call t_node_set_external_int32_ptr
-  call t_node_as_int32_ptr
-  call t_node_as_int32_ptr_read_scalar
-  call t_node_set_fetch_path_int32
-  call t_node_append
+
   
   call fruit_summary
   call fruit_finalize

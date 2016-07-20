@@ -7,9 +7,12 @@ class Hdf5(Package):
     """
 
     homepage = "http://www.hdfgroup.org/HDF5/"
-    url      = "http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.16.tar.bz2"
+    url      = "https://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.16/src/hdf5-1.8.16.tar.gz"
 
-    version('1.8.16', '79c1593573ebddf734eee8d43ecfe483')
+    version('1.8.17', '7d572f8f3b798a628b8245af0391a0ca',preferred=True)
+    version('1.8.16', 'b8ed9a36ae142317f88b0c7ef4b9c618')
+
+
 
     depends_on("szip")
 

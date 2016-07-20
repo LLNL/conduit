@@ -324,7 +324,7 @@ TEST(conduit_tutorial, json_generator_std)
 {
     CONDUIT_INFO("json_generator_std");
     
-    Generator g("{test: {dtype: float64, value: 100.0}}","conduit");
+    Generator g("{test: {dtype: float64, value: 100.0}}","conduit_json");
     
     Node n;
     g.walk(n);

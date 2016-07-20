@@ -70,7 +70,7 @@ const char CONDUIT_UTILS_FILE_PATH_SEPARATOR='/';
 
 
 #include <string.h>
-
+#include <stdio.h>
 
 //-----------------------------------------------------------------------------
 // -- libb64 includes -- 
@@ -377,8 +377,11 @@ json_sanitize(const std::string &json)
                     else
                     {
                         in_id = false;
-                        /// check for true & false which we need to support in json
-                        if( !(cur_id == "true" || cur_id == "false"))
+                        /// check for true, false, and null 
+                        /// which we need to support in json
+                        if( !(cur_id == "true"  || 
+                              cur_id == "false" ||
+                              cur_id == "null" ))
                         {
                             /// emit cur_id
                             res += "\"" + cur_id + "\"";
@@ -429,7 +432,8 @@ indent(std::ostream &os,
 }
 
 //-----------------------------------------------------------------------------
-void sleep(index_t milliseconds)
+void
+sleep(index_t milliseconds)
 {
 
 #if defined(CONDUIT_PLATFORM_WINDOWS)
@@ -443,12 +447,160 @@ void sleep(index_t milliseconds)
 
 }
 
+
 //-----------------------------------------------------------------------------
-void base64_encode(const void *src,
-                   index_t src_nbytes,
-                   void *dest)
+std::string
+escape_special_chars(const std::string &input)
 {
-    int nbytes = (int)src_nbytes;    
+    std::string res;
+    for(size_t i = 0; i < input.size(); ++i) 
+    {
+        char val = input[i];
+        // supported special chars
+        switch(val)
+        {
+            // quotes and slashes
+            case '\"':
+            case '\\':
+            {
+                res += '\\';
+                res += val;
+                break;
+            }
+            // newline
+            case '\n':
+            {
+                res += "\\n";
+                break;
+            }
+            // tab
+            case '\t':
+            {
+                res += "\\t";
+                break;
+            }
+            // backspace
+            case '\b':
+            {
+                res += "\\b";
+                break;
+            }
+            // formfeed
+            case '\f':
+            {
+                res += "\\f";
+                break;
+            }
+            // carriage return
+            case '\r':
+            {
+                res += "\\r";
+                break;
+            }
+            
+            default:
+            {
+                res += val;
+            }
+        }
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+std::string
+unescape_special_chars(const std::string &input)
+{
+    std::string res;
+    size_t input_size = input.size();
+    for(size_t i = 0; i < input_size; ++i) 
+    {
+        // check for escape char
+        if( input[i] == '\\' &&
+            i < (input_size -1))
+        {
+            char val = input[i+1];
+            switch(val)
+            {
+                // quotes and slashes
+                case '\"':
+                case '\\':
+                // even though we don't escape forward slashes
+                // we support unescaping them.
+                case '/': 
+                {
+                    res += val;
+                    // skip escape char
+                    i++;
+                    break;
+                }
+                // newline
+                case 'n':
+                {
+                    res += "\n";
+                    // skip escape char
+                    i++;
+                    break;
+                }
+                // tab
+                case 't':
+                {
+                    res += "\t";
+                    // skip escape char
+                    i++;
+                    break;
+                }
+                // backspace
+                case 'b':
+                {
+                    res += "\b";
+                    // skip escape char
+                    i++;
+                    break;
+                }
+                // formfeed
+                case 'f':
+                {
+                    res += "\f";
+                    // skip escape char
+                    i++;
+                    break;
+                }
+                // carriage return
+                case 'r':
+                {
+                    res += "\r";
+                    // skip escape char
+                    i++;
+                    break;
+                }
+                // \uFFFF & unknown escape strings
+                default:
+                {
+                    // simply emit
+                    res += val;
+                    break;
+                }
+            }
+        }
+        else
+        {
+          res += input[i];
+        }
+    }
+
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+base64_encode(const void *src,
+              index_t src_nbytes,
+              void *dest)
+{
+    int nbytes = (int)src_nbytes;
     base64_encodestate enc_state;
     base64_init_encodestate(&enc_state);
     const char *src_ptr = (const char*)src;
@@ -468,9 +620,10 @@ void base64_encode(const void *src,
 }
 
 //-----------------------------------------------------------------------------
-void base64_decode(const void *src,
-                   index_t src_nbytes,
-                   void *dest)
+void
+base64_decode(const void *src,
+              index_t src_nbytes,
+              void *dest)
 {
     base64_decodestate dec_state;
     int src_len = src_nbytes;
@@ -481,6 +634,24 @@ void base64_decode(const void *src,
                         src_len,
                         des_ptr,
                         &dec_state);
+}
+
+//-----------------------------------------------------------------------------
+std::string
+float64_to_string(float64 value)
+{
+    char buffer[64];
+    snprintf(buffer,64,"%.15g",value);
+
+    std::string res(buffer);
+
+    if(res.find('.') == std::string::npos &&
+       res.find('e') == std::string::npos )
+    {
+        res += ".0";
+    }
+
+    return res;
 }
 
 

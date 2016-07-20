@@ -123,6 +123,80 @@ if(ENABLE_TESTS)
     include(CTest)
 endif()
 
+
+######################################################################################
+# Provide macros to simplify creating libs 
+######################################################################################
+macro(add_compiled_library)
+    set(options INTERNAL)
+    set(singleValuedArgs NAME EXPORT HEADERS_DEST_DIR LIB_DEST_DIR )
+    set(multiValuedArgs  HEADERS SOURCES)
+
+    ## parse the arguments to the macro
+    cmake_parse_arguments(args
+         "${options}" "${singleValuedArgs}" "${multiValuedArgs}" ${ARGN} )
+    
+    #############################
+    # add lib target
+    #############################
+
+    #
+    # Note: headers are added here so they show up in project file generators
+    # (such as xcode, eclipse, etc)
+    #
+    
+    if(${args_INTERNAL} AND NOT WIN32)
+        # internal libs can always be static on osx + linux, but need to be same
+        # build type (shared, static) on Windows.
+        add_library(${args_NAME} STATIC 
+                    ${args_SOURCES}
+                    ${args_HEADERS})
+        
+    else()
+        if(BUILD_SHARED_LIBS)
+            add_library(${args_NAME} SHARED 
+                        ${args_SOURCES}
+                        ${args_HEADERS})
+        else()
+            add_library(${args_NAME} STATIC 
+                        ${args_SOURCES}
+                        ${args_HEADERS})
+        endif()
+    endif()
+
+    #############################
+    # install and export setup
+    #############################
+    # if export is set, install our lib
+    if(NOT ${args_INTERNAL} OR WIN32)
+    
+        # if we have headers, install them
+        if(NOT "${args_HEADERS}" STREQUAL "")
+            if(NOT "${args_HEADERS_DEST_DIR}" STREQUAL "")
+                install(FILES ${args_HEADERS} DESTINATION ${args_HEADERS_DEST_DIR})
+            else()
+                install(FILES ${args_HEADERS} DESTINATION include)
+            endif()
+        endif()
+        # install our lib
+        if(NOT "${args_LIB_DEST}" STREQUAL "")
+            install(TARGETS ${args_NAME}
+                    EXPORT ${args_EXPORT}
+                    LIBRARY DESTINATION ${args_LIB_DEST_DIR}
+                    ARCHIVE DESTINATION ${args_LIB_DEST_DIR}
+                    RUNTIME DESTINATION ${args_LIB_DEST_DIRT})
+        else()
+            install(TARGETS ${args_NAME}
+                    EXPORT ${args_EXPORT}
+                    LIBRARY DESTINATION lib
+                    ARCHIVE DESTINATION lib
+                    RUNTIME DESTINATION lib)
+        endif()
+    endif()
+
+endmacro()
+
+
 ######################################################################################
 # Provide macros to simplify adding compile and link flags to a target
 ######################################################################################

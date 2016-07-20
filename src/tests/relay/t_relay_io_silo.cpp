@@ -49,6 +49,7 @@
 //-----------------------------------------------------------------------------
 
 #include "relay.hpp"
+#include "relay_silo.hpp"
 #include <iostream>
 #include "gtest/gtest.h"
 
@@ -56,7 +57,7 @@ using namespace conduit;
 using namespace conduit::relay;
 
 
-TEST(conduit_io_silo, conduit_silo_cold_storage)
+TEST(conduit_relay_io_silo, conduit_silo_cold_storage)
 {
     uint32 a_val = 20;
     uint32 b_val = 8;
@@ -81,7 +82,7 @@ TEST(conduit_io_silo, conduit_silo_cold_storage)
     EXPECT_EQ(n_load["c"].as_uint32(), c_val);
 }
 
-TEST(conduit_io_silo, conduit_silo_cold_storage_generic_iface)
+TEST(conduit_relay_io_silo, conduit_silo_cold_storage_generic_iface)
 {
     uint32 a_val = 20;
     uint32 b_val = 8;

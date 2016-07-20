@@ -99,10 +99,10 @@ TEST(conduit_node_save_load, bin_simple_file)
     Schema schema("{\"dtype\":{\"a\":\"int32\",\"b\":\"int32\"},\"length\":2}");
 
     Node nsrc(schema,data,true);
-    nsrc.save("tout_conduit_io_bin_simple_2_file");
+    nsrc.save("tout_conduit_relay_io_bin_simple_2_file.conduit_bin");
 
     Node n;
-    n.load("tout_conduit_io_bin_simple_2_file");
+    n.load("tout_conduit_relay_io_bin_simple_2_file.conduit_bin");
         
     n.schema().print();
     n.print_detailed();
@@ -135,10 +135,10 @@ TEST(conduit_node_save_load, other_protocols)
     nsrc["a"] = a_val;
     nsrc["b"] = b_val;
     
-    nsrc.save("tout_conduit_io_other_protos_json.json",
+    nsrc.save("tout_conduit_relay_io_other_protos_json.json",
               "json");
 
-    n.load("tout_conduit_io_other_protos_json.json",
+    n.load("tout_conduit_relay_io_other_protos_json.json",
            "json");
     
     n.print_detailed();
@@ -146,22 +146,22 @@ TEST(conduit_node_save_load, other_protocols)
     EXPECT_EQ(n["a"].to_int32(), a_val);
     EXPECT_EQ(n["b"].to_int32(), b_val);
 
-    nsrc.save("tout_conduit_io_other_protos_conduit.json",
-              "conduit");
+    nsrc.save("tout_conduit_relay_io_other_protos_conduit.json",
+              "conduit_json");
 
-    n.load("tout_conduit_io_other_protos_conduit.json",
-           "conduit");
+    n.load("tout_conduit_relay_io_other_protos_conduit.json",
+           "conduit_json");
     
     n.print_detailed();
 
     EXPECT_EQ(n["a"].as_int32(), a_val);
     EXPECT_EQ(n["b"].as_int32(), b_val);
 
-    nsrc.save("tout_conduit_io_other_protos_base64_json.json",
-              "base64_json");
+    nsrc.save("tout_conduit_relay_io_other_protos_base64_json.json",
+              "conduit_base64_json");
 
-    n.load("tout_conduit_io_other_protos_base64_json.json",
-           "base64_json");
+    n.load("tout_conduit_relay_io_other_protos_base64_json.json",
+           "conduit_base64_json");
     
     n.print_detailed();
 
@@ -190,11 +190,11 @@ TEST(conduit_node_save_load, mmap_simple_file)
 
     Node nsrc(schema,data,true);
     
-    nsrc.save("tout_conduit_mmap_x2");
+    nsrc.save("tout_conduit_mmap_x2.conduit_bin");
     
    
     Node nmmap;
-    nmmap.mmap("tout_conduit_mmap_x2");
+    nmmap.mmap("tout_conduit_mmap_x2.conduit_bin");
     
     nmmap.schema().print();
     nmmap.print_detailed();
@@ -250,10 +250,10 @@ TEST(conduit_node_save_load, simple_restore)
 
     n_src.print();
     n_src.info().print();
-    n_src.save("tout_conduit_simple_restore");
+    n_src.save("tout_conduit_simple_restore.conduit_bin");
 
     Node n_load;
-    n_load.load("tout_conduit_simple_restore");
+    n_load.load("tout_conduit_simple_restore.conduit_bin");
 
     n_load.print();
     
@@ -282,12 +282,12 @@ TEST(conduit_node_save_load, simple_class_restore)
     }
 
     d.n.print();
-    d.n.save("tout_conduit_restore_mmap");
+    d.n.save("tout_conduit_restore_mmap.conduit_bin");
 
     ExampleData d2;
     d2.alloc(10);
     Node nmmap;
-    nmmap.mmap("tout_conduit_restore_mmap");
+    nmmap.mmap("tout_conduit_restore_mmap.conduit_bin");
 
     d2.n.info().print();
 
@@ -319,10 +319,10 @@ TEST(conduit_node_save_load, io_explicit_zero_length_vector_restore)
 
     n1.print_detailed();
    
-    n1.save("tout_zero_len_vector_save");
+    n1.save("tout_zero_len_vector_save.conduit_bin");
 
     Node n2;
-    n2.load("tout_zero_len_vector_save");
+    n2.load("tout_zero_len_vector_save.conduit_bin");
 
     std::cout << "n2 load result" << std::endl;
 
@@ -357,7 +357,7 @@ TEST(conduit_node_save_load, io_reset_before_load)
 
     n1.print_detailed();
    
-    n1.save("tout_node_load_reset");
+    n1.save("tout_node_load_reset.conduit_bin");
 
 
     EXPECT_EQ(n1.schema()["one"].dtype().number_of_elements(),1);
@@ -368,7 +368,7 @@ TEST(conduit_node_save_load, io_reset_before_load)
     Node n2;
     n2["here"].set(one);
     n2["there"].set(two);
-    n2.load("tout_node_load_reset");
+    n2.load("tout_node_load_reset.conduit_bin");
 
     std::cout << "n2 load result" << std::endl;
 
@@ -378,6 +378,72 @@ TEST(conduit_node_save_load, io_reset_before_load)
               n2.schema()["one"].dtype().number_of_elements());
     EXPECT_EQ(n2.schema()["one"].dtype().number_of_elements(),1);
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_save_load, load_save_with_empty)
+{
+
+    Node n;
+    n["path/to/a"] = 1;
+    n["path/to/empty"];
+    n["path/to/b"] = 2;
+    
+    n.print_detailed();
+   
+    n.save("tout_node_load_save_with_empty.conduit_bin");
+
+    Node n_load;
+    n_load.load("tout_node_load_save_with_empty.conduit_bin");
+    EXPECT_EQ(n["path/to/empty"].dtype().id(),
+              n_load["path/to/empty"].dtype().id());
+    
+    n_load.print_detailed();
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_save_load, load_save_with_childless_object)
+{
+
+    Node n;
+    n["path/to/a"] = 1;
+    n["path/to/empty"].set(DataType::object());
+    n["path/to/b"] = 2;
+    
+    n.print_detailed();
+   
+    n.save("tout_node_load_save_with_cl_object.conduit_bin");
+
+    Node n_load;
+    n_load.load("tout_node_load_save_with_cl_object.conduit_bin");
+    EXPECT_EQ(n["path/to/empty"].dtype().id(),
+              n_load["path/to/empty"].dtype().id());
+    
+    n_load.print_detailed();
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_save_load, load_save_with_childless_list)
+{
+
+    Node n;
+    n["path/to/a"] = 1;
+    n["path/to/empty"].set(DataType::list());
+    n["path/to/b"] = 2;
+    
+    n.print_detailed();
+   
+    n.save("tout_node_load_save_with_cl_list.conduit_bin");
+
+    Node n_load;
+    n_load.load("tout_node_load_save_with_cl_list.conduit_bin");
+    EXPECT_EQ(n["path/to/empty"].dtype().id(),
+              n_load["path/to/empty"].dtype().id());
+    
+    n_load.print_detailed();
+}
+
+
 
 
 

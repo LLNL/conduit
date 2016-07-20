@@ -43,9 +43,6 @@
 ###############################################################################
 
 set(UNIT_TEST_BASE_LIBS gtest_main gtest)
-if(ENABLE_GPREF_TOOLS)
-    list(APPEND UNIT_TEST_BASE_LIBS gperftools_lib)
-endif()
 
 ##------------------------------------------------------------------------------
 ## - Builds and adds a test that uses gtest

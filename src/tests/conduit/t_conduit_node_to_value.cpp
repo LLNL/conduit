@@ -419,5 +419,153 @@ TEST(conduit_node_to_value, float64_to_scalar)
     EXPECT_NEAR( n.to_double(),127,0.0001);
 }
 
+//-----------------------------------------------------------------------------
+// check default values from as_zzz, by avoiding exceptions on warn
+//----------------------------------------------------------------------------- 
+
+//-----------------------------------------------------------------------------
+void 
+print_msg(const std::string &msg,
+          const std::string &file,
+          int line)
+{
+    std::cout << "File:"    << file << std::endl;
+    std::cout << "Line:"    << line << std::endl;
+    std::cout << "Message:" << msg  << std::endl;
+}
+
+//-----------------------------------------------------------------------------
+void 
+my_warning_handler(const std::string &msg,
+                   const std::string &file,
+                   int line)
+{
+    print_msg(msg,file,line);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, get_from_empty)
+{
+    // override warning handler so we can check the default
+    // return values on dtype mismatch
+    conduit::utils::set_warning_handler(my_warning_handler);
+    
+    Node n;// empty
+
+    // bw-style types (pointers)
+    int8     *int8_ptr    = n.value();
+    int16    *int16_ptr   = n.value();
+    int32    *int32_ptr   = n.value();
+    int64    *int64_ptr   = n.value();
+    
+    uint8     *uint8_ptr    = n.value();
+    uint16    *uint16_ptr   = n.value();
+    uint32    *uint32_ptr   = n.value();
+    uint64    *uint64_ptr   = n.value();
+    
+    float32  *float32_ptr = n.value();
+    float64  *float64_ptr = n.value();
+
+    EXPECT_TRUE(int8_ptr == NULL);
+    EXPECT_TRUE(int16_ptr == NULL);
+    EXPECT_TRUE(int32_ptr == NULL);
+    EXPECT_TRUE(int64_ptr == NULL);
+
+    EXPECT_TRUE(uint8_ptr == NULL);
+    EXPECT_TRUE(uint16_ptr == NULL);
+    EXPECT_TRUE(uint32_ptr == NULL);
+    EXPECT_TRUE(uint64_ptr == NULL);
+    
+    EXPECT_TRUE(float32_ptr == NULL);
+    EXPECT_TRUE(float64_ptr == NULL);
+
+    // bw-style types (scalars)
+
+    int8  int8_val  = n.value();
+    int16 int16_val = n.value();
+    int32 int32_val = n.value();
+    int64 int64_val = n.value();
+
+    uint8  uint8_val  = n.value();
+    uint16 uint16_val = n.value();
+    uint32 uint32_val = n.value();
+    uint64 uint64_val = n.value();
+    
+    float32 float32_val = n.value();
+    float64 float64_val = n.value();
+    
+    EXPECT_EQ(int8_val,0);
+    EXPECT_EQ(int16_val,0);
+    EXPECT_EQ(int32_val,0);
+    EXPECT_EQ(int64_val,0);
+
+    EXPECT_EQ(uint8_val,0);
+    EXPECT_EQ(uint16_val,0);
+    EXPECT_EQ(uint32_val,0);
+    EXPECT_EQ(uint64_val,0);
+
+    EXPECT_EQ(float32_val,0);
+    EXPECT_EQ(float64_val,0);
+
+    // c native types (pointers)
+    char   *char_ptr   = n.value();
+    short  *short_ptr  = n.value();
+    int    *int_ptr    = n.value();
+    long   *long_ptr   = n.value();
+
+    unsigned char   *uchar_ptr  = n.value();
+    unsigned short  *ushort_ptr = n.value();
+    unsigned int    *uint_ptr   = n.value();
+    unsigned long   *ulong_ptr  = n.value();
+
+    float  *float_ptr  = n.value();
+    double *double_ptr = n.value();
+
+    EXPECT_TRUE(char_ptr == NULL);
+    EXPECT_TRUE(short_ptr == NULL);
+    EXPECT_TRUE(int_ptr == NULL);
+    EXPECT_TRUE(long_ptr == NULL);
+
+    EXPECT_TRUE(uchar_ptr == NULL);
+    EXPECT_TRUE(ushort_ptr == NULL);
+    EXPECT_TRUE(uint_ptr == NULL);
+    EXPECT_TRUE(ulong_ptr == NULL);
+    
+    EXPECT_TRUE(float_ptr == NULL);
+    EXPECT_TRUE(double_ptr == NULL);
+    
+    // c native types (scalars)
+    signed char  char_val  = n.value();
+    
+    short  short_val = n.value();
+    int    int_val   = n.value();
+    long   long_val  = n.value();
+
+    unsigned char   uchar_val  = n.value();
+    unsigned short  ushort_val = n.value();
+    unsigned int    uint_val   = n.value();
+    unsigned long   ulong_val  = n.value();
+    
+    float  float_val  = n.value();
+    double double_val = n.value();
+
+    EXPECT_EQ(char_val,0);
+    EXPECT_EQ(short_val,0);
+    EXPECT_EQ(int_val,0);
+    EXPECT_EQ(long_val,0);
+
+
+    EXPECT_EQ(uchar_val,0);
+    EXPECT_EQ(ushort_val,0);
+    EXPECT_EQ(uint_val,0);
+    EXPECT_EQ(ulong_val,0);
+    
+    EXPECT_EQ(float_val,0);
+    EXPECT_EQ(double_val,0);
+
+    // reset warning handler to default
+    conduit::utils::set_warning_handler(conduit::utils::default_warning_handler);
+}
+
 
 

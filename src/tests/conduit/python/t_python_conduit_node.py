@@ -52,7 +52,6 @@ import unittest
 
 from conduit import Node
 
-
 from numpy import *
 
 
@@ -106,18 +105,18 @@ class Test_Conduit_Node(unittest.TestCase):
         vec = array(range(100), uint32)
         n = Node()
         n['a'] = vec
-        n.save("test_pyconduit_node_save_load")
+        n.save("test_pyconduit_node_save_load.conduit_bin")
         nl = Node()
-        nl.load("test_pyconduit_node_save_load")
+        nl.load("test_pyconduit_node_save_load.conduit_bin")
         self.assertEqual(nl['a'][99], 99)
         
-        n.save("test_pyconduit_node_json_save_load",protocol="json")
+        n.save("test_pyconduit_node_json_save_load.json",protocol="json")
         nl = Node()
-        nl.load("test_pyconduit_node_json_save_load", protocol="json")
+        nl.load("test_pyconduit_node_json_save_load.json", protocol="json")
         
-        n.save("test_pyconduit_node_base64_json_save_load", protocol="base64_json")
+        n.save("test_pyconduit_node_base64_json_save_load.conduit_base64_json", protocol="conduit_base64_json")
         nl = Node()
-        nl.load("test_pyconduit_node_base64_json_save_load", protocol="base64_json")
+        nl.load("test_pyconduit_node_base64_json_save_load.conduit_base64_json", protocol="conduit_base64_json")
 
         self.assertEqual(nl['a'][99], 99)
 

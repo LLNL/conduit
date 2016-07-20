@@ -58,18 +58,17 @@ Here is a list of the software components used by conduit in source form and the
 
 C and C++ Libraries
 =====================
-- *gpreftools*: thirdparty_builtin/gperftools-2.2.1.tar.gz: gperftools-2.2.1/COPYING (BSD Style License)
 - *gtest*: thirdparty_builtin/gtest-1.7.0/LICENSE (BSD Style License)
 - *libb64*: thirdparty_builtin/libb64/LICENSE (Public Domain)
 - *rapidjson*: thirdparty_builtin/rapidjson/license.txt (MIT License)
-- *civetweb*: thirdparty_builtin/civetweb/license.txt (MIT License)
+- *civetweb*: thirdparty_builtin/civetweb-1.8/LICENSE.md (MIT License)
 
 JavaScript Libraries
 =====================
-- *fattable*: src/libs/conduit_io/web_clients/rest_client/resources/fattable/LICENSE (MIT License)
-- *pure*: src/libs/conduit_io/web_clients/rest_client/resources/pure/LICENSE.md  (BSD Style License)
-- *d3*: src/libs/conduit_io/web_clients/rest_client/resources/d3/LICENSE (BSD Style License)
-- *jquery*: /src/libs/conduit_io/web_clients/wsock_test/resources/jquerty-license.txt (MIT License)
+- *fattable*: src/libs/relay/web_clients/rest_client/resources/fattable/LICENSE (MIT License)
+- *pure*: src/libs/relay/web_clients/rest_client/resources/pure/LICENSE.md  (BSD Style License)
+- *d3*: src/libs/relay/web_clients/rest_client/resources/d3/LICENSE (BSD Style License)
+- *jquery*: /src/libs/relay/web_clients/wsock_test/resources/jquerty-license.txt (MIT License)
 
 Fortran Libraries
 =====================

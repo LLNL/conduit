@@ -61,20 +61,20 @@ bool launch_server = false;
 bool use_ssl       = false;
 bool use_auth      = false;
 
-TEST(conduit_io_rest, rest_server)
+TEST(conduit_relay_web_rest, rest_server)
 {
     uint32 a_val = 20;
     uint32 b_val = 8;
-    uint32 c_val = 13;
+    
+    std::vector<float64> c_vals(5,3.14159);
 
     Node *n = new Node();
     n->fetch("a") = a_val;
     n->fetch("b") = b_val;
-    n->fetch("c") = c_val;
+    n->fetch("c") = c_vals;
 
     EXPECT_EQ(n->fetch("a").as_uint32(), a_val);
     EXPECT_EQ(n->fetch("b").as_uint32(), b_val);
-    EXPECT_EQ(n->fetch("c").as_uint32(), c_val);
     
     if(launch_server)
     {
@@ -85,14 +85,14 @@ TEST(conduit_io_rest, rest_server)
                   
         if(use_ssl)
         {
-            cert_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"conduit_io");
+            cert_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"relay");
             cert_file = utils::join_file_path(cert_file,"t_ssl_cert.pem");
         }
 
         if(use_auth)
         {
             auth_domain = "test";
-            auth_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"conduit_io");
+            auth_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"relay");
             auth_file = utils::join_file_path(auth_file,"t_htpasswd.txt");
         }
         

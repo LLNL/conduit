@@ -70,31 +70,30 @@ set(blueprint_sources
     blueprint_mcarray.cpp
     blueprint_mcarray_examples.cpp)
 
+
 #
-# Note: headers are added here so they show up in project file generators
-# (such as xcode, eclipse, etc)
+# Setup conduit blueprint lib
 #
-if(BUILD_SHARED_LIBS)
-    add_library(conduit_blueprint SHARED ${blueprint_sources} ${blueprint_headers})
-else()
-    add_library(conduit_blueprint STATIC ${blueprint_sources} ${blueprint_headers})
-endif()
+add_compiled_library(NAME conduit_blueprint
+                     EXPORT conduit
+                     HEADERS ${blueprint_headers}
+                     SOURCES ${blueprint_sources})
+
 
 #
 # Link with conduit
 #
 target_link_libraries(conduit_blueprint conduit)
 
-##################################
-# Install Targets for conduit 
-##################################
 
-install(FILES ${blueprint_headers} DESTINATION include)
-install(TARGETS conduit_blueprint
-  EXPORT conduit
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-)
+################################
+# Add python wrappers if python
+# support was selected
+################################
+if(PYTHON_FOUND)
+    add_subdirectory(python)
+endif()
+
 
 
 

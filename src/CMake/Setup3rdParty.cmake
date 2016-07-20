@@ -72,7 +72,7 @@ endif()
 ################################
 # Setup includes for RapidJSON
 ################################
-include(CMake/thirdparty/FindRapidJSON.cmake)
+include(CMake/thirdparty/SetupRapidJSON.cmake)
 message(STATUS "Using RapidJSON Include: ${RAPIDJSON_INCLUDE_DIR}")
 include_directories(${RAPIDJSON_INCLUDE_DIR})
 
@@ -85,8 +85,8 @@ include_directories(thirdparty_builtin/libb64-1.2.1/include/)
 ################################
 # Setup and build civetweb
 ################################
-add_subdirectory(thirdparty_builtin/civetweb/)
-include_directories(thirdparty_builtin/civetweb/include)
+add_subdirectory(thirdparty_builtin/civetweb-1.8/)
+include_directories(thirdparty_builtin/civetweb-1.8/include)
 
 ################################
 # Optional Features
@@ -100,37 +100,11 @@ if(ENABLE_DOCS)
     include(CMake/thirdparty/FindSphinx.cmake)
 endif()
 
-if(ENABLE_GPERFTOOLS)
-    ################################
-    # Setup and build gperftools
-    ################################
-    set(GPREFTOOLS_DIR thirdparty_builtin/gperftools-2.2.1)
-    add_subdirectory(${GPREFTOOLS_DIR})
-    add_library(gperftools_lib STATIC IMPORTED)
-
-    set_target_properties(gperftools_lib PROPERTIES IMPORTED_LOCATION 
-                      ${CMAKE_BINARY_DIR}/${GPREFTOOLS_DIR}/build/lib/libtcmalloc_and_profiler.a)
-
-    add_dependencies( gperftools_lib gperftools_build )
-
-    include_directories(${CMAKE_BINARY_DIR}/${GPREFTOOLS_DIR}/build/include/)
-
-    #
-    # Note: We only want to do this when are using gperf profiling tools, 
-    # we may not want to use this in general
-    #
-    if(CMAKE_COMPILER_IS_GNUCXX)
-        set(CMAKE_CXX_FLAGS "-fno-omit-frame-pointer") 
-    endif()
-    
-    set(GPERFTOOLS_FOUND 1)
-endif()
-
 if(ENABLE_PYTHON)
     ################################
     # Setup includes for Python & Numpy
     ################################
-    include(CMake/thirdparty/FindPython.cmake)
+    include(CMake/thirdparty/SetupPython.cmake)
     message(STATUS "Using Python Include: ${PYTHON_INCLUDE_DIRS}")
     include_directories(${PYTHON_INCLUDE_DIRS})
     # if we don't find python, throw a fatal error
@@ -167,7 +141,7 @@ endif()
 ################################
 # Search for HDF5.
 if(HDF5_DIR)
-    include(CMake/thirdparty/FindHDF5.cmake)
+    include(CMake/thirdparty/SetupHDF5.cmake)
     include_directories(${HDF5_INCLUDE_DIRS})
     # if we don't find HDF5, throw a fatal error
     if(NOT HDF5_FOUND)
@@ -180,7 +154,7 @@ endif()
 ################################
 # Search for Silo.
 if(SILO_DIR)
-    include(CMake/thirdparty/FindSilo.cmake)
+    include(CMake/thirdparty/SetupSilo.cmake)
     include_directories(${SILO_INCLUDE_DIRS})
     # if we don't find silo, throw a fatal error
     if(NOT SILO_FOUND)

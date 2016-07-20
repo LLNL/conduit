@@ -43,8 +43,9 @@
 ###############################################################################
 
 # Specify the sources of the pure python and compiled portions of our module.
-SET(CONDUIT_PY_SOURCES     py_src/__init__.py)
-SET(CONDUIT_PY_CPP_SOURCES conduit_python.cpp)
+SET(conduit_py_python_sources  py_src/__init__.py)
+SET(conduit_py_headers         conduit_python.hpp)
+SET(conduit_py_cpp_sources     conduit_python.cpp)
 
 # Make sure we have access to numpy
 include_directories(${NUMPY_INCLUDE_DIRS})
@@ -54,9 +55,12 @@ PYTHON_ADD_HYBRID_MODULE(conduit_python
                          python-modules
                          conduit
                          setup.py
-                         "${CONDUIT_PY_SOURCES}"
-                         ${CONDUIT_PY_CPP_SOURCES})
+                         "${conduit_py_python_sources}"
+                         ${conduit_py_headers}
+                         ${conduit_py_cpp_sources})
 
-# link with the proper libs
-target_link_libraries(conduit_python conduit ${PYTHON_LIBRARIES})
+# link with the proper libs (beyond python)
+target_link_libraries(conduit_python conduit)
 
+# install the capi header so other python modules can use it
+install(FILES ${conduit_py_headers} DESTINATION python-modules/conduit/)

@@ -278,6 +278,33 @@ namespace utils
 
 
 //-----------------------------------------------------------------------------
+/// Helpers for escaping / unescaping special characters in strings.
+///
+/// Our main use case for escaping is json, so we support the escape rules 
+/// outlined by the json standard (see: http://www.json.org/). 
+///
+/// List of supported special characters. 
+///    " (quote)
+///    \ (backward slash)
+///    \n (newline)
+///    \t (tab)
+///    \b (backspace)
+///    \f (form feed)
+///    \r (carriage return)
+///
+/// Special chars that are not escaped, but are unescaped:
+///    / (forward slash)
+///
+/// Special chars that are not escaped or unescaped:
+///    \u (for hex escapes: \uFFFF)
+/// 
+//-----------------------------------------------------------------------------
+    std::string CONDUIT_API escape_special_chars(const std::string &input);
+    std::string CONDUIT_API unescape_special_chars(const std::string &input);
+
+
+
+//-----------------------------------------------------------------------------
 /// Base64 Encoding of Buffers 
 //-----------------------------------------------------------------------------
     void CONDUIT_API base64_encode(const void *src,
@@ -303,6 +330,13 @@ namespace utils
            oss << std::hex << value;
            return  oss.str();
      }
+
+
+//-----------------------------------------------------------------------------
+// floating point to string helper, strikes a balance of what we want 
+// for format-wise for debug printing and json.
+//-----------------------------------------------------------------------------
+    std::string CONDUIT_API float64_to_string(float64 value);
 
 //-----------------------------------------------------------------------------
      void CONDUIT_API indent(std::ostream &os,

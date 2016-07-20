@@ -384,14 +384,14 @@ void
 Node::load(const std::string &ibase,
            const std::string &protocol)
 {
-    if(protocol == "conduit_pair")
+    if(protocol == "conduit_bin")
     {
         // TODO: use generator?
         Schema s;
-        std::string ifschema = ibase + ".conduit_json";
-        std::string ifdata   = ibase + ".conduit_bin";
+        std::string ifschema = ibase + "_json";
+
         s.load(ifschema);
-        load(ifdata,s);
+        load(ibase,s);
     }
     // single file json cases
     else
@@ -414,14 +414,14 @@ void
 Node::save(const std::string &obase,
            const std::string &protocol) const
 {
-    if(protocol == "conduit_pair")
+    if(protocol == "conduit_bin")
     {
         Node res;
         compact_to(res);
-        std::string ofschema = obase + ".conduit_json";
-        std::string ofdata   = obase + ".conduit_bin";
+        std::string ofschema = obase + "_json";
+
         res.schema().save(ofschema);
-        res.serialize(ofdata);
+        res.serialize(obase);
     }
     // single file json cases
     else
@@ -434,12 +434,12 @@ Node::save(const std::string &obase,
 void
 Node::mmap(const std::string &stream_path)
 {
-    std::string ifschema = stream_path + ".conduit_json";
-    std::string ifdata   = stream_path + ".conduit_bin";
+    std::string ifschema = stream_path + "_json";
+
 
     Schema s;
     s.load(ifschema);
-    mmap(ifdata,s);
+    mmap(stream_path,s);
 }
 
 
@@ -997,8 +997,8 @@ Node::set_char8_str(const char *data)
                    sizeof(char),
                    sizeof(char),
                    Endianness::DEFAULT_ID);
-                   init(str_t);
-                   memcpy(m_data,data,sizeof(char)*str_size_with_term);
+    init(str_t);
+    memcpy(m_data,data,sizeof(char)*str_size_with_term);
 }
 
 
@@ -4713,7 +4713,7 @@ Node::update(Node &n_src)
         {
             index_t num_children = number_of_children();
             for(index_t idx=0; 
-                (idx < num_children and idx < src_num_children); 
+                (idx < num_children && idx < src_num_children); 
                 idx++)
             {
                 child(idx).update(n_src.child(idx));
@@ -4786,7 +4786,7 @@ Node::update_compatible(Node &n_src)
         {
             index_t num_children = number_of_children();
             for(index_t idx=0; 
-                (idx < num_children and idx < src_num_children); 
+                (idx < num_children && idx < src_num_children); 
                  idx++)
             {
                 child(idx).update_compatible(n_src.child(idx));
@@ -4844,7 +4844,7 @@ Node::update_external(Node &n_src)
         {
             index_t num_children = number_of_children();
             for(index_t idx=0; 
-                (idx < num_children and idx < src_num_children); 
+                (idx < num_children && idx < src_num_children); 
                 idx++)
             {
                 child(idx).update_external(n_src.child(idx));
@@ -7586,13 +7586,13 @@ Node::to_json(const std::string &protocol,
     {
         return to_pure_json(indent,depth,pad,eoe);
     }
-    else if(protocol == "conduit")
+    else if(protocol == "conduit_json")
     {
         return to_detailed_json(indent,depth,pad,eoe);
     }
-    else if(protocol == "base64_json")
+    else if(protocol == "conduit_base64_json")
     {
-        return to_base64_json(indent,depth,pad,eoe);        
+        return to_base64_json(indent,depth,pad,eoe);
     }
     else
     {
@@ -7615,11 +7615,11 @@ Node::to_json_stream(const std::string &stream_path,
     {
         return to_pure_json(stream_path,indent,depth,pad,eoe);
     }
-    else if(protocol == "conduit")
+    else if(protocol == "conduit_json")
     {
         return to_detailed_json(stream_path,indent,depth,pad,eoe);
     }
-    else if(protocol == "base64_json")
+    else if(protocol == "conduit_base64_json")
     {
         return to_base64_json(stream_path,indent,depth,pad,eoe);        
     }
@@ -7641,11 +7641,11 @@ Node::to_json_stream(std::ostream &os,
     {
         return to_pure_json(os,indent,depth,pad,eoe);
     }
-    else if(protocol == "conduit")
+    else if(protocol == "conduit_json")
     {
         return to_detailed_json(os,indent,depth,pad,eoe);
     }
-    else if(protocol == "base64_json")
+    else if(protocol == "conduit_base64_json")
     {
         return to_base64_json(os,indent,depth,pad,eoe);        
     }
@@ -7763,7 +7763,7 @@ Node::to_json_generic(std::ostream &os,
                                 dtype_open,
                                 dtype_rest);
             os<< dtype_open;
-            os << ", value: ";
+            os << ", \"value\": ";
         }
 
         switch(dtype().id())
@@ -7803,8 +7803,15 @@ Node::to_json_generic(std::ostream &os,
                 break;
             // char8_str
             case DataType::CHAR8_STR_ID: 
-                os << "\"" << as_char8_str() << "\""; 
+                os << "\"" 
+                   << utils::escape_special_chars(as_string())
+                   << "\""; 
                 break;
+            // empty
+            case DataType::EMPTY_ID: 
+                os << "null";
+                break;
+
         }
 
         if(detailed)
@@ -8054,7 +8061,7 @@ Node::print() const
 void
 Node::print_detailed() const
 {
-    to_json_stream(std::cout,"conduit");
+    to_json_stream(std::cout,"conduit_json");
 }
 
 

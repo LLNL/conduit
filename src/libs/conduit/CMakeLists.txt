@@ -58,8 +58,8 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Bitwidth_Style_Types.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/Bitwidth_Style_Types.h")
 
 #
-# Specify all headers
-#            
+# Specify conduit cpp headers
+#
 set(conduit_headers
     Endianness_Types.h
     DataArray.hpp
@@ -79,15 +79,15 @@ set(conduit_headers
     )
 
 #
-# c interface headers
-#            
+# Specify conduit c interface headers
+#
 set(conduit_c_headers
     conduit.h
     conduit_node.h
     )
 
 #
-# Specify all sources
+# Specify conduit cpp sources
 #
 set(conduit_sources
     Core.cpp
@@ -103,34 +103,27 @@ set(conduit_sources
     )
 
 #
-# c interface sources
-#            
+# Specify conduit c interface sources
+#
 set(conduit_c_sources
     conduit_node.cpp
     )
 
 
-    #
-# Note: headers are added here so they show up in project file generators
-# (such as xcode, eclipse, etc)
 #
+# Setup the conduit lib
+#
+add_compiled_library(NAME   conduit
+                     EXPORT conduit
+                     HEADERS ${conduit_headers} ${conduit_c_headers}
+                     SOURCES ${conduit_sources} ${conduit_c_sources}
+                     )
 
-if(BUILD_SHARED_LIBS)
-    add_library(conduit SHARED 
-                ${conduit_sources} 
-                ${conduit_c_sources} 
-                ${conduit_headers}
-                ${conduit_c_headers})
-else()
-    add_library(conduit STATIC
-                ${conduit_sources} 
-                ${conduit_c_sources} 
-                ${conduit_headers}
-                ${conduit_c_headers})
-endif()
-
-
-target_link_libraries(conduit libb64)
+#
+# libb64 is a private dep, its not exposed in / required by
+# conduit's header files
+#
+target_link_libraries(conduit PRIVATE libb64)
 
 ################################
 # Add python wrappers if python
@@ -148,16 +141,4 @@ if(FORTRAN_FOUND)
     add_subdirectory(fortran)
 endif()
 
-
-##################################
-# Install Targets for conduit lib
-##################################
-
-install(FILES ${conduit_headers} ${conduit_c_headers} DESTINATION include)
-install(TARGETS conduit
-  EXPORT conduit
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION lib
-)
 

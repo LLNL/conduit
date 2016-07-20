@@ -69,9 +69,9 @@ Clone the Conduit repo:
 
 Configure a build:
 
-*config-build.sh* is a simple wrapper for the cmake call to configure conduit. 
-This creates a new out-of-source build directory *build-debug* and a directory for the install *install-debug*.
-It will optionally include a *host-config.cmake* file with detailed configuration options. 
+``config-build.sh`` is a simple wrapper for the cmake call to configure conduit. 
+This creates a new out-of-source build directory ``build-debug`` and a directory for the install ``install-debug``.
+It will optionally include a ``host-config.cmake`` file with detailed configuration options. 
 
 
 .. code:: bash
@@ -100,9 +100,12 @@ Conduit's build system supports the following CMake options:
 
 * **BUILD_SHARED_LIBS** - Controls if shared (ON) or static (OFF) libraries are built. *(default = ON)* 
 * **ENABLE_TESTS** - Controls if unit tests are built. *(default = ON)* 
+* **ENABLE_DOCS** - Controls if the Conduit documentation is built (when sphinx and doxygen are found ). *(default = ON)*
+* **ENABLE_COVERAGE** - Controls if code coverage compiler flags are used to build Conduit. *(default = OFF)*
 * **ENABLE_PYTHON** - Controls if the Conduit Python module is built. *(default = OFF)*
 
- The Conduit Python module will build for both Python2 and Python3. To select a specific Python, set the CMake variable **PYTHON_EXECUTABLE** to path of the desired python binary. The Conduit Python module requires Numpy. The selected Python instance must provide Numpy, or PYTHONPATH must be set to include a Numpy install compatible with the selected Python install. 
+
+ The Conduit Python module will build for both Python 2 and Python 3. To select a specific Python, set the CMake variable **PYTHON_EXECUTABLE** to path of the desired python binary. The Conduit Python module requires Numpy. The selected Python instance must provide Numpy, or PYTHONPATH must be set to include a Numpy install compatible with the selected Python install. 
 
 * **ENABLE_MPI** - Controls if the conduit_relay_mpi library is built. *(default = OFF)*
  We are using CMake's standard FindMPI logic. To select a specific MPI set the CMake variables **MPI_C_COMPILER** and **MPI_CXX_COMPILER**, or the other FindMPI options for MPI include paths and MPI libraries.
@@ -115,7 +118,7 @@ Conduit's build system supports the following CMake options:
 * **SILO_DIR** - Path to a Silo install *(optional)*. 
  Controls if Silo I/O support is built into *conduit_relay*. When used, the following CMake variables must also be set:
  
- * **HDF5_DIR** - Path to a HDF5 install. (Silo support also depends on HDF5) 
+ * **HDF5_DIR** - Path to a HDF5 install. (Silo support depends on HDF5) 
 
 Host Config Files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -130,14 +133,14 @@ To handle build options, thirdparty library paths, etc we rely on CMake's initia
 
 We call these initial-cache files *host-config* files, since we typically create a file for each platform or specific hosts if necessary. 
 
-The *config-build.sh* script will use your machine's hostname, the SYS_TYPE environment variable, and your platform name (via *uname*) to look for an existing host config file in the *host-configs* directory at the root of the conduit repo. If found, it will pass the host config file to CMake via the *-C* command line option.
+The ``config-build.sh`` script will use your machine's hostname, the SYS_TYPE environment variable, and your platform name (via *uname*) to look for an existing host config file in the ``host-configs`` directory at the root of the conduit repo. If found, it will pass the host config file to CMake via the `-C` command line option.
 
 .. code:: bash
     
     cmake {other options} -C host-configs/{config_file}.cmake ../
 
 
-You can view several example files under the *host-configs* directory. 
+You can view several example files under the ``host-configs`` directory. 
 
 These files use standard CMake commands. CMake *set* commands need to specify the root cache path as follows:
 
@@ -149,8 +152,8 @@ These files use standard CMake commands. CMake *set* commands need to specify th
 Bootstrapping Thirdparty Dependencies 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can use *bootstrap-env.sh* (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses *scripts/uberenv*, which leverages **Spack** (http://software.llnl.gov/spack) to build external thirdparty libraries and tools used by Conduit.
-It also writes a initial host-config file for you and adds the Spack built CMake binary to your PATH, so can directly call the *config-build.sh* helper script to configure a conduit build.
+You can use ``bootstrap-env.sh`` (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses ``scripts/uberenv/uberenv.py``, which leverages **Spack** (http://software.llnl.gov/spack) to build the external thirdparty libraries and tools used by Conduit.
+After building these libraries and tools, it writes an initial *host-config* file and adds the Spack built CMake binary to your PATH, so can immediately call the ``config-build.sh`` helper script to configure a conduit build.
 
 .. code:: bash
     
@@ -168,8 +171,24 @@ It also writes a initial host-config file for you and adds the Spack built CMake
     ./config-build.sh uberenv_libs/`hostname`*.cmake
 
 
+Compiler Settings for Thirdparty Dependencies 
+++++++++++++++++++++++++++++++++++++++++++++++++
+You can edit ``scripts/uberenv/compilers.yaml`` to change the compiler settings
+passed to Spack. See the `Spack Compiler Configuration    <http://software.llnl.gov/spack/basic_usage.html#manual-compiler-configuration>`_   
+documentation for details. 
+
+.. note::
+    The bootstrapping process ignores ``~/.spack/compilers.yaml`` to avoid conflicts
+    and surprises from a user's specific Spack settings on HPC platforms.
 
 
-
+Building with Spack
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. note::
+  Conduit developers use ``scripts/uberenv/uberenv.py`` to setup thirdparty libraries for Conduit 
+  development.  Due to this, the process builds more libraries than necessary for most use cases.
+  For example, we build independent installs of Python 2 and Python 3 to make it easy 
+  to check Python C-API compatibility during development. In the near future, we plan to 
+  provide a Spack package to simplify deployment.
 
 

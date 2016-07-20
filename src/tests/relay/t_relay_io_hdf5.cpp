@@ -49,6 +49,7 @@
 //-----------------------------------------------------------------------------
 
 #include "relay.hpp"
+#include "relay_hdf5.hpp"
 #include "hdf5.h"
 #include <iostream>
 #include "gtest/gtest.h"
@@ -580,7 +581,40 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_leaf_arrays)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_empty)
+{
+    Node n;
+    n["path/to/empty"];
+    n.print_detailed();
+    
+    io::hdf5_write(n,"tout_hdf5_wr_empty.hdf5");
+    
+    Node n_load;
+    io::hdf5_read("tout_hdf5_wr_empty.hdf5",n_load);
+    n_load.print_detailed();
+    
+    EXPECT_EQ(n["path/to/empty"].dtype().id(),
+              n_load["path/to/empty"].dtype().id());
+}
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_childless_object)
+{
+    Node n;
+    n["path/to/empty"].set(DataType::object());
+    n.print_detailed();
+    
+    io::hdf5_write(n,"tout_hdf5_wr_cl_obj.hdf5");
+    
+    Node n_load;
+    io::hdf5_read("tout_hdf5_wr_cl_obj.hdf5",n_load);
+    n_load.print_detailed();
+    
+    EXPECT_EQ(n["path/to/empty"].dtype().id(),
+              n_load["path/to/empty"].dtype().id());
+}
 
 
 

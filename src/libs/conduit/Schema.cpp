@@ -1031,6 +1031,7 @@ Schema::compact_to(Schema &s_dest, index_t curr_offset) const
     
     if(dtype_id == DataType::OBJECT_ID )
     {
+        s_dest.init_object();
         index_t nchildren = children().size();
         for(index_t i=0; i < nchildren;i++)
         {
@@ -1042,6 +1043,7 @@ Schema::compact_to(Schema &s_dest, index_t curr_offset) const
     }
     else if(dtype_id == DataType::LIST_ID)
     {
+        s_dest.init_list();
         index_t nchildren = children().size();
         for(index_t i=0; i < nchildren ;i++)
         {            
