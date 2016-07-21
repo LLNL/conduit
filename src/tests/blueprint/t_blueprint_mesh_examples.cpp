@@ -168,7 +168,7 @@ create_blueprint_index_for_2d_examples(Node &index_root)
         tris_idx["fields/radial_ec/mesh/path"]   = "tris/fields/radial_ec";
     
     // quads (unstructured)
-    Node &quads_idx = index_root["tris"];
+    Node &quads_idx = index_root["quads"];
     // state
     quads_idx["state/cycle"] = 42;
     quads_idx["state/time"]  = 3.1415;
@@ -344,8 +344,8 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
 
     // we are using one node to hold group of example meshes purely out of convenience  
     Node dsets;
-    index_t npts_x = 11;
-    index_t npts_y = 11;
+    index_t npts_x = 51;
+    index_t npts_y = 51;
     index_t npts_z = 1; // 2D examples ...
     
     blueprint::mesh::examples::braid("uniform",
@@ -458,7 +458,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
         
         CONDUIT_INFO("Creating ")
         CONDUIT_INFO("Creating: braid_2d_examples.hdf5.blueprint_root")
-        relay::io::save("hdf5",root,"braid_2d_examples.hdf5.blueprint_root");
+        relay::io::save(root,"braid_2d_examples.hdf5.blueprint_root","hdf5");
         CONDUIT_INFO("Creating: braid_2d_examples.hdf5")
         relay::io::save(dsets,"braid_2d_examples.hdf5");
     }
@@ -477,9 +477,9 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
 
     // we are using one node to hold group of example meshes purely out of convenience  
     Node dsets;
-    index_t npts_x = 11;
-    index_t npts_y = 11;
-    index_t npts_z = 11; // 3D examples ...
+    index_t npts_x = 31;
+    index_t npts_y = 31;
+    index_t npts_z = 31; // 3D examples ...
     
     blueprint::mesh::examples::braid("uniform",
                                       npts_x,
@@ -573,7 +573,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
         Node root;
         create_blueprint_index_for_3d_examples(root["blueprint_index"]);
 
-        root["protocol/name"] = "conduit_hdf5";
+        root["protocol/name"]    = "hdf5";
         root["protocol/version"] = "0.1";
         
         root["number_of_files"] = 1;
@@ -582,7 +582,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
         root["tree_pattern"] = "/";
 
         CONDUIT_INFO("Creating: braid_3d_examples.hdf5.blueprint_root")
-        relay::io::save("hdf5",root,"braid_3d_examples.hdf5.blueprint_root");
+        relay::io::save(root,"braid_3d_examples.hdf5.blueprint_root","hdf5");
         CONDUIT_INFO("Creating: braid_3d_examples.hdf5")
         relay::io::save(dsets,"braid_3d_examples.hdf5");
     }

@@ -926,15 +926,10 @@ braid_hexs(index_t npts_x,
                                           npts_z,
                                           fields["braid_pc"]);
 
-    // skip for now, we need a helper that generates 
-    // one value for each quad, then two for each tri
-    // we can't do this b/c the current ele_scalar_file function
-    // is to simplistic. 
-    //
-    // braid_init_example_element_scalar_field(nele_x,
-    //                                         nele_y,
-    //                                         nele_z,
-    //                                         fields["radial_ec"]);
+    braid_init_example_element_scalar_field(nele_x,
+                                            nele_y,
+                                            nele_z,
+                                            fields["radial_ec"]);
 }
 
 //---------------------------------------------------------------------------//
