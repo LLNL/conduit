@@ -478,24 +478,25 @@ silo_write_pointmesh(DBfile *dbfile,
                      Node &n_mesh_info)
 {
     // expects explicit coords
+    Node &n_coord_vals = n_coords["values"];
     
     int num_dims = 2;    
-    if(!n_coords.has_path("x"))
+    if(!n_coord_vals.has_path("x"))
     {
         CONDUIT_ERROR( "mesh coordset missing: x");
     }
-    if(!n_coords.has_path("y"))
+    if(!n_coord_vals.has_path("y"))
     {
         CONDUIT_ERROR( "mesh coordset missing: y");
     }
-    if(n_coords.has_path("z"))
+    if(n_coord_vals.has_path("z"))
     {
         num_dims = 3;
     }
 
     Node n_coords_compact;
     // compaction is necessary to support ragged arrays
-    n_coords.compact_to(n_coords_compact);
+    n_coord_vals.compact_to(n_coords_compact);
 
     int num_pts = n_coords_compact["x"].dtype().number_of_elements();
     
@@ -704,18 +705,19 @@ silo_write_ucd_mesh(DBfile *dbfile,
     // also support interleaved:
     // xy, xyz 
     // convert these to separate coord arrays for silo 
+    Node &n_coord_vals = n_coords["values"];
 
     // check if we are 2d or 3d
     int num_coords = 2;    
-    if(!n_coords.has_path("x"))
+    if(!n_coord_vals.has_path("x"))
     {
         CONDUIT_ERROR( "mesh coordset missing: x");
     }
-    if(!n_coords.has_path("y"))
+    if(!n_coord_vals.has_path("y"))
     {
         CONDUIT_ERROR( "mesh coordset missing: y");
     }
-    if(n_coords.has_path("z"))
+    if(n_coord_vals.has_path("z"))
     {
         num_coords = 3;
     }
@@ -724,7 +726,7 @@ silo_write_ucd_mesh(DBfile *dbfile,
 
     Node n_coords_compact;
     // compaction is necessary to support ragged arrays
-    n_coords.compact_to(n_coords_compact);
+    n_coord_vals.compact_to(n_coords_compact);
 
     int num_pts = n_coords_compact["x"].dtype().number_of_elements();
     // TODO: check that y & z have the same number of points
@@ -799,19 +801,19 @@ silo_write_quad_rect_mesh(DBfile *dbfile,
     // TODO: also support interleaved:
     // xy, xyz 
     // convert these to separate coord arrays for silo 
-    Node &n_coords_rect = n_coords;
+    Node &n_coord_vals = n_coords["values"];
 
     // check if we are 2d or 3d
     int num_coords = 2;    
-    if(!n_coords_rect.has_path("x"))
+    if(!n_coord_vals.has_path("x"))
     {
         CONDUIT_ERROR( "mesh coordset missing: x");
     }
-    if(!n_coords_rect.has_path("y"))
+    if(!n_coord_vals.has_path("y"))
     {
         CONDUIT_ERROR( "mesh coordset missing: y");
     }
-    if(n_coords_rect.has_path("z"))
+    if(n_coord_vals.has_path("z"))
     {
         num_coords = 3;
     }
@@ -821,7 +823,7 @@ silo_write_quad_rect_mesh(DBfile *dbfile,
 
     Node n_coords_compact;
     // compaction is necessary to support ragged arrays
-    n_coords_rect.compact_to(n_coords_compact);
+    n_coord_vals.compact_to(n_coords_compact);
 
 
     int pts_dims[3];
@@ -988,22 +990,23 @@ silo_write_quad_uniform_mesh(DBfile *dbfile,
     
 
     n_rect_coords["type"] = "rectilinear";
-    n_rect_coords["x"].set(DataType::float64(npts_x));
-    n_rect_coords["y"].set(DataType::float64(npts_y));
+    Node &n_rect_coord_vals = n_rect_coords["values"];
+    n_rect_coord_vals["x"].set(DataType::float64(npts_x));
+    n_rect_coord_vals["y"].set(DataType::float64(npts_y));
     
     if(npts_z > 1)
     {
-        n_rect_coords["z"].set(DataType::float64(npts_z));
+        n_rect_coord_vals["z"].set(DataType::float64(npts_z));
     }
     
     
-    float64 *x_coords_ptr = n_rect_coords["x"].value();
-    float64 *y_coords_ptr = n_rect_coords["y"].value();
+    float64 *x_coords_ptr = n_rect_coord_vals["x"].value();
+    float64 *y_coords_ptr = n_rect_coord_vals["y"].value();
     float64 *z_coords_ptr = NULL;
     
     if(npts_z > 1)
     {
-        z_coords_ptr = n_rect_coords["z"].value();
+        z_coords_ptr = n_rect_coord_vals["z"].value();
     }
     
     float64 cv = x0;
@@ -1052,29 +1055,30 @@ silo_write_structured_mesh(DBfile *dbfile,
     // also support interleaved:
     // xy, xyz 
     // convert these to separate coord arrays for silo 
+    Node& n_coords_vals = n_coords["values"];
 
     // check if we are 2d or 3d
     int num_coords = 2;    
-    if(!n_coords.has_path("x"))
+    if(!n_coords_vals.has_path("x"))
     {
         CONDUIT_ERROR( "mesh coordset missing: x");
     }
-    if(!n_coords.has_path("y"))
+    if(!n_coords_vals.has_path("y"))
     {
         CONDUIT_ERROR( "mesh coordset missing: y");
     }
-    if(n_coords.has_path("z"))
+    if(n_coords_vals.has_path("z"))
     {
         num_coords = 3;
     }
 
-    // blueprint::transmute(n_coords,,n_coords_compact)
+    // blueprint::transmute(n_coord_vals,,n_coords_compact)
 
     const char* coordnames[3] = {"x", "y", "z"};
 
     Node n_coords_compact;
     // compaction is necessary to support ragged arrays
-    n_coords.compact_to(n_coords_compact);
+    n_coords_vals.compact_to(n_coords_compact);
 
     int num_pts = n_coords_compact["x"].dtype().number_of_elements();
     // TODO: check that y & z have the same number of points
