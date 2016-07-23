@@ -596,6 +596,32 @@ check_if_conduit_node_is_compatible_with_hdf5_tree(const Node &node,
 }
 
 
+//---------------------------------------------------------------------------//
+hid_t
+create_hdf5_compression_plist_for_conduit_leaf(const DataType &dtype)
+{
+    hid_t h5_cprops_id = H5Pcreate(H5P_DATASET_CREATE);
+
+    hsize_t num_eles = (hsize_t) dtype.number_of_elements();
+    // Turn on chunking...needed for compression
+    hsize_t chunk_size = 1024;
+    double num_chunks = (double) num_eles / (double) chunk_size;
+    double partial_chunk = num_chunks - (int) num_chunks;
+    double chunk_waste = 1 - partial_chunk;
+    if (chunk_waste > 0.1 || num_eles < chunk_size)
+    {
+        chunk_size = num_eles;
+    }
+
+    H5Pset_chunk(h5_cprops_id, 1, &chunk_size);
+
+    // Turn on compression
+    H5Pset_shuffle(h5_cprops_id);
+    H5Pset_deflate(h5_cprops_id, 9);
+
+    return h5_cprops_id;
+}
+
 
 //---------------------------------------------------------------------------//
 hid_t
@@ -608,6 +634,8 @@ create_hdf5_dataset_for_conduit_leaf(const DataType &dtype,
     hid_t h5_dtype = conduit_dtype_to_hdf5_dtype(dtype);
 
     hsize_t num_eles = (hsize_t) dtype.number_of_elements();
+    
+    hid_t h5_cprops_id = create_hdf5_compression_plist_for_conduit_leaf(dtype);
     
     hid_t h5_dspace_id = H5Screate_simple(1,
                                           &num_eles,
@@ -622,12 +650,16 @@ create_hdf5_dataset_for_conduit_leaf(const DataType &dtype,
                     h5_dtype,
                     h5_dspace_id,
                     H5P_DEFAULT,
-                    H5P_DEFAULT,
+                    h5_cprops_id,
                     H5P_DEFAULT);
 
     CONDUIT_CHECK_HDF5_ERROR(res,
                              "Failed to create HDF5 Dataset " 
                              << hdf5_group_id << " " << hdf5_dset_name);
+
+    // close plist used for compression
+    CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_cprops_id),
+                         "Failed to close HDF5 compression property list" << h5_cprops_id);
 
     // close our dataspace
     CONDUIT_CHECK_HDF5_ERROR(H5Sclose(h5_dspace_id),

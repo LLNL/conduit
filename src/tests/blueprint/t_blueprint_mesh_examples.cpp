@@ -57,6 +57,282 @@
 
 using namespace conduit;
 
+
+//-----------------------------------------------------------------------------
+void
+create_blueprint_index_for_2d_examples(Node &index_root)
+{
+    // uniform
+        Node &uni_idx = index_root["uniform"];
+        // state
+        uni_idx["state/cycle"] = 42;
+        uni_idx["state/time"]  = 3.1415;
+        uni_idx["state/number_of_domains"]  = 1;
+        // coords
+        uni_idx["coordsets/coords/type"]         = "uniform";
+        uni_idx["coordsets/coords/coord_system"] = "xy";
+        uni_idx["coordsets/coords/path"]         = "uniform/coords";
+        // topology
+        uni_idx["topologies/mesh/type"]     = "uniform";
+        uni_idx["topologies/mesh/coordset"] = "coords";
+        uni_idx["topologies/mesh/path"]     = "uniform/topology";
+        // fields
+            // pc
+            uni_idx["fields/braid_pc/association"] = "point";
+            uni_idx["fields/braid_pc/topology"]    = "mesh";
+            uni_idx["fields/braid_pc/number_of_components"] = 1;
+            uni_idx["fields/braid_pc/mesh/path"]   = "uniform/fields/braid_pc";
+            // ec
+            uni_idx["fields/radial_ec/association"] = "element";
+            uni_idx["fields/radial_ec/topology"]    = "mesh";
+            uni_idx["fields/radial_ec/number_of_components"] = 1;
+            uni_idx["fields/radial_ec/mesh/path"]   = "uniform/fields/radial_ec";
+
+    // rectilinear
+        Node &rect_idx = index_root["rect"];
+        // state
+        rect_idx["state/cycle"] = 42;
+        rect_idx["state/time"]  = 3.1415;
+        rect_idx["state/number_of_domains"]  = 1;
+        // coords
+        rect_idx["coordsets/coords/type"]         = "rectilinear";
+        rect_idx["coordsets/coords/coord_system"] = "xy";
+        rect_idx["coordsets/coords/path"]         = "rect/coords";
+        // topology
+        rect_idx["topologies/mesh/type"]     = "rectilinear";
+        rect_idx["topologies/mesh/coordset"] = "coords";
+        rect_idx["topologies/mesh/path"]     = "rect/topology";
+        // fields
+            // pc
+            rect_idx["fields/braid_pc/association"] = "point";
+            rect_idx["fields/braid_pc/topology"]    = "mesh";
+            rect_idx["fields/braid_pc/number_of_components"] = 1;
+            rect_idx["fields/braid_pc/mesh/path"]   = "rect/fields/braid_pc";
+            // ec
+            rect_idx["fields/radial_ec/association"] = "element";
+            rect_idx["fields/radial_ec/topology"]    = "mesh";
+            rect_idx["fields/radial_ec/number_of_components"] = 1;
+            rect_idx["fields/radial_ec/mesh/path"]   = "rect/fields/radial_ec";
+
+
+    // structured
+        Node &struct_idx = index_root["struct"];
+        // state
+        struct_idx["state/cycle"] = 42;
+        struct_idx["state/time"]  = 3.1415;
+        struct_idx["state/number_of_domains"]  = 1;
+        // coords
+        struct_idx["coordsets/coords/type"]         = "explicit";
+        struct_idx["coordsets/coords/coord_system"] = "xy";
+        struct_idx["coordsets/coords/path"]         = "struct/coords";
+        // topology
+        struct_idx["topologies/mesh/type"]     = "structured";
+        struct_idx["topologies/mesh/coordset"] = "coords";
+        struct_idx["topologies/mesh/path"]     = "struct/topology";
+        // fields
+            // pc
+            struct_idx["fields/braid_pc/association"] = "point";
+            struct_idx["fields/braid_pc/topology"]    = "mesh";
+            struct_idx["fields/braid_pc/number_of_components"] = 1;
+            struct_idx["fields/braid_pc/mesh/path"]   = "struct/fields/braid_pc";
+            // ec
+            struct_idx["fields/radial_ec/association"] = "element";
+            struct_idx["fields/radial_ec/topology"]    = "mesh";
+            struct_idx["fields/radial_ec/number_of_components"] = 1;
+            struct_idx["fields/radial_ec/mesh/path"]   = "struct/fields/radial_ec";
+    
+    // tris (unstructured)
+    Node &tris_idx = index_root["tris"];
+    // state
+    tris_idx["state/cycle"] = 42;
+    tris_idx["state/time"]  = 3.1415;
+    tris_idx["state/number_of_domains"]  = 1;
+    // coords
+    tris_idx["coordsets/coords/type"]         = "explicit";
+    tris_idx["coordsets/coords/coord_system"] = "xy";
+    tris_idx["coordsets/coords/path"]         = "tris/coords";
+    // topology
+    tris_idx["topologies/mesh/type"]     = "unstructured";
+    tris_idx["topologies/mesh/coordset"] = "coords";
+    tris_idx["topologies/mesh/path"]     = "tris/topology";
+    // fields
+        // pc
+        tris_idx["fields/braid_pc/association"] = "point";
+        tris_idx["fields/braid_pc/topology"]    = "mesh";
+        tris_idx["fields/braid_pc/number_of_components"] = 1;
+        tris_idx["fields/braid_pc/mesh/path"]   = "tris/fields/braid_pc";
+        // ec
+        tris_idx["fields/radial_ec/association"] = "element";
+        tris_idx["fields/radial_ec/topology"]    = "mesh";
+        tris_idx["fields/radial_ec/number_of_components"] = 1;
+        tris_idx["fields/radial_ec/mesh/path"]   = "tris/fields/radial_ec";
+    
+    // quads (unstructured)
+    Node &quads_idx = index_root["quads"];
+    // state
+    quads_idx["state/cycle"] = 42;
+    quads_idx["state/time"]  = 3.1415;
+    quads_idx["state/number_of_domains"]  = 1;
+    // coords
+    quads_idx["coordsets/coords/type"]         = "explicit";
+    quads_idx["coordsets/coords/coord_system"] = "xy";
+    quads_idx["coordsets/coords/path"]         = "quads/coords";
+    // topology
+    quads_idx["topologies/mesh/type"]     = "unstructured";
+    quads_idx["topologies/mesh/coordset"] = "coords";
+    quads_idx["topologies/mesh/path"]     = "quads/topology";
+    // fields
+        // pc
+        quads_idx["fields/braid_pc/association"] = "point";
+        quads_idx["fields/braid_pc/topology"]    = "mesh";
+        quads_idx["fields/braid_pc/number_of_components"] = 1;
+        quads_idx["fields/braid_pc/mesh/path"]   = "quads/fields/braid_pc";
+        // ec
+        quads_idx["fields/radial_ec/association"] = "element";
+        quads_idx["fields/radial_ec/topology"]    = "mesh";
+        quads_idx["fields/radial_ec/number_of_components"] = 1;
+        quads_idx["fields/radial_ec/mesh/path"]   = "quads/fields/radial_ec";
+    
+}
+
+//-----------------------------------------------------------------------------
+void
+create_blueprint_index_for_3d_examples(Node &index_root)
+{
+    // uniform
+        Node &uni_idx = index_root["uniform"];
+        // state
+        uni_idx["state/cycle"] = 42;
+        uni_idx["state/time"]  = 3.1415;
+        uni_idx["state/number_of_domains"]  = 1;
+        // coords
+        uni_idx["coordsets/coords/type"]         = "uniform";
+        uni_idx["coordsets/coords/coord_system"] = "xyz";
+        uni_idx["coordsets/coords/path"]         = "uniform/coords";
+        // topology
+        uni_idx["topologies/mesh/type"]     = "uniform";
+        uni_idx["topologies/mesh/coordset"] = "coords";
+        uni_idx["topologies/mesh/path"]     = "uniform/topology";
+        // fields
+            // pc
+            uni_idx["fields/braid_pc/association"] = "point";
+            uni_idx["fields/braid_pc/topology"]    = "mesh";
+            uni_idx["fields/braid_pc/number_of_components"] = 1;
+            uni_idx["fields/braid_pc/mesh/path"]   = "uniform/fields/braid_pc";
+            // ec
+            uni_idx["fields/radial_ec/association"] = "element";
+            uni_idx["fields/radial_ec/topology"]    = "mesh";
+            uni_idx["fields/radial_ec/number_of_components"] = 1;
+            uni_idx["fields/radial_ec/mesh/path"]   = "uniform/fields/radial_ec";
+
+    // rectilinear
+        Node &rect_idx = index_root["rect"];
+        // state
+        rect_idx["state/cycle"] = 42;
+        rect_idx["state/time"]  = 3.1415;
+        rect_idx["state/number_of_domains"]  = 1;
+        // coords
+        rect_idx["coordsets/coords/type"]         = "rectilinear";
+        rect_idx["coordsets/coords/coord_system"] = "xyz";
+        rect_idx["coordsets/coords/path"]         = "rect/coords";
+        // topology
+        rect_idx["topologies/mesh/type"]     = "rectilinear";
+        rect_idx["topologies/mesh/coordset"] = "coords";
+        rect_idx["topologies/mesh/path"]     = "rect/topology";
+        // fields
+            // pc
+            rect_idx["fields/braid_pc/association"] = "point";
+            rect_idx["fields/braid_pc/topology"]    = "mesh";
+            rect_idx["fields/braid_pc/number_of_components"] = 1;
+            rect_idx["fields/braid_pc/mesh/path"]   = "rect/fields/braid_pc";
+            // ec
+            rect_idx["fields/radial_ec/association"] = "element";
+            rect_idx["fields/radial_ec/topology"]    = "mesh";
+            rect_idx["fields/radial_ec/number_of_components"] = 1;
+            rect_idx["fields/radial_ec/mesh/path"]   = "rect/fields/radial_ec";
+
+
+    // structured
+        Node &struct_idx = index_root["struct"];
+        // state
+        struct_idx["state/cycle"] = 42;
+        struct_idx["state/time"]  = 3.1415;
+        struct_idx["state/number_of_domains"]  = 1;
+        // coords
+        struct_idx["coordsets/coords/type"]         = "explicit";
+        struct_idx["coordsets/coords/coord_system"] = "xyz";
+        struct_idx["coordsets/coords/path"]         = "struct/coords";
+        // topology
+        struct_idx["topologies/mesh/type"]     = "structured";
+        struct_idx["topologies/mesh/coordset"] = "coords";
+        struct_idx["topologies/mesh/path"]     = "struct/topology";
+        // fields
+            // pc
+            struct_idx["fields/braid_pc/association"] = "point";
+            struct_idx["fields/braid_pc/topology"]    = "mesh";
+            struct_idx["fields/braid_pc/number_of_components"] = 1;
+            struct_idx["fields/braid_pc/mesh/path"]   = "struct/fields/braid_pc";
+            // ec
+            struct_idx["fields/radial_ec/association"] = "element";
+            struct_idx["fields/radial_ec/topology"]    = "mesh";
+            struct_idx["fields/radial_ec/number_of_components"] = 1;
+            struct_idx["fields/radial_ec/mesh/path"]   = "struct/fields/radial_ec";
+    
+    // tets (unstructured)
+    Node &tets_idx = index_root["tets"];
+    // state
+    tets_idx["state/cycle"] = 42;
+    tets_idx["state/time"]  = 3.1415;
+    tets_idx["state/number_of_domains"]  = 1;
+    // coords
+    tets_idx["coordsets/coords/type"]         = "explicit";
+    tets_idx["coordsets/coords/coord_system"] = "xyz";
+    tets_idx["coordsets/coords/path"]         = "tets/coords";
+    // topology
+    tets_idx["topologies/mesh/type"]     = "unstructured";
+    tets_idx["topologies/mesh/coordset"] = "coords";
+    tets_idx["topologies/mesh/path"]     = "tets/topology";
+    // fields
+        // pc
+        tets_idx["fields/braid_pc/association"] = "point";
+        tets_idx["fields/braid_pc/topology"]    = "mesh";
+        tets_idx["fields/braid_pc/number_of_components"] = 1;
+        tets_idx["fields/braid_pc/mesh/path"]   = "tets/fields/braid_pc";
+        // ec
+        tets_idx["fields/radial_ec/association"] = "element";
+        tets_idx["fields/radial_ec/topology"]    = "mesh";
+        tets_idx["fields/radial_ec/number_of_components"] = 1;
+        tets_idx["fields/radial_ec/mesh/path"]   = "tets/fields/radial_ec";
+    
+    // hexs (unstructured)
+    Node &hexs_idx = index_root["hexs"];
+    // state
+    hexs_idx["state/cycle"] = 42;
+    hexs_idx["state/time"]  = 3.1415;
+    hexs_idx["state/number_of_domains"]  = 1;
+    // coords
+    hexs_idx["coordsets/coords/type"]         = "explicit";
+    hexs_idx["coordsets/coords/coord_system"] = "xyz";
+    hexs_idx["coordsets/coords/path"]         = "hexs/coords";
+    // topology
+    hexs_idx["topologies/mesh/type"]     = "unstructured";
+    hexs_idx["topologies/mesh/coordset"] = "coords";
+    hexs_idx["topologies/mesh/path"]     = "hexs/topology";
+    // fields
+        // pc
+        hexs_idx["fields/braid_pc/association"] = "point";
+        hexs_idx["fields/braid_pc/topology"]    = "mesh";
+        hexs_idx["fields/braid_pc/number_of_components"] = 1;
+        hexs_idx["fields/braid_pc/mesh/path"]   = "hexs/fields/braid_pc";
+        // ec
+        hexs_idx["fields/radial_ec/association"] = "element";
+        hexs_idx["fields/radial_ec/topology"]    = "mesh";
+        hexs_idx["fields/radial_ec/number_of_components"] = 1;
+        hexs_idx["fields/radial_ec/mesh/path"]   = "hexs/fields/radial_ec";
+    
+}
+
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, mesh_2d)
 {
@@ -64,11 +340,12 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
     relay::about(io_protos);
 
     bool silo_enabled = io_protos["io/protocols/conduit_silo"].as_string() == "enabled";
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
 
     // we are using one node to hold group of example meshes purely out of convenience  
     Node dsets;
-    index_t npts_x = 11;
-    index_t npts_y = 11;
+    index_t npts_x = 51;
+    index_t npts_y = 51;
     index_t npts_z = 1; // 2D examples ...
     
     blueprint::mesh::examples::braid("uniform",
@@ -129,7 +406,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
         Node &mesh = itr.next();
         //mesh.print();
         std::string name = itr.path();
-        std::cout << "expanding 2d example '" << name << "'" << std::endl;
+        CONDUIT_INFO("expanding 2d example '" << name << "'");
         blueprint::mesh::expand(mesh,expanded[name],info);
 
     }
@@ -143,7 +420,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
         {
             Node &mesh = itr.next();
             std::string name = itr.path();
-            std::cout << "saving 2d example '" << name << "' to silo" << std::endl;
+            CONDUIT_INFO("saving 2d example '" << name << "' to silo");
             // Skip output of silo mesh for mixed mesh of tris and quads for now.
             // The silo output is not yet defined and it throws an exception
             // in conduit_silo.cpp::silo_write_ucd_zonelist()
@@ -154,9 +431,8 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
 
             if( name == "quads_and_tris" || name == "quads_and_tris_offsets" )
             {
-                std::cout <<"\tNOTE: skipping output to SILO -- ";
-                std::cout << "feature is unavailable for mixed element meshes";
-                std::cout << std::endl;
+                CONDUIT_INFO("\tNOTE: skipping output to SILO -- ")
+                CONDUIT_INFO("feature is unavailable for mixed element meshes")
                 continue;
             }
 
@@ -164,6 +440,27 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
                             "braid_2d_" + name +  "_example.silo:mesh",
                             "conduit_silo_mesh");
         }
+    }
+    
+    if(hdf5_enabled)
+    {
+        
+        Node root;
+        create_blueprint_index_for_2d_examples(root["blueprint_index"]);
+        
+        root["protocol/name"] = "conduit_hdf5";
+        root["protocol/version"] = "0.1";
+        
+        root["number_of_files"] = 1;
+        root["number_of_trees"] = 1;
+        root["file_pattern"] = "braid_2d_examples.hdf5";
+        root["tree_pattern"] = "/";
+        
+        CONDUIT_INFO("Creating ")
+        CONDUIT_INFO("Creating: braid_2d_examples.hdf5.blueprint_root")
+        relay::io::save(root,"braid_2d_examples.hdf5.blueprint_root","hdf5");
+        CONDUIT_INFO("Creating: braid_2d_examples.hdf5")
+        relay::io::save(dsets,"braid_2d_examples.hdf5");
     }
     
 }
@@ -176,12 +473,13 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
     relay::about(io_protos);
 
     bool silo_enabled = io_protos["io/protocols/conduit_silo"].as_string() == "enabled";
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
 
     // we are using one node to hold group of example meshes purely out of convenience  
     Node dsets;
-    index_t npts_x = 11;
-    index_t npts_y = 11;
-    index_t npts_z = 11; // 3D examples ...
+    index_t npts_x = 51;
+    index_t npts_y = 51;
+    index_t npts_z = 51; // 3D examples ...
     
     blueprint::mesh::examples::braid("uniform",
                                       npts_x,
@@ -249,7 +547,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
             Node &mesh = itr.next();
             //mesh.print();
             std::string name = itr.path();
-            std::cout << "saving 3d example '" << name << "' to silo" << std::endl;
+            CONDUIT_INFO("saving 3d example '" << name << "' to silo")
 
             // Skip output of silo mesh for mixed mesh of hexs and tets for now.
             // The silo output is not yet defined and it throws an exception
@@ -260,13 +558,33 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
             // The silo writer needs to be updated for this case.
             if(name == "hexs_and_tets")
             {
-                std::cout<<"\tskipping output to SILO -- this is not implemented yet for indexed_stream meshes."<< std::endl;
+                CONDUIT_INFO("\tskipping output to SILO -- this is not implemented yet for indexed_stream meshes.");
                 continue;
             }
             relay::io::save(mesh,
                             "braid_3d_" + name +  "_example.silo:mesh",
                             "conduit_silo_mesh");
         }
+    }
+    
+    if(hdf5_enabled)
+    {
+        
+        Node root;
+        create_blueprint_index_for_3d_examples(root["blueprint_index"]);
+
+        root["protocol/name"]    = "hdf5";
+        root["protocol/version"] = "0.1";
+        
+        root["number_of_files"] = 1;
+        root["number_of_trees"] = 1;
+        root["file_pattern"] = "braid_3d_examples.hdf5";
+        root["tree_pattern"] = "/";
+
+        CONDUIT_INFO("Creating: braid_3d_examples.hdf5.blueprint_root")
+        relay::io::save(root,"braid_3d_examples.hdf5.blueprint_root","hdf5");
+        CONDUIT_INFO("Creating: braid_3d_examples.hdf5")
+        relay::io::save(dsets,"braid_3d_examples.hdf5");
     }
     
 }
