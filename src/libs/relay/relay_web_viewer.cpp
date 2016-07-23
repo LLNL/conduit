@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: relay_web_visualizer.cpp
+/// file: relay_web_viewer.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -63,7 +63,7 @@
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "relay_web.hpp"
-#include "relay_web_visualizer.hpp"
+#include "relay_web_viewer.hpp"
 #include "relay_config.hpp"
 
 //-----------------------------------------------------------------------------
@@ -86,24 +86,24 @@ namespace web
 
 
 //-----------------------------------------------------------------------------
-// -- Visualizer Request Handler  -
+// -- Viewer Request Handler  -
 //-----------------------------------------------------------------------------
 
-VisualizerRequestHandler::VisualizerRequestHandler(Node *node)
+ViewerRequestHandler::ViewerRequestHandler(Node *node)
 : WebRequestHandler(),
   m_node(node)
 {
     // empty
 }
 
-VisualizerRequestHandler::~VisualizerRequestHandler()
+ViewerRequestHandler::~ViewerRequestHandler()
 {
     // empty
 }
 
 //---------------------------------------------------------------------------//
 bool
-VisualizerRequestHandler::handle_post(WebServer *server,
+ViewerRequestHandler::handle_post(WebServer *server,
                                        struct mg_connection *conn) 
 {
     return handle_request(server,conn);
@@ -112,7 +112,7 @@ VisualizerRequestHandler::handle_post(WebServer *server,
 
 //---------------------------------------------------------------------------//
 bool
-VisualizerRequestHandler::handle_get(WebServer *server,
+ViewerRequestHandler::handle_get(WebServer *server,
                                      struct mg_connection *conn) 
 {
     return handle_request(server,conn);
@@ -122,7 +122,7 @@ VisualizerRequestHandler::handle_get(WebServer *server,
 // Main handler, dispatches to proper api requests.
 //---------------------------------------------------------------------------//
 bool
-VisualizerRequestHandler::handle_request(WebServer *server,
+ViewerRequestHandler::handle_request(WebServer *server,
                                          struct mg_connection *conn) 
 {
     const struct mg_request_info *req_info = mg_get_request_info(conn);
@@ -162,7 +162,7 @@ VisualizerRequestHandler::handle_request(WebServer *server,
 // Handles a request from the client for the node's schema.
 //---------------------------------------------------------------------------//
 bool
-VisualizerRequestHandler::handle_get_schema(struct mg_connection *conn)
+ViewerRequestHandler::handle_get_schema(struct mg_connection *conn)
 {
     if(m_node != NULL)
     {
@@ -180,7 +180,7 @@ VisualizerRequestHandler::handle_get_schema(struct mg_connection *conn)
 // Handles a request from the client for a specific value in the node.
 //---------------------------------------------------------------------------//
 bool
-VisualizerRequestHandler::handle_get_value(struct mg_connection *conn)
+ViewerRequestHandler::handle_get_value(struct mg_connection *conn)
 {
     if(m_node != NULL)
     {
@@ -210,7 +210,7 @@ VisualizerRequestHandler::handle_get_value(struct mg_connection *conn)
 // of the node.
 //---------------------------------------------------------------------------//
 bool
-VisualizerRequestHandler::handle_get_base64_json(struct mg_connection *conn)
+ViewerRequestHandler::handle_get_base64_json(struct mg_connection *conn)
 {
     if(m_node != NULL)
     {
@@ -231,28 +231,28 @@ VisualizerRequestHandler::handle_get_base64_json(struct mg_connection *conn)
 // Handles a request from the client to shutdown the REST server
 //---------------------------------------------------------------------------//
 bool
-VisualizerRequestHandler::handle_shutdown(WebServer *server)
+ViewerRequestHandler::handle_shutdown(WebServer *server)
 {
     server->shutdown();
     return true;
 }
 
 //---------------------------------------------------------------------------//
-// Helper to easily create a Visualizer instance.
+// Helper to easily create a Viewer instance.
 //---------------------------------------------------------------------------//
 WebServer *
-VisualizerServer::serve(Node *data,
+ViewerServer::serve(Node *data,
                         bool block,
                         index_t port,
                         const std::string &ssl_cert_file,
                         const std::string &auth_domain,
                         const std::string &auth_file)
 {
-    VisualizerRequestHandler *rhandler = new VisualizerRequestHandler(data);
+    ViewerRequestHandler *rhandler = new ViewerRequestHandler(data);
     
     WebServer *res = new WebServer();
     // call general serve routine
-    res->serve(utils::join_file_path(CONDUIT_RELAY_WEB_CLIENT_ROOT,"rest_client"),
+    res->serve(utils::join_file_path(CONDUIT_RELAY_WEB_CLIENT_ROOT,"node_viewer"),
                rhandler,
                port,
                ssl_cert_file,
