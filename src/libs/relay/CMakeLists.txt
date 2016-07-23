@@ -77,7 +77,7 @@ set(conduit_relay_headers
     relay.hpp
     relay_io.hpp
     relay_web.hpp
-    relay_web_visualizer.hpp
+    relay_web_viewer.hpp
     relay_exports.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/relay_config.hpp)
 
@@ -88,7 +88,7 @@ set(conduit_relay_sources
     relay.cpp
     relay_io.cpp
     relay_web.cpp
-    relay_web_visualizer.cpp)
+    relay_web_viewer.cpp)
     
 if(HDF5_FOUND)
     list(APPEND conduit_relay_headers relay_hdf5.hpp)

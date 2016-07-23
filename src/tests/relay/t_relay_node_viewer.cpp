@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_relay_rest.cpp
+/// file: t_relay_viewer.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -61,7 +61,7 @@ bool launch_server = false;
 bool use_ssl       = false;
 bool use_auth      = false;
 
-TEST(conduit_relay_web_rest, rest_server)
+TEST(conduit_relay_web, node_viewer)
 {
     uint32 a_val = 20;
     uint32 b_val = 8;
@@ -97,18 +97,18 @@ TEST(conduit_relay_web_rest, rest_server)
         }
         
 
-        web::WebServer *svr = web::VisualizerServer::serve(n,
-                                                           true,
-                                                           8080,
-                                                           cert_file,
-                                                           auth_domain,
-                                                           auth_file);
+        web::WebServer *svr = web::ViewerServer::serve(n,
+                                                       true,
+                                                       8080,
+                                                       cert_file,
+                                                       auth_domain,
+                                                       auth_file);
         delete svr;
     }
     else
     {
-        std::cout << "provide \"launch\" as a command line arg "
-                  << "to launch a conduit::Node REST test server at "
+        std::cout << "Provide \"launch\" as a command line arg "
+                  << "to launch a Conduit Node Viewer server at "
                   << "http://localhost:8080" << std::endl;
     }
 

@@ -44,12 +44,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: relay_web_visualizer.hpp
+/// file: relay_web_viewer.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_RELAY_WEB_VISUALIZER_HPP
-#define CONDUIT_RELAY_WEB_VISUALIZER_HPP
+#ifndef CONDUIT_RELAY_WEB_VIEWER_HPP
+#define CONDUIT_RELAY_WEB_VIEWER_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
@@ -78,13 +78,13 @@ namespace web
 {
 
 //-----------------------------------------------------------------------------
-// -- Visualizer Web Request Handler  -
+// -- Viewer Web Request Handler  -
 //-----------------------------------------------------------------------------
-class CONDUIT_RELAY_API VisualizerRequestHandler : public WebRequestHandler
+class CONDUIT_RELAY_API ViewerRequestHandler : public WebRequestHandler
 {
 public:
-                   VisualizerRequestHandler(Node *node);
-                  ~VisualizerRequestHandler();
+                   ViewerRequestHandler(Node *node);
+                  ~ViewerRequestHandler();
     
     virtual bool   handle_post(WebServer *server,
                                struct mg_connection *conn);
@@ -107,10 +107,10 @@ private:
 };
 
 //-----------------------------------------------------------------------------
-// -- Visualizer Web Request Handler  -
+// -- Viewer Web Request Handler  -
 //-----------------------------------------------------------------------------
 
-class CONDUIT_RELAY_API VisualizerServer
+class CONDUIT_RELAY_API ViewerServer
 {
 public:
     static WebServer  *serve(Node *data,
