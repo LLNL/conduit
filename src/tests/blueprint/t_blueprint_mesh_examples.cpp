@@ -477,9 +477,9 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
 
     // we are using one node to hold group of example meshes purely out of convenience  
     Node dsets;
-    index_t npts_x = 31;
-    index_t npts_y = 31;
-    index_t npts_z = 31; // 3D examples ...
+    index_t npts_x = 51;
+    index_t npts_y = 51;
+    index_t npts_z = 51; // 3D examples ...
     
     blueprint::mesh::examples::braid("uniform",
                                       npts_x,
