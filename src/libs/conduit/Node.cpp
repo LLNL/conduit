@@ -4642,28 +4642,6 @@ Node::serialize(std::ofstream &ofs) const
 
 //---------------------------------------------------------------------------//
 void
-Node::compact()
-{
-    // TODO: we can do this more efficiently
-    Node n;
-    compact_to(n);
-    set(n);
-}
-
-
-//---------------------------------------------------------------------------//
-Node
-Node::compact_to()const
-{
-    // NOTE: very ineff w/o move semantics
-    Node res;
-    compact_to(res);
-    return res;
-}
-
-
-//---------------------------------------------------------------------------//
-void
 Node::compact_to(Node &n_dest) const
 {
     n_dest.reset();

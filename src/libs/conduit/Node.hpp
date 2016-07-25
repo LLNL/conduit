@@ -1864,16 +1864,8 @@ public:
 //-----------------------------------------------------------------------------
 // -- compaction methods ---
 //-----------------------------------------------------------------------------
-    /// compact this node
-    void        compact();
-
     /// compact into a new node
     void        compact_to(Node &n_dest) const;
-
-    /// compact and return the result
-    /// TODO: this is inefficient w/o move semantics, but is very 
-    /// convenient for testing and example programs.
-    Node        compact_to() const;
 
 //-----------------------------------------------------------------------------
 // -- update methods ---
