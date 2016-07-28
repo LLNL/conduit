@@ -49,6 +49,11 @@ import os
 import platform
 from os.path import join as pjoin
 
+
+def cmake_cache_entry(name,value):
+    return 'set("%s" "%s" CACHE PATH "")\n\n' % (name,value)
+        
+
 class UberenvConduit(Package):
     """Spack Based Uberenv Build for Conduit Thirdparty Libs """
 
@@ -56,34 +61,44 @@ class UberenvConduit(Package):
 
     version('0.1', '8d378ef62dedc2df5db447b029b71200')
 
-    #######################
+    variant("hdf5",default=True,description="build third party dependencies for Conduit HDF5 support")
+    variant("silo",default=True,description="build third party dependencies for Conduit Silo support")
+    
+    variant("doc",default=True,description="build third party dependencies for creating Conduit's docs")
+    variant("python3",default=True,description="build python3")
+    
+
+    ###########################
     # standard spack packages
-    #######################
+    ###########################
     #on osx, build mpich for mpi support
     if "darwin" in platform.system().lower():
         depends_on("mpich")
     
-    #######################
+    ##########################
     # uberenv custom packages
-    #######################
+    ##########################
 
     #######################
     # CMake
     #######################
-    depends_on("cmake~ncurses~openssl@3.3.1")
+    depends_on("cmake@3.3.1")
     
     #######################
     # python
     #######################
-    depends_on("python3")
-    depends_on("py3-sphinx")
-    depends_on("py3-breathe")
-    depends_on("py3-numpy")
 
+    # python2
     depends_on("python")
-    depends_on("py-sphinx")
-    depends_on("py-breathe")
     depends_on("py-numpy")
+    depends_on("py-sphinx", when="+doc")
+    depends_on("py-breathe", when="+doc")
+
+    # python3
+    depends_on("python3", when="+python3")
+    depends_on("py3-numpy",when="+python3")
+    depends_on("py3-sphinx", when="+python3+doc")
+    depends_on("py3-breathe",when="+python3+doc")
 
     #######################
     # i/o packages
@@ -100,24 +115,28 @@ class UberenvConduit(Package):
         
     def install(self, spec, prefix):
         dest_dir     = env["SPACK_DEBUG_LOG_DIR"]
+        
         c_compiler   = env["SPACK_CC"]
         cpp_compiler = env["SPACK_CXX"]
         f_compiler   = None
+        
         # see if we should enable fortran support
         if "SPACK_FC" in env.keys():
-            f_compiler   = env["SPACK_FC"]
-        sys_type     = spec.architecture
+            # even if this is set, it may not exist
+            # do one more sanity check
+            if os.path.isfile(env["SPACK_FC"]):
+                f_compiler  = env["SPACK_FC"]
+
+        sys_type = spec.architecture
+        # if on llnl systems, we can use the SYS_TYPE
         if env.has_key("SYS_TYPE"):
             sys_type = env["SYS_TYPE"]
         
         #######################
         # TPL Paths
         #######################
-        cmake_exe        = pjoin(spec['cmake'].prefix.bin,"cmake")
-        python_exe       = pjoin(spec['python'].prefix.bin,"python")
-        sphinx_build_exe = pjoin(spec['python'].prefix.bin,"sphinx-build")
-        python3_exe      = pjoin(spec['python3'].prefix.bin,"python3")
-        py3_sphinx_build_exe = pjoin(spec['python3'].prefix.bin,"sphinx-build")
+        cmake_exe  = pjoin(spec['cmake'].prefix.bin,"cmake")
+        python_exe = pjoin(spec['python'].prefix.bin,"python")
         
         #######################
         # Check for MPI
@@ -144,71 +163,98 @@ class UberenvConduit(Package):
         # show path to cmake for reference
         cfg.write("# cmake from uberenv\n")
         cfg.write("# cmake exectuable path: %s\n\n" % cmake_exe)
+        
+        #######################
         #######################
         # compiler settings
         #######################
+        #######################
+        
         cfg.write("#######\n")
         cfg.write("# using %s compiler spec\n" % spec.compiler)
         cfg.write("#######\n\n")
         cfg.write("# c compiler used by spack\n")
-        cfg.write('set(CMAKE_C_COMPILER "%s" CACHE PATH "")\n\n' % c_compiler)
+        cfg.write(cmake_cache_entry("CMAKE_C_COMPILER",c_compiler))
         cfg.write("# cpp compiler used by spack\n")
-        cfg.write('set(CMAKE_CXX_COMPILER "%s" CACHE PATH "")\n\n' % cpp_compiler)
+        cfg.write(cmake_cache_entry("CMAKE_CXX_COMPILER",cpp_compiler))
+        
         cfg.write("# fortran compiler used by spack\n")
         if not f_compiler is None:
-            cfg.write('set(ENABLE_FORTRAN ON CACHE PATH "")\n\n')
-            cfg.write('set(CMAKE_Fortran_COMPILER  "%s" CACHE PATH "")\n\n' % f_compiler)
+            cfg.write(cmake_cache_entry("ENABLE_FORTRAN","ON"))
+            cfg.write(cmake_cache_entry("CMAKE_Fortran_COMPILER",f_compiler))
         else:
             cfg.write("# no fortran compiler found\n\n")
-            cfg.write('set(ENABLE_FORTRAN OFF CACHE PATH "")\n\n')
+            cfg.write(cmake_cache_entry("ENABLE_FORTRAN","OFF"))
+
         #######################
-        #python packages
+        #######################
+        # python
+        #######################
+        
         #######################
         # python 2
         #######################
         cfg.write("# Enable python module builds\n")
-        cfg.write('set(ENABLE_PYTHON ON CACHE PATH "")\n\n')
+        cfg.write(cmake_cache_entry("ENABLE_PYTHON","ON"))
         cfg.write("# python from uberenv\n")
-        cfg.write('set(PYTHON_EXECUTABLE "%s" CACHE PATH "")\n\n' % python_exe)
-        cfg.write("# sphinx from uberenv\n")
-        cfg.write('set(SPHINX_EXECUTABLE "%s" CACHE PATH "")\n\n' % sphinx_build_exe)
+        cfg.write(cmake_cache_entry("PYTHON_EXECUTABLE",python_exe))
+        
+        if "+doc" in spec:
+            sphinx_build_exe = pjoin(spec['python'].prefix.bin,"sphinx-build")
+            cfg.write("# sphinx from uberenv\n")
+            cfg.write(cmake_cache_entry("SPHINX_EXECUTABLE",sphinx_build_exe))
+
         #######################
         # python 3
         #######################
-        cfg.write("# python3 from uberenv\n")
-        cfg.write('#set(PYTHON_EXECUTABLE "%s" CACHE PATH "")\n\n' % python3_exe)
-        cfg.write("# sphinx from uberenv\n")
-        cfg.write('#set(SPHINX_EXECUTABLE "%s" CACHE PATH "")\n\n' % py3_sphinx_build_exe)
+        if "+python3" in spec:
+            python3_exe      = pjoin(spec['python3'].prefix.bin,"python3")
+            cfg.write("# python3 from uberenv\n")
+            cfg.write("#" + cmake_cache_entry("PYTHON_EXECUTABLE",python3_exe))
+            if "+doc" in spec:
+                py3_sphinx_build_exe = pjoin(spec['python3'].prefix.bin,"sphinx-build")
+                cfg.write("# sphinx from uberenv\n")
+                cfg.write("#" + cmake_cache_entry("SPHINX_EXECUTABLE",py3_sphinx_build_exe))
+
         #######################
         # mpi
         #######################
         cfg.write("# MPI Support\n")
-        cfg.write('set(ENABLE_MPI ON CACHE PATH "")\n\n')
         if not mpicc is None:
-            cfg.write('set(MPI_C_COMPILER  "%s" CACHE PATH "")\n\n' % mpicc.command)
+            cfg.write(cmake_cache_entry("ENABLE_MPI","ON"))
+            cfg.write(cmake_cache_entry("MPI_C_COMPILER",mpicc.command))
         # we use `mpicc` as `MPI_CXX_COMPILER` b/c we don't want to introduce 
         # linking deps to the MPI C++ libs (we aren't using C++ features of MPI)
         if not mpicxx is None:
-            cfg.write('set(MPI_CXX_COMPILER "%s" CACHE PATH "")\n\n' % mpicc.command)
+            cfg.write(cmake_cache_entry("MPI_CXX_COMPILER",mpicc.command))
         if not mpif90 is None:
-            cfg.write('set(MPI_Fortran_COMPILER "%s" CACHE PATH "")\n\n' % mpif90.command)
+            cfg.write(cmake_cache_entry("MPI_Fortran_COMPILER", mpif90.command))
         if not mpiexec is None:
-            cfg.write('set(MPIEXEC "%s" CACHE PATH "")\n\n' % mpiexec.command)
+            cfg.write(cmake_cache_entry("MPIEXEC", mpiexec.command))
 
+        #######################
         #######################
         # i/o packages
         #######################
+        #######################
         cfg.write("# I/O Packages\n\n")
+        
         #######################
         # hdf5
         #######################
         cfg.write("# hdf5 from uberenv\n")
-        cfg.write('set(HDF5_DIR "%s" CACHE PATH "")\n\n' % spec['hdf5'].prefix)
+        if "+hdf5" in spec:
+            cfg.write(cmake_cache_entry("HDF5_DIR", spec['hdf5'].prefix))
+        else:
+            cfg.write("# hdf5 not built by uberenv\n")
         #######################
         # silo
         #######################
         cfg.write("# silo from uberenv\n")
-        cfg.write('set(SILO_DIR "%s" CACHE PATH "")\n\n' % spec['silo'].prefix)
+        if "+silo" in spec:
+            cfg.write(cmake_cache_entry("SILO_DIR", spec['silo'].prefix))
+        else:
+            cfg.write("# silo not built by uberenv\n")
 
         cfg.write("##################################\n")
         cfg.write("# end uberenv host-config\n")

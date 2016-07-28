@@ -52,7 +52,10 @@ class Py3Numpy(Package):
     version('1.9.1', '78842b73560ec378142665e712ae4ad9')
 
     extends('python3')
+    
+    depends_on("py3-setuptools")
+    
 
     def install(self, spec, prefix):
-        # don't
+        # don't install to prefix
         python('setup.py', 'install')

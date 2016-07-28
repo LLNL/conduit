@@ -46,6 +46,7 @@ import glob
 import inspect
 import os
 import re
+import platform
 from contextlib import closing
 
 import spack
@@ -68,14 +69,24 @@ class Python(Package):
     version('2.7.9', '5eebcaa0030dc4061156d3429657fb83')
     version('2.7.8', 'd4bca0159acb0b44a781292b5231936f')
 
+    #on osx el cap, need to provide openssl
+    if "darwin" in platform.system().lower():
+        depends_on("openssl")
+
     def install(self, spec, prefix):
         # Need this to allow python build to find the Python installation.
         env['PYTHONHOME'] = prefix
         env['MACOSX_DEPLOYMENT_TARGET'] = '10.6'
         # Rest of install is pretty standard.
-        configure_args= ["--prefix=%s" % prefix,
-                         "--with-threads",
-                         "--enable-shared"]
+
+        configure_args = ["--prefix=%s" % prefix,
+                          "--with-threads",
+                          "--enable-shared"]
+        
+        if "darwin" in platform.system().lower():
+             configure_args.extend( ["CPPFLAGS=-I%s/include" % spec["openssl"].prefix,
+                                     "LDFLAGS=-L%s/lib"      % spec["openssl"].prefix])
+
         if spec.satisfies('@3:'):
             configure_args.append('--without-ensurepip')
         configure(*configure_args)

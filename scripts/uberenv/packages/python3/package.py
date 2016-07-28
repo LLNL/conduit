@@ -47,6 +47,7 @@ import glob
 import inspect
 import os
 import re
+import platform
 from contextlib import closing
 
 import spack
@@ -65,6 +66,10 @@ class Python3(Package):
     version('3.5.1', 'be78e48cdfc1a7ad90efff146dce6cfe')
     version('3.5.0', 'a56c0c0b45d75a0ec9c6dee933c41c36')
 
+    #on osx el cap, need to provide openssl
+    if "darwin" in platform.system().lower():
+        depends_on("openssl")
+
     def install(self, spec, prefix):
         # Need this to allow python build to find the Python installation.
         env['PYTHONHOME'] = prefix
@@ -73,6 +78,10 @@ class Python3(Package):
         configure_args= ["--prefix=%s" % prefix,
                          "--with-threads",
                          "--enable-shared"]
+
+        if "darwin" in platform.system().lower():
+             configure_args.extend( ["CPPFLAGS=-I%s/include" % spec["openssl"].prefix,
+                                     "LDFLAGS=-L%s/lib"      % spec["openssl"].prefix])
         if spec.satisfies('@3:'):
             configure_args.append('--without-ensurepip')
         configure(*configure_args)
