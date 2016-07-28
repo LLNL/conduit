@@ -72,11 +72,19 @@ class Mpich(Package):
         # TODO: Spack should make it so that you can't actually find
         # these compilers if they're "disabled" for the current
         # compiler configuration.
-        if not self.compiler.f77:
+        found_fortran = False;
+        if self.compiler.f77 and os.path.isfile(self.compiler.f77):
+            found_fortran = True;
+        else:
             config_args.append("--disable-f77")
-
-        if not self.compiler.fc:
+            
+        if self.compiler.fc and os.path.isfile(self.compiler.fc):
+            found_fortran = True;
+        else:
             config_args.append("--disable-fc")
+
+        if not found_fortran:
+            config_args.append("--disable-fortran")
 
         configure(*config_args)
         make()

@@ -94,7 +94,7 @@ Build, test, and install Conduit:
 Build Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The core Conduit library has no dependencies outside of the repo, however Conduit provides optional support for I/O and Communication (MPI) features that require externally built thirdparty libraries.  
+The core Conduit library has no dependencies outside of the repo, however Conduit provides optional support for I/O and Communication (MPI) features that require externally built third party libraries.  
 
 Conduit's build system supports the following CMake options:
 
@@ -123,7 +123,7 @@ Conduit's build system supports the following CMake options:
 Host Config Files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To handle build options, thirdparty library paths, etc we rely on CMake's initial-cache file mechanism. 
+To handle build options, third party library paths, etc we rely on CMake's initial-cache file mechanism. 
 
 
 .. code:: bash
@@ -140,7 +140,7 @@ The ``config-build.sh`` script will use your machine's hostname, the SYS_TYPE en
     cmake {other options} -C host-configs/{config_file}.cmake ../
 
 
-You can view several example files under the ``host-configs`` directory. 
+You can find example files in the ``host-configs`` directory. 
 
 These files use standard CMake commands. CMake *set* commands need to specify the root cache path as follows:
 
@@ -149,15 +149,14 @@ These files use standard CMake commands. CMake *set* commands need to specify th
     set(CMAKE_VARIABLE_NAME {VALUE} CACHE PATH "")
 
 
-Bootstrapping Thirdparty Dependencies 
+Bootstrapping Third Party Dependencies 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can use ``bootstrap-env.sh`` (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses ``scripts/uberenv/uberenv.py``, which leverages **Spack** (http://software.llnl.gov/spack) to build the external thirdparty libraries and tools used by Conduit.
-After building these libraries and tools, it writes an initial *host-config* file and adds the Spack built CMake binary to your PATH, so can immediately call the ``config-build.sh`` helper script to configure a conduit build.
+You can use ``bootstrap-env.sh`` (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses ``scripts/uberenv/uberenv.py``, which leverages **Spack** (http://software.llnl.gov/spack) to build the external third party libraries and tools used by Conduit. Fortran support in is optional, dependencies should build without fortran. After building these libraries and tools, it writes an initial *host-config* file and adds the Spack built CMake binary to your PATH, so can immediately call the ``config-build.sh`` helper script to configure a conduit build.
 
 .. code:: bash
     
-    #build thirdparty libs using spack
+    #build third party libs using spack
     source bootstrap-env.sh
     
     #copy the generated host-config file into the standard location
@@ -171,11 +170,13 @@ After building these libraries and tools, it writes an initial *host-config* fil
     ./config-build.sh uberenv_libs/`hostname`*.cmake
 
 
-Compiler Settings for Thirdparty Dependencies 
+Compiler Settings for Third Party Dependencies 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 You can edit ``scripts/uberenv/compilers.yaml`` to change the compiler settings
 passed to Spack. See the `Spack Compiler Configuration    <http://software.llnl.gov/spack/basic_usage.html#manual-compiler-configuration>`_   
-documentation for details. 
+documentation for details.
+
+For OSX, the defaults in ``compilers.yaml`` are clang from X-Code and gfortran from https://gcc.gnu.org/wiki/GFortranBinaries#MacOS. 
 
 .. note::
     The bootstrapping process ignores ``~/.spack/compilers.yaml`` to avoid conflicts
@@ -185,7 +186,7 @@ documentation for details.
 Building with Spack
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. note::
-  Conduit developers use ``scripts/uberenv/uberenv.py`` to setup thirdparty libraries for Conduit 
+  Conduit developers use ``scripts/uberenv/uberenv.py`` to setup third party libraries for Conduit 
   development.  Due to this, the process builds more libraries than necessary for most use cases.
   For example, we build independent installs of Python 2 and Python 3 to make it easy 
   to check Python C-API compatibility during development. In the near future, we plan to 

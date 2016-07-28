@@ -52,6 +52,7 @@ class PyNumpy(Package):
     version('1.9.1',  '78842b73560ec378142665e712ae4ad9')
 
     extends('python')
+    depends_on("py-setuptools")
 
     def install(self, spec, prefix):
         # don't

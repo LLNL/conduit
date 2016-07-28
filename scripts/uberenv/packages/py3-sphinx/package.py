@@ -48,11 +48,24 @@ class Py3Sphinx(Package):
     """Sphinx Documentation Generator."""
 
     homepage = "http://sphinx-doc.org/"
-    url      = "https://pypi.python.org/packages/source/S/Sphinx/Sphinx-1.3.1.tar.gz#md5=8786a194acf9673464c5455b11fd4332"
+    url      = "https://pypi.python.org/packages/8b/78/eeea2b837f911cdc301f5f05163f9729a2381cadd03ccf35b25afe816c90/Sphinx-1.4.5.tar.gz"
 
-    version('1.3.1', '8786a194acf9673464c5455b11fd4332')
+    version('1.4.5', '5c2cd2dac45dfa6123d067e32a89e89a')
 
-    extends('python3')
+    extends('python')
+    
+    depends_on("py-setuptools")
+    depends_on("py-six")
+    depends_on("py-jinja2")
+    depends_on("py-pygments")
+    depends_on("py-docutils")
+    depends_on("py-imagesize")
+    depends_on("py-snowballstemmer")
+    depends_on("py-alabaster")
+    depends_on("py-babel")
+    depends_on("py-sphinx-rtd-theme")
+    
+    
 
     def install(self, spec, prefix):
         # simply install to the spack python
@@ -63,7 +76,7 @@ class Py3Sphinx(Package):
                           "sphinx-build",
                           "sphinx-quickstart"]
         for script in sphinx_scripts:
-            script_path = join_path(spec["python3"].prefix,"bin",script)
+            script_path = join_path(spec["python"].prefix,"bin",script)
             # use spack sbang to fix issues with shebang that is too long
             filter_shebang(script_path)
 
