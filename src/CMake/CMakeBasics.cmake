@@ -168,7 +168,16 @@ macro(add_compiled_library)
     # install and export setup
     #############################
     # if export is set, install our lib
-    if(NOT ${args_INTERNAL} OR WIN32)
+    
+    #
+    # See https://github.com/LLNL/conduit/issues/14
+    # we are installing these (for now) due to an issue other cmake
+    # build systems importing conduit targets and still needing
+    # to link these type of libs, even though we are using them
+    # with PRIVATE cmake link properties.
+    #
+    #if(NOT ${args_INTERNAL} OR WIN32)
+    #
     
         # if we have headers, install them
         if(NOT "${args_HEADERS}" STREQUAL "")
@@ -192,7 +201,7 @@ macro(add_compiled_library)
                     ARCHIVE DESTINATION lib
                     RUNTIME DESTINATION lib)
         endif()
-    endif()
+    #endif()
 
 endmacro()
 
