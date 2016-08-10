@@ -94,7 +94,7 @@ endif()
 # Setup install to copy the fortran modules 
 install(FILES 
         ${conduit_fortran_modules}
-        DESTINATION include)
+        DESTINATION include/conduit)
 
 
 

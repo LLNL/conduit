@@ -77,7 +77,8 @@ set(blueprint_sources
 add_compiled_library(NAME conduit_blueprint
                      EXPORT conduit
                      HEADERS ${blueprint_headers}
-                     SOURCES ${blueprint_sources})
+                     SOURCES ${blueprint_sources}
+                     HEADERS_DEST_DIR include/conduit)
 
 
 #

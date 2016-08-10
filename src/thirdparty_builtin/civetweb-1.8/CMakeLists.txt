@@ -70,7 +70,8 @@ add_compiled_library(NAME   conduit_civetweb
                      INTERNAL
                      EXPORT conduit
                      HEADERS ${civetweb_headers}
-                     SOURCES ${civetweb_sources})
+                     SOURCES ${civetweb_sources}
+                     HEADERS_DEST_DIR include/conduit)
 
 ##################################
 # system dependencies for civetweb

@@ -117,7 +117,7 @@ add_compiled_library(NAME   conduit
                      EXPORT conduit
                      HEADERS ${conduit_headers} ${conduit_c_headers}
                      SOURCES ${conduit_sources} ${conduit_c_sources}
-                     )
+                     HEADERS_DEST_DIR include/conduit)
 
 #
 # libb64 is a private dep, its not exposed in / required by
