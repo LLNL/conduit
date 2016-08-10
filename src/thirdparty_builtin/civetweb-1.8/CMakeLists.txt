@@ -66,7 +66,7 @@ add_definitions(-DUSE_WEBSOCKET)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 
-add_compiled_library(NAME   civetweb
+add_compiled_library(NAME   conduit_civetweb
                      INTERNAL
                      EXPORT conduit
                      HEADERS ${civetweb_headers}
@@ -79,7 +79,7 @@ add_compiled_library(NAME   civetweb
 if(UNIX AND NOT APPLE)
     # we need these on linux, we may need similar libs on windows 
     # (OSX appears ok without them)
-    target_link_libraries(civetweb dl rt)
+    target_link_libraries(conduit_civetweb dl rt)
 endif()
 
 

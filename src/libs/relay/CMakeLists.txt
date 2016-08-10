@@ -118,7 +118,7 @@ target_link_libraries(conduit_relay PUBLIC conduit)
 # civetweb is a private dep, its not exposed in / required by
 # conduit relays' header files
 #
-target_link_libraries(conduit_relay PRIVATE civetweb)
+target_link_libraries(conduit_relay PRIVATE conduit_civetweb)
 
 
 #

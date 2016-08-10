@@ -44,39 +44,34 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_libb64_smoke.cpp
+/// file: t_civetweb_smoke.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <iostream>
 #include "gtest/gtest.h"
-#define BUFFERSIZE 65536
-#include "b64/encode.h"
-#include "b64/decode.h"
 
-TEST(libb64_smoke, basic_use )
+//-----------------------------------------------------------------------------
+// civetweb includes
+//-----------------------------------------------------------------------------
+#include "civetweb.h"
+
+//-----------------------------------------------------------------------------
+//
+// Note: This just tests that we can compile and link with civetweb, it 
+// does not start a web server
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+int
+dummy_civetweb_handler(struct mg_connection *conn, void *cbdata)
 {
-    std::string sin("test");
-    
-    std::istringstream iss(sin);
-    std::ostringstream oss;
+	mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n");
+    return 0;
+}
 
-    base64::encoder e;
-    e.encode(iss,oss);
-    
-    std::cout << oss.str() << std::endl;
-    std::string sout = oss.str();
-    
-    
-    
-    iss.str(sout);
-    iss.clear();
-    oss.str("");
-
-    base64::decoder d;
-
-    d.decode(iss,oss);
-    
-    EXPECT_EQ(oss.str(),sin);
+TEST(civetweb_smoke, basic_use )
+{
+    EXPECT_TRUE(true);
 }
 
