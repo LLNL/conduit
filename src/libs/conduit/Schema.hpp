@@ -256,6 +256,11 @@ public:
     /// path to index map
     index_t          child_index(const std::string &path) const;
 
+    /// index to path map
+    /// returns an empty string when passed index is invalid, or 
+    /// this schema does not describe an object.
+    std::string      child_name(index_t idx) const;
+
     /// this uses the fetch method
     Schema           &operator[](const std::string &path);
     /// the const variant uses the "fetch_child" method

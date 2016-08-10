@@ -783,6 +783,24 @@ Schema::child_index(const std::string &path) const
 }
 
 //---------------------------------------------------------------------------//
+std::string
+Schema::child_name(index_t idx) const
+{
+    std::string res = "";
+
+    if(m_dtype.id() == DataType::OBJECT_ID)
+    {
+        const std::vector<std::string> &obj_order = object_order();
+        if( idx < obj_order.size())
+        {
+            res = obj_order[idx];
+        }
+    }
+
+    return res;
+}
+
+//---------------------------------------------------------------------------//
 Schema &
 Schema::fetch(const std::string &path)
 {
