@@ -42,7 +42,6 @@
 
 <body class="wy-body-for-nav" role="document">
 
-   
   <div class="wy-grid-for-nav">
 
     
@@ -89,7 +88,7 @@
 <li class="toctree-l3 current"><a class="reference internal" href="conduit.html#tutorial">Tutorial</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html">Basic Concepts</a></li>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_numeric.html">Accessing Numeric Data</a></li>
-<li class="toctree-l4 current"><a class="current reference internal" href="">Generators</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Generators</a></li>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_ownership.html">Data Ownership</a></li>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_update.html">Node Update Methods</a></li>
 </ul>
@@ -127,11 +126,7 @@
         <div class="rst-content">
           
 
-
-
-
-
-
+ 
 
 
 
@@ -139,18 +134,18 @@
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-        <li><a href="user.html">User Documentation</a> &raquo;</li>
+          <li><a href="user.html">User Documentation</a> &raquo;</li>
       
-        <li><a href="conduit.html">Conduit</a> &raquo;</li>
+          <li><a href="conduit.html">Conduit</a> &raquo;</li>
       
     <li>Generators</li>
-    <li class="wy-breadcrumbs-aside">
-      
-          
-          <a href="_sources/tutorial_json.txt" rel="nofollow"> View page source</a>
+      <li class="wy-breadcrumbs-aside">
         
-      
-    </li>
+          
+            <a href="_sources/tutorial_json.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
   </ul>
   <hr/>
 </div>
@@ -162,7 +157,7 @@
 <div class="section" id="using-generator-instances-to-parse-json-schemas">
 <h2>Using <em>Generator</em> instances to parse JSON schemas<a class="headerlink" href="#using-generator-instances-to-parse-json-schemas" title="Permalink to this headline">¶</a></h2>
 <p>The <em>Generator</em> class is used to parse conduit JSON schemas into a <em>Node</em>.</p>
-<div class="highlight-cpp"><div class="highlight"><pre><span></span><span class="n">Generator</span> <span class="nf">g</span><span class="p">(</span><span class="s">&quot;{test: {dtype: float64, value: 100.0}}&quot;</span><span class="p">,</span><span class="s">&quot;conduit_json&quot;</span><span class="p">);</span>
+<div class="highlight-cpp"><div class="highlight"><pre><span class="n">Generator</span> <span class="nf">g</span><span class="p">(</span><span class="s">&quot;{test: {dtype: float64, value: 100.0}}&quot;</span><span class="p">,</span><span class="s">&quot;conduit_json&quot;</span><span class="p">);</span>
 
 <span class="n">Node</span> <span class="n">n</span><span class="p">;</span>
 <span class="n">g</span><span class="p">.</span><span class="n">walk</span><span class="p">(</span><span class="n">n</span><span class="p">);</span>
@@ -172,7 +167,7 @@
 <span class="n">n</span><span class="p">.</span><span class="n">print_detailed</span><span class="p">();</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="mi">100</span>
+<div class="highlight-default"><div class="highlight"><pre><span class="mi">100</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="mi">100</span>
@@ -184,7 +179,7 @@
 </pre></div>
 </div>
 <p>The <em>Generator</em> can also parse pure json. For leaf nodes: wide types such as <em>int64</em>, <em>uint64</em>, and <em>float64</em> are inferred.</p>
-<div class="highlight-cpp"><div class="highlight"><pre><span></span><span class="n">Generator</span> <span class="nf">g</span><span class="p">(</span><span class="s">&quot;{test: 100.0}&quot;</span><span class="p">,</span><span class="s">&quot;json&quot;</span><span class="p">);</span>
+<div class="highlight-cpp"><div class="highlight"><pre><span class="n">Generator</span> <span class="nf">g</span><span class="p">(</span><span class="s">&quot;{test: 100.0}&quot;</span><span class="p">,</span><span class="s">&quot;json&quot;</span><span class="p">);</span>
 
 <span class="n">Node</span> <span class="n">n</span><span class="p">;</span>
 <span class="n">g</span><span class="p">.</span><span class="n">walk</span><span class="p">(</span><span class="n">n</span><span class="p">);</span>
@@ -194,7 +189,7 @@
 <span class="n">n</span><span class="p">.</span><span class="n">print</span><span class="p">();</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="mi">100</span>
+<div class="highlight-default"><div class="highlight"><pre><span class="mi">100</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;dtype&quot;</span><span class="p">:</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;length&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;endianness&quot;</span><span class="p">:</span> <span class="s2">&quot;little&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">}</span>
@@ -206,42 +201,42 @@
 </pre></div>
 </div>
 <p>Schemas can easily be bound to in-core data.</p>
-<div class="highlight-cpp"><div class="highlight"><pre><span></span><span class="n">float64</span> <span class="n">vals</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<div class="highlight-cpp"><div class="highlight"><pre><span class="n">float64</span> <span class="n">vals</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
 <span class="n">Generator</span> <span class="nf">g</span><span class="p">(</span><span class="s">&quot;{a: {dtype: float64, value: 100.0}, b: {dtype: float64, value: 200.0} }&quot;</span><span class="p">,</span><span class="n">vals</span><span class="p">);</span>
 
 <span class="n">Node</span> <span class="n">n</span><span class="p">;</span>
 <span class="n">g</span><span class="p">.</span><span class="n">walk_external</span><span class="p">(</span><span class="n">n</span><span class="p">);</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span>100 vs 100
-200 vs 200
+<div class="highlight-default"><div class="highlight"><pre><span class="mi">100</span> <span class="n">vs</span> <span class="mi">100</span>
+<span class="mi">200</span> <span class="n">vs</span> <span class="mi">200</span>
 
-{
-  &quot;a&quot;: 100,
-  &quot;b&quot;: 200
-}
+<span class="p">{</span>
+  <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+  <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="mi">200</span>
+<span class="p">}</span>
 
-{
-  &quot;mem_spaces&quot;: 
-  {
-    &quot;0x7fff5a5f1a60&quot;: 
-    {
-      &quot;path&quot;: &quot;a&quot;,
-      &quot;type&quot;: &quot;external&quot;
-    }
-  },
-  &quot;total_bytes&quot;: 16,
-  &quot;total_bytes_compact&quot;: 16,
-  &quot;total_bytes_alloced&quot;: 0,
-  &quot;total_bytes_mmaped&quot;: 0
-}
+<span class="p">{</span>
+  <span class="s2">&quot;mem_spaces&quot;</span><span class="p">:</span> 
+  <span class="p">{</span>
+    <span class="s2">&quot;0x7fff5a5f1a60&quot;</span><span class="p">:</span> 
+    <span class="p">{</span>
+      <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;external&quot;</span>
+    <span class="p">}</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;total_bytes&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
+  <span class="s2">&quot;total_bytes_compact&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
+  <span class="s2">&quot;total_bytes_alloced&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="s2">&quot;total_bytes_mmaped&quot;</span><span class="p">:</span> <span class="mi">0</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="compacting-nodes">
 <h2>Compacting Nodes<a class="headerlink" href="#compacting-nodes" title="Permalink to this headline">¶</a></h2>
 <p><em>Nodes</em> can be compacted to transform sparse data.</p>
-<div class="highlight-cpp"><div class="highlight"><pre><span></span><span class="n">float64</span> <span class="n">vals</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span> <span class="mf">100.0</span><span class="p">,</span><span class="o">-</span><span class="mf">100.0</span><span class="p">,</span>
+<div class="highlight-cpp"><div class="highlight"><pre><span class="n">float64</span> <span class="n">vals</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span> <span class="mf">100.0</span><span class="p">,</span><span class="o">-</span><span class="mf">100.0</span><span class="p">,</span>
                    <span class="mf">200.0</span><span class="p">,</span><span class="o">-</span><span class="mf">200.0</span><span class="p">,</span>
                    <span class="mf">300.0</span><span class="p">,</span><span class="o">-</span><span class="mf">300.0</span><span class="p">,</span>
                    <span class="mf">400.0</span><span class="p">,</span><span class="o">-</span><span class="mf">400.0</span><span class="p">,</span>
@@ -287,7 +282,7 @@
 <span class="n">ninfo</span><span class="p">.</span><span class="n">print</span><span class="p">();</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="mi">500</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="mi">500</span><span class="p">]</span>
 <span class="p">[</span><span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="o">-</span><span class="mi">200</span><span class="p">,</span> <span class="o">-</span><span class="mi">300</span><span class="p">,</span> <span class="o">-</span><span class="mi">400</span><span class="p">,</span> <span class="o">-</span><span class="mi">500</span><span class="p">]</span>
 
 <span class="p">{</span>

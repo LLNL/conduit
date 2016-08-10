@@ -42,7 +42,6 @@
 
 <body class="wy-body-for-nav" role="document">
 
-   
   <div class="wy-grid-for-nav">
 
     
@@ -90,7 +89,7 @@
 <li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html">Basic Concepts</a></li>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_numeric.html">Accessing Numeric Data</a></li>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_json.html">Generators</a></li>
-<li class="toctree-l4 current"><a class="current reference internal" href="">Data Ownership</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Data Ownership</a></li>
 <li class="toctree-l4"><a class="reference internal" href="tutorial_update.html">Node Update Methods</a></li>
 </ul>
 </li>
@@ -127,11 +126,7 @@
         <div class="rst-content">
           
 
-
-
-
-
-
+ 
 
 
 
@@ -139,18 +134,18 @@
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-        <li><a href="user.html">User Documentation</a> &raquo;</li>
+          <li><a href="user.html">User Documentation</a> &raquo;</li>
       
-        <li><a href="conduit.html">Conduit</a> &raquo;</li>
+          <li><a href="conduit.html">Conduit</a> &raquo;</li>
       
     <li>Data Ownership</li>
-    <li class="wy-breadcrumbs-aside">
-      
-          
-          <a href="_sources/tutorial_ownership.txt" rel="nofollow"> View page source</a>
+      <li class="wy-breadcrumbs-aside">
         
-      
-    </li>
+          
+            <a href="_sources/tutorial_ownership.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
   </ul>
   <hr/>
 </div>
@@ -171,7 +166,7 @@
 <li><strong>set(...)</strong>: Makes a copy of the data passed into the <em>Node</em>. This will trigger an allocation if the current data type of the <em>Node</em> is incompatible with what was passed. The <em>Node</em> assignment operators use their respective <strong>set</strong> variants, so they follow the same copy semantics.</li>
 <li><strong>set_external(...)</strong>: Sets up the <em>Node</em> to describe data passed and access the data externally. Does not copy the data.</li>
 </ul>
-<div class="highlight-cpp"><div class="highlight"><pre><span></span> 
+<div class="highlight-cpp"><div class="highlight"><pre> 
 <span class="n">index_t</span> <span class="n">vsize</span> <span class="o">=</span> <span class="mi">5</span><span class="p">;</span>
 <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">float64</span><span class="o">&gt;</span> <span class="n">vals</span><span class="p">(</span><span class="n">vsize</span><span class="p">,</span><span class="mf">0.0</span><span class="p">);</span>
 <span class="k">for</span><span class="p">(</span><span class="n">index_t</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="n">i</span><span class="o">&lt;</span><span class="n">vsize</span><span class="p">;</span><span class="n">i</span><span class="o">++</span><span class="p">)</span>
@@ -191,7 +186,7 @@
 <span class="n">n</span><span class="p">.</span><span class="n">print</span><span class="p">();</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="p">{</span>
+<div class="highlight-default"><div class="highlight"><pre><span class="p">{</span>
   <span class="s2">&quot;mem_spaces&quot;</span><span class="p">:</span> 
   <span class="p">{</span>
     <span class="s2">&quot;0x7fd4cac05590&quot;</span><span class="p">:</span> 
