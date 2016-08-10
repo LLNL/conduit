@@ -183,6 +183,29 @@ TEST(schema_basics, schema_alloc)
 }
 
 //-----------------------------------------------------------------------------
+TEST(schema_basics, schema_name_by_index)
+{
+    Schema s1;
+    s1["a"].set(DataType::int64());
+    s1["b"].set(DataType::float64());
+    s1["c"].set(DataType::float64());
+    
+    // standard case
+    EXPECT_EQ(s1.child_name(0),"a");
+    EXPECT_EQ(s1.child_name(1),"b");
+    EXPECT_EQ(s1.child_name(2),"c");
+
+    // these are out of bounds, should be empty
+    EXPECT_EQ(s1.child_name(100),"");
+    EXPECT_EQ(s1["a"].child_name(100),"");
+    
+    Schema s2;
+    // check empty schema
+    EXPECT_EQ(s2.child_name(100),"");
+}
+
+
+//-----------------------------------------------------------------------------
 ///
 /// commented out b/c spanned_bytes is now private, 
 /// keeping if useful in future
