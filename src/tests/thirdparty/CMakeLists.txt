@@ -50,9 +50,10 @@
 # Core (conduit lib) Unit Tests
 ################################
 set(TPL_TESTS t_gtest_smoke
-              t_rapidjson_smoke
-              t_libb64_smoke)
+              t_rapidjson_smoke)
 
+set(B64_TPL_TEST   t_libb64_smoke)
+set(CIVET_TPL_TEST t_civetweb_smoke)
 
 ################################
 # Optional Unit Tests
@@ -70,7 +71,17 @@ set(FORTRAN_TESTS t_fortran_smoke t_fruit_smoke)
 ################################
 message(STATUS "Adding thirdparty lib unit tests")
 foreach(TEST ${TPL_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON libb64 )
+    add_cpp_test(TEST ${TEST} DEPENDS_ON)
+endforeach()
+
+message(STATUS "Adding b64 unit test")
+foreach(TEST ${B64_TPL_TEST})
+    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit_b64 )
+endforeach()
+
+message(STATUS "Adding civetweb unit test")
+foreach(TEST ${CIVET_TPL_TEST})
+    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit_civetweb )
 endforeach()
 
 

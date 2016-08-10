@@ -123,7 +123,7 @@ add_compiled_library(NAME   conduit
 # libb64 is a private dep, its not exposed in / required by
 # conduit's header files
 #
-target_link_libraries(conduit PRIVATE libb64)
+target_link_libraries(conduit PRIVATE conduit_b64)
 
 ################################
 # Add python wrappers if python

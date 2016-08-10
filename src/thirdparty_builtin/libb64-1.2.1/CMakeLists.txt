@@ -58,7 +58,7 @@ set(libb64_sources
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 
-add_compiled_library(NAME   libb64
+add_compiled_library(NAME conduit_b64
                      INTERNAL
                      EXPORT conduit
                      SOURCES ${libb64_sources})

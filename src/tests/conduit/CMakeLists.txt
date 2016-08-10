@@ -81,7 +81,7 @@ set(BASIC_TESTS t_conduit_smoke
 ################################
 message(STATUS "Adding conduit lib unit tests")
 foreach(TEST ${BASIC_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit libb64 )
+    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit)
 endforeach()
 
 ################################

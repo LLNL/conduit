@@ -66,7 +66,7 @@ add_definitions(-DUSE_WEBSOCKET)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 
-add_compiled_library(NAME   civetweb
+add_compiled_library(NAME   conduit_civetweb
                      INTERNAL
                      EXPORT conduit
                      HEADERS ${civetweb_headers}
