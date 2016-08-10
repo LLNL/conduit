@@ -99,6 +99,7 @@ find_package_handle_standard_args(Python  DEFAULT_MSG
 ##############################################################################
 FUNCTION(PYTHON_ADD_DISTUTILS_SETUP target_name
                                     dest_dir
+                                    py_module_dir
                                     setup_file)
     MESSAGE(STATUS "Configuring python distutils setup: ${target_name}")
     add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${target_name}_build
@@ -112,17 +113,32 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP target_name
 
     add_custom_target(${target_name} ALL DEPENDS 
                       ${CMAKE_CURRENT_BINARY_DIR}/${target_name}_build)
-    # also use distutils for the install ...
-    INSTALL(CODE
-        "
-        EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-            COMMAND ${PYTHON_EXECUTABLE} ${setup_file} -v
-                build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${target_name}_build_install
-                install --install-purelib=\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${dest_dir}
-            OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
-        MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
-        ")
 
+    # also use distutils for the install ...
+    # if PYTHON_MODULE_INSTALL_PREFIX is set, install there
+    if(PYTHON_MODULE_INSTALL_PREFIX)
+        INSTALL(CODE
+            "
+            EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                COMMAND ${PYTHON_EXECUTABLE} ${setup_file} -v
+                    build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${target_name}_build_install
+                    install --install-purelib=${PYTHON_MODULE_INSTALL_PREFIX}
+                OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
+            MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
+            ")
+    else()
+        # else install to the dest dir under CMAKE_INSTALL_PREFIX
+        INSTALL(CODE
+            "
+            EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                COMMAND ${PYTHON_EXECUTABLE} ${setup_file} -v
+                    build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${target_name}_build_install
+                    install --install-purelib=\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${dest_dir}
+                OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
+            MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
+            ")
+    endif()
+    
 ENDFUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
 
 ##############################################################################
@@ -134,21 +150,29 @@ ENDFUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
 #
 ##############################################################################
 FUNCTION(PYTHON_ADD_COMPILED_MODULE target_name
-                                    dest_dir)
+                                    dest_dir
+                                    py_module_dir)
     MESSAGE(STATUS "Configuring python module: ${target_name}")
     PYTHON_ADD_MODULE(${target_name} ${ARGN})
     SET_TARGET_PROPERTIES(${target_name} PROPERTIES
                                          LIBRARY_OUTPUT_DIRECTORY
-                                         ${CMAKE_BINARY_DIR}/${dest_dir})
+                                         ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir})
 
     # link with python
     target_link_libraries(${target_name} ${PYTHON_LIBRARIES})
 
+    # support installing the python module components to an
+    # an alternate dir, set via PYTHON_MODULE_INSTALL_PREFIX 
+    set(py_install_dir ${dest_dir})
+    if(PYTHON_MODULE_INSTALL_PREFIX)
+        set(py_install_dir ${PYTHON_MODULE_INSTALL_PREFIX})
+    endif()
+
     install(TARGETS ${target_name}
             EXPORT  conduit
-            LIBRARY DESTINATION ${dest_dir}
-            ARCHIVE DESTINATION ${dest_dir}
-            RUNTIME DESTINATION ${dest_dir}
+            LIBRARY DESTINATION ${py_install_dir}/${py_module_dir}
+            ARCHIVE DESTINATION ${py_install_dir}/${py_module_dir}
+            RUNTIME DESTINATION ${py_install_dir}/${py_module_dir}
     )
 
 ENDFUNCTION(PYTHON_ADD_COMPILED_MODULE)
@@ -158,27 +182,35 @@ ENDFUNCTION(PYTHON_ADD_COMPILED_MODULE)
 ##############################################################################
 FUNCTION(PYTHON_ADD_HYBRID_MODULE target_name
                                   dest_dir
-                                  py_name
+                                  py_module_dir
                                   setup_file
                                   py_sources)
     MESSAGE(STATUS "Configuring hybrid python module: ${target_name}")
     PYTHON_ADD_DISTUTILS_SETUP("${target_name}_py_setup"
                                ${dest_dir}
+                               ${py_module_dir}
                                ${setup_file}
                                ${py_sources})
     PYTHON_ADD_MODULE(${target_name} ${ARGN})
     SET_TARGET_PROPERTIES(${target_name} PROPERTIES
                                          LIBRARY_OUTPUT_DIRECTORY
-                                         ${CMAKE_BINARY_DIR}/${dest_dir}/${py_name})
+                                         ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir})
 
     # link with python
     target_link_libraries(${target_name} ${PYTHON_LIBRARIES})
 
+    # support installing the python module components to an
+    # an alternate dir, set via PYTHON_MODULE_INSTALL_PREFIX 
+    set(py_install_dir ${dest_dir})
+    if(PYTHON_MODULE_INSTALL_PREFIX)
+        set(py_install_dir ${PYTHON_MODULE_INSTALL_PREFIX})
+    endif()
+
     install(TARGETS ${target_name}
             EXPORT  conduit
-            LIBRARY DESTINATION ${dest_dir}/${py_name}
-            ARCHIVE DESTINATION ${dest_dir}/${py_name}
-            RUNTIME DESTINATION ${dest_dir}/${py_name}
+            LIBRARY DESTINATION ${py_install_dir}/${py_module_dir}
+            ARCHIVE DESTINATION ${py_install_dir}/${py_module_dir}
+            RUNTIME DESTINATION ${py_install_dir}/${py_module_dir}
     )
 
 ENDFUNCTION(PYTHON_ADD_HYBRID_MODULE)

@@ -108,6 +108,7 @@ Conduit's build system supports the following CMake options:
  The Conduit Python module will build for both Python 2 and Python 3. To select a specific Python, set the CMake variable **PYTHON_EXECUTABLE** to path of the desired python binary. The Conduit Python module requires Numpy. The selected Python instance must provide Numpy, or PYTHONPATH must be set to include a Numpy install compatible with the selected Python install. 
 
 * **ENABLE_MPI** - Controls if the conduit_relay_mpi library is built. *(default = OFF)*
+
  We are using CMake's standard FindMPI logic. To select a specific MPI set the CMake variables **MPI_C_COMPILER** and **MPI_CXX_COMPILER**, or the other FindMPI options for MPI include paths and MPI libraries.
 
  To run the mpi unit tests on LLNL's LC platforms, you may also need change the CMake variables **MPIEXEC** and **MPIEXEC_NUMPROC_FLAG**, so you can use srun and select a partition. (for an example see: src/host-configs/chaos_5_x86_64.cmake)
@@ -119,6 +120,17 @@ Conduit's build system supports the following CMake options:
  Controls if Silo I/O support is built into *conduit_relay*. When used, the following CMake variables must also be set:
  
  * **HDF5_DIR** - Path to a HDF5 install. (Silo support depends on HDF5) 
+
+Installation Path Options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Conduit's build system provides an **install** target that installs the Conduit libraires, headers, python modules, and documentation. These CMake options allow you to control install destination paths:
+
+* **CMAKE_INSTALL_PREFIX** - Standard CMake install path option *(optional)*.
+
+* **PYTHON_MODULE_INSTALL_PREFIX** - Path to install Python modules into *(optional)*.
+
+ When present and **ENABLE_PYTHON** is ON, Conduit's Python modules will be installed to ``${PYTHON_MODULE_INSTALL_PREFIX}`` directory instead of ``${CMAKE_INSTALL_PREFIX}/python-modules``.
+
 
 Host Config Files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
