@@ -63,4 +63,10 @@ PYTHON_ADD_HYBRID_MODULE(conduit_python
 target_link_libraries(conduit_python conduit)
 
 # install the capi header so other python modules can use it
-install(FILES ${conduit_py_headers} DESTINATION python-modules/conduit/)
+# support alt install dir for python module via PYTHON_MODULE_INSTALL_PREFIX
+if(PYTHON_MODULE_INSTALL_PREFIX)
+    install(FILES ${conduit_py_headers} DESTINATION ${PYTHON_MODULE_INSTALL_PREFIX}/conduit/)
+else()
+    install(FILES ${conduit_py_headers} DESTINATION python-modules/conduit/)
+endif()
+

@@ -45,7 +45,9 @@
 
 # Setup our modules
 PYTHON_ADD_HYBRID_MODULE(relay_python
+                         # dest dir
                          python-modules
+                         # python module dir
                          conduit/relay
                          # python setup
                          setup.py
@@ -59,8 +61,10 @@ target_link_libraries(relay_python conduit conduit_relay ${PYTHON_LIBRARIES})
 
 # add relay io submodule
 PYTHON_ADD_COMPILED_MODULE(relay_io_python
-                           # dest 
-                           python-modules/conduit/relay/io
+                           # dest_dir 
+                           python-modules
+                           # python module dir
+                           conduit/relay/io
                            # c srcs
                            relay_io_python.cpp)
 
@@ -72,7 +76,9 @@ target_link_libraries(relay_io_python conduit conduit_relay)
 # add relay web submodule
 PYTHON_ADD_COMPILED_MODULE(relay_web_python
                            # dest 
-                           python-modules/conduit/relay/web
+                           python-modules
+                           # python module dir
+                           conduit/relay/web
                            # c srcs
                            relay_web_python.cpp)
 
