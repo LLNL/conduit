@@ -107,7 +107,8 @@ endif()
 add_compiled_library(NAME conduit_relay
                      EXPORT conduit
                      HEADERS ${conduit_relay_headers}
-                     SOURCES ${conduit_relay_sources})
+                     SOURCES ${conduit_relay_sources}
+                     HEADERS_DEST_DIR include/conduit)
 
 #
 # Link with conduit 
@@ -167,7 +168,8 @@ include_directories(${MPI_CXX_INCLUDE_PATH})
 add_compiled_library(NAME conduit_relay_mpi 
                      EXPORT conduit
                      HEADERS ${conduit_relay_mpi_headers}
-                     SOURCES ${conduit_relay_mpi_sources} )
+                     SOURCES ${conduit_relay_mpi_sources}
+                     HEADERS_DEST_DIR include/conduit)
 
 
 #
