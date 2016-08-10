@@ -90,7 +90,7 @@ class Python(Package):
         if spec.satisfies('@3:'):
             configure_args.append('--without-ensurepip')
         configure(*configure_args)
-        make()
+        make(parallel=False)
         make("install")
 
         # Modify compiler paths in configuration files. This is necessary for
