@@ -114,9 +114,11 @@ Conduit's build system supports the following CMake options:
  To run the mpi unit tests on LLNL's LC platforms, you may also need change the CMake variables **MPIEXEC** and **MPIEXEC_NUMPROC_FLAG**, so you can use srun and select a partition. (for an example see: src/host-configs/chaos_5_x86_64.cmake)
 
 * **HDF5_DIR** - Path to a HDF5 install *(optional)*. 
+
  Controls if HDF5 I/O support is built into *conduit_relay*.
 
 * **SILO_DIR** - Path to a Silo install *(optional)*. 
+
  Controls if Silo I/O support is built into *conduit_relay*. When used, the following CMake variables must also be set:
  
  * **HDF5_DIR** - Path to a HDF5 install. (Silo support depends on HDF5) 
@@ -203,5 +205,16 @@ Building with Spack
   For example, we build independent installs of Python 2 and Python 3 to make it easy 
   to check Python C-API compatibility during development. In the near future, we plan to 
   provide a Spack package to simplify deployment.
+
+
+
+Using Conduit in Another Project
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Under ``src/examples``, you can find examples demonstrating how to use Conduit in a CMake-based build system (``using-with-cmake``) and via a Makefile (``using-with-make``).
+
+
+
+
 
 
