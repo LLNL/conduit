@@ -62,6 +62,6 @@ INC_FLAGS=-I$(CONDUIT_DIR)/include/conduit
 LINK_FLAGS=-L$(CONDUIT_DIR)/lib/ -lconduit -lconduit_relay -lconduit_blueprint
 
 main:
-	$(CXX) $(INC_FLAGS) $(LINK_FLAGS) example.cpp  -o example
+	$(CXX) $(INC_FLAGS) example.cpp $(LINK_FLAGS) -o example
 
 
