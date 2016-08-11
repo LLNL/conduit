@@ -5,6 +5,8 @@ build-release-xcode/
 install-debug/
 install-release/
 .DS_Store
+src/examples/using-with-cmake/build
+src/examples/using-with-make/example
 temp.cpp
 temp.exe
 *.pyc
