@@ -256,6 +256,32 @@ TEST(conduit_utils, is_file)
 
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, remove_file)
+{
+    std::ofstream ofs;
+    
+    ofs.open("t_remove_file.txt");
+    ofs << "here" << std::endl;
+    ofs.close();
+
+    EXPECT_TRUE(utils::is_file("t_remove_file.txt"));
+    
+    utils::remove_file("t_remove_file.txt");
+    
+    EXPECT_FALSE(utils::is_file("t_remove_file.txt"));
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, system_exec)
+{
+    // TODO: windows test ... 
+    EXPECT_EQ(utils::system_execute("pwd"),0);
+}
+
+
+
+
 
 
 

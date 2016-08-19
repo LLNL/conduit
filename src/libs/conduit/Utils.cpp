@@ -335,6 +335,21 @@ is_directory(const std::string &path)
     return res;
 }
 
+//-----------------------------------------------------------------------------
+bool
+remove_file(const std::string &path)
+{
+    return remove(path.c_str());
+}
+
+
+//-----------------------------------------------------------------------------
+int
+system_execute(const std::string &cmd)
+{
+    return system(cmd.c_str());
+}
+
 
 //-----------------------------------------------------------------------------
 bool 
