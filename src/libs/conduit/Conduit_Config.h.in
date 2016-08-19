@@ -65,6 +65,8 @@
 #define CONDUIT_PLATFORM_UNIX
 #endif
 
+#cmakedefine CONDUIT_INSTALL_PREFIX "${CONDUIT_INSTALL_PREFIX}"
+
 #endif
 
 

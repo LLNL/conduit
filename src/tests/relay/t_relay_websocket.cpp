@@ -71,7 +71,7 @@ TEST(conduit_relay_web_websocket, websocket_test)
     }
 
     // read png data into a string.
-    std::string wsock_path = utils::join_file_path(CONDUIT_RELAY_WEB_CLIENT_ROOT,
+    std::string wsock_path = utils::join_file_path(web::web_client_root_directory(),
                                                    "wsock_test");
 
     std::string example_png_path = utils::join_file_path(wsock_path,

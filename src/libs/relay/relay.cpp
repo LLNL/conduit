@@ -84,6 +84,17 @@ about(Node &n)
     n.reset();
 
     n["web"] = "enabled";
+    
+    Node conduit_about;
+    conduit::about(conduit_about);
+    
+    std::string install_prefix = conduit_about["install_prefix"].as_string();
+    std::string web_root = utils::join_file_path(install_prefix,"share");
+    web_root = utils::join_file_path(web_root,"conduit");
+    web_root = utils::join_file_path(web_root,"web_clients");
+    
+    n["web_client_root"] =  web_root;
+
     Node &io_protos = n["io/protocols"];
 
     // standard binary io

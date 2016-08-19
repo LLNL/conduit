@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: relay_web_viewer.cpp
+/// file: relay_web_node_viewer_server.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -63,7 +63,7 @@
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "relay_web.hpp"
-#include "relay_web_viewer.hpp"
+#include "relay_web_node_viewer_server.hpp"
 #include "relay_config.hpp"
 
 //-----------------------------------------------------------------------------
@@ -84,26 +84,25 @@ namespace relay
 namespace web
 {
 
-
 //-----------------------------------------------------------------------------
 // -- Viewer Request Handler  -
 //-----------------------------------------------------------------------------
 
-ViewerRequestHandler::ViewerRequestHandler(Node *node)
+NodeViewerRequestHandler::NodeViewerRequestHandler(Node *node)
 : WebRequestHandler(),
   m_node(node)
 {
     // empty
 }
 
-ViewerRequestHandler::~ViewerRequestHandler()
+NodeViewerRequestHandler::~NodeViewerRequestHandler()
 {
     // empty
 }
 
 //---------------------------------------------------------------------------//
 bool
-ViewerRequestHandler::handle_post(WebServer *server,
+NodeViewerRequestHandler::handle_post(WebServer *server,
                                        struct mg_connection *conn) 
 {
     return handle_request(server,conn);
@@ -112,7 +111,7 @@ ViewerRequestHandler::handle_post(WebServer *server,
 
 //---------------------------------------------------------------------------//
 bool
-ViewerRequestHandler::handle_get(WebServer *server,
+NodeViewerRequestHandler::handle_get(WebServer *server,
                                      struct mg_connection *conn) 
 {
     return handle_request(server,conn);
@@ -122,7 +121,7 @@ ViewerRequestHandler::handle_get(WebServer *server,
 // Main handler, dispatches to proper api requests.
 //---------------------------------------------------------------------------//
 bool
-ViewerRequestHandler::handle_request(WebServer *server,
+NodeViewerRequestHandler::handle_request(WebServer *server,
                                          struct mg_connection *conn) 
 {
     const struct mg_request_info *req_info = mg_get_request_info(conn);
@@ -162,7 +161,7 @@ ViewerRequestHandler::handle_request(WebServer *server,
 // Handles a request from the client for the node's schema.
 //---------------------------------------------------------------------------//
 bool
-ViewerRequestHandler::handle_get_schema(struct mg_connection *conn)
+NodeViewerRequestHandler::handle_get_schema(struct mg_connection *conn)
 {
     if(m_node != NULL)
     {
@@ -180,7 +179,7 @@ ViewerRequestHandler::handle_get_schema(struct mg_connection *conn)
 // Handles a request from the client for a specific value in the node.
 //---------------------------------------------------------------------------//
 bool
-ViewerRequestHandler::handle_get_value(struct mg_connection *conn)
+NodeViewerRequestHandler::handle_get_value(struct mg_connection *conn)
 {
     if(m_node != NULL)
     {
@@ -210,7 +209,7 @@ ViewerRequestHandler::handle_get_value(struct mg_connection *conn)
 // of the node.
 //---------------------------------------------------------------------------//
 bool
-ViewerRequestHandler::handle_get_base64_json(struct mg_connection *conn)
+NodeViewerRequestHandler::handle_get_base64_json(struct mg_connection *conn)
 {
     if(m_node != NULL)
     {
@@ -231,7 +230,7 @@ ViewerRequestHandler::handle_get_base64_json(struct mg_connection *conn)
 // Handles a request from the client to shutdown the REST server
 //---------------------------------------------------------------------------//
 bool
-ViewerRequestHandler::handle_shutdown(WebServer *server)
+NodeViewerRequestHandler::handle_shutdown(WebServer *server)
 {
     server->shutdown();
     return true;
@@ -241,20 +240,57 @@ ViewerRequestHandler::handle_shutdown(WebServer *server)
 // Helper to easily create a Viewer instance.
 //---------------------------------------------------------------------------//
 WebServer *
-ViewerServer::serve(Node *data,
+NodeViewerServer::serve(Node *data,
                         bool block,
-                        index_t port,
+                        const std::string &addy,
                         const std::string &ssl_cert_file,
                         const std::string &auth_domain,
                         const std::string &auth_file)
 {
-    ViewerRequestHandler *rhandler = new ViewerRequestHandler(data);
+    NodeViewerRequestHandler *rhandler = new NodeViewerRequestHandler(data);
     
     WebServer *res = new WebServer();
     // call general serve routine
-    res->serve(utils::join_file_path(CONDUIT_RELAY_WEB_CLIENT_ROOT,"node_viewer"),
+    res->serve(utils::join_file_path(web_client_root_directory(),
+                                     "node_viewer"),
                rhandler,
-               port,
+               addy,
+               ssl_cert_file,
+               auth_domain,
+               auth_file);
+    
+    if(block)
+    {
+        // wait for shutdown()
+        while(res->is_running()) 
+        {
+            utils::sleep(100);
+        }
+    }
+    
+    return res;
+}
+
+//---------------------------------------------------------------------------//
+WebServer *
+NodeViewerServer::serve(Node *data,
+                    bool block,
+                    index_t port,
+                    const std::string &ssl_cert_file,
+                    const std::string &auth_domain,
+                    const std::string &auth_file)
+{
+    NodeViewerRequestHandler *rhandler = new NodeViewerRequestHandler(data);
+    
+    std::ostringstream oss;
+    oss << "127.0.0.1:" << port;
+    
+    WebServer *res = new WebServer();
+    // call general serve routine
+    res->serve(utils::join_file_path(web_client_root_directory(),
+                                     "node_viewer"),
+               rhandler,
+               oss.str(),
                ssl_cert_file,
                auth_domain,
                auth_file);

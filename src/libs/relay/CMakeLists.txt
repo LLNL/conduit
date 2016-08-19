@@ -65,7 +65,7 @@ if(MPI_FOUND)
   SET(CONDUIT_RELAY_MPI_ENABLED TRUE)
 endif()
 
-set(CONDUIT_RELAY_WEB_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/web_clients)
+set(CONDUIT_RELAY_WEB_CLIENT_ROOT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/web_clients)
 
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/relay_config.hpp.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/relay_config.hpp")
@@ -77,7 +77,7 @@ set(conduit_relay_headers
     relay.hpp
     relay_io.hpp
     relay_web.hpp
-    relay_web_viewer.hpp
+    relay_web_node_viewer_server.hpp
     relay_exports.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/relay_config.hpp)
 
@@ -88,7 +88,7 @@ set(conduit_relay_sources
     relay.cpp
     relay_io.cpp
     relay_web.cpp
-    relay_web_viewer.cpp)
+    relay_web_node_viewer_server.cpp)
     
 if(HDF5_FOUND)
     list(APPEND conduit_relay_headers relay_hdf5.hpp)
@@ -133,6 +133,21 @@ if(HDF5_FOUND)
     target_link_libraries(conduit_relay PUBLIC ${HDF5_LIBRARIES})
 endif()
 
+
+###################################
+# add conduit_relay_node_viewer exe
+###################################
+add_executable(conduit_relay_node_viewer relay_web_node_viewer.cpp)
+target_link_libraries(conduit_relay_node_viewer conduit_relay)
+
+# add install target
+install(TARGETS conduit_relay_node_viewer
+        RUNTIME DESTINATION bin)
+
+##############################################################
+# install files needed for the relay web node viewer client
+#############################################################
+install(DIRECTORY web_clients/node_viewer DESTINATION share/conduit/web_clients/)
 
 ################################
 # Add python wrappers if python

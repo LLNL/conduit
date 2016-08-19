@@ -80,6 +80,7 @@ about(Node &n)
 {
     n.reset();
     n["version"] = "{alpha}";
+    n["install_prefix"] = CONDUIT_INSTALL_PREFIX;
     n["license"] = CONDUIT_LICENSE_TEXT;
     
     // TODO: include compiler info, etc ?
