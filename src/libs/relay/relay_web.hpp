@@ -166,7 +166,7 @@ public:
     //                   const std::string &auth_file     = std::string(""));
 
 
-    void        shutdown();
+    virtual void shutdown();
     
     bool        is_running() const;
 

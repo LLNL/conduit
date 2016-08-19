@@ -71,6 +71,8 @@ usage()
               << "  --htpasswd {htpasswd file for client authentication}"
               << std::endl
               << "  --cert  {https cert file}"
+              << std::endl
+              << "  --entangle {use entangle to create htpasswd file}"
               << std::endl << std::endl ;
 
 }
@@ -80,6 +82,7 @@ void
 parse_args(int argc,
            char *argv[],
            int &port,
+           bool &entangle,
            std::string &data_file,
            std::string &protocol,
            std::string &auth_file,
@@ -129,6 +132,10 @@ parse_args(int argc,
             cert_file = std::string(argv[i+1]);
             i++;
         }
+        else if(arg_str == "--entangle")
+        {
+            entangle = true;
+        }
         else if(data_file == "")
         {
             data_file = arg_str;
@@ -151,6 +158,7 @@ main(int argc, char* argv[])
         }
         
         int port = 9000;
+        bool entangle = false;
         std::string data_file("");
         std::string protocol("");
         std::string auth_file("");
@@ -159,6 +167,7 @@ main(int argc, char* argv[])
         parse_args(argc,
                    argv,
                    port,
+                   entangle,
                    data_file,
                    protocol,
                    auth_file,
@@ -180,13 +189,19 @@ main(int argc, char* argv[])
             relay::io::load(data_file,protocol,data);
         }
 
+        std::ostringstream oss;
+        oss << "127.0.0.1:" << port;
+
         // launch the server
-        web::WebServer *svr = web::NodeViewerServer::serve(&data,
-                                                           true,
-                                                           port,
-                                                           cert_file,
-                                                           "localhost",
-                                                           auth_file);
+        web::NodeViewerServer *svr =new web::NodeViewerServer();
+        
+        svr->serve(&data,
+                   true,
+                   entangle,
+                   oss.str(),
+                   cert_file,
+                   "localhost",
+                   auth_file);
         delete svr;
     }
     catch(const conduit::Error &e)

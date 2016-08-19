@@ -65,7 +65,7 @@ if(MPI_FOUND)
   SET(CONDUIT_RELAY_MPI_ENABLED TRUE)
 endif()
 
-set(CONDUIT_RELAY_WEB_CLIENT_ROOT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/web_clients)
+set(CONDUIT_RELAY_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/relay_config.hpp.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/relay_config.hpp")
@@ -144,10 +144,19 @@ target_link_libraries(conduit_relay_node_viewer conduit_relay)
 install(TARGETS conduit_relay_node_viewer
         RUNTIME DESTINATION bin)
 
+
 ##############################################################
 # install files needed for the relay web node viewer client
 #############################################################
-install(DIRECTORY web_clients/node_viewer DESTINATION share/conduit/web_clients/)
+install(DIRECTORY web_clients/node_viewer
+        DESTINATION share/conduit/web_clients/)
+
+#############################################################
+# add install of entangle helper script
+#############################################################
+install(FILES scripts/conduit_relay_entangle.py 
+        DESTINATION bin)
+
 
 ################################
 # Add python wrappers if python

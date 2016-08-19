@@ -97,12 +97,12 @@ TEST(conduit_relay_web, node_viewer)
         }
         
 
-        web::WebServer *svr = web::NodeViewerServer::serve(n,
-                                                           true,
-                                                           8080,
-                                                           cert_file,
-                                                           auth_domain,
-                                                           auth_file);
+        web::WebServer *svr = web::NodeViewerServer::run(n,
+                                                         true,
+                                                         8080,
+                                                         cert_file,
+                                                         auth_domain,
+                                                         auth_file);
         delete svr;
     }
     else

@@ -88,18 +88,20 @@ namespace web
 std::string
 web_client_root_directory()
 {
-    // check or source dir
-    if(conduit::utils::is_directory(CONDUIT_RELAY_WEB_CLIENT_ROOT_SOURCE_DIR))
+    // check for source dir
+    std::string web_root = utils::join_file_path(CONDUIT_RELAY_SOURCE_DIR,
+                                                 "web_clients");
+    
+    if(conduit::utils::is_directory(web_root))
     {
-        return CONDUIT_RELAY_WEB_CLIENT_ROOT_SOURCE_DIR;
+        return web_root;
     }
     
     Node n;
-    
     // conduit::relay::about(n)
     about(n);
     
-    std::string web_root = n["web_client_root"].as_string();
+    web_root = n["web_client_root"].as_string();
 
     if(!conduit::utils::is_directory(web_root))
     {

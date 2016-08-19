@@ -107,26 +107,49 @@ private:
 };
 
 //-----------------------------------------------------------------------------
-// -- Viewer Web Request Handler  -
+// -- Node Viewer Web Server -
 //-----------------------------------------------------------------------------
 
-class CONDUIT_RELAY_API NodeViewerServer
+class CONDUIT_RELAY_API NodeViewerServer : public WebServer
 {
 public:
+    
+             NodeViewerServer();
+    virtual ~NodeViewerServer();
 
-    static WebServer  *serve(Node *data,
+    void serve(Node *data,
+               bool block=false,
+               bool entangle=false,
+               const std::string &addy = std::string("127.0.0.1:8080"),
+               const std::string &ssl_cert_file = std::string(""),
+               const std::string &auth_domain   = std::string(""),
+               const std::string &auth_file     = std::string(""));
+
+    virtual void shutdown();
+
+
+    static WebServer  *run(Node *data,
                              bool block=false,
                              const std::string &addy = std::string("127.0.0.1:8080"),
                              const std::string &ssl_cert_file = std::string(""),
                              const std::string &auth_domain   = std::string(""),
                              const std::string &auth_file     = std::string(""));
 
-    static WebServer  *serve(Node *data,
-                             bool block=false,
-                             index_t port = 8080,
-                             const std::string &ssl_cert_file = std::string(""),
-                             const std::string &auth_domain   = std::string(""),
-                             const std::string &auth_file     = std::string(""));
+    static WebServer  *run(Node *data,
+                           bool block=false,
+                           index_t port = 8080,
+                           const std::string &ssl_cert_file = std::string(""),
+                           const std::string &auth_domain   = std::string(""),
+                           const std::string &auth_file     = std::string(""));
+
+
+private:
+    void              entangle_register();
+
+    
+    WebRequestHandler *m_handler;
+    std::string        m_entangle_obase;
+    
 
 };
 
