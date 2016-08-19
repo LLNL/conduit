@@ -53,6 +53,9 @@
 
 #include <iostream>
 #include "gtest/gtest.h"
+
+#include "t_config.hpp"
+
 using namespace conduit;
 
 bool info_occured    = false;
@@ -223,7 +226,36 @@ TEST(conduit_utils, float64_to_string)
 }
 
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, is_dir)
+{
+    EXPECT_TRUE(utils::is_directory(CONDUIT_T_SRC_DIR));
+    EXPECT_TRUE(utils::is_directory(CONDUIT_T_BIN_DIR));
     
+    EXPECT_FALSE(utils::is_directory("asdasdasdasd"));
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, is_file)
+{
+
+    std::string tf_path = utils::join_file_path(CONDUIT_T_SRC_DIR,
+                                                "conduit");
+
+    tf_path = utils::join_file_path(tf_path,"t_conduit_utils.cpp");
+
+    EXPECT_TRUE(utils::is_file(tf_path));
+    
+    EXPECT_FALSE(utils::is_file(CONDUIT_T_SRC_DIR));
+    EXPECT_FALSE(utils::is_file(CONDUIT_T_BIN_DIR));
+    
+    EXPECT_FALSE(utils::is_file("asdasdasdasd"));
+}
+
+
+
 
 
 
