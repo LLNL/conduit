@@ -51,6 +51,9 @@ ENABLE_WARNINGS()
 
 include("CMake/BitwidthChecks.cmake")
 
+
+set(CONDUIT_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_Config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h")
 

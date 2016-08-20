@@ -278,6 +278,20 @@ namespace utils
 
 
 //-----------------------------------------------------------------------------
+     bool CONDUIT_API is_file(const std::string &path);
+
+//-----------------------------------------------------------------------------
+     bool CONDUIT_API is_directory(const std::string &path);
+
+//-----------------------------------------------------------------------------
+     bool CONDUIT_API remove_file(const std::string &path);
+
+//-----------------------------------------------------------------------------
+     int  CONDUIT_API system_execute(const std::string &cmd);
+
+
+
+//-----------------------------------------------------------------------------
 /// Helpers for escaping / unescaping special characters in strings.
 ///
 /// Our main use case for escaping is json, so we support the escape rules 

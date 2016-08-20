@@ -86,6 +86,12 @@ namespace relay
 namespace web
 {
 
+//-----------------------------------------------------------------------------
+/// -- Returns path to root directory for web client resources --
+/// Source path:     ${CMAKE_CURRENT_SOURCE_DIR}/web_clients
+/// Installed path:  {install_prefix}/share/conduit/web_client/
+//-----------------------------------------------------------------------------
+std::string web_client_root_directory();
 
 //-----------------------------------------------------------------------------
 // -- Web Server Request Handler Interface -
@@ -126,10 +132,18 @@ public:
 
     /// TODO: too many default args here, may want to change the interface
     /// to make things cleaner in the future.
+
+    /// convenience case that uses the default request handler 
+    void        serve(const std::string &doc_root,
+                      const std::string &addy = std::string("127.0.0.1:8080"),
+                      const std::string &ssl_cert_file = std::string(""),
+                      const std::string &auth_domain   = std::string(""),
+                      const std::string &auth_file     = std::string(""));
     
     /// convenience case that uses the default request handler
+    /// This variant binds to localhost:{port}.
     void        serve(const std::string &doc_root,
-                      index_t port = 8080,
+                      index_t port = 8080, // binds to localhost:{port}
                       const std::string &ssl_cert_file = std::string(""),
                       const std::string &auth_domain   = std::string(""),
                       const std::string &auth_file     = std::string(""));
@@ -137,12 +151,22 @@ public:
     /// general case, supporting a user provided request handler
     void        serve(const std::string &doc_root,
                       WebRequestHandler *dispatch, // takes ownership?
-                      index_t port = 8080,
+                      const std::string &addy = std::string("127.0.0.1:8080"),
                       const std::string &ssl_cert_file = std::string(""),
                       const std::string &auth_domain   = std::string(""),
                       const std::string &auth_file     = std::string(""));
-    
-    void        shutdown();
+
+
+    // /// general case, supporting a user provided request handler (port case)
+    // void        serve(const std::string &doc_root,
+    //                   WebRequestHandler *dispatch, // takes ownership?
+    //                   index_t port = 8080,
+    //                   const std::string &ssl_cert_file = std::string(""),
+    //                   const std::string &auth_domain   = std::string(""),
+    //                   const std::string &auth_file     = std::string(""));
+
+
+    virtual void shutdown();
     
     bool        is_running() const;
 
@@ -164,7 +188,7 @@ private:
     WebRequestHandler      *m_handler;
     
     std::string             m_doc_root;
-    std::string             m_port;
+    std::string             m_address_and_port;
     std::string             m_ssl_cert_file;
     std::string             m_auth_domain;
     std::string             m_auth_file;

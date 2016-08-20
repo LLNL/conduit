@@ -85,6 +85,35 @@ namespace web
 
 
 //-----------------------------------------------------------------------------
+std::string
+web_client_root_directory()
+{
+    // check for source dir
+    std::string web_root = utils::join_file_path(CONDUIT_RELAY_SOURCE_DIR,
+                                                 "web_clients");
+    
+    if(conduit::utils::is_directory(web_root))
+    {
+        return web_root;
+    }
+    
+    Node n;
+    // conduit::relay::about(n)
+    about(n);
+    
+    web_root = n["web_client_root"].as_string();
+
+    if(!conduit::utils::is_directory(web_root))
+    {
+         CONDUIT_ERROR("Web client root directory (" << web_root << ") "
+                       " is missing");
+    }
+
+    return web_root;
+}
+
+
+//-----------------------------------------------------------------------------
 // WebRequestHandler Interface
 //-----------------------------------------------------------------------------
 WebRequestHandler::WebRequestHandler()
@@ -554,7 +583,7 @@ WebSocket::send(const Node &data,
 WebServer::WebServer()
 : m_handler(NULL),
   m_doc_root(""),
-  m_port(""),
+  m_address_and_port(""),
   m_ssl_cert_file(""),
   m_auth_domain(""),
   m_auth_file(""),
@@ -624,12 +653,13 @@ WebServer::context()
     return (struct mg_context *) m_server->getContext();
 }
 
+
 //-----------------------------------------------------------------------------
 // convenience case that uses the default request handler 
 //-----------------------------------------------------------------------------
 void
 WebServer::serve(const std::string &doc_root,
-                 index_t port,
+                 const std::string &addy,
                  const std::string &ssl_cert_file,
                  const std::string &auth_domain,
                  const std::string &auth_file)
@@ -638,25 +668,48 @@ WebServer::serve(const std::string &doc_root,
 
     serve(doc_root,
           handler,
-          port,
+          addy,
           ssl_cert_file,
           auth_domain,
           auth_file);
 }
 
 //-----------------------------------------------------------------------------
+// convenience case that uses the default request handler (port case)
+//-----------------------------------------------------------------------------
+void
+WebServer::serve(const std::string &doc_root,
+                 index_t port,
+                 const std::string &ssl_cert_file,
+                 const std::string &auth_domain,
+                 const std::string &auth_file)
+{
+    std::ostringstream oss;
+    oss << "127.0.0.1:" << port;
+
+    serve(doc_root,
+          oss.str(),
+          ssl_cert_file,
+          auth_domain,
+          auth_file);
+}
+
+
+
+//-----------------------------------------------------------------------------
 void
 WebServer::serve(const std::string &doc_root,
                  WebRequestHandler *handler,
-                 index_t port,
+                 const std::string &addy,
                  const std::string &ssl_cert_file,
                  const std::string &auth_domain,
                  const std::string &auth_file)
 {
     if(is_running())
     {
-        CONDUIT_INFO("WebServer instance is already running");
-        return;
+        CONDUIT_INFO("WebServer instance is already running on: "
+                     << m_address_and_port);
+        return; 
     }
     
     m_dispatch = new CivetDispatchHandler(*this);
@@ -677,23 +730,24 @@ WebServer::serve(const std::string &doc_root,
     // civetweb takes strings as arguments
     // convert the port number to a string.
     std::ostringstream oss;
-    oss << port;
+    oss << addy;
     // civetweb uses the suffix 's' on port ars for the with https case
     if(use_ssl)
     {
         oss << "s";
     }
     
-    m_port = oss.str();
+    m_address_and_port = oss.str();
 
 
     CONDUIT_INFO("Starting WebServer instance with doc root = " << doc_root);
 
     // setup civetweb options
     const char *options[] = { "document_root",   doc_root.c_str(),
-                              "listening_ports", m_port.c_str(),
+                              "listening_ports", m_address_and_port.c_str(),
                               "num_threads",     "2",
-                               // for ssl, auth domain and auth file options
+                               // place holders for ssl, auth domain and 
+                               // auth file options
                                NULL, NULL, 
                                NULL, NULL,
                                NULL, NULL,
@@ -726,27 +780,27 @@ WebServer::serve(const std::string &doc_root,
     catch(CivetException except)
     {
         // Catch Civet Exception and use Conduit's error handling mech.
-        CONDUIT_ERROR("WebServer failed to bind civet server on port " 
-                      << m_port);
+        CONDUIT_ERROR("WebServer failed to bind civet server on " 
+                      << m_address_and_port);
     }
     
     // check for valid context    
     mg_context *ctx = context();
     if(ctx == NULL)
     {
-         CONDUIT_ERROR("WebServer failed to bind civet server on port " 
-                       << m_port);
+         CONDUIT_ERROR("WebServer failed to bind civet server on" 
+                       << m_address_and_port);
     }else
     {
         if(!use_ssl)
         {
             CONDUIT_INFO("conduit::relay::web::WebServer http server instance "
-                         "active on port: " << m_port);
+                         "active: " << m_address_and_port);
         }
         else
         {
             CONDUIT_INFO("conduit::relay::web::WebServer https server instance "
-                         "active on port: " << m_port);
+                         "active on: " << m_address_and_port);
         }
     }
 
@@ -768,8 +822,8 @@ WebServer::shutdown()
 {
     if(is_running())
     {
-        CONDUIT_INFO("closing conduit::relay::web::WebServer instance on port: " 
-                     << m_port);
+        CONDUIT_INFO("closing conduit::relay::web::WebServer instance on: " 
+                     << m_address_and_port);
 
         m_running = false;
 

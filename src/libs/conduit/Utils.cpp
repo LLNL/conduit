@@ -61,6 +61,19 @@
 #include <time.h>
 #endif
 
+// file system funcs
+#if defined(CONDUIT_PLATFORM_WINDOWS)
+// TODO
+#else
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <dirent.h>
+#include <errno.h>
+#endif
+
+
 // define for path sep
 #if defined(CONDUIT_PLATFORM_WINDOWS)
 const char CONDUIT_UTILS_FILE_PATH_SEPARATOR='\\';
@@ -68,9 +81,10 @@ const char CONDUIT_UTILS_FILE_PATH_SEPARATOR='\\';
 const char CONDUIT_UTILS_FILE_PATH_SEPARATOR='/';
 #endif
 
-
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
+
 
 //-----------------------------------------------------------------------------
 // -- libb64 includes -- 
@@ -276,6 +290,68 @@ join_file_path(const std::string &left,
     }
     res += right;
     return res;
+}
+
+
+//-----------------------------------------------------------------------------
+bool
+is_file(const std::string &path)
+{
+    bool res = false;
+#if defined(CONDUIT_PLATFORM_WINDOWS)
+    // TODO
+    CONDUIT_WARNING("utils::is_directory not implemented on windows");
+#else // unix, etc
+    struct stat path_stat;
+    stat(path.c_str(), &path_stat);
+    res = S_ISREG(path_stat.st_mode);
+#endif
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+bool
+is_directory(const std::string &path)
+{
+    bool res = false;
+#if defined(CONDUIT_PLATFORM_WINDOWS)
+    // TODO
+    CONDUIT_WARNING("utils::is_directory not implemented on windows");
+#else // unix, etc
+    DIR *dir = opendir(path.c_str());
+    if(dir)
+    {
+        /* Directory exists. */
+        closedir(dir);
+        res = true;
+    }
+    else if (ENOENT == errno)
+    {
+        /* Directory does not exist. */
+    }
+    else
+    {
+        /* opendir() failed for some other reason. */
+    }
+#endif
+    
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+bool
+remove_file(const std::string &path)
+{
+    return remove(path.c_str());
+}
+
+
+//-----------------------------------------------------------------------------
+int
+system_execute(const std::string &cmd)
+{
+    return system(cmd.c_str());
 }
 
 

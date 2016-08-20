@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: relay_web_viewer.cpp
+/// file: relay_web_node_viewer_server.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -63,7 +63,7 @@
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "relay_web.hpp"
-#include "relay_web_viewer.hpp"
+#include "relay_web_node_viewer_server.hpp"
 #include "relay_config.hpp"
 
 //-----------------------------------------------------------------------------
@@ -84,26 +84,25 @@ namespace relay
 namespace web
 {
 
-
 //-----------------------------------------------------------------------------
 // -- Viewer Request Handler  -
 //-----------------------------------------------------------------------------
 
-ViewerRequestHandler::ViewerRequestHandler(Node *node)
+NodeViewerRequestHandler::NodeViewerRequestHandler(Node *node)
 : WebRequestHandler(),
   m_node(node)
 {
     // empty
 }
 
-ViewerRequestHandler::~ViewerRequestHandler()
+NodeViewerRequestHandler::~NodeViewerRequestHandler()
 {
     // empty
 }
 
 //---------------------------------------------------------------------------//
 bool
-ViewerRequestHandler::handle_post(WebServer *server,
+NodeViewerRequestHandler::handle_post(WebServer *server,
                                        struct mg_connection *conn) 
 {
     return handle_request(server,conn);
@@ -112,7 +111,7 @@ ViewerRequestHandler::handle_post(WebServer *server,
 
 //---------------------------------------------------------------------------//
 bool
-ViewerRequestHandler::handle_get(WebServer *server,
+NodeViewerRequestHandler::handle_get(WebServer *server,
                                      struct mg_connection *conn) 
 {
     return handle_request(server,conn);
@@ -122,7 +121,7 @@ ViewerRequestHandler::handle_get(WebServer *server,
 // Main handler, dispatches to proper api requests.
 //---------------------------------------------------------------------------//
 bool
-ViewerRequestHandler::handle_request(WebServer *server,
+NodeViewerRequestHandler::handle_request(WebServer *server,
                                          struct mg_connection *conn) 
 {
     const struct mg_request_info *req_info = mg_get_request_info(conn);
@@ -162,7 +161,7 @@ ViewerRequestHandler::handle_request(WebServer *server,
 // Handles a request from the client for the node's schema.
 //---------------------------------------------------------------------------//
 bool
-ViewerRequestHandler::handle_get_schema(struct mg_connection *conn)
+NodeViewerRequestHandler::handle_get_schema(struct mg_connection *conn)
 {
     if(m_node != NULL)
     {
@@ -180,7 +179,7 @@ ViewerRequestHandler::handle_get_schema(struct mg_connection *conn)
 // Handles a request from the client for a specific value in the node.
 //---------------------------------------------------------------------------//
 bool
-ViewerRequestHandler::handle_get_value(struct mg_connection *conn)
+NodeViewerRequestHandler::handle_get_value(struct mg_connection *conn)
 {
     if(m_node != NULL)
     {
@@ -210,7 +209,7 @@ ViewerRequestHandler::handle_get_value(struct mg_connection *conn)
 // of the node.
 //---------------------------------------------------------------------------//
 bool
-ViewerRequestHandler::handle_get_base64_json(struct mg_connection *conn)
+NodeViewerRequestHandler::handle_get_base64_json(struct mg_connection *conn)
 {
     if(m_node != NULL)
     {
@@ -231,44 +230,208 @@ ViewerRequestHandler::handle_get_base64_json(struct mg_connection *conn)
 // Handles a request from the client to shutdown the REST server
 //---------------------------------------------------------------------------//
 bool
-ViewerRequestHandler::handle_shutdown(WebServer *server)
+NodeViewerRequestHandler::handle_shutdown(WebServer *server)
 {
     server->shutdown();
     return true;
 }
 
 //---------------------------------------------------------------------------//
-// Helper to easily create a Viewer instance.
+NodeViewerServer::NodeViewerServer()
+: m_handler(NULL),
+  m_entangle_obase(""),
+  WebServer()
+{
+    
+}
+
 //---------------------------------------------------------------------------//
-WebServer *
-ViewerServer::serve(Node *data,
+NodeViewerServer::~NodeViewerServer()
+{
+    shutdown();
+}
+
+
+//---------------------------------------------------------------------------//
+void
+NodeViewerServer::shutdown()
+{
+    if(is_running())
+    {
+       WebServer::shutdown();
+    }
+
+    if(!m_entangle_obase.empty())
+    {
+        std::string entangle_json   = m_entangle_obase + ".json";
+        std::string entangle_htpass = m_entangle_obase + ".htpasswd";
+
+        if(utils::is_file(entangle_json))
+        {
+            CONDUIT_INFO("Cleaning up entangle file:" << entangle_json);
+            utils::remove_file(entangle_json);
+        }
+        
+        if(utils::is_file(entangle_htpass))
+        {
+            CONDUIT_INFO("Cleaning up entangle file:" << entangle_htpass);
+            utils::remove_file(entangle_htpass);
+        }
+    }
+    
+    if(m_handler != NULL)
+    {
+        delete m_handler;
+        m_handler = NULL;
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void
+NodeViewerServer::entangle_register()
+{
+    
+    // check for source dir
+    std::string et_script = utils::join_file_path(CONDUIT_RELAY_SOURCE_DIR,
+                                                  "scripts");
+    et_script = utils::join_file_path(et_script,"conduit_relay_entangle.py");
+
+    if(!utils::is_file(et_script))
+    {
+  
+        Node n;
+        conduit::about(n);
+        std::string et_script = n["install_prefix"].as_string();
+        et_script = utils::join_file_path(et_script,"bin");
+        et_script = utils::join_file_path(et_script,"conduit_relay_entangle.py");
+    }
+    
+    if(!utils::is_file(et_script))
+    {
+        CONDUIT_ERROR("Could not find conduit_relay_entangle.py script");
+    }
+
+    m_entangle_obase = "entangle_out_conduit_node_viewer";
+
+    std::ostringstream cmd;    
+    cmd << "python " << et_script;
+    cmd << " --register --obase " << m_entangle_obase;
+
+    CONDUIT_INFO(cmd.str());
+
+    if( utils::system_execute(cmd.str()) != 0  ||
+        ! utils::is_file(m_entangle_obase + ".htpasswd") )
+    {
+        m_entangle_obase = "";
+        CONDUIT_ERROR("Error running conduit_relay_entangle.py to "
+                      "generate htpasswd");
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+NodeViewerServer::serve(Node *data,
                         bool block,
-                        index_t port,
+                        bool entangle,
+                        const std::string &addy,
                         const std::string &ssl_cert_file,
                         const std::string &auth_domain,
                         const std::string &auth_file)
 {
-    ViewerRequestHandler *rhandler = new ViewerRequestHandler(data);
     
-    WebServer *res = new WebServer();
-    // call general serve routine
-    res->serve(utils::join_file_path(CONDUIT_RELAY_WEB_CLIENT_ROOT,"node_viewer"),
-               rhandler,
-               port,
-               ssl_cert_file,
-               auth_domain,
-               auth_file);
+    if(is_running() or m_handler != NULL)
+    {
+        CONDUIT_INFO("Web Server already running");
+        return;
+    }
     
+    m_handler = new NodeViewerRequestHandler(data);
+
+    if(entangle)
+    {
+        entangle_register();
+        std::string e_auth_domain = "localhost";
+        
+        std::string e_auth_file   = m_entangle_obase + ".htpasswd";
+        std::string e_cert_file   = "";
+
+        // call general serve routine
+        WebServer::serve(utils::join_file_path(web_client_root_directory(),"node_viewer"),
+                         m_handler,
+                         addy,
+                         e_cert_file,
+                         e_auth_domain,
+                         e_auth_file);
+    }
+    else
+    {
+
+        // call general serve routine
+        WebServer::serve(utils::join_file_path(web_client_root_directory(),"node_viewer"),
+                         m_handler,
+                         addy,
+                         ssl_cert_file,
+                         auth_domain,
+                         auth_file);
+    }
     if(block)
     {
         // wait for shutdown()
-        while(res->is_running()) 
+        while(is_running()) 
         {
             utils::sleep(100);
         }
     }
     
+    return;
+}
+
+
+//---------------------------------------------------------------------------//
+// Helper to easily create a Viewer instance.
+//---------------------------------------------------------------------------//
+WebServer *
+NodeViewerServer::run(Node *data,
+                      bool block,
+                      const std::string &addy,
+                      const std::string &ssl_cert_file,
+                      const std::string &auth_domain,
+                      const std::string &auth_file)
+{
+    NodeViewerServer *res = new NodeViewerServer();
+    // call general serve routine
+    res->serve(data,
+               block,
+               false,
+               addy,
+               ssl_cert_file,
+               auth_domain,
+               auth_file);
+
     return res;
+}
+
+//---------------------------------------------------------------------------//
+WebServer *
+NodeViewerServer::run(Node *data,
+                      bool block,
+                      index_t port,
+                      const std::string &ssl_cert_file,
+                      const std::string &auth_domain,
+                      const std::string &auth_file)
+{
+    
+    std::ostringstream oss;
+    oss << "127.0.0.1:" << port;
+
+    // call general serve routine
+    return run(data,
+               block,
+               oss.str(),
+               ssl_cert_file,
+               auth_domain,
+               auth_file);
 }
 
 

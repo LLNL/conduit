@@ -44,12 +44,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: relay_web_viewer.hpp
+/// file: relay_web_node_viewer_server.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_RELAY_WEB_VIEWER_HPP
-#define CONDUIT_RELAY_WEB_VIEWER_HPP
+#ifndef CONDUIT_RELAY_WEB_NODE_VIEWER_SERVER_HPP
+#define CONDUIT_RELAY_WEB_NODE_VIEWER_SERVER_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
@@ -80,11 +80,11 @@ namespace web
 //-----------------------------------------------------------------------------
 // -- Viewer Web Request Handler  -
 //-----------------------------------------------------------------------------
-class CONDUIT_RELAY_API ViewerRequestHandler : public WebRequestHandler
+class CONDUIT_RELAY_API NodeViewerRequestHandler : public WebRequestHandler
 {
 public:
-                   ViewerRequestHandler(Node *node);
-                  ~ViewerRequestHandler();
+                   NodeViewerRequestHandler(Node *node);
+                  ~NodeViewerRequestHandler();
     
     virtual bool   handle_post(WebServer *server,
                                struct mg_connection *conn);
@@ -107,18 +107,50 @@ private:
 };
 
 //-----------------------------------------------------------------------------
-// -- Viewer Web Request Handler  -
+// -- Node Viewer Web Server -
 //-----------------------------------------------------------------------------
 
-class CONDUIT_RELAY_API ViewerServer
+class CONDUIT_RELAY_API NodeViewerServer : public WebServer
 {
 public:
-    static WebServer  *serve(Node *data,
+    
+             NodeViewerServer();
+    virtual ~NodeViewerServer();
+
+    void serve(Node *data,
+               bool block=false,
+               bool entangle=false,
+               const std::string &addy = std::string("127.0.0.1:8080"),
+               const std::string &ssl_cert_file = std::string(""),
+               const std::string &auth_domain   = std::string(""),
+               const std::string &auth_file     = std::string(""));
+
+    virtual void shutdown();
+
+
+    static WebServer  *run(Node *data,
                              bool block=false,
-                             index_t port = 8080,
+                             const std::string &addy = std::string("127.0.0.1:8080"),
                              const std::string &ssl_cert_file = std::string(""),
                              const std::string &auth_domain   = std::string(""),
                              const std::string &auth_file     = std::string(""));
+
+    static WebServer  *run(Node *data,
+                           bool block=false,
+                           index_t port = 8080,
+                           const std::string &ssl_cert_file = std::string(""),
+                           const std::string &auth_domain   = std::string(""),
+                           const std::string &auth_file     = std::string(""));
+
+
+private:
+    void              entangle_register();
+
+    
+    WebRequestHandler *m_handler;
+    std::string        m_entangle_obase;
+    
+
 };
 
 

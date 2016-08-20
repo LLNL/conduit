@@ -62,8 +62,8 @@
 
 #cmakedefine CONDUIT_RELAY_MPI_ENABLED
 
-// this path points to the web client js code tree
-#cmakedefine CONDUIT_RELAY_WEB_CLIENT_ROOT      "@CONDUIT_RELAY_WEB_CLIENT_ROOT@"
+// this path points to the source dir
+#cmakedefine CONDUIT_RELAY_SOURCE_DIR  "@CONDUIT_RELAY_SOURCE_DIR@"
 
 #endif
 
