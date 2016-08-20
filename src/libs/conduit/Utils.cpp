@@ -69,6 +69,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <dirent.h>
+#include <errno.h>
 #endif
 
 
