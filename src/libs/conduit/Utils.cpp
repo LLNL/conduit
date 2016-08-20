@@ -84,7 +84,7 @@ const char CONDUIT_UTILS_FILE_PATH_SEPARATOR='/';
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <cstdlib>
+
 
 //-----------------------------------------------------------------------------
 // -- libb64 includes -- 

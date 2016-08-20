@@ -51,6 +51,7 @@
 #include "conduit.hpp"
 #include "relay.hpp"
 #include <iostream>
+#include <stdlib.h>
 
 using namespace conduit;
 using namespace conduit::relay;
