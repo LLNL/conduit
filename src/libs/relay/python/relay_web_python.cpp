@@ -236,7 +236,6 @@ PyRelay_Web_WebServer_init(PyRelay_Web_WebServer *self)
 }
 
 
-
 //-----------------------------------------------------------------------------
 static PyObject *
 PyRelay_Web_WebServer_serve(PyRelay_Web_WebServer *self,
@@ -244,66 +243,55 @@ PyRelay_Web_WebServer_serve(PyRelay_Web_WebServer *self,
                             PyObject *kwargs)
 {
 
-    static const char *kwlist[] = {"doc_root",
-                                   "port",
-                                   "ssl_cert_file",
-                                   "auth_domain",
-                                   "auth_file",
+    static const char *kwlist[] = {"block",
                                     NULL};
 
-    const char *doc_root_c_str;
-    Py_ssize_t port = 0;
-    const char *ssl_cert_file_c_str;
-    const char *auth_domain_c_str;
-    const char *auth_file_c_str;
+    PyObject *py_block = NULL; 
   
     if (!PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
-                                     "s|nsss",
+                                     "|o",
                                      const_cast<char**>(kwlist),
-                                     &doc_root_c_str,
-                                     &port,
-                                     &ssl_cert_file_c_str,
-                                     &auth_domain_c_str,
-                                     &auth_file_c_str))
+                                     &py_block))
     {
         return NULL;
     }
     
-
-    std::string doc_root(doc_root_c_str);
-   
-    if(port == 0)
+    bool block = false;
+    if(py_block != NULL)
     {
-        port = 8080;
+        block = (PyObject_IsTrue(py_block) == 1);
     }
 
-    std::string ssl_cert_file;
-    if(ssl_cert_file_c_str != NULL)
-    {
-        ssl_cert_file = std::string(ssl_cert_file_c_str);
-    }
-        
-    std::string auth_domain;
+    self->webserver->serve(block);
 
-    if(auth_domain_c_str != NULL)
-    {
-        auth_domain = std::string(auth_domain_c_str);
-    }
+    Py_RETURN_NONE; 
+}
 
-    std::string auth_file;
-    if(auth_file_c_str != NULL)
-    {
-        auth_file = std::string(auth_file_c_str);
-    }
 
-    self->webserver->serve(doc_root,
-                           port,
-                           ssl_cert_file,
-                           auth_domain,
-                           auth_file);
+
+//-----------------------------------------------------------------------------
+static PyObject *
+PyRelay_Web_WebServer_set_document_root(PyRelay_Web_WebServer *self,
+                                        PyObject *args,
+                                        PyObject *kwargs)
+{
+
+    static const char *kwlist[] = {"document_root",
+                                   NULL};
+ 
+    const char *document_root;
     
+    if(!PyArg_ParseTupleAndKeywords(args,
+                                    kwargs,
+                                    "s",
+                                    const_cast<char**>(kwlist),
+                                    &document_root))
+    {
+        return NULL;
+    }
     
+    self->webserver->set_document_root(std::string(document_root));
     
     Py_RETURN_NONE; 
 }
@@ -312,11 +300,206 @@ PyRelay_Web_WebServer_serve(PyRelay_Web_WebServer *self,
 
 //-----------------------------------------------------------------------------
 static PyObject *
+PyRelay_Web_WebServer_set_bind_address(PyRelay_Web_WebServer *self,
+                                       PyObject *args,
+                                       PyObject *kwargs)
+{
+
+    static const char *kwlist[] = {"address",
+                                   NULL};
+ 
+    const char *address;
+    
+    if(!PyArg_ParseTupleAndKeywords(args,
+                                    kwargs,
+                                    "s",
+                                    const_cast<char**>(kwlist),
+                                    &address))
+    {
+        return NULL;
+    }
+    
+    self->webserver->set_bind_address(std::string(address));
+    
+    Py_RETURN_NONE; 
+}
+
+//-----------------------------------------------------------------------------
+static PyObject *
+PyRelay_Web_WebServer_set_port(PyRelay_Web_WebServer *self,
+                               PyObject *args,
+                               PyObject *kwargs)
+{
+
+    static const char *kwlist[] = {"port",
+                                   NULL};
+    
+    Py_ssize_t port  = 9000;
+    
+    if(!PyArg_ParseTupleAndKeywords(args,
+                                    kwargs,
+                                    "n",
+                                    const_cast<char**>(kwlist),
+                                    &port))
+    {
+        return NULL;
+    }
+    
+    self->webserver->set_port(port);
+    
+    Py_RETURN_NONE; 
+}
+
+//-----------------------------------------------------------------------------
+static PyObject *
+PyRelay_Web_WebServer_set_htpasswd_auth_file(PyRelay_Web_WebServer *self,
+                                             PyObject *args,
+                                             PyObject *kwargs)
+{
+
+    static const char *kwlist[] = {"htpasswd_auth_file",
+                                   NULL};
+ 
+    const char *auth_file;
+    
+    if(!PyArg_ParseTupleAndKeywords(args,
+                                    kwargs,
+                                    "s",
+                                    const_cast<char**>(kwlist),
+                                    &auth_file))
+    {
+        return NULL;
+    }
+    
+    self->webserver->set_htpasswd_auth_file(std::string(auth_file));
+    
+    Py_RETURN_NONE; 
+}
+
+//-----------------------------------------------------------------------------
+static PyObject *
+PyRelay_Web_WebServer_set_htpasswd_auth_domain(PyRelay_Web_WebServer *self,
+                                               PyObject *args,
+                                               PyObject *kwargs)
+{
+
+    static const char *kwlist[] = {"htpasswd_auth_domain",
+                                   NULL};
+ 
+    const char *auth_domain;
+    
+    if(!PyArg_ParseTupleAndKeywords(args,
+                                    kwargs,
+                                    "s",
+                                    const_cast<char**>(kwlist),
+                                    &auth_domain))
+    {
+        return NULL;
+    }
+    
+    self->webserver->set_htpasswd_auth_domain(std::string(auth_domain));
+    
+    Py_RETURN_NONE; 
+}
+
+
+
+//-----------------------------------------------------------------------------
+static PyObject *
+PyRelay_Web_WebServer_set_ssl_certificate_file(PyRelay_Web_WebServer *self,
+                                               PyObject *args,
+                                               PyObject *kwargs)
+{
+
+    static const char *kwlist[] = {"cert_file",
+                                   NULL};
+ 
+    const char *cert_file;
+    
+    if(!PyArg_ParseTupleAndKeywords(args,
+                                    kwargs,
+                                    "s",
+                                    const_cast<char**>(kwlist),
+                                    &cert_file))
+    {
+        return NULL;
+    }
+    
+    self->webserver->set_ssl_certificate_file(std::string(cert_file));
+    
+    Py_RETURN_NONE; 
+}
+
+//-----------------------------------------------------------------------------
+static PyObject *
+PyRelay_Web_WebServer_set_entangle_output_base(PyRelay_Web_WebServer *self,
+                                               PyObject *args,
+                                               PyObject *kwargs)
+{
+
+    static const char *kwlist[] = {"obase",
+                                   NULL};
+ 
+    const char *obase;
+    
+    if(!PyArg_ParseTupleAndKeywords(args,
+                                    kwargs,
+                                    "s",
+                                    const_cast<char**>(kwlist),
+                                    &obase))
+    {
+        return NULL;
+    }
+    
+    self->webserver->set_entangle_output_base(std::string(obase));
+    
+    Py_RETURN_NONE; 
+}
+
+
+//-----------------------------------------------------------------------------
+static PyObject *
+PyRelay_Web_WebServer_set_entangle_gateway(PyRelay_Web_WebServer *self,
+                                           PyObject *args,
+                                           PyObject *kwargs)
+{
+
+    static const char *kwlist[] = {"gateway",
+                                   NULL};
+ 
+    const char *gateway;
+    
+    if(!PyArg_ParseTupleAndKeywords(args,
+                                    kwargs,
+                                    "s",
+                                    const_cast<char**>(kwlist),
+                                    &gateway))
+    {
+        return NULL;
+    }
+    
+    self->webserver->set_entangle_gateway(std::string(gateway));
+    
+    Py_RETURN_NONE; 
+}
+
+
+//-----------------------------------------------------------------------------
+static PyObject *
+PyRelay_Web_WebServer_entangle_register(PyRelay_Web_WebServer *self)
+{
+    self->webserver->entangle_register();
+    
+    Py_RETURN_NONE;
+}
+
+//-----------------------------------------------------------------------------
+static PyObject *
 PyRelay_Web_WebServer_shutdown(PyRelay_Web_WebServer *self)
 {
     self->webserver->shutdown();
     
-    Py_RETURN_NONE; 
+    Py_RETURN_NONE;
 }
 
 //-----------------------------------------------------------------------------
@@ -375,8 +558,44 @@ static PyMethodDef PyRelay_Web_WebServer_METHODS[] = {
     //-----------------------------------------------------------------------//
     {"serve",
      (PyCFunction)PyRelay_Web_WebServer_serve,
-     METH_NOARGS,
+     METH_VARARGS| METH_KEYWORDS,
      "Start the web server."},
+    {"set_document_root",
+     (PyCFunction)PyRelay_Web_WebServer_set_document_root,
+     METH_VARARGS| METH_KEYWORDS,
+     "Set the document root path to use."},
+    {"set_bind_address",
+     (PyCFunction)PyRelay_Web_WebServer_set_bind_address,
+     METH_VARARGS| METH_KEYWORDS,
+     "Set the ip address to bind to."},
+    {"set_port",
+     (PyCFunction)PyRelay_Web_WebServer_set_port,
+     METH_VARARGS| METH_KEYWORDS,
+     "Set the port to serve on."},
+    {"set_htpasswd_auth_domain",
+     (PyCFunction)PyRelay_Web_WebServer_set_htpasswd_auth_domain,
+     METH_VARARGS| METH_KEYWORDS,
+     "Set the htpasswd authentication domain to use."},
+    {"set_htpasswd_auth_file",
+     (PyCFunction)PyRelay_Web_WebServer_set_htpasswd_auth_file,
+     METH_VARARGS| METH_KEYWORDS,
+     "Set the htpasswd authentication file to use."},
+    {"set_ssl_certificate_file",
+     (PyCFunction)PyRelay_Web_WebServer_set_ssl_certificate_file,
+     METH_VARARGS| METH_KEYWORDS,
+     "Set the ssl certificate to use."},
+    {"set_entangle_output_base",
+     (PyCFunction)PyRelay_Web_WebServer_set_entangle_output_base,
+     METH_VARARGS| METH_KEYWORDS,
+     "Set the output base name for entangle register."},
+    {"set_entangle_gateway",
+     (PyCFunction)PyRelay_Web_WebServer_set_entangle_gateway,
+     METH_VARARGS| METH_KEYWORDS,
+     "Set named gateway to use for entangle register."},
+    {"entangle_register",
+     (PyCFunction)PyRelay_Web_WebServer_entangle_register,
+     METH_NOARGS,
+     "Call entangle to generate a new password and register the server."},
     {"shutdown",
      (PyCFunction)PyRelay_Web_WebServer_shutdown,
      METH_NOARGS,
@@ -385,7 +604,7 @@ static PyMethodDef PyRelay_Web_WebServer_METHODS[] = {
      (PyCFunction)PyRelay_Web_WebServer_is_running,
      METH_NOARGS,
      "Returns if the web server is running."},
-    {"shutdown",
+    {"websocket",
      (PyCFunction)PyRelay_Web_WebServer_shutdown,
      METH_VARARGS| METH_KEYWORDS,
      "Obtain connected web socket connection."},

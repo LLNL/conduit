@@ -139,8 +139,8 @@ public:
     
     /// the request handler ( WebServer takes ownership of this)
     ///
-    /// Note: must be set before starting the server, or an error will
-    /// be thrown
+    /// If not set, the default request handler is used
+    ///
     void set_request_handler(WebRequestHandler *handler);
 
     /// the ip address to run the server on
@@ -178,42 +178,6 @@ public:
     /// start server, if block is true enters a wait loop that
     /// waits for the server to close
     void serve(bool block = false);
-
-    /// TODO: too many default args here, may want to change the interface
-    /// to make things cleaner in the future.
-
-    /// convenience case that uses the default request handler 
-    void        serve(const std::string &doc_root,
-                      const std::string &addy = std::string("127.0.0.1:8080"),
-                      const std::string &ssl_cert_file = std::string(""),
-                      const std::string &auth_domain   = std::string(""),
-                      const std::string &auth_file     = std::string(""));
-    
-    /// convenience case that uses the default request handler
-    /// This variant binds to localhost:{port}.
-    void        serve(const std::string &doc_root,
-                      index_t port = 8080, // binds to localhost:{port}
-                      const std::string &ssl_cert_file = std::string(""),
-                      const std::string &auth_domain   = std::string(""),
-                      const std::string &auth_file     = std::string(""));
-
-    /// general case, supporting a user provided request handler
-    void        serve(const std::string &doc_root,
-                      WebRequestHandler *dispatch, // takes ownership?
-                      const std::string &addy = std::string("127.0.0.1:8080"),
-                      const std::string &ssl_cert_file = std::string(""),
-                      const std::string &auth_domain   = std::string(""),
-                      const std::string &auth_file     = std::string(""));
-
-
-    // /// general case, supporting a user provided request handler (port case)
-    // void        serve(const std::string &doc_root,
-    //                   WebRequestHandler *dispatch, // takes ownership?
-    //                   index_t port = 8080,
-    //                   const std::string &ssl_cert_file = std::string(""),
-    //                   const std::string &auth_domain   = std::string(""),
-    //                   const std::string &auth_file     = std::string(""));
-
 
     virtual void shutdown();
     

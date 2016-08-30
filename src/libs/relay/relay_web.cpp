@@ -873,80 +873,6 @@ WebServer::context()
 
 
 //-----------------------------------------------------------------------------
-// convenience case that uses the default request handler 
-//-----------------------------------------------------------------------------
-void
-WebServer::serve(const std::string &doc_root,
-                 const std::string &addy,
-                 const std::string &ssl_cert_file,
-                 const std::string &auth_domain,
-                 const std::string &auth_file)
-{
-    WebRequestHandler *handler = new WebRequestHandler();
-
-    serve(doc_root,
-          handler,
-          addy,
-          ssl_cert_file,
-          auth_domain,
-          auth_file);
-}
-
-//-----------------------------------------------------------------------------
-// convenience case that uses the default request handler (port case)
-//-----------------------------------------------------------------------------
-void
-WebServer::serve(const std::string &doc_root,
-                 index_t port,
-                 const std::string &ssl_cert_file,
-                 const std::string &auth_domain,
-                 const std::string &auth_file)
-{
-    std::ostringstream oss;
-    oss << "127.0.0.1:" << port;
-
-    serve(doc_root,
-          oss.str(),
-          ssl_cert_file,
-          auth_domain,
-          auth_file);
-}
-
-
-
-//-----------------------------------------------------------------------------
-void
-WebServer::serve(const std::string &doc_root,
-                 WebRequestHandler *handler,
-                 const std::string &addy,
-                 const std::string &ssl_cert_file,
-                 const std::string &auth_domain,
-                 const std::string &auth_file)
-{
-    set_document_root(doc_root);
-    set_request_handler(handler);
-
-    // parse port from addy
-    if(!addy.empty())
-    {
-        std::string curr("");
-        std::string next("");
-
-        utils::split_string(addy,":",curr,next);
-        int port  = atoi(next.c_str());
-        set_port(port);
-        set_bind_address(curr);
-    }
-    
-    set_ssl_certificate_file(ssl_cert_file);
-    set_htpasswd_auth_domain(auth_domain);
-    set_htpasswd_auth_file(auth_file);
-    
-    serve();
-}
-
-
-//-----------------------------------------------------------------------------
 void
 WebServer::serve(bool block)
 {
@@ -959,8 +885,8 @@ WebServer::serve(bool block)
 
     if(m_handler == NULL)
     {
-        CONDUIT_ERROR("Cannot start WebServer because the event handler is"
-                      " NULL.");
+        m_handler = new WebRequestHandler();
+        CONDUIT_INFO("Using default Web Request Handler.");
     }
     
     if(m_doc_root.empty() || !utils::is_directory(m_doc_root))
@@ -1080,10 +1006,17 @@ WebServer::serve(bool block)
     // setup web socket handler
     m_server->addWebSocketHandler("/websocket", m_dispatch);
 
-
     // signal we are valid
     m_running = true;
-
+    
+    if(block)
+    {
+        // wait for shutdown()
+        while(is_running())
+        {
+            utils::sleep(100);
+        }
+    }
 }
 
 

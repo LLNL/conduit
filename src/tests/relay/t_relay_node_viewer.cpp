@@ -78,32 +78,28 @@ TEST(conduit_relay_web, node_viewer)
     
     if(launch_server)
     {
-        
-        std::string cert_file   = std::string("");
-        std::string auth_domain = std::string("");
-        std::string auth_file   = std::string("");
+        web::NodeViewerServer svr;
+        svr.set_port(8080);
+        svr.set_node(n);
                   
         if(use_ssl)
         {
-            cert_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"relay");
+            std::string cert_file = utils::join_file_path(CONDUIT_T_SRC_DIR,
+                                                          "relay");
             cert_file = utils::join_file_path(cert_file,"t_ssl_cert.pem");
+            svr.set_ssl_certificate_file(cert_file);
         }
 
         if(use_auth)
         {
-            auth_domain = "test";
-            auth_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"relay");
+            std::string auth_file = utils::join_file_path(CONDUIT_T_SRC_DIR,
+                                                          "relay");
             auth_file = utils::join_file_path(auth_file,"t_htpasswd.txt");
+            svr.set_htpasswd_auth_domain("test");
+            svr.set_htpasswd_auth_file(auth_file);
         }
-        
 
-        web::WebServer *svr = web::NodeViewerServer::run(n,
-                                                         true,
-                                                         8080,
-                                                         cert_file,
-                                                         auth_domain,
-                                                         auth_file);
-        delete svr;
+        svr.serve(true);
     }
     else
     {

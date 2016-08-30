@@ -65,7 +65,9 @@ usage()
               << std::endl << std::endl 
               << " optional arguments:"
               << std::endl
-              << "  --port {port number to bind to on localhost}" 
+              << "  --address {ip address to bind to (default=127.0.0.1)}" 
+              << std::endl
+              << "  --port {port number to serve on (default=9000)}" 
               << std::endl
               << "  --protocol {relay protocol string used to read data file}"
               << std::endl
@@ -84,6 +86,7 @@ usage()
 void
 parse_args(int argc,
            char *argv[],
+           std::string address,
            int &port,
            bool &entangle,
            std::string &data_file,
@@ -105,6 +108,16 @@ parse_args(int argc,
             port = atoi(argv[i+1]);
             i++;
 
+        }
+        else if(arg_str == "--address")
+        {
+            if(i+1 >= argc )
+            {
+                CONDUIT_ERROR("expected value following --address option");
+            }
+
+            address = std::string(argv[i+1]);
+            i++;
         }
         else if(arg_str == "--protocol")
         {
@@ -174,6 +187,7 @@ main(int argc, char* argv[])
         int port = 9000;
         bool entangle = false;
         std::string data_file("");
+        std::string address("127.0.0.1");
         std::string protocol("");
         std::string auth_file("");
         std::string cert_file("");
@@ -181,6 +195,7 @@ main(int argc, char* argv[])
 
         parse_args(argc,
                    argv,
+                   address,
                    port,
                    entangle,
                    data_file,
@@ -205,38 +220,45 @@ main(int argc, char* argv[])
             relay::io::load(data_file,protocol,data);
         }
 
-        std::ostringstream oss;
-        oss << "127.0.0.1:" << port;
+        // setup our node viewer web server
+        web::NodeViewerServer svr;
+        
+        // provide our data
+        svr.set_node(&data);
+        
+        // set the address
+        svr.set_bind_address(address);
 
-        // launch the server
-        web::NodeViewerServer *svr =new web::NodeViewerServer();
-        
-        // svr->set_bind_address(string, port)
-        
-        // svr->set_htpasswd_file()
-        // svr->set_auth_domain()
-        // svr->set_cert_file()
-        // svr->set_htpasswd_file()
+        // set the port
+        svr.set_port(port);
 
-        // svr->set_entangle_output_base()
-        // svr->set_entangle_gateway()
+        // set entangle gateway if passed on command line
+        if(!gateway.empty())
+        {
+            svr.set_entangle_gateway(gateway);
+        }
 
-        // svr->entangle_register() -- opt gateway
-        //  runs  entangle --register
-        //  calls set_htpasswd_file()
-        //  calls set_auth_domain()
+        // set htpasswd file if passed on command line
+        if(!auth_file.empty())
+        {
+            svr.set_htpasswd_auth_file(auth_file);
+        }
+
+        // set ssl cert file if passed on command line
+        if(!cert_file.empty())
+        {
+            svr.set_ssl_certificate_file(cert_file);
+        }
         
-        // svr->serve(data,block;
-        
-        svr->serve(&data,
-                   true,
-                   entangle,
-                   oss.str(),
-                   cert_file,
-                   "localhost",
-                   auth_file,
-                   gateway);
-        delete svr;
+        // run entangle if requested
+        if(entangle)
+        {
+            svr.entangle_register();
+        }
+
+        // start the server
+        svr.serve(true);
+
     }
     catch(const conduit::Error &e)
     {
