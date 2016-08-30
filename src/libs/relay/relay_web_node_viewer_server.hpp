@@ -123,7 +123,8 @@ public:
                const std::string &addy = std::string("127.0.0.1:8080"),
                const std::string &ssl_cert_file = std::string(""),
                const std::string &auth_domain   = std::string(""),
-               const std::string &auth_file     = std::string(""));
+               const std::string &auth_file     = std::string(""),
+               const std::string &gateway       = std::string(""));
 
     virtual void shutdown();
 
@@ -144,12 +145,11 @@ public:
 
 
 private:
-    void              entangle_register();
+    void              entangle_register(int port,
+                                        const std::string &gateway);
 
-    
     WebRequestHandler *m_handler;
     std::string        m_entangle_obase;
-    
 
 };
 

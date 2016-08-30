@@ -130,6 +130,55 @@ public:
                 WebServer();
     virtual    ~WebServer();
 
+
+    /// the root path on the file system to server
+    /// 
+    /// Note: must be set before starting the server, or an error will
+    /// be thrown
+    void set_document_root(const std::string &doc_root);
+    
+    /// the request handler ( WebServer takes ownership of this)
+    ///
+    /// Note: must be set before starting the server, or an error will
+    /// be thrown
+    void set_request_handler(WebRequestHandler *handler);
+
+    /// the ip address to run the server on
+    ///   default address: 127.0.0.1 (localhost)
+    void set_bind_address(const std::string &addy);
+
+    /// the port to run the server on
+    ///   default port:    9000
+    void set_port(int port);
+
+    /// options for htpasswd authentication 
+    ///   defaults: {not used}
+    void set_htpasswd_auth_domain(const std::string &domain);
+    void set_htpasswd_auth_file(const std::string &htpasswd_file);
+
+    /// option for using ssl certificate file to enable https
+    ///   default: {not used}
+    void set_ssl_certificate_file(const std::string &cert_file);
+    
+    /// options for entangle auth and port forwarding setup
+    ///   defaults: {not used}
+    void set_entangle_output_base(const std::string &obase);
+    void set_entangle_gateway(const std::string &gateway);
+
+    /// calls the entangle python script to generate a new 
+    /// password, htpasswd file and setup json files for 
+    /// clients to use with entangle to establish ssh tunnels.
+    ///   
+    ///   runs conduit_relay_entangle.py --register
+    ///   calls this->set_htpasswd_domain("127.0.0.1")
+    ///   calls this->set_htpasswd_file({entangle_obase}.htpasswd)
+    void entangle_register();
+    
+    
+    /// start server, if block is true enters a wait loop that
+    /// waits for the server to close
+    void serve(bool block = false);
+
     /// TODO: too many default args here, may want to change the interface
     /// to make things cleaner in the future.
 
@@ -170,6 +219,10 @@ public:
     
     bool        is_running() const;
 
+    std::string bind_address() const;
+    int         port()    const;
+
+
     /// returns the first active websocket, if none are active, blocks
     /// until a websocket connection is established.
     ///
@@ -178,8 +231,10 @@ public:
     WebSocket  *websocket(index_t ms_poll = 100,
                           index_t ms_timeout = 60000);
 
+    /// returns the request handler used by this server instance
     WebRequestHandler *handler();
     
+    /// access to civetweb 
     mg_context *context();
     void        lock_context();
     void        unlock_context();
@@ -188,10 +243,18 @@ private:
     WebRequestHandler      *m_handler;
     
     std::string             m_doc_root;
-    std::string             m_address_and_port;
+    std::string             m_address;
+    int                     m_port;
+
     std::string             m_ssl_cert_file;
-    std::string             m_auth_domain;
-    std::string             m_auth_file;
+
+    std::string             m_htpasswd_auth_domain;
+    std::string             m_htpasswd_auth_file;
+
+    std::string             m_entangle_obase;
+    std::string             m_entangle_gateway;
+    bool                    m_using_entangle;
+
     bool                    m_running;
 
     CivetServer            *m_server;

@@ -583,10 +583,14 @@ WebSocket::send(const Node &data,
 WebServer::WebServer()
 : m_handler(NULL),
   m_doc_root(""),
-  m_address_and_port(""),
+  m_address("127.0.0.1"),
+  m_port(9000),
   m_ssl_cert_file(""),
-  m_auth_domain(""),
-  m_auth_file(""),
+  m_htpasswd_auth_domain("localhost"),
+  m_htpasswd_auth_file(""),
+  m_entangle_obase(""),
+  m_entangle_gateway(""),
+  m_using_entangle(false),
   m_running(false),
   m_server(NULL),
   m_dispatch(NULL)
@@ -600,12 +604,226 @@ WebServer::~WebServer()
     shutdown();
 }
 
+
+//-----------------------------------------------------------------------------
+void
+WebServer::set_document_root(const std::string &doc_root)
+{
+    if(is_running())
+    {
+        CONDUIT_WARN("Cannot set web server document root while"
+                        " while server is running");
+    }
+    else
+    {
+        m_doc_root = doc_root;
+    }
+}
+
+
+
+//-----------------------------------------------------------------------------
+void
+WebServer::set_request_handler(WebRequestHandler *handler)
+{
+    if(is_running())
+    {
+        CONDUIT_WARN("Cannot set web server request handler while"
+                        " while server is running");
+    }
+    else
+    {
+        m_handler = handler;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+WebServer::set_bind_address(const std::string &addy)
+{
+    if(is_running())
+    {
+        CONDUIT_WARN("Cannot set web server bind address while"
+                        " while server is running");
+    }
+    else
+    {
+        m_address = addy;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+WebServer::set_port(int port)
+{
+    if(is_running())
+    {
+        CONDUIT_WARN("Cannot set web server port while"
+                        " while server is running");
+    }
+    else
+    {
+        m_port = port;
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+void
+WebServer::set_htpasswd_auth_domain(const std::string &domain)
+{
+    if(is_running())
+    {
+        CONDUIT_WARN("Cannot set web server htpasswd auth domain while"
+                        " while server is running");
+    }
+    else
+    {
+        m_htpasswd_auth_domain = domain;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+WebServer::set_htpasswd_auth_file(const std::string &htpasswd_file)
+{
+    if(is_running())
+    {
+        CONDUIT_WARN("Cannot set web server htpasswd auth file while"
+                        " while server is running");
+    }
+    else
+    {
+        m_htpasswd_auth_file = htpasswd_file;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+WebServer::set_ssl_certificate_file(const std::string &cert_file)
+{
+    if(is_running())
+    {
+        CONDUIT_WARN("Cannot set web server ssl certificate file"
+                        " while server is running");
+    }
+    else
+    {
+        m_ssl_cert_file = cert_file;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+WebServer::set_entangle_output_base(const std::string &obase)
+{
+    if(is_running())
+    {
+        CONDUIT_WARN("Cannot set web server entangle output base"
+                        " while server is running");
+    }
+    else
+    {
+        m_entangle_obase = obase;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+WebServer::set_entangle_gateway(const std::string &gateway)
+{
+    if(is_running())
+    {
+        CONDUIT_WARN("Cannot set web server entangle gateway"
+                        " while server is running");
+    }
+    else
+    {
+        m_entangle_gateway = gateway;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+WebServer::entangle_register()
+{
+    // check for source dir
+    std::string et_script = utils::join_file_path(CONDUIT_RELAY_SOURCE_DIR,
+                                                  "scripts");
+    et_script = utils::join_file_path(et_script,"conduit_relay_entangle.py");
+
+    if(!utils::is_file(et_script))
+    {
+        Node n;
+        conduit::about(n);
+        std::string et_script = n["install_prefix"].as_string();
+        et_script = utils::join_file_path(et_script,"bin");
+        et_script = utils::join_file_path(et_script,"conduit_relay_entangle.py");
+    }
+    
+    if(!utils::is_file(et_script))
+    {
+        CONDUIT_ERROR("Could not find conduit_relay_entangle.py script");
+    }
+
+
+    std::ostringstream cmd;    
+    cmd << "python " << et_script;
+    cmd << " --register ";
+    cmd << " --port " << m_port;
+
+    if(!m_entangle_gateway.empty())
+    {
+        cmd << " --gateway " << m_entangle_gateway;
+    }
+    
+    if(m_entangle_obase.empty())
+    {
+        m_entangle_obase = "_entangle_conduit_relay_webserver_output";
+    }
+    
+    cmd << "--obase " << m_entangle_obase;
+
+    CONDUIT_INFO(cmd.str());
+
+    if( utils::system_execute(cmd.str()) != 0  ||
+        ! utils::is_file(m_entangle_obase + ".htpasswd") )
+    {
+        m_entangle_obase = "";
+        CONDUIT_ERROR("Error running conduit_relay_entangle.py to "
+                      "generate htpasswd");
+    }
+    
+    
+    set_htpasswd_auth_domain("localhost");
+    set_htpasswd_auth_file(m_entangle_obase + ".htpasswd");
+
+    m_using_entangle = true;
+}
+
+
 //-----------------------------------------------------------------------------
 bool
 WebServer::is_running() const
 {
     return m_running;
 }
+
+
+//-----------------------------------------------------------------------------
+int
+WebServer::port() const
+{
+    return m_port;
+}
+
+//-----------------------------------------------------------------------------
+std::string
+WebServer::bind_address() const
+{
+    return m_address;
+}
+
 
 //-----------------------------------------------------------------------------
 WebSocket *
@@ -705,46 +923,76 @@ WebServer::serve(const std::string &doc_root,
                  const std::string &auth_domain,
                  const std::string &auth_file)
 {
+    set_document_root(doc_root);
+    set_request_handler(handler);
+
+    // parse port from addy
+    if(!addy.empty())
+    {
+        std::string curr("");
+        std::string next("");
+
+        utils::split_string(addy,":",curr,next);
+        int port  = atoi(next.c_str());
+        set_port(port);
+        set_bind_address(curr);
+    }
+    
+    set_ssl_certificate_file(ssl_cert_file);
+    set_htpasswd_auth_domain(auth_domain);
+    set_htpasswd_auth_file(auth_file);
+    
+    serve();
+}
+
+
+//-----------------------------------------------------------------------------
+void
+WebServer::serve(bool block)
+{
     if(is_running())
     {
         CONDUIT_INFO("WebServer instance is already running on: "
-                     << m_address_and_port);
+                     << m_address << ":" << m_port);
         return; 
     }
+
+    if(m_handler == NULL)
+    {
+        CONDUIT_ERROR("Cannot start WebServer because the event handler is"
+                      " NULL.");
+    }
+    
+    if(m_doc_root.empty() || !utils::is_directory(m_doc_root))
+    {
+        CONDUIT_ERROR("Cannot start WebServer because document root is not a"
+                      " valid file system directory.");
+    }
+    
     
     m_dispatch = new CivetDispatchHandler(*this);
-    
-    m_handler = handler;
-
-    m_doc_root = doc_root;
-
-    m_ssl_cert_file = ssl_cert_file;
-    m_auth_domain   = auth_domain;
-    m_auth_file     = auth_file;
 
     bool use_ssl = m_ssl_cert_file.size() > 0;
-    bool use_auth_domain = m_auth_domain.size() > 0;
-    bool use_auth_file   = m_auth_file.size() > 0;
+    bool use_auth_domain = m_htpasswd_auth_domain.size() > 0;
+    bool use_auth_file   = m_htpasswd_auth_file.size() > 0;
     
 
     // civetweb takes strings as arguments
     // convert the port number to a string.
     std::ostringstream oss;
-    oss << addy;
+    oss << m_address << ":" << m_port;
+    
     // civetweb uses the suffix 's' on port ars for the with https case
     if(use_ssl)
     {
         oss << "s";
     }
     
-    m_address_and_port = oss.str();
-
-
-    CONDUIT_INFO("Starting WebServer instance with doc root = " << doc_root);
+    std::string addy_and_port = oss.str();
 
     // setup civetweb options
-    const char *options[] = { "document_root",   doc_root.c_str(),
-                              "listening_ports", m_address_and_port.c_str(),
+    const char *options[] = { "document_root",   m_doc_root.c_str(),
+                              "listening_ports", addy_and_port.c_str(),
                               "num_threads",     "2",
                                // place holders for ssl, auth domain and 
                                // auth file options
@@ -757,21 +1005,43 @@ WebServer::serve(const std::string &doc_root,
     
     if(use_ssl)
     {
-        options[options_idx++] = "ssl_certificate";
-        options[options_idx++] = m_ssl_cert_file.c_str();
+        if(!utils::is_file(m_ssl_cert_file))
+        {
+            CONDUIT_ERROR("SSL certificate file not found: " 
+                          << m_ssl_cert_file);
+        }
+        else
+        {
+            CONDUIT_INFO("Using SSL Certificate: " << m_ssl_cert_file);
+            options[options_idx++] = "ssl_certificate";
+            options[options_idx++] = m_ssl_cert_file.c_str();
+        }
     }
     
     if(use_auth_domain)
     {
+        CONDUIT_INFO("Using htpasswd auth domain: " << m_htpasswd_auth_domain);
         options[options_idx++] = "authentication_domain";
-        options[options_idx++] = m_auth_domain.c_str();
+        options[options_idx++] = m_htpasswd_auth_domain.c_str();
     }
     
     if(use_auth_file)
     {
-        options[options_idx++] = "global_auth_file";
-        options[options_idx++] = m_auth_file.c_str();
+        if(!utils::is_file(m_htpasswd_auth_file))
+        {
+            CONDUIT_ERROR("htpasswd file not found: "
+                          << m_htpasswd_auth_file);
+        }
+        else
+        {
+            CONDUIT_INFO("Using htpasswd file : " << m_htpasswd_auth_file);
+            options[options_idx++] = "global_auth_file";
+            options[options_idx++] = m_htpasswd_auth_file.c_str();
+        }
     }
+
+    CONDUIT_INFO("Binding WebServer to " << addy_and_port 
+                 << " with document root " << m_doc_root);
 
     try
     {
@@ -781,7 +1051,7 @@ WebServer::serve(const std::string &doc_root,
     {
         // Catch Civet Exception and use Conduit's error handling mech.
         CONDUIT_ERROR("WebServer failed to bind civet server on " 
-                      << m_address_and_port);
+                      << addy_and_port);
     }
     
     // check for valid context    
@@ -789,18 +1059,18 @@ WebServer::serve(const std::string &doc_root,
     if(ctx == NULL)
     {
          CONDUIT_ERROR("WebServer failed to bind civet server on" 
-                       << m_address_and_port);
+                       << addy_and_port);
     }else
     {
         if(!use_ssl)
         {
             CONDUIT_INFO("conduit::relay::web::WebServer http server instance "
-                         "active: " << m_address_and_port);
+                         "active: " << addy_and_port);
         }
         else
         {
             CONDUIT_INFO("conduit::relay::web::WebServer https server instance "
-                         "active on: " << m_address_and_port);
+                         "active: " << addy_and_port);
         }
     }
 
@@ -816,6 +1086,7 @@ WebServer::serve(const std::string &doc_root,
 
 }
 
+
 //-----------------------------------------------------------------------------
 void     
 WebServer::shutdown()
@@ -823,9 +1094,28 @@ WebServer::shutdown()
     if(is_running())
     {
         CONDUIT_INFO("closing conduit::relay::web::WebServer instance on: " 
-                     << m_address_and_port);
+                     << m_address << ":" << m_port);
+
+        if(m_using_entangle)
+        {
+            std::string entangle_json   = m_entangle_obase + ".json";
+            std::string entangle_htpass = m_entangle_obase + ".htpasswd";
+
+            if(utils::is_file(entangle_json))
+            {
+                CONDUIT_INFO("Cleaning up entangle file:" << entangle_json);
+                utils::remove_file(entangle_json);
+            }
+        
+            if(utils::is_file(entangle_htpass))
+            {
+                CONDUIT_INFO("Cleaning up entangle file:" << entangle_htpass);
+                utils::remove_file(entangle_htpass);
+            }
+        }
 
         m_running = false;
+        m_using_entangle = false;
 
         delete m_server;
         delete m_handler;

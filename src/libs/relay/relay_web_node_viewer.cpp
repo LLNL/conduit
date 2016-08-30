@@ -74,6 +74,8 @@ usage()
               << "  --cert  {https cert file}"
               << std::endl
               << "  --entangle {use entangle to create htpasswd file}"
+              << std::endl
+              << "  --gateway {gateway for entangle clients}"
               << std::endl << std::endl ;
 
 }
@@ -87,7 +89,8 @@ parse_args(int argc,
            std::string &data_file,
            std::string &protocol,
            std::string &auth_file,
-           std::string &cert_file)
+           std::string &cert_file,
+           std::string &gateway)
 {
     for(int i=1; i < argc ; i++)
     {
@@ -133,6 +136,16 @@ parse_args(int argc,
             cert_file = std::string(argv[i+1]);
             i++;
         }
+        else if(arg_str == "--gateway")
+        {
+            if(i+1 >= argc )
+            {
+                CONDUIT_ERROR("expected value following --gateway option");
+            }
+
+            gateway = std::string(argv[i+1]);
+            i++;
+        }
         else if(arg_str == "--entangle")
         {
             entangle = true;
@@ -164,6 +177,7 @@ main(int argc, char* argv[])
         std::string protocol("");
         std::string auth_file("");
         std::string cert_file("");
+        std::string gateway("");
 
         parse_args(argc,
                    argv,
@@ -172,7 +186,8 @@ main(int argc, char* argv[])
                    data_file,
                    protocol,
                    auth_file,
-                   cert_file);
+                   cert_file,
+                   gateway);
 
         if(data_file.empty())
         {
@@ -196,13 +211,31 @@ main(int argc, char* argv[])
         // launch the server
         web::NodeViewerServer *svr =new web::NodeViewerServer();
         
+        // svr->set_bind_address(string, port)
+        
+        // svr->set_htpasswd_file()
+        // svr->set_auth_domain()
+        // svr->set_cert_file()
+        // svr->set_htpasswd_file()
+
+        // svr->set_entangle_output_base()
+        // svr->set_entangle_gateway()
+
+        // svr->entangle_register() -- opt gateway
+        //  runs  entangle --register
+        //  calls set_htpasswd_file()
+        //  calls set_auth_domain()
+        
+        // svr->serve(data,block;
+        
         svr->serve(&data,
                    true,
                    entangle,
                    oss.str(),
                    cert_file,
                    "localhost",
-                   auth_file);
+                   auth_file,
+                   gateway);
         delete svr;
     }
     catch(const conduit::Error &e)

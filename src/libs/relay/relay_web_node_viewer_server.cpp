@@ -289,7 +289,8 @@ NodeViewerServer::shutdown()
 
 //---------------------------------------------------------------------------//
 void
-NodeViewerServer::entangle_register()
+NodeViewerServer::entangle_register(int port,
+                                    const std::string &gateway)
 {
     
     // check for source dir
@@ -316,7 +317,15 @@ NodeViewerServer::entangle_register()
 
     std::ostringstream cmd;    
     cmd << "python " << et_script;
-    cmd << " --register --obase " << m_entangle_obase;
+    cmd << " --register ";
+    cmd << " --port " << port;
+    if(!gateway.empty())
+    {
+        cmd << " --gateway " << gateway;
+    }
+    
+    cmd << "--obase " << m_entangle_obase;
+
 
     CONDUIT_INFO(cmd.str());
 
@@ -337,7 +346,8 @@ NodeViewerServer::serve(Node *data,
                         const std::string &addy,
                         const std::string &ssl_cert_file,
                         const std::string &auth_domain,
-                        const std::string &auth_file)
+                        const std::string &auth_file,
+                        const std::string &gateway)
 {
     
     if(is_running() or m_handler != NULL)
@@ -345,12 +355,14 @@ NodeViewerServer::serve(Node *data,
         CONDUIT_INFO("Web Server already running");
         return;
     }
-    
+
     m_handler = new NodeViewerRequestHandler(data);
 
     if(entangle)
     {
-        entangle_register();
+        entangle_register(port(),
+                          gateway);
+
         std::string e_auth_domain = "localhost";
         
         std::string e_auth_file   = m_entangle_obase + ".htpasswd";
