@@ -114,32 +114,29 @@ TEST(conduit_relay_web_websocket, websocket_test)
     msg["count"] = 0;
     
     msg.to_json_stream("test.json","json");
-    
+
+    // setup the webserver
     web::WebServer svr;
-    // start our server
-    
-    std::string cert_file   = std::string("");
-    std::string auth_domain = std::string("");
-    std::string auth_file   = std::string("");
-                  
+
     if(use_ssl)
     {
-        cert_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"relay");
+        std::string cert_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"relay");
         cert_file = utils::join_file_path(cert_file,"t_ssl_cert.pem");
+        svr.set_ssl_certificate_file(cert_file);
     }
 
     if(use_auth)
     {
-        auth_domain = "test";
-        auth_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"relay");
+        std::string auth_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"relay");
         auth_file = utils::join_file_path(auth_file,"t_htpasswd.txt");
+        svr.set_htpasswd_auth_domain("test");
+        svr.set_htpasswd_auth_file(auth_file);
     }
 
-    svr.serve(wsock_path,
-              8081,
-              cert_file,
-              auth_domain,
-              auth_file);
+    svr.set_port(8081);
+    svr.set_document_root(wsock_path);
+
+    svr.serve();
 
     while(svr.is_running()) 
     {

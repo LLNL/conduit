@@ -88,9 +88,9 @@ namespace web
 // -- Viewer Request Handler  -
 //-----------------------------------------------------------------------------
 
-NodeViewerRequestHandler::NodeViewerRequestHandler(Node *node)
+NodeViewerRequestHandler::NodeViewerRequestHandler()
 : WebRequestHandler(),
-  m_node(node)
+  m_node(NULL)
 {
     // empty
 }
@@ -237,11 +237,26 @@ NodeViewerRequestHandler::handle_shutdown(WebServer *server)
 }
 
 //---------------------------------------------------------------------------//
-NodeViewerServer::NodeViewerServer()
-: m_handler(NULL),
-  m_entangle_obase(""),
-  WebServer()
+// Sets the Node Object to view
+//---------------------------------------------------------------------------//
+void
+NodeViewerRequestHandler::set_node(Node *node)
 {
+    m_node = node;
+}
+
+
+//---------------------------------------------------------------------------//
+// Node Viewer Server Methods
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+NodeViewerServer::NodeViewerServer()
+: WebServer()
+{
+    set_request_handler(new NodeViewerRequestHandler());
+    set_document_root(utils::join_file_path(web_client_root_directory(),
+                                            "node_viewer"));
     
 }
 
@@ -251,187 +266,12 @@ NodeViewerServer::~NodeViewerServer()
     shutdown();
 }
 
-
 //---------------------------------------------------------------------------//
 void
-NodeViewerServer::shutdown()
+NodeViewerServer::set_node(Node *data)
 {
-    if(is_running())
-    {
-       WebServer::shutdown();
-    }
-
-    if(!m_entangle_obase.empty())
-    {
-        std::string entangle_json   = m_entangle_obase + ".json";
-        std::string entangle_htpass = m_entangle_obase + ".htpasswd";
-
-        if(utils::is_file(entangle_json))
-        {
-            CONDUIT_INFO("Cleaning up entangle file:" << entangle_json);
-            utils::remove_file(entangle_json);
-        }
-        
-        if(utils::is_file(entangle_htpass))
-        {
-            CONDUIT_INFO("Cleaning up entangle file:" << entangle_htpass);
-            utils::remove_file(entangle_htpass);
-        }
-    }
-    
-    if(m_handler != NULL)
-    {
-        delete m_handler;
-        m_handler = NULL;
-    }
-}
-
-
-//---------------------------------------------------------------------------//
-void
-NodeViewerServer::entangle_register()
-{
-    
-    // check for source dir
-    std::string et_script = utils::join_file_path(CONDUIT_RELAY_SOURCE_DIR,
-                                                  "scripts");
-    et_script = utils::join_file_path(et_script,"conduit_relay_entangle.py");
-
-    if(!utils::is_file(et_script))
-    {
-  
-        Node n;
-        conduit::about(n);
-        std::string et_script = n["install_prefix"].as_string();
-        et_script = utils::join_file_path(et_script,"bin");
-        et_script = utils::join_file_path(et_script,"conduit_relay_entangle.py");
-    }
-    
-    if(!utils::is_file(et_script))
-    {
-        CONDUIT_ERROR("Could not find conduit_relay_entangle.py script");
-    }
-
-    m_entangle_obase = "entangle_out_conduit_node_viewer";
-
-    std::ostringstream cmd;    
-    cmd << "python " << et_script;
-    cmd << " --register --obase " << m_entangle_obase;
-
-    CONDUIT_INFO(cmd.str());
-
-    if( utils::system_execute(cmd.str()) != 0  ||
-        ! utils::is_file(m_entangle_obase + ".htpasswd") )
-    {
-        m_entangle_obase = "";
-        CONDUIT_ERROR("Error running conduit_relay_entangle.py to "
-                      "generate htpasswd");
-    }
-}
-
-//---------------------------------------------------------------------------//
-void
-NodeViewerServer::serve(Node *data,
-                        bool block,
-                        bool entangle,
-                        const std::string &addy,
-                        const std::string &ssl_cert_file,
-                        const std::string &auth_domain,
-                        const std::string &auth_file)
-{
-    
-    if(is_running() or m_handler != NULL)
-    {
-        CONDUIT_INFO("Web Server already running");
-        return;
-    }
-    
-    m_handler = new NodeViewerRequestHandler(data);
-
-    if(entangle)
-    {
-        entangle_register();
-        std::string e_auth_domain = "localhost";
-        
-        std::string e_auth_file   = m_entangle_obase + ".htpasswd";
-        std::string e_cert_file   = "";
-
-        // call general serve routine
-        WebServer::serve(utils::join_file_path(web_client_root_directory(),"node_viewer"),
-                         m_handler,
-                         addy,
-                         e_cert_file,
-                         e_auth_domain,
-                         e_auth_file);
-    }
-    else
-    {
-
-        // call general serve routine
-        WebServer::serve(utils::join_file_path(web_client_root_directory(),"node_viewer"),
-                         m_handler,
-                         addy,
-                         ssl_cert_file,
-                         auth_domain,
-                         auth_file);
-    }
-    if(block)
-    {
-        // wait for shutdown()
-        while(is_running()) 
-        {
-            utils::sleep(100);
-        }
-    }
-    
-    return;
-}
-
-
-//---------------------------------------------------------------------------//
-// Helper to easily create a Viewer instance.
-//---------------------------------------------------------------------------//
-WebServer *
-NodeViewerServer::run(Node *data,
-                      bool block,
-                      const std::string &addy,
-                      const std::string &ssl_cert_file,
-                      const std::string &auth_domain,
-                      const std::string &auth_file)
-{
-    NodeViewerServer *res = new NodeViewerServer();
-    // call general serve routine
-    res->serve(data,
-               block,
-               false,
-               addy,
-               ssl_cert_file,
-               auth_domain,
-               auth_file);
-
-    return res;
-}
-
-//---------------------------------------------------------------------------//
-WebServer *
-NodeViewerServer::run(Node *data,
-                      bool block,
-                      index_t port,
-                      const std::string &ssl_cert_file,
-                      const std::string &auth_domain,
-                      const std::string &auth_file)
-{
-    
-    std::ostringstream oss;
-    oss << "127.0.0.1:" << port;
-
-    // call general serve routine
-    return run(data,
-               block,
-               oss.str(),
-               ssl_cert_file,
-               auth_domain,
-               auth_file);
+    NodeViewerRequestHandler *req_handler=(NodeViewerRequestHandler*)handler();
+    req_handler->set_node(data);
 }
 
 

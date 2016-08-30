@@ -83,7 +83,7 @@ namespace web
 class CONDUIT_RELAY_API NodeViewerRequestHandler : public WebRequestHandler
 {
 public:
-                   NodeViewerRequestHandler(Node *node);
+                   NodeViewerRequestHandler();
                   ~NodeViewerRequestHandler();
     
     virtual bool   handle_post(WebServer *server,
@@ -91,6 +91,8 @@ public:
 
     virtual bool   handle_get(WebServer *server,
                               struct mg_connection *conn);
+                              
+    void           set_node(Node *node);
 
 private:
     // catch all, used for any post or get
@@ -117,39 +119,7 @@ public:
              NodeViewerServer();
     virtual ~NodeViewerServer();
 
-    void serve(Node *data,
-               bool block=false,
-               bool entangle=false,
-               const std::string &addy = std::string("127.0.0.1:8080"),
-               const std::string &ssl_cert_file = std::string(""),
-               const std::string &auth_domain   = std::string(""),
-               const std::string &auth_file     = std::string(""));
-
-    virtual void shutdown();
-
-
-    static WebServer  *run(Node *data,
-                             bool block=false,
-                             const std::string &addy = std::string("127.0.0.1:8080"),
-                             const std::string &ssl_cert_file = std::string(""),
-                             const std::string &auth_domain   = std::string(""),
-                             const std::string &auth_file     = std::string(""));
-
-    static WebServer  *run(Node *data,
-                           bool block=false,
-                           index_t port = 8080,
-                           const std::string &ssl_cert_file = std::string(""),
-                           const std::string &auth_domain   = std::string(""),
-                           const std::string &auth_file     = std::string(""));
-
-
-private:
-    void              entangle_register();
-
-    
-    WebRequestHandler *m_handler;
-    std::string        m_entangle_obase;
-    
+    void    set_node(Node *node);
 
 };
 
