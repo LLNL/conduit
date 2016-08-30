@@ -100,7 +100,7 @@ script:
   - cmake  ${CMAKE_OPTS} ../src
   # build, test, and install
   - make
-  - make test
+  - env CTEST_OUTPUT_ON_FAILURE=1 make test
   - make install
   # test our examples that demo using an installed conduit
   # using with cmake example
