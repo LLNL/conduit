@@ -782,7 +782,7 @@ WebServer::entangle_register()
         m_entangle_obase = "_entangle_conduit_relay_webserver_output";
     }
     
-    cmd << "--obase " << m_entangle_obase;
+    cmd << " --obase " << m_entangle_obase;
 
     CONDUIT_INFO(cmd.str());
 
