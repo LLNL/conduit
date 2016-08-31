@@ -69,6 +69,14 @@ if(ENABLE_TESTS)
     include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 endif()
 
+
+if(UNIX AND NOT APPLE)
+    # on some linux platforms we need to explicitly link threading 
+    # options.
+    find_package( Threads REQUIRED )
+endif()
+
+
 ################################
 # Setup includes for RapidJSON
 ################################
