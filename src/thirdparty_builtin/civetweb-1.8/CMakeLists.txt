@@ -81,6 +81,7 @@ if(UNIX AND NOT APPLE)
     # we need these on linux, we may need similar libs on windows 
     # (OSX appears ok without them)
     target_link_libraries(conduit_civetweb dl rt)
+    target_link_libraries(conduit_civetweb ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 
