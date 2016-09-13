@@ -186,6 +186,37 @@ contains
     end subroutine t_node_obj_set_float64
 
     !--------------------------------------------------------------------------
+    subroutine t_node_obj_set_and_fetch_path_float64_ptr
+        type(node) n
+        real(8), dimension(5) :: data
+        real(8) res
+        integer i
+        real(8), pointer :: f_arr(:)
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_obj_set_and_fetch_path_float64_ptr")
+        !----------------------------------------------------------------------
+        
+        ! fill our array
+        do i = 1,5
+            data(i) = i
+        enddo
+        ! create node and set data in the tree
+        n = conduit_node_obj_create()
+        call n%set_path_float64_ptr("sub/path/test",data,5_8)
+
+        ! fetch pointer to the data from comparison 
+        call n%fetch_path_as_float64_ptr("sub/path/test",f_arr)
+        
+        ! check array value equiv
+        do i = 1,5
+            call assert_equals(f_arr(i),data(i))
+        enddo
+        ! cleanup
+        call conduit_node_obj_destroy(n)
+    end subroutine t_node_obj_set_and_fetch_path_float64_ptr
+
+    !--------------------------------------------------------------------------
     subroutine t_node_obj_set_int32_ptr
         type(node) obj
         integer(4), dimension(5) :: data
@@ -529,7 +560,6 @@ contains
         call conduit_node_obj_destroy(n)
         
     end subroutine t_node_obj_set_generic_fetch_ptr
-
 
 !------------------------------------------------------------------------------
 end module f_conduit_node
