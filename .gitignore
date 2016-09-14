@@ -1,14 +1,8 @@
-build-debug/
-build-release/
-build-debug-xcode/
-build-release-xcode/
-install-debug/
-install-release/
+build-*/
+install-*/
 .DS_Store
 src/examples/using-with-cmake/build
 src/examples/using-with-make/example
-temp.cpp
-temp.exe
 *.pyc
 .ipynb_checkpoints
 visitlog.py
