@@ -386,10 +386,12 @@ silo_write_field(DBfile *dbfile,
         }
         else
         {
-            CONDUIT_ERROR( "field " 
-                            << var_name 
-                            << "'s type not implemented, found " 
-                            << dtype.name());
+            // skip the field if we don't support its type
+            CONDUIT_INFO( "skipping field " 
+                           << var_name 
+                           << ", since its type is not implemented, found " 
+                           << dtype.name() );
+            continue;
         }
 
         int silo_error = 0;

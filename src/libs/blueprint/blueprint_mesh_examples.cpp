@@ -152,6 +152,72 @@ void braid_init_example_point_scalar_field(index_t npts_x,
 }
 
 //---------------------------------------------------------------------------//
+void braid_init_example_point_vector_field(index_t npts_x,
+                                           index_t npts_y,
+                                           index_t npts_z,
+                                           Node &res)
+{
+    index_t npts = npts_x * npts_y * npts_z;
+    
+    res["association"] = "point";
+    res["type"] = "vector";
+    res["values/dx"].set(DataType::float64(npts));
+    res["values/dy"].set(DataType::float64(npts));
+
+    float64 *dx_vals = res["values/dx"].value();
+    float64 *dy_vals = res["values/dy"].value();
+    float64 *dz_vals = NULL;
+    
+    if(npts_z > 1)
+    {
+        res["values/dz"].set(DataType::float64(npts));
+        dz_vals = res["values/dz"].value();
+    }
+
+    // this logic is from the explicit coord set setup function
+    // we are using the coords (distance from origin)
+    // to create an example vector field
+    
+    float dx = 20.0 / float64(npts_x-1);
+    float dy = 20.0 / float64(npts_y-1);
+
+    float dz = 0.0;
+
+    if(npts_z > 1)
+    {
+        dz = 20.0 / float64(npts_z-1);
+    }
+
+    index_t idx = 0;
+    for(index_t k = 0; k < npts_z ; k++)
+    {
+        float64 cz = -10.0 + k * dz;
+        
+        for(index_t j = 0; j < npts_y ; j++)
+        {
+            float64 cy =  -10.0 + j * dy;
+            
+            for(index_t i = 0; i < npts_x ; i++)
+            {
+                float64 cx =  -10.0 + i * dx;
+
+                dx_vals[idx] = cx;
+                dy_vals[idx] = cy;
+
+                if(npts_z > 1)
+                {
+                    dz_vals[idx] = cz;
+                }
+                
+                idx++;
+            }
+        
+        }
+    }
+}
+
+
+//---------------------------------------------------------------------------//
 void braid_init_example_element_scalar_field(index_t nele_x,
                                              index_t nele_y,
                                              index_t nele_z,
@@ -401,6 +467,12 @@ braid_uniform(index_t npts_x,
                                             nele_y,
                                             nele_z,
                                             fields["radial_ec"]);
+
+    braid_init_example_point_vector_field(npts_x,
+                                          npts_y,
+                                          npts_z,
+                                          fields["vec_pc"]);
+
 }
 
 
@@ -438,6 +510,12 @@ braid_rectilinear(index_t npts_x,
                                             nele_y,
                                             nele_z,
                                             fields["radial_ec"]);
+
+    braid_init_example_point_vector_field(npts_x,
+                                          npts_y,
+                                          npts_z,
+                                          fields["vec_pc"]);
+
 }
 
 //---------------------------------------------------------------------------//
@@ -479,6 +557,12 @@ braid_structured(index_t npts_x,
                                             nele_y, 
                                             nele_z,
                                             fields["radial_ec"]);
+
+    braid_init_example_point_vector_field(npts_x,
+                                          npts_y,
+                                          npts_z,
+                                          fields["vec_pc"]);
+
 }
 
 
@@ -511,7 +595,13 @@ braid_points_explicit(index_t npts_x,
                                             npts_y, 
                                             npts_z,
                                             fields["radial_ec"]);
- }
+
+    braid_init_example_point_vector_field(npts_x,
+                                          npts_y,
+                                          npts_z,
+                                          fields["vec_pc"]);
+
+}
 
 
 //---------------------------------------------------------------------------//
@@ -564,6 +654,11 @@ braid_quads(index_t npts_x,
                                             nele_y,
                                             0,
                                             fields["radial_ec"]);
+
+    braid_init_example_point_vector_field(npts_x,
+                                          npts_y,
+                                          1,
+                                          fields["vec_pc"]);
 }
 
 //---------------------------------------------------------------------------//
@@ -678,6 +773,11 @@ braid_quads_and_tris(index_t npts_x,
                                           npts_y,
                                           1,
                                           fields["braid_pc"]);
+
+    braid_init_example_point_vector_field(npts_x,
+                                          npts_y,
+                                          1,
+                                          fields["vec_pc"]);
 
     // braid_init_example_element_scalar_field(nele_x,
     //                                         nele_y,
@@ -803,6 +903,11 @@ braid_quads_and_tris_offsets(index_t npts_x,
                                           npts_y,
                                           1,
                                           fields["braid_pc"]);
+
+    braid_init_example_point_vector_field(npts_x,
+                                          npts_y,
+                                          1,
+                                          fields["vec_pc"]);
 }
 
 //---------------------------------------------------------------------------//
@@ -862,6 +967,12 @@ braid_tris(index_t npts_x,
                                             nele_quads_y,
                                             0,
                                             fields["radial_ec"],2);
+
+    braid_init_example_point_vector_field(npts_x,
+                                          npts_y,
+                                          1,
+                                          fields["vec_pc"]);
+
 }
 
 
@@ -932,6 +1043,11 @@ braid_hexs(index_t npts_x,
                                             nele_y,
                                             nele_z,
                                             fields["radial_ec"]);
+
+    braid_init_example_point_vector_field(npts_x,
+                                          npts_y,
+                                          npts_z,
+                                          fields["vec_pc"]);
 }
 
 //---------------------------------------------------------------------------//
@@ -1038,6 +1154,12 @@ braid_tets(index_t npts_x,
                                             nele_hexs_z,
                                             fields["radial_ec"],
                                             tets_per_hex);
+
+    braid_init_example_point_vector_field(npts_x,
+                                          npts_y,
+                                          npts_z,
+                                          fields["vec_pc"]);
+
 }
 
 //---------------------------------------------------------------------------//
@@ -1221,6 +1343,11 @@ braid_hexs_and_tets(index_t npts_x,
                                           npts_y,
                                           npts_z,
                                           fields["braid_pc"]);
+
+    braid_init_example_point_vector_field(npts_x,
+                                          npts_y,
+                                          npts_z,
+                                          fields["vec_pc"]);
 
 //    // Omit for now -- the function assumes a uniform element type
 //    braid_init_example_element_scalar_field(nele_hexs_x,
