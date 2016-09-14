@@ -910,6 +910,78 @@ braid_quads_and_tris_offsets(index_t npts_x,
                                           fields["vec_pc"]);
 }
 
+
+//---------------------------------------------------------------------------//
+void
+braid_lines_2d(index_t npts_x,
+               index_t npts_y,
+               Node &res)
+{
+    res.reset();
+    
+    // require npts_x > 0 && npts_y > 0
+
+    index_t nele_quads_x = npts_x-1;
+    index_t nele_quads_y = npts_y-1;
+    index_t nele_quads = nele_quads_x * nele_quads_y;
+        
+    braid_init_example_state(res);
+    braid_init_explicit_coordset(npts_x,
+                                 npts_y,
+                                 1,
+                                 res["coords"]);
+  
+    res["topology/type"] = "unstructured";
+    res["topology/elements/shape"] = "lines";
+    res["topology/elements/connectivity"].set(DataType::int32(nele_quads*4*2));
+    int32 *conn = res["topology/elements/connectivity"].value();
+
+    index_t idx = 0;
+    for(index_t j = 0; j < nele_quads_y ; j++)
+    {
+        index_t yoff = j * (nele_quads_x+1);
+        
+        for(index_t i = 0; i < nele_quads_x; i++)
+        {
+            // 4 lines per quad.
+
+            // Note: this pattern allows for simple per-quad construction,
+            // but it creates spatially overlapping lines
+
+            conn[idx++] = yoff + i;
+            conn[idx++] = yoff + i + (nele_quads_x+1);
+
+            conn[idx++] = yoff + i + (nele_quads_x+1);
+            conn[idx++] = yoff + i + 1 + (nele_quads_x+1);
+
+            conn[idx++] = yoff + i;
+            conn[idx++] = yoff + i + 1;
+
+            conn[idx++] = yoff + i + 1;
+            conn[idx++] = yoff + i + 1 + (nele_quads_x+1);
+        }
+    }
+
+
+    Node &fields = res["fields"];
+
+    braid_init_example_point_scalar_field(npts_x,
+                                          npts_y,
+                                          1,
+                                          fields["braid_pc"]);
+
+    braid_init_example_element_scalar_field(nele_quads_x,
+                                            nele_quads_y,
+                                            0,
+                                            fields["radial_ec"],4);
+
+    braid_init_example_point_vector_field(npts_x,
+                                          npts_y,
+                                          1,
+                                          fields["vec_pc"]);
+
+}
+
 //---------------------------------------------------------------------------//
 void
 braid_tris(index_t npts_x,
@@ -948,7 +1020,7 @@ braid_tris(index_t npts_x,
             conn[idx+2] = yoff + i + 1 + (nele_quads_x+1);
 
             conn[idx+3] = yoff + i;
-            conn[idx+4] = yoff + i +1;
+            conn[idx+4] = yoff + i + 1;
             conn[idx+5] = yoff + i + 1 + (nele_quads_x+1);
             
             idx+=6;
@@ -1161,6 +1233,116 @@ braid_tets(index_t npts_x,
                                           fields["vec_pc"]);
 
 }
+
+
+//---------------------------------------------------------------------------//
+void
+braid_lines_3d(index_t npts_x,
+               index_t npts_y,
+               index_t npts_z,
+               Node &res)
+{
+    res.reset();
+    
+    index_t nele_hexs_x = npts_x - 1;
+    index_t nele_hexs_y = npts_y - 1;
+    index_t nele_hexs_z = npts_z - 1;
+    index_t nele_hexs = nele_hexs_x * nele_hexs_y * nele_hexs_z;
+    
+
+    braid_init_example_state(res);
+    braid_init_explicit_coordset(npts_x,
+                                 npts_y,
+                                 npts_z,
+                                 res["coords"]);
+
+    res["topology/type"] = "unstructured";
+    res["topology/elements/shape"] = "lines";
+    res["topology/elements/connectivity"].set(DataType::int32(nele_hexs * 12 * 2));
+    int32 *conn = res["topology/elements/connectivity"].value();
+
+    index_t idx = 0;
+    for(index_t k = 0; k < nele_hexs_z ; k++)
+    {
+        index_t zoff = k * (nele_hexs_x+1)*(nele_hexs_y+1);
+        index_t zoff_n = (k+1) * (nele_hexs_x+1)*(nele_hexs_y+1);
+        
+        for(index_t j = 0; j < nele_hexs_y ; j++)
+        {
+            index_t yoff = j * (nele_hexs_x+1);
+            index_t yoff_n = (j+1) * (nele_hexs_x+1);
+
+
+            for(index_t i = 0; i < nele_hexs_z; i++)
+            {
+                // 12 lines per hex 
+                // Note: this pattern allows for simple per-hex construction,
+                // but it creates spatially overlapping lines
+
+                // front face
+                conn[idx++] = zoff + yoff + i;
+                conn[idx++] = zoff + yoff + i +1;
+
+                conn[idx++] = zoff + yoff + i + 1;
+                conn[idx++] = zoff + yoff_n + i + 1;
+                
+                conn[idx++] = zoff + yoff_n + i + 1;
+                conn[idx++] = zoff + yoff_n + i;
+                
+                conn[idx++] = zoff + yoff_n + i;
+                conn[idx++] = zoff + yoff + i;
+
+                // back face
+                conn[idx++] = zoff_n + yoff + i;
+                conn[idx++] = zoff_n + yoff + i +1;
+
+                conn[idx++] = zoff_n + yoff + i + 1;
+                conn[idx++] = zoff_n + yoff_n + i + 1;
+                
+                conn[idx++] = zoff_n + yoff_n + i + 1;
+                conn[idx++] = zoff_n + yoff_n + i;
+                
+                conn[idx++] = zoff_n + yoff_n + i;
+                conn[idx++] = zoff_n + yoff + i;
+
+                // sides 
+                conn[idx++] = zoff   + yoff + i;
+                conn[idx++] = zoff_n + yoff + i;
+
+                conn[idx++] = zoff   + yoff + i + 1;
+                conn[idx++] = zoff_n + yoff + i + 1;
+                
+                conn[idx++] = zoff   + yoff_n + i + 1;
+                conn[idx++] = zoff_n + yoff_n + i + 1;
+                
+                conn[idx++] = zoff   + yoff_n + i;
+                conn[idx++] = zoff_n + yoff_n + i;
+
+            }
+        }
+    }
+
+    Node &fields = res["fields"];
+
+    braid_init_example_point_scalar_field(npts_x,
+                                          npts_y,
+                                          npts_z,
+                                          fields["braid_pc"]);
+
+    braid_init_example_element_scalar_field(nele_hexs_x,
+                                            nele_hexs_y,
+                                            nele_hexs_z,
+                                            fields["radial_ec"],
+                                            12);
+
+    braid_init_example_point_vector_field(npts_x,
+                                          npts_y,
+                                          npts_z,
+                                          fields["vec_pc"]);
+
+}
+
+
 
 //---------------------------------------------------------------------------//
 void
@@ -1380,6 +1562,13 @@ braid(const std::string &mesh_type,
     {
         braid_structured(npts_x,npts_y,npts_z,res);
     }
+    else if(mesh_type == "lines")
+    {
+        if( npts_z <= 1 )
+            braid_lines_2d(npts_x,npts_y,res);
+        else
+            braid_lines_3d(npts_x,npts_y,npts_x,res);
+    }
     else if(mesh_type == "tris")
     {
         braid_tris(npts_x,npts_y,res);
@@ -1408,7 +1597,7 @@ braid(const std::string &mesh_type,
     {
         braid_hexs_and_tets(npts_x,npts_y,npts_z,res);
     }
-    else if(mesh_type == "points_explicit")
+    else if(mesh_type == "points")
     {
         braid_points_explicit(npts_x,npts_y,npts_z,res);
     }

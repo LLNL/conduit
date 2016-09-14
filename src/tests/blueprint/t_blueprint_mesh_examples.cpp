@@ -158,6 +158,37 @@ create_blueprint_index_for_2d_examples(Node &index_root)
             struct_idx["fields/vec_pc/topology"]    = "mesh";
             struct_idx["fields/vec_pc/path"]        = "struct/fields/vec_pc";
 
+    // lines (unstructured)
+        Node &lines_idx = index_root["lines"];
+        // state
+        lines_idx["state/cycle"] = 42;
+        lines_idx["state/time"]  = 3.1415;
+        lines_idx["state/number_of_domains"]  = 1;
+        // coords
+        lines_idx["coordsets/coords/type"]         = "explicit";
+        lines_idx["coordsets/coords/coord_system"] = "xy";
+        lines_idx["coordsets/coords/path"]         = "lines/coords";
+        // topology
+        lines_idx["topologies/mesh/type"]     = "unstructured";
+        lines_idx["topologies/mesh/coordset"] = "coords";
+        lines_idx["topologies/mesh/path"]     = "lines/topology";
+        // fields
+            // pc
+            lines_idx["fields/braid_pc/number_of_components"] = 1;
+            lines_idx["fields/braid_pc/association"] = "point";
+            lines_idx["fields/braid_pc/topology"]    = "mesh";
+            lines_idx["fields/braid_pc/path"]   = "lines/fields/braid_pc";
+            // ec
+            lines_idx["fields/radial_ec/number_of_components"] = 1;
+            lines_idx["fields/radial_ec/association"] = "element";
+            lines_idx["fields/radial_ec/topology"]    = "mesh";
+            lines_idx["fields/radial_ec/path"]        = "lines/fields/radial_ec";
+            // vec pc
+            lines_idx["fields/vec_pc/number_of_components"] = 2;
+            lines_idx["fields/vec_pc/association"] = "point";
+            lines_idx["fields/vec_pc/topology"]    = "mesh";
+            lines_idx["fields/vec_pc/path"]        = "lines/fields/vec_pc";
+
     
     // tris (unstructured)
     Node &tris_idx = index_root["tris"];
@@ -324,7 +355,38 @@ create_blueprint_index_for_3d_examples(Node &index_root)
             struct_idx["fields/vec_pc/topology"]    = "mesh";
             struct_idx["fields/vec_pc/path"]        = "struct/fields/vec_pc";
 
-    
+
+    // lines (unstructured)
+        Node &lines_idx = index_root["lines"];
+        // state
+        lines_idx["state/cycle"] = 42;
+        lines_idx["state/time"]  = 3.1415;
+        lines_idx["state/number_of_domains"]  = 1;
+        // coords
+        lines_idx["coordsets/coords/type"]         = "explicit";
+        lines_idx["coordsets/coords/coord_system"] = "xyz";
+        lines_idx["coordsets/coords/path"]         = "lines/coords";
+        // topology
+        lines_idx["topologies/mesh/type"]     = "unstructured";
+        lines_idx["topologies/mesh/coordset"] = "coords";
+        lines_idx["topologies/mesh/path"]     = "lines/topology";
+        // fields
+            // pc
+            lines_idx["fields/braid_pc/number_of_components"] = 1;
+            lines_idx["fields/braid_pc/association"] = "point";
+            lines_idx["fields/braid_pc/topology"]    = "mesh";
+            lines_idx["fields/braid_pc/path"]   = "lines/fields/braid_pc";
+            // ec
+            lines_idx["fields/radial_ec/number_of_components"] = 1;
+            lines_idx["fields/radial_ec/association"] = "element";
+            lines_idx["fields/radial_ec/topology"]    = "mesh";
+            lines_idx["fields/radial_ec/path"]        = "lines/fields/radial_ec";
+            // vec pc
+            lines_idx["fields/vec_pc/number_of_components"] = 3;
+            lines_idx["fields/vec_pc/association"] = "point";
+            lines_idx["fields/vec_pc/topology"]    = "mesh";
+            lines_idx["fields/vec_pc/path"]        = "lines/fields/vec_pc";
+
     // tets (unstructured)
     Node &tets_idx = index_root["tets"];
     // state
@@ -424,6 +486,12 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
                                      npts_y,
                                      npts_z,
                                      dsets["struct"]);
+
+    blueprint::mesh::examples::braid("lines",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["lines"]);
                                      
     blueprint::mesh::examples::braid("tris",
                                      npts_x,
@@ -449,11 +517,11 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
                                      npts_z,
                                      dsets["quads_and_tris_offsets"]);
 
-    blueprint::mesh::examples::braid("points_explicit",
+    blueprint::mesh::examples::braid("points",
                                      npts_x,
                                      npts_y,
                                      npts_z,
-                                     dsets["points_explicit"]);
+                                     dsets["points"]);
 
     Node expanded;
     
@@ -558,11 +626,17 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
                                      npts_z,
                                      dsets["struct"]);
 
-    blueprint::mesh::examples::braid("points_explicit",
+    blueprint::mesh::examples::braid("points",
                                      npts_x,
                                      npts_y,
                                      npts_z,
-                                     dsets["points_explicit"]);
+                                     dsets["points"]);
+
+    blueprint::mesh::examples::braid("lines",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["lines"]);
 
     blueprint::mesh::examples::braid("tets",
                                      npts_x,
