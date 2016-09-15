@@ -660,6 +660,16 @@ silo_write_ucd_zonelist(DBfile *dbfile,
             shapecnt[i]    = num_elems;
             total_num_elems += num_elems;
         }
+        else  if( topo_shape == "lines")
+        {
+            // TODO: check for explicit # of elems
+            int num_elems  = n_mesh_conn.dtype().number_of_elements() / 2;
+            shapetype[i]   = DB_ZONETYPE_BEAM;
+            shapesize[i]   = 2;
+            shapecnt[i]    = num_elems;
+            total_num_elems += num_elems;
+        }
+        
     }
     
     // Final Compaction
