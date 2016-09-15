@@ -163,17 +163,17 @@ void braid_init_example_point_vector_field(index_t npts_x,
     res["association"] = "point";
     res["type"] = "vector";
     res["topology"] = "mesh";
-    res["values/dx"].set(DataType::float64(npts));
-    res["values/dy"].set(DataType::float64(npts));
+    res["values/u"].set(DataType::float64(npts));
+    res["values/v"].set(DataType::float64(npts));
 
-    float64 *dx_vals = res["values/dx"].value();
-    float64 *dy_vals = res["values/dy"].value();
-    float64 *dz_vals = NULL;
+    float64 *u_vals = res["values/u"].value();
+    float64 *v_vals = res["values/v"].value();
+    float64 *w_vals = NULL;
     
     if(npts_z > 1)
     {
-        res["values/dz"].set(DataType::float64(npts));
-        dz_vals = res["values/dz"].value();
+        res["values/w"].set(DataType::float64(npts));
+        w_vals = res["values/w"].value();
     }
 
     // this logic is from the explicit coord set setup function
@@ -203,12 +203,12 @@ void braid_init_example_point_vector_field(index_t npts_x,
             {
                 float64 cx =  -10.0 + i * dx;
 
-                dx_vals[idx] = cx;
-                dy_vals[idx] = cy;
+                u_vals[idx] = cx;
+                v_vals[idx] = cy;
 
                 if(npts_z > 1)
                 {
-                    dz_vals[idx] = cz;
+                    w_vals[idx] = cz;
                 }
                 
                 idx++;
@@ -474,7 +474,7 @@ braid_uniform(index_t npts_x,
     braid_init_example_point_vector_field(npts_x,
                                           npts_y,
                                           npts_z,
-                                          fields["vec"]);
+                                          fields["vel"]);
 
 }
 
@@ -517,7 +517,7 @@ braid_rectilinear(index_t npts_x,
     braid_init_example_point_vector_field(npts_x,
                                           npts_y,
                                           npts_z,
-                                          fields["vec"]);
+                                          fields["vel"]);
 
 }
 
@@ -564,7 +564,7 @@ braid_structured(index_t npts_x,
     braid_init_example_point_vector_field(npts_x,
                                           npts_y,
                                           npts_z,
-                                          fields["vec"]);
+                                          fields["vel"]);
 
 }
 
@@ -602,7 +602,7 @@ braid_points_explicit(index_t npts_x,
     braid_init_example_point_vector_field(npts_x,
                                           npts_y,
                                           npts_z,
-                                          fields["vec"]);
+                                          fields["vel"]);
 
 }
 
@@ -661,7 +661,7 @@ braid_quads(index_t npts_x,
     braid_init_example_point_vector_field(npts_x,
                                           npts_y,
                                           1,
-                                          fields["vec"]);
+                                          fields["vel"]);
 }
 
 //---------------------------------------------------------------------------//
@@ -780,7 +780,7 @@ braid_quads_and_tris(index_t npts_x,
     braid_init_example_point_vector_field(npts_x,
                                           npts_y,
                                           1,
-                                          fields["vec"]);
+                                          fields["vel"]);
 
     // braid_init_example_element_scalar_field(nele_x,
     //                                         nele_y,
@@ -910,7 +910,7 @@ braid_quads_and_tris_offsets(index_t npts_x,
     braid_init_example_point_vector_field(npts_x,
                                           npts_y,
                                           1,
-                                          fields["vec"]);
+                                          fields["vel"]);
 }
 
 
@@ -981,7 +981,7 @@ braid_lines_2d(index_t npts_x,
     braid_init_example_point_vector_field(npts_x,
                                           npts_y,
                                           1,
-                                          fields["vec"]);
+                                          fields["vel"]);
 
 }
 
@@ -1046,7 +1046,7 @@ braid_tris(index_t npts_x,
     braid_init_example_point_vector_field(npts_x,
                                           npts_y,
                                           1,
-                                          fields["vec"]);
+                                          fields["vel"]);
 
 }
 
@@ -1122,7 +1122,7 @@ braid_hexs(index_t npts_x,
     braid_init_example_point_vector_field(npts_x,
                                           npts_y,
                                           npts_z,
-                                          fields["vec"]);
+                                          fields["vel"]);
 }
 
 //---------------------------------------------------------------------------//
@@ -1233,7 +1233,7 @@ braid_tets(index_t npts_x,
     braid_init_example_point_vector_field(npts_x,
                                           npts_y,
                                           npts_z,
-                                          fields["vec"]);
+                                          fields["vel"]);
 
 }
 
@@ -1341,7 +1341,7 @@ braid_lines_3d(index_t npts_x,
     braid_init_example_point_vector_field(npts_x,
                                           npts_y,
                                           npts_z,
-                                          fields["vec"]);
+                                          fields["vel"]);
 
 }
 
@@ -1532,7 +1532,7 @@ braid_hexs_and_tets(index_t npts_x,
     braid_init_example_point_vector_field(npts_x,
                                           npts_y,
                                           npts_z,
-                                          fields["vec"]);
+                                          fields["vel"]);
 
 //    // Omit for now -- the function assumes a uniform element type
 //    braid_init_example_element_scalar_field(nele_hexs_x,
