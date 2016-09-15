@@ -921,12 +921,11 @@ contains
         type(C_PTR), value, intent(IN) :: cnode
         character(*), intent(IN) :: path
         integer(4), pointer :: f_out(:)
-        integer n
+        type(C_PTR) :: sub_node
         type(C_PTR) :: int32_c_ptr
         !---
-        n = conduit_node_number_of_elements(cnode)
-        int32_c_ptr = c_conduit_node_fetch_path_as_int32_ptr(cnode,trim(path) // C_NULL_CHAR)
-        call c_f_pointer(int32_c_ptr, f_out, (/n/))
+        sub_node = conduit_node_fetch(cnode,trim(path) // C_NULL_CHAR)
+        call conduit_node_as_int32_ptr(sub_node,f_out)
     end subroutine conduit_node_fetch_path_as_int32_ptr
 
     !--------------------------------------------------------------------------
@@ -999,12 +998,11 @@ contains
         type(C_PTR), value, intent(IN) :: cnode
         character(*), intent(IN) :: path
         integer(8), pointer :: f_out(:)
-        integer n
+        type(C_PTR) :: sub_node
         type(C_PTR) :: int64_c_ptr
         !---
-        n = conduit_node_number_of_elements(cnode)
-        int64_c_ptr = c_conduit_node_fetch_path_as_int64_ptr(cnode,trim(path) // C_NULL_CHAR)
-        call c_f_pointer(int64_c_ptr, f_out, (/n/))
+        sub_node = conduit_node_fetch(cnode,trim(path) // C_NULL_CHAR)
+        call conduit_node_as_int64_ptr(sub_node,f_out)
     end subroutine conduit_node_fetch_path_as_int64_ptr
 
 
@@ -1078,12 +1076,11 @@ contains
         type(C_PTR), value, intent(IN) :: cnode
         character(*), intent(IN) :: path
         real(4), pointer :: f_out(:)
-        integer n
+        type(C_PTR) :: sub_node
         type(C_PTR) :: float32_c_ptr
         !---
-        n = conduit_node_number_of_elements(cnode)
-        float32_c_ptr = c_conduit_node_fetch_path_as_float32_ptr(cnode,trim(path) // C_NULL_CHAR)
-        call c_f_pointer(float32_c_ptr, f_out, (/n/))
+        sub_node = conduit_node_fetch(cnode,trim(path) // C_NULL_CHAR)
+        call conduit_node_as_float32_ptr(sub_node,f_out)
     end subroutine conduit_node_fetch_path_as_float32_ptr
 
 
@@ -1158,12 +1155,11 @@ contains
         type(C_PTR), value, intent(IN) :: cnode
         character(*), intent(IN) :: path
         real(8), pointer :: f_out(:)
-        integer n
+        type(C_PTR) :: sub_node
         type(C_PTR) :: float64_c_ptr
         !---
-        n = conduit_node_number_of_elements(cnode)
-        float64_c_ptr = c_conduit_node_fetch_path_as_float64_ptr(cnode,trim(path) // C_NULL_CHAR)
-        call c_f_pointer(float64_c_ptr, f_out, (/n/))
+        sub_node = conduit_node_fetch(cnode,trim(path) // C_NULL_CHAR)
+        call conduit_node_as_float64_ptr(sub_node,f_out)
     end subroutine conduit_node_fetch_path_as_float64_ptr
 
 
@@ -1211,12 +1207,11 @@ contains
         type(C_PTR), value, intent(IN) :: cnode
         character(*), intent(IN) :: path
         character,pointer :: f_out(:)
-        integer n
+        type(C_PTR) :: sub_node
         type(C_PTR) :: str_c_ptr
         !---
-        n = conduit_node_number_of_elements(cnode)
-        str_c_ptr = c_conduit_node_fetch_path_as_char8_str(cnode,trim(path) // C_NULL_CHAR)
-        call c_f_pointer(str_c_ptr, f_out, (/n/))
+        sub_node = conduit_node_fetch(cnode,trim(path) // C_NULL_CHAR)
+        call conduit_node_as_char8_str(sub_node,f_out)
     end subroutine conduit_node_fetch_path_as_char8_str
 
 !------------------------------------------------------------------------------

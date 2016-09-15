@@ -208,6 +208,9 @@ contains
         ! fetch pointer to the data from comparison 
         call n%fetch_path_as_float64_ptr("sub/path/test",f_arr)
         
+        ! check size of fetched array
+        call assert_equals(size(data),size(f_arr));
+        
         ! check array value equiv
         do i = 1,5
             call assert_equals(f_arr(i),data(i))
@@ -283,7 +286,10 @@ contains
         call assert_equals(res,42)
         ! int32 *res_ptr = n.as_int32_ptr()
         call obj%as_int32_ptr(f_arr)
-        
+
+        ! check size of fetched array
+        call assert_equals(size(data),size(f_arr));
+
         call assert_equals(f_arr(1),42)
         ! check array value equiv
         do i = 1,5
@@ -326,6 +332,9 @@ contains
         ! int32 *res_ptr = n.as_int32_ptr()
         call obj%as_int32_ptr(f_arr)
         
+        ! check size of fetched array
+        call assert_equals(size(data),size(f_arr));
+
         ! check array value equiv
         do i = 1,5
             call assert_equals(f_arr(i),data(i))

@@ -156,7 +156,8 @@ contains
         call assert_equals(res,42)
         ! int32 *res_ptr = n.as_int32_ptr()
         call conduit_node_as_int32_ptr(cnode,f_arr)
-        
+        ! check size of fetched array
+        call assert_equals(size(data),size(f_arr));
         call assert_equals(f_arr(1),42)
         
         ! check array value equiv
@@ -225,7 +226,8 @@ contains
         call assert_equals(nele,5)
         ! int32 *res_ptr = n.as_int32_ptr()
         call conduit_node_as_int32_ptr(cnode,f_arr)
-        
+        ! check size of fetched array
+        call assert_equals(size(data),size(f_arr));
         ! check array value equiv
         do i = 1,5
             call assert_equals(f_arr(i),data(i))
@@ -326,6 +328,9 @@ contains
         call conduit_node_print_detailed(cnode)
         ! int32 *res_ptr = n.as_int32_ptr()
         call conduit_node_fetch_path_as_int32_ptr(cnode,"my_sub",f_arr)
+        ! check size of fetched array
+        call assert_equals(size(data),size(f_arr));
+
         ! check array value equiv
         do i = 1,5
             call assert_equals(f_arr(i),data(i))
@@ -370,6 +375,8 @@ contains
         call assert_equals(res,42)
         ! int32 *res_ptr = n.as_int32_ptr()
         call conduit_node_fetch_path_as_int32_ptr(cnode,"my_sub",f_arr)
+        ! check size of fetched array
+        call assert_equals(size(data),size(f_arr));
         
         call assert_equals(f_arr(1),42)
         
@@ -483,6 +490,7 @@ contains
         ! int64 *res_ptr = n.as_int64_ptr()
         call conduit_node_as_int64_ptr(cnode,f_arr)
     
+        call assert_equals(size(data),size(f_arr));
         !call assert_equals(f_arr(1),42_8)
     
         ! check array value equiv
@@ -555,7 +563,9 @@ contains
         call assert_equals(nele,5)
         ! int64 *res_ptr = n.as_int64_ptr()
         call conduit_node_as_int64_ptr(cnode,f_arr)
-    
+        ! check size of fetched array
+        call assert_equals(size(data),size(f_arr));
+
         ! check array value equiv
         do i = 1,5
             !=======
@@ -660,6 +670,9 @@ contains
         call conduit_node_print_detailed(cnode)
         ! int64 *res_ptr = n.as_int64_ptr()
         call conduit_node_fetch_path_as_int64_ptr(cnode,"my_sub",f_arr)
+        
+        call assert_equals(size(data),size(f_arr));
+        
         ! check array value equiv
         do i = 1,5
             !=======
@@ -712,6 +725,8 @@ contains
         print *, res, "vs", 42
         ! int64 *res_ptr = n.as_int64_ptr()
         call conduit_node_fetch_path_as_int64_ptr(cnode,"my_sub",f_arr)
+        ! check size of fetched array
+        call assert_equals(size(data),size(f_arr));
     
         !call assert_equals(f_arr(1),42_8)
     
