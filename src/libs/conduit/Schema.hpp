@@ -176,6 +176,9 @@ public:
 
 
 
+    const Schema   *parent() const
+                       { return m_parent;}
+
     Schema         *parent()
                         { return m_parent;}
 
@@ -230,6 +233,7 @@ public:
     const Schema     &child(index_t idx) const;
     /// access to child schema pointer by index
     Schema           *child_ptr(index_t idx);
+    const Schema     *child_ptr(index_t idx) const;
 
     /// remove a child by index
     void             remove(index_t idx);
@@ -265,7 +269,9 @@ public:
     Schema           &operator[](const std::string &path);
     /// the const variant uses the "fetch_child" method
     const Schema     &operator[](const std::string &path) const;
-
+    
+    std::string       path() const;
+    
     bool              has_path(const std::string &path) const;
     void              paths(std::vector<std::string> &paths) const;
     const std::vector<std::string> &paths() const;

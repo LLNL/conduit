@@ -8165,7 +8165,15 @@ Node::number_of_children() const
 }
 
 //---------------------------------------------------------------------------//
-bool           
+std::string 
+Node::path() const
+{
+    return m_schema->path();
+}
+
+
+//---------------------------------------------------------------------------//
+bool
 Node::has_path(const std::string &path) const
 {
     return m_schema->has_path(path);
