@@ -797,6 +797,28 @@ TEST(conduit_node, check_path)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, check_path_in_bad_access)
+{   
+    // test if the path string appears in the exception thrown
+    // for a bad dtype access
+    
+    Node n;
+    
+    n["a/b/c/d/e/f"] = 10;
+    
+    try
+    {
+        std::string s = n["a/b/c/d/e/f"].as_string();
+    }
+    catch(Error e)
+    {
+        EXPECT_TRUE(e.message().find("a/b/c/d/e/f") != std::string::npos);
+    }
+}
+
+
+
 
 
 
