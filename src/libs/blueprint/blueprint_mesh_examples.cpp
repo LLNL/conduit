@@ -577,6 +577,7 @@ braid_points_explicit(index_t npts_x,
                       Node &res)
 {
     res.reset();
+    int npts_total = npts_x * npts_y * npts_z;
     
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
@@ -585,8 +586,16 @@ braid_points_explicit(index_t npts_x,
                                  res["coords"]);
     
     res["topology/type"] = "points";
-    res["topology/coordset"] = "coords"; 
-    
+    res["topology/coordset"] = "coords";
+    res["topology/elements/shape"] = "points";
+    res["topology/elements/connectivity"].set(DataType::int32(npts_total));
+    int32 *conn = res["topology/elements/connectivity"].value();
+
+    for(index_t i = 0; i < npts_total ; i++)
+    {
+        conn[i] =i;
+    }
+
     Node &fields = res["fields"];
     
     braid_init_example_point_scalar_field(npts_x,

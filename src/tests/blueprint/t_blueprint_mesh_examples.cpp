@@ -253,7 +253,36 @@ create_blueprint_index_for_2d_examples(Node &index_root)
         quads_idx["fields/vel/topology"]    = "mesh";
         quads_idx["fields/vel/path"]        = "quads/fields/vel";
 
-    
+    // points (unstructured)
+    Node &pts_idx = index_root["points"];
+    // state
+    pts_idx["state/cycle"] = 42;
+    pts_idx["state/time"]  = 3.1415;
+    pts_idx["state/number_of_domains"]  = 1;
+    // coords
+    pts_idx["coordsets/coords/type"]         = "explicit";
+    pts_idx["coordsets/coords/coord_system"] = "xyz";
+    pts_idx["coordsets/coords/path"]         = "points/coords";
+    // topology
+    pts_idx["topologies/mesh/type"]     = "unstructured";
+    pts_idx["topologies/mesh/coordset"] = "coords";
+    pts_idx["topologies/mesh/path"]     = "points/topology";
+    // fields
+        // pc
+        pts_idx["fields/braid/number_of_components"] = 1;
+        pts_idx["fields/braid/association"] = "point";
+        pts_idx["fields/braid/topology"]    = "mesh";
+        pts_idx["fields/braid/path"]        = "points/fields/braid";
+        // ec
+        pts_idx["fields/radial/number_of_components"] = 1;
+        pts_idx["fields/radial/association"] = "element";
+        pts_idx["fields/radial/topology"]    = "mesh";
+        pts_idx["fields/radial/path"]        = "points/fields/radial";
+        // vel pc
+        pts_idx["fields/vel/number_of_components"] = 3;
+        pts_idx["fields/vel/association"] = "point";
+        pts_idx["fields/vel/topology"]    = "mesh";
+        pts_idx["fields/vel/path"]        = "points/fields/vel";
 }
 
 //-----------------------------------------------------------------------------
@@ -450,7 +479,38 @@ create_blueprint_index_for_3d_examples(Node &index_root)
         hexs_idx["fields/vel/topology"]    = "mesh";
         hexs_idx["fields/vel/path"]        = "hexs/fields/vel";
 
-    
+
+    // points (unstructured)
+    Node &pts_idx = index_root["points"];
+    // state
+    pts_idx["state/cycle"] = 42;
+    pts_idx["state/time"]  = 3.1415;
+    pts_idx["state/number_of_domains"]  = 1;
+    // coords
+    pts_idx["coordsets/coords/type"]         = "explicit";
+    pts_idx["coordsets/coords/coord_system"] = "xyz";
+    pts_idx["coordsets/coords/path"]         = "points/coords";
+    // topology
+    pts_idx["topologies/mesh/type"]     = "unstructured";
+    pts_idx["topologies/mesh/coordset"] = "coords";
+    pts_idx["topologies/mesh/path"]     = "points/topology";
+    // fields
+        // pc
+        pts_idx["fields/braid/number_of_components"] = 1;
+        pts_idx["fields/braid/association"] = "point";
+        pts_idx["fields/braid/topology"]    = "mesh";
+        pts_idx["fields/braid/path"]        = "points/fields/braid";
+        // ec
+        pts_idx["fields/radial/number_of_components"] = 1;
+        pts_idx["fields/radial/association"] = "element";
+        pts_idx["fields/radial/topology"]    = "mesh";
+        pts_idx["fields/radial/path"]        = "points/fields/radial";
+        // vel pc
+        pts_idx["fields/vel/number_of_components"] = 3;
+        pts_idx["fields/vel/association"] = "point";
+        pts_idx["fields/vel/topology"]    = "mesh";
+        pts_idx["fields/vel/path"]        = "points/fields/vel";
+
 }
 
 
