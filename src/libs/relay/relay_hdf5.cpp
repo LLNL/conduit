@@ -60,6 +60,14 @@
 //-----------------------------------------------------------------------------
 #include <hdf5.h>
 
+//-----------------------------------------------------------------------------
+/// macro used to check if an HDF5 object id is valid
+//-----------------------------------------------------------------------------
+#define CONDUIT_HDF5_VALID_ID( hdf5_id )   hdf5_id  >= 0
+//-----------------------------------------------------------------------------
+/// macro used to check if an HDF5 return status is ok
+//-----------------------------------------------------------------------------
+#define CONDUIT_HDF5_STATUS_OK(hdf5_id )   hdf5_id  >= 0
 
 //-----------------------------------------------------------------------------
 /// The CONDUIT_CHECK_HDF5_ERROR macro is used to check error codes from HDF5.
@@ -74,16 +82,43 @@
             << " " << msg;                                          \
         CONDUIT_ERROR( hdf5_err_oss.str());                         \
     }                                                               \
-}                                                                   \
+}
 
 //-----------------------------------------------------------------------------
-/// macro used to check if an HDF5 object id is valid
+/// The CONDUIT_HDF5_ERROR macro is used for errors with ref paths.
 //-----------------------------------------------------------------------------
-#define CONDUIT_HDF5_VALID_ID( hdf5_id )   hdf5_id  >= 0
+#define CONDUIT_HDF5_ERROR( ref_path, msg )                               \
+{                                                                         \
+    CONDUIT_ERROR( "HDF5 Error (reference path: \"" << ref_path           \
+                    << ref_path << "\") " <<  msg);                       \
+}
+
 //-----------------------------------------------------------------------------
-/// macro used to check if an HDF5 return status is ok
+/// The CONDUIT_HDF5_WARN macro is used for warnings with ref paths.
 //-----------------------------------------------------------------------------
-#define CONDUIT_HDF5_STATUS_OK(hdf5_id )   hdf5_id  >= 0
+#define CONDUIT_HDF5_WARN( ref_path, msg )                                \
+{                                                                         \
+    CONDUIT_WARN( "HDF5 Warning (reference path: \"" << ref_path          \
+                  << ref_path << "\") " <<  msg);                         \
+}
+
+//-----------------------------------------------------------------------------
+/// The CONDUIT_CHECK_HDF5_ERROR macro is used to check error codes from HDF5.
+//-----------------------------------------------------------------------------
+#define CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH( hdf5_err, ref_path, msg ) \
+{                                                                         \
+    if( hdf5_err < 0 )                                                    \
+    {                                                                     \
+        std::ostringstream hdf5_err_oss;                                  \
+        hdf5_err_oss << "HDF5 Error (error code: "                        \
+            <<  hdf5_err                                                  \
+            <<  ", reference path: \""                                    \
+            <<  ref_path << "\""                                          \
+            <<  ") " << msg;                                              \
+        CONDUIT_ERROR( hdf5_err_oss.str());                               \
+    }                                                                     \
+}
+
 
 
 //-----------------------------------------------------------------------------
@@ -164,11 +199,13 @@ private:
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-hid_t    conduit_dtype_to_hdf5_dtype(const DataType &dt);
+hid_t    conduit_dtype_to_hdf5_dtype(const DataType &dt,
+                                     const std::string &ref_path);
 
 //-----------------------------------------------------------------------------
 DataType hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
-                                     index_t num_elems);
+                                     index_t num_elems,
+                                     const std::string &ref_path);
 
 //-----------------------------------------------------------------------------
 // helpers for checking if compatible 
@@ -176,15 +213,18 @@ DataType hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
 
 //-----------------------------------------------------------------------------
 bool  check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
-                                                        hid_t hdf5_id);
+                                                  const std::string &ref_path,
+                                                                hid_t hdf5_id);
  
 //-----------------------------------------------------------------------------
 bool  check_if_conduit_object_is_compatible_with_hdf5_tree(const Node &node,
-                                                           hid_t hdf5_id);
+                                                const std::string &ref_path,
+                                                             hid_t hdf5_id);
 
 //-----------------------------------------------------------------------------
 bool  check_if_conduit_node_is_compatible_with_hdf5_tree(const Node &node,
-                                                         hid_t hdf5_id);
+                                              const std::string &ref_path,
+                                                            hid_t hdf5_id);
 
 
 //-----------------------------------------------------------------------------
@@ -193,20 +233,24 @@ bool  check_if_conduit_node_is_compatible_with_hdf5_tree(const Node &node,
 
 //-----------------------------------------------------------------------------
 hid_t create_hdf5_dataset_for_conduit_leaf(const DataType &dt,
+                                           const std::string &ref_path,
                                            hid_t hdf5_group_id,
                                            const std::string &hdf5_dset_name);
 
 //---------------------------------------------------------------------------//
 void  write_conduit_leaf_to_hdf5_dataset(const Node &node,
+                                         const std::string &ref_path,
                                          hid_t hdf5_dset_id);
 
 //-----------------------------------------------------------------------------
 void  write_conduit_leaf_to_hdf5_group(const Node &node,
+                                       const std::string &ref_path,
                                        hid_t hdf5_group_id,
                                        const std::string &hdf5_dset_name);
 
 //-----------------------------------------------------------------------------
 void  write_conduit_object_to_hdf5_group(const Node &node,
+                                         const std::string &ref_path,
                                          hid_t hdf5_group_id);
 
 
@@ -216,17 +260,34 @@ void  write_conduit_object_to_hdf5_group(const Node &node,
 
 //-----------------------------------------------------------------------------
 void read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
+                                         const std::string &ref_path,
                                          Node &dest);
 
 //-----------------------------------------------------------------------------
 void read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
+                                       const std::string &ref_path,
                                        Node &dest);
 
 //-----------------------------------------------------------------------------
 void read_hdf5_tree_into_conduit_node(hid_t hdf5_id,
+                                      const std::string &ref_path,
                                       Node &dest);
 
 
+//-----------------------------------------------------------------------------
+// helper used to properly create a new ref_path for a child 
+std::string
+join_ref_paths(const std::string &parent, const std::string &child)
+{
+    if(parent.size() > 0)
+    {
+        return parent + "/" + child;
+    }
+    else
+    {
+        return child;
+    }
+}
 
 //-----------------------------------------------------------------------------
 
@@ -239,7 +300,8 @@ void read_hdf5_tree_into_conduit_node(hid_t hdf5_id,
 
 //-----------------------------------------------------------------------------
 hid_t
-conduit_dtype_to_hdf5_dtype(const DataType &dt)
+conduit_dtype_to_hdf5_dtype(const DataType &dt,
+                            const std::string &ref_path)
 {
     hid_t res = -1;
     // first check endianness
@@ -263,8 +325,11 @@ conduit_dtype_to_hdf5_dtype(const DataType &dt)
             case DataType::CHAR8_STR_ID: res = H5T_C_S1; break;
             
             default:
-                CONDUIT_ERROR("conduit::DataType to HDF5 Leaf DataType Conversion:"
-                              << dt.to_json() << " is not a leaf data type");
+                CONDUIT_HDF5_ERROR(ref_path,
+                                  "conduit::DataType to HDF5 Leaf DataType "
+                                  << "Conversion:"
+                                  << dt.to_json() 
+                                  << " is not a leaf data type");
         };
     }
     else // we know we are big endian
@@ -287,8 +352,11 @@ conduit_dtype_to_hdf5_dtype(const DataType &dt)
             case DataType::CHAR8_STR_ID: res = H5T_C_S1; break;
             
             default:
-                CONDUIT_ERROR("conduit::DataType to HDF5 Leaf DataType Conversion:"
-                              << dt.to_json() << " is not a leaf data type");
+                CONDUIT_HDF5_ERROR(ref_path,
+                                  "conduit::DataType to HDF5 Leaf DataType "
+                                  << "Conversion:"
+                                  << dt.to_json() 
+                                  << " is not a leaf data type");
         };
     }
     
@@ -300,7 +368,8 @@ conduit_dtype_to_hdf5_dtype(const DataType &dt)
 //-----------------------------------------------------------------------------
 DataType 
 hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
-                            index_t num_elems)
+                            index_t num_elems,
+                            const std::string &ref_path)
 {
     // TODO: there may be a more straight forward way to do this using
     // hdf5's data type introspection methods
@@ -440,7 +509,9 @@ hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
     //-----------------------------------------------
     else
     {
-        CONDUIT_ERROR("Error with HDF5 DataType to conduit::DataType Leaf Conversion");
+        CONDUIT_HDF5_ERROR(ref_path,
+                           "Error with HDF5 DataType to conduit::DataType "
+                           << "Leaf Conversion");
     }
 
     // set proper number of elems from what was passed
@@ -454,10 +525,10 @@ hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
 // Write Helpers
 //---------------------------------------------------------------------------//
 
-
 //---------------------------------------------------------------------------//
 bool
 check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
+                                                  const std::string &ref_path,
                                                   hid_t hdf5_id)
 {
     bool res = true;
@@ -481,7 +552,8 @@ check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
         else
         {
             // get the hdf5 datatype that matchs the conduit dtype
-            hid_t h5_dtype = conduit_dtype_to_hdf5_dtype(dtype);
+            hid_t h5_dtype = conduit_dtype_to_hdf5_dtype(dtype,
+                                                         ref_path);
         
             // get the hdf5 datatype for the passed hdf5 obj
             hid_t h5_test_dtype  = H5Dget_type(hdf5_id);
@@ -494,20 +566,29 @@ check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
                     (dtype.number_of_elements() ==  h5_test_num_ele) ) )
             {
                     res = false;
-                }
+            }
 
-            CONDUIT_CHECK_HDF5_ERROR(H5Tclose(h5_test_dtype),
+            CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Tclose(h5_test_dtype),
+                                                   ref_path,
                                      "Failed to close HDF5 Datatype " 
                                      << h5_test_dtype);
         }
 
-        CONDUIT_CHECK_HDF5_ERROR(H5Sclose(h5_test_dspace),
+        CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Sclose(h5_test_dspace),
+                                               ref_path,
                          "Failed to close HDF5 Dataspace " << h5_test_dspace);
     }
     else
     {
         // bad id, or not a dataset
         res = false;
+    }
+    
+    if(res == false)
+    {
+        CONDUIT_INFO("leaf in Conduit Node at path " << ref_path <<
+                     " is not compatible with given HDF5 tree at path"
+                     << ref_path);
     }
 
     return res;
@@ -516,6 +597,7 @@ check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
 //---------------------------------------------------------------------------//
 bool
 check_if_conduit_object_is_compatible_with_hdf5_tree(const Node &node,
+                                                     const std::string &ref_path,
                                                      hid_t hdf5_id)
 {
     bool res = true;
@@ -544,23 +626,28 @@ check_if_conduit_object_is_compatible_with_hdf5_tree(const Node &node,
                                         itr.path().c_str(),
                                         H5P_DEFAULT);
         
+            std::string chld_ref_path = join_ref_paths(ref_path,itr.path());
             if( CONDUIT_HDF5_VALID_ID(h5_child_obj) )
             {
                 // if a child does exist, we need to make sure the child is 
                 // compatible with the conduit node
                 res = check_if_conduit_node_is_compatible_with_hdf5_tree(child,
+                                                                 chld_ref_path,
                                                                   h5_child_obj);
             
-                CONDUIT_CHECK_HDF5_ERROR(H5Oclose(h5_child_obj),
+                CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Oclose(h5_child_obj),
+                                                       ref_path,
                              "Failed to close HDF5 Object: " << h5_child_obj);
             }
-        
             // no child exists with this name,  we are ok (it can be created 
             // to match) check the next child
         }
     }
     else // bad id or not a group
     {
+        CONDUIT_INFO("object in Conduit Node at path " << ref_path << 
+                     " is not compatible with given HDF5 tree at path"
+                     << ref_path );
         res = false;
     }
     
@@ -571,6 +658,7 @@ check_if_conduit_object_is_compatible_with_hdf5_tree(const Node &node,
 //---------------------------------------------------------------------------//
 bool
 check_if_conduit_node_is_compatible_with_hdf5_tree(const Node &node,
+                                                   const std::string &ref_path,
                                                    hid_t hdf5_id)
 {
     bool res = true;
@@ -580,11 +668,13 @@ check_if_conduit_node_is_compatible_with_hdf5_tree(const Node &node,
     if(dt.is_number() || dt.is_string())
     {
         res = check_if_conduit_leaf_is_compatible_with_hdf5_obj(dt,
+                                                                ref_path,
                                                                 hdf5_id);
     }
     else if(dt.is_object())
     {
         res = check_if_conduit_object_is_compatible_with_hdf5_tree(node,
+                                                                   ref_path,
                                                                    hdf5_id);
     }
     else // not supported
@@ -626,12 +716,13 @@ create_hdf5_compression_plist_for_conduit_leaf(const DataType &dtype)
 //---------------------------------------------------------------------------//
 hid_t
 create_hdf5_dataset_for_conduit_leaf(const DataType &dtype,
+                                     const std::string &ref_path,
                                      hid_t hdf5_group_id,
                                      const std::string &hdf5_dset_name)
 {
     hid_t res = -1;
     
-    hid_t h5_dtype = conduit_dtype_to_hdf5_dtype(dtype);
+    hid_t h5_dtype = conduit_dtype_to_hdf5_dtype(dtype,ref_path);
 
     hsize_t num_eles = (hsize_t) dtype.number_of_elements();
     
@@ -641,8 +732,9 @@ create_hdf5_dataset_for_conduit_leaf(const DataType &dtype,
                                           &num_eles,
                                           NULL);
 
-    CONDUIT_CHECK_HDF5_ERROR(h5_dspace_id,
-                             "Failed to create HDF5 Dataspace");
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_dspace_id,
+                                           ref_path,
+                                           "Failed to create HDF5 Dataspace");
 
     // create new dataset
     res = H5Dcreate(hdf5_group_id,
@@ -653,18 +745,24 @@ create_hdf5_dataset_for_conduit_leaf(const DataType &dtype,
                     h5_cprops_id,
                     H5P_DEFAULT);
 
-    CONDUIT_CHECK_HDF5_ERROR(res,
-                             "Failed to create HDF5 Dataset " 
-                             << hdf5_group_id << " " << hdf5_dset_name);
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(res,
+                                           ref_path,
+                                           "Failed to create HDF5 Dataset " 
+                                           << hdf5_group_id << " " 
+                                           << hdf5_dset_name);
 
     // close plist used for compression
-    CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_cprops_id),
-                         "Failed to close HDF5 compression property list" << h5_cprops_id);
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Pclose(h5_cprops_id),
+                                           ref_path,
+                                           "Failed to close HDF5 compression "
+                                           "property list " 
+                                           << h5_cprops_id);
 
     // close our dataspace
-    CONDUIT_CHECK_HDF5_ERROR(H5Sclose(h5_dspace_id),
-                             "Failed to close HDF5 Dataspace " 
-                             << h5_dspace_id);
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Sclose(h5_dspace_id),
+                                           ref_path,
+                                           "Failed to close HDF5 Dataspace " 
+                                           << h5_dspace_id);
 
 
     return res;
@@ -674,6 +772,7 @@ create_hdf5_dataset_for_conduit_leaf(const DataType &dtype,
 //---------------------------------------------------------------------------//
 hid_t
 create_hdf5_dataset_for_conduit_empty(hid_t hdf5_group_id,
+                                      const std::string &ref_path,
                                       const std::string &hdf5_dset_name)
 {
     hid_t res = -1;
@@ -681,8 +780,9 @@ create_hdf5_dataset_for_conduit_empty(hid_t hdf5_group_id,
     hid_t h5_dtype_id  = H5Tcreate(H5T_OPAQUE, 1);
     hid_t h5_dspace_id = H5Screate(H5S_NULL);
     
-    CONDUIT_CHECK_HDF5_ERROR(h5_dspace_id,
-                             "Failed to create HDF5 Dataspace");
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_dspace_id,
+                                           ref_path,
+                                           "Failed to create HDF5 Dataspace");
 
     // create new dataset
     res = H5Dcreate(hdf5_group_id,
@@ -693,16 +793,20 @@ create_hdf5_dataset_for_conduit_empty(hid_t hdf5_group_id,
                     H5P_DEFAULT,
                     H5P_DEFAULT);
 
-    CONDUIT_CHECK_HDF5_ERROR(res,
-                             "Failed to create HDF5 Dataset " 
-                             << hdf5_group_id << " " << hdf5_dset_name);
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(res,
+                                           ref_path,
+                                           "Failed to create HDF5 Dataset " 
+                                           << hdf5_group_id 
+                                           << " " << hdf5_dset_name);
     // close our datatype
-    CONDUIT_CHECK_HDF5_ERROR(H5Tclose(h5_dtype_id),
-                             "Failed to close HDF5 Datatype");
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Tclose(h5_dtype_id),
+                                           ref_path,
+                                           "Failed to close HDF5 Datatype");
     // close our dataspace
-    CONDUIT_CHECK_HDF5_ERROR(H5Sclose(h5_dspace_id),
-                             "Failed to close HDF5 Dataspace " 
-                             << h5_dspace_id);
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Sclose(h5_dspace_id),
+                                           ref_path,
+                                           "Failed to close HDF5 Dataspace " 
+                                           << h5_dspace_id);
 
     return res;
 }
@@ -713,11 +817,12 @@ create_hdf5_dataset_for_conduit_empty(hid_t hdf5_group_id,
 //---------------------------------------------------------------------------//
 void 
 write_conduit_leaf_to_hdf5_dataset(const Node &node,
+                                   const std::string &ref_path,
                                    hid_t hdf5_dset_id)
 {
     DataType dt = node.dtype();
     
-    hid_t h5_dtype_id = conduit_dtype_to_hdf5_dtype(dt);
+    hid_t h5_dtype_id = conduit_dtype_to_hdf5_dtype(dt,ref_path);
     herr_t h5_status = -1;
 
     // if the node is compact, we can write directly from its data ptr
@@ -745,14 +850,17 @@ write_conduit_leaf_to_hdf5_dataset(const Node &node,
     }
 
     // check write result
-    CONDUIT_CHECK_HDF5_ERROR(h5_status,
-                             "Failed to write to HDF5 Dataset " << hdf5_dset_id);
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_status,
+                                           ref_path,
+                                           "Failed to write to HDF5 Dataset "
+                                           << hdf5_dset_id);
 
 }
 
 //---------------------------------------------------------------------------//
 void 
 write_conduit_leaf_to_hdf5_group(const Node &node,
+                                 const std::string &ref_path,
                                  hid_t hdf5_group_id,
                                  const std::string &hdf5_dset_name)
 {
@@ -775,35 +883,47 @@ write_conduit_leaf_to_hdf5_group(const Node &node,
                               hdf5_dset_name.c_str(),
                               H5P_DEFAULT);
 
-        CONDUIT_CHECK_HDF5_ERROR(h5_child_id,
-                             "Failed to open HDF5 Dataset "
-                             << " parent: " << hdf5_group_id
-                             << " name: "   << hdf5_dset_name);
+        CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_child_id,
+                                               ref_path,
+                                               "Failed to open HDF5 Dataset "
+                                               << " parent: "
+                                               << hdf5_group_id
+                                               << " name: "
+                                               << hdf5_dset_name);
     }
     else
     {
         // if the hdf5 dataset does not exist, we need to create it
         h5_child_id = create_hdf5_dataset_for_conduit_leaf(node.dtype(),
+                                                           ref_path,
                                                            hdf5_group_id,
-                                                           hdf5_dset_name.c_str());
+                                                           hdf5_dset_name);
 
-        CONDUIT_CHECK_HDF5_ERROR(h5_child_id,
-                             "Failed to create HDF5 Dataset "
-                             << " parent: " << hdf5_group_id
-                             << " name: "   << hdf5_dset_name);
+        CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_child_id,
+                                               ref_path,
+                                               "Failed to create HDF5 Dataset "
+                                               << " parent: "
+                                               << hdf5_group_id
+                                               << " name: "
+                                               << hdf5_dset_name);
     }
     
+    std::string chld_ref_path = join_ref_paths(ref_path,hdf5_dset_name);
     // write the data
     write_conduit_leaf_to_hdf5_dataset(node,
+                                       chld_ref_path,
                                        h5_child_id);
     
-    CONDUIT_CHECK_HDF5_ERROR(H5Dclose(h5_child_id),
-                             "Failed to close HDF5 Dataset: " << h5_child_id);
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Dclose(h5_child_id),
+                                           ref_path,
+                                           "Failed to close HDF5 Dataset: "
+                                           << h5_child_id);
 }
 
 //---------------------------------------------------------------------------//
 void 
 write_conduit_empty_to_hdf5_group(hid_t hdf5_group_id,
+                                  const std::string &ref_path,
                                   const std::string &hdf5_dset_name)
 {
 
@@ -826,15 +946,19 @@ write_conduit_empty_to_hdf5_group(hid_t hdf5_group_id,
     {
         // if the hdf5 dataset does not exist, we need to create it
         h5_child_id = create_hdf5_dataset_for_conduit_empty(hdf5_group_id,
-                                                            hdf5_dset_name.c_str());
+                                                            ref_path,
+                                                            hdf5_dset_name);
 
-        CONDUIT_CHECK_HDF5_ERROR(h5_child_id,
-                             "Failed to create HDF5 Dataset "
-                             << " parent: " << hdf5_group_id
-                             << " name: "   << hdf5_dset_name);
+        CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_child_id,
+                                               ref_path,
+                                               "Failed to create HDF5 Dataset "
+                                               << " parent: " << hdf5_group_id
+                                               << " name: "   << hdf5_dset_name);
 
-        CONDUIT_CHECK_HDF5_ERROR(H5Dclose(h5_child_id), 
-                             "Failed to close HDF5 Dataset: " << h5_child_id);
+        CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Dclose(h5_child_id), 
+                                              ref_path,
+                                              "Failed to close HDF5 Dataset: "
+                                              << h5_child_id);
     }
     
 
@@ -845,6 +969,7 @@ write_conduit_empty_to_hdf5_group(hid_t hdf5_group_id,
 //---------------------------------------------------------------------------//
 void
 write_conduit_object_to_hdf5_group(const Node &node,
+                                   const std::string &ref_path,
                                    hid_t hdf5_group_id)
 {
     // strong dose of evil casting, but it's ok b/c we are grownups here?
@@ -860,6 +985,7 @@ write_conduit_object_to_hdf5_group(const Node &node,
         if(dt.is_number() || dt. is_string())
         {
             write_conduit_leaf_to_hdf5_group(child,
+                                             ref_path,
                                              hdf5_group_id,
                                              itr.path().c_str());
         }
@@ -868,6 +994,7 @@ write_conduit_object_to_hdf5_group(const Node &node,
             // if we have an empty not, it will become
             // a dataset with an null shape
             write_conduit_empty_to_hdf5_group(hdf5_group_id,
+                                              ref_path,
                                               itr.path().c_str());
         }
         else if(dt.is_object())
@@ -882,27 +1009,29 @@ write_conduit_object_to_hdf5_group(const Node &node,
             
             hid_t h5_child_id = -1;
             
-            // if the hdf5 group doesn't exist, we need to create it
             if( CONDUIT_HDF5_STATUS_OK(h5_info_status) )
             {
+                // if the hdf5 group exists, open it
                 h5_child_id = H5Gopen(hdf5_group_id,
                                       itr.path().c_str(),
                                       H5P_DEFAULT);
 
-                CONDUIT_CHECK_HDF5_ERROR(h5_child_id,
-                                         "Failed to open HDF5 Group "
-                                         << " parent: " << hdf5_group_id
-                                         << " name: "   << itr.path());
+                CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_child_id,
+                                                       ref_path,
+                                             "Failed to open HDF5 Group "
+                                             << " parent: " << hdf5_group_id
+                                             << " name: "   << itr.path());
             }
             else
             {
-
+                // if the hdf5 group doesn't exist, we need to create it
                 hid_t h5_gc_plist = H5Pcreate(H5P_GROUP_CREATE);
         
                 herr_t h5_status = H5Pset_link_creation_order(h5_gc_plist, 
                         ( H5P_CRT_ORDER_TRACKED |  H5P_CRT_ORDER_INDEXED) );
 
-                CONDUIT_CHECK_HDF5_ERROR(h5_status,
+                CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_status,
+                                                       ref_path,
                                  "Failed to create H5P_GROUP_CREATE property "
                                  << " list");
 
@@ -912,29 +1041,36 @@ write_conduit_object_to_hdf5_group(const Node &node,
                                         h5_gc_plist,
                                         H5P_DEFAULT);
 
-                CONDUIT_CHECK_HDF5_ERROR(h5_child_id,
-                                     "Failed to create HDF5 Group "
+                CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_child_id,
+                                                       ref_path,
+                                      "Failed to create HDF5 Group "
                                       << " parent: " << hdf5_group_id
                                       << " name: "   << itr.path());
 
-                CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_gc_plist),
+                CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Pclose(h5_gc_plist),
+                                                       ref_path,
                                      "Failed to close HDF5 H5P_GROUP_CREATE "
-                                     << "property list: " << h5_gc_plist);
+                                     << "property list: " 
+                                     << h5_gc_plist);
             }
 
 
             // traverse 
             write_conduit_object_to_hdf5_group(child,
+                                               ref_path,
                                                h5_child_id);
 
-            CONDUIT_CHECK_HDF5_ERROR(H5Gclose(h5_child_id),
-                                     "Failed to close HDF5 Group " << h5_child_id);
+            CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Gclose(h5_child_id),
+                                                   ref_path,
+                                     "Failed to close HDF5 Group " 
+                                     << h5_child_id);
         }
         else
         {
-            CONDUIT_WARN("DataType \'" 
-                         << DataType::id_to_name(dt.id())
-                         <<"\' not supported for relay HDF5 I/O");
+            CONDUIT_HDF5_WARN(ref_path,
+                               "DataType \'" 
+                               << DataType::id_to_name(dt.id())
+                               <<"\' not supported for relay HDF5 I/O");
         }
     }
 }
@@ -946,6 +1082,7 @@ write_conduit_object_to_hdf5_group(const Node &node,
 //---------------------------------------------------------------------------//
 void
 write_conduit_node_to_hdf5_tree(const Node &node,
+                                const std::string &ref_path,
                                 hid_t hdf5_id)
 {
 
@@ -953,16 +1090,20 @@ write_conduit_node_to_hdf5_tree(const Node &node,
     // we support a leaf or a group 
     if(dt.is_number() || dt.is_string())
     {
-        write_conduit_leaf_to_hdf5_dataset(node,hdf5_id);
-        
+        write_conduit_leaf_to_hdf5_dataset(node,
+                                           ref_path,
+                                           hdf5_id);
     }
     else if(dt.is_object())
     {
-        write_conduit_object_to_hdf5_group(node,hdf5_id);
+        write_conduit_object_to_hdf5_group(node,
+                                           ref_path,
+                                           hdf5_id);
     }
     else // not supported
     {
-        CONDUIT_ERROR("HDF5 write doesn't support LIST_ID or EMPTY_ID nodes.");
+        CONDUIT_HDF5_ERROR(ref_path,
+                   "HDF5 write doesn't support LIST_ID or EMPTY_ID nodes.");
     }
 }
 
@@ -1022,6 +1163,7 @@ struct h5_read_opdata
 
     // pointer to conduit node, anchors traversal to 
     Node            *node;
+    std::string      ref_path;
 };
 
 //---------------------------------------------------------------------------//
@@ -1091,11 +1233,15 @@ h5_literate_traverse_op_func(hid_t hdf5_id,
                                     &h5_info_buf,
                                     H5P_DEFAULT);
 
-    CONDUIT_CHECK_HDF5_ERROR(h5_status,
-                             "Error fetching HDF5 Object info: " 
-                             << " parent: " << hdf5_id 
-                             << " path:"    << hdf5_path) ;
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_status,
+                                           h5_od->ref_path,
+                                           "Error fetching HDF5 Object info: "
+                                           << " parent: " << hdf5_id 
+                                           << " path:"    << hdf5_path) ;
 
+    std::string chld_ref_path = h5_od->ref_path  + 
+                                std::string("/") + 
+                                std::string(hdf5_path);
     switch (h5_info_buf.type)
     {
         case H5O_TYPE_GROUP:
@@ -1120,19 +1266,28 @@ h5_literate_traverse_op_func(hid_t hdf5_id,
                 hid_t h5_group_id = H5Gopen(hdf5_id,
                                            hdf5_path,
                                            H5P_DEFAULT);
-                
-                CONDUIT_CHECK_HDF5_ERROR(h5_group_id,
-                                 "Error opening HDF5 Group: " 
-                                 << " parent: " << hdf5_id 
-                                 << " path:"    << hdf5_path);
+                CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_group_id,
+                                                       h5_od->ref_path,
+                                                       "Error opening HDF5 "
+                                                       << "Group: " 
+                                                       << " parent: "
+                                                       << hdf5_id 
+                                                       << " path:"
+                                                       << hdf5_path);
 
                 // execute traversal for this group
+                Node &chld_node = h5_od->node->fetch(hdf5_path);
+
                 read_hdf5_group_into_conduit_node(h5_group_id,
-                                                  h5_od->node->fetch(hdf5_path));
+                                                  chld_ref_path,
+                                                  chld_node);
 
                 // close the group
-                CONDUIT_CHECK_HDF5_ERROR(H5Gclose(h5_group_id),
-                                     "Error closing HDF5 Group: " << h5_group_id);
+                CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Gclose(h5_group_id),
+                                                       h5_od->ref_path,
+                                                       "Error closing HDF5 "
+                                                       << "Group: "
+                                                       << h5_group_id);
             }
             break;
         }
@@ -1144,16 +1299,25 @@ h5_literate_traverse_op_func(hid_t hdf5_id,
                                        hdf5_path,
                                        H5P_DEFAULT);
 
-            CONDUIT_CHECK_HDF5_ERROR(h5_dset_id,
-                             "Error opening HDF5 Dataset: " 
-                             << " parent: " << hdf5_id 
-                             << " path:"    << hdf5_path);
+            CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_dset_id,
+                                                   h5_od->ref_path,
+                                                   "Error opening HDF5 "
+                                                   << " Dataset: " 
+                                                   << " parent: "
+                                                   << hdf5_id 
+                                                   << " path:"
+                                                   << hdf5_path);
 
-            read_hdf5_dataset_into_conduit_node(h5_dset_id,leaf);
+            read_hdf5_dataset_into_conduit_node(h5_dset_id,
+                                                chld_ref_path,
+                                                leaf);
             
             // close the dataset
-            CONDUIT_CHECK_HDF5_ERROR(H5Dclose(h5_dset_id),
-                                     "Error closing HDF5 Dataset: " << h5_dset_id);
+            CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Dclose(h5_dset_id),
+                                                   h5_od->ref_path,
+                                                   "Error closing HDF5 "
+                                                   << " Dataset: " 
+                                                   << h5_dset_id);
             break;
         }
         default:
@@ -1169,6 +1333,7 @@ h5_literate_traverse_op_func(hid_t hdf5_id,
 //---------------------------------------------------------------------------//
 void
 read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
+                                  const std::string &ref_path,
                                   Node &dest)
 {
     // we want to make sure this is a conduit object
@@ -1188,8 +1353,8 @@ read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
     h5_od.addr = h5_info_buf.addr;
     // attach the pointer to our node
     h5_od.node = &dest;
-
-    // check and see if we have 
+    // keep ref path
+    h5_od.ref_path = ref_path;
 
     H5_index_t h5_grp_index_type = H5_INDEX_NAME;
     
@@ -1214,9 +1379,12 @@ read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
             }
         }
     
-        CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_gc_plist),
-                                 "Failed to close HDF5 H5P_GROUP_CREATE "
-                                 << "property list: " << h5_gc_plist);
+        CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Pclose(h5_gc_plist),
+                                               ref_path,
+                                               "Failed to close HDF5 "
+                                               << "H5P_GROUP_CREATE "
+                                               << "property list: " 
+                                               << h5_gc_plist);
     }
     
     
@@ -1229,19 +1397,25 @@ read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
                            h5_literate_traverse_op_func,
                            (void *) &h5_od);
 
-    CONDUIT_CHECK_HDF5_ERROR(h5_status,
-                             "Error calling H5Literate to traverse and "
-                             << "read HDF5 hierarchy: " << hdf5_group_id);
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_status,
+                                           ref_path,
+                                           "Error calling H5Literate to "
+                                           << "traverse and read HDF5 "
+                                           << "hierarchy: "
+                                           << hdf5_group_id);
 }
 
 //---------------------------------------------------------------------------//
 void
 read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
+                                    const std::string &ref_path,
                                     Node &dest)
 {
     hid_t h5_dspace_id = H5Dget_space(hdf5_dset_id);
-    CONDUIT_CHECK_HDF5_ERROR(h5_dspace_id,
-                 "Error reading HDF5 Dataspace: " << hdf5_dset_id);
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_dspace_id,
+                                           ref_path,
+                                           "Error reading HDF5 Dataspace: " 
+                                           << hdf5_dset_id);
 
     // check for empty case
     if(H5Sget_simple_extent_type(h5_dspace_id) == H5S_NULL)
@@ -1253,14 +1427,17 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
     {
         hid_t h5_dtype_id  = H5Dget_type(hdf5_dset_id);
     
-        CONDUIT_CHECK_HDF5_ERROR(h5_dtype_id,
-                                 "Error reading HDF5 Datatype: "
-                                 << hdf5_dset_id);
+        CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_dtype_id,
+                                               ref_path,
+                                               "Error reading HDF5 Datatype: "
+                                               << hdf5_dset_id);
 
 
     
         index_t nelems     = H5Sget_simple_extent_npoints(h5_dspace_id);
-        DataType dt        = hdf5_dtype_to_conduit_dtype(h5_dtype_id,nelems);
+        DataType dt        = hdf5_dtype_to_conduit_dtype(h5_dtype_id,
+                                                         nelems,
+                                                         ref_path);
         hid_t h5_status    = 0;
     
         if(dest.dtype().is_compact() && 
@@ -1294,24 +1471,29 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
         dest.set(n_tmp);
         }
 
-        CONDUIT_CHECK_HDF5_ERROR(h5_status,
-                                 "Error reading HDF5 Dataset: "
-                                  << hdf5_dset_id);
+        CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_status,
+                                               ref_path,
+                                               "Error reading HDF5 Dataset: "
+                                                << hdf5_dset_id);
     
-        CONDUIT_CHECK_HDF5_ERROR(H5Tclose(h5_dtype_id),
-                                 "Error reading HDF5 Datatype: " 
-                                 << h5_dtype_id);
+        CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Tclose(h5_dtype_id),
+                                               ref_path,
+                                               "Error reading HDF5 Datatype: "
+                                               << h5_dtype_id);
 
     }
 
-    CONDUIT_CHECK_HDF5_ERROR(H5Sclose(h5_dspace_id),
-                             "Error closing HDF5 Dataspace: " << h5_dspace_id);
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Sclose(h5_dspace_id),
+                                           ref_path,
+                                           "Error closing HDF5 Dataspace: "
+                                           << h5_dspace_id);
 
 }
 
 //---------------------------------------------------------------------------//
 void
 read_hdf5_tree_into_conduit_node(hid_t hdf5_id,
+                                 const std::string  &ref_path,
                                  Node &dest)
 {
     herr_t     h5_status = 0;
@@ -1319,9 +1501,11 @@ read_hdf5_tree_into_conduit_node(hid_t hdf5_id,
     
     h5_status = H5Oget_info(hdf5_id,&h5_info_buf);
 
-    CONDUIT_CHECK_HDF5_ERROR(h5_status,
-                             "Error fetching HDF5 object info from: " 
-                             << hdf5_id);
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_status,
+                                           ref_path,
+                                           "Error fetching HDF5 object "
+                                           << "info from: " 
+                                           << hdf5_id);
 
 
     switch (h5_info_buf.type)
@@ -1331,6 +1515,7 @@ read_hdf5_tree_into_conduit_node(hid_t hdf5_id,
         case H5O_TYPE_GROUP:
         {
             read_hdf5_group_into_conduit_node(hdf5_id,
+                                              ref_path,
                                               dest);
             break;
         }
@@ -1339,31 +1524,36 @@ read_hdf5_tree_into_conduit_node(hid_t hdf5_id,
         case H5O_TYPE_DATASET:
         {
             read_hdf5_dataset_into_conduit_node(hdf5_id,
+                                                ref_path,
                                                 dest);
             break;
         }
         // unsupported types
         case H5O_TYPE_UNKNOWN:
         {
-            CONDUIT_ERROR("Cannot read HDF5 Object : "
-                          << "(type == H5O_TYPE_UNKNOWN )");
+            CONDUIT_HDF5_ERROR(ref_path,
+                               "Cannot read HDF5 Object : "
+                                << "(type == H5O_TYPE_UNKNOWN )");
             break;
         }
         case H5O_TYPE_NAMED_DATATYPE:
         {
-            CONDUIT_ERROR("Cannot read HDF5 Object "
-                          << "(type == H5O_TYPE_NAMED_DATATYPE )");
+            CONDUIT_HDF5_ERROR(ref_path,
+                               "Cannot read HDF5 Object "
+                               << "(type == H5O_TYPE_NAMED_DATATYPE )");
             break;
         }
         case H5O_TYPE_NTYPES:
         {
-            CONDUIT_ERROR("Cannot read HDF5 Object "
+            CONDUIT_HDF5_ERROR(ref_path,
+              "Cannot read HDF5 Object "
                << "(type == H5O_TYPE_NTYPES [This is an invalid HDF5 type!]");
             break;
         }
         default:
         {
-            CONDUIT_ERROR("Cannot read HDF5 Object (type == Unknown )");
+            CONDUIT_HDF5_ERROR(ref_path,
+                               "Cannot read HDF5 Object (type == Unknown )");
         }
     }
 }
@@ -1414,16 +1604,16 @@ hdf5_write(const Node &node,
     hid_t h5_file_plist = H5Pcreate(H5P_FILE_CREATE);
 
     CONDUIT_CHECK_HDF5_ERROR(h5_file_plist,
-                     "Failed to create H5P_FILE_CREATE property "
-                     << " list");
+                             "Failed to create H5P_FILE_CREATE property "
+                             << " list");
 
 
     herr_t h5_status = H5Pset_link_creation_order(h5_file_plist, 
             ( H5P_CRT_ORDER_TRACKED |  H5P_CRT_ORDER_INDEXED) );
 
     CONDUIT_CHECK_HDF5_ERROR(h5_status,
-                     "Failed to set creation order options for property "
-                     << "list");
+                             "Failed to set creation order options for "
+                             << "property list");
 
     // open the hdf5 file for writing
     hid_t h5_file_id = H5Fcreate(file_path.c_str(),
@@ -1436,8 +1626,8 @@ hdf5_write(const Node &node,
                              << file_path);
 
     CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_file_plist),
-                         "Failed to close HDF5 H5P_GROUP_CREATE "
-                         << "property list: " << h5_file_plist);
+                             "Failed to close HDF5 H5P_GROUP_CREATE "
+                             << "property list: " << h5_file_plist);
     
     hdf5_write(node,
                h5_file_id,
@@ -1491,7 +1681,7 @@ hdf5_write(const Node &node,
     std::string path = hdf5_path.substr(pos,len);
     
     // TODO: Creating the external tree is inefficient but the compatibility 
-    // checks and the writes handle node paths are there.
+    // checks and write methods handle node paths easily handle this case.
     // revisit if this is too slow
     
     Node n;
@@ -1510,15 +1700,16 @@ hdf5_write(const Node &node,
 
     // check compat
     if(check_if_conduit_node_is_compatible_with_hdf5_tree(n,
+                                                          "",
                                                           hdf5_id))
     {
         // write if we are compat
-        write_conduit_node_to_hdf5_tree(n,hdf5_id);
+        write_conduit_node_to_hdf5_tree(n,"",hdf5_id);
     }
     else
     {
         CONDUIT_ERROR("Failed to write node, existing HDF5 tree is "
-                      "incompatible with the node.")
+                      "incompatible with the Conduit Node.")
     }
 
     // restore hdf5 error stack
@@ -1537,15 +1728,18 @@ hdf5_write(const Node &node,
     
     // check compat
     if(check_if_conduit_node_is_compatible_with_hdf5_tree(node,
+                                                          "",
                                                           hdf5_id))
     {
         // write if we are compat
-        write_conduit_node_to_hdf5_tree(node,hdf5_id);
+        write_conduit_node_to_hdf5_tree(node,
+                                        "",
+                                        hdf5_id);
     }
     else
     {
         CONDUIT_ERROR("Failed to write node, existing HDF5 tree is "
-                      << "incompatible with the node.")
+                      << "incompatible with the Conduit Node.")
     }
     // restore hdf5 error stack
 }
@@ -1628,10 +1822,13 @@ hdf5_read(hid_t hdf5_id,
                              "Failed to fetch HDF5 object from: "
                              << hdf5_id << ":" << hdf5_path);
 
-    read_hdf5_tree_into_conduit_node(h5_child_obj,dest);
+    read_hdf5_tree_into_conduit_node(h5_child_obj,
+                                     hdf5_path,
+                                     dest);
     
     CONDUIT_CHECK_HDF5_ERROR(H5Oclose(h5_child_obj),
-                             "Failed to close HDF5 Object: " << h5_child_obj);
+                             "Failed to close HDF5 Object: "
+                             << h5_child_obj);
     
     // enable hdf5 error stack
 }
@@ -1645,7 +1842,9 @@ hdf5_read(hid_t hdf5_id,
     // disable hdf5 error stack
     HDF5ErrorStackSupressor supress_hdf5_errors;
     
-    read_hdf5_tree_into_conduit_node(hdf5_id,dest);
+    read_hdf5_tree_into_conduit_node(hdf5_id,
+                                     "",
+                                     dest);
     
     // enable hdf5 error stack
 }
