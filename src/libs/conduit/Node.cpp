@@ -9276,6 +9276,18 @@ Node::as_unsigned_long_ptr()
 #ifdef CONDUIT_USE_LONG_LONG
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
+const unsigned long long *
+Node::as_unsigned_long_long_ptr() const
+{
+    CONDUIT_CHECK_DTYPE(this,
+        CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
+        "as_unsigned_long_long_ptr()",
+        NULL);
+    return (unsigned long long*)element_ptr(0);
+}
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
 unsigned long long *
 Node::as_unsigned_long_long_ptr()
 {
@@ -9286,6 +9298,7 @@ Node::as_unsigned_long_long_ptr()
     return (unsigned long long*)element_ptr(0);
 }
 //---------------------------------------------------------------------------//
+
 #endif
 //---------------------------------------------------------------------------//
 
@@ -9322,6 +9335,17 @@ Node::as_double_ptr()
 //---------------------------------------------------------------------------//
 long double *
 Node::as_long_double_ptr()
+{
+    CONDUIT_CHECK_DTYPE(this,
+        CONDUIT_NATIVE_LONG_DOUBLE_ID,
+        "as_long_double_ptr()",
+        NULL);
+    return (long double*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+long double *
+Node::as_long_double_ptr() const
 {
     CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_LONG_DOUBLE_ID,
@@ -9844,7 +9868,7 @@ Node::as_double_array() const
     return double_array(m_data,dtype());
 }
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_USE_LONG_DOUBLE
 //---------------------------------------------------------------------------//
 const long_double_array
 Node::as_long_double_array() const

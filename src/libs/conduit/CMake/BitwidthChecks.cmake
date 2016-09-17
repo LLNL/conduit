@@ -1,45 +1,45 @@
 ###############################################################################
 # Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
-# 
+#
 # Produced at the Lawrence Livermore National Laboratory
-# 
+#
 # LLNL-CODE-666778
-# 
+#
 # All rights reserved.
-# 
-# This file is part of Conduit. 
-# 
+#
+# This file is part of Conduit.
+#
 # For details, see: http://software.llnl.gov/conduit/.
-# 
+#
 # Please also read conduit/LICENSE
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
-# * Redistributions of source code must retain the above copyright notice, 
+#
+# * Redistributions of source code must retain the above copyright notice,
 #   this list of conditions and the disclaimer below.
-# 
+#
 # * Redistributions in binary form must reproduce the above copyright notice,
 #   this list of conditions and the disclaimer (as noted below) in the
 #   documentation and/or other materials provided with the distribution.
-# 
+#
 # * Neither the name of the LLNS/LLNL nor the names of its contributors may
 #   be used to endorse or promote products derived from this software without
 #   specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 # LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 # DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 # OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-# 
+#
 ###############################################################################
 
 
@@ -54,26 +54,26 @@ set(CONDUIT_EMPTY_ID  0)
 set(CONDUIT_OBJECT_ID 1)
 set(CONDUIT_LIST_ID   2)
 ################################################
-# signed integer types 
+# signed integer types
 ################################################
 set(CONDUIT_INT8_ID   3)
 set(CONDUIT_INT16_ID  4)
 set(CONDUIT_INT32_ID  5)
 set(CONDUIT_INT64_ID  6)
 ################################################
-# unsigned integer types 
+# unsigned integer types
 ################################################
 set(CONDUIT_UINT8_ID   7)
 set(CONDUIT_UINT16_ID  8)
 set(CONDUIT_UINT32_ID  9)
 set(CONDUIT_UINT64_ID  10)
 ################################################
-# floating point types 
+# floating point types
 ################################################
 set(CONDUIT_FLOAT32_ID 11)
 set(CONDUIT_FLOAT64_ID 12)
 ################################################
-#  string types 
+#  string types
 ################################################
 set(CONDUIT_CHAR8_STR_ID  13)
 
@@ -81,7 +81,7 @@ set(CONDUIT_CHAR8_STR_ID  13)
 #-----------------------------------------------------------------------------
 # Logic to provide bitwidth annotated style standard data types
 #-----------------------------------------------------------------------------
-# Derived from numpy (which provides very comprehensive support 
+# Derived from numpy (which provides very comprehensive support
 # for these types)
 #-----------------------------------------------------------------------------
 
@@ -116,70 +116,94 @@ if(${CONDUIT_BITSOF_LONG} EQUAL "8")
     ####
     # conduit to native
     ####
-    set(CONDUIT_INT8_TYPE   "conduit_long")
-    set(CONDUIT_UINT8_TYPE  "conduit_ulong")
-    #
-    set(CONDUIT_INT8_NATIVE_TYPE  "long")
-    set(CONDUIT_UINT8_NATIVE_TYPE "unsigned long")
+    # make sure we haven't already mapped this type
+    if(NOT CONDUIT_INT8_TYPE)
+        set(CONDUIT_INT8_TYPE   "conduit_long")
+        set(CONDUIT_UINT8_TYPE  "conduit_ulong")
+        #
+        set(CONDUIT_INT8_NATIVE_TYPE  "long")
+        set(CONDUIT_UINT8_NATIVE_TYPE "unsigned long")
+    endif()
     ####
     # native to conduit
     ####
-    set(CONDUIT_NATIVE_LONG_ID          ${CONDUIT_INT8_ID})
-    set(CONDUIT_NATIVE_UNSIGNED_LONG_ID ${CONDUIT_UINT8_ID})
-    #
-    set(CONDUIT_NATIVE_LONG_TYPE          "conduit_int8")
-    set(CONDUIT_NATIVE_UNSIGNED_LONG_TYPE "conduit_uint8")
+    # check to see if the native type map has been made
+    if(NOT CONDUIT_NATIVE_LONG_TYPE)
+        set(CONDUIT_NATIVE_LONG_ID          ${CONDUIT_INT8_ID})
+        set(CONDUIT_NATIVE_UNSIGNED_LONG_ID ${CONDUIT_UINT8_ID})
+        #
+        set(CONDUIT_NATIVE_LONG_TYPE          "conduit_int8")
+        set(CONDUIT_NATIVE_UNSIGNED_LONG_TYPE "conduit_uint8")
+    endif()
 elseif(${CONDUIT_BITSOF_LONG} EQUAL 16)
     ####
     # conduit to native
     ####
-    set(CONDUIT_INT16_TYPE   "conduit_long")
-    set(CONDUIT_UINT16_TYPE  "conduit_ulong")
-    #
-    set(CONDUIT_INT16_NATIVE_TYPE  "long")
-    set(CONDUIT_UINT16_NATIVE_TYPE "unsigned long")
+    # make sure we haven't already mapped this type
+    if(NOT CONDUIT_INT16_TYPE)
+        set(CONDUIT_INT16_TYPE   "conduit_long")
+        set(CONDUIT_UINT16_TYPE  "conduit_ulong")
+        #
+        set(CONDUIT_INT16_NATIVE_TYPE  "long")
+        set(CONDUIT_UINT16_NATIVE_TYPE "unsigned long")
+    endif()
     ####
     # native to conduit
     ####
-    set(CONDUIT_NATIVE_LONG_ID          ${CONDUIT_INT16_ID})
-    set(CONDUIT_NATIVE_UNSIGNED_LONG_ID ${CONDUIT_UINT16_ID})
-    #
-    set(CONDUIT_NATIVE_LONG_TYPE          "conduit_int16")
-    set(CONDUIT_NATIVE_UNSIGNED_LONG_TYPE "conduit_uint16")
+    # check to see if the native type map has been made
+    if(NOT CONDUIT_NATIVE_LONG_TYPE)
+        set(CONDUIT_NATIVE_LONG_ID          ${CONDUIT_INT16_ID})
+        set(CONDUIT_NATIVE_UNSIGNED_LONG_ID ${CONDUIT_UINT16_ID})
+        #
+        set(CONDUIT_NATIVE_LONG_TYPE          "conduit_int16")
+        set(CONDUIT_NATIVE_UNSIGNED_LONG_TYPE "conduit_uint16")
+    endif()
 elseif(${CONDUIT_BITSOF_LONG} EQUAL 32)
     ####
     # conduit to native
     ####
-    set(CONDUIT_INT32_TYPE   "conduit_long")
-    set(CONDUIT_UINT32_TYPE  "conduit_ulong")
-    #
-    set(CONDUIT_INT32_NATIVE_TYPE  "long")
-    set(CONDUIT_UINT32_NATIVE_TYPE "unsigned long")
+    # make sure we haven't already mapped this type
+    if(NOT CONDUIT_INT32_TYPE)
+        set(CONDUIT_INT32_TYPE   "conduit_long")
+        set(CONDUIT_UINT32_TYPE  "conduit_ulong")
+        #
+        set(CONDUIT_INT32_NATIVE_TYPE  "long")
+        set(CONDUIT_UINT32_NATIVE_TYPE "unsigned long")
+    endif()
     ####
     # native to conduit
     ####
-    set(CONDUIT_NATIVE_LONG_ID          ${CONDUIT_INT32_ID})
-    set(CONDUIT_NATIVE_UNSIGNED_LONG_ID ${CONDUIT_UINT32_ID})
-    #
-    set(CONDUIT_NATIVE_LONG_TYPE          "conduit_int32")
-    set(CONDUIT_NATIVE_UNSIGNED_LONG_TYPE "conduit_uint32")
+    # check to see if the native type map has been made
+    if(NOT CONDUIT_NATIVE_LONG_TYPE)
+        set(CONDUIT_NATIVE_LONG_ID          ${CONDUIT_INT32_ID})
+        set(CONDUIT_NATIVE_UNSIGNED_LONG_ID ${CONDUIT_UINT32_ID})
+        #
+        set(CONDUIT_NATIVE_LONG_TYPE          "conduit_int32")
+        set(CONDUIT_NATIVE_UNSIGNED_LONG_TYPE "conduit_uint32")
+    endif()
 elseif(${CONDUIT_BITSOF_LONG} EQUAL 64)
     ####
     # conduit to native
     ####
-    set(CONDUIT_INT64_TYPE   "conduit_long")
-    set(CONDUIT_UINT64_TYPE  "conduit_ulong")
-    #
-    set(CONDUIT_INT64_NATIVE_TYPE  "long")
-    set(CONDUIT_UINT64_NATIVE_TYPE "unsigned long")
+    # make sure we haven't already mapped this type
+    if(NOT CONDUIT_INT64_TYPE)
+        set(CONDUIT_INT64_TYPE   "conduit_long")
+        set(CONDUIT_UINT64_TYPE  "conduit_ulong")
+        #
+        set(CONDUIT_INT64_NATIVE_TYPE  "long")
+        set(CONDUIT_UINT64_NATIVE_TYPE "unsigned long")
+    endif()
     ####
     # native to conduit
     ####
-    set(CONDUIT_NATIVE_LONG_ID          ${CONDUIT_INT64_ID})
-    set(CONDUIT_NATIVE_UNSIGNED_LONG_ID ${CONDUIT_UINT64_ID})
-    #
-    set(CONDUIT_NATIVE_LONG_TYPE          "conduit_int64")
-    set(CONDUIT_NATIVE_UNSIGNED_LONG_TYPE "conduit_uint64")
+    # check to see if the native type map has been made
+    if(NOT CONDUIT_NATIVE_LONG_TYPE)
+        set(CONDUIT_NATIVE_LONG_ID          ${CONDUIT_INT64_ID})
+        set(CONDUIT_NATIVE_UNSIGNED_LONG_ID ${CONDUIT_UINT64_ID})
+        #
+        set(CONDUIT_NATIVE_LONG_TYPE          "conduit_int64")
+        set(CONDUIT_NATIVE_UNSIGNED_LONG_TYPE "conduit_uint64")
+    endif()
 endif()
 
 #-----------------------------------------------------------------------------
@@ -780,5 +804,3 @@ message(STATUS " conduit::uint64 native type: ${CONDUIT_UINT64_NATIVE_TYPE}")
 #-----------------------------------------------------------------------------
 message(STATUS " conduit::float32 native type: ${CONDUIT_FLOAT32_NATIVE_TYPE}")
 message(STATUS " conduit::float64 native type: ${CONDUIT_FLOAT64_NATIVE_TYPE}")
-
-

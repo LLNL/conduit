@@ -2605,18 +2605,21 @@ private:
 
     // signed integers via pointers
     #ifdef CONDUIT_USE_LONG_LONG
-    long long      *as_long_long_ptr() const;
+    long long       *as_long_long_ptr();
+    const long long *as_long_long_ptr() const;
     #endif
 
     // unsigned integers via pointers
     #ifdef CONDUIT_USE_LONG_LONG
-    unsigned long long  *as_unsigned_long_long_ptr() const;
+    unsigned long long        *as_unsigned_long_long_ptr();
+    const unsigned long long  *as_unsigned_long_long_ptr() const;
     #endif
 
 
     // floating point via pointers
     #ifdef CONDUIT_USE_LONG_DOUBLE
-    long double     *as_long_double_ptr();
+    long double         *as_long_double_ptr();
+    const long double   *as_long_double_ptr() const;
     #endif
 
     // signed integers via pointers (const variants)
