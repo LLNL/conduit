@@ -630,6 +630,13 @@ Schema::child_ptr(index_t idx)
     return &child(idx);
 }
 
+//---------------------------------------------------------------------------//
+const Schema *
+Schema::child_ptr(index_t idx) const
+{
+    return &child(idx);
+}
+
 
 //---------------------------------------------------------------------------//
 void    
@@ -865,6 +872,47 @@ Schema::operator[](const std::string &path)
 }
 
 //---------------------------------------------------------------------------//
+std::string 
+Schema::path() const
+{
+    const Schema *p = parent();
+
+    if(p == NULL)
+    {
+        return "";
+    }
+    
+    index_t idx = 0;
+    index_t nchld = p->number_of_children();
+    for(index_t i=0; i < nchld; i++)
+    {
+        if( p->child_ptr(i) == this )
+        {
+            idx = i;
+        }
+    }
+
+    std::ostringstream oss;
+    std::string parent_path = p->path();
+    if(parent_path.size() > 0)
+        oss << parent_path << "/";
+
+    // if this schema has a parent, its parent is either an object or list
+    if(p->dtype().is_object())
+    {
+        // use name
+        oss << p->child_name(idx);
+    }
+    else if(p->dtype().is_list())
+    {
+        // use order in the list
+        oss << "[" << idx << "]";
+    }
+
+    return oss.str();
+}
+
+//---------------------------------------------------------------------------//
 bool           
 Schema::has_path(const std::string &path) const
 {
@@ -946,8 +994,8 @@ Schema &
 Schema::append()
 {
     init_list();
-    init_list();
     Schema *sch = new Schema();
+    sch->m_parent = this;
     children().push_back(sch);
     return *sch;
 }

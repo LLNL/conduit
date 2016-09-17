@@ -773,4 +773,52 @@ TEST(conduit_node, check_contiguous_with)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, check_path)
+{   
+
+    Node n;
+    
+    n["a/b/c/d/e/f"] = 10;
+
+    EXPECT_EQ(n.path(),"");
+    EXPECT_EQ(n["a/b/c/d/e/f"].path(), "a/b/c/d/e/f");
+    
+    // check roundtrip -- using path() to fetch from root node
+    EXPECT_EQ(n.fetch_ptr(n["a/b/c/d/e/f"].path()),&n["a/b/c/d/e/f"]);
+    
+    // list cases
+    EXPECT_EQ(n["a/b/c/list"].append().path(), "a/b/c/list/[0]");
+    EXPECT_EQ(n["a/b/c/list"].append().path(), "a/b/c/list/[1]");
+    EXPECT_EQ(n["a/b/c/list"].append().path(), "a/b/c/list/[2]");
+
+    n.print();
+
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node, check_path_in_bad_access)
+{   
+    // test if the path string appears in the exception thrown
+    // for a bad dtype access
+    
+    Node n;
+    
+    n["a/b/c/d/e/f"] = 10;
+    
+    try
+    {
+        std::string s = n["a/b/c/d/e/f"].as_string();
+    }
+    catch(Error e)
+    {
+        EXPECT_TRUE(e.message().find("a/b/c/d/e/f") != std::string::npos);
+    }
+}
+
+
+
+
+
 

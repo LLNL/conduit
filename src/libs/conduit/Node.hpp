@@ -2280,8 +2280,12 @@ public:
     /// access child node via index (equivalent to fetch via index)
     Node             &operator[](index_t idx);
 
-    /// return the number of children (list and object interfaces)
+    /// returns the number of children (list and object interfaces)
     index_t number_of_children() const;
+
+    /// returns a string with the path of this node up
+    /// the tree, following the parent chain
+    std::string path() const;
 
     /// checks if given path exists in the Node hierarchy 
     bool        has_path(const std::string &path) const;

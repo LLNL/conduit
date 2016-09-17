@@ -83,22 +83,24 @@
 //-----------------------------------------------------------------------------
 //
 /// The CONDUIT_CHECK_DTYPE macro is used to check the dtype for leaf access
-/// methods.
+/// methods. If a type mismatch occurs, the message provides the full path to
+/// the node.
+// 
 //-----------------------------------------------------------------------------
-#define CONDUIT_CHECK_DTYPE( dtype_id, dtype_id_expect, msg, rtn )  \
-{                                                                   \
-    CONDUIT_CHECK( (dtype_id == dtype_id_expect) ,                  \
-                    "DataType "                                     \
-                    << DataType::id_to_name(dtype_id)               \
-                    << " does not equal expected DataType "         \
-                    << DataType::id_to_name(dtype_id_expect)        \
-                    << " " << msg);                                 \
-                                                                    \
-    if(dtype_id != dtype_id_expect)                                 \
-    {                                                               \
-        return rtn;                                                 \
-    }                                                               \
-}                                                                   \
+#define CONDUIT_CHECK_DTYPE( dtype_node, dtype_id_expect, method, rtn ) \
+{                                                                       \
+    CONDUIT_CHECK( (dtype_node->dtype().id() == dtype_id_expect) ,      \
+                    "Node::" << method << " -- DataType "               \
+                    << DataType::id_to_name(dtype_node->dtype().id())   \
+                    << " at path " << dtype_node->path()                \
+                    << " does not equal expected DataType "             \
+                    << DataType::id_to_name(dtype_id_expect));          \
+                                                                        \
+    if(dtype_node->dtype().id() != dtype_id_expect)                     \
+    {                                                                   \
+        return rtn;                                                     \
+    }                                                                   \
+}                                                                       \
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -8165,7 +8167,15 @@ Node::number_of_children() const
 }
 
 //---------------------------------------------------------------------------//
-bool           
+std::string 
+Node::path() const
+{
+    return m_schema->path();
+}
+
+
+//---------------------------------------------------------------------------//
+bool
 Node::has_path(const std::string &path) const
 {
     return m_schema->has_path(path);
@@ -8317,7 +8327,7 @@ Node::list_of_external(void *data,
 int8
 Node::as_int8()  const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::INT8_ID,
                          "as_int8()",
                          0);
@@ -8328,7 +8338,7 @@ Node::as_int8()  const
 int16
 Node::as_int16() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(), 
+    CONDUIT_CHECK_DTYPE(this, 
                          DataType::INT16_ID,
                          "as_int16()",
                          0);
@@ -8339,7 +8349,7 @@ Node::as_int16() const
 int32
 Node::as_int32() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::INT32_ID,
                          "as_int32()",
                          0);
@@ -8350,7 +8360,7 @@ Node::as_int32() const
 int64
 Node::as_int64() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::INT64_ID,
                          "as_int64()",
                          0);
@@ -8365,7 +8375,7 @@ Node::as_int64() const
 uint8
 Node::as_uint8() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(), 
+    CONDUIT_CHECK_DTYPE(this, 
                          DataType::UINT8_ID,
                          "as_uint8()", 0);
     return *((uint8*)element_ptr(0));
@@ -8375,7 +8385,7 @@ Node::as_uint8() const
 uint16
 Node::as_uint16() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::UINT16_ID,
                          "as_uint16()",
                          0);
@@ -8386,7 +8396,7 @@ Node::as_uint16() const
 uint32
 Node::as_uint32() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::UINT32_ID,
                          "as_uint32()",
                          0);
@@ -8397,7 +8407,7 @@ Node::as_uint32() const
 uint64
 Node::as_uint64() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::UINT64_ID,
                          "as_uint64()",
                          0);
@@ -8412,7 +8422,7 @@ Node::as_uint64() const
 float32
 Node::as_float32() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(), 
+    CONDUIT_CHECK_DTYPE(this, 
                          DataType::FLOAT32_ID,
                          "as_float32()",
                          0);
@@ -8423,7 +8433,7 @@ Node::as_float32() const
 float64
 Node::as_float64() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::FLOAT64_ID,
                          "as_float64()",
                          0);
@@ -8438,7 +8448,7 @@ Node::as_float64() const
 int8 *
 Node::as_int8_ptr()
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(), 
+    CONDUIT_CHECK_DTYPE(this, 
                          DataType::INT8_ID,
                          "as_int8_ptr()",
                          NULL);
@@ -8449,7 +8459,7 @@ Node::as_int8_ptr()
 int16 *
 Node::as_int16_ptr()
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::INT16_ID,
                          "as_int16_ptr()",
                          NULL);
@@ -8460,7 +8470,7 @@ Node::as_int16_ptr()
 int32 *
 Node::as_int32_ptr()
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::INT32_ID,
                          "as_int32_ptr()",
                          NULL);
@@ -8471,7 +8481,7 @@ Node::as_int32_ptr()
 int64 *
 Node::as_int64_ptr()
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::INT64_ID,
                          "as_int64_ptr()",
                          NULL);
@@ -8486,7 +8496,7 @@ Node::as_int64_ptr()
 uint8 *
 Node::as_uint8_ptr()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::UINT8_ID,
                          "as_uint8_ptr()",
                          NULL);
@@ -8497,7 +8507,7 @@ Node::as_uint8_ptr()
 uint16 *
 Node::as_uint16_ptr()   
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::UINT16_ID,
                          "as_uint16_ptr()",
                          NULL);
@@ -8508,7 +8518,7 @@ Node::as_uint16_ptr()
 uint32 *
 Node::as_uint32_ptr()   
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::UINT32_ID,
                          "as_uint32_ptr()",
                          NULL);
@@ -8519,7 +8529,7 @@ Node::as_uint32_ptr()
 uint64 *
 Node::as_uint64_ptr()   
 {     
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::UINT64_ID,
                          "as_uint64_ptr()",
                          NULL);
@@ -8534,7 +8544,7 @@ Node::as_uint64_ptr()
 float32 *
 Node::as_float32_ptr()  
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::FLOAT32_ID,
                          "as_float32_ptr()",
                          NULL);
@@ -8545,7 +8555,7 @@ Node::as_float32_ptr()
 float64 *
 Node::as_float64_ptr()  
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::FLOAT64_ID,
                          "as_float64_ptr()",
                          NULL);
@@ -8561,7 +8571,7 @@ Node::as_float64_ptr()
 const int8 *
 Node::as_int8_ptr() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::INT8_ID,
                          "as_int8_ptr()",
                          NULL);
@@ -8572,7 +8582,7 @@ Node::as_int8_ptr() const
 const int16 *
 Node::as_int16_ptr() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::INT16_ID,
                          "as_int16_ptr()",
                          NULL);
@@ -8583,7 +8593,7 @@ Node::as_int16_ptr() const
 const int32 *
 Node::as_int32_ptr() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::INT32_ID,
                          "as_int32_ptr()",
                          NULL);
@@ -8594,7 +8604,7 @@ Node::as_int32_ptr() const
 const int64 *
 Node::as_int64_ptr() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::INT64_ID,
                          "as_int64_ptr()",
                          NULL);
@@ -8609,7 +8619,7 @@ Node::as_int64_ptr() const
 const uint8 *
 Node::as_uint8_ptr() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::UINT8_ID,
                          "as_uint8_ptr()",
                          NULL);
@@ -8620,7 +8630,7 @@ Node::as_uint8_ptr() const
 const uint16 *
 Node::as_uint16_ptr() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::UINT16_ID,
                          "as_uint16_ptr()",
                          NULL);
@@ -8631,7 +8641,7 @@ Node::as_uint16_ptr() const
 const uint32 *
 Node::as_uint32_ptr() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::UINT32_ID,
                          "as_uint32_ptr()",
                          NULL);
@@ -8642,7 +8652,7 @@ Node::as_uint32_ptr() const
 const uint64 *
 Node::as_uint64_ptr() const
 {     
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::UINT64_ID,
                          "as_uint64_ptr()",
                          NULL);
@@ -8657,7 +8667,7 @@ Node::as_uint64_ptr() const
 const float32 *
 Node::as_float32_ptr() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::FLOAT32_ID,
                          "as_float32_ptr()",
                          NULL);
@@ -8668,7 +8678,7 @@ Node::as_float32_ptr() const
 const float64 *
 Node::as_float64_ptr() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::FLOAT64_ID,
                          "as_float64_ptr()",
                          NULL);
@@ -8684,7 +8694,7 @@ Node::as_float64_ptr() const
 int8_array
 Node::as_int8_array()
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::INT8_ID,
                          "as_int8_array()",
                          int8_array());
@@ -8695,7 +8705,7 @@ Node::as_int8_array()
 int16_array
 Node::as_int16_array()
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::INT16_ID,
                          "as_int16_array()",
                          int16_array());
@@ -8706,7 +8716,7 @@ Node::as_int16_array()
 int32_array
 Node::as_int32_array()
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::INT32_ID,
                          "as_int32_array()",
                          int32_array());
@@ -8717,7 +8727,7 @@ Node::as_int32_array()
 int64_array
 Node::as_int64_array()
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::INT64_ID,
                          "as_int64_array()",
                          int64_array());
@@ -8732,7 +8742,7 @@ Node::as_int64_array()
 uint8_array
 Node::as_uint8_array()
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::UINT8_ID,
                          "as_uint8_array()",
                          uint8_array());
@@ -8743,7 +8753,7 @@ Node::as_uint8_array()
 uint16_array
 Node::as_uint16_array()
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::UINT16_ID,
                          "as_uint16_array()",
                          uint16_array());
@@ -8754,7 +8764,7 @@ Node::as_uint16_array()
 uint32_array
 Node::as_uint32_array()
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                           DataType::UINT32_ID,
                           "as_uint32_array()",
                           uint32_array());
@@ -8765,7 +8775,7 @@ Node::as_uint32_array()
 uint64_array
 Node::as_uint64_array() 
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::UINT64_ID,
                          "as_uint64_array()",
                          uint64_array());
@@ -8780,7 +8790,7 @@ Node::as_uint64_array()
 float32_array
 Node::as_float32_array()
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::FLOAT32_ID,
                          "as_float32_array()",
                          float32_array());
@@ -8791,7 +8801,7 @@ Node::as_float32_array()
 float64_array
 Node::as_float64_array()
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::FLOAT64_ID,
                          "as_float64_array()",
                          float64_array());
@@ -8806,7 +8816,7 @@ Node::as_float64_array()
 const int8_array
 Node::as_int8_array() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::INT8_ID,
                          "as_int8_array()",
                          int8_array());
@@ -8817,7 +8827,7 @@ Node::as_int8_array() const
 const int16_array
 Node::as_int16_array() const 
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::INT16_ID,
                          "as_int16_array()",
                          int16_array());
@@ -8828,7 +8838,7 @@ Node::as_int16_array() const
 const int32_array
 Node::as_int32_array() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::INT32_ID,
                          "as_int32_array()",
                          int32_array());
@@ -8839,7 +8849,7 @@ Node::as_int32_array() const
 const int64_array
 Node::as_int64_array() const 
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::INT64_ID,
                          "as_int64_array()",
                          int64_array());
@@ -8855,7 +8865,7 @@ Node::as_int64_array() const
 const uint8_array
 Node::as_uint8_array() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::UINT8_ID,
                          "as_uint8_array()",
                          uint8_array());
@@ -8866,7 +8876,7 @@ Node::as_uint8_array() const
 const uint16_array
 Node::as_uint16_array() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::UINT16_ID,
                          "as_uint16_array()",
                          uint16_array());
@@ -8877,7 +8887,7 @@ Node::as_uint16_array() const
 const uint32_array
 Node::as_uint32_array() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::UINT32_ID,
                          "as_uint32_array()",
                          uint32_array());
@@ -8888,7 +8898,7 @@ Node::as_uint32_array() const
 const uint64_array
 Node::as_uint64_array() const 
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::UINT64_ID,
                          "as_uint64_array()",
                          uint64_array());
@@ -8903,7 +8913,7 @@ Node::as_uint64_array() const
 const float32_array
 Node::as_float32_array() const 
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::FLOAT32_ID,
                          "as_float32_array()",
                          float32_array());
@@ -8914,7 +8924,7 @@ Node::as_float32_array() const
 const float64_array
 Node::as_float64_array() const 
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::FLOAT64_ID,
                          "as_float64_array()",
                          float64_array());
@@ -8929,7 +8939,7 @@ Node::as_float64_array() const
 char *
 Node::as_char8_str()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::CHAR8_STR_ID,
                          "as_char8_str()",
                          NULL);
@@ -8940,7 +8950,7 @@ Node::as_char8_str()
 const char *
 Node::as_char8_str() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::CHAR8_STR_ID,
                          "as_char8_str()",
                          NULL);
@@ -8951,7 +8961,7 @@ Node::as_char8_str() const
 std::string
 Node::as_string() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          DataType::CHAR8_STR_ID,
                          "as_string()",
                          std::string());
@@ -8986,7 +8996,7 @@ Node::data_ptr() const
 char
 Node::as_char() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_CHAR_ID,
                          "as_char()",
                          0);
@@ -8997,7 +9007,7 @@ Node::as_char() const
 short
 Node::as_short() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_SHORT_ID,
                          "as_short()",
                          0);
@@ -9008,7 +9018,7 @@ Node::as_short() const
 int
 Node::as_int() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_INT_ID,
                          "as_int()",
                          0);
@@ -9019,7 +9029,7 @@ Node::as_int() const
 long
 Node::as_long()  const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_LONG_ID,
                          "as_long()",
                          0);
@@ -9033,7 +9043,7 @@ Node::as_long()  const
 long long
 Node::as_long_long()  const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_LONG_LONG_ID,
                          "as_long_long()",
                          0);
@@ -9051,7 +9061,7 @@ Node::as_long_long()  const
 unsigned char
 Node::as_unsigned_char() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
                          "as_unsigned_char()",
                          0);
@@ -9062,7 +9072,7 @@ Node::as_unsigned_char() const
 unsigned short 
 Node::as_unsigned_short() const 
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
                          "as_unsigned_short()",
                          0);
@@ -9073,7 +9083,7 @@ Node::as_unsigned_short() const
 unsigned int
 Node::as_unsigned_int()const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_INT_ID,
                          "as_unsigned_int()",
                          0);
@@ -9084,7 +9094,7 @@ Node::as_unsigned_int()const
 unsigned long
 Node::as_unsigned_long() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_LONG_ID,
                          "as_unsigned_long()",
                          0);
@@ -9097,7 +9107,7 @@ Node::as_unsigned_long() const
 unsigned long long
 Node::as_unsigned_long_long() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
                          "as_unsigned_long_long()",
                          0);
@@ -9115,7 +9125,7 @@ Node::as_unsigned_long_long() const
 float
 Node::as_float() const 
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_FLOAT_ID,
                          "as_float()",
                          0);
@@ -9126,7 +9136,7 @@ Node::as_float() const
 double
 Node::as_double() const 
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_DOUBLE_ID,
                          "as_double()",
                          0);
@@ -9139,7 +9149,7 @@ Node::as_double() const
 long double
 Node::as_long_double() const 
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_LONG_DOUBLE_ID,
                          "as_long_double()",
                          0);
@@ -9157,7 +9167,7 @@ Node::as_long_double() const
 char *
 Node::as_char_ptr()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_CHAR_ID,
                          "as_char_ptr()",
                          NULL);
@@ -9168,7 +9178,7 @@ Node::as_char_ptr()
 short *
 Node::as_short_ptr()
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_SHORT_ID,
                          "as_short_ptr()",
                          NULL);
@@ -9179,7 +9189,7 @@ Node::as_short_ptr()
 int *
 Node::as_int_ptr()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_INT_ID,
                          "as_int_ptr()",
                          NULL);
@@ -9190,7 +9200,7 @@ Node::as_int_ptr()
 long *
 Node::as_long_ptr()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_LONG_ID,
                          "as_long_ptr()",
                          NULL);
@@ -9204,7 +9214,7 @@ Node::as_long_ptr()
 long long *
 Node::as_long_long_ptr()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_LONG_LONG_ID,
                          "as_long_long_ptr()",
                          NULL);
@@ -9222,7 +9232,7 @@ Node::as_long_long_ptr()
 unsigned char *
 Node::as_unsigned_char_ptr()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
                          "as_unsigned_char_ptr()",
                          NULL);
@@ -9233,7 +9243,7 @@ Node::as_unsigned_char_ptr()
 unsigned short *
 Node::as_unsigned_short_ptr()
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
                          "as_unsigned_short_ptr()",
                          NULL);
@@ -9244,7 +9254,7 @@ Node::as_unsigned_short_ptr()
 unsigned int *
 Node::as_unsigned_int_ptr()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_INT_ID,
                          "as_unsigned_int_ptr()",
                          NULL);
@@ -9255,7 +9265,7 @@ Node::as_unsigned_int_ptr()
 unsigned long *
 Node::as_unsigned_long_ptr()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_LONG_ID,
                          "as_unsigned_long_ptr()",
                          NULL);
@@ -9269,7 +9279,7 @@ Node::as_unsigned_long_ptr()
 unsigned long long *
 Node::as_unsigned_long_long_ptr()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
                          "as_unsigned_long_long_ptr()",
                          NULL);
@@ -9288,7 +9298,7 @@ Node::as_unsigned_long_long_ptr()
 float *
 Node::as_float_ptr()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_FLOAT_ID,
                          "as_float_ptr()",
                          NULL);
@@ -9299,7 +9309,7 @@ Node::as_float_ptr()
 double *
 Node::as_double_ptr()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_DOUBLE_ID,
                          "as_double_ptr()",
                          NULL);
@@ -9313,7 +9323,7 @@ Node::as_double_ptr()
 long double *
 Node::as_long_double_ptr()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_LONG_DOUBLE_ID,
                          "as_long_double_ptr()",
                          NULL);
@@ -9332,7 +9342,7 @@ Node::as_long_double_ptr()
 const char *
 Node::as_char_ptr() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_CHAR_ID,
                          "as_char_ptr()",
                          NULL);
@@ -9343,7 +9353,7 @@ Node::as_char_ptr() const
 const short *
 Node::as_short_ptr() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_SHORT_ID,
                          "as_short_ptr()",
                          NULL);
@@ -9354,7 +9364,7 @@ Node::as_short_ptr() const
 const int *
 Node::as_int_ptr() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_INT_ID,
                          "as_int_ptr()",
                          NULL);
@@ -9365,7 +9375,7 @@ Node::as_int_ptr() const
 const long *
 Node::as_long_ptr() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_LONG_ID,
                          "as_long_ptr()",
                          NULL);
@@ -9379,7 +9389,7 @@ Node::as_long_ptr() const
 const long long *
 Node::as_long_long_ptr() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_LONG_LONG_ID,
                          "as_long_long_ptr()",
                          NULL);
@@ -9399,7 +9409,7 @@ Node::as_long_long_ptr() const
 const unsigned char *
 Node::as_unsigned_char_ptr() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
                          "as_unsigned_char_ptr()",
                          NULL);
@@ -9410,7 +9420,7 @@ Node::as_unsigned_char_ptr() const
 const unsigned short *
 Node::as_unsigned_short_ptr() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
                          "as_unsigned_short_ptr()",
                          NULL);
@@ -9421,7 +9431,7 @@ Node::as_unsigned_short_ptr() const
 const unsigned int *
 Node::as_unsigned_int_ptr() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_INT_ID,
                          "as_unsigned_int_ptr()",
                          NULL);
@@ -9432,7 +9442,7 @@ Node::as_unsigned_int_ptr() const
 const unsigned long *
 Node::as_unsigned_long_ptr() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_LONG_ID,
                          "as_unsigned_long_ptr()",
                          NULL);
@@ -9445,7 +9455,7 @@ Node::as_unsigned_long_ptr() const
 const unsigned long long *
 Node::as_unsigned_long_long_ptr() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
                          "as_unsigned_long_long_ptr()",
                          NULL);
@@ -9465,7 +9475,7 @@ Node::as_unsigned_long_long_ptr() const
 const float *
 Node::as_float_ptr() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_FLOAT_ID,
                          "as_float_ptr()",
                          NULL);
@@ -9476,7 +9486,7 @@ Node::as_float_ptr() const
 const double *
 Node::as_double_ptr() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_DOUBLE_ID,
                          "as_double_ptr()",
                          NULL);
@@ -9490,7 +9500,7 @@ Node::as_double_ptr() const
 const long double *
 Node::as_long_double_ptr() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_LONG_DOUBLE_ID,
                          "as_long_double_ptr()",
                          NULL);
@@ -9509,7 +9519,7 @@ Node::as_long_double_ptr() const
 char_array
 Node::as_char_array()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_CHAR_ID,
                          "as_char_array()",
                          char_array());
@@ -9520,7 +9530,7 @@ Node::as_char_array()
 short_array
 Node::as_short_array()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_SHORT_ID,
                          "as_short_array()",
                          short_array());
@@ -9531,7 +9541,7 @@ Node::as_short_array()
 int_array
 Node::as_int_array()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_INT_ID,
                          "as_int_array()",
                          int_array());
@@ -9542,7 +9552,7 @@ Node::as_int_array()
 long_array
 Node::as_long_array()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_LONG_ID,
                          "as_long_array()",
                          long_array());
@@ -9556,7 +9566,7 @@ Node::as_long_array()
 long_long_array
 Node::as_long_long_array()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_LONG_LONG_ID,
                          "as_long_long_array()",
                          long_long_array());
@@ -9575,7 +9585,7 @@ Node::as_long_long_array()
 unsigned_char_array
 Node::as_unsigned_char_array()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
                          "as_unsigned_char_array()",
                          unsigned_char_array());
@@ -9586,7 +9596,7 @@ Node::as_unsigned_char_array()
 unsigned_short_array
 Node::as_unsigned_short_array()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
                          "as_unsigned_short_array()",
                          unsigned_short_array());
@@ -9597,7 +9607,7 @@ Node::as_unsigned_short_array()
 unsigned_int_array
 Node::as_unsigned_int_array()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_INT_ID,
                          "as_unsigned_int_array()",
                          unsigned_int_array());
@@ -9608,7 +9618,7 @@ Node::as_unsigned_int_array()
 unsigned_long_array
 Node::as_unsigned_long_array()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_LONG_ID,
                          "as_unsigned_long_array()",
                          unsigned_long_array());
@@ -9622,7 +9632,7 @@ Node::as_unsigned_long_array()
 unsigned_long_long_array
 Node::as_unsigned_long_long_array()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
                          "as_unsigned_long_long_array()",
                          unsigned_long_long_array());
@@ -9642,7 +9652,7 @@ Node::as_unsigned_long_long_array()
 float_array
 Node::as_float_array()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_FLOAT_ID,
                          "as_float_array()",
                          float_array());
@@ -9653,7 +9663,7 @@ Node::as_float_array()
 double_array
 Node::as_double_array()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_DOUBLE_ID,
                          "as_double_array()",
                          double_array());
@@ -9666,7 +9676,7 @@ Node::as_double_array()
 long_double_array
 Node::as_long_double_array()
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_LONG_DOUBLE_ID,
                          "as_long_double_array()",
                          long_double_array());
@@ -9685,7 +9695,7 @@ Node::as_long_double_array()
 const char_array
 Node::as_char_array() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_CHAR_ID,
                          "as_char_array()",
                          char_array());
@@ -9696,7 +9706,7 @@ Node::as_char_array() const
 const short_array
 Node::as_short_array() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_SHORT_ID,
                          "as_short_array()",
                          short_array());
@@ -9707,7 +9717,7 @@ Node::as_short_array() const
 const int_array
 Node::as_int_array() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_INT_ID,
                          "as_int_array()",
                          int_array());
@@ -9718,7 +9728,7 @@ Node::as_int_array() const
 const long_array
 Node::as_long_array() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_LONG_ID,
                          "as_long_array()",
                          long_array());
@@ -9731,7 +9741,7 @@ Node::as_long_array() const
 const long_long_array
 Node::as_long_long_array() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_LONG_LONG_ID,
                          "as_long_long_array()",
                          long_long_array());
@@ -9750,7 +9760,7 @@ Node::as_long_long_array() const
 const unsigned_char_array
 Node::as_unsigned_char_array() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
                          "as_unsigned_char_array()",
                          unsigned_char_array());
@@ -9761,7 +9771,7 @@ Node::as_unsigned_char_array() const
 const unsigned_short_array
 Node::as_unsigned_short_array() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
                          "as_unsigned_short_array()",
                          unsigned_short_array());
@@ -9772,7 +9782,7 @@ Node::as_unsigned_short_array() const
 const unsigned_int_array
 Node::as_unsigned_int_array() const
 { 
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_INT_ID,
                          "as_unsigned_int_array()",
                          unsigned_int_array());
@@ -9783,7 +9793,7 @@ Node::as_unsigned_int_array() const
 const unsigned_long_array
 Node::as_unsigned_long_array() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_LONG_ID,
                          "as_unsigned_long_array()",
                          unsigned_long_array());
@@ -9797,7 +9807,7 @@ Node::as_unsigned_long_array() const
 const unsigned_long_long_array
 Node::as_unsigned_long_long_array() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
                          "as_unsigned_long_long_array()",
                          unsigned_long_long_array());
@@ -9816,7 +9826,7 @@ Node::as_unsigned_long_long_array() const
 const float_array
 Node::as_float_array() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_FLOAT_ID,
                          "as_float_array()",
                          float_array());
@@ -9827,7 +9837,7 @@ Node::as_float_array() const
 const double_array
 Node::as_double_array() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_DOUBLE_ID,
                          "as_double_array()",
                          double_array());
@@ -9839,7 +9849,7 @@ Node::as_double_array() const
 const long_double_array
 Node::as_long_double_array() const
 {
-    CONDUIT_CHECK_DTYPE(dtype().id(),
+    CONDUIT_CHECK_DTYPE(this,
                          CONDUIT_NATIVE_LONG_DOUBLE_ID,
                          "as_long_double_array()",
                          long_double_array());
