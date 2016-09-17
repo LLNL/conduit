@@ -272,6 +272,7 @@ public:
     
     std::string       path() const;
     
+    bool              has_child(const std::string &name) const;
     bool              has_path(const std::string &path) const;
     void              paths(std::vector<std::string> &paths) const;
     const std::vector<std::string> &paths() const;

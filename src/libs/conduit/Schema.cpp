@@ -913,6 +913,27 @@ Schema::path() const
 }
 
 //---------------------------------------------------------------------------//
+bool
+Schema::has_child(const std::string &name) const
+{
+    // for the non-object case, has_path simply returns false
+    if(m_dtype.id() != DataType::OBJECT_ID)
+        return false;
+
+    const std::map<std::string,index_t> &ents = object_map();
+
+    if(ents.find(name) == ents.end())
+    {
+        return false;
+    }
+    else
+    {
+        return true;
+    }
+}
+
+
+//---------------------------------------------------------------------------//
 bool           
 Schema::has_path(const std::string &path) const
 {

@@ -2263,22 +2263,32 @@ public:
 //-----------------------------------------------------------------------------
     /// return a iterator that give access to this nodes children
     NodeIterator     children();
-    
-    /// `fetch' methods do modify map structure if a path doesn't exist
-    /// fetch the node at the given path
+
+    /// fetch the node at the given path    
+    /// non-const `fetch' methods do modify map structure if a path 
+    /// does not exist
     Node             &fetch(const std::string &path);
+    const Node       &fetch(const std::string &path) const;
+
     /// fetch the node at the given index
     Node             &child(index_t idx);
+    const Node       &child(index_t idx) const;
 
-    /// fetch a pointer to the node  at the given path   
+    /// fetch a pointer to the node  at the given path
     Node             *fetch_ptr(const std::string &path);
+    const Node       *fetch_ptr(const std::string &path) const;
+
     /// fetch a pointer to the node at the given index
     Node             *child_ptr(index_t idx);
+    const Node       *child_ptr(index_t idx) const;
 
     /// access child node via a path (equivalent to fetch via path)
     Node             &operator[](const std::string &path);
+    const Node       &operator[](const std::string &path) const;
+
     /// access child node via index (equivalent to fetch via index)
     Node             &operator[](index_t idx);
+    const Node       &operator[](index_t idx) const;
 
     /// returns the number of children (list and object interfaces)
     index_t number_of_children() const;

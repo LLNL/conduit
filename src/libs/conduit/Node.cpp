@@ -8070,7 +8070,7 @@ Node&
 Node::fetch(const std::string &path)
 {
     // fetch w/ path forces OBJECT_ID
-    if(dtype().id() != DataType::OBJECT_ID)
+    if(dtype().is_object())
     {
         init(DataType::object());
     }
@@ -8084,20 +8084,19 @@ Node::fetch(const std::string &path)
     {
         if(m_parent == NULL)
         {
-            CONDUIT_ERROR("Tried to fetch non-existent parent Node")
+            CONDUIT_ERROR("Cannot fetch from NULL parent" << path);
         }
         else
         {
             return m_parent->fetch(p_next);
         }
-        
     }
 
     // if this node doesn't exist yet, we need to create it and
     // link it to a schema
         
     index_t idx;
-    if(!m_schema->has_path(p_curr))
+    if(!m_schema->has_child(p_curr))
     {
         Schema *schema_ptr = m_schema->fetch_ptr(p_curr);
         Node *curr_node = new Node();
@@ -8122,6 +8121,57 @@ Node::fetch(const std::string &path)
 
 }
 
+//---------------------------------------------------------------------------//
+const Node&
+Node::fetch(const std::string &path) const
+{
+    // const fetch w/ path requires object role
+    if(dtype().is_object())
+    {
+        CONDUIT_ERROR("Cannot const fetch path, Node(" << this->path()
+                      << ") is not an object");
+    }
+    
+    std::string p_curr;
+    std::string p_next;
+    utils::split_path(path,p_curr,p_next);
+
+    // check for parent
+    if(p_curr == "..")
+    {
+        if(m_parent == NULL)
+        {
+            CONDUIT_ERROR("Cannot const fetch from NULL parent" << path);
+        }
+        else
+        {
+            return m_parent->fetch(p_next);
+        }
+    }
+
+    index_t idx;
+    if(m_schema->has_child(p_curr))
+    {
+        idx = m_schema->child_index(p_curr);
+    }
+    else
+    {
+        CONDUIT_ERROR("Cannot const fetch non-existent " 
+                      << "child " << p_curr << " from Node("
+                      << this->path()
+                      << ")");
+    }
+
+    if(p_next.empty())
+    {
+        return  *m_children[idx];
+    }
+    else
+    {
+        return m_children[idx]->fetch(p_next);
+    }
+}
+
 
 //---------------------------------------------------------------------------//
 Node&
@@ -8132,6 +8182,13 @@ Node::child(index_t idx)
 
 
 //---------------------------------------------------------------------------//
+const Node&
+Node::child(index_t idx) const
+{
+    return *m_children[idx];
+}
+
+//---------------------------------------------------------------------------//
 Node *
 Node::fetch_ptr(const std::string &path)
 {
@@ -8139,8 +8196,31 @@ Node::fetch_ptr(const std::string &path)
 }
 
 //---------------------------------------------------------------------------//
+const Node *
+Node::fetch_ptr(const std::string &path) const
+{
+    // TODO, this could be more efficient with sep imp that doens't
+    // use has_path and fetch (two traversals)
+    if(has_path(path))
+    {
+        return &fetch(path);
+    }
+    else
+    {
+        return NULL;
+    }
+}
+
+//---------------------------------------------------------------------------//
 Node *
 Node::child_ptr(index_t idx)
+{
+    return &child(idx);
+}
+
+//---------------------------------------------------------------------------//
+const Node *
+Node::child_ptr(index_t idx) const
 {
     return &child(idx);
 }
@@ -8153,8 +8233,22 @@ Node::operator[](const std::string &path)
 }
 
 //---------------------------------------------------------------------------//
+const Node&
+Node::operator[](const std::string &path) const
+{
+    return fetch(path);
+}
+
+//---------------------------------------------------------------------------//
 Node&
 Node::operator[](index_t idx)
+{
+    return child(idx);
+}
+
+//---------------------------------------------------------------------------//
+const Node&
+Node::operator[](index_t idx) const
 {
     return child(idx);
 }
