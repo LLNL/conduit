@@ -59,7 +59,7 @@ set(RELAY_TESTS t_relay_smoke
 ################################
 set(RELAY_MPI_TESTS      t_relay_mpi_smoke t_relay_mpi_test)
 set(RELAY_SILO_TESTS     t_relay_io_silo)
-set(RELAY_HDF5_TESTS     t_relay_io_hdf5)
+set(RELAY_HDF5_TESTS     t_relay_io_hdf5 t_relay_io_hdf5_read_and_print)
 
 
 ################################

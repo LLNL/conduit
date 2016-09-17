@@ -618,4 +618,45 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_childless_object)
 
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, conduit_hdf5_test_write_incompat)
+{
+    
+    Node n;
+    n["a/b/leaf"] = DataType::uint32(2);
+    n["a/b/grp/leaf"].set_uint32(10);
+    
+    uint32_array vals =  n["a/b/leaf"].value();
+    
+    vals[0] = 1;
+    vals[1] = 2;
+    
+    io::hdf5_write(n,"tout_hdf5_test_write_incompat.hdf5");
+
+    n.print();
+
+    Node n2;
+    n2["a/b/leaf/v"] = DataType::float64(2);
+    n2["a/b/grp/leaf/v"].set_float64(10.0);
+    
+    n2.print();
+
+    hid_t h5_file_id = H5Fopen("tout_hdf5_test_write_incompat.hdf5",
+                               H5F_ACC_RDWR,
+                               H5P_DEFAULT);
+
+    try
+    {
+        io::hdf5_write(n2,h5_file_id);
+    }
+    catch(Error &e)
+    {
+        CONDUIT_INFO(e.message());
+    }
+    
+    H5Fclose(h5_file_id);
+
+}
+
+
 
