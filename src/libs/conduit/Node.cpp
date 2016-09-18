@@ -7548,8 +7548,6 @@ Node::Value::operator long_double_array() const
 #endif
 //---------------------------------------------------------------------------//
 
-
-
 //-----------------------------------------------------------------------------
 // -- JSON construction methods ---
 //-----------------------------------------------------------------------------
@@ -8066,6 +8064,14 @@ Node::children()
 }
 
 //---------------------------------------------------------------------------//
+NodeConstIterator
+Node::children() const
+{
+    return NodeConstIterator(this);
+}
+
+
+//---------------------------------------------------------------------------//
 Node&
 Node::fetch(const std::string &path)
 {
@@ -8126,7 +8132,7 @@ const Node&
 Node::fetch(const std::string &path) const
 {
     // const fetch w/ path requires object role
-    if(dtype().is_object())
+    if(!dtype().is_object())
     {
         CONDUIT_ERROR("Cannot const fetch path, Node(" << this->path()
                       << ") is not an object");

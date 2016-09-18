@@ -136,7 +136,7 @@ TEST(conduit_node_iterator, empty)
     while(itr.has_next())
     {
         Node &n = itr.next();
-        n.print();
+        CONDUIT_INFO(n.to_json());
     }
     
     itr = n["c"].children();
@@ -197,3 +197,75 @@ TEST(conduit_node_iterator, move_cursor)
 
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_iterator, const_move_cursor)
+{
+    uint32   a_val  = 10;
+    uint32   b_val  = 20;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = "myval";
+    
+
+    NodeConstIterator itr = n.children();
+
+    itr.to_back();
+    EXPECT_FALSE(itr.has_next());
+    
+    // we are at the end,  check error capture
+    EXPECT_THROW(itr.next(),conduit::Error);
+    EXPECT_THROW(itr.peek_next(),conduit::Error);
+    
+    const Node &last = itr.peek_previous();
+    EXPECT_EQ(last.as_string(),"myval");
+    
+    itr.to_front();
+    EXPECT_TRUE(itr.has_next());
+    
+    // we are at the beginning, check error capture
+    EXPECT_THROW(itr.previous(),conduit::Error);
+    EXPECT_THROW(itr.peek_previous(),conduit::Error);
+    
+    const Node &first = itr.peek_next();
+    EXPECT_EQ(first.as_uint32(),a_val);
+
+    EXPECT_TRUE(itr.has_next());
+    EXPECT_EQ(itr.next().as_uint32(),a_val);
+    EXPECT_EQ(itr.path(),"a");
+    
+    EXPECT_TRUE(itr.has_next());
+    EXPECT_EQ(itr.next().as_uint32(),b_val);
+    EXPECT_EQ(itr.path(),"b");
+
+    EXPECT_TRUE(itr.has_next());
+    EXPECT_EQ(itr.next().as_string(),"myval");
+    EXPECT_EQ(itr.path(),"c");
+    
+    EXPECT_FALSE(itr.has_next());
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_iterator, const_itr_from_const_node)
+{
+    uint32   c_val  = 10;
+    uint32   d_val  = 20;
+
+    Node n;
+    n["a/b/c"] = c_val;
+    n["a/b/d"] = d_val;
+
+    const Node &n_b = n["a/b"];
+    
+    NodeConstIterator itr = n_b.children();
+    
+    const Node &n_c = itr.next();
+    EXPECT_EQ(n_c.as_uint32(),c_val);
+    
+    const Node &n_d = itr.next();
+    EXPECT_EQ(n_d.as_uint32(),d_val);
+
+}

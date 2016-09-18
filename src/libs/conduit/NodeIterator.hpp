@@ -63,7 +63,11 @@
 //-----------------------------------------------------------------------------
 namespace conduit
 {
-    
+
+// forward declare NodeConstIterator so it can be a used as a friend
+// to NodeIterator
+class NodeConstIterator;
+
 //-----------------------------------------------------------------------------
 // -- begin conduit::NodeIterator --
 //-----------------------------------------------------------------------------
@@ -82,7 +86,7 @@ public:
 // -- conduit::NodeIterator public members --
 //
 //-----------------------------------------------------------------------------
-    
+    friend class NodeConstIterator;
 //-----------------------------------------------------------------------------
 /// NodeIterator Construction and Destruction
 //-----------------------------------------------------------------------------
@@ -138,12 +142,97 @@ private:
     index_t  m_index;
     /// total number of children 
     index_t  m_num_children; 
-    
 };
 //-----------------------------------------------------------------------------
 // -- end conduit::NodeIterator --
 //-----------------------------------------------------------------------------
 
+
+    
+//-----------------------------------------------------------------------------
+// -- begin conduit::NodeIterator --
+//-----------------------------------------------------------------------------
+///
+/// class: conduit::NodeConstIterator
+///
+/// description:
+///  General purpose const iterator for Nodes.
+///
+//-----------------------------------------------------------------------------
+class CONDUIT_API NodeConstIterator
+{
+public:
+//-----------------------------------------------------------------------------
+//
+// -- conduit::NodeConstIterator public members --
+//
+//-----------------------------------------------------------------------------
+    
+//-----------------------------------------------------------------------------
+/// NodeConstIterator Construction and Destruction
+//-----------------------------------------------------------------------------
+    /// Default constructor.
+    NodeConstIterator();
+    /// Copy constructor.
+    NodeConstIterator(const NodeConstIterator &itr);
+    /// Primary iterator constructor.
+    NodeConstIterator(const Node *node,index_t idx=0);
+    /// Destructor 
+    ~NodeConstIterator();
+
+    /// Construct from non const
+    NodeConstIterator(const NodeIterator &itr);
+ 
+    /// Assignment operator.
+    NodeConstIterator &operator=(const NodeConstIterator &itr);
+
+    /// Assignment operator from non const
+    NodeConstIterator &operator=(const NodeIterator &itr);
+ 
+//-----------------------------------------------------------------------------
+/// Iterator value and property access.
+//-----------------------------------------------------------------------------
+    std::string path()  const;
+    index_t     index() const;
+    const Node &node();
+    void        to_front();
+
+//-----------------------------------------------------------------------------
+/// Iterator forward control.
+//-----------------------------------------------------------------------------
+    bool        has_next() const;
+    const Node &next();
+    const Node &peek_next();
+
+//-----------------------------------------------------------------------------
+/// Iterator reverse control.
+//-----------------------------------------------------------------------------
+    bool        has_previous() const;
+    const Node &previous();
+    const Node &peek_previous();
+    void        to_back();
+
+//-----------------------------------------------------------------------------
+/// Human readable info about this iterator
+//-----------------------------------------------------------------------------
+    void        info(Node &res) const;
+    
+private:
+//-----------------------------------------------------------------------------
+//
+// -- conduit::NodeIterator private data members --
+//
+//-----------------------------------------------------------------------------
+    /// pointer to the Node wrapped by this iterator
+    const Node  *m_node;
+    /// current child index
+    index_t      m_index;
+    /// total number of children 
+    index_t      m_num_children; 
+};
+//-----------------------------------------------------------------------------
+// -- end conduit::NodeIterator --
+//-----------------------------------------------------------------------------
 
 }
 //-----------------------------------------------------------------------------

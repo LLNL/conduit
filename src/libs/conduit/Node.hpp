@@ -83,6 +83,7 @@ namespace conduit
 //-----------------------------------------------------------------------------
 class Generator;
 class NodeIterator;
+class NodeConstIterator;
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::Node --
@@ -113,6 +114,7 @@ public:
     ///  NodeIterator needs access to Node internals to create
     ///   an efficient iterator
     friend class NodeIterator;
+    friend class NodeConstIterator;
     friend class Generator;
 
 //-----------------------------------------------------------------------------
@@ -2262,9 +2264,10 @@ public:
 ///  Node traversal (iterators), child access (for list or object types)
 //-----------------------------------------------------------------------------
     /// return a iterator that give access to this nodes children
-    NodeIterator     children();
+    NodeIterator        children();
+    NodeConstIterator   children() const;
 
-    /// fetch the node at the given path    
+    /// fetch the node at the given path
     /// non-const `fetch' methods do modify map structure if a path 
     /// does not exist
     Node             &fetch(const std::string &path);

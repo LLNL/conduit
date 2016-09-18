@@ -818,6 +818,33 @@ TEST(conduit_node, check_path_in_bad_access)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, check_const_access)
+{   
+    Node n;
+    
+    n["a/b"].set_int32(10);
+    n["a/c"].set(DataType::int64(2));
+    
+    int64_array c_vals = n["a/c"].value();
+    c_vals[0]= 1;
+    c_vals[1]= 2;
+
+    // Note: this won't throw b/c n is not const, so the const fetch
+    // will not bind
+    //const Node &n_bad = n["bad"];
+    
+    const Node &n_a = n["a"];
+    const int64 *c_vals_const = n_a["c"].as_int64_ptr();
+
+    EXPECT_THROW(const Node &n_a_bad = n_a["bad"];,conduit::Error);
+    
+    EXPECT_EQ(n_a["b"].as_int32(),10);
+    EXPECT_EQ(c_vals_const[0],1);
+    EXPECT_EQ(c_vals_const[1],2);
+    
+}
+
 
 
 
