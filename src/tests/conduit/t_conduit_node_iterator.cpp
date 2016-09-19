@@ -243,6 +243,8 @@ TEST(conduit_node_iterator, move_cursor)
     while(citr.has_next())
     {
         const Node &curr = citr.next();
+        index_t curr_idx = citr.index();
+        EXPECT_EQ(n.child_ptr(curr_idx),&curr);
         count++;
     }
 
@@ -332,6 +334,19 @@ TEST(conduit_node_iterator, const_move_cursor)
     EXPECT_EQ(itr_2.path(),"c");
     
     EXPECT_FALSE(itr_2.has_next());
+    
+    // replay after assignment 
+    itr_2 = itr;
+    
+    EXPECT_TRUE(itr_2.has_next());
+    EXPECT_EQ(itr_2.next().as_string(),"myval");
+    EXPECT_EQ(itr_2.path(),"c");
+    
+    EXPECT_FALSE(itr_2.has_next());
+    
+    
+    
+    
 
 
 }
