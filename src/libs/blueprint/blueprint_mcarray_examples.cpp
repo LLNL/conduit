@@ -233,7 +233,7 @@ xyz(const std::string &mcarray_type,
     }
     else
     {
-        CONDUIT_ERROR("unknown mca_type = " << mca_type);
+        CONDUIT_ERROR("unknown mca_type = " << mcarray_type);
     }
 }
 
