@@ -242,7 +242,7 @@ TEST(schema_basics, schema_fetch_child)
     
     const Schema *s_d_ptr = s.fetch_ptr("d");
 
-    EXPECT_TRUE(s_d_ptr->dtype().is_float64());
+    EXPECT_TRUE(s_d_ptr->dtype().is_object());
     
     const Schema &s_e = s_d_ptr->fetch("e");
 
