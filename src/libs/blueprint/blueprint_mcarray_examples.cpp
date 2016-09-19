@@ -80,7 +80,7 @@ namespace mcarray
 {
 
 //-----------------------------------------------------------------------------
-// -- begin blueprint::mca::examples --
+// -- begin blueprint::mcarray::examples --
 //-----------------------------------------------------------------------------
 
 namespace examples
@@ -210,24 +210,24 @@ xyz_interleaved_mixed_type(index_t nvals, // total number of "tuples"
 
 //---------------------------------------------------------------------------//
 void
-xyz(const std::string &mca_type,
+xyz(const std::string &mcarray_type,
     index_t npts, // total number of points
     Node &res)
 {
 
-    if(mca_type == "interleaved")
+    if(mcarray_type == "interleaved")
     {
         xyz_interleaved(npts,res);
     }
-    else if(mca_type == "separate")
+    else if(mcarray_type == "separate")
     {
         xyz_separate(npts,res);
     }
-    else if(mca_type == "contiguous")
+    else if(mcarray_type == "contiguous")
     {
         xyz_contiguous(npts,res);
     }
-    else if(mca_type == "interleaved_mixed")
+    else if(mcarray_type == "interleaved_mixed")
     {
         xyz_interleaved_mixed_type(npts,res); 
     }

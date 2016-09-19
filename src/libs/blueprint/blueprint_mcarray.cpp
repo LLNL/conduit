@@ -80,64 +80,48 @@ namespace blueprint
 namespace mcarray
 {
 
-
 //-----------------------------------------------------------------------------
 bool
-verify(Node &n,
-       Node &info)
+verify(const Node &n)
 {
-    return verify_mcarray(n);
+    Node info;
+    return verify(n,info);
+}
+
+//----------------------------------------------------------------------------
+bool verify(const conduit::Node &n,
+            Node &info)
+{
+    NodeConstIterator itr = n.children();
+    
+    bool ok = !n.dtype().is_empty();
+    
+    index_t num_elems = 0;
+    
+    while(itr.has_next() && ok)
+    {
+        // get the next child
+        const Node &chld = itr.next();
+        
+        ok = chld.dtype().is_number();
+        if(ok)
+        {
+            if(num_elems == 0)
+            {
+                num_elems = chld.dtype().number_of_elements();
+            }
+
+            ok = ( chld.dtype().number_of_elements() == num_elems);
+        }
+    }
+    
+    return ok;
 }
 
 
 //-----------------------------------------------------------------------------
 bool
-transform(Node &src,
-          Node &actions,
-          Node &dest,
-          Node &info)
-{
-   // TODO: list vs object case?
-   // list example:
-   //
-   // ["expand"]
-   // obj example
-   // [ {name: expand, opts: ... }]
-   //
-   // blueprint::actions::expand(actions,adest);
-   
-   NodeIterator itr = actions.children();
-   
-   while(itr.has_next())
-   {
-       Node &curr = itr.next();
-       std::string action_name = curr["name"].as_string();
-       // TODO: wire in any mca methods
-       // if( action_name == "expand")
-       // {
-       //     bool res = expand(src,dest,info.append());
-       //     if(!res)
-       //     {
-       //         return res;
-       //     }
-       // }
-       // else
-       // {
-           std::ostringstream oss;
-           oss << "blueprint::mca, unsupported action:" << action_name;
-           info.set(oss.str());
-           return false;
-       // }
-   }
-   
-   return true;
-
-}
-
-
-//-----------------------------------------------------------------------------
-bool
-to_contiguous(conduit::Node &src,
+to_contiguous(const conduit::Node &src,
               conduit::Node &dest)
 {
     // goal is to setup dest with children with the same names as src
@@ -145,14 +129,14 @@ to_contiguous(conduit::Node &src,
     //index_t num_dest_elems = src.child(0).number_of_elements() * num_comps;
     
     Schema s_dest;
-    NodeIterator itr = src.children();
+    NodeConstIterator itr = src.children();
     
     index_t curr_offset = 0;
     
     while(itr.has_next())
     {
         // get the next child
-        Node &chld = itr.next();
+        const Node &chld = itr.next();
         // get the next child's name
         std::string name = itr.path();
         
@@ -186,7 +170,7 @@ to_contiguous(conduit::Node &src,
 
 //-----------------------------------------------------------------------------
 bool
-to_interleaved(conduit::Node &src,
+to_interleaved(const conduit::Node &src,
                conduit::Node &dest)
 {
     // goal is to setup dest with children with the same names as src
@@ -194,14 +178,14 @@ to_interleaved(conduit::Node &src,
     
     Schema s_dest;
     
-    NodeIterator itr = src.children();
+    NodeConstIterator itr = src.children();
     index_t num_comps = src.number_of_children();
     index_t curr_offset = 0;
     
     while(itr.has_next())
     {
         // get the next child
-        Node &chld = itr.next();
+        const Node &chld = itr.next();
         // get the next child's name
         std::string name = itr.path();
         
@@ -234,38 +218,10 @@ to_interleaved(conduit::Node &src,
     return true; // we always work!
 }
 
-//----------------------------------------------------------------------------
-bool verify_mcarray(conduit::Node &n)
-{
-    NodeIterator itr = n.children();
-    
-    bool ok = !n.dtype().is_empty();
-    
-    index_t num_elems = 0;
-    
-    while(itr.has_next() && ok)
-    {
-        // get the next child
-        Node &chld = itr.next();
-        
-        ok = chld.dtype().is_number();
-        if(ok)
-        {
-            if(num_elems == 0)
-            {
-                num_elems = chld.dtype().number_of_elements();
-            }
-
-            ok = ( chld.dtype().number_of_elements() == num_elems);
-        }
-    }
-    
-    return ok;
-}
 
 
 //----------------------------------------------------------------------------
-bool BLUEPRINT_API is_interleaved(conduit::Node &n)
+bool BLUEPRINT_API is_interleaved(const conduit::Node &n)
 {
     // TODO: Implement
 
@@ -277,19 +233,20 @@ bool BLUEPRINT_API is_interleaved(conduit::Node &n)
 
     uint8 *starting_data_ptr = NULL;
 
-    NodeIterator itr = n.children();
+    NodeConstIterator itr = n.children();
     index_t stride = 0;
     index_t total_bytes_per_tuple = 0;
     
     while(itr.has_next() && ok)
     {
-      Node &child = itr.next();
+      const Node &child = itr.next();
       if(starting_data_ptr == NULL)
       {
         starting_data_ptr = (uint8*) child.element_ptr(0);
         stride = child.dtype().stride();
       }
-      std::cout<<"Pointer "<<(uint64*)child.element_ptr(0)<<std::endl;
+      
+      //std::cout<<"Pointer "<<(uint64*)child.element_ptr(0)<<std::endl;
       ok = (total_bytes_per_tuple == ((uint8*)child.element_ptr(0) - starting_data_ptr));
       if(ok) ok = (stride == child.dtype().stride());
       total_bytes_per_tuple += child.dtype().element_bytes(); 

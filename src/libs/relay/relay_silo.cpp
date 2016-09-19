@@ -307,15 +307,15 @@ silo_write_field(DBfile *dbfile,
 {
 
 
-    if (!n_var.has_path("topologies"))
+    if (!n_var.has_path("topology"))
     {
         CONDUIT_ERROR( "Missing linked topology! " 
                         << "fields/"
                         << var_name 
-                        << "/topologies");
+                        << "/topology");
     }
 
-    NodeConstIterator fld_topos_itr = n_var["topologies"].children();
+    NodeConstIterator fld_topos_itr = n_var["topology"].children();
 
     while(fld_topos_itr.has_next())
     {
@@ -325,7 +325,7 @@ silo_write_field(DBfile *dbfile,
         {
             CONDUIT_ERROR( "Invalid linked topology! " 
                             << "fields/" 
-                            << var_name << "/topologies: "
+                            << var_name << "/topology: "
                             << topo_name);
         }
 

@@ -85,21 +85,22 @@ std::string BLUEPRINT_API about();
 void        BLUEPRINT_API about(conduit::Node &n);
 
 //-----------------------------------------------------------------------------
-/// Experimental blueprint interface
+/// blueprint verify interface
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+/// Verify passed node confirms to given blueprint protocol
 //-----------------------------------------------------------------------------
 bool BLUEPRINT_API verify(const std::string &protocol,
-                          conduit::Node &n,
-                          conduit::Node &info);
+                          const conduit::Node &n);
 
 //-----------------------------------------------------------------------------
-bool BLUEPRINT_API transform(const std::string &protocol,
-                             conduit::Node &src,
-                             conduit::Node &actions,
-                             conduit::Node &dest,
-                             conduit::Node &info);
-
+/// Verify passed node confirms to given blueprint protocol.
+/// Messages related to the verification are be placed in the "info" node.
+//-----------------------------------------------------------------------------
+bool BLUEPRINT_API verify(const std::string &protocol,
+                          const conduit::Node &n,
+                          conduit::Node &info);
 
 //-----------------------------------------------------------------------------
 }

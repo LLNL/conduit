@@ -71,11 +71,11 @@ create_blueprint_index_for_2d_examples(Node &index_root)
         // coords
         uni_idx["coordsets/coords/type"]         = "uniform";
         uni_idx["coordsets/coords/coord_system"] = "xy";
-        uni_idx["coordsets/coords/path"]         = "uniform/coords";
+        uni_idx["coordsets/coords/path"]         = "uniform/coordsets/coords";
         // topology
         uni_idx["topologies/mesh/type"]     = "uniform";
         uni_idx["topologies/mesh/coordset"] = "coords";
-        uni_idx["topologies/mesh/path"]     = "uniform/topology";
+        uni_idx["topologies/mesh/path"]     = "uniform/topologies/mesh";
         // fields
             // pc
             uni_idx["fields/braid/number_of_components"] = 1;
@@ -103,11 +103,11 @@ create_blueprint_index_for_2d_examples(Node &index_root)
         // coords
         rect_idx["coordsets/coords/type"]         = "rectilinear";
         rect_idx["coordsets/coords/coord_system"] = "xy";
-        rect_idx["coordsets/coords/path"]         = "rect/coords";
+        rect_idx["coordsets/coords/path"]         = "rect/coordsets/coords";
         // topology
         rect_idx["topologies/mesh/type"]     = "rectilinear";
         rect_idx["topologies/mesh/coordset"] = "coords";
-        rect_idx["topologies/mesh/path"]     = "rect/topology";
+        rect_idx["topologies/mesh/path"]     = "rect/topologies/mesh";
         // fields
             // pc
             rect_idx["fields/braid/number_of_components"] = 1;
@@ -136,11 +136,11 @@ create_blueprint_index_for_2d_examples(Node &index_root)
         // coords
         struct_idx["coordsets/coords/type"]         = "explicit";
         struct_idx["coordsets/coords/coord_system"] = "xy";
-        struct_idx["coordsets/coords/path"]         = "struct/coords";
+        struct_idx["coordsets/coords/path"]         = "struct/coordsets/coords";
         // topology
         struct_idx["topologies/mesh/type"]     = "structured";
         struct_idx["topologies/mesh/coordset"] = "coords";
-        struct_idx["topologies/mesh/path"]     = "struct/topology";
+        struct_idx["topologies/mesh/path"]     = "struct/topologies/mesh";
         // fields
             // pc
             struct_idx["fields/braid/number_of_components"] = 1;
@@ -167,11 +167,11 @@ create_blueprint_index_for_2d_examples(Node &index_root)
         // coords
         lines_idx["coordsets/coords/type"]         = "explicit";
         lines_idx["coordsets/coords/coord_system"] = "xy";
-        lines_idx["coordsets/coords/path"]         = "lines/coords";
+        lines_idx["coordsets/coords/path"]         = "lines/coordsets/coords";
         // topology
         lines_idx["topologies/mesh/type"]     = "unstructured";
         lines_idx["topologies/mesh/coordset"] = "coords";
-        lines_idx["topologies/mesh/path"]     = "lines/topology";
+        lines_idx["topologies/mesh/path"]     = "lines/topologies/mesh";
         // fields
             // pc
             lines_idx["fields/braid/number_of_components"] = 1;
@@ -199,11 +199,11 @@ create_blueprint_index_for_2d_examples(Node &index_root)
     // coords
     tris_idx["coordsets/coords/type"]         = "explicit";
     tris_idx["coordsets/coords/coord_system"] = "xy";
-    tris_idx["coordsets/coords/path"]         = "tris/coords";
+    tris_idx["coordsets/coords/path"]         = "tris/coordsets/coords";
     // topology
     tris_idx["topologies/mesh/type"]     = "unstructured";
     tris_idx["topologies/mesh/coordset"] = "coords";
-    tris_idx["topologies/mesh/path"]     = "tris/topology";
+    tris_idx["topologies/mesh/path"]     = "tris/topologies/mesh";
     // fields
         // pc
         tris_idx["fields/braid/number_of_components"] = 1;
@@ -231,11 +231,11 @@ create_blueprint_index_for_2d_examples(Node &index_root)
     // coords
     quads_idx["coordsets/coords/type"]         = "explicit";
     quads_idx["coordsets/coords/coord_system"] = "xy";
-    quads_idx["coordsets/coords/path"]         = "quads/coords";
+    quads_idx["coordsets/coords/path"]         = "quads/coordsets/coords";
     // topology
     quads_idx["topologies/mesh/type"]     = "unstructured";
     quads_idx["topologies/mesh/coordset"] = "coords";
-    quads_idx["topologies/mesh/path"]     = "quads/topology";
+    quads_idx["topologies/mesh/path"]     = "quads/topologies/mesh";
     // fields
         // pc
         quads_idx["fields/braid/number_of_components"] = 1;
@@ -261,12 +261,12 @@ create_blueprint_index_for_2d_examples(Node &index_root)
     pts_idx["state/number_of_domains"]  = 1;
     // coords
     pts_idx["coordsets/coords/type"]         = "explicit";
-    pts_idx["coordsets/coords/coord_system"] = "xyz";
-    pts_idx["coordsets/coords/path"]         = "points/coords";
+    pts_idx["coordsets/coords/coord_system"] = "xy";
+    pts_idx["coordsets/coords/path"]         = "points/coordsets/coords";
     // topology
     pts_idx["topologies/mesh/type"]     = "unstructured";
     pts_idx["topologies/mesh/coordset"] = "coords";
-    pts_idx["topologies/mesh/path"]     = "points/topology";
+    pts_idx["topologies/mesh/path"]     = "points/topologies/mesh";
     // fields
         // pc
         pts_idx["fields/braid/number_of_components"] = 1;
@@ -279,7 +279,7 @@ create_blueprint_index_for_2d_examples(Node &index_root)
         pts_idx["fields/radial/topology"]    = "mesh";
         pts_idx["fields/radial/path"]        = "points/fields/radial";
         // vel pc
-        pts_idx["fields/vel/number_of_components"] = 3;
+        pts_idx["fields/vel/number_of_components"] = 2;
         pts_idx["fields/vel/association"] = "point";
         pts_idx["fields/vel/topology"]    = "mesh";
         pts_idx["fields/vel/path"]        = "points/fields/vel";
@@ -298,11 +298,11 @@ create_blueprint_index_for_3d_examples(Node &index_root)
         // coords
         uni_idx["coordsets/coords/type"]         = "uniform";
         uni_idx["coordsets/coords/coord_system"] = "xyz";
-        uni_idx["coordsets/coords/path"]         = "uniform/coords";
+        uni_idx["coordsets/coords/path"]         = "uniform/coordsets/coords";
         // topology
         uni_idx["topologies/mesh/type"]     = "uniform";
         uni_idx["topologies/mesh/coordset"] = "coords";
-        uni_idx["topologies/mesh/path"]     = "uniform/topology";
+        uni_idx["topologies/mesh/path"]     = "uniform/topologies/mesh";
         // fields
             // pc
             uni_idx["fields/braid/number_of_components"] = 1;
@@ -330,11 +330,11 @@ create_blueprint_index_for_3d_examples(Node &index_root)
         // coords
         rect_idx["coordsets/coords/type"]         = "rectilinear";
         rect_idx["coordsets/coords/coord_system"] = "xyz";
-        rect_idx["coordsets/coords/path"]         = "rect/coords";
+        rect_idx["coordsets/coords/path"]         = "rect/coordsets/coords";
         // topology
         rect_idx["topologies/mesh/type"]     = "rectilinear";
         rect_idx["topologies/mesh/coordset"] = "coords";
-        rect_idx["topologies/mesh/path"]     = "rect/topology";
+        rect_idx["topologies/mesh/path"]     = "rect/topologies/mesh";
         // fields
             // pc
             rect_idx["fields/braid/number_of_components"] = 1;
@@ -362,11 +362,11 @@ create_blueprint_index_for_3d_examples(Node &index_root)
         // coords
         struct_idx["coordsets/coords/type"]         = "explicit";
         struct_idx["coordsets/coords/coord_system"] = "xyz";
-        struct_idx["coordsets/coords/path"]         = "struct/coords";
+        struct_idx["coordsets/coords/path"]         = "struct/coordsets/coords";
         // topology
         struct_idx["topologies/mesh/type"]     = "structured";
         struct_idx["topologies/mesh/coordset"] = "coords";
-        struct_idx["topologies/mesh/path"]     = "struct/topology";
+        struct_idx["topologies/mesh/path"]     = "struct/topologies/mesh";
         // fields
             // pc
             struct_idx["fields/braid/number_of_components"] = 1;
@@ -394,11 +394,11 @@ create_blueprint_index_for_3d_examples(Node &index_root)
         // coords
         lines_idx["coordsets/coords/type"]         = "explicit";
         lines_idx["coordsets/coords/coord_system"] = "xyz";
-        lines_idx["coordsets/coords/path"]         = "lines/coords";
+        lines_idx["coordsets/coords/path"]         = "lines/coordsets/coords";
         // topology
         lines_idx["topologies/mesh/type"]     = "unstructured";
         lines_idx["topologies/mesh/coordset"] = "coords";
-        lines_idx["topologies/mesh/path"]     = "lines/topology";
+        lines_idx["topologies/mesh/path"]     = "lines/topologies/mesh";
         // fields
             // pc
             lines_idx["fields/braid/number_of_components"] = 1;
@@ -425,11 +425,11 @@ create_blueprint_index_for_3d_examples(Node &index_root)
     // coords
     tets_idx["coordsets/coords/type"]         = "explicit";
     tets_idx["coordsets/coords/coord_system"] = "xyz";
-    tets_idx["coordsets/coords/path"]         = "tets/coords";
+    tets_idx["coordsets/coords/path"]         = "tets/coordsets/coords";
     // topology
     tets_idx["topologies/mesh/type"]     = "unstructured";
     tets_idx["topologies/mesh/coordset"] = "coords";
-    tets_idx["topologies/mesh/path"]     = "tets/topology";
+    tets_idx["topologies/mesh/path"]     = "tets/topologies/mesh";
     // fields
         // pc
         tets_idx["fields/braid/number_of_components"] = 1;
@@ -457,11 +457,11 @@ create_blueprint_index_for_3d_examples(Node &index_root)
     // coords
     hexs_idx["coordsets/coords/type"]         = "explicit";
     hexs_idx["coordsets/coords/coord_system"] = "xyz";
-    hexs_idx["coordsets/coords/path"]         = "hexs/coords";
+    hexs_idx["coordsets/coords/path"]         = "hexs/coordsets/coords";
     // topology
     hexs_idx["topologies/mesh/type"]     = "unstructured";
     hexs_idx["topologies/mesh/coordset"] = "coords";
-    hexs_idx["topologies/mesh/path"]     = "hexs/topology";
+    hexs_idx["topologies/mesh/path"]     = "hexs/topologies/mesh";
     // fields
         // pc
         hexs_idx["fields/braid/number_of_components"] = 1;
@@ -489,11 +489,11 @@ create_blueprint_index_for_3d_examples(Node &index_root)
     // coords
     pts_idx["coordsets/coords/type"]         = "explicit";
     pts_idx["coordsets/coords/coord_system"] = "xyz";
-    pts_idx["coordsets/coords/path"]         = "points/coords";
+    pts_idx["coordsets/coords/path"]         = "points/coordsets/coords";
     // topology
     pts_idx["topologies/mesh/type"]     = "unstructured";
     pts_idx["topologies/mesh/coordset"] = "coords";
-    pts_idx["topologies/mesh/path"]     = "points/topology";
+    pts_idx["topologies/mesh/path"]     = "points/topologies/mesh";
     // fields
         // pc
         pts_idx["fields/braid/number_of_components"] = 1;
@@ -583,29 +583,29 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
                                      npts_z,
                                      dsets["points"]);
 
-    Node expanded;
-    
-    NodeIterator itr = dsets.children();
-    
-    while(itr.has_next())
-    {
-        Node info;
-        Node &mesh = itr.next();
-        //mesh.print();
-        std::string name = itr.path();
-        CONDUIT_INFO("expanding 2d example '" << name << "'");
-        blueprint::mesh::expand(mesh,expanded[name],info);
-
-    }
+    // Node expanded;
+    //
+    // NodeIterator itr = dsets.children();
+    //
+    // while(itr.has_next())
+    // {
+    //     Node info;
+    //     Node &mesh = itr.next();
+    //     //mesh.print();
+    //     std::string name = itr.path();
+    //     CONDUIT_INFO("expanding 2d example '" << name << "'");
+    //     blueprint::mesh::expand(mesh,expanded[name],info);
+    //
+    // }
     
     if(silo_enabled)
     {
     
-        itr = expanded.children();
+        NodeConstIterator itr = dsets.children();
     
         while(itr.has_next())
         {
-            Node &mesh = itr.next();
+            const Node &mesh = itr.next();
             std::string name = itr.path();
             CONDUIT_INFO("saving 2d example '" << name << "' to silo");
             // Skip output of silo mesh for mixed mesh of tris and quads for now.
@@ -716,28 +716,28 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
                                      npts_z,
                                      dsets["hexs_and_tets"]);
 
-    Node expanded;
-    
-    NodeIterator itr = dsets.children();
-    
-    while(itr.has_next())
-    {
-        Node info;
-        Node &mesh = itr.next();
-        //mesh.print();
-        std::string name = itr.path();
-        std::cout << "expanding 3d example '" << name << "'" << std::endl;
-        blueprint::mesh::expand(mesh,expanded[name],info);
-    }
+    // Node expanded;
+    //
+    // NodeIterator itr = dsets.children();
+    //
+    // while(itr.has_next())
+    // {
+    //     Node info;
+    //     Node &mesh = itr.next();
+    //     //mesh.print();
+    //     std::string name = itr.path();
+    //     std::cout << "expanding 3d example '" << name << "'" << std::endl;
+    //     blueprint::mesh::expand(mesh,expanded[name],info);
+    // }
     
     if(silo_enabled)
     {
     
-        itr = expanded.children();
+        NodeConstIterator itr = dsets.children();
         
         while(itr.has_next())
         {
-            Node &mesh = itr.next();
+            const Node &mesh = itr.next();
             //mesh.print();
             std::string name = itr.path();
             CONDUIT_INFO("saving 3d example '" << name << "' to silo")
