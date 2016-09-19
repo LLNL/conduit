@@ -849,6 +849,48 @@ TEST(conduit_node, check_const_access)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, node_more_set_cases)
+{   
+    // construct from data type
+    Node n(DataType::object());
+    
+    // create complex tree
+    n["a/b/c/d"].append().set(DataType::int64(2));
+    
+    int64_array cvals = n["a/b/c/d"][0].value();
+    cvals[0]= 1;
+    cvals[1]= 2;
+
+    // set from constructor
+    Node n2(n);
+
+    // set using node
+    Node n3;
+    n3.set(n2);
+
+
+    const int64 *n2_vals_ptr= n2["a/b/c/d"][0].as_int64_ptr();
+    const int64 *n3_vals_ptr= n3["a/b/c/d"][0].as_int64_ptr();
+
+    EXPECT_EQ(n2_vals_ptr[0],1);
+    EXPECT_EQ(n2_vals_ptr[1],2);
+    
+    EXPECT_EQ(n3_vals_ptr[0],1);
+    EXPECT_EQ(n3_vals_ptr[1],2);
+    
+
+    float64 fval[1] = { 3.1415 };
+
+    Node n4;
+
+    n4.set(DataType::float64(),fval);
+    n4.print();
+
+    
+}
+
+
 
 
 

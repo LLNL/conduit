@@ -591,7 +591,7 @@ Node::set_data_using_schema(const Schema &schema,
     index_t nbytes = m_schema->spanned_bytes();
     allocate(nbytes);
     memcpy(m_data, data, nbytes);
-    walk_schema(this,m_schema,data);
+    walk_schema(this,m_schema,m_data);
 }
 
 //---------------------------------------------------------------------------//
@@ -611,7 +611,7 @@ Node::set_data_using_dtype(const DataType &dtype,
     m_schema->set(dtype);
     allocate(m_schema->total_bytes());
     memcpy(m_data, data, m_schema->total_bytes());
-    walk_schema(this,m_schema,data);
+    walk_schema(this,m_schema,m_data);
 }
 
 //---------------------------------------------------------------------------//

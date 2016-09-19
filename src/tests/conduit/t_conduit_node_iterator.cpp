@@ -118,6 +118,32 @@ TEST(conduit_node_iterator, simple_1)
     }
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node_iterator, const_itr_from_const_node)
+{
+    uint32   c_val  = 10;
+    uint32   d_val  = 20;
+
+    Node n;
+    n["a/b/c"] = c_val;
+    n["a/b/d"] = d_val;
+
+    const Node &n_b = n["a/b"];
+    
+    NodeConstIterator itr = n_b.children();
+    
+    const Node &n_c = itr.next();
+    EXPECT_EQ(n_c.as_uint32(),c_val);
+    
+    const Node &n_d = itr.next();
+    EXPECT_EQ(n_d.as_uint32(),d_val);
+    Node itr_info;
+    itr.info(itr_info);
+    CONDUIT_INFO( itr_info.to_json() );
+    
+    
+
+}
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node_iterator, empty)
@@ -189,11 +215,55 @@ TEST(conduit_node_iterator, move_cursor)
     EXPECT_EQ(itr.next().as_uint32(),b_val);
     EXPECT_EQ(itr.path(),"b");
 
+    //  create new iterator with current state of itr
+    NodeIterator itr_2(itr);
+    
     EXPECT_TRUE(itr.has_next());
     EXPECT_EQ(itr.next().as_string(),"myval");
     EXPECT_EQ(itr.path(),"c");
     
     EXPECT_FALSE(itr.has_next());
+    
+    // replaying the above commands on itr_2.
+    
+    EXPECT_TRUE(itr_2.has_next());
+    EXPECT_EQ(itr_2.next().as_string(),"myval");
+    EXPECT_EQ(itr_2.path(),"c");
+    
+    EXPECT_FALSE(itr_2.has_next());
+    
+    
+    // const itr from itr
+    itr.to_front();
+    
+    NodeConstIterator citr(itr);
+    
+    int count=0;
+
+    while(citr.has_next())
+    {
+        const Node &curr = citr.next();
+        count++;
+    }
+
+    EXPECT_EQ(count,n.number_of_children());
+    
+    // reset from non-const 
+    citr = itr;
+
+    count=0;
+
+    while(citr.has_next())
+    {
+        citr.next();
+        const Node &curr = citr.node();
+        count++;
+    }
+
+    
+    EXPECT_EQ(count,n.number_of_children());
+    
+    
 
 }
 
@@ -210,7 +280,9 @@ TEST(conduit_node_iterator, const_move_cursor)
     n["c"] = "myval";
     
 
-    NodeConstIterator itr = n.children();
+    NodeConstIterator itr;
+    
+    itr = n.children();
 
     itr.to_back();
     EXPECT_FALSE(itr.has_next());
@@ -246,26 +318,21 @@ TEST(conduit_node_iterator, const_move_cursor)
     
     EXPECT_FALSE(itr.has_next());
 
+
+    EXPECT_TRUE(itr.has_previous());
+    EXPECT_EQ(itr.previous().as_uint32(),b_val);
+    EXPECT_EQ(itr.path(),"b");
+    
+    
+    NodeConstIterator itr_2(itr);
+
+
+    EXPECT_TRUE(itr_2.has_next());
+    EXPECT_EQ(itr_2.next().as_string(),"myval");
+    EXPECT_EQ(itr_2.path(),"c");
+    
+    EXPECT_FALSE(itr_2.has_next());
+
+
 }
 
-//-----------------------------------------------------------------------------
-TEST(conduit_node_iterator, const_itr_from_const_node)
-{
-    uint32   c_val  = 10;
-    uint32   d_val  = 20;
-
-    Node n;
-    n["a/b/c"] = c_val;
-    n["a/b/d"] = d_val;
-
-    const Node &n_b = n["a/b"];
-    
-    NodeConstIterator itr = n_b.children();
-    
-    const Node &n_c = itr.next();
-    EXPECT_EQ(n_c.as_uint32(),c_val);
-    
-    const Node &n_d = itr.next();
-    EXPECT_EQ(n_d.as_uint32(),d_val);
-
-}
