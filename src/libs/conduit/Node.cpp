@@ -4664,7 +4664,7 @@ Node::compact_to(Node &n_dest) const
 
 //---------------------------------------------------------------------------//
 void
-Node::update(Node &n_src)
+Node::update(const Node &n_src)
 {
     // walk src and add it contents to this node
     /// TODO:
@@ -4737,7 +4737,7 @@ Node::update(Node &n_src)
 
 //---------------------------------------------------------------------------//
 void
-Node::update_compatible(Node &n_src)
+Node::update_compatible(const Node &n_src)
 {
     // walk src and copy contents to this node if their entries match
     index_t dtype_id = n_src.dtype().id();
@@ -7549,6 +7549,388 @@ Node::Value::operator long_double_array() const
 //---------------------------------------------------------------------------//
 
 //-----------------------------------------------------------------------------
+// -- ConstValue Helper class ---
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::ConstValue(const Node *node, bool coerse)
+:m_node(node),
+ m_coerse(coerse)
+{
+
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::ConstValue(const ConstValue &value)
+:m_node(value.m_node), 
+ m_coerse(value.m_coerse)
+{
+
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::ConstValue(const Value &value)
+:m_node(value.m_node), 
+ m_coerse(value.m_coerse)
+{
+
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::~ConstValue()
+{
+
+}
+
+// TODO: why do we have to use a signed char here, does it have to do with
+// how we danced around setting string types?
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator signed char() const
+{
+    if(m_coerse)
+        return m_node->to_char();
+    else
+        return m_node->as_char();
+}
+
+////---------------------------------------------------------------------------//
+//Node::ConstValue::operator char() const
+//{
+//    if(m_coerse)
+//        return m_node->to_char();
+//    else
+//        return m_node->as_char();
+//}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator short() const
+{
+    if(m_coerse)
+        return m_node->to_short();
+    else
+        return m_node->as_short();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator int() const
+{
+    if(m_coerse)
+        return m_node->to_int();
+    else
+        return m_node->as_int();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator long() const
+{
+    if(m_coerse)
+        return m_node->to_long();
+    else
+        return m_node->as_long();
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator long long() const
+{
+    if(m_coerse)
+        return m_node->to_long_long();
+    else
+        return m_node->as_long_long();
+}
+#endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator unsigned char() const
+{
+    if(m_coerse)
+        return m_node->to_unsigned_char();
+    else
+        return m_node->as_unsigned_char();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator unsigned short() const
+{
+    if(m_coerse)
+        return m_node->to_unsigned_short();
+    else
+        return m_node->as_unsigned_short();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator unsigned int() const
+{
+    if(m_coerse)
+        return m_node->to_unsigned_int();
+    else
+        return m_node->as_unsigned_int();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator unsigned long() const
+{
+    if(m_coerse)
+        return m_node->to_unsigned_long();
+    else
+        return m_node->as_unsigned_long();
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator unsigned long long() const
+{
+    if(m_coerse)
+        return m_node->to_unsigned_long_long();
+    else
+        return m_node->as_unsigned_long_long();
+}
+#endif
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator float() const
+{
+    if(m_coerse)
+        return m_node->to_float();
+    else
+        return m_node->as_float();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator double() const
+{
+    if(m_coerse)
+        return m_node->to_double();
+    else
+        return m_node->as_double();
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_DOUBLE
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator long double() const
+{
+    if(m_coerse)
+        return m_node->to_long_double();
+    else
+        return m_node->as_long_double();
+}
+#endif
+
+//---------------------------------------------------------------------------//
+// -- pointer casts -- 
+// (no coercion)
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const char*() const
+{
+    return m_node->as_char_ptr();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const signed char*() const
+{
+    return (signed char*)m_node->as_char_ptr();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const short*() const
+{
+    return m_node->as_short_ptr();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const int*() const
+{
+    return m_node->as_int_ptr();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const long*() const
+{
+    return m_node->as_long_ptr();
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const long long*() const
+{
+    return m_node->as_long_long_ptr();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const unsigned char*() const
+{
+    return m_node->as_unsigned_char_ptr();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const unsigned short*() const
+{
+    return m_node->as_unsigned_short_ptr();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const unsigned int*() const
+{
+    return m_node->as_unsigned_int_ptr();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const unsigned long*() const
+{
+    return m_node->as_unsigned_long_ptr();
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const unsigned long long*() const
+{
+    return m_node->as_unsigned_long_long_ptr();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const float*() const
+{
+    return m_node->as_float_ptr();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const double*() const
+{
+    return m_node->as_double_ptr();
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_DOUBLE
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const long double*() const
+{
+    return m_node->as_long_double_ptr();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
+// -- array casts -- 
+// (no coercion)
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const char_array() const
+{
+    return m_node->as_char_array();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const short_array() const
+{
+    return m_node->as_short_array();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const int_array() const
+{
+    return m_node->as_int_array();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const long_array() const
+{
+    return m_node->as_long_array();
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const long_long_array() const
+{
+    return m_node->as_long_long_array();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const unsigned_char_array() const
+{
+    return m_node->as_unsigned_char_array();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const unsigned_short_array() const
+{
+    return m_node->as_unsigned_short_array();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const unsigned_int_array() const
+{
+    return m_node->as_unsigned_int_array();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const unsigned_long_array() const
+{
+    return m_node->as_unsigned_long_array();
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const unsigned_long_long_array() const
+{
+    return m_node->as_unsigned_long_long_array();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const float_array() const
+{
+    return m_node->as_float_array();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const double_array() const
+{
+    return m_node->as_double_array();
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_DOUBLE
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const long_double_array() const
+{
+    return m_node->as_long_double_array();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+//-----------------------------------------------------------------------------
+// End Node::ConstValue
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 // -- JSON construction methods ---
 //-----------------------------------------------------------------------------
 
@@ -7645,9 +8027,9 @@ Node::to_json_generic(bool detailed,
                       const std::string &pad,
                       const std::string &eoe) const
 {
-   std::ostringstream oss;
-   to_json_generic(oss,detailed,indent,depth,pad,eoe);
-   return oss.str();
+    std::ostringstream oss;
+    to_json_generic(oss,detailed,indent,depth,pad,eoe);
+    return oss.str();
 }
 
 
@@ -8072,6 +8454,109 @@ Node::children() const
 
 
 //---------------------------------------------------------------------------//
+const Node&
+Node::fetch_child(const std::string &path) const
+{
+    // const fetch w/ path requires object role
+    if(!dtype().is_object())
+    {
+        CONDUIT_ERROR("Cannot const fetch_child, Node(" << this->path()
+                      << ") is not an object");
+    }
+    
+    std::string p_curr;
+    std::string p_next;
+    utils::split_path(path,p_curr,p_next);
+
+    // check for parent
+    if(p_curr == "..")
+    {
+        if(m_parent == NULL)
+        {
+            CONDUIT_ERROR("Cannot const fetch from NULL parent" << path);
+        }
+        else
+        {
+            return m_parent->fetch(p_next);
+        }
+    }
+
+    index_t idx;
+    if(m_schema->has_child(p_curr))
+    {
+        idx = m_schema->child_index(p_curr);
+    }
+    else
+    {
+        CONDUIT_ERROR("Cannot const fetch non-existent " 
+                      << "child " << p_curr << " from Node("
+                      << this->path()
+                      << ")");
+    }
+
+    if(p_next.empty())
+    {
+        return  *m_children[idx];
+    }
+    else
+    {
+        return m_children[idx]->fetch(p_next);
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+Node&
+Node::fetch_child(const std::string &path)
+{
+    // const fetch w/ path requires object role
+    if(!dtype().is_object())
+    {
+        CONDUIT_ERROR("Cannot fetch_child, Node(" << this->path()
+                      << ") is not an object");
+    }
+    
+    std::string p_curr;
+    std::string p_next;
+    utils::split_path(path,p_curr,p_next);
+
+    // check for parent
+    if(p_curr == "..")
+    {
+        if(m_parent == NULL)
+        {
+            CONDUIT_ERROR("Cannot const fetch from NULL parent" << path);
+        }
+        else
+        {
+            return m_parent->fetch(p_next);
+        }
+    }
+
+    index_t idx;
+    if(m_schema->has_child(p_curr))
+    {
+        idx = m_schema->child_index(p_curr);
+    }
+    else
+    {
+        CONDUIT_ERROR("Cannot const fetch non-existent " 
+                      << "child " << p_curr << " from Node("
+                      << this->path()
+                      << ")");
+    }
+
+    if(p_next.empty())
+    {
+        return  *m_children[idx];
+    }
+    else
+    {
+        return m_children[idx]->fetch(p_next);
+    }
+}
+
+//---------------------------------------------------------------------------//
 Node&
 Node::fetch(const std::string &path)
 {
@@ -8131,51 +8616,7 @@ Node::fetch(const std::string &path)
 const Node&
 Node::fetch(const std::string &path) const
 {
-    // const fetch w/ path requires object role
-    if(!dtype().is_object())
-    {
-        CONDUIT_ERROR("Cannot const fetch path, Node(" << this->path()
-                      << ") is not an object");
-    }
-    
-    std::string p_curr;
-    std::string p_next;
-    utils::split_path(path,p_curr,p_next);
-
-    // check for parent
-    if(p_curr == "..")
-    {
-        if(m_parent == NULL)
-        {
-            CONDUIT_ERROR("Cannot const fetch from NULL parent" << path);
-        }
-        else
-        {
-            return m_parent->fetch(p_next);
-        }
-    }
-
-    index_t idx;
-    if(m_schema->has_child(p_curr))
-    {
-        idx = m_schema->child_index(p_curr);
-    }
-    else
-    {
-        CONDUIT_ERROR("Cannot const fetch non-existent " 
-                      << "child " << p_curr << " from Node("
-                      << this->path()
-                      << ")");
-    }
-
-    if(p_next.empty())
-    {
-        return  *m_children[idx];
-    }
-    else
-    {
-        return m_children[idx]->fetch(p_next);
-    }
+    return fetch_child(path);
 }
 
 

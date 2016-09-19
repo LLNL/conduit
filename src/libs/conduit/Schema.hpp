@@ -176,7 +176,7 @@ public:
     bool            equals(const Schema &s) const;
 
 
-
+    /// parent access
     const Schema   *parent() const
                        { return m_parent;}
 
@@ -249,14 +249,17 @@ public:
 //
 //-----------------------------------------------------------------------------
     /// the `fetch_child' methods don't modify map structure, if a path
-    /// doesn't exists they will throw an exception
+    /// doesn't exist they will throw an exception
     Schema           &fetch_child(const std::string &path);
     const Schema     &fetch_child(const std::string &path) const;
 
-    /// fetch with a path arg methods do modifies map structure 
-    /// if a path doesn't exists
+    /// non-const fetch with a path arg methods do modify map 
+    // structure if a path doesn't exist
     Schema           &fetch(const std::string &path);
+    const Schema     &fetch(const std::string &path) const;
+    
     Schema           *fetch_ptr(const std::string &path);
+    const Schema     *fetch_ptr(const std::string &path) const;
 
     /// path to index map
     index_t          child_index(const std::string &path) const;

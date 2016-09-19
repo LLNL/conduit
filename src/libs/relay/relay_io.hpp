@@ -82,16 +82,16 @@ namespace io
 ///
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(Node &node,
+void CONDUIT_RELAY_API save(const Node &node,
                             const std::string &path);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(Node &node,
+void CONDUIT_RELAY_API save(const Node &node,
                             const std::string &path,
                             const std::string &protocol);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(Node &node,
+void CONDUIT_RELAY_API save(const Node &node,
                             const std::string &path,
                             const std::string &protocol);
 
@@ -100,11 +100,11 @@ void CONDUIT_RELAY_API save(Node &node,
 ///
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save_merged(Node &node,
+void CONDUIT_RELAY_API save_merged(const Node &node,
                                    const std::string &path);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save_merged(Node &node,
+void CONDUIT_RELAY_API save_merged(const Node &node,
                                    const std::string &path,
                                    const std::string &protocol);
 

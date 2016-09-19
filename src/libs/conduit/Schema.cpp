@@ -848,10 +848,23 @@ Schema::fetch(const std::string &path)
 }
 
 
+//---------------------------------------------------------------------------//
+const Schema &
+Schema::fetch(const std::string &path) const
+{
+    return fetch_child(path);
+}
 
 //---------------------------------------------------------------------------//
 Schema *
 Schema::fetch_ptr(const std::string &path)
+{
+    return &fetch(path);
+}
+
+//---------------------------------------------------------------------------//
+const Schema *
+Schema::fetch_ptr(const std::string &path) const
 {
     return &fetch(path);
 }

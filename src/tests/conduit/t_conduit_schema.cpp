@@ -204,6 +204,20 @@ TEST(schema_basics, schema_name_by_index)
     EXPECT_EQ(s2.child_name(100),"");
 }
 
+//-----------------------------------------------------------------------------
+TEST(schema_basics, schema_fetch_child)
+{
+    Schema s;
+    s["a"].set(DataType::int64());
+    s["b"].set(DataType::float64());
+    s["c"].set(DataType::float64());
+
+    const Schema &s_c = s["c"];
+
+    EXPECT_THROW(s.fetch_child("bad"),conduit::Error);
+    EXPECT_THROW(const Schema &s_bad = s_c.fetch_child("bad"),conduit::Error);
+}
+
 
 //-----------------------------------------------------------------------------
 ///

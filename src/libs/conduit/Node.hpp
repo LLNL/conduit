@@ -1877,11 +1877,11 @@ public:
     ///
     /// NOTE: The input should be const, but the lack of a const fetch prevents
     /// this for now.
-    void        update(Node &n_src);
+    void        update(const Node &n_src);
 
     /// update_compatible() copies data from the children in n_src that match
     ///  the current Nodes children.
-    void        update_compatible(Node &n_src);
+    void        update_compatible(const Node &n_src);
 
     /// update_external() sets this node to describe the data from the children 
     //   in n_src.
@@ -2008,7 +2008,7 @@ public:
             operator int()         const;
             operator long()        const;
             #ifdef CONDUIT_USE_LONG_LONG
-                operator long long()const;
+                operator long long() const;
             #endif
 
 
@@ -2018,14 +2018,14 @@ public:
             operator unsigned int()    const;
             operator unsigned long()   const;
             #ifdef CONDUIT_USE_LONG_LONG
-                operator unsigned long long()const;
+                operator unsigned long long() const;
             #endif
             
             // cast operators for floating point types
             operator float()  const;
             operator double() const;
             #ifdef CONDUIT_USE_LONG_DOUBLE
-                operator long double()const;
+                operator long double() const;
             #endif
             
         
@@ -2040,7 +2040,7 @@ public:
             operator int*()         const;
             operator long*()        const;
             #ifdef CONDUIT_USE_LONG_LONG
-                operator long long *()const;
+                operator long long *() const;
             #endif
 
             // as unsigned int ptr
@@ -2049,7 +2049,7 @@ public:
             operator unsigned int*()   const;
             operator unsigned long*()  const;
             #ifdef CONDUIT_USE_LONG_LONG
-                operator unsigned long long *()const;
+                operator unsigned long long *() const;
             #endif
 
             
@@ -2057,7 +2057,7 @@ public:
             operator float*()  const;
             operator double*() const;
             #ifdef CONDUIT_USE_LONG_DOUBLE
-                operator long double *()const;
+                operator long double *() const;
             #endif
 
 
@@ -2068,7 +2068,7 @@ public:
             operator int_array()   const;
             operator long_array()  const;
             #ifdef CONDUIT_USE_LONG_LONG
-                operator long_long_array()const;
+                operator long_long_array() const;
             #endif
             
 
@@ -2077,14 +2077,14 @@ public:
             operator unsigned_int_array()   const;
             operator unsigned_long_array()  const;
             #ifdef CONDUIT_USE_LONG_LONG
-                operator unsigned_long_long_array()const;
+                operator unsigned_long_long_array() const;
             #endif
 
 
             operator float_array()  const;
             operator double_array() const;
             #ifdef CONDUIT_USE_LONG_DOUBLE
-                operator long_double_array()const;
+                operator long_double_array() const;
             #endif
 
 
@@ -2097,7 +2097,118 @@ public:
             // coercion flag, note - only scalars types can be coerced 
             bool     m_coerse; 
     };
-    
+
+//-----------------------------------------------------------------------------
+// -- Node::ConstValue Helper class --
+//
+// This class allows us to support casting return semantics.
+// we can't support these methods directly in conduit::Node  because doing so
+// undermines our operator=() overloads. 
+//-----------------------------------------------------------------------------
+    class ConstValue
+    {
+        friend class Node;
+        public:
+            ~ConstValue();
+            ConstValue(const Value &rhs);
+            ConstValue(const ConstValue &rhs);
+            // cast operators for signed integers
+            
+            // we need an explicit case for signed char
+            operator signed char() const;
+            operator short()       const;
+            operator int()         const;
+            operator long()        const;
+            #ifdef CONDUIT_USE_LONG_LONG
+                operator long long() const;
+            #endif
+
+
+            // cast operators for unsigned integers
+            operator unsigned char()   const;
+            operator unsigned short()  const;
+            operator unsigned int()    const;
+            operator unsigned long()   const;
+            #ifdef CONDUIT_USE_LONG_LONG
+                operator unsigned long long() const;
+            #endif
+            
+            // cast operators for floating point types
+            operator float()  const;
+            operator double() const;
+            #ifdef CONDUIT_USE_LONG_DOUBLE
+                operator long double() const;
+            #endif
+            
+        
+            // -- as pointer -- //
+
+            // as signed int ptr
+            operator const char*()        const;
+            // we need an explicit case for signed char, due to how int8 
+            // is implemented
+            operator const signed char*() const;
+            operator const short*()       const;
+            operator const int*()         const;
+            operator const long*()        const;
+            #ifdef CONDUIT_USE_LONG_LONG
+                operator const long long *() const;
+            #endif
+
+            // as unsigned int ptr
+            operator const unsigned char*()  const;
+            operator const unsigned short*() const;
+            operator const unsigned int*()   const;
+            operator const unsigned long*()  const;
+            #ifdef CONDUIT_USE_LONG_LONG
+                operator const unsigned long long *() const;
+            #endif
+
+            
+            // as floating point ptr
+            operator const float*()  const;
+            operator const double*() const;
+            #ifdef CONDUIT_USE_LONG_DOUBLE
+                operator long double *() const;
+            #endif
+
+
+            // -- as array -- //
+
+            operator const char_array()  const;
+            operator const short_array() const;
+            operator const int_array()   const;
+            operator const long_array()  const;
+            #ifdef CONDUIT_USE_LONG_LONG
+                operator const long_long_array() const;
+            #endif
+            
+
+            operator const unsigned_char_array()  const;
+            operator const unsigned_short_array() const;
+            operator const unsigned_int_array()   const;
+            operator const unsigned_long_array()  const;
+            #ifdef CONDUIT_USE_LONG_LONG
+                operator unsigned_long_long_array() const;
+            #endif
+
+
+            operator const float_array()  const;
+            operator const double_array() const;
+            #ifdef CONDUIT_USE_LONG_DOUBLE
+                operator const long_double_array() const;
+            #endif
+
+
+        private:
+            // This is private we only want conduit::Node to create a 
+            // conduit::Node::ConstValue instance
+            ConstValue(const Node *node, bool coerse);
+            // holds the node with the actually data
+            const Node *m_node;
+            // coercion flag, note - only scalars types can be coerced 
+            bool        m_coerse; 
+    };
 
 //-----------------------------------------------------------------------------
 // -- Node methods that use the Node::Value class as a casting vehicle.
@@ -2106,8 +2217,15 @@ public:
     Value value()  // works for all leaf types, but no coercion
         { return  Value(this,false); }
 
-    Value to_value()  // only works for scalar leaf types
+    Value to_value() // only works for scalar leaf types
         { return  Value(this,true); }
+
+    ConstValue value() const // works for all leaf types, but no coercion
+        { return  ConstValue(this,false); }
+
+    ConstValue to_value() const // only works for scalar leaf types
+        { return  ConstValue(this,true); }
+
 
 
 //-----------------------------------------------------------------------------
@@ -2173,12 +2291,18 @@ public:
     // allocated.
     bool             is_data_external() const
                         {return !m_alloced;}
+
     // check if this node is the root of a tree nodes.
     bool             is_root() const 
                         {return m_parent == NULL;}
+
     // parent access
     Node            *parent() 
                         {return m_parent;}
+
+    const Node      *parent() const
+                        {return m_parent;}
+
     
     //memory space info
     index_t          total_bytes() const 
@@ -2272,6 +2396,11 @@ public:
     /// does not exist
     Node             &fetch(const std::string &path);
     const Node       &fetch(const std::string &path) const;
+
+    /// the `fetch_child' methods don't modify map structure, if a path
+    /// doesn't exist they will throw an exception
+    Node             &fetch_child(const std::string &path);
+    const Node       &fetch_child(const std::string &path) const;
 
     /// fetch the node at the given index
     Node             &child(index_t idx);

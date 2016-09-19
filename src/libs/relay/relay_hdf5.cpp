@@ -610,15 +610,13 @@ check_if_conduit_object_is_compatible_with_hdf5_tree(const Node &node,
     if( CONDUIT_HDF5_STATUS_OK(h5_status) &&
         (h5_obj_info.type == H5O_TYPE_GROUP) )
     {
-        // strong dose of evil casting, but it's ok b/c we are grownups here?
-        // time we will tell ...
-        NodeIterator itr = const_cast<Node*>(&node)->children();
+        NodeConstIterator itr = node.children();
 
         // call on each child with expanded path
         while(itr.has_next() && res)
         {
 
-            Node &child = itr.next();
+            const Node &child = itr.next();
             // check if the HDF5 group has child with same name 
             // as the node's child
         
@@ -972,14 +970,12 @@ write_conduit_object_to_hdf5_group(const Node &node,
                                    const std::string &ref_path,
                                    hid_t hdf5_group_id)
 {
-    // strong dose of evil casting, but it's ok b/c we are grownups here?
-    // time we will tell ...
-    NodeIterator itr = const_cast<Node*>(&node)->children();
+    NodeConstIterator itr = node.children();
 
     // call on each child with expanded path
     while(itr.has_next())
     {
-        Node &child = itr.next();
+        const Node &child = itr.next();
         DataType dt = child.dtype();
 
         if(dt.is_number() || dt. is_string())
@@ -991,7 +987,7 @@ write_conduit_object_to_hdf5_group(const Node &node,
         }
         else if(dt.is_empty())
         {
-            // if we have an empty not, it will become
+            // if we have an empty node, it will become
             // a dataset with an null shape
             write_conduit_empty_to_hdf5_group(hdf5_group_id,
                                               ref_path,
