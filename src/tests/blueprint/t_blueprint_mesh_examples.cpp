@@ -716,6 +716,15 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
                                      npts_z,
                                      dsets["hexs_and_tets"]);
 
+    NodeConstIterator itr = dsets.children();
+
+    while(itr.has_next())
+    {
+        Node info;
+        EXPECT_TRUE(blueprint::mesh::verify(itr.next(),info));
+        CONDUIT_INFO(info.to_json());
+    }
+
     // Node expanded;
     //
     // NodeIterator itr = dsets.children();
@@ -733,7 +742,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
     if(silo_enabled)
     {
     
-        NodeConstIterator itr = dsets.children();
+        itr.to_front();
         
         while(itr.has_next())
         {

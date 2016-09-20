@@ -8714,6 +8714,12 @@ Node::path() const
     return m_schema->path();
 }
 
+//---------------------------------------------------------------------------//
+bool
+Node::has_child(const std::string &name) const
+{
+    return m_schema->has_child(name);
+}
 
 //---------------------------------------------------------------------------//
 bool

@@ -80,6 +80,29 @@ namespace blueprint
 namespace mcarray
 {
 
+
+//-----------------------------------------------------------------------------
+bool
+verify(const std::string &protocol,
+       const Node &n)
+{
+    Node info;
+    return verify(protocol,n,info);
+}
+
+
+//-----------------------------------------------------------------------------
+bool
+verify(const std::string &protocol,
+       const Node &n,
+       Node &info)
+{
+    // mcarray doens't provide any nested protocols
+    return false;
+}
+
+
+
 //-----------------------------------------------------------------------------
 bool
 verify(const Node &n)
@@ -92,30 +115,75 @@ verify(const Node &n)
 bool verify(const conduit::Node &n,
             Node &info)
 {
+    bool res = true;
+
+    // mcarray needs to be an object or a list
+    if( ! (n.dtype().is_object() || n.dtype().is_list()) )
+    {
+        info["errors"].append().set("mcarray has no children");
+        res = false;
+    }
+
     NodeConstIterator itr = n.children();
-    
-    bool ok = !n.dtype().is_empty();
-    
     index_t num_elems = 0;
-    
-    while(itr.has_next() && ok)
+
+    while(itr.has_next())
     {
         // get the next child
         const Node &chld = itr.next();
         
-        ok = chld.dtype().is_number();
-        if(ok)
+        // make sure we have a number
+        if(chld.dtype().is_number())
         {
             if(num_elems == 0)
             {
                 num_elems = chld.dtype().number_of_elements();
             }
 
-            ok = ( chld.dtype().number_of_elements() == num_elems);
+            if(chld.dtype().number_of_elements() != num_elems)
+            {
+                std::ostringstream oss;
+                std::string chld_name = itr.path();
+                
+                if(chld_name.size() == 0)
+                {
+                    oss << "child [" << itr.index() <<  "]";
+                }
+                else
+                {
+                    oss << "child \"" << chld_name << "\"";
+                }
+
+                oss << " does not have the same number of "
+                    << "elements as mcarray components.";
+
+                info["errors"].append().set(oss.str());
+
+                res = false;
+            }
+        }
+        else
+        {
+            std::ostringstream oss;
+            std::string chld_name = itr.path();
+
+            if(chld_name.size() == 0)
+            {
+                oss << "child [" << itr.index() <<  "]";
+            }
+            else
+            {
+                oss << "child \"" << chld_name << "\"";
+            }
+
+            oss << " is not a numeric type.";
+            info["errors"].append().set(oss.str());
+
+            res = false;
         }
     }
-    
-    return ok;
+
+    return res;
 }
 
 
