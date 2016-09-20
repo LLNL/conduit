@@ -138,7 +138,7 @@ identify_protocol(const std::string &path,
 
 //---------------------------------------------------------------------------//
 void 
-save(Node &node,
+save(const Node &node,
      const std::string &path)
 {
     std::string protocol;
@@ -148,7 +148,7 @@ save(Node &node,
 
 //---------------------------------------------------------------------------//
 void 
-save_merged(Node &node,
+save_merged(const Node &node,
             const std::string &path)
 {
     std::string protocol;
@@ -179,7 +179,7 @@ load_merged(const std::string &path,
 
 //---------------------------------------------------------------------------//
 void 
-save(Node &node,
+save(const Node &node,
      const std::string &path,
      const std::string &protocol)
 {
@@ -227,7 +227,7 @@ save(Node &node,
 
 //---------------------------------------------------------------------------//
 void 
-save_merged(Node &node,
+save_merged(const Node &node,
             const std::string &path,
             const std::string &protocol)
 {

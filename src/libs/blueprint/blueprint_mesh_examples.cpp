@@ -454,10 +454,10 @@ braid_uniform(index_t npts_x,
     braid_init_uniform_coordset(npts_x,
                                 npts_y,
                                 npts_z,
-                                res["coords"]);
+                                res["coordsets/coords"]);
 
-    res["topology/type"] = "uniform";
-    res["topology/coordset"] = "coords"; 
+    res["topologies/mesh/type"] = "uniform";
+    res["topologies/mesh/coordset"] = "coords"; 
     
     Node &fields = res["fields"];
 
@@ -497,10 +497,10 @@ braid_rectilinear(index_t npts_x,
     braid_init_rectilinear_coordset(npts_x,
                                     npts_y,
                                     npts_z,
-                                    res["coords"]);
+                                    res["coordsets/coords"]);
     
-    res["topology/type"] = "rectilinear";
-    res["topology/coordset"] = "coords"; 
+    res["topologies/mesh/type"] = "rectilinear";
+    res["topologies/mesh/coordset"] = "coords"; 
     
     Node &fields = res["fields"];
 
@@ -538,15 +538,16 @@ braid_structured(index_t npts_x,
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  npts_z,
-                                 res["coords"]);
+                                 res["coordsets/coords"]);
   
-    res["topology/type"] = "structured";
-    res["topology/elements/dims/i"] = nele_x;
-    res["topology/elements/dims/j"] = nele_y;
+    res["topologies/mesh/type"] = "structured";
+    res["topologies/mesh/coordset"] = "coords";
+    res["topologies/mesh/elements/dims/i"] = nele_x;
+    res["topologies/mesh/elements/dims/j"] = nele_y;
     
     if(nele_z > 0)
     {
-        res["topology/elements/dims/k"] = nele_z; 
+        res["topologies/mesh/elements/dims/k"] = nele_z; 
     }
 
     Node &fields = res["fields"];
@@ -583,13 +584,13 @@ braid_points_explicit(index_t npts_x,
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  npts_z,
-                                 res["coords"]);
+                                 res["coordsets/coords"]);
     
-    res["topology/type"] = "points";
-    res["topology/coordset"] = "coords";
-    res["topology/elements/shape"] = "points";
-    res["topology/elements/connectivity"].set(DataType::int32(npts_total));
-    int32 *conn = res["topology/elements/connectivity"].value();
+    res["topologies/mesh/type"] = "points";
+    res["topologies/mesh/coordset"] = "coords";
+    res["topologies/mesh/elements/shape"] = "points";
+    res["topologies/mesh/elements/connectivity"].set(DataType::int32(npts_total));
+    int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
     for(index_t i = 0; i < npts_total ; i++)
     {
@@ -632,12 +633,13 @@ braid_quads(index_t npts_x,
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  1,
-                                 res["coords"]);
+                                 res["coordsets/coords"]);
   
-    res["topology/type"] = "unstructured";
-    res["topology/elements/shape"] = "quads";
-    res["topology/elements/connectivity"].set(DataType::int32(nele*4));
-    int32 *conn = res["topology/elements/connectivity"].value();
+    res["topologies/mesh/type"] = "unstructured";
+    res["topologies/mesh/coordset"] = "coords";
+    res["topologies/mesh/elements/shape"] = "quads";
+    res["topologies/mesh/elements/connectivity"].set(DataType::int32(nele*4));
+    int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
     index_t idx = 0;
     for(index_t j = 0; j < nele_x ; j++)
@@ -688,11 +690,12 @@ braid_quads_and_tris(index_t npts_x,
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  1,
-                                 res["coords"]);
+                                 res["coordsets/coords"]);
   
-    res["topology/type"] = "unstructured";
+    res["topologies/mesh/type"] = "unstructured";
+    res["topologies/mesh/coordset"] = "coords";
 
-    Node &elems = res["topology/elements"];
+    Node &elems = res["topologies/mesh/elements"];
     elems["stream_shapes/quads/stream_id"] = 9; // VTK_QUAD
     elems["stream_shapes/quads/shape"]     = "quads";
     elems["stream_shapes/tris/stream_id"]  = 5; // VTK_TRIANGLE
@@ -813,11 +816,12 @@ braid_quads_and_tris_offsets(index_t npts_x,
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  1,
-                                 res["coords"]);
+                                 res["coordsets/coords"]);
 
-    res["topology/type"] = "unstructured";
-
-    Node &elems = res["topology/elements"];
+    res["topologies/mesh/type"] = "unstructured";
+    res["topologies/mesh/coordset"] = "coords";
+    
+    Node &elems = res["topologies/mesh/elements"];
     elems["stream_shapes/quads/stream_id"] = 9; // VTK_QUAD
     elems["stream_shapes/quads/shape"]     = "quads";
     elems["stream_shapes/tris/stream_id"]  = 5; // VTK_TRIANGLE
@@ -941,12 +945,13 @@ braid_lines_2d(index_t npts_x,
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  1,
-                                 res["coords"]);
+                                 res["coordsets/coords"]);
   
-    res["topology/type"] = "unstructured";
-    res["topology/elements/shape"] = "lines";
-    res["topology/elements/connectivity"].set(DataType::int32(nele_quads*4*2));
-    int32 *conn = res["topology/elements/connectivity"].value();
+    res["topologies/mesh/type"] = "unstructured";
+    res["topologies/mesh/coordset"] = "coords";
+    res["topologies/mesh/elements/shape"] = "lines";
+    res["topologies/mesh/elements/connectivity"].set(DataType::int32(nele_quads*4*2));
+    int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
     index_t idx = 0;
     for(index_t j = 0; j < nele_quads_y ; j++)
@@ -1012,12 +1017,13 @@ braid_tris(index_t npts_x,
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  1,
-                                 res["coords"]);
+                                 res["coordsets/coords"]);
   
-    res["topology/type"] = "unstructured";
-    res["topology/elements/shape"] = "tris";
-    res["topology/elements/connectivity"].set(DataType::int32(nele_quads*6));
-    int32 *conn = res["topology/elements/connectivity"].value();
+    res["topologies/mesh/type"] = "unstructured";
+    res["topologies/mesh/coordset"] = "coords";
+    res["topologies/mesh/elements/shape"] = "tris";
+    res["topologies/mesh/elements/connectivity"].set(DataType::int32(nele_quads*6));
+    int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
     index_t idx = 0;
     for(index_t j = 0; j < nele_quads_y ; j++)
@@ -1078,12 +1084,13 @@ braid_hexs(index_t npts_x,
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  npts_z,
-                                 res["coords"]);
+                                 res["coordsets/coords"]);
   
-    res["topology/type"] = "unstructured";
-    res["topology/elements/shape"] = "hexs";
-    res["topology/elements/connectivity"].set(DataType::int32(nele*8));
-    int32 *conn = res["topology/elements/connectivity"].value();
+    res["topologies/mesh/type"] = "unstructured";
+    res["topologies/mesh/coordset"] = "coords";
+    res["topologies/mesh/elements/shape"] = "hexs";
+    res["topologies/mesh/elements/connectivity"].set(DataType::int32(nele*8));
+    int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
     index_t idx = 0;
     for(index_t k = 0; k < nele_z ; k++)
@@ -1156,13 +1163,14 @@ braid_tets(index_t npts_x,
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  npts_z,
-                                 res["coords"]);
+                                 res["coordsets/coords"]);
   
 
-    res["topology/type"] = "unstructured";
-    res["topology/elements/shape"] = "tets";
-    res["topology/elements/connectivity"].set(DataType::int32(n_tets_verts));
-    int32 *conn = res["topology/elements/connectivity"].value();
+    res["topologies/mesh/type"] = "unstructured";
+    res["topologies/mesh/coordset"] = "coords";
+    res["topologies/mesh/elements/shape"] = "tets";
+    res["topologies/mesh/elements/connectivity"].set(DataType::int32(n_tets_verts));
+    int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
 
     index_t idx = 0;
@@ -1266,12 +1274,13 @@ braid_lines_3d(index_t npts_x,
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  npts_z,
-                                 res["coords"]);
+                                 res["coordsets/coords"]);
 
-    res["topology/type"] = "unstructured";
-    res["topology/elements/shape"] = "lines";
-    res["topology/elements/connectivity"].set(DataType::int32(nele_hexs * 12 * 2));
-    int32 *conn = res["topology/elements/connectivity"].value();
+    res["topologies/mesh/type"] = "unstructured";
+    res["topologies/mesh/coordset"] = "coords";
+    res["topologies/mesh/elements/shape"] = "lines";
+    res["topologies/mesh/elements/connectivity"].set(DataType::int32(nele_hexs * 12 * 2));
+    int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
     index_t idx = 0;
     for(index_t k = 0; k < nele_hexs_z ; k++)
@@ -1359,9 +1368,9 @@ braid_lines_3d(index_t npts_x,
 //---------------------------------------------------------------------------//
 void
 braid_hexs_and_tets(index_t npts_x,
-           index_t npts_y,
-           index_t npts_z,
-           Node &res)
+                    index_t npts_y,
+                    index_t npts_z,
+                    Node &res)
 {
 
     // WARNING -- The code below is UNTESTED.
@@ -1394,22 +1403,23 @@ braid_hexs_and_tets(index_t npts_x,
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  npts_z,
-                                 res["coords"]);
+                                 res["coordsets/coords"]);
 
     // Setup mesh as unstructured indexed_stream mesh of hexs and tets
-    res["topology/type"] = "unstructured";
+    res["topologies/mesh/type"] = "unstructured";
+    res["topologies/mesh/coordset"] = "coords";
 
-    res["topology/elements/stream_shapes/hexs/stream_id"] = 0;
-    res["topology/elements/stream_shapes/hexs/shape"] = "hexs";
+    res["topologies/mesh/elements/stream_shapes/hexs/stream_id"] = 0;
+    res["topologies/mesh/elements/stream_shapes/hexs/shape"] = "hexs";
 
-    res["topology/elements/stream_shapes/tets/stream_id"] = 1;
-    res["topology/elements/stream_shapes/tets/shape"] = "tets";
+    res["topologies/mesh/elements/stream_shapes/tets/stream_id"] = 1;
+    res["topologies/mesh/elements/stream_shapes/tets/shape"] = "tets";
 
-    res["topology/elements/stream_index/stream_ids"].set(DataType::int32(4));
-    res["topology/elements/stream_index/stream_lengths"].set(DataType::int32(4));
+    res["topologies/mesh/elements/stream_index/stream_ids"].set(DataType::int32(4));
+    res["topologies/mesh/elements/stream_index/stream_lengths"].set(DataType::int32(4));
 
-    int32* sidx_ids = res["topology/elements/stream_index/stream_ids"].value();
-    int32* sidx_lengths = res["topology/elements/stream_index/stream_lengths"].value();
+    int32* sidx_ids = res["topologies/mesh/elements/stream_index/stream_ids"].value();
+    int32* sidx_lengths = res["topologies/mesh/elements/stream_index/stream_lengths"].value();
 
     // There are four groups -- alternating between hexs and tets
     sidx_ids[0] = 0;
@@ -1446,8 +1456,8 @@ braid_hexs_and_tets(index_t npts_x,
         break;
     }
 
-    res["topology/elements/stream"].set( DataType::int32(n_hexs_verts + n_tets_verts) );
-    int32* conn = res["topology/elements/stream"].value();
+    res["topologies/mesh/elements/stream"].set( DataType::int32(n_hexs_verts + n_tets_verts) );
+    int32* conn = res["topologies/mesh/elements/stream"].value();
 
     index_t idx = 0;
     index_t elem_count = 0;

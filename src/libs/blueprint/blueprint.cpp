@@ -87,15 +87,23 @@ void
 about(Node &n)
 {
     n.reset();
-    n["protocols/mesh"] = "enabled";
-    n["protocols/mca"]  = "enabled";
+    n["protocols/mesh"]    = "enabled";
+    n["protocols/mcarray"]  = "enabled";
 }
-
 
 //---------------------------------------------------------------------------//
 bool
 verify(const std::string &protocol,
-       Node &n,
+       const Node &n)
+{
+    Node info;
+    return verify(protocol,n,info);
+}
+
+//---------------------------------------------------------------------------//
+bool
+verify(const std::string &protocol,
+       const Node &n,
        Node &info)
 {
     bool res = false;
@@ -112,32 +120,6 @@ verify(const std::string &protocol,
     
     return res;
 }
-
-
-//---------------------------------------------------------------------------//
-bool
-transform(const std::string &protocol,
-          Node &src,
-          Node &actions,
-          Node &des,
-          Node &info)
-{
-    bool res = false;
-    des.reset();
-    info.reset();
-
-    if(protocol == "mesh")
-    {
-        res = mesh::transform(src,actions,des,info);
-    }
-    else if(protocol == "mcarray")
-    {
-        res = mcarray::transform(src,actions,des,info);
-    }
-    
-    return res;
-}
-
 
 }
 //-----------------------------------------------------------------------------

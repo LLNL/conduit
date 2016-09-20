@@ -83,103 +83,19 @@ namespace mesh
 
 //-----------------------------------------------------------------------------
 bool
-verify(Node &n,
+verify(const Node &n)
+{
+    Node info;
+    return verify(n,info);
+}
+
+//-----------------------------------------------------------------------------
+bool
+verify(const Node &n,
        Node &info)
 {
     return false;
 }
-
-
-//-----------------------------------------------------------------------------
-bool
-transform(Node &src,
-          Node &actions,
-          Node &dest,
-          Node &info)
-{
-   // TODO: list vs object case?
-   // list example:
-   //
-   // ["expand"]
-   // obj example
-   // [ {name: expand, opts: ... }]
-   //
-   // blueprint::actions::expand(actions,adest);
-   
-   NodeIterator itr = actions.children();
-   
-   while(itr.has_next())
-   {
-       Node &curr = itr.next();
-       std::string action_name = curr["name"].as_string();
-       if( action_name == "expand")
-       {
-           bool res = expand(src,dest,info.append());
-           if(!res)
-           {
-               return res;
-           }
-       }
-       else
-       {
-           std::ostringstream oss;
-           oss << "blueprint::mesh, unsupported action:" << action_name;
-           info.set(oss.str());
-           return false;
-       }
-   }
-   
-   return true;
-
-}
-
-
-//---------------------------------------------------------------------------//
-bool
-expand(Node &src,
-       Node &des,
-       Node &info)
-{
-    if(src.has_path("topologies") && src.has_path("coordsets"))
-    {
-        // assume all is well, we already have a multi-topology description
-        des.set_external(src);
-    }
-    else if(src.has_path("topology") && src.has_path("coords"))
-    {
-        // promote single topology to standard multi-topology description
-        if(src.has_path("state"))
-        {
-            des["state"].set_external(src["state"]);
-            
-        }
-        // mesh is the default name for a topo, 
-        // coords is the default name for a coordset
-        des["coordsets/coords"].set_external(src["coords"]);
-        des["topologies/mesh"].set_external(src["topology"]);
-        des["topologies/mesh/coordset"].set("coords");
-        
-        if(src.has_path("fields"))
-        {
-            des["fields"].set_external(src["fields"]);
-            
-            NodeIterator itr = des["fields"].children();
-            
-            while( itr.has_next() )
-            {
-                Node &field = itr.next();
-                field["topologies"].append().set("mesh");
-            }
-        }
-    }
-    else
-    {
-        CONDUIT_ERROR("Missing topologies and coordsets, or topology and coords");
-    }
-    
-    return true;
-}
-
 
 }
 //-----------------------------------------------------------------------------

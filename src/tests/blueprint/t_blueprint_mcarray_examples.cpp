@@ -69,13 +69,13 @@ TEST(conduit_blueprint_mcarray_examples, verify_mcarray)
     n["here/there"]     = 10;
     n["here/everywhere"] = 10;
     
-    EXPECT_FALSE(blueprint::mcarray::verify_mcarray(n));
+    EXPECT_FALSE(blueprint::mcarray::verify(n));
 
     n.reset();
     n["x"].set(DataType::float64(10));
     n["y"].set(DataType::float64(5));
     
-    EXPECT_FALSE(blueprint::mcarray::verify_mcarray(n));
+    EXPECT_FALSE(blueprint::mcarray::verify(n));
 
     ///
     /// cases we expect to work
@@ -83,25 +83,25 @@ TEST(conduit_blueprint_mcarray_examples, verify_mcarray)
     
     n.reset();
     n["x"].set(DataType::float64(10));
-    EXPECT_TRUE(blueprint::mcarray::verify_mcarray(n));
+    EXPECT_TRUE(blueprint::mcarray::verify(n));
 
     n["y"].set(DataType::float64(10));
-    EXPECT_TRUE(blueprint::mcarray::verify_mcarray(n));
+    EXPECT_TRUE(blueprint::mcarray::verify(n));
     
     blueprint::mcarray::examples::xyz("separate",
                                   5,
                                   n);
-    EXPECT_TRUE(blueprint::mcarray::verify_mcarray(n));
+    EXPECT_TRUE(blueprint::mcarray::verify(n));
 
     blueprint::mcarray::examples::xyz("interleaved",
                                   5,
                                   n);
-    EXPECT_TRUE(blueprint::mcarray::verify_mcarray(n));
+    EXPECT_TRUE(blueprint::mcarray::verify(n));
 
     blueprint::mcarray::examples::xyz("contiguous",
                                   5,
                                   n);
-    EXPECT_TRUE(blueprint::mcarray::verify_mcarray(n));
+    EXPECT_TRUE(blueprint::mcarray::verify(n));
 
 }
 

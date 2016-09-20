@@ -302,6 +302,7 @@ public:
              index_t stride,
              index_t element_bytes,
              index_t endianness);
+
     /// construct from full details, given a data type id
     DataType(index_t dtype_id,
              index_t num_elements,
@@ -309,6 +310,7 @@ public:
              index_t stride,
              index_t element_bytes,
              index_t endianness);
+
     /// destructor
    ~DataType();
 

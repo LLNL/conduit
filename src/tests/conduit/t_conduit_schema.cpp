@@ -98,6 +98,28 @@ TEST(schema_basics, equal_schemas)
     s1["c"].set(DataType::uint8(20));
 
     EXPECT_FALSE(s1.equals(s2));
+    
+    Schema s3(DataType::float64());
+    EXPECT_TRUE(s3.equals(s3));
+
+    EXPECT_FALSE(s1.equals(s3));
+
+
+    Schema s4;
+    s4.append().set(DataType::float64());
+    s4.append().set(DataType::float64());
+    s4.append().set(DataType::float64());
+
+    Schema s5(s4);
+    
+    EXPECT_TRUE(s4.equals(s5));
+
+    s5.append().set(DataType::float64());
+    EXPECT_FALSE(s4.equals(s5));
+
+    s5.remove(3);
+
+    EXPECT_TRUE(s4.equals(s5));
 }
 
 
@@ -203,6 +225,33 @@ TEST(schema_basics, schema_name_by_index)
     // check empty schema
     EXPECT_EQ(s2.child_name(100),"");
 }
+
+//-----------------------------------------------------------------------------
+TEST(schema_basics, schema_fetch_child)
+{
+    Schema s;
+    s["a"].set(DataType::int64());
+    s["b"].set(DataType::float64());
+    s["c"].set(DataType::float64());
+    s["d/e"].set(DataType::int64());
+
+    const Schema &s_c = s["c"];
+
+    EXPECT_THROW(s.fetch_child("bad"),conduit::Error);
+    EXPECT_THROW(const Schema &s_bad = s_c.fetch_child("bad"),conduit::Error);
+    
+    const Schema *s_d_ptr = s.fetch_ptr("d");
+
+    EXPECT_TRUE(s_d_ptr->dtype().is_object());
+    
+    const Schema &s_e = s_d_ptr->fetch("e");
+
+    EXPECT_TRUE(s_e.dtype().is_int64());
+
+}
+
+
+
 
 
 //-----------------------------------------------------------------------------

@@ -98,7 +98,7 @@ namespace io
 
 //---------------------------------------------------------------------------//
 void 
-silo_write(const  Node &node,
+silo_write(const Node &node,
            const std::string &path)
 {
     // check for ":" split
@@ -142,7 +142,7 @@ silo_read(const std::string &path,
 
 
 //---------------------------------------------------------------------------//
-void silo_write(const  Node &node,
+void silo_write(const Node &node,
                 const std::string &file_path,
                 const std::string &silo_obj_path)
 {
@@ -264,14 +264,14 @@ void silo_read(DBfile *dbfile,
 
 //---------------------------------------------------------------------------//
 DBoptlist * 
-silo_generate_state_optlist(Node &n)
+silo_generate_state_optlist(const Node &n)
 {
     DBoptlist *res = NULL;
     
     if (n.has_path("state"))
     {
         int silo_error = 0;
-        Node &n_state = n["state"];
+        const Node &n_state = n["state"];
         res = DBMakeOptlist(2);
         
         if(n.has_path("cycle"))
@@ -302,20 +302,20 @@ silo_generate_state_optlist(Node &n)
 void 
 silo_write_field(DBfile *dbfile, 
                  const std::string &var_name,
-                 Node &n_var,
+                 const Node &n_var,
                  Node &n_mesh_info)
 {
 
 
-    if (!n_var.has_path("topologies"))
+    if (!n_var.has_path("topology"))
     {
         CONDUIT_ERROR( "Missing linked topology! " 
                         << "fields/"
                         << var_name 
-                        << "/topologies");
+                        << "/topology");
     }
 
-    NodeIterator fld_topos_itr = n_var["topologies"].children();
+    NodeConstIterator fld_topos_itr = n_var["topology"].children();
 
     while(fld_topos_itr.has_next())
     {
@@ -325,7 +325,7 @@ silo_write_field(DBfile *dbfile,
         {
             CONDUIT_ERROR( "Invalid linked topology! " 
                             << "fields/" 
-                            << var_name << "/topologies: "
+                            << var_name << "/topology: "
                             << topo_name);
         }
 
@@ -475,12 +475,12 @@ silo_write_field(DBfile *dbfile,
 void
 silo_write_pointmesh(DBfile *dbfile, 
                      const std::string &topo_name,
-                     Node &n_coords,
+                     const Node &n_coords,
                      DBoptlist *state_optlist,
                      Node &n_mesh_info)
 {
     // expects explicit coords
-    Node &n_coord_vals = n_coords["values"];
+    const Node &n_coord_vals = n_coords["values"];
     
     int num_dims = 2;    
     if(!n_coord_vals.has_path("x"))
@@ -557,7 +557,7 @@ silo_write_pointmesh(DBfile *dbfile,
 void 
 silo_write_ucd_zonelist(DBfile *dbfile, 
                         const std::string &topo_name,
-                        Node &n_topo,
+                        const Node &n_topo,
                         Node &n_mesh_info)
 {
     Node ucd_zlist;
@@ -567,7 +567,7 @@ silo_write_ucd_zonelist(DBfile *dbfile,
     ucd_zlist["shapesize"].set(DataType::c_int(1));
     ucd_zlist["shapecnt"].set(DataType::c_int(1));
     
-    Node &n_elements = n_topo["elements"];
+    const Node &n_elements = n_topo["elements"];
     std::string coordset_name = n_topo["coordset"].as_string();
     
     bool shape_list = true;
@@ -597,19 +597,19 @@ silo_write_ucd_zonelist(DBfile *dbfile,
     
     
     
-    Node *shape_block = &n_elements;
+    const Node *shape_block = &n_elements;
     Node n_conn;
     
     for(index_t i=0;i < num_shapes;i++)
     {
         if(shape_list)
         {
-            Node *shape_block = n_elements.child_ptr(i);
+            const Node *shape_block = n_elements.child_ptr(i);
         }
        
         std::string topo_shape = shape_block->fetch("shape").as_string();
 
-        Node &n_mesh_conn = shape_block->fetch("connectivity");
+        const Node &n_mesh_conn = shape_block->fetch("connectivity");
 
         // convert to compact ints ... 
         if(shape_list)
@@ -710,14 +710,14 @@ silo_write_ucd_zonelist(DBfile *dbfile,
 void 
 silo_write_ucd_mesh(DBfile *dbfile, 
                     const std::string &topo_name,
-                    Node &n_coords,
+                    const Node &n_coords,
                     DBoptlist *state_optlist,
                     Node &n_mesh_info)
 {
     // also support interleaved:
     // xy, xyz 
     // convert these to separate coord arrays for silo 
-    Node &n_coord_vals = n_coords["values"];
+    const Node &n_coord_vals = n_coords["values"];
 
     // check if we are 2d or 3d
     int num_coords = 2;    
@@ -806,14 +806,14 @@ silo_write_ucd_mesh(DBfile *dbfile,
 void 
 silo_write_quad_rect_mesh(DBfile *dbfile, 
                           const std::string &topo_name,
-                          Node &n_coords,
+                          const Node &n_coords,
                           DBoptlist *state_optlist,
                           Node &n_mesh_info)
 {
     // TODO: also support interleaved:
     // xy, xyz 
     // convert these to separate coord arrays for silo 
-    Node &n_coord_vals = n_coords["values"];
+    const Node &n_coord_vals = n_coords["values"];
 
     // check if we are 2d or 3d
     int num_coords = 2;    
@@ -913,7 +913,7 @@ silo_write_quad_rect_mesh(DBfile *dbfile,
 void 
 silo_write_quad_uniform_mesh(DBfile *dbfile, 
                              const std::string &topo_name,
-                             Node &n_coords,
+                             const Node &n_coords,
                              DBoptlist *state_optlist,
                              Node &n_mesh_info)
 {
@@ -940,7 +940,7 @@ silo_write_quad_uniform_mesh(DBfile *dbfile,
         CONDUIT_ERROR("uniform mesh missing 'dims'")
     }
     
-    Node &n_dims = n_coords["dims"];
+    const Node &n_dims = n_coords["dims"];
     
     if( n_dims.has_path("i") )
     {
@@ -960,7 +960,7 @@ silo_write_quad_uniform_mesh(DBfile *dbfile,
 
     if(n_coords.has_path("origin"))
     {
-        Node &n_origin = n_coords["origin"];
+        const Node &n_origin = n_coords["origin"];
         
         if( n_origin.has_path("x") )
         {
@@ -980,7 +980,7 @@ silo_write_quad_uniform_mesh(DBfile *dbfile,
     
     if(n_coords.has_path("spacing"))
     {
-        Node &n_spacing = n_coords["spacing"];
+        const Node &n_spacing = n_coords["spacing"];
         
         if( n_spacing.has_path("dx") )
         {
@@ -1059,15 +1059,15 @@ silo_write_quad_uniform_mesh(DBfile *dbfile,
 void 
 silo_write_structured_mesh(DBfile *dbfile, 
                            const std::string &topo_name,
-                           Node &n_topo,
-                           Node &n_coords,
+                           const Node &n_topo,
+                           const Node &n_coords,
                            DBoptlist *state_optlist,
                            Node &n_mesh_info)
 {
     // also support interleaved:
     // xy, xyz 
     // convert these to separate coord arrays for silo 
-    Node& n_coords_vals = n_coords["values"];
+    const Node& n_coords_vals = n_coords["values"];
 
     // check if we are 2d or 3d
     int num_coords = 2;    
@@ -1183,7 +1183,7 @@ silo_write_structured_mesh(DBfile *dbfile,
 
 //---------------------------------------------------------------------------//
 void 
-silo_mesh_write(Node &n,
+silo_mesh_write(const Node &n,
                 DBfile *dbfile,
                 const std::string &silo_obj_path)
 {
@@ -1202,10 +1202,10 @@ silo_mesh_write(Node &n,
     
     Node n_mesh_info; // helps with bookkeeping for all topos
     
-    NodeIterator topo_itr = n["topologies"].children();
+    NodeConstIterator topo_itr = n["topologies"].children();
     while(topo_itr.has_next())
     {
-        Node &n_topo = topo_itr.next();
+        const Node &n_topo = topo_itr.next();
         
         std::string topo_name = topo_itr.path();
     
@@ -1245,7 +1245,7 @@ silo_mesh_write(Node &n,
                             << topo_name ); 
         }
     
-        Node &n_coords = n["coordsets"][coordset_name];
+        const Node &n_coords = n["coordsets"][coordset_name];
     
         if(topo_type == "unstructured")
         {
@@ -1302,11 +1302,11 @@ silo_mesh_write(Node &n,
 
     if (n.has_path("fields")) 
     {
-        NodeIterator itr = n["fields"].children();
+        NodeConstIterator itr = n["fields"].children();
 
         while(itr.has_next())
         {
-            Node &n_var = itr.next();
+            const Node &n_var = itr.next();
             std::string var_name = itr.path();
             silo_write_field(dbfile,
                              var_name,
@@ -1325,7 +1325,7 @@ silo_mesh_write(Node &n,
 
 //---------------------------------------------------------------------------//
 void 
-silo_mesh_write(Node &node,
+silo_mesh_write(const Node &node,
                 const std::string &path)
 {
     // check for ":" split
@@ -1347,7 +1347,7 @@ silo_mesh_write(Node &node,
 
 
 //---------------------------------------------------------------------------//
-void silo_mesh_write(Node &node,
+void silo_mesh_write(const Node &node,
                      const std::string &file_path,
                      const std::string &silo_obj_path)
 {

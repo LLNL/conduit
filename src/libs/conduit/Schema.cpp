@@ -848,10 +848,23 @@ Schema::fetch(const std::string &path)
 }
 
 
+//---------------------------------------------------------------------------//
+const Schema &
+Schema::fetch(const std::string &path) const
+{
+    return fetch_child(path);
+}
 
 //---------------------------------------------------------------------------//
 Schema *
 Schema::fetch_ptr(const std::string &path)
+{
+    return &fetch(path);
+}
+
+//---------------------------------------------------------------------------//
+const Schema *
+Schema::fetch_ptr(const std::string &path) const
 {
     return &fetch(path);
 }
@@ -911,6 +924,27 @@ Schema::path() const
 
     return oss.str();
 }
+
+//---------------------------------------------------------------------------//
+bool
+Schema::has_child(const std::string &name) const
+{
+    // for the non-object case, has_path simply returns false
+    if(m_dtype.id() != DataType::OBJECT_ID)
+        return false;
+
+    const std::map<std::string,index_t> &ents = object_map();
+
+    if(ents.find(name) == ents.end())
+    {
+        return false;
+    }
+    else
+    {
+        return true;
+    }
+}
+
 
 //---------------------------------------------------------------------------//
 bool           

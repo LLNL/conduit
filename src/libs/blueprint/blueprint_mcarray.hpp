@@ -82,38 +82,28 @@ namespace mcarray
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-bool BLUEPRINT_API verify(conduit::Node &n,
+bool BLUEPRINT_API verify(const conduit::Node &n);
+
+//-----------------------------------------------------------------------------
+bool BLUEPRINT_API verify(const conduit::Node &n,
                           conduit::Node &info);
 
-
 //-----------------------------------------------------------------------------
-bool BLUEPRINT_API transform(conduit::Node &src,
-                             conduit::Node &actions,
-                             conduit::Node &dest,
-                             conduit::Node &info);
-
-
-//-----------------------------------------------------------------------------
-// mcarray blueprint methods
+/// mcarray blueprint property and transform methods
+/// 
+/// These methods can be called on any verified mcarray.
 //-----------------------------------------------------------------------------
 
+//----------------------------------------------------------------------------
+bool BLUEPRINT_API is_interleaved(const conduit::Node &n);
+
 //-----------------------------------------------------------------------------
-bool BLUEPRINT_API to_contiguous(conduit::Node &src,
+bool BLUEPRINT_API to_contiguous(const conduit::Node &src,
                                  conduit::Node &dest);
 
-
 //-----------------------------------------------------------------------------
-bool BLUEPRINT_API to_interleaved(conduit::Node &src,
+bool BLUEPRINT_API to_interleaved(const conduit::Node &src,
                                   conduit::Node &dest);
-
-
-//----------------------------------------------------------------------------
-bool BLUEPRINT_API verify_mcarray(conduit::Node &n);
-
-
-//----------------------------------------------------------------------------
-bool BLUEPRINT_API is_interleaved(conduit::Node &n);
-
 
 
 //-----------------------------------------------------------------------------
