@@ -883,11 +883,24 @@ TEST(conduit_node, node_more_set_cases)
     float64 fval[1] = { 3.1415 };
 
     Node n4;
+    n4["a"].set(DataType::float64(),fval);
+    n4.set_path("b",DataType::float64(),fval);
 
-    n4.set(DataType::float64(),fval);
+    EXPECT_EQ(n4["a"].as_float64(),fval[0]);
+    EXPECT_EQ(n4["b"].as_float64(),fval[0]);
+
     n4.print();
 
+    Node n5;
+    n5["a"].set(Schema(DataType::float64()),fval);
+    n5.set_path("b",Schema(DataType::float64()),fval);
+
+    EXPECT_EQ(n5["a"].as_float64(),fval[0]);
+    EXPECT_EQ(n5["b"].as_float64(),fval[0]);
     
+    n5.print();
+
+
 }
 
 
