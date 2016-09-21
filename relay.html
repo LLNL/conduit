@@ -152,7 +152,7 @@
 <li><strong>web</strong> - An embedded web server (built using <a class="reference external" href="https://github.com/civetweb/civetweb">CivetWeb</a>) that can host files and supports developing custom REST and WebSocket backends that use conduit::Node instances as payloads.</li>
 <li><strong>mpi</strong>  - Interfaces for MPI communication using conduit::Node instances as payloads.</li>
 </ul>
-<p>The <strong>io</strong> and <strong>web</strong> features are built into the <em>conduit_relay</em> library. To avoid include and linking issues for serial codes that want to use relay, the MPI functionality exists in a separate library <em>conduit_relay_mpi</em>.</p>
+<p>The <strong>io</strong> and <strong>web</strong> features are built into the <em>conduit_relay</em> library. The MPI functionality exists in a separate library <em>conduit_relay_mpi</em> to avoid include and linking issues for serial codes that want to use relay.</p>
 </div>
 
 
