@@ -69,6 +69,6 @@ class Py3Breathe(Package):
                           "sphinx-build",
                           "sphinx-quickstart"]
         for script in sphinx_scripts:
-            script_path = join_path(spec["python"].prefix,"bin",script)
+            script_path = join_path(spec["python3"].prefix,"bin",script)
             # use spack sbang to fix issues with shebang that is too long
             filter_shebang(script_path)
