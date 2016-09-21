@@ -52,7 +52,7 @@ class Py3Breathe(Package):
 
     version('4.0.0', '32316d5a890a3124ea3e8a9e0b2b3b97')
 
-    extends('python')
+    extends('python3')
 
 
     def install(self, spec, prefix):

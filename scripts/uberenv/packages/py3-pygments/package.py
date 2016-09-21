@@ -9,6 +9,8 @@ class Py3Pygments(Package):
 
     extends('python3')
 
+    depends_on("py3-setuptools")
+
     def install(self, spec, prefix):
         # simply install to the spack python
         python('setup.py', 'install') 

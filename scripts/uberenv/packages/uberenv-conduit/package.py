@@ -59,7 +59,7 @@ class UberenvConduit(Package):
 
     homepage = "http://example.com"
 
-    version('0.1', '8d378ef62dedc2df5db447b029b71200')
+    version('0.2.0', '8d378ef62dedc2df5db447b029b71200')
 
     variant("hdf5",default=True,description="build third party dependencies for Conduit HDF5 support")
     variant("silo",default=True,description="build third party dependencies for Conduit Silo support")
@@ -89,23 +89,22 @@ class UberenvConduit(Package):
     #######################
 
     # python2
-    depends_on("python")
-    depends_on("py-numpy")
-    depends_on("py-sphinx", when="+doc")
-    depends_on("py-breathe", when="+doc")
+    depends_on("python", when="+python")
+    depends_on("py-numpy", when="+python")
+    depends_on("py-sphinx", when="+python+doc")
+    depends_on("py-breathe", when="+python+doc")
 
     # python3
     depends_on("python3", when="+python3")
     depends_on("py3-numpy",when="+python3")
     depends_on("py3-sphinx", when="+python3+doc")
-    depends_on("py3-breathe",when="+python3+doc")
+    depends_on("py3-breathe", when="+python3+doc")
 
     #######################
     # i/o packages
     #######################
-    depends_on("szip")
-    depends_on("hdf5")
-    depends_on("silo")
+    depends_on("hdf5",when="+hdf5")
+    depends_on("silo",when="+silo")
 
     def url_for_version(self, version):
         dummy_tar_path =  os.path.abspath(pjoin(os.path.split(__file__)[0]))
@@ -136,7 +135,6 @@ class UberenvConduit(Package):
         # TPL Paths
         #######################
         cmake_exe  = pjoin(spec['cmake'].prefix.bin,"cmake")
-        python_exe = pjoin(spec['python'].prefix.bin,"python")
         
         #######################
         # Check for MPI
@@ -190,14 +188,16 @@ class UberenvConduit(Package):
         #######################
         # python
         #######################
-        
+        cfg.write("# Python Support\n")
         #######################
         # python 2
         #######################
-        cfg.write("# Enable python module builds\n")
-        cfg.write(cmake_cache_entry("ENABLE_PYTHON","ON"))
-        cfg.write("# python from uberenv\n")
-        cfg.write(cmake_cache_entry("PYTHON_EXECUTABLE",python_exe))
+        if "+python" in spec:
+            python_exe = pjoin(spec['python'].prefix.bin,"python")
+            cfg.write("# Enable python module builds\n")
+            cfg.write(cmake_cache_entry("ENABLE_PYTHON","ON"))
+            cfg.write("# python from uberenv\n")
+            cfg.write(cmake_cache_entry("PYTHON_EXECUTABLE",python_exe))
         
         if "+doc" in spec:
             sphinx_build_exe = pjoin(spec['python'].prefix.bin,"sphinx-build")
@@ -216,6 +216,9 @@ class UberenvConduit(Package):
                 cfg.write("# sphinx from uberenv\n")
                 cfg.write("#" + cmake_cache_entry("SPHINX_EXECUTABLE",py3_sphinx_build_exe))
 
+        if not "+python" in spec or "+pyhton3" in spec:
+            cfg.write(cmake_cache_entry("ENABLE_PYTHON","OFF"))
+
         #######################
         # mpi
         #######################
@@ -223,6 +226,9 @@ class UberenvConduit(Package):
         if not mpicc is None:
             cfg.write(cmake_cache_entry("ENABLE_MPI","ON"))
             cfg.write(cmake_cache_entry("MPI_C_COMPILER",mpicc.command))
+        else:
+            cfg.write(cmake_cache_entry("ENABLE_MPI","OFF"))
+
         # we use `mpicc` as `MPI_CXX_COMPILER` b/c we don't want to introduce 
         # linking deps to the MPI C++ libs (we aren't using C++ features of MPI)
         if not mpicxx is None:
@@ -238,7 +244,6 @@ class UberenvConduit(Package):
         #######################
         #######################
         cfg.write("# I/O Packages\n\n")
-        
         #######################
         # hdf5
         #######################
