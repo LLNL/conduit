@@ -67,7 +67,7 @@ class UberenvConduit(Package):
     variant("doc",default=True,description="build third party dependencies for creating Conduit's docs")
     variant("python",default=True,description="build python 2")
     variant("python3",default=True,description="build python 3")
-    variant("mpich",default=false,description="build mpich as MPI lib for Conduit")
+    variant("mpich",default=False,description="build mpich as MPI lib for Conduit")
 
 
     ###########################
