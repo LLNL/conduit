@@ -57,7 +57,7 @@ def cmake_cache_entry(name,value):
 class UberenvConduit(Package):
     """Spack Based Uberenv Build for Conduit Thirdparty Libs """
 
-    homepage = "http://example.com"
+    homepage = "http://software.llnl.gov/conduit"
 
     version('0.2.0', '8d378ef62dedc2df5db447b029b71200')
 
@@ -65,19 +65,24 @@ class UberenvConduit(Package):
     variant("silo",default=True,description="build third party dependencies for Conduit Silo support")
     
     variant("doc",default=True,description="build third party dependencies for creating Conduit's docs")
-    variant("python3",default=True,description="build python3")
-    
+    variant("python",default=True,description="build python 2")
+    variant("python3",default=True,description="build python 3")
+    variant("mpich",default=false,description="build mpich as MPI lib for Conduit")
+
 
     ###########################
     # standard spack packages
     ###########################
-    #on osx, build mpich for mpi support
-    if "darwin" in platform.system().lower():
-        depends_on("mpich")
     
     ##########################
     # uberenv custom packages
     ##########################
+
+    #on osx, always build mpich for mpi support
+    if "darwin" in platform.system().lower():
+        depends_on("mpich")
+    else: # else, defer to the variant
+        depends_on("mpich",when="+mpich")
 
     #######################
     # CMake
