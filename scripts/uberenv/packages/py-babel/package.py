@@ -7,9 +7,11 @@ class PyBabel(Package):
 
     version('1.3', '5264ceb02717843cbc9ffce8e6e06bdb')
 
+    extends('python')
+
+    depends_on("py-setuptools")
     depends_on("py-tz")
 
-    extends('python')
 
     def install(self, spec, prefix):
         # simply install to the spack python

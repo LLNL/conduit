@@ -7,9 +7,11 @@ class Py3Babel(Package):
 
     version('1.3', '5264ceb02717843cbc9ffce8e6e06bdb')
 
+    extends('python3')
+
+    depends_on("py3-setuptools")
     depends_on("py3-tz")
 
-    extends('python3')
 
     def install(self, spec, prefix):
         # simply install to the spack python
