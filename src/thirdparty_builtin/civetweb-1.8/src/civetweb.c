@@ -138,12 +138,11 @@ mg_static_assert(sizeof(void *) >= sizeof(int), "data type size check");
 #include <mach/mach_time.h>
 #include <assert.h>
 
-
-/* clock_gettime is not implemented on OSX */
-int clock_gettime(int clk_id, struct timespec *t);
+/* clock_gettime is not implemented on OSX prior to 10.12 */
+int _civet_clock_gettime(int clk_id, struct timespec *t);
 
 int
-clock_gettime(int clk_id, struct timespec *t)
+_civet_clock_gettime(int clk_id, struct timespec *t)
 {
 	memset(t, 0, sizeof(*t));
 	if (clk_id == CLOCK_REALTIME) {
@@ -183,8 +182,28 @@ clock_gettime(int clk_id, struct timespec *t)
 	}
 	return -1; /* EINVAL - Clock ID is unknown */
 }
+
+/* if clock_gettime is declared, then __CLOCK_AVAILABILITY will be defined */
+#ifdef __CLOCK_AVAILABILITY
+/* If we compiled with Mac OSX 10.12 or later, then clock_gettime will be
+ * declared
+ * but it may be NULL at runtime. So we need to check before using it. */
+int _civet_safe_clock_gettime(int clk_id, struct timespec *t);
+
+int
+_civet_safe_clock_gettime(int clk_id, struct timespec *t)
+{
+	if (clock_gettime) {
+		return clock_gettime(clk_id, t);
+	}
+	return _civet_clock_gettime(clk_id, t);
+}
+#define clock_gettime _civet_safe_clock_gettime
+#else
+#define clock_gettime _civet_clock_gettime
 #endif
 
+#endif
 
 #include <time.h>
 #include <stdlib.h>
