@@ -147,7 +147,7 @@ To handle build options, third party library paths, etc we rely on CMake's initi
 
 We call these initial-cache files *host-config* files, since we typically create a file for each platform or specific hosts if necessary. 
 
-The ``config-build.sh`` script uses your machine's hostname, the SYS_TYPE environment variable, and your platform name (via *uname*) to look for an existing host config file in the ``host-configs`` directory at the root of the conduit repo. If found, passes the host config file to CMake via the `-C` command line option.
+The ``config-build.sh`` script uses your machine's hostname, the SYS_TYPE environment variable, and your platform name (via *uname*) to look for an existing host config file in the ``host-configs`` directory at the root of the conduit repo. If found, it passes the host config file to CMake via the `-C` command line option.
 
 .. code:: bash
     
@@ -216,7 +216,7 @@ Under ``src/examples`` there are examples demonstrating how to use Conduit in a 
 Building Conduit in a Docker Container
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Under ``src/examples/docker/master/ubuntu/`` there is an example ``Dockerfile`` which can be used to create a ubuntu-based docker image with a build of the Conduit the github master branch. There is also a script that demonstrates how to build a Docker image from the Dockerfile (``build.sh``) and a script that runs this image in a Docker container (``run.sh``). In the image the Conduit repo is cloned at ``/conduit/``, the build directory is ``/conduit/build-debug``, and the install directory is ``/conduit/install-debug``.
+Under ``src/examples/docker/master/ubuntu`` there is an example ``Dockerfile`` which can be used to create an ubuntu-based docker image with a build of the Conduit github master branch. There is also a script that demonstrates how to build a Docker image from the Dockerfile (``example_build.sh``) and a script that runs this image in a Docker container (``example_run.sh``). The Conduit repo is cloned into the image's file system at ``/conduit``, the build directory is ``/conduit/build-debug``, and the install directory is ``/conduit/install-debug``.
 
 
 
