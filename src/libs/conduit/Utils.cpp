@@ -300,7 +300,7 @@ is_file(const std::string &path)
     bool res = false;
 #if defined(CONDUIT_PLATFORM_WINDOWS)
     // TODO
-    CONDUIT_WARN("utils::is_directory not implemented on windows");
+    CONDUIT_WARN("utils::is_file not implemented on windows");
 #else // unix, etc
     struct stat path_stat;
     stat(path.c_str(), &path_stat);
@@ -343,7 +343,8 @@ is_directory(const std::string &path)
 bool
 remove_file(const std::string &path)
 {
-    return remove(path.c_str());
+    int res = remove(path.c_str());
+    return (res == 0);
 }
 
 
