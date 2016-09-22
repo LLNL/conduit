@@ -148,25 +148,29 @@ send(Node &node, int dest, int tag, MPI_Comm comm)
 int
 recv(Node &node, int src, int tag, MPI_Comm comm)
 {  
-    int intArray[2];
+    int rcv_counts[2];
     MPI_Status status;
 
-    int mpi_error = MPI_Recv(intArray, 2, MPI_INT, src, tag, comm, &status);
+    int mpi_error = MPI_Recv(rcv_counts, 2, MPI_INT, src, tag, comm, &status);
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
 
-    int schema_len = intArray[0];
-    int data_len = intArray[1];
+    int schema_len = rcv_counts[0];
+    int data_len   = rcv_counts[1];
 
-    char schema[schema_len + 1];
-    char data[data_len + 1];
+    Node recv_buffers;
+    recv_buffers["schema"].set(DataType::c_char(schema_len+1));
+    recv_buffers["data"].set(DataType::c_char(data_len+1));
 
-    mpi_error = MPI_Recv(schema, schema_len, MPI_CHAR, src, tag, comm, &status);
+    char *schema_ptr = recv_buffers["schema"].value();
+    char *data_ptr   = recv_buffers["data"].value();
+
+    mpi_error = MPI_Recv(schema_ptr, schema_len, MPI_CHAR, src, tag, comm, &status);
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
 
-    mpi_error = MPI_Recv(data, data_len, MPI_CHAR, src, tag, comm, &status);
+    mpi_error = MPI_Recv(data_ptr, data_len, MPI_CHAR, src, tag, comm, &status);
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
     
-    Generator node_gen(schema, data);
+    Generator node_gen(schema_ptr, data_ptr);
     /// gen copy 
     node_gen.walk(node);
 
@@ -181,7 +185,6 @@ reduce(Node &send_node,
        int root,
        MPI_Comm mpi_comm) 
 {
-
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -189,25 +192,26 @@ reduce(Node &send_node,
     send_node.schema().compact_to(schema_c);
     std::string schema = schema_c.to_json();
 
-
     std::vector<uint8> data;
     send_node.serialize(data);
     int data_len = data.size();
 
-    int datasize = 0;
-    MPI_Type_size(mpi_datatype, &datasize);
+    int data_size = 0;
+    MPI_Type_size(mpi_datatype, &data_size);
 
-    char recvdata[data_len+1];
+    Node recv_buffer;
+    recv_buffer.set(DataType::c_char(data_len+1));
+    char *recv_ptr = recv_buffer.value();
 
     int mpi_error = MPI_Reduce(&data[0],
-                               recvdata,
-                               (data_len / datasize) + 1,
+                               recv_ptr,
+                               (data_len / data_size) + 1,
                                mpi_datatype, mpi_op, root, mpi_comm);
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
     
     if (rank == root)
     {
-        Generator node_gen(schema, recvdata);
+        Generator node_gen(schema, recv_ptr);
 
         node_gen.walk(recv_node);
     }
@@ -233,20 +237,22 @@ all_reduce(Node &send_node,
     send_node.serialize(data);
     int data_len = data.size();
 
-    int datasize = 0;
-    MPI_Type_size(mpi_datatype, &datasize);
+    int data_size = 0;
+    MPI_Type_size(mpi_datatype, &data_size);
 
-    char recvdata[data_len+1];
+    Node recv_buffer;
+    recv_buffer.set(DataType::c_char(data_len+1));
+    char *recv_ptr = recv_buffer.value();
 
     int mpi_error = MPI_Allreduce(&data[0],
-                                  recvdata,
-                                  (data_len / datasize) + 1,
+                                  recv_ptr,
+                                  (data_len / data_size) + 1,
                                   mpi_datatype,
                                   mpi_op,
                                   mpi_comm);
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
 
-    Generator node_gen(schema, recvdata);
+    Generator node_gen(schema, recv_ptr);
 
     node_gen.walk(recv_node);
 
@@ -717,8 +723,6 @@ all_gatherv(Node &send_node,
     
     s_tmp.compact_to(rcv_schema);
 
-
-    
     // allocate data to hold the gather result
     recv_node.set(rcv_schema);
     data_rcv_buff = (char*)recv_node.data_ptr();
