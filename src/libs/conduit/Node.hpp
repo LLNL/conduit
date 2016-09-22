@@ -336,6 +336,50 @@ public:
     void set(float64 data);
 
 //-----------------------------------------------------------------------------
+//  set scalar gap methods for c-native types
+//-----------------------------------------------------------------------------
+//  These set methods are used to fill out the interface for cases where
+//  any of the native c types are not mapped 1-1 to our to bit width style 
+//  types. 
+//
+//  Windows is one important case where this happens. Both long and int 
+//  represent 32-bit integers, and long long is used as the type for 64-bit
+//  integers. In this case the long and int are aliased types -- we want 
+//  to support both via overloaded "set" functions, however one of the types
+//  is already used as the underlying type for set(int32 ). When int is 
+//  selected as int32, Visual Studio needs an explicit method to disambiguate 
+//  the long case.
+//-----------------------------------------------------------------------------
+    #ifndef CONDUIT_USE_CHAR
+        void set(signed char data);
+        void set(unsigned char data);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        void set(short data);
+        void set(unsigned short data);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        void set(int data);
+        void set(unsigned int data);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        void set(long data);
+        void set(unsigned long data);
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        void set(float data);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        void set(double data);
+    #endif
+
+
+//-----------------------------------------------------------------------------
 // -- set for conduit::DataArray types ---
 //-----------------------------------------------------------------------------
     // signed integer array types via conduit::DataArray
@@ -370,6 +414,39 @@ public:
     
     void set_float64_array(const float64_array &data);
     void set(const float64_array &data);
+
+
+//-----------------------------------------------------------------------------
+//  set array gap methods for c-native types
+//-----------------------------------------------------------------------------
+    #ifndef CONDUIT_USE_CHAR
+        void set(const char_array &data);
+        void set(const unsigned_char_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        void set(const short_array &data);
+        void set(const unsigned_unsigned_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        void set(const int_array &data);
+        void set(const unsigned_int_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        void set(const long_array &data);
+        void set(const unsigned_long_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        void set(const float_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        void set(const double_array &data);
+    #endif
+
 
 //-----------------------------------------------------------------------------
 // -- set for string types -- 
@@ -430,6 +507,36 @@ public:
     void set_float64_vector(const std::vector<float64> &data);
     void set(const std::vector<float64> &data);
 
+//-----------------------------------------------------------------------------
+//  set vector gap methods for c-native types
+//-----------------------------------------------------------------------------
+    #ifndef CONDUIT_USE_CHAR
+        void set(const std::vector<char> &data);
+        void set(const std::vector<unsigned char> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        void set(const std::vector<short> &data);
+        void set(const std::vector<unsigned short> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        void set(const std::vector<int> &data);
+        void set(const std::vector<unsigned int> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        void set(const std::vector<long> &data);
+        void set(const std::vector<unsigned long> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        void set(const std::vector<float> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        void set(const std::vector<double> &data);
+    #endif
 
 
 //-----------------------------------------------------------------------------
@@ -591,6 +698,92 @@ public:
              index_t stride = sizeof(conduit::float64),
              index_t element_bytes = sizeof(conduit::float64),
              index_t endianness = Endianness::DEFAULT_ID);
+
+
+//-----------------------------------------------------------------------------
+//  set via pointer gap methods for c-native types
+//-----------------------------------------------------------------------------
+    #ifndef CONDUIT_USE_CHAR
+        void set(signed char *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_CHAR),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_CHAR),
+                 index_t endianness = Endianness::DEFAULT_ID);
+
+        void set(unsigned char *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR),
+                 index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        void set(short *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_SHORT),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_SHORT),
+                 index_t endianness = Endianness::DEFAULT_ID);
+
+        void set(unsigned short *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT),
+                 index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        void set(int *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_INT),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_INT),
+                 index_t endianness = Endianness::DEFAULT_ID);
+
+        void set(unsigned int *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_INT),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_INT),
+                 index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        void set(long *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_LONG),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG),
+                 index_t endianness = Endianness::DEFAULT_ID);
+
+        void set(unsigned long *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
+                 index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        void set(float *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_FLOAT),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_FLOAT),
+                 index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        void set(double *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_DOUBLE),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_DOUBLE),
+                 index_t endianness = Endianness::DEFAULT_ID);
+    #endif
 
 //-----------------------------------------------------------------------------
 ///@}
