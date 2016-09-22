@@ -788,6 +788,113 @@ Node::set(float64 data)
     set_float64(data);
 }
 
+
+//-----------------------------------------------------------------------------
+// set gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+set(signed char data)
+{
+    set((CONDUIT_NATIVE_CHAR)data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(unsigned char data)
+{
+    set((CONDUIT_NATIVE_UNSIGNED_CHAR)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+set(short data)
+{
+    set((CONDUIT_NATIVE_SHORT)data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(unsigned short data)
+{
+    set((CONDUIT_NATIVE_UNSIGNED_SHORT)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+set(int data)
+{
+    set((CONDUIT_NATIVE_INT)data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(unsigned int data)
+{
+    set((CONDUIT_NATIVE_UNSIGNED_INT)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+set(long data)
+{
+    set((CONDUIT_NATIVE_LONG)data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(unsigned long data)
+{
+    set((CONDUIT_NATIVE_UNSIGNED_LONG)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set(float data)
+{
+    set((CONDUIT_NATIVE_FLOAT)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set(double data)
+{
+    set((CONDUIT_NATIVE_DOUBLE)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
+
 //-----------------------------------------------------------------------------
 // -- set for conduit::DataArray types ---
 //-----------------------------------------------------------------------------
@@ -954,6 +1061,122 @@ Node::set(const float64_array &data)
     set_float64_array(data);
 }
 
+
+//-----------------------------------------------------------------------------
+// set array gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+set(const char_array &data)
+{
+    init(DataType::c_char(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const unsigned_char_array &data)
+{
+    init(DataType::c_unsigned_char(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+set(const short_array &data)
+{
+    init(DataType::c_short(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const unsigned_short_array&data)
+{
+    init(DataType::c_unsigned_short(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+set(const int_array &data)
+{
+    init(DataType::c_int(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const unsigned_int_array &data)
+{
+    init(DataType::c_unsigned_int(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+set(const long_array &data)
+{
+    init(DataType::c_long(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const unsigned_long_array &data)
+{
+    init(DataType::c_unsigned_long(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+set(const float_array &data)
+{
+    init(DataType::c_float(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+set(const double_array &data)
+{
+    init(DataType::c_double(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
 //-----------------------------------------------------------------------------
 // -- set for string types -- 
 //-----------------------------------------------------------------------------
@@ -1016,13 +1239,7 @@ Node::set_char8_str(const char *data)
 void 
 Node::set_int8_vector(const std::vector<int8> &data)
 {
-    DataType vec_t(DataType::INT8_ID,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(int8),
-                   sizeof(int8),
-                   Endianness::DEFAULT_ID);
-    init(vec_t);
+    init(DataType::int8(data.size()));
     memcpy(m_data,&data[0],sizeof(int8)*data.size());
 }
 
@@ -1037,13 +1254,7 @@ Node::set(const std::vector<int8> &data)
 void 
 Node::set_int16_vector(const std::vector<int16> &data)
 {
-    DataType vec_t(DataType::INT16_ID,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(int16),
-                   sizeof(int16),
-                   Endianness::DEFAULT_ID);
-    init(vec_t);
+    init(DataType::int16(data.size()));
     memcpy(m_data,&data[0],sizeof(int16)*data.size());
 }
 
@@ -1058,13 +1269,7 @@ Node::set(const std::vector<int16> &data)
 void 
 Node::set_int32_vector(const std::vector<int32> &data)
 {
-    DataType vec_t(DataType::INT32_ID,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(int32),
-                   sizeof(int32),
-                   Endianness::DEFAULT_ID);
-    init(vec_t);
+    init(DataType::int32(data.size()));
     memcpy(m_data,&data[0],sizeof(int32)*data.size());
 }
 
@@ -1079,13 +1284,7 @@ Node::set(const std::vector<int32> &data)
 void 
 Node::set_int64_vector(const std::vector<int64> &data)
 {
-    DataType vec_t(DataType::INT64_ID,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(int64),
-                   sizeof(int64),
-                   Endianness::DEFAULT_ID);
-    init(vec_t);
+    init(DataType::int64(data.size()));
     memcpy(m_data,&data[0],sizeof(int64)*data.size());
 }
 
@@ -1104,13 +1303,7 @@ Node::set(const std::vector<int64> &data)
 void 
 Node::set_uint8_vector(const std::vector<uint8> &data)
 {
-    DataType vec_t(DataType::UINT8_ID,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(uint8),
-                   sizeof(uint8),
-                   Endianness::DEFAULT_ID);
-    init(vec_t);
+    init(DataType::uint8(data.size()));
     memcpy(m_data,&data[0],sizeof(uint8)*data.size());
 }
 
@@ -1125,13 +1318,7 @@ Node::set(const std::vector<uint8> &data)
 void 
 Node::set_uint16_vector(const std::vector<uint16> &data)
 {
-    DataType vec_t(DataType::UINT16_ID,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(uint16),
-                   sizeof(uint16),
-                   Endianness::DEFAULT_ID);
-    init(vec_t);
+    init(DataType::uint16(data.size()));
     memcpy(m_data,&data[0],sizeof(uint16)*data.size());
 }
 
@@ -1146,13 +1333,7 @@ Node::set(const std::vector<uint16> &data)
 void 
 Node::set_uint32_vector(const std::vector<uint32> &data)
 {
-    DataType vec_t(DataType::UINT32_ID,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(uint32),
-                   sizeof(uint32),
-                   Endianness::DEFAULT_ID);
-    init(vec_t);
+    init(DataType::uint32(data.size()));
     memcpy(m_data,&data[0],sizeof(uint32)*data.size());
 }
 
@@ -1167,13 +1348,7 @@ Node::set(const std::vector<uint32> &data)
 void 
 Node::set_uint64_vector(const std::vector<uint64> &data)
 {
-    DataType vec_t(DataType::UINT64_ID,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(uint64),
-                   sizeof(uint64),
-                   Endianness::DEFAULT_ID);
-    init(vec_t);
+    init(DataType::uint64(data.size()));
     memcpy(m_data,&data[0],sizeof(uint64)*data.size());
 }
 
@@ -1192,13 +1367,7 @@ Node::set(const std::vector<uint64> &data)
 void 
 Node::set_float32_vector(const std::vector<float32> &data)
 {
-    DataType vec_t(DataType::FLOAT32_ID,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(float32),
-                   sizeof(float32),
-                   Endianness::DEFAULT_ID);
-    init(vec_t);
+    init(DataType::float32(data.size()));
     memcpy(m_data,&data[0],sizeof(float32)*data.size());
 }
 
@@ -1214,13 +1383,7 @@ Node::set(const std::vector<float32> &data)
 void 
 Node::set_float64_vector(const std::vector<float64> &data)
 {
-    DataType vec_t(DataType::FLOAT64_ID,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(float64),
-                   sizeof(float64),
-                   Endianness::DEFAULT_ID);
-    init(vec_t);
+    init(DataType::float64(data.size()));
     memcpy(m_data,&data[0],sizeof(float64)*data.size());
 }
 
@@ -1230,6 +1393,123 @@ Node::set(const std::vector<float64> &data)
 {
     set_float64_vector(data);
 }
+
+
+//-----------------------------------------------------------------------------
+// set vector gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+set(const std::vector<char> &data)
+{
+    init(DataType::c_char(data.size()));
+    memcpy(m_data,&data[0],sizeof(char)*data.size());
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::vector<unsigned char> &data)
+{
+    init(DataType::c_unsigned_char(data.size()));
+    memcpy(m_data,&data[0],sizeof(char)*data.size());
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+set(const std::vector<short> &data)
+{
+    init(DataType::c_short(data.size()));
+    memcpy(m_data,&data[0],sizeof(char)*data.size());
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::vector<unsigned short> &data)
+{
+    init(DataType::c_unsigned_short(data.size()));
+    memcpy(m_data,&data[0],sizeof(char)*data.size());
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+set(const std::vector<int> &data)
+{
+    init(DataType::c_int(data.size()));
+    memcpy(m_data,&data[0],sizeof(char)*data.size());
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::vector<unsigned int> &data)
+{
+    init(DataType::c_unsigned_int(data.size()));
+    memcpy(m_data,&data[0],sizeof(char)*data.size());
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+set(const std::vector<long> &data)
+{
+    init(DataType::c_long(data.size()));
+    memcpy(m_data,&data[0],sizeof(char)*data.size());
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::vector<unsigned long> &data)
+{
+    init(DataType::c_unsigned_long(data.size()));
+    memcpy(m_data,&data[0],sizeof(char)*data.size());
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+set(const std::vector<float> &data)
+{
+    init(DataType::c_float(data.size()));
+    memcpy(m_data,&data[0],sizeof(char)*data.size());
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+set(const std::vector<double> &data)
+{
+    init(DataType::c_double(data.size()));
+    memcpy(m_data,&data[0],sizeof(char)*data.size());
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
 
 
 //-----------------------------------------------------------------------------
@@ -1250,10 +1530,10 @@ Node::set_int8_ptr(int8  *data,
                    index_t endianness)
 {
     set(int8_array(data,DataType::int8(num_elements,
-                                               offset,
-                                               stride,
-                                               element_bytes,
-                                               endianness)));
+                                       offset,
+                                       stride,
+                                       element_bytes,
+                                       endianness)));
 }
 
 //---------------------------------------------------------------------------//
@@ -1528,6 +1808,202 @@ Node::set(float64 *data,
 {
     set_float64_ptr(data,num_elements,offset,stride,element_bytes,endianness);
 }
+
+
+//-----------------------------------------------------------------------------
+// set pointer gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+set(signed char *data,
+    index_t num_elements,
+    index_t offset,
+    index_t stride,
+    index_t element_bytes,
+    index_t endianness)
+{
+    set(char_array(data,DataType::c_char(num_elements,
+                                         offset,
+                                         stride,
+                                         element_bytes,
+                                         endianness)));
+}
+
+//-----------------------------------------------------------------------------
+void
+set(unsigned char *data,
+    index_t num_elements,
+    index_t offset,
+    index_t stride,
+    index_t element_bytes,
+    index_t endianness)
+{
+    set(unsigned_char_array(data,DataType::c_unsigned_char(num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness)));
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+set(short *data,
+    index_t num_elements,
+    index_t offset,
+    index_t stride,
+    index_t element_bytes,
+    index_t endianness)
+{
+    set(short_array(data,DataType::c_short(num_elements,
+                                           offset,
+                                           stride,
+                                           element_bytes,
+                                           endianness)));
+}
+
+//-----------------------------------------------------------------------------
+void
+set(unsigned short *data,
+    index_t num_elements,
+    index_t offset,
+    index_t stride,
+    index_t element_bytes,
+    index_t endianness)
+{
+    set(unsigned_short_array(data,DataType::c_unsigned_short(num_elements,
+                                                             offset,
+                                                             stride,
+                                                             element_bytes,
+                                                             endianness)));
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+set(int *data,
+    index_t num_elements,
+    index_t offset,
+    index_t stride,
+    index_t element_bytes,
+    index_t endianness)
+{
+    set(int_array(data,DataType::c_int(num_elements,
+                                       offset,
+                                       stride,
+                                       element_bytes,
+                                       endianness)));
+}
+
+//-----------------------------------------------------------------------------
+void
+set(unsigned int *data,
+    index_t num_elements,
+    index_t offset,
+    index_t stride,
+    index_t element_bytes,
+    index_t endianness)
+{
+    set(unsigned_int_array(data,DataType::c_unsigned_int(num_elements,
+                                                         offset,
+                                                         stride,
+                                                         element_bytes,
+                                                         endianness)));
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+set(long *data,
+    index_t num_elements,
+    index_t offset,
+    index_t stride,
+    index_t element_bytes,
+    index_t endianness)
+{
+    set(long_array(data,DataType::c_long(num_elements,
+                                         offset,
+                                         stride,
+                                         element_bytes,
+                                         endianness)));
+}
+
+//-----------------------------------------------------------------------------
+void
+set(unsigned long *data,
+    index_t num_elements,
+    index_t offset,
+    index_t stride,
+    index_t element_bytes,
+    index_t endianness)
+{
+    set(unsigned_long_array(data,DataType::c_unsigned_long(num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness)));
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+set(float *data,
+    index_t num_elements,
+    index_t offset,
+    index_t stride,
+    index_t element_bytes,
+    index_t endianness)
+{
+    set(float_array(data,DataType::c_float(num_elements,
+                                           offset,
+                                           stride,
+                                           element_bytes,
+                                           endianness)));
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+set(double *data,
+    index_t num_elements,
+    index_t offset,
+    index_t stride,
+    index_t element_bytes,
+    index_t endianness)
+{
+    set(double_array(data,DataType::c_double(num_elements,
+                                             offset,
+                                             stride,
+                                             element_bytes,
+                                             endianness)));
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 //

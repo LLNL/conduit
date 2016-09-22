@@ -74,8 +74,16 @@
 #cmakedefine CONDUIT_HAS_LONG_DOUBLE    @CONDUIT_HAS_LONG_DOUBLE@
 
 
-// defines that let us know if we need to use long long or long double
-// to fill out support for our menu of bit-width style types
+// defines that let us know which types are used to support for our menu of
+// bit-width style types
+#cmakedefine CONDUIT_USE_CHAR           @CONDUIT_USE_CHAR@
+#cmakedefine CONDUIT_USE_SHORT          @CONDUIT_USE_SHORT@
+#cmakedefine CONDUIT_USE_INT            @CONDUIT_USE_INT@
+#cmakedefine CONDUIT_USE_LONG           @CONDUIT_USE_LONG@
+
+#cmakedefine CONDUIT_USE_FLOAT          @CONDUIT_USE_FLOAT@
+#cmakedefine CONDUIT_USE_DOUBLE         @CONDUIT_USE_DOUBLE@
+
 #cmakedefine CONDUIT_USE_LONG_LONG      @CONDUIT_USE_LONG_LONG@
 #cmakedefine CONDUIT_USE_LONG_DOUBLE    @CONDUIT_USE_LONG_DOUBLE@
 
@@ -300,6 +308,61 @@ typedef conduit_index64_t conduit_index_t;
 
 #ifndef CONDUIT_FLOAT64_NATIVE_NAME
 #error Bitwidth Style Types: no native type found that maps to float64
+#endif
+
+//-----------------------------------------------------------------------------
+///End Bit-width type map sanity checks
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+/// Native type map sanity checks
+//-----------------------------------------------------------------------------
+
+//
+// check that we have a mapping for all base native types to conduit types
+//
+
+// signed ints
+#ifndef CONDUIT_NATIVE_CHAR
+#error C-Style Types: no conduit type found that maps to char
+#endif
+
+#ifndef CONDUIT_NATIVE_SHORT
+#error C-Style Types: no conduit type found that maps to short
+#endif
+
+#ifndef CONDUIT_NATIVE_INT
+#error C-Style Types: no conduit type found that maps to int
+#endif
+
+#ifndef CONDUIT_NATIVE_LONG
+#error C-Style Types: no conduit type found that maps to long
+#endif
+
+// unsigned ints
+#ifndef CONDUIT_NATIVE_UNSIGNED_CHAR
+#error C-Style Types: no conduit type found that maps to unsigned char
+#endif
+
+#ifndef CONDUIT_NATIVE_UNSIGNED_SHORT
+#error C-Style Types: no conduit type found that maps to unsigned short
+#endif
+
+#ifndef CONDUIT_NATIVE_UNSIGNED_INT
+#error C-Style Types: no conduit type found that maps to unsigned int
+#endif
+
+#ifndef CONDUIT_NATIVE_UNSIGNED_LONG
+#error C-Style Types: no conduit type found that maps to unsigned long
+#endif
+
+// floating points numbers
+#ifndef CONDUIT_NATIVE_FLOAT
+#error C-Style Types: no conduit type found that maps to float
+#endif
+
+#ifndef CONDUIT_NATIVE_DOUBLE
+#error C-Style Types: no conduit type found that maps to double
 #endif
 
 //-----------------------------------------------------------------------------
