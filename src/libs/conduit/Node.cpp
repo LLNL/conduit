@@ -797,7 +797,7 @@ Node::set(float64 data)
 #ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
 void
-set(signed char data)
+Node::set(signed char data)
 {
     set((CONDUIT_NATIVE_CHAR)data);
 }
@@ -816,7 +816,7 @@ Node::set(unsigned char data)
 #ifndef CONDUIT_USE_SHORT
 //-----------------------------------------------------------------------------
 void
-set(short data)
+Node::set(short data)
 {
     set((CONDUIT_NATIVE_SHORT)data);
 }
@@ -835,7 +835,7 @@ Node::set(unsigned short data)
 #ifndef CONDUIT_USE_INT
 //-----------------------------------------------------------------------------
 void
-set(int data)
+Node::set(int data)
 {
     set((CONDUIT_NATIVE_INT)data);
 }
@@ -1070,7 +1070,7 @@ Node::set(const float64_array &data)
 #ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
 void
-set(const char_array &data)
+Node::set(const char_array &data)
 {
     init(DataType::c_char(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
@@ -1091,7 +1091,7 @@ Node::set(const unsigned_char_array &data)
 #ifndef CONDUIT_USE_SHORT
 //-----------------------------------------------------------------------------
 void
-set(const short_array &data)
+Node::set(const short_array &data)
 {
     init(DataType::c_short(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
@@ -1112,7 +1112,7 @@ Node::set(const unsigned_short_array&data)
 #ifndef CONDUIT_USE_INT
 //-----------------------------------------------------------------------------
 void
-set(const int_array &data)
+Node::set(const int_array &data)
 {
     init(DataType::c_int(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
@@ -1155,7 +1155,7 @@ Node::set(const unsigned_long_array &data)
 #ifndef CONDUIT_USE_FLOAT
 //-----------------------------------------------------------------------------
 void
-set(const float_array &data)
+Node::set(const float_array &data)
 {
     init(DataType::c_float(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
@@ -1168,7 +1168,7 @@ set(const float_array &data)
 #ifndef CONDUIT_USE_DOUBLE
 //-----------------------------------------------------------------------------
 void
-set(const double_array &data)
+Node::set(const double_array &data)
 {
     init(DataType::c_double(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
@@ -1403,7 +1403,7 @@ Node::set(const std::vector<float64> &data)
 #ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
 void
-set(const std::vector<char> &data)
+Node::set(const std::vector<char> &data)
 {
     init(DataType::c_char(data.size()));
     memcpy(m_data,&data[0],sizeof(char)*data.size());
@@ -1424,7 +1424,7 @@ Node::set(const std::vector<unsigned char> &data)
 #ifndef CONDUIT_USE_SHORT
 //-----------------------------------------------------------------------------
 void
-set(const std::vector<short> &data)
+Node::set(const std::vector<short> &data)
 {
     init(DataType::c_short(data.size()));
     memcpy(m_data,&data[0],sizeof(char)*data.size());
@@ -1445,7 +1445,7 @@ Node::set(const std::vector<unsigned short> &data)
 #ifndef CONDUIT_USE_INT
 //-----------------------------------------------------------------------------
 void
-set(const std::vector<int> &data)
+Node::set(const std::vector<int> &data)
 {
     init(DataType::c_int(data.size()));
     memcpy(m_data,&data[0],sizeof(char)*data.size());
@@ -1488,7 +1488,7 @@ Node::set(const std::vector<unsigned long> &data)
 #ifndef CONDUIT_USE_FLOAT
 //-----------------------------------------------------------------------------
 void
-set(const std::vector<float> &data)
+Node::set(const std::vector<float> &data)
 {
     init(DataType::c_float(data.size()));
     memcpy(m_data,&data[0],sizeof(char)*data.size());
@@ -1501,7 +1501,7 @@ set(const std::vector<float> &data)
 #ifndef CONDUIT_USE_DOUBLE
 //-----------------------------------------------------------------------------
 void
-set(const std::vector<double> &data)
+Node::set(const std::vector<double> &data)
 {
     init(DataType::c_double(data.size()));
     memcpy(m_data,&data[0],sizeof(char)*data.size());
@@ -1818,12 +1818,12 @@ Node::set(float64 *data,
 #ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
 void
-set(signed char *data,
-    index_t num_elements,
-    index_t offset,
-    index_t stride,
-    index_t element_bytes,
-    index_t endianness)
+Node::set(signed char *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
 {
     set(char_array(data,DataType::c_char(num_elements,
                                          offset,
@@ -1834,12 +1834,12 @@ set(signed char *data,
 
 //-----------------------------------------------------------------------------
 void
-set(unsigned char *data,
-    index_t num_elements,
-    index_t offset,
-    index_t stride,
-    index_t element_bytes,
-    index_t endianness)
+Node::set(unsigned char *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
 {
     set(unsigned_char_array(data,DataType::c_unsigned_char(num_elements,
                                                            offset,
@@ -1855,12 +1855,12 @@ set(unsigned char *data,
 #ifndef CONDUIT_USE_SHORT
 //-----------------------------------------------------------------------------
 void
-set(short *data,
-    index_t num_elements,
-    index_t offset,
-    index_t stride,
-    index_t element_bytes,
-    index_t endianness)
+Node::set(short *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
 {
     set(short_array(data,DataType::c_short(num_elements,
                                            offset,
@@ -1871,12 +1871,12 @@ set(short *data,
 
 //-----------------------------------------------------------------------------
 void
-set(unsigned short *data,
-    index_t num_elements,
-    index_t offset,
-    index_t stride,
-    index_t element_bytes,
-    index_t endianness)
+Node::set(unsigned short *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
 {
     set(unsigned_short_array(data,DataType::c_unsigned_short(num_elements,
                                                              offset,
@@ -1892,12 +1892,12 @@ set(unsigned short *data,
 #ifndef CONDUIT_USE_INT
 //-----------------------------------------------------------------------------
 void
-set(int *data,
-    index_t num_elements,
-    index_t offset,
-    index_t stride,
-    index_t element_bytes,
-    index_t endianness)
+Node::set(int *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
 {
     set(int_array(data,DataType::c_int(num_elements,
                                        offset,
@@ -1908,12 +1908,12 @@ set(int *data,
 
 //-----------------------------------------------------------------------------
 void
-set(unsigned int *data,
-    index_t num_elements,
-    index_t offset,
-    index_t stride,
-    index_t element_bytes,
-    index_t endianness)
+Node::set(unsigned int *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
 {
     set(unsigned_int_array(data,DataType::c_unsigned_int(num_elements,
                                                          offset,
@@ -1967,12 +1967,12 @@ Node::set(unsigned long *data,
 #ifndef CONDUIT_USE_FLOAT
 //-----------------------------------------------------------------------------
 void
-set(float *data,
-    index_t num_elements,
-    index_t offset,
-    index_t stride,
-    index_t element_bytes,
-    index_t endianness)
+Node::set(float *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
 {
     set(float_array(data,DataType::c_float(num_elements,
                                            offset,
@@ -1988,12 +1988,12 @@ set(float *data,
 #ifndef CONDUIT_USE_DOUBLE
 //-----------------------------------------------------------------------------
 void
-set(double *data,
-    index_t num_elements,
-    index_t offset,
-    index_t stride,
-    index_t element_bytes,
-    index_t endianness)
+Node::set(double *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
 {
     set(double_array(data,DataType::c_double(num_elements,
                                              offset,
@@ -2286,6 +2286,112 @@ Node::set_path(const std::string &path,
 }
 
 //-----------------------------------------------------------------------------
+// set_path gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, signed char data)
+{
+    set_path(path,(CONDUIT_NATIVE_CHAR)data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, unsigned char data)
+{
+    set_path(path,(CONDUIT_NATIVE_UNSIGNED_CHAR)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, short data)
+{
+    set_path(path,(CONDUIT_NATIVE_SHORT)data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, unsigned short data)
+{
+    set_path(path,(CONDUIT_NATIVE_UNSIGNED_SHORT)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, int data)
+{
+    set_path(path,(CONDUIT_NATIVE_INT)data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, unsigned int data)
+{
+    set_path(path,(CONDUIT_NATIVE_UNSIGNED_INT)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, long data)
+{
+    set_path(path,(CONDUIT_NATIVE_LONG)data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, unsigned long data)
+{
+    set_path(path,(CONDUIT_NATIVE_UNSIGNED_LONG)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, float data)
+{
+    set_path(path,(CONDUIT_NATIVE_FLOAT)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, double data)
+{
+    set_path(path, (CONDUIT_NATIVE_DOUBLE)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
 // -- set_path for conduit::DataArray types ---
 //-----------------------------------------------------------------------------
 
@@ -2460,6 +2566,123 @@ Node::set_path(const std::string &path,
 {
     set_path_float64_array(path,data);    
 }
+
+//-----------------------------------------------------------------------------
+// set_path array gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const char_array &data)
+{
+    fetch(path).set(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const unsigned_char_array &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const short_array &data)
+{
+    fetch(path).set(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const unsigned_short_array &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const int_array &data)
+{
+    fetch(path).set(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const unsigned_int_array &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const long_array &data)
+{
+    fetch(path).set(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const unsigned_long_array &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const float_array &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const double_array &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
+
 
 //-----------------------------------------------------------------------------
 // -- set_path for string types -- 
@@ -2664,6 +2887,122 @@ Node::set_path(const std::string &path,const std::vector<float64> &data)
 {
     set_path_float64_vector(path,data);
 }
+
+
+//-----------------------------------------------------------------------------
+// set_path vector gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<char> &data)
+{
+    fetch(path).set(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<unsigned char> &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<short> &data)
+{
+    fetch(path).set(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<unsigned short> &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<int> &data)
+{
+    fetch(path).set(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<unsigned int> &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<long> &data)
+{
+    fetch(path).set(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<unsigned long> &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<float> &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<double> &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
 
 
 //-----------------------------------------------------------------------------
@@ -3048,6 +3387,222 @@ Node::set_path(const std::string &path,
                          element_bytes,
                          endianness);
 }
+
+//-----------------------------------------------------------------------------
+// set_path pointer gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               signed char *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               unsigned char *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               short *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               unsigned short *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               int *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               unsigned int *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               long *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               unsigned long *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               float *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               double *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 //
@@ -3490,6 +4045,222 @@ Node::set_external(float64 *data,
 }
 
 //-----------------------------------------------------------------------------
+// set pointer gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set_external(signed char *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_char(num_elements,
+                                   offset,
+                                   stride,
+                                   element_bytes,
+                                   endianness));
+    m_data  = data;
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(unsigned char *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_unsigned_char(num_elements,
+                                            offset,
+                                            stride,
+                                            element_bytes,
+                                            endianness));
+    m_data  = data;
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set_external(short *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_short(num_elements,
+                                    offset,
+                                    stride,
+                                    element_bytes,
+                                    endianness));
+    m_data  = data;
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(unsigned short *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_unsigned_short(num_elements,
+                                             offset,
+                                             stride,
+                                             element_bytes,
+                                             endianness));
+    m_data  = data;
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set_external(int *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_int(num_elements,
+                                  offset,
+                                  stride,
+                                  element_bytes,
+                                  endianness));
+    m_data  = data;
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(unsigned int *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_unsigned_int(num_elements,
+                                           offset,
+                                           stride,
+                                           element_bytes,
+                                           endianness));
+    m_data  = data;
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set_external(long *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_long(num_elements,
+                                   offset,
+                                   stride,
+                                   element_bytes,
+                                   endianness));
+    m_data  = data;
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(unsigned long *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_unsigned_long(num_elements,
+                                            offset,
+                                            stride,
+                                            element_bytes,
+                                            endianness));
+    m_data  = data;
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set_external(float *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_float(num_elements,
+                                    offset,
+                                    stride,
+                                    element_bytes,
+                                    endianness));
+    m_data  = data;
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set_external(double *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_double(num_elements,
+                                     offset,
+                                     stride,
+                                     element_bytes,
+                                     endianness));
+    m_data  = data;
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
 // -- set_external for conduit::DataArray types ---
 //-----------------------------------------------------------------------------
 
@@ -3685,6 +4456,133 @@ Node::set_external_char8_str(char *data)
     m_data  = data;
 }
 
+
+//-----------------------------------------------------------------------------
+// set_external array gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const char_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const unsigned_char_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const short_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const unsigned_short_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const int_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const unsigned_int_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const long_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const unsigned_long_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const float_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const double_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
+
 //-----------------------------------------------------------------------------
 // -- set_external for std::vector types ---
 //-----------------------------------------------------------------------------
@@ -3860,6 +4758,132 @@ Node::set_external(std::vector<float64> &data)
 {
     set_external_float64_vector(data);
 }
+
+//-----------------------------------------------------------------------------
+// set_external vector gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<char> &data)
+{
+    release();
+    m_schema->set(DataType::c_char((index_t)data.size()));
+    m_data  = &data[0];
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<unsigned char> &data)
+{
+    release();
+    m_schema->set(DataType::c_unsigned_char((index_t)data.size()));
+    m_data  = &data[0];
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<short> &data)
+{
+    release();
+    m_schema->set(DataType::c_short((index_t)data.size()));
+    m_data  = &data[0];
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<unsigned short> &data)
+{
+    release();
+    m_schema->set(DataType::c_unsigned_short((index_t)data.size()));
+    m_data  = &data[0];
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<int> &data)
+{
+    release();
+    m_schema->set(DataType::c_int((index_t)data.size()));
+    m_data  = &data[0];
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<unsigned int> &data)
+{
+    release();
+    m_schema->set(DataType::c_unsigned_int((index_t)data.size()));
+    m_data  = &data[0];
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<long> &data)
+{
+    release();
+    m_schema->set(DataType::c_long((index_t)data.size()));
+    m_data  = &data[0];
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<unsigned long> &data)
+{
+    release();
+    m_schema->set(DataType::c_unsigned_long((index_t)data.size()));
+    m_data  = &data[0];
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<float> &data)
+{
+    release();
+    m_schema->set(DataType::c_float((index_t)data.size()));
+    m_data  = &data[0];
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<double> &data)
+{
+    release();
+    m_schema->set(DataType::c_double((index_t)data.size()));
+    m_data  = &data[0];
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 //
@@ -4323,6 +5347,223 @@ Node::set_path_external(const std::string &path,
 }
 
 //-----------------------------------------------------------------------------
+// set_path_external pointer gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        signed char *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        unsigned char *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        short *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        unsigned short *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        int *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        unsigned int *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        long *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        unsigned long *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        float *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        double *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
+
+
+//-----------------------------------------------------------------------------
 // -- set_path_external for conduit::DataArray types ---
 //-----------------------------------------------------------------------------
 
@@ -4497,6 +5738,123 @@ Node::set_path_external(const std::string &path,
 {
     set_path_external_float64_array(path,data);
 }
+
+
+//-----------------------------------------------------------------------------
+// set_path_external array gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const char_array &data)
+{
+    fetch(path).set_external(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const unsigned_char_array &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const short_array &data)
+{
+    fetch(path).set_external(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const unsigned_short_array &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const int_array &data)
+{
+    fetch(path).set_external(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const unsigned_int_array &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const long_array &data)
+{
+    fetch(path).set_external(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const unsigned_long_array &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const float_array &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const double_array &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
 
 
 //-----------------------------------------------------------------------------
@@ -4687,6 +6045,124 @@ Node::set_path_external(const std::string &path,
 {
     set_path_external_float64_vector(path,data);
 }
+
+
+//-----------------------------------------------------------------------------
+// set_path_external vector gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<char> &data)
+{
+    fetch(path).set_external(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<unsigned char> &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<short> &data)
+{
+    fetch(path).set_external(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<unsigned short> &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<int> &data)
+{
+    fetch(path).set_external(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<unsigned int> &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<long> &data)
+{
+    fetch(path).set_external(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<unsigned long> &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<float> &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<double> &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
+
 
 //-----------------------------------------------------------------------------
 //
@@ -7281,7 +8757,7 @@ Node::to_unsigned_char_array(Node &res) const
             // error
             CONDUIT_ERROR("Cannot convert non numeric " 
                         << dtype().name() 
-                        << " type to unsinged_char_array.");
+                        << " type to unsigned_char_array.");
         }
     }
 }
@@ -7354,7 +8830,7 @@ Node::to_unsigned_short_array(Node &res) const
             // error
             CONDUIT_ERROR("Cannot convert non numeric " 
                         << dtype().name() 
-                        << " type to unsinged_short_array.");
+                        << " type to unsigned_short_array.");
         }
     }
 }
@@ -7427,7 +8903,7 @@ Node::to_unsigned_int_array(Node &res) const
             // error
             CONDUIT_ERROR("Cannot convert non numeric " 
                         << dtype().name() 
-                        << " type to unsinged_int_array.");
+                        << " type to unsigned_int_array.");
         }
     }
 }
@@ -7500,7 +8976,7 @@ Node::to_unsigned_long_array(Node &res) const
             // error
             CONDUIT_ERROR("Cannot convert non numeric " 
                         << dtype().name() 
-                        << " type to unsinged_long_array.");
+                        << " type to unsigned_long_array.");
         }
     }
 }
