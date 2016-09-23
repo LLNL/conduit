@@ -43,8 +43,8 @@ namespace base64
 			const int N = _buffersize;
 			char* code = new char[N];
 			char* plaintext = new char[N];
-			int codelength;
-			int plainlength;
+            std::streamsize codelength;
+            std::streamsize plainlength;
 
 			do
 			{

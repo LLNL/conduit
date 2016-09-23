@@ -249,30 +249,30 @@ typedef DataArray<float64>  float64_array;
 
 
 /// signed integer arrays
-typedef DataArray<CONDUIT_NATIVE_CHAR>    char_array;
-typedef DataArray<CONDUIT_NATIVE_SHORT>   short_array;
-typedef DataArray<CONDUIT_NATIVE_INT>     int_array;
-typedef DataArray<CONDUIT_NATIVE_LONG>    long_array;
+typedef DataArray<signed char>  char_array;
+typedef DataArray<short>        short_array;
+typedef DataArray<int>          int_array;
+typedef DataArray<long>         long_array;
 #ifdef CONDUIT_USE_LONG_LONG
-typedef DataArray<CONDUIT_NATIVE_LONG_LONG>  long_long_array;
+typedef DataArray<long long>  long_long_array;
 #endif
 
 
 /// unsigned integer arrays
-typedef DataArray<CONDUIT_NATIVE_UNSIGNED_CHAR>   unsigned_char_array;
-typedef DataArray<CONDUIT_NATIVE_UNSIGNED_SHORT>  unsigned_short_array;
-typedef DataArray<CONDUIT_NATIVE_UNSIGNED_INT>    unsigned_int_array;
-typedef DataArray<CONDUIT_NATIVE_UNSIGNED_LONG>   unsigned_long_array;
+typedef DataArray<unsigned char>   unsigned_char_array;
+typedef DataArray<unsigned short>  unsigned_short_array;
+typedef DataArray<unsigned int>    unsigned_int_array;
+typedef DataArray<unsigned long>   unsigned_long_array;
 #ifdef CONDUIT_USE_LONG_LONG
-typedef DataArray<CONDUIT_NATIVE_UNSIGNED_LONG_LONG>  unsigned_long_long_array;
+typedef DataArray<unsigned long long>  unsigned_long_long_array;
 #endif
 
 
 /// floating point arrays
-typedef DataArray<CONDUIT_NATIVE_FLOAT>   float_array;
-typedef DataArray<CONDUIT_NATIVE_DOUBLE>  double_array;
+typedef DataArray<float>   float_array;
+typedef DataArray<double>  double_array;
 #ifdef CONDUIT_USE_LONG_DOUBLE
-typedef DataArray<CONDUIT_NATIVE_LONG_DOUBLE>  long_double_array;
+typedef DataArray<long double>  long_double_array;
 #endif
 
 }
