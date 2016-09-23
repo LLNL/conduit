@@ -514,7 +514,7 @@ sleep(index_t milliseconds)
 {
 
 #if defined(CONDUIT_PLATFORM_WINDOWS)
-    Sleep(milliseconds);
+    Sleep((DWORD)milliseconds);
 #else // unix, etc
     struct timespec ts;
     ts.tv_sec = milliseconds / 1000;
@@ -703,7 +703,7 @@ base64_decode(const void *src,
               void *dest)
 {
     base64_decodestate dec_state;
-    int src_len = src_nbytes;
+    int src_len = (int)src_nbytes;
     base64_init_decodestate(&dec_state);
     const char *src_ptr = (const char*)src;
     char *des_ptr = (char*)dest;

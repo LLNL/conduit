@@ -2382,7 +2382,7 @@ public:
             operator const unsigned_int_array()   const;
             operator const unsigned_long_array()  const;
             #ifdef CONDUIT_USE_LONG_LONG
-                operator unsigned_long_long_array() const;
+                operator const unsigned_long_long_array() const;
             #endif
 
 
@@ -2941,13 +2941,11 @@ private:
     // signed integers via pointers
     #ifdef CONDUIT_USE_LONG_LONG
     long long       *as_long_long_ptr();
-    const long long *as_long_long_ptr() const;
     #endif
 
     // unsigned integers via pointers
     #ifdef CONDUIT_USE_LONG_LONG
     unsigned long long        *as_unsigned_long_long_ptr();
-    const unsigned long long  *as_unsigned_long_long_ptr() const;
     #endif
 
 
