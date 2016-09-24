@@ -2138,7 +2138,7 @@ public:
 //  set via pointer gap methods for c-native types
 //-----------------------------------------------------------------------------
     #ifndef CONDUIT_USE_CHAR
-        void set_external_path(const std::string &path,
+        void set_path_external(const std::string &path,
                                signed char *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
@@ -2146,7 +2146,7 @@ public:
                                index_t element_bytes = sizeof(CONDUIT_NATIVE_CHAR),
                                index_t endianness = Endianness::DEFAULT_ID);
 
-        void set_external_path(const std::string &path,
+        void set_path_external(const std::string &path,
                                unsigned char *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
@@ -2156,7 +2156,7 @@ public:
     #endif
 
     #ifndef CONDUIT_USE_SHORT
-        void set_external_path(const std::string &path,
+        void set_path_external(const std::string &path,
                                short *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
@@ -2164,7 +2164,7 @@ public:
                                index_t element_bytes = sizeof(CONDUIT_NATIVE_SHORT),
                                index_t endianness = Endianness::DEFAULT_ID);
 
-        void set_external_path(const std::string &path,
+        void set_path_external(const std::string &path,
                                unsigned short *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
@@ -2174,7 +2174,7 @@ public:
     #endif
 
     #ifndef CONDUIT_USE_INT
-        void set_external_path(const std::string &path,
+        void set_path_external(const std::string &path,
                                int *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
@@ -2182,7 +2182,7 @@ public:
                                index_t element_bytes = sizeof(CONDUIT_NATIVE_INT),
                                index_t endianness = Endianness::DEFAULT_ID);
 
-        void set_external_path(const std::string &path,
+        void set_path_external(const std::string &path,
                                unsigned int *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
@@ -2192,7 +2192,7 @@ public:
     #endif
 
     #ifndef CONDUIT_USE_LONG
-        void set_external_path(const std::string &path,
+        void set_path_external(const std::string &path,
                                long *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
@@ -2200,7 +2200,7 @@ public:
                                index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG),
                                index_t endianness = Endianness::DEFAULT_ID);
 
-        void set_external_path(const std::string &path,
+        void set_path_external(const std::string &path,
                                unsigned long *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
@@ -2210,7 +2210,7 @@ public:
     #endif
 
     #ifndef CONDUIT_USE_FLOAT
-        void set_external_path(const std::string &path,
+        void set_path_external(const std::string &path,
                                float *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
@@ -2220,7 +2220,7 @@ public:
     #endif
 
     #ifndef CONDUIT_USE_DOUBLE
-        void set_external_path(const std::string &path,
+        void set_path_external(const std::string &path,
                                double *data,
                                index_t num_elements = 1,
                                index_t offset = 0,

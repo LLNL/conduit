@@ -4771,7 +4771,7 @@ Node::set_external(const std::vector<char> &data)
 {
     release();
     m_schema->set(DataType::c_char((index_t)data.size()));
-    m_data  = &data[0];
+    m_data  = (void*)&data[0];
 }
 
 //-----------------------------------------------------------------------------
@@ -4780,7 +4780,7 @@ Node::set_external(const std::vector<unsigned char> &data)
 {
     release();
     m_schema->set(DataType::c_unsigned_char((index_t)data.size()));
-    m_data  = &data[0];
+    m_data  = (void*)&data[0];
 }
 //-----------------------------------------------------------------------------
 #endif // end use char check
@@ -4794,7 +4794,7 @@ Node::set_external(const std::vector<short> &data)
 {
     release();
     m_schema->set(DataType::c_short((index_t)data.size()));
-    m_data  = &data[0];
+    m_data  = (void*)&data[0];
 }
 
 //-----------------------------------------------------------------------------
@@ -4803,7 +4803,7 @@ Node::set_external(const std::vector<unsigned short> &data)
 {
     release();
     m_schema->set(DataType::c_unsigned_short((index_t)data.size()));
-    m_data  = &data[0];
+    m_data  = (void*)&data[0];
 }
 //-----------------------------------------------------------------------------
 #endif // end use short check
@@ -4817,7 +4817,7 @@ Node::set_external(const std::vector<int> &data)
 {
     release();
     m_schema->set(DataType::c_int((index_t)data.size()));
-    m_data  = &data[0];
+    m_data  = (void*)&data[0];
 }
 
 //-----------------------------------------------------------------------------
@@ -4826,7 +4826,7 @@ Node::set_external(const std::vector<unsigned int> &data)
 {
     release();
     m_schema->set(DataType::c_unsigned_int((index_t)data.size()));
-    m_data  = &data[0];
+    m_data  = (void*)&data[0];
 }
 //-----------------------------------------------------------------------------
 #endif // end use int check
@@ -4840,7 +4840,7 @@ Node::set_external(const std::vector<long> &data)
 {
     release();
     m_schema->set(DataType::c_long((index_t)data.size()));
-    m_data  = &data[0];
+    m_data  = (void*)&data[0];
 }
 
 //-----------------------------------------------------------------------------
@@ -4849,7 +4849,7 @@ Node::set_external(const std::vector<unsigned long> &data)
 {
     release();
     m_schema->set(DataType::c_unsigned_long((index_t)data.size()));
-    m_data  = &data[0];
+    m_data  = (void*)&data[0];
 }
 //-----------------------------------------------------------------------------
 #endif // end use long check
@@ -4864,7 +4864,7 @@ Node::set_external(const std::vector<float> &data)
 {
     release();
     m_schema->set(DataType::c_float((index_t)data.size()));
-    m_data  = &data[0];
+    m_data  = (void*)&data[0];
 }
 //-----------------------------------------------------------------------------
 #endif // end use float check
@@ -4878,7 +4878,7 @@ Node::set_external(const std::vector<double> &data)
 {
     release();
     m_schema->set(DataType::c_double((index_t)data.size()));
-    m_data  = &data[0];
+    m_data  = (void*)&data[0];
 }
 //-----------------------------------------------------------------------------
 #endif // end use double check
