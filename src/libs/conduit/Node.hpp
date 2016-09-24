@@ -2535,6 +2535,90 @@ public:
     Node &operator=(float32 data);    
     Node &operator=(float64 data);
 
+
+//-----------------------------------------------------------------------------
+// --  assignment c-native gap operators for scalar types ---
+//-----------------------------------------------------------------------------
+
+    #ifndef CONDUIT_USE_CHAR
+        Node &operator=(signed char data);
+        Node &operator=(unsigned char data);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        Node &operator=(short data);
+        Node &operator=(unsigned short data);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        Node &operator=(int data);
+        Node &operator=(unsigned int data);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        Node &operator=(long data);
+        Node &operator=(unsigned long data);
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        Node &operator=(float data);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        Node &operator=(double data);
+    #endif
+//-----------------------------------------------------------------------------
+// -- assignment operators for conduit::DataArray types ---
+//-----------------------------------------------------------------------------
+    // signed integer array types via conduit::DataArray
+    Node &operator=(const int8_array  &data);
+    Node &operator=(const int16_array &data);
+    Node &operator=(const int32_array &data);
+    Node &operator=(const int64_array &data);
+
+    // unsigned integer array ttypes via conduit::DataArray
+    Node &operator=(const uint8_array  &data);
+    Node &operator=(const uint16_array &data);
+    Node &operator=(const uint32_array &data);
+    Node &operator=(const uint64_array &data);
+
+    // floating point array types via conduit::DataArray
+    Node &operator=(const float32_array &data);
+    Node &operator=(const float64_array &data);
+
+//-----------------------------------------------------------------------------
+// --  assignment c-native gap operators for data array  types ---
+//-----------------------------------------------------------------------------
+
+#ifndef CONDUIT_USE_CHAR
+    Node &operator=(const char_array &data);
+    Node &operator=(const unsigned_char_array &data);
+#endif
+
+#ifndef CONDUIT_USE_SHORT
+    Node &operator=(const short_array &data);
+    Node &operator=(const unsigned_short_array &data); 
+#endif
+
+#ifndef CONDUIT_USE_INT
+    Node &operator=(const int_array &data);
+    Node &operator=(const unsigned_int_array &data); 
+#endif
+
+#ifndef CONDUIT_USE_LONG
+    Node &operator=(const long_array &data);
+    Node &operator=(const unsigned_long_array &data);
+#endif
+
+#ifndef CONDUIT_USE_FLOAT
+    Node &operator=(const float_array &data);
+#endif
+
+#ifndef CONDUIT_USE_DOUBLE
+    Node &operator=(const double_array &data);
+#endif
+
+
 //-----------------------------------------------------------------------------
 // -- assignment operators for std::vector types ---
 //-----------------------------------------------------------------------------
@@ -2556,23 +2640,37 @@ public:
     Node &operator=(const std::vector<float64> &data);
 
 //-----------------------------------------------------------------------------
-// -- assignment operators for conduit::DataArray types ---
+// --  assignment c-native gap operators for vector types ---
 //-----------------------------------------------------------------------------
-    // signed integer array types via conduit::DataArray
-    Node &operator=(const int8_array  &data);
-    Node &operator=(const int16_array &data);
-    Node &operator=(const int32_array &data);
-    Node &operator=(const int64_array &data);
 
-    // unsigned integer array ttypes via conduit::DataArray
-    Node &operator=(const uint8_array  &data);
-    Node &operator=(const uint16_array &data);
-    Node &operator=(const uint32_array &data);
-    Node &operator=(const uint64_array &data);
+#ifndef CONDUIT_USE_CHAR
+    Node &operator=(const std::vector<char> &data);
+    Node &operator=(const std::vector<unsigned char> &data);
+#endif
 
-    // floating point array types via conduit::DataArray
-    Node &operator=(const float32_array &data);
-    Node &operator=(const float64_array &data);
+#ifndef CONDUIT_USE_SHORT
+    Node &operator=(const std::vector<short> &data);
+    Node &operator=(const std::vector<unsigned short> &data);
+#endif
+
+#ifndef CONDUIT_USE_INT
+    Node &operator=(const std::vector<int> &data);
+    Node &operator=(const std::vector<unsigned int> &data); 
+#endif
+
+#ifndef CONDUIT_USE_LONG
+    Node &operator=(const std::vector<long> &data);
+    Node &operator=(const std::vector<unsigned long> &data); 
+#endif
+
+#ifndef CONDUIT_USE_FLOAT
+    Node &operator=(const std::vector<float> &data);
+#endif
+
+#ifndef CONDUIT_USE_DOUBLE
+    Node &operator=(const std::vector<double> &data);
+#endif
+
 
 //-----------------------------------------------------------------------------
 // -- assignment operators for string types -- 
