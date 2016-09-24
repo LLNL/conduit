@@ -367,7 +367,7 @@ TEST(conduit_node, check_value_implict_c_type_cast)
     unsigned int   uiv = 3;
     unsigned long  ulv = 4;
     
-    float  fv = 1.2;
+    float  fv = 1.2f;
     double dv = 2.4;
     
     n["cv"] = cv;
@@ -507,7 +507,7 @@ TEST(conduit_node, check_value_implict_bitwidth_type_cast)
     uint32 ui32v = 3;
     uint64 ui64v = 4;
 
-    float32 f32v = 1.2;
+    float32 f32v = 1.2f;
     float64 f64v = 2.4;
     
     n["i8v"]  = i8v;

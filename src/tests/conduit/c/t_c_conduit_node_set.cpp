@@ -124,7 +124,7 @@ TEST(c_conduit_node_set, set_bitwidth_uint_scalar)
 //-----------------------------------------------------------------------------
 TEST(c_conduit_node_set, set_bitwidth_float_scalar)
 {
-    conduit_float32 f32v =  3.1415;
+    conduit_float32 f32v =  3.1415f;
     conduit_float64 f64v = -3.1415;
 
     conduit_node *n = conduit_node_create();
@@ -279,7 +279,7 @@ TEST(c_conduit_node_set, set_bitwidth_uint_ptr)
 //-----------------------------------------------------------------------------
 TEST(conduit_node_set, set_bitwidth_float_ptr)
 {
-    conduit_float32  f32av[4] = {-0.8, -1.6, -3.2, -6.4};
+    conduit_float32  f32av[4] = {-0.8f, -1.6f, -3.2f, -6.4f};
     conduit_float64  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
 
 
@@ -433,7 +433,7 @@ TEST(c_conduit_node_set, set_native_uint_scalar)
 //-----------------------------------------------------------------------------
 TEST(c_conduit_node_set, set_native_float_scalar)
 {
-    float  fv =  3.1415;
+    float  fv =  3.1415f;
     double dv = -3.1415;
 
     conduit_node *n = conduit_node_create();
@@ -588,7 +588,7 @@ TEST(c_conduit_node_set, set_native_uint_ptr)
 //-----------------------------------------------------------------------------
 TEST(conduit_node_set, set_native_float_ptr)
 {
-    float   fav[4] = {-0.8, -1.6, -3.2, -6.4};
+    float   fav[4] = {-0.8f, -1.6f, -3.2f, -6.4f};
     double  dav[4] = {-0.8, -1.6, -3.2, -6.4};
 
     conduit_node *n = conduit_node_create();

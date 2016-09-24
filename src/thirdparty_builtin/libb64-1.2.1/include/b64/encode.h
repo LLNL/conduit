@@ -48,13 +48,13 @@ namespace base64
 			const int N = _buffersize;
 			char* plaintext = new char[N];
 			char* code = new char[2*N];
-            std::streamsize plainlength;
-            std::streamsize codelength;
+            int plainlength;
+            int codelength;
 
 			do
 			{
 				istream_in.read(plaintext, N);
-				plainlength = istream_in.gcount();
+				plainlength = (int)istream_in.gcount();
 				//
 				codelength = encode(plaintext, plainlength, code);
 				ostream_in.write(code, codelength);

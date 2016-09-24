@@ -7479,7 +7479,7 @@ Node::to_float32() const
         case DataType::UINT64_ID: return (float32)as_uint64();
         /* floats */
         case DataType::FLOAT32_ID: return as_float32();
-        case DataType::FLOAT64_ID: return (float64)as_float64();
+        case DataType::FLOAT64_ID: return (float32)as_float64();
         // string case
         case DataType::CHAR8_STR_ID:
         {
