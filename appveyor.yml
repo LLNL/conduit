@@ -1,0 +1,24 @@
+environment:
+  matrix:
+  - CMAKE_GENERATOR: "Visual Studio 14 2015 Win64"
+
+init:
+  # line endings magic
+  - git config --global core.autocrlf input
+
+before_build:
+  # remove some noisy warnings from Xamarin
+  - del "C:\Program Files (x86)\MSBuild\14.0\Microsoft.Common.targets\ImportAfter\Xamarin.Common.targets"
+  # configure
+  - echo Running cmake ...
+  - cmake -Hsrc -Bbuild -G "%CMAKE_GENERATOR%"
+
+build_script:
+  #build
+  - echo Building ...
+  - cmake --build build --config "%CONFIGURATION%"
+
+after_build:
+  # run our test
+  - ps: cd build
+  - ctest -VV
