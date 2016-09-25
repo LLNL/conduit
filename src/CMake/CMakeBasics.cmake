@@ -117,12 +117,26 @@ if("${isSystemDir}" STREQUAL "-1")
 endif()
 
 ################################
+# Win32 Output Dir Settings
+################################
+# On windows we place all of the libs and execs in one dir.
+# dlls need to be located next to the execs since there is no
+# rpath equiv on windows. I tried some gymnastics to extract
+# and append the output dir of each dependent lib to the PATH for
+# each of our tests and bins, but that was futile.
+################################
+if(WIN32)
+    set(EXECUTABLE_OUTPUT_PATH  ${CMAKE_BINARY_DIR}/bin)
+    set(ARCHIVE_OUTPUT_PATH     ${CMAKE_BINARY_DIR}/bin)
+    set(LIBRARY_OUTPUT_PATH     ${CMAKE_BINARY_DIR}/bin)
+endif()
+
+################################
 # Standard CTest Options
 ################################
 if(ENABLE_TESTS)
     include(CTest)
 endif()
-
 
 ######################################################################################
 # Provide macros to simplify creating libs
@@ -222,7 +236,8 @@ macro(add_target_compile_flags)
         endif()
         # append new flags
         set(_COMP_FLAGS "${args_FLAGS} ${_COMP_FLAGS}")
-        set_target_properties(${args_TARGET} PROPERTIES COMPILE_FLAGS "${_COMP_FLAGS}" )
+        set_target_properties(${args_TARGET}
+                              PROPERTIES COMPILE_FLAGS "${_COMP_FLAGS}" )
     endif()
 
 endmacro()
@@ -244,7 +259,8 @@ macro(add_target_link_flags)
         endif()
         # append new flag
         set(_LINK_FLAGS "${args_FLAGS} ${_LINK_FLAGS}")
-        set_target_properties(${args_TARGET} PROPERTIES LINK_FLAGS "${_LINK_FLAGS}" )
+        set_target_properties(${args_TARGET}
+                              PROPERTIES LINK_FLAGS "${_LINK_FLAGS}" )
     endif()
 
 endmacro()
