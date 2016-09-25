@@ -488,6 +488,37 @@ template class DataArray<uint64>;
 template class DataArray<float32>;
 template class DataArray<float64>;
 
+// gap template instantiations for c-native types
+
+#ifndef CONDUIT_USE_CHAR
+template class DataArray<char>;
+template class DataArray<unsigned char>;
+#endif
+
+#ifndef CONDUIT_USE_SHORT
+template class DataArray<short>;
+template class DataArray<unsigned short>;
+#endif
+
+#ifndef CONDUIT_USE_INT
+template class DataArray<int>;
+template class DataArray<unsigned int>;
+#endif
+
+#ifndef CONDUIT_USE_LONG
+template class DataArray<long>;
+template class DataArray<unsigned long>;
+#endif
+
+#ifndef CONDUIT_USE_FLOAT
+template class DataArray<float>;
+#endif
+
+#ifndef CONDUIT_USE_DOUBLE
+template class DataArray<double>;
+#endif
+
+
 
 }
 //-----------------------------------------------------------------------------

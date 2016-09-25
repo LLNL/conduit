@@ -1,45 +1,45 @@
 ###############################################################################
 # Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
-# 
+#
 # Produced at the Lawrence Livermore National Laboratory
-# 
+#
 # LLNL-CODE-666778
-# 
+#
 # All rights reserved.
-# 
-# This file is part of Conduit. 
-# 
+#
+# This file is part of Conduit.
+#
 # For details, see: http://software.llnl.gov/conduit/.
-# 
+#
 # Please also read conduit/LICENSE
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
-# * Redistributions of source code must retain the above copyright notice, 
+#
+# * Redistributions of source code must retain the above copyright notice,
 #   this list of conditions and the disclaimer below.
-# 
+#
 # * Redistributions in binary form must reproduce the above copyright notice,
 #   this list of conditions and the disclaimer (as noted below) in the
 #   documentation and/or other materials provided with the distribution.
-# 
+#
 # * Neither the name of the LLNS/LLNL nor the names of its contributors may
 #   be used to endorse or promote products derived from this software without
 #   specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 # LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 # DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 # OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-# 
+#
 ###############################################################################
 
 ################################
@@ -64,7 +64,7 @@ macro(ENABLE_WARNINGS)
         add_definitions(/W2)
     else()
         if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR
-            "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR 
+            "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR
             "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
             # use these flags for clang, gcc, or icc
             add_definitions(-Wall -Wextra)
@@ -125,17 +125,17 @@ endif()
 
 
 ######################################################################################
-# Provide macros to simplify creating libs 
+# Provide macros to simplify creating libs
 ######################################################################################
 macro(add_compiled_library)
-    set(options INTERNAL)
+    set(options OBJECT)
     set(singleValuedArgs NAME EXPORT HEADERS_DEST_DIR LIB_DEST_DIR )
     set(multiValuedArgs  HEADERS SOURCES)
 
     ## parse the arguments to the macro
     cmake_parse_arguments(args
          "${options}" "${singleValuedArgs}" "${multiValuedArgs}" ${ARGN} )
-    
+
     #############################
     # add lib target
     #############################
@@ -144,21 +144,22 @@ macro(add_compiled_library)
     # Note: headers are added here so they show up in project file generators
     # (such as xcode, eclipse, etc)
     #
-    
-    if(${args_INTERNAL} AND NOT WIN32)
-        # internal libs can always be static on osx + linux, but need to be same
-        # build type (shared, static) on Windows.
-        add_library(${args_NAME} STATIC 
+
+    # if OBJECT is present, create an object library instead of a
+    # standard library.
+
+    if(${args_OBJECT})
+        add_library(${args_NAME} OBJECT
                     ${args_SOURCES}
                     ${args_HEADERS})
-        
+
     else()
         if(BUILD_SHARED_LIBS)
-            add_library(${args_NAME} SHARED 
+            add_library(${args_NAME} SHARED
                         ${args_SOURCES}
                         ${args_HEADERS})
         else()
-            add_library(${args_NAME} STATIC 
+            add_library(${args_NAME} STATIC
                         ${args_SOURCES}
                         ${args_HEADERS})
         endif()
@@ -168,23 +169,17 @@ macro(add_compiled_library)
     # install and export setup
     #############################
     # if export is set, install our lib
-    
-    #
-    # See https://github.com/LLNL/conduit/issues/14
-    # we are installing these (for now) due to an issue other cmake
-    # build systems importing conduit targets and still needing
-    # to link these type of libs, even though we are using them
-    # with PRIVATE cmake link properties.
-    #
-    #if(NOT ${args_INTERNAL} OR WIN32)
-    #
-    
+
+    # object libraries don't need to be installed
+    if(NOT ${args_OBJECT})
         # if we have headers, install them
         if(NOT "${args_HEADERS}" STREQUAL "")
             if(NOT "${args_HEADERS_DEST_DIR}" STREQUAL "")
-                install(FILES ${args_HEADERS} DESTINATION ${args_HEADERS_DEST_DIR})
+                install(FILES ${args_HEADERS}
+                        DESTINATION ${args_HEADERS_DEST_DIR})
             else()
-                install(FILES ${args_HEADERS} DESTINATION include)
+                install(FILES ${args_HEADERS}
+                        DESTINATION include)
             endif()
         endif()
         # install our lib
@@ -201,7 +196,7 @@ macro(add_compiled_library)
                     ARCHIVE DESTINATION lib
                     RUNTIME DESTINATION lib)
         endif()
-    #endif()
+    endif()
 
 endmacro()
 
@@ -218,7 +213,7 @@ macro(add_target_compile_flags)
     ## parse the arguments to the macro
     cmake_parse_arguments(args
          "${options}" "${singleValuedArgs}" "${multiValuedArgs}" ${ARGN} )
-    
+
     if(NOT "${args_FLAGS}" STREQUAL "")
         # get prev flags
         get_target_property(_COMP_FLAGS ${args_TARGET} COMPILE_FLAGS)
@@ -229,7 +224,7 @@ macro(add_target_compile_flags)
         set(_COMP_FLAGS "${args_FLAGS} ${_COMP_FLAGS}")
         set_target_properties(${args_TARGET} PROPERTIES COMPILE_FLAGS "${_COMP_FLAGS}" )
     endif()
-    
+
 endmacro()
 
 macro(add_target_link_flags)
@@ -240,7 +235,7 @@ macro(add_target_link_flags)
     ## parse the arguments to the macro
     cmake_parse_arguments(args
          "${options}" "${singleValuedArgs}" "${multiValuedArgs}" ${ARGN} )
-    
+
     if(NOT "${args_FLAGS}" STREQUAL "")
         # get prev flags
         get_target_property(_LINK_FLAGS ${args_TARGET} LINK_FLAGS)
@@ -251,7 +246,5 @@ macro(add_target_link_flags)
         set(_LINK_FLAGS "${args_FLAGS} ${_LINK_FLAGS}")
         set_target_properties(${args_TARGET} PROPERTIES LINK_FLAGS "${_LINK_FLAGS}" )
     endif()
-    
+
 endmacro()
-
-

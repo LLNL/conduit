@@ -91,7 +91,7 @@ namespace web
 /// Source path:     ${CMAKE_CURRENT_SOURCE_DIR}/web_clients
 /// Installed path:  {install_prefix}/share/conduit/web_client/
 //-----------------------------------------------------------------------------
-std::string web_client_root_directory();
+std::string CONDUIT_RELAY_API web_client_root_directory();
 
 //-----------------------------------------------------------------------------
 // -- Web Server Request Handler Interface -
