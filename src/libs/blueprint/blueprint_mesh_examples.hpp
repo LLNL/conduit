@@ -86,7 +86,7 @@ namespace examples
     void BLUEPRINT_API braid(const std::string &mesh_type,
                              conduit::index_t nx,
                              conduit::index_t ny,
-                             conduit::index_t nz,  // not implemented ... 
+                             conduit::index_t nz,
                              conduit::Node &res);
 }
 //-----------------------------------------------------------------------------

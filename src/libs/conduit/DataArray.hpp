@@ -254,7 +254,7 @@ typedef DataArray<short>        short_array;
 typedef DataArray<int>          int_array;
 typedef DataArray<long>         long_array;
 #ifdef CONDUIT_USE_LONG_LONG
-typedef DataArray<long long>  long_long_array;
+typedef DataArray<long long>    long_long_array;
 #endif
 
 

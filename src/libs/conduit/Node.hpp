@@ -2841,7 +2841,7 @@ public:
 // we can't support these methods directly in conduit::Node  because doing so
 // undermines our operator=() overloads. 
 //-----------------------------------------------------------------------------
-    class Value
+    class CONDUIT_API Value
     {
         friend class Node;
         public:
@@ -2952,7 +2952,7 @@ public:
 // we can't support these methods directly in conduit::Node  because doing so
 // undermines our operator=() overloads. 
 //-----------------------------------------------------------------------------
-    class ConstValue
+    class CONDUIT_API ConstValue
     {
         friend class Node;
         public:
