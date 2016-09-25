@@ -116,11 +116,15 @@ add_compiled_library(NAME conduit_relay
 #
 target_link_libraries(conduit_relay PUBLIC conduit)
 
-#
-# civetweb is a private dep, its not exposed in / required by
-# conduit relays' header files
-#
-target_link_libraries(conduit_relay PRIVATE ${CIVETWEB_DEPENDS})
+##################################
+# system dependencies for civetweb
+##################################
+
+if(UNIX AND NOT APPLE)
+    # we need these for civetweb on linux, we may need similar libs
+    # on windows (OSX appears ok without them)
+    target_link_libraries(conduit_relay dl rt ${CMAKE_THREAD_LIBS_INIT})
+endif()
 
 
 #

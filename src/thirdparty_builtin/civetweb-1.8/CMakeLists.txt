@@ -70,13 +70,3 @@ add_compiled_library(NAME   conduit_civetweb
                      OBJECT
                      HEADERS ${civetweb_headers}
                      SOURCES ${civetweb_sources})
-
-##################################
-# system dependencies for civetweb
-##################################
-
-if(UNIX AND NOT APPLE)
-    # we need these on linux, we may need similar libs on windows
-    # (OSX appears ok without them)
-    set(CIVETWEB_DEPENDS dl rt ${CMAKE_THREAD_LIBS_INIT})
-endif()
