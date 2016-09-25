@@ -81,10 +81,18 @@ foreach(TEST ${B64_TPL_TEST})
 endforeach()
 
 message(STATUS "Adding civetweb unit test")
+
+
 foreach(TEST ${CIVET_TPL_TEST})
     add_cpp_test(TEST ${TEST}
                  SOURCES $<TARGET_OBJECTS:conduit_civetweb>
-                 DEPENDS_ON ${CIVETWEB_DEPENDS} )
+                 DEPENDS_ON ${CIVETWEB_LIB_DEPENDS} )
+
+    if(UNIX AND NOT APPLE)
+        # we need these for civetweb on linux, we may need similar libs
+        # on windows (OSX appears ok without them)
+        target_link_libraries(${TEST} dl rt ${CMAKE_THREAD_LIBS_INIT})
+    endif()
 endforeach()
 
 
