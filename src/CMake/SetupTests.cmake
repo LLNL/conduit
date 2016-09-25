@@ -68,7 +68,13 @@ function(add_cpp_test)
     target_link_libraries( ${arg_TEST} ${UNIT_TEST_BASE_LIBS})
     target_link_libraries( ${arg_TEST} "${arg_DEPENDS_ON}" )
 
-    add_test( ${arg_TEST} ${arg_TEST} )
+
+
+    if(WIN32)
+        add_test( ${arg_TEST} ${CMAKE_BINARY_DIR}/bin/${arg_TEST}.exe)
+    else()
+        add_test( ${arg_TEST} ${arg_TEST} )
+    endif()
 
     if(ENABLE_GPREF_TOOLS)
       # Set HEAPCHECK to local to enable explicit gpref heap checking
@@ -101,10 +107,14 @@ function(add_cpp_mpi_test)
     include_directories(${MPI_CXX_INCLUDE_PATH})
     # guard against empty mpi params
     if(NOT "${MPI_CXX_COMPILE_FLAGS}" STREQUAL "")
-        set_source_files_properties(${arg_TEST}.cpp PROPERTIES COMPILE_FLAGS  ${MPI_CXX_COMPILE_FLAGS} )
+        set_source_files_properties(${arg_TEST}.cpp
+                                    PROPERTIES
+                                    COMPILE_FLAGS  ${MPI_CXX_COMPILE_FLAGS} )
     endif()
     if(NOT "${MPI_CXX_LINK_FLAGS}" STREQUAL "")
-        set_source_files_properties(${arg_TEST}.cpp PROPERTIES LINK_FLAGS  ${MPI_CXX_LINK_FLAGS} )
+        set_source_files_properties(${arg_TEST}.cpp
+                                    PROPERTIES
+                                    LINK_FLAGS  ${MPI_CXX_LINK_FLAGS} )
     endif()
 
 
@@ -115,8 +125,17 @@ function(add_cpp_mpi_test)
     target_link_libraries( ${arg_TEST} "${arg_DEPENDS_ON}" )
 
     # setup custom test command to launch the test via mpi
-    set(test_parameters ${MPIEXEC_NUMPROC_FLAG} ${arg_NUM_PROCS} "./${arg_TEST}")
-    add_test(NAME ${arg_TEST} COMMAND ${MPIEXEC} ${test_parameters})
+    if(WIN32)
+        set(test_params ${MPIEXEC_NUMPROC_FLAG}
+                        ${arg_NUM_PROCS}
+                        "${CMAKE_BINARY_DIR}/bin/${arg_TEST}.exe)")
+    else()
+        set(test_params ${MPIEXEC_NUMPROC_FLAG}
+                        ${arg_NUM_PROCS}
+                        "./${arg_TEST}")
+    endif()
+
+    add_test(NAME ${arg_TEST} COMMAND ${MPIEXEC} ${test_params})
 
 endfunction()
 
@@ -131,7 +150,9 @@ function(add_python_test TEST)
     add_test(NAME ${TEST} COMMAND
              ${PYTHON_EXECUTABLE} -B -m unittest -v ${TEST})
     # make sure python can pick up the modules we built
-    set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${CMAKE_BINARY_DIR}/python-modules/:${CMAKE_CURRENT_SOURCE_DIR}")
+    set_property(TEST ${TEST}
+                 PROPERTY
+                 ENVIRONMENT "PYTHONPATH=${CMAKE_BINARY_DIR}/python-modules/:${CMAKE_CURRENT_SOURCE_DIR}")
 endfunction(add_python_test)
 
 
