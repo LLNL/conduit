@@ -123,7 +123,7 @@ target_link_libraries(conduit_relay PUBLIC conduit)
 if(UNIX AND NOT APPLE)
     # we need these for civetweb on linux, we may need similar libs
     # on windows (OSX appears ok without them)
-    target_link_libraries(conduit_relay dl rt ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(conduit_relay PUBLIC dl rt ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 
