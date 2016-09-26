@@ -185,9 +185,10 @@ public:
 /// description:
 ///  These methods use a Generator to parse a json schema into a Node hierarchy.
 ///
-/// * The variants without a void * data parameter will allocate memory for the
-///   Node hierarchy and populate with inline values from the json schema (if
-///   they are provided).
+/// * The non external variant with a NULL data parameter will allocate memory 
+///   for the Node hierarchy and populate with inline values from the json schema 
+///   (if they are provided).
+///
 /// * The `external' variants build a Node hierarchy that points to the input
 ///   data, they do not copy the data into the Node hierarchy.
 //-----------------------------------------------------------------------------
@@ -199,27 +200,13 @@ public:
 
     void generate_external(const Generator &gen);
 
-//-----------------------------------------------------------------------------
-// -- json schema only --
-//-----------------------------------------------------------------------------
-    void generate(const std::string &json_schema);
-
-    void generate(const std::string &json_schema,
-                  const std::string &protocol);
-
 
 //-----------------------------------------------------------------------------
-// -- json schema coupled with in-core data -- 
+// -- json schema optionally coupled with in-core data -- 
 //-----------------------------------------------------------------------------
     void generate(const std::string &json_schema,
-                  void *data);
-
-    void generate(const std::string &json_schema,
-                  const std::string &protocol,
-                  void *data);
-
-    void generate_external(const std::string &json_schema,
-                           void *data);
+                  const std::string &protocol = std::string("conduit_json"),
+                  void *data = NULL);
 
     void generate_external(const std::string &json_schema,
                            const std::string &protocol,
