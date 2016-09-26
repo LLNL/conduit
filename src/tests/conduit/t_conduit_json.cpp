@@ -246,7 +246,7 @@ TEST(conduit_json, json_explicit_offsets)
     char    *vals_ptr = (char*)&vals;
 
     std::string schema ="{dtype: uint32, value:42, offset:8}";
-    Generator g1(schema,vals_ptr);
+    Generator g1(schema,"conduit_json",vals_ptr);
     Node n1(g1,true);
 
     EXPECT_EQ(42,n1.as_uint32());
@@ -254,7 +254,7 @@ TEST(conduit_json, json_explicit_offsets)
     
     
     schema ="{dtype: uint32, value:52, offset:16}";
-    Generator g2(schema,vals_ptr);
+    Generator g2(schema, "conduit_json", vals_ptr);
     Node n2(g2,true);
     std::cout << n2.as_uint32() << std::endl;
     EXPECT_EQ(52,n2.as_uint32());
@@ -262,7 +262,7 @@ TEST(conduit_json, json_explicit_offsets)
     
     
     schema ="{v1 :{dtype: uint32, offset:8}, v2: {dtype: uint32, offset:16}}";
-    Generator g3(schema,vals_ptr);
+    Generator g3(schema, "conduit_json", vals_ptr);
     Node n3(g3,true);
 
     EXPECT_EQ(42,n3["v1"].as_uint32());
@@ -285,7 +285,7 @@ TEST(conduit_json, json_c_type_names)
     char  *vals_ptr = (char*)&vals;
 
     std::string schema ="{dtype: int, value:42, offset:8}";
-    Generator g1(schema,vals_ptr);
+    Generator g1(schema, "conduit_json", vals_ptr);
     Node n1(g1,true);
 
     EXPECT_EQ(42,n1.as_int());
@@ -293,7 +293,7 @@ TEST(conduit_json, json_c_type_names)
     
     
     schema ="{dtype: int, value:52, offset:16}";
-    Generator g2(schema,vals_ptr);
+    Generator g2(schema, "conduit_json", vals_ptr);
     Node n2(g2,true);
     std::cout << n2.as_int() << std::endl;
     EXPECT_EQ(52,n2.as_int());
@@ -301,7 +301,7 @@ TEST(conduit_json, json_c_type_names)
     
     
     schema ="{v1 :{dtype: int, offset:8}, v2: {dtype: int, offset:16}}";
-    Generator g3(schema,vals_ptr);
+    Generator g3(schema, "conduit_json", vals_ptr);
     Node n3(g3,true);
 
     EXPECT_EQ(42,n3["v1"].as_int());
