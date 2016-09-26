@@ -65,12 +65,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#if !defined(CONDUIT_PLATFORM_WINDOWS)
-#include <unistd.h>
-#include <dirent.h>
-#include <dirent.h>
-#include <errno.h>
-#endif
 
 // define for path sep
 #if defined(CONDUIT_PLATFORM_WINDOWS)
@@ -297,8 +291,11 @@ is_file(const std::string &path)
 {
     bool res = false;
     struct stat path_stat;
-    stat(path.c_str(), &path_stat);
-    res = (bool)(path_stat.st_mode & S_IFREG);
+    if(stat(path.c_str(), &path_stat) == 0)
+    {
+        if(path_stat.st_mode & S_IFREG)
+            res = true;
+    }
     return res;
 }
 
@@ -308,28 +305,12 @@ bool
 is_directory(const std::string &path)
 {
     bool res = false;
-#if defined(CONDUIT_PLATFORM_WINDOWS)
     struct stat path_stat;
-    stat(path.c_str(), &path_stat);
-    res = (bool)(path_stat.st_mode & S_IFDIR);
-#else // unix, etc
-    DIR *dir = opendir(path.c_str());
-    if(dir)
+    if (stat(path.c_str(), &path_stat) == 0)
     {
-        /* Directory exists. */
-        closedir(dir);
-        res = true;
+        if (path_stat.st_mode & S_IFDIR)
+            res = true;
     }
-    else if (ENOENT == errno)
-    {
-        /* Directory does not exist. */
-    }
-    else
-    {
-        /* opendir() failed for some other reason. */
-    }
-#endif
-    
     return res;
 }
 
