@@ -4559,8 +4559,10 @@ void
 Node::set_external_int8_vector(std::vector<int8> &data)
 {
     release();
-    m_schema->set(DataType::int8((index_t)data.size()));
-    m_data  = &data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::int8(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //---------------------------------------------------------------------------//
@@ -4575,8 +4577,10 @@ void
 Node::set_external_int16_vector(std::vector<int16> &data)
 {
     release();
-    m_schema->set(DataType::int16((index_t)data.size()));
-    m_data  = &data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::int16(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //---------------------------------------------------------------------------//
@@ -4591,8 +4595,10 @@ void
 Node::set_external_int32_vector(std::vector<int32> &data)
 {
     release();
-    m_schema->set(DataType::int32((index_t)data.size()));
-    m_data  = &data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::int32(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //---------------------------------------------------------------------------//
@@ -4607,8 +4613,10 @@ void
 Node::set_external_int64_vector(std::vector<int64> &data)
 {
     release();
-    m_schema->set(DataType::int64((index_t)data.size()));
-    m_data  = &data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::int64(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //---------------------------------------------------------------------------//
@@ -4627,8 +4635,10 @@ void
 Node::set_external_uint8_vector(std::vector<uint8> &data)
 {
     release();
-    m_schema->set(DataType::uint8((index_t)data.size()));
-    m_data  = &data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::uint8(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //---------------------------------------------------------------------------//
@@ -4643,8 +4653,10 @@ void
 Node::set_external_uint16_vector(std::vector<uint16> &data)
 {
     release();
-    m_schema->set(DataType::uint16((index_t)data.size()));
-    m_data  = &data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::uint16(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //---------------------------------------------------------------------------//
@@ -4659,8 +4671,10 @@ void
 Node::set_external_uint32_vector(std::vector<uint32> &data)
 {
     release();
-    m_schema->set(DataType::uint32((index_t)data.size()));
-    m_data  = &data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::uint32(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //---------------------------------------------------------------------------//
@@ -4675,8 +4689,10 @@ void
 Node::set_external_uint64_vector(std::vector<uint64> &data)
 {
     release();
-    m_schema->set(DataType::uint64((index_t)data.size()));
-    m_data  = &data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::uint64(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //---------------------------------------------------------------------------//
@@ -4695,8 +4711,10 @@ void
 Node::set_external_float32_vector(std::vector<float32> &data)
 {
     release();
-    m_schema->set(DataType::float32((index_t)data.size()));
-    m_data  = &data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::float32(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //---------------------------------------------------------------------------//
@@ -4711,8 +4729,10 @@ void
 Node::set_external_float64_vector(std::vector<float64> &data)
 {
     release();
-    m_schema->set(DataType::float64((index_t)data.size()));
-    m_data  = &data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::float64(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //---------------------------------------------------------------------------//
@@ -4733,8 +4753,10 @@ void
 Node::set_external(const std::vector<char> &data)
 {
     release();
-    m_schema->set(DataType::c_char((index_t)data.size()));
-    m_data  = (void*)&data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_char(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //-----------------------------------------------------------------------------
@@ -4742,8 +4764,10 @@ void
 Node::set_external(const std::vector<unsigned char> &data)
 {
     release();
-    m_schema->set(DataType::c_unsigned_char((index_t)data.size()));
-    m_data  = (void*)&data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_unsigned_char(data_num_ele);
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 //-----------------------------------------------------------------------------
 #endif // end use char check
@@ -4756,8 +4780,10 @@ void
 Node::set_external(const std::vector<short> &data)
 {
     release();
-    m_schema->set(DataType::c_short((index_t)data.size()));
-    m_data  = (void*)&data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_short(data_num_ele);
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //-----------------------------------------------------------------------------
@@ -4765,8 +4791,10 @@ void
 Node::set_external(const std::vector<unsigned short> &data)
 {
     release();
-    m_schema->set(DataType::c_unsigned_short((index_t)data.size()));
-    m_data  = (void*)&data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_unsigned_short(data_num_ele);
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 //-----------------------------------------------------------------------------
 #endif // end use short check
@@ -4779,8 +4807,10 @@ void
 Node::set_external(const std::vector<int> &data)
 {
     release();
-    m_schema->set(DataType::c_int((index_t)data.size()));
-    m_data  = (void*)&data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_int(data_num_ele);
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //-----------------------------------------------------------------------------
@@ -4788,8 +4818,10 @@ void
 Node::set_external(const std::vector<unsigned int> &data)
 {
     release();
-    m_schema->set(DataType::c_unsigned_int((index_t)data.size()));
-    m_data  = (void*)&data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_unsigned_int(data_num_ele);
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 //-----------------------------------------------------------------------------
 #endif // end use int check
@@ -4802,8 +4834,10 @@ void
 Node::set_external(const std::vector<long> &data)
 {
     release();
-    m_schema->set(DataType::c_long((index_t)data.size()));
-    m_data  = (void*)&data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_long(data_num_ele);
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //-----------------------------------------------------------------------------
@@ -4811,8 +4845,10 @@ void
 Node::set_external(const std::vector<unsigned long> &data)
 {
     release();
-    m_schema->set(DataType::c_unsigned_long((index_t)data.size()));
-    m_data  = (void*)&data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_unsigned_long(data_num_ele);
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 //-----------------------------------------------------------------------------
 #endif // end use long check
@@ -4826,8 +4862,10 @@ void
 Node::set_external(const std::vector<float> &data)
 {
     release();
-    m_schema->set(DataType::c_float((index_t)data.size()));
-    m_data  = (void*)&data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_float(data_num_ele);
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 //-----------------------------------------------------------------------------
 #endif // end use float check
@@ -4840,8 +4878,10 @@ void
 Node::set_external(const std::vector<double> &data)
 {
     release();
-    m_schema->set(DataType::c_double((index_t)data.size()));
-    m_data  = (void*)&data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_double(data_num_ele);
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 //-----------------------------------------------------------------------------
 #endif // end use double check

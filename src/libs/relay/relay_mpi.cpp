@@ -170,7 +170,7 @@ recv(Node &node, int src, int tag, MPI_Comm comm)
     mpi_error = MPI_Recv(data_ptr, data_len, MPI_CHAR, src, tag, comm, &status);
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
     
-    Generator node_gen(schema_ptr, data_ptr);
+    Generator node_gen(schema_ptr, "conduit_json", data_ptr);
     /// gen copy 
     node_gen.walk(node);
 
@@ -211,7 +211,7 @@ reduce(Node &send_node,
     
     if (rank == root)
     {
-        Generator node_gen(schema, recv_ptr);
+        Generator node_gen(schema, "conduit_json", recv_ptr);
 
         node_gen.walk(recv_node);
     }
@@ -252,7 +252,7 @@ all_reduce(Node &send_node,
                                   mpi_comm);
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
 
-    Generator node_gen(schema, recv_ptr);
+    Generator node_gen(schema, "conduit_json", recv_ptr);
 
     node_gen.walk(recv_node);
 
