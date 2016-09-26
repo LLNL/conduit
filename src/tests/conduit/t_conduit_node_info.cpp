@@ -112,7 +112,7 @@ TEST(conduit_node_info, simple_3)
     EXPECT_EQ(4,ninfo["total_bytes_alloced"].to_index_t());
     
     
-    Generator g2(schema,&val);
+    Generator g2(schema,"conduit_json",&val);
     Node n2(g2,true);
     std::cout << n2.as_uint32() << std::endl;
     EXPECT_EQ(42,val);

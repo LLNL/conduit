@@ -190,7 +190,7 @@ Node::Node(const std::string &json_schema,
            bool external)
 {
     init_defaults(); 
-    Generator g(json_schema,data);
+    Generator g(json_schema,"conduit_json",data);
 
     if(external)
     {
@@ -217,7 +217,7 @@ Node::Node(const Schema &schema,
 {
     init_defaults();
     std::string json_schema =schema.to_json(); 
-    Generator g(json_schema,data);
+    Generator g(json_schema,"conduit_json",data);
     if(external)
     {
         g.walk_external(*this);
@@ -258,7 +258,6 @@ Node::Node(const DataType &dtype,
 //
 //-----------------------------------------------------------------------------
 
-
 //---------------------------------------------------------------------------//
 void
 Node::generate(const Generator &gen)
@@ -275,33 +274,6 @@ Node::generate_external(const Generator &gen)
 
 //---------------------------------------------------------------------------//
 void
-Node::generate(const std::string &json_schema)
-{
-    Generator g(json_schema);
-    generate(g);
-}
-
-//---------------------------------------------------------------------------//
-void
-Node::generate(const std::string &json_schema,
-               const std::string &protocol)
-               
-{
-    Generator g(json_schema,protocol);
-    generate(g);
-}   
-
-//---------------------------------------------------------------------------//
-void
-Node::generate(const std::string &json_schema,
-               void *data)
-{
-    Generator g(json_schema,data);
-    generate(g);
-}
-    
-//---------------------------------------------------------------------------//
-void
 Node::generate(const std::string &json_schema,
                const std::string &protocol,
                void *data)
@@ -309,15 +281,6 @@ Node::generate(const std::string &json_schema,
 {
     Generator g(json_schema,protocol,data);
     generate(g);
-}
-
-//---------------------------------------------------------------------------//
-void
-Node::generate_external(const std::string &json_schema,
-                        void *data)
-{
-    Generator g(json_schema,data);
-    generate_external(g);
 }
     
 //---------------------------------------------------------------------------//

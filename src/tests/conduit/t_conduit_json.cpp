@@ -129,7 +129,7 @@ TEST(conduit_json, json_inline_value)
     std::cout << n.as_uint32() << std::endl;
     EXPECT_EQ(42,n.as_uint32());
     
-    Generator g2(schema,&val);
+    Generator g2(schema,"conduit_json",&val);
     Node n2(g2,true);
     std::cout << n2.as_uint32() << std::endl;
     EXPECT_EQ(42,val);

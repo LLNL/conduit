@@ -67,7 +67,9 @@ TEST(conduit_generator, simple_gen_schema)
     memcpy(&data[4],&b_val,4);
     memcpy(&data[8],&c_val,8);
 
-    Generator g1("{\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}",data);
+    Generator g1("{\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}",
+                 "conduit_json",
+                 data);
     Node n;
     g1.walk(n);
     
@@ -142,6 +144,111 @@ TEST(conduit_generator, simple_gen_schema)
     delete [] data4;
 
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_generator, simple_gen_schema_with_gen_setters)
+{
+    uint32   a_val = 10;
+    uint32   b_val = 20;
+    float64  c_val = 30.0;
+
+    char *data = new char[16];
+    memcpy(&data[0], &a_val, 4);
+    memcpy(&data[4], &b_val, 4);
+    memcpy(&data[8], &c_val, 8);
+
+    Generator g;
+
+    std::string s1_str = "{\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}";
+
+    g.set_json_schema(s1_str);
+    g.set_data_ptr(data);
+
+    EXPECT_EQ(g.json_schema(), s1_str);
+    EXPECT_EQ(g.protocol(), std::string("conduit_json"));
+    EXPECT_EQ(g.data_ptr(), data);
+    
+    Node n;
+    g.walk(n);
+
+    EXPECT_EQ(n["a"].as_uint32(), a_val);
+    EXPECT_EQ(n["b"].as_uint32(), b_val);
+    EXPECT_EQ(n["c"].as_float64(), c_val);
+
+    std::string s2_str = "{\"g\": {\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}}";
+    std::cout << s2_str << std::endl;
+
+    g.set_json_schema(s2_str);
+    g.set_data_ptr(NULL);
+
+    Schema schema2;
+    g.walk(schema2);
+
+    Node n2(schema2, data, true); // true for external
+    EXPECT_EQ(n2["g"]["a"].as_uint32(), a_val);
+    EXPECT_EQ(n2["g"]["b"].as_uint32(), b_val);
+    EXPECT_EQ(n2["g"]["c"].as_float64(), c_val);
+
+    uint32 *data2 = new uint32[5];
+    for (int i = 0; i < 5; i++) {
+        data2[i] = i * 5;
+    }
+
+    g.set_json_schema("{\"dtype\":\"uint32\",\"length\":  5}");
+
+    Schema schema3;
+    g.walk(schema3);
+    Node n3(schema3, data2, true); // true for external
+
+    for (int i = 0; i < 5; i++) {
+        EXPECT_EQ(n3.as_uint32_ptr()[i], i * 5);
+    }
+
+    g.set_json_schema("[\"uint32\", \"float64\", \"uint32\"]");
+
+    char* data3 = new char[16];
+    memcpy(&data3[0], &a_val, 4);
+    memcpy(&data3[4], &c_val, 8);
+    memcpy(&data3[12], &b_val, 4);
+    Schema schema4;
+    g.walk(schema4);
+    Node n4(schema4, data3, true); // true for external
+    EXPECT_EQ(n4[0].as_uint32(), a_val);
+    EXPECT_EQ(n4[1].as_float64(), c_val);
+    EXPECT_EQ(n4[2].as_uint32(), b_val);
+
+    g.set_json_schema("{\"top\":[{\"int1\":\"uint32\", \"int2\":\"uint32\"}, \"float64\", \"uint32\"], \"other\":\"float64\"}");
+    
+    Schema schema5;
+    g.walk(schema5);
+
+    char* data4 = new char[28];
+    uint32   d_val = 40;
+    float64  e_val = 50.0;
+    memcpy(&data4[0], &a_val, 4);
+    memcpy(&data4[4], &b_val, 4);
+    memcpy(&data4[8], &c_val, 8);
+    memcpy(&data4[16], &d_val, 4);
+    memcpy(&data4[20], &e_val, 8);
+
+    Node n5(schema5, data4, true); // true for external
+
+    n5.schema().print();
+    EXPECT_EQ(n5["top"][0]["int1"].as_uint32(), a_val);
+    EXPECT_EQ(n5["top"][0]["int2"].as_uint32(), b_val);
+    EXPECT_EQ(n5["top"][1].as_float64(), c_val);
+    EXPECT_EQ(n5["top"][2].as_uint32(), d_val);
+    EXPECT_EQ(n5["other"].as_float64(), e_val);
+
+
+    delete[] data;
+    delete[] data2;
+    delete[] data3;
+    delete[] data4;
+
+}
+
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_generator, gen_array_with_num_eles)
@@ -274,7 +381,8 @@ TEST(conduit_generator, gen_endianness)
         
         CONDUIT_INFO("Gen as Big Endian (Machine Default)");
         Generator g1("{\"dtype\":\"uint32\",\"length\": 1, \"endianness\": \"big\"}",
-                    &data.vbytes[0]);
+                     "conduit_json",
+                     &data.vbytes[0]);
       
         Node n;
         n.generate_external(g1);
@@ -289,7 +397,8 @@ TEST(conduit_generator, gen_endianness)
         
         CONDUIT_INFO("Gen as Little Endian");
         Generator g2("{\"dtype\":\"uint32\",\"length\": 1, \"endianness\": \"little\"}",
-                    &data.vbytes[0]);
+                     "conduit_json",
+                     &data.vbytes[0]);
         
         n.generate_external(g2);
         n.endian_swap_to_machine_default();
@@ -307,6 +416,7 @@ TEST(conduit_generator, gen_endianness)
         
         CONDUIT_INFO("Gen as Little Endian (Machine Default)");
         Generator g("{\"dtype\":\"uint32\",\"length\": 1, \"endianness\": \"little\"}",
+                    "conduit_json",
                     &data.vbytes[0]);
       
         Node n;
@@ -321,6 +431,7 @@ TEST(conduit_generator, gen_endianness)
         data.vbytes[3] =  0xfe;
     
         Generator g2("{\"dtype\":\"uint32\",\"length\": 1, \"endianness\": \"big\"}",
+                     "conduit_json",
                      &data.vbytes[0]);
         
         CONDUIT_INFO("Gen as Big Endian");

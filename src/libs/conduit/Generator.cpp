@@ -1200,20 +1200,12 @@ Generator::Parser::parse_base64(Node *node,
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-Generator::Generator(const std::string &json_schema)
-:m_json_schema(json_schema),
+Generator::Generator()
+:m_json_schema(""),
  m_protocol("conduit_json"),
  m_data(NULL)
 {}
 
-
-//---------------------------------------------------------------------------//
-Generator::Generator(const std::string &json_schema,
-                     void *data)
-:m_json_schema(json_schema),
- m_protocol("conduit_json"),
- m_data(data)
-{}
 
 //---------------------------------------------------------------------------//
 Generator::Generator(const std::string &json_schema,
@@ -1223,6 +1215,49 @@ Generator::Generator(const std::string &json_schema,
  m_protocol(protocol),
  m_data(data)
 {}
+
+//---------------------------------------------------------------------------//
+void
+Generator::set_json_schema(const std::string &json_schema)
+{
+    m_json_schema = json_schema;
+}
+
+//---------------------------------------------------------------------------//
+void
+Generator::set_protocol(const std::string &protocol)
+{
+    m_protocol = protocol;
+}
+
+//---------------------------------------------------------------------------//
+void
+Generator::set_data_ptr(void *data_ptr)
+{
+    m_data = data_ptr;
+}
+
+//---------------------------------------------------------------------------//
+const std::string &
+Generator::json_schema() const
+{
+    return m_json_schema;
+}
+
+//---------------------------------------------------------------------------//
+const std::string &
+Generator::protocol() const
+{
+    return m_protocol;
+}
+
+//---------------------------------------------------------------------------//
+void *
+Generator::data_ptr() const
+{
+    return m_data;
+}
+
 
 //-----------------------------------------------------------------------------
 // JSON Parsing interface
