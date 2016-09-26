@@ -4765,7 +4765,7 @@ Node::set_external(const std::vector<unsigned char> &data)
 {
     release();
     index_t data_num_ele = (index_t)data.size();
-    m_schema->set(DataType::c_unsigned_char(data_num_ele);
+    m_schema->set(DataType::c_unsigned_char(data_num_ele));
     if(data_num_ele > 0)
         m_data  = (void*)&data[0];
 }
@@ -4781,7 +4781,7 @@ Node::set_external(const std::vector<short> &data)
 {
     release();
     index_t data_num_ele = (index_t)data.size();
-    m_schema->set(DataType::c_short(data_num_ele);
+    m_schema->set(DataType::c_short(data_num_ele));
     if(data_num_ele > 0)
         m_data  = (void*)&data[0];
 }
@@ -4792,7 +4792,7 @@ Node::set_external(const std::vector<unsigned short> &data)
 {
     release();
     index_t data_num_ele = (index_t)data.size();
-    m_schema->set(DataType::c_unsigned_short(data_num_ele);
+    m_schema->set(DataType::c_unsigned_short(data_num_ele));
     if(data_num_ele > 0)
         m_data  = (void*)&data[0];
 }
@@ -4808,7 +4808,7 @@ Node::set_external(const std::vector<int> &data)
 {
     release();
     index_t data_num_ele = (index_t)data.size();
-    m_schema->set(DataType::c_int(data_num_ele);
+    m_schema->set(DataType::c_int(data_num_ele));
     if(data_num_ele > 0)
         m_data  = (void*)&data[0];
 }
@@ -4819,7 +4819,7 @@ Node::set_external(const std::vector<unsigned int> &data)
 {
     release();
     index_t data_num_ele = (index_t)data.size();
-    m_schema->set(DataType::c_unsigned_int(data_num_ele);
+    m_schema->set(DataType::c_unsigned_int(data_num_ele));
     if(data_num_ele > 0)
         m_data  = (void*)&data[0];
 }
@@ -4835,7 +4835,7 @@ Node::set_external(const std::vector<long> &data)
 {
     release();
     index_t data_num_ele = (index_t)data.size();
-    m_schema->set(DataType::c_long(data_num_ele);
+    m_schema->set(DataType::c_long(data_num_ele));
     if(data_num_ele > 0)
         m_data  = (void*)&data[0];
 }
@@ -4846,7 +4846,7 @@ Node::set_external(const std::vector<unsigned long> &data)
 {
     release();
     index_t data_num_ele = (index_t)data.size();
-    m_schema->set(DataType::c_unsigned_long(data_num_ele);
+    m_schema->set(DataType::c_unsigned_long(data_num_ele));
     if(data_num_ele > 0)
         m_data  = (void*)&data[0];
 }
@@ -4863,7 +4863,7 @@ Node::set_external(const std::vector<float> &data)
 {
     release();
     index_t data_num_ele = (index_t)data.size();
-    m_schema->set(DataType::c_float(data_num_ele);
+    m_schema->set(DataType::c_float(data_num_ele));
     if(data_num_ele > 0)
         m_data  = (void*)&data[0];
 }
@@ -4879,7 +4879,7 @@ Node::set_external(const std::vector<double> &data)
 {
     release();
     index_t data_num_ele = (index_t)data.size();
-    m_schema->set(DataType::c_double(data_num_ele);
+    m_schema->set(DataType::c_double(data_num_ele));
     if(data_num_ele > 0)
         m_data  = (void*)&data[0];
 }
