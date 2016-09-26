@@ -62,17 +62,15 @@
 #endif
 
 // file system funcs
-#if defined(CONDUIT_PLATFORM_WINDOWS)
-// TODO
-#else
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+
+#if !defined(CONDUIT_PLATFORM_WINDOWS)
 #include <unistd.h>
 #include <dirent.h>
 #include <dirent.h>
 #include <errno.h>
 #endif
-
 
 // define for path sep
 #if defined(CONDUIT_PLATFORM_WINDOWS)
@@ -298,14 +296,9 @@ bool
 is_file(const std::string &path)
 {
     bool res = false;
-#if defined(CONDUIT_PLATFORM_WINDOWS)
-    // TODO
-    CONDUIT_WARN("utils::is_file not implemented on windows");
-#else // unix, etc
     struct stat path_stat;
     stat(path.c_str(), &path_stat);
-    res = S_ISREG(path_stat.st_mode);
-#endif
+    res = (bool)(path_stat.st_mode & S_IFREG);
     return res;
 }
 
@@ -316,8 +309,9 @@ is_directory(const std::string &path)
 {
     bool res = false;
 #if defined(CONDUIT_PLATFORM_WINDOWS)
-    // TODO
-    CONDUIT_WARN("utils::is_directory not implemented on windows");
+    struct stat path_stat;
+    stat(path.c_str(), &path_stat);
+    res = (bool)(path_stat.st_mode & S_IFDIR);
 #else // unix, etc
     DIR *dir = opendir(path.c_str());
     if(dir)
