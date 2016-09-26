@@ -304,7 +304,7 @@ TEST(conduit_node_save_load, simple_class_restore)
 //-----------------------------------------------------------------------------
 TEST(conduit_node_save_load, io_explicit_zero_length_vector_restore)
 {
-    std::vector<float> one;
+    std::vector<float> one(1);
     float two = 2;
     float three = 3;
     float four = 4;
