@@ -253,7 +253,7 @@ void silo_read(DBfile *dbfile,
         CONDUIT_ERROR("Error extracting data conduit Node from Silo file");
     }
 
-    Generator node_gen(schema, data);
+    Generator node_gen(schema, "conduit_json", data);
     /// gen copy 
     node_gen.walk(node);
     
