@@ -3856,8 +3856,16 @@ private:
     bool      m_alloced;
     // flag that indicates if m_data is memory-mapped
     bool      m_mmaped;
-    // memory-map file descriptor
-    int       m_mmap_fd;
+    
+    // private class that implements a cross platform memory map interface
+    class MMap;
+
+    // memory-map helper instance
+    // This is only allocated if a memory map is active (m_mmaped is true)
+    // Note: m_mmaped is used for bookkeeping during cases were we are
+    // initializing nodes using memory maps, so it is still needed apart from 
+    // simply knowing if this pointer is valid.
+    MMap     *m_mmap;
 };
 //-----------------------------------------------------------------------------
 // -- end conduit::Node --

@@ -12782,6 +12782,142 @@ Node::set_data_ptr(void *data)
 //=============================================================================
 
 //-----------------------------------------------------------------------------
+// Node::MMap helper class
+//-----------------------------------------------------------------------------
+// This private class encapsulates specific logic for both unix and windows
+// style memory mapping.
+//-----------------------------------------------------------------------------
+class Node::MMap
+{
+  public:
+      MMap();
+      ~MMap();
+
+      //----------------------------------------------------------------------
+      void  open(const std::string &path,
+                 index_t data_size);
+
+      //----------------------------------------------------------------------
+      void  close();
+
+      //----------------------------------------------------------------------
+      void *data_ptr() const
+          { return m_data; }
+
+  private:
+      void      *m_data;
+      int        m_data_size;
+
+#if !defined(CONDUIT_PLATFORM_WINDOWS)
+      // memory-map file descriptor
+      int       m_mmap_fd;
+
+#endif
+
+};
+
+//-----------------------------------------------------------------------------
+Node::MMap::MMap()
+: m_data(NULL),
+  m_data_size(0),
+#if !defined(CONDUIT_PLATFORM_WINDOWS)
+  m_mmap_fd(-1)
+#else
+  // windows
+#endif
+{
+    // empty
+}
+
+//-----------------------------------------------------------------------------
+Node::MMap::~MMap()
+{
+    close();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::MMap::open(const std::string &path,
+                 index_t data_size)
+{
+    if(m_data != NULL)
+    {
+        CONDUIT_ERROR("<Node::mmap> mmap already open");
+    }
+
+#if !defined(CONDUIT_PLATFORM_WINDOWS)
+    m_mmap_fd   = ::open(path.c_str(),
+                         (O_RDWR | O_CREAT),
+                         (S_IRUSR | S_IWUSR));
+
+    m_data_size = data_size;
+
+    if (m_mmap_fd == -1) 
+        CONDUIT_ERROR("<Node::mmap> failed to open: " << path);
+
+    m_data = ::mmap(0,
+                    m_data_size,
+                    (PROT_READ | PROT_WRITE),
+                    MAP_SHARED,
+                    m_mmap_fd, 0);
+
+    if (m_data == MAP_FAILED) 
+        CONDUIT_ERROR("<Node::mmap> mmap data = MAP_FAILED" << path);
+#else
+    ///
+    /// TODO: mmap isn't supported on windows, we need to use a 
+    /// a windows specific API.  
+    /// See: https://lc.llnl.gov/jira/browse/CON-38
+    ///
+    /// For now, we simply throw an error
+    ///
+    CONDUIT_ERROR("<Node::mmap> conduit does not yet support mmap on Windows");
+#endif
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::MMap::close()
+{
+    // simple return if the mmap isn't active
+    if(m_data == NULL)
+        return;
+    
+#if !defined(CONDUIT_PLATFORM_WINDOWS)
+    
+    if(munmap(m_data, m_data_size) == -1) 
+    {
+        CONDUIT_ERROR("<Node::mmap> failed to unmap mmap.");
+    }
+    
+    if(::close(m_mmap_fd) == -1)
+    {
+        CONDUIT_ERROR("<Node::mmap> failed close mmap filed descriptor.");
+    }
+
+    m_mmap_fd   = -1;
+
+#else
+    ///
+    /// TODO: mmap isn't supported on windows, we need to use a 
+    /// a windows specific API.  
+    /// See: https://lc.llnl.gov/jira/browse/CON-38
+    ///
+    /// For now, we simply throw an error
+    ///
+    CONDUIT_ERROR("<Node::mmap> conduit does not yet support mmap on Windows");
+#endif
+
+    // clear data pointer and size member
+    m_data      = NULL;
+    m_data_size = 0;
+
+}
+
+
+
+
+//-----------------------------------------------------------------------------
 //
 // -- private methods that help with init, memory allocation, and cleanup --
 //
@@ -12835,34 +12971,13 @@ Node::allocate(index_t dsize)
 
 //---------------------------------------------------------------------------//
 void
-Node::mmap(const std::string &stream_path, index_t dsize)
+Node::mmap(const std::string &stream_path, index_t data_size)
 {
-#if defined(CONDUIT_PLATFORM_WINDOWS)
-    ///
-    /// TODO: mmap isn't supported on windows, we need to use a 
-    /// a windows specific API.  
-    /// See: https://lc.llnl.gov/jira/browse/CON-38
-    ///
-    /// For now, we simply throw an error
-    ///
-    CONDUIT_ERROR("<Node::mmap> conduit does not yet support mmap on Windows");
-#else    
-    m_mmap_fd   = open(stream_path.c_str(),
-                       (O_RDWR | O_CREAT),
-                       (S_IRUSR | S_IWUSR));
-    m_data_size = dsize;
-
-    if (m_mmap_fd == -1) 
-        CONDUIT_ERROR("<Node::mmap> failed to open: " << stream_path);
-
-    m_data = ::mmap(0, dsize, PROT_READ | PROT_WRITE, MAP_SHARED, m_mmap_fd, 0);
-
-    if (m_data == MAP_FAILED) 
-        CONDUIT_ERROR("<Node::mmap> MAP_FAILED" << stream_path);
-    
+    m_mmap = new MMap();
+    m_mmap->open(stream_path,data_size);
+    m_data = m_mmap->data_ptr();
     m_alloced = false;
     m_mmaped  = true;
-#endif    
 }
 
 
@@ -12888,29 +13003,21 @@ Node::release()
         {   
             // clean up our storage
             free(m_data);
+            init_defaults();
             m_data = NULL;
-            m_alloced = false;
             m_data_size = 0;
+            m_alloced   = false;
         }
     }   
-#if !defined(CONDUIT_PLATFORM_WINDOWS)
-    ///
-    /// TODO: mmap isn't yet supported on windows
-    ///
-    else if(m_mmaped && m_data)
+    else if(m_mmaped && m_mmap)
     {
-        if(munmap(m_data, m_data_size) == -1) 
-        {
-            // TODO error
-        }
-        close(m_mmap_fd);
-        m_data      = NULL;
-        m_mmap_fd   = -1;
+        delete m_mmap;
+        m_data = NULL;
         m_data_size = 0;
+        m_mmaped    = false;
+        m_mmap      = NULL;
     }
-#endif
 }
-    
 
 //---------------------------------------------------------------------------//
 void
@@ -12957,7 +13064,7 @@ Node::init_defaults()
     m_alloced = false;
 
     m_mmaped    = false;
-    m_mmap_fd   = -1;
+    m_mmap      = NULL;
 
     m_schema = new Schema(DataType::EMPTY_ID);
     m_owns_schema = true;
