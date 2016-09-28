@@ -72,6 +72,8 @@
 // 
 #include <sys/mman.h>
 #include <unistd.h>
+#else
+#include "Windows.h"
 #endif
 
 //-----------------------------------------------------------------------------
@@ -12811,7 +12813,10 @@ class Node::MMap
 #if !defined(CONDUIT_PLATFORM_WINDOWS)
       // memory-map file descriptor
       int       m_mmap_fd;
-
+#else
+      // handles for windows mmap
+      HANDLE    m_file_hnd;
+      HANDLE    m_map_hnd;
 #endif
 
 };
@@ -12824,6 +12829,8 @@ Node::MMap::MMap()
   m_mmap_fd(-1)
 #else
   // windows
+  m_file_hnd(INVALID_HANDLE_VALUE),
+  m_map_hnd(INVALID_HANDLE_VALUE)
 #endif
 {
     // empty
@@ -12864,14 +12871,40 @@ Node::MMap::open(const std::string &path,
     if (m_data == MAP_FAILED) 
         CONDUIT_ERROR("<Node::mmap> mmap data = MAP_FAILED" << path);
 #else
-    ///
-    /// TODO: mmap isn't supported on windows, we need to use a 
-    /// a windows specific API.  
-    /// See: https://lc.llnl.gov/jira/browse/CON-38
-    ///
-    /// For now, we simply throw an error
-    ///
-    CONDUIT_ERROR("<Node::mmap> conduit does not yet support mmap on Windows");
+    m_file_hnd = CreateFile(path.c_str(),
+                            (GENERIC_READ | GENERIC_WRITE),
+                            0,
+                            NULL,
+                            OPEN_EXISTING,
+                            FILE_FLAG_RANDOM_ACCESS,
+                            NULL);
+
+    if (m_file_hnd == INVALID_HANDLE_VALUE)
+    {
+        CONDUIT_ERROR("<Node::mmap> CreateFile() Failed ");
+    }
+
+    m_map_hnd = CreateFileMapping(m_file_hnd,
+                                  NULL,
+                                  PAGE_READWRITE,
+                                  0, 0, 0);
+
+    if (m_map_hnd == NULL)
+    {
+        CloseHandle(m_file_hnd);
+        CONDUIT_ERROR("<Node::mmap> CreateFileMapping() failed with error" << GetLastError());
+    }
+
+    m_data = MapViewOfFile(m_map_hnd,
+                           FILE_MAP_ALL_ACCESS,
+                           0, 0, 0);
+
+    if (m_data == NULL)
+    {
+        CloseHandle(m_map_hnd);
+        CloseHandle(m_file_hnd);
+        CONDUIT_ERROR("<Node::mmap> MapViewOfFile() failed with error" << GetLastError());
+    }
 #endif
 }
 
@@ -12898,14 +12931,11 @@ Node::MMap::close()
     m_mmap_fd   = -1;
 
 #else
-    ///
-    /// TODO: mmap isn't supported on windows, we need to use a 
-    /// a windows specific API.  
-    /// See: https://lc.llnl.gov/jira/browse/CON-38
-    ///
-    /// For now, we simply throw an error
-    ///
-    CONDUIT_ERROR("<Node::mmap> conduit does not yet support mmap on Windows");
+    UnmapViewOfFile(m_data);
+    CloseHandle(m_map_hnd);
+    CloseHandle(m_file_hnd);
+    m_file_hnd = INVALID_HANDLE_VALUE;
+    m_map_hnd  = INVALID_HANDLE_VALUE;
 #endif
 
     // clear data pointer and size member

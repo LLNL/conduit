@@ -146,8 +146,13 @@ TEST(conduit_node_binary_io, mmap_simple)
     // change mmap
     nmmap[0]["a"] = 100;
     nmmap[0]["b"] = 200;
-    
-   
+
+#if defined(CONDUIT_PLATFORM_WINDOWS)
+    // need to close the mmap on windows in order
+    // to read it for the next test
+    nmmap.reset();
+#endif
+
     // standard read
     
     Node ntest;
