@@ -19,6 +19,6 @@ build_script:
   - cmake --build build --config "%CONFIGURATION%"
 
 after_build:
-  # run our test
+  # run our tests
   - ps: cd build
-  - ctest -VV
+  - cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build . --target RUN_TESTS
