@@ -325,6 +325,11 @@ namespace utils
                                    index_t src_nbytes,
                                    void *dest);
 
+    index_t CONDUIT_API base64_encode_buffer_size(index_t src_nbytes);
+
+    index_t CONDUIT_API base64_decode_buffer_size(index_t encoded_nbytes);
+
+
     void CONDUIT_API base64_decode(const void *src,
                                    index_t src_nbytes,
                                    void *dest);
