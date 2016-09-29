@@ -48,7 +48,12 @@ int base64_decode_block(const char* code_in, const int length_in, char* plaintex
 				if (codechar == code_in+length_in)
 				{
 					state_in->step = step_a;
-					state_in->plainchar = *plainchar;
+                    // fix bad mem ref (found with valgrind)
+                    // this fix is adapted from Cinder's bug fix for this issue in 
+                    // their copy of bb64, see:
+                    //   https://github.com/cinder/Cinder/pull/1555
+                    // (note: bb64 is public domain and Cinder is BSD-2)
+					state_in->plainchar = 0;
 					return plainchar - plaintext_out;
 				}
 				fragment = (char)base64_decode_value(*codechar++);
