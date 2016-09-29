@@ -13006,6 +13006,7 @@ Node::mmap(const std::string &stream_path, index_t data_size)
     m_mmap = new MMap();
     m_mmap->open(stream_path,data_size);
     m_data = m_mmap->data_ptr();
+    m_data_size = data_size;
     m_alloced = false;
     m_mmaped  = true;
 }
@@ -13033,7 +13034,6 @@ Node::release()
         {   
             // clean up our storage
             free(m_data);
-            init_defaults();
             m_data = NULL;
             m_data_size = 0;
             m_alloced   = false;
