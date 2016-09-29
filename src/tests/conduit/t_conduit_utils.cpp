@@ -296,22 +296,32 @@ TEST(conduit_utils, base64_enc_dec)
     // use libb64 to encode the data
     index_t nbytes = n.schema().total_bytes();
     Node bb64_data;
-    bb64_data.set(DataType::char8_str(nbytes*2+1));
+    index_t enc_buff_size = utils::base64_encode_buffer_size(nbytes);
+    
+    bb64_data.set(DataType::char8_str(enc_buff_size));
     
     const char *src_ptr = (const char*)n.data_ptr();
     char *dest_ptr      = (char*)bb64_data.data_ptr();
-    memset(dest_ptr,0,nbytes*2+1);
+    memset(dest_ptr,0,enc_buff_size);
     
     utils::base64_encode(src_ptr,nbytes,dest_ptr);
 
+    index_t dec_buff_size = utils::base64_decode_buffer_size(enc_buff_size);
+
     // use libb64 to decode the data
-    std::string base64_str = bb64_data.as_string();
-    Node n_res(n.schema());
-    const char *bb64_src_ptr = base64_str.c_str();
-    int bb64_src_len = base64_str.length();
-    void *bb64_dest_ptr = n_res.data_ptr();
     
-    utils::base64_decode(bb64_src_ptr,bb64_src_len,bb64_dest_ptr);
+    // decode buffer
+    Node bb64_decode;
+    bb64_decode.set(DataType::char8_str(dec_buff_size));
+    char *b64_decode_ptr = (char*)bb64_decode.data_ptr();
+    memset(b64_decode_ptr,0,dec_buff_size);
+    
+    utils::base64_decode(bb64_data.as_char8_str(),
+                         dec_buff_size,
+                         b64_decode_ptr);
+    
+    // apply schema
+    Node n_res(n.schema(),b64_decode_ptr,false);
 
     // check we have the same values
     EXPECT_EQ(n_src["a"].as_int32(), n_res["a"].as_int32());
