@@ -657,7 +657,7 @@ base64_encode(const void *src,
     base64_init_encodestate(&enc_state);
     const char *src_ptr = (const char*)src;
     char *des_ptr       = (char*)dest;
-    memset(des_ptr,0,nbytes*2);
+    memset(des_ptr,0,base64_encode_buffer_size(src_nbytes));
     
     int code_len = base64_encode_block(src_ptr,
                                        nbytes,
