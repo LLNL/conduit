@@ -362,15 +362,42 @@ TEST(conduit_json, to_base64_json)
 
     nparse.print();
     
-    EXPECT_EQ(n["a"].as_uint32(),a_val);
-    EXPECT_EQ(n["b"].as_uint32(),b_val);
+    EXPECT_EQ(nparse["a"].as_uint32(),a_val);
+    EXPECT_EQ(nparse["b"].as_uint32(),b_val);
     
-    uint32 *arr_vals= n["arr"].value();
+    uint32 *arr_vals= nparse["arr"].value();
     
     for(index_t i=0;i<5;i++)
     {
         EXPECT_EQ(arr_vals[i],arr[i]);
     }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_json, to_base64_json_2)
+{
+
+    uint32   a_val  = 10;
+    uint32   b_val  = 20;
+    float64  c_val  = 30.0;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+ 
+    std::string base64_json = n.to_json("conduit_base64_json");
+    std::cout << base64_json << std::endl;
+    
+    Node nparse;
+    Generator g(base64_json,"conduit_base64_json");
+    g.walk(nparse);
+
+    nparse.print();
+    
+    EXPECT_EQ(nparse["a"].as_uint32(),a_val);
+    EXPECT_EQ(nparse["b"].as_uint32(),b_val);
+    EXPECT_EQ(nparse["c"].as_float64(),c_val);
 }
 
 

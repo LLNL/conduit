@@ -1181,7 +1181,7 @@ Generator::Parser::parse_base64(Node *node,
         memset(decode_ptr,0,dec_buff_size);
 
         utils::base64_decode(src_ptr,
-                             dec_buff_size,
+                             encoded_len,
                              decode_ptr);
 
         node->set(s,decode_ptr);

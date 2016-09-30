@@ -43,7 +43,7 @@
 ###############################################################################
 """
  file: python_conduit_generator.py
- description: Unit tests for conduit::Geneartor python module interface.
+ description: Unit tests for conduit::Generator python module interface.
 
 """
 
