@@ -317,7 +317,7 @@ TEST(conduit_utils, base64_enc_dec)
     memset(b64_decode_ptr,0,dec_buff_size);
     
     utils::base64_decode(bb64_data.as_char8_str(),
-                         dec_buff_size,
+                         enc_buff_size,
                          b64_decode_ptr);
     
     // apply schema
