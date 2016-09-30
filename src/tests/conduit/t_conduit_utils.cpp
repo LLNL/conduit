@@ -275,8 +275,11 @@ TEST(conduit_utils, remove_file)
 //-----------------------------------------------------------------------------
 TEST(conduit_utils, system_exec)
 {
-    // TODO: windows test ... 
+#if !defined(CONDUIT_PLATFORM_WINDOWS)
     EXPECT_EQ(utils::system_execute("pwd"),0);
+#else
+    EXPECT_EQ(utils::system_execute("echo %cd%"), 0);
+#endif
 }
 
 
