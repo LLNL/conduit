@@ -6896,7 +6896,7 @@ void
 Node::serialize(const std::string &stream_path) const
 {
     std::ofstream ofs;
-    ofs.open(stream_path.c_str());
+    ofs.open(stream_path.c_str(), std::ios_base::binary);
     if(!ofs.is_open())
         CONDUIT_ERROR("<Node::serialize> failed to open: " << stream_path);
     serialize(ofs);
