@@ -634,6 +634,18 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
         
         Node root;
         create_blueprint_index_for_2d_examples(root["blueprint_index"]);
+
+        Node info;
+        NodeConstIterator idx_itr = root["blueprint_index"].children();
+        while(idx_itr.has_next())
+        {
+
+            const Node &chld = idx_itr.next();
+            EXPECT_TRUE(blueprint::mesh::index::verify(chld,info[idx_itr.path()]));
+        }
+
+        CONDUIT_INFO("blueprint::mesh::index verify info:");
+        CONDUIT_INFO(info.to_json());
         
         root["protocol/name"] = "conduit_hdf5";
         root["protocol/version"] = "0.1";
@@ -725,20 +737,6 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
         CONDUIT_INFO(info.to_json());
     }
 
-    // Node expanded;
-    //
-    // NodeIterator itr = dsets.children();
-    //
-    // while(itr.has_next())
-    // {
-    //     Node info;
-    //     Node &mesh = itr.next();
-    //     //mesh.print();
-    //     std::string name = itr.path();
-    //     std::cout << "expanding 3d example '" << name << "'" << std::endl;
-    //     blueprint::mesh::expand(mesh,expanded[name],info);
-    // }
-    
     if(silo_enabled)
     {
     
@@ -771,9 +769,20 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
     
     if(hdf5_enabled)
     {
-        
         Node root;
         create_blueprint_index_for_3d_examples(root["blueprint_index"]);
+        
+        Node info;
+        NodeConstIterator idx_itr = root["blueprint_index"].children();
+        while(idx_itr.has_next())
+        {
+
+            const Node &chld = idx_itr.next();
+            EXPECT_TRUE(blueprint::mesh::index::verify(chld,info[idx_itr.path()]));
+        }
+        
+        CONDUIT_INFO("blueprint::mesh::index verify info:");
+        CONDUIT_INFO(info.to_json());
 
         root["protocol/name"]    = "hdf5";
         root["protocol/version"] = "0.1";

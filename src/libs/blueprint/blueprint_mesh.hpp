@@ -89,7 +89,13 @@ bool BLUEPRINT_API verify(const conduit::Node &n,
 
 //-----------------------------------------------------------------------------
 /// Interface to call verify on nested mesh protocols by name.
-///   supports: coordset, topology, field, and index
+///   supports: coordset
+///             topology
+///             field
+///             index
+///             coordset/index,
+///             topology/index,
+///             field/index
 //-----------------------------------------------------------------------------
 bool BLUEPRINT_API verify(const std::string &protocol,
                           const conduit::Node &n);
@@ -111,6 +117,46 @@ namespace coordset
     //-------------------------------------------------------------------------
     bool BLUEPRINT_API verify(const conduit::Node &n,
                               conduit::Node &info);
+                              
+    //-------------------------------------------------------------------------
+    // blueprint::mesh::coordset::index protocol interface
+    //-------------------------------------------------------------------------
+    namespace index
+    {
+        //---------------------------------------------------------------------
+        bool BLUEPRINT_API verify(const conduit::Node &n);
+
+        //---------------------------------------------------------------------
+        bool BLUEPRINT_API verify(const conduit::Node &n,
+                                  conduit::Node &info);
+    }
+    
+    //-------------------------------------------------------------------------
+    // blueprint::mesh::coordset::type protocol interface
+    //-------------------------------------------------------------------------
+    namespace type
+    {
+        //---------------------------------------------------------------------
+        bool BLUEPRINT_API verify(const conduit::Node &n);
+
+        //---------------------------------------------------------------------
+        bool BLUEPRINT_API verify(const conduit::Node &n,
+                                  conduit::Node &info);
+    }
+    
+    //-------------------------------------------------------------------------
+    // blueprint::mesh::coordset::coord_system protocol interface
+    //-------------------------------------------------------------------------
+    namespace coord_system
+    {
+        //---------------------------------------------------------------------
+        bool BLUEPRINT_API verify(const conduit::Node &n);
+
+        //---------------------------------------------------------------------
+        bool BLUEPRINT_API verify(const conduit::Node &n,
+                                  conduit::Node &info);
+    }
+    
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::coordset --
@@ -128,6 +174,33 @@ namespace topology
     //-------------------------------------------------------------------------
     bool BLUEPRINT_API verify(const conduit::Node &n,
                               conduit::Node &info);
+
+    //-------------------------------------------------------------------------
+    // blueprint::mesh::topology::index protocol interface
+    //-------------------------------------------------------------------------
+    namespace index
+    {
+        //---------------------------------------------------------------------
+        bool BLUEPRINT_API verify(const conduit::Node &n);
+
+        //---------------------------------------------------------------------
+        bool BLUEPRINT_API verify(const conduit::Node &n,
+                                  conduit::Node &info);
+    }
+    
+    //-------------------------------------------------------------------------
+    // blueprint::mesh::topology::type protocol interface
+    //-------------------------------------------------------------------------
+    namespace type
+    {
+        //---------------------------------------------------------------------
+        bool BLUEPRINT_API verify(const conduit::Node &n);
+
+        //---------------------------------------------------------------------
+        bool BLUEPRINT_API verify(const conduit::Node &n,
+                                  conduit::Node &info);
+    }
+    
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::topology --
@@ -144,6 +217,48 @@ namespace field
     //-------------------------------------------------------------------------
     bool BLUEPRINT_API verify(const conduit::Node &n,
                               conduit::Node &info);
+                              
+    //-------------------------------------------------------------------------
+    // blueprint::mesh::field::index protocol interface
+    //-------------------------------------------------------------------------
+    namespace index
+    {
+        //---------------------------------------------------------------------
+        bool BLUEPRINT_API verify(const conduit::Node &n);
+
+        //---------------------------------------------------------------------
+        bool BLUEPRINT_API verify(const conduit::Node &n,
+                                  conduit::Node &info);
+    }
+    
+                              
+    //-------------------------------------------------------------------------
+    // blueprint::mesh::field::association  protocol interface
+    //-------------------------------------------------------------------------
+    namespace association
+    {
+        //---------------------------------------------------------------------
+        bool BLUEPRINT_API verify(const conduit::Node &n);
+
+        //---------------------------------------------------------------------
+        bool BLUEPRINT_API verify(const conduit::Node &n,
+                                  conduit::Node &info);
+    }
+    
+    //-------------------------------------------------------------------------
+    // blueprint::mesh::field::basis protocol interface
+    //-------------------------------------------------------------------------
+    namespace basis
+    {
+        //---------------------------------------------------------------------
+        bool BLUEPRINT_API verify(const conduit::Node &n);
+
+        //---------------------------------------------------------------------
+        bool BLUEPRINT_API verify(const conduit::Node &n,
+                                  conduit::Node &info);
+    }
+    
+    
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::field --
