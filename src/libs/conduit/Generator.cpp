@@ -1170,13 +1170,21 @@ Generator::Parser::parse_base64(Node *node,
             CONDUIT_ERROR("conduit_base64_json protocol error: missing schema");
         }
         
-        node->set(s);
-
         const char *src_ptr = base64_str.c_str();
-        int src_len = base64_str.length();
-        void *dest_ptr = node->data_ptr();
-        
-        utils::base64_decode(src_ptr,src_len,dest_ptr);
+        int encoded_len = base64_str.length();
+        int dec_buff_size = utils::base64_decode_buffer_size(encoded_len);
+
+        // decode buffer
+        Node bb64_decode;
+        bb64_decode.set(DataType::char8_str(dec_buff_size));
+        char *decode_ptr = (char*)bb64_decode.data_ptr();
+        memset(decode_ptr,0,dec_buff_size);
+
+        utils::base64_decode(src_ptr,
+                             dec_buff_size,
+                             decode_ptr);
+
+        node->set(s,decode_ptr);
 
     }
     else

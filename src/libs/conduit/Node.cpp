@@ -10607,12 +10607,13 @@ Node::to_base64_json(std::ostream &os,
     
     // use libb64 to encode the data
     index_t nbytes = n.schema().total_bytes();
+    index_t enc_buff_size =  utils::base64_encode_buffer_size(nbytes);
     Node bb64_data;
-    bb64_data.set(DataType::char8_str(nbytes*2+1));
+    bb64_data.set(DataType::char8_str(enc_buff_size));
     
     const char *src_ptr = (const char*)n.data_ptr();
     char *dest_ptr       = (char*)bb64_data.data_ptr();
-    memset(dest_ptr,0,nbytes*2);
+    memset(dest_ptr,0,enc_buff_size);
 
     utils::base64_encode(src_ptr,nbytes,dest_ptr);
     
