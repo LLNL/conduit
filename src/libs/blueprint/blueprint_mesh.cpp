@@ -317,6 +317,99 @@ verify(const Node &n,
     return res;
 }
 
+
+
+//-----------------------------------------------------------------------------
+void
+generate_index(const Node &mesh,
+               const std::string &ref_path,
+               index_t number_of_domains,
+               Node &index_out)
+{
+    index_out.reset();
+    
+    index_out["state/number_of_domains"] = number_of_domains;
+
+    NodeConstIterator itr = mesh["coordsets"].children();
+    
+    while(itr.has_next())
+    {
+        const Node &coordset = itr.next();
+        std::string coordset_name = itr.path();
+        Node &idx_coordset = index_out["coordsets"][coordset_name];
+        
+        std::string coordset_type =   coordset["type"].as_string();
+        idx_coordset["type"] = coordset_type;
+    
+        index_t num_comps = 0;
+
+        if(coordset_type == "uniform")
+        {
+            num_comps = coordset["dims"].number_of_children();
+        }
+        else
+        {
+            num_comps = coordset["values"].number_of_children();
+        }
+        
+        if(num_comps == 2)
+        {
+            idx_coordset["coord_system"] = "xy";
+        }
+        else if(num_comps == 3)
+        {
+            idx_coordset["coord_system"] = "xyz";
+        }
+
+        idx_coordset["path"] = ref_path + "/coordsets/" + coordset_name;
+    }
+
+    itr = mesh["topologies"].children();
+    
+    while(itr.has_next())
+    {
+        const Node &topo = itr.next();
+        std::string topo_name = itr.path();
+        Node &idx_topo = index_out["topologies"][topo_name];
+        idx_topo["type"] = topo["type"].as_string();
+        idx_topo["coordset"] = topo["coordset"].as_string();
+        idx_topo["path"] = ref_path + "/topologies/" + topo_name;
+    }
+    
+    if(mesh.has_child("fields"))
+    {
+    
+        itr = mesh["fields"].children();
+        
+        while(itr.has_next())
+        {
+            const Node &fld = itr.next();
+            std::string fld_name = itr.path();
+            Node &idx_fld = index_out["fields"][fld_name];
+            
+            index_t ncomps = 1;
+            if(fld["values"].dtype().is_object())
+            {
+                ncomps = fld["values"].number_of_children();
+            }
+            
+            idx_fld["number_of_components"] = ncomps;
+            
+            idx_fld["topology"] = fld["topology"].as_string();
+            if(fld.has_child("association"))
+            {
+                idx_fld["association"] = fld["association"];
+            }
+            else
+            {
+                idx_fld["basis"] = fld["basis"];
+            }
+            idx_fld["path"] = ref_path + "/fields/" + fld_name;
+        }
+    }
+}
+
+
 //-----------------------------------------------------------------------------
 // blueprint::mesh::coordset protocol interface
 //-----------------------------------------------------------------------------
@@ -1331,16 +1424,6 @@ verify(const Node &n,
     }
 
     return res;
-}
-
-
-//-----------------------------------------------------------------------------
-void
-generate(const Node &n,
-         Node &index_out)
-{
-    index_out.reset();
-    // TODO: IMPLEMENT!
 }
 
 

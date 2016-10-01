@@ -586,7 +586,7 @@ braid_points_explicit(index_t npts_x,
                                  npts_z,
                                  res["coordsets/coords"]);
     
-    res["topologies/mesh/type"] = "points";
+    res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
     res["topologies/mesh/elements/shape"] = "points";
     res["topologies/mesh/elements/connectivity"].set(DataType::int32(npts_total));

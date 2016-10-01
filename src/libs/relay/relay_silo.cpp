@@ -1214,14 +1214,23 @@ silo_mesh_write(const Node &n,
         n_mesh_info[topo_name]["type"].set(topo_type);
         
 
-        
-        // we need a zone list for a ucd mesh
         if(topo_type == "unstructured")
         {
-            silo_write_ucd_zonelist(dbfile,
-                                    topo_name,
-                                    n_topo,
-                                    n_mesh_info);
+            
+            std::string ele_shape = n_topo["elements/shape"].as_string();
+            if( ele_shape != "points")
+            {
+                // we need a zone list for a ucd mesh
+                silo_write_ucd_zonelist(dbfile,
+                                        topo_name,
+                                        n_topo,
+                                        n_mesh_info);
+            }
+            else
+            {
+                topo_type = "points";
+                n_mesh_info[topo_name]["type"].set(topo_type);
+            }
         }
 
         // make sure we have coordsets

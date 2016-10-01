@@ -106,6 +106,12 @@ bool BLUEPRINT_API verify(const std::string &protocol,
                           conduit::Node &info);
 
 
+//-------------------------------------------------------------------------
+void BLUEPRINT_API generate_index(const conduit::Node &mesh,
+                                  const std::string &ref_path,
+                                  index_t num_domains,
+                                  Node &index_out);
+
 //-----------------------------------------------------------------------------
 // blueprint::mesh::coordset protocol interface
 //-----------------------------------------------------------------------------
@@ -275,11 +281,6 @@ namespace index
     //-------------------------------------------------------------------------
     bool BLUEPRINT_API verify(const conduit::Node &n,
                               conduit::Node &info);
-
-    //-------------------------------------------------------------------------
-    void BLUEPRINT_API generate(const conduit::Node &n,
-                                Node &index_out);
-
 
 }
 //-----------------------------------------------------------------------------
