@@ -65,23 +65,29 @@ using namespace conduit;
 
 //-----------------------------------------------------------------------------
 void
-log_info(Node &info, const std::string &msg)
+log_info(Node &info,
+         const std::string &proto_name,
+         const std::string &msg)
 {
-    info["info"].append().set(msg);
+    info["info"].append().set(proto_name + ": " + msg);
 }
 
 //-----------------------------------------------------------------------------
 void
-log_optional(Node &info, const std::string &msg)
+log_optional(Node &info,
+             const std::string &proto_name,
+             const std::string &msg)
 {
-    info["optional"].append().set(msg);
+    info["optional"].append().set(proto_name + ": " + msg);
 }
 
 //-----------------------------------------------------------------------------
 void
-log_error(Node &info, const std::string &msg)
+log_error(Node &info,
+         const std::string &proto_name,
+         const std::string &msg)
 {
-    info["errors"].append().set(msg);
+    info["errors"].append().set(proto_name + ": " + msg);
 }
 
 
@@ -171,6 +177,9 @@ verify(const Node &n,
 {
     bool res = true;
 
+
+    const std::string proto_name = "mesh";
+    
     // note "errors" is a list, this allows us to log multiple errors.
     // Given that not conforming result is likely to trigger an error 
     // state in client code it seems like we should give as much info as
@@ -181,12 +190,12 @@ verify(const Node &n,
     //  each child must conform to "mesh::coordset"
     if(!n.has_child("coordsets"))
     {
-        info["errors"].append().set("missing child node \"coordsets\"");
+        log_error(info,proto_name,"missing child \"coordsets\"");
         res = false;
     }
     else if(n["coordsets"].number_of_children() == 0)
     {
-        info["errors"].append().set("\"coordsets\" has no children");
+        log_error(info,proto_name,"\"coordsets\" has no children");
         res = false;
     }
     else
@@ -200,8 +209,8 @@ verify(const Node &n,
 
             if(!coordset::verify(chld,info["coordsets/" + chld_name]))
             {
-                info["errors"].append().set(chld_name 
-                                + " is not a valid blueprint::mesh::coordset");
+                log_error(info,proto_name,chld_name 
+                            + " is not a valid mesh::coordset");
                 res = false;
             }
         }
@@ -211,12 +220,12 @@ verify(const Node &n,
     // each child must conform to "mesh::topology"
     if(!n.has_child("topologies"))
     {
-        info["errors"].append().set("missing child node \"topologies\"");
+        log_error(info,proto_name,"missing child \"topologies\"");
         res = false;
     }
     else if(n["topologies"].number_of_children() == 0)
     {
-        info["errors"].append().set("\"topologies\" has no children");
+        log_error(info,proto_name,"\"topologies\" has no children");
         res = false;
     }
     else
@@ -231,8 +240,8 @@ verify(const Node &n,
 
             if(!topology::verify(chld,info["topologies"][chld_name]))
             {
-                info["errors"].append().set(chld_name 
-                                + " is not a valid blueprint::mesh::topology");
+                log_error(info,proto_name,chld_name 
+                            + " is not a valid mesh::topology");
                 res = false;
             }
 
@@ -246,7 +255,7 @@ verify(const Node &n,
                     << "\"" << chld_name  << "\" "
                     << "references a non-existent coordset "
                     << "\"" << coords_name  << "\" ";
-                info["errors"].append().set(oss.str());
+                log_error(info,proto_name,oss.str());
                 res = false;
             }
             else if(info["coordsets"][coords_name]["valid"].as_string() != "true")
@@ -254,9 +263,9 @@ verify(const Node &n,
                 std::ostringstream oss;
                 oss << "topology "
                     << "\"" << chld_name  << "\" "
-                    << "references a invalid coordset "
+                    << "references an invalid coordset "
                     << "\"" << coords_name  << "\" ";
-                info["errors"].append().set(oss.str());
+                log_error(info,proto_name,oss.str());
                 res = false;
             }
         }
@@ -274,8 +283,8 @@ verify(const Node &n,
 
             if(!field::verify(chld,info["fields/" + chld_name]))
             {
-                info["errors"].append().set(chld_name 
-                                    + " is not a valid blueprint::mesh::field");
+                log_error(info,proto_name,chld_name 
+                            + " is not a valid mesh::topology");
                 res = false;
             }
 
@@ -289,7 +298,7 @@ verify(const Node &n,
                     << "\"" << chld_name  << "\" "
                     << "references a non-existent topology "
                     << "\"" << topo_name  << "\" ";
-                info["errors"].append().set(oss.str());
+                log_error(info,proto_name,oss.str());
                 res = false;
             }
             else if(info["topologies"][topo_name]["valid"].as_string() != "true")
@@ -297,9 +306,9 @@ verify(const Node &n,
                 std::ostringstream oss;
                 oss << "field "
                     << "\"" << chld_name  << "\" "
-                    << "references a invalid topology "
+                    << "references an invalid topology "
                     << "\"" << topo_name << "\" ";
-                info["errors"].append().set(oss.str());
+                log_error(info,proto_name,oss.str());
                 res = false;
             }
         }
@@ -374,6 +383,11 @@ generate_index(const Node &mesh,
         idx_topo["type"] = topo["type"].as_string();
         idx_topo["coordset"] = topo["coordset"].as_string();
         idx_topo["path"] = ref_path + "/topologies/" + topo_name;
+        // a topology may also specify a grid_function
+        if(topo.has_child("grid_function"))
+        {
+            idx_topo["grid_function"] = topo["grid_function"].as_string();
+        }
     }
     
     if(mesh.has_child("fields"))
@@ -430,9 +444,11 @@ verify_coordset_uniform(const Node &coordset,
 {
     bool res = true;
 
+    std::string proto_name = "mesh::coordset::uniform";
+
     if(!coordset.has_child("dims"))
     {
-        log_error(info,"missing uniform coordset child \"value\"");
+        log_error(info,proto_name, "missing child \"value\"");
         res = false;
     }
     else // dims needs at least one child ("i") 
@@ -441,31 +457,31 @@ verify_coordset_uniform(const Node &coordset,
         
         if(!dims.has_child("i"))
         {
-            log_error(info,"missing coordset child \"dims\"");
+            log_error(info,proto_name, "missing child \"dims\"");
             res = false;
         }
         else if(!dims["i"].dtype().is_number())
         {
-            log_error(info,"uniform dims/i is not a number");
+            log_error(info,proto_name,"dims/i is not a number");
             res = false;
         }
         
         if(dims.has_child("j"))
         {
-            log_optional(info,"uniform dims includes j");
+            log_optional(info,proto_name, "dims includes j");
             if(!dims["j"].dtype().is_number())
             {
-                log_error(info,"uniform dims/j is not a number");
+                log_error(info,proto_name,"dims/j is not a number");
                 res = false;
             }
         }
         
         if(dims.has_child("k"))
         {
-            log_optional(info,"uniform dims includes k");
+            log_optional(info,proto_name, "dims includes k");
             if(!dims["k"].dtype().is_number())
             {
-                log_error(info,"uniform dims/k is not a number");
+                log_error(info,proto_name,"dims/k is not a number");
                 res = false;
             }
         }
@@ -473,15 +489,14 @@ verify_coordset_uniform(const Node &coordset,
     
     if(!coordset.has_child("origin"))
     {
-        log_optional(info, "uniform coordset has origin");
-
+        log_optional(info,proto_name, "has origin");
         const Node &origin = coordset["origin"];
 
         if(origin.has_child("x"))
         {
             if(!origin["x"].dtype().is_number())
             {
-                log_error(info,"uniform origin/x is not a number");
+                log_error(info,proto_name,"origin/x is not a number");
                 res = false;
             }
         }
@@ -490,7 +505,7 @@ verify_coordset_uniform(const Node &coordset,
         {
             if(!origin["y"].dtype().is_number())
             {
-                log_error(info,"uniform origin/y is not a number");
+                log_error(info,proto_name,"origin/y is not a number");
                 res = false;
             }
         }
@@ -499,7 +514,7 @@ verify_coordset_uniform(const Node &coordset,
         {
             if(!origin["z"].dtype().is_number())
             {
-                log_error(info, "uniform origin/z is not a number");
+                log_error(info,proto_name,"origin/z is not a number");
                 res = false;
             }
         }
@@ -507,7 +522,7 @@ verify_coordset_uniform(const Node &coordset,
 
     if(!coordset.has_child("spacing"))
     {
-        log_optional(info, "uniform coordset has spacing");
+        log_optional(info,proto_name, "has spacing");
         
         const Node &spacing = coordset["spacing"];
 
@@ -516,7 +531,7 @@ verify_coordset_uniform(const Node &coordset,
 
             if(!spacing["dx"].dtype().is_number())
             {
-                log_error(info, "uniform spacing/dx is not a number");
+                log_error(info,proto_name,"spacing/dx is not a number");
                 res = false;
             }
         }
@@ -526,7 +541,7 @@ verify_coordset_uniform(const Node &coordset,
 
             if(!spacing["dy"].dtype().is_number())
             {
-                log_error(info, "uniform spacing/dy is not a number");
+                log_error(info,proto_name,"spacing/dy is not a number");
                 res = false;
             }
         }
@@ -536,7 +551,7 @@ verify_coordset_uniform(const Node &coordset,
 
             if(!spacing["dz"].dtype().is_number())
             {
-                log_error(info,"uniform spacing/dz is not a number");
+                log_error(info,proto_name,"spacing/dz is not a number");
                 res = false;
             }
         }
@@ -552,9 +567,12 @@ verify_coordset_rectilinear(const Node &coordset,
 {
     bool res = true;
 
+    std::string proto_name = "mesh::coordset::rectilinear";
+
+
     if(!coordset.has_child("values"))
     {
-        log_error(info, "missing rectilinear coordset child \"value\"");
+        log_error(info,proto_name, "missing child \"values\"");
         res = false;
     }
     else
@@ -574,10 +592,12 @@ verify_coordset_explicit(const Node &coordset,
                          Node &info)
 {
     bool res = true;
+    
+    std::string proto_name = "mesh::coordset::explicit";
 
     if(!coordset.has_child("values"))
     {
-        log_error(info,"missing explicit coordset child \"value\"");
+        log_error(info,proto_name, "missing child \"values\"");
         res = false;
     }
     else
@@ -597,9 +617,11 @@ verify(const Node &coordset,
 {
     bool res = true;
 
+    std::string proto_name = "mesh::coordset";
+    
     if(!coordset.has_child("type"))
     {
-        log_error(info,"missing coordset child \"type\"");
+        log_error(info,proto_name, "missing child \"type\"");
         res = false;
     }
     else if(!coordset::type::verify(coordset["type"],info["type"]))
@@ -655,10 +677,12 @@ verify(const Node &coordset_type,
        Node &info)
 {    
     bool res = true;
+    std::string proto_name = "mesh::coordset::type";
+
 
     if(!coordset_type.dtype().is_string())
     {
-        log_error(info,"mesh::coordset::type expected string");
+        log_error(info,proto_name,"is not a string");
         res = false;
     }
     else
@@ -669,11 +693,11 @@ verify(const Node &coordset_type,
            coordset_type_str == "rectilinear" ||
            coordset_type_str == "explicit")
         {
-            log_info(info,"type: " + coordset_type_str);
+            log_info(info,proto_name,"valid type: " + coordset_type_str);
         }
         else
         {
-            log_error(info,"mesh::coordset::type unsupported value:"
+            log_error(info,proto_name, "unsupported value:"
                            + coordset_type_str);
             res = false;
         }
@@ -718,10 +742,12 @@ verify(const Node &coord_sys,
        Node &info)
 {    
     bool res = true;
+    
+    std::string proto_name = "mesh::coordset::coord_system";
 
     if(!coord_sys.dtype().is_string())
     {
-        log_error(info,"mesh::coordset::coord_system expected string");
+        log_error(info,proto_name,"is not a string");
         res = false;
     }
     else
@@ -731,12 +757,12 @@ verify(const Node &coord_sys,
         if(coord_sys_str == "xy" ||
            coord_sys_str == "xyz")
         {
-            log_info(info,"type: " + coord_sys_str);
+            log_info(info,proto_name, "valid type: " + coord_sys_str);
         }
         else
         {
-            log_error(info,"mesh::coordset::coord_system unsupported value:"
-                           + coord_sys_str);
+            log_error(info,proto_name,"unsupported value:"
+                                       + coord_sys_str);
             res = false;
         }
     }
@@ -781,11 +807,11 @@ verify(const Node &coordset_idx,
        Node &info)
 {    
     bool res = true;
-
+    std::string proto_name = "mesh::coordset::index";
     // we need the mesh type
     if(!coordset_idx.has_child("type"))
     {
-        log_error(info,"missing mesh::coordset::index child \"type\"");
+        log_error(info,proto_name, "missing child \"type\"");
         res = false;
     }
     else if(!coordset::type::verify(coordset_idx["type"],info["type"]))
@@ -796,7 +822,7 @@ verify(const Node &coordset_idx,
     // we need a coord_system
     if(!coordset_idx.has_child("coord_system"))
     {
-        log_error(info,"missing mesh::coordset::index child \"coord_system\"");
+        log_error(info,proto_name,"missing mesh::coordset::index child \"coord_system\"");
         res = false;
     }
     else if(!coordset::coord_system::verify(coordset_idx["coord_system"],
@@ -808,12 +834,12 @@ verify(const Node &coordset_idx,
     // we need a path
     if(!coordset_idx.has_child("path"))
     {
-        log_error(info,"missing mesh::topology::index child \"path\"");
+        log_error(info,proto_name,"missing child \"path\"");
         res = false;
     }
     else if(!coordset_idx["path"].dtype().is_string())
     {
-        log_error(info,"mesh::topology::index \"path\" is not a string");
+        log_error(info,proto_name,"\"path\" is not a string");
         res = false;
     }
     
@@ -886,11 +912,12 @@ verify(const Node &topo_idx,
        Node &info)
 {    
     bool res = true;
+    std::string proto_name = "mesh::topology::index";
 
     // we need the mesh type
     if(!topo_idx.has_child("type"))
     {
-        log_error(info,"missing mesh::topology::index child \"type\"");
+        log_error(info,proto_name,"missing child \"type\"");
         res = false;
     }
     else if(!topology::type::verify(topo_idx["type"],info["type"]))
@@ -901,24 +928,24 @@ verify(const Node &topo_idx,
     // we need a coordset ref
     if(!topo_idx.has_child("coordset"))
     {
-        log_error(info,"missing mesh::topology::index child \"coordset\"");
+        log_error(info,proto_name,"missing child \"coordset\"");
         res = false;
     }
     else if(!topo_idx["coordset"].dtype().is_string())
     {
-        log_error(info,"mesh::topology::index \"coordset\" is not a string");
+        log_error(info,proto_name,"\"coordset\" is not a string");
         res = false;
     }
 
     // we need a path
     if(!topo_idx.has_child("path"))
     {
-        log_error(info,"missing mesh::topology::index child \"path\"");
+        log_error(info,proto_name, "missing child \"path\"");
         res = false;
     }
     else if(!topo_idx["path"].dtype().is_string())
     {
-        log_error(info,"mesh::topology::index \"path\" is not a string");
+        log_error(info,proto_name, "\"path\" is not a string");
         res = false;
     }
     
@@ -960,10 +987,12 @@ verify(const Node &topo_type,
        Node &info)
 {    
     bool res = true;
+    
+    std::string proto_name = "mesh::topology::type";
 
     if(!topo_type.dtype().is_string())
     {
-        log_error(info,"mesh::topology::type expected string");
+        log_error(info,proto_name,"is not a string");
         res = false;
     }
     else
@@ -975,11 +1004,11 @@ verify(const Node &topo_type,
            topo_type_str == "structured"  ||
            topo_type_str == "unstructured" )
         {
-            log_info(info,"type: " + topo_type_str);
+            log_info(info,proto_name, "valid type: " + topo_type_str);
         }
         else
         {
-            log_error(info,"mesh::topology::type unsupported value:"
+            log_error(info,proto_name, "unsupported value:"
                            + topo_type_str);
             res = false;
         }
@@ -1026,12 +1055,91 @@ verify(const Node &n)
 
 //-----------------------------------------------------------------------------
 bool
-verify(const Node &n,
+verify(const Node &field,
        Node &info)
 {
-    // TODO: IMPLEMENT!
-    info["valid"] = "true";
-    return true;
+    bool res = true;
+
+    std::string proto_name = "mesh::field::index";
+        
+    // we need a topology
+    if(!field.has_child("topology"))
+    {
+        log_error(info, proto_name,"missing child \"topology\"");
+        res = false;
+    }
+    else if(!field["topology"].dtype().is_string())
+    {
+        log_error(info, proto_name, "\"topology\" is not a string");
+        res = false;
+    }
+
+
+    if(!field.has_child("values"))
+    {
+        log_error(info, proto_name, "missing child \"values\"");
+        res = false;
+    }
+    else if(field["values"].dtype().is_object())
+    {
+        if(!blueprint::mcarray::verify(field["values"],info["values"]))
+        {
+             res = false;
+        }
+        else
+        {
+            log_info(info,proto_name,"is a mcarray.");
+        }
+    }
+    else if(field["values"].dtype().is_number())
+    {
+        log_info(info,proto_name,"is a single component numeric array.");
+    }
+    else
+    {
+        log_error(info, proto_name, "\"values\" is not a "
+                        " numeric array or mcarray.");
+        res = false;
+    }
+
+
+    // make sure we have either a basis or assoc entry
+    bool has_assoc = field.has_child("association");
+    bool has_basis = field.has_child("basis");
+    
+    if( ! (has_assoc || has_basis))
+    {
+        log_error(info,proto_name, "missing child "
+                       "\"association\" or \"basis\"");
+        res = false;
+    }
+    else if(has_assoc)
+    {
+        if(!field::association::verify(field["association"],
+                                       info["association"]))
+        {
+            res = false;
+        }
+    }
+    else if(has_basis)
+    {
+        if(!field::basis::verify(field["basis"],info["basis"]))
+        {
+            res = false;
+        }
+    }
+
+    if(res)
+    {
+        info["valid"] = "true";
+    }
+    else
+    {
+        info["valid"] = "false";
+    }
+
+    return res;
+
 }
 
 
@@ -1056,9 +1164,11 @@ verify(const Node &assoc,
 {    
     bool res = true;
 
+    std::string proto_name = "mesh::field::association";
+
     if(!assoc.dtype().is_string())
     {
-        log_error(info,"mesh::field::association expected string");
+        log_error(info,proto_name,"is not a string");
         res = false;
     }
     else
@@ -1068,11 +1178,11 @@ verify(const Node &assoc,
         if(assoc_str == "point" ||
            assoc_str == "element")
         {
-            log_info(info,"association: " + assoc_str );
+            log_info(info,proto_name, "association: " + assoc_str );
         }
         else
         {
-            log_error(info,"mesh::field::association unsupported value:"
+            log_error(info,proto_name, "unsupported value:"
                            + assoc_str);
             res = false;
         }
@@ -1118,14 +1228,16 @@ verify(const Node &basis,
 {    
     bool res = true;
 
+    std::string proto_name = "mesh::field::basis";
+
     if(!basis.dtype().is_string())
     {
-        log_error(info,"mesh::field::basis expected string");
+        log_error(info,proto_name,"is not a string");
         res = false;
     }
     else
     {
-        log_info(info,"basis: " + basis.as_string());
+        log_info(info,proto_name,"basis: " + basis.as_string());
     }
 
     if(res)
@@ -1166,29 +1278,30 @@ verify(const Node &field_idx,
        Node &info)
 {    
     bool res = true;
+    std::string proto_name = "mesh::field::index ";
 
     // we need a topology
     if(!field_idx.has_child("topology"))
     {
-        log_error(info,"missing mesh::field::index child \"topology\"");
+        log_error(info,proto_name,"missing child \"topology\"");
         res = false;
     }
     else if(!field_idx["topology"].dtype().is_string())
     {
-        log_error(info,"mesh::field::index \"topology\" is not a string");
+        log_error(info,proto_name,"\"topology\" is not a string");
         res = false;
     }
 
     // we need number_of_components
     if(!field_idx.has_child("number_of_components"))
     {
-        log_error(info,"missing  mesh::field::index child "
+        log_error(info,proto_name,"missing child "
                        "\"number_of_components\"");
         res = false;
     }
     else if(!field_idx["number_of_components"].dtype().is_integer())
     {
-        log_error(info,"mesh::field::index \"number_of_components\" "
+        log_error(info,proto_name,"\"number_of_components\" "
                        "is not an integer");
         res = false;
     }
@@ -1196,12 +1309,12 @@ verify(const Node &field_idx,
     // we need a path
     if(!field_idx.has_child("path"))
     {
-        log_error(info,"missing mesh::field::index child \"path\"");
+        log_error(info,proto_name,"missing child \"path\"");
         res = false;
     }
     else if(!field_idx["path"].dtype().is_string())
     {
-        log_error(info,"mesh::field::index \"path\" is not a string");
+        log_error(info,proto_name,"\"path\" is not a string");
         res = false;
     }
     
@@ -1211,7 +1324,7 @@ verify(const Node &field_idx,
     // make sure we have either a basis or assoc entry
     if( ! (has_assoc || has_basis))
     {
-        log_error(info,"missing mesh::field::index child "
+        log_error(info,proto_name,"missing child "
                        "\"association\" or \"basis\"");
         res = false;
     }
@@ -1279,6 +1392,7 @@ verify(const Node &n,
     //
     
     bool res = true;
+    std::string proto_name = "mesh::index";
 
     // note "errors" is a list, this allows us to log multiple errors.
     // Given that not conforming result is likely to trigger an error 
@@ -1290,12 +1404,12 @@ verify(const Node &n,
     //  each child must conform to "mesh::coordset"
     if(!n.has_child("coordsets"))
     {
-        info["errors"].append().set("missing child node \"coordsets\"");
+        log_error(info,proto_name,"missing child \"coordsets\"");
         res = false;
     }
     else if(n["coordsets"].number_of_children() == 0)
     {
-        info["errors"].append().set("\"coordsets\" has no children");
+        log_error(info,proto_name,"\"coordsets\" has no children");
         res = false;
     }
     else
@@ -1309,8 +1423,8 @@ verify(const Node &n,
 
             if(!coordset::index::verify(chld,info["coordsets/" + chld_name]))
             {
-                info["errors"].append().set(chld_name 
-                                + " is not a valid blueprint::mesh::coordset::index");
+                log_error(info,proto_name,chld_name 
+                                + " is not a valid mesh::coordset::index");
                 res = false;
             }
         }
@@ -1320,12 +1434,12 @@ verify(const Node &n,
     // each child must conform to "mesh::topology"
     if(!n.has_child("topologies"))
     {
-        info["errors"].append().set("missing child node \"topologies\"");
+        log_error(info,proto_name,"missing child \"topologies\"");
         res = false;
     }
     else if(n["topologies"].number_of_children() == 0)
     {
-        info["errors"].append().set("\"topologies\" has no children");
+        log_error(info,proto_name,"\"topologies\" has no children");
         res = false;
     }
     else
@@ -1340,8 +1454,8 @@ verify(const Node &n,
 
             if(!topology::index::verify(chld,info["topologies"][chld_name]))
             {
-                info["errors"].append().set(chld_name 
-                                + " is not a valid blueprint::mesh::topology::index");
+                log_error(info,proto_name,chld_name 
+                                + " is not a valid mesh::topology::index");
                 res = false;
             }
 
@@ -1355,7 +1469,7 @@ verify(const Node &n,
                     << "\"" << chld_name  << "\" "
                     << "references a non-existent coordset index entry"
                     << "\"" << coords_name  << "\" ";
-                info["errors"].append().set(oss.str());
+                log_error(info,proto_name,oss.str());
                 res = false;
             }
             else if(info["coordsets"][coords_name]["valid"].as_string() != "true")
@@ -1363,9 +1477,9 @@ verify(const Node &n,
                 std::ostringstream oss;
                 oss << "topology index entry "
                     << "\"" << chld_name  << "\" "
-                    << "references a invalid coordset index entry "
+                    << "references an invalid coordset index entry "
                     << "\"" << coords_name  << "\" ";
-                info["errors"].append().set(oss.str());
+                log_error(info,proto_name,oss.str());
                 res = false;
             }
         }
@@ -1383,8 +1497,8 @@ verify(const Node &n,
 
             if(!field::index::verify(chld,info["fields/" + chld_name]))
             {
-                info["errors"].append().set(chld_name 
-                                    + " is not a valid blueprint::mesh::field::index");
+                log_error(info,proto_name,chld_name 
+                                + " is not a valid mesh::field::index");
                 res = false;
             }
 
@@ -1394,21 +1508,21 @@ verify(const Node &n,
             if(!n["topologies"].has_child(topo_name))
             {
                 std::ostringstream oss;
-                oss << "field index entry"
+                oss << "field index entry "
                     << "\"" << chld_name  << "\" "
                     << "references a non-existent topology index entry"
                     << "\"" << topo_name  << "\" ";
-                info["errors"].append().set(oss.str());
+                log_error(info,proto_name,oss.str());
                 res = false;
             }
             else if(info["topologies"][topo_name]["valid"].as_string() != "true")
             {
                 std::ostringstream oss;
-                oss << "field index entry"
+                oss << "field index entry "
                     << "\"" << chld_name  << "\" "
-                    << "references a invalid topology index entry"
+                    << "references an invalid topology index entry"
                     << "\"" << topo_name << "\" ";
-                info["errors"].append().set(oss.str());
+                log_error(info,proto_name,oss.str());
                 res = false;
             }
         }
