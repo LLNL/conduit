@@ -1,45 +1,45 @@
 ###############################################################################
 # Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
-# 
+#
 # Produced at the Lawrence Livermore National Laboratory
-# 
+#
 # LLNL-CODE-666778
-# 
+#
 # All rights reserved.
-# 
-# This file is part of Conduit. 
-# 
+#
+# This file is part of Conduit.
+#
 # For details, see: http://software.llnl.gov/conduit/.
-# 
+#
 # Please also read conduit/LICENSE
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
-# * Redistributions of source code must retain the above copyright notice, 
+#
+# * Redistributions of source code must retain the above copyright notice,
 #   this list of conditions and the disclaimer below.
-# 
+#
 # * Redistributions in binary form must reproduce the above copyright notice,
 #   this list of conditions and the disclaimer (as noted below) in the
 #   documentation and/or other materials provided with the distribution.
-# 
+#
 # * Neither the name of the LLNS/LLNL nor the names of its contributors may
 #   be used to endorse or promote products derived from this software without
 #   specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 # LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 # DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 # OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-# 
+#
 ###############################################################################
 
 
@@ -95,7 +95,7 @@ set(conduit_c_headers
 set(conduit_sources
     Core.cpp
     Error.cpp
-    Endianness.cpp 
+    Endianness.cpp
     DataType.cpp
     DataArray.cpp
     Generator.cpp
@@ -120,13 +120,8 @@ add_compiled_library(NAME   conduit
                      EXPORT conduit
                      HEADERS ${conduit_headers} ${conduit_c_headers}
                      SOURCES ${conduit_sources} ${conduit_c_sources}
+                             $<TARGET_OBJECTS:conduit_b64>
                      HEADERS_DEST_DIR include/conduit)
-
-#
-# libb64 is a private dep, its not exposed in / required by
-# conduit's header files
-#
-target_link_libraries(conduit PRIVATE conduit_b64)
 
 ################################
 # Add python wrappers if python
@@ -137,11 +132,9 @@ if(PYTHON_FOUND)
 endif()
 
 #################################
-# Add fortran interface lib 
+# Add fortran interface lib
 # if fortran support was selected
 #################################
 if(FORTRAN_FOUND)
     add_subdirectory(fortran)
 endif()
-
-

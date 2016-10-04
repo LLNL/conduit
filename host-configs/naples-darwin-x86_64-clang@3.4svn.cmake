@@ -18,10 +18,11 @@ set("CMAKE_C_COMPILER" "/usr/bin/clang" CACHE PATH "")
 set("CMAKE_CXX_COMPILER" "/usr/bin/clang++" CACHE PATH "")
 
 # fortran compiler used by spack
-# no fortran compiler found
+set("ENABLE_FORTRAN" "ON" CACHE PATH "")
 
-set("ENABLE_FORTRAN" "OFF" CACHE PATH "")
+set("CMAKE_Fortran_COMPILER" "/usr/local/bin/gfortran" CACHE PATH "")
 
+# Python Support
 # Enable python module builds
 set("ENABLE_PYTHON" "ON" CACHE PATH "")
 
@@ -40,11 +41,13 @@ set("SPHINX_EXECUTABLE" "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/s
 # MPI Support
 set("ENABLE_MPI" "ON" CACHE PATH "")
 
-set("MPI_C_COMPILER" "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/spack/darwin-x86_64/clang-3.4svn/mpich-3.2-5m2s3c3ugo6jqt4bz7nci3nfh4aamzfu/bin/mpicc" CACHE PATH "")
+set("MPI_C_COMPILER" "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/spack/darwin-x86_64/clang-3.4svn/mpich-3.0.4-63ubtzf67gx6wcvrokynzxyokaudcj3m/bin/mpicc" CACHE PATH "")
 
-set("MPI_CXX_COMPILER" "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/spack/darwin-x86_64/clang-3.4svn/mpich-3.2-5m2s3c3ugo6jqt4bz7nci3nfh4aamzfu/bin/mpicc" CACHE PATH "")
+set("MPI_CXX_COMPILER" "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/spack/darwin-x86_64/clang-3.4svn/mpich-3.0.4-63ubtzf67gx6wcvrokynzxyokaudcj3m/bin/mpicc" CACHE PATH "")
 
-set("MPIEXEC" "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/spack/darwin-x86_64/clang-3.4svn/mpich-3.2-5m2s3c3ugo6jqt4bz7nci3nfh4aamzfu/bin/mpiexec" CACHE PATH "")
+set("MPI_Fortran_COMPILER" "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/spack/darwin-x86_64/clang-3.4svn/mpich-3.0.4-63ubtzf67gx6wcvrokynzxyokaudcj3m/bin/mpif90" CACHE PATH "")
+
+set("MPIEXEC" "/Users/harrison37/Work/conduit/uberenv_libs/spack/opt/spack/darwin-x86_64/clang-3.4svn/mpich-3.0.4-63ubtzf67gx6wcvrokynzxyokaudcj3m/bin/mpiexec" CACHE PATH "")
 
 # I/O Packages
 

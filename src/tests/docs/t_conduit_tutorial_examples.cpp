@@ -359,7 +359,9 @@ TEST(conduit_tutorial, json_generator_bind_to_incore)
     CONDUIT_INFO("json_generator_bind_to_incore");
     
     float64 vals[2];
-    Generator g("{a: {dtype: float64, value: 100.0}, b: {dtype: float64, value: 200.0} }",vals);
+    Generator g("{a: {dtype: float64, value: 100.0}, b: {dtype: float64, value: 200.0} }",
+                "conduit_json",
+                vals);
 
     Node n;
     g.walk_external(n);
@@ -389,8 +391,12 @@ TEST(conduit_tutorial, json_generator_compact)
                        500.0,-500.0};
 
     // stride though the data with two different views. 
-    Generator g1("{dtype: float64, length: 5, stride: 16}",vals);
-    Generator g2("{dtype: float64, length: 5, stride: 16, offset:8}",vals);
+    Generator g1("{dtype: float64, length: 5, stride: 16}",
+                 "conduit_json",
+                 vals);
+    Generator g2("{dtype: float64, length: 5, stride: 16, offset:8}",
+                 "conduit_json",
+                  vals);
 
     Node n1;
     g1.walk_external(n1);

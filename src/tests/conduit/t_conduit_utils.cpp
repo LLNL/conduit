@@ -275,10 +275,62 @@ TEST(conduit_utils, remove_file)
 //-----------------------------------------------------------------------------
 TEST(conduit_utils, system_exec)
 {
-    // TODO: windows test ... 
+#if !defined(CONDUIT_PLATFORM_WINDOWS)
     EXPECT_EQ(utils::system_execute("pwd"),0);
+#else
+    EXPECT_EQ(utils::system_execute("echo %cd%"), 0);
+#endif
 }
 
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, base64_enc_dec)
+{
+    Node n_src;
+    n_src["a"].set_int32(10);
+    n_src["b"].set_int32(20);
+    n_src["c"].set_int32(30);
+    
+    // we need compact data for base64
+    Node n;
+    n_src.compact_to(n);
+    
+    // use libb64 to encode the data
+    index_t nbytes = n.schema().total_bytes();
+    Node bb64_data;
+    index_t enc_buff_size = utils::base64_encode_buffer_size(nbytes);
+    
+    bb64_data.set(DataType::char8_str(enc_buff_size));
+    
+    const char *src_ptr = (const char*)n.data_ptr();
+    char *dest_ptr      = (char*)bb64_data.data_ptr();
+    memset(dest_ptr,0,enc_buff_size);
+    
+    utils::base64_encode(src_ptr,nbytes,dest_ptr);
+
+    index_t dec_buff_size = utils::base64_decode_buffer_size(enc_buff_size);
+
+    // use libb64 to decode the data
+    
+    // decode buffer
+    Node bb64_decode;
+    bb64_decode.set(DataType::char8_str(dec_buff_size));
+    char *b64_decode_ptr = (char*)bb64_decode.data_ptr();
+    memset(b64_decode_ptr,0,dec_buff_size);
+    
+    utils::base64_decode(bb64_data.as_char8_str(),
+                         enc_buff_size,
+                         b64_decode_ptr);
+    
+    // apply schema
+    Node n_res(n.schema(),b64_decode_ptr,false);
+
+    // check we have the same values
+    EXPECT_EQ(n_src["a"].as_int32(), n_res["a"].as_int32());
+    EXPECT_EQ(n_src["b"].as_int32(), n_res["b"].as_int32());
+    EXPECT_EQ(n_src["c"].as_int32(), n_res["c"].as_int32());
+}
 
 
 

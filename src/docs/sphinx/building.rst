@@ -71,7 +71,7 @@ Configure a build:
 
 ``config-build.sh`` is a simple wrapper for the cmake call to configure conduit. 
 This creates a new out-of-source build directory ``build-debug`` and a directory for the install ``install-debug``.
-It will optionally include a ``host-config.cmake`` file with detailed configuration options. 
+It optionally includes a ``host-config.cmake`` file with detailed configuration options. 
 
 
 .. code:: bash
@@ -147,7 +147,7 @@ To handle build options, third party library paths, etc we rely on CMake's initi
 
 We call these initial-cache files *host-config* files, since we typically create a file for each platform or specific hosts if necessary. 
 
-The ``config-build.sh`` script will use your machine's hostname, the SYS_TYPE environment variable, and your platform name (via *uname*) to look for an existing host config file in the ``host-configs`` directory at the root of the conduit repo. If found, it will pass the host config file to CMake via the `-C` command line option.
+The ``config-build.sh`` script uses your machine's hostname, the SYS_TYPE environment variable, and your platform name (via *uname*) to look for an existing host config file in the ``host-configs`` directory at the root of the conduit repo. If found, it passes the host config file to CMake via the `-C` command line option.
 
 .. code:: bash
     
@@ -211,7 +211,12 @@ Building with Spack
 Using Conduit in Another Project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Under ``src/examples``, you can find examples demonstrating how to use Conduit in a CMake-based build system (``using-with-cmake``) and via a Makefile (``using-with-make``).
+Under ``src/examples`` there are examples demonstrating how to use Conduit in a CMake-based build system (``using-with-cmake``) and via a Makefile (``using-with-make``).
+
+Building Conduit in a Docker Container
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Under ``src/examples/docker/master/ubuntu`` there is an example ``Dockerfile`` which can be used to create an ubuntu-based docker image with a build of the Conduit github master branch. There is also a script that demonstrates how to build a Docker image from the Dockerfile (``example_build.sh``) and a script that runs this image in a Docker container (``example_run.sh``). The Conduit repo is cloned into the image's file system at ``/conduit``, the build directory is ``/conduit/build-debug``, and the install directory is ``/conduit/install-debug``.
 
 
 

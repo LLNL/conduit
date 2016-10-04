@@ -86,7 +86,7 @@ usage()
 void
 parse_args(int argc,
            char *argv[],
-           std::string address,
+           std::string &address,
            int &port,
            bool &entangle,
            std::string &data_file,

@@ -129,7 +129,7 @@ TEST(conduit_json, json_inline_value)
     std::cout << n.as_uint32() << std::endl;
     EXPECT_EQ(42,n.as_uint32());
     
-    Generator g2(schema,&val);
+    Generator g2(schema,"conduit_json",&val);
     Node n2(g2,true);
     std::cout << n2.as_uint32() << std::endl;
     EXPECT_EQ(42,val);
@@ -246,7 +246,7 @@ TEST(conduit_json, json_explicit_offsets)
     char    *vals_ptr = (char*)&vals;
 
     std::string schema ="{dtype: uint32, value:42, offset:8}";
-    Generator g1(schema,vals_ptr);
+    Generator g1(schema,"conduit_json",vals_ptr);
     Node n1(g1,true);
 
     EXPECT_EQ(42,n1.as_uint32());
@@ -254,7 +254,7 @@ TEST(conduit_json, json_explicit_offsets)
     
     
     schema ="{dtype: uint32, value:52, offset:16}";
-    Generator g2(schema,vals_ptr);
+    Generator g2(schema, "conduit_json", vals_ptr);
     Node n2(g2,true);
     std::cout << n2.as_uint32() << std::endl;
     EXPECT_EQ(52,n2.as_uint32());
@@ -262,7 +262,7 @@ TEST(conduit_json, json_explicit_offsets)
     
     
     schema ="{v1 :{dtype: uint32, offset:8}, v2: {dtype: uint32, offset:16}}";
-    Generator g3(schema,vals_ptr);
+    Generator g3(schema, "conduit_json", vals_ptr);
     Node n3(g3,true);
 
     EXPECT_EQ(42,n3["v1"].as_uint32());
@@ -285,7 +285,7 @@ TEST(conduit_json, json_c_type_names)
     char  *vals_ptr = (char*)&vals;
 
     std::string schema ="{dtype: int, value:42, offset:8}";
-    Generator g1(schema,vals_ptr);
+    Generator g1(schema, "conduit_json", vals_ptr);
     Node n1(g1,true);
 
     EXPECT_EQ(42,n1.as_int());
@@ -293,7 +293,7 @@ TEST(conduit_json, json_c_type_names)
     
     
     schema ="{dtype: int, value:52, offset:16}";
-    Generator g2(schema,vals_ptr);
+    Generator g2(schema, "conduit_json", vals_ptr);
     Node n2(g2,true);
     std::cout << n2.as_int() << std::endl;
     EXPECT_EQ(52,n2.as_int());
@@ -301,7 +301,7 @@ TEST(conduit_json, json_c_type_names)
     
     
     schema ="{v1 :{dtype: int, offset:8}, v2: {dtype: int, offset:16}}";
-    Generator g3(schema,vals_ptr);
+    Generator g3(schema, "conduit_json", vals_ptr);
     Node n3(g3,true);
 
     EXPECT_EQ(42,n3["v1"].as_int());
@@ -362,15 +362,42 @@ TEST(conduit_json, to_base64_json)
 
     nparse.print();
     
-    EXPECT_EQ(n["a"].as_uint32(),a_val);
-    EXPECT_EQ(n["b"].as_uint32(),b_val);
+    EXPECT_EQ(nparse["a"].as_uint32(),a_val);
+    EXPECT_EQ(nparse["b"].as_uint32(),b_val);
     
-    uint32 *arr_vals= n["arr"].value();
+    uint32 *arr_vals= nparse["arr"].value();
     
     for(index_t i=0;i<5;i++)
     {
         EXPECT_EQ(arr_vals[i],arr[i]);
     }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_json, to_base64_json_2)
+{
+
+    uint32   a_val  = 10;
+    uint32   b_val  = 20;
+    float64  c_val  = 30.0;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+ 
+    std::string base64_json = n.to_json("conduit_base64_json");
+    std::cout << base64_json << std::endl;
+    
+    Node nparse;
+    Generator g(base64_json,"conduit_base64_json");
+    g.walk(nparse);
+
+    nparse.print();
+    
+    EXPECT_EQ(nparse["a"].as_uint32(),a_val);
+    EXPECT_EQ(nparse["b"].as_uint32(),b_val);
+    EXPECT_EQ(nparse["c"].as_float64(),c_val);
 }
 
 

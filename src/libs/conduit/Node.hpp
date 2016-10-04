@@ -185,9 +185,10 @@ public:
 /// description:
 ///  These methods use a Generator to parse a json schema into a Node hierarchy.
 ///
-/// * The variants without a void * data parameter will allocate memory for the
-///   Node hierarchy and populate with inline values from the json schema (if
-///   they are provided).
+/// * The non external variant with a NULL data parameter will allocate memory 
+///   for the Node hierarchy and populate with inline values from the json schema 
+///   (if they are provided).
+///
 /// * The `external' variants build a Node hierarchy that points to the input
 ///   data, they do not copy the data into the Node hierarchy.
 //-----------------------------------------------------------------------------
@@ -199,27 +200,13 @@ public:
 
     void generate_external(const Generator &gen);
 
-//-----------------------------------------------------------------------------
-// -- json schema only --
-//-----------------------------------------------------------------------------
-    void generate(const std::string &json_schema);
-
-    void generate(const std::string &json_schema,
-                  const std::string &protocol);
-
 
 //-----------------------------------------------------------------------------
-// -- json schema coupled with in-core data -- 
+// -- json schema optionally coupled with in-core data -- 
 //-----------------------------------------------------------------------------
     void generate(const std::string &json_schema,
-                  void *data);
-
-    void generate(const std::string &json_schema,
-                  const std::string &protocol,
-                  void *data);
-
-    void generate_external(const std::string &json_schema,
-                           void *data);
+                  const std::string &protocol = std::string("conduit_json"),
+                  void *data = NULL);
 
     void generate_external(const std::string &json_schema,
                            const std::string &protocol,
@@ -336,6 +323,50 @@ public:
     void set(float64 data);
 
 //-----------------------------------------------------------------------------
+//  set scalar gap methods for c-native types
+//-----------------------------------------------------------------------------
+//  These set methods are used to fill out the interface for cases where
+//  any of the native c types are not mapped 1-1 to our to bit width style 
+//  types. 
+//
+//  Windows is one important case where this happens. Both long and int 
+//  represent 32-bit integers, and long long is used as the type for 64-bit
+//  integers. In this case the long and int are aliased types -- we want 
+//  to support both via overloaded "set" functions, however one of the types
+//  is already used as the underlying type for set(int32 ). When int is 
+//  selected as int32, Visual Studio needs an explicit method to disambiguate 
+//  the long case.
+//-----------------------------------------------------------------------------
+    #ifndef CONDUIT_USE_CHAR
+        void set(signed char data);
+        void set(unsigned char data);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        void set(short data);
+        void set(unsigned short data);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        void set(int data);
+        void set(unsigned int data);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        void set(long data);
+        void set(unsigned long data);
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        void set(float data);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        void set(double data);
+    #endif
+
+
+//-----------------------------------------------------------------------------
 // -- set for conduit::DataArray types ---
 //-----------------------------------------------------------------------------
     // signed integer array types via conduit::DataArray
@@ -370,6 +401,39 @@ public:
     
     void set_float64_array(const float64_array &data);
     void set(const float64_array &data);
+
+
+//-----------------------------------------------------------------------------
+//  set array gap methods for c-native types
+//-----------------------------------------------------------------------------
+    #ifndef CONDUIT_USE_CHAR
+        void set(const char_array &data);
+        void set(const unsigned_char_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        void set(const short_array &data);
+        void set(const unsigned_unsigned_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        void set(const int_array &data);
+        void set(const unsigned_int_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        void set(const long_array &data);
+        void set(const unsigned_long_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        void set(const float_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        void set(const double_array &data);
+    #endif
+
 
 //-----------------------------------------------------------------------------
 // -- set for string types -- 
@@ -430,6 +494,36 @@ public:
     void set_float64_vector(const std::vector<float64> &data);
     void set(const std::vector<float64> &data);
 
+//-----------------------------------------------------------------------------
+//  set vector gap methods for c-native types
+//-----------------------------------------------------------------------------
+    #ifndef CONDUIT_USE_CHAR
+        void set(const std::vector<char> &data);
+        void set(const std::vector<unsigned char> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        void set(const std::vector<short> &data);
+        void set(const std::vector<unsigned short> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        void set(const std::vector<int> &data);
+        void set(const std::vector<unsigned int> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        void set(const std::vector<long> &data);
+        void set(const std::vector<unsigned long> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        void set(const std::vector<float> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        void set(const std::vector<double> &data);
+    #endif
 
 
 //-----------------------------------------------------------------------------
@@ -592,6 +686,92 @@ public:
              index_t element_bytes = sizeof(conduit::float64),
              index_t endianness = Endianness::DEFAULT_ID);
 
+
+//-----------------------------------------------------------------------------
+//  set via pointer gap methods for c-native types
+//-----------------------------------------------------------------------------
+    #ifndef CONDUIT_USE_CHAR
+        void set(signed char *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_CHAR),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_CHAR),
+                 index_t endianness = Endianness::DEFAULT_ID);
+
+        void set(unsigned char *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR),
+                 index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        void set(short *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_SHORT),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_SHORT),
+                 index_t endianness = Endianness::DEFAULT_ID);
+
+        void set(unsigned short *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT),
+                 index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        void set(int *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_INT),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_INT),
+                 index_t endianness = Endianness::DEFAULT_ID);
+
+        void set(unsigned int *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_INT),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_INT),
+                 index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        void set(long *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_LONG),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG),
+                 index_t endianness = Endianness::DEFAULT_ID);
+
+        void set(unsigned long *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
+                 index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        void set(float *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_FLOAT),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_FLOAT),
+                 index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        void set(double *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_DOUBLE),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_DOUBLE),
+                 index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
 //-----------------------------------------------------------------------------
 ///@}
 //-----------------------------------------------------------------------------
@@ -703,31 +883,63 @@ public:
     void set_path(const std::string &path, float64 data);
 
 //-----------------------------------------------------------------------------
+//  set_path scalar gap methods for c-native types
+//-----------------------------------------------------------------------------
+    #ifndef CONDUIT_USE_CHAR
+        void set_path(const std::string &path, signed char data);
+        void set_path(const std::string &path, unsigned char data);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        void set_path(const std::string &path, short data);
+        void set_path(const std::string &path, unsigned short data);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        void set_path(const std::string &path, int data);
+        void set_path(const std::string &path, unsigned int data);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        void set_path(const std::string &path, long data);
+        void set_path(const std::string &path, unsigned long data);
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        void set_path(const std::string &path, float data);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        void set_path(const std::string &path, double data);
+    #endif
+
+
+//-----------------------------------------------------------------------------
 // -- set_path for conduit::DataArray types ---
 //-----------------------------------------------------------------------------
     //-------------------------------------------------------------------------
     // signed integer array types via conduit::DataArray
     //-------------------------------------------------------------------------
     void set_path_int8_array(const std::string &path,
-                          const int8_array  &data);
+                             const int8_array  &data);
 
     void set_path(const std::string &path, const int8_array  &data);
 
     //-------------------------------------------------------------------------
     void set_path_int16_array(const std::string &path,
-                           const int16_array &data);
+                              const int16_array &data);
 
     void set_path(const std::string &path, const int16_array &data);
 
     //-------------------------------------------------------------------------
     void set_path_int32_array(const std::string &path,
-                        const int32_array &data);
+                              const int32_array &data);
 
     void set_path(const std::string &path, const int32_array &data);
 
     //-------------------------------------------------------------------------
     void set_path_int64_array(const std::string &path,
-                           const int64_array &data);
+                              const int64_array &data);
 
     void set_path(const std::string &path, const int64_array &data);
 
@@ -735,25 +947,25 @@ public:
     // unsigned integer array types via conduit::DataArray
     //-------------------------------------------------------------------------
     void set_path_uint8_array(const std::string &path,
-                           const uint8_array  &data);
+                              const uint8_array  &data);
 
     void set_path(const std::string &path, const uint8_array  &data);
 
     //-------------------------------------------------------------------------
     void set_path_uint16_array(const std::string &path,
-                            const uint16_array &data);
+                               const uint16_array &data);
 
     void set_path(const std::string &path, const uint16_array &data);
 
     //-------------------------------------------------------------------------
     void set_path_uint32_array(const std::string &path,
-                            const uint32_array &data);
+                               const uint32_array &data);
 
     void set_path(const std::string &path, const uint32_array &data);
 
     //-------------------------------------------------------------------------
     void set_path_uint64_array(const std::string &path,
-                            const uint64_array &data);
+                               const uint64_array &data);
 
     void set_path(const std::string &path, const uint64_array &data);
 
@@ -761,15 +973,60 @@ public:
     // floating point array types via conduit::DataArray
     //-------------------------------------------------------------------------
     void set_path_float32_array(const std::string &path,
-                             const float32_array &data);
+                                const float32_array &data);
 
     void set_path(const std::string &path, const float32_array &data);
 
     //-------------------------------------------------------------------------
     void set_path_float64_array(const std::string &path,
-                             const float64_array &data);
+                                const float64_array &data);
 
     void set_path(const std::string &path, const float64_array &data);
+
+//-----------------------------------------------------------------------------
+//  set_path array gap methods for c-native types
+//-----------------------------------------------------------------------------
+    #ifndef CONDUIT_USE_CHAR
+        void set_path(const std::string &path,
+                      const char_array &data);
+
+        void set_path(const std::string &path,
+                      const unsigned_char_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        void set_path(const std::string &path,
+                      const short_array &data);
+                      
+        void set_path(const std::string &path,
+                      const unsigned_short_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        void set_path(const std::string &path,
+                      const int_array &data);
+                      
+        void set_path(const std::string &path,
+                      const unsigned_int_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        void set_path(const std::string &path,
+                      const long_array &data);
+                      
+        void set_path(const std::string &path,
+                      const unsigned_long_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        void set_path(const std::string &path,
+                      const float_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        void set_path(const std::string &path,
+                      const double_array &data);
+    #endif
 
 //-----------------------------------------------------------------------------
 // -- set_path for string types -- 
@@ -858,6 +1115,53 @@ public:
                                  const std::vector<float64> &data);
 
     void set_path(const std::string &path, const std::vector<float64> &data);
+
+
+//-----------------------------------------------------------------------------
+//  set_path vector gap methods for c-native types
+//-----------------------------------------------------------------------------
+    #ifndef CONDUIT_USE_CHAR
+        void set_path(const std::string &path, 
+                      const std::vector<char> &data);
+                 
+        void set_path(const std::string &path, 
+                      const std::vector<unsigned char> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        void set_path(const std::string &path, 
+                      const std::vector<short> &data);
+
+        void set_path(const std::string &path, 
+                      const std::vector<unsigned short> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        void set_path(const std::string &path, 
+                      const std::vector<int> &data);
+
+        void set_path(const std::string &path,
+                      const std::vector<unsigned int> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        void set_path(const std::string &path, 
+                      const std::vector<long> &data);
+
+        void set_path(const std::string &path, 
+                      const std::vector<unsigned long> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        void set_path(const std::string &path, 
+                      const std::vector<float> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        void set_path(const std::string &path, 
+                      const std::vector<double> &data);
+    #endif
+
 
 //-----------------------------------------------------------------------------
 // -- set_path via bitwidth style pointers (scalar and array types) -- 
@@ -1036,6 +1340,101 @@ public:
                   index_t element_bytes = sizeof(conduit::float64),
                   index_t endianness = Endianness::DEFAULT_ID);
 
+
+//-----------------------------------------------------------------------------
+//  set via pointer gap methods for c-native types
+//-----------------------------------------------------------------------------
+    #ifndef CONDUIT_USE_CHAR
+        void set_path(const std::string &path,
+                      signed char *data,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(CONDUIT_NATIVE_CHAR),
+                      index_t element_bytes = sizeof(CONDUIT_NATIVE_CHAR),
+                      index_t endianness = Endianness::DEFAULT_ID);
+
+        void set_path(const std::string &path,
+                      unsigned char *data,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR),
+                      index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR),
+                      index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        void set_path(const std::string &path,
+                      short *data,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(CONDUIT_NATIVE_SHORT),
+                      index_t element_bytes = sizeof(CONDUIT_NATIVE_SHORT),
+                      index_t endianness = Endianness::DEFAULT_ID);
+
+        void set_path(const std::string &path,
+                      unsigned short *data,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT),
+                      index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT),
+                      index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        void set_path(const std::string &path,
+                      int *data,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(CONDUIT_NATIVE_INT),
+                      index_t element_bytes = sizeof(CONDUIT_NATIVE_INT),
+                      index_t endianness = Endianness::DEFAULT_ID);
+
+        void set_path(const std::string &path,
+                      unsigned int *data,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_INT),
+                      index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_INT),
+                      index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        void set_path(const std::string &path,
+                      long *data,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(CONDUIT_NATIVE_LONG),
+                      index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG),
+                      index_t endianness = Endianness::DEFAULT_ID);
+
+        void set_path(const std::string &path,
+                      unsigned long *data,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
+                      index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
+                      index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        void set_path(const std::string &path,
+                      float *data,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(CONDUIT_NATIVE_FLOAT),
+                      index_t element_bytes = sizeof(CONDUIT_NATIVE_FLOAT),
+                      index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        void set_path(const std::string &path,
+                      double *data,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(CONDUIT_NATIVE_DOUBLE),
+                      index_t element_bytes = sizeof(CONDUIT_NATIVE_DOUBLE),
+                      index_t endianness = Endianness::DEFAULT_ID);
+    #endif
 
 //-----------------------------------------------------------------------------
 ///@}                      
@@ -1238,6 +1637,92 @@ public:
                       index_t endianness = Endianness::DEFAULT_ID);
 
 //-----------------------------------------------------------------------------
+//  set via pointer gap methods for c-native types
+//-----------------------------------------------------------------------------
+    #ifndef CONDUIT_USE_CHAR
+        void set_external(signed char *data,
+                          index_t num_elements = 1,
+                          index_t offset = 0,
+                          index_t stride = sizeof(CONDUIT_NATIVE_CHAR),
+                          index_t element_bytes = sizeof(CONDUIT_NATIVE_CHAR),
+                          index_t endianness = Endianness::DEFAULT_ID);
+
+        void set_external(unsigned char *data,
+                          index_t num_elements = 1,
+                          index_t offset = 0,
+                          index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR),
+                          index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR),
+                          index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        void set_external(short *data,
+                          index_t num_elements = 1,
+                          index_t offset = 0,
+                          index_t stride = sizeof(CONDUIT_NATIVE_SHORT),
+                          index_t element_bytes = sizeof(CONDUIT_NATIVE_SHORT),
+                          index_t endianness = Endianness::DEFAULT_ID);
+
+        void set_external(unsigned short *data,
+                          index_t num_elements = 1,
+                          index_t offset = 0,
+                          index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT),
+                          index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT),
+                          index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        void set_external(int *data,
+                          index_t num_elements = 1,
+                          index_t offset = 0,
+                          index_t stride = sizeof(CONDUIT_NATIVE_INT),
+                          index_t element_bytes = sizeof(CONDUIT_NATIVE_INT),
+                          index_t endianness = Endianness::DEFAULT_ID);
+
+        void set_external(unsigned int *data,
+                          index_t num_elements = 1,
+                          index_t offset = 0,
+                          index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_INT),
+                          index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_INT),
+                          index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        void set_external(long *data,
+                          index_t num_elements = 1,
+                          index_t offset = 0,
+                          index_t stride = sizeof(CONDUIT_NATIVE_LONG),
+                          index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG),
+                          index_t endianness = Endianness::DEFAULT_ID);
+
+        void set_external(unsigned long *data,
+                          index_t num_elements = 1,
+                          index_t offset = 0,
+                          index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
+                          index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
+                          index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        void set_external(float *data,
+                          index_t num_elements = 1,
+                          index_t offset = 0,
+                          index_t stride = sizeof(CONDUIT_NATIVE_FLOAT),
+                          index_t element_bytes = sizeof(CONDUIT_NATIVE_FLOAT),
+                          index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        void set_external(double *data,
+                          index_t num_elements = 1,
+                          index_t offset = 0,
+                          index_t stride = sizeof(CONDUIT_NATIVE_DOUBLE),
+                          index_t element_bytes = sizeof(CONDUIT_NATIVE_DOUBLE),
+                          index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+
+//-----------------------------------------------------------------------------
 // -- set_external for conduit::DataArray types ---
 //-----------------------------------------------------------------------------
 
@@ -1286,6 +1771,38 @@ public:
     //-------------------------------------------------------------------------
     void set_external_float64_array(const float64_array &data);
     void set_external(const float64_array &data);
+
+//-----------------------------------------------------------------------------
+//  set_external array gap methods for c-native types
+//-----------------------------------------------------------------------------
+    #ifndef CONDUIT_USE_CHAR
+        void set_external(const char_array &data);
+        void set_external(const unsigned_char_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        void set_external(const short_array &data);
+        void set_external(const unsigned_unsigned_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        void set_external(const int_array &data);
+        void set_external(const unsigned_int_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        void set_external(const long_array &data);
+        void set_external(const unsigned_long_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        void set_external(const float_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        void set_external(const double_array &data);
+    #endif
+
 
 //-----------------------------------------------------------------------------
 // -- set_external for string types ---
@@ -1341,6 +1858,37 @@ public:
     //-------------------------------------------------------------------------
     void set_external_float64_vector(std::vector<float64> &data);
     void set_external(std::vector<float64> &data);
+
+//-----------------------------------------------------------------------------
+//  set_external vector gap methods for c-native types
+//-----------------------------------------------------------------------------
+    #ifndef CONDUIT_USE_CHAR
+        void set_external(const std::vector<char> &data);
+        void set_external(const std::vector<unsigned char> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        void set_external(const std::vector<short> &data);
+        void set_external(const std::vector<unsigned short> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        void set_external(const std::vector<int> &data);
+        void set_external(const std::vector<unsigned int> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        void set_external(const std::vector<long> &data);
+        void set_external(const std::vector<unsigned long> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        void set_external(const std::vector<float> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        void set_external(const std::vector<double> &data);
+    #endif
 
 
 //-----------------------------------------------------------------------------
@@ -1573,6 +2121,101 @@ public:
                            index_t element_bytes = sizeof(conduit::float64),
                            index_t endianness = Endianness::DEFAULT_ID);
 
+//-----------------------------------------------------------------------------
+//  set via pointer gap methods for c-native types
+//-----------------------------------------------------------------------------
+    #ifndef CONDUIT_USE_CHAR
+        void set_path_external(const std::string &path,
+                               signed char *data,
+                               index_t num_elements = 1,
+                               index_t offset = 0,
+                               index_t stride = sizeof(CONDUIT_NATIVE_CHAR),
+                               index_t element_bytes = sizeof(CONDUIT_NATIVE_CHAR),
+                               index_t endianness = Endianness::DEFAULT_ID);
+
+        void set_path_external(const std::string &path,
+                               unsigned char *data,
+                               index_t num_elements = 1,
+                               index_t offset = 0,
+                               index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR),
+                               index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR),
+                               index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        void set_path_external(const std::string &path,
+                               short *data,
+                               index_t num_elements = 1,
+                               index_t offset = 0,
+                               index_t stride = sizeof(CONDUIT_NATIVE_SHORT),
+                               index_t element_bytes = sizeof(CONDUIT_NATIVE_SHORT),
+                               index_t endianness = Endianness::DEFAULT_ID);
+
+        void set_path_external(const std::string &path,
+                               unsigned short *data,
+                               index_t num_elements = 1,
+                               index_t offset = 0,
+                               index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT),
+                               index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT),
+                               index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        void set_path_external(const std::string &path,
+                               int *data,
+                               index_t num_elements = 1,
+                               index_t offset = 0,
+                               index_t stride = sizeof(CONDUIT_NATIVE_INT),
+                               index_t element_bytes = sizeof(CONDUIT_NATIVE_INT),
+                               index_t endianness = Endianness::DEFAULT_ID);
+
+        void set_path_external(const std::string &path,
+                               unsigned int *data,
+                               index_t num_elements = 1,
+                               index_t offset = 0,
+                               index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_INT),
+                               index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_INT),
+                               index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        void set_path_external(const std::string &path,
+                               long *data,
+                               index_t num_elements = 1,
+                               index_t offset = 0,
+                               index_t stride = sizeof(CONDUIT_NATIVE_LONG),
+                               index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG),
+                               index_t endianness = Endianness::DEFAULT_ID);
+
+        void set_path_external(const std::string &path,
+                               unsigned long *data,
+                               index_t num_elements = 1,
+                               index_t offset = 0,
+                               index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
+                               index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
+                               index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        void set_path_external(const std::string &path,
+                               float *data,
+                               index_t num_elements = 1,
+                               index_t offset = 0,
+                               index_t stride = sizeof(CONDUIT_NATIVE_FLOAT),
+                               index_t element_bytes = sizeof(CONDUIT_NATIVE_FLOAT),
+                               index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        void set_path_external(const std::string &path,
+                               double *data,
+                               index_t num_elements = 1,
+                               index_t offset = 0,
+                               index_t stride = sizeof(CONDUIT_NATIVE_DOUBLE),
+                               index_t element_bytes = sizeof(CONDUIT_NATIVE_DOUBLE),
+                               index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
 
 //-----------------------------------------------------------------------------
 // -- set_path_external for conduit::DataArray types ---
@@ -1653,6 +2296,53 @@ public:
 
     void set_path_external(const std::string &path,
                           const float64_array &data);
+
+//-----------------------------------------------------------------------------
+//  set_path_external array gap methods for c-native types
+//-----------------------------------------------------------------------------
+    #ifndef CONDUIT_USE_CHAR
+        void set_path_external(const std::string &path,
+                               const char_array &data);
+
+        void set_path_external(const std::string &path,
+                              const unsigned_char_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        void set_path_external(const std::string &path,
+                               const short_array &data);
+                      
+        void set_path_external(const std::string &path,
+                               const unsigned_short_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        void set_path_external(const std::string &path,
+                               const int_array &data);
+                      
+        void set_path_external(const std::string &path,
+                               const unsigned_int_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        void set_path_external(const std::string &path,
+                               const long_array &data);
+                      
+        void set_path_external(const std::string &path,
+                               const unsigned_long_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        void set_path_external(const std::string &path,
+                               const float_array &data);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        void set_path_external(const std::string &path,
+                               const double_array &data);
+    #endif
+
+
 
 //-----------------------------------------------------------------------------
 // -- set_external for string types ---
@@ -1740,6 +2430,52 @@ public:
                            std::vector<float64> &data);
 
 //-----------------------------------------------------------------------------
+//  set_path_external vector gap methods for c-native types
+//-----------------------------------------------------------------------------
+    #ifndef CONDUIT_USE_CHAR
+        void set_path_external(const std::string &path, 
+                               const std::vector<char> &data);
+                 
+        void set_path_external(const std::string &path, 
+                               const std::vector<unsigned char> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        void set_path_external(const std::string &path, 
+                               const std::vector<short> &data);
+
+        void set_path_external(const std::string &path, 
+                               const std::vector<unsigned short> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        void set_path_external(const std::string &path, 
+                               const std::vector<int> &data);
+
+        void set_path_external(const std::string &path,
+                               const std::vector<unsigned int> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        void set_path_external(const std::string &path, 
+                               const std::vector<long> &data);
+
+        void set_path_external(const std::string &path, 
+                               const std::vector<unsigned long> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        void set_path_external(const std::string &path, 
+                               const std::vector<float> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        void set_path_external(const std::string &path, 
+                               const std::vector<double> &data);
+    #endif
+
+
+//-----------------------------------------------------------------------------
 ///@}                      
 //-----------------------------------------------------------------------------
 //
@@ -1786,6 +2522,90 @@ public:
     Node &operator=(float32 data);    
     Node &operator=(float64 data);
 
+
+//-----------------------------------------------------------------------------
+// --  assignment c-native gap operators for scalar types ---
+//-----------------------------------------------------------------------------
+
+    #ifndef CONDUIT_USE_CHAR
+        Node &operator=(signed char data);
+        Node &operator=(unsigned char data);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        Node &operator=(short data);
+        Node &operator=(unsigned short data);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        Node &operator=(int data);
+        Node &operator=(unsigned int data);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        Node &operator=(long data);
+        Node &operator=(unsigned long data);
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        Node &operator=(float data);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        Node &operator=(double data);
+    #endif
+//-----------------------------------------------------------------------------
+// -- assignment operators for conduit::DataArray types ---
+//-----------------------------------------------------------------------------
+    // signed integer array types via conduit::DataArray
+    Node &operator=(const int8_array  &data);
+    Node &operator=(const int16_array &data);
+    Node &operator=(const int32_array &data);
+    Node &operator=(const int64_array &data);
+
+    // unsigned integer array ttypes via conduit::DataArray
+    Node &operator=(const uint8_array  &data);
+    Node &operator=(const uint16_array &data);
+    Node &operator=(const uint32_array &data);
+    Node &operator=(const uint64_array &data);
+
+    // floating point array types via conduit::DataArray
+    Node &operator=(const float32_array &data);
+    Node &operator=(const float64_array &data);
+
+//-----------------------------------------------------------------------------
+// --  assignment c-native gap operators for data array  types ---
+//-----------------------------------------------------------------------------
+
+#ifndef CONDUIT_USE_CHAR
+    Node &operator=(const char_array &data);
+    Node &operator=(const unsigned_char_array &data);
+#endif
+
+#ifndef CONDUIT_USE_SHORT
+    Node &operator=(const short_array &data);
+    Node &operator=(const unsigned_short_array &data); 
+#endif
+
+#ifndef CONDUIT_USE_INT
+    Node &operator=(const int_array &data);
+    Node &operator=(const unsigned_int_array &data); 
+#endif
+
+#ifndef CONDUIT_USE_LONG
+    Node &operator=(const long_array &data);
+    Node &operator=(const unsigned_long_array &data);
+#endif
+
+#ifndef CONDUIT_USE_FLOAT
+    Node &operator=(const float_array &data);
+#endif
+
+#ifndef CONDUIT_USE_DOUBLE
+    Node &operator=(const double_array &data);
+#endif
+
+
 //-----------------------------------------------------------------------------
 // -- assignment operators for std::vector types ---
 //-----------------------------------------------------------------------------
@@ -1807,23 +2627,37 @@ public:
     Node &operator=(const std::vector<float64> &data);
 
 //-----------------------------------------------------------------------------
-// -- assignment operators for conduit::DataArray types ---
+// --  assignment c-native gap operators for vector types ---
 //-----------------------------------------------------------------------------
-    // signed integer array types via conduit::DataArray
-    Node &operator=(const int8_array  &data);
-    Node &operator=(const int16_array &data);
-    Node &operator=(const int32_array &data);
-    Node &operator=(const int64_array &data);
 
-    // unsigned integer array ttypes via conduit::DataArray
-    Node &operator=(const uint8_array  &data);
-    Node &operator=(const uint16_array &data);
-    Node &operator=(const uint32_array &data);
-    Node &operator=(const uint64_array &data);
+#ifndef CONDUIT_USE_CHAR
+    Node &operator=(const std::vector<char> &data);
+    Node &operator=(const std::vector<unsigned char> &data);
+#endif
 
-    // floating point array types via conduit::DataArray
-    Node &operator=(const float32_array &data);
-    Node &operator=(const float64_array &data);
+#ifndef CONDUIT_USE_SHORT
+    Node &operator=(const std::vector<short> &data);
+    Node &operator=(const std::vector<unsigned short> &data);
+#endif
+
+#ifndef CONDUIT_USE_INT
+    Node &operator=(const std::vector<int> &data);
+    Node &operator=(const std::vector<unsigned int> &data); 
+#endif
+
+#ifndef CONDUIT_USE_LONG
+    Node &operator=(const std::vector<long> &data);
+    Node &operator=(const std::vector<unsigned long> &data); 
+#endif
+
+#ifndef CONDUIT_USE_FLOAT
+    Node &operator=(const std::vector<float> &data);
+#endif
+
+#ifndef CONDUIT_USE_DOUBLE
+    Node &operator=(const std::vector<double> &data);
+#endif
+
 
 //-----------------------------------------------------------------------------
 // -- assignment operators for string types -- 
@@ -1994,7 +2828,7 @@ public:
 // we can't support these methods directly in conduit::Node  because doing so
 // undermines our operator=() overloads. 
 //-----------------------------------------------------------------------------
-    class Value
+    class CONDUIT_API Value
     {
         friend class Node;
         public:
@@ -2105,7 +2939,7 @@ public:
 // we can't support these methods directly in conduit::Node  because doing so
 // undermines our operator=() overloads. 
 //-----------------------------------------------------------------------------
-    class ConstValue
+    class CONDUIT_API ConstValue
     {
         friend class Node;
         public:
@@ -2189,7 +3023,7 @@ public:
             operator const unsigned_int_array()   const;
             operator const unsigned_long_array()  const;
             #ifdef CONDUIT_USE_LONG_LONG
-                operator unsigned_long_long_array() const;
+                operator const unsigned_long_long_array() const;
             #endif
 
 
@@ -2750,13 +3584,11 @@ private:
     // signed integers via pointers
     #ifdef CONDUIT_USE_LONG_LONG
     long long       *as_long_long_ptr();
-    const long long *as_long_long_ptr() const;
     #endif
 
     // unsigned integers via pointers
     #ifdef CONDUIT_USE_LONG_LONG
     unsigned long long        *as_unsigned_long_long_ptr();
-    const unsigned long long  *as_unsigned_long_long_ptr() const;
     #endif
 
 
@@ -3026,8 +3858,16 @@ private:
     bool      m_alloced;
     // flag that indicates if m_data is memory-mapped
     bool      m_mmaped;
-    // memory-map file descriptor
-    int       m_mmap_fd;
+    
+    // private class that implements a cross platform memory map interface
+    class MMap;
+
+    // memory-map helper instance
+    // This is only allocated if a memory map is active (m_mmaped is true)
+    // Note: m_mmaped is used for bookkeeping during cases were we are
+    // initializing nodes using memory maps, so it is still needed apart from 
+    // simply knowing if this pointer is valid.
+    MMap     *m_mmap;
 };
 //-----------------------------------------------------------------------------
 // -- end conduit::Node --

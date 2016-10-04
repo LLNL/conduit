@@ -155,5 +155,9 @@ TEST(conduit_json_sanitize, simple_quoteless_schema)
     EXPECT_EQ(n5["top"][2].as_uint32(),d_val);
     EXPECT_EQ(n5["other"].as_float64(),e_val);
 
+    delete [] data;
+    delete [] data2;
+    delete [] data3;
+    delete [] data4;
 }
 

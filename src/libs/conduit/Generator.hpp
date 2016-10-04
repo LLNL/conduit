@@ -94,11 +94,8 @@ public:
 //-----------------------------------------------------------------------------
 // Generator Construction and Destruction
 //-----------------------------------------------------------------------------
-    /// create a generator from json
-    Generator(const std::string &json_schema);
-    /// create a generator from json, which can be applied to a data pointer
-    Generator(const std::string &json_schema,
-              void *data);
+    Generator();
+
     /// create a generator from json, using a given protocol name, which can 
     /// optionally be applied to a data pointer
     ///
@@ -108,8 +105,18 @@ public:
     ///   "conduit_base64_json"
     ///
     Generator(const std::string &json_schema,
-              const std::string &protocol,
+              const std::string &protocol = std::string("conduit_json"),
               void *data = NULL);
+
+
+    void set_json_schema(const std::string &json_schema);
+    void set_protocol(const std::string &protocol);
+    void set_data_ptr(void *);
+
+    const std::string &json_schema() const;
+    const std::string &protocol()   const;
+    void *data_ptr() const;
+
 
 //-----------------------------------------------------------------------------
 // JSON Parsing interface

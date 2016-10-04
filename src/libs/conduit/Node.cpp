@@ -72,6 +72,8 @@
 // 
 #include <sys/mman.h>
 #include <unistd.h>
+#else
+#include "Windows.h"
 #endif
 
 //-----------------------------------------------------------------------------
@@ -190,7 +192,7 @@ Node::Node(const std::string &json_schema,
            bool external)
 {
     init_defaults(); 
-    Generator g(json_schema,data);
+    Generator g(json_schema,"conduit_json",data);
 
     if(external)
     {
@@ -217,7 +219,7 @@ Node::Node(const Schema &schema,
 {
     init_defaults();
     std::string json_schema =schema.to_json(); 
-    Generator g(json_schema,data);
+    Generator g(json_schema,"conduit_json",data);
     if(external)
     {
         g.walk_external(*this);
@@ -258,7 +260,6 @@ Node::Node(const DataType &dtype,
 //
 //-----------------------------------------------------------------------------
 
-
 //---------------------------------------------------------------------------//
 void
 Node::generate(const Generator &gen)
@@ -275,33 +276,6 @@ Node::generate_external(const Generator &gen)
 
 //---------------------------------------------------------------------------//
 void
-Node::generate(const std::string &json_schema)
-{
-    Generator g(json_schema);
-    generate(g);
-}
-
-//---------------------------------------------------------------------------//
-void
-Node::generate(const std::string &json_schema,
-               const std::string &protocol)
-               
-{
-    Generator g(json_schema,protocol);
-    generate(g);
-}   
-
-//---------------------------------------------------------------------------//
-void
-Node::generate(const std::string &json_schema,
-               void *data)
-{
-    Generator g(json_schema,data);
-    generate(g);
-}
-    
-//---------------------------------------------------------------------------//
-void
 Node::generate(const std::string &json_schema,
                const std::string &protocol,
                void *data)
@@ -309,15 +283,6 @@ Node::generate(const std::string &json_schema,
 {
     Generator g(json_schema,protocol,data);
     generate(g);
-}
-
-//---------------------------------------------------------------------------//
-void
-Node::generate_external(const std::string &json_schema,
-                        void *data)
-{
-    Generator g(json_schema,data);
-    generate_external(g);
 }
     
 //---------------------------------------------------------------------------//
@@ -788,6 +753,113 @@ Node::set(float64 data)
     set_float64(data);
 }
 
+
+//-----------------------------------------------------------------------------
+// set gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set(signed char data)
+{
+    set((CONDUIT_NATIVE_CHAR)data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(unsigned char data)
+{
+    set((CONDUIT_NATIVE_UNSIGNED_CHAR)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set(short data)
+{
+    set((CONDUIT_NATIVE_SHORT)data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(unsigned short data)
+{
+    set((CONDUIT_NATIVE_UNSIGNED_SHORT)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set(int data)
+{
+    set((CONDUIT_NATIVE_INT)data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(unsigned int data)
+{
+    set((CONDUIT_NATIVE_UNSIGNED_INT)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set(long data)
+{
+    set((CONDUIT_NATIVE_LONG)data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(unsigned long data)
+{
+    set((CONDUIT_NATIVE_UNSIGNED_LONG)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set(float data)
+{
+    set((CONDUIT_NATIVE_FLOAT)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set(double data)
+{
+    set((CONDUIT_NATIVE_DOUBLE)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
+
 //-----------------------------------------------------------------------------
 // -- set for conduit::DataArray types ---
 //-----------------------------------------------------------------------------
@@ -954,6 +1026,122 @@ Node::set(const float64_array &data)
     set_float64_array(data);
 }
 
+
+//-----------------------------------------------------------------------------
+// set array gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set(const char_array &data)
+{
+    init(DataType::c_char(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const unsigned_char_array &data)
+{
+    init(DataType::c_unsigned_char(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set(const short_array &data)
+{
+    init(DataType::c_short(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const unsigned_short_array&data)
+{
+    init(DataType::c_unsigned_short(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set(const int_array &data)
+{
+    init(DataType::c_int(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const unsigned_int_array &data)
+{
+    init(DataType::c_unsigned_int(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set(const long_array &data)
+{
+    init(DataType::c_long(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const unsigned_long_array &data)
+{
+    init(DataType::c_unsigned_long(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set(const float_array &data)
+{
+    init(DataType::c_float(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set(const double_array &data)
+{
+    init(DataType::c_double(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
 //-----------------------------------------------------------------------------
 // -- set for string types -- 
 //-----------------------------------------------------------------------------
@@ -1016,13 +1204,7 @@ Node::set_char8_str(const char *data)
 void 
 Node::set_int8_vector(const std::vector<int8> &data)
 {
-    DataType vec_t(DataType::INT8_ID,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(int8),
-                   sizeof(int8),
-                   Endianness::DEFAULT_ID);
-    init(vec_t);
+    init(DataType::int8(data.size()));
     memcpy(m_data,&data[0],sizeof(int8)*data.size());
 }
 
@@ -1037,13 +1219,7 @@ Node::set(const std::vector<int8> &data)
 void 
 Node::set_int16_vector(const std::vector<int16> &data)
 {
-    DataType vec_t(DataType::INT16_ID,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(int16),
-                   sizeof(int16),
-                   Endianness::DEFAULT_ID);
-    init(vec_t);
+    init(DataType::int16(data.size()));
     memcpy(m_data,&data[0],sizeof(int16)*data.size());
 }
 
@@ -1058,13 +1234,7 @@ Node::set(const std::vector<int16> &data)
 void 
 Node::set_int32_vector(const std::vector<int32> &data)
 {
-    DataType vec_t(DataType::INT32_ID,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(int32),
-                   sizeof(int32),
-                   Endianness::DEFAULT_ID);
-    init(vec_t);
+    init(DataType::int32(data.size()));
     memcpy(m_data,&data[0],sizeof(int32)*data.size());
 }
 
@@ -1079,13 +1249,7 @@ Node::set(const std::vector<int32> &data)
 void 
 Node::set_int64_vector(const std::vector<int64> &data)
 {
-    DataType vec_t(DataType::INT64_ID,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(int64),
-                   sizeof(int64),
-                   Endianness::DEFAULT_ID);
-    init(vec_t);
+    init(DataType::int64(data.size()));
     memcpy(m_data,&data[0],sizeof(int64)*data.size());
 }
 
@@ -1104,13 +1268,7 @@ Node::set(const std::vector<int64> &data)
 void 
 Node::set_uint8_vector(const std::vector<uint8> &data)
 {
-    DataType vec_t(DataType::UINT8_ID,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(uint8),
-                   sizeof(uint8),
-                   Endianness::DEFAULT_ID);
-    init(vec_t);
+    init(DataType::uint8(data.size()));
     memcpy(m_data,&data[0],sizeof(uint8)*data.size());
 }
 
@@ -1125,13 +1283,7 @@ Node::set(const std::vector<uint8> &data)
 void 
 Node::set_uint16_vector(const std::vector<uint16> &data)
 {
-    DataType vec_t(DataType::UINT16_ID,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(uint16),
-                   sizeof(uint16),
-                   Endianness::DEFAULT_ID);
-    init(vec_t);
+    init(DataType::uint16(data.size()));
     memcpy(m_data,&data[0],sizeof(uint16)*data.size());
 }
 
@@ -1146,13 +1298,7 @@ Node::set(const std::vector<uint16> &data)
 void 
 Node::set_uint32_vector(const std::vector<uint32> &data)
 {
-    DataType vec_t(DataType::UINT32_ID,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(uint32),
-                   sizeof(uint32),
-                   Endianness::DEFAULT_ID);
-    init(vec_t);
+    init(DataType::uint32(data.size()));
     memcpy(m_data,&data[0],sizeof(uint32)*data.size());
 }
 
@@ -1167,13 +1313,7 @@ Node::set(const std::vector<uint32> &data)
 void 
 Node::set_uint64_vector(const std::vector<uint64> &data)
 {
-    DataType vec_t(DataType::UINT64_ID,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(uint64),
-                   sizeof(uint64),
-                   Endianness::DEFAULT_ID);
-    init(vec_t);
+    init(DataType::uint64(data.size()));
     memcpy(m_data,&data[0],sizeof(uint64)*data.size());
 }
 
@@ -1192,13 +1332,7 @@ Node::set(const std::vector<uint64> &data)
 void 
 Node::set_float32_vector(const std::vector<float32> &data)
 {
-    DataType vec_t(DataType::FLOAT32_ID,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(float32),
-                   sizeof(float32),
-                   Endianness::DEFAULT_ID);
-    init(vec_t);
+    init(DataType::float32(data.size()));
     memcpy(m_data,&data[0],sizeof(float32)*data.size());
 }
 
@@ -1214,13 +1348,7 @@ Node::set(const std::vector<float32> &data)
 void 
 Node::set_float64_vector(const std::vector<float64> &data)
 {
-    DataType vec_t(DataType::FLOAT64_ID,
-                   (index_t)data.size(),
-                   0,
-                   sizeof(float64),
-                   sizeof(float64),
-                   Endianness::DEFAULT_ID);
-    init(vec_t);
+    init(DataType::float64(data.size()));
     memcpy(m_data,&data[0],sizeof(float64)*data.size());
 }
 
@@ -1230,6 +1358,123 @@ Node::set(const std::vector<float64> &data)
 {
     set_float64_vector(data);
 }
+
+
+//-----------------------------------------------------------------------------
+// set vector gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::vector<char> &data)
+{
+    init(DataType::c_char(data.size()));
+    memcpy(m_data,&data[0],sizeof(char)*data.size());
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::vector<unsigned char> &data)
+{
+    init(DataType::c_unsigned_char(data.size()));
+    memcpy(m_data,&data[0],sizeof(char)*data.size());
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::vector<short> &data)
+{
+    init(DataType::c_short(data.size()));
+    memcpy(m_data,&data[0],sizeof(char)*data.size());
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::vector<unsigned short> &data)
+{
+    init(DataType::c_unsigned_short(data.size()));
+    memcpy(m_data,&data[0],sizeof(char)*data.size());
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::vector<int> &data)
+{
+    init(DataType::c_int(data.size()));
+    memcpy(m_data,&data[0],sizeof(char)*data.size());
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::vector<unsigned int> &data)
+{
+    init(DataType::c_unsigned_int(data.size()));
+    memcpy(m_data,&data[0],sizeof(char)*data.size());
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::vector<long> &data)
+{
+    init(DataType::c_long(data.size()));
+    memcpy(m_data,&data[0],sizeof(char)*data.size());
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::vector<unsigned long> &data)
+{
+    init(DataType::c_unsigned_long(data.size()));
+    memcpy(m_data,&data[0],sizeof(char)*data.size());
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::vector<float> &data)
+{
+    init(DataType::c_float(data.size()));
+    memcpy(m_data,&data[0],sizeof(char)*data.size());
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::vector<double> &data)
+{
+    init(DataType::c_double(data.size()));
+    memcpy(m_data,&data[0],sizeof(char)*data.size());
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
 
 
 //-----------------------------------------------------------------------------
@@ -1250,10 +1495,10 @@ Node::set_int8_ptr(int8  *data,
                    index_t endianness)
 {
     set(int8_array(data,DataType::int8(num_elements,
-                                               offset,
-                                               stride,
-                                               element_bytes,
-                                               endianness)));
+                                       offset,
+                                       stride,
+                                       element_bytes,
+                                       endianness)));
 }
 
 //---------------------------------------------------------------------------//
@@ -1528,6 +1773,202 @@ Node::set(float64 *data,
 {
     set_float64_ptr(data,num_elements,offset,stride,element_bytes,endianness);
 }
+
+
+//-----------------------------------------------------------------------------
+// set pointer gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set(signed char *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
+{
+    set(char_array(data,DataType::c_char(num_elements,
+                                         offset,
+                                         stride,
+                                         element_bytes,
+                                         endianness)));
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(unsigned char *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
+{
+    set(unsigned_char_array(data,DataType::c_unsigned_char(num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness)));
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set(short *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
+{
+    set(short_array(data,DataType::c_short(num_elements,
+                                           offset,
+                                           stride,
+                                           element_bytes,
+                                           endianness)));
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(unsigned short *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
+{
+    set(unsigned_short_array(data,DataType::c_unsigned_short(num_elements,
+                                                             offset,
+                                                             stride,
+                                                             element_bytes,
+                                                             endianness)));
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set(int *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
+{
+    set(int_array(data,DataType::c_int(num_elements,
+                                       offset,
+                                       stride,
+                                       element_bytes,
+                                       endianness)));
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(unsigned int *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
+{
+    set(unsigned_int_array(data,DataType::c_unsigned_int(num_elements,
+                                                         offset,
+                                                         stride,
+                                                         element_bytes,
+                                                         endianness)));
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set(long *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
+{
+    set(long_array(data,DataType::c_long(num_elements,
+                                         offset,
+                                         stride,
+                                         element_bytes,
+                                         endianness)));
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(unsigned long *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
+{
+    set(unsigned_long_array(data,DataType::c_unsigned_long(num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness)));
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set(float *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
+{
+    set(float_array(data,DataType::c_float(num_elements,
+                                           offset,
+                                           stride,
+                                           element_bytes,
+                                           endianness)));
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set(double *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
+{
+    set(double_array(data,DataType::c_double(num_elements,
+                                             offset,
+                                             stride,
+                                             element_bytes,
+                                             endianness)));
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 //
@@ -1810,6 +2251,112 @@ Node::set_path(const std::string &path,
 }
 
 //-----------------------------------------------------------------------------
+// set_path gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, signed char data)
+{
+    set_path(path,(CONDUIT_NATIVE_CHAR)data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, unsigned char data)
+{
+    set_path(path,(CONDUIT_NATIVE_UNSIGNED_CHAR)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, short data)
+{
+    set_path(path,(CONDUIT_NATIVE_SHORT)data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, unsigned short data)
+{
+    set_path(path,(CONDUIT_NATIVE_UNSIGNED_SHORT)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, int data)
+{
+    set_path(path,(CONDUIT_NATIVE_INT)data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, unsigned int data)
+{
+    set_path(path,(CONDUIT_NATIVE_UNSIGNED_INT)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, long data)
+{
+    set_path(path,(CONDUIT_NATIVE_LONG)data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, unsigned long data)
+{
+    set_path(path,(CONDUIT_NATIVE_UNSIGNED_LONG)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, float data)
+{
+    set_path(path,(CONDUIT_NATIVE_FLOAT)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, double data)
+{
+    set_path(path, (CONDUIT_NATIVE_DOUBLE)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
 // -- set_path for conduit::DataArray types ---
 //-----------------------------------------------------------------------------
 
@@ -1984,6 +2531,123 @@ Node::set_path(const std::string &path,
 {
     set_path_float64_array(path,data);    
 }
+
+//-----------------------------------------------------------------------------
+// set_path array gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const char_array &data)
+{
+    fetch(path).set(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const unsigned_char_array &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const short_array &data)
+{
+    fetch(path).set(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const unsigned_short_array &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const int_array &data)
+{
+    fetch(path).set(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const unsigned_int_array &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const long_array &data)
+{
+    fetch(path).set(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const unsigned_long_array &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const float_array &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const double_array &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
+
 
 //-----------------------------------------------------------------------------
 // -- set_path for string types -- 
@@ -2188,6 +2852,122 @@ Node::set_path(const std::string &path,const std::vector<float64> &data)
 {
     set_path_float64_vector(path,data);
 }
+
+
+//-----------------------------------------------------------------------------
+// set_path vector gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<char> &data)
+{
+    fetch(path).set(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<unsigned char> &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<short> &data)
+{
+    fetch(path).set(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<unsigned short> &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<int> &data)
+{
+    fetch(path).set(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<unsigned int> &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<long> &data)
+{
+    fetch(path).set(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<unsigned long> &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<float> &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<double> &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
 
 
 //-----------------------------------------------------------------------------
@@ -2572,6 +3352,222 @@ Node::set_path(const std::string &path,
                          element_bytes,
                          endianness);
 }
+
+//-----------------------------------------------------------------------------
+// set_path pointer gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               signed char *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               unsigned char *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               short *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               unsigned short *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               int *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               unsigned int *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               long *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               unsigned long *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               float *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               double *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 //
@@ -3014,6 +4010,222 @@ Node::set_external(float64 *data,
 }
 
 //-----------------------------------------------------------------------------
+// set pointer gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set_external(signed char *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_char(num_elements,
+                                   offset,
+                                   stride,
+                                   element_bytes,
+                                   endianness));
+    m_data  = data;
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(unsigned char *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_unsigned_char(num_elements,
+                                            offset,
+                                            stride,
+                                            element_bytes,
+                                            endianness));
+    m_data  = data;
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set_external(short *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_short(num_elements,
+                                    offset,
+                                    stride,
+                                    element_bytes,
+                                    endianness));
+    m_data  = data;
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(unsigned short *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_unsigned_short(num_elements,
+                                             offset,
+                                             stride,
+                                             element_bytes,
+                                             endianness));
+    m_data  = data;
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set_external(int *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_int(num_elements,
+                                  offset,
+                                  stride,
+                                  element_bytes,
+                                  endianness));
+    m_data  = data;
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(unsigned int *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_unsigned_int(num_elements,
+                                           offset,
+                                           stride,
+                                           element_bytes,
+                                           endianness));
+    m_data  = data;
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set_external(long *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_long(num_elements,
+                                   offset,
+                                   stride,
+                                   element_bytes,
+                                   endianness));
+    m_data  = data;
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(unsigned long *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_unsigned_long(num_elements,
+                                            offset,
+                                            stride,
+                                            element_bytes,
+                                            endianness));
+    m_data  = data;
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set_external(float *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_float(num_elements,
+                                    offset,
+                                    stride,
+                                    element_bytes,
+                                    endianness));
+    m_data  = data;
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set_external(double *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_double(num_elements,
+                                     offset,
+                                     stride,
+                                     element_bytes,
+                                     endianness));
+    m_data  = data;
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
 // -- set_external for conduit::DataArray types ---
 //-----------------------------------------------------------------------------
 
@@ -3209,6 +4421,133 @@ Node::set_external_char8_str(char *data)
     m_data  = data;
 }
 
+
+//-----------------------------------------------------------------------------
+// set_external array gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const char_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const unsigned_char_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const short_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const unsigned_short_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const int_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const unsigned_int_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const long_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const unsigned_long_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const float_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const double_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
+
 //-----------------------------------------------------------------------------
 // -- set_external for std::vector types ---
 //-----------------------------------------------------------------------------
@@ -3222,8 +4561,10 @@ void
 Node::set_external_int8_vector(std::vector<int8> &data)
 {
     release();
-    m_schema->set(DataType::int8((index_t)data.size()));
-    m_data  = &data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::int8(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //---------------------------------------------------------------------------//
@@ -3238,8 +4579,10 @@ void
 Node::set_external_int16_vector(std::vector<int16> &data)
 {
     release();
-    m_schema->set(DataType::int16((index_t)data.size()));
-    m_data  = &data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::int16(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //---------------------------------------------------------------------------//
@@ -3254,8 +4597,10 @@ void
 Node::set_external_int32_vector(std::vector<int32> &data)
 {
     release();
-    m_schema->set(DataType::int32((index_t)data.size()));
-    m_data  = &data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::int32(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //---------------------------------------------------------------------------//
@@ -3270,8 +4615,10 @@ void
 Node::set_external_int64_vector(std::vector<int64> &data)
 {
     release();
-    m_schema->set(DataType::int64((index_t)data.size()));
-    m_data  = &data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::int64(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //---------------------------------------------------------------------------//
@@ -3290,8 +4637,10 @@ void
 Node::set_external_uint8_vector(std::vector<uint8> &data)
 {
     release();
-    m_schema->set(DataType::uint8((index_t)data.size()));
-    m_data  = &data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::uint8(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //---------------------------------------------------------------------------//
@@ -3306,8 +4655,10 @@ void
 Node::set_external_uint16_vector(std::vector<uint16> &data)
 {
     release();
-    m_schema->set(DataType::uint16((index_t)data.size()));
-    m_data  = &data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::uint16(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //---------------------------------------------------------------------------//
@@ -3322,8 +4673,10 @@ void
 Node::set_external_uint32_vector(std::vector<uint32> &data)
 {
     release();
-    m_schema->set(DataType::uint32((index_t)data.size()));
-    m_data  = &data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::uint32(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //---------------------------------------------------------------------------//
@@ -3338,8 +4691,10 @@ void
 Node::set_external_uint64_vector(std::vector<uint64> &data)
 {
     release();
-    m_schema->set(DataType::uint64((index_t)data.size()));
-    m_data  = &data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::uint64(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //---------------------------------------------------------------------------//
@@ -3358,8 +4713,10 @@ void
 Node::set_external_float32_vector(std::vector<float32> &data)
 {
     release();
-    m_schema->set(DataType::float32((index_t)data.size()));
-    m_data  = &data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::float32(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //---------------------------------------------------------------------------//
@@ -3374,8 +4731,10 @@ void
 Node::set_external_float64_vector(std::vector<float64> &data)
 {
     release();
-    m_schema->set(DataType::float64((index_t)data.size()));
-    m_data  = &data[0];
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::float64(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
 }
 
 //---------------------------------------------------------------------------//
@@ -3384,6 +4743,152 @@ Node::set_external(std::vector<float64> &data)
 {
     set_external_float64_vector(data);
 }
+
+//-----------------------------------------------------------------------------
+// set_external vector gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<char> &data)
+{
+    release();
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_char(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<unsigned char> &data)
+{
+    release();
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_unsigned_char(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<short> &data)
+{
+    release();
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_short(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<unsigned short> &data)
+{
+    release();
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_unsigned_short(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<int> &data)
+{
+    release();
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_int(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<unsigned int> &data)
+{
+    release();
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_unsigned_int(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<long> &data)
+{
+    release();
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_long(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<unsigned long> &data)
+{
+    release();
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_unsigned_long(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<float> &data)
+{
+    release();
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_float(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<double> &data)
+{
+    release();
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_double(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 //
@@ -3847,6 +5352,223 @@ Node::set_path_external(const std::string &path,
 }
 
 //-----------------------------------------------------------------------------
+// set_path_external pointer gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        signed char *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        unsigned char *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        short *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        unsigned short *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        int *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        unsigned int *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        long *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        unsigned long *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        float *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        double *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
+
+
+//-----------------------------------------------------------------------------
 // -- set_path_external for conduit::DataArray types ---
 //-----------------------------------------------------------------------------
 
@@ -4021,6 +5743,123 @@ Node::set_path_external(const std::string &path,
 {
     set_path_external_float64_array(path,data);
 }
+
+
+//-----------------------------------------------------------------------------
+// set_path_external array gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const char_array &data)
+{
+    fetch(path).set_external(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const unsigned_char_array &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const short_array &data)
+{
+    fetch(path).set_external(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const unsigned_short_array &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const int_array &data)
+{
+    fetch(path).set_external(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const unsigned_int_array &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const long_array &data)
+{
+    fetch(path).set_external(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const unsigned_long_array &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const float_array &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const double_array &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
 
 
 //-----------------------------------------------------------------------------
@@ -4212,6 +6051,124 @@ Node::set_path_external(const std::string &path,
     set_path_external_float64_vector(path,data);
 }
 
+
+//-----------------------------------------------------------------------------
+// set_path_external vector gap methods for c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<char> &data)
+{
+    fetch(path).set_external(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<unsigned char> &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<short> &data)
+{
+    fetch(path).set_external(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<unsigned short> &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<int> &data)
+{
+    fetch(path).set_external(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<unsigned int> &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<long> &data)
+{
+    fetch(path).set_external(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<unsigned long> &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<float> &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<double> &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
+
+
 //-----------------------------------------------------------------------------
 //
 // -- end definition of Node set_path_external methods --
@@ -4353,6 +6310,353 @@ Node::operator=(float64 data)
 }
 
 //-----------------------------------------------------------------------------
+// assignment operator gap methods for scalar c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(signed char data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(unsigned char data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(short data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(unsigned short data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(int data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(unsigned int data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(long data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(unsigned long data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(float data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(double data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- assignment operators for string types -- 
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+Node &
+Node::operator=(const std::string &data)
+{
+    set(data);
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+Node &
+Node::operator=(const char *data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+// -- assignment operators for conduit::DataArray types ---
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// signed integer array types via conduit::DataArray
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+Node &
+Node::operator=(const int8_array &data)
+{
+    set(data);
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+Node &
+Node::operator=(const int16_array &data)
+{
+    set(data);
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+Node &
+Node::operator=(const int32_array &data)
+{
+    set(data);
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+Node &
+Node::operator=(const int64_array &data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+// unsigned integer array types via conduit::DataArray
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+Node &
+Node::operator=(const uint8_array &data)
+{
+    set(data);
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+Node &
+Node::operator=(const uint16_array &data)
+{
+    set(data);
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+Node &
+Node::operator=(const uint32_array &data)
+{
+    set(data);
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+Node &
+Node::operator=(const uint64_array &data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+// floating point array types via conduit::DataArray
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+Node &
+Node::operator=(const float32_array &data)
+{
+    set(data);
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+Node &
+Node::operator=(const float64_array &data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+// assignment operator gap methods for data array c-native types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const char_array &data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const unsigned_char_array &data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const short_array &data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const unsigned_short_array &data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+ //-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+ //-----------------------------------------------------------------------------
+Node &
+Node::operator=(const int_array &data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const unsigned_int_array &data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const long_array &data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const unsigned_long_array &data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const float_array &data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const double_array &data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 // -- assignment operators for std::vector types ---
 //-----------------------------------------------------------------------------
 
@@ -4449,121 +6753,119 @@ Node::operator=(const std::vector<float64> &data)
 }
 
 //-----------------------------------------------------------------------------
-// -- assignment operators for conduit::DataArray types ---
+// assignment operator gap methods for vector c-native types
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// signed integer array types via conduit::DataArray
+#ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
-
-
-//---------------------------------------------------------------------------//
 Node &
-Node::operator=(const int8_array &data)
-{
-    set(data);
-    return *this;
-}
-
-//---------------------------------------------------------------------------//
-Node &
-Node::operator=(const int16_array &data)
-{
-    set(data);
-    return *this;
-}
-
-//---------------------------------------------------------------------------//
-Node &
-Node::operator=(const int32_array &data)
-{
-    set(data);
-    return *this;
-}
-
-//---------------------------------------------------------------------------//
-Node &
-Node::operator=(const int64_array &data)
+Node::operator=(const std::vector<char> &data)
 {
     set(data);
     return *this;
 }
 
 //-----------------------------------------------------------------------------
-// unsigned integer array types via conduit::DataArray
+Node &
+Node::operator=(const std::vector<unsigned char> &data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
 //-----------------------------------------------------------------------------
 
-//---------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
 Node &
-Node::operator=(const uint8_array &data)
-{
-    set(data);
-    return *this;
-}
-
-//---------------------------------------------------------------------------//
-Node &
-Node::operator=(const uint16_array &data)
-{
-    set(data);
-    return *this;
-}
-
-//---------------------------------------------------------------------------//
-Node &
-Node::operator=(const uint32_array &data)
-{
-    set(data);
-    return *this;
-}
-
-//---------------------------------------------------------------------------//
-Node &
-Node::operator=(const uint64_array &data)
+Node::operator=(const std::vector<short> &data)
 {
     set(data);
     return *this;
 }
 
 //-----------------------------------------------------------------------------
-// floating point array types via conduit::DataArray
+Node &
+Node::operator=(const std::vector<unsigned short> &data)
+{
+    set(data);
+    return *this;
+}//-----------------------------------------------------------------------------
+#endif // end use short check
 //-----------------------------------------------------------------------------
 
-//---------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
 Node &
-Node::operator=(const float32_array &data)
-{
-    set(data);
-    return *this;
-}
-
-//---------------------------------------------------------------------------//
-Node &
-Node::operator=(const float64_array &data)
+Node::operator=(const std::vector<int> &data)
 {
     set(data);
     return *this;
 }
 
 //-----------------------------------------------------------------------------
-// -- assignment operators for string types -- 
+Node &
+Node::operator=(const std::vector<unsigned int> &data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
 //-----------------------------------------------------------------------------
 
-//---------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
 Node &
-Node::operator=(const std::string &data)
+Node::operator=(const std::vector<long> &data)
 {
     set(data);
     return *this;
 }
 
-//---------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------
 Node &
-Node::operator=(const char *data)
+Node::operator=(const std::vector<unsigned long> &data)
 {
     set(data);
     return *this;
 }
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::vector<float> &data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::vector<double> &data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 //
@@ -4594,7 +6896,7 @@ void
 Node::serialize(const std::string &stream_path) const
 {
     std::ofstream ofs;
-    ofs.open(stream_path.c_str());
+    ofs.open(stream_path.c_str(), std::ios_base::binary);
     if(!ofs.is_open())
         CONDUIT_ERROR("<Node::serialize> failed to open: " << stream_path);
     serialize(ofs);
@@ -5182,7 +7484,7 @@ Node::to_float32() const
         case DataType::UINT64_ID: return (float32)as_uint64();
         /* floats */
         case DataType::FLOAT32_ID: return as_float32();
-        case DataType::FLOAT64_ID: return (float64)as_float64();
+        case DataType::FLOAT64_ID: return (float32)as_float64();
         // string case
         case DataType::CHAR8_STR_ID:
         {
@@ -6805,7 +9107,7 @@ Node::to_unsigned_char_array(Node &res) const
             // error
             CONDUIT_ERROR("Cannot convert non numeric " 
                         << dtype().name() 
-                        << " type to unsinged_char_array.");
+                        << " type to unsigned_char_array.");
         }
     }
 }
@@ -6878,7 +9180,7 @@ Node::to_unsigned_short_array(Node &res) const
             // error
             CONDUIT_ERROR("Cannot convert non numeric " 
                         << dtype().name() 
-                        << " type to unsinged_short_array.");
+                        << " type to unsigned_short_array.");
         }
     }
 }
@@ -6951,7 +9253,7 @@ Node::to_unsigned_int_array(Node &res) const
             // error
             CONDUIT_ERROR("Cannot convert non numeric " 
                         << dtype().name() 
-                        << " type to unsinged_int_array.");
+                        << " type to unsigned_int_array.");
         }
     }
 }
@@ -7024,7 +9326,7 @@ Node::to_unsigned_long_array(Node &res) const
             // error
             CONDUIT_ERROR("Cannot convert non numeric " 
                         << dtype().name() 
-                        << " type to unsinged_long_array.");
+                        << " type to unsigned_long_array.");
         }
     }
 }
@@ -8305,12 +10607,13 @@ Node::to_base64_json(std::ostream &os,
     
     // use libb64 to encode the data
     index_t nbytes = n.schema().total_bytes();
+    index_t enc_buff_size =  utils::base64_encode_buffer_size(nbytes);
     Node bb64_data;
-    bb64_data.set(DataType::char8_str(nbytes*2));
+    bb64_data.set(DataType::char8_str(enc_buff_size));
     
     const char *src_ptr = (const char*)n.data_ptr();
     char *dest_ptr       = (char*)bb64_data.data_ptr();
-    memset(dest_ptr,0,nbytes*2);
+    memset(dest_ptr,0,enc_buff_size);
 
     utils::base64_encode(src_ptr,nbytes,dest_ptr);
     
@@ -8875,9 +11178,9 @@ int8
 Node::as_int8()  const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::INT8_ID,
-                         "as_int8()",
-                         0);
+                        DataType::INT8_ID,
+                        "as_int8() const",
+                        0);
     return *((int8*)element_ptr(0));
 }
 
@@ -8886,9 +11189,9 @@ int16
 Node::as_int16() const
 { 
     CONDUIT_CHECK_DTYPE(this, 
-                         DataType::INT16_ID,
-                         "as_int16()",
-                         0);
+                        DataType::INT16_ID,
+                        "as_int16() const",
+                        0);
     return *((int16*)element_ptr(0));
 }
 
@@ -8897,9 +11200,9 @@ int32
 Node::as_int32() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::INT32_ID,
-                         "as_int32()",
-                         0);
+                        DataType::INT32_ID,
+                        "as_int32() const",
+                        0);
     return *((int32*)element_ptr(0));
 }
 
@@ -8908,9 +11211,9 @@ int64
 Node::as_int64() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::INT64_ID,
-                         "as_int64()",
-                         0);
+                        DataType::INT64_ID,
+                        "as_int64() const",
+                        0);
     return *((int64*)element_ptr(0));
 }
 
@@ -8923,8 +11226,9 @@ uint8
 Node::as_uint8() const
 { 
     CONDUIT_CHECK_DTYPE(this, 
-                         DataType::UINT8_ID,
-                         "as_uint8()", 0);
+                        DataType::UINT8_ID,
+                        "as_uint8() const",
+                        0);
     return *((uint8*)element_ptr(0));
 }
 
@@ -8933,9 +11237,9 @@ uint16
 Node::as_uint16() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::UINT16_ID,
-                         "as_uint16()",
-                         0);
+                        DataType::UINT16_ID,
+                        "as_uint16() const",
+                        0);
     return *((uint16*)element_ptr(0));
 }
 
@@ -8944,9 +11248,9 @@ uint32
 Node::as_uint32() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::UINT32_ID,
-                         "as_uint32()",
-                         0);
+                        DataType::UINT32_ID,
+                        "as_uint32() const",
+                        0);
     return *((uint32*)element_ptr(0));
 }
 
@@ -8955,9 +11259,9 @@ uint64
 Node::as_uint64() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::UINT64_ID,
-                         "as_uint64()",
-                         0);
+                        DataType::UINT64_ID,
+                        "as_uint64() const",
+                        0);
     return *((uint64*)element_ptr(0));
 }
 
@@ -8970,9 +11274,9 @@ float32
 Node::as_float32() const
 { 
     CONDUIT_CHECK_DTYPE(this, 
-                         DataType::FLOAT32_ID,
-                         "as_float32()",
-                         0);
+                        DataType::FLOAT32_ID,
+                        "as_float32() const",
+                        0);
     return *((float32*)element_ptr(0));
 }
 
@@ -8981,9 +11285,9 @@ float64
 Node::as_float64() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::FLOAT64_ID,
-                         "as_float64()",
-                         0);
+                        DataType::FLOAT64_ID,
+                        "as_float64() const",
+                        0);
     return *((float64*)element_ptr(0));
 }
 
@@ -8996,9 +11300,9 @@ int8 *
 Node::as_int8_ptr()
 { 
     CONDUIT_CHECK_DTYPE(this, 
-                         DataType::INT8_ID,
-                         "as_int8_ptr()",
-                         NULL);
+                        DataType::INT8_ID,
+                        "as_int8_ptr()",
+                        NULL);
     return (int8*)element_ptr(0);
 }
 
@@ -9007,9 +11311,9 @@ int16 *
 Node::as_int16_ptr()
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::INT16_ID,
-                         "as_int16_ptr()",
-                         NULL);
+                        DataType::INT16_ID,
+                        "as_int16_ptr()",
+                        NULL);
     return (int16*)element_ptr(0);
 }
 
@@ -9018,9 +11322,9 @@ int32 *
 Node::as_int32_ptr()
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::INT32_ID,
-                         "as_int32_ptr()",
-                         NULL);
+                        DataType::INT32_ID,
+                        "as_int32_ptr()",
+                        NULL);
     return (int32*)element_ptr(0);
 }
 
@@ -9029,9 +11333,9 @@ int64 *
 Node::as_int64_ptr()
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::INT64_ID,
-                         "as_int64_ptr()",
-                         NULL);
+                        DataType::INT64_ID,
+                        "as_int64_ptr()",
+                        NULL);
     return (int64*)element_ptr(0);
 }
 
@@ -9044,9 +11348,9 @@ uint8 *
 Node::as_uint8_ptr()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::UINT8_ID,
-                         "as_uint8_ptr()",
-                         NULL);
+                        DataType::UINT8_ID,
+                        "as_uint8_ptr()",
+                        NULL);
     return (uint8*)element_ptr(0);
 }
 
@@ -9055,9 +11359,9 @@ uint16 *
 Node::as_uint16_ptr()   
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::UINT16_ID,
-                         "as_uint16_ptr()",
-                         NULL);
+                        DataType::UINT16_ID,
+                        "as_uint16_ptr()",
+                        NULL);
     return (uint16*)element_ptr(0);
 }
 
@@ -9066,9 +11370,9 @@ uint32 *
 Node::as_uint32_ptr()   
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::UINT32_ID,
-                         "as_uint32_ptr()",
-                         NULL);
+                        DataType::UINT32_ID,
+                        "as_uint32_ptr()",
+                        NULL);
     return (uint32*)element_ptr(0);
 }
 
@@ -9077,9 +11381,9 @@ uint64 *
 Node::as_uint64_ptr()   
 {     
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::UINT64_ID,
-                         "as_uint64_ptr()",
-                         NULL);
+                        DataType::UINT64_ID,
+                        "as_uint64_ptr()",
+                        NULL);
     return (uint64*)element_ptr(0);
 }
 
@@ -9092,9 +11396,9 @@ float32 *
 Node::as_float32_ptr()  
 {
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::FLOAT32_ID,
-                         "as_float32_ptr()",
-                         NULL);
+                        DataType::FLOAT32_ID,
+                        "as_float32_ptr()",
+                        NULL);
     return (float32*)element_ptr(0);
 }
 
@@ -9103,9 +11407,9 @@ float64 *
 Node::as_float64_ptr()  
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::FLOAT64_ID,
-                         "as_float64_ptr()",
-                         NULL);
+                        DataType::FLOAT64_ID,
+                        "as_float64_ptr()",
+                        NULL);
     return (float64*)element_ptr(0);
 }
 
@@ -9119,9 +11423,9 @@ const int8 *
 Node::as_int8_ptr() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::INT8_ID,
-                         "as_int8_ptr()",
-                         NULL);
+                        DataType::INT8_ID,
+                        "as_int8_ptr() const",
+                        NULL);
     return (int8*)element_ptr(0);
 }
 
@@ -9130,9 +11434,9 @@ const int16 *
 Node::as_int16_ptr() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::INT16_ID,
-                         "as_int16_ptr()",
-                         NULL);
+                        DataType::INT16_ID,
+                        "as_int16_ptr() const",
+                        NULL);
     return (int16*)element_ptr(0);
 }
 
@@ -9141,9 +11445,9 @@ const int32 *
 Node::as_int32_ptr() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::INT32_ID,
-                         "as_int32_ptr()",
-                         NULL);
+                        DataType::INT32_ID,
+                        "as_int32_ptr() const",
+                        NULL);
     return (int32*)element_ptr(0);
 }
 
@@ -9152,9 +11456,9 @@ const int64 *
 Node::as_int64_ptr() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::INT64_ID,
-                         "as_int64_ptr()",
-                         NULL);
+                        DataType::INT64_ID,
+                        "as_int64_ptr() const",
+                        NULL);
     return (int64*)element_ptr(0);
 }
 
@@ -9167,9 +11471,9 @@ const uint8 *
 Node::as_uint8_ptr() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::UINT8_ID,
-                         "as_uint8_ptr()",
-                         NULL);
+                        DataType::UINT8_ID,
+                        "as_uint8_ptr() const",
+                        NULL);
     return (uint8*)element_ptr(0);
 }
 
@@ -9178,9 +11482,9 @@ const uint16 *
 Node::as_uint16_ptr() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::UINT16_ID,
-                         "as_uint16_ptr()",
-                         NULL);
+                        DataType::UINT16_ID,
+                        "as_uint16_ptr() const",
+                        NULL);
     return (uint16*)element_ptr(0);
 }
 
@@ -9189,9 +11493,9 @@ const uint32 *
 Node::as_uint32_ptr() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::UINT32_ID,
-                         "as_uint32_ptr()",
-                         NULL);
+                        DataType::UINT32_ID,
+                        "as_uint32_ptr() const",
+                        NULL);
     return (uint32*)element_ptr(0);
 }
 
@@ -9200,9 +11504,9 @@ const uint64 *
 Node::as_uint64_ptr() const
 {     
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::UINT64_ID,
-                         "as_uint64_ptr()",
-                         NULL);
+                        DataType::UINT64_ID,
+                        "as_uint64_ptr() const",
+                        NULL);
     return (uint64*)element_ptr(0);
 }
 
@@ -9215,9 +11519,9 @@ const float32 *
 Node::as_float32_ptr() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::FLOAT32_ID,
-                         "as_float32_ptr()",
-                         NULL);
+                        DataType::FLOAT32_ID,
+                        "as_float32_ptr() const",
+                        NULL);
     return (float32*)element_ptr(0);
 }
 
@@ -9226,9 +11530,9 @@ const float64 *
 Node::as_float64_ptr() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::FLOAT64_ID,
-                         "as_float64_ptr()",
-                         NULL);
+                        DataType::FLOAT64_ID,
+                        "as_float64_ptr() const",
+                        NULL);
     return (float64*)element_ptr(0);
 }
 
@@ -9242,9 +11546,9 @@ int8_array
 Node::as_int8_array()
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::INT8_ID,
-                         "as_int8_array()",
-                         int8_array());
+                        DataType::INT8_ID,
+                        "as_int8_array()",
+                        int8_array());
     return int8_array(m_data,dtype());
 }
 
@@ -9253,9 +11557,9 @@ int16_array
 Node::as_int16_array()
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::INT16_ID,
-                         "as_int16_array()",
-                         int16_array());
+                        DataType::INT16_ID,
+                        "as_int16_array()",
+                        int16_array());
     return int16_array(m_data,dtype());
 }
 
@@ -9264,9 +11568,9 @@ int32_array
 Node::as_int32_array()
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::INT32_ID,
-                         "as_int32_array()",
-                         int32_array());
+                        DataType::INT32_ID,
+                        "as_int32_array()",
+                        int32_array());
     return int32_array(m_data,dtype());
 }
 
@@ -9275,9 +11579,9 @@ int64_array
 Node::as_int64_array()
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::INT64_ID,
-                         "as_int64_array()",
-                         int64_array());
+                        DataType::INT64_ID,
+                        "as_int64_array()",
+                        int64_array());
     return int64_array(m_data,dtype());
 }
 
@@ -9290,9 +11594,9 @@ uint8_array
 Node::as_uint8_array()
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::UINT8_ID,
-                         "as_uint8_array()",
-                         uint8_array());
+                        DataType::UINT8_ID,
+                        "as_uint8_array()",
+                        uint8_array());
     return uint8_array(m_data,dtype());
 }
 
@@ -9301,9 +11605,9 @@ uint16_array
 Node::as_uint16_array()
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::UINT16_ID,
-                         "as_uint16_array()",
-                         uint16_array());
+                        DataType::UINT16_ID,
+                        "as_uint16_array()",
+                        uint16_array());
     return uint16_array(m_data,dtype());
 }
 
@@ -9312,9 +11616,9 @@ uint32_array
 Node::as_uint32_array()
 { 
     CONDUIT_CHECK_DTYPE(this,
-                          DataType::UINT32_ID,
-                          "as_uint32_array()",
-                          uint32_array());
+                        DataType::UINT32_ID,
+                        "as_uint32_array()",
+                        uint32_array());
     return uint32_array(m_data,dtype());
 }
 
@@ -9323,9 +11627,9 @@ uint64_array
 Node::as_uint64_array() 
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::UINT64_ID,
-                         "as_uint64_array()",
-                         uint64_array());
+                        DataType::UINT64_ID,
+                        "as_uint64_array()",
+                        uint64_array());
     return uint64_array(m_data,dtype());
 }
 
@@ -9338,9 +11642,9 @@ float32_array
 Node::as_float32_array()
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::FLOAT32_ID,
-                         "as_float32_array()",
-                         float32_array());
+                        DataType::FLOAT32_ID,
+                        "as_float32_array()",
+                        float32_array());
     return float32_array(m_data,dtype());
 }
 
@@ -9349,9 +11653,9 @@ float64_array
 Node::as_float64_array()
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::FLOAT64_ID,
-                         "as_float64_array()",
-                         float64_array());
+                        DataType::FLOAT64_ID,
+                        "as_float64_array()",
+                        float64_array());
     return float64_array(m_data,dtype());
 }
 
@@ -9364,9 +11668,9 @@ const int8_array
 Node::as_int8_array() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::INT8_ID,
-                         "as_int8_array()",
-                         int8_array());
+                        DataType::INT8_ID,
+                        "as_int8_array() const",
+                        int8_array());
     return int8_array(m_data,dtype());
 }
 
@@ -9375,9 +11679,9 @@ const int16_array
 Node::as_int16_array() const 
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::INT16_ID,
-                         "as_int16_array()",
-                         int16_array());
+                        DataType::INT16_ID,
+                        "as_int16_array() const",
+                        int16_array());
     return int16_array(m_data,dtype());
 }
 
@@ -9386,9 +11690,9 @@ const int32_array
 Node::as_int32_array() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::INT32_ID,
-                         "as_int32_array()",
-                         int32_array());
+                        DataType::INT32_ID,
+                        "as_int32_array() const",
+                        int32_array());
     return int32_array(m_data,dtype());
 }
 
@@ -9397,9 +11701,9 @@ const int64_array
 Node::as_int64_array() const 
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::INT64_ID,
-                         "as_int64_array()",
-                         int64_array());
+                        DataType::INT64_ID,
+                        "as_int64_array() const",
+                        int64_array());
     return int64_array(m_data,dtype());
 }
 
@@ -9413,9 +11717,9 @@ const uint8_array
 Node::as_uint8_array() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::UINT8_ID,
-                         "as_uint8_array()",
-                         uint8_array());
+                        DataType::UINT8_ID,
+                        "as_uint8_array() const",
+                        uint8_array());
     return uint8_array(m_data,dtype());
 }
 
@@ -9424,9 +11728,9 @@ const uint16_array
 Node::as_uint16_array() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::UINT16_ID,
-                         "as_uint16_array()",
-                         uint16_array());
+                        DataType::UINT16_ID,
+                        "as_uint16_array() const",
+                        uint16_array());
     return uint16_array(m_data,dtype());
 }
 
@@ -9435,9 +11739,9 @@ const uint32_array
 Node::as_uint32_array() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::UINT32_ID,
-                         "as_uint32_array()",
-                         uint32_array());
+                        DataType::UINT32_ID,
+                        "as_uint32_array() const",
+                        uint32_array());
     return uint32_array(m_data,dtype());
 }
 
@@ -9446,9 +11750,9 @@ const uint64_array
 Node::as_uint64_array() const 
 {
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::UINT64_ID,
-                         "as_uint64_array()",
-                         uint64_array());
+                        DataType::UINT64_ID,
+                        "as_uint64_array() const",
+                        uint64_array());
     return uint64_array(m_data,dtype());
 }
 
@@ -9461,9 +11765,9 @@ const float32_array
 Node::as_float32_array() const 
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::FLOAT32_ID,
-                         "as_float32_array()",
-                         float32_array());
+                        DataType::FLOAT32_ID,
+                        "as_float32_array() const",
+                        float32_array());
     return float32_array(m_data,dtype());
 }
 
@@ -9472,9 +11776,9 @@ const float64_array
 Node::as_float64_array() const 
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::FLOAT64_ID,
-                         "as_float64_array()",
-                         float64_array());
+                        DataType::FLOAT64_ID,
+                        "as_float64_array() const",
+                        float64_array());
     return float64_array(m_data,dtype());
 }
 
@@ -9487,9 +11791,9 @@ char *
 Node::as_char8_str()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::CHAR8_STR_ID,
-                         "as_char8_str()",
-                         NULL);
+                        DataType::CHAR8_STR_ID,
+                        "as_char8_str()",
+                        NULL);
     return (char *)element_ptr(0);
 }
 
@@ -9498,9 +11802,9 @@ const char *
 Node::as_char8_str() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::CHAR8_STR_ID,
-                         "as_char8_str()",
-                         NULL);
+                        DataType::CHAR8_STR_ID,
+                        "as_char8_str() const",
+                        NULL);
     return (const char *)element_ptr(0);
 }
 
@@ -9509,9 +11813,9 @@ std::string
 Node::as_string() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         DataType::CHAR8_STR_ID,
-                         "as_string()",
-                         std::string());
+                        DataType::CHAR8_STR_ID,
+                        "as_string() const",
+                        std::string());
     return std::string(as_char8_str());
 }
 
@@ -9544,9 +11848,9 @@ char
 Node::as_char() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_CHAR_ID,
-                         "as_char()",
-                         0);
+                        CONDUIT_NATIVE_CHAR_ID,
+                        "as_char() const",
+                        0);
     return *((char*)element_ptr(0));
 }
 
@@ -9555,9 +11859,9 @@ short
 Node::as_short() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_SHORT_ID,
-                         "as_short()",
-                         0);
+                        CONDUIT_NATIVE_SHORT_ID,
+                        "as_short() const",
+                        0);
     return *((short*)element_ptr(0));
 }
 
@@ -9566,9 +11870,9 @@ int
 Node::as_int() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_INT_ID,
-                         "as_int()",
-                         0);
+                        CONDUIT_NATIVE_INT_ID,
+                        "as_int() const",
+                        0);
     return *((int*)element_ptr(0));
 }
 
@@ -9577,9 +11881,9 @@ long
 Node::as_long()  const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_LONG_ID,
-                         "as_long()",
-                         0);
+                        CONDUIT_NATIVE_LONG_ID,
+                        "as_long() const",
+                        0);
     return *((long*)element_ptr(0));
 }
 
@@ -9591,9 +11895,9 @@ long long
 Node::as_long_long()  const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_LONG_LONG_ID,
-                         "as_long_long()",
-                         0);
+                        CONDUIT_NATIVE_LONG_LONG_ID,
+                        "as_long_long() const",
+                        0);
     return *((long long*)element_ptr(0));
 }
 //---------------------------------------------------------------------------//
@@ -9609,9 +11913,9 @@ unsigned char
 Node::as_unsigned_char() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
-                         "as_unsigned_char()",
-                         0);
+                        CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
+                        "as_unsigned_char() const",
+                        0);
     return *((unsigned char*)element_ptr(0));
 }
 
@@ -9620,9 +11924,9 @@ unsigned short
 Node::as_unsigned_short() const 
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
-                         "as_unsigned_short()",
-                         0);
+                        CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
+                        "as_unsigned_short() const",
+                        0);
     return *((unsigned short*)element_ptr(0));
 }
 
@@ -9631,9 +11935,9 @@ unsigned int
 Node::as_unsigned_int()const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_INT_ID,
-                         "as_unsigned_int()",
-                         0);
+                        CONDUIT_NATIVE_UNSIGNED_INT_ID,
+                        "as_unsigned_int() const",
+                        0);
     return *((unsigned int*)element_ptr(0));
 }
 
@@ -9642,9 +11946,9 @@ unsigned long
 Node::as_unsigned_long() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_LONG_ID,
-                         "as_unsigned_long()",
-                         0);
+                        CONDUIT_NATIVE_UNSIGNED_LONG_ID,
+                        "as_unsigned_long() const",
+                        0);
     return *(( unsigned long*)element_ptr(0));
 }
 
@@ -9655,9 +11959,9 @@ unsigned long long
 Node::as_unsigned_long_long() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
-                         "as_unsigned_long_long()",
-                         0);
+                        CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
+                        "as_unsigned_long_long() const",
+                        0);
     return *(( unsigned long long*)element_ptr(0));
 }
 //---------------------------------------------------------------------------//
@@ -9673,9 +11977,9 @@ float
 Node::as_float() const 
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_FLOAT_ID,
-                         "as_float()",
-                         0);
+                        CONDUIT_NATIVE_FLOAT_ID,
+                        "as_float() const",
+                        0);
     return *((float*)element_ptr(0));
 }
 
@@ -9684,9 +11988,9 @@ double
 Node::as_double() const 
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_DOUBLE_ID,
-                         "as_double()",
-                         0);
+                        CONDUIT_NATIVE_DOUBLE_ID,
+                        "as_double() const",
+                        0);
     return *((double*)element_ptr(0));
 }
 
@@ -9697,9 +12001,9 @@ long double
 Node::as_long_double() const 
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_LONG_DOUBLE_ID,
-                         "as_long_double()",
-                         0);
+                        CONDUIT_NATIVE_LONG_DOUBLE_ID,
+                        "as_long_double() const",
+                        0);
     return *((long double*)element_ptr(0));
 }
 //---------------------------------------------------------------------------//
@@ -9715,9 +12019,9 @@ char *
 Node::as_char_ptr()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_CHAR_ID,
-                         "as_char_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_CHAR_ID,
+                        "as_char_ptr()",
+                        NULL);
     return (char*)element_ptr(0);
 }
 
@@ -9726,9 +12030,9 @@ short *
 Node::as_short_ptr()
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_SHORT_ID,
-                         "as_short_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_SHORT_ID,
+                        "as_short_ptr()",
+                        NULL);
     return (short*)element_ptr(0);
 }
 
@@ -9737,9 +12041,9 @@ int *
 Node::as_int_ptr()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_INT_ID,
-                         "as_int_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_INT_ID,
+                        "as_int_ptr()",
+                        NULL);
     return (int*)element_ptr(0);
 }
 
@@ -9748,9 +12052,9 @@ long *
 Node::as_long_ptr()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_LONG_ID,
-                         "as_long_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_LONG_ID,
+                        "as_long_ptr()",
+                        NULL);
     return (long*)element_ptr(0);
 }
 
@@ -9762,9 +12066,9 @@ long long *
 Node::as_long_long_ptr()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_LONG_LONG_ID,
-                         "as_long_long_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_LONG_LONG_ID,
+                        "as_long_long_ptr()",
+                        NULL);
     return (long long*)element_ptr(0);
 }
 //---------------------------------------------------------------------------//
@@ -9780,9 +12084,9 @@ unsigned char *
 Node::as_unsigned_char_ptr()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
-                         "as_unsigned_char_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
+                        "as_unsigned_char_ptr()",
+                        NULL);
     return (unsigned char*)element_ptr(0);
 }
 
@@ -9791,9 +12095,9 @@ unsigned short *
 Node::as_unsigned_short_ptr()
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
-                         "as_unsigned_short_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
+                        "as_unsigned_short_ptr()",
+                        NULL);
     return (unsigned short*)element_ptr(0);
 }
 
@@ -9802,9 +12106,9 @@ unsigned int *
 Node::as_unsigned_int_ptr()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_INT_ID,
-                         "as_unsigned_int_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_UNSIGNED_INT_ID,
+                        "as_unsigned_int_ptr()",
+                        NULL);
     return (unsigned int*)element_ptr(0);
 }
 
@@ -9813,9 +12117,9 @@ unsigned long *
 Node::as_unsigned_long_ptr()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_LONG_ID,
-                         "as_unsigned_long_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_UNSIGNED_LONG_ID,
+                        "as_unsigned_long_ptr()",
+                        NULL);
     return (unsigned long*)element_ptr(0);
 }
 
@@ -9823,29 +12127,18 @@ Node::as_unsigned_long_ptr()
 #ifdef CONDUIT_USE_LONG_LONG
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
-const unsigned long long *
-Node::as_unsigned_long_long_ptr() const
-{
-    CONDUIT_CHECK_DTYPE(this,
-        CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
-        "as_unsigned_long_long_ptr()",
-        NULL);
-    return (unsigned long long*)element_ptr(0);
-}
-//---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
 unsigned long long *
 Node::as_unsigned_long_long_ptr()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
-                         "as_unsigned_long_long_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
+                        "as_unsigned_long_long_ptr()",
+                        NULL);
     return (unsigned long long*)element_ptr(0);
 }
 //---------------------------------------------------------------------------//
-
 #endif
 //---------------------------------------------------------------------------//
 
@@ -9859,9 +12152,9 @@ float *
 Node::as_float_ptr()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_FLOAT_ID,
-                         "as_float_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_FLOAT_ID,
+                        "as_float_ptr()",
+                        NULL);
     return (float*)element_ptr(0);
 }
 
@@ -9870,9 +12163,9 @@ double *
 Node::as_double_ptr()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_DOUBLE_ID,
-                         "as_double_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_DOUBLE_ID,
+                        "as_double_ptr()",
+                        NULL);
     return (double*)element_ptr(0);
 }
 
@@ -9884,9 +12177,9 @@ long double *
 Node::as_long_double_ptr()
 {
     CONDUIT_CHECK_DTYPE(this,
-        CONDUIT_NATIVE_LONG_DOUBLE_ID,
-        "as_long_double_ptr()",
-        NULL);
+                        CONDUIT_NATIVE_LONG_DOUBLE_ID,
+                        "as_long_double_ptr()",
+                        NULL);
     return (long double*)element_ptr(0);
 }
 
@@ -9895,9 +12188,9 @@ long double *
 Node::as_long_double_ptr() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_LONG_DOUBLE_ID,
-                         "as_long_double_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_LONG_DOUBLE_ID,
+                        "as_long_double_ptr() const",
+                        NULL);
     return (long double*)element_ptr(0);
 }
 //---------------------------------------------------------------------------//
@@ -9906,7 +12199,7 @@ Node::as_long_double_ptr() const
 
 
 //---------------------------------------------------------------------------//
-// signed integers via pointers
+// signed integers via pointers (const)
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
@@ -9914,9 +12207,9 @@ const char *
 Node::as_char_ptr() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_CHAR_ID,
-                         "as_char_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_CHAR_ID,
+                        "as_char_ptr() const",
+                        NULL);
     return (char*)element_ptr(0);
 }
 
@@ -9925,9 +12218,9 @@ const short *
 Node::as_short_ptr() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_SHORT_ID,
-                         "as_short_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_SHORT_ID,
+                        "as_short_ptr() const",
+                        NULL);
     return (short*)element_ptr(0);
 }
 
@@ -9936,9 +12229,9 @@ const int *
 Node::as_int_ptr() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_INT_ID,
-                         "as_int_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_INT_ID,
+                        "as_int_ptr() const",
+                        NULL);
     return (int*)element_ptr(0);
 }
 
@@ -9947,9 +12240,9 @@ const long *
 Node::as_long_ptr() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_LONG_ID,
-                         "as_long_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_LONG_ID,
+                        "as_long_ptr() const",
+                        NULL);
     return (long*)element_ptr(0);
 }
 
@@ -9961,9 +12254,9 @@ const long long *
 Node::as_long_long_ptr() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_LONG_LONG_ID,
-                         "as_long_long_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_LONG_LONG_ID,
+                        "as_long_long_ptr() const",
+                        NULL);
     return (long long*)element_ptr(0);
 }
 //---------------------------------------------------------------------------//
@@ -9971,9 +12264,8 @@ Node::as_long_long_ptr() const
 //---------------------------------------------------------------------------//
 
 
-
 //---------------------------------------------------------------------------//
-// unsigned integers via pointers
+// unsigned integers via pointers (const)
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
@@ -9981,9 +12273,9 @@ const unsigned char *
 Node::as_unsigned_char_ptr() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
-                         "as_unsigned_char_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
+                        "as_unsigned_char_ptr() const",
+                        NULL);
     return (unsigned char*)element_ptr(0);
 }
 
@@ -9992,9 +12284,9 @@ const unsigned short *
 Node::as_unsigned_short_ptr() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
-                         "as_unsigned_short_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
+                        "as_unsigned_short_ptr() const",
+                        NULL);
     return (unsigned short*)element_ptr(0);
 }
 
@@ -10003,9 +12295,9 @@ const unsigned int *
 Node::as_unsigned_int_ptr() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_INT_ID,
-                         "as_unsigned_int_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_UNSIGNED_INT_ID,
+                        "as_unsigned_int_ptr() const",
+                        NULL);
     return (unsigned int*)element_ptr(0);
 }
 
@@ -10014,32 +12306,35 @@ const unsigned long *
 Node::as_unsigned_long_ptr() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_LONG_ID,
-                         "as_unsigned_long_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_UNSIGNED_LONG_ID,
+                        "as_unsigned_long_ptr() const",
+                        NULL);
     return (unsigned long*)element_ptr(0);
 }
 
 //---------------------------------------------------------------------------//
 #ifdef CONDUIT_USE_LONG_LONG
 //---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
 const unsigned long long *
 Node::as_unsigned_long_long_ptr() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
-                         "as_unsigned_long_long_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
+                        "as_unsigned_long_long_ptr() const",
+                        NULL);
     return (unsigned long long*)element_ptr(0);
 }
-
 //---------------------------------------------------------------------------//
 #endif
 //---------------------------------------------------------------------------//
 
 
+
+
 //---------------------------------------------------------------------------//
-// floating point via pointers
+// floating point via pointers (const)
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
@@ -10047,9 +12342,9 @@ const float *
 Node::as_float_ptr() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_FLOAT_ID,
-                         "as_float_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_FLOAT_ID,
+                        "as_float_ptr() const",
+                        NULL);
     return (float*)element_ptr(0);
 }
 
@@ -10058,9 +12353,9 @@ const double *
 Node::as_double_ptr() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_DOUBLE_ID,
-                         "as_double_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_DOUBLE_ID,
+                        "as_double_ptr() const",
+                        NULL);
     return (double*)element_ptr(0);
 }
 
@@ -10072,9 +12367,9 @@ const long double *
 Node::as_long_double_ptr() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_LONG_DOUBLE_ID,
-                         "as_long_double_ptr()",
-                         NULL);
+                        CONDUIT_NATIVE_LONG_DOUBLE_ID,
+                        "as_long_double_ptr() const",
+                        NULL);
     return (long double*)element_ptr(0);
 }
 //---------------------------------------------------------------------------//
@@ -10091,9 +12386,9 @@ char_array
 Node::as_char_array()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_CHAR_ID,
-                         "as_char_array()",
-                         char_array());
+                        CONDUIT_NATIVE_CHAR_ID,
+                        "as_char_array()",
+                        char_array());
     return char_array(m_data,dtype());
 }
 
@@ -10102,9 +12397,9 @@ short_array
 Node::as_short_array()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_SHORT_ID,
-                         "as_short_array()",
-                         short_array());
+                        CONDUIT_NATIVE_SHORT_ID,
+                        "as_short_array()",
+                        short_array());
     return short_array(m_data,dtype());
 }
 
@@ -10113,9 +12408,9 @@ int_array
 Node::as_int_array()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_INT_ID,
-                         "as_int_array()",
-                         int_array());
+                        CONDUIT_NATIVE_INT_ID,
+                        "as_int_array()",
+                        int_array());
     return int_array(m_data,dtype());
 }
 
@@ -10124,9 +12419,9 @@ long_array
 Node::as_long_array()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_LONG_ID,
-                         "as_long_array()",
-                         long_array());
+                        CONDUIT_NATIVE_LONG_ID,
+                        "as_long_array()",
+                        long_array());
     return long_array(m_data,dtype());
 }
 
@@ -10138,9 +12433,9 @@ long_long_array
 Node::as_long_long_array()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_LONG_LONG_ID,
-                         "as_long_long_array()",
-                         long_long_array());
+                        CONDUIT_NATIVE_LONG_LONG_ID,
+                        "as_long_long_array()",
+                        long_long_array());
     return long_long_array(m_data,dtype());
 }
 //---------------------------------------------------------------------------//
@@ -10157,9 +12452,9 @@ unsigned_char_array
 Node::as_unsigned_char_array()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
-                         "as_unsigned_char_array()",
-                         unsigned_char_array());
+                        CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
+                        "as_unsigned_char_array()",
+                        unsigned_char_array());
     return unsigned_char_array(m_data,dtype());
 }
 
@@ -10168,9 +12463,9 @@ unsigned_short_array
 Node::as_unsigned_short_array()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
-                         "as_unsigned_short_array()",
-                         unsigned_short_array());
+                        CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
+                        "as_unsigned_short_array()",
+                        unsigned_short_array());
     return unsigned_short_array(m_data,dtype());
 }
 
@@ -10179,9 +12474,9 @@ unsigned_int_array
 Node::as_unsigned_int_array()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_INT_ID,
-                         "as_unsigned_int_array()",
-                         unsigned_int_array());
+                        CONDUIT_NATIVE_UNSIGNED_INT_ID,
+                        "as_unsigned_int_array()",
+                        unsigned_int_array());
     return unsigned_int_array(m_data,dtype());
 }
 
@@ -10190,9 +12485,9 @@ unsigned_long_array
 Node::as_unsigned_long_array()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_LONG_ID,
-                         "as_unsigned_long_array()",
-                         unsigned_long_array());
+                        CONDUIT_NATIVE_UNSIGNED_LONG_ID,
+                        "as_unsigned_long_array()",
+                        unsigned_long_array());
     return unsigned_long_array(m_data,dtype());
 }
 
@@ -10204,9 +12499,9 @@ unsigned_long_long_array
 Node::as_unsigned_long_long_array()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
-                         "as_unsigned_long_long_array()",
-                         unsigned_long_long_array());
+                        CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
+                        "as_unsigned_long_long_array()",
+                        unsigned_long_long_array());
     return unsigned_long_long_array(m_data,dtype());
 }
 
@@ -10224,9 +12519,9 @@ float_array
 Node::as_float_array()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_FLOAT_ID,
-                         "as_float_array()",
-                         float_array());
+                        CONDUIT_NATIVE_FLOAT_ID,
+                        "as_float_array()",
+                        float_array());
     return float_array(m_data,dtype());
 }
 
@@ -10235,9 +12530,9 @@ double_array
 Node::as_double_array()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_DOUBLE_ID,
-                         "as_double_array()",
-                         double_array());
+                        CONDUIT_NATIVE_DOUBLE_ID,
+                        "as_double_array()",
+                        double_array());
     return double_array(m_data,dtype());
 }
 
@@ -10248,9 +12543,9 @@ long_double_array
 Node::as_long_double_array()
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_LONG_DOUBLE_ID,
-                         "as_long_double_array()",
-                         long_double_array());
+                        CONDUIT_NATIVE_LONG_DOUBLE_ID,
+                        "as_long_double_array()",
+                        long_double_array());
     return long_double_array(m_data,dtype());
 }
 //---------------------------------------------------------------------------//
@@ -10267,9 +12562,9 @@ const char_array
 Node::as_char_array() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_CHAR_ID,
-                         "as_char_array()",
-                         char_array());
+                        CONDUIT_NATIVE_CHAR_ID,
+                        "as_char_array() const",
+                        char_array());
     return char_array(m_data,dtype());
 }
 
@@ -10278,9 +12573,9 @@ const short_array
 Node::as_short_array() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_SHORT_ID,
-                         "as_short_array()",
-                         short_array());
+                        CONDUIT_NATIVE_SHORT_ID,
+                        "as_short_array() const",
+                        short_array());
     return short_array(m_data,dtype());
 }
 
@@ -10289,9 +12584,9 @@ const int_array
 Node::as_int_array() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_INT_ID,
-                         "as_int_array()",
-                         int_array());
+                        CONDUIT_NATIVE_INT_ID,
+                        "as_int_array() const",
+                        int_array());
     return int_array(m_data,dtype());
 }
 
@@ -10300,9 +12595,9 @@ const long_array
 Node::as_long_array() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_LONG_ID,
-                         "as_long_array()",
-                         long_array());
+                        CONDUIT_NATIVE_LONG_ID,
+                        "as_long_array() const",
+                        long_array());
     return long_array(m_data,dtype());
 }
 
@@ -10313,9 +12608,9 @@ const long_long_array
 Node::as_long_long_array() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_LONG_LONG_ID,
-                         "as_long_long_array()",
-                         long_long_array());
+                        CONDUIT_NATIVE_LONG_LONG_ID,
+                        "as_long_long_array() const",
+                        long_long_array());
     return long_long_array(m_data,dtype());
 }
 //---------------------------------------------------------------------------//
@@ -10332,9 +12627,9 @@ const unsigned_char_array
 Node::as_unsigned_char_array() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
-                         "as_unsigned_char_array()",
-                         unsigned_char_array());
+                        CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
+                        "as_unsigned_char_array() const",
+                        unsigned_char_array());
     return unsigned_char_array(m_data,dtype());
 }
 
@@ -10343,9 +12638,9 @@ const unsigned_short_array
 Node::as_unsigned_short_array() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
-                         "as_unsigned_short_array()",
-                         unsigned_short_array());
+                        CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
+                        "as_unsigned_short_array() const",
+                        unsigned_short_array());
     return unsigned_short_array(m_data,dtype());
 }
 
@@ -10354,9 +12649,9 @@ const unsigned_int_array
 Node::as_unsigned_int_array() const
 { 
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_INT_ID,
-                         "as_unsigned_int_array()",
-                         unsigned_int_array());
+                        CONDUIT_NATIVE_UNSIGNED_INT_ID,
+                        "as_unsigned_int_array() const",
+                        unsigned_int_array());
     return unsigned_int_array(m_data,dtype());
 }
 
@@ -10365,9 +12660,9 @@ const unsigned_long_array
 Node::as_unsigned_long_array() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_LONG_ID,
-                         "as_unsigned_long_array()",
-                         unsigned_long_array());
+                        CONDUIT_NATIVE_UNSIGNED_LONG_ID,
+                        "as_unsigned_long_array() const",
+                        unsigned_long_array());
     return unsigned_long_array(m_data,dtype());
 }
 
@@ -10379,9 +12674,9 @@ const unsigned_long_long_array
 Node::as_unsigned_long_long_array() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
-                         "as_unsigned_long_long_array()",
-                         unsigned_long_long_array());
+                        CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
+                        "as_unsigned_long_long_array() const",
+                        unsigned_long_long_array());
     return unsigned_long_long_array(m_data,dtype());
 }
 //---------------------------------------------------------------------------//
@@ -10398,9 +12693,9 @@ const float_array
 Node::as_float_array() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_FLOAT_ID,
-                         "as_float_array()",
-                         float_array());
+                        CONDUIT_NATIVE_FLOAT_ID,
+                        "as_float_array() const",
+                        float_array());
     return float_array(m_data,dtype());
 }
 
@@ -10409,9 +12704,9 @@ const double_array
 Node::as_double_array() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_DOUBLE_ID,
-                         "as_double_array()",
-                         double_array());
+                        CONDUIT_NATIVE_DOUBLE_ID,
+                        "as_double_array() const",
+                        double_array());
     return double_array(m_data,dtype());
 }
 //---------------------------------------------------------------------------//
@@ -10421,9 +12716,9 @@ const long_double_array
 Node::as_long_double_array() const
 {
     CONDUIT_CHECK_DTYPE(this,
-                         CONDUIT_NATIVE_LONG_DOUBLE_ID,
-                         "as_long_double_array()",
-                         long_double_array());
+                        CONDUIT_NATIVE_LONG_DOUBLE_ID,
+                        "as_long_double_array() const",
+                        long_double_array());
     return long_double_array(m_data,dtype());
 }
 
@@ -10496,6 +12791,170 @@ Node::set_data_ptr(void *data)
 //=============================================================================
 
 //-----------------------------------------------------------------------------
+// Node::MMap helper class
+//-----------------------------------------------------------------------------
+// This private class encapsulates specific logic for both unix and windows
+// style memory mapping.
+//-----------------------------------------------------------------------------
+class Node::MMap
+{
+  public:
+      MMap();
+      ~MMap();
+
+      //----------------------------------------------------------------------
+      void  open(const std::string &path,
+                 index_t data_size);
+
+      //----------------------------------------------------------------------
+      void  close();
+
+      //----------------------------------------------------------------------
+      void *data_ptr() const
+          { return m_data; }
+
+  private:
+      void      *m_data;
+      int        m_data_size;
+
+#if !defined(CONDUIT_PLATFORM_WINDOWS)
+      // memory-map file descriptor
+      int       m_mmap_fd;
+#else
+      // handles for windows mmap
+      HANDLE    m_file_hnd;
+      HANDLE    m_map_hnd;
+#endif
+
+};
+
+//-----------------------------------------------------------------------------
+Node::MMap::MMap()
+: m_data(NULL),
+  m_data_size(0),
+#if !defined(CONDUIT_PLATFORM_WINDOWS)
+  m_mmap_fd(-1)
+#else
+  // windows
+  m_file_hnd(INVALID_HANDLE_VALUE),
+  m_map_hnd(INVALID_HANDLE_VALUE)
+#endif
+{
+    // empty
+}
+
+//-----------------------------------------------------------------------------
+Node::MMap::~MMap()
+{
+    close();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::MMap::open(const std::string &path,
+                 index_t data_size)
+{
+    if(m_data != NULL)
+    {
+        CONDUIT_ERROR("<Node::mmap> mmap already open");
+    }
+
+#if !defined(CONDUIT_PLATFORM_WINDOWS)
+    m_mmap_fd   = ::open(path.c_str(),
+                         (O_RDWR | O_CREAT),
+                         (S_IRUSR | S_IWUSR));
+
+    m_data_size = data_size;
+
+    if (m_mmap_fd == -1) 
+        CONDUIT_ERROR("<Node::mmap> failed to open: " << path);
+
+    m_data = ::mmap(0,
+                    m_data_size,
+                    (PROT_READ | PROT_WRITE),
+                    MAP_SHARED,
+                    m_mmap_fd, 0);
+
+    if (m_data == MAP_FAILED) 
+        CONDUIT_ERROR("<Node::mmap> mmap data = MAP_FAILED" << path);
+#else
+    m_file_hnd = CreateFile(path.c_str(),
+                            (GENERIC_READ | GENERIC_WRITE),
+                            0,
+                            NULL,
+                            OPEN_EXISTING,
+                            FILE_FLAG_RANDOM_ACCESS,
+                            NULL);
+
+    if (m_file_hnd == INVALID_HANDLE_VALUE)
+    {
+        CONDUIT_ERROR("<Node::mmap> CreateFile() Failed ");
+    }
+
+    m_map_hnd = CreateFileMapping(m_file_hnd,
+                                  NULL,
+                                  PAGE_READWRITE,
+                                  0, 0, 0);
+
+    if (m_map_hnd == NULL)
+    {
+        CloseHandle(m_file_hnd);
+        CONDUIT_ERROR("<Node::mmap> CreateFileMapping() failed with error" << GetLastError());
+    }
+
+    m_data = MapViewOfFile(m_map_hnd,
+                           FILE_MAP_ALL_ACCESS,
+                           0, 0, 0);
+
+    if (m_data == NULL)
+    {
+        CloseHandle(m_map_hnd);
+        CloseHandle(m_file_hnd);
+        CONDUIT_ERROR("<Node::mmap> MapViewOfFile() failed with error" << GetLastError());
+    }
+#endif
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::MMap::close()
+{
+    // simple return if the mmap isn't active
+    if(m_data == NULL)
+        return;
+    
+#if !defined(CONDUIT_PLATFORM_WINDOWS)
+    
+    if(munmap(m_data, m_data_size) == -1) 
+    {
+        CONDUIT_ERROR("<Node::mmap> failed to unmap mmap.");
+    }
+    
+    if(::close(m_mmap_fd) == -1)
+    {
+        CONDUIT_ERROR("<Node::mmap> failed close mmap filed descriptor.");
+    }
+
+    m_mmap_fd   = -1;
+
+#else
+    UnmapViewOfFile(m_data);
+    CloseHandle(m_map_hnd);
+    CloseHandle(m_file_hnd);
+    m_file_hnd = INVALID_HANDLE_VALUE;
+    m_map_hnd  = INVALID_HANDLE_VALUE;
+#endif
+
+    // clear data pointer and size member
+    m_data      = NULL;
+    m_data_size = 0;
+
+}
+
+
+
+
+//-----------------------------------------------------------------------------
 //
 // -- private methods that help with init, memory allocation, and cleanup --
 //
@@ -10549,34 +13008,14 @@ Node::allocate(index_t dsize)
 
 //---------------------------------------------------------------------------//
 void
-Node::mmap(const std::string &stream_path, index_t dsize)
+Node::mmap(const std::string &stream_path, index_t data_size)
 {
-#if defined(CONDUIT_PLATFORM_WINDOWS)
-    ///
-    /// TODO: mmap isn't supported on windows, we need to use a 
-    /// a windows specific API.  
-    /// See: https://lc.llnl.gov/jira/browse/CON-38
-    ///
-    /// For now, we simply throw an error
-    ///
-    CONDUIT_ERROR("<Node::mmap> conduit does not yet support mmap on Windows");
-#else    
-    m_mmap_fd   = open(stream_path.c_str(),
-                       (O_RDWR | O_CREAT),
-                       (S_IRUSR | S_IWUSR));
-    m_data_size = dsize;
-
-    if (m_mmap_fd == -1) 
-        CONDUIT_ERROR("<Node::mmap> failed to open: " << stream_path);
-
-    m_data = ::mmap(0, dsize, PROT_READ | PROT_WRITE, MAP_SHARED, m_mmap_fd, 0);
-
-    if (m_data == MAP_FAILED) 
-        CONDUIT_ERROR("<Node::mmap> MAP_FAILED" << stream_path);
-    
+    m_mmap = new MMap();
+    m_mmap->open(stream_path,data_size);
+    m_data = m_mmap->data_ptr();
+    m_data_size = data_size;
     m_alloced = false;
     m_mmaped  = true;
-#endif    
 }
 
 
@@ -10603,28 +13042,19 @@ Node::release()
             // clean up our storage
             free(m_data);
             m_data = NULL;
-            m_alloced = false;
             m_data_size = 0;
+            m_alloced   = false;
         }
     }   
-#if !defined(CONDUIT_PLATFORM_WINDOWS)
-    ///
-    /// TODO: mmap isn't yet supported on windows
-    ///
-    else if(m_mmaped && m_data)
+    else if(m_mmaped && m_mmap)
     {
-        if(munmap(m_data, m_data_size) == -1) 
-        {
-            // TODO error
-        }
-        close(m_mmap_fd);
-        m_data      = NULL;
-        m_mmap_fd   = -1;
+        delete m_mmap;
+        m_data = NULL;
         m_data_size = 0;
+        m_mmaped    = false;
+        m_mmap      = NULL;
     }
-#endif
 }
-    
 
 //---------------------------------------------------------------------------//
 void
@@ -10671,7 +13101,7 @@ Node::init_defaults()
     m_alloced = false;
 
     m_mmaped    = false;
-    m_mmap_fd   = -1;
+    m_mmap      = NULL;
 
     m_schema = new Schema(DataType::EMPTY_ID);
     m_owns_schema = true;

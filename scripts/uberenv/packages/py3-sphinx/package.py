@@ -52,20 +52,18 @@ class Py3Sphinx(Package):
 
     version('1.4.5', '5c2cd2dac45dfa6123d067e32a89e89a')
 
-    extends('python')
+    extends('python3')
     
-    depends_on("py-setuptools")
-    depends_on("py-six")
-    depends_on("py-jinja2")
-    depends_on("py-pygments")
-    depends_on("py-docutils")
-    depends_on("py-imagesize")
-    depends_on("py-snowballstemmer")
-    depends_on("py-alabaster")
-    depends_on("py-babel")
-    depends_on("py-sphinx-rtd-theme")
-    
-    
+    depends_on("py3-setuptools")
+    depends_on("py3-six")
+    depends_on("py3-jinja2")
+    depends_on("py3-pygments")
+    depends_on("py3-docutils")
+    depends_on("py3-imagesize")
+    depends_on("py3-snowballstemmer")
+    depends_on("py3-alabaster")
+    depends_on("py3-babel")
+    depends_on("py3-sphinx-rtd-theme")
 
     def install(self, spec, prefix):
         # simply install to the spack python
@@ -76,7 +74,7 @@ class Py3Sphinx(Package):
                           "sphinx-build",
                           "sphinx-quickstart"]
         for script in sphinx_scripts:
-            script_path = join_path(spec["python"].prefix,"bin",script)
+            script_path = join_path(spec["python3"].prefix,"bin",script)
             # use spack sbang to fix issues with shebang that is too long
             filter_shebang(script_path)
 

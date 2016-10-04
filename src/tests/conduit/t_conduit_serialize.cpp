@@ -136,7 +136,9 @@ TEST(conduit_serialize, compact)
                        500.0,
                       -500.0};
 
-    Generator g("{dtype: float64, length: 5, stride: 16, offset:8}",vals);
+    Generator g("{dtype: float64, length: 5, stride: 16, offset:8}",
+                "conduit_json",
+                vals);
 
     Node n(g,true);
 

@@ -62,7 +62,9 @@ TEST(conduit_node_compact, compact_1)
     uint32   vals[] = {10,20,30,40,50,60,70,80,90,100};
 
     
-    Generator g("{vals: {dtype:uint32, length:5, stride:8}}",vals);
+    Generator g("{vals: {dtype:uint32, length:5, stride:8}}",
+                "conduit_json",
+                vals);
     Node n(g,true);
 
     EXPECT_EQ(40,n.total_bytes());
@@ -85,8 +87,13 @@ TEST(conduit_node_compact, compact_2)
 {
 
     float64 vals[] = { 100.0,-100.0,200.0,-200.0,300.0,-300.0,400.0,-400.0,500.0,-500.0};
-    Generator g1("{dtype: float64, length: 5, stride: 16}",vals);
-    Generator g2("{dtype: float64, length: 5, stride: 16, offset:8}",vals);
+    Generator g1("{dtype: float64, length: 5, stride: 16}",
+                 "conduit_json",
+                 vals);
+    
+    Generator g2("{dtype: float64, length: 5, stride: 16, offset:8}",
+                 "conduit_json",
+                  vals);
 
     Node n1(g1,true);
     n1.print();

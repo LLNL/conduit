@@ -48,8 +48,8 @@
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_MCA_EXAMPLES_HPP
-#define BLUEPRINT_MCA_EXAMPLES_HPP
+#ifndef BLUEPRINT_MCARRAY_EXAMPLES_HPP
+#define BLUEPRINT_MCARRAY_EXAMPLES_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
@@ -73,8 +73,6 @@ namespace blueprint
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mcarray --
 //-----------------------------------------------------------------------------
-
-// NOTE: MCA is an intentionally bad name, which we hope to change.
 
 namespace mcarray
 {

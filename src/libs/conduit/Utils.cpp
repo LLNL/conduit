@@ -62,16 +62,8 @@
 #endif
 
 // file system funcs
-#if defined(CONDUIT_PLATFORM_WINDOWS)
-// TODO
-#else
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
-#include <dirent.h>
-#include <dirent.h>
-#include <errno.h>
-#endif
+#include <sys/types.h>
 
 
 // define for path sep
@@ -298,14 +290,12 @@ bool
 is_file(const std::string &path)
 {
     bool res = false;
-#if defined(CONDUIT_PLATFORM_WINDOWS)
-    // TODO
-    CONDUIT_WARN("utils::is_directory not implemented on windows");
-#else // unix, etc
     struct stat path_stat;
-    stat(path.c_str(), &path_stat);
-    res = S_ISREG(path_stat.st_mode);
-#endif
+    if(stat(path.c_str(), &path_stat) == 0)
+    {
+        if(path_stat.st_mode & S_IFREG)
+            res = true;
+    }
     return res;
 }
 
@@ -315,27 +305,12 @@ bool
 is_directory(const std::string &path)
 {
     bool res = false;
-#if defined(CONDUIT_PLATFORM_WINDOWS)
-    // TODO
-    CONDUIT_WARN("utils::is_directory not implemented on windows");
-#else // unix, etc
-    DIR *dir = opendir(path.c_str());
-    if(dir)
+    struct stat path_stat;
+    if (stat(path.c_str(), &path_stat) == 0)
     {
-        /* Directory exists. */
-        closedir(dir);
-        res = true;
+        if (path_stat.st_mode & S_IFDIR)
+            res = true;
     }
-    else if (ENOENT == errno)
-    {
-        /* Directory does not exist. */
-    }
-    else
-    {
-        /* opendir() failed for some other reason. */
-    }
-#endif
-    
     return res;
 }
 
@@ -343,7 +318,8 @@ is_directory(const std::string &path)
 bool
 remove_file(const std::string &path)
 {
-    return remove(path.c_str());
+    int res = remove(path.c_str());
+    return (res == 0);
 }
 
 
@@ -513,7 +489,7 @@ sleep(index_t milliseconds)
 {
 
 #if defined(CONDUIT_PLATFORM_WINDOWS)
-    Sleep(milliseconds);
+    Sleep((DWORD)milliseconds);
 #else // unix, etc
     struct timespec ts;
     ts.tv_sec = milliseconds / 1000;
@@ -681,7 +657,7 @@ base64_encode(const void *src,
     base64_init_encodestate(&enc_state);
     const char *src_ptr = (const char*)src;
     char *des_ptr       = (char*)dest;
-    memset(des_ptr,0,nbytes*2);
+    memset(des_ptr,0,base64_encode_buffer_size(src_nbytes));
     
     int code_len = base64_encode_block(src_ptr,
                                        nbytes,
@@ -696,13 +672,28 @@ base64_encode(const void *src,
 }
 
 //-----------------------------------------------------------------------------
+index_t 
+base64_encode_buffer_size(index_t src_nbytes)
+{
+     return  (4*src_nbytes) / 3 + 4 + 1;
+}
+
+//-----------------------------------------------------------------------------
+index_t
+base64_decode_buffer_size(index_t encoded_nbytes)
+{
+    return (encoded_nbytes / 4) * 3 + 1;
+}
+
+
+//-----------------------------------------------------------------------------
 void
 base64_decode(const void *src,
               index_t src_nbytes,
               void *dest)
 {
     base64_decodestate dec_state;
-    int src_len = src_nbytes;
+    int src_len = (int)src_nbytes;
     base64_init_decodestate(&dec_state);
     const char *src_ptr = (const char*)src;
     char *des_ptr = (char*)dest;

@@ -57,7 +57,7 @@
 //-----------------------------------------------------------------------------
 // conduit includes
 //-----------------------------------------------------------------------------
-#include "blueprint_mesh.hpp"
+#include "blueprint_mcarray_examples.hpp"
 
 
 //-----------------------------------------------------------------------------
@@ -233,7 +233,7 @@ xyz(const std::string &mcarray_type,
     }
     else
     {
-        CONDUIT_ERROR("unknown mca_type = " << mcarray_type);
+        CONDUIT_ERROR("unknown mcarray_type = " << mcarray_type);
     }
 }
 

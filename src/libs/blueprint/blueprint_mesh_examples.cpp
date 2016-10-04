@@ -58,7 +58,7 @@
 //-----------------------------------------------------------------------------
 // conduit includes
 //-----------------------------------------------------------------------------
-#include "blueprint_mesh.hpp"
+#include "blueprint_mesh_examples.hpp"
 
 
 //-----------------------------------------------------------------------------
@@ -116,9 +116,9 @@ void braid_init_example_point_scalar_field(index_t npts_x,
     
     float64 *vals = res["values"].value();
 
-    float dx = (4.0 * PI_VALUE) / float64(npts_x-1);
-    float dy = (2.0 * PI_VALUE) / float64(npts_y-1);
-    float dz = (3.0 * PI_VALUE) / float64(npts_z-1);
+    float64 dx = (float) (4.0 * PI_VALUE) / float64(npts_x - 1);
+    float64 dy = (float) (2.0 * PI_VALUE) / float64(npts_y-1);
+    float64 dz = (float) (3.0 * PI_VALUE) / float64(npts_z-1);
     
     index_t idx = 0;
 
@@ -180,10 +180,9 @@ void braid_init_example_point_vector_field(index_t npts_x,
     // we are using the coords (distance from origin)
     // to create an example vector field
     
-    float dx = 20.0 / float64(npts_x-1);
-    float dy = 20.0 / float64(npts_y-1);
-
-    float dz = 0.0;
+    float64 dx = 20.0 / float64(npts_x - 1);
+    float64 dy =  20.0 / float64(npts_y-1);
+    float64 dz = 0.0;
 
     if(npts_z > 1)
     {
@@ -240,9 +239,9 @@ void braid_init_example_element_scalar_field(index_t nele_x,
 
     float64 *vals = res["values"].value();
 
-    float dx = 20.0 / float64(nele_x);
-    float dy = 20.0 / float64(nele_y);
-    float dz = 0.0;
+    float64 dx = 20.0 / float64(nele_x);
+    float64 dy = 20.0 / float64(nele_y);
+    float64 dz = 0.0f;
     
     if(nele_z > 0 )
     {
@@ -400,10 +399,10 @@ braid_init_explicit_coordset(index_t npts_x,
         z_vals = coord_vals["z"].value();
     }
 
-    float dx = 20.0 / float64(npts_x-1);
-    float dy = 20.0 / float64(npts_y-1);
+    float64 dx = 20.0 / float64(npts_x-1);
+    float64 dy = 20.0 / float64(npts_y-1);
 
-    float dz = 0.0;
+    float64 dz = 0.0;
 
     if(npts_z > 1)
     {
@@ -578,7 +577,7 @@ braid_points_explicit(index_t npts_x,
                       Node &res)
 {
     res.reset();
-    int npts_total = npts_x * npts_y * npts_z;
+    index_t npts_total = npts_x * npts_y * npts_z;
     
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
@@ -592,9 +591,9 @@ braid_points_explicit(index_t npts_x,
     res["topologies/mesh/elements/connectivity"].set(DataType::int32(npts_total));
     int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
-    for(index_t i = 0; i < npts_total ; i++)
+    for(int32 i = 0; i < (int32)npts_total ; i++)
     {
-        conn[i] =i;
+        conn[i] = i;
     }
 
     Node &fields = res["fields"];

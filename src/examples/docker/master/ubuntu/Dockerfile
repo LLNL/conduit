@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -9,7 +9,7 @@
 # 
 # This file is part of Conduit. 
 # 
-# For details, see: http://software.llnl.gov/conduit/.
+# For details, see https://lc.llnl.gov/conduit/.
 # 
 # Please also read conduit/LICENSE
 # 
@@ -41,34 +41,52 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
-from spack import *
-from spack.hooks.sbang import filter_shebang
 
-class Py3Breathe(Package):
-    """Breathe provides a bridge between the Sphinx and Doxygen documentation systems."""
+FROM ubuntu:latest
+MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
 
-    homepage = "https://breathe.readthedocs.org/en/latest/"
-    url      = "https://pypi.python.org/packages/source/b/breathe/breathe-4.0.0.tar.gz"
+# fetch build env
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    build-essential \
+    gcc \
+    g++ \
+    gfortran \
+    zlib1g-dev \
+    python \
+ && rm -rf /var/lib/apt/lists/*
 
-    version('4.0.0', '32316d5a890a3124ea3e8a9e0b2b3b97')
+# at some sites, ssl certs are intercepted, which
+# cases issues fetching source via https.
+#
+# to resolve this, either install the proper certs into the image, or use 
+# the following commands to  disable ssl for git and curl (used by spack):
+#RUN git config --global http.sslVerify false
+#RUN echo insecure >> ~/.curlrc
 
-    extends('python3')
+# clone conduit master
+RUN git clone --depth 1 https://github.com/LLNL/conduit.git
 
+# bootstrap third party libs using spack and uberenv
+#  for this example we use mpich for MPI and only build python2 (not python3)
+RUN cd conduit && python scripts/uberenv/uberenv.py --spec %gcc+mpich~python3
 
-    def install(self, spec, prefix):
-        # breathe + sphinx doesn't play well with --prefix installs, for now simply 
-        # install to the spack python
-        python('setup.py', 'install') #, '--prefix=%s' % prefix)
-        # sphinx_build lives in python's bin dir and for some reason breathe's
-        # setuptools install reinstalls the sphinx build scripts (even though
-        # it finds the existing sphinx install).
-        # To keep this from undermining us, we need to patch the new copies
-        # of these scripts.
-        sphinx_scripts = ["sphinx-apidoc",
-                          "sphinx-autogen",
-                          "sphinx-build",
-                          "sphinx-quickstart"]
-        for script in sphinx_scripts:
-            script_path = join_path(spec["python3"].prefix,"bin",script)
-            # use spack sbang to fix issues with shebang that is too long
-            filter_shebang(script_path)
+# configure a debug build with cmake
+RUN cd conduit && mkdir build-debug
+RUN cd conduit/build-debug && \
+    ../uberenv_libs/spack/opt/spack/*/*/cmake*/bin/cmake \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DCMAKE_INSTALL_PREFIX=/conduit/install-debug \
+    -C ../uberenv_libs/*.cmake \
+    ../src
+
+# build, test, and install conduit
+RUN cd conduit/build-debug && make
+RUN cd conduit/build-debug && make test
+RUN cd conduit/build-debug && make install
+
+# open port 9000, for use by conduit relay
+EXPOSE 9000
+
+CMD ["/bin/bash"]
