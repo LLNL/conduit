@@ -63,6 +63,7 @@ macro(ENABLE_WARNINGS)
     if(CMAKE_BUILD_TOOL MATCHES "(msdev|devenv|nmake)")
         add_definitions(/W2)
     else()
+        message(STATUS "C++ Compiler ID: ${CMAKE_CXX_COMPILER_ID}")
         if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR
             "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR
             "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
@@ -75,7 +76,7 @@ macro(ENABLE_WARNINGS)
             #  add -Wno-c-binding-type
             set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-c-binding-type")
         endif()
-        
+        MESSAGE(STATUS "CMake Fortran Flags: ${CMAKE_Fortran_FLAGS}")
     endif()
 endmacro()
 
