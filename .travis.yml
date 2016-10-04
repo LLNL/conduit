@@ -99,7 +99,7 @@ script:
   # configure with cmake
   - cmake  ${CMAKE_OPTS} ../src
   # build, test, and install
-  - make VERBOSE=1
+  - make
   - env CTEST_OUTPUT_ON_FAILURE=1 make test
   - make install
   # test our examples that demo using an installed conduit
