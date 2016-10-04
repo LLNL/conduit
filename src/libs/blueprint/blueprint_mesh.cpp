@@ -64,6 +64,12 @@ using namespace conduit;
 
 
 //-----------------------------------------------------------------------------
+// Helpers for consistently logging info about the verification process.
+// this may be promoted to be a blueprint-wide standard, lets see how 
+// it works out for the mesh bp first.
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 void
 log_info(Node &info,
          const std::string &proto_name,
@@ -90,6 +96,21 @@ log_error(Node &info,
     info["errors"].append().set(proto_name + ": " + msg);
 }
 
+
+//-----------------------------------------------------------------------------
+void
+log_verify_result(Node &info,
+                  bool res)
+{
+    if(res)
+    {
+        info["valid"] = "true";
+    }
+    else
+    {
+        info["valid"] = "false";
+    }
+}
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -121,7 +142,6 @@ mesh::verify(const std::string &protocol,
     {
         res = topology::verify(n,info);
     }
-    
     else if(protocol == "field")
     {
         res = field::verify(n,info);
@@ -154,8 +174,7 @@ mesh::verify(const Node &n,
     bool res = true;
 
     const std::string proto_name = "mesh";
-    
-    // note "errors" is a list, this allows us to log multiple errors.
+
     // Given that not conforming result is likely to trigger an error 
     // state in client code it seems like we should give as much info as
     // possible about what is wrong with the mesh, so we don't early
@@ -289,14 +308,7 @@ mesh::verify(const Node &n,
         }
     }
     
-    if(res)
-    {
-        info["valid"] = "true";
-    }
-    else
-    {
-        info["valid"] = "false";
-    }
+    log_verify_result(info,res);
 
     return res;
 }
@@ -398,6 +410,53 @@ mesh::generate_index(const Node &mesh,
     }
 }
 
+//-----------------------------------------------------------------------------
+// blueprint::mesh::logical_dims protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::logical_dims::verify(const Node &dims,
+                           Node &info)
+{
+    bool res = true;
+    const std::string proto_name = "mesh::logical_dims";
+    
+    if(!dims.has_child("i"))
+    {
+        log_error(info,proto_name, "missing child \"dims\"");
+        res = false;
+    }
+    else if(!dims["i"].dtype().is_number())
+    {
+        log_error(info,proto_name,"dims/i is not a number");
+        res = false;
+    }
+    
+    if(dims.has_child("j"))
+    {
+        log_optional(info,proto_name, "dims includes j");
+        if(!dims["j"].dtype().is_number())
+        {
+            log_error(info,proto_name,"dims/j is not a number");
+            res = false;
+        }
+    }
+    
+    if(dims.has_child("k"))
+    {
+        log_optional(info,proto_name, "dims includes k");
+        if(!dims["k"].dtype().is_number())
+        {
+            log_error(info,proto_name,"dims/k is not a number");
+            res = false;
+        }
+    }
+    
+    log_verify_result(info,res);
+
+    return res;
+}
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::coordset protocol interface
@@ -408,6 +467,96 @@ mesh::generate_index(const Node &mesh,
 // blueprint::mesh::coordset::verify protocol interface
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+bool
+mesh::coordset::uniform::origin::verify(const Node &origin,
+                                        Node &info)
+{
+    bool res = true;
+
+    const std::string proto_name = "mesh::coordset::uniform::origin";
+
+    //TODO: check other supported coord systems (cyln,spherical)
+
+    if(origin.has_child("x"))
+    {
+        if(!origin["x"].dtype().is_number())
+        {
+            log_error(info,proto_name,"origin/x is not a number");
+            res = false;
+        }
+    }
+
+    if(origin.has_child("y"))
+    {
+        if(!origin["y"].dtype().is_number())
+        {
+            log_error(info,proto_name,"origin/y is not a number");
+            res = false;
+        }
+    }
+
+    if(origin.has_child("z"))
+    {
+        if(!origin["z"].dtype().is_number())
+        {
+            log_error(info,proto_name,"origin/z is not a number");
+            res = false;
+        }
+    }
+
+    log_verify_result(info,res);
+
+    return res;
+}
+
+
+
+//-----------------------------------------------------------------------------
+bool
+mesh::coordset::uniform::spacing::verify(const Node &spacing,
+                                         Node &info)
+{
+    bool res = true;
+
+    const std::string proto_name = "mesh::coordset::uniform::spacing";
+
+    //TODO: check other supported coord systems (cyln,spherical)
+
+    if(spacing.has_child("dx"))
+    {
+
+        if(!spacing["dx"].dtype().is_number())
+        {
+            log_error(info,proto_name,"spacing/dx is not a number");
+            res = false;
+        }
+    }
+
+    if(spacing.has_child("dy"))
+    {
+
+        if(!spacing["dy"].dtype().is_number())
+        {
+            log_error(info,proto_name,"spacing/dy is not a number");
+            res = false;
+        }
+    }
+
+    if(spacing.has_child("dz"))
+    {
+
+        if(!spacing["dz"].dtype().is_number())
+        {
+            log_error(info,proto_name,"spacing/dz is not a number");
+            res = false;
+        }
+    }
+
+    log_verify_result(info,res);
+
+    return res;
+}
 
 //-----------------------------------------------------------------------------
 bool
@@ -416,79 +565,30 @@ mesh::coordset::uniform::verify(const Node &coordset,
 {
     bool res = true;
 
-    std::string proto_name = "mesh::coordset::uniform";
+    const std::string proto_name = "mesh::coordset::uniform";
 
     if(!coordset.has_child("dims"))
     {
-        log_error(info,proto_name, "missing child \"value\"");
+        log_error(info,proto_name, "missing child \"dims\"");
         res = false;
     }
-    else // dims needs at least one child ("i") 
+    else
     {
         const Node &dims = coordset["dims"];
         
-        if(!dims.has_child("i"))
+        if(!mesh::logical_dims::verify(dims,info))
         {
-            log_error(info,proto_name, "missing child \"dims\"");
-            res = false;
-        }
-        else if(!dims["i"].dtype().is_number())
-        {
-            log_error(info,proto_name,"dims/i is not a number");
-            res = false;
-        }
-        
-        if(dims.has_child("j"))
-        {
-            log_optional(info,proto_name, "dims includes j");
-            if(!dims["j"].dtype().is_number())
-            {
-                log_error(info,proto_name,"dims/j is not a number");
-                res = false;
-            }
-        }
-        
-        if(dims.has_child("k"))
-        {
-            log_optional(info,proto_name, "dims includes k");
-            if(!dims["k"].dtype().is_number())
-            {
-                log_error(info,proto_name,"dims/k is not a number");
-                res = false;
-            }
+            res= false;
         }
     }
     
     if(!coordset.has_child("origin"))
     {
         log_optional(info,proto_name, "has origin");
-        const Node &origin = coordset["origin"];
-
-        if(origin.has_child("x"))
+        
+        if(!mesh::coordset::uniform::origin::verify(coordset["dims"],info))
         {
-            if(!origin["x"].dtype().is_number())
-            {
-                log_error(info,proto_name,"origin/x is not a number");
-                res = false;
-            }
-        }
-
-        if(origin.has_child("y"))
-        {
-            if(!origin["y"].dtype().is_number())
-            {
-                log_error(info,proto_name,"origin/y is not a number");
-                res = false;
-            }
-        }
-
-        if(origin.has_child("z"))
-        {
-            if(!origin["z"].dtype().is_number())
-            {
-                log_error(info,proto_name,"origin/z is not a number");
-                res = false;
-            }
+            res= false;
         }
     }
 
@@ -496,38 +596,14 @@ mesh::coordset::uniform::verify(const Node &coordset,
     {
         log_optional(info,proto_name, "has spacing");
         
-        const Node &spacing = coordset["spacing"];
 
-        if(spacing.has_child("dx"))
+        if(!mesh::coordset::uniform::origin::verify(coordset["spacing"],info))
         {
-
-            if(!spacing["dx"].dtype().is_number())
-            {
-                log_error(info,proto_name,"spacing/dx is not a number");
-                res = false;
-            }
-        }
-
-        if(spacing.has_child("dy"))
-        {
-
-            if(!spacing["dy"].dtype().is_number())
-            {
-                log_error(info,proto_name,"spacing/dy is not a number");
-                res = false;
-            }
-        }
-
-        if(spacing.has_child("dz"))
-        {
-
-            if(!spacing["dz"].dtype().is_number())
-            {
-                log_error(info,proto_name,"spacing/dz is not a number");
-                res = false;
-            }
+            res= false;
         }
     }
+
+    log_verify_result(info,res);
 
     return res;
 }
@@ -555,6 +631,8 @@ mesh::coordset::rectilinear::verify(const Node &coordset,
                                          info["values"]);
     }
 
+    log_verify_result(info,res);
+
     return res;
 }
 
@@ -579,6 +657,8 @@ mesh::coordset::_explicit::verify(const Node &coordset,
         res = blueprint::mcarray::verify(coordset["values"],
                                          info["values"]);
     }
+
+    log_verify_result(info,res);
 
     return res;
 }
@@ -619,14 +699,7 @@ mesh::coordset::verify(const Node &coordset,
         }
     }
 
-    if(res)
-    {
-        info["valid"] = "true";
-    }
-    else
-    {
-        info["valid"] = "false";
-    }
+    log_verify_result(info,res);
 
     return res;
 }
@@ -667,14 +740,7 @@ mesh::coordset::type::verify(const Node &coordset_type,
         }
     }
 
-    if(res)
-    {
-        info["valid"] = "true";
-    }
-    else
-    {
-        info["valid"] = "false";
-    }
+    log_verify_result(info,res);
 
     return res;
 }
@@ -714,14 +780,7 @@ mesh::coordset::coord_system::verify(const Node &coord_sys,
         }
     }
 
-    if(res)
-    {
-        info["valid"] = "true";
-    }
-    else
-    {
-        info["valid"] = "false";
-    }
+    log_verify_result(info,res);
 
     return res;
 }
@@ -773,14 +832,7 @@ mesh::coordset::index::verify(const Node &coordset_idx,
         res = false;
     }
     
-    if(res)
-    {
-        info["valid"] = "true";
-    }
-    else
-    {
-        info["valid"] = "false";
-    }
+    log_verify_result(info,res);
 
     return res;
 }
@@ -792,13 +844,271 @@ mesh::coordset::index::verify(const Node &coordset_idx,
 
 //-----------------------------------------------------------------------------
 bool
-mesh::topology::verify(const Node &coordset,
+mesh::topology::verify(const Node &topo,
                        Node &info)
 {
-    // TODO: IMPLEMENT!
-    info["valid"] = "true";
-    return true;
+    bool res = true;
+    std::string proto_name = "mesh::topology";
+
+    // we need the topo type
+    if(!topo.has_child("type"))
+    {
+        log_error(info,proto_name, "missing child \"type\"");
+        res = false;
+    }
+    else if(!mesh::topology::type::verify(topo["type"],info["type"]))
+    {
+        res = false;
+    }
+    else
+    {
+        std::string type_name = topo["type"].as_string();
+
+        if(type_name == "uniform")
+        {
+            res = mesh::topology::uniform::verify(topo,info);
+        }
+        else if(type_name == "rectilinear")
+        {
+            res = mesh::topology::rectilinear::verify(topo,info);
+        }
+        else if(type_name == "structured")
+        {
+            res = mesh::topology::structured::verify(topo,info);
+        }
+        else if(type_name == "unstructured")
+        {
+            res = mesh::topology::unstructured::verify(topo,info);
+        }
+    }
+
+    log_verify_result(info,res);
+    
+    return res;
+
 }
+
+//-----------------------------------------------------------------------------
+// blueprint::mesh::topology::uniform protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::topology::uniform::verify(const Node &topo_elements,
+                                Node &info)
+{
+    // future: will be used to verify optional info from "elements"
+    // child of a uniform topology
+    bool res = true;
+    log_verify_result(info,res);
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+// blueprint::mesh::topology::rectilinear protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::topology::rectilinear::verify(const Node &topo_elements,
+                                    Node &info)
+{
+    // future: will be used to verify optional info from "elements"
+    // child of a rectilinear topology
+    bool res = true;
+    log_verify_result(info,res);
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+bool
+mesh::topology::structured::verify(const Node &topo,
+                                   Node &info)
+{
+    bool res = true;
+    std::string proto_name = "mesh::topology::structured";
+
+    if(!topo.has_child("elements"))
+    {
+        log_error(info,proto_name, "missing child \"elements\"");
+        res = false;
+    }
+    else
+    {
+        const Node &topo_elements = topo["elements"];
+        
+        if(!topo_elements.has_child("dims"))
+        {
+            log_error(info["elements"],proto_name, "missing child \"dims\"");
+            res = false;
+        }
+        else
+        {
+            if(!mesh::logical_dims::verify(topo_elements["dims"],
+                                           info["elements/dims"]))
+            {
+                res = false;
+            }
+        }
+    }
+
+    log_verify_result(info,res);
+
+    return res;
+}
+
+
+
+//-----------------------------------------------------------------------------
+bool
+mesh::topology::unstructured::verify(const Node &topo,
+                                   Node &info)
+{
+    bool res = true;
+    std::string proto_name = "mesh::topology::unstructured";
+
+    if(!topo.has_child("elements"))
+    {
+        log_error(info,proto_name, "missing child \"elements\"");
+        res = false;
+    }
+    else
+    {
+        const Node &topo_elements = topo["elements"];
+        
+        if(topo_elements.has_child("shape"))
+        {
+            // single shape case
+            if(!mesh::topology::shape::verify(topo_elements["shape"],
+                                             info["elements/shape"]))
+            {
+                res = false;
+            }
+
+            if(!topo_elements.has_child("connectivity"))
+            {
+                log_error(info["elements"],
+                          proto_name, "missing child \"connectivity\"");
+                res = false;
+            }
+            else if(!topo_elements["connectivity"].dtype().is_integer())
+            {
+                log_error(info["elements"],
+                         proto_name,
+                         "\"connectivity\" is not an integer array");
+                res = false;
+            }
+        }
+        else if(topo_elements.has_child("element_types"))
+        {
+            // TODO stream cases
+        }
+        else // mixed shape list or object case
+        {
+            bool has_names = topo_elements.dtype().is_object();
+
+            NodeConstIterator itr = topo_elements.children();
+            while(itr.has_next())
+            {
+                const Node &cld  = itr.next();
+                std::string name = itr.path();
+                
+                if(has_names)
+                {
+                    info["elements"][name];
+                }
+                else
+                {
+                    info["elements"].append();
+                }
+                
+                Node &cld_info = info["elements"][itr.index()];
+                
+                if(!cld.has_child("shape"))
+                {
+                    log_error(cld_info,proto_name, "missing child \"shape\"");
+                    res = false;
+                }
+                else
+                {
+                    // verify shape
+                    if(!mesh::topology::shape::verify(cld,
+                                                      cld_info))
+                    {
+                        res = false;
+                    }
+                }
+                
+                if(!cld.has_child("connectivity"))
+                {
+                    log_error(cld_info,
+                              proto_name,
+                              "missing child \"connectivity\"");
+                    res = false;
+                }
+                else if(!cld["connectivity"].dtype().is_integer())
+                {
+                    log_error(cld_info,proto_name,"\"connectivity\" "
+                              "is not an integer array");
+                    res = false;
+                }
+            }
+            
+        }
+        
+        
+    }
+
+    log_verify_result(info,res);
+
+    return res;
+}
+
+
+
+//-----------------------------------------------------------------------------
+// blueprint::mesh::shape::index protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::topology::shape::verify(const Node &shape,
+                              Node &info)
+{
+    bool res = true;
+    std::string proto_name = "mesh::topology::shape";
+
+    if(!shape.dtype().is_string())
+    {
+        log_error(info,proto_name,"is not a string");
+        res = false;
+    }
+    else
+    {
+        std::string shape_str = shape.as_string();
+
+        if(shape_str == "point" ||
+           shape_str == "line"  ||
+           shape_str == "tri"   ||
+           shape_str == "quad"  ||
+           shape_str == "tet"   ||
+           shape_str == "hex" )
+        {
+            log_info(info,proto_name,"valid type: " + shape_str);
+        }
+        else
+        {
+            log_error(info,proto_name, "unsupported value:"
+                           + shape_str);
+            res = false;
+        }
+    }
+
+    log_verify_result(info,res);
+
+    return res;
+}
+
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::topology::index protocol interface
@@ -847,14 +1157,7 @@ mesh::topology::index::verify(const Node &topo_idx,
         res = false;
     }
     
-    if(res)
-    {
-        info["valid"] = "true";
-    }
-    else
-    {
-        info["valid"] = "false";
-    }
+    log_verify_result(info,res);
 
     return res;
 }
@@ -896,14 +1199,7 @@ mesh::topology::type::verify(const Node &topo_type,
         }
     }
 
-    if(res)
-    {
-        info["valid"] = "true";
-    }
-    else
-    {
-        info["valid"] = "false";
-    }
+    log_verify_result(info,res);
 
     return res;
 }
@@ -989,17 +1285,9 @@ mesh::field::verify(const Node &field,
         }
     }
 
-    if(res)
-    {
-        info["valid"] = "true";
-    }
-    else
-    {
-        info["valid"] = "false";
-    }
+    log_verify_result(info,res);
 
     return res;
-
 }
 
 
@@ -1038,14 +1326,7 @@ mesh::field::association::verify(const Node &assoc,
         }
     }
 
-    if(res)
-    {
-        info["valid"] = "true";
-    }
-    else
-    {
-        info["valid"] = "false";
-    }
+    log_verify_result(info,res);
 
     return res;
 }
@@ -1074,14 +1355,7 @@ mesh::field::basis::verify(const Node &basis,
         log_info(info,proto_name,"basis: " + basis.as_string());
     }
 
-    if(res)
-    {
-        info["valid"] = "true";
-    }
-    else
-    {
-        info["valid"] = "false";
-    }
+    log_verify_result(info,res);
 
     return res;
 }
@@ -1162,14 +1436,7 @@ mesh::field::index::verify(const Node &field_idx,
         }
     }
 
-    if(res)
-    {
-        info["valid"] = "true";
-    }
-    else
-    {
-        info["valid"] = "false";
-    }
+    log_verify_result(info,res);
 
     return res;
 }
@@ -1325,14 +1592,7 @@ mesh::index::verify(const Node &n,
         }
     }
     
-    if(res)
-    {
-        info["valid"] = "true";
-    }
-    else
-    {
-        info["valid"] = "false";
-    }
+    log_verify_result(info,res);
 
     return res;
 }

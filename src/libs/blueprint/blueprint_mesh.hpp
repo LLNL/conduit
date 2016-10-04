@@ -106,6 +106,16 @@ void BLUEPRINT_API generate_index(const conduit::Node &mesh,
                                   Node &index_out);
 
 //-----------------------------------------------------------------------------
+// blueprint::mesh::logical_dims protocol interface
+//-----------------------------------------------------------------------------
+namespace logical_dims
+{
+    //-------------------------------------------------------------------------
+    bool BLUEPRINT_API verify(const conduit::Node &n,
+                              conduit::Node &info);
+}
+
+//-----------------------------------------------------------------------------
 // blueprint::mesh::coordset protocol interface
 //-----------------------------------------------------------------------------
 namespace coordset
@@ -113,8 +123,7 @@ namespace coordset
     //-------------------------------------------------------------------------
     bool BLUEPRINT_API verify(const conduit::Node &n,
                               conduit::Node &info);
-                              
-                              
+
     //-------------------------------------------------------------------------
     // blueprint::mesh::coordset::uniform protocol interface
     //-------------------------------------------------------------------------
@@ -123,6 +132,27 @@ namespace coordset
         //---------------------------------------------------------------------
         bool BLUEPRINT_API verify(const conduit::Node &n,
                                   conduit::Node &info);
+
+        //---------------------------------------------------------------------
+        // blueprint::mesh::coordset::uniform::origin protocol interface
+        //---------------------------------------------------------------------
+        namespace origin
+        {
+            //-----------------------------------------------------------------
+            bool BLUEPRINT_API verify(const conduit::Node &n,
+                                      conduit::Node &info);
+        }
+
+        //---------------------------------------------------------------------
+        // blueprint::mesh::coordset::uniform::spacing protocol interface
+        //---------------------------------------------------------------------
+        namespace spacing
+        {
+            //-----------------------------------------------------------------
+            bool BLUEPRINT_API verify(const conduit::Node &n,
+                                      conduit::Node &info);
+        }
+
     }
 
     //-------------------------------------------------------------------------
@@ -190,6 +220,57 @@ namespace topology
     //-------------------------------------------------------------------------
     bool BLUEPRINT_API verify(const conduit::Node &n,
                               conduit::Node &info);
+
+    //-------------------------------------------------------------------------
+    // blueprint::mesh::topology::uniform protocol interface
+    //-------------------------------------------------------------------------
+    namespace uniform
+    {
+        //---------------------------------------------------------------------
+        bool BLUEPRINT_API verify(const conduit::Node &n,
+                                  conduit::Node &info);
+    }
+    
+    //-------------------------------------------------------------------------
+    // blueprint::mesh::topology::rectilinear protocol interface
+    //-------------------------------------------------------------------------
+    namespace rectilinear
+    {
+        //---------------------------------------------------------------------
+        bool BLUEPRINT_API verify(const conduit::Node &n,
+                                  conduit::Node &info);
+    }
+
+    //-------------------------------------------------------------------------
+    // blueprint::mesh::topology::structured protocol interface
+    //-------------------------------------------------------------------------
+    namespace structured
+    {
+        //---------------------------------------------------------------------
+        bool BLUEPRINT_API verify(const conduit::Node &n,
+                                  conduit::Node &info);
+    }
+
+    //-------------------------------------------------------------------------
+    // blueprint::mesh::topology::unstructured protocol interface
+    //-------------------------------------------------------------------------
+    namespace unstructured
+    {
+        //---------------------------------------------------------------------
+        bool BLUEPRINT_API verify(const conduit::Node &n,
+                                  conduit::Node &info);
+    }
+
+
+    //-------------------------------------------------------------------------
+    // blueprint::mesh::topology::shape protocol interface
+    //-------------------------------------------------------------------------
+    namespace shape
+    {
+        //---------------------------------------------------------------------
+        bool BLUEPRINT_API verify(const conduit::Node &n,
+                                  conduit::Node &info);
+    }
 
     //-------------------------------------------------------------------------
     // blueprint::mesh::topology::index protocol interface

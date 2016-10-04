@@ -588,7 +588,7 @@ braid_points_explicit(index_t npts_x,
     
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
-    res["topologies/mesh/elements/shape"] = "points";
+    res["topologies/mesh/elements/shape"] = "point";
     res["topologies/mesh/elements/connectivity"].set(DataType::int32(npts_total));
     int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
@@ -637,7 +637,7 @@ braid_quads(index_t npts_x,
   
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
-    res["topologies/mesh/elements/shape"] = "quads";
+    res["topologies/mesh/elements/shape"] = "quad";
     res["topologies/mesh/elements/connectivity"].set(DataType::int32(nele*4));
     int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
@@ -696,10 +696,10 @@ braid_quads_and_tris(index_t npts_x,
     res["topologies/mesh/coordset"] = "coords";
 
     Node &elems = res["topologies/mesh/elements"];
-    elems["stream_shapes/quads/stream_id"] = 9; // VTK_QUAD
-    elems["stream_shapes/quads/shape"]     = "quads";
-    elems["stream_shapes/tris/stream_id"]  = 5; // VTK_TRIANGLE
-    elems["stream_shapes/tris/shape"]      = "tris";
+    elems["element_types/quads/stream_id"] = 9; // VTK_QUAD
+    elems["element_types/quads/shape"]     = "quad";
+    elems["element_types/tris/stream_id"]  = 5; // VTK_TRIANGLE
+    elems["element_types/tris/shape"]      = "tri";
 
     // Fill in stream IDs and calculate size of the connectivity array
     int count   = 0;
@@ -733,8 +733,8 @@ braid_quads_and_tris(index_t npts_x,
     } // END for all j
 
 
-    elems["stream_index/stream_ids"].set(stream_ids_buffer);
-    elems["stream_index/stream_lengths"].set(stream_lengths);
+    elems["element_index/stream_ids"].set(stream_ids_buffer);
+    elems["element_index/element_counts"].set(stream_lengths);
 
     // Allocate connectivity array
     elems["stream"].set(DataType::int32(count));
@@ -822,10 +822,10 @@ braid_quads_and_tris_offsets(index_t npts_x,
     res["topologies/mesh/coordset"] = "coords";
     
     Node &elems = res["topologies/mesh/elements"];
-    elems["stream_shapes/quads/stream_id"] = 9; // VTK_QUAD
-    elems["stream_shapes/quads/shape"]     = "quads";
-    elems["stream_shapes/tris/stream_id"]  = 5; // VTK_TRIANGLE
-    elems["stream_shapes/tris/shape"]      = "tris";
+    elems["element_types/quads/stream_id"] = 9; // VTK_QUAD
+    elems["element_types/quads/shape"]     = "quad";
+    elems["element_types/tris/stream_id"]  = 5; // VTK_TRIANGLE
+    elems["element_types/tris/shape"]      = "tri";
 
     // Fill in stream IDs and calculate size of the connectivity array
     int count   = 0;
@@ -864,8 +864,8 @@ braid_quads_and_tris_offsets(index_t npts_x,
     } // END for all j
 
 
-    elems["stream_index/stream_ids"].set(stream_ids);
-    elems["stream_index/stream_offsets"].set(stream_offsets);
+    elems["element_index/stream_ids"].set(stream_ids);
+    elems["element_index/offsets"].set(stream_offsets);
 
     // Allocate connectivity array
     elems["stream"].set(DataType::int32(count));
@@ -949,7 +949,7 @@ braid_lines_2d(index_t npts_x,
   
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
-    res["topologies/mesh/elements/shape"] = "lines";
+    res["topologies/mesh/elements/shape"] = "line";
     res["topologies/mesh/elements/connectivity"].set(DataType::int32(nele_quads*4*2));
     int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
@@ -1021,7 +1021,7 @@ braid_tris(index_t npts_x,
   
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
-    res["topologies/mesh/elements/shape"] = "tris";
+    res["topologies/mesh/elements/shape"] = "tri";
     res["topologies/mesh/elements/connectivity"].set(DataType::int32(nele_quads*6));
     int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
@@ -1088,7 +1088,7 @@ braid_hexs(index_t npts_x,
   
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
-    res["topologies/mesh/elements/shape"] = "hexs";
+    res["topologies/mesh/elements/shape"] = "hex";
     res["topologies/mesh/elements/connectivity"].set(DataType::int32(nele*8));
     int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
@@ -1168,7 +1168,7 @@ braid_tets(index_t npts_x,
 
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
-    res["topologies/mesh/elements/shape"] = "tets";
+    res["topologies/mesh/elements/shape"] = "tet";
     res["topologies/mesh/elements/connectivity"].set(DataType::int32(n_tets_verts));
     int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
@@ -1278,7 +1278,7 @@ braid_lines_3d(index_t npts_x,
 
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
-    res["topologies/mesh/elements/shape"] = "lines";
+    res["topologies/mesh/elements/shape"] = "line";
     res["topologies/mesh/elements/connectivity"].set(DataType::int32(nele_hexs * 12 * 2));
     int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
@@ -1409,17 +1409,17 @@ braid_hexs_and_tets(index_t npts_x,
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
 
-    res["topologies/mesh/elements/stream_shapes/hexs/stream_id"] = 0;
-    res["topologies/mesh/elements/stream_shapes/hexs/shape"] = "hexs";
+    res["topologies/mesh/elements/element_types/hexs/stream_id"] = 0;
+    res["topologies/mesh/elements/element_types/hexs/shape"] = "hex";
 
-    res["topologies/mesh/elements/stream_shapes/tets/stream_id"] = 1;
-    res["topologies/mesh/elements/stream_shapes/tets/shape"] = "tets";
+    res["topologies/mesh/elements/element_types/tets/stream_id"] = 1;
+    res["topologies/mesh/elements/element_types/tets/shape"] = "tet";
 
-    res["topologies/mesh/elements/stream_index/stream_ids"].set(DataType::int32(4));
-    res["topologies/mesh/elements/stream_index/stream_lengths"].set(DataType::int32(4));
+    res["topologies/mesh/elements/element_index/stream_ids"].set(DataType::int32(4));
+    res["topologies/mesh/elements/element_index/element_counts"].set(DataType::int32(4));
 
-    int32* sidx_ids = res["topologies/mesh/elements/stream_index/stream_ids"].value();
-    int32* sidx_lengths = res["topologies/mesh/elements/stream_index/stream_lengths"].value();
+    int32* sidx_ids = res["topologies/mesh/elements/element_index/stream_ids"].value();
+    int32* sidx_lengths = res["topologies/mesh/elements/element_index/element_counts"].value();
 
     // There are four groups -- alternating between hexs and tets
     sidx_ids[0] = 0;
