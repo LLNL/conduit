@@ -992,7 +992,7 @@ mesh::topology::verify(const Node &topo,
 
 //-----------------------------------------------------------------------------
 bool
-mesh::topology::uniform::verify(const Node &topo_elements,
+mesh::topology::uniform::verify(const Node & /*topo*/,
                                 Node &info)
 {
     // future: will be used to verify optional info from "elements"
@@ -1008,7 +1008,7 @@ mesh::topology::uniform::verify(const Node &topo_elements,
 
 //-----------------------------------------------------------------------------
 bool
-mesh::topology::rectilinear::verify(const Node &topo_elements,
+mesh::topology::rectilinear::verify(const Node &/*topo*/,
                                     Node &info)
 {
     // future: will be used to verify optional info from "elements"
