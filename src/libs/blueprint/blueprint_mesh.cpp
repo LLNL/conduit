@@ -104,27 +104,12 @@ namespace conduit
 namespace blueprint
 {
 
-//-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mesh --
-//-----------------------------------------------------------------------------
-
-namespace mesh
-{
 
 //-----------------------------------------------------------------------------
 bool
-verify(const std::string &protocol,
-       const Node &n)
-{
-    Node info;
-    return verify(protocol,n,info);
-}
-
-//-----------------------------------------------------------------------------
-bool
-verify(const std::string &protocol,
-       const Node &n,
-       Node &info)
+mesh::verify(const std::string &protocol,
+             const Node &n,
+             Node &info)
 {
     bool res = false;
 
@@ -161,22 +146,12 @@ verify(const std::string &protocol,
     return res;
 }
 
-
 //-----------------------------------------------------------------------------
 bool
-verify(const Node &n)
-{
-    Node info;
-    return verify(n,info);
-}
-
-//-----------------------------------------------------------------------------
-bool
-verify(const Node &n,
-       Node &info)
+mesh::verify(const Node &n,
+             Node &info)
 {
     bool res = true;
-
 
     const std::string proto_name = "mesh";
     
@@ -330,10 +305,10 @@ verify(const Node &n,
 
 //-----------------------------------------------------------------------------
 void
-generate_index(const Node &mesh,
-               const std::string &ref_path,
-               index_t number_of_domains,
-               Node &index_out)
+mesh::generate_index(const Node &mesh,
+                     const std::string &ref_path,
+                     index_t number_of_domains,
+                     Node &index_out)
 {
     index_out.reset();
     
@@ -427,20 +402,17 @@ generate_index(const Node &mesh,
 //-----------------------------------------------------------------------------
 // blueprint::mesh::coordset protocol interface
 //-----------------------------------------------------------------------------
-namespace coordset
-{
+
+
 //-----------------------------------------------------------------------------
-bool
-verify(const Node &coordset)
-{
-    Node info;
-    return verify(coordset,info);
-}
+// blueprint::mesh::coordset::verify protocol interface
+//-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 bool
-verify_coordset_uniform(const Node &coordset,
-                        Node &info)
+mesh::coordset::uniform::verify(const Node &coordset,
+                                Node &info)
 {
     bool res = true;
 
@@ -562,9 +534,10 @@ verify_coordset_uniform(const Node &coordset,
 
 //-----------------------------------------------------------------------------
 bool
-verify_coordset_rectilinear(const Node &coordset,
-                            Node &info)
+mesh::coordset::rectilinear::verify(const Node &coordset,
+                                    Node &info)
 {
+    
     bool res = true;
 
     std::string proto_name = "mesh::coordset::rectilinear";
@@ -588,8 +561,8 @@ verify_coordset_rectilinear(const Node &coordset,
 
 //-----------------------------------------------------------------------------
 bool
-verify_coordset_explicit(const Node &coordset,
-                         Node &info)
+mesh::coordset::_explicit::verify(const Node &coordset,
+                                 Node &info)
 {
     bool res = true;
     
@@ -612,8 +585,8 @@ verify_coordset_explicit(const Node &coordset,
 
 //-----------------------------------------------------------------------------
 bool
-verify(const Node &coordset,
-       Node &info)
+mesh::coordset::verify(const Node &coordset,
+                       Node &info)
 {
     bool res = true;
 
@@ -634,15 +607,15 @@ verify(const Node &coordset,
 
         if(type_name == "uniform")
         {
-            res = verify_coordset_uniform(coordset,info);
+            res = mesh::coordset::uniform::verify(coordset,info);
         }
         else if(type_name == "rectilinear")
         {
-            res = verify_coordset_rectilinear(coordset,info);
+            res = mesh::coordset::rectilinear::verify(coordset,info);
         }
         else if(type_name == "explicit")
         {
-            res = verify_coordset_explicit(coordset,info);
+            res = mesh::coordset::_explicit::verify(coordset,info);
         }
     }
 
@@ -661,20 +634,11 @@ verify(const Node &coordset,
 //-----------------------------------------------------------------------------
 // blueprint::mesh::coordset::type protocol interface
 //-----------------------------------------------------------------------------
-namespace type
-{
-//-----------------------------------------------------------------------------
-bool
-verify(const Node &n)
-{
-    Node info;
-    return verify(n,info);
-}
 
 //-----------------------------------------------------------------------------
 bool
-verify(const Node &coordset_type,
-       Node &info)
+mesh::coordset::type::verify(const Node &coordset_type,
+                             Node &info)
 {    
     bool res = true;
     std::string proto_name = "mesh::coordset::type";
@@ -716,30 +680,13 @@ verify(const Node &coordset_type,
 }
 
 //-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::coordset::type --
-//-----------------------------------------------------------------------------
-
-
-
-//-----------------------------------------------------------------------------
 // blueprint::mesh::coordset::coord_system protocol interface
 //-----------------------------------------------------------------------------
-namespace coord_system
-{
-//-----------------------------------------------------------------------------
-bool
-verify(const Node &n)
-{
-    Node info;
-    return verify(n,info);
-}
 
 //-----------------------------------------------------------------------------
 bool
-verify(const Node &coord_sys,
-       Node &info)
+mesh::coordset::coord_system::verify(const Node &coord_sys,
+                                     Node &info)
 {    
     bool res = true;
     
@@ -779,32 +726,15 @@ verify(const Node &coord_sys,
     return res;
 }
 
-//-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::coordset::coord_system --
-//-----------------------------------------------------------------------------
-
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::coordset::index protocol interface
 //-----------------------------------------------------------------------------
-namespace index
-{
 
 //-----------------------------------------------------------------------------
 bool
-verify(const Node &n)
-{
-    Node info;
-    return verify(n,info);
-}
-
-
-//-----------------------------------------------------------------------------
-bool
-verify(const Node &coordset_idx,
-       Node &info)
+mesh::coordset::index::verify(const Node &coordset_idx,
+                              Node &info)
 {    
     bool res = true;
     std::string proto_name = "mesh::coordset::index";
@@ -855,38 +785,15 @@ verify(const Node &coordset_idx,
     return res;
 }
 
-//-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::coordset::index --
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::coordset --
-//-----------------------------------------------------------------------------
-
-
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::topology protocol interface
 //-----------------------------------------------------------------------------
-namespace topology
-{
 
 //-----------------------------------------------------------------------------
 bool
-verify(const Node &topology)
-{
-    Node info;
-    return verify(topology,info);
-}
-
-//-----------------------------------------------------------------------------
-bool
-verify(const Node &coordset,
-       Node &info)
+mesh::topology::verify(const Node &coordset,
+                       Node &info)
 {
     // TODO: IMPLEMENT!
     info["valid"] = "true";
@@ -896,20 +803,11 @@ verify(const Node &coordset,
 //-----------------------------------------------------------------------------
 // blueprint::mesh::topology::index protocol interface
 //-----------------------------------------------------------------------------
-namespace index
-{
-//-----------------------------------------------------------------------------
-bool
-verify(const Node &n)
-{
-    Node info;
-    return verify(n,info);
-}
 
 //-----------------------------------------------------------------------------
 bool
-verify(const Node &topo_idx,
-       Node &info)
+mesh::topology::index::verify(const Node &topo_idx,
+                              Node &info)
 {    
     bool res = true;
     std::string proto_name = "mesh::topology::index";
@@ -962,29 +860,13 @@ verify(const Node &topo_idx,
 }
 
 //-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::topology::index --
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
 // blueprint::mesh::topology::type protocol interface
 //-----------------------------------------------------------------------------
-namespace type
-{
-//-----------------------------------------------------------------------------
-bool
-verify(const Node &n)
-{
-    Node info;
-    return verify(n,info);
-}
 
 //-----------------------------------------------------------------------------
 bool
-verify(const Node &topo_type,
-       Node &info)
+mesh::topology::type::verify(const Node &topo_type,
+                             Node &info)
 {    
     bool res = true;
     
@@ -1026,41 +908,19 @@ verify(const Node &topo_type,
     return res;
 }
 
-//-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::topology::type --
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::topology --
-//-----------------------------------------------------------------------------
-
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::field protocol interface
 //-----------------------------------------------------------------------------
-namespace field
-{
-//-----------------------------------------------------------------------------
-bool
-verify(const Node &n)
-{
-    Node info;
-    return verify(n,info);
-}
 
 //-----------------------------------------------------------------------------
 bool
-verify(const Node &field,
-       Node &info)
+mesh::field::verify(const Node &field,
+                    Node &info)
 {
     bool res = true;
 
-    std::string proto_name = "mesh::field::index";
+    std::string proto_name = "mesh::field";
         
     // we need a topology
     if(!field.has_child("topology"))
@@ -1146,21 +1006,11 @@ verify(const Node &field,
 //-----------------------------------------------------------------------------
 // blueprint::mesh::field::association protocol interface
 //-----------------------------------------------------------------------------
-namespace association
-{
-    
-//-----------------------------------------------------------------------------
-bool
-verify(const Node &n)
-{
-    Node info;
-    return verify(n,info);
-}
 
 //-----------------------------------------------------------------------------
 bool
-verify(const Node &assoc,
-       Node &info)
+mesh::field::association::verify(const Node &assoc,
+                                 Node &info)
 {    
     bool res = true;
 
@@ -1200,31 +1050,15 @@ verify(const Node &assoc,
     return res;
 }
 
-//-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// end blueprint::mesh::field::association protocol interface
-//-----------------------------------------------------------------------------
-
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::field::basis protocol interface
 //-----------------------------------------------------------------------------
-namespace basis
-{
-    
-//-----------------------------------------------------------------------------
-bool
-verify(const Node &n)
-{
-    Node info;
-    return verify(n,info);
-}
 
 //-----------------------------------------------------------------------------
 bool
-verify(const Node &basis,
-       Node &info)
+mesh::field::basis::verify(const Node &basis,
+                        Node &info)
 {    
     bool res = true;
 
@@ -1253,32 +1087,16 @@ verify(const Node &basis,
 }
 
 //-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// end blueprint::mesh::field::basis protocol interface
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
 // blueprint::mesh::field::index protocol interface
 //-----------------------------------------------------------------------------
-namespace index
-{
-    
-//-----------------------------------------------------------------------------
-bool
-verify(const Node &n)
-{
-    Node info;
-    return verify(n,info);
-}
 
 //-----------------------------------------------------------------------------
 bool
-verify(const Node &field_idx,
-       Node &info)
+mesh::field::index::verify(const Node &field_idx,
+                           Node &info)
 {    
     bool res = true;
-    std::string proto_name = "mesh::field::index ";
+    std::string proto_name = "mesh::field::index";
 
     // we need a topology
     if(!field_idx.has_child("topology"))
@@ -1356,36 +1174,15 @@ verify(const Node &field_idx,
     return res;
 }
 
-//-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::field::index --
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::field --
-//-----------------------------------------------------------------------------
-
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::index protocol interface
 //-----------------------------------------------------------------------------
-namespace index
-{
-//-----------------------------------------------------------------------------
-bool
-verify(const Node &n)
-{
-    Node info;
-    return verify(n,info);
-}
 
 //-----------------------------------------------------------------------------
 bool
-verify(const Node &n,
-       Node &info)
+mesh::index::verify(const Node &n,
+                    Node &info)
 {    
     // the mesh blueprint index provides metadata about a valid 
     // mesh blueprint conf
@@ -1539,18 +1336,6 @@ verify(const Node &n,
 
     return res;
 }
-
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::index --
-//-----------------------------------------------------------------------------
-
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh --
-//-----------------------------------------------------------------------------
 
 
 }
