@@ -68,6 +68,16 @@ if(ENABLE_FORTRAN_OBJ_INTERFACE)
     list(APPEND conduit_fortran_sources conduit_fortran_obj.f)
 endif()
 
+####################################################
+# disable c <-> fortran binding warnings
+####################################################
+if("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
+    message(STATUS "Disabling c <-> fortran binding warnings for "
+                   "conduit_fortran "
+                   "(Adding Fortran compiler flag: -Wno-c-binding-type)")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-c-binding-type")
+endif()
+
 #
 # Setup the conduit fortran lib
 #

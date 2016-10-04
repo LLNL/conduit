@@ -70,13 +70,6 @@ macro(ENABLE_WARNINGS)
             # use these flags for clang, gcc, or icc
             add_definitions(-Wall -Wextra)
         endif()
-        # avoid c <-> fortran binding warnings
-        if("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
-            # if it's not already included in our fortran flags,
-            #  add -Wno-c-binding-type
-            set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-c-binding-type")
-        endif()
-        MESSAGE(STATUS "CMake Fortran Flags: ${CMAKE_Fortran_FLAGS}")
     endif()
 endmacro()
 
