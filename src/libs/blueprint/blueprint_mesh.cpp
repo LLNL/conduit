@@ -347,14 +347,19 @@ mesh::generate_index(const Node &mesh,
         {
             num_comps = coordset["values"].number_of_children();
         }
+
+        idx_coordset["coord_system/type"] = "cartesian";
         
         if(num_comps == 2)
         {
-            idx_coordset["coord_system"] = "xy";
+            idx_coordset["coord_system/axes/i"] = "x";
+            idx_coordset["coord_system/axes/j"] = "y";
         }
         else if(num_comps == 3)
         {
-            idx_coordset["coord_system"] = "xyz";
+            idx_coordset["coord_system/axes/i"] = "x";
+            idx_coordset["coord_system/axes/j"] = "y";
+            idx_coordset["coord_system/axes/k"] = "z";
         }
 
         idx_coordset["path"] = ref_path + "/coordsets/" + coordset_name;
@@ -749,26 +754,40 @@ mesh::coordset::type::verify(const Node &coordset_type,
 // blueprint::mesh::coordset::coord_system protocol interface
 //-----------------------------------------------------------------------------
 
+bool
+check_coord_sys_axis_name(std::string &name)
+{
+    return ( name == "x"     || name == "y" || name == "z" ||
+             name == "r"     || name == "z" ||
+             name == "theta" || name == "phi");
+}
+
 //-----------------------------------------------------------------------------
 bool
 mesh::coordset::coord_system::verify(const Node &coord_sys,
                                      Node &info)
 {    
     bool res = true;
-    
+
     std::string proto_name = "mesh::coordset::coord_system";
 
-    if(!coord_sys.dtype().is_string())
+    if(!coord_sys.has_child("type"))
+    {
+        log_error(info,proto_name,"missing child \"type\"");
+        res = false;
+    }
+    else if(!coord_sys["type"].dtype().is_string())
     {
         log_error(info,proto_name,"is not a string");
         res = false;
     }
     else
     {
-        std::string coord_sys_str = coord_sys.as_string();
+        std::string coord_sys_str = coord_sys["type"].as_string();
 
-        if(coord_sys_str == "xy" ||
-           coord_sys_str == "xyz")
+        if( coord_sys_str == "cartesian" ||
+            coord_sys_str == "cylinderical" ||
+            coord_sys_str == "spherical")
         {
             log_info(info,proto_name, "valid type: " + coord_sys_str);
         }
@@ -777,6 +796,85 @@ mesh::coordset::coord_system::verify(const Node &coord_sys,
             log_error(info,proto_name,"unsupported value:"
                                        + coord_sys_str);
             res = false;
+        }
+    }
+    
+    // TODO, we could also check for duplicate names
+
+    if(!coord_sys.has_child("axes"))
+    {
+        log_error(info,proto_name,"missing child \"axes\"");
+        res = false;
+    }
+    else
+    {
+        const Node &axes = coord_sys["axes"];
+        
+        if(!axes.has_child("i"))
+        {
+            log_error(info,proto_name, "missing child \"axes/i\"");
+            res = false;
+        }
+        else if(!axes["i"].dtype().is_string())
+        {
+            log_error(info,proto_name,"axes/i is not a string");
+            res = false;
+        }
+        else
+        {
+            std::string axis_name = axes["i"].as_string();
+            if(!check_coord_sys_axis_name(axis_name))
+            {
+                log_error(info,
+                          proto_name,
+                          "axes/i: " + axis_name +
+                           " is not a valid coord_system axis name");
+                res = false;
+            }
+        }
+    
+        if(axes.has_child("j"))
+        {
+            log_optional(info,proto_name, "axes includes j");
+            if(!axes["j"].dtype().is_string())
+            {
+                log_error(info,proto_name,"axes/j is not a string");
+                res = false;
+            }
+            else
+            {
+                std::string axis_name = axes["j"].as_string();
+                if(!check_coord_sys_axis_name(axis_name))
+                {
+                    log_error(info,
+                              proto_name,
+                              "axes/j: " + axis_name +
+                               " is not a valid coord_system axis name");
+                    res = false;
+                }
+            }
+        }
+    
+        if(axes.has_child("k"))
+        {
+            log_optional(info,proto_name, "axes includes k");
+            if(!axes["k"].dtype().is_string())
+            {
+                log_error(info,proto_name,"axes/k is not a string");
+                res = false;
+            }
+            else
+            {
+                std::string axis_name = axes["k"].as_string();
+                if(!check_coord_sys_axis_name(axis_name))
+                {
+                    log_error(info,
+                              proto_name,
+                              "axes/k: " + axis_name +
+                               " is not a valid coord_system axis name");
+                    res = false;
+                }
+            }
         }
     }
 
