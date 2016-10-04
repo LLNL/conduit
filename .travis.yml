@@ -116,7 +116,7 @@ script:
   - env LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/travis-debug-install/lib/ ./example
   
 after_success:
-  - coveralls --gcov /usr/bin/gcov-4.8 --include src/libs/conduit  --gcov-options '\-lp' --root $TRAVIS_BUILD_DIR --build-root $TRAVIS_BUILD_DIR/travis-debug-build;
+  - coveralls --gcov /usr/bin/gcov-4.8 --include src/libs/conduit src/libs/blueprint --gcov-options '\-lp' --root $TRAVIS_BUILD_DIR --build-root $TRAVIS_BUILD_DIR/travis-debug-build;
 notifications:
   email:
     recipients:
