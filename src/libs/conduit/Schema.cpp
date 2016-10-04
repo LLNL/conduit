@@ -798,7 +798,7 @@ Schema::child_name(index_t idx) const
     if(m_dtype.id() == DataType::OBJECT_ID)
     {
         const std::vector<std::string> &obj_order = object_order();
-        if( idx < obj_order.size())
+        if( idx < (index_t)obj_order.size())
         {
             res = obj_order[idx];
         }

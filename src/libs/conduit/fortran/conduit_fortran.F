@@ -906,7 +906,7 @@ contains
         implicit none
         type(C_PTR), value, intent(IN) :: cnode
         integer(4), pointer :: f_out(:)
-        integer n
+        integer(C_SIZE_T) :: n
         type(C_PTR) :: int32_c_ptr
         !---
         n = conduit_node_number_of_elements(cnode)
@@ -922,7 +922,6 @@ contains
         character(*), intent(IN) :: path
         integer(4), pointer :: f_out(:)
         type(C_PTR) :: sub_node
-        type(C_PTR) :: int32_c_ptr
         !---
         sub_node = conduit_node_fetch(cnode,trim(path) // C_NULL_CHAR)
         call conduit_node_as_int32_ptr(sub_node,f_out)
@@ -983,7 +982,7 @@ contains
         implicit none
         type(C_PTR), value, intent(IN) :: cnode
         integer(8), pointer :: f_out(:)
-        integer n
+        integer(C_SIZE_T) :: n
         type(C_PTR) :: int64_c_ptr
         !---
         n = conduit_node_number_of_elements(cnode)
@@ -999,7 +998,6 @@ contains
         character(*), intent(IN) :: path
         integer(8), pointer :: f_out(:)
         type(C_PTR) :: sub_node
-        type(C_PTR) :: int64_c_ptr
         !---
         sub_node = conduit_node_fetch(cnode,trim(path) // C_NULL_CHAR)
         call conduit_node_as_int64_ptr(sub_node,f_out)
@@ -1061,7 +1059,7 @@ contains
         implicit none
         type(C_PTR), value, intent(IN) :: cnode
         real(4), pointer :: f_out(:)
-        integer n
+        integer(C_SIZE_T) :: n
         type(C_PTR) :: float32_c_ptr
         !---
         n = conduit_node_number_of_elements(cnode)
@@ -1077,7 +1075,6 @@ contains
         character(*), intent(IN) :: path
         real(4), pointer :: f_out(:)
         type(C_PTR) :: sub_node
-        type(C_PTR) :: float32_c_ptr
         !---
         sub_node = conduit_node_fetch(cnode,trim(path) // C_NULL_CHAR)
         call conduit_node_as_float32_ptr(sub_node,f_out)
@@ -1140,7 +1137,7 @@ contains
         implicit none
         type(C_PTR), value, intent(IN) :: cnode
         real(8), pointer :: f_out(:)
-        integer n
+        integer(C_SIZE_T) :: n
         type(C_PTR) :: float64_c_ptr
         !---
         n = conduit_node_number_of_elements(cnode)
@@ -1156,7 +1153,6 @@ contains
         character(*), intent(IN) :: path
         real(8), pointer :: f_out(:)
         type(C_PTR) :: sub_node
-        type(C_PTR) :: float64_c_ptr
         !---
         sub_node = conduit_node_fetch(cnode,trim(path) // C_NULL_CHAR)
         call conduit_node_as_float64_ptr(sub_node,f_out)
@@ -1192,7 +1188,7 @@ contains
         implicit none
         type(C_PTR), value, intent(IN) :: cnode
         character,pointer :: f_out(:)
-        integer n
+        integer(C_SIZE_T) :: n
         type(C_PTR) :: str_c_ptr
         !---
         n = conduit_node_number_of_elements(cnode)

@@ -129,16 +129,16 @@ WebRequestHandler::~WebRequestHandler()
 
 //-----------------------------------------------------------------------------
 bool
-WebRequestHandler::handle_post(WebServer *server,
-                               struct mg_connection *conn)
+WebRequestHandler::handle_post(WebServer * /*server*/,
+                               struct mg_connection * /*conn*/)
 {
     return true;
 }
 
 //-----------------------------------------------------------------------------
 bool
-WebRequestHandler::handle_get(WebServer *server,
-                              struct mg_connection *conn)
+WebRequestHandler::handle_get(WebServer * /*server*/,
+                              struct mg_connection * /*conn*/)
 {
     return true;
 }
