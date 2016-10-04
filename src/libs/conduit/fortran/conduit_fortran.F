@@ -1204,7 +1204,6 @@ contains
         character(*), intent(IN) :: path
         character,pointer :: f_out(:)
         type(C_PTR) :: sub_node
-        type(C_PTR) :: str_c_ptr
         !---
         sub_node = conduit_node_fetch(cnode,trim(path) // C_NULL_CHAR)
         call conduit_node_as_char8_str(sub_node,f_out)

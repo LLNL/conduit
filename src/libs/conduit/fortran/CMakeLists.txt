@@ -47,8 +47,6 @@
 # Add our library
 ################################
 
-ENABLE_WARNINGS()
-
 # Create include file with bitwidth style mappings for fortran
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Bitwidth_Style_Types.inc.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/Bitwidth_Style_Types.inc")
@@ -86,7 +84,7 @@ if("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
                     "conduit_fortran "
                     "(Adding Fortran compiler flag: -Wno-c-binding-type)")
     add_target_compile_flags(TARGET conduit_fortran 
-                             FLAGS" -Wno-c-binding-type")
+                             FLAGS  "-Wno-c-binding-type")
 endif()
 
 target_link_libraries(conduit_fortran  conduit)

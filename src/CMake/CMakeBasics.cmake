@@ -63,10 +63,9 @@ macro(ENABLE_WARNINGS)
     if(CMAKE_BUILD_TOOL MATCHES "(msdev|devenv|nmake)")
         add_definitions(/W2)
     else()
-        message(STATUS "C++ Compiler ID: ${CMAKE_CXX_COMPILER_ID}")
-        if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR
-            "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR
-            "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+        if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" OR
+            "${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"   OR
+            "${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
             # use these flags for clang, gcc, or icc
             add_definitions(-Wall -Wextra)
         endif()
