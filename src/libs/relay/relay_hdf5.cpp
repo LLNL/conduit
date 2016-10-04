@@ -1781,8 +1781,6 @@ hdf5_read(const std::string &file_path,
           const std::string &hdf5_path,
           Node &node)
 {
-    herr_t h5_status = 0;
-    
     // open the hdf5 file for reading
     hid_t h5_file_id = H5Fopen(file_path.c_str(),
                                H5F_ACC_RDONLY,
