@@ -80,36 +80,17 @@ namespace blueprint
 namespace mcarray
 {
 
-
 //-----------------------------------------------------------------------------
 bool
-verify(const std::string &protocol,
-       const Node &n)
-{
-    Node info;
-    return verify(protocol,n,info);
-}
-
-
-//-----------------------------------------------------------------------------
-bool
-verify(const std::string &protocol,
-       const Node &n,
+verify(const std::string &/*protocol*/,
+       const Node &/*n*/,
        Node &info)
 {
+    info["valid"] = "false";
     // mcarray doens't provide any nested protocols
     return false;
 }
 
-
-
-//-----------------------------------------------------------------------------
-bool
-verify(const Node &n)
-{
-    Node info;
-    return verify(n,info);
-}
 
 //----------------------------------------------------------------------------
 bool verify(const conduit::Node &n,
