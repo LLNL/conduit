@@ -373,7 +373,7 @@ Schema::compatible(const Schema &s) const
     else if(dt_id == DataType::LIST_ID) 
     {
         // each of s's entries dtypes must match
-        size_t s_n_chd = (size_t)s.number_of_children();
+        index_t s_n_chd = s.number_of_children();
         
         // can't be compatible in this case
         if(number_of_children() < s_n_chd)
@@ -382,7 +382,7 @@ Schema::compatible(const Schema &s) const
         const std::vector<Schema*> &s_lst = s.children();
         const std::vector<Schema*> &lst   = children();
 
-        for(size_t i = 0; i < s_n_chd && res; i++)
+        for(size_t i = 0; (i < (size_t)s_n_chd) && res; i++)
         {
             res = lst[i]->compatible(*s_lst[i]);
         }
@@ -446,7 +446,7 @@ Schema::equals(const Schema &s) const
     else if(dt_id == DataType::LIST_ID) 
     {
         // all entries must be equal
-        size_t s_n_chd = (size_t)s.number_of_children();
+        index_t s_n_chd = s.number_of_children();
         
         // can't be compatible in this case
         if(number_of_children() != s_n_chd)
@@ -455,7 +455,7 @@ Schema::equals(const Schema &s) const
         const std::vector<Schema*> &s_lst = s.children();
         const std::vector<Schema*> &lst   = children();
 
-        for(size_t i = 0; i < s_n_chd && res; i++)
+        for(size_t i = 0; (i < (size_t)s_n_chd) && res; i++)
         {
             res = lst[i]->equals(*s_lst[i]);
         }
