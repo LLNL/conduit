@@ -173,11 +173,6 @@ struct PyRelay_Web_WebSocket
     WebSocket *websocket;
 };
 
-
-//---------------------------------------------------------------------------//
-static int       PyRelay_Web_WebServer_Check(PyObject* obj);
-
-
 //---------------------------------------------------------------------------//
 static PyObject* PyRelay_Web_WebSocket_python_wrap(WebSocket *websocket);
 
@@ -605,7 +600,7 @@ static PyMethodDef PyRelay_Web_WebServer_METHODS[] = {
      METH_NOARGS,
      "Returns if the web server is running."},
     {"websocket",
-     (PyCFunction)PyRelay_Web_WebServer_shutdown,
+     (PyCFunction)PyRelay_Web_WebServer_websocket,
      METH_VARARGS| METH_KEYWORDS,
      "Obtain connected web socket connection."},
     //-----------------------------------------------------------------------//
@@ -668,11 +663,15 @@ static PyTypeObject PyRelay_Web_WebServer_TYPE = {
 
 
 //---------------------------------------------------------------------------//
-static int
-PyRelay_Web_WebServer_Check(PyObject* obj)
-{
-    return (PyObject_TypeCheck(obj, &PyRelay_Web_WebServer_TYPE));
-}
+// Leave commented until we need to use.
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// static int
+// PyRelay_Web_WebServer_Check(PyObject* obj)
+// {
+//     return (PyObject_TypeCheck(obj, &PyRelay_Web_WebServer_TYPE));
+// }
 
 
 //---------------------------------------------------------------------------//
@@ -728,12 +727,8 @@ PyRelay_Web_WebSocket_send(PyRelay_Web_WebSocket *self,
                                    "protocol",
                                     NULL};
 
-    PyObject *py_node;
-    const char *protocol_c_str;
-    Py_ssize_t port = 0;
-    const char *ssl_cert_file_c_str;
-    const char *auth_domain_c_str;
-    const char *auth_file_c_str;
+    PyObject *py_node = NULL;
+    const char *protocol_c_str = NULL;
   
     if (!PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
@@ -858,13 +853,16 @@ static PyTypeObject PyRelay_Web_WebSocket_TYPE = {
    0
 };
 
+//---------------------------------------------------------------------------//
+// Leave commented until we need to use.
+//---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
-static int
-PyRelay_Web_WebSocket_Check(PyObject* obj)
-{
-    return (PyObject_TypeCheck(obj, &PyRelay_Web_WebSocket_TYPE));
-}
+// static int
+// PyRelay_Web_WebSocket_Check(PyObject* obj)
+// {
+//     return (PyObject_TypeCheck(obj, &PyRelay_Web_WebSocket_TYPE));
+// }
 
 
 //---------------------------------------------------------------------------//

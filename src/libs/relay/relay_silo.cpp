@@ -592,7 +592,6 @@ silo_write_ucd_zonelist(DBfile *dbfile,
     int *shapesize = ucd_zlist["shapesize"].value();
     int *shapecnt  = ucd_zlist["shapecnt"].value();
     
-    int total_conn_len  = 0;
     int total_num_elems = 0;
     
     
@@ -604,7 +603,8 @@ silo_write_ucd_zonelist(DBfile *dbfile,
     {
         if(shape_list)
         {
-            const Node *shape_block = n_elements.child_ptr(i);
+            // TODO: This is wrong, re work silo logic post bp verify merge
+            //const Node *shape_block = n_elements.child_ptr(i);
         }
        
         std::string topo_shape = shape_block->fetch("shape").as_string();

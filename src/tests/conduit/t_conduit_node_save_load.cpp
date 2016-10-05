@@ -66,9 +66,9 @@ public:
     
     void alloc(index_t c_size)
     {
-        x_vals.resize(c_size,0.0);        
-        y_vals.resize(c_size,0.0);
-        z_vals.resize(c_size,0.0);
+        x_vals.resize((size_t)c_size,0.0);        
+        y_vals.resize((size_t)c_size,0.0);
+        z_vals.resize((size_t)c_size,0.0);
         n["x"].set_external(x_vals);
         n["y"].set_external(y_vals);
         n["z"].set_external(z_vals);
@@ -248,7 +248,7 @@ TEST(conduit_node_save_load, simple_restore)
     n_src["v"].set_external(v_src);
     n_dest["v"].set_external(v_dest);
     
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         v_src[i] = 1.2 * (i+1);
     }
@@ -279,7 +279,7 @@ TEST(conduit_node_save_load, simple_class_restore)
     d.alloc(10);
     d.n.print();
 
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         d.x_vals[i] = 1.2 * i;
         d.y_vals[i] = 2.3 * i;

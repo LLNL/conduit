@@ -243,7 +243,7 @@ TEST(conduit_array, set_using_ptrs)
     n["vint8"].set(DataType::int8(10));
     n["vint8"].as_int8_array().set(&v_int8[0],10);
     int8 *n_int8_ptr = n["vint8"].value();
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         EXPECT_EQ(n_int8_ptr[i],v_int8[i]);
     }
@@ -252,7 +252,7 @@ TEST(conduit_array, set_using_ptrs)
     n["vint16"].set(DataType::int16(10));
     n["vint16"].as_int16_array().set(&v_int16[0],10);
     int16 *n_int16_ptr = n["vint16"].value();
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         EXPECT_EQ(n_int16_ptr[i],v_int16[i]);
     }
@@ -261,7 +261,7 @@ TEST(conduit_array, set_using_ptrs)
     n["vint32"].set(DataType::int32(10));
     n["vint32"].as_int32_array().set(&v_int32[0],10);
     int32 *n_int32_ptr = n["vint32"].value();
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         EXPECT_EQ(n_int32_ptr[i],v_int32[i]);
     }
@@ -270,7 +270,7 @@ TEST(conduit_array, set_using_ptrs)
     n["vint64"].set(DataType::int64(10));
     n["vint64"].as_int64_array().set(&v_int64[0],10);
     int64 *n_int64_ptr = n["vint64"].value();
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         EXPECT_EQ(n_int64_ptr[i],v_int64[i]);
     }
@@ -279,7 +279,7 @@ TEST(conduit_array, set_using_ptrs)
     n["vuint8"].set(DataType::uint8(10));
     n["vuint8"].as_uint8_array().set(&v_uint8[0],10);
     uint8 *n_uint8_ptr = n["vuint8"].value();
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         EXPECT_EQ(n_uint8_ptr[i],v_uint8[i]);
     }
@@ -288,7 +288,7 @@ TEST(conduit_array, set_using_ptrs)
     n["vuint16"].set(DataType::uint16(10));
     n["vuint16"].as_uint16_array().set(&v_uint16[0],10);
     uint16 *n_uint16_ptr = n["vuint16"].value();
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         EXPECT_EQ(n_uint16_ptr[i],v_uint16[i]);
     }
@@ -297,7 +297,7 @@ TEST(conduit_array, set_using_ptrs)
     n["vuint32"].set(DataType::uint32(10));
     n["vuint32"].as_uint32_array().set(&v_uint32[0],10);
     uint32 *n_uint32_ptr = n["vuint32"].value();
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         EXPECT_EQ(n_uint32_ptr[i],v_uint32[i]);
     }
@@ -306,7 +306,7 @@ TEST(conduit_array, set_using_ptrs)
     n["vuint64"].set(DataType::uint64(10));
     n["vuint64"].as_uint64_array().set(&v_uint64[0],10);
     uint64 *n_uint64_ptr = n["vuint64"].value();
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         EXPECT_EQ(n_uint64_ptr[i],v_uint64[i]);
     }
@@ -316,7 +316,7 @@ TEST(conduit_array, set_using_ptrs)
     n["vfloat32"].set(DataType::float32(10));
     n["vfloat32"].as_float32_array().set(&v_float32[0],10);
     float32 *n_float32_ptr = n["vfloat32"].value();
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         EXPECT_EQ(n_float32_ptr[i],v_float32[i]);
     }
@@ -325,7 +325,7 @@ TEST(conduit_array, set_using_ptrs)
     n["vfloat64"].set(DataType::float64(10));
     n["vfloat64"].as_float64_array().set(&v_float64[0],10);
     float64 *n_float64_ptr = n["vfloat64"].value();
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         EXPECT_EQ(n_float64_ptr[i],v_float64[i]);
     }
@@ -483,7 +483,7 @@ TEST(conduit_array, set_using_std_vectors)
     n["vint8"].set(DataType::int8(10));
     n["vint8"].as_int8_array().set(v_int8);
     int8 *n_int8_ptr = n["vint8"].value();
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         EXPECT_EQ(n_int8_ptr[i],v_int8[i]);
     }
@@ -492,7 +492,7 @@ TEST(conduit_array, set_using_std_vectors)
     n["vint16"].set(DataType::int16(10));
     n["vint16"].as_int16_array().set(v_int16);
     int16 *n_int16_ptr = n["vint16"].value();
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         EXPECT_EQ(n_int16_ptr[i],v_int16[i]);
     }
@@ -501,7 +501,7 @@ TEST(conduit_array, set_using_std_vectors)
     n["vint32"].set(DataType::int32(10));
     n["vint32"].as_int32_array().set(v_int32);
     int32 *n_int32_ptr = n["vint32"].value();
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         EXPECT_EQ(n_int32_ptr[i],v_int32[i]);
     }
@@ -510,7 +510,7 @@ TEST(conduit_array, set_using_std_vectors)
     n["vint64"].set(DataType::int64(10));
     n["vint64"].as_int64_array().set(v_int64);
     int64 *n_int64_ptr = n["vint64"].value();
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         EXPECT_EQ(n_int64_ptr[i],v_int64[i]);
     }
@@ -519,7 +519,7 @@ TEST(conduit_array, set_using_std_vectors)
     n["vuint8"].set(DataType::uint8(10));
     n["vuint8"].as_uint8_array().set(v_uint8);
     uint8 *n_uint8_ptr = n["vuint8"].value();
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         EXPECT_EQ(n_uint8_ptr[i],v_uint8[i]);
     }
@@ -528,7 +528,7 @@ TEST(conduit_array, set_using_std_vectors)
     n["vuint16"].set(DataType::uint16(10));
     n["vuint16"].as_uint16_array().set(v_uint16);
     uint16 *n_uint16_ptr = n["vuint16"].value();
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         EXPECT_EQ(n_uint16_ptr[i],v_uint16[i]);
     }
@@ -537,7 +537,7 @@ TEST(conduit_array, set_using_std_vectors)
     n["vuint32"].set(DataType::uint32(10));
     n["vuint32"].as_uint32_array().set(v_uint32);
     uint32 *n_uint32_ptr = n["vuint32"].value();
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         EXPECT_EQ(n_uint32_ptr[i],v_uint32[i]);
     }
@@ -546,7 +546,7 @@ TEST(conduit_array, set_using_std_vectors)
     n["vuint64"].set(DataType::uint64(10));
     n["vuint64"].as_uint64_array().set(v_uint64);
     uint64 *n_uint64_ptr = n["vuint64"].value();
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         EXPECT_EQ(n_uint64_ptr[i],v_uint64[i]);
     }
@@ -556,7 +556,7 @@ TEST(conduit_array, set_using_std_vectors)
     n["vfloat32"].set(DataType::float32(10));
     n["vfloat32"].as_float32_array().set(v_float32);
     float32 *n_float32_ptr = n["vfloat32"].value();
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         EXPECT_EQ(n_float32_ptr[i],v_float32[i]);
     }
@@ -565,7 +565,7 @@ TEST(conduit_array, set_using_std_vectors)
     n["vfloat64"].set(DataType::float64(10));
     n["vfloat64"].as_float64_array().set(v_float64);
     float64 *n_float64_ptr = n["vfloat64"].value();
-    for(index_t i=0;i<10;i++)
+    for(size_t i=0;i<10;i++)
     {
         EXPECT_EQ(n_float64_ptr[i],v_float64[i]);
     }

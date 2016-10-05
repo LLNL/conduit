@@ -48,8 +48,10 @@
 
 
 # Fail if someone tries to config an in-source build.
-if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
-   message(FATAL_ERROR "In-source builds are not supported. Please remove CMakeCache.txt from the 'src' dir and configure an out-of-source build in another directory.")
+if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
+   message(FATAL_ERROR "In-source builds are not supported. Please remove "
+                       "CMakeCache.txt from the 'src' dir and configure an "
+                       "out-of-source build in another directory.")
 endif()
 
 # enable creation of compile_commands.json
@@ -60,12 +62,12 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 macro(ENABLE_WARNINGS)
     # set the warning levels we want to abide by
-    if(CMAKE_BUILD_TOOL MATCHES "(msdev|devenv|nmake)")
-        add_definitions(/W2)
+    if("${CMAKE_BUILD_TOOL}" MATCHES "(msdev|devenv|nmake|MSBuild)")
+        add_definitions(/W4)
     else()
-        if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR
-            "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR
-            "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+        if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" OR
+            "${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"   OR
+            "${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
             # use these flags for clang, gcc, or icc
             add_definitions(-Wall -Wextra)
         endif()
@@ -111,7 +113,8 @@ set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # the RPATH to be used when installing, but only if it's not a system directory
-list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES
+          "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
 if("${isSystemDir}" STREQUAL "-1")
    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 endif()
@@ -138,9 +141,9 @@ if(ENABLE_TESTS)
     include(CTest)
 endif()
 
-######################################################################################
+###############################################################################
 # Provide macros to simplify creating libs
-######################################################################################
+###############################################################################
 macro(add_compiled_library)
     set(options OBJECT)
     set(singleValuedArgs NAME EXPORT HEADERS_DEST_DIR LIB_DEST_DIR )
@@ -215,9 +218,9 @@ macro(add_compiled_library)
 endmacro()
 
 
-######################################################################################
+###############################################################################
 # Provide macros to simplify adding compile and link flags to a target
-######################################################################################
+###############################################################################
 
 macro(add_target_compile_flags)
     set(options)
