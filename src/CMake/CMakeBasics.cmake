@@ -63,7 +63,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 macro(ENABLE_WARNINGS)
     # set the warning levels we want to abide by
     if("${CMAKE_BUILD_TOOL}" MATCHES "(msdev|devenv|nmake|MSBuild)")
-        add_definitions(/W3)
+        add_definitions(/W4)
     else()
         if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" OR
             "${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"   OR

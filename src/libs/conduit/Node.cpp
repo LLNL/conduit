@@ -10784,18 +10784,15 @@ Node::fetch_child(const std::string &path) const
         }
     }
 
-    size_t idx;
-    if(m_schema->has_child(p_curr))
-    {
-        idx = (size_t) m_schema->child_index(p_curr);
-    }
-    else
+    if(!m_schema->has_child(p_curr))
     {
         CONDUIT_ERROR("Cannot const fetch non-existent " 
                       << "child " << p_curr << " from Node("
                       << this->path()
                       << ")");
     }
+
+    size_t idx = (size_t)m_schema->child_index(p_curr);
 
     if(p_next.empty())
     {
@@ -10836,18 +10833,15 @@ Node::fetch_child(const std::string &path)
         }
     }
 
-    size_t idx;
-    if(m_schema->has_child(p_curr))
+    if(!m_schema->has_child(p_curr))
     {
-        idx = (size_t) m_schema->child_index(p_curr);
-    }
-    else
-    {
-        CONDUIT_ERROR("Cannot const fetch non-existent " 
+        CONDUIT_ERROR("Cannot const fetch non-existent "
                       << "child " << p_curr << " from Node("
                       << this->path()
                       << ")");
     }
+    
+    size_t idx = (size_t)m_schema->child_index(p_curr);
 
     if(p_next.empty())
     {
@@ -12899,6 +12893,8 @@ Node::MMap::open(const std::string &path,
     m_data = MapViewOfFile(m_map_hnd,
                            FILE_MAP_ALL_ACCESS,
                            0, 0, 0);
+
+    m_data_size = (int)data_size;
 
     if (m_data == NULL)
     {

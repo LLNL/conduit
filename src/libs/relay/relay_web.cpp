@@ -756,7 +756,7 @@ WebServer::entangle_register()
     {
         Node n;
         conduit::about(n);
-        std::string et_script = n["install_prefix"].as_string();
+        et_script = n["install_prefix"].as_string();
         et_script = utils::join_file_path(et_script,"bin");
         et_script = utils::join_file_path(et_script,"conduit_relay_entangle.py");
     }
