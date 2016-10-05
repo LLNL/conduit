@@ -1171,8 +1171,8 @@ Generator::Parser::parse_base64(Node *node,
         }
         
         const char *src_ptr = base64_str.c_str();
-        int encoded_len = base64_str.length();
-        int dec_buff_size = utils::base64_decode_buffer_size(encoded_len);
+        index_t encoded_len = (index_t) base64_str.length();
+        index_t dec_buff_size = utils::base64_decode_buffer_size(encoded_len);
 
         // decode buffer
         Node bb64_decode;

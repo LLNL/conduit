@@ -464,7 +464,7 @@ DataArray<T>::compact_elements_to(uint8 *data) const
     {
         memcpy(data_ptr,
                element_ptr(i),
-               ele_bytes);
+               (size_t)ele_bytes);
         data_ptr+=ele_bytes;
     }
 }

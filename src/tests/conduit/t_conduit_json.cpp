@@ -78,7 +78,7 @@ TEST(conduit_json, to_json_2)
     uint32   a_val  = 10;
     uint32   b_val  = 20;
     uint32   arr[5];
-    for(index_t i=0;i<5;i++)
+    for(uint32 i=0;i<5;i++)
     {
         arr[i] = i*i;
     }
@@ -343,7 +343,7 @@ TEST(conduit_json, to_base64_json)
     uint32   a_val  = 10;
     uint32   b_val  = 20;
     uint32   arr[5];
-    for(index_t i=0;i<5;i++)
+    for(uint32 i=0;i<5;i++)
     {
         arr[i] = i*i;
     }

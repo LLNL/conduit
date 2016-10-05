@@ -47,8 +47,6 @@
 # Add our library
 ################################
 
-ENABLE_WARNINGS()
-
 # Create include file with bitwidth style mappings for fortran
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Bitwidth_Style_Types.inc.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/Bitwidth_Style_Types.inc")
@@ -68,6 +66,8 @@ if(ENABLE_FORTRAN_OBJ_INTERFACE)
     list(APPEND conduit_fortran_sources conduit_fortran_obj.f)
 endif()
 
+
+
 #
 # Setup the conduit fortran lib
 #
@@ -76,8 +76,21 @@ add_compiled_library(NAME   conduit_fortran
                      SOURCES ${conduit_fortran_sources}
                      )
 
-target_link_libraries(conduit_fortran  conduit)
 set_target_properties(conduit_fortran PROPERTIES Fortran_FORMAT "FREE")
+
+if("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
+    # disable c <-> fortran binding warnings for gfortran 
+    message(STATUS "Disabling c <-> fortran binding warnings for "
+                    "conduit_fortran "
+                    "(Adding Fortran compiler flag: -Wno-c-binding-type)")
+    add_target_compile_flags(TARGET conduit_fortran 
+                             FLAGS  "-Wno-c-binding-type")
+endif()
+
+target_link_libraries(conduit_fortran  conduit)
+
+
+
 
 ####################################################################
 # Special install targets for conduit fortran modules 
