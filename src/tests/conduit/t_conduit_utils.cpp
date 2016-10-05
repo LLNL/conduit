@@ -305,7 +305,7 @@ TEST(conduit_utils, base64_enc_dec)
     
     const char *src_ptr = (const char*)n.data_ptr();
     char *dest_ptr      = (char*)bb64_data.data_ptr();
-    memset(dest_ptr,0,enc_buff_size);
+    memset(dest_ptr,0,(size_t)enc_buff_size);
     
     utils::base64_encode(src_ptr,nbytes,dest_ptr);
 
@@ -317,7 +317,7 @@ TEST(conduit_utils, base64_enc_dec)
     Node bb64_decode;
     bb64_decode.set(DataType::char8_str(dec_buff_size));
     char *b64_decode_ptr = (char*)bb64_decode.data_ptr();
-    memset(b64_decode_ptr,0,dec_buff_size);
+    memset(b64_decode_ptr,0,(size_t)dec_buff_size);
     
     utils::base64_decode(bb64_data.as_char8_str(),
                          enc_buff_size,

@@ -122,7 +122,7 @@ NodeIterator::operator=(const NodeIterator &itr)
 std::string
 NodeIterator::path() const
 {
-    return m_node->m_schema->object_order()[m_index-1];
+    return m_node->m_schema->object_order()[(size_t)(m_index-1)];
 }
 
 //---------------------------------------------------------------------------//
@@ -351,7 +351,7 @@ NodeConstIterator::operator=(const NodeIterator &itr)
 std::string
 NodeConstIterator::path() const
 {
-    return m_node->m_schema->object_order()[m_index-1];
+    return m_node->m_schema->object_order()[(size_t)(m_index-1)];
 }
 
 //---------------------------------------------------------------------------//

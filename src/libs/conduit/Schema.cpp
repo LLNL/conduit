@@ -173,7 +173,7 @@ Schema::set(const Schema &schema)
     {
        std::vector<Schema*> &my_children = children();
        const std::vector<Schema*> &their_children = schema.children();
-       for (index_t i = 0; i < (index_t)their_children.size(); i++) 
+       for (size_t i = 0; i < their_children.size(); i++) 
        {
            Schema *child_schema = new Schema(*their_children[i]);
            child_schema->m_parent = this;
@@ -373,7 +373,7 @@ Schema::compatible(const Schema &s) const
     else if(dt_id == DataType::LIST_ID) 
     {
         // each of s's entries dtypes must match
-        index_t s_n_chd = s.number_of_children();
+        size_t s_n_chd = (size_t)s.number_of_children();
         
         // can't be compatible in this case
         if(number_of_children() < s_n_chd)
@@ -382,7 +382,7 @@ Schema::compatible(const Schema &s) const
         const std::vector<Schema*> &s_lst = s.children();
         const std::vector<Schema*> &lst   = children();
 
-        for(index_t i = 0; i < s_n_chd && res; i++)
+        for(size_t i = 0; i < s_n_chd && res; i++)
         {
             res = lst[i]->compatible(*s_lst[i]);
         }
@@ -418,7 +418,7 @@ Schema::equals(const Schema &s) const
         {
             if(has_path(itr->first))
             {
-                index_t s_idx = itr->second;
+                size_t s_idx = (size_t) itr->second;
                 res = s.children()[s_idx]->equals(fetch_child(itr->first));
             }
             else
@@ -433,7 +433,7 @@ Schema::equals(const Schema &s) const
         {
             if(s.has_path(itr->first))
             {
-                index_t idx = itr->second;
+                size_t idx = (size_t) itr->second;
                 res = children()[idx]->equals(s.fetch_child(itr->first));
             }
             else
@@ -446,7 +446,7 @@ Schema::equals(const Schema &s) const
     else if(dt_id == DataType::LIST_ID) 
     {
         // all entries must be equal
-        index_t s_n_chd = s.number_of_children();
+        size_t s_n_chd = (size_t)s.number_of_children();
         
         // can't be compatible in this case
         if(number_of_children() != s_n_chd)
@@ -455,7 +455,7 @@ Schema::equals(const Schema &s) const
         const std::vector<Schema*> &s_lst = s.children();
         const std::vector<Schema*> &lst   = children();
 
-        for(index_t i = 0; i < s_n_chd && res; i++)
+        for(size_t i = 0; i < s_n_chd && res; i++)
         {
             res = lst[i]->equals(*s_lst[i]);
         }
@@ -511,8 +511,8 @@ Schema::to_json_stream(std::ostream &os,
         utils::indent(os,indent,depth,pad);
         os << "{" << eoe;
     
-        index_t nchildren = (index_t) children().size();
-        for(index_t i=0; i < nchildren;i++)
+        size_t nchildren = children().size();
+        for(size_t i=0; i < nchildren;i++)
         {
             utils::indent(os,indent,depth+1,pad);
             os << "\""<< object_order()[i] << "\": ";
@@ -530,8 +530,8 @@ Schema::to_json_stream(std::ostream &os,
         utils::indent(os,indent,depth,pad);
         os << "[" << eoe;
         
-        index_t nchildren = (index_t) children().size();
-        for(index_t i=0; i < nchildren;i++)
+        size_t nchildren = children().size();
+        for(size_t i=0; i < nchildren;i++)
         {
             utils::indent(os,indent,depth+1,pad);
             children()[i]->to_json_stream(os,detailed,indent,depth+1,pad,eoe);
@@ -612,14 +612,14 @@ Schema::number_of_children() const
 Schema &
 Schema::child(index_t idx)
 {
-    return *children()[idx];
+    return *children()[(size_t)idx];
 }
 
 //---------------------------------------------------------------------------//
 const Schema &
 Schema::child(index_t idx) const
 {
-    return *children()[idx];
+    return *children()[(size_t)idx];
 }
 
 
@@ -650,7 +650,7 @@ Schema::remove(index_t idx)
     }
     
     std::vector<Schema*>  &chldrn = children();
-    if(idx > (index_t) chldrn.size())
+    if( (size_t)idx > chldrn.size())
     {
         CONDUIT_ERROR("<Schema::remove> Invalid index:" 
                     << idx << ">" << chldrn.size() <<  "(list_size)");
@@ -659,18 +659,18 @@ Schema::remove(index_t idx)
     if(dtype_id == DataType::OBJECT_ID)
     {
         // any index above the current needs to shift down by one
-        for (index_t i = idx; i < (index_t) object_order().size(); i++)
+        for (size_t i = (size_t)idx; i < object_order().size(); i++)
         {
             object_map()[object_order()[i]]--;
         }
         
-        object_map().erase(object_order()[idx]);
-        object_order().erase(object_order().begin() + idx);
+        object_map().erase(object_order()[(size_t)idx]);
+        object_order().erase(object_order().begin() + (size_t)idx);
     }
 
-    Schema* child = chldrn[idx];
+    Schema* child = chldrn[(size_t)idx];
     delete child;
-    chldrn.erase(chldrn.begin() + idx);
+    chldrn.erase(chldrn.begin() + (size_t)idx);
 }
 
 //---------------------------------------------------------------------------//
@@ -705,7 +705,7 @@ Schema::fetch_child(const std::string &path)
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
 
-    index_t idx = child_index(p_curr);
+    size_t idx = (size_t) child_index(p_curr);
     
     // check for parent
     if(p_curr == "..")
@@ -750,7 +750,7 @@ Schema::fetch_child(const std::string &path) const
            return m_parent->fetch_child(p_next);
     }
 
-    index_t idx = child_index(p_curr);
+    size_t idx = (size_t) child_index(p_curr);
     
     if(p_next.empty())
     {
@@ -798,9 +798,9 @@ Schema::child_name(index_t idx) const
     if(m_dtype.id() == DataType::OBJECT_ID)
     {
         const std::vector<std::string> &obj_order = object_order();
-        if( idx < (index_t)obj_order.size())
+        if( (size_t) idx < obj_order.size())
         {
-            res = obj_order[idx];
+            res = obj_order[(size_t)idx];
         }
     }
 
@@ -835,7 +835,7 @@ Schema::fetch(const std::string &path)
         object_order().push_back(p_curr);
     }
 
-    index_t idx = child_index(p_curr);
+    size_t idx = (size_t) child_index(p_curr);
     if(p_next.empty())
     {
         return *children()[idx];
@@ -969,7 +969,7 @@ Schema::has_path(const std::string &path) const
 
     if(!p_next.empty())
     {
-        index_t idx = ents.find(p_curr)->second;
+        size_t idx = (size_t) ents.find(p_curr)->second;
         return children()[idx]->has_path(p_next);
     }
     else
@@ -1002,7 +1002,7 @@ Schema::remove(const std::string &path)
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
-    index_t idx = child_index(p_curr);
+    size_t idx = (size_t)child_index(p_curr);
     Schema *child = children()[idx];
 
     if(!p_next.empty())
@@ -1012,7 +1012,7 @@ Schema::remove(const std::string &path)
     else
     {
         // any index above the current needs to shift down by one
-        for (index_t i = idx; i < (index_t) object_order().size(); i++)
+        for (size_t i = idx; i < object_order().size(); i++)
         {
             object_map()[object_order()[i]]--;
         }
@@ -1094,7 +1094,7 @@ Schema::release()
        dtype().id() == DataType::LIST_ID)
     {
         std::vector<Schema*> chld = children();
-        for(index_t i=0; i< (index_t)chld.size(); i++)
+        for(size_t i=0; i< chld.size(); i++)
         {
             delete chld[i];
         }
@@ -1132,8 +1132,8 @@ Schema::compact_to(Schema &s_dest, index_t curr_offset) const
     if(dtype_id == DataType::OBJECT_ID )
     {
         s_dest.init_object();
-        index_t nchildren = children().size();
-        for(index_t i=0; i < nchildren;i++)
+        size_t nchildren = children().size();
+        for(size_t i=0; i < nchildren;i++)
         {
             Schema  *cld_src = children()[i];
             Schema &cld_dest = s_dest.fetch(object_order()[i]);
@@ -1144,8 +1144,8 @@ Schema::compact_to(Schema &s_dest, index_t curr_offset) const
     else if(dtype_id == DataType::LIST_ID)
     {
         s_dest.init_list();
-        index_t nchildren = children().size();
-        for(index_t i=0; i < nchildren ;i++)
+        size_t nchildren = children().size();
+        for(size_t i=0; i < nchildren ;i++)
         {            
             Schema  *cld_src = children()[i];
             Schema &cld_dest = s_dest.append();
@@ -1277,8 +1277,8 @@ Schema::object_order() const
 void
 Schema::object_map_print() const
 {
-    index_t sz = object_order().size();
-    for(index_t i=0;i<sz;i++)
+    size_t sz = object_order().size();
+    for(size_t i=0;i<sz;i++)
     {
         std::cout << object_order()[i] << " ";
     }

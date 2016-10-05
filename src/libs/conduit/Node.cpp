@@ -468,7 +468,7 @@ Node::set_node(const Node &node)
              itr < paths.end(); ++itr)
         {
             Schema *curr_schema = this->m_schema->fetch_ptr(*itr);
-            index_t idx = this->m_schema->child_index(*itr);
+            size_t idx = (size_t) this->m_schema->child_index(*itr);
             Node *curr_node = new Node();
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(this);
@@ -479,7 +479,7 @@ Node::set_node(const Node &node)
     else if(node.dtype().id() == DataType::LIST_ID)       
     {   
         init(DataType::list());
-        for(index_t i=0;i< (index_t)node.m_children.size(); i++)
+        for(size_t i=0;i< node.m_children.size(); i++)
         {
             this->m_schema->append();
             Schema *curr_schema = this->m_schema->child_ptr(i);
@@ -530,7 +530,7 @@ Node::set_schema(const Schema &schema)
     m_schema->set(schema);
     // allocate data 
     // for this case, we need the total bytes spanned by the schema
-    index_t nbytes = m_schema->spanned_bytes();
+    size_t nbytes =(size_t) m_schema->spanned_bytes();
     allocate(nbytes);
     memset(m_data,0,nbytes);
     // call walk w/ internal data pointer
@@ -553,7 +553,7 @@ Node::set_data_using_schema(const Schema &schema,
     release();
     m_schema->set(schema);   
     // for this case, we need the total bytes spanned by the schema
-    index_t nbytes = m_schema->spanned_bytes();
+    size_t nbytes = (size_t)m_schema->spanned_bytes();
     allocate(nbytes);
     memcpy(m_data, data, nbytes);
     walk_schema(this,m_schema,m_data);
@@ -575,7 +575,7 @@ Node::set_data_using_dtype(const DataType &dtype,
     release();
     m_schema->set(dtype);
     allocate(m_schema->total_bytes());
-    memcpy(m_data, data, m_schema->total_bytes());
+    memcpy(m_data, data, (size_t) m_schema->total_bytes());
     walk_schema(this,m_schema,m_data);
 }
 
@@ -1157,7 +1157,7 @@ void
 Node::set_string(const std::string &data)
 {
     // size including the null term
-    index_t str_size_with_term = data.length()+1;
+    size_t str_size_with_term = data.length()+1;
     DataType str_t(DataType::CHAR8_STR_ID,
                    str_size_with_term,
                    0,
@@ -1180,7 +1180,7 @@ void
 Node::set_char8_str(const char *data)
 {
     // size including the null term
-    index_t str_size_with_term = strlen(data)+1;
+    size_t str_size_with_term = strlen(data)+1;
     DataType str_t(DataType::CHAR8_STR_ID,
                    str_size_with_term,
                    0,
@@ -6887,7 +6887,7 @@ Node::operator=(const std::vector<double> &data)
 void
 Node::serialize(std::vector<uint8> &data) const
 {
-    data = std::vector<uint8>(total_bytes_compact(),0);
+    data = std::vector<uint8>((size_t)total_bytes_compact(),0);
     serialize(&data[0],0);
 }
 
@@ -6931,7 +6931,7 @@ Node::serialize(std::ofstream &ofs) const
         else
         {
             // copy all elements 
-            index_t c_num_bytes = total_bytes_compact();
+            size_t c_num_bytes = (size_t) total_bytes_compact();
             uint8 *buffer = new uint8[c_num_bytes];
             compact_elements_to(buffer);
             ofs.write((const char*)buffer,c_num_bytes);
@@ -7027,7 +7027,7 @@ Node::update(const Node &n_src)
             {
                 memcpy(element_ptr(idx),
                        n_src.element_ptr(idx), 
-                       this->dtype().element_bytes());
+                       (size_t)this->dtype().element_bytes());
             }
         }
         else // not compatible
@@ -7092,7 +7092,7 @@ Node::update_compatible(const Node &n_src)
             {
                 memcpy(element_ptr(idx),
                        n_src.element_ptr(idx), 
-                       this->dtype().element_bytes());
+                       (size_t)this->dtype().element_bytes());
             }
         }
     }
@@ -10370,8 +10370,8 @@ Node::to_json_generic(std::ostream &os,
         utils::indent(os,indent,depth,pad);
         os << "{" << eoe;
     
-        index_t nchildren = (index_t) m_children.size();
-        for(index_t i=0; i <  nchildren;i++)
+        size_t nchildren = m_children.size();
+        for(size_t i=0; i <  nchildren;i++)
         {
             utils::indent(os,indent,depth+1,pad);
             os << "\""<< m_schema->object_order()[i] << "\": ";
@@ -10394,8 +10394,8 @@ Node::to_json_generic(std::ostream &os,
         utils::indent(os,indent,depth,pad);
         os << "[" << eoe;
         
-        index_t nchildren = m_children.size();
-        for(index_t i=0; i < nchildren;i++)
+        size_t nchildren = m_children.size();
+        for(size_t i=0; i < nchildren;i++)
         {
             utils::indent(os,indent,depth+1,pad);
             m_children[i]->to_json_generic(os,
@@ -10613,7 +10613,7 @@ Node::to_base64_json(std::ostream &os,
     
     const char *src_ptr = (const char*)n.data_ptr();
     char *dest_ptr       = (char*)bb64_data.data_ptr();
-    memset(dest_ptr,0,enc_buff_size);
+    memset(dest_ptr,0,(size_t)enc_buff_size);
 
     utils::base64_encode(src_ptr,nbytes,dest_ptr);
     
@@ -10784,10 +10784,10 @@ Node::fetch_child(const std::string &path) const
         }
     }
 
-    index_t idx;
+    size_t idx;
     if(m_schema->has_child(p_curr))
     {
-        idx = m_schema->child_index(p_curr);
+        idx = (size_t) m_schema->child_index(p_curr);
     }
     else
     {
@@ -10836,10 +10836,10 @@ Node::fetch_child(const std::string &path)
         }
     }
 
-    index_t idx;
+    size_t idx;
     if(m_schema->has_child(p_curr))
     {
-        idx = m_schema->child_index(p_curr);
+        idx = (size_t) m_schema->child_index(p_curr);
     }
     else
     {
@@ -10889,7 +10889,7 @@ Node::fetch(const std::string &path)
     // if this node doesn't exist yet, we need to create it and
     // link it to a schema
         
-    index_t idx;
+    size_t idx;
     if(!m_schema->has_child(p_curr))
     {
         Schema *schema_ptr = m_schema->fetch_ptr(p_curr);
@@ -10901,7 +10901,7 @@ Node::fetch(const std::string &path)
     }
     else
     {
-        idx = m_schema->child_index(p_curr);
+        idx = (size_t) m_schema->child_index(p_curr);
     }
 
     if(p_next.empty())
@@ -10927,7 +10927,7 @@ Node::fetch(const std::string &path) const
 Node&
 Node::child(index_t idx)
 {
-    return *m_children[idx];
+    return *m_children[(size_t)idx];
 }
 
 
@@ -10935,7 +10935,7 @@ Node::child(index_t idx)
 const Node&
 Node::child(index_t idx) const
 {
-    return *m_children[idx];
+    return *m_children[(size_t)idx];
 }
 
 //---------------------------------------------------------------------------//
@@ -11067,9 +11067,9 @@ Node::remove(index_t idx)
     // to cleanup
     
     // remove the proper list entry
-    delete m_children[idx];
+    delete m_children[(size_t)idx];
     m_schema->remove(idx);
-    m_children.erase(m_children.begin() + idx);
+    m_children.erase(m_children.begin() + (size_t)idx);
 }
 
 //---------------------------------------------------------------------------//
@@ -11080,7 +11080,7 @@ Node::remove(const std::string &path)
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
 
-    index_t idx=m_schema->child_index(p_curr);
+    size_t idx= (size_t) m_schema->child_index(p_curr);
     
     if(!p_next.empty())
     {
@@ -12993,7 +12993,7 @@ Node::allocate(const DataType &dtype)
 void
 Node::allocate(index_t dsize)
 {
-    m_data      = malloc(dsize);
+    m_data      = malloc((size_t)dsize);
     m_data_size = dsize;
     m_alloced   = true;
     m_mmaped    = false;
@@ -13018,7 +13018,7 @@ void
 Node::release()
 {
     // delete all children
-    for (index_t i = 0; i < (index_t) m_children.size(); i++)
+    for (size_t i = 0; i < m_children.size(); i++)
     {
         Node* node = m_children[i];
         delete node;
@@ -13121,7 +13121,7 @@ Node::walk_schema(Node   *node,
     node->set_data_ptr(data);
     if(schema->dtype().id() == DataType::OBJECT_ID)
     {
-        for(index_t i=0;i<(index_t)schema->children().size(); i++)
+        for(size_t i=0;i< schema->children().size(); i++)
         {
     
             std::string curr_name = schema->object_order()[i];
@@ -13161,7 +13161,7 @@ Node::mirror_node(Node   *node,
     
     if(schema->dtype().id() == DataType::OBJECT_ID)
     {
-        for(index_t i=0;i< (index_t) schema->children().size(); i++)
+        for(size_t i=0;i< schema->children().size(); i++)
         {
     
             std::string curr_name = schema->object_order()[i];
@@ -13243,7 +13243,7 @@ Node::compact_elements_to(uint8 *data) const
         {
             memcpy(data_ptr,
                    element_ptr(i),
-                   ele_bytes);
+                   (size_t)ele_bytes);
             data_ptr+=ele_bytes;
         }
     }
@@ -13270,7 +13270,7 @@ Node::serialize(uint8 *data,index_t curr_offset) const
         {
             memcpy(&data[curr_offset],
                    m_data,
-                   total_bytes());
+                   (size_t)total_bytes());
         }
         else // ser as is. This copies stride * num_ele bytes
         {
@@ -13425,8 +13425,8 @@ Node::info(Node &res, const std::string &curr_path) const
     if(dtype_id == DataType::OBJECT_ID)
     {
         std::ostringstream oss;
-        index_t nchildren = m_children.size();
-        for(index_t i=0; i < nchildren;i++)
+        size_t nchildren = m_children.size();
+        for(size_t i=0; i < nchildren;i++)
         {
             oss.str("");
             if(curr_path == "")
@@ -13443,8 +13443,8 @@ Node::info(Node &res, const std::string &curr_path) const
     else if(dtype_id == DataType::LIST_ID)
     {
         std::ostringstream oss;
-        index_t nchildren = m_children.size();
-        for(index_t i=0; i < nchildren;i++)
+        size_t nchildren = m_children.size();
+        for(size_t i=0; i < nchildren;i++)
         {
             oss.str("");
             oss << curr_path << "[" << i << "]";
