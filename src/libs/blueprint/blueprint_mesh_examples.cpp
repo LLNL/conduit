@@ -624,9 +624,9 @@ braid_quads(index_t npts_x,
 {
     res.reset();
     
-    index_t nele_x = npts_x - 1;
-    index_t nele_y = npts_y - 1;
-    index_t nele = nele_x * nele_y;
+    int32 nele_x = (int32)(npts_x - 1);
+    int32 nele_y = (int32)(npts_y - 1);
+    int32 nele = nele_x * nele_y;
     
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
@@ -640,11 +640,11 @@ braid_quads(index_t npts_x,
     res["topologies/mesh/elements/connectivity"].set(DataType::int32(nele*4));
     int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
-    index_t idx = 0;
-    for(index_t j = 0; j < nele_x ; j++)
+    int32 idx = 0;
+    for(int32 j = 0; j < nele_x ; j++)
     {
-        index_t yoff = j * (nele_x+1);
-        for(index_t i = 0; i < nele_y; i++)
+        int32 yoff = j * (nele_x+1);
+        for(int32 i = 0; i < nele_y; i++)
         {
             conn[idx+0] = yoff + i;
             conn[idx+1] = yoff + i + (nele_x+1);
@@ -682,8 +682,8 @@ braid_quads_and_tris(index_t npts_x,
 {
     res.reset();
     
-    index_t nele_x = npts_x - 1;
-    index_t nele_y = npts_y - 1;
+    int32 nele_x = (int32)(npts_x - 1);
+    int32 nele_y = (int32)(npts_y - 1);
     
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
@@ -701,14 +701,14 @@ braid_quads_and_tris(index_t npts_x,
     elems["element_types/tris/shape"]      = "tri";
 
     // Fill in stream IDs and calculate size of the connectivity array
-    int count   = 0;
-    int ielem   = 0;
+    int32 count   = 0;
+    int32 ielem   = 0;
     std::vector< int32 > stream_ids_buffer;
     std::vector< int32 > stream_lengths;
 
-    for(index_t j = 0; j < nele_x ; j++)
+    for(int32 j = 0; j < nele_x ; j++)
     {
-        for(index_t i = 0; i < nele_y; i++)
+        for(int32 i = 0; i < nele_y; i++)
         {
              if ( ielem % 2 == 0 )
              {
@@ -740,18 +740,18 @@ braid_quads_and_tris(index_t npts_x,
     int32* conn = elems["stream"].value();
 
     // Fill in connectivity array
-    index_t idx = 0;
+    int32 idx = 0;
     int32 elem  = 0;
-    for(index_t j = 0; j < nele_x ; j++)
+    for(int32 j = 0; j < nele_x ; j++)
     {
-        index_t yoff = j * (nele_x+1);
+        int32 yoff = j * (nele_x+1);
 
-        for(index_t i = 0; i < nele_y; i++)
+        for(int32 i = 0; i < nele_y; i++)
         {
-            index_t n1 = yoff + i;
-            index_t n2 = n1 + (nele_x+1);
-            index_t n3 = n1 + 1 + (nele_x+1);
-            index_t n4 = n1 + 1;
+            int32 n1 = yoff + i;
+            int32 n2 = n1 + (nele_x+1);
+            int32 n3 = n1 + 1 + (nele_x+1);
+            int32 n4 = n1 + 1;
 
             if ( elem % 2 == 0 )
             {
@@ -808,8 +808,8 @@ braid_quads_and_tris_offsets(index_t npts_x,
 
     res.reset();
 
-    index_t nele_x = npts_x - 1;
-    index_t nele_y = npts_y - 1;
+    int32 nele_x = (int32)(npts_x - 1);
+    int32 nele_y = (int32)(npts_y - 1);
 
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
@@ -827,17 +827,17 @@ braid_quads_and_tris_offsets(index_t npts_x,
     elems["element_types/tris/shape"]      = "tri";
 
     // Fill in stream IDs and calculate size of the connectivity array
-    int count   = 0;
-    int ielem   = 0;
+    int32 count   = 0;
+    int32 ielem   = 0;
     std::vector< int32 > stream_ids;
     std::vector< int32 > stream_offsets;
     stream_offsets.push_back( 0 );
 
-    for(index_t j = 0; j < nele_x ; j++)
+    for(int32 j = 0; j < nele_x ; j++)
     {
-        for(index_t i = 0; i < nele_y; i++)
+        for(int32 i = 0; i < nele_y; i++)
         {
-             int32 next = stream_offsets.back();
+            int32 next = stream_offsets.back();
 
              if ( ielem % 2 == 0 )
              {
@@ -871,18 +871,18 @@ braid_quads_and_tris_offsets(index_t npts_x,
     int32* conn = elems["stream"].value();
 
     // Fill in connectivity array
-    index_t idx = 0;
+    int32 idx = 0;
     int32 elem  = 0;
-    for(index_t j = 0; j < nele_x ; j++)
+    for(int32 j = 0; j < nele_x ; j++)
     {
-        index_t yoff = j * (nele_x+1);
+        int32 yoff = j * (nele_x+1);
 
-        for(index_t i = 0; i < nele_y; i++)
+        for(int32 i = 0; i < nele_y; i++)
         {
-            index_t n1 = yoff + i;
-            index_t n2 = n1 + (nele_x+1);
-            index_t n3 = n1 + 1 + (nele_x+1);
-            index_t n4 = n1 + 1;
+            int32 n1 = yoff + i;
+            int32 n2 = n1 + (nele_x+1);
+            int32 n3 = n1 + 1 + (nele_x+1);
+            int32 n4 = n1 + 1;
 
             if ( elem % 2 == 0 )
             {
@@ -936,9 +936,9 @@ braid_lines_2d(index_t npts_x,
     
     // require npts_x > 0 && npts_y > 0
 
-    index_t nele_quads_x = npts_x-1;
-    index_t nele_quads_y = npts_y-1;
-    index_t nele_quads = nele_quads_x * nele_quads_y;
+    int32 nele_quads_x = (int32)(npts_x-1);
+    int32 nele_quads_y = (int32)(npts_y-1);
+    int32 nele_quads = nele_quads_x * nele_quads_y;
         
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
@@ -952,12 +952,12 @@ braid_lines_2d(index_t npts_x,
     res["topologies/mesh/elements/connectivity"].set(DataType::int32(nele_quads*4*2));
     int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
-    index_t idx = 0;
-    for(index_t j = 0; j < nele_quads_y ; j++)
+    int32 idx = 0;
+    for(int32 j = 0; j < nele_quads_y ; j++)
     {
-        index_t yoff = j * (nele_quads_x+1);
+        int32 yoff = j * (nele_quads_x+1);
         
-        for(index_t i = 0; i < nele_quads_x; i++)
+        for(int32 i = 0; i < nele_quads_x; i++)
         {
             // 4 lines per quad.
 
@@ -1008,9 +1008,9 @@ braid_tris(index_t npts_x,
     
     // require npts_x > 0 && npts_y > 0
 
-    index_t nele_quads_x = npts_x-1;
-    index_t nele_quads_y = npts_y-1;
-    index_t nele_quads = nele_quads_x * nele_quads_y;
+    int32 nele_quads_x = (int32) npts_x-1;
+    int32 nele_quads_y = (int32) npts_y-1;
+    int32 nele_quads = nele_quads_x * nele_quads_y;
         
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
@@ -1024,12 +1024,12 @@ braid_tris(index_t npts_x,
     res["topologies/mesh/elements/connectivity"].set(DataType::int32(nele_quads*6));
     int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
-    index_t idx = 0;
-    for(index_t j = 0; j < nele_quads_y ; j++)
+    int32 idx = 0;
+    for(int32 j = 0; j < nele_quads_y ; j++)
     {
-        index_t yoff = j * (nele_quads_x+1);
+        int32 yoff = j * (nele_quads_x+1);
         
-        for(index_t i = 0; i < nele_quads_x; i++)
+        for(int32 i = 0; i < nele_quads_x; i++)
         {
             // two tris per quad. 
             conn[idx+0] = yoff + i;
@@ -1074,10 +1074,10 @@ braid_hexs(index_t npts_x,
 {
     res.reset();
     
-    index_t nele_x = npts_x - 1;
-    index_t nele_y = npts_y - 1;
-    index_t nele_z = npts_z - 1;
-    index_t nele = nele_x * nele_y * nele_z;
+    int32 nele_x = (int32)(npts_x - 1);
+    int32 nele_y = (int32)(npts_y - 1);
+    int32 nele_z = (int32)(npts_z - 1);
+    int32 nele = nele_x * nele_y * nele_z;
     
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
@@ -1091,19 +1091,19 @@ braid_hexs(index_t npts_x,
     res["topologies/mesh/elements/connectivity"].set(DataType::int32(nele*8));
     int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
-    index_t idx = 0;
-    for(index_t k = 0; k < nele_z ; k++)
+    int32 idx = 0;
+    for(int32 k = 0; k < nele_z ; k++)
     {
-        index_t zoff = k * (nele_x+1)*(nele_y+1);
-        index_t zoff_n = (k+1) * (nele_x+1)*(nele_y+1);
+        int32 zoff = k * (nele_x+1)*(nele_y+1);
+        int32 zoff_n = (k+1) * (nele_x+1)*(nele_y+1);
         
-        for(index_t j = 0; j < nele_y ; j++)
+        for(int32 j = 0; j < nele_y ; j++)
         {
-            index_t yoff = j * (nele_x+1);
-            index_t yoff_n = (j+1) * (nele_x+1);
+            int32 yoff = j * (nele_x+1);
+            int32 yoff_n = (j+1) * (nele_x+1);
 
 
-            for(index_t i = 0; i < nele_x; i++)
+            for(int32 i = 0; i < nele_x; i++)
             {
                 // ordering is same as VTK_HEXAHEDRON
 
@@ -1149,14 +1149,14 @@ braid_tets(index_t npts_x,
 {
     res.reset();
     
-    index_t nele_hexs_x = npts_x - 1;
-    index_t nele_hexs_y = npts_y - 1;
-    index_t nele_hexs_z = npts_z - 1;
-    index_t nele_hexs = nele_hexs_x * nele_hexs_y * nele_hexs_z;
+    int32 nele_hexs_x = (int32) (npts_x - 1);
+    int32 nele_hexs_y = (int32) (npts_y - 1);
+    int32 nele_hexs_z = (int32) (npts_z - 1);
+    int32 nele_hexs = nele_hexs_x * nele_hexs_y * nele_hexs_z;
     
-    index_t tets_per_hex = 6;
-    index_t verts_per_tet = 4;
-    index_t n_tets_verts = nele_hexs * tets_per_hex * verts_per_tet;
+    int32 tets_per_hex = 6;
+    int32 verts_per_tet = 4;
+    int32 n_tets_verts = nele_hexs * tets_per_hex * verts_per_tet;
 
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
@@ -1172,23 +1172,23 @@ braid_tets(index_t npts_x,
     int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
 
-    index_t idx = 0;
-    for(index_t k = 0; k < nele_hexs_z ; k++)
+    int32 idx = 0;
+    for(int32 k = 0; k < nele_hexs_z ; k++)
     {
-        index_t zoff = k * (nele_hexs_x+1)*(nele_hexs_y+1);
-        index_t zoff_n = (k+1) * (nele_hexs_x+1)*(nele_hexs_y+1);
+        int32 zoff = k * (nele_hexs_x+1)*(nele_hexs_y+1);
+        int32 zoff_n = (k+1) * (nele_hexs_x+1)*(nele_hexs_y+1);
         
-        for(index_t j = 0; j < nele_hexs_y ; j++)
+        for(int32 j = 0; j < nele_hexs_y ; j++)
         {
-            index_t yoff = j * (nele_hexs_x+1);
-            index_t yoff_n = (j+1) * (nele_hexs_x+1);
+            int32 yoff = j * (nele_hexs_x+1);
+            int32 yoff_n = (j+1) * (nele_hexs_x+1);
 
 
-            for(index_t i = 0; i < nele_hexs_z; i++)
+            for(int32 i = 0; i < nele_hexs_z; i++)
             {
                 // Create a local array of the vertex indices
                 // ordering is same as VTK_HEXAHEDRON
-                index_t vidx[8] = {zoff + yoff + i
+                int32 vidx[8] =   {zoff + yoff + i
                                   ,zoff + yoff + i + 1
                                   ,zoff + yoff_n + i + 1
                                   ,zoff + yoff_n + i
@@ -1263,10 +1263,10 @@ braid_lines_3d(index_t npts_x,
 {
     res.reset();
     
-    index_t nele_hexs_x = npts_x - 1;
-    index_t nele_hexs_y = npts_y - 1;
-    index_t nele_hexs_z = npts_z - 1;
-    index_t nele_hexs = nele_hexs_x * nele_hexs_y * nele_hexs_z;
+    int32 nele_hexs_x = (int32)(npts_x - 1);
+    int32 nele_hexs_y = (int32)(npts_y - 1);
+    int32 nele_hexs_z = (int32)(npts_z - 1);
+    int32 nele_hexs = nele_hexs_x * nele_hexs_y * nele_hexs_z;
     
 
     braid_init_example_state(res);
@@ -1281,19 +1281,19 @@ braid_lines_3d(index_t npts_x,
     res["topologies/mesh/elements/connectivity"].set(DataType::int32(nele_hexs * 12 * 2));
     int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
-    index_t idx = 0;
-    for(index_t k = 0; k < nele_hexs_z ; k++)
+    int32 idx = 0;
+    for(int32 k = 0; k < nele_hexs_z ; k++)
     {
-        index_t zoff = k * (nele_hexs_x+1)*(nele_hexs_y+1);
-        index_t zoff_n = (k+1) * (nele_hexs_x+1)*(nele_hexs_y+1);
+        int32 zoff = k * (nele_hexs_x+1)*(nele_hexs_y+1);
+        int32 zoff_n = (k+1) * (nele_hexs_x+1)*(nele_hexs_y+1);
         
-        for(index_t j = 0; j < nele_hexs_y ; j++)
+        for(int32 j = 0; j < nele_hexs_y ; j++)
         {
-            index_t yoff = j * (nele_hexs_x+1);
-            index_t yoff_n = (j+1) * (nele_hexs_x+1);
+            int32 yoff = j * (nele_hexs_x+1);
+            int32 yoff_n = (j+1) * (nele_hexs_x+1);
 
 
-            for(index_t i = 0; i < nele_hexs_z; i++)
+            for(int32 i = 0; i < nele_hexs_z; i++)
             {
                 // 12 lines per hex 
                 // Note: this pattern allows for simple per-hex construction,
@@ -1378,24 +1378,24 @@ braid_hexs_and_tets(index_t npts_x,
 
     res.reset();
 
-    index_t nele_hexs_x = npts_x - 1;
-    index_t nele_hexs_y = npts_y - 1;
-    index_t nele_hexs_z = npts_z - 1;
-    index_t nele_hexs = nele_hexs_x * nele_hexs_y * nele_hexs_z;
+    int32 nele_hexs_x = (int32)(npts_x - 1);
+    int32 nele_hexs_y = (int32)(npts_y - 1);
+    int32 nele_hexs_z = (int32)(npts_z - 1);
+    int32 nele_hexs = nele_hexs_x * nele_hexs_y * nele_hexs_z;
 
 
     // Set the number of voxels containing hexs and tets
-    index_t n_hex_hexs = (nele_hexs > 1)? nele_hexs / 2 : nele_hexs;
-    index_t n_hex_tets = nele_hexs - n_hex_hexs;
+    int32 n_hex_hexs = (nele_hexs > 1)? nele_hexs / 2 : nele_hexs;
+    int32 n_hex_tets = nele_hexs - n_hex_hexs;
 
     // Compute the sizes of the connectivity array for each element type
-    index_t hexs_per_hex = 1;
-    index_t verts_per_hex = 8;
-    index_t n_hexs_verts = n_hex_hexs * hexs_per_hex * verts_per_hex;
+    int32 hexs_per_hex = 1;
+    int32 verts_per_hex = 8;
+    int32 n_hexs_verts = n_hex_hexs * hexs_per_hex * verts_per_hex;
 
-    index_t tets_per_hex = 6;
-    index_t verts_per_tet = 4;
-    index_t n_tets_verts = n_hex_tets * tets_per_hex * verts_per_tet;
+    int32 tets_per_hex = 6;
+    int32 verts_per_tet = 4;
+    int32 n_tets_verts = n_hex_tets * tets_per_hex * verts_per_tet;
 
 
     braid_init_example_state(res);
@@ -1458,24 +1458,24 @@ braid_hexs_and_tets(index_t npts_x,
     res["topologies/mesh/elements/stream"].set( DataType::int32(n_hexs_verts + n_tets_verts) );
     int32* conn = res["topologies/mesh/elements/stream"].value();
 
-    index_t idx = 0;
-    index_t elem_count = 0;
-    for(index_t k = 0; k < nele_hexs_z ; k++)
+    int32 idx = 0;
+    int32 elem_count = 0;
+    for(int32 k = 0; k < nele_hexs_z ; k++)
     {
-        index_t zoff = k * (nele_hexs_x+1)*(nele_hexs_y+1);
-        index_t zoff_n = (k+1) * (nele_hexs_x+1)*(nele_hexs_y+1);
+        int32 zoff = k * (nele_hexs_x+1)*(nele_hexs_y+1);
+        int32 zoff_n = (k+1) * (nele_hexs_x+1)*(nele_hexs_y+1);
 
-        for(index_t j = 0; j < nele_hexs_y ; j++)
+        for(int32 j = 0; j < nele_hexs_y ; j++)
         {
-            index_t yoff = j * (nele_hexs_x+1);
-            index_t yoff_n = (j+1) * (nele_hexs_x+1);
+            int32 yoff = j * (nele_hexs_x+1);
+            int32 yoff_n = (j+1) * (nele_hexs_x+1);
 
 
-            for(index_t i = 0; i < nele_hexs_z; i++)
+            for(int32 i = 0; i < nele_hexs_z; i++)
             {
                 // Create a local array of the vertex indices
                 // ordering is same as VTK_HEXAHEDRON
-                index_t vidx[8] = {zoff + yoff + i
+                int32 vidx[8] = {zoff + yoff + i
                                   ,zoff + yoff + i + 1
                                   ,zoff + yoff_n + i + 1
                                   ,zoff + yoff_n + i
