@@ -314,6 +314,30 @@ mesh::verify(const Node &n,
 }
 
 
+//-----------------------------------------------------------------------------
+std::string 
+identify_coord_sys_type(const Node &coords)
+{
+    if( coords.has_child("theta") || coords.has_child("phi"))
+    {
+        return std::string("spherical");
+    }
+    else if( coords.has_child("r") ) // rz, or r w/o theta, phi
+    {
+        return std::string("cylindrical");
+    }
+    else if( coords.has_child("x") || 
+             coords.has_child("y") || 
+             coords.has_child("z") )
+    {
+        return std::string("cartesian");
+    }
+    else
+    {
+        return std::string("unknown");
+    }
+}
+
 
 //-----------------------------------------------------------------------------
 void
@@ -337,30 +361,64 @@ mesh::generate_index(const Node &mesh,
         std::string coordset_type =   coordset["type"].as_string();
         idx_coordset["type"] = coordset_type;
     
-        index_t num_comps = 0;
-
         if(coordset_type == "uniform")
         {
-            num_comps = coordset["dims"].number_of_children();
+            // default to cartesian, but check if origin or spacing exist
+            // b/c they may name axes from cyln or sph
+            if(coordset.has_child("origin"))
+            {
+                NodeConstIterator origin_itr = coordset["origin"].children();
+                while(origin_itr.has_next())
+                {
+                    origin_itr.next();
+                    idx_coordset["coord_system/axes"][origin_itr.path()];
+                }
+            }
+            else if(coordset.has_child("spacing"))
+            {
+                NodeConstIterator spacing_itr = coordset["spacing"].children();
+                while(spacing_itr.has_next())
+                {
+                    spacing_itr.next();
+                    std::string axis_name = spacing_itr.path();
+                    // spacing names start with "d"
+                    axis_name = axis_name.substr(1);
+                    idx_coordset["coord_system/axes"][axis_name];
+                }
+            }
+            else
+            {
+                // assume cartesian 
+                index_t num_comps = coordset["dims"].number_of_children();
+                
+                if(num_comps > 0)
+                {
+                    idx_coordset["coord_system/axes/x"];
+                }
+                
+                if(num_comps > 1)
+                {
+                    idx_coordset["coord_system/axes/y"];
+                }
+
+                if(num_comps > 2)
+                {
+                    idx_coordset["coord_system/axes/z"];
+                }
+            }
         }
         else
         {
-            num_comps = coordset["values"].number_of_children();
+            // use child names as axes
+            NodeConstIterator values_itr = coordset["values"].children();
+            while(values_itr.has_next())
+            {
+                values_itr.next();
+                idx_coordset["coord_system/axes"][values_itr.path()];
+            }
         }
 
-        idx_coordset["coord_system/type"] = "cartesian";
-        
-        if(num_comps == 2)
-        {
-            idx_coordset["coord_system/axes/i"] = "x";
-            idx_coordset["coord_system/axes/j"] = "y";
-        }
-        else if(num_comps == 3)
-        {
-            idx_coordset["coord_system/axes/i"] = "x";
-            idx_coordset["coord_system/axes/j"] = "y";
-            idx_coordset["coord_system/axes/k"] = "z";
-        }
+        idx_coordset["coord_system/type"] = identify_coord_sys_type(idx_coordset["coord_system/axes"]);
 
         idx_coordset["path"] = ref_path + "/coordsets/" + coordset_name;
     }
@@ -481,33 +539,40 @@ mesh::coordset::uniform::origin::verify(const Node &origin,
 
     const std::string proto_name = "mesh::coordset::uniform::origin";
 
-    //TODO: check other supported coord systems (cyln,spherical)
-
-    if(origin.has_child("x"))
+    if(origin.has_child("x") && !origin["x"].dtype().is_number())
     {
-        if(!origin["x"].dtype().is_number())
-        {
-            log_error(info,proto_name,"origin/x is not a number");
-            res = false;
-        }
+        log_error(info,proto_name,"origin/x is not a number");
+        res = false;
     }
 
-    if(origin.has_child("y"))
+    if(origin.has_child("y") && !origin["y"].dtype().is_number())
     {
-        if(!origin["y"].dtype().is_number())
-        {
-            log_error(info,proto_name,"origin/y is not a number");
-            res = false;
-        }
+        log_error(info,proto_name,"origin/y is not a number");
+        res = false;
     }
 
-    if(origin.has_child("z"))
+    if(origin.has_child("z") && !origin["z"].dtype().is_number())
     {
-        if(!origin["z"].dtype().is_number())
-        {
-            log_error(info,proto_name,"origin/z is not a number");
-            res = false;
-        }
+        log_error(info,proto_name,"origin/z is not a number");
+        res = false;
+    }
+    
+    if(origin.has_child("r") && !origin["r"].dtype().is_number())
+    {
+        log_error(info,proto_name,"origin/r is not a number");
+        res = false;
+    }
+
+    if(origin.has_child("theta") && !origin["theta"].dtype().is_number())
+    {
+        log_error(info,proto_name,"origin/theta is not a number");
+        res = false;
+    }
+
+    if(origin.has_child("phi") && !origin["phi"].dtype().is_number())
+    {
+        log_error(info,proto_name,"origin/phi is not a number");
+        res = false;
     }
 
     log_verify_result(info,res);
@@ -526,36 +591,40 @@ mesh::coordset::uniform::spacing::verify(const Node &spacing,
 
     const std::string proto_name = "mesh::coordset::uniform::spacing";
 
-    //TODO: check other supported coord systems (cyln,spherical)
-
-    if(spacing.has_child("dx"))
+    if(spacing.has_child("dx") && !spacing["dx"].dtype().is_number())
     {
-
-        if(!spacing["dx"].dtype().is_number())
-        {
-            log_error(info,proto_name,"spacing/dx is not a number");
-            res = false;
-        }
+        log_error(info,proto_name,"spacing/dx is not a number");
+        res = false;
     }
 
-    if(spacing.has_child("dy"))
+    if(spacing.has_child("dy") && !spacing["dy"].dtype().is_number())
     {
-
-        if(!spacing["dy"].dtype().is_number())
-        {
-            log_error(info,proto_name,"spacing/dy is not a number");
-            res = false;
-        }
+        log_error(info,proto_name,"spacing/dy is not a number");
+        res = false;
     }
 
-    if(spacing.has_child("dz"))
+    if(spacing.has_child("dz") && !spacing["dz"].dtype().is_number())
     {
+        log_error(info,proto_name,"spacing/dz is not a number");
+        res = false;
+    }
+    
+    if(spacing.has_child("dr") && !spacing["dr"].dtype().is_number())
+    {
+        log_error(info,proto_name,"spacing/dr is not a number");
+        res = false;
+    }
 
-        if(!spacing["dz"].dtype().is_number())
-        {
-            log_error(info,proto_name,"spacing/dz is not a number");
-            res = false;
-        }
+    if(spacing.has_child("dtheta") && !spacing["dtheta"].dtype().is_number())
+    {
+        log_error(info,proto_name,"spacing/dtheta is not a number");
+        res = false;
+    }
+
+    if(spacing.has_child("dphi") && !spacing["dphi"].dtype().is_number())
+    {
+        log_error(info,proto_name,"spacing/phi is not a number");
+        res = false;
     }
 
     log_verify_result(info,res);
@@ -581,7 +650,7 @@ mesh::coordset::uniform::verify(const Node &coordset,
     {
         const Node &dims = coordset["dims"];
         
-        if(!mesh::logical_dims::verify(dims,info))
+        if(!mesh::logical_dims::verify(dims,info["dims"]))
         {
             res= false;
         }
@@ -591,7 +660,8 @@ mesh::coordset::uniform::verify(const Node &coordset,
     {
         log_optional(info,proto_name, "has origin");
         
-        if(!mesh::coordset::uniform::origin::verify(coordset["dims"],info))
+        if(!mesh::coordset::uniform::origin::verify(coordset["dims"],
+                                                    info["dims"]))
         {
             res= false;
         }
@@ -602,7 +672,8 @@ mesh::coordset::uniform::verify(const Node &coordset,
         log_optional(info,proto_name, "has spacing");
         
 
-        if(!mesh::coordset::uniform::origin::verify(coordset["spacing"],info))
+        if(!mesh::coordset::uniform::spacing::verify(coordset["spacing"],
+                                                     info["spacing"]))
         {
             res= false;
         }
@@ -739,8 +810,9 @@ mesh::coordset::type::verify(const Node &coordset_type,
         }
         else
         {
-            log_error(info,proto_name, "unsupported value:"
-                           + coordset_type_str);
+            log_error(info,
+                      proto_name,
+                      "unsupported value:" + coordset_type_str);
             res = false;
         }
     }
@@ -754,13 +826,27 @@ mesh::coordset::type::verify(const Node &coordset_type,
 // blueprint::mesh::coordset::coord_system protocol interface
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
 bool
-check_coord_sys_axis_name(std::string &name)
+check_cart_coord_sys_axis_name(std::string &name)
 {
-    return ( name == "x"     || name == "y" || name == "z" ||
-             name == "r"     || name == "z" ||
-             name == "theta" || name == "phi");
+    return ( name == "x" || name == "y" || name == "z");
 }
+
+//-----------------------------------------------------------------------------
+bool
+check_sph_coord_sys_axis_name(std::string &name)
+{
+    return ( name == "r" || name == "theta" || name == "phi");
+}
+
+//-----------------------------------------------------------------------------
+bool
+check_cyln_coord_sys_axis_name(std::string &name)
+{
+    return ( name == "r" || name == "z");
+}
+
 
 //-----------------------------------------------------------------------------
 bool
@@ -769,7 +855,10 @@ mesh::coordset::coord_system::verify(const Node &coord_sys,
 {    
     bool res = true;
 
+    
     std::string proto_name = "mesh::coordset::coord_system";
+
+    std::string coord_sys_str = "unknown";
 
     if(!coord_sys.has_child("type"))
     {
@@ -783,10 +872,10 @@ mesh::coordset::coord_system::verify(const Node &coord_sys,
     }
     else
     {
-        std::string coord_sys_str = coord_sys["type"].as_string();
+        coord_sys_str = coord_sys["type"].as_string();
 
         if( coord_sys_str == "cartesian" ||
-            coord_sys_str == "cylinderical" ||
+            coord_sys_str == "cylindrical" ||
             coord_sys_str == "spherical")
         {
             log_info(info,proto_name, "valid type: " + coord_sys_str);
@@ -798,8 +887,6 @@ mesh::coordset::coord_system::verify(const Node &coord_sys,
             res = false;
         }
     }
-    
-    // TODO, we could also check for duplicate names
 
     if(!coord_sys.has_child("axes"))
     {
@@ -809,69 +896,49 @@ mesh::coordset::coord_system::verify(const Node &coord_sys,
     else
     {
         const Node &axes = coord_sys["axes"];
-        
-        if(!axes.has_child("i"))
+
+        if(axes.number_of_children() == 0)
         {
-            log_error(info,proto_name, "missing child \"axes/i\"");
-            res = false;
-        }
-        else if(!axes["i"].dtype().is_string())
-        {
-            log_error(info,proto_name,"axes/i is not a string");
+            log_error(info,proto_name,"axes has no children");
             res = false;
         }
         else
         {
-            std::string axis_name = axes["i"].as_string();
-            if(!check_coord_sys_axis_name(axis_name))
+            NodeConstIterator itr  = axes.children();
+
+            while(itr.has_next())
             {
-                log_error(info,
-                          proto_name,
-                          "axes/i: " + axis_name +
-                           " is not a valid coord_system axis name");
-                res = false;
-            }
-        }
-    
-        if(axes.has_child("j"))
-        {
-            log_optional(info,proto_name, "axes includes j");
-            if(!axes["j"].dtype().is_string())
-            {
-                log_error(info,proto_name,"axes/j is not a string");
-                res = false;
-            }
-            else
-            {
-                std::string axis_name = axes["j"].as_string();
-                if(!check_coord_sys_axis_name(axis_name))
+                bool axis_name_ok = true;
+                
+                itr.next();
+                std::string axis_name = itr.path();
+                if(coord_sys_str == "cartesian")
+                {
+                    axis_name_ok = check_cart_coord_sys_axis_name(axis_name);
+                }
+                else if(coord_sys_str == "cylindrical")
+                {
+                    axis_name_ok = check_cyln_coord_sys_axis_name(axis_name);
+                }
+                else if(coord_sys_str == "spherical")
+                {
+                    axis_name_ok = check_sph_coord_sys_axis_name(axis_name);
+                }
+                else
                 {
                     log_error(info,
                               proto_name,
-                              "axes/j: " + axis_name +
-                               " is not a valid coord_system axis name");
+                              "cannot verify axis name (" + axis_name + ") "
+                              "for coord_sys type " + coord_sys_str);
                     res = false;
                 }
-            }
-        }
-    
-        if(axes.has_child("k"))
-        {
-            log_optional(info,proto_name, "axes includes k");
-            if(!axes["k"].dtype().is_string())
-            {
-                log_error(info,proto_name,"axes/k is not a string");
-                res = false;
-            }
-            else
-            {
-                std::string axis_name = axes["k"].as_string();
-                if(!check_coord_sys_axis_name(axis_name))
+
+                if(!axis_name_ok)
                 {
                     log_error(info,
                               proto_name,
-                              "axes/k: " + axis_name +
-                               " is not a valid coord_system axis name");
+                              "unsupported " + coord_sys_str  + 
+                              " axis name: " + axis_name);
                     res = false;
                 }
             }
