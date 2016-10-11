@@ -307,6 +307,47 @@ mesh::verify(const Node &n,
             }
         }
     }
+
+    // one last pass to make sure if a grid_function was specified by a topo,
+    // it is valid
+
+    if (n.has_child("topologies"))
+    {
+        NodeConstIterator itr = n["topologies"].children();
+
+        while (itr.has_next())
+        {
+            const Node &chld = itr.next();
+            const std::string chld_name = itr.path();
+
+            if (chld.has_child("grid_function") &&
+                chld["grid_function"].dtype().is_string())
+            {
+                std::string gf_name = chld["grid_function"].as_string();
+
+                if(!n.has_child("fields") || !n["fields"].has_child(gf_name))
+                {
+                    std::ostringstream oss;
+                    oss << "topology "
+                        << "\"" << chld_name << "\" "
+                        << " grid_function references a non-existent field "
+                        << "\"" << gf_name << "\" ";
+                    log_error(info, proto_name, oss.str());
+                    res = false;
+                }
+                else if (info["fields"][gf_name]["valid"].as_string() != "true")
+                {
+                    std::ostringstream oss;
+                    oss << "topology "
+                        << "\"" << chld_name << "\" "
+                        << " grid_function references an invalid field "
+                        << "\"" << gf_name << "\" ";
+                    log_error(info, proto_name, oss.str());
+                    res = false;
+                }
+            }
+        }
+    }
     
     log_verify_result(info,res);
 
@@ -1047,6 +1088,30 @@ mesh::topology::verify(const Node &topo,
         }
     }
 
+    // we need a coordset ref
+    if (!topo.has_child("coordset"))
+    {
+        log_error(info, proto_name, "missing child \"coordset\"");
+        res = false;
+    }
+    else if (!topo["coordset"].dtype().is_string())
+    {
+        log_error(info, proto_name, "\"coordset\" is not a string");
+        res = false;
+    }
+
+    // optional grid_function ref
+    if (topo.has_child("grid_function"))
+    {
+        log_optional(info, proto_name, "includes grid_function");
+        if (!topo["grid_function"].dtype().is_string())
+        {
+            log_error(info, proto_name, "\"grid_function\" is not a string");
+            res = false;
+        }
+    }
+
+
     log_verify_result(info,res);
     
     return res;
@@ -1321,6 +1386,18 @@ mesh::topology::index::verify(const Node &topo_idx,
         log_error(info,proto_name, "\"path\" is not a string");
         res = false;
     }
+
+    // optional grid_function ref
+    if (topo_idx.has_child("grid_function"))
+    {
+        log_optional(info, proto_name, "includes grid_function");
+        if (!topo_idx["grid_function"].dtype().is_string())
+        {
+            log_error(info, proto_name, "\"grid_function\" is not a string");
+            res = false;
+        }
+    }
+
     
     log_verify_result(info,res);
 
