@@ -60,7 +60,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # always use position independent code
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-message(status "CMake build tool name: ${CMAKE_BUILD_TOOL}")
+message(STATUS "CMake build tool name: ${CMAKE_BUILD_TOOL}")
 
 macro(ENABLE_WARNINGS)
     # set the warning levels we want to abide by
