@@ -652,7 +652,7 @@ Schema::remove(index_t idx)
     }
     
     std::vector<Schema*>  &chldrn = children();
-    if( (size_t)idx > chldrn.size())
+    if( (size_t)idx >= chldrn.size())
     {
         CONDUIT_ERROR("<Schema::remove> Invalid index:" 
                     << idx << ">" << chldrn.size() <<  "(list_size)");

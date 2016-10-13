@@ -237,6 +237,10 @@ TEST(schema_basics, schema_fetch_child)
 
     const Schema &s_c = s["c"];
 
+    const Schema &s_c_idx = s[2];
+    
+    EXPECT_EQ(&s_c,&s_c_idx);
+
     EXPECT_THROW(s.fetch_child("bad"),conduit::Error);
     EXPECT_THROW(const Schema &s_bad = s_c.fetch_child("bad"),conduit::Error);
     
@@ -248,6 +252,54 @@ TEST(schema_basics, schema_fetch_child)
 
     EXPECT_TRUE(s_e.dtype().is_int64());
 
+}
+
+
+
+//-----------------------------------------------------------------------------
+TEST(schema_basics, schema_child_names)
+{
+    Schema s;
+    s["a"].set(DataType::int64());
+    s["b"].set(DataType::float64());
+    s["c"].set(DataType::float64());
+    s["d/e"].set(DataType::int64());
+    
+    const std::vector<std::string> &cld_names = s.child_names();
+    
+    const std::vector<std::string> &sde_names = s["d/e"].child_names();
+
+    EXPECT_EQ(cld_names[0],std::string("a"));
+    EXPECT_EQ(cld_names[1],std::string("b"));
+    EXPECT_EQ(cld_names[2],std::string("c"));
+    EXPECT_EQ(cld_names[3],std::string("d"));
+
+    EXPECT_EQ(sde_names.size(),0);
+
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(schema_basics, schema_errors)
+{
+    Schema s;
+    s["a"].set(DataType::int64());
+    s["b"].set(DataType::float64());
+    s["c"].set(DataType::float64());
+    
+    EXPECT_THROW(s.save("/dev/null/bad"),conduit::Error);
+    EXPECT_THROW(s.load("/dev/null/bad"),conduit::Error);
+
+    s.reset(); // can remove from empty
+    EXPECT_THROW(s.remove(0),conduit::Error);
+    s.append(); // now we have a list with one element
+    EXPECT_THROW(s.remove(1),conduit::Error);
+    
+    s.reset();
+    EXPECT_THROW(s.remove("a"),conduit::Error);
+    EXPECT_THROW(s.fetch_child("a"),conduit::Error);
+    s = DataType::object();
+    EXPECT_THROW(s.fetch_child(".."),conduit::Error);
 }
 
 
