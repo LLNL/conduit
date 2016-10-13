@@ -105,7 +105,7 @@ public:
 //-----------------------------------------------------------------------------
 /// Iterator value and property access.
 //-----------------------------------------------------------------------------
-    std::string path()  const;
+    std::string name()  const;
     index_t     index() const;
     Node       &node();
     void        to_front();
@@ -192,7 +192,7 @@ public:
 //-----------------------------------------------------------------------------
 /// Iterator value and property access.
 //-----------------------------------------------------------------------------
-    std::string path()  const;
+    std::string name()  const;
     index_t     index() const;
     const Node &node();
     void        to_front();

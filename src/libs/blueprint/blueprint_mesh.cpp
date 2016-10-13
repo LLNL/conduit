@@ -199,7 +199,7 @@ mesh::verify(const Node &n,
         while(itr.has_next())
         {
             const Node &chld = itr.next();
-            const std::string chld_name = itr.path();
+            const std::string chld_name = itr.name();
 
             if(!coordset::verify(chld,info["coordsets/" + chld_name]))
             {
@@ -230,7 +230,7 @@ mesh::verify(const Node &n,
         while(itr.has_next())
         {
             const Node &chld = itr.next();
-            const std::string chld_name = itr.path();
+            const std::string chld_name = itr.name();
 
             if(!topology::verify(chld,info["topologies"][chld_name]))
             {
@@ -273,7 +273,7 @@ mesh::verify(const Node &n,
         while(itr.has_next())
         {
             const Node &chld = itr.next();
-            const std::string chld_name = itr.path();
+            const std::string chld_name = itr.name();
 
             if(!field::verify(chld,info["fields/" + chld_name]))
             {
@@ -318,7 +318,7 @@ mesh::verify(const Node &n,
         while (itr.has_next())
         {
             const Node &chld = itr.next();
-            const std::string chld_name = itr.path();
+            const std::string chld_name = itr.name();
 
             if (chld.has_child("grid_function") &&
                 chld["grid_function"].dtype().is_string())
@@ -396,7 +396,7 @@ mesh::generate_index(const Node &mesh,
     while(itr.has_next())
     {
         const Node &coordset = itr.next();
-        std::string coordset_name = itr.path();
+        std::string coordset_name = itr.name();
         Node &idx_coordset = index_out["coordsets"][coordset_name];
         
         std::string coordset_type =   coordset["type"].as_string();
@@ -412,7 +412,7 @@ mesh::generate_index(const Node &mesh,
                 while(origin_itr.has_next())
                 {
                     origin_itr.next();
-                    idx_coordset["coord_system/axes"][origin_itr.path()];
+                    idx_coordset["coord_system/axes"][origin_itr.name()];
                 }
             }
             else if(coordset.has_child("spacing"))
@@ -421,7 +421,7 @@ mesh::generate_index(const Node &mesh,
                 while(spacing_itr.has_next())
                 {
                     spacing_itr.next();
-                    std::string axis_name = spacing_itr.path();
+                    std::string axis_name = spacing_itr.name();
                     // spacing names start with "d"
                     axis_name = axis_name.substr(1);
                     idx_coordset["coord_system/axes"][axis_name];
@@ -455,7 +455,7 @@ mesh::generate_index(const Node &mesh,
             while(values_itr.has_next())
             {
                 values_itr.next();
-                idx_coordset["coord_system/axes"][values_itr.path()];
+                idx_coordset["coord_system/axes"][values_itr.name()];
             }
         }
 
@@ -469,7 +469,7 @@ mesh::generate_index(const Node &mesh,
     while(itr.has_next())
     {
         const Node &topo = itr.next();
-        std::string topo_name = itr.path();
+        std::string topo_name = itr.name();
         Node &idx_topo = index_out["topologies"][topo_name];
         idx_topo["type"] = topo["type"].as_string();
         idx_topo["coordset"] = topo["coordset"].as_string();
@@ -489,7 +489,7 @@ mesh::generate_index(const Node &mesh,
         while(itr.has_next())
         {
             const Node &fld = itr.next();
-            std::string fld_name = itr.path();
+            std::string fld_name = itr.name();
             Node &idx_fld = index_out["fields"][fld_name];
             
             index_t ncomps = 1;
@@ -952,7 +952,7 @@ mesh::coordset::coord_system::verify(const Node &coord_sys,
                 bool axis_name_ok = true;
                 
                 itr.next();
-                std::string axis_name = itr.path();
+                std::string axis_name = itr.name();
                 if(coord_sys_str == "cartesian")
                 {
                     axis_name_ok = check_cart_coord_sys_axis_name(axis_name);
@@ -1241,7 +1241,7 @@ mesh::topology::unstructured::verify(const Node &topo,
             while(itr.has_next())
             {
                 const Node &cld  = itr.next();
-                std::string name = itr.path();
+                std::string name = itr.name();
                 
                 if(has_names)
                 {
@@ -1725,7 +1725,7 @@ mesh::index::verify(const Node &n,
         while(itr.has_next())
         {
             const Node &chld = itr.next();
-            const std::string chld_name = itr.path();
+            const std::string chld_name = itr.name();
 
             if(!coordset::index::verify(chld,info["coordsets/" + chld_name]))
             {
@@ -1756,7 +1756,7 @@ mesh::index::verify(const Node &n,
         while(itr.has_next())
         {
             const Node &chld = itr.next();
-            const std::string chld_name = itr.path();
+            const std::string chld_name = itr.name();
 
             if(!topology::index::verify(chld,info["topologies"][chld_name]))
             {
@@ -1799,7 +1799,7 @@ mesh::index::verify(const Node &n,
         while(itr.has_next())
         {
             const Node &chld = itr.next();
-            const std::string chld_name = itr.path();
+            const std::string chld_name = itr.name();
 
             if(!field::index::verify(chld,info["fields/" + chld_name]))
             {

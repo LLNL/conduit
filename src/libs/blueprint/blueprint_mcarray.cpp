@@ -124,7 +124,7 @@ bool verify(const conduit::Node &n,
             if(chld.dtype().number_of_elements() != num_elems)
             {
                 std::ostringstream oss;
-                std::string chld_name = itr.path();
+                std::string chld_name = itr.name();
                 
                 if(chld_name.size() == 0)
                 {
@@ -146,7 +146,7 @@ bool verify(const conduit::Node &n,
         else
         {
             std::ostringstream oss;
-            std::string chld_name = itr.path();
+            std::string chld_name = itr.name();
 
             if(chld_name.size() == 0)
             {
@@ -187,7 +187,7 @@ to_contiguous(const conduit::Node &src,
         // get the next child
         const Node &chld = itr.next();
         // get the next child's name
-        std::string name = itr.path();
+        std::string name = itr.name();
         
         // use the child's data type to see our desired data type
         DataType curr_dt = chld.dtype();
@@ -236,7 +236,7 @@ to_interleaved(const conduit::Node &src,
         // get the next child
         const Node &chld = itr.next();
         // get the next child's name
-        std::string name = itr.path();
+        std::string name = itr.name();
         
         // use the child's data type to see our desired data type
         DataType curr_dt = chld.dtype();

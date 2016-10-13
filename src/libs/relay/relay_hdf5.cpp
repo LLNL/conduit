@@ -621,10 +621,10 @@ check_if_conduit_object_is_compatible_with_hdf5_tree(const Node &node,
             // as the node's child
         
             hid_t h5_child_obj = H5Oopen(hdf5_id,
-                                        itr.path().c_str(),
+                                        itr.name().c_str(),
                                         H5P_DEFAULT);
         
-            std::string chld_ref_path = join_ref_paths(ref_path,itr.path());
+            std::string chld_ref_path = join_ref_paths(ref_path,itr.name());
             if( CONDUIT_HDF5_VALID_ID(h5_child_obj) )
             {
                 // if a child does exist, we need to make sure the child is 
@@ -983,7 +983,7 @@ write_conduit_object_to_hdf5_group(const Node &node,
             write_conduit_leaf_to_hdf5_group(child,
                                              ref_path,
                                              hdf5_group_id,
-                                             itr.path().c_str());
+                                             itr.name().c_str());
         }
         else if(dt.is_empty())
         {
@@ -991,7 +991,7 @@ write_conduit_object_to_hdf5_group(const Node &node,
             // a dataset with an null shape
             write_conduit_empty_to_hdf5_group(hdf5_group_id,
                                               ref_path,
-                                              itr.path().c_str());
+                                              itr.name().c_str());
         }
         else if(dt.is_object())
         {
@@ -999,7 +999,7 @@ write_conduit_object_to_hdf5_group(const Node &node,
             // as the node's child
             H5O_info_t h5_obj_info;
             herr_t h5_info_status =  H5Oget_info_by_name(hdf5_group_id,
-                                                         itr.path().c_str(),
+                                                         itr.name().c_str(),
                                                          &h5_obj_info,
                                                          H5P_DEFAULT);
             
@@ -1009,14 +1009,14 @@ write_conduit_object_to_hdf5_group(const Node &node,
             {
                 // if the hdf5 group exists, open it
                 h5_child_id = H5Gopen(hdf5_group_id,
-                                      itr.path().c_str(),
+                                      itr.name().c_str(),
                                       H5P_DEFAULT);
 
                 CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_child_id,
                                                        ref_path,
                                              "Failed to open HDF5 Group "
                                              << " parent: " << hdf5_group_id
-                                             << " name: "   << itr.path());
+                                             << " name: "   << itr.name());
             }
             else
             {
@@ -1032,7 +1032,7 @@ write_conduit_object_to_hdf5_group(const Node &node,
                                  << " list");
 
                 h5_child_id = H5Gcreate(hdf5_group_id,
-                                        itr.path().c_str(),
+                                        itr.name().c_str(),
                                         H5P_DEFAULT,
                                         h5_gc_plist,
                                         H5P_DEFAULT);
@@ -1041,7 +1041,7 @@ write_conduit_object_to_hdf5_group(const Node &node,
                                                        ref_path,
                                       "Failed to create HDF5 Group "
                                       << " parent: " << hdf5_group_id
-                                      << " name: "   << itr.path());
+                                      << " name: "   << itr.name());
 
                 CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Pclose(h5_gc_plist),
                                                        ref_path,

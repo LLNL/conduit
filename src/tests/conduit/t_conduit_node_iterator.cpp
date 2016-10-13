@@ -84,13 +84,13 @@ TEST(conduit_node_iterator, simple_1)
         
         if(i == 0)
         {
-            EXPECT_EQ("a",itr.path());
+            EXPECT_EQ("a",itr.name());
             EXPECT_EQ(i,itr.index());
             EXPECT_EQ(a_val,n.as_uint32());
         }
         else if(i == 1)
         {
-            EXPECT_EQ("b",itr.path());
+            EXPECT_EQ("b",itr.name());
             EXPECT_EQ(i,itr.index());
             EXPECT_EQ(b_val,n.as_uint32());
         }
@@ -104,13 +104,13 @@ TEST(conduit_node_iterator, simple_1)
         
         if(i == 1)
         {
-            EXPECT_EQ("a",itr.path());
+            EXPECT_EQ("a",itr.name());
             EXPECT_EQ(i,itr.index());
             EXPECT_EQ(a_val,n.as_uint32());
         }
         else if(i == 2)
         {
-            EXPECT_EQ("b",itr.path());
+            EXPECT_EQ("b",itr.name());
             EXPECT_EQ(i,itr.index());
             EXPECT_EQ(b_val,n.as_uint32());
         }
@@ -209,18 +209,18 @@ TEST(conduit_node_iterator, move_cursor)
 
     EXPECT_TRUE(itr.has_next());
     EXPECT_EQ(itr.next().as_uint32(),a_val);
-    EXPECT_EQ(itr.path(),"a");
+    EXPECT_EQ(itr.name(),"a");
     
     EXPECT_TRUE(itr.has_next());
     EXPECT_EQ(itr.next().as_uint32(),b_val);
-    EXPECT_EQ(itr.path(),"b");
+    EXPECT_EQ(itr.name(),"b");
 
     //  create new iterator with current state of itr
     NodeIterator itr_2(itr);
     
     EXPECT_TRUE(itr.has_next());
     EXPECT_EQ(itr.next().as_string(),"myval");
-    EXPECT_EQ(itr.path(),"c");
+    EXPECT_EQ(itr.name(),"c");
     
     EXPECT_FALSE(itr.has_next());
     
@@ -228,7 +228,7 @@ TEST(conduit_node_iterator, move_cursor)
     
     EXPECT_TRUE(itr_2.has_next());
     EXPECT_EQ(itr_2.next().as_string(),"myval");
-    EXPECT_EQ(itr_2.path(),"c");
+    EXPECT_EQ(itr_2.name(),"c");
     
     EXPECT_FALSE(itr_2.has_next());
     
@@ -308,22 +308,22 @@ TEST(conduit_node_iterator, const_move_cursor)
 
     EXPECT_TRUE(itr.has_next());
     EXPECT_EQ(itr.next().as_uint32(),a_val);
-    EXPECT_EQ(itr.path(),"a");
+    EXPECT_EQ(itr.name(),"a");
     
     EXPECT_TRUE(itr.has_next());
     EXPECT_EQ(itr.next().as_uint32(),b_val);
-    EXPECT_EQ(itr.path(),"b");
+    EXPECT_EQ(itr.name(),"b");
 
     EXPECT_TRUE(itr.has_next());
     EXPECT_EQ(itr.next().as_string(),"myval");
-    EXPECT_EQ(itr.path(),"c");
+    EXPECT_EQ(itr.name(),"c");
     
     EXPECT_FALSE(itr.has_next());
 
 
     EXPECT_TRUE(itr.has_previous());
     EXPECT_EQ(itr.previous().as_uint32(),b_val);
-    EXPECT_EQ(itr.path(),"b");
+    EXPECT_EQ(itr.name(),"b");
     
     
     NodeConstIterator itr_2(itr);
@@ -331,7 +331,7 @@ TEST(conduit_node_iterator, const_move_cursor)
 
     EXPECT_TRUE(itr_2.has_next());
     EXPECT_EQ(itr_2.next().as_string(),"myval");
-    EXPECT_EQ(itr_2.path(),"c");
+    EXPECT_EQ(itr_2.name(),"c");
     
     EXPECT_FALSE(itr_2.has_next());
     
@@ -340,7 +340,7 @@ TEST(conduit_node_iterator, const_move_cursor)
     
     EXPECT_TRUE(itr_2.has_next());
     EXPECT_EQ(itr_2.next().as_string(),"myval");
-    EXPECT_EQ(itr_2.path(),"c");
+    EXPECT_EQ(itr_2.name(),"c");
     
     EXPECT_FALSE(itr_2.has_next());
     

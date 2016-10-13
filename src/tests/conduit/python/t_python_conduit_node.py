@@ -145,7 +145,7 @@ class Test_Conduit_Node(unittest.TestCase):
         n['c'] = 3
         for v in ['a','b','c']:
             self.assertTrue(n.has_path(v))
-        paths = n.paths()
+        paths = n.child_names()
         for v in ['a','b','c']:
             self.assertTrue(v in paths)
 
@@ -168,11 +168,11 @@ class Test_Conduit_Node(unittest.TestCase):
         self.assertEqual(n.number_of_children(),3)
         n.remove(path='c')
         self.assertEqual(n.number_of_children(),2)
-        paths = n.paths()
+        paths = n.child_names()
         for v in ['a','b']:
             self.assertTrue(v in paths)
         n.remove(index=0)
-        paths = n.paths()
+        paths = n.child_names()
         for v in ['b']:
             self.assertTrue(v in paths)
 

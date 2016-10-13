@@ -461,11 +461,10 @@ Node::set_node(const Node &node)
     if(node.dtype().id() == DataType::OBJECT_ID)
     {
         init(DataType::object());
-        std::vector<std::string> paths;
-        node.paths(paths);
+        const std::vector<std::string> &cld_names = node.child_names();
 
-        for (std::vector<std::string>::const_iterator itr = paths.begin();
-             itr < paths.end(); ++itr)
+        for (std::vector<std::string>::const_iterator itr = cld_names.begin();
+             itr < cld_names.end(); ++itr)
         {
             Schema *curr_schema = this->m_schema->fetch_ptr(*itr);
             size_t idx = (size_t) this->m_schema->child_index(*itr);
@@ -6975,11 +6974,10 @@ Node::update(const Node &n_src)
     index_t dtype_id = n_src.dtype().id();
     if( dtype_id == DataType::OBJECT_ID)
     {
-        std::vector<std::string> src_paths;
-        n_src.paths(src_paths);
+        const std::vector<std::string> &scld_names = n_src.child_names();
 
-        for (std::vector<std::string>::const_iterator itr = src_paths.begin();
-             itr < src_paths.end(); ++itr)
+        for (std::vector<std::string>::const_iterator itr = scld_names.begin();
+             itr < scld_names.end(); ++itr)
         {
             std::string ent_name = *itr;
             fetch(ent_name).update(n_src.fetch(ent_name));
@@ -7045,11 +7043,10 @@ Node::update_compatible(const Node &n_src)
     index_t dtype_id = n_src.dtype().id();
     if( dtype_id == DataType::OBJECT_ID)
     {
-        std::vector<std::string> src_paths;
-        n_src.paths(src_paths);
+        const std::vector<std::string> &scld_names = n_src.child_names();
 
-        for (std::vector<std::string>::const_iterator itr = src_paths.begin();
-             itr < src_paths.end(); ++itr)
+        for (std::vector<std::string>::const_iterator itr = scld_names.begin();
+             itr < scld_names.end(); ++itr)
         {
             std::string ent_name = *itr;
             if(has_path(ent_name))
@@ -7106,11 +7103,10 @@ Node::update_external(Node &n_src)
     index_t dtype_id = n_src.dtype().id();
     if( dtype_id == DataType::OBJECT_ID)
     {
-        std::vector<std::string> src_paths;
-        n_src.paths(src_paths);
+        const std::vector<std::string> &scld_names = n_src.child_names();
 
-        for (std::vector<std::string>::const_iterator itr = src_paths.begin();
-             itr < src_paths.end(); ++itr)
+        for (std::vector<std::string>::const_iterator itr = scld_names.begin();
+             itr < scld_names.end(); ++itr)
         {
             std::string ent_name = *itr;
             fetch(ent_name).update_external(n_src.fetch(ent_name));
@@ -11026,17 +11022,10 @@ Node::has_path(const std::string &path) const
 }
 
 //---------------------------------------------------------------------------//
-void
-Node::paths(std::vector<std::string> &paths) const
-{
-    m_schema->paths(paths);
-}
-
-//---------------------------------------------------------------------------//
 const std::vector<std::string>&
-Node::paths() const
+Node::child_names() const
 {
-    return m_schema->paths();
+    return m_schema->child_names();
 }
 
 //---------------------------------------------------------------------------//
