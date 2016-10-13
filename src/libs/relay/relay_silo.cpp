@@ -1207,7 +1207,7 @@ silo_mesh_write(const Node &n,
     {
         const Node &n_topo = topo_itr.next();
         
-        std::string topo_name = topo_itr.path();
+        std::string topo_name = topo_itr.name();
     
         std::string topo_type = n_topo["type"].as_string();
 
@@ -1316,7 +1316,7 @@ silo_mesh_write(const Node &n,
         while(itr.has_next())
         {
             const Node &n_var = itr.next();
-            std::string var_name = itr.path();
+            std::string var_name = itr.name();
             silo_write_field(dbfile,
                              var_name,
                              n_var,

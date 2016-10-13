@@ -392,7 +392,7 @@ TEST(conduit_blueprint_mcarray_examples, mcarray_xyz)
     {
         Node info;
         Node &mcarray = itr.next();
-        std::string name = itr.path();
+        std::string name = itr.name();
         // TODO: tests!
     }
 }

@@ -68,6 +68,8 @@
 namespace conduit
 {
 
+std::vector<std::string> Schema::m_empty_child_names;
+
 //=============================================================================
 //-----------------------------------------------------------------------------
 //
@@ -978,18 +980,19 @@ Schema::has_path(const std::string &path) const
     }
 }
 
-//---------------------------------------------------------------------------//
-void
-Schema::paths(std::vector<std::string> &paths) const
-{
-    paths = object_order();
-}
 
 //---------------------------------------------------------------------------//
 const std::vector<std::string>&
-Schema::paths() const
+Schema::child_names() const
 {
-    return object_order();
+    if(m_dtype.is_object())
+    {
+        return object_order();
+    }
+    else
+    {
+        return m_empty_child_names;
+    }
 }
 
 //---------------------------------------------------------------------------//

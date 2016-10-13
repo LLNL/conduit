@@ -2716,9 +2716,9 @@ PyConduit_NodeIterator_iternext(PyObject *self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduit_NodeIterator_path(PyConduit_NodeIterator *self)
+PyConduit_NodeIterator_name(PyConduit_NodeIterator *self)
 {
-    return (Py_BuildValue("s", self->itr.path().c_str()));
+    return (Py_BuildValue("s", self->itr.name().c_str()));
 }
 
 //---------------------------------------------------------------------------//
@@ -2859,8 +2859,8 @@ PyConduit_NodeIterator_info(PyConduit_NodeIterator *self)
 //----------------------------------------------------------------------------//
 static PyMethodDef PyConduit_NodeIterator_METHODS[] = {
     //-----------------------------------------------------------------------//
-    {"path",
-     (PyCFunction)PyConduit_NodeIterator_path, 
+    {"name",
+     (PyCFunction)PyConduit_NodeIterator_name, 
      METH_NOARGS,
      "{todo}"}, 
     //-----------------------------------------------------------------------//
@@ -3409,21 +3409,22 @@ PyConduit_Node_has_path(PyConduit_Node *self,
 
 //---------------------------------------------------------------------------//
 static PyObject * 
-PyConduit_Node_paths(PyConduit_Node *self)
+PyConduit_Node_child_names(PyConduit_Node *self)
 {
-    std::vector<std::string> paths;
-    self->node->paths(paths);
-    
     /// TODO: I think there is a faster way in the Python CAPI
     /// since we know the size of the list.
     PyObject *retval = PyList_New(0);
     
-    for (std::vector<std::string>::const_iterator itr = paths.begin();
-         itr < paths.end(); ++itr)
+    if(self->node->dtype().is_object())
     {
-        PyList_Append(retval, PyString_FromString( (*itr).c_str()));
-    };
+        const std::vector<std::string> cld_names = self->node->child_names();
+        for (std::vector<std::string>::const_iterator itr = cld_names.begin();
+             itr < cld_names.end(); ++itr)
+        {
+            PyList_Append(retval, PyString_FromString( (*itr).c_str()));
+        };
 
+    }
     return retval;
 }
 
@@ -3858,10 +3859,10 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      METH_VARARGS, 
      "Returns if this node has the given path"},
     //-----------------------------------------------------------------------//
-    {"paths",
-     (PyCFunction)PyConduit_Node_paths,
+    {"child_names",
+     (PyCFunction)PyConduit_Node_child_names,
      METH_NOARGS, 
-     "Returns a list with this node's child paths"},
+     "Returns a list with this node's child names"},
      //-----------------------------------------------------------------------//
      {"info",
       (PyCFunction)PyConduit_Node_info,

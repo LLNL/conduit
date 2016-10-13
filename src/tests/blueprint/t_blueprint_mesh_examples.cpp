@@ -591,7 +591,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
     {
         Node info;
         const Node &mesh = itr.next();
-        std::string mesh_name = itr.path();
+        std::string mesh_name = itr.name();
         
         EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
         CONDUIT_INFO(info.to_json());
@@ -618,7 +618,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
         while(itr.has_next())
         {
             const Node &mesh = itr.next();
-            std::string name = itr.path();
+            std::string name = itr.name();
             CONDUIT_INFO("saving 2d example '" << name << "' to silo");
             // Skip output of silo mesh for mixed mesh of tris and quads for now.
             // The silo output is not yet defined and it throws an exception
@@ -653,7 +653,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
         {
 
             const Node &chld = idx_itr.next();
-            EXPECT_TRUE(blueprint::mesh::index::verify(chld,info[idx_itr.path()]));
+            EXPECT_TRUE(blueprint::mesh::index::verify(chld,info[idx_itr.name()]));
         }
 
         CONDUIT_INFO("blueprint::mesh::index verify info:");
@@ -748,7 +748,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
     {
         Node info;
         const Node &mesh = itr.next();
-        std::string mesh_name = itr.path();
+        std::string mesh_name = itr.name();
         
         EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
         CONDUIT_INFO(info.to_json());
@@ -776,7 +776,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
         {
             const Node &mesh = itr.next();
             //mesh.print();
-            std::string name = itr.path();
+            std::string name = itr.name();
             CONDUIT_INFO("saving 3d example '" << name << "' to silo")
 
             // Skip output of silo mesh for mixed mesh of hexs and tets for now.
@@ -808,7 +808,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
         {
 
             const Node &chld = idx_itr.next();
-            EXPECT_TRUE(blueprint::mesh::index::verify(chld,info[idx_itr.path()]));
+            EXPECT_TRUE(blueprint::mesh::index::verify(chld,info[idx_itr.name()]));
         }
         
         CONDUIT_INFO("blueprint::mesh::index verify info:");

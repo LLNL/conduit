@@ -111,7 +111,7 @@ TEST(conduit_node_paths, simple_paths)
     Schema schema("{\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}");
     Node n(schema,data,true);
     std::cout << n.schema().to_json() << std::endl; 
-    const std::vector<std::string>& npaths = n.paths();
+    const std::vector<std::string>& npaths = n.child_names();
     EXPECT_EQ(npaths.size(),3);
     EXPECT_EQ(npaths[0],"a");
     EXPECT_EQ(npaths[1],"b");
@@ -120,7 +120,7 @@ TEST(conduit_node_paths, simple_paths)
     Schema schema2("{\"g\": {\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}}");
     Node n2(schema2,data,true);
     std::cout << n2.schema().to_json() << std::endl;
-    const std::vector<std::string>& n2paths = n2.paths();
+    const std::vector<std::string>& n2paths = n2.child_names();
     EXPECT_EQ(n2paths.size(),1);
     EXPECT_EQ(n2paths[0],"g");
 

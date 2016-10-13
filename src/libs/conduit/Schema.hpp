@@ -278,8 +278,7 @@ public:
     
     bool              has_child(const std::string &name) const;
     bool              has_path(const std::string &path) const;
-    void              paths(std::vector<std::string> &paths) const;
-    const std::vector<std::string> &paths() const;
+    const std::vector<std::string> &child_names() const;
     void              remove(const std::string &path);
     
 //-----------------------------------------------------------------------------
@@ -336,6 +335,10 @@ private:
         std::vector<std::string>        object_order;
         std::map<std::string, index_t>  object_map;
     };
+
+    // this is used to return a ref to an empty list of strings as 
+    // child names when the schema is not in the object role.
+    static std::vector<std::string>     m_empty_child_names;
 
 //-----------------------------------------------------------------------------
 //

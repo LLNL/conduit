@@ -74,7 +74,7 @@ class Test_Conduit_Node_Iterator(unittest.TestCase):
         self.assertTrue(itr.has_next())
         print(itr.has_next());
         for v in itr:
-            print(v.path(), v.node())
+            print(v.name(), v.node())
             idx = v.index()
             if idx == 0:
                 self.assertEqual(v.node().value(),a_val)
