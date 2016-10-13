@@ -622,7 +622,7 @@ silo_write_ucd_zonelist(DBfile *dbfile,
         }
 
 
-        if( topo_shape == "quads")
+        if( topo_shape == "quad")
         {
             // TODO: check for explicit # of elems
             int num_elems    = n_mesh_conn.dtype().number_of_elements() / 4;
@@ -632,7 +632,7 @@ silo_write_ucd_zonelist(DBfile *dbfile,
             total_num_elems  += num_elems;
 
         }
-        else  if( topo_shape == "tris")
+        else  if( topo_shape == "tri")
         {
             // TODO: check for explicit # of elems
             int num_elems  = n_mesh_conn.dtype().number_of_elements() / 3;
@@ -641,7 +641,7 @@ silo_write_ucd_zonelist(DBfile *dbfile,
             shapecnt[i]    = num_elems;
             total_num_elems += num_elems;
         }
-        else if( topo_shape == "hexs")
+        else if( topo_shape == "hex")
         {
             // TODO: check for explicit # of elems
             int num_elems    = n_mesh_conn.dtype().number_of_elements() / 8;
@@ -651,7 +651,7 @@ silo_write_ucd_zonelist(DBfile *dbfile,
             total_num_elems  += num_elems;
 
         }
-        else  if( topo_shape == "tets")
+        else  if( topo_shape == "tet")
         {
             // TODO: check for explicit # of elems
             int num_elems  = n_mesh_conn.dtype().number_of_elements() / 4;
@@ -660,7 +660,7 @@ silo_write_ucd_zonelist(DBfile *dbfile,
             shapecnt[i]    = num_elems;
             total_num_elems += num_elems;
         }
-        else  if( topo_shape == "lines")
+        else  if( topo_shape == "line")
         {
             // TODO: check for explicit # of elems
             int num_elems  = n_mesh_conn.dtype().number_of_elements() / 2;
@@ -1214,14 +1214,23 @@ silo_mesh_write(const Node &n,
         n_mesh_info[topo_name]["type"].set(topo_type);
         
 
-        
-        // we need a zone list for a ucd mesh
         if(topo_type == "unstructured")
         {
-            silo_write_ucd_zonelist(dbfile,
-                                    topo_name,
-                                    n_topo,
-                                    n_mesh_info);
+            
+            std::string ele_shape = n_topo["elements/shape"].as_string();
+            if( ele_shape != "point")
+            {
+                // we need a zone list for a ucd mesh
+                silo_write_ucd_zonelist(dbfile,
+                                        topo_name,
+                                        n_topo,
+                                        n_mesh_info);
+            }
+            else
+            {
+                topo_type = "points";
+                n_mesh_info[topo_name]["type"].set(topo_type);
+            }
         }
 
         // make sure we have coordsets

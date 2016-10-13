@@ -3263,6 +3263,8 @@ public:
     /// the tree, following the parent chain
     std::string path() const;
 
+    /// checks if a node has a direct child with given name
+    bool        has_child(const std::string &name) const;
     /// checks if given path exists in the Node hierarchy 
     bool        has_path(const std::string &path) const;
     /// returns the direct child paths for this node

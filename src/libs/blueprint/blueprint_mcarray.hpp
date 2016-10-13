@@ -82,11 +82,14 @@ namespace mcarray
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-bool BLUEPRINT_API verify(const conduit::Node &n);
-
-//-----------------------------------------------------------------------------
 bool BLUEPRINT_API verify(const conduit::Node &n,
                           conduit::Node &info);
+
+//-----------------------------------------------------------------------------
+bool BLUEPRINT_API verify(const std::string &protocol,
+                          const conduit::Node &n,
+                          conduit::Node &info);
+
 
 //-----------------------------------------------------------------------------
 /// mcarray blueprint property and transform methods

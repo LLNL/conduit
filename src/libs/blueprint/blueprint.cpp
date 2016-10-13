@@ -87,7 +87,11 @@ void
 about(Node &n)
 {
     n.reset();
-    n["protocols/mesh"]    = "enabled";
+    n["protocols/mesh/coordset"] = "enabled";
+    n["protocols/mesh/topology"] = "enabled";
+    n["protocols/mesh/field"]    = "enabled";
+    n["protocols/mesh/index"]    = "enabled";
+    
     n["protocols/mcarray"]  = "enabled";
 }
 
@@ -108,16 +112,34 @@ verify(const std::string &protocol,
 {
     bool res = false;
     info.reset();
-
-    if(protocol == "mesh")
-    {
-        res = mesh::verify(n,info);
-    }
-    else if(protocol == "mcarray")
-    {
-        res = mcarray::verify(n,info);
-    }
     
+    std::string p_curr;
+    std::string p_next;
+    utils::split_path(protocol,p_curr,p_next);
+
+    if(!p_next.empty())
+    {
+        if(protocol == "mesh")
+        {
+            res = mesh::verify(p_next,n,info);
+        }
+        else if(protocol == "mcarray")
+        {
+            res = mcarray::verify(p_next,n,info);
+        }
+    }
+    else
+    {
+        if(protocol == "mesh")
+        {
+            res = mesh::verify(n,info);
+        }
+        else if(protocol == "mcarray")
+        {
+            res = mcarray::verify(n,info);
+        }
+    }
+
     return res;
 }
 
