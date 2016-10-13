@@ -156,3 +156,13 @@ TEST(conduit_blueprint_mcarray_verify, invalid_array_contents)
     n["m"].set(0.0f);
     EXPECT_FALSE(blueprint::mcarray::verify(n,info));
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mcarray_verify, verify_with_protocol)
+{
+    Node n, info;
+
+    EXPECT_FALSE(blueprint::mcarray::verify("protocol",n,info));
+    EXPECT_FALSE(blueprint::mcarray::verify("mcarray",n,info));
+}
