@@ -58,102 +58,43 @@
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mcarray_examples, verify_mcarray)
+TEST(conduit_blueprint_mcarray_examples, mcarray_verify)
 {
-    ///
-    /// cases we expect to fail
-    ///
-    
-    
     Node n, info;
-    n["here/there"]     = 10;
-    n["here/everywhere"] = 10;
-    
-    EXPECT_FALSE(blueprint::mcarray::verify(n,info));
 
     n.reset();
-    n["x"].set(DataType::float64(10));
-    n["y"].set(DataType::float64(5));
-    
-    EXPECT_FALSE(blueprint::mcarray::verify(n,info));
+    blueprint::mcarray::examples::xyz("separate",5,n);
+    EXPECT_TRUE(blueprint::mcarray::verify(n,info));
 
-    ///
-    /// cases we expect to work
-    ///
-    
     n.reset();
-    n["x"].set(DataType::float64(10));
+    blueprint::mcarray::examples::xyz("interleaved",5,n);
     EXPECT_TRUE(blueprint::mcarray::verify(n,info));
 
-    n["y"].set(DataType::float64(10));
+    n.reset();
+    blueprint::mcarray::examples::xyz("contiguous",5,n);
     EXPECT_TRUE(blueprint::mcarray::verify(n,info));
-    
-    blueprint::mcarray::examples::xyz("separate",
-                                  5,
-                                  n);
-    EXPECT_TRUE(blueprint::mcarray::verify(n,info));
-
-    blueprint::mcarray::examples::xyz("interleaved",
-                                  5,
-                                  n);
-    EXPECT_TRUE(blueprint::mcarray::verify(n,info));
-
-    blueprint::mcarray::examples::xyz("contiguous",
-                                  5,
-                                  n);
-    EXPECT_TRUE(blueprint::mcarray::verify(n,info));
-
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mcarray_examples, verify_mcarray_generic)
+TEST(conduit_blueprint_mcarray_examples, mcarray_verify_generic)
 {
-    ///
-    /// cases we expect to fail
-    ///
-    
-    
     Node n, info;
-    n["here/there"]     = 10;
-    n["here/everywhere"] = 10;
-    
-    EXPECT_FALSE(blueprint::verify("mcarray",n,info));
 
     n.reset();
-    n["x"].set(DataType::float64(10));
-    n["y"].set(DataType::float64(5));
-    
-    EXPECT_FALSE(blueprint::verify("mcarray",n,info));
+    blueprint::mcarray::examples::xyz("separate",5,n);
+    EXPECT_TRUE(blueprint::verify("mcarray",n,info));
 
-    ///
-    /// cases we expect to work
-    ///
-    
     n.reset();
-    n["x"].set(DataType::float64(10));
+    blueprint::mcarray::examples::xyz("interleaved",5,n);
     EXPECT_TRUE(blueprint::verify("mcarray",n,info));
 
-    n["y"].set(DataType::float64(10));
-    EXPECT_TRUE(blueprint::verify("mcarray",n,info));
-    
-    blueprint::mcarray::examples::xyz("separate",
-                                  5,
-                                  n);
-    EXPECT_TRUE(blueprint::verify("mcarray",n,info));
-
-    blueprint::mcarray::examples::xyz("interleaved",
-                                  5,
-                                  n);
-    EXPECT_TRUE(blueprint::verify("mcarray",n,info));
-
-    blueprint::mcarray::examples::xyz("contiguous",
-                                  5,
-                                  n);
+    n.reset();
+    blueprint::mcarray::examples::xyz("contiguous",5,n);
     EXPECT_TRUE(blueprint::verify("mcarray",n,info));
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mcarray_examples, mcarray_test_to_contig)
+TEST(conduit_blueprint_mcarray_examples, mcarray_to_contiguous)
 {
     
     Node n;
@@ -206,7 +147,7 @@ TEST(conduit_blueprint_mcarray_examples, mcarray_test_to_contig)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mcarray_examples, mcarray_test_to_interleaved)
+TEST(conduit_blueprint_mcarray_examples, mcarray_to_interleaved)
 {
     
     Node n;
