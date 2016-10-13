@@ -52,20 +52,175 @@
 #include "blueprint.hpp"
 #include "relay.hpp"
 
-#include <iostream>
+#include <vector>
+#include <string>
 #include "gtest/gtest.h"
 
 using namespace conduit;
 
+/// Helper Functions ///
+
+std::vector<std::string> create_basis(const std::string& d1,
+                                      const std::string& d2,
+                                      const std::string& d3="")
+{
+    std::vector<std::string> dim_vector;
+
+    dim_vector.push_back(d1);
+    dim_vector.push_back(d2);
+
+    if(d3 != "")
+    {
+        dim_vector.push_back(d3);
+    }
+
+    return dim_vector;
+}
+
+
+bool is_valid_basis(bool (*basis_valid_fun)(const Node&, Node&),
+                    const std::vector<std::string>& basis)
+{
+    Node n, info;
+
+    bool is_valid = true;
+    for(index_t bi = 0; bi < basis.size(); bi++)
+    {
+        const std::string& basis_dim = basis[bi];
+
+        n[basis_dim].set("test");
+        is_valid &= !basis_valid_fun(n, info);
+
+        n[basis_dim].set(10);
+        is_valid &= basis_valid_fun(n, info);
+
+        // TODO(JRC): Determine whether or not the basis (i, k) should be
+        // valid for logical coordinates.
+        /*
+        if( bi > 0 )
+        {
+            const std::string& prev_dim = basis[bi-1];
+            n.remove(prev_dim);
+            is_valid &= !basis_valid_fun(n, info);
+            n[basis_dim].set(10);
+        }
+        */
+    }
+
+    return is_valid;
+}
+
+/// Mesh Coordinate Set Tests ///
+
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_verify, TODO1)
+TEST(conduit_blueprint_mesh_verify, coordset_logical_dims)
+{
+    bool (*verify_coordset_logical)(const Node&, Node&) = blueprint::mesh::logical_dims::verify;
+
+    Node n, info;
+    EXPECT_FALSE(verify_coordset_logical(n, info));
+
+    EXPECT_TRUE(is_valid_basis(verify_coordset_logical,create_basis("i","j","k")));
+
+    EXPECT_FALSE(is_valid_basis(verify_coordset_logical,create_basis("x","y","z")));
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, coordset_uniform_origin)
+{
+    bool (*verify_uniform_origin)(const Node&, Node&) = blueprint::mesh::coordset::uniform::origin::verify;
+
+    Node n, info;
+    EXPECT_FALSE(verify_uniform_origin(n, info));
+
+    EXPECT_TRUE(is_valid_basis(verify_uniform_origin,create_basis("x","y","z")));
+    EXPECT_TRUE(is_valid_basis(verify_uniform_origin,create_basis("r","theta","phi")));
+    EXPECT_TRUE(is_valid_basis(verify_uniform_origin,create_basis("r","z")));
+
+    const std::vector<std::string> logical_basis = create_basis("i","j","k");
+    EXPECT_FALSE(is_valid_basis(verify_uniform_origin,logical_basis));
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, coordset_uniform_spacing)
+{
+    bool (*verify_uniform_spacing)(const Node&, Node&) = blueprint::mesh::coordset::uniform::spacing::verify;
+
+    Node n, info;
+    EXPECT_FALSE(verify_uniform_spacing(n, info));
+
+    EXPECT_TRUE(is_valid_basis(verify_uniform_spacing,create_basis("dx","dy","dz")));
+    EXPECT_TRUE(is_valid_basis(verify_uniform_spacing,create_basis("dr","dtheta","dphi")));
+    EXPECT_TRUE(is_valid_basis(verify_uniform_spacing,create_basis("dr","dz")));
+
+    EXPECT_FALSE(is_valid_basis(verify_uniform_spacing,create_basis("di","dj","dk")));
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, coordset_types)
 {
     // TODO(JRC): Implement this test case and give it a name.
 }
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_verify, TODO2)
+TEST(conduit_blueprint_mesh_verify, coordset_uniform)
+{
+    // TODO(JRC): Implement this test case and give it a name.
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, coordset_rectilinear)
+{
+    // TODO(JRC): Implement this test case and give it a name.
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, coordset_explicit)
+{
+    // TODO(JRC): Implement this test case and give it a name.
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, coordset_general)
+{
+    // TODO(JRC): Implement this test case and give it a name.
+}
+
+/// Mesh Topology Tests ///
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, TOPOLOGY)
+{
+    // TODO(JRC): Implement this test case and give it a name.
+}
+
+/// Mesh Field Tests ///
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, FIELD)
+{
+    // TODO(JRC): Implement this test case and give it a name.
+}
+
+/// Mesh Index Tests ///
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, INDEX)
+{
+    // TODO(JRC): Implement this test case and give it a name.
+}
+
+/// Mesh Integration Tests ///
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, INTEGRATION)
 {
     // TODO(JRC): Implement this test case and give it a name.
 }
