@@ -689,29 +689,26 @@ mesh::coordset::uniform::verify(const Node &coordset,
     }
     else
     {
-        const Node &dims = coordset["dims"];
-        
-        if(!mesh::logical_dims::verify(dims,info["dims"]))
-        {
-            res= false;
-        }
-    }
-    
-    if(!coordset.has_child("origin"))
-    {
-        log_optional(info,proto_name, "has origin");
-        
-        if(!mesh::coordset::uniform::origin::verify(coordset["dims"],
-                                                    info["dims"]))
+        if(!mesh::logical_dims::verify(coordset["dims"],info["dims"]))
         {
             res= false;
         }
     }
 
-    if(!coordset.has_child("spacing"))
+    if(coordset.has_child("origin"))
+    {
+        log_optional(info,proto_name, "has origin");
+
+        if(!mesh::coordset::uniform::origin::verify(coordset["origin"],
+                                                    info["origin"]))
+        {
+            res= false;
+        }
+    }
+
+    if(coordset.has_child("spacing"))
     {
         log_optional(info,proto_name, "has spacing");
-        
 
         if(!mesh::coordset::uniform::spacing::verify(coordset["spacing"],
                                                      info["spacing"]))

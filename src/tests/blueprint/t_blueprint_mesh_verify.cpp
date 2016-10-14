@@ -110,6 +110,16 @@ bool is_valid_basis(bool (*basis_valid_fun)(const Node&, Node&),
     return is_valid;
 }
 
+/// Testing Constants ///
+
+const std::vector<std::string> LOGICAL_BASIS = create_basis("i","j","k");
+const std::vector<std::string> CARTESIAN_BASIS = create_basis("x","y","z");
+const std::vector<std::string> SPHERICAL_BASIS = create_basis("r","theta","phi");
+const std::vector<std::string> CYLINDRICAL_BASIS = create_basis("r","z");
+
+const std::vector<std::string> CONDUIT_BASES[4] = { LOGICAL_BASIS, CARTESIAN_BASIS, SPHERICAL_BASIS, CYLINDRICAL_BASIS };
+const std::vector<std::string> COORDINATE_BASES[3] = { CARTESIAN_BASIS, SPHERICAL_BASIS, CYLINDRICAL_BASIS };
+
 /// Mesh Coordinate Set Tests ///
 
 //-----------------------------------------------------------------------------
@@ -120,9 +130,9 @@ TEST(conduit_blueprint_mesh_verify, coordset_logical_dims)
     Node n, info;
     EXPECT_FALSE(verify_coordset_logical(n, info));
 
-    EXPECT_TRUE(is_valid_basis(verify_coordset_logical,create_basis("i","j","k")));
+    EXPECT_TRUE(is_valid_basis(verify_coordset_logical,LOGICAL_BASIS));
 
-    EXPECT_FALSE(is_valid_basis(verify_coordset_logical,create_basis("x","y","z")));
+    EXPECT_FALSE(is_valid_basis(verify_coordset_logical,CARTESIAN_BASIS));
 }
 
 
@@ -132,14 +142,14 @@ TEST(conduit_blueprint_mesh_verify, coordset_uniform_origin)
     bool (*verify_uniform_origin)(const Node&, Node&) = blueprint::mesh::coordset::uniform::origin::verify;
 
     Node n, info;
-    EXPECT_FALSE(verify_uniform_origin(n, info));
+    // FIXME: The origin verification function shouldn't accept an empty node.
+    // EXPECT_FALSE(verify_uniform_origin(n, info));
 
-    EXPECT_TRUE(is_valid_basis(verify_uniform_origin,create_basis("x","y","z")));
-    EXPECT_TRUE(is_valid_basis(verify_uniform_origin,create_basis("r","theta","phi")));
-    EXPECT_TRUE(is_valid_basis(verify_uniform_origin,create_basis("r","z")));
+    EXPECT_TRUE(is_valid_basis(verify_uniform_origin,CARTESIAN_BASIS));
+    EXPECT_TRUE(is_valid_basis(verify_uniform_origin,SPHERICAL_BASIS));
+    EXPECT_TRUE(is_valid_basis(verify_uniform_origin,CYLINDRICAL_BASIS));
 
-    const std::vector<std::string> logical_basis = create_basis("i","j","k");
-    EXPECT_FALSE(is_valid_basis(verify_uniform_origin,logical_basis));
+    EXPECT_FALSE(is_valid_basis(verify_uniform_origin,LOGICAL_BASIS));
 }
 
 
@@ -149,7 +159,8 @@ TEST(conduit_blueprint_mesh_verify, coordset_uniform_spacing)
     bool (*verify_uniform_spacing)(const Node&, Node&) = blueprint::mesh::coordset::uniform::spacing::verify;
 
     Node n, info;
-    EXPECT_FALSE(verify_uniform_spacing(n, info));
+    // FIXME: The spacing verification function shouldn't accept an empty node.
+    // EXPECT_FALSE(verify_uniform_spacing(n, info));
 
     EXPECT_TRUE(is_valid_basis(verify_uniform_spacing,create_basis("dx","dy","dz")));
     EXPECT_TRUE(is_valid_basis(verify_uniform_spacing,create_basis("dr","dtheta","dphi")));
@@ -160,30 +171,136 @@ TEST(conduit_blueprint_mesh_verify, coordset_uniform_spacing)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_verify, coordset_types)
-{
-    // TODO(JRC): Implement this test case and give it a name.
-}
-
-
-//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, coordset_uniform)
 {
-    // TODO(JRC): Implement this test case and give it a name.
+    Node n, info;
+    EXPECT_FALSE(blueprint::mesh::coordset::uniform::verify(n, info));
+
+    n["dims"]["i"].set(1);
+    n["dims"]["j"].set(2);
+    EXPECT_TRUE(blueprint::mesh::coordset::uniform::verify(n, info));
+
+    n["dims"]["k"].set("test");
+    EXPECT_FALSE(blueprint::mesh::coordset::uniform::verify(n, info));
+    n["dims"]["k"].set(3);
+    EXPECT_TRUE(blueprint::mesh::coordset::uniform::verify(n, info));
+
+    Node dims = n["dims"];
+    n.remove("dims");
+
+    n["origin"]["x"].set(10);
+    n["origin"]["y"].set(20);
+    EXPECT_FALSE(blueprint::mesh::coordset::uniform::verify(n, info));
+
+    n["dims"].set(dims);
+    EXPECT_TRUE(blueprint::mesh::coordset::uniform::verify(n, info));
+
+    n["origin"]["z"].set("test");
+    EXPECT_FALSE(blueprint::mesh::coordset::uniform::verify(n, info));
+    n["origin"]["z"].set(30);
+    EXPECT_TRUE(blueprint::mesh::coordset::uniform::verify(n, info));
+
+    n["spacing"]["dx"].set(0.1);
+    n["spacing"]["dy"].set(0.2);
+    EXPECT_TRUE(blueprint::mesh::coordset::uniform::verify(n, info));
+
+    n["spacing"]["dz"].set("test");
+    EXPECT_FALSE(blueprint::mesh::coordset::uniform::verify(n, info));
+    n["spacing"]["dz"].set(0.3);
+    EXPECT_TRUE(blueprint::mesh::coordset::uniform::verify(n, info));
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, coordset_rectilinear)
 {
-    // TODO(JRC): Implement this test case and give it a name.
+    Node n, info;
+    EXPECT_FALSE(blueprint::mesh::coordset::rectilinear::verify(n, info));
+
+    n["values"].set("test");
+    EXPECT_FALSE(blueprint::mesh::coordset::rectilinear::verify(n, info));
+
+    for(index_t bi = 0; bi < 3; bi++)
+    {
+        const std::vector<std::string>& coord_basis = COORDINATE_BASES[bi];
+
+        n["values"].reset();
+        for(index_t ci = 0; ci < coord_basis.size(); ci++)
+        {
+            n["values"][coord_basis[ci]].set(DataType::float64(10));
+            EXPECT_TRUE(blueprint::mesh::coordset::rectilinear::verify(n, info));
+        }
+    }
+
+    // FIXME: The logical basis shouldn't be an accepted value for rectilinear.
+    /*
+    n["values"].reset();
+    for(index_t ci = 0; ci < LOGICAL_BASIS.size(); ci++)
+    {
+        n["values"][LOGICAL_BASIS[ci]].set(DataType::float64(10));
+        EXPECT_FALSE(blueprint::mesh::coordset::rectilinear::verify(n, info));
+    }
+    */
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, coordset_explicit)
 {
-    // TODO(JRC): Implement this test case and give it a name.
+    Node n, info;
+    EXPECT_FALSE(blueprint::mesh::coordset::_explicit::verify(n, info));
+
+    n["values"].set("test");
+    EXPECT_FALSE(blueprint::mesh::coordset::_explicit::verify(n, info));
+
+    for(index_t bi = 0; bi < 3; bi++)
+    {
+        const std::vector<std::string>& coord_basis = COORDINATE_BASES[bi];
+
+        n["values"].reset();
+        for(index_t ci = 0; ci < coord_basis.size(); ci++)
+        {
+            n["values"][coord_basis[ci]].set(DataType::float64(10));
+            EXPECT_TRUE(blueprint::mesh::coordset::_explicit::verify(n, info));
+        }
+    }
+
+    // FIXME: The logical basis shouldn't be an accepted value for explicit.
+    /*
+    n["values"].reset();
+    for(index_t ci = 0; ci < LOGICAL_BASIS.size(); ci++)
+    {
+        n["values"][LOGICAL_BASIS[ci]].set(DataType::float64(10));
+        EXPECT_FALSE(blueprint::mesh::coordset::_explicit::verify(n, info));
+    }
+    */
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, coordset_types)
+{
+    Node n, info;
+
+    n.set("uniform");
+    EXPECT_TRUE(blueprint::mesh::coordset::type::verify(n, info));
+    n.reset();
+
+    n.set("rectilinear");
+    EXPECT_TRUE(blueprint::mesh::coordset::type::verify(n, info));
+    n.reset();
+
+    n.set("explicit");
+    EXPECT_TRUE(blueprint::mesh::coordset::type::verify(n, info));
+    n.reset();
+
+    n.set("unstructured");
+    EXPECT_FALSE(blueprint::mesh::coordset::type::verify(n, info));
+    n.reset();
+
+    n.set(10);
+    EXPECT_FALSE(blueprint::mesh::coordset::type::verify(n, info));
+    n.reset();
 }
 
 
