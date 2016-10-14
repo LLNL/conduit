@@ -488,6 +488,20 @@ TEST(dtype_tests,dtype_endianness_checks)
            Endianness::LITTLE_ID);
 
     EXPECT_TRUE(dt.is_little_endian());
+    
+    dt.set_endianness(Endianness::machine_default());
+    EXPECT_TRUE(dt.endianness_matches_machine());
+    
+    if(Endianness::machine_is_little_endian())
+    {
+        dt.set_endianness(Endianness::BIG_ID);
+    }
+    else
+    {
+        dt.set_endianness(Endianness::LITTLE_ID);
+    }
+    
+    EXPECT_FALSE(dt.endianness_matches_machine());
 }
 
 
