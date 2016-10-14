@@ -94,8 +94,9 @@ bool is_valid_basis(bool (*basis_valid_fun)(const Node&, Node&),
         n[basis_dim].set(10);
         is_valid &= basis_valid_fun(n, info);
 
-        // TODO(JRC): Determine whether or not the basis (i, k) should be
-        // valid for logical coordinates.
+        // FIXME: The basis checking functions shouldn't accept bases such as
+        // (y) or (x, z); all successive dimensions should require the existence
+        // of previous basis dimensions.
         /*
         if( bi > 0 )
         {
@@ -307,7 +308,21 @@ TEST(conduit_blueprint_mesh_verify, coordset_types)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, coordset_general)
 {
-    // TODO(JRC): Implement this test case and give it a name.
+    Node mesh, info;
+    EXPECT_FALSE(blueprint::mesh::coordset::verify(mesh, info));
+
+    blueprint::mesh::examples::braid("uniform",10,10,10,mesh);
+    Node& n = mesh["coordsets"]["coords"];
+
+    n.remove("type");
+    EXPECT_FALSE(blueprint::mesh::coordset::verify(n, info));
+    n["type"].set("structured");
+    EXPECT_FALSE(blueprint::mesh::coordset::verify(n, info));
+    n["type"].set("rectilinear");
+    EXPECT_FALSE(blueprint::mesh::coordset::verify(n, info));
+
+    n["type"].set("uniform");
+    EXPECT_TRUE(blueprint::mesh::coordset::verify(n, info));
 }
 
 /// Mesh Topology Tests ///
