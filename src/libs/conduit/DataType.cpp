@@ -783,6 +783,16 @@ DataType::is_big_endian() const
             );
 }
 
+//---------------------------------------------------------------------------//
+bool
+DataType::endianness_matches_machine() const
+{
+    return ( (m_endianness ==  Endianness::DEFAULT_ID)   ||
+             (m_endianness == Endianness::BIG_ID && 
+                    Endianness::machine_is_big_endian()) ||
+             (m_endianness == Endianness::LITTLE_ID && 
+                    Endianness::machine_is_little_endian()) );
+}
 
 //---------------------------------------------------------------------------// 
 index_t
