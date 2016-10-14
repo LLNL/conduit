@@ -1421,7 +1421,7 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
     }
     else
     {
-        hid_t h5_dtype_id  = H5Dget_type(hdf5_dset_id);
+        hid_t h5_dtype_id  = H5Dget_type(hdf5_dset_id); 
     
         CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_dtype_id,
                                                ref_path,
@@ -1434,6 +1434,37 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
         DataType dt        = hdf5_dtype_to_conduit_dtype(h5_dtype_id,
                                                          nelems,
                                                          ref_path);
+        // if the endianness of the dset in the file doesn't
+        // match the current machine we always want to convert it
+        // on read.
+
+        // check endianness
+        if(!dt.endianness_matches_machine())
+        {
+            // if they don't match, modify the dt
+            // and get the proper hdf5 data type handle
+            dt.set_endianness(Endianness::machine_default());
+            
+            // clean up our old handle
+            CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Tclose(h5_dtype_id),
+                                                   ref_path,
+                                        "Error closing HDF5 Datatype: "
+                                        << h5_dtype_id);
+            // get ref to standard variant of this dtype
+            h5_dtype_id  = conduit_dtype_to_hdf5_dtype(dt,
+                                                       ref_path);
+
+            CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_dtype_id,
+                                                   ref_path,
+                                        "Error creating HDF5 Datatype");
+
+            // copy this handle, b/c clean up code later will close it
+            h5_dtype_id  = H5Tcopy(h5_dtype_id);
+            CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_dtype_id,
+                                                   ref_path,
+                                        "Error copying HDF5 Datatype");
+        }
+        
         hid_t h5_status    = 0;
     
         if(dest.dtype().is_compact() && 
@@ -1474,7 +1505,7 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
     
         CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Tclose(h5_dtype_id),
                                                ref_path,
-                                               "Error reading HDF5 Datatype: "
+                                               "Error closing HDF5 Datatype: "
                                                << h5_dtype_id);
 
     }

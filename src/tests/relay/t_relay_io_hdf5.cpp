@@ -659,4 +659,33 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_test_write_incompat)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, auto_endian)
+{
+    Node n;
+    n["a"].set_int64(12345689);
+    n["b"].set_int64(-12345689);
+    
+    if(Endianness::machine_is_big_endian())
+    {
+        n.endian_swap_to_little();
+    }
+    else
+    {
+        n.endian_swap_to_big();
+    }
+
+    io::hdf5_write(n,"tout_hdf5_wr_opp_endian.hdf5");
+    
+    Node n_load;
+    io::hdf5_read("tout_hdf5_wr_opp_endian.hdf5",n_load);
+
+    EXPECT_EQ(n_load["a"].as_int64(),12345689);
+    EXPECT_EQ(n_load["b"].as_int64(),-12345689);
+
+}
+
+
+
+
 

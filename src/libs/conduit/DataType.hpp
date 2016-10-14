@@ -412,6 +412,7 @@ public:
 
     bool        is_little_endian()    const;
     bool        is_big_endian()       const;
+    bool        endianness_matches_machine() const;
 
 //-----------------------------------------------------------------------------
 // Helpers to convert TypeID Enum Values to human readable strings and 
