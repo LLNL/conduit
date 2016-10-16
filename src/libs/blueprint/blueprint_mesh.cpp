@@ -890,12 +890,10 @@ check_cyln_coord_sys_axis_name(std::string &name)
 bool
 mesh::coordset::coord_system::verify(const Node &coord_sys,
                                      Node &info)
-{    
+{
     bool res = true;
 
-    
     std::string proto_name = "mesh::coordset::coord_system";
-
     std::string coord_sys_str = "unknown";
 
     if(!coord_sys.has_child("type"))
@@ -947,7 +945,7 @@ mesh::coordset::coord_system::verify(const Node &coord_sys,
             while(itr.has_next())
             {
                 bool axis_name_ok = true;
-                
+
                 itr.next();
                 std::string axis_name = itr.name();
                 if(coord_sys_str == "cartesian")
