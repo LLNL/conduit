@@ -118,7 +118,7 @@ const std::vector<std::string> CARTESIAN_COORDSYS = create_coordsys("x","y","z")
 const std::vector<std::string> SPHERICAL_COORDSYS = create_coordsys("r","theta","phi");
 const std::vector<std::string> CYLINDRICAL_COORDSYS = create_coordsys("r","z");
 
-const std::vector<std::string> COORDINATE_COORDSYSS[3] =
+const std::vector<std::string> COORDINATE_COORDSYSS[] =
     {CARTESIAN_COORDSYS, CYLINDRICAL_COORDSYS, SPHERICAL_COORDSYS};
 
 /// Mesh Coordinate Set Tests ///
@@ -288,7 +288,7 @@ TEST(conduit_blueprint_mesh_verify, coordset_types)
 {
     Node n, info;
 
-    const std::string coordset_types[3] = {"uniform", "rectilinear", "explicit"};
+    const std::string coordset_types[] = {"uniform", "rectilinear", "explicit"};
     for(index_t ti = 0; ti < 3; ti++)
     {
         n.reset();
@@ -308,7 +308,7 @@ TEST(conduit_blueprint_mesh_verify, coordset_coordsys)
     Node n, info;
     EXPECT_FALSE(blueprint::mesh::coordset::coord_system::verify(n,info));
 
-    const std::string coordsys_types[3] = {"cartesian", "cylindrical", "spherical"};
+    const std::string coordsys_types[] = {"cartesian", "cylindrical", "spherical"};
     for(index_t ci = 0; ci < 3; ci++)
     {
         n.reset();
@@ -409,7 +409,27 @@ TEST(conduit_blueprint_mesh_verify, topology_rectilinear)
 TEST(conduit_blueprint_mesh_verify, topology_structured)
 {
     Node n, info;
-    // TODO(JRC): Implement this test case and give it a name.
+    EXPECT_FALSE(blueprint::mesh::topology::structured::verify(n,info));
+
+    n["elements"].set(0);
+    EXPECT_FALSE(blueprint::mesh::topology::structured::verify(n,info));
+
+    n["elements"].reset();
+    n["elements"]["dims"].set(0);
+    EXPECT_FALSE(blueprint::mesh::topology::structured::verify(n,info));
+
+    n["elements"]["dims"].reset();
+    n["elements"]["dims"]["x"].set(5);
+    n["elements"]["dims"]["y"].set(10);
+    EXPECT_FALSE(blueprint::mesh::topology::structured::verify(n,info));
+
+    n["elements"]["dims"].reset();
+    n["elements"]["dims"]["i"].set(15);
+    n["elements"]["dims"]["j"].set(20);
+    EXPECT_TRUE(blueprint::mesh::topology::structured::verify(n,info));
+
+    n["elements"]["dims"]["k"].set(25);
+    EXPECT_TRUE(blueprint::mesh::topology::structured::verify(n,info));
 }
 
 
@@ -417,7 +437,7 @@ TEST(conduit_blueprint_mesh_verify, topology_structured)
 TEST(conduit_blueprint_mesh_verify, topology_unstructured)
 {
     Node n, info;
-    // TODO(JRC): Implement this test case and give it a name.
+    // TODO(JRC): Implement this test case.
 }
 
 
@@ -426,7 +446,7 @@ TEST(conduit_blueprint_mesh_verify, topology_types)
 {
     Node n, info;
 
-    const std::string topology_types[4] = {"uniform", "rectilinear", "structured", "unstructured"};
+    const std::string topology_types[] = {"uniform", "rectilinear", "structured", "unstructured"};
     for(index_t ti = 0; ti < 4; ti++)
     {
         n.reset();
@@ -436,21 +456,62 @@ TEST(conduit_blueprint_mesh_verify, topology_types)
 
     n.set("explicit");
     EXPECT_FALSE(blueprint::mesh::topology::type::verify(n,info));
-    n.reset();
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, topology_shape)
 {
-    // TODO(JRC): Implement this test case and give it a name.
+    Node n, info;
+    EXPECT_FALSE(blueprint::mesh::topology::shape::verify(n,info));
+
+    const std::string shape_types[] = {"point", "line", "tri", "quad", "tet", "hex"};
+    for(index_t ti = 0; ti < 6; ti++)
+    {
+        n.reset();
+        n.set(shape_types[ti]);
+        EXPECT_TRUE(blueprint::mesh::topology::shape::verify(n,info));
+    }
+
+    n.reset();
+    n.set(10);
+    EXPECT_FALSE(blueprint::mesh::topology::shape::verify(n,info));
+
+    n.reset();
+    n.set("poly");
+    EXPECT_FALSE(blueprint::mesh::topology::shape::verify(n,info));
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, topology_index)
 {
-    // TODO(JRC): Implement this test case and give it a name.
+    Node n, info;
+    EXPECT_FALSE(blueprint::mesh::topology::index::verify(n,info));
+
+    n["type"].set("explicit");
+    EXPECT_FALSE(blueprint::mesh::topology::index::verify(n,info));
+
+    n["type"].set("unstructured");
+    EXPECT_FALSE(blueprint::mesh::topology::index::verify(n,info));
+
+    n["coordset"].set(0);
+    EXPECT_FALSE(blueprint::mesh::topology::index::verify(n,info));
+
+    n["coordset"].set("path");
+    EXPECT_FALSE(blueprint::mesh::topology::index::verify(n,info));
+
+    n["path"].set(5);
+    EXPECT_FALSE(blueprint::mesh::topology::index::verify(n,info));
+
+    n["path"].set("path");
+    EXPECT_TRUE(blueprint::mesh::topology::index::verify(n,info));
+
+    n["grid_function"].set(10);
+    EXPECT_FALSE(blueprint::mesh::topology::index::verify(n,info));
+
+    n["grid_function"].set("path");
+    EXPECT_TRUE(blueprint::mesh::topology::index::verify(n,info));
 }
 
 
