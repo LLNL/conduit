@@ -84,9 +84,9 @@ bool is_valid_coordsys(bool (*coordsys_valid_fun)(const Node&, Node&),
     Node n, info;
 
     bool is_valid = true;
-    for(index_t bi = 0; bi < coordsys.size(); bi++)
+    for(index_t ci = 0; ci < coordsys.size(); ci++)
     {
-        const std::string& coordsys_dim = coordsys[bi];
+        const std::string& coordsys_dim = coordsys[ci];
 
         n[coordsys_dim].set("test");
         is_valid &= !coordsys_valid_fun(n, info);
@@ -98,9 +98,9 @@ bool is_valid_coordsys(bool (*coordsys_valid_fun)(const Node&, Node&),
         // systems such as (y) or (x, z); all successive dimensions should
         // require the existence of previous coordsys dimensions.
         /*
-        if( bi > 0 )
+        if( ci > 0 )
         {
-            const std::string& prev_dim = coordsys[bi-1];
+            const std::string& prev_dim = coordsys[ci-1];
             n.remove(prev_dim);
             is_valid &= !coordsys_valid_fun(n, info);
             n[coordsys_dim].set(10);
@@ -118,8 +118,8 @@ const std::vector<std::string> CARTESIAN_COORDSYS = create_coordsys("x","y","z")
 const std::vector<std::string> SPHERICAL_COORDSYS = create_coordsys("r","theta","phi");
 const std::vector<std::string> CYLINDRICAL_COORDSYS = create_coordsys("r","z");
 
-const std::vector<std::string> COORDINATE_BASES[3] =
-    {CARTESIAN_COORDSYS, SPHERICAL_COORDSYS, CYLINDRICAL_COORDSYS};
+const std::vector<std::string> COORDINATE_COORDSYSS[3] =
+    {CARTESIAN_COORDSYS, CYLINDRICAL_COORDSYS, SPHERICAL_COORDSYS};
 
 /// Mesh Coordinate Set Tests ///
 
@@ -224,9 +224,9 @@ TEST(conduit_blueprint_mesh_verify, coordset_rectilinear)
     n["values"].set("test");
     EXPECT_FALSE(blueprint::mesh::coordset::rectilinear::verify(n, info));
 
-    for(index_t bi = 0; bi < 3; bi++)
+    for(index_t ci = 0; ci < 3; ci++)
     {
-        const std::vector<std::string>& coord_coordsys = COORDINATE_BASES[bi];
+        const std::vector<std::string>& coord_coordsys = COORDINATE_COORDSYSS[ci];
 
         n["values"].reset();
         for(index_t ci = 0; ci < coord_coordsys.size(); ci++)
@@ -258,9 +258,9 @@ TEST(conduit_blueprint_mesh_verify, coordset_explicit)
     n["values"].set("test");
     EXPECT_FALSE(blueprint::mesh::coordset::_explicit::verify(n, info));
 
-    for(index_t bi = 0; bi < 3; bi++)
+    for(index_t ci = 0; ci < 3; ci++)
     {
-        const std::vector<std::string>& coord_coordsys = COORDINATE_BASES[bi];
+        const std::vector<std::string>& coord_coordsys = COORDINATE_COORDSYSS[ci];
 
         n["values"].reset();
         for(index_t ci = 0; ci < coord_coordsys.size(); ci++)
@@ -322,7 +322,68 @@ TEST(conduit_blueprint_mesh_verify, coordset_general)
     EXPECT_TRUE(blueprint::mesh::coordset::verify(n, info));
 }
 
-// FIXME: Add tests for 'blueprint::mesh::coord_system::verify' and 'blueprint::mesh::index:verify'.
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, coordset_coordsys)
+{
+    Node n, info;
+    EXPECT_FALSE(blueprint::mesh::coordset::coord_system::verify(n, info));
+
+    const std::string coordsys_types[3] = {"cartesian", "cylindrical", "spherical"};
+    for(index_t ci = 0; ci < 3; ci++)
+    {
+        n.reset();
+        info.reset();
+
+        n["type"].set(coordsys_types[ci]);
+        EXPECT_FALSE(blueprint::mesh::coordset::coord_system::verify(n, info));
+
+        const std::vector<std::string>& coordsys = COORDINATE_COORDSYSS[ci];
+        for(index_t ai = 0; ai < coordsys.size(); ai++)
+        {
+            n["axes"][coordsys[ai]].set(10);
+            EXPECT_TRUE(blueprint::mesh::coordset::coord_system::verify(n, info));
+        }
+
+        n["type"].set(coordsys_types[(ci == 0) ? 2 : ci - 1]);
+        EXPECT_FALSE(blueprint::mesh::coordset::coord_system::verify(n, info));
+
+        n["type"].set("barycentric");
+        EXPECT_FALSE(blueprint::mesh::coordset::coord_system::verify(n, info));
+
+        n["type"].set(10);
+        EXPECT_FALSE(blueprint::mesh::coordset::coord_system::verify(n, info));
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, coordset_index)
+{
+    Node n, info;
+    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n, info));
+
+    n["type"].set("unstructured");
+    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n, info));
+
+    n["type"].set("uniform");
+    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n, info));
+
+    n["coord_system"].set("invalid");
+    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n, info));
+
+    n["coord_system"].reset();
+    n["coord_system"]["type"].set("cartesian");
+    n["coord_system"]["axes"]["x"].set(10);
+    n["coord_system"]["axes"]["y"].set(10);
+    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n, info));
+
+    n["path"].set(10);
+    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n, info));
+
+    n["path"].set("path");
+    EXPECT_TRUE(blueprint::mesh::coordset::index::verify(n, info));
+}
 
 /// Mesh Topology Tests ///
 
