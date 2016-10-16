@@ -89,10 +89,10 @@ bool is_valid_coordsys(bool (*coordsys_valid_fun)(const Node&, Node&),
         const std::string& coordsys_dim = coordsys[ci];
 
         n[coordsys_dim].set("test");
-        is_valid &= !coordsys_valid_fun(n, info);
+        is_valid &= !coordsys_valid_fun(n,info);
 
         n[coordsys_dim].set(10);
-        is_valid &= coordsys_valid_fun(n, info);
+        is_valid &= coordsys_valid_fun(n,info);
 
         // FIXME: The coordinate system checking functions shouldn't accept
         // systems such as (y) or (x, z); all successive dimensions should
@@ -102,7 +102,7 @@ bool is_valid_coordsys(bool (*coordsys_valid_fun)(const Node&, Node&),
         {
             const std::string& prev_dim = coordsys[ci-1];
             n.remove(prev_dim);
-            is_valid &= !coordsys_valid_fun(n, info);
+            is_valid &= !coordsys_valid_fun(n,info);
             n[coordsys_dim].set(10);
         }
         */
@@ -130,7 +130,7 @@ TEST(conduit_blueprint_mesh_verify, coordset_logical_dims)
         blueprint::mesh::logical_dims::verify;
 
     Node n, info;
-    EXPECT_FALSE(verify_coordset_logical(n, info));
+    EXPECT_FALSE(verify_coordset_logical(n,info));
 
     EXPECT_TRUE(is_valid_coordsys(verify_coordset_logical,LOGICAL_COORDSYS));
 
@@ -146,7 +146,7 @@ TEST(conduit_blueprint_mesh_verify, coordset_uniform_origin)
 
     Node n, info;
     // FIXME: The origin verification function shouldn't accept an empty node.
-    // EXPECT_FALSE(verify_uniform_origin(n, info));
+    // EXPECT_FALSE(verify_uniform_origin(n,info));
 
     EXPECT_TRUE(is_valid_coordsys(verify_uniform_origin,CARTESIAN_COORDSYS));
     EXPECT_TRUE(is_valid_coordsys(verify_uniform_origin,SPHERICAL_COORDSYS));
@@ -164,7 +164,7 @@ TEST(conduit_blueprint_mesh_verify, coordset_uniform_spacing)
 
     Node n, info;
     // FIXME: The spacing verification function shouldn't accept an empty node.
-    // EXPECT_FALSE(verify_uniform_spacing(n, info));
+    // EXPECT_FALSE(verify_uniform_spacing(n,info));
 
     EXPECT_TRUE(is_valid_coordsys(verify_uniform_spacing,create_coordsys("dx","dy","dz")));
     EXPECT_TRUE(is_valid_coordsys(verify_uniform_spacing,create_coordsys("dr","dtheta","dphi")));
@@ -178,40 +178,40 @@ TEST(conduit_blueprint_mesh_verify, coordset_uniform_spacing)
 TEST(conduit_blueprint_mesh_verify, coordset_uniform)
 {
     Node n, info;
-    EXPECT_FALSE(blueprint::mesh::coordset::uniform::verify(n, info));
+    EXPECT_FALSE(blueprint::mesh::coordset::uniform::verify(n,info));
 
     n["dims"]["i"].set(1);
     n["dims"]["j"].set(2);
-    EXPECT_TRUE(blueprint::mesh::coordset::uniform::verify(n, info));
+    EXPECT_TRUE(blueprint::mesh::coordset::uniform::verify(n,info));
 
     n["dims"]["k"].set("test");
-    EXPECT_FALSE(blueprint::mesh::coordset::uniform::verify(n, info));
+    EXPECT_FALSE(blueprint::mesh::coordset::uniform::verify(n,info));
     n["dims"]["k"].set(3);
-    EXPECT_TRUE(blueprint::mesh::coordset::uniform::verify(n, info));
+    EXPECT_TRUE(blueprint::mesh::coordset::uniform::verify(n,info));
 
     Node dims = n["dims"];
     n.remove("dims");
 
     n["origin"]["x"].set(10);
     n["origin"]["y"].set(20);
-    EXPECT_FALSE(blueprint::mesh::coordset::uniform::verify(n, info));
+    EXPECT_FALSE(blueprint::mesh::coordset::uniform::verify(n,info));
 
     n["dims"].set(dims);
-    EXPECT_TRUE(blueprint::mesh::coordset::uniform::verify(n, info));
+    EXPECT_TRUE(blueprint::mesh::coordset::uniform::verify(n,info));
 
     n["origin"]["z"].set("test");
-    EXPECT_FALSE(blueprint::mesh::coordset::uniform::verify(n, info));
+    EXPECT_FALSE(blueprint::mesh::coordset::uniform::verify(n,info));
     n["origin"]["z"].set(30);
-    EXPECT_TRUE(blueprint::mesh::coordset::uniform::verify(n, info));
+    EXPECT_TRUE(blueprint::mesh::coordset::uniform::verify(n,info));
 
     n["spacing"]["dx"].set(0.1);
     n["spacing"]["dy"].set(0.2);
-    EXPECT_TRUE(blueprint::mesh::coordset::uniform::verify(n, info));
+    EXPECT_TRUE(blueprint::mesh::coordset::uniform::verify(n,info));
 
     n["spacing"]["dz"].set("test");
-    EXPECT_FALSE(blueprint::mesh::coordset::uniform::verify(n, info));
+    EXPECT_FALSE(blueprint::mesh::coordset::uniform::verify(n,info));
     n["spacing"]["dz"].set(0.3);
-    EXPECT_TRUE(blueprint::mesh::coordset::uniform::verify(n, info));
+    EXPECT_TRUE(blueprint::mesh::coordset::uniform::verify(n,info));
 }
 
 
@@ -219,10 +219,10 @@ TEST(conduit_blueprint_mesh_verify, coordset_uniform)
 TEST(conduit_blueprint_mesh_verify, coordset_rectilinear)
 {
     Node n, info;
-    EXPECT_FALSE(blueprint::mesh::coordset::rectilinear::verify(n, info));
+    EXPECT_FALSE(blueprint::mesh::coordset::rectilinear::verify(n,info));
 
     n["values"].set("test");
-    EXPECT_FALSE(blueprint::mesh::coordset::rectilinear::verify(n, info));
+    EXPECT_FALSE(blueprint::mesh::coordset::rectilinear::verify(n,info));
 
     for(index_t ci = 0; ci < 3; ci++)
     {
@@ -232,7 +232,7 @@ TEST(conduit_blueprint_mesh_verify, coordset_rectilinear)
         for(index_t ci = 0; ci < coord_coordsys.size(); ci++)
         {
             n["values"][coord_coordsys[ci]].set(DataType::float64(10));
-            EXPECT_TRUE(blueprint::mesh::coordset::rectilinear::verify(n, info));
+            EXPECT_TRUE(blueprint::mesh::coordset::rectilinear::verify(n,info));
         }
     }
 
@@ -243,7 +243,7 @@ TEST(conduit_blueprint_mesh_verify, coordset_rectilinear)
     for(index_t ci = 0; ci < LOGICAL_COORDSYS.size(); ci++)
     {
         n["values"][LOGICAL_COORDSYS[ci]].set(DataType::float64(10));
-        EXPECT_FALSE(blueprint::mesh::coordset::rectilinear::verify(n, info));
+        EXPECT_FALSE(blueprint::mesh::coordset::rectilinear::verify(n,info));
     }
     */
 }
@@ -253,10 +253,10 @@ TEST(conduit_blueprint_mesh_verify, coordset_rectilinear)
 TEST(conduit_blueprint_mesh_verify, coordset_explicit)
 {
     Node n, info;
-    EXPECT_FALSE(blueprint::mesh::coordset::_explicit::verify(n, info));
+    EXPECT_FALSE(blueprint::mesh::coordset::_explicit::verify(n,info));
 
     n["values"].set("test");
-    EXPECT_FALSE(blueprint::mesh::coordset::_explicit::verify(n, info));
+    EXPECT_FALSE(blueprint::mesh::coordset::_explicit::verify(n,info));
 
     for(index_t ci = 0; ci < 3; ci++)
     {
@@ -266,7 +266,7 @@ TEST(conduit_blueprint_mesh_verify, coordset_explicit)
         for(index_t ci = 0; ci < coord_coordsys.size(); ci++)
         {
             n["values"][coord_coordsys[ci]].set(DataType::float64(10));
-            EXPECT_TRUE(blueprint::mesh::coordset::_explicit::verify(n, info));
+            EXPECT_TRUE(blueprint::mesh::coordset::_explicit::verify(n,info));
         }
     }
 
@@ -277,7 +277,7 @@ TEST(conduit_blueprint_mesh_verify, coordset_explicit)
     for(index_t ci = 0; ci < LOGICAL_COORDSYS.size(); ci++)
     {
         n["values"][LOGICAL_COORDSYS[ci]].set(DataType::float64(10));
-        EXPECT_FALSE(blueprint::mesh::coordset::_explicit::verify(n, info));
+        EXPECT_FALSE(blueprint::mesh::coordset::_explicit::verify(n,info));
     }
     */
 }
@@ -293,33 +293,12 @@ TEST(conduit_blueprint_mesh_verify, coordset_types)
     {
         n.reset();
         n.set(coordset_types[ti]);
-        EXPECT_TRUE(blueprint::mesh::coordset::type::verify(n, info));
+        EXPECT_TRUE(blueprint::mesh::coordset::type::verify(n,info));
     }
 
     n.set("unstructured");
-    EXPECT_FALSE(blueprint::mesh::coordset::type::verify(n, info));
+    EXPECT_FALSE(blueprint::mesh::coordset::type::verify(n,info));
     n.reset();
-}
-
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_verify, coordset_general)
-{
-    Node mesh, info;
-    EXPECT_FALSE(blueprint::mesh::coordset::verify(mesh, info));
-
-    blueprint::mesh::examples::braid("uniform",10,10,10,mesh);
-    Node& n = mesh["coordsets"]["coords"];
-
-    n.remove("type");
-    EXPECT_FALSE(blueprint::mesh::coordset::verify(n, info));
-    n["type"].set("structured");
-    EXPECT_FALSE(blueprint::mesh::coordset::verify(n, info));
-    n["type"].set("rectilinear");
-    EXPECT_FALSE(blueprint::mesh::coordset::verify(n, info));
-
-    n["type"].set("uniform");
-    EXPECT_TRUE(blueprint::mesh::coordset::verify(n, info));
 }
 
 
@@ -327,7 +306,7 @@ TEST(conduit_blueprint_mesh_verify, coordset_general)
 TEST(conduit_blueprint_mesh_verify, coordset_coordsys)
 {
     Node n, info;
-    EXPECT_FALSE(blueprint::mesh::coordset::coord_system::verify(n, info));
+    EXPECT_FALSE(blueprint::mesh::coordset::coord_system::verify(n,info));
 
     const std::string coordsys_types[3] = {"cartesian", "cylindrical", "spherical"};
     for(index_t ci = 0; ci < 3; ci++)
@@ -336,23 +315,23 @@ TEST(conduit_blueprint_mesh_verify, coordset_coordsys)
         info.reset();
 
         n["type"].set(coordsys_types[ci]);
-        EXPECT_FALSE(blueprint::mesh::coordset::coord_system::verify(n, info));
+        EXPECT_FALSE(blueprint::mesh::coordset::coord_system::verify(n,info));
 
         const std::vector<std::string>& coordsys = COORDINATE_COORDSYSS[ci];
         for(index_t ai = 0; ai < coordsys.size(); ai++)
         {
             n["axes"][coordsys[ai]].set(10);
-            EXPECT_TRUE(blueprint::mesh::coordset::coord_system::verify(n, info));
+            EXPECT_TRUE(blueprint::mesh::coordset::coord_system::verify(n,info));
         }
 
         n["type"].set(coordsys_types[(ci == 0) ? 2 : ci - 1]);
-        EXPECT_FALSE(blueprint::mesh::coordset::coord_system::verify(n, info));
+        EXPECT_FALSE(blueprint::mesh::coordset::coord_system::verify(n,info));
 
         n["type"].set("barycentric");
-        EXPECT_FALSE(blueprint::mesh::coordset::coord_system::verify(n, info));
+        EXPECT_FALSE(blueprint::mesh::coordset::coord_system::verify(n,info));
 
         n["type"].set(10);
-        EXPECT_FALSE(blueprint::mesh::coordset::coord_system::verify(n, info));
+        EXPECT_FALSE(blueprint::mesh::coordset::coord_system::verify(n,info));
     }
 }
 
@@ -361,35 +340,83 @@ TEST(conduit_blueprint_mesh_verify, coordset_coordsys)
 TEST(conduit_blueprint_mesh_verify, coordset_index)
 {
     Node n, info;
-    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n, info));
+    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n,info));
 
     n["type"].set("unstructured");
-    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n, info));
+    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n,info));
 
     n["type"].set("uniform");
-    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n, info));
+    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n,info));
 
     n["coord_system"].set("invalid");
-    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n, info));
+    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n,info));
 
     n["coord_system"].reset();
     n["coord_system"]["type"].set("cartesian");
     n["coord_system"]["axes"]["x"].set(10);
     n["coord_system"]["axes"]["y"].set(10);
-    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n, info));
+    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n,info));
 
     n["path"].set(10);
-    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n, info));
+    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n,info));
 
     n["path"].set("path");
-    EXPECT_TRUE(blueprint::mesh::coordset::index::verify(n, info));
+    EXPECT_TRUE(blueprint::mesh::coordset::index::verify(n,info));
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, coordset_general)
+{
+    Node mesh, info;
+    EXPECT_FALSE(blueprint::mesh::coordset::verify(mesh,info));
+
+    blueprint::mesh::examples::braid("uniform",10,10,10,mesh);
+    Node& n = mesh["coordsets"]["coords"];
+
+    n.remove("type");
+    EXPECT_FALSE(blueprint::mesh::coordset::verify(n,info));
+    n["type"].set("structured");
+    EXPECT_FALSE(blueprint::mesh::coordset::verify(n,info));
+    n["type"].set("rectilinear");
+    EXPECT_FALSE(blueprint::mesh::coordset::verify(n,info));
+
+    n["type"].set("uniform");
+    EXPECT_TRUE(blueprint::mesh::coordset::verify(n,info));
 }
 
 /// Mesh Topology Tests ///
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_verify, TOPOLOGY)
+TEST(conduit_blueprint_mesh_verify, topology_uniform)
 {
+    // FIXME: Implement once 'mesh::topology::uniform::verify' is implemented.
+    Node n, info;
+    EXPECT_TRUE(blueprint::mesh::topology::uniform::verify(n,info));
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, topology_rectilinear)
+{
+    // FIXME: Implement once 'mesh::topology::rectilinear::verify' is implemented.
+    Node n, info;
+    EXPECT_TRUE(blueprint::mesh::topology::rectilinear::verify(n,info));
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, topology_structured)
+{
+    Node n, info;
+    // TODO(JRC): Implement this test case and give it a name.
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, topology_unstructured)
+{
+    Node n, info;
     // TODO(JRC): Implement this test case and give it a name.
 }
 
@@ -404,12 +431,33 @@ TEST(conduit_blueprint_mesh_verify, topology_types)
     {
         n.reset();
         n.set(topology_types[ti]);
-        EXPECT_TRUE(blueprint::mesh::topology::type::verify(n, info));
+        EXPECT_TRUE(blueprint::mesh::topology::type::verify(n,info));
     }
 
     n.set("explicit");
-    EXPECT_FALSE(blueprint::mesh::topology::type::verify(n, info));
+    EXPECT_FALSE(blueprint::mesh::topology::type::verify(n,info));
     n.reset();
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, topology_shape)
+{
+    // TODO(JRC): Implement this test case and give it a name.
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, topology_index)
+{
+    // TODO(JRC): Implement this test case and give it a name.
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, topology_general)
+{
+    // TODO(JRC): Implement this test case and give it a name.
 }
 
 /// Mesh Field Tests ///
