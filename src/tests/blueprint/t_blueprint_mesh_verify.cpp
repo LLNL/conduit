@@ -337,35 +337,6 @@ TEST(conduit_blueprint_mesh_verify, coordset_coordsys)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_verify, coordset_index)
-{
-    Node n, info;
-    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n,info));
-
-    n["type"].set("unstructured");
-    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n,info));
-
-    n["type"].set("uniform");
-    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n,info));
-
-    n["coord_system"].set("invalid");
-    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n,info));
-
-    n["coord_system"].reset();
-    n["coord_system"]["type"].set("cartesian");
-    n["coord_system"]["axes"]["x"].set(10);
-    n["coord_system"]["axes"]["y"].set(10);
-    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n,info));
-
-    n["path"].set(10);
-    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n,info));
-
-    n["path"].set("path");
-    EXPECT_TRUE(blueprint::mesh::coordset::index::verify(n,info));
-}
-
-
-//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, coordset_general)
 {
     Node mesh, info;
@@ -484,6 +455,51 @@ TEST(conduit_blueprint_mesh_verify, topology_shape)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, topology_general)
+{
+    // TODO(JRC): Implement this test case and give it a name.
+}
+
+/// Mesh Field Tests ///
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, FIELD)
+{
+    // TODO(JRC): Implement this test case and give it a name.
+}
+
+/// Mesh Index Tests ///
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, coordset_index)
+{
+    Node n, info;
+    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n,info));
+
+    n["type"].set("unstructured");
+    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n,info));
+
+    n["type"].set("uniform");
+    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n,info));
+
+    n["coord_system"].set("invalid");
+    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n,info));
+
+    n["coord_system"].reset();
+    n["coord_system"]["type"].set("cartesian");
+    n["coord_system"]["axes"]["x"].set(10);
+    n["coord_system"]["axes"]["y"].set(10);
+    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n,info));
+
+    n["path"].set(10);
+    EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n,info));
+
+    n["path"].set("path");
+    EXPECT_TRUE(blueprint::mesh::coordset::index::verify(n,info));
+}
+
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, topology_index)
 {
     Node n, info;
@@ -516,25 +532,9 @@ TEST(conduit_blueprint_mesh_verify, topology_index)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_verify, topology_general)
+TEST(conduit_blueprint_mesh_verify, index_general)
 {
-    // TODO(JRC): Implement this test case and give it a name.
-}
-
-/// Mesh Field Tests ///
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_verify, FIELD)
-{
-    // TODO(JRC): Implement this test case and give it a name.
-}
-
-/// Mesh Index Tests ///
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_verify, INDEX)
-{
-    // TODO(JRC): Implement this test case and give it a name.
+    // TODO(JRC): Implement this test case.
 }
 
 /// Mesh Integration Tests ///
