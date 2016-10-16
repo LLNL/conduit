@@ -463,7 +463,21 @@ TEST(conduit_blueprint_mesh_verify, topology_general)
 /// Mesh Field Tests ///
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_verify, FIELD)
+TEST(conduit_blueprint_mesh_verify, field_association)
+{
+    // TODO(JRC): Implement this test case and give it a name.
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, field_basis)
+{
+    // TODO(JRC): Implement this test case and give it a name.
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, field_general)
 {
     // TODO(JRC): Implement this test case and give it a name.
 }
@@ -471,7 +485,7 @@ TEST(conduit_blueprint_mesh_verify, FIELD)
 /// Mesh Index Tests ///
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_verify, coordset_index)
+TEST(conduit_blueprint_mesh_verify, index_coordset)
 {
     Node n, info;
     EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n,info));
@@ -500,7 +514,7 @@ TEST(conduit_blueprint_mesh_verify, coordset_index)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_verify, topology_index)
+TEST(conduit_blueprint_mesh_verify, index_topology)
 {
     Node n, info;
     EXPECT_FALSE(blueprint::mesh::topology::index::verify(n,info));
@@ -528,6 +542,13 @@ TEST(conduit_blueprint_mesh_verify, topology_index)
 
     n["grid_function"].set("path");
     EXPECT_TRUE(blueprint::mesh::topology::index::verify(n,info));
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, index_field)
+{
+    // TODO(JRC): Implement this test case and give it a name.
 }
 
 
