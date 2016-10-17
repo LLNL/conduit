@@ -1161,7 +1161,7 @@ mesh::topology::structured::verify(const Node &topo,
     else
     {
         const Node &topo_elements = topo["elements"];
-        
+
         if(!topo_elements.has_child("dims"))
         {
             log_error(info["elements"],proto_name, "missing child \"dims\"");
@@ -1176,6 +1176,9 @@ mesh::topology::structured::verify(const Node &topo,
             }
         }
     }
+
+    // FIXME: Add some verification code here for the optional origin in the
+    // structured topology.
 
     log_verify_result(info,res);
 
@@ -1200,7 +1203,7 @@ mesh::topology::unstructured::verify(const Node &topo,
     else
     {
         const Node &topo_elements = topo["elements"];
-        
+
         if(topo_elements.has_child("shape"))
         {
             // single shape case
@@ -1228,7 +1231,7 @@ mesh::topology::unstructured::verify(const Node &topo,
         {
             // TODO stream cases
         }
-        else // mixed shape list or object case
+        else if(topo_elements.number_of_children() != 0)
         {
             bool has_names = topo_elements.dtype().is_object();
 
@@ -1237,7 +1240,7 @@ mesh::topology::unstructured::verify(const Node &topo,
             {
                 const Node &cld  = itr.next();
                 std::string name = itr.name();
-                
+
                 if(has_names)
                 {
                     info["elements"][name];
@@ -1246,9 +1249,9 @@ mesh::topology::unstructured::verify(const Node &topo,
                 {
                     info["elements"].append();
                 }
-                
+
                 Node &cld_info = info["elements"][itr.index()];
-                
+
                 if(!cld.has_child("shape"))
                 {
                     log_error(cld_info,proto_name, "missing child \"shape\"");
@@ -1257,13 +1260,13 @@ mesh::topology::unstructured::verify(const Node &topo,
                 else
                 {
                     // verify shape
-                    if(!mesh::topology::shape::verify(cld,
-                                                      cld_info))
+                    if(!mesh::topology::shape::verify(cld["shape"],
+                                                      cld_info["shape"]))
                     {
                         res = false;
                     }
                 }
-                
+
                 if(!cld.has_child("connectivity"))
                 {
                     log_error(cld_info,
@@ -1278,10 +1281,12 @@ mesh::topology::unstructured::verify(const Node &topo,
                     res = false;
                 }
             }
-            
         }
-        
-        
+        else
+        {
+            log_error(info,proto_name,"invalid child \"elements\"");
+            res = false;
+        }
     }
 
     log_verify_result(info,res);
