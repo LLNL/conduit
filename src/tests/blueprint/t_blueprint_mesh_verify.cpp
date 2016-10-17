@@ -505,7 +505,38 @@ TEST(conduit_blueprint_mesh_verify, topology_shape)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, topology_general)
 {
-    // TODO(JRC): Implement this test case and give it a name.
+    Node mesh, info;
+    EXPECT_FALSE(blueprint::mesh::topology::verify(mesh,info));
+
+    blueprint::mesh::examples::braid("quads",10,10,1,mesh);
+    Node& n = mesh["topologies"]["mesh"];
+
+    n.remove("type");
+    EXPECT_FALSE(blueprint::mesh::topology::verify(n,info));
+    n["type"].set("explicit");
+    EXPECT_FALSE(blueprint::mesh::topology::verify(n,info));
+
+    // FIXME: Remove the comments from the following line once the verify functions
+    // for uniform and rectilinear topologies have been implemented.
+    const std::string topology_types[] = {/*"uniform", "rectilinear", */"structured"};
+    for(index_t ti = 0; ti < 1; ti++)
+    {
+        n["type"].set(topology_types[ti]);
+        EXPECT_FALSE(blueprint::mesh::topology::verify(n,info));
+    }
+
+    n["type"].set("unstructured");
+    EXPECT_TRUE(blueprint::mesh::topology::verify(n,info));
+
+    n.remove("coordset");
+    EXPECT_FALSE(blueprint::mesh::topology::verify(n,info));
+    n["coordset"].set("coords");
+    EXPECT_TRUE(blueprint::mesh::topology::verify(n,info));
+
+    n["grid_function"].set(10);
+    EXPECT_FALSE(blueprint::mesh::topology::verify(n,info));
+    n["grid_function"].set("coords_gf");
+    EXPECT_TRUE(blueprint::mesh::topology::verify(n,info));
 }
 
 /// Mesh Field Tests ///
@@ -604,12 +635,4 @@ TEST(conduit_blueprint_mesh_verify, index_field)
 TEST(conduit_blueprint_mesh_verify, index_general)
 {
     // TODO(JRC): Implement this test case.
-}
-
-/// Mesh Integration Tests ///
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_verify, INTEGRATION)
-{
-    // TODO(JRC): Implement this test case and give it a name.
 }
