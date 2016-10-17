@@ -408,7 +408,55 @@ TEST(conduit_blueprint_mesh_verify, topology_structured)
 TEST(conduit_blueprint_mesh_verify, topology_unstructured)
 {
     Node n, info;
-    // TODO(JRC): Implement this test case.
+    EXPECT_FALSE(blueprint::mesh::topology::unstructured::verify(n,info));
+
+    n["elements"].set(0);
+    EXPECT_FALSE(blueprint::mesh::topology::unstructured::verify(n,info));
+
+    { // Single Shape Topology Tests //
+        n["elements"].reset();
+        n["elements"]["shape"].set("polygon");
+        EXPECT_FALSE(blueprint::mesh::topology::unstructured::verify(n,info));
+
+        n["elements"]["shape"].set("quad");
+        EXPECT_FALSE(blueprint::mesh::topology::unstructured::verify(n,info));
+
+        n["elements"]["connectivity"].set("quad");
+        EXPECT_FALSE(blueprint::mesh::topology::unstructured::verify(n,info));
+        n["elements"]["connectivity"].set(DataType::float64(10));
+        EXPECT_FALSE(blueprint::mesh::topology::unstructured::verify(n,info));
+
+        n["elements"]["connectivity"].set(DataType::int32(1));
+        EXPECT_TRUE(blueprint::mesh::topology::unstructured::verify(n,info));
+        n["elements"]["connectivity"].set(DataType::int32(10));
+        EXPECT_TRUE(blueprint::mesh::topology::unstructured::verify(n,info));
+    }
+
+    { // Mixed Shape Topology List Tests //
+        n["elements"].reset();
+
+        n["elements"]["a"]["shape"].set("quad");
+        n["elements"]["a"]["connectivity"].set(DataType::int32(5));
+        EXPECT_TRUE(blueprint::mesh::topology::unstructured::verify(n,info));
+
+        n["elements"]["b"]["shape"].set("polygon");
+        EXPECT_FALSE(blueprint::mesh::topology::unstructured::verify(n,info));
+        n["elements"]["b"]["shape"].set("quad");
+        EXPECT_FALSE(blueprint::mesh::topology::unstructured::verify(n,info));
+        n["elements"]["b"]["connectivity"].set(DataType::float32(3));
+        EXPECT_FALSE(blueprint::mesh::topology::unstructured::verify(n,info));
+        n["elements"]["b"]["connectivity"].set(DataType::int32(1));
+        EXPECT_TRUE(blueprint::mesh::topology::unstructured::verify(n,info));
+
+        n["elements"]["c"]["shape"].set("tri");
+        n["elements"]["c"]["connectivity"].set(DataType::int32(5));
+        EXPECT_TRUE(blueprint::mesh::topology::unstructured::verify(n,info));
+    }
+
+    { // Multiple Shape Topology Stream Tests //
+        // FIXME: Implement once multiple unstructured shape topologies are implemented.
+        n["elements"].reset();
+    }
 }
 
 
