@@ -717,12 +717,72 @@ TEST(conduit_blueprint_mesh_verify, index_topology)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, index_field)
 {
-    // TODO(JRC): Implement this test case and give it a name.
+    Node n, info;
+    EXPECT_FALSE(blueprint::mesh::field::index::verify(n,info));
+
+    n["topology"].set(0);
+    EXPECT_FALSE(blueprint::mesh::field::index::verify(n,info));
+
+    n["topology"].set("path");
+    EXPECT_FALSE(blueprint::mesh::field::index::verify(n,info));
+
+    n["number_of_components"].set("three");
+    EXPECT_FALSE(blueprint::mesh::field::index::verify(n,info));
+
+    n["number_of_components"].set(3);
+    EXPECT_FALSE(blueprint::mesh::field::index::verify(n,info));
+
+    n["path"].set(5);
+    EXPECT_FALSE(blueprint::mesh::field::index::verify(n,info));
+
+    n["path"].set("path");
+    EXPECT_FALSE(blueprint::mesh::field::index::verify(n,info));
+
+    n["association"].set("zone");
+    EXPECT_FALSE(blueprint::mesh::field::index::verify(n,info));
+    n["association"].set("point");
+    EXPECT_TRUE(blueprint::mesh::field::index::verify(n,info));
+
+    n.remove("association");
+    n["basis"].set(0);
+    EXPECT_FALSE(blueprint::mesh::field::index::verify(n,info));
+    n["basis"].set("basis");
+    EXPECT_TRUE(blueprint::mesh::field::index::verify(n,info));
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, index_general)
 {
-    // TODO(JRC): Implement this test case.
+    Node mesh, index, info;
+    EXPECT_FALSE(blueprint::mesh::index::verify(mesh,info));
+
+    // FIXME: How does this even work?
+    /*
+    blueprint::mesh::examples::braid("quads",10,10,1,mesh);
+    blueprint::mesh::generate_index(mesh,"fields/braid",1,index);
+    EXPECT_TRUE(blueprint::mesh::index::verify(index,info));
+
+    { // Topology Field Tests //
+        Node topology = index["topology"];
+        index.remove("topology");
+        EXPECT_FALSE(blueprint::mesh::index::verify(index,info));
+        index["topology"].set(10);
+        EXPECT_FALSE(blueprint::mesh::index::verify(index,info));
+        index["topology"].set(topology);
+        EXPECT_TRUE(blueprint::mesh::index::verify(index,info));
+    }
+
+    { // Components Field Tests //
+        
+    }
+
+    { // Path Field Tests //
+        
+    }
+
+    { // Association/Basis Field Tests //
+        
+    }
+    */
 }
