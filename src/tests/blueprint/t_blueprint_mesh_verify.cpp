@@ -511,32 +511,38 @@ TEST(conduit_blueprint_mesh_verify, topology_general)
     blueprint::mesh::examples::braid("quads",10,10,1,mesh);
     Node& n = mesh["topologies"]["mesh"];
 
-    n.remove("type");
-    EXPECT_FALSE(blueprint::mesh::topology::verify(n,info));
-    n["type"].set("explicit");
-    EXPECT_FALSE(blueprint::mesh::topology::verify(n,info));
-
-    // FIXME: Remove the comments from the following line once the verify functions
-    // for uniform and rectilinear topologies have been implemented.
-    const std::string topology_types[] = {/*"uniform", "rectilinear", */"structured"};
-    for(index_t ti = 0; ti < 1; ti++)
-    {
-        n["type"].set(topology_types[ti]);
+    { // Type Field Tests //
+        n.remove("type");
         EXPECT_FALSE(blueprint::mesh::topology::verify(n,info));
+        n["type"].set("explicit");
+        EXPECT_FALSE(blueprint::mesh::topology::verify(n,info));
+
+        // FIXME: Remove the comments from the following line once the verify functions
+        // for uniform and rectilinear topologies have been implemented.
+        const std::string topology_types[] = {/*"uniform", "rectilinear", */"structured"};
+        for(index_t ti = 0; ti < 1; ti++)
+        {
+            n["type"].set(topology_types[ti]);
+            EXPECT_FALSE(blueprint::mesh::topology::verify(n,info));
+        }
+
+        n["type"].set("unstructured");
+        EXPECT_TRUE(blueprint::mesh::topology::verify(n,info));
     }
 
-    n["type"].set("unstructured");
-    EXPECT_TRUE(blueprint::mesh::topology::verify(n,info));
+    { // Coordset Field Tests //
+        n.remove("coordset");
+        EXPECT_FALSE(blueprint::mesh::topology::verify(n,info));
+        n["coordset"].set("coords");
+        EXPECT_TRUE(blueprint::mesh::topology::verify(n,info));
+    }
 
-    n.remove("coordset");
-    EXPECT_FALSE(blueprint::mesh::topology::verify(n,info));
-    n["coordset"].set("coords");
-    EXPECT_TRUE(blueprint::mesh::topology::verify(n,info));
-
-    n["grid_function"].set(10);
-    EXPECT_FALSE(blueprint::mesh::topology::verify(n,info));
-    n["grid_function"].set("coords_gf");
-    EXPECT_TRUE(blueprint::mesh::topology::verify(n,info));
+    { // Grid Function Field Tests //
+        n["grid_function"].set(10);
+        EXPECT_FALSE(blueprint::mesh::topology::verify(n,info));
+        n["grid_function"].set("coords_gf");
+        EXPECT_TRUE(blueprint::mesh::topology::verify(n,info));
+    }
 }
 
 /// Mesh Field Tests ///
@@ -544,21 +550,105 @@ TEST(conduit_blueprint_mesh_verify, topology_general)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, field_association)
 {
-    // TODO(JRC): Implement this test case and give it a name.
+    Node n, info;
+    EXPECT_FALSE(blueprint::mesh::field::association::verify(n,info));
+
+    const std::string shape_types[] = {"point", "element"};
+    for(index_t ti = 0; ti < 2; ti++)
+    {
+        n.reset();
+        n.set(shape_types[ti]);
+        EXPECT_TRUE(blueprint::mesh::field::association::verify(n,info));
+    }
+
+    n.reset();
+    n.set(0);
+    EXPECT_FALSE(blueprint::mesh::field::association::verify(n,info));
+
+    n.reset();
+    n.set("zone");
+    EXPECT_FALSE(blueprint::mesh::field::association::verify(n,info));
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, field_basis)
 {
-    // TODO(JRC): Implement this test case and give it a name.
+    // FIXME: Does this have to be verified against anything else?  What does
+    // this basis refer to if it isn't a different path in the mesh structure?
+    Node n, info;
+    EXPECT_FALSE(blueprint::mesh::field::basis::verify(n,info));
+
+    n.reset();
+    n.set(0);
+    EXPECT_FALSE(blueprint::mesh::field::basis::verify(n,info));
+
+    n.reset();
+    n.set("basis");
+    EXPECT_TRUE(blueprint::mesh::field::basis::verify(n,info));
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, field_general)
 {
-    // TODO(JRC): Implement this test case and give it a name.
+    Node mesh, info;
+    EXPECT_FALSE(blueprint::mesh::field::verify(mesh,info));
+
+    blueprint::mesh::examples::braid("quads",10,10,1,mesh);
+    Node& n = mesh["fields"]["braid"];
+
+    { // Topology Field Tests //
+        n.remove("topology");
+        EXPECT_FALSE(blueprint::mesh::field::verify(n,info));
+        n["topology"].set(10);
+        EXPECT_FALSE(blueprint::mesh::field::verify(n,info));
+        n["topology"].set("mesh");
+        EXPECT_TRUE(blueprint::mesh::field::verify(n,info));
+    }
+
+    { // Values Field Tests //
+        Node values = n["values"];
+
+        n.remove("values");
+        EXPECT_FALSE(blueprint::mesh::field::verify(n,info));
+        n["values"].set("values");
+        EXPECT_FALSE(blueprint::mesh::field::verify(n,info));
+        n["values"].set(DataType::float64(10));
+        EXPECT_TRUE(blueprint::mesh::field::verify(n,info));
+
+        n["values"].reset();
+        n["values"]["x"].set("Hello, ");
+        n["values"]["y"].set("World!");
+        EXPECT_FALSE(blueprint::mesh::field::verify(n,info));
+
+        n["values"].reset();
+        n["values"]["x"].set(DataType::float64(5));
+        n["values"]["y"].set(DataType::float64(5));
+        EXPECT_TRUE(blueprint::mesh::field::verify(n,info));
+
+        n["values"].set(values);
+        EXPECT_TRUE(blueprint::mesh::field::verify(n,info));
+    }
+
+    { // Association/Basis Field Tests //
+        n.remove("association");
+        EXPECT_FALSE(blueprint::mesh::field::verify(n,info));
+
+        n["association"].set("zone");
+        EXPECT_FALSE(blueprint::mesh::field::verify(n,info));
+        n["association"].set("point");
+        EXPECT_TRUE(blueprint::mesh::field::verify(n,info));
+
+        n.remove("association");
+        n["basis"].set(0);
+        EXPECT_FALSE(blueprint::mesh::field::verify(n,info));
+        n["basis"].set("basis");
+        EXPECT_TRUE(blueprint::mesh::field::verify(n,info));
+
+        n["association"].set("point");
+        EXPECT_TRUE(blueprint::mesh::field::verify(n,info));
+    }
 }
 
 /// Mesh Index Tests ///
