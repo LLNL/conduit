@@ -1727,7 +1727,7 @@ mesh::index::verify(const Node &n,
             const Node &chld = itr.next();
             const std::string chld_name = itr.name();
 
-            if(!coordset::index::verify(chld,info["coordsets/" + chld_name]))
+            if(!coordset::index::verify(chld,info["coordsets"][chld_name]))
             {
                 log_error(info,proto_name,chld_name 
                                 + " is not a valid mesh::coordset::index");
@@ -1750,13 +1750,13 @@ mesh::index::verify(const Node &n,
     }
     else
     {
-    
         NodeConstIterator itr = n["topologies"].children();
-        
         while(itr.has_next())
         {
             const Node &chld = itr.next();
             const std::string chld_name = itr.name();
+            const std::string coords_name = chld.has_child("coordset") ?
+                chld["coordset"].as_string() : "";
 
             if(!topology::index::verify(chld,info["topologies"][chld_name]))
             {
@@ -1764,11 +1764,7 @@ mesh::index::verify(const Node &n,
                                 + " is not a valid mesh::topology::index");
                 res = false;
             }
-
-            // make sure the topology references a valid coordset
-            std::string coords_name = chld["coordset"].as_string();
-            
-            if(!n["coordsets"].has_child(coords_name))
+            else if(!n.has_child("coordsets") || !n["coordsets"].has_child(coords_name))
             {
                 std::ostringstream oss;
                 oss << "topology index entry "
@@ -1794,42 +1790,48 @@ mesh::index::verify(const Node &n,
     // optional: "fields", each child must conform to "mesh::field"
     if(n.has_path("fields"))
     {
-        NodeConstIterator itr = n["fields"].children();
-    
-        while(itr.has_next())
+        if(n["fields"].number_of_children() == 0)
         {
-            const Node &chld = itr.next();
-            const std::string chld_name = itr.name();
+            log_error(info,proto_name,"\"fields\" has no children");
+            res = false;
+        }
+        else
+        {
+            NodeConstIterator itr = n["fields"].children();
 
-            if(!field::index::verify(chld,info["fields/" + chld_name]))
+            while(itr.has_next())
             {
-                log_error(info,proto_name,chld_name 
-                                + " is not a valid mesh::field::index");
-                res = false;
-            }
+                const Node &chld = itr.next();
+                const std::string chld_name = itr.name();
+                const std::string topo_name = chld.has_child("topology") ?
+                    chld["topology"].as_string() : "";
 
-            // make sure the field references a valid topology
-            std::string topo_name = chld["topology"].as_string();
-        
-            if(!n["topologies"].has_child(topo_name))
-            {
-                std::ostringstream oss;
-                oss << "field index entry "
-                    << "\"" << chld_name  << "\" "
-                    << "references a non-existent topology index entry"
-                    << "\"" << topo_name  << "\" ";
-                log_error(info,proto_name,oss.str());
-                res = false;
-            }
-            else if(info["topologies"][topo_name]["valid"].as_string() != "true")
-            {
-                std::ostringstream oss;
-                oss << "field index entry "
-                    << "\"" << chld_name  << "\" "
-                    << "references an invalid topology index entry"
-                    << "\"" << topo_name << "\" ";
-                log_error(info,proto_name,oss.str());
-                res = false;
+                if(!field::index::verify(chld,info["fields"][chld_name]))
+                {
+                    log_error(info,proto_name,chld_name 
+                                    + " is not a valid mesh::field::index");
+                    res = false;
+                }
+                else if(!n.has_child("topologies") || !n["topologies"].has_child(topo_name))
+                {
+                    std::ostringstream oss;
+                    oss << "field index entry "
+                        << "\"" << chld_name  << "\" "
+                        << "references a non-existent topology index entry"
+                        << "\"" << topo_name  << "\" ";
+                    log_error(info,proto_name,oss.str());
+                    res = false;
+                }
+                else if(info["topologies"][topo_name]["valid"].as_string() != "true")
+                {
+                    std::ostringstream oss;
+                    oss << "field index entry "
+                        << "\"" << chld_name  << "\" "
+                        << "references an invalid topology index entry"
+                        << "\"" << topo_name << "\" ";
+                    log_error(info,proto_name,oss.str());
+                    res = false;
+                }
             }
         }
     }
