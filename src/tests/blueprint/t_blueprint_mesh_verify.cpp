@@ -379,6 +379,7 @@ TEST(conduit_blueprint_mesh_verify, topology_rectilinear)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, topology_structured)
 {
+    // FIXME: Use a base mesh for this.
     Node n, info;
     EXPECT_FALSE(blueprint::mesh::topology::structured::verify(n,info));
 
@@ -656,6 +657,7 @@ TEST(conduit_blueprint_mesh_verify, field_general)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, index_coordset)
 {
+    // FIXME: Use a base mesh for this.
     Node n, info;
     EXPECT_FALSE(blueprint::mesh::coordset::index::verify(n,info));
 
@@ -685,6 +687,7 @@ TEST(conduit_blueprint_mesh_verify, index_coordset)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, index_topology)
 {
+    // FIXME: Use a base mesh for this.
     Node n, info;
     EXPECT_FALSE(blueprint::mesh::topology::index::verify(n,info));
 
@@ -717,6 +720,7 @@ TEST(conduit_blueprint_mesh_verify, index_topology)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, index_field)
 {
+    // FIXME: Use a base mesh for this.
     Node n, info;
     EXPECT_FALSE(blueprint::mesh::field::index::verify(n,info));
 
@@ -757,32 +761,87 @@ TEST(conduit_blueprint_mesh_verify, index_general)
     Node mesh, index, info;
     EXPECT_FALSE(blueprint::mesh::index::verify(mesh,info));
 
-    // FIXME: How does this even work?
-    /*
     blueprint::mesh::examples::braid("quads",10,10,1,mesh);
-    blueprint::mesh::generate_index(mesh,"fields/braid",1,index);
+    blueprint::mesh::generate_index(mesh,"quads",1,index);
     EXPECT_TRUE(blueprint::mesh::index::verify(index,info));
 
     { // Topology Field Tests //
-        Node topology = index["topology"];
-        index.remove("topology");
+        info.reset();
+        Node coords = index["coordsets"];
+        index.remove("coordsets");
+
         EXPECT_FALSE(blueprint::mesh::index::verify(index,info));
-        index["topology"].set(10);
+        index["coordsets"].set("coords");
         EXPECT_FALSE(blueprint::mesh::index::verify(index,info));
-        index["topology"].set(topology);
+
+        index["coordsets"].reset();
+        index["coordsets"]["coords1"].set("coords");
+        index["coordsets"]["coords2"].set("coords");
+        EXPECT_FALSE(blueprint::mesh::index::verify(index,info));
+
+        index["coordsets"].reset();
+        index["coordsets"].set(coords);
         EXPECT_TRUE(blueprint::mesh::index::verify(index,info));
     }
 
     { // Components Field Tests //
-        
+        info.reset();
+        Node topos = index["topologies"];
+        index.remove("topologies");
+
+        EXPECT_FALSE(blueprint::mesh::index::verify(index,info));
+        index["topologies"].set("topo");
+        EXPECT_FALSE(blueprint::mesh::index::verify(index,info));
+
+        index["topologies"].reset();
+        index["topologies"]["topo1"].set("topo");
+        index["topologies"]["topo2"].set("topo");
+        EXPECT_FALSE(blueprint::mesh::index::verify(index,info));
+
+        index["topologies"].reset();
+        index["topologies"]["mesh"]["type"].set("unstructured");
+        index["topologies"]["mesh"]["path"].set("quads/topologies/mesh");
+        index["topologies"]["mesh"]["coordset"].set("nonexitent");
+        EXPECT_FALSE(blueprint::mesh::index::verify(index,info));
+
+        index["topologies"]["mesh"]["coordset"].set("coords");
+        index["coordsets"]["coords"]["type"].set("invalid");
+        EXPECT_FALSE(blueprint::mesh::index::verify(index,info));
+        index["coordsets"]["coords"]["type"].set("explicit");
+
+        index["topologies"].reset();
+        index["topologies"].set(topos);
+        EXPECT_TRUE(blueprint::mesh::index::verify(index,info));
     }
 
-    { // Path Field Tests //
-        
-    }
+    { // Fields Field Tests //
+        info.reset();
+        Node fields = index["fields"];
+        index.remove("fields");
+        EXPECT_TRUE(blueprint::mesh::index::verify(index,info));
 
-    { // Association/Basis Field Tests //
-        
+        index["fields"].set("field");
+        EXPECT_FALSE(blueprint::mesh::index::verify(index,info));
+
+        index["fields"].reset();
+        index["fields"]["field1"].set("field1");
+        index["fields"]["field1"].set("field2");
+        EXPECT_FALSE(blueprint::mesh::index::verify(index,info));
+
+        index["fields"].reset();
+        index["fields"]["field"]["number_of_components"].set(1);
+        index["fields"]["field"]["association"].set("point");
+        index["fields"]["field"]["path"].set("quads/fields/braid");
+        index["fields"]["field"]["topology"].set("nonexitent");
+        EXPECT_FALSE(blueprint::mesh::index::verify(index,info));
+
+        index["fields"]["field"]["topology"].set("mesh");
+        index["topologies"]["mesh"]["type"].set("invalid");
+        EXPECT_FALSE(blueprint::mesh::index::verify(index,info));
+        index["topologies"]["mesh"]["type"].set("unstructured");
+
+        index["fields"].reset();
+        index["fields"].set(fields);
+        EXPECT_TRUE(blueprint::mesh::index::verify(index,info));
     }
-    */
 }
