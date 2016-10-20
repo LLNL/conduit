@@ -332,9 +332,13 @@ TEST(conduit_blueprint_mesh_verify, coordset_types)
         EXPECT_TRUE(blueprint::mesh::coordset::type::verify(n,info));
     }
 
+    n.reset();
+    n.set(0);
+    EXPECT_FALSE(blueprint::mesh::coordset::type::verify(n,info));
+
+    n.reset();
     n.set("unstructured");
     EXPECT_FALSE(blueprint::mesh::coordset::type::verify(n,info));
-    n.reset();
 }
 
 
@@ -353,6 +357,10 @@ TEST(conduit_blueprint_mesh_verify, coordset_coordsys)
         n["type"].set(coordsys_types[ci]);
         EXPECT_FALSE(blueprint::mesh::coordset::coord_system::verify(n,info));
 
+        n["axes"].set(0);
+        EXPECT_FALSE(blueprint::mesh::coordset::coord_system::verify(n,info));
+
+        n["axes"].reset();
         const std::vector<std::string>& coordsys = COORDINATE_COORDSYSS[ci];
         for(index_t ai = 0; ai < coordsys.size(); ai++)
         {
@@ -480,6 +488,9 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
     { // Mixed Shape Topology List Tests //
         n["elements"].reset();
 
+        n["elements"]["a"].set(0);
+        EXPECT_FALSE(blueprint::mesh::topology::unstructured::verify(n,info));
+
         n["elements"]["a"]["shape"].set("quad");
         n["elements"]["a"]["connectivity"].set(DataType::int32(5));
         EXPECT_TRUE(blueprint::mesh::topology::unstructured::verify(n,info));
@@ -518,6 +529,11 @@ TEST(conduit_blueprint_mesh_verify, topology_types)
         EXPECT_TRUE(blueprint::mesh::topology::type::verify(n,info));
     }
 
+    n.reset();
+    n.set(0);
+    EXPECT_FALSE(blueprint::mesh::topology::type::verify(n,info));
+
+    n.reset();
     n.set("explicit");
     EXPECT_FALSE(blueprint::mesh::topology::type::verify(n,info));
 }
@@ -586,6 +602,10 @@ TEST(conduit_blueprint_mesh_verify, topology_general)
         { // Coordset Field Tests //
             n.remove("coordset");
             EXPECT_FALSE(verify_topology(n,info));
+
+            n["coordset"].set(0);
+            EXPECT_FALSE(verify_topology(n,info));
+
             n["coordset"].set("coords");
             EXPECT_TRUE(verify_topology(n,info));
         }
