@@ -379,7 +379,6 @@ TEST(conduit_blueprint_mesh_verify, topology_rectilinear)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, topology_structured)
 {
-    // FIXME: Use a base mesh for this.
     Node n, info;
     EXPECT_FALSE(blueprint::mesh::topology::structured::verify(n,info));
 
@@ -408,7 +407,6 @@ TEST(conduit_blueprint_mesh_verify, topology_structured)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, topology_unstructured)
 {
-    // FIXME: Use a base mesh for this.
     Node n, info;
     EXPECT_FALSE(blueprint::mesh::topology::unstructured::verify(n,info));
 
