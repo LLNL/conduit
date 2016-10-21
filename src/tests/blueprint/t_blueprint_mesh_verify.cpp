@@ -1050,5 +1050,114 @@ TEST(conduit_blueprint_mesh_verify, index_general)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, mesh_general)
 {
-    // TODO: Implement this function.
+    Node mesh, info;
+    EXPECT_FALSE(blueprint::mesh::verify(mesh,info));
+
+    blueprint::mesh::examples::braid("quads",10,10,1,mesh);
+    EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
+
+    { // Coordsets Field Tests //
+        Node coordsets = mesh["coordsets"];
+        mesh.remove("coordsets");
+        EXPECT_FALSE(blueprint::mesh::verify(mesh,info));
+
+        mesh["coordsets"].set("path");
+        EXPECT_FALSE(blueprint::mesh::verify(mesh,info));
+
+        mesh["coordsets"].reset();
+        mesh["coordsets"]["coords"]["type"].set("invalid");
+        mesh["coordsets"]["coords"]["values"]["x"].set(DataType::float64(10));
+        mesh["coordsets"]["coords"]["values"]["y"].set(DataType::float64(10));
+        EXPECT_FALSE(blueprint::mesh::verify(mesh,info));
+
+        mesh["coordsets"]["coords"]["type"].set("explicit");
+        EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
+        mesh["coordsets"]["coords2"]["type"].set("invalid");
+        EXPECT_FALSE(blueprint::mesh::verify(mesh,info));
+
+        mesh["coordsets"].reset();
+        mesh["coordsets"].set(coordsets);
+        EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
+    }
+
+    { // Topologies Field Tests //
+        Node topologies = mesh["topologies"];
+        mesh.remove("topologies");
+        EXPECT_FALSE(blueprint::mesh::verify(mesh,info));
+
+        mesh["topologies"].set("path");
+        EXPECT_FALSE(blueprint::mesh::verify(mesh,info));
+
+        mesh["topologies"].reset();
+        mesh["topologies"]["mesh"]["type"].set("invalid");
+        mesh["topologies"]["mesh"]["coordset"].set("coords");
+        mesh["topologies"]["mesh"]["elements"]["shape"].set("quad");
+        mesh["topologies"]["mesh"]["elements"]["connectivity"].set(DataType::int32(10));
+        EXPECT_FALSE(blueprint::mesh::verify(mesh,info));
+
+        mesh["topologies"]["mesh"]["type"].set("unstructured");
+        EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
+
+        mesh["coordsets"]["coords"]["type"].set("invalid");
+        EXPECT_FALSE(blueprint::mesh::verify(mesh,info));
+        mesh["coordsets"]["coords"]["type"].set("explicit");
+
+        mesh["topologies"]["grid"]["type"].set("invalid");
+        EXPECT_FALSE(blueprint::mesh::verify(mesh,info));
+
+        mesh["topologies"].reset();
+        mesh["topologies"].set(topologies);
+        EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
+    }
+
+    { // Fields Field Tests //
+        Node fields = mesh["fields"];
+        mesh.remove("fields");
+        EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
+
+        mesh["fields"].set("path");
+        EXPECT_FALSE(blueprint::mesh::verify(mesh,info));
+
+        mesh["fields"].reset();
+        mesh["fields"]["temp"]["association"].set("invalid");
+        mesh["fields"]["temp"]["topology"].set("mesh");
+        mesh["fields"]["temp"]["values"].set(DataType::float64(10));
+        EXPECT_FALSE(blueprint::mesh::verify(mesh,info));
+
+        mesh["fields"]["temp"]["association"].set("point");
+        EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
+
+        mesh["topologies"]["mesh"]["type"].set("invalid");
+        EXPECT_FALSE(blueprint::mesh::verify(mesh,info));
+        mesh["topologies"]["mesh"]["type"].set("unstructured");
+
+        mesh["fields"]["accel"]["association"].set("invalid");
+        EXPECT_FALSE(blueprint::mesh::verify(mesh,info));
+
+        mesh["fields"].reset();
+        mesh["fields"].set(fields);
+        EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
+    }
+
+    { // Grid Function Field Tests //
+        Node topologies = mesh["topologies"];
+        Node fields = mesh["fields"];
+        mesh.remove("fields");
+
+        mesh["topologies"]["mesh"]["grid_function"].set("braid");
+        EXPECT_FALSE(blueprint::mesh::verify(mesh,info));
+
+        mesh["fields"].set(fields);
+        mesh["topologies"]["mesh"]["grid_function"].set("invalid");
+        EXPECT_FALSE(blueprint::mesh::verify(mesh,info));
+        mesh["topologies"]["mesh"]["grid_function"].set("braid");
+        EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
+
+        mesh["fields"]["braid"]["association"].set("invalid");
+        EXPECT_FALSE(blueprint::mesh::verify(mesh,info));
+        mesh["fields"]["braid"]["association"].set("point");
+
+        mesh["topologies"].reset();
+        mesh["topologies"].set(topologies);
+    }
 }

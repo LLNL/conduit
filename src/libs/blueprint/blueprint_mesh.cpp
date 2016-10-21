@@ -201,7 +201,7 @@ mesh::verify(const Node &n,
             const Node &chld = itr.next();
             const std::string chld_name = itr.name();
 
-            if(!coordset::verify(chld,info["coordsets/" + chld_name]))
+            if(!coordset::verify(chld,info["coordsets"][chld_name]))
             {
                 log_error(info,proto_name,chld_name 
                             + " is not a valid mesh::coordset");
@@ -224,13 +224,13 @@ mesh::verify(const Node &n,
     }
     else
     {
-    
         NodeConstIterator itr = n["topologies"].children();
-        
         while(itr.has_next())
         {
             const Node &chld = itr.next();
             const std::string chld_name = itr.name();
+            const std::string coords_name = chld.has_child("coordset") ?
+                chld["coordset"].as_string() : "";
 
             if(!topology::verify(chld,info["topologies"][chld_name]))
             {
@@ -238,11 +238,7 @@ mesh::verify(const Node &n,
                             + " is not a valid mesh::topology");
                 res = false;
             }
-
-            // make sure the topology references a valid coordset
-            std::string coords_name = chld["coordset"].as_string();
-            
-            if(!n["coordsets"].has_child(coords_name))
+            else if(!n.has_child("coordsets") || !n["coordsets"].has_child(coords_name))
             {
                 std::ostringstream oss;
                 oss << "topology "
@@ -268,42 +264,47 @@ mesh::verify(const Node &n,
     // optional: "fields", each child must conform to "mesh::field"
     if(n.has_path("fields"))
     {
-        NodeConstIterator itr = n["fields"].children();
-    
-        while(itr.has_next())
+        if(n["fields"].number_of_children() == 0)
         {
-            const Node &chld = itr.next();
-            const std::string chld_name = itr.name();
+            log_error(info,proto_name,"\"fields\" has no children");
+            res = false;
+        }
+        else
+        {
+            NodeConstIterator itr = n["fields"].children();
+            while(itr.has_next())
+            {
+                const Node &chld = itr.next();
+                const std::string chld_name = itr.name();
+                const std::string topo_name = chld.has_child("topology") ?
+                    chld["topology"].as_string() : "";
 
-            if(!field::verify(chld,info["fields/" + chld_name]))
-            {
-                log_error(info,proto_name,chld_name 
-                            + " is not a valid mesh::topology");
-                res = false;
-            }
-
-            // make sure the field references a valid topology
-            std::string topo_name = chld["topology"].as_string();
-        
-            if(!n["topologies"].has_child(topo_name))
-            {
-                std::ostringstream oss;
-                oss << "field "
-                    << "\"" << chld_name  << "\" "
-                    << "references a non-existent topology "
-                    << "\"" << topo_name  << "\" ";
-                log_error(info,proto_name,oss.str());
-                res = false;
-            }
-            else if(info["topologies"][topo_name]["valid"].as_string() != "true")
-            {
-                std::ostringstream oss;
-                oss << "field "
-                    << "\"" << chld_name  << "\" "
-                    << "references an invalid topology "
-                    << "\"" << topo_name << "\" ";
-                log_error(info,proto_name,oss.str());
-                res = false;
+                if(!field::verify(chld,info["fields"][chld_name]))
+                {
+                    log_error(info,proto_name,chld_name 
+                                + " is not a valid mesh::topology");
+                    res = false;
+                }
+                else if(!n.has_child("topologies") || !n["topologies"].has_child(topo_name))
+                {
+                    std::ostringstream oss;
+                    oss << "field "
+                        << "\"" << chld_name  << "\" "
+                        << "references a non-existent topology "
+                        << "\"" << topo_name  << "\" ";
+                    log_error(info,proto_name,oss.str());
+                    res = false;
+                }
+                else if(info["topologies"][topo_name]["valid"].as_string() != "true")
+                {
+                    std::ostringstream oss;
+                    oss << "field "
+                        << "\"" << chld_name  << "\" "
+                        << "references an invalid topology "
+                        << "\"" << topo_name << "\" ";
+                    log_error(info,proto_name,oss.str());
+                    res = false;
+                }
             }
         }
     }
@@ -348,7 +349,7 @@ mesh::verify(const Node &n,
             }
         }
     }
-    
+
     log_verify_result(info,res);
 
     return res;
