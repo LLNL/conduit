@@ -42,24 +42,24 @@
 # 
 ###############################################################################
 
+###############################################################################
+# Conduit Blueprint Fortran Interface Unit Tests
+###############################################################################
+
+set(FORTRAN_TESTS 
+    t_f_blueprint_smoke)
+
 ################################
-# Conduit Project Wide Includes
+# Add our tests
 ################################
+message(STATUS "Adding conduit blueprint lib fortran interface unit tests")
+foreach(TEST ${FORTRAN_TESTS})
+    add_fortran_test(TEST ${TEST} DEPENDS_ON conduit 
+                                             conduit_fortran
+                                             conduit_blueprint
+                                             conduit_blueprint_fortran)
+endforeach()
 
-# add conduit include dirs so units tests have access to the headers across
-# libs and in unit tests
-
-include_directories(${PROJECT_SOURCE_DIR}/libs/conduit 
-                    ${PROJECT_SOURCE_DIR}/libs/conduit/c
-                    ${PROJECT_SOURCE_DIR}/libs/conduit/python
-                    ${PROJECT_BINARY_DIR}/libs/conduit)
 
 
-include_directories(${PROJECT_SOURCE_DIR}/libs/relay
-                    ${PROJECT_SOURCE_DIR}/libs/relay/c
-                    ${PROJECT_BINARY_DIR}/libs/relay)
-
-include_directories(${PROJECT_SOURCE_DIR}/libs/blueprint
-                    ${PROJECT_SOURCE_DIR}/libs/blueprint/c
-                    ${PROJECT_BINARY_DIR}/libs/blueprint)
 

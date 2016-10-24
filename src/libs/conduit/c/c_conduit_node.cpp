@@ -50,6 +50,8 @@
 #include "conduit_node.h"
 
 #include "conduit.hpp"
+#include "conduit_cpp_to_c.hpp"
+
 #include <stdlib.h>
 
 //-----------------------------------------------------------------------------
@@ -59,21 +61,6 @@
 extern "C" {
 
 using namespace conduit;
-
-//---------------------------------------------------------------------------//
-Node *
-cpp_node(conduit_node *cnode)
-{
-    return static_cast<Node*>(cnode);
-}
-
-//---------------------------------------------------------------------------//
-conduit_node *
-c_node(Node *node)
-{
-    return (void*)node;
-}
-
 
 //-----------------------------------------------------------------------------
 // -- basic constructor and destruction -- 

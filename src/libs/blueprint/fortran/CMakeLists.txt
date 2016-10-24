@@ -42,24 +42,44 @@
 # 
 ###############################################################################
 
+
 ################################
-# Conduit Project Wide Includes
+# Add our library
 ################################
 
-# add conduit include dirs so units tests have access to the headers across
-# libs and in unit tests
+#
+# Specify fortran sources
+#
+set(conduit_blueprint_sources
+    conduit_blueprint_fortran.f)
 
-include_directories(${PROJECT_SOURCE_DIR}/libs/conduit 
-                    ${PROJECT_SOURCE_DIR}/libs/conduit/c
-                    ${PROJECT_SOURCE_DIR}/libs/conduit/python
-                    ${PROJECT_BINARY_DIR}/libs/conduit)
+#
+# Setup the conduit fortran lib
+#
+add_compiled_library(NAME   conduit_blueprint_fortran
+                     EXPORT conduit
+                     SOURCES ${conduit_blueprint_sources}
+                     )
+
+set_target_properties(conduit_blueprint_fortran
+                       PROPERTIES Fortran_FORMAT "FREE")
+
+target_link_libraries(conduit_blueprint_fortran  conduit conduit_blueprint)
 
 
-include_directories(${PROJECT_SOURCE_DIR}/libs/relay
-                    ${PROJECT_SOURCE_DIR}/libs/relay/c
-                    ${PROJECT_BINARY_DIR}/libs/relay)
+###############################################################################
+# Special install targets for conduit fortran modules 
+###############################################################################
 
-include_directories(${PROJECT_SOURCE_DIR}/libs/blueprint
-                    ${PROJECT_SOURCE_DIR}/libs/blueprint/c
-                    ${PROJECT_BINARY_DIR}/libs/blueprint)
+set(conduit_blueprint_fortran_modules
+    ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint.mod)
+
+
+# Setup install to copy the fortran modules 
+install(FILES 
+        ${conduit_blueprint_fortran_modules}
+        DESTINATION include/conduit)
+
+
+
 

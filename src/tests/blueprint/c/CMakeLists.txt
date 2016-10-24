@@ -42,24 +42,19 @@
 # 
 ###############################################################################
 
+###############################################################################
+# Conduit Blueprint C Interface Unit Tests
+###############################################################################
+
+set(BASIC_C_TESTS
+     t_c_blueprint_smoke)
+
 ################################
-# Conduit Project Wide Includes
+# Add our tests
 ################################
+message(STATUS "Adding conduit blueprint lib c interface unit tests")
+foreach(TEST ${BASIC_C_TESTS})
+    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_blueprint)
+endforeach()
 
-# add conduit include dirs so units tests have access to the headers across
-# libs and in unit tests
-
-include_directories(${PROJECT_SOURCE_DIR}/libs/conduit 
-                    ${PROJECT_SOURCE_DIR}/libs/conduit/c
-                    ${PROJECT_SOURCE_DIR}/libs/conduit/python
-                    ${PROJECT_BINARY_DIR}/libs/conduit)
-
-
-include_directories(${PROJECT_SOURCE_DIR}/libs/relay
-                    ${PROJECT_SOURCE_DIR}/libs/relay/c
-                    ${PROJECT_BINARY_DIR}/libs/relay)
-
-include_directories(${PROJECT_SOURCE_DIR}/libs/blueprint
-                    ${PROJECT_SOURCE_DIR}/libs/blueprint/c
-                    ${PROJECT_BINARY_DIR}/libs/blueprint)
 
