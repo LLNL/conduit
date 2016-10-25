@@ -270,7 +270,7 @@ to_interleaved(const conduit::Node &src,
 
 
 //----------------------------------------------------------------------------
-bool BLUEPRINT_API is_interleaved(const conduit::Node &n)
+bool is_interleaved(const conduit::Node &n)
 {
     // TODO: Implement
 

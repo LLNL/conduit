@@ -56,9 +56,9 @@
 //-----------------------------------------------------------------------------
 #if defined(_WIN32)
 #if defined(CONDUIT_BLUEPRINT_EXPORTS) || defined(conduit_blueprint_EXPORTS)
-#define BLUEPRINT_API __declspec(dllexport)
+#define CONDUIT_BLUEPRINT_API __declspec(dllexport)
 #else
-#define BLUEPRINT_API __declspec(dllimport)
+#define CONDUIT_BLUEPRINT_API __declspec(dllimport)
 #endif
 #if defined(_MSC_VER)
 // Turn off warning about lack of DLL interface
@@ -70,9 +70,9 @@
 #endif
 #else
 # if __GNUC__ >= 4 && (defined(CONDUIT_BLUEPRINT_EXPORTS) || defined(conduit_blueprint_EXPORTS))
-#   define BLUEPRINT_API __attribute__ ((visibility("default")))
+#   define CONDUIT_BLUEPRINT_API __attribute__ ((visibility("default")))
 # else
-#   define BLUEPRINT_API /* hidden by default */
+#   define CONDUIT_BLUEPRINT_API /* hidden by default */
 # endif
 #endif
 

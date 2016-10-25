@@ -82,13 +82,13 @@ namespace mcarray
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-bool BLUEPRINT_API verify(const conduit::Node &n,
-                          conduit::Node &info);
+bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+                                  conduit::Node &info);
 
 //-----------------------------------------------------------------------------
-bool BLUEPRINT_API verify(const std::string &protocol,
-                          const conduit::Node &n,
-                          conduit::Node &info);
+bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
+                                  const conduit::Node &n,
+                                  conduit::Node &info);
 
 
 //-----------------------------------------------------------------------------
@@ -98,15 +98,15 @@ bool BLUEPRINT_API verify(const std::string &protocol,
 //-----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
-bool BLUEPRINT_API is_interleaved(const conduit::Node &n);
+bool CONDUIT_BLUEPRINT_API is_interleaved(const conduit::Node &n);
 
 //-----------------------------------------------------------------------------
-bool BLUEPRINT_API to_contiguous(const conduit::Node &src,
-                                 conduit::Node &dest);
+bool CONDUIT_BLUEPRINT_API to_contiguous(const conduit::Node &src,
+                                         conduit::Node &dest);
 
 //-----------------------------------------------------------------------------
-bool BLUEPRINT_API to_interleaved(const conduit::Node &src,
-                                  conduit::Node &dest);
+bool CONDUIT_BLUEPRINT_API to_interleaved(const conduit::Node &src,
+                                          conduit::Node &dest);
 
 
 //-----------------------------------------------------------------------------

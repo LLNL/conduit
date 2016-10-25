@@ -83,9 +83,9 @@ namespace mcarray
 namespace examples
 {
     // creates mcarray with num pts * 3 components. 
-    void BLUEPRINT_API xyz(const std::string &mcarray_type,
-                           conduit::index_t npts, // total number of points
-                           conduit::Node &res);
+    void CONDUIT_BLUEPRINT_API xyz(const std::string &mcarray_type,
+                                   conduit::index_t npts, // total # of points
+                                   conduit::Node &res);
 
 //-----------------------------------------------------------------------------
 }

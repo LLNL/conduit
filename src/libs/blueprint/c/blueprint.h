@@ -69,7 +69,7 @@ extern "C" {
 // -- conduit_blueprint c interface  --
 //-----------------------------------------------------------------------------
 
-BLUEPRINT_API void  conduit_blueprint_about(conduit_node *cnode);
+CONDUIT_BLUEPRINT_API void  conduit_blueprint_about(conduit_node *cnode);
 
 #ifdef __cplusplus
 }
