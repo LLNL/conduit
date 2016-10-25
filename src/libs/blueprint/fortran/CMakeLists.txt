@@ -51,7 +51,8 @@
 # Specify fortran sources
 #
 set(conduit_blueprint_sources
-    conduit_blueprint_fortran.f)
+    conduit_blueprint_fortran.f
+    conduit_blueprint_mcarray_fortran.f)
 
 #
 # Setup the conduit fortran lib

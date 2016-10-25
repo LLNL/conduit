@@ -82,7 +82,14 @@ namespace mcarray
 //-----------------------------------------------------------------------------
 namespace examples
 {
-    // creates mcarray with num pts * 3 components. 
+    //-------------------------------------------------------------------------
+    /// creates mcarray with num pts * 3 components. 
+    /// with the following layout options (passed via mcarray_type)
+    ///  interleaved
+    ///  separate
+    ///  contiguous
+    ///  interleaved_mixed
+    //-------------------------------------------------------------------------
     void CONDUIT_BLUEPRINT_API xyz(const std::string &mcarray_type,
                                    conduit::index_t npts, // total # of points
                                    conduit::Node &res);

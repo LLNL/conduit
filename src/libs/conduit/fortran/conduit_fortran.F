@@ -155,6 +155,31 @@ module conduit
         type(C_PTR), value, intent(IN) :: cnode
     end subroutine conduit_node_destroy
 
+
+    !--------------------------------------------------------------------------
+    ! node properties
+    !--------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
+    function conduit_node_is_root(cnode) result(res) &
+             bind(C, name="conduit_node_is_root")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         logical(C_BOOL) :: res
+     end function conduit_node_is_root
+
+
+     !--------------------------------------------------------------------------
+     function conduit_node_is_contiguous(cnode) result(res) &
+              bind(C, name="conduit_node_is_contiguous")
+          use iso_c_binding
+          implicit none
+          type(C_PTR), value, intent(IN) :: cnode
+          logical(C_BOOL) :: res
+      end function conduit_node_is_contiguous
+
+
     !--------------------------------------------------------------------------
     ! object and list interface
     !--------------------------------------------------------------------------

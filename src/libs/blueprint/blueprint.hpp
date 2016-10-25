@@ -89,12 +89,6 @@ void        CONDUIT_BLUEPRINT_API about(conduit::Node &n);
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-/// Verify passed node confirms to given blueprint protocol
-//-----------------------------------------------------------------------------
-bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
-                                  const conduit::Node &n);
-
-//-----------------------------------------------------------------------------
 /// Verify passed node confirms to given blueprint protocol.
 /// Messages related to the verification are be placed in the "info" node.
 //-----------------------------------------------------------------------------

@@ -44,54 +44,54 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint.h
+/// file: t_c_blueprint_smoke.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_BLUEPRINT_H
-#define CONDUIT_BLUEPRINT_H
-
-//-----------------------------------------------------------------------------
-// -- includes for the public conduit blueprint c interface -- 
-//-----------------------------------------------------------------------------
-
 #include "conduit.h"
-#include "blueprint_exports.hpp"
+#include "blueprint.h"
+
+#include <stdio.h>
+#include "gtest/gtest.h"
 
 //-----------------------------------------------------------------------------
-// -- begin extern C
-//-----------------------------------------------------------------------------
-#ifdef __cplusplus
-extern "C" {
-#endif
+TEST(c_conduit_blueprint_mcarray, create_and_verify)
+{
+    conduit_node *n      = conduit_node_create();
+    conduit_node *nxform = conduit_node_create();
+    conduit_node *nempty = conduit_node_create();
+    conduit_node *info   = conduit_node_create();
 
-//-----------------------------------------------------------------------------
-// -- conduit_blueprint c interface  --
-//-----------------------------------------------------------------------------
+    conduit_blueprint_mcarray_examples_xyz("interleaved",10,n);
+    EXPECT_TRUE(conduit_blueprint_mcarray_verify(n,info));
+    EXPECT_TRUE(conduit_blueprint_mcarray_is_interleaved(n));
 
-CONDUIT_BLUEPRINT_API void conduit_blueprint_about(conduit_node *cnode);
+    EXPECT_TRUE(conduit_blueprint_mcarray_to_contiguous(n,nxform));
+    EXPECT_FALSE(conduit_blueprint_mcarray_is_interleaved(nxform));
+    EXPECT_TRUE(conduit_node_is_contiguous(nxform));
 
+    conduit_blueprint_mcarray_examples_xyz("separate",10,n);
+    EXPECT_TRUE(conduit_blueprint_mcarray_verify(n,info));
 
-//-----------------------------------------------------------------------------
-/// Verify passed node confirms to given blueprint protocol.
-/// Messages related to the verification are be placed in the "info" node.
-//-----------------------------------------------------------------------------
-CONDUIT_BLUEPRINT_API bool conduit_blueprint_verify(const char *protocol,
-                                                    const conduit_node *cnode,
-                                                    conduit_node *cinfo);
+    conduit_blueprint_mcarray_examples_xyz("contiguous",10,n);
+    EXPECT_TRUE(conduit_blueprint_mcarray_verify(n,info));
+    EXPECT_TRUE(conduit_node_is_contiguous(n));
+    EXPECT_FALSE(conduit_blueprint_mcarray_is_interleaved(n));
 
-#ifdef __cplusplus
+    EXPECT_TRUE(conduit_blueprint_mcarray_to_interleaved(n,nxform));
+    conduit_node_print_detailed(nxform);
+    EXPECT_TRUE(conduit_blueprint_mcarray_is_interleaved(nxform));
+
+    conduit_blueprint_mcarray_examples_xyz("interleaved_mixed",10,n);
+    EXPECT_TRUE(conduit_blueprint_mcarray_verify(n,info));
+    
+    EXPECT_FALSE(conduit_blueprint_mcarray_verify_sub_protocol("sub",n,info));
+    EXPECT_FALSE(conduit_blueprint_mcarray_verify(nempty,info));
+
+    conduit_node_destroy(n);
+    conduit_node_destroy(nxform);
+    conduit_node_destroy(nempty);
+    conduit_node_destroy(info);
 }
-#endif
-//-----------------------------------------------------------------------------
-// -- end extern C
-//-----------------------------------------------------------------------------
-
-#include "blueprint_mcarray.h"
-#include "blueprint_mesh.h"
 
 
-//-----------------------------------------------------------------------------
-// -- end header guard ifdef
-//-----------------------------------------------------------------------------
-#endif

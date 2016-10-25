@@ -68,7 +68,7 @@ extern "C" {
 // -- general conduit c interface methods --
 //-----------------------------------------------------------------------------
 
-CONDUIT_API void  conduit_about(conduit_node *cnode);
+CONDUIT_API void conduit_about(conduit_node *cnode);
 
 #ifdef __cplusplus
 }

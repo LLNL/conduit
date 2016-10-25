@@ -73,6 +73,36 @@ c_node(Node *node)
     return (void*)node;
 }
 
+
+//---------------------------------------------------------------------------//
+const Node *
+cpp_node(const conduit_node *cnode)
+{
+    return static_cast<const Node*>(cnode);
+}
+
+//---------------------------------------------------------------------------//
+const conduit_node *
+c_node(const Node *node)
+{
+    return (void*)node;
+}
+
+//---------------------------------------------------------------------------//
+Node &
+cpp_node_ref(conduit_node *cnode)
+{
+    return *static_cast<Node*>(cnode);
+}
+
+//---------------------------------------------------------------------------//
+const Node &
+cpp_node_ref(const conduit_node *cnode)
+{
+    return *static_cast<const Node*>(cnode);
+}
+
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit:: --

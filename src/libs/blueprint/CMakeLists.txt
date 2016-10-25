@@ -66,6 +66,8 @@ set(blueprint_headers
 #
 set(blueprint_c_headers 
     c/blueprint.h
+    c/blueprint_mcarray.h
+    c/blueprint_mesh.h
     )
 
 
@@ -85,6 +87,8 @@ set(blueprint_sources
 #
 set(blueprint_c_sources 
     c/c_blueprint.cpp
+    c/c_blueprint_mcarray.cpp
+    c/c_blueprint_mesh.cpp
     )
 
 

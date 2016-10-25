@@ -80,6 +80,7 @@ contains
         ! Node n;
         ! n.print_detailed();
         cnode = conduit_node_create()
+        call assert_true(conduit_node_is_root(cnode) .eqv. .true. )
         call conduit_node_print_detailed(cnode)
         call conduit_node_destroy(cnode)
     
@@ -111,6 +112,9 @@ contains
         n1 = conduit_node_append(cnode)
         ! Node &n2 = n.append();
         n2 = conduit_node_append(cnode)
+
+        call assert_true( conduit_node_is_root(n2) .eqv. .false.)
+        
         ! index_t nchld = n.number_of_children();
         nchld = conduit_node_number_of_children(cnode)
         

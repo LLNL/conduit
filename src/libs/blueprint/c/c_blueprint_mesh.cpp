@@ -44,54 +44,89 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint.h
+/// file: c_blueprint.cpp
 ///
 //-----------------------------------------------------------------------------
+#include "blueprint.h"
 
-#ifndef CONDUIT_BLUEPRINT_H
-#define CONDUIT_BLUEPRINT_H
+#include "conduit.hpp"
+#include "blueprint.hpp"
 
-//-----------------------------------------------------------------------------
-// -- includes for the public conduit blueprint c interface -- 
-//-----------------------------------------------------------------------------
+#include "conduit_cpp_to_c.hpp"
 
-#include "conduit.h"
-#include "blueprint_exports.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin extern C
 //-----------------------------------------------------------------------------
-#ifdef __cplusplus
+
 extern "C" {
-#endif
+
+using namespace conduit;
 
 //-----------------------------------------------------------------------------
-// -- conduit_blueprint c interface  --
+/// Verify passed node confirms to the blueprint mesh protocol.
 //-----------------------------------------------------------------------------
-
-CONDUIT_BLUEPRINT_API void conduit_blueprint_about(conduit_node *cnode);
-
-
-//-----------------------------------------------------------------------------
-/// Verify passed node confirms to given blueprint protocol.
-/// Messages related to the verification are be placed in the "info" node.
-//-----------------------------------------------------------------------------
-CONDUIT_BLUEPRINT_API bool conduit_blueprint_verify(const char *protocol,
-                                                    const conduit_node *cnode,
-                                                    conduit_node *cinfo);
-
-#ifdef __cplusplus
+bool
+conduit_blueprint_mesh_verify(const conduit_node *cnode,
+                              conduit_node *cinfo)
+{
+    const Node &n = cpp_node_ref(cnode);
+    Node &info    = cpp_node_ref(cinfo);
+    return blueprint::mesh::verify(n,info);
 }
-#endif
+
+
+//-----------------------------------------------------------------------------
+/// Verify passed node confirms to given blueprint mesh sub protocol.
+//-----------------------------------------------------------------------------
+bool
+conduit_blueprint_mesh_verify_sub_protocol(const char *protocol,
+                                           const conduit_node *cnode,
+                                           conduit_node *cinfo)
+{
+    const Node &n = cpp_node_ref(cnode);
+    Node &info    = cpp_node_ref(cinfo);
+    return blueprint::mesh::verify(std::string(protocol),n,info);
+}
+
+
+//-----------------------------------------------------------------------------
+/// Generate mesh::index from valid mesh
+//-----------------------------------------------------------------------------
+void
+conduit_blueprint_mesh_generate_index(const conduit_node *cmesh,
+                                      const char *ref_path,
+                                      conduit_index_t num_domains,
+                                      conduit_node *cindex_out)
+{
+    const Node &mesh = cpp_node_ref(cmesh);
+    Node &index_out  = cpp_node_ref(cindex_out);
+    blueprint::mesh::generate_index(mesh,
+                                    std::string(ref_path),
+                                    num_domains,
+                                    index_out);
+}
+
+//-----------------------------------------------------------------------------
+/// Interface to generate example data
+//-----------------------------------------------------------------------------
+void
+conduit_blueprint_mesh_examples_braid(const char *mesh_type,
+                                      conduit_index_t nx,
+                                      conduit_index_t ny,
+                                      conduit_index_t nz,
+                                      conduit_node *cres)
+{
+    Node &res = cpp_node_ref(cres);
+    blueprint::mesh::examples::braid(std::string(mesh_type),
+                                     nx,ny,nz,
+                                     res);
+}
+
+
+
+}
 //-----------------------------------------------------------------------------
 // -- end extern C
 //-----------------------------------------------------------------------------
 
-#include "blueprint_mcarray.h"
-#include "blueprint_mesh.h"
-
-
-//-----------------------------------------------------------------------------
-// -- end header guard ifdef
-//-----------------------------------------------------------------------------
-#endif

@@ -47,7 +47,8 @@
 ###############################################################################
 
 set(BASIC_C_TESTS
-     t_c_blueprint_smoke)
+     t_c_blueprint_smoke
+     t_c_blueprint_mcarray)
 
 ################################
 # Add our tests

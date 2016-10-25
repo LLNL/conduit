@@ -272,8 +272,6 @@ to_interleaved(const conduit::Node &src,
 //----------------------------------------------------------------------------
 bool is_interleaved(const conduit::Node &n)
 {
-    // TODO: Implement
-
     // Conditions:
     // 1) address + offset for each comp can back tracks to start address
     //    (comp address + offset - func(comp index) == start address)

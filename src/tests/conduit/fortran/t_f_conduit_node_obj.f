@@ -80,6 +80,7 @@ contains
         ! n.print_detailed();
         obj = conduit_node_obj_create()
         call obj%print_detailed()
+        call assert_true(obj%is_root() .eqv. .true. )
         call conduit_node_obj_destroy(obj)
     
     end subroutine t_node_obj_create
@@ -461,6 +462,8 @@ contains
         n1 = obj%append()
         ! Node &n2 = n.append();
         n2 = obj%append()
+        
+        call assert_true( n2%is_root() .eqv. .false. )
         ! index_t nchld = n.number_of_children();
         nchld = obj%number_of_children()
         

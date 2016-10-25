@@ -47,7 +47,8 @@
 ###############################################################################
 
 set(FORTRAN_TESTS 
-    t_f_blueprint_smoke)
+    t_f_blueprint_smoke
+    t_f_blueprint_mcarray)
 
 ################################
 # Add our tests

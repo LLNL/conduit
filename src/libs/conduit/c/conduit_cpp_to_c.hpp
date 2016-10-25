@@ -67,6 +67,18 @@ CONDUIT_API conduit::Node *cpp_node(conduit_node *cnode);
 //---------------------------------------------------------------------------//
 CONDUIT_API conduit_node *c_node(conduit::Node *node);
 
+//---------------------------------------------------------------------------//
+CONDUIT_API const conduit::Node *cpp_node(const conduit_node *cnode);
+//---------------------------------------------------------------------------//
+CONDUIT_API const conduit_node *c_node(const conduit::Node *node);
+
+//---------------------------------------------------------------------------//
+CONDUIT_API conduit::Node &cpp_node_ref(conduit_node *cnode);
+//---------------------------------------------------------------------------//
+CONDUIT_API const conduit::Node &cpp_node_ref(const conduit_node *cnode);
+
+
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit:: --

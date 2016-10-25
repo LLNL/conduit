@@ -98,15 +98,6 @@ about(Node &n)
 //---------------------------------------------------------------------------//
 bool
 verify(const std::string &protocol,
-       const Node &n)
-{
-    Node info;
-    return verify(protocol,n,info);
-}
-
-//---------------------------------------------------------------------------//
-bool
-verify(const std::string &protocol,
        const Node &n,
        Node &info)
 {

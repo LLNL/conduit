@@ -123,7 +123,7 @@ conduit_node_number_of_elements(conduit_node *cnode)
 }
 
 //-----------------------------------------------------------------------------
-int 
+bool 
 conduit_node_is_root(conduit_node *cnode)
 {
     return cpp_node(cnode)->is_root();
@@ -142,6 +142,15 @@ conduit_node_print_detailed(conduit_node *cnode)
 {
     cpp_node(cnode)->print_detailed();
 }
+
+
+//-----------------------------------------------------------------------------
+bool 
+conduit_node_is_contiguous(conduit_node *cnode)
+{
+    return cpp_node(cnode)->is_contiguous();
+}
+
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

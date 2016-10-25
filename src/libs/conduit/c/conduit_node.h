@@ -106,12 +106,15 @@ CONDUIT_API conduit_index_t conduit_node_number_of_elements(conduit_node *cnode)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-CONDUIT_API int  conduit_node_is_root(conduit_node *cnode);
+CONDUIT_API bool conduit_node_is_root(conduit_node *cnode);
 
 //-----------------------------------------------------------------------------
 CONDUIT_API void conduit_node_print(conduit_node *cnode);
 CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
 
+
+//-----------------------------------------------------------------------------
+CONDUIT_API bool conduit_node_is_contiguous(conduit_node *cnode);
 
 
 //-----------------------------------------------------------------------------

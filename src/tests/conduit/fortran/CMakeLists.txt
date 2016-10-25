@@ -55,7 +55,7 @@ set(FORTRAN_TESTS
     t_f_conduit_node_char8_str)
 
 if(ENABLE_FORTRAN_OBJ_INTERFACE)
-    list(APPEND BASIC_FORTRAN_TESTS t_f_conduit_node_obj)
+    list(APPEND FORTRAN_TESTS t_f_conduit_node_obj)
 endif()
 
 ################################

@@ -190,8 +190,7 @@ xyz_interleaved_mixed_type(index_t nvals, // total number of "tuples"
     s["y"].set(DataType::float64(nvals,offset,stride));
     offset=  sizeof(conduit::float32) + sizeof(conduit::float64);
     s["z"].set(DataType::uint8(nvals,offset,stride));
-    
-    s.print();
+
     // init the output
     res.set(s);
     
