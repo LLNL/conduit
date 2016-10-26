@@ -133,6 +133,8 @@ mesh::verify(const std::string &protocol,
              Node &info)
 {
     bool res = false;
+    
+    info.reset();
 
     if(protocol == "coordset")
     {
@@ -171,6 +173,7 @@ bool
 mesh::verify(const Node &n,
              Node &info)
 {
+    info.reset();
     bool res = true;
 
     const std::string proto_name = "mesh";
@@ -523,6 +526,7 @@ bool
 mesh::logical_dims::verify(const Node &dims,
                            Node &info)
 {
+    info.reset();
     bool res = true;
     const std::string proto_name = "mesh::logical_dims";
     
@@ -576,6 +580,7 @@ bool
 mesh::coordset::uniform::origin::verify(const Node &origin,
                                         Node &info)
 {
+    info.reset();
     bool res = true;
 
     const std::string proto_name = "mesh::coordset::uniform::origin";
@@ -628,6 +633,7 @@ bool
 mesh::coordset::uniform::spacing::verify(const Node &spacing,
                                          Node &info)
 {
+    info.reset();
     bool res = true;
 
     const std::string proto_name = "mesh::coordset::uniform::spacing";
@@ -678,6 +684,7 @@ bool
 mesh::coordset::uniform::verify(const Node &coordset,
                                 Node &info)
 {
+    info.reset();
     bool res = true;
 
     const std::string proto_name = "mesh::coordset::uniform";
@@ -730,7 +737,7 @@ bool
 mesh::coordset::rectilinear::verify(const Node &coordset,
                                     Node &info)
 {
-    
+    info.reset();
     bool res = true;
 
     std::string proto_name = "mesh::coordset::rectilinear";
@@ -759,6 +766,7 @@ bool
 mesh::coordset::_explicit::verify(const Node &coordset,
                                  Node &info)
 {
+    info.reset();
     bool res = true;
     
     std::string proto_name = "mesh::coordset::explicit";
@@ -785,6 +793,7 @@ bool
 mesh::coordset::verify(const Node &coordset,
                        Node &info)
 {
+    info.reset();
     bool res = true;
 
     std::string proto_name = "mesh::coordset";
@@ -830,6 +839,7 @@ bool
 mesh::coordset::type::verify(const Node &coordset_type,
                              Node &info)
 {    
+    info.reset();
     bool res = true;
     std::string proto_name = "mesh::coordset::type";
 
@@ -893,10 +903,11 @@ check_cyln_coord_sys_axis_name(std::string &name)
 bool
 mesh::coordset::coord_system::verify(const Node &coord_sys,
                                      Node &info)
-{    
+{
+    info.reset();
     bool res = true;
 
-    
+
     std::string proto_name = "mesh::coordset::coord_system";
 
     std::string coord_sys_str = "unknown";
@@ -1000,7 +1011,8 @@ mesh::coordset::coord_system::verify(const Node &coord_sys,
 bool
 mesh::coordset::index::verify(const Node &coordset_idx,
                               Node &info)
-{    
+{
+    info.reset();
     bool res = true;
     std::string proto_name = "mesh::coordset::index";
     // we need the mesh type
@@ -1053,6 +1065,7 @@ bool
 mesh::topology::verify(const Node &topo,
                        Node &info)
 {
+    info.reset();
     bool res = true;
     std::string proto_name = "mesh::topology";
 
@@ -1127,6 +1140,7 @@ bool
 mesh::topology::uniform::verify(const Node & /*topo*/,
                                 Node &info)
 {
+    info.reset();
     // future: will be used to verify optional info from "elements"
     // child of a uniform topology
     bool res = true;
@@ -1143,6 +1157,7 @@ bool
 mesh::topology::rectilinear::verify(const Node &/*topo*/,
                                     Node &info)
 {
+    info.reset();
     // future: will be used to verify optional info from "elements"
     // child of a rectilinear topology
     bool res = true;
@@ -1155,6 +1170,7 @@ bool
 mesh::topology::structured::verify(const Node &topo,
                                    Node &info)
 {
+    info.reset();
     bool res = true;
     std::string proto_name = "mesh::topology::structured";
 
@@ -1194,6 +1210,7 @@ bool
 mesh::topology::unstructured::verify(const Node &topo,
                                    Node &info)
 {
+    info.reset();
     bool res = true;
     std::string proto_name = "mesh::topology::unstructured";
 
@@ -1305,6 +1322,7 @@ bool
 mesh::topology::shape::verify(const Node &shape,
                               Node &info)
 {
+    info.reset();
     bool res = true;
     std::string proto_name = "mesh::topology::shape";
 
@@ -1348,7 +1366,8 @@ mesh::topology::shape::verify(const Node &shape,
 bool
 mesh::topology::index::verify(const Node &topo_idx,
                               Node &info)
-{    
+{
+    info.reset();
     bool res = true;
     std::string proto_name = "mesh::topology::index";
 
@@ -1412,7 +1431,8 @@ mesh::topology::index::verify(const Node &topo_idx,
 bool
 mesh::topology::type::verify(const Node &topo_type,
                              Node &info)
-{    
+{
+    info.reset();
     bool res = true;
     
     std::string proto_name = "mesh::topology::type";
@@ -1456,6 +1476,7 @@ bool
 mesh::field::verify(const Node &field,
                     Node &info)
 {
+    info.reset();
     bool res = true;
 
     std::string proto_name = "mesh::field";
@@ -1541,7 +1562,8 @@ mesh::field::verify(const Node &field,
 bool
 mesh::field::association::verify(const Node &assoc,
                                  Node &info)
-{    
+{
+    info.reset();
     bool res = true;
 
     std::string proto_name = "mesh::field::association";
@@ -1582,7 +1604,8 @@ mesh::field::association::verify(const Node &assoc,
 bool
 mesh::field::basis::verify(const Node &basis,
                         Node &info)
-{    
+{
+    info.reset();
     bool res = true;
 
     std::string proto_name = "mesh::field::basis";
@@ -1610,7 +1633,8 @@ mesh::field::basis::verify(const Node &basis,
 bool
 mesh::field::index::verify(const Node &field_idx,
                            Node &info)
-{    
+{
+    info.reset();
     bool res = true;
     std::string proto_name = "mesh::field::index";
 
@@ -1692,7 +1716,8 @@ mesh::field::index::verify(const Node &field_idx,
 bool
 mesh::index::verify(const Node &n,
                     Node &info)
-{    
+{
+    info.reset();
     // the mesh blueprint index provides metadata about a valid 
     // mesh blueprint conf
     //

@@ -52,7 +52,8 @@
 #
 set(conduit_blueprint_sources
     conduit_blueprint_fortran.f
-    conduit_blueprint_mcarray_fortran.f)
+    conduit_blueprint_mcarray_fortran.f
+    conduit_blueprint_mesh_fortran.f)
 
 #
 # Setup the conduit fortran lib
@@ -63,9 +64,9 @@ add_compiled_library(NAME   conduit_blueprint_fortran
                      )
 
 set_target_properties(conduit_blueprint_fortran
-                       PROPERTIES Fortran_FORMAT "FREE")
+                      PROPERTIES Fortran_FORMAT "FREE")
 
-target_link_libraries(conduit_blueprint_fortran  conduit conduit_blueprint)
+target_link_libraries(conduit_blueprint_fortran conduit conduit_blueprint)
 
 
 ###############################################################################

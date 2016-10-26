@@ -86,6 +86,7 @@ verify(const std::string &/*protocol*/,
        const Node &/*n*/,
        Node &info)
 {
+    info.reset();
     info["valid"] = "false";
     // mcarray doens't provide any nested protocols
     return false;
@@ -96,6 +97,7 @@ verify(const std::string &/*protocol*/,
 bool verify(const conduit::Node &n,
             Node &info)
 {
+    info.reset();
     bool res = true;
 
     // mcarray needs to be an object or a list
