@@ -157,30 +157,6 @@ module conduit
 
 
     !--------------------------------------------------------------------------
-    ! node properties
-    !--------------------------------------------------------------------------
-
-    !--------------------------------------------------------------------------
-    function conduit_node_is_root(cnode) result(res) &
-             bind(C, name="conduit_node_is_root")
-         use iso_c_binding
-         implicit none
-         type(C_PTR), value, intent(IN) :: cnode
-         logical(C_BOOL) :: res
-     end function conduit_node_is_root
-
-
-     !--------------------------------------------------------------------------
-     function conduit_node_is_contiguous(cnode) result(res) &
-              bind(C, name="conduit_node_is_contiguous")
-          use iso_c_binding
-          implicit none
-          type(C_PTR), value, intent(IN) :: cnode
-          logical(C_BOOL) :: res
-      end function conduit_node_is_contiguous
-
-
-    !--------------------------------------------------------------------------
     ! object and list interface
     !--------------------------------------------------------------------------
     
@@ -218,6 +194,34 @@ module conduit
     !--------------------------------------------------------------------------
 
     !--------------------------------------------------------------------------
+    function conduit_node_is_root(cnode) result(res) &
+             bind(C, name="conduit_node_is_root")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         logical(C_BOOL) :: res
+     end function conduit_node_is_root
+
+
+     !--------------------------------------------------------------------------
+     function conduit_node_is_data_external(cnode) result(res) &
+              bind(C, name="conduit_node_is_data_external")
+          use iso_c_binding
+          implicit none
+          type(C_PTR), value, intent(IN) :: cnode
+          logical(C_BOOL) :: res
+      end function conduit_node_is_data_external
+
+      !--------------------------------------------------------------------------
+      function conduit_node_parent(cnode) result(res) &
+               bind(C, name="conduit_node_parent")
+           use iso_c_binding
+           implicit none
+           type(C_PTR), value, intent(IN) :: cnode
+           type(C_PTR) :: res
+       end function conduit_node_parent
+
+    !--------------------------------------------------------------------------
     function conduit_node_number_of_elements(cnode) result(res) &
             bind(C, name="conduit_node_number_of_elements")
         use iso_c_binding
@@ -234,6 +238,93 @@ module conduit
          type(C_PTR), value, intent(IN) :: cnode
          integer(C_SIZE_T) :: res
      end function conduit_node_number_of_children
+     
+     !--------------------------------------------------------------------------
+     function c_conduit_node_has_child(cnode,name) result(res) &
+              bind(C, name="conduit_node_has_child")
+          use iso_c_binding
+          implicit none
+          type(C_PTR), value, intent(IN) :: cnode
+          character(kind=C_CHAR), intent(IN) :: name(*)
+          logical(C_BOOL) :: res
+      end function c_conduit_node_has_child
+     
+      !--------------------------------------------------------------------------
+      function c_conduit_node_has_path(cnode,path) result(res) &
+               bind(C, name="conduit_node_has_path")
+           use iso_c_binding
+           implicit none
+           type(C_PTR), value, intent(IN) :: cnode
+           character(kind=C_CHAR), intent(IN) :: path(*)
+           logical(C_BOOL) :: res
+       end function c_conduit_node_has_path
+
+       !--------------------------------------------------------------------------
+       function conduit_node_total_bytes(cnode) result(res) &
+               bind(C, name="conduit_node_total_bytes")
+           use iso_c_binding
+           implicit none
+           type(C_PTR), value, intent(IN) :: cnode
+           integer(C_SIZE_T) :: res
+       end function conduit_node_total_bytes
+
+       !--------------------------------------------------------------------------
+       function conduit_node_total_bytes_compact(cnode) result(res) &
+               bind(C, name="conduit_node_total_bytes_compact")
+           use iso_c_binding
+           implicit none
+           type(C_PTR), value, intent(IN) :: cnode
+           integer(C_SIZE_T) :: res
+       end function conduit_node_total_bytes_compact
+
+       !--------------------------------------------------------------------------
+       function conduit_node_is_compact(cnode) result(res) &
+                bind(C, name="conduit_node_is_compact")
+            use iso_c_binding
+            implicit none
+            type(C_PTR), value, intent(IN) :: cnode
+            logical(C_BOOL) :: res
+        end function conduit_node_is_compact
+    
+        !--------------------------------------------------------------------------
+        function conduit_node_is_contiguous(cnode) result(res) &
+             bind(C, name="conduit_node_is_contiguous")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         logical(C_BOOL) :: res
+        end function conduit_node_is_contiguous
+
+        !--------------------------------------------------------------------------
+        function conduit_node_contiguous_with_node(cnode,cother) result(res) &
+              bind(C, name="conduit_node_contiguous_with_node")
+          use iso_c_binding
+          implicit none
+          type(C_PTR), value, intent(IN) :: cnode
+          type(C_PTR), value, intent(IN) :: cother
+          logical(C_BOOL) :: res
+        end function conduit_node_contiguous_with_node
+
+
+       !--------------------------------------------------------------------------
+       function conduit_node_compatible(cnode,cother) result(res) &
+               bind(C, name="conduit_node_compatible")
+           use iso_c_binding
+           implicit none
+           type(C_PTR), value, intent(IN) :: cnode
+           type(C_PTR), value, intent(IN) :: cother
+           logical(C_BOOL) :: res
+        end function conduit_node_compatible
+
+        !--------------------------------------------------------------------------
+        function conduit_node_info(cnode,cdest) result(res) &
+                bind(C, name="conduit_node_info")
+            use iso_c_binding
+            implicit none
+            type(C_PTR), value, intent(IN) :: cnode
+            type(C_PTR), value, intent(IN) :: cdest
+            logical(C_BOOL) :: res
+         end function conduit_node_info
 
      !--------------------------------------------------------------------------
      ! node print helpers
@@ -898,6 +989,29 @@ contains
         !---
         res = c_conduit_node_fetch(cnode, trim(path) // C_NULL_CHAR)
     end function conduit_node_fetch
+
+
+    !--------------------------------------------------------------------------
+    function conduit_node_has_child(cnode, name) result(res)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: name
+        logical(C_BOOL) :: res
+        !---
+        res = c_conduit_node_has_child(cnode, trim(name) // C_NULL_CHAR)
+    end function conduit_node_has_child
+
+    !--------------------------------------------------------------------------
+    function conduit_node_has_path(cnode, path) result(res)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        logical(C_BOOL) :: res
+        !---
+        res = c_conduit_node_has_path(cnode, trim(path) // C_NULL_CHAR)
+    end function conduit_node_has_path
 
     !--------------------------------------------------------------------------
     ! int32 subs
