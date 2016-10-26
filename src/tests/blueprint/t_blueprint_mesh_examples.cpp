@@ -57,233 +57,8 @@
 
 using namespace conduit;
 
-// these are now auto generated, keeping for ref for a bit
-// //-----------------------------------------------------------------------------
-// void
-// create_blueprint_index_for_2d_examples(Node &index_root)
-// {
-//     // uniform
-//         Node &uni_idx = index_root["uniform"];
-//         // state
-//         uni_idx["state/cycle"] = 42;
-//         uni_idx["state/time"]  = 3.1415;
-//         uni_idx["state/number_of_domains"]  = 1;
-//         // coords
-//         uni_idx["coordsets/coords/type"]         = "uniform";
-//         uni_idx["coordsets/coords/coord_system"] = "xy";
-//         uni_idx["coordsets/coords/path"]         = "uniform/coordsets/coords";
-//         // topology
-//         uni_idx["topologies/mesh/type"]     = "uniform";
-//         uni_idx["topologies/mesh/coordset"] = "coords";
-//         uni_idx["topologies/mesh/path"]     = "uniform/topologies/mesh";
-//         // fields
-//             // pc
-//             uni_idx["fields/braid/number_of_components"] = 1;
-//             uni_idx["fields/braid/association"] = "point";
-//             uni_idx["fields/braid/topology"]    = "mesh";
-//             uni_idx["fields/braid/path"]        = "uniform/fields/braid";
-//             // ec
-//             uni_idx["fields/radial/number_of_components"] = 1;
-//             uni_idx["fields/radial/association"] = "element";
-//             uni_idx["fields/radial/topology"]    = "mesh";
-//             uni_idx["fields/radial/path"]        = "uniform/fields/radial";
-//             // vel pc
-//             uni_idx["fields/vel/number_of_components"] = 2;
-//             uni_idx["fields/vel/association"] = "point";
-//             uni_idx["fields/vel/topology"]    = "mesh";
-//             uni_idx["fields/vel/path"]        = "uniform/fields/vel";
-//
-//
-//     // rectilinear
-//         Node &rect_idx = index_root["rect"];
-//         // state
-//         rect_idx["state/cycle"] = 42;
-//         rect_idx["state/time"]  = 3.1415;
-//         rect_idx["state/number_of_domains"]  = 1;
-//         // coords
-//         rect_idx["coordsets/coords/type"]         = "rectilinear";
-//         rect_idx["coordsets/coords/coord_system"] = "xy";
-//         rect_idx["coordsets/coords/path"]         = "rect/coordsets/coords";
-//         // topology
-//         rect_idx["topologies/mesh/type"]     = "rectilinear";
-//         rect_idx["topologies/mesh/coordset"] = "coords";
-//         rect_idx["topologies/mesh/path"]     = "rect/topologies/mesh";
-//         // fields
-//             // pc
-//             rect_idx["fields/braid/number_of_components"] = 1;
-//             rect_idx["fields/braid/association"] = "point";
-//             rect_idx["fields/braid/topology"]    = "mesh";
-//             rect_idx["fields/braid/path"]        = "rect/fields/braid";
-//             // ec
-//             rect_idx["fields/radial/number_of_components"] = 1;
-//             rect_idx["fields/radial/association"] = "element";
-//             rect_idx["fields/radial/topology"]    = "mesh";
-//             rect_idx["fields/radial/path"]        = "rect/fields/radial";
-//             // vel pc
-//             rect_idx["fields/vel/number_of_components"] = 2;
-//             rect_idx["fields/vel/association"] = "point";
-//             rect_idx["fields/vel/topology"]    = "mesh";
-//             rect_idx["fields/vel/path"]        = "rect/fields/vel";
-//
-//
-//
-//     // structured
-//         Node &struct_idx = index_root["struct"];
-//         // state
-//         struct_idx["state/cycle"] = 42;
-//         struct_idx["state/time"]  = 3.1415;
-//         struct_idx["state/number_of_domains"]  = 1;
-//         // coords
-//         struct_idx["coordsets/coords/type"]         = "explicit";
-//         struct_idx["coordsets/coords/coord_system"] = "xy";
-//         struct_idx["coordsets/coords/path"]         = "struct/coordsets/coords";
-//         // topology
-//         struct_idx["topologies/mesh/type"]     = "structured";
-//         struct_idx["topologies/mesh/coordset"] = "coords";
-//         struct_idx["topologies/mesh/path"]     = "struct/topologies/mesh";
-//         // fields
-//             // pc
-//             struct_idx["fields/braid/number_of_components"] = 1;
-//             struct_idx["fields/braid/association"] = "point";
-//             struct_idx["fields/braid/topology"]    = "mesh";
-//             struct_idx["fields/braid/path"]        = "struct/fields/braid";
-//             // ec
-//             struct_idx["fields/radial/number_of_components"] = 1;
-//             struct_idx["fields/radial/association"] = "element";
-//             struct_idx["fields/radial/topology"]    = "mesh";
-//             struct_idx["fields/radial/path"]        = "struct/fields/radial";
-//             // vel pc
-//             struct_idx["fields/vel/number_of_components"] = 2;
-//             struct_idx["fields/vel/association"] = "point";
-//             struct_idx["fields/vel/topology"]    = "mesh";
-//             struct_idx["fields/vel/path"]        = "struct/fields/vel";
-//
-//     // lines (unstructured)
-//         Node &lines_idx = index_root["lines"];
-//         // state
-//         lines_idx["state/cycle"] = 42;
-//         lines_idx["state/time"]  = 3.1415;
-//         lines_idx["state/number_of_domains"]  = 1;
-//         // coords
-//         lines_idx["coordsets/coords/type"]         = "explicit";
-//         lines_idx["coordsets/coords/coord_system"] = "xy";
-//         lines_idx["coordsets/coords/path"]         = "lines/coordsets/coords";
-//         // topology
-//         lines_idx["topologies/mesh/type"]     = "unstructured";
-//         lines_idx["topologies/mesh/coordset"] = "coords";
-//         lines_idx["topologies/mesh/path"]     = "lines/topologies/mesh";
-//         // fields
-//             // pc
-//             lines_idx["fields/braid/number_of_components"] = 1;
-//             lines_idx["fields/braid/association"] = "point";
-//             lines_idx["fields/braid/topology"]    = "mesh";
-//             lines_idx["fields/braid/path"]   = "lines/fields/braid";
-//             // ec
-//             lines_idx["fields/radial/number_of_components"] = 1;
-//             lines_idx["fields/radial/association"] = "element";
-//             lines_idx["fields/radial/topology"]    = "mesh";
-//             lines_idx["fields/radial/path"]        = "lines/fields/radial";
-//             // vel pc
-//             lines_idx["fields/vel/number_of_components"] = 2;
-//             lines_idx["fields/vel/association"] = "point";
-//             lines_idx["fields/vel/topology"]    = "mesh";
-//             lines_idx["fields/vel/path"]        = "lines/fields/vel";
-//
-//
-//     // tris (unstructured)
-//     Node &tris_idx = index_root["tris"];
-//     // state
-//     tris_idx["state/cycle"] = 42;
-//     tris_idx["state/time"]  = 3.1415;
-//     tris_idx["state/number_of_domains"]  = 1;
-//     // coords
-//     tris_idx["coordsets/coords/type"]         = "explicit";
-//     tris_idx["coordsets/coords/coord_system"] = "xy";
-//     tris_idx["coordsets/coords/path"]         = "tris/coordsets/coords";
-//     // topology
-//     tris_idx["topologies/mesh/type"]     = "unstructured";
-//     tris_idx["topologies/mesh/coordset"] = "coords";
-//     tris_idx["topologies/mesh/path"]     = "tris/topologies/mesh";
-//     // fields
-//         // pc
-//         tris_idx["fields/braid/number_of_components"] = 1;
-//         tris_idx["fields/braid/association"] = "point";
-//         tris_idx["fields/braid/topology"]    = "mesh";
-//         tris_idx["fields/braid/path"]   = "tris/fields/braid";
-//         // ec
-//         tris_idx["fields/radial/number_of_components"] = 1;
-//         tris_idx["fields/radial/association"] = "element";
-//         tris_idx["fields/radial/topology"]    = "mesh";
-//         tris_idx["fields/radial/path"]        = "tris/fields/radial";
-//         // vel pc
-//         tris_idx["fields/vel/number_of_components"] = 2;
-//         tris_idx["fields/vel/association"] = "point";
-//         tris_idx["fields/vel/topology"]    = "mesh";
-//         tris_idx["fields/vel/path"]   = "tris/fields/vel";
-//
-//
-//     // quads (unstructured)
-//     Node &quads_idx = index_root["quads"];
-//     // state
-//     quads_idx["state/cycle"] = 42;
-//     quads_idx["state/time"]  = 3.1415;
-//     quads_idx["state/number_of_domains"]  = 1;
-//     // coords
-//     quads_idx["coordsets/coords/type"]         = "explicit";
-//     quads_idx["coordsets/coords/coord_system"] = "xy";
-//     quads_idx["coordsets/coords/path"]         = "quads/coordsets/coords";
-//     // topology
-//     quads_idx["topologies/mesh/type"]     = "unstructured";
-//     quads_idx["topologies/mesh/coordset"] = "coords";
-//     quads_idx["topologies/mesh/path"]     = "quads/topologies/mesh";
-//     // fields
-//         // pc
-//         quads_idx["fields/braid/number_of_components"] = 1;
-//         quads_idx["fields/braid/association"] = "point";
-//         quads_idx["fields/braid/topology"]    = "mesh";
-//         quads_idx["fields/braid/path"]        = "quads/fields/braid";
-//         // ec
-//         quads_idx["fields/radial/number_of_components"] = 1;
-//         quads_idx["fields/radial/association"] = "element";
-//         quads_idx["fields/radial/topology"]    = "mesh";
-//         quads_idx["fields/radial/path"]        = "quads/fields/radial";
-//         // vel pc
-//         quads_idx["fields/vel/number_of_components"] = 2;
-//         quads_idx["fields/vel/association"] = "point";
-//         quads_idx["fields/vel/topology"]    = "mesh";
-//         quads_idx["fields/vel/path"]        = "quads/fields/vel";
-//
-//     // points (unstructured)
-//     Node &pts_idx = index_root["points"];
-//     // state
-//     pts_idx["state/cycle"] = 42;
-//     pts_idx["state/time"]  = 3.1415;
-//     pts_idx["state/number_of_domains"]  = 1;
-//     // coords
-//     pts_idx["coordsets/coords/type"]         = "explicit";
-//     pts_idx["coordsets/coords/coord_system"] = "xy";
-//     pts_idx["coordsets/coords/path"]         = "points/coordsets/coords";
-//     // topology
-//     pts_idx["topologies/mesh/type"]     = "unstructured";
-//     pts_idx["topologies/mesh/coordset"] = "coords";
-//     pts_idx["topologies/mesh/path"]     = "points/topologies/mesh";
-//     // fields
-//         // pc
-//         pts_idx["fields/braid/number_of_components"] = 1;
-//         pts_idx["fields/braid/association"] = "point";
-//         pts_idx["fields/braid/topology"]    = "mesh";
-//         pts_idx["fields/braid/path"]        = "points/fields/braid";
-//         // ec
-//         pts_idx["fields/radial/number_of_components"] = 1;
-//         pts_idx["fields/radial/association"] = "element";
-//         pts_idx["fields/radial/topology"]    = "mesh";
-//         pts_idx["fields/radial/path"]        = "points/fields/radial";
-//         // vel pc
-//         pts_idx["fields/vel/number_of_components"] = 2;
-//         pts_idx["fields/vel/association"] = "point";
-//         pts_idx["fields/vel/topology"]    = "mesh";
-//         pts_idx["fields/vel/path"]        = "points/fields/vel";
-// }
+index_t OUTPUT_NUM_AXIS_POINTS = 5;
+
 
 //-----------------------------------------------------------------------------
 void
@@ -525,8 +300,9 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
 
     // we are using one node to hold group of example meshes purely out of convenience  
     Node dsets;
-    index_t npts_x = 51;
-    index_t npts_y = 51;
+    // can be overridden via command line
+    index_t npts_x = OUTPUT_NUM_AXIS_POINTS;
+    index_t npts_y = OUTPUT_NUM_AXIS_POINTS;
     index_t npts_z = 1; // 2D examples ...
     
     blueprint::mesh::examples::braid("uniform",
@@ -688,9 +464,10 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
 
     // we are using one node to hold group of example meshes purely out of convenience  
     Node dsets;
-    index_t npts_x = 51;
-    index_t npts_y = 51;
-    index_t npts_z = 51; // 3D examples ...
+    // can be overridden via command line
+    index_t npts_x = OUTPUT_NUM_AXIS_POINTS;
+    index_t npts_y = OUTPUT_NUM_AXIS_POINTS;
+    index_t npts_z = OUTPUT_NUM_AXIS_POINTS; // 3D examples ...
     
     blueprint::mesh::examples::braid("uniform",
                                       npts_x,
@@ -829,3 +606,22 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
     }
     
 }
+
+
+//-----------------------------------------------------------------------------
+int main(int argc, char* argv[])
+{
+    int result = 0;
+
+    ::testing::InitGoogleTest(&argc, argv);
+    
+    // allow override of the data size via the command line
+    if(argc == 2)
+    { 
+        OUTPUT_NUM_AXIS_POINTS = atoi(argv[1]);
+    }
+    
+    result = RUN_ALL_TESTS();
+    return result;
+}
+
