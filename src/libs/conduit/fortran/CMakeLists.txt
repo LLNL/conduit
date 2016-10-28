@@ -48,8 +48,8 @@
 ################################
 
 # Create include file with bitwidth style mappings for fortran
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Bitwidth_Style_Types.inc.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/Bitwidth_Style_Types.inc")
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_fortran_bitwidth_style_types.inc.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/conduit_fortran_bitwidth_style_types.inc")
 
 # Allow fortran compiler to include the Bitwidth_Style_Types.inc file
 # Note: Unlike .h files, the .inc file will not be needed by client code

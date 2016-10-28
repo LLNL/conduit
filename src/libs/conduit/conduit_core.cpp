@@ -44,30 +44,111 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Conduit_Config.h
+/// file: conduit_core.cpp
 ///
 //-----------------------------------------------------------------------------
+#include "conduit_core.hpp"
 
-#ifndef CONDUIT_CONFIG_H
-#define CONDUIT_CONFIG_H
 
 //-----------------------------------------------------------------------------
-//
-// #define platform check helpers
-//
+// conduit includes
 //-----------------------------------------------------------------------------
+#include "conduit_node.hpp"
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
-#define CONDUIT_PLATFORM_WINDOWS
-#elif  defined(__APPLE__)
-#define CONDUIT_PLATFORM_APPLE
+// Note: This header is only needed a compile time.
+#include "conduit_license.hpp"
+
+//-----------------------------------------------------------------------------
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
+namespace conduit
+{
+
+
+//---------------------------------------------------------------------------//
+std::string
+about()
+{
+    Node n;
+    about(n);
+    return n.to_json();
+}
+
+//---------------------------------------------------------------------------//
+void
+about(Node &n)
+{
+    n.reset();
+    n["version"] = "{alpha}";
+    n["install_prefix"] = CONDUIT_INSTALL_PREFIX;
+    n["license"] = CONDUIT_LICENSE_TEXT;
+    
+    // TODO: include compiler info, etc ?
+
+    // Type Info Map
+    Node &nn = n["native_typemap"];
+
+    // ints
+#ifdef CONDUIT_INT8_NATIVE_NAME
+    nn["int8"] = CONDUIT_INT8_NATIVE_NAME;
 #else
-#define CONDUIT_PLATFORM_UNIX
+    nn["int8"] = "<unmapped>";
+#endif
+#ifdef CONDUIT_INT16_NATIVE_NAME
+    nn["int16"] = CONDUIT_INT16_NATIVE_NAME;
+#else
+    nn["int16"] = "<unmapped>";
+#endif
+#ifdef CONDUIT_INT32_NATIVE_NAME
+    nn["int32"] = CONDUIT_INT32_NATIVE_NAME;
+#else
+    nn["int32"] = "<unmapped>";
+#endif
+#ifdef CONDUIT_INT64_NATIVE_NAME
+    nn["int64"] = CONDUIT_INT64_NATIVE_NAME;
+#else
+    nn["int64"] = "<unmapped>";
 #endif
 
-#cmakedefine CONDUIT_INSTALL_PREFIX "${CONDUIT_INSTALL_PREFIX}"
-
+    // unsigned ints
+#ifdef CONDUIT_UINT8_NATIVE_NAME
+    nn["uint8"] = CONDUIT_UINT8_NATIVE_NAME;
+#else
+    nn["uint8"] = "<unmapped>";
+#endif
+#ifdef CONDUIT_UINT16_NATIVE_NAME
+    nn["uint16"] = CONDUIT_UINT16_NATIVE_NAME;
+#else
+    nn["uint16"] = "<unmapped>";
+#endif
+#ifdef CONDUIT_UINT32_NATIVE_NAME
+    nn["uint32"] = CONDUIT_UINT32_NATIVE_NAME;
+#else
+    nn["uint32"] = "<unmapped>";
+#endif
+#ifdef CONDUIT_UINT64_NATIVE_NAME
+    nn["uint64"] = CONDUIT_UINT64_NATIVE_NAME;
+#else
+    nn["uint64"] = "<unmapped>";
 #endif
 
+    // floating points numbers
+#ifdef CONDUIT_FLOAT32_NATIVE_NAME
+    nn["float32"] = CONDUIT_FLOAT32_NATIVE_NAME;
+#else
+    nn["float32"] = "<unmapped>";
+#endif
+#ifdef CONDUIT_FLOAT64_NATIVE_NAME
+    nn["float64"] = CONDUIT_FLOAT64_NATIVE_NAME;
+#else
+    nn["float64"] = "<unmapped>";
+#endif
 
+}
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit:: --
+//-----------------------------------------------------------------------------
 

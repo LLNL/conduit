@@ -44,25 +44,23 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Endianness.hpp
+/// file: conduit_error.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_ENDIANNESS_HPP
-#define CONDUIT_ENDIANNESS_HPP
+#ifndef CONDUIT_ERROR_HPP
+#define CONDUIT_ERROR_HPP
 
 //-----------------------------------------------------------------------------
 // -- standard lib includes -- 
 //-----------------------------------------------------------------------------
-#include <vector>
+#include <string>
 #include <sstream>
 
 //-----------------------------------------------------------------------------
 // -- conduit includes -- 
 //-----------------------------------------------------------------------------
-#include "Endianness_Types.h"
-
-#include "Core.hpp"
+#include "conduit_core.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -71,86 +69,75 @@ namespace conduit
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::Endianness --
+// -- begin conduit::Error --
 //-----------------------------------------------------------------------------
 ///
-/// class: conduit::Endianness
+/// class: conduit::Error
 ///
 /// description:
-///  Class for endian info and conversation. 
+///  Class used to record a runtime error in conduit.
 ///
 //-----------------------------------------------------------------------------
-class CONDUIT_API Endianness
+class CONDUIT_API Error : public std::exception
 {
-public:
+public:    
 //-----------------------------------------------------------------------------
 //
-// -- conduit::Endianness public members --
+// -- conduit::Error public members --
 //
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-/// EndianEnum is an Enumeration used to hold endian states:
-///  *DEFAULT_ID - represents the current machine's endianness
-///  *BIG_ID     - represents is big endian 
-///  *LITTLE_ID  - represents little endian
+// Construction and Destruction
 //-----------------------------------------------------------------------------
-    typedef enum
-    {
-        DEFAULT_ID = CONDUIT_ENDIANNESS_DEFAULT_ID, // default
-        BIG_ID     = CONDUIT_ENDIANNESS_BIG_ID,
-        LITTLE_ID  = CONDUIT_ENDIANNESS_LITTLE_ID
-    } EndianEnum;
-
-//-----------------------------------------------------------------------------
-/// Returns the current machine's endianness: BIG_ID or LITTLE_ID
-//-----------------------------------------------------------------------------
-    static index_t          machine_default();
+    /// Default constructor
+    Error();
+    /// Copy constructor
+    Error(const Error &err);
+    /// Main constructor, used by CONDUIT_ERROR macro
+    Error(const std::string &msg, 
+          const std::string &file,
+          index_t line);
+    /// Destructor
+    ~Error() throw();
     
 //-----------------------------------------------------------------------------
-/// Convenience checks for machine endianness. 
+// Methods used to access and display Error as a human readable string. 
 //-----------------------------------------------------------------------------
-    static bool             machine_is_little_endian();
-    static bool             machine_is_big_endian();
+    /// Print info about this error to stdout.
+    void                print()   const;
+    /// Return a human readable string that describes this error.
+    std::string         message() const;
+    /// Writes a human readable string that describes this error to the 
+    /// passed output stream.
+    void                message(std::ostringstream &oss) const;
+    /// part of std::exception interface
+    virtual const char* what() const throw();
 
+private:
 //-----------------------------------------------------------------------------
-/// Convert human readable string {big|little|default} to an EndianEnum id.
+//
+// -- conduit::Error private data members --
+//
 //-----------------------------------------------------------------------------
-    static index_t          name_to_id(const std::string &name);
-//-----------------------------------------------------------------------------
-/// Converts an EndianEnum id to a human readable string.
-//-----------------------------------------------------------------------------
-    static std::string      id_to_name(index_t endianness);
+    /// holds the error message
+    std::string m_msg;
+    /// holds the source file name where the error was raised
+    std::string m_file;
+    /// holds the line number in the source file where the error was raised.
+    index_t     m_line;
+    /// holds the formatted error message for std::exception interface
+    std::string m_what;
     
-//-----------------------------------------------------------------------------
-/// Helpers for endianness transforms
-//-----------------------------------------------------------------------------
-    /// swaps for 16 bit types
-    static void             swap16(void *data);
-    /// executes direct copy from src to dest. 
-    /// src and dest must not be the same location.
-    static void             swap16(void *src, void *dest);
-
-    /// swaps for 32 bit types
-    static void             swap32(void *data);
-    /// executes direct copy from src to dest. 
-    /// src and dest must not be the same location.
-    static void             swap32(void *src, void *dest);
-
-    /// swaps for 64 bit types    
-    static void             swap64(void *data);
-    /// executes direct copy from src to dest. 
-    /// src and dest must not be the same location.
-    static void             swap64(void *src, void *dest);
-
 };
 //-----------------------------------------------------------------------------
-// -- end conduit::Endianness --
+// -- end conduit::Error --
 //-----------------------------------------------------------------------------
 
 }
 //-----------------------------------------------------------------------------
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
+
 
 #endif

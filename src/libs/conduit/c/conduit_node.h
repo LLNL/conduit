@@ -55,9 +55,9 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-#include "Bitwidth_Style_Types.h"
-#include "Endianness_Types.h"
-#include "Conduit_Exports.hpp"
+#include "conduit_bitwidth_style_types.h"
+#include "conduit_endianness_types.h"
+#include "conduit_exports.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin extern C

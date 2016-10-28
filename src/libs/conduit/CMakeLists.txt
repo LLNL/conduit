@@ -54,31 +54,31 @@ include("CMake/BitwidthChecks.cmake")
 
 set(CONDUIT_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Conduit_Config.h.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h")
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_config.h.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/conduit_config.h")
 
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/Bitwidth_Style_Types.h.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/Bitwidth_Style_Types.h")
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_bitwidth_style_types.h.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/conduit_bitwidth_style_types.h")
 
 #
 # Specify conduit cpp headers
 #
 set(conduit_headers
-    Endianness_Types.h
-    DataArray.hpp
-    Endianness.hpp
-    Node.hpp
     conduit.hpp
-    Core.hpp
-    DataType.hpp
-    Generator.hpp
-    Error.hpp
-    NodeIterator.hpp
-    Schema.hpp
-    Utils.hpp
-    Conduit_Exports.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/Conduit_Config.h
-    ${CMAKE_CURRENT_BINARY_DIR}/Bitwidth_Style_Types.h
+    conduit_endianness_types.h
+    conduit_core.hpp
+    conduit_endianness.hpp
+    conduit_data_array.hpp
+    conduit_data_type.hpp
+    conduit_node.hpp
+    conduit_generator.hpp
+    conduit_error.hpp
+    conduit_node_iterator.hpp
+    conduit_schema.hpp
+    conduit_utils.hpp
+    conduit_exports.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/conduit_config.h
+    ${CMAKE_CURRENT_BINARY_DIR}/conduit_bitwidth_style_types.h
     )
 
 #
@@ -94,16 +94,16 @@ set(conduit_c_headers
 # Specify conduit cpp sources
 #
 set(conduit_sources
-    Core.cpp
-    Error.cpp
-    Endianness.cpp
-    DataType.cpp
-    DataArray.cpp
-    Generator.cpp
-    Node.cpp
-    NodeIterator.cpp
-    Schema.cpp
-    Utils.cpp
+    conduit_core.cpp
+    conduit_error.cpp
+    conduit_endianness.cpp
+    conduit_data_type.cpp
+    conduit_data_array.cpp
+    conduit_generator.cpp
+    conduit_node.cpp
+    conduit_node_iterator.cpp
+    conduit_schema.cpp
+    conduit_utils.cpp
     )
 
 #
