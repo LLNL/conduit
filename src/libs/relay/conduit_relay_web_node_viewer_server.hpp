@@ -44,20 +44,20 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: relay_io.hpp
+/// file: conduit_relay_web_node_viewer_server.hpp
 ///
 //-----------------------------------------------------------------------------
 
-
-#ifndef CONDUIT_RELAY_IO_HPP
-#define CONDUIT_RELAY_IO_HPP
+#ifndef CONDUIT_RELAY_WEB_NODE_VIEWER_SERVER_HPP
+#define CONDUIT_RELAY_WEB_NODE_VIEWER_SERVER_HPP
 
 //-----------------------------------------------------------------------------
-// conduit lib include 
+// conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-#include "relay_exports.hpp"
-#include "relay_config.hpp"
+
+#include "conduit_relay_exports.hpp"
+#include "conduit_relay_web.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -68,81 +68,67 @@ namespace conduit
 //-----------------------------------------------------------------------------
 // -- begin conduit::relay --
 //-----------------------------------------------------------------------------
-namespace relay
+namespace relay 
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::relay::io --
+// -- begin conduit::relay::web --
 //-----------------------------------------------------------------------------
-namespace io
+namespace web
 {
 
-///
-/// ``save`` works like a 'set' to the file.
-///
+//-----------------------------------------------------------------------------
+// -- Viewer Web Request Handler  -
+//-----------------------------------------------------------------------------
+class CONDUIT_RELAY_API NodeViewerRequestHandler : public WebRequestHandler
+{
+public:
+                   NodeViewerRequestHandler();
+                  ~NodeViewerRequestHandler();
+    
+    virtual bool   handle_post(WebServer *server,
+                               struct mg_connection *conn);
+
+    virtual bool   handle_get(WebServer *server,
+                              struct mg_connection *conn);
+                              
+    void           set_node(Node *node);
+
+private:
+    // catch all, used for any post or get
+    bool           handle_request(WebServer *server,
+                                  struct mg_connection *conn);
+    // handlers for specific commands 
+    bool           handle_get_schema(struct mg_connection *conn);
+    bool           handle_get_value(struct mg_connection *conn);
+    bool           handle_get_base64_json(struct mg_connection *conn);
+    bool           handle_shutdown(WebServer *server);
+
+    // holds the node to visualize 
+    Node          *m_node;
+};
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const Node &node,
-                            const std::string &path);
-
+// -- Node Viewer Web Server -
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const Node &node,
-                            const std::string &path,
-                            const std::string &protocol);
 
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const Node &node,
-                            const std::string &path,
-                            const std::string &protocol);
+class CONDUIT_RELAY_API NodeViewerServer : public WebServer
+{
+public:
+    
+             NodeViewerServer();
+    virtual ~NodeViewerServer();
 
-///
-/// ``save_merged`` works like an update to the file.
-///
+    void    set_node(Node *node);
 
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save_merged(const Node &node,
-                                   const std::string &path);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save_merged(const Node &node,
-                                   const std::string &path,
-                                   const std::string &protocol);
-
-
-///
-/// ``load`` works like a 'set', the node is reset and then populated
-///
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load(const std::string &path,
-                            Node &node);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load(const std::string &path,
-                            const std::string &protocol,
-                            Node &node);
-
-
-///
-/// ``load_merged`` works like an update, for the object case, entries are read
-///  into the node. If the node is already in the OBJECT_T role, children are 
-///  added
-///
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load_merged(const std::string &path,
-                                   Node &node);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load_merged(const std::string &path,
-                                   const std::string &protocol,
-                                   Node &node);
+};
 
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::relay::io --
+// -- end conduit::relay::web --
 //-----------------------------------------------------------------------------
+
 
 }
 //-----------------------------------------------------------------------------
@@ -150,11 +136,13 @@ void CONDUIT_RELAY_API load_merged(const std::string &path,
 //-----------------------------------------------------------------------------
 
 
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
 
+#endif 
 
-#endif
+
 

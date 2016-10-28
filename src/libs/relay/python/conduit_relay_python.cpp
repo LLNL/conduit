@@ -64,8 +64,8 @@
 // conduit includes
 //---------------------------------------------------------------------------//
 #include "conduit.hpp"
-#include "relay.hpp"
-#include "Relay_Python_Exports.hpp"
+#include "conduit_relay.hpp"
+#include "conduit_relay_python_exports.hpp"
 
 // conduit python module capi header
 #include "conduit_python.hpp"
@@ -265,9 +265,9 @@ static struct PyModuleDef relay_python_module_def =
 extern "C" 
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
-PyObject *RELAY_PYTHON_API PyInit_relay_python(void)
+PyObject *CONDUIT_RELAY_PYTHON_API PyInit_relay_python(void)
 #else
-void RELAY_PYTHON_API initrelay_python(void)
+void CONDUIT_RELAY_PYTHON_API initrelay_python(void)
 #endif
 //---------------------------------------------------------------------------//
 {    

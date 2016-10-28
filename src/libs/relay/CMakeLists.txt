@@ -67,50 +67,50 @@ endif()
 
 set(CONDUIT_RELAY_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/relay_config.hpp.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/relay_config.hpp")
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_relay_config.hpp.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_config.hpp")
 
 #
 # Specify cpp headers
 #
 set(conduit_relay_headers
-    relay.hpp
-    relay_io.hpp
-    relay_web.hpp
-    relay_web_node_viewer_server.hpp
-    relay_exports.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/relay_config.hpp)
+    conduit_relay.hpp
+    conduit_relay_io.hpp
+    conduit_relay_web.hpp
+    conduit_relay_web_node_viewer_server.hpp
+    conduit_relay_exports.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_config.hpp)
 
 #
 # Specify c headers
 #
 set(conduit_relay_c_headers
-    c/relay.h)
+    c/conduit_relay.h)
 
 #
 # Specify cpp sources
 #
 set(conduit_relay_sources
-    relay.cpp
-    relay_io.cpp
-    relay_web.cpp
-    relay_web_node_viewer_server.cpp)
+    conduit_relay.cpp
+    conduit_relay_io.cpp
+    conduit_relay_web.cpp
+    conduit_relay_web_node_viewer_server.cpp)
 
 #
 # Specify c sources
 #
 set(conduit_relay_c_sources
-    c/c_relay.cpp)
+    c/c_conduit_relay.cpp)
 
 
 if(HDF5_FOUND)
-    list(APPEND conduit_relay_headers relay_hdf5.hpp)
-    list(APPEND conduit_relay_sources relay_hdf5.cpp)
+    list(APPEND conduit_relay_headers conduit_relay_hdf5.hpp)
+    list(APPEND conduit_relay_sources conduit_relay_hdf5.cpp)
 endif()
 
 if(SILO_FOUND)
-    list(APPEND conduit_relay_headers relay_silo.hpp)
-    list(APPEND conduit_relay_sources relay_silo.cpp)
+    list(APPEND conduit_relay_headers conduit_relay_silo.hpp)
+    list(APPEND conduit_relay_sources conduit_relay_silo.cpp)
 endif()
 
 
@@ -155,7 +155,7 @@ endif()
 ###################################
 # add conduit_relay_node_viewer exe
 ###################################
-add_executable(conduit_relay_node_viewer relay_web_node_viewer.cpp)
+add_executable(conduit_relay_node_viewer conduit_relay_web_node_viewer.cpp)
 target_link_libraries(conduit_relay_node_viewer conduit_relay)
 
 # add install target
@@ -203,13 +203,13 @@ if(MPI_FOUND)
 # Specify relay mpi headers
 #
 set(conduit_relay_mpi_headers
-    relay_mpi.hpp
-    relay_exports.hpp)
+    conduit_relay_mpi.hpp
+    conduit_relay_exports.hpp)
 
 #
 # Specify relay mpi sources
 #
-set(conduit_relay_mpi_sources relay_mpi.cpp)
+set(conduit_relay_mpi_sources conduit_relay_mpi.cpp)
 
 include_directories(${MPI_CXX_INCLUDE_PATH})
 

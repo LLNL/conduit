@@ -44,16 +44,20 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: relay.cpp
+/// file: conduit_relay_io.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "relay.hpp"
+
+#ifndef CONDUIT_RELAY_IO_HPP
+#define CONDUIT_RELAY_IO_HPP
 
 //-----------------------------------------------------------------------------
-// standard lib includes
+// conduit lib include 
 //-----------------------------------------------------------------------------
-#include <iostream>
+#include "conduit.hpp"
+#include "conduit_relay_exports.hpp"
+#include "conduit_relay_config.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -67,73 +71,78 @@ namespace conduit
 namespace relay
 {
 
-
-//---------------------------------------------------------------------------//
-std::string
-about()
+//-----------------------------------------------------------------------------
+// -- begin conduit::relay::io --
+//-----------------------------------------------------------------------------
+namespace io
 {
-    Node n;
-    relay::about(n);
-    return n.to_json();
+
+///
+/// ``save`` works like a 'set' to the file.
+///
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save(const Node &node,
+                            const std::string &path);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save(const Node &node,
+                            const std::string &path,
+                            const std::string &protocol);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save(const Node &node,
+                            const std::string &path,
+                            const std::string &protocol);
+
+///
+/// ``save_merged`` works like an update to the file.
+///
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save_merged(const Node &node,
+                                   const std::string &path);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save_merged(const Node &node,
+                                   const std::string &path,
+                                   const std::string &protocol);
+
+
+///
+/// ``load`` works like a 'set', the node is reset and then populated
+///
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load(const std::string &path,
+                            Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load(const std::string &path,
+                            const std::string &protocol,
+                            Node &node);
+
+
+///
+/// ``load_merged`` works like an update, for the object case, entries are read
+///  into the node. If the node is already in the OBJECT_T role, children are 
+///  added
+///
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load_merged(const std::string &path,
+                                   Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load_merged(const std::string &path,
+                                   const std::string &protocol,
+                                   Node &node);
+
+
 }
-
-//---------------------------------------------------------------------------//
-void
-about(Node &n)
-{
-    n.reset();
-
-    n["web"] = "enabled";
-    
-    Node conduit_about;
-    conduit::about(conduit_about);
-    
-    std::string install_prefix = conduit_about["install_prefix"].as_string();
-    std::string web_root = utils::join_file_path(install_prefix,"share");
-    web_root = utils::join_file_path(web_root,"conduit");
-    web_root = utils::join_file_path(web_root,"web_clients");
-    
-    n["web_client_root"] =  web_root;
-
-    Node &io_protos = n["io/protocols"];
-
-    // standard binary io
-    io_protos["conduit_bin"] = "enabled";
-
-#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-    // straight hdf5 
-    io_protos["hdf5"] = "enabled";
-#else
-    // straight hdf5 
-    io_protos["hdf5"] = "disabled";
-#endif
-    
-    // silo
-#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
-    // node is packed into two silo objects
-    io_protos["conduit_silo"] = "enabled";
-#else
-    // node is packed into two silo objects
-    io_protos["conduit_silo"] = "disabled";
-#endif
-    
-    // silo mesh aware
-#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
-    io_protos["conduit_silo_mesh"] = "enabled";
-#else
-    io_protos["conduit_silo_mesh"] = "disabled";
-#endif
-
-
-#ifdef CONDUIT_RELAY_MPI_ENABLED
-    n["mpi"] = "enabled";
-#else
-    n["mpi"] = "disabled";
-#endif
-
-
-}
-
+//-----------------------------------------------------------------------------
+// -- end conduit::relay::io --
+//-----------------------------------------------------------------------------
 
 }
 //-----------------------------------------------------------------------------
@@ -146,4 +155,6 @@ about(Node &n)
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
 
+
+#endif
 

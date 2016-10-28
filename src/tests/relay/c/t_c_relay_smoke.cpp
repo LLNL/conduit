@@ -49,7 +49,7 @@
 //-----------------------------------------------------------------------------
 
 #include "conduit.h"
-#include "relay.h"
+#include "conduit_relay.h"
 
 #include <stdio.h>
 #include "gtest/gtest.h"
