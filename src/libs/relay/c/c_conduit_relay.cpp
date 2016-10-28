@@ -44,40 +44,35 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Relay_Python_Exports.hpp
+/// file: c_conduit_relay.cpp
 ///
 //-----------------------------------------------------------------------------
+#include "conduit_relay.h"
 
-#ifndef RELAY_PYTHON_EXPORTS_HPP
-#define RELAY_PYTHON_EXPORTS_HPP
+#include "conduit.hpp"
+#include "conduit_relay.hpp"
+#include "conduit_cpp_to_c.hpp"
+
 
 //-----------------------------------------------------------------------------
-// -- define proper lib exports for various platforms -- 
+// -- begin extern C
 //-----------------------------------------------------------------------------
 
-#if defined(_WIN32)
-#if defined(RELAY_PYTHON_EXPORTS) || defined(RELAY_IO_PYTHON_EXPORTS) || defined(relay_python_EXPORTS) || defined(relay_io_python_EXPORTS)
-#define RELAY_PYTHON_API __declspec(dllexport)
-#else
-#define RELAY_PYTHON_API __declspec(dllimport)
-#endif
-#if defined(_MSC_VER)
-// Turn off warning about lack of DLL interface
-#pragma warning(disable:4251)
-// Turn off warning non-dll class is base for dll-interface class.
-#pragma warning(disable:4275)
-// Turn off warning about identifier truncation
-#pragma warning(disable:4786)
-#endif
-#else
-# if __GNUC__ >= 4 && (defined(RELAY_PYTHON_EXPORTS) || defined(RELAY_IO_PYTHON_EXPORTS)  || defined(relay_python_EXPORTS) ||  defined(relay_io_python_EXPORTS))
-#   define RELAY_PYTHON_API __attribute__ ((visibility("default")))
-# else
-#   define RELAY_PYTHON_API /* hidden by default */
-# endif
-#endif
+extern "C" {
 
-#endif
+using namespace conduit;
+
+//---------------------------------------------------------------------------//
+void
+conduit_relay_about(conduit_node *cnode)
+{
+    Node *n = cpp_node(cnode);
+    relay::about(*n);
+}
 
 
+}
+//-----------------------------------------------------------------------------
+// -- end extern C
+//-----------------------------------------------------------------------------
 

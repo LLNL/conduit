@@ -44,58 +44,39 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: relay.hpp
+/// file: conduit_relay_exports.hpp
 ///
 //-----------------------------------------------------------------------------
 
-
-#ifndef CONDUIT_RELAY_HPP
-#define CONDUIT_RELAY_HPP
-
-//-----------------------------------------------------------------------------
-// conduit lib include 
-//-----------------------------------------------------------------------------
-#include "conduit.hpp"
-
-#include "relay_exports.hpp"
-#include "relay_config.hpp"
-
-#include "relay_io.hpp"
-#include "relay_web.hpp"
-#include "relay_web_node_viewer_server.hpp"
-
+#ifndef CONDUIT_RELAY_EXPORTS_HPP
+#define CONDUIT_RELAY_EXPORTS_HPP
 
 //-----------------------------------------------------------------------------
-// -- begin conduit:: --
+// -- define proper lib exports for various platforms -- 
 //-----------------------------------------------------------------------------
-namespace conduit
-{
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::relay --
-//-----------------------------------------------------------------------------
-namespace relay
-{
-
-//-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how relay was
-/// configured.
-//-----------------------------------------------------------------------------
-std::string CONDUIT_RELAY_API about();
-void        CONDUIT_RELAY_API about(conduit::Node &res);
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::relay --
-//-----------------------------------------------------------------------------
-
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit:: --
-//-----------------------------------------------------------------------------
-
-
+#if defined(_WIN32)
+#if defined(CONDUIT_RELAY_EXPORTS) || defined(conduit_relay_EXPORTS) || defined(CONDUIT_RELAY_MPI_EXPORTS) || defined(conduit_relay_mpi_EXPORTS)
+#define CONDUIT_RELAY_API __declspec(dllexport)
+#else
+#define CONDUIT_RELAY_API __declspec(dllimport)
+#endif
+#if defined(_MSC_VER)
+// Turn off warning about lack of DLL interface
+#pragma warning(disable:4251)
+// Turn off warning non-dll class is base for dll-interface class.
+#pragma warning(disable:4275)
+// Turn off warning about identifier truncation
+#pragma warning(disable:4786)
+#endif
+#else
+# if __GNUC__ >= 4 && ( defined(CONDUIT_RELAY_EXPORTS) || defined(conduit_relay_EXPORTS) || defined(CONDUIT_RELAY_MPI_EXPORTS) || defined(conduit_relay_mpi_EXPORTS))
+#   define CONDUIT_RELAY_API __attribute__ ((visibility("default")))
+# else
+#   define CONDUIT_RELAY_API /* hidden by default */
+# endif
+#endif
 
 #endif
+
+
 

@@ -51,7 +51,7 @@
 #include <iostream>
 
 #include "conduit.hpp"
-#include "relay.hpp"
+#include "conduit_relay.hpp"
 #include "blueprint.hpp"
 
 

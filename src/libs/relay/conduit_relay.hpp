@@ -44,42 +44,58 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: relay.h
+/// file: conduit_relay.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_RELAY_H
-#define CONDUIT_RELAY_H
+
+#ifndef CONDUIT_RELAY_HPP
+#define CONDUIT_RELAY_HPP
 
 //-----------------------------------------------------------------------------
-// -- includes for the public conduit relay c interface -- 
+// conduit lib include 
 //-----------------------------------------------------------------------------
+#include "conduit.hpp"
 
-#include "conduit.h"
-#include "relay_exports.hpp"
+#include "conduit_relay_exports.hpp"
+#include "conduit_relay_config.hpp"
+
+#include "conduit_relay_io.hpp"
+#include "conduit_relay_web.hpp"
+#include "conduit_relay_web_node_viewer_server.hpp"
+
 
 //-----------------------------------------------------------------------------
-// -- begin extern C
+// -- begin conduit:: --
 //-----------------------------------------------------------------------------
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace conduit
+{
 
 //-----------------------------------------------------------------------------
-// -- conduit_relay c interface  --
+// -- begin conduit::relay --
 //-----------------------------------------------------------------------------
+namespace relay
+{
 
-CONDUIT_RELAY_API void conduit_relay_about(conduit_node *cnode);
+//-----------------------------------------------------------------------------
+/// The about methods construct human readable info about how relay was
+/// configured.
+//-----------------------------------------------------------------------------
+std::string CONDUIT_RELAY_API about();
+void        CONDUIT_RELAY_API about(conduit::Node &res);
 
-#ifdef __cplusplus
 }
-#endif
 //-----------------------------------------------------------------------------
-// -- end extern C
+// -- end conduit::relay --
 //-----------------------------------------------------------------------------
 
 
+}
 //-----------------------------------------------------------------------------
-// -- end header guard ifdef
+// -- end conduit:: --
 //-----------------------------------------------------------------------------
+
+
+
 #endif
+

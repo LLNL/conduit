@@ -48,7 +48,7 @@
 ///
 //-----------------------------------------------------------------------------
 
-#include "relay_mpi.hpp"
+#include "conduit_relay_mpi.hpp"
 #include <iostream>
 #include "gtest/gtest.h"
 

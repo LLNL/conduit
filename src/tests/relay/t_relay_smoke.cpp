@@ -48,7 +48,7 @@
 ///
 //-----------------------------------------------------------------------------
 
-#include "relay.hpp"
+#include "conduit_relay.hpp"
 #include <iostream>
 #include "gtest/gtest.h"
 

@@ -44,12 +44,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: relay_web_node_viewer_exe.cpp
+/// file: conduit_relay_web_node_viewer_exe.cpp
 ///
 //-----------------------------------------------------------------------------
 
 #include "conduit.hpp"
-#include "relay.hpp"
+#include "conduit_relay.hpp"
 #include <iostream>
 #include <stdlib.h>
 

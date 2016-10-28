@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_web.hpp
+/// file: conduit_conduit_web.hpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -56,7 +56,7 @@
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
 
-#include "relay_exports.hpp"
+#include "conduit_relay_exports.hpp"
 
 //
 // forward declare civetweb types so we don't need the 

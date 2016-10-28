@@ -44,7 +44,7 @@
 
 
 # Setup our modules
-PYTHON_ADD_HYBRID_MODULE(relay_python
+PYTHON_ADD_HYBRID_MODULE(conduit_relay_python
                          # dest dir
                          python-modules
                          # python module dir
@@ -54,34 +54,34 @@ PYTHON_ADD_HYBRID_MODULE(relay_python
                          # python srcs
                          py_src/__init__.py
                          # c srcs
-                         relay_python.cpp)
+                         conduit_relay_python.cpp)
 
 # link with the proper libs
-target_link_libraries(relay_python conduit conduit_relay ${PYTHON_LIBRARIES})
+target_link_libraries(conduit_relay_python conduit conduit_relay ${PYTHON_LIBRARIES})
 
 # add relay io submodule
-PYTHON_ADD_COMPILED_MODULE(relay_io_python
+PYTHON_ADD_COMPILED_MODULE(conduit_relay_io_python
                            # dest_dir 
                            python-modules
                            # python module dir
                            conduit/relay/io
                            # c srcs
-                           relay_io_python.cpp)
+                           conduit_relay_io_python.cpp)
 
 
 # link with the proper libs (beyond python)
-target_link_libraries(relay_io_python conduit conduit_relay)
+target_link_libraries(conduit_relay_io_python conduit conduit_relay)
 
 
 # add relay web submodule
-PYTHON_ADD_COMPILED_MODULE(relay_web_python
+PYTHON_ADD_COMPILED_MODULE(conduit_relay_web_python
                            # dest 
                            python-modules
                            # python module dir
                            conduit/relay/web
                            # c srcs
-                           relay_web_python.cpp)
+                           conduit_relay_web_python.cpp)
 
 # link with the proper libs (beyond python)
-target_link_libraries(relay_web_python conduit conduit_relay)
+target_link_libraries(conduit_relay_web_python conduit conduit_relay)
 
