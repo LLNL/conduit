@@ -44,24 +44,30 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Endianness_Types.h
+/// file: conduit_config.h
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_ENDIANNESS_TYPES_H
-#define CONDUIT_ENDIANNESS_TYPES_H
+#ifndef CONDUIT_CONFIG_H
+#define CONDUIT_CONFIG_H
 
 //-----------------------------------------------------------------------------
-/// conduit_endianness_type_id is an Enumeration used to describe the  
-/// endianness cases supported by conduit
+//
+// #define platform check helpers
+//
 //-----------------------------------------------------------------------------
-typedef enum
-{
-    CONDUIT_ENDIANNESS_DEFAULT_ID  = 0, // (machine default)
-    CONDUIT_ENDIANNESS_BIG_ID,          // big endian
-    CONDUIT_ENDIANNESS_LITTLE_ID        // little endian
-} conduit_endianness_type_id;
 
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+#define CONDUIT_PLATFORM_WINDOWS
+#elif  defined(__APPLE__)
+#define CONDUIT_PLATFORM_APPLE
+#else
+#define CONDUIT_PLATFORM_UNIX
+#endif
+
+#cmakedefine CONDUIT_INSTALL_PREFIX "${CONDUIT_INSTALL_PREFIX}"
 
 #endif
+
+
 

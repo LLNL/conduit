@@ -56,15 +56,15 @@
 // -- includes for the public conduit interface -- 
 //-----------------------------------------------------------------------------
 
-#include "Core.hpp"
-#include "Error.hpp"
-#include "Endianness.hpp"
-#include "DataType.hpp"
-#include "DataArray.hpp"
-#include "Schema.hpp"
-#include "Node.hpp"
-#include "Generator.hpp"
-#include "Utils.hpp"
+#include "conduit_core.hpp"
+#include "conduit_error.hpp"
+#include "conduit_endianness.hpp"
+#include "conduit_data_type.hpp"
+#include "conduit_data_array.hpp"
+#include "conduit_schema.hpp"
+#include "conduit_node.hpp"
+#include "conduit_generator.hpp"
+#include "conduit_utils.hpp"
 
 #endif
 

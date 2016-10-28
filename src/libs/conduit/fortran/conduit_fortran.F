@@ -46,7 +46,7 @@
 ! conduit_fortran.f
 !------------------------------------------------------------------------------
 
-#include "Bitwidth_Style_Types.inc"
+#include "conduit_fortran_bitwidth_style_types.inc"
 
 !------------------------------------------------------------------------------
 module conduit

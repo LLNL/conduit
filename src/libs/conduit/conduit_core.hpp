@@ -44,15 +44,33 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Error.cpp
+/// file: conduit_core.hpp
 ///
 //-----------------------------------------------------------------------------
-#include "Error.hpp"
+
+#ifndef CONDUIT_CORE_HPP
+#define CONDUIT_CORE_HPP
 
 //-----------------------------------------------------------------------------
-// -- conduit includes -- 
+// -- standard cpp lib includes -- 
 //-----------------------------------------------------------------------------
-#include "Node.hpp"
+#include <string>
+#include <iostream>
+
+//-----------------------------------------------------------------------------
+// -- configure time defines -- 
+//-----------------------------------------------------------------------------
+#include "conduit_config.h"
+
+//-----------------------------------------------------------------------------
+// -- define proper lib exports for various platforms -- 
+//-----------------------------------------------------------------------------
+#include "conduit_exports.hpp"
+
+//-----------------------------------------------------------------------------
+// -- include bit width style types mapping header  -- 
+//-----------------------------------------------------------------------------
+#include "conduit_bitwidth_style_types.h"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -60,98 +78,46 @@
 namespace conduit
 {
 
-//-----------------------------------------------------------------------------
-//
-// -- conduit::Error public members --
-//
-//-----------------------------------------------------------------------------
+class Node;
 
 //-----------------------------------------------------------------------------
-// Error Construction and Destruction
+/// typedefs that map bit width style types into conduit::
 //-----------------------------------------------------------------------------
 
-//---------------------------------------------------------------------------//
-Error::Error()
-:m_msg(""),
- m_file(""),
- m_line(0),
- m_what("")
-{
-    m_what = message();
-}
+/// unsigned integer typedefs
+typedef conduit_uint8   uint8;
+typedef conduit_uint16  uint16;
+typedef conduit_uint32  uint32;
+typedef conduit_uint64  uint64;
 
-//---------------------------------------------------------------------------//
-Error::Error(const Error &err)
-:m_msg(err.m_msg),
- m_file(err.m_file),
- m_line(err.m_line),
- m_what("")
-{
-    m_what = message();
-}
+/// signed integer typedefs
+typedef conduit_int8    int8;
+typedef conduit_int16   int16;
+typedef conduit_int32   int32;
+typedef conduit_int64   int64;
 
-//---------------------------------------------------------------------------//
-Error::Error(const std::string &msg,
-             const std::string &file,
-             index_t line)
-:m_msg(msg),
- m_file(file),
- m_line(line),
- m_what("")
-{
-    m_what = message();
-}
+/// floating point typedefs
+typedef conduit_float32 float32;
+typedef conduit_float64 float64;
 
-//---------------------------------------------------------------------------//
-Error::~Error() throw()
-{
-    //empty
-}
+/// index typedefs
+typedef conduit_index32_t index32_t;
+typedef conduit_index64_t index64_t;
+// conduit_index_t is defined in Bitwidth_Style_Types.h
+// it will be index64_t, unless CONDUIT_INDEX_32 is defined
+typedef conduit_index_t   index_t;
 
 //-----------------------------------------------------------------------------
-// Methods used to access and display Error as a human readable string. 
+/// The about methods construct human readable info about how conduit was
+/// configured.
 //-----------------------------------------------------------------------------
-
-
-//---------------------------------------------------------------------------//
-void
-Error::print() const
-{
-    std::cout << message() << std::endl;
-}
-
-
-//---------------------------------------------------------------------------//
-std::string
-Error::message() const
-{
-    std::ostringstream oss;
-    message(oss);
-    return oss.str();
-}
-
-//---------------------------------------------------------------------------//
-void
-Error::message(std::ostringstream &oss) const
-{
-    Node n;
-    n["file"] = m_file;
-    n["line"] = m_line;
-    n["message"] = m_msg;
-    n.to_json_stream(oss);
-    oss << std::endl;
-}
-
-//---------------------------------------------------------------------------//
-const char* 
-Error::what() const throw()
-{
-    return m_what.c_str(); 
-}
-
+std::string CONDUIT_API about();
+void        CONDUIT_API about(Node &);
 
 }
 //-----------------------------------------------------------------------------
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
+
+#endif
 

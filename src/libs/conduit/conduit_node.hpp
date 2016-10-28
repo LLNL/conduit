@@ -45,7 +45,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Node.hpp
+/// file: conduit_node.hpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -63,14 +63,14 @@
 //-----------------------------------------------------------------------------
 // -- conduit includes -- 
 //-----------------------------------------------------------------------------
-#include "Core.hpp"
-#include "Error.hpp"
-#include "Endianness.hpp"
-#include "DataType.hpp"
-#include "DataArray.hpp"
-#include "Schema.hpp"
-#include "Generator.hpp"
-#include "NodeIterator.hpp"
+#include "conduit_core.hpp"
+#include "conduit_endianness.hpp"
+#include "conduit_data_type.hpp"
+#include "conduit_data_array.hpp"
+#include "conduit_schema.hpp"
+#include "conduit_generator.hpp"
+#include "conduit_node_iterator.hpp"
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --

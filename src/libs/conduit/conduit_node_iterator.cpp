@@ -44,10 +44,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: NodeIterator.cpp
+/// file: conduit_node_iterator.cpp
 ///
 //-----------------------------------------------------------------------------
-#include "NodeIterator.hpp"
+#include "conduit_node_iterator.hpp"
+#include "conduit_error.hpp"
+#include "conduit_utils.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
