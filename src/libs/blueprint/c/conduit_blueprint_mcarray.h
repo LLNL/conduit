@@ -44,72 +44,73 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint.hpp
+/// file: conduit_blueprint_mcarray.h
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_HPP
-#define BLUEPRINT_HPP
+#ifndef CONDUIT_BLUEPRINT_MCARRAY_H
+#define CONDUIT_BLUEPRINT_MCARRAY_H
 
 //-----------------------------------------------------------------------------
-// conduit lib includes
+// -- includes for the public conduit blueprint c interface -- 
 //-----------------------------------------------------------------------------
-#include "conduit.hpp"
 
-#include "blueprint_exports.hpp"
-
-#include "blueprint_mesh.hpp"
-#include "blueprint_mesh_examples.hpp"
-
-#include "blueprint_mcarray.hpp"
-#include "blueprint_mcarray_examples.hpp"
-
+#include "conduit.h"
+#include "conduit_blueprint_exports.hpp"
 
 //-----------------------------------------------------------------------------
-// -- begin conduit:: --
+// -- begin extern C
 //-----------------------------------------------------------------------------
-namespace conduit
-{
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint --
-//-----------------------------------------------------------------------------
-namespace blueprint
-{
-
-//-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how blueprint was
-/// configured.
-//-----------------------------------------------------------------------------
-std::string CONDUIT_BLUEPRINT_API about();
-void        CONDUIT_BLUEPRINT_API about(conduit::Node &n);
-
-//-----------------------------------------------------------------------------
-/// blueprint verify interface
+// -- conduit_blueprint_mcarray c interface  --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-/// Verify passed node confirms to given blueprint protocol.
-/// Messages related to the verification are be placed in the "info" node.
+/// Verify passed node confirms to the blueprint mcarray protocol.
 //-----------------------------------------------------------------------------
-bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
-                                  const conduit::Node &n,
-                                  conduit::Node &info);
+CONDUIT_BLUEPRINT_API bool conduit_blueprint_mcarray_verify(const conduit_node *cnode,
+                                                            conduit_node *cinfo);
+
 
 //-----------------------------------------------------------------------------
+/// Verify passed node confirms to given blueprint mcarray sub protocol.
+//-----------------------------------------------------------------------------
+CONDUIT_BLUEPRINT_API bool conduit_blueprint_mcarray_verify_sub_protocol(const char *protocol,
+                                                                         const conduit_node *cnode,
+                                                                         conduit_node *cinfo);
+
+//----------------------------------------------------------------------------
+CONDUIT_BLUEPRINT_API bool conduit_blueprint_mcarray_is_interleaved(const conduit_node *cnode);
+
+//----------------------------------------------------------------------------
+CONDUIT_BLUEPRINT_API bool conduit_blueprint_mcarray_to_contiguous(const conduit_node *cnode,
+                                                                   conduit_node *cdest);
+
+//-----------------------------------------------------------------------------
+CONDUIT_BLUEPRINT_API bool conduit_blueprint_mcarray_to_interleaved(const conduit_node *cnode,
+                                                                    conduit_node *cdest);
+
+//-----------------------------------------------------------------------------
+/// Interface to generate example mesh blueprint data.
+//-----------------------------------------------------------------------------
+CONDUIT_BLUEPRINT_API void conduit_blueprint_mcarray_examples_xyz(const char *mcarray_type,
+                                                                  conduit_index_t npts,
+                                                                  conduit_node *cres);
+
+#ifdef __cplusplus
 }
+#endif
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint --
-//-----------------------------------------------------------------------------
-
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit:: --
+// -- end extern C
 //-----------------------------------------------------------------------------
 
 
-#endif 
-
-
-
+//-----------------------------------------------------------------------------
+// -- end header guard ifdef
+//-----------------------------------------------------------------------------
+#endif

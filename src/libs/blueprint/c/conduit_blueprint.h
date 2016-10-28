@@ -44,40 +44,54 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Blueprint_Python_Exports.hpp
+/// file: conduit_blueprint.h
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_PYTHON_EXPORTS_HPP
-#define BLUEPRINT_PYTHON_EXPORTS_HPP
+#ifndef CONDUIT_BLUEPRINT_H
+#define CONDUIT_BLUEPRINT_H
 
 //-----------------------------------------------------------------------------
-// -- define proper lib exports for various platforms -- 
+// -- includes for the public conduit blueprint c interface -- 
 //-----------------------------------------------------------------------------
 
-#if defined(_WIN32)
-#if defined(BLUEPRINT_PYTHON_EXPORTS) || defined(blueprint_python_EXPORTS)
-#define BLUEPRINT_PYTHON_API __declspec(dllexport)
-#else
-#define BLUEPRINT_PYTHON_API __declspec(dllimport)
-#endif
-#if defined(_MSC_VER)
-// Turn off warning about lack of DLL interface
-#pragma warning(disable:4251)
-// Turn off warning non-dll class is base for dll-interface class.
-#pragma warning(disable:4275)
-// Turn off warning about identifier truncation
-#pragma warning(disable:4786)
-#endif
-#else
-# if __GNUC__ >= 4 && (defined(BLUEPRINT_PYTHON_EXPORTS) || defined(blueprint_python_EXPORTS))
-#   define BLUEPRINT_PYTHON_API __attribute__ ((visibility("default")))
-# else
-#   define BLUEPRINT_PYTHON_API /* hidden by default */
-# endif
+#include "conduit.h"
+#include "conduit_blueprint_exports.hpp"
+
+//-----------------------------------------------------------------------------
+// -- begin extern C
+//-----------------------------------------------------------------------------
+#ifdef __cplusplus
+extern "C" {
 #endif
 
+//-----------------------------------------------------------------------------
+// -- conduit_blueprint c interface  --
+//-----------------------------------------------------------------------------
+
+CONDUIT_BLUEPRINT_API void conduit_blueprint_about(conduit_node *cnode);
+
+
+//-----------------------------------------------------------------------------
+/// Verify passed node confirms to given blueprint protocol.
+/// Messages related to the verification are be placed in the "info" node.
+//-----------------------------------------------------------------------------
+CONDUIT_BLUEPRINT_API bool conduit_blueprint_verify(const char *protocol,
+                                                    const conduit_node *cnode,
+                                                    conduit_node *cinfo);
+
+#ifdef __cplusplus
+}
 #endif
+//-----------------------------------------------------------------------------
+// -- end extern C
+//-----------------------------------------------------------------------------
+
+#include "conduit_blueprint_mcarray.h"
+#include "conduit_blueprint_mesh.h"
 
 
-
+//-----------------------------------------------------------------------------
+// -- end header guard ifdef
+//-----------------------------------------------------------------------------
+#endif

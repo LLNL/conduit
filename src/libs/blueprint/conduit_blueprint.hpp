@@ -44,25 +44,32 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint_mesh_examples.hpp
+/// file: conduit_blueprint.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_MESH_EXAMPLES_HPP
-#define BLUEPRINT_MESH_EXAMPLES_HPP
+#ifndef CONDUIT_BLUEPRINT_HPP
+#define CONDUIT_BLUEPRINT_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-#include "blueprint_exports.hpp"
+
+#include "conduit_blueprint_exports.hpp"
+
+#include "conduit_blueprint_mesh.hpp"
+#include "conduit_blueprint_mesh_examples.hpp"
+
+#include "conduit_blueprint_mcarray.hpp"
+#include "conduit_blueprint_mcarray_examples.hpp"
+
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::--
+// -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
 {
-
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint --
@@ -71,44 +78,34 @@ namespace blueprint
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mesh --
+/// The about methods construct human readable info about how blueprint was
+/// configured.
 //-----------------------------------------------------------------------------
-namespace mesh 
-{
+std::string CONDUIT_BLUEPRINT_API about();
+void        CONDUIT_BLUEPRINT_API about(conduit::Node &n);
 
 //-----------------------------------------------------------------------------
-/// Methods that generate example meshes.
-/// We should move these to a better place in the future.
-//-----------------------------------------------------------------------------
-namespace examples
-{
-    
-    void CONDUIT_BLUEPRINT_API braid(const std::string &mesh_type,
-                                     conduit::index_t nx,
-                                     conduit::index_t ny,
-                                     conduit::index_t nz,
-                                     conduit::Node &res);
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::examples --
+/// blueprint verify interface
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+/// Verify passed node confirms to given blueprint protocol.
+/// Messages related to the verification are be placed in the "info" node.
+//-----------------------------------------------------------------------------
+bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
+                                  const conduit::Node &n,
+                                  conduit::Node &info);
 
 //-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh --
-//-----------------------------------------------------------------------------
-
-
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint --
 //-----------------------------------------------------------------------------
 
+
 }
 //-----------------------------------------------------------------------------
-// -- end conduit --
+// -- end conduit:: --
 //-----------------------------------------------------------------------------
 
 

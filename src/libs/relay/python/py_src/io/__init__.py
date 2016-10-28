@@ -46,7 +46,7 @@
 # file: __init__.py
 # Purpose: Main init for the conduit relay io module.
 ###############################################################################
-from .relay_io_python import *
+from .conduit_relay_io_python import *
 
 
 

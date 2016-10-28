@@ -44,19 +44,19 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint.h
+/// file: conduit_blueprint_mesh.h
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_BLUEPRINT_H
-#define CONDUIT_BLUEPRINT_H
+#ifndef CONDUIT_BLUEPRINT_MESH_H
+#define CONDUIT_BLUEPRINT_MESH_H
 
 //-----------------------------------------------------------------------------
 // -- includes for the public conduit blueprint c interface -- 
 //-----------------------------------------------------------------------------
 
 #include "conduit.h"
-#include "blueprint_exports.hpp"
+#include "conduit_blueprint_exports.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin extern C
@@ -66,19 +66,39 @@ extern "C" {
 #endif
 
 //-----------------------------------------------------------------------------
-// -- conduit_blueprint c interface  --
+// -- conduit_blueprint_mesh c interface  --
 //-----------------------------------------------------------------------------
 
-CONDUIT_BLUEPRINT_API void conduit_blueprint_about(conduit_node *cnode);
+//-----------------------------------------------------------------------------
+/// Verify passed node confirms to the blueprint mesh protocol.
+//-----------------------------------------------------------------------------
+CONDUIT_BLUEPRINT_API bool conduit_blueprint_mesh_verify(const conduit_node *cnode,
+                                                         conduit_node *cinfo);
 
 
 //-----------------------------------------------------------------------------
-/// Verify passed node confirms to given blueprint protocol.
-/// Messages related to the verification are be placed in the "info" node.
+/// Verify passed node confirms to given blueprint mesh sub protocol.
 //-----------------------------------------------------------------------------
-CONDUIT_BLUEPRINT_API bool conduit_blueprint_verify(const char *protocol,
-                                                    const conduit_node *cnode,
-                                                    conduit_node *cinfo);
+CONDUIT_BLUEPRINT_API bool conduit_blueprint_mesh_verify_sub_protocol(const char *protocol,
+                                                                      const conduit_node *cnode,
+                                                                      conduit_node *cinfo);
+
+//-----------------------------------------------------------------------------
+/// Generate mesh::index from valid mesh.
+//-----------------------------------------------------------------------------
+CONDUIT_BLUEPRINT_API void conduit_blueprint_mesh_generate_index(const conduit_node *cmesh,
+                                                                 const char *ref_path,
+                                                                 conduit_index_t num_domains,
+                                                                 conduit_node *cindex_out);
+
+//-----------------------------------------------------------------------------
+/// Interface to generate example mesh blueprint data.
+//-----------------------------------------------------------------------------
+CONDUIT_BLUEPRINT_API void conduit_blueprint_mesh_examples_braid(const char *mesh_type,
+                                                                 conduit_index_t nx,
+                                                                 conduit_index_t ny,
+                                                                 conduit_index_t nz,
+                                                                 conduit_node *cres);
 
 #ifdef __cplusplus
 }
@@ -86,9 +106,6 @@ CONDUIT_BLUEPRINT_API bool conduit_blueprint_verify(const char *protocol,
 //-----------------------------------------------------------------------------
 // -- end extern C
 //-----------------------------------------------------------------------------
-
-#include "blueprint_mcarray.h"
-#include "blueprint_mesh.h"
 
 
 //-----------------------------------------------------------------------------

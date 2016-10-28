@@ -44,10 +44,10 @@
 
 # Specify the sources of the pure python and compiled portions of our module.
 SET(blueprint_py_python_sources  py_src/__init__.py)
-SET(blueprint_py_cpp_sources     blueprint_python.cpp)
+SET(blueprint_py_cpp_sources     conduit_blueprint_python.cpp)
 
 # Setup our module
-PYTHON_ADD_HYBRID_MODULE(blueprint_python
+PYTHON_ADD_HYBRID_MODULE(conduit_blueprint_python
                          python-modules
                          conduit/blueprint
                          setup.py
@@ -55,5 +55,5 @@ PYTHON_ADD_HYBRID_MODULE(blueprint_python
                          ${blueprint_py_cpp_sources})
 
 # link with the proper libs (beyond python)
-target_link_libraries(blueprint_python conduit conduit_blueprint)
+target_link_libraries(conduit_blueprint_python conduit conduit_blueprint)
 

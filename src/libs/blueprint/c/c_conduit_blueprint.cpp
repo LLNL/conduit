@@ -44,13 +44,13 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: c_blueprint.cpp
+/// file: c_conduit_blueprint.cpp
 ///
 //-----------------------------------------------------------------------------
-#include "blueprint.h"
+#include "conduit_blueprint.h"
 
 #include "conduit.hpp"
-#include "blueprint.hpp"
+#include "conduit_blueprint.hpp"
 
 #include "conduit_cpp_to_c.hpp"
 
@@ -63,67 +63,25 @@ extern "C" {
 
 using namespace conduit;
 
-//-----------------------------------------------------------------------------
-/// Verify passed node confirms to the blueprint mesh protocol.
+//---------------------------------------------------------------------------//
+void
+conduit_blueprint_about(conduit_node *cnode)
+{
+    Node *n = cpp_node(cnode);
+    blueprint::about(*n);
+}
+
+
 //-----------------------------------------------------------------------------
 bool
-conduit_blueprint_mesh_verify(const conduit_node *cnode,
-                              conduit_node *cinfo)
+conduit_blueprint_verify(const char *protocol,
+                         const conduit_node *cnode,
+                         conduit_node *cinfo)
 {
-    const Node &n = cpp_node_ref(cnode);
-    Node &info    = cpp_node_ref(cinfo);
-    return blueprint::mesh::verify(n,info);
+    const Node *n = cpp_node(cnode);
+    Node *info =  cpp_node(cinfo);
+    return blueprint::verify(std::string(protocol),*n,*info);
 }
-
-
-//-----------------------------------------------------------------------------
-/// Verify passed node confirms to given blueprint mesh sub protocol.
-//-----------------------------------------------------------------------------
-bool
-conduit_blueprint_mesh_verify_sub_protocol(const char *protocol,
-                                           const conduit_node *cnode,
-                                           conduit_node *cinfo)
-{
-    const Node &n = cpp_node_ref(cnode);
-    Node &info    = cpp_node_ref(cinfo);
-    return blueprint::mesh::verify(std::string(protocol),n,info);
-}
-
-
-//-----------------------------------------------------------------------------
-/// Generate mesh::index from valid mesh
-//-----------------------------------------------------------------------------
-void
-conduit_blueprint_mesh_generate_index(const conduit_node *cmesh,
-                                      const char *ref_path,
-                                      conduit_index_t num_domains,
-                                      conduit_node *cindex_out)
-{
-    const Node &mesh = cpp_node_ref(cmesh);
-    Node &index_out  = cpp_node_ref(cindex_out);
-    blueprint::mesh::generate_index(mesh,
-                                    std::string(ref_path),
-                                    num_domains,
-                                    index_out);
-}
-
-//-----------------------------------------------------------------------------
-/// Interface to generate example data
-//-----------------------------------------------------------------------------
-void
-conduit_blueprint_mesh_examples_braid(const char *mesh_type,
-                                      conduit_index_t nx,
-                                      conduit_index_t ny,
-                                      conduit_index_t nz,
-                                      conduit_node *cres)
-{
-    Node &res = cpp_node_ref(cres);
-    blueprint::mesh::examples::braid(std::string(mesh_type),
-                                     nx,ny,nz,
-                                     res);
-}
-
-
 
 }
 //-----------------------------------------------------------------------------

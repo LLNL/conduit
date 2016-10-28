@@ -64,8 +64,8 @@
 // conduit includes
 //---------------------------------------------------------------------------//
 #include "conduit.hpp"
-#include "blueprint.hpp"
-#include "Blueprint_Python_Exports.hpp"
+#include "conduit_blueprint.hpp"
+#include "conduit_blueprint_python_exports.hpp"
 
 // conduit python module capi header
 #include "conduit_python.hpp"
@@ -266,9 +266,9 @@ static struct PyModuleDef blueprint_python_module_def =
 extern "C" 
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
-PyObject *BLUEPRINT_PYTHON_API PyInit_blueprint_python(void)
+PyObject *CONDUIT_BLUEPRINT_PYTHON_API PyInit_conduit_blueprint_python(void)
 #else
-void BLUEPRINT_PYTHON_API initblueprint_python(void)
+void CONDUIT_BLUEPRINT_PYTHON_API initconduit_blueprint_python(void)
 #endif
 //---------------------------------------------------------------------------//
 {    

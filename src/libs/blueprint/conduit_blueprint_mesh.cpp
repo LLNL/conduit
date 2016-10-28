@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint_mesh.cpp
+/// file: conduit_blueprint_mesh.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -57,8 +57,8 @@
 //-----------------------------------------------------------------------------
 // conduit includes
 //-----------------------------------------------------------------------------
-#include "blueprint_mcarray.hpp"
-#include "blueprint_mesh.hpp"
+#include "conduit_blueprint_mcarray.hpp"
+#include "conduit_blueprint_mesh.hpp"
 
 using namespace conduit;
 
