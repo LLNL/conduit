@@ -58,7 +58,7 @@ TEST(c_conduit_node, simple)
 {
     conduit_node *n = conduit_node_create();
     
-    EXPECT_EQ(conduit_node_is_root(n),1);
+    EXPECT_TRUE(conduit_node_is_root(n));
     
     conduit_node_set_int(n,10);
     
@@ -85,11 +85,11 @@ TEST(c_conduit_node, simple_hier)
     conduit_node *b = conduit_node_fetch(n,"b");
     conduit_node *c = conduit_node_fetch(n,"c");
 
-    EXPECT_EQ(conduit_node_is_root(n),1);
+    EXPECT_TRUE(conduit_node_is_root(n));
     
-    EXPECT_EQ(conduit_node_is_root(a),0);
-    EXPECT_EQ(conduit_node_is_root(b),0);
-    EXPECT_EQ(conduit_node_is_root(c),0);
+    EXPECT_FALSE(conduit_node_is_root(a));
+    EXPECT_FALSE(conduit_node_is_root(b));
+    EXPECT_FALSE(conduit_node_is_root(c));
     
     conduit_node_set_int(a,a_val);
     conduit_node_set_int(b,b_val);
