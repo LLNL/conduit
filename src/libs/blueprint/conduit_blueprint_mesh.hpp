@@ -44,18 +44,18 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint_mesh.hpp
+/// file: conduit_blueprint_mesh.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_MESH_HPP
-#define BLUEPRINT_MESH_HPP
+#ifndef CONDUIT_BLUEPRINT_MESH_HPP
+#define CONDUIT_BLUEPRINT_MESH_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-#include "blueprint_exports.hpp"
+#include "conduit_blueprint_exports.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit --

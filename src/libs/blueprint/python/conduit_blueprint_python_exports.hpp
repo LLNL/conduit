@@ -44,47 +44,40 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: c_blueprint.cpp
+/// file: conduit_blueprint_python_exports.hpp
 ///
 //-----------------------------------------------------------------------------
-#include "blueprint.h"
 
-#include "conduit.hpp"
-#include "blueprint.hpp"
-
-#include "conduit_cpp_to_c.hpp"
-
+#ifndef CONDUIT_BLUEPRINT_PYTHON_EXPORTS_HPP
+#define CONDUIT_BLUEPRINT_PYTHON_EXPORTS_HPP
 
 //-----------------------------------------------------------------------------
-// -- begin extern C
+// -- define proper lib exports for various platforms -- 
 //-----------------------------------------------------------------------------
 
-extern "C" {
+#if defined(_WIN32)
+#if defined(CONDUIT_BLUEPRINT_PYTHON_EXPORTS) || defined(conduit_blueprint_python_EXPORTS)
+#define CONDUIT_BLUEPRINT_PYTHON_API __declspec(dllexport)
+#else
+#define CONDUIT_BLUEPRINT_PYTHON_API __declspec(dllimport)
+#endif
+#if defined(_MSC_VER)
+// Turn off warning about lack of DLL interface
+#pragma warning(disable:4251)
+// Turn off warning non-dll class is base for dll-interface class.
+#pragma warning(disable:4275)
+// Turn off warning about identifier truncation
+#pragma warning(disable:4786)
+#endif
+#else
+# if __GNUC__ >= 4 && (defined(CONDUIT_BLUEPRINT_PYTHON_EXPORTS) || defined(conduit_blueprint_python_EXPORTS))
+#   define CONDUIT_BLUEPRINT_PYTHON_API __attribute__ ((visibility("default")))
+# else
+#   define CONDUIT_BLUEPRINT_PYTHON_API /* hidden by default */
+# endif
+#endif
 
-using namespace conduit;
-
-//---------------------------------------------------------------------------//
-void
-conduit_blueprint_about(conduit_node *cnode)
-{
-    Node *n = cpp_node(cnode);
-    blueprint::about(*n);
-}
+#endif
 
 
-//-----------------------------------------------------------------------------
-bool
-conduit_blueprint_verify(const char *protocol,
-                         const conduit_node *cnode,
-                         conduit_node *cinfo)
-{
-    const Node *n = cpp_node(cnode);
-    Node *info =  cpp_node(cinfo);
-    return blueprint::verify(std::string(protocol),*n,*info);
-}
-
-}
-//-----------------------------------------------------------------------------
-// -- end extern C
-//-----------------------------------------------------------------------------
 

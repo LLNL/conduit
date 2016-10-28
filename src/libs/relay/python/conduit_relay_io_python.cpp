@@ -357,9 +357,9 @@ static struct PyModuleDef relay_io_python_module_def =
 extern "C" 
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
-PyObject *CONDUIT_RELAY_PYTHON_API PyInit_relay_io_python(void)
+PyObject *CONDUIT_RELAY_PYTHON_API PyInit_conduit_relay_io_python(void)
 #else
-void CONDUIT_RELAY_PYTHON_API initrelay_io_python(void)
+void CONDUIT_RELAY_PYTHON_API initconduit_relay_io_python(void)
 #endif
 //---------------------------------------------------------------------------//
 {    

@@ -49,7 +49,7 @@
 //-----------------------------------------------------------------------------
 
 #include "conduit.h"
-#include "blueprint.h"
+#include "conduit_blueprint.h"
 
 #include <stdio.h>
 #include "gtest/gtest.h"

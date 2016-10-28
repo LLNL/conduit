@@ -44,12 +44,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_mesh_verify.cpp
+/// file: t_blueprint_mcarray_verify.cpp
 ///
 //-----------------------------------------------------------------------------
 
 #include "conduit.hpp"
-#include "blueprint.hpp"
+#include "conduit_blueprint.hpp"
 #include "conduit_relay.hpp"
 
 #include <iostream>

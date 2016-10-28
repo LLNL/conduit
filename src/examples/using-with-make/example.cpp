@@ -52,7 +52,7 @@
 
 #include "conduit.hpp"
 #include "conduit_relay.hpp"
-#include "blueprint.hpp"
+#include "conduit_blueprint.hpp"
 
 
 int main(int argc, char **argv)

@@ -44,12 +44,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_mesh_examples.cpp
+/// file: t_blueprint_mesh_examples.cpp
 ///
 //-----------------------------------------------------------------------------
 
 #include "conduit.hpp"
-#include "blueprint.hpp"
+#include "conduit_blueprint.hpp"
 #include "conduit_relay.hpp"
 
 #include <iostream>

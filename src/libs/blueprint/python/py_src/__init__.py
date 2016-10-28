@@ -46,7 +46,7 @@
 # file: __init__.py
 # Purpose: Main init for the conduit blueprint module.
 ###############################################################################
-from .blueprint_python import *
+from .conduit_blueprint_python import *
 
 
 

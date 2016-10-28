@@ -44,18 +44,18 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint_mcarray_examples.hpp
+/// file: conduit_blueprint_mcarray.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_MCARRAY_EXAMPLES_HPP
-#define BLUEPRINT_MCARRAY_EXAMPLES_HPP
+#ifndef CONDUIT_BLUEPRINT_MCA_HPP
+#define CONDUIT_BLUEPRINT_MCA_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-#include "blueprint_exports.hpp"
+#include "conduit_blueprint_exports.hpp"
 
 
 //-----------------------------------------------------------------------------
@@ -63,6 +63,7 @@
 //-----------------------------------------------------------------------------
 namespace conduit
 {
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint --
@@ -73,34 +74,42 @@ namespace blueprint
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mcarray --
 //-----------------------------------------------------------------------------
-
 namespace mcarray
 {
 
 //-----------------------------------------------------------------------------
-/// Methods that generate example multi-component arrays.
-//-----------------------------------------------------------------------------
-namespace examples
-{
-    //-------------------------------------------------------------------------
-    /// creates mcarray with num pts * 3 components. 
-    /// with the following layout options (passed via mcarray_type)
-    ///  interleaved
-    ///  separate
-    ///  contiguous
-    ///  interleaved_mixed
-    //-------------------------------------------------------------------------
-    void CONDUIT_BLUEPRINT_API xyz(const std::string &mcarray_type,
-                                   conduit::index_t npts, // total # of points
-                                   conduit::Node &res);
-
-//-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::examples --
+// blueprint protocol interface
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+                                  conduit::Node &info);
 
+//-----------------------------------------------------------------------------
+bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
+                                  const conduit::Node &n,
+                                  conduit::Node &info);
+
+
+//-----------------------------------------------------------------------------
+/// mcarray blueprint property and transform methods
+/// 
+/// These methods can be called on any verified mcarray.
+//-----------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------
+bool CONDUIT_BLUEPRINT_API is_interleaved(const conduit::Node &n);
+
+//-----------------------------------------------------------------------------
+bool CONDUIT_BLUEPRINT_API to_contiguous(const conduit::Node &src,
+                                         conduit::Node &dest);
+
+//-----------------------------------------------------------------------------
+bool CONDUIT_BLUEPRINT_API to_interleaved(const conduit::Node &src,
+                                          conduit::Node &dest);
+
+
+//-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mcarray --
@@ -109,13 +118,13 @@ namespace examples
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint:: --
+// -- end conduit::blueprint --
 //-----------------------------------------------------------------------------
 
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit --
+// -- end conduit:: --
 //-----------------------------------------------------------------------------
 
 

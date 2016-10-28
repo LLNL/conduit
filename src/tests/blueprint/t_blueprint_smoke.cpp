@@ -44,12 +44,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_smoke.cpp
+/// file: t_blueprint_smoke.cpp
 ///
 //-----------------------------------------------------------------------------
 
 #include "conduit.hpp"
-#include "blueprint.hpp"
+#include "conduit_blueprint.hpp"
 
 #include <iostream>
 #include "gtest/gtest.h"

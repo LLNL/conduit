@@ -53,21 +53,21 @@ ENABLE_WARNINGS()
 # Specify all headers
 #            
 set(blueprint_headers 
-    blueprint.hpp
-    blueprint_mesh.hpp
-    blueprint_mesh_examples.hpp
-    blueprint_mcarray.hpp
-    blueprint_mcarray_examples.hpp
-    blueprint_exports.hpp
+    conduit_blueprint.hpp
+    conduit_blueprint_mesh.hpp
+    conduit_blueprint_mesh_examples.hpp
+    conduit_blueprint_mcarray.hpp
+    conduit_blueprint_mcarray_examples.hpp
+    conduit_blueprint_exports.hpp
 )
 
 #
 # Specify blueprint c sources
 #
 set(blueprint_c_headers 
-    c/blueprint.h
-    c/blueprint_mcarray.h
-    c/blueprint_mesh.h
+    c/conduit_blueprint.h
+    c/conduit_blueprint_mcarray.h
+    c/conduit_blueprint_mesh.h
     )
 
 
@@ -75,20 +75,20 @@ set(blueprint_c_headers
 # Specify blueprint cpp sources
 #
 set(blueprint_sources 
-    blueprint.cpp
-    blueprint_mesh.cpp
-    blueprint_mesh_examples.cpp
-    blueprint_mcarray.cpp
-    blueprint_mcarray_examples.cpp
+    conduit_blueprint.cpp
+    conduit_blueprint_mesh.cpp
+    conduit_blueprint_mesh_examples.cpp
+    conduit_blueprint_mcarray.cpp
+    conduit_blueprint_mcarray_examples.cpp
     )
 
 #
 # Specify blueprint c sources
 #
 set(blueprint_c_sources 
-    c/c_blueprint.cpp
-    c/c_blueprint_mcarray.cpp
-    c/c_blueprint_mesh.cpp
+    c/c_conduit_blueprint.cpp
+    c/c_conduit_blueprint_mcarray.cpp
+    c/c_conduit_blueprint_mesh.cpp
     )
 
 

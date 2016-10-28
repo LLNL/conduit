@@ -44,99 +44,82 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: c_blueprint.cpp
+/// file: conduit_blueprint_mcarray_examples.hpp
 ///
 //-----------------------------------------------------------------------------
-#include "blueprint.h"
 
+#ifndef CONDUIT_BLUEPRINT_MCARRAY_EXAMPLES_HPP
+#define CONDUIT_BLUEPRINT_MCARRAY_EXAMPLES_HPP
+
+//-----------------------------------------------------------------------------
+// conduit lib includes
+//-----------------------------------------------------------------------------
 #include "conduit.hpp"
-#include "blueprint.hpp"
-
-#include "conduit_cpp_to_c.hpp"
+#include "conduit_blueprint_exports.hpp"
 
 
 //-----------------------------------------------------------------------------
-// -- begin extern C
+// -- begin conduit:: --
 //-----------------------------------------------------------------------------
-
-extern "C" {
-
-using namespace conduit;
-
-//-----------------------------------------------------------------------------
-/// Verify passed node confirms to the blueprint mcarray protocol.
-//-----------------------------------------------------------------------------
-bool
-conduit_blueprint_mcarray_verify(const conduit_node *cnode,
-                                 conduit_node *cinfo)
+namespace conduit
 {
-    const Node &n = cpp_node_ref(cnode);
-    Node &info    = cpp_node_ref(cinfo);
-    return blueprint::mcarray::verify(n,info);
-}
-
 
 //-----------------------------------------------------------------------------
-/// Verify passed node confirms to given blueprint mcarray sub protocol.
+// -- begin conduit::blueprint --
 //-----------------------------------------------------------------------------
-bool
-conduit_blueprint_mcarray_verify_sub_protocol(const char *protocol,
-                                              const conduit_node *cnode,
-                                              conduit_node *cinfo)
+namespace blueprint
 {
-    const Node &n = cpp_node_ref(cnode);
-    Node &info    = cpp_node_ref(cinfo);
-    return blueprint::mcarray::verify(std::string(protocol),n,info);
-}
 
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mcarray --
+//-----------------------------------------------------------------------------
 
-//----------------------------------------------------------------------------
-bool
-conduit_blueprint_mcarray_is_interleaved(const conduit_node *cnode)
+namespace mcarray
 {
-    const Node &n = cpp_node_ref(cnode);
-    return blueprint::mcarray::is_interleaved(n);
-}
 
 //-----------------------------------------------------------------------------
-bool
-conduit_blueprint_mcarray_to_contiguous(const conduit_node *cnode,
-                                        conduit_node *cdest)
+/// Methods that generate example multi-component arrays.
+//-----------------------------------------------------------------------------
+namespace examples
 {
-    const Node &n = cpp_node_ref(cnode);
-    Node &dest    = cpp_node_ref(cdest);
-    return blueprint::mcarray::to_contiguous(n,dest);
-}
+    //-------------------------------------------------------------------------
+    /// creates mcarray with num pts * 3 components. 
+    /// with the following layout options (passed via mcarray_type)
+    ///  interleaved
+    ///  separate
+    ///  contiguous
+    ///  interleaved_mixed
+    //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API xyz(const std::string &mcarray_type,
+                                   conduit::index_t npts, // total # of points
+                                   conduit::Node &res);
 
 //-----------------------------------------------------------------------------
-bool
-conduit_blueprint_mcarray_to_interleaved(const conduit_node *cnode,
-                                         conduit_node *cdest)
-{
-    const Node &n = cpp_node_ref(cnode);
-    Node &dest    = cpp_node_ref(cdest);
-    return blueprint::mcarray::to_interleaved(n,dest);
 }
-
-
 //-----------------------------------------------------------------------------
-/// Interface to generate example data
+// -- end conduit::blueprint::mesh::examples --
 //-----------------------------------------------------------------------------
-void
-conduit_blueprint_mcarray_examples_xyz(const char *mcarray_type,
-                                       conduit_index_t npts,
-                                       conduit_node *cres)
-{
-    Node &res = cpp_node_ref(cres);
-    blueprint::mcarray::examples::xyz(std::string(mcarray_type),
-                                      npts,
-                                      res);
-}
-
 
 
 }
 //-----------------------------------------------------------------------------
-// -- end extern C
+// -- end conduit::blueprint::mcarray --
 //-----------------------------------------------------------------------------
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint:: --
+//-----------------------------------------------------------------------------
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit --
+//-----------------------------------------------------------------------------
+
+
+#endif 
+
+
 

@@ -44,12 +44,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: blueprint_exports.hpp
+/// file: conduit_blueprint_exports.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef BLUEPRINT_EXPORTS_HPP
-#define BLUEPRINT_EXPORTS_HPP
+#ifndef CONDUIT_BLUEPRINT_EXPORTS_HPP
+#define CONDUIT_BLUEPRINT_EXPORTS_HPP
 
 //-----------------------------------------------------------------------------
 // -- define proper lib exports for various platforms -- 
