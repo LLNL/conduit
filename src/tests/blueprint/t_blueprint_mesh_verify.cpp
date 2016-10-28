@@ -84,7 +84,7 @@ bool is_valid_coordsys(bool (*coordsys_valid_fun)(const Node&, Node&),
     Node n, info;
 
     bool is_valid = true;
-    for(index_t ci = 0; ci < coordsys.size(); ci++)
+    for(size_t ci = 0; ci < coordsys.size(); ci++)
     {
         const std::string& coordsys_dim = coordsys[ci];
 
@@ -260,14 +260,14 @@ TEST(conduit_blueprint_mesh_verify, coordset_rectilinear)
     n["values"].set("test");
     EXPECT_FALSE(blueprint::mesh::coordset::rectilinear::verify(n,info));
 
-    for(index_t ci = 0; ci < 3; ci++)
+    for(size_t ci = 0; ci < 3; ci++)
     {
         const std::vector<std::string>& coord_coordsys = COORDINATE_COORDSYSS[ci];
 
         n["values"].reset();
-        for(index_t ci = 0; ci < coord_coordsys.size(); ci++)
+        for(size_t cj = 0; cj < coord_coordsys.size(); cj++)
         {
-            n["values"][coord_coordsys[ci]].set(DataType::float64(10));
+            n["values"][coord_coordsys[cj]].set(DataType::float64(10));
             EXPECT_TRUE(blueprint::mesh::coordset::rectilinear::verify(n,info));
         }
     }
@@ -294,14 +294,14 @@ TEST(conduit_blueprint_mesh_verify, coordset_explicit)
     n["values"].set("test");
     EXPECT_FALSE(blueprint::mesh::coordset::_explicit::verify(n,info));
 
-    for(index_t ci = 0; ci < 3; ci++)
+    for(size_t ci = 0; ci < 3; ci++)
     {
         const std::vector<std::string>& coord_coordsys = COORDINATE_COORDSYSS[ci];
 
         n["values"].reset();
-        for(index_t ci = 0; ci < coord_coordsys.size(); ci++)
+        for(size_t cj = 0; cj < coord_coordsys.size(); cj++)
         {
-            n["values"][coord_coordsys[ci]].set(DataType::float64(10));
+            n["values"][coord_coordsys[cj]].set(DataType::float64(10));
             EXPECT_TRUE(blueprint::mesh::coordset::_explicit::verify(n,info));
         }
     }
@@ -362,7 +362,7 @@ TEST(conduit_blueprint_mesh_verify, coordset_coordsys)
 
         n["axes"].reset();
         const std::vector<std::string>& coordsys = COORDINATE_COORDSYSS[ci];
-        for(index_t ai = 0; ai < coordsys.size(); ai++)
+        for(size_t ai = 0; ai < coordsys.size(); ai++)
         {
             n["axes"][coordsys[ai]].set(10);
             EXPECT_TRUE(blueprint::mesh::coordset::coord_system::verify(n,info));

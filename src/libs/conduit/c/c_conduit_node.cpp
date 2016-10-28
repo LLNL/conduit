@@ -50,6 +50,8 @@
 #include "conduit_node.h"
 
 #include "conduit.hpp"
+#include "conduit_cpp_to_c.hpp"
+
 #include <stdlib.h>
 
 //-----------------------------------------------------------------------------
@@ -59,21 +61,6 @@
 extern "C" {
 
 using namespace conduit;
-
-//---------------------------------------------------------------------------//
-Node *
-cpp_node(conduit_node *cnode)
-{
-    return static_cast<Node*>(cnode);
-}
-
-//---------------------------------------------------------------------------//
-conduit_node *
-c_node(Node *node)
-{
-    return (void*)node;
-}
-
 
 //-----------------------------------------------------------------------------
 // -- basic constructor and destruction -- 
@@ -136,10 +123,93 @@ conduit_node_number_of_elements(conduit_node *cnode)
 }
 
 //-----------------------------------------------------------------------------
-int 
+bool 
+conduit_node_has_child(const conduit_node *cnode, 
+                       const char *name)
+{
+    return cpp_node(cnode)->has_child(std::string(name));
+}
+
+//-----------------------------------------------------------------------------
+bool 
+conduit_node_has_path(const conduit_node *cnode, 
+                      const char *path)
+{
+    return cpp_node(cnode)->has_path(std::string(path));
+}
+
+//-----------------------------------------------------------------------------
+bool 
 conduit_node_is_root(conduit_node *cnode)
 {
     return cpp_node(cnode)->is_root();
+}
+
+//-----------------------------------------------------------------------------
+bool 
+conduit_node_is_data_external(const conduit_node *cnode)
+{
+    return cpp_node(cnode)->is_data_external();
+}
+
+
+//-----------------------------------------------------------------------------
+conduit_node * 
+conduit_node_parent(conduit_node *cnode)
+{
+    return c_node(cpp_node(cnode)->parent());
+}
+
+//-----------------------------------------------------------------------------
+conduit_index_t
+conduit_node_total_bytes(const conduit_node *cnode)
+{
+    return cpp_node(cnode)->total_bytes();
+}
+
+//-----------------------------------------------------------------------------
+conduit_index_t
+conduit_node_total_bytes_compact(const conduit_node *cnode)
+{
+    return cpp_node(cnode)->total_bytes_compact();
+}
+
+//-----------------------------------------------------------------------------
+bool 
+conduit_node_is_compact(const conduit_node *cnode)
+{
+    return cpp_node(cnode)->is_compact();
+}
+
+//-----------------------------------------------------------------------------
+bool 
+conduit_node_is_contiguous(const conduit_node *cnode)
+{
+    return cpp_node(cnode)->is_contiguous();
+}
+
+//-----------------------------------------------------------------------------
+bool 
+conduit_node_contiguous_with_node(const conduit_node *cnode,
+                                  const conduit_node *cother)
+{
+    return cpp_node(cnode)->contiguous_with(cpp_node_ref(cother));
+}
+
+//-----------------------------------------------------------------------------
+bool 
+conduit_node_contiguous_with_address(const conduit_node *cnode,
+                                     void *address)
+{
+    return cpp_node(cnode)->contiguous_with(address);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_info(const conduit_node *cnode,
+                  const conduit_node *cnres)
+{
+    cpp_node(cnode)->compatible(cpp_node_ref(cnres));
 }
 
 //-----------------------------------------------------------------------------
@@ -155,6 +225,10 @@ conduit_node_print_detailed(conduit_node *cnode)
 {
     cpp_node(cnode)->print_detailed();
 }
+
+
+
+
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

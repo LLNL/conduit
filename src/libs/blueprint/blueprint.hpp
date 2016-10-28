@@ -81,26 +81,20 @@ namespace blueprint
 /// The about methods construct human readable info about how blueprint was
 /// configured.
 //-----------------------------------------------------------------------------
-std::string BLUEPRINT_API about();
-void        BLUEPRINT_API about(conduit::Node &n);
+std::string CONDUIT_BLUEPRINT_API about();
+void        CONDUIT_BLUEPRINT_API about(conduit::Node &n);
 
 //-----------------------------------------------------------------------------
 /// blueprint verify interface
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-/// Verify passed node confirms to given blueprint protocol
-//-----------------------------------------------------------------------------
-bool BLUEPRINT_API verify(const std::string &protocol,
-                          const conduit::Node &n);
-
-//-----------------------------------------------------------------------------
 /// Verify passed node confirms to given blueprint protocol.
 /// Messages related to the verification are be placed in the "info" node.
 //-----------------------------------------------------------------------------
-bool BLUEPRINT_API verify(const std::string &protocol,
-                          const conduit::Node &n,
-                          conduit::Node &info);
+bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
+                                  const conduit::Node &n,
+                                  conduit::Node &info);
 
 //-----------------------------------------------------------------------------
 }

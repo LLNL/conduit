@@ -150,6 +150,7 @@ Schema::reset()
 void 
 Schema::set(const Schema &schema)
 {
+    reset();
     bool init_children = false;
     index_t dt_id = schema.m_dtype.id();
     if (dt_id == DataType::OBJECT_ID)
@@ -157,7 +158,7 @@ Schema::set(const Schema &schema)
        init_object();
        init_children = true;
 
-       object_map() = schema.object_map();
+       object_map()   = schema.object_map();
        object_order() = schema.object_order();
     } 
     else if (dt_id == DataType::LIST_ID)

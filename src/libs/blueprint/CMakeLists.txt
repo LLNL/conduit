@@ -58,17 +58,39 @@ set(blueprint_headers
     blueprint_mesh_examples.hpp
     blueprint_mcarray.hpp
     blueprint_mcarray_examples.hpp
-    blueprint_exports.hpp)
+    blueprint_exports.hpp
+)
 
 #
-# Specify all sources
+# Specify blueprint c sources
+#
+set(blueprint_c_headers 
+    c/blueprint.h
+    c/blueprint_mcarray.h
+    c/blueprint_mesh.h
+    )
+
+
+#
+# Specify blueprint cpp sources
 #
 set(blueprint_sources 
     blueprint.cpp
     blueprint_mesh.cpp
     blueprint_mesh_examples.cpp
     blueprint_mcarray.cpp
-    blueprint_mcarray_examples.cpp)
+    blueprint_mcarray_examples.cpp
+    )
+
+#
+# Specify blueprint c sources
+#
+set(blueprint_c_sources 
+    c/c_blueprint.cpp
+    c/c_blueprint_mcarray.cpp
+    c/c_blueprint_mesh.cpp
+    )
+
 
 
 #
@@ -76,8 +98,8 @@ set(blueprint_sources
 #
 add_compiled_library(NAME conduit_blueprint
                      EXPORT conduit
-                     HEADERS ${blueprint_headers}
-                     SOURCES ${blueprint_sources}
+                     HEADERS ${blueprint_headers} ${blueprint_c_headers}
+                     SOURCES ${blueprint_sources} ${blueprint_c_sources}
                      HEADERS_DEST_DIR include/conduit)
 
 
@@ -95,6 +117,11 @@ if(PYTHON_FOUND)
     add_subdirectory(python)
 endif()
 
-
-
+#################################
+# Add fortran interface lib
+# if fortran support was selected
+#################################
+if(FORTRAN_FOUND)
+    add_subdirectory(fortran)
+endif()
 

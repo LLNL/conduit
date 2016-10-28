@@ -71,7 +71,7 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/relay_config.hpp.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/relay_config.hpp")
 
 #
-# Specify all headers
+# Specify cpp headers
 #
 set(conduit_relay_headers
     relay.hpp
@@ -82,13 +82,26 @@ set(conduit_relay_headers
     ${CMAKE_CURRENT_BINARY_DIR}/relay_config.hpp)
 
 #
-# Specify all sources
+# Specify c headers
+#
+set(conduit_relay_c_headers
+    c/relay.h)
+
+#
+# Specify cpp sources
 #
 set(conduit_relay_sources
     relay.cpp
     relay_io.cpp
     relay_web.cpp
     relay_web_node_viewer_server.cpp)
+
+#
+# Specify c sources
+#
+set(conduit_relay_c_sources
+    c/c_relay.cpp)
+
 
 if(HDF5_FOUND)
     list(APPEND conduit_relay_headers relay_hdf5.hpp)
@@ -106,8 +119,8 @@ endif()
 #
 add_compiled_library(NAME conduit_relay
                      EXPORT conduit
-                     HEADERS ${conduit_relay_headers}
-                     SOURCES ${conduit_relay_sources}
+                     HEADERS ${conduit_relay_headers} ${conduit_relay_c_headers}
+                     SOURCES ${conduit_relay_sources} ${conduit_relay_c_sources}
                              $<TARGET_OBJECTS:conduit_civetweb>
                      HEADERS_DEST_DIR include/conduit)
 
@@ -170,6 +183,15 @@ install(FILES scripts/conduit_relay_entangle.py
 if(PYTHON_FOUND)
     add_subdirectory(python)
 endif()
+
+################################
+# Add fortran interface if 
+# fortran support was selected
+################################
+if(FORTRAN_FOUND)
+    add_subdirectory(fortran)
+endif()
+
 
 ################################################################
 # If we have mpi, add the conduit relay mpi library

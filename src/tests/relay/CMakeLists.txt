@@ -63,7 +63,7 @@ set(RELAY_HDF5_TESTS     t_relay_io_hdf5 t_relay_io_hdf5_read_and_print)
 
 
 ################################
-# Add our tests
+# Add our main tests
 ################################
 
 message(STATUS "Adding conduit_relay unit tests")
@@ -71,6 +71,11 @@ foreach(TEST ${RELAY_TESTS})
     add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_relay )
 endforeach()
 
+
+################################
+# Add c interface tests
+################################
+add_subdirectory("c")
 
 ################################
 # Add our Optional Unit Tests
@@ -117,4 +122,13 @@ if(PYTHON_FOUND)
 else()
     message(STATUS "Python disabled: Skipping conduit relay python module tests")
 endif()
+
+
+if(FORTRAN_FOUND)
+    add_subdirectory("fortran")
+else()
+    message(STATUS "Fortran disabled: Skipping conduit relay fortran interface tests")
+endif()
+
+
 

@@ -42,29 +42,27 @@
 # 
 ###############################################################################
 
-################################
-# Conduit C Interface Unit Tests
-################################
+###############################################################################
+# Conduit Fortran Interface Unit Tests
+###############################################################################
 
-################################
-# Core (conduit lib) Unit Tests
-################################
-set(BASIC_FORTRAN_TESTS 
+set(FORTRAN_TESTS 
     t_f_type_sizes
+    t_f_conduit_smoke
     t_f_conduit_node
     t_f_conduit_node_int
     t_f_conduit_node_float
     t_f_conduit_node_char8_str)
 
 if(ENABLE_FORTRAN_OBJ_INTERFACE)
-    list(APPEND BASIC_FORTRAN_TESTS t_f_conduit_node_obj)
+    list(APPEND FORTRAN_TESTS t_f_conduit_node_obj)
 endif()
 
 ################################
 # Add our tests
 ################################
 message(STATUS "Adding conduit lib fortran interface unit tests")
-foreach(TEST ${BASIC_FORTRAN_TESTS})
+foreach(TEST ${FORTRAN_TESTS})
     add_fortran_test(TEST ${TEST} DEPENDS_ON conduit conduit_fortran)
 endforeach()
 

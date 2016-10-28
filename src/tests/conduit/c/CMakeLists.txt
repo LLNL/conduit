@@ -42,14 +42,12 @@
 # 
 ###############################################################################
 
-################################
+###############################################################################
 # Conduit C Interface Unit Tests
-################################
+###############################################################################
 
-################################
-# Core (conduit lib) Unit Tests
-################################
-set(BASIC_C_TESTS
+set(C_TESTS
+    t_c_conduit_smoke
     t_c_conduit_node
     t_c_conduit_node_set)
 
@@ -57,7 +55,7 @@ set(BASIC_C_TESTS
 # Add our tests
 ################################
 message(STATUS "Adding conduit lib c interface unit tests")
-foreach(TEST ${BASIC_C_TESTS})
+foreach(TEST ${C_TESTS})
     add_cpp_test(TEST ${TEST} DEPENDS_ON conduit )
 endforeach()
 

@@ -44,19 +44,54 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit.h
+/// file: blueprint.h
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_H
-#define CONDUIT_H
+#ifndef CONDUIT_BLUEPRINT_H
+#define CONDUIT_BLUEPRINT_H
+
+//-----------------------------------------------------------------------------
+// -- includes for the public conduit blueprint c interface -- 
+//-----------------------------------------------------------------------------
+
+#include "conduit.h"
+#include "blueprint_exports.hpp"
+
+//-----------------------------------------------------------------------------
+// -- begin extern C
+//-----------------------------------------------------------------------------
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+//-----------------------------------------------------------------------------
+// -- conduit_blueprint c interface  --
+//-----------------------------------------------------------------------------
+
+CONDUIT_BLUEPRINT_API void conduit_blueprint_about(conduit_node *cnode);
 
 
 //-----------------------------------------------------------------------------
-// -- includes for the public conduit c interface -- 
+/// Verify passed node confirms to given blueprint protocol.
+/// Messages related to the verification are be placed in the "info" node.
+//-----------------------------------------------------------------------------
+CONDUIT_BLUEPRINT_API bool conduit_blueprint_verify(const char *protocol,
+                                                    const conduit_node *cnode,
+                                                    conduit_node *cinfo);
+
+#ifdef __cplusplus
+}
+#endif
+//-----------------------------------------------------------------------------
+// -- end extern C
 //-----------------------------------------------------------------------------
 
-#include "conduit_node.h"
+#include "blueprint_mcarray.h"
+#include "blueprint_mesh.h"
 
 
+//-----------------------------------------------------------------------------
+// -- end header guard ifdef
+//-----------------------------------------------------------------------------
 #endif

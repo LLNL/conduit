@@ -69,6 +69,11 @@ module conduit_obj
         procedure :: print => conduit_node_obj_print
         procedure :: print_detailed => conduit_node_obj_print_detailed
         !----------------------------------------------------------------------
+
+        !----------------------------------------------------------------------
+        procedure :: is_root => conduit_node_obj_is_root
+        procedure :: is_contiguous => conduit_node_obj_is_contiguous
+
         
         !----------------------------------------------------------------------
         !----------------------------------------------------------------------
@@ -250,6 +255,25 @@ contains
         call conduit_node_destroy(obj%cnode)
         obj%cnode = C_NULL_PTR
     end subroutine conduit_node_obj_destroy
+
+    !--------------------------------------------------------------------------
+    function conduit_node_obj_is_root(obj) result(res)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        logical(C_BOOL) :: res
+        res = conduit_node_is_root(obj%cnode)
+     end function conduit_node_obj_is_root
+
+     !--------------------------------------------------------------------------
+     function conduit_node_obj_is_contiguous(obj) result(res)
+         use iso_c_binding
+         implicit none
+         class(node) :: obj
+         logical(C_BOOL) :: res
+         res = conduit_node_is_contiguous(obj%cnode)
+      end function conduit_node_obj_is_contiguous
+
 
     !--------------------------------------------------------------------------
     function conduit_node_obj_fetch(obj, path) result(res)

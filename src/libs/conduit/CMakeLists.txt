@@ -85,8 +85,9 @@ set(conduit_headers
 # Specify conduit c interface headers
 #
 set(conduit_c_headers
-    conduit.h
-    conduit_node.h
+    c/conduit.h
+    c/conduit_node.h
+    c/conduit_cpp_to_c.hpp
     )
 
 #
@@ -109,7 +110,9 @@ set(conduit_sources
 # Specify conduit c interface sources
 #
 set(conduit_c_sources
-    conduit_node.cpp
+    c/c_conduit.cpp
+    c/c_conduit_node.cpp
+    c/c_conduit_cpp_to_c.cpp
     )
 
 

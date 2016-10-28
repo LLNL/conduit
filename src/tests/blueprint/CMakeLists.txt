@@ -65,6 +65,10 @@ foreach(TEST ${BLUEPRINT_TESTS})
     add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_blueprint conduit_relay)
 endforeach()
 
+################################
+# Add c interface tests
+################################
+add_subdirectory("c")
 
 ################################
 # Add optional tests
@@ -73,6 +77,13 @@ if(PYTHON_FOUND)
     add_subdirectory("python")
 else()
     message(STATUS "Python disabled: Skipping conduit blueprint python module tests")
+endif()
+
+
+if(FORTRAN_FOUND)
+    add_subdirectory("fortran")
+else()
+    message(STATUS "Fortran disabled: Skipping conduit blueprint fortran interface tests")
 endif()
 
 
