@@ -278,7 +278,7 @@ void CONDUIT_RELAY_PYTHON_API initconduit_relay_python(void)
 #if defined(IS_PY3K)
     PyObject *relay_module = PyModule_Create(&relay_python_module_def);
 #else
-    PyObject *relay_module = Py_InitModule((char*)"relay_python",
+    PyObject *relay_module = Py_InitModule((char*)"conduit_relay_python",
                                              relay_python_funcs);
 #endif
 
@@ -290,7 +290,7 @@ void CONDUIT_RELAY_PYTHON_API initconduit_relay_python(void)
 
     struct module_state *st = GETSTATE(relay_module);
     
-    st->error = PyErr_NewException((char*)"relay_python.Error",
+    st->error = PyErr_NewException((char*)"conduit_relay_python.Error",
                                    NULL,
                                    NULL);
     if (st->error == NULL)

@@ -976,7 +976,7 @@ void CONDUIT_RELAY_PYTHON_API initconduit_relay_web_python(void)
 #if defined(IS_PY3K)
     PyObject *relay_web_module = PyModule_Create(&relay_web_python_module_def);
 #else
-    PyObject *relay_web_module = Py_InitModule((char*)"relay_web_python",
+    PyObject *relay_web_module = Py_InitModule((char*)"conduit_relay_web_python",
                                                relay_web_python_funcs);
 #endif
 
