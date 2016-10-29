@@ -370,7 +370,7 @@ void CONDUIT_RELAY_PYTHON_API initconduit_relay_io_python(void)
 #if defined(IS_PY3K)
     PyObject *relay_io_module = PyModule_Create(&relay_io_python_module_def);
 #else
-    PyObject *relay_io_module = Py_InitModule((char*)"relay_io_python",
+    PyObject *relay_io_module = Py_InitModule((char*)"conduit_relay_io_python",
                                               relay_io_python_funcs);
 #endif
 

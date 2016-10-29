@@ -279,7 +279,7 @@ void CONDUIT_BLUEPRINT_PYTHON_API initconduit_blueprint_python(void)
 #if defined(IS_PY3K)
     PyObject *blueprint_module = PyModule_Create(&blueprint_python_module_def);
 #else
-    PyObject *blueprint_module = Py_InitModule((char*)"blueprint_python",
+    PyObject *blueprint_module = Py_InitModule((char*)"conduit_blueprint_python",
                                              blueprint_python_funcs);
 #endif
 
@@ -290,7 +290,7 @@ void CONDUIT_BLUEPRINT_PYTHON_API initconduit_blueprint_python(void)
 
     struct module_state *st = GETSTATE(blueprint_module);
     
-    st->error = PyErr_NewException((char*)"blueprint_python.Error",
+    st->error = PyErr_NewException((char*)"conduit_blueprint_python.Error",
                                    NULL,
                                    NULL);
     if (st->error == NULL)
