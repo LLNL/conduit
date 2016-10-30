@@ -44,68 +44,35 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: c_conduit_cpp_to_c.cpp
+/// file: conduit_relay_c.cpp
 ///
 //-----------------------------------------------------------------------------
-#include "conduit.h"
-#include "conduit.hpp"
+#include "conduit_relay.h"
 
+#include "conduit.hpp"
+#include "conduit_relay.hpp"
 #include "conduit_cpp_to_c.hpp"
 
+
 //-----------------------------------------------------------------------------
-// -- begin conduit:: --
+// -- begin extern C
 //-----------------------------------------------------------------------------
-namespace conduit
-{
 
+extern "C" {
 
-//---------------------------------------------------------------------------//
-Node *
-cpp_node(conduit_node *cnode)
-{
-    return static_cast<Node*>(cnode);
-}
+using namespace conduit;
 
 //---------------------------------------------------------------------------//
-conduit_node *
-c_node(Node *node)
+void
+conduit_relay_about(conduit_node *cnode)
 {
-    return (void*)node;
-}
-
-
-//---------------------------------------------------------------------------//
-const Node *
-cpp_node(const conduit_node *cnode)
-{
-    return static_cast<const Node*>(cnode);
-}
-
-//---------------------------------------------------------------------------//
-const conduit_node *
-c_node(const Node *node)
-{
-    return (void*)node;
-}
-
-//---------------------------------------------------------------------------//
-Node &
-cpp_node_ref(conduit_node *cnode)
-{
-    return *static_cast<Node*>(cnode);
-}
-
-//---------------------------------------------------------------------------//
-const Node &
-cpp_node_ref(const conduit_node *cnode)
-{
-    return *static_cast<const Node*>(cnode);
+    Node *n = cpp_node(cnode);
+    relay::about(*n);
 }
 
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit:: --
+// -- end extern C
 //-----------------------------------------------------------------------------
-
 

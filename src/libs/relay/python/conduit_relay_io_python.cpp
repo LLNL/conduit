@@ -66,7 +66,7 @@
 #include "conduit.hpp"
 #include "conduit_relay.hpp"
 
-#include "conduit_relay_python_exports.hpp"
+#include "conduit_relay_python_exports.h"
 
 // conduit python module capi header
 #include "conduit_python.hpp"

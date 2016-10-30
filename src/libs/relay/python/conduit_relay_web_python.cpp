@@ -62,7 +62,7 @@
 #include "conduit.hpp"
 #include "conduit_relay.hpp"
 
-#include "conduit_relay_python_exports.hpp"
+#include "conduit_relay_python_exports.h"
 
 // conduit python module capi header
 #include "conduit_python.hpp"
@@ -74,6 +74,18 @@ using namespace conduit::relay::web;
 #if PY_MAJOR_VERSION >= 3
 #define IS_PY3K
 #endif
+
+//-----------------------------------------------------------------------------
+// PyVarObject_TAIL is used at the end of each PyVarObject def
+// to make sure we have the correct number of initializers across python
+// versions.
+//-----------------------------------------------------------------------------
+#ifdef Py_TPFLAGS_HAVE_FINALIZE
+#define PyVarObject_TAIL ,0
+#else
+#define PyVarObject_TAIL
+#endif
+
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -659,6 +671,7 @@ static PyTypeObject PyRelay_Web_WebServer_TYPE = {
    0,  /* tp_weaklist */
    0,
    0
+   PyVarObject_TAIL
 };
 
 
@@ -851,6 +864,7 @@ static PyTypeObject PyRelay_Web_WebSocket_TYPE = {
    0,  /* tp_weaklist */
    0,
    0
+   PyVarObject_TAIL
 };
 
 //---------------------------------------------------------------------------//

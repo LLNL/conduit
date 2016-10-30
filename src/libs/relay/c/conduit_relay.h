@@ -56,7 +56,9 @@
 //-----------------------------------------------------------------------------
 
 #include "conduit.h"
-#include "conduit_relay_exports.hpp"
+#include "conduit_relay_config.h"
+#include "conduit_relay_exports.h"
+
 
 //-----------------------------------------------------------------------------
 // -- begin extern C

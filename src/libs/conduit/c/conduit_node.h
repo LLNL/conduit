@@ -57,7 +57,7 @@
 
 #include "conduit_bitwidth_style_types.h"
 #include "conduit_endianness_types.h"
-#include "conduit_exports.hpp"
+#include "conduit_exports.h"
 
 //-----------------------------------------------------------------------------
 // -- begin extern C

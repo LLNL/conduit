@@ -44,39 +44,38 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay_exports.hpp
+/// file: conduit_c.cpp
 ///
 //-----------------------------------------------------------------------------
+#include "conduit.h"
 
-#ifndef CONDUIT_RELAY_EXPORTS_HPP
-#define CONDUIT_RELAY_EXPORTS_HPP
+#include "conduit.hpp"
+#include "conduit_cpp_to_c.hpp"
+
 
 //-----------------------------------------------------------------------------
-// -- define proper lib exports for various platforms -- 
+// -- begin extern C
 //-----------------------------------------------------------------------------
-#if defined(_WIN32)
-#if defined(CONDUIT_RELAY_EXPORTS) || defined(conduit_relay_EXPORTS) || defined(CONDUIT_RELAY_MPI_EXPORTS) || defined(conduit_relay_mpi_EXPORTS)
-#define CONDUIT_RELAY_API __declspec(dllexport)
-#else
-#define CONDUIT_RELAY_API __declspec(dllimport)
-#endif
-#if defined(_MSC_VER)
-// Turn off warning about lack of DLL interface
-#pragma warning(disable:4251)
-// Turn off warning non-dll class is base for dll-interface class.
-#pragma warning(disable:4275)
-// Turn off warning about identifier truncation
-#pragma warning(disable:4786)
-#endif
-#else
-# if __GNUC__ >= 4 && ( defined(CONDUIT_RELAY_EXPORTS) || defined(conduit_relay_EXPORTS) || defined(CONDUIT_RELAY_MPI_EXPORTS) || defined(conduit_relay_mpi_EXPORTS))
-#   define CONDUIT_RELAY_API __attribute__ ((visibility("default")))
-# else
-#   define CONDUIT_RELAY_API /* hidden by default */
-# endif
-#endif
 
-#endif
+extern "C" {
+
+using namespace conduit;
+
+//-----------------------------------------------------------------------------
+// -- basic constructor and destruction -- 
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void
+conduit_about(conduit_node *cnode)
+{
+    Node *n = cpp_node(cnode);
+    about(*n);
+}
 
 
+}
+//-----------------------------------------------------------------------------
+// -- end extern C
+//-----------------------------------------------------------------------------
 

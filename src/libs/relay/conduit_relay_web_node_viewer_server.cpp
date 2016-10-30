@@ -62,9 +62,9 @@
 //-----------------------------------------------------------------------------
 // conduit includes
 //-----------------------------------------------------------------------------
+#include "conduit_relay_config.h"
 #include "conduit_relay_web.hpp"
 #include "conduit_relay_web_node_viewer_server.hpp"
-#include "conduit_relay_config.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --

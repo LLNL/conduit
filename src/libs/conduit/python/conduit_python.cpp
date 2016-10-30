@@ -54,6 +54,16 @@
 #define IS_PY3K
 #endif
 
+//-----------------------------------------------------------------------------
+// PyVarObject_TAIL is used at the end of each PyVarObject def
+// to make sure we have the correct number of initializers across python
+// versions.
+//-----------------------------------------------------------------------------
+#ifdef Py_TPFLAGS_HAVE_FINALIZE
+#define PyVarObject_TAIL ,0
+#else
+#define PyVarObject_TAIL
+#endif
 
 //-----------------------------------------------------------------------------
 // -- standard lib includes -- 
@@ -73,7 +83,7 @@
 // conduit includes
 //---------------------------------------------------------------------------//
 #include "conduit.hpp"
-#include "Conduit_Python_Exports.hpp"
+#include "conduit_python_exports.hpp"
 
 #define CONDUIT_MODULE
 #include "conduit_python.hpp"
@@ -1922,6 +1932,7 @@ static PyTypeObject PyConduit_DataType_TYPE = {
    0,  /* tp_weaklist */
    0,
    0
+   PyVarObject_TAIL
 };
 
 //---------------------------------------------------------------------------//
@@ -2189,6 +2200,7 @@ static PyTypeObject PyConduit_Generator_TYPE = {
    0,  /* tp_weaklist */
    0,
    0
+   PyVarObject_TAIL
 };
 
 
@@ -2611,6 +2623,7 @@ static PyTypeObject PyConduit_Schema_TYPE = {
    0,  /* tp_weaklist */
    0,
    0
+   PyVarObject_TAIL
 };
 
 
@@ -2973,6 +2986,7 @@ static PyTypeObject PyConduit_NodeIterator_TYPE = {
    0,  /* tp_weaklist */
    0,
    0
+   PyVarObject_TAIL       
 };
 
 //---------------------------------------------------------------------------//
@@ -4015,6 +4029,7 @@ static PyTypeObject PyConduit_Node_TYPE = {
    0,  /* tp_weaklist */
    0,
    0
+   PyVarObject_TAIL
 };
 
 

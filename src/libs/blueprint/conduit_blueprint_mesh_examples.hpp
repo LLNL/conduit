@@ -55,7 +55,7 @@
 // conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-#include "conduit_blueprint_exports.hpp"
+#include "conduit_blueprint_exports.h"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::--

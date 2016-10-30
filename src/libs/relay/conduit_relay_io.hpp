@@ -56,8 +56,8 @@
 // conduit lib include 
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-#include "conduit_relay_exports.hpp"
-#include "conduit_relay_config.hpp"
+#include "conduit_relay_exports.h"
+#include "conduit_relay_config.h"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --

@@ -56,7 +56,7 @@
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
 
-#include "conduit_blueprint_exports.hpp"
+#include "conduit_blueprint_exports.h"
 
 #include "conduit_blueprint_mesh.hpp"
 #include "conduit_blueprint_mesh_examples.hpp"

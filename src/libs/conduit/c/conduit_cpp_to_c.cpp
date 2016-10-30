@@ -44,40 +44,68 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_exports.hpp
+/// file: conduit_cpp_to_c.cpp
 ///
 //-----------------------------------------------------------------------------
+#include "conduit.h"
+#include "conduit.hpp"
 
-#ifndef CONDUIT_EXPORTS_HPP
-#define CONDUIT_EXPORTS_HPP
+#include "conduit_cpp_to_c.hpp"
 
 //-----------------------------------------------------------------------------
-// -- define proper lib exports for various platforms -- 
+// -- begin conduit:: --
 //-----------------------------------------------------------------------------
+namespace conduit
+{
 
-#if defined(_WIN32)
-#if defined(CONDUIT_EXPORTS) || defined(conduit_EXPORTS)
-#define CONDUIT_API __declspec(dllexport)
-#else
-#define CONDUIT_API __declspec(dllimport)
-#endif
-#if defined(_MSC_VER)
-// Turn off warning about lack of DLL interface
-#pragma warning(disable:4251)
-// Turn off warning non-dll class is base for dll-interface class.
-#pragma warning(disable:4275)
-// Turn off warning about identifier truncation
-#pragma warning(disable:4786)
-#endif
-#else
-# if __GNUC__ >= 4 && (defined(CONDUIT_EXPORTS) || defined(conduit_EXPORTS))
-#   define CONDUIT_API __attribute__ ((visibility("default")))
-# else
-#   define CONDUIT_API /* hidden by default */
-# endif
-#endif
 
-#endif
+//---------------------------------------------------------------------------//
+Node *
+cpp_node(conduit_node *cnode)
+{
+    return static_cast<Node*>(cnode);
+}
 
+//---------------------------------------------------------------------------//
+conduit_node *
+c_node(Node *node)
+{
+    return (void*)node;
+}
+
+
+//---------------------------------------------------------------------------//
+const Node *
+cpp_node(const conduit_node *cnode)
+{
+    return static_cast<const Node*>(cnode);
+}
+
+//---------------------------------------------------------------------------//
+const conduit_node *
+c_node(const Node *node)
+{
+    return (void*)node;
+}
+
+//---------------------------------------------------------------------------//
+Node &
+cpp_node_ref(conduit_node *cnode)
+{
+    return *static_cast<Node*>(cnode);
+}
+
+//---------------------------------------------------------------------------//
+const Node &
+cpp_node_ref(const conduit_node *cnode)
+{
+    return *static_cast<const Node*>(cnode);
+}
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit:: --
+//-----------------------------------------------------------------------------
 
 
