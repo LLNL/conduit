@@ -65,7 +65,7 @@
 //-----------------------------------------------------------------------------
 // -- define proper lib exports for various platforms -- 
 //-----------------------------------------------------------------------------
-#include "conduit_exports.hpp"
+#include "conduit_exports.h"
 
 //-----------------------------------------------------------------------------
 // -- include bit width style types mapping header  -- 

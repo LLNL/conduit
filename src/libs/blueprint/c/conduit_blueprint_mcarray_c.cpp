@@ -44,10 +44,10 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: c_conduit_blueprint_mesh.cpp
+/// file: conduit_blueprint_mcarray_c.cpp
 ///
 //-----------------------------------------------------------------------------
-#include "conduit_blueprint_mesh.h"
+#include "conduit_blueprint_mcarray.h"
 
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
@@ -64,63 +64,73 @@ extern "C" {
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
-/// Verify passed node confirms to the blueprint mesh protocol.
+/// Verify passed node confirms to the blueprint mcarray protocol.
 //-----------------------------------------------------------------------------
 bool
-conduit_blueprint_mesh_verify(const conduit_node *cnode,
-                              conduit_node *cinfo)
+conduit_blueprint_mcarray_verify(const conduit_node *cnode,
+                                 conduit_node *cinfo)
 {
     const Node &n = cpp_node_ref(cnode);
     Node &info    = cpp_node_ref(cinfo);
-    return blueprint::mesh::verify(n,info);
+    return blueprint::mcarray::verify(n,info);
 }
 
 
 //-----------------------------------------------------------------------------
-/// Verify passed node confirms to given blueprint mesh sub protocol.
+/// Verify passed node confirms to given blueprint mcarray sub protocol.
 //-----------------------------------------------------------------------------
 bool
-conduit_blueprint_mesh_verify_sub_protocol(const char *protocol,
-                                           const conduit_node *cnode,
-                                           conduit_node *cinfo)
+conduit_blueprint_mcarray_verify_sub_protocol(const char *protocol,
+                                              const conduit_node *cnode,
+                                              conduit_node *cinfo)
 {
     const Node &n = cpp_node_ref(cnode);
     Node &info    = cpp_node_ref(cinfo);
-    return blueprint::mesh::verify(std::string(protocol),n,info);
+    return blueprint::mcarray::verify(std::string(protocol),n,info);
 }
 
 
-//-----------------------------------------------------------------------------
-/// Generate mesh::index from valid mesh
-//-----------------------------------------------------------------------------
-void
-conduit_blueprint_mesh_generate_index(const conduit_node *cmesh,
-                                      const char *ref_path,
-                                      conduit_index_t num_domains,
-                                      conduit_node *cindex_out)
+//----------------------------------------------------------------------------
+bool
+conduit_blueprint_mcarray_is_interleaved(const conduit_node *cnode)
 {
-    const Node &mesh = cpp_node_ref(cmesh);
-    Node &index_out  = cpp_node_ref(cindex_out);
-    blueprint::mesh::generate_index(mesh,
-                                    std::string(ref_path),
-                                    num_domains,
-                                    index_out);
+    const Node &n = cpp_node_ref(cnode);
+    return blueprint::mcarray::is_interleaved(n);
 }
+
+//-----------------------------------------------------------------------------
+bool
+conduit_blueprint_mcarray_to_contiguous(const conduit_node *cnode,
+                                        conduit_node *cdest)
+{
+    const Node &n = cpp_node_ref(cnode);
+    Node &dest    = cpp_node_ref(cdest);
+    return blueprint::mcarray::to_contiguous(n,dest);
+}
+
+//-----------------------------------------------------------------------------
+bool
+conduit_blueprint_mcarray_to_interleaved(const conduit_node *cnode,
+                                         conduit_node *cdest)
+{
+    const Node &n = cpp_node_ref(cnode);
+    Node &dest    = cpp_node_ref(cdest);
+    return blueprint::mcarray::to_interleaved(n,dest);
+}
+
 
 //-----------------------------------------------------------------------------
 /// Interface to generate example data
 //-----------------------------------------------------------------------------
 void
-conduit_blueprint_mesh_examples_braid(const char *mesh_type,
-                                      conduit_index_t nx,
-                                      conduit_index_t ny,
-                                      conduit_index_t nz,
-                                      conduit_node *cres)
+conduit_blueprint_mcarray_examples_xyz(const char *mcarray_type,
+                                       conduit_index_t npts,
+                                       conduit_node *cres)
 {
     Node &res = cpp_node_ref(cres);
-    blueprint::mesh::examples::braid(std::string(mesh_type),
-                                     nx,ny,nz,
-                                     res);
+    blueprint::mcarray::examples::xyz(std::string(mcarray_type),
+                                      npts,
+                                      res);
 }
 
 

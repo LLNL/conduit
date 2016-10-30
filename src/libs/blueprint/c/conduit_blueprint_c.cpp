@@ -44,10 +44,10 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: c_conduit_blueprint_mcarray.cpp
+/// file: conduit_blueprint_c.cpp
 ///
 //-----------------------------------------------------------------------------
-#include "conduit_blueprint_mcarray.h"
+#include "conduit_blueprint.h"
 
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
@@ -63,77 +63,25 @@ extern "C" {
 
 using namespace conduit;
 
-//-----------------------------------------------------------------------------
-/// Verify passed node confirms to the blueprint mcarray protocol.
-//-----------------------------------------------------------------------------
-bool
-conduit_blueprint_mcarray_verify(const conduit_node *cnode,
-                                 conduit_node *cinfo)
-{
-    const Node &n = cpp_node_ref(cnode);
-    Node &info    = cpp_node_ref(cinfo);
-    return blueprint::mcarray::verify(n,info);
-}
-
-
-//-----------------------------------------------------------------------------
-/// Verify passed node confirms to given blueprint mcarray sub protocol.
-//-----------------------------------------------------------------------------
-bool
-conduit_blueprint_mcarray_verify_sub_protocol(const char *protocol,
-                                              const conduit_node *cnode,
-                                              conduit_node *cinfo)
-{
-    const Node &n = cpp_node_ref(cnode);
-    Node &info    = cpp_node_ref(cinfo);
-    return blueprint::mcarray::verify(std::string(protocol),n,info);
-}
-
-
-//----------------------------------------------------------------------------
-bool
-conduit_blueprint_mcarray_is_interleaved(const conduit_node *cnode)
-{
-    const Node &n = cpp_node_ref(cnode);
-    return blueprint::mcarray::is_interleaved(n);
-}
-
-//-----------------------------------------------------------------------------
-bool
-conduit_blueprint_mcarray_to_contiguous(const conduit_node *cnode,
-                                        conduit_node *cdest)
-{
-    const Node &n = cpp_node_ref(cnode);
-    Node &dest    = cpp_node_ref(cdest);
-    return blueprint::mcarray::to_contiguous(n,dest);
-}
-
-//-----------------------------------------------------------------------------
-bool
-conduit_blueprint_mcarray_to_interleaved(const conduit_node *cnode,
-                                         conduit_node *cdest)
-{
-    const Node &n = cpp_node_ref(cnode);
-    Node &dest    = cpp_node_ref(cdest);
-    return blueprint::mcarray::to_interleaved(n,dest);
-}
-
-
-//-----------------------------------------------------------------------------
-/// Interface to generate example data
-//-----------------------------------------------------------------------------
+//---------------------------------------------------------------------------//
 void
-conduit_blueprint_mcarray_examples_xyz(const char *mcarray_type,
-                                       conduit_index_t npts,
-                                       conduit_node *cres)
+conduit_blueprint_about(conduit_node *cnode)
 {
-    Node &res = cpp_node_ref(cres);
-    blueprint::mcarray::examples::xyz(std::string(mcarray_type),
-                                      npts,
-                                      res);
+    Node *n = cpp_node(cnode);
+    blueprint::about(*n);
 }
 
 
+//-----------------------------------------------------------------------------
+bool
+conduit_blueprint_verify(const char *protocol,
+                         const conduit_node *cnode,
+                         conduit_node *cinfo)
+{
+    const Node *n = cpp_node(cnode);
+    Node *info =  cpp_node(cinfo);
+    return blueprint::verify(std::string(protocol),*n,*info);
+}
 
 }
 //-----------------------------------------------------------------------------

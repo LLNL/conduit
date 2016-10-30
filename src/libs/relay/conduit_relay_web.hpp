@@ -56,7 +56,7 @@
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
 
-#include "conduit_relay_exports.hpp"
+#include "conduit_relay_exports.h"
 
 //
 // forward declare civetweb types so we don't need the 

@@ -56,7 +56,7 @@
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
 
-#include "conduit_relay_exports.hpp"
+#include "conduit_relay_exports.h"
 #include "conduit_relay_web.hpp"
 
 //-----------------------------------------------------------------------------

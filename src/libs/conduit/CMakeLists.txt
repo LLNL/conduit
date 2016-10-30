@@ -76,7 +76,7 @@ set(conduit_headers
     conduit_node_iterator.hpp
     conduit_schema.hpp
     conduit_utils.hpp
-    conduit_exports.hpp
+    conduit_exports.h
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_config.h
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_bitwidth_style_types.h
     )
@@ -110,9 +110,9 @@ set(conduit_sources
 # Specify conduit c interface sources
 #
 set(conduit_c_sources
-    c/c_conduit.cpp
-    c/c_conduit_node.cpp
-    c/c_conduit_cpp_to_c.cpp
+    c/conduit_c.cpp
+    c/conduit_node_c.cpp
+    c/conduit_cpp_to_c.cpp
     )
 
 

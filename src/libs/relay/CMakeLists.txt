@@ -67,8 +67,8 @@ endif()
 
 set(CONDUIT_RELAY_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_relay_config.hpp.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_config.hpp")
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_relay_config.h.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_config.h")
 
 #
 # Specify cpp headers
@@ -78,8 +78,8 @@ set(conduit_relay_headers
     conduit_relay_io.hpp
     conduit_relay_web.hpp
     conduit_relay_web_node_viewer_server.hpp
-    conduit_relay_exports.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_config.hpp)
+    conduit_relay_exports.h
+    ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_config.h)
 
 #
 # Specify c headers
@@ -100,7 +100,7 @@ set(conduit_relay_sources
 # Specify c sources
 #
 set(conduit_relay_c_sources
-    c/c_conduit_relay.cpp)
+    c/conduit_relay_c.cpp)
 
 
 if(HDF5_FOUND)
@@ -204,7 +204,7 @@ if(MPI_FOUND)
 #
 set(conduit_relay_mpi_headers
     conduit_relay_mpi.hpp
-    conduit_relay_exports.hpp)
+    conduit_relay_exports.h)
 
 #
 # Specify relay mpi sources

@@ -58,7 +58,7 @@ set(blueprint_headers
     conduit_blueprint_mesh_examples.hpp
     conduit_blueprint_mcarray.hpp
     conduit_blueprint_mcarray_examples.hpp
-    conduit_blueprint_exports.hpp
+    conduit_blueprint_exports.h
 )
 
 #
@@ -86,9 +86,9 @@ set(blueprint_sources
 # Specify blueprint c sources
 #
 set(blueprint_c_sources 
-    c/c_conduit_blueprint.cpp
-    c/c_conduit_blueprint_mcarray.cpp
-    c/c_conduit_blueprint_mesh.cpp
+    c/conduit_blueprint_c.cpp
+    c/conduit_blueprint_mcarray_c.cpp
+    c/conduit_blueprint_mesh_c.cpp
     )
 
 
