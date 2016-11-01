@@ -165,8 +165,9 @@ These files use standard CMake commands. CMake *set* commands need to specify th
 
 Bootstrapping Third Party Dependencies 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+We use **Spack** (http://software.llnl.gov/spack) automate builds of third party dependencies on OSX and Linux. Conduit builds on Windows as well, but there is no automated process to build dependencies necessary to support Conduit's optional features.
 
-You can use ``bootstrap-env.sh`` (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses ``scripts/uberenv/uberenv.py``, which leverages **Spack** (http://software.llnl.gov/spack) to build the external third party libraries and tools used by Conduit. Fortran support in is optional, dependencies should build without fortran. After building these libraries and tools, it writes an initial *host-config* file and adds the Spack built CMake binary to your PATH, so can immediately call the ``config-build.sh`` helper script to configure a conduit build.
+On OSX and Linux, you can use ``bootstrap-env.sh`` (located at the root of the conduit repo) to help setup your development environment. This script uses ``scripts/uberenv/uberenv.py``, which leverages **Spack** to build all of the external third party libraries and tools used by Conduit. Fortran support is optional and all dependencies should build without a fortran compiler. After building these libraries and tools, it writes an initial *host-config* file and adds the Spack built CMake binary to your PATH so can immediately call the ``config-build.sh`` helper script to configure a conduit build.
 
 .. code:: bash
     
@@ -184,17 +185,61 @@ You can use ``bootstrap-env.sh`` (located at the root of the conduit repo) to he
     ./config-build.sh uberenv_libs/`hostname`*.cmake
 
 
-Compiler Settings for Third Party Dependencies 
-++++++++++++++++++++++++++++++++++++++++++++++++
-You can edit ``scripts/uberenv/compilers.yaml`` to change the compiler settings
-passed to Spack. See the `Spack Compiler Configuration    <http://software.llnl.gov/spack/basic_usage.html#manual-compiler-configuration>`_   
+When ``bootstrap-env.sh`` runs ``uberenv.py``, all command line arguments are forwarded:
+
+.. code:: bash
+
+    python scripts/uberenv/uberenv.py $@
+
+So any options to ``bootstrap-env.sh`` are effectively ``uberenv.py`` options.
+
+Uberenv Options for Building Third Party Dependencies
++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+``uberenv.py`` has a few options that allow you to control how dependencies are built:
+
+ ================== ==================================== ======================================
+  Option             Description                          Default
+ ================== ==================================== ======================================
+  --prefix           Destination directory                ``uberenv_libs``
+  --spec             Spack spec                           linux: **%gcc**
+                                                          osx: **%clang**
+  --compilers-yaml   Spack compilers settings file        ``scripts/uberenv/compilers.yaml``
+ ================== ==================================== ======================================
+
+Default invocation on Linux:
+
+.. code:: bash
+
+    python scripts/uberenv/uberenv.py --prefix uberenv_libs \
+                                      --spec %gcc \
+                                      --compilers-yaml scripts/uberenv/compilers.yaml
+
+Default invocation on OSX:
+
+.. code:: bash
+
+    python scripts/uberenv/uberenv.py --prefix uberenv_libs \
+                                      --spec %clang \
+                                      --compilers-yaml scripts/uberenv/compilers.yaml
+
+For details on Spack's spec syntax, see the `Spack Specs & dependencies <http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies>`_ documentation.
+
+ 
+You can edit ``scripts/uberenv/compilers.yaml`` or use the **--compilers-yaml** option to change the compiler settings
+used by Spack. See the `Spack Compiler Configuration <http://spack.readthedocs.io/en/latest/getting_started.html#manual-compiler-configuration>`_
 documentation for details.
 
-For OSX, the defaults in ``compilers.yaml`` are clang from X-Code and gfortran from https://gcc.gnu.org/wiki/GFortranBinaries#MacOS. 
+For OSX, the defaults in ``compilers.yaml`` are X-Code's clang and gfortran from https://gcc.gnu.org/wiki/GFortranBinaries#MacOS. 
 
 .. note::
     The bootstrapping process ignores ``~/.spack/compilers.yaml`` to avoid conflicts
     and surprises from a user's specific Spack settings on HPC platforms.
+
+When run, ``uberenv.py`` checkouts a specific version of Spack from github as ``spack`` in the 
+destination directory. It then uses Spack to build and install Conduit's dependencies into 
+``spack/opt/spack/``. Finally, it generates a host-config file ``{hostname}.cmake`` in the 
+destination directory that specifies the compiler settings and paths to all of the dependencies.
 
 
 Building with Spack
@@ -204,7 +249,7 @@ Building with Spack
   development.  Due to this, the process builds more libraries than necessary for most use cases.
   For example, we build independent installs of Python 2 and Python 3 to make it easy 
   to check Python C-API compatibility during development. In the near future, we plan to 
-  provide a Spack package to simplify deployment.
+  provide a Spack package that supports variants to simplify deployment.
 
 
 
