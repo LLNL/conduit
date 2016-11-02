@@ -109,7 +109,7 @@ void braid_init_example_point_scalar_field(index_t npts_x,
 {
     index_t npts = npts_x * npts_y * npts_z;
     
-    res["association"] = "point";
+    res["association"] = "vertex";
     res["type"] = "scalar";
     res["topology"] = "mesh";
     res["values"].set(DataType::float64(npts));
@@ -160,7 +160,7 @@ void braid_init_example_point_vector_field(index_t npts_x,
 {
     index_t npts = npts_x * npts_y * npts_z;
     
-    res["association"] = "point";
+    res["association"] = "vertex";
     res["type"] = "vector";
     res["topology"] = "mesh";
     res["values/u"].set(DataType::float64(npts));
