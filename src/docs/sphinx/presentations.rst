@@ -52,6 +52,10 @@ Slides
 * :download:`Conduit Introduction (February 2015) <2015_conduit_intro.pdf>`
 
 
+Talks
+------------------
+* `SciPy 2016 talk on Conduit (July 2016) <https://youtu.be/3_GKjeRUPKg>`_
+
 Interviews
 ------------------
 * `RCE HPC Podcast on Conduit  <http://www.rce-cast.com/Podcast/rce-101-conduit.html>`_

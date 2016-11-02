@@ -63,10 +63,14 @@ Source Code Repo Layout
  * **conduit/** - Unit tests for the main Conduit library
  * **relay/** - Unit tests for Conduit Relay libraries
  * **blueprint/** - Unit tests for Blueprint library
- * **thirdparty/** - Unit tests for thirdparty libraries
+ * **thirdparty/** - Unit tests for third party libraries
+
+* **src/examples/** - Basic examples related to building and using Conduit 
+
+.. (see :ref:`_using_in_another_project` ?)
 
 * **src/docs/** -  Documentation 
-* **src/thirdparty_builtin/** - Thirdparty libraries we build and manage directly
+* **src/thirdparty_builtin/** - Third party libraries we build and manage directly
 
 
 Build System Info
@@ -80,29 +84,30 @@ See :ref:`building` in the User Documentation.
 Important CMake Targets
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-- **make**: Builds the Conduit library.
+- **make**: Builds Conduit.
 
-- **make test**: Runs Conduit unit tests.
+- **make test**: Runs unit tests.
 
 - **make docs**: Builds sphinx and doxygen documentation.
 
-- **make install**: Installs conduit libraries, headers, and documentation to `CMAKE_INSTALL_PREFIX`
+- **make install**: Installs conduit libraries, headers, and documentation to ``CMAKE_INSTALL_PREFIX``
 
 Adding a Unit Test
 ~~~~~~~~~~~~~~~~~~~
 - Create a test source file in ``src/tests/{lib_name}/``
+- All test source files should have a "t_" prefix in their file name to make them easy to identify.
 - Add the test to build system by editing ``src/tests/{lib_name}/CMakeLists.txt``
 
 
 Git Development Workflow 
 ------------------------
 
-The primary Conduit source repository is hosted on LLNL's CZ Stash instance:
+Conduit's primary source repository and issue tracker are hosted on github:
 
-https://lc.llnl.gov/stash/projects/CON
+https://github.com/llnl/conduit
 
-We we are using a **Github Flow** model, which is a simpler variant of the confusingly similar sounding **Git Flow** model.
 
+We are using a **Github Flow** model, which is a simpler variant of the confusingly similar sounding **Git Flow** model.
 
 Here are the basics: 
 
@@ -112,23 +117,19 @@ Here are the basics:
 
 - The master should always compile and pass all tests.
 
+- Releases are tagged off of master.
+
 More details on GitHub Flow:
 
 https://guides.github.com/introduction/flow/index.html
 
 Here are some other rules to abide by:
 
-- You *can* merge your own pull requests.
+- If you have write permissions for the Conduit repo, you *can* merge your own pull requests.
 
-- After completing all intended work on branch, please delete the remote branch after merging to master. (Stash has an option to do this when merging a pull request.)
+- After completing all intended work on branch, please delete the remote branch after merging to master. (Github has an option to do this after you merge a pull request.)
 
-Github 
--------------------------
-The *master* and *gh-pages* branches of Conduit are also available on github:
 
-https://github.com/llnl/conduit
-
-We welcome issues and pull requests on github.
 
 
 

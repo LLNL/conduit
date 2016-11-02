@@ -50,27 +50,26 @@
 Conduit
 ============
 
-**Conduit: A Scientific Data Exchange Library for HPC Simulations**
+**Conduit: Simplified Data Exchange for HPC Simulations**
 
 Introduction
 ------------
 
 Conduit is an open source project from Lawrence Livermore National Laboratory. It provides an intuitive model for describing hierarchical scientific data in C++, C, Fortran, and Python and is used for data coupling between packages in-core, serialization, and I/O tasks.
 
-
 Conduit's Core API provides:
 
 - A flexible way to describe hierarchal data:
   
-    A JSON-based schema for describing hierarchical in-core data structures.
+    A JSON-inspired data model for describing hierarchical in-core scientific data.
 
 - A sane API to access hierarchal data:
 
     A dynamic API for rapid construction and consumption of hierarchical objects.
 
-Conduit is under active development. The C++ API underpins the other language APIs and currently has the most features. We are still filling out the C, Fortran, and Python APIs. 
+Conduit is under active development and targets Linux, OSX, and Windows platforms. The C++ API underpins the other language APIs and currently has the most features. We are still filling out the C, Fortran, and Python APIs.
 
-For more background, please see our :download:`Conduit Introduction <2015_conduit_intro.pdf>` presentation slides.
+For more background, please see :doc:`presentations`.
 
 
 Unique Features
@@ -87,15 +86,20 @@ Conduit Project Resources
 
 **Online Documentation**
 
-http://software.llnl.gov/conduit/index.html
+http://software.llnl.gov/conduit/
 
 **Github Source Repo**
 
 https://github.com/llnl/conduit
 
-**LLNL Collaboration Zone Stash Source Repo (LLNL Users)**
+**Issue Tracker**
 
-https://lc.llnl.gov/stash/projects/CON/repos/conduit/browse
+https://github.com/llnl/conduit/issues
+
+
+**LLNL Collaboration Zone Bitbucket Server Source Repo (Mirror for LLNL Users)**
+
+https://lc.llnl.gov/bitbucket/projects/CON/repos/conduit/browse
 
 
 Conduit Libraries 
@@ -109,12 +113,11 @@ The *conduit* library provides Conduit's core data API. The *relay* and *bluepri
 conduit
 ~~~~~~~~
  - Provides Conduit's Core API in C++ and subsets of Core API in Python, C, and Fortran.
- - *Optionally depends on Python with NumPy and Fortran*
+ - *Optionally depends on Fortran and Python with NumPy*
 
 relay
 ~~~~~~
  - Provides:
- 
  
    - I/O functionally beyond simple binary, memory mapped, and json-based text file I/O.
    - A light-weight web server for REST and WebSocket clients. 
@@ -123,7 +126,7 @@ relay
 
 blueprint
 ~~~~~~~~~~
- - Provides interfaces for common higher-level conventions and data protocols (eg. describing a “mesh”) using Conduit.
+ - Provides interfaces for common higher-level conventions and data exchange protocols (eg. describing a “mesh”) using Conduit.
  - *No optional dependancies* 
 
 See the :doc:`user` for more details on these libraries. 

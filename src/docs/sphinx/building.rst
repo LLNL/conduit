@@ -60,12 +60,11 @@ Clone the Conduit repo:
     git clone https://github.com/llnl/conduit.git
 
 
-* From LLNL's CZ Stash Instance (LLNL Users)
+* From LLNL's CZ Bitbucket Server (Mirror for LLNL Users)
 
 .. code:: bash
     
-    git clone https://{USER_NAME}@lc.llnl.gov/stash/scm/con/conduit.git
-
+    git clone https://{USER_NAME}@lc.llnl.gov/bitbucket/scm/con/conduit.git
 
 Configure a build:
 
@@ -250,7 +249,6 @@ Building with Spack
   For example, we build independent installs of Python 2 and Python 3 to make it easy 
   to check Python C-API compatibility during development. In the near future, we plan to 
   provide a Spack package that supports variants to simplify deployment.
-
 
 
 Using Conduit in Another Project

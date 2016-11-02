@@ -46,25 +46,70 @@
 Blueprint
 ===================
 
-.. note::
-    The **blueprint** API and docs are work in progress.
+.. .. note::
+..     The **blueprint** API and docs are work in progress.
 
 
 The flexibly of the Conduit Node allows it to be used to represent a wide range of scientific data. Unconstrained, this flexibly can lead to many application specific choices for common types of data that could potentially be shared between applications.
 
-The goal of Blueprint is to help facilite a set of shared higher-level conventions for using Conduit Nodes to hold common simulation data structures. The Blueprint library in Conduit provides methods to verify if a Conduit Node instance conforms to a known convention and methods that provide common transforms that can be used with these conventions.
+The goal of Blueprint is to help facilite a set of shared higher-level conventions for using Conduit Nodes to hold common simulation data structures. The Blueprint library in Conduit provides methods to verify if a Conduit Node instance conforms to known conventions, which we call **protocols**. It also provides property and transform methods that can be used on conforming Nodes. 
 
 For now, Blueprint is focused on conventions for two important types of data:
 
-*  Multi-Component Arrays
+*  Multi-Component Arrays (protocol: ``mcarray``)
 
     A multi-component array is a collection of fixed-sized numeric tuples. 
     They are used in the context computational meshes to represent coordinate data or field data, such as the three directional components of a 3D velocity field. There are a few common in-core data layouts used by several APIs to accept multi-component array data, these include:  row-major vs column-major layouts, or the use of arrays of struct vs struct of arrays in C-style languages. Blueprint provides transforms that convert any multi-component array to these common data layouts.
 
-*  Computational Meshes
+*  Computational Meshes (protocol: ``mesh``)
 
-    Many taxonomies and concrete mesh data models have been developed to allow computational meshes to be used in software. Blueprint's conventions for representing mesh data were formed by negotiating with simulation application teams at LLNL and from a survey of existing projects that provide scientific mesh-related APIs including: ADIOS,  Damaris, EAVL, MFEM, Silo, VTK, VTKm, and Xdmf. Blueprint's mesh conventions are  not a replacement for existing mesh data models or APIs. Our explicit goal is to outline a comprehensive, but small set of options for describing meshes in-core that  simplifies the process of adapting data to several existing mesh-aware APIs.
+    Many taxonomies and concrete mesh data models have been developed to allow computational meshes to be used in software. Blueprint's conventions for representing mesh data were formed by negotiating with simulation application teams at LLNL and from a survey of existing projects that provide scientific mesh-related APIs including: ADIOS,  Damaris, EAVL, MFEM, Silo, VTK, VTKm, and Xdmf. Blueprint's mesh conventions are not a replacement for existing mesh data models or APIs. Our explicit goal is to outline a comprehensive, but small set of options for describing meshes in-core that simplifies the process of adapting data to several existing mesh-aware APIs.
 
+Blueprint provides a generic top level ``verify()`` method, which exposes the verify checks for all supported protocols. 
+
+.. code:: cpp
+
+    bool conduit::blueprint::verify(const std::string &protocol,
+                                    const Node &node,
+                                    Node &info);
+
+``verify()`` returns true if the passed Node *node* conforms to the named protocol. It also provides details about the verification, including specific errors in the passed *info* Node.
+
+.. code:: cpp
+
+    // setup our candidate and info nodes
+    Node n,info;
+    ....
+     
+    // check if n conforms
+    if(conduit::blueprint::verify("mesh",n,info))
+        CONDUIT_INFO("mesh verify succeded.");
+    else
+        CONDUIT_INFO("mesh verify failed!");
+   
+    // show details
+    info.print()
+
+Methods for specific protocols are grouped in namespaces:
+
+.. code:: cpp
+
+    // setup our candidate and info nodes
+    Node n,info;
+    ....
+     
+    // check if n conforms
+    if(conduit::blueprint::verify("mcarray",n,info))
+    {
+        // check if our mcarray has a specific memory layout 
+        if(!conduit::blueprint::mcarray::is_interleaved(n))
+        {
+            // copy data from n into the desired memory layout
+            Node xform;
+            conduit::blueprint::mcarray::to_interleaved(n,xform);
+            // ...
+        }
+    }
 
 
 .. toctree::
