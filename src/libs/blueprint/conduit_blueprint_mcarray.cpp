@@ -49,17 +49,14 @@
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// std lib includes
-//-----------------------------------------------------------------------------
-#include <string.h>
-#include <math.h>
-
-//-----------------------------------------------------------------------------
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "conduit_blueprint_mcarray.hpp"
+#include "conduit_blueprint_utils.hpp"
 
 using namespace conduit;
+// access verify logging helpers
+using namespace conduit::blueprint::utils;
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -86,9 +83,10 @@ verify(const std::string &/*protocol*/,
        const Node &/*n*/,
        Node &info)
 {
-    info.reset();
-    info["valid"] = "false";
     // mcarray doens't provide any nested protocols
+
+    info.reset();
+    log_verify_result(info,false);
     return false;
 }
 
@@ -100,10 +98,12 @@ bool verify(const conduit::Node &n,
     info.reset();
     bool res = true;
 
+    const std::string proto_name = "mcarray";
+
     // mcarray needs to be an object or a list
     if( ! (n.dtype().is_object() || n.dtype().is_list()) )
     {
-        info["errors"].append().set("mcarray has no children");
+        log_error(info,proto_name,"Node has no children");
         res = false;
     }
 
@@ -140,7 +140,7 @@ bool verify(const conduit::Node &n,
                 oss << " does not have the same number of "
                     << "elements as mcarray components.";
 
-                info["errors"].append().set(oss.str());
+                log_error(info,proto_name,oss.str());
 
                 res = false;
             }
@@ -160,11 +160,13 @@ bool verify(const conduit::Node &n,
             }
 
             oss << " is not a numeric type.";
-            info["errors"].append().set(oss.str());
 
+            log_error(info,proto_name,oss.str());
             res = false;
         }
     }
+    
+    log_verify_result(info,res);
 
     return res;
 }

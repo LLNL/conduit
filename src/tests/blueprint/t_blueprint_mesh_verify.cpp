@@ -1055,6 +1055,7 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
 
     blueprint::mesh::examples::braid("quads",10,10,1,mesh);
     EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
+    info.print();
 
     { // Coordsets Field Tests //
         Node coordsets = mesh["coordsets"];

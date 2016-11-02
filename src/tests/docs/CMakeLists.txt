@@ -57,7 +57,7 @@ set(DOCS_TESTS t_conduit_tutorial_examples)
 ################################
 message(STATUS "Adding docs related unit tests")
 foreach(TEST ${DOCS_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit )
+    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_blueprint conduit_relay )
 endforeach()
 
 

@@ -49,68 +49,16 @@
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// std lib includes
-//-----------------------------------------------------------------------------
-#include <string.h>
-#include <math.h>
-
-//-----------------------------------------------------------------------------
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "conduit_blueprint_mcarray.hpp"
 #include "conduit_blueprint_mesh.hpp"
+#include "conduit_blueprint_utils.hpp"
 
 using namespace conduit;
+// access verify logging helpers
+using namespace conduit::blueprint::utils;
 
-
-//-----------------------------------------------------------------------------
-// Helpers for consistently logging info about the verification process.
-// this may be promoted to be a blueprint-wide standard, lets see how 
-// it works out for the mesh bp first.
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-void
-log_info(Node &info,
-         const std::string &proto_name,
-         const std::string &msg)
-{
-    info["info"].append().set(proto_name + ": " + msg);
-}
-
-//-----------------------------------------------------------------------------
-void
-log_optional(Node &info,
-             const std::string &proto_name,
-             const std::string &msg)
-{
-    info["optional"].append().set(proto_name + ": " + msg);
-}
-
-//-----------------------------------------------------------------------------
-void
-log_error(Node &info,
-         const std::string &proto_name,
-         const std::string &msg)
-{
-    info["errors"].append().set(proto_name + ": " + msg);
-}
-
-
-//-----------------------------------------------------------------------------
-void
-log_verify_result(Node &info,
-                  bool res)
-{
-    if(res)
-    {
-        info["valid"] = "true";
-    }
-    else
-    {
-        info["valid"] = "false";
-    }
-}
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -285,7 +233,7 @@ mesh::verify(const Node &n,
                 if(!field::verify(chld,info["fields"][chld_name]))
                 {
                     log_error(info,proto_name,chld_name 
-                                + " is not a valid mesh::topology");
+                                + " is not a valid mesh::field");
                     res = false;
                 }
                 else if(!n.has_child("topologies") || !n["topologies"].has_child(topo_name))
@@ -1578,7 +1526,7 @@ mesh::field::association::verify(const Node &assoc,
     {
         std::string assoc_str = assoc.as_string();
 
-        if(assoc_str == "point" ||
+        if(assoc_str == "vertex" ||
            assoc_str == "element")
         {
             log_info(info,proto_name, "association: " + assoc_str );

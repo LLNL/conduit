@@ -10715,6 +10715,7 @@ void
 Node::print() const
 {
     to_json_stream(std::cout);
+    std::cout << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -10722,6 +10723,7 @@ void
 Node::print_detailed() const
 {
     to_json_stream(std::cout,"conduit_json");
+    std::cout << std::endl;
 }
 
 

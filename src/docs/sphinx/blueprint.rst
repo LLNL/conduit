@@ -75,41 +75,22 @@ Blueprint provides a generic top level ``verify()`` method, which exposes the ve
 
 ``verify()`` returns true if the passed Node *node* conforms to the named protocol. It also provides details about the verification, including specific errors in the passed *info* Node.
 
-.. code:: cpp
+.. literalinclude:: ../../tests/docs/t_conduit_tutorial_examples.cpp
+   :lines: 474-488
+   :language: cpp
+   :dedent: 4
 
-    // setup our candidate and info nodes
-    Node n,info;
-    ....
-     
-    // check if n conforms
-    if(conduit::blueprint::verify("mesh",n,info))
-        CONDUIT_INFO("mesh verify succeded.");
-    else
-        CONDUIT_INFO("mesh verify failed!");
-   
-    // show details
-    info.print()
 
 Methods for specific protocols are grouped in namespaces:
 
-.. code:: cpp
 
-    // setup our candidate and info nodes
-    Node n,info;
-    ....
-     
-    // check if n conforms
-    if(conduit::blueprint::verify("mcarray",n,info))
-    {
-        // check if our mcarray has a specific memory layout 
-        if(!conduit::blueprint::mcarray::is_interleaved(n))
-        {
-            // copy data from n into the desired memory layout
-            Node xform;
-            conduit::blueprint::mcarray::to_interleaved(n,xform);
-            // ...
-        }
-    }
+.. literalinclude:: ../../tests/docs/t_conduit_tutorial_examples.cpp
+   :lines: 499-518
+   :language: cpp
+   :dedent: 4
+
+.. literalinclude:: tutorial_examples_out.txt
+   :lines: 19-30
 
 
 .. toctree::
