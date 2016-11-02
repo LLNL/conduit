@@ -49,7 +49,9 @@
 ################################
 # Docs Related Unit Tests
 ################################
-set(DOCS_TESTS t_conduit_tutorial_examples)
+set(DOCS_TESTS  
+    t_conduit_docs_tutorial_examples
+    t_conduit_docs_blueprint_examples)
 
 
 ################################

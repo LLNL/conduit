@@ -55,12 +55,12 @@ The *Generator* class is used to parse conduit JSON schemas into a *Node*.
 
 .. # from conduit_tutorial_examples: json_generator_std
 
-.. literalinclude:: ../../tests/docs/t_conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
    :lines: 328-337
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: tutorial_examples_out.txt
+.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
    :lines: 185-193
 
 
@@ -68,24 +68,24 @@ The *Generator* can also parse pure json. For leaf nodes: wide types such as *in
 
 .. # from conduit_tutorial_examples: json_generator_pure_json
 
-.. literalinclude:: ../../tests/docs/t_conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
    :lines: 345-354
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: tutorial_examples_out.txt
+.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
    :lines: 200-208
 
 Schemas can easily be bound to in-core data.
 
 .. # from conduit_tutorial_examples: json_generator_bind_to_incore
 
-.. literalinclude:: ../../tests/docs/t_conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
    :lines: 362-368
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: tutorial_examples_out.txt
+.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
    :lines: 215-236
 
 
@@ -97,12 +97,12 @@ Compacting Nodes
 
 .. # from conduit_tutorial_examples: json_generator_compact
 
-.. literalinclude:: ../../tests/docs/t_conduit_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
    :lines: 386-431
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: tutorial_examples_out.txt
+.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
    :lines: 243-309
 
 

@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_conduit_tutorial_examples.cpp
+/// file: t_conduit_docs_tutorial_examples.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -465,57 +465,4 @@ TEST(conduit_tutorial, mem_ownership_external)
     CONDUIT_INFO("mem_ownership_external");
 }
 
-//-----------------------------------------------------------------------------
-// 474-488
-TEST(conduit_tutorial, blueprint_example_1)
-{
-    CONDUIT_INFO("blueprint_example_1");
-
-    // setup our candidate and info nodes
-    Node n,info;
-
-    //create an example mesh
-    conduit::blueprint::mesh::examples::braid("tets",
-                                               5,5,5,
-                                               n);
-    // check if n conforms
-    if(conduit::blueprint::verify("mesh",n,info))
-        std::cout << "mesh verify succeeded." << std::endl;
-    else
-        std::cout << "mesh verify failed!" << std::endl;
-   
-    // show some of the verify details
-    info["coordsets/coords"].print();
-    
-    CONDUIT_INFO("blueprint_example_1");
-}
-
-//-----------------------------------------------------------------------------
-// 499-518
-TEST(conduit_tutorial, blueprint_example_2)
-{
-    CONDUIT_INFO("blueprint_example_2");
-
-    // setup our candidate and info nodes
-    Node n,info;
-
-    // create an example mcarray
-    conduit::blueprint::mcarray::examples::xyz("separate",5,n);
-    
-    // check if n conforms
-    if(conduit::blueprint::verify("mcarray",n,info))
-    {
-        // check if our mcarray has a specific memory layout 
-        if(!conduit::blueprint::mcarray::is_interleaved(n))
-        {
-            // copy data from n into the desired memory layout
-            Node xform;
-            conduit::blueprint::mcarray::to_interleaved(n,xform);
-            // ...
-            xform.print();
-        }
-    }
-
-    CONDUIT_INFO("blueprint_example_2");
-}
 

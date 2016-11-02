@@ -65,6 +65,16 @@ For now, Blueprint is focused on conventions for two important types of data:
 
     Many taxonomies and concrete mesh data models have been developed to allow computational meshes to be used in software. Blueprint's conventions for representing mesh data were formed by negotiating with simulation application teams at LLNL and from a survey of existing projects that provide scientific mesh-related APIs including: ADIOS,  Damaris, EAVL, MFEM, Silo, VTK, VTKm, and Xdmf. Blueprint's mesh conventions are not a replacement for existing mesh data models or APIs. Our explicit goal is to outline a comprehensive, but small set of options for describing meshes in-core that simplifies the process of adapting data to several existing mesh-aware APIs.
 
+Protocol Details
+-----------------
+
+.. toctree::
+    blueprint_mcarray
+    blueprint_mesh
+
+Blueprint Interface
+---------------------
+
 Blueprint provides a generic top level ``verify()`` method, which exposes the verify checks for all supported protocols. 
 
 .. code:: cpp
@@ -75,26 +85,28 @@ Blueprint provides a generic top level ``verify()`` method, which exposes the ve
 
 ``verify()`` returns true if the passed Node *node* conforms to the named protocol. It also provides details about the verification, including specific errors in the passed *info* Node.
 
-.. literalinclude:: ../../tests/docs/t_conduit_tutorial_examples.cpp
-   :lines: 474-488
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_examples.cpp
+   :lines: 65-79
    :language: cpp
    :dedent: 4
+
+.. literalinclude:: t_conduit_docs_blueprint_examples_out.txt
+   :lines: 10-19
+
 
 
 Methods for specific protocols are grouped in namespaces:
 
 
-.. literalinclude:: ../../tests/docs/t_conduit_tutorial_examples.cpp
-   :lines: 499-518
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_examples.cpp
+   :lines: 90-116
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: tutorial_examples_out.txt
-   :lines: 19-30
+.. literalinclude:: t_conduit_docs_blueprint_examples_out.txt
+   :lines: 26-83
 
 
-.. toctree::
-    blueprint_mcarray
-    blueprint_mesh
+
 
 
