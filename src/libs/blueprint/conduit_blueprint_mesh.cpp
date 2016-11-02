@@ -285,7 +285,7 @@ mesh::verify(const Node &n,
                 if(!field::verify(chld,info["fields"][chld_name]))
                 {
                     log_error(info,proto_name,chld_name 
-                                + " is not a valid mesh::topology");
+                                + " is not a valid mesh::field");
                     res = false;
                 }
                 else if(!n.has_child("topologies") || !n["topologies"].has_child(topo_name))
@@ -1578,7 +1578,7 @@ mesh::field::association::verify(const Node &assoc,
     {
         std::string assoc_str = assoc.as_string();
 
-        if(assoc_str == "point" ||
+        if(assoc_str == "vertex" ||
            assoc_str == "element")
         {
             log_info(info,proto_name, "association: " + assoc_str );

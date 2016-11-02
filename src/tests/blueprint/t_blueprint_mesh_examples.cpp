@@ -81,7 +81,7 @@ create_blueprint_index_for_3d_examples(Node &index_root)
         // fields
             // pc
             uni_idx["fields/braid/number_of_components"] = 1;
-            uni_idx["fields/braid/association"] = "point";
+            uni_idx["fields/braid/association"] = "vertex";
             uni_idx["fields/braid/topology"]    = "mesh";
             uni_idx["fields/braid/path"]        = "uniform/fields/braid";
             // ec
@@ -91,7 +91,7 @@ create_blueprint_index_for_3d_examples(Node &index_root)
             uni_idx["fields/radial/path"]        = "uniform/fields/radial";
             // vel pc
             uni_idx["fields/vel/number_of_components"] = 3;
-            uni_idx["fields/vel/association"] = "point";
+            uni_idx["fields/vel/association"] = "vertex";
             uni_idx["fields/vel/topology"]    = "mesh";
             uni_idx["fields/vel/path"]        = "uniform/fields/vel";
 
@@ -113,7 +113,7 @@ create_blueprint_index_for_3d_examples(Node &index_root)
         // fields
             // pc
             rect_idx["fields/braid/number_of_components"] = 1;
-            rect_idx["fields/braid/association"] = "point";
+            rect_idx["fields/braid/association"] = "vertex";
             rect_idx["fields/braid/topology"]    = "mesh";
             rect_idx["fields/braid/path"]        = "rect/fields/braid";
             // ec
@@ -123,7 +123,7 @@ create_blueprint_index_for_3d_examples(Node &index_root)
             rect_idx["fields/radial/path"]        = "rect/fields/radial";
             // vel pc
             rect_idx["fields/vel/number_of_components"] = 3;
-            rect_idx["fields/vel/association"] = "point";
+            rect_idx["fields/vel/association"] = "vertex";
             rect_idx["fields/vel/topology"]    = "mesh";
             rect_idx["fields/vel/path"]        = "rect/fields/vel";
 
@@ -145,7 +145,7 @@ create_blueprint_index_for_3d_examples(Node &index_root)
         // fields
             // pc
             struct_idx["fields/braid/number_of_components"] = 1;
-            struct_idx["fields/braid/association"] = "point";
+            struct_idx["fields/braid/association"] = "vertex";
             struct_idx["fields/braid/topology"]    = "mesh";
             struct_idx["fields/braid/path"]        = "struct/fields/braid";
             // ec
@@ -155,7 +155,7 @@ create_blueprint_index_for_3d_examples(Node &index_root)
             struct_idx["fields/radial/path"]        = "struct/fields/radial";
             // vel pc
             struct_idx["fields/vel/number_of_components"] = 3;
-            struct_idx["fields/vel/association"] = "point";
+            struct_idx["fields/vel/association"] = "vertex";
             struct_idx["fields/vel/topology"]    = "mesh";
             struct_idx["fields/vel/path"]        = "struct/fields/vel";
 
@@ -177,7 +177,7 @@ create_blueprint_index_for_3d_examples(Node &index_root)
         // fields
             // pc
             lines_idx["fields/braid/number_of_components"] = 1;
-            lines_idx["fields/braid/association"] = "point";
+            lines_idx["fields/braid/association"] = "vertex";
             lines_idx["fields/braid/topology"]    = "mesh";
             lines_idx["fields/braid/path"]   = "lines/fields/braid";
             // ec
@@ -187,7 +187,7 @@ create_blueprint_index_for_3d_examples(Node &index_root)
             lines_idx["fields/radial/path"]        = "lines/fields/radial";
             // vel pc
             lines_idx["fields/vel/number_of_components"] = 3;
-            lines_idx["fields/vel/association"] = "point";
+            lines_idx["fields/vel/association"] = "vertex";
             lines_idx["fields/vel/topology"]    = "mesh";
             lines_idx["fields/vel/path"]        = "lines/fields/vel";
 
@@ -208,7 +208,7 @@ create_blueprint_index_for_3d_examples(Node &index_root)
     // fields
         // pc
         tets_idx["fields/braid/number_of_components"] = 1;
-        tets_idx["fields/braid/association"] = "point";
+        tets_idx["fields/braid/association"] = "vertex";
         tets_idx["fields/braid/topology"]    = "mesh";
         tets_idx["fields/braid/path"]        = "tets/fields/braid";
         // ec
@@ -218,7 +218,7 @@ create_blueprint_index_for_3d_examples(Node &index_root)
         tets_idx["fields/radial/path"]        = "tets/fields/radial";
         // vel pc
         tets_idx["fields/vel/number_of_components"] = 3;
-        tets_idx["fields/vel/association"] = "point";
+        tets_idx["fields/vel/association"] = "vertex";
         tets_idx["fields/vel/topology"]    = "mesh";
         tets_idx["fields/vel/path"]        = "tets/fields/vel";
 
@@ -240,7 +240,7 @@ create_blueprint_index_for_3d_examples(Node &index_root)
     // fields
         // pc
         hexs_idx["fields/braid/number_of_components"] = 1;
-        hexs_idx["fields/braid/association"] = "point";
+        hexs_idx["fields/braid/association"] = "vertex";
         hexs_idx["fields/braid/topology"]    = "mesh";
         hexs_idx["fields/braid/path"]        = "hexs/fields/braid";
         // ec
@@ -250,7 +250,7 @@ create_blueprint_index_for_3d_examples(Node &index_root)
         hexs_idx["fields/radial/path"]        = "hexs/fields/radial";
         // vel pc
         hexs_idx["fields/vel/number_of_components"] = 3;
-        hexs_idx["fields/vel/association"] = "point";
+        hexs_idx["fields/vel/association"] = "vertex";
         hexs_idx["fields/vel/topology"]    = "mesh";
         hexs_idx["fields/vel/path"]        = "hexs/fields/vel";
 
@@ -272,7 +272,7 @@ create_blueprint_index_for_3d_examples(Node &index_root)
     // fields
         // pc
         pts_idx["fields/braid/number_of_components"] = 1;
-        pts_idx["fields/braid/association"] = "point";
+        pts_idx["fields/braid/association"] = "vertex";
         pts_idx["fields/braid/topology"]    = "mesh";
         pts_idx["fields/braid/path"]        = "points/fields/braid";
         // ec
@@ -282,7 +282,7 @@ create_blueprint_index_for_3d_examples(Node &index_root)
         pts_idx["fields/radial/path"]        = "points/fields/radial";
         // vel pc
         pts_idx["fields/vel/number_of_components"] = 3;
-        pts_idx["fields/vel/association"] = "point";
+        pts_idx["fields/vel/association"] = "vertex";
         pts_idx["fields/vel/topology"]    = "mesh";
         pts_idx["fields/vel/path"]        = "points/fields/vel";
 

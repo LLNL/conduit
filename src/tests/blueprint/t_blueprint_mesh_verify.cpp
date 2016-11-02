@@ -627,11 +627,11 @@ TEST(conduit_blueprint_mesh_verify, field_association)
     Node n, info;
     EXPECT_FALSE(blueprint::mesh::field::association::verify(n,info));
 
-    const std::string shape_types[] = {"point", "element"};
+    const std::string assoc_types[] = {"vertex", "element"};
     for(index_t ti = 0; ti < 2; ti++)
     {
         n.reset();
-        n.set(shape_types[ti]);
+        n.set(assoc_types[ti]);
         EXPECT_TRUE(blueprint::mesh::field::association::verify(n,info));
     }
 
@@ -719,7 +719,7 @@ TEST(conduit_blueprint_mesh_verify, field_general)
 
             n["association"].set("zone");
             EXPECT_FALSE(verify_field(n,info));
-            n["association"].set("point");
+            n["association"].set("vertex");
             EXPECT_TRUE(verify_field(n,info));
 
             n.remove("association");
@@ -728,7 +728,7 @@ TEST(conduit_blueprint_mesh_verify, field_general)
             n["basis"].set("basis");
             EXPECT_TRUE(verify_field(n,info));
 
-            n["association"].set("point");
+            n["association"].set("vertex");
             EXPECT_TRUE(verify_field(n,info));
         }
     }
@@ -932,7 +932,7 @@ TEST(conduit_blueprint_mesh_verify, index_field)
         { // Association Field Tests //
             findex["association"].set("zone");
             EXPECT_FALSE(verify_field_index(findex,info));
-            findex["association"].set("point");
+            findex["association"].set("vertex");
             EXPECT_TRUE(verify_field_index(findex,info));
 
             findex.remove("association");
@@ -1028,7 +1028,7 @@ TEST(conduit_blueprint_mesh_verify, index_general)
 
             index["fields"].reset();
             index["fields"]["field"]["number_of_components"].set(1);
-            index["fields"]["field"]["association"].set("point");
+            index["fields"]["field"]["association"].set("vertex");
             index["fields"]["field"]["path"].set("quads/fields/braid");
             index["fields"]["field"]["topology"].set("nonexitent");
             EXPECT_FALSE(verify_index(index,info));
@@ -1124,7 +1124,7 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
         mesh["fields"]["temp"]["values"].set(DataType::float64(10));
         EXPECT_FALSE(blueprint::mesh::verify(mesh,info));
 
-        mesh["fields"]["temp"]["association"].set("point");
+        mesh["fields"]["temp"]["association"].set("vertex");
         EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
 
         mesh["topologies"]["mesh"]["type"].set("invalid");
@@ -1155,7 +1155,7 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
 
         mesh["fields"]["braid"]["association"].set("invalid");
         EXPECT_FALSE(blueprint::mesh::verify(mesh,info));
-        mesh["fields"]["braid"]["association"].set("point");
+        mesh["fields"]["braid"]["association"].set("vertex");
 
         mesh["topologies"].reset();
         mesh["topologies"].set(topologies);
