@@ -71,6 +71,8 @@ usage()
               << std::endl
               << "  --protocol {relay protocol string used to read data file}"
               << std::endl
+              << "  --doc-root {path to http document root}"
+              << std::endl
               << "  --htpasswd {htpasswd file for client authentication}"
               << std::endl
               << "  --cert  {https cert file}"
@@ -89,6 +91,7 @@ parse_args(int argc,
            std::string &address,
            int &port,
            bool &entangle,
+           std::string &doc_root,
            std::string &data_file,
            std::string &protocol,
            std::string &auth_file,
@@ -108,6 +111,16 @@ parse_args(int argc,
             port = atoi(argv[i+1]);
             i++;
 
+        }
+        else if(arg_str == "--doc-root")
+        {
+            if(i+1 >= argc )
+            {
+                CONDUIT_ERROR("expected value following --doc-root option");
+            }
+
+            doc_root = std::string(argv[i+1]);
+            i++;
         }
         else if(arg_str == "--address")
         {
@@ -186,6 +199,7 @@ main(int argc, char* argv[])
         
         int port = 9000;
         bool entangle = false;
+        std::string doc_root("");
         std::string data_file("");
         std::string address("127.0.0.1");
         std::string protocol("");
@@ -198,6 +212,7 @@ main(int argc, char* argv[])
                    address,
                    port,
                    entangle,
+                   doc_root,
                    data_file,
                    protocol,
                    auth_file,
@@ -231,6 +246,12 @@ main(int argc, char* argv[])
 
         // set the port
         svr.set_port(port);
+
+        // set doc root if passed on command line
+        if(!doc_root.empty())
+        {
+            svr.set_document_root(doc_root);
+        }
 
         // set entangle gateway if passed on command line
         if(!gateway.empty())
