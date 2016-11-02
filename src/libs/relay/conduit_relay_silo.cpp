@@ -350,7 +350,7 @@ silo_write_field(DBfile *dbfile,
             num_values = num_elems;
         }
 
-        if (n_var["association"].as_string() == "point")
+        if (n_var["association"].as_string() == "vertex")
         {
             centering  = DB_NODECENT;
             num_values = num_pts;
