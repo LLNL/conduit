@@ -95,7 +95,7 @@ Important CMake Targets
 Adding a Unit Test
 ~~~~~~~~~~~~~~~~~~~
 - Create a test source file in ``src/tests/{lib_name}/``
-- All test source files should have a "t_" prefix in their file name to make them easy to identify.
+- All test source files should have a ``t_`` prefix on their file name to make them easy to identify.
 - Add the test to build system by editing ``src/tests/{lib_name}/CMakeLists.txt``
 
 
