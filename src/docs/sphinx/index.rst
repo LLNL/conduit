@@ -162,6 +162,7 @@ Conduit Documentation
 
    user
    developer
+   releases
    presentations
    licenses
 
