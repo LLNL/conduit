@@ -76,7 +76,7 @@ TEST(conduit_node_info, simple_1)
     std::cout << ninfo.to_json() << std::endl;;
     EXPECT_EQ(8,ninfo["total_strided_bytes"].to_index_t());
     EXPECT_EQ(8,ninfo["total_bytes_compact"].to_index_t());
-    EXPECT_EQ(8,ninfo["total_bytes_alloced"].to_index_t());
+    EXPECT_EQ(8,ninfo["total_bytes_allocated"].to_index_t());
     EXPECT_EQ(0,ninfo["total_bytes_mmaped"].to_index_t());
 }
 
@@ -91,7 +91,7 @@ TEST(conduit_node_info, simple_2)
     std::cout << ninfo.to_json("conduit_json") << std::endl;;
     EXPECT_EQ(72,ninfo["total_strided_bytes"].to_index_t());
     EXPECT_EQ(72,ninfo["total_bytes_compact"].to_index_t());
-    EXPECT_EQ(72,ninfo["total_bytes_alloced"].to_index_t());
+    EXPECT_EQ(72,ninfo["total_bytes_allocated"].to_index_t());
     EXPECT_EQ(0,ninfo["total_bytes_mmaped"].to_index_t());
 }
 
@@ -109,7 +109,7 @@ TEST(conduit_node_info, simple_3)
     n.info(ninfo);
     EXPECT_EQ(42,n.as_uint32());
     EXPECT_EQ(4,ninfo["total_strided_bytes"].to_index_t());
-    EXPECT_EQ(4,ninfo["total_bytes_alloced"].to_index_t());
+    EXPECT_EQ(4,ninfo["total_bytes_allocated"].to_index_t());
     
     
     Generator g2(schema,"conduit_json",&val);
@@ -120,7 +120,7 @@ TEST(conduit_node_info, simple_3)
     n2.info(ninfo);
     std::cout << ninfo.to_json("conduit_json") << std::endl;;
     EXPECT_EQ(4,ninfo["total_strided_bytes"].to_index_t());
-    EXPECT_EQ(0,ninfo["total_bytes_alloced"].to_index_t());
+    EXPECT_EQ(0,ninfo["total_bytes_allocated"].to_index_t());
     
     
 }

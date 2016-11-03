@@ -10666,35 +10666,11 @@ Node::info(Node &res) const
     res.reset();
     info(res,std::string());
 
-    
-    // update summary
-    index_t tb_alloc = 0;
-    index_t tb_mmap  = 0;
-
-    // for each in mem_spaces:
-    res["total_strided_bytes"] = total_strided_bytes();
-    res["total_bytes_compact"] = total_bytes_compact();
-    
-    std::vector<std::string> mchildren;
-    Node &mspaces = res["mem_spaces"];
-    
-    NodeIterator itr = mspaces.children();
-    
-    while(itr.has_next())
-    {
-        Node &mspace = itr.next();
-        std::string mtype  = mspace["type"].as_string();
-        if( mtype == "allocated")
-        {
-            tb_alloc += mspace["bytes"].to_index_t();
-        }
-        else if(mtype == "mmaped")
-        {
-            tb_mmap  += mspace["bytes"].to_index_t();
-        }
-    }
-    res["total_bytes_alloced"] = tb_alloc;
-    res["total_bytes_mmaped"]  = tb_mmap;
+    // add summary 
+    res["total_strided_bytes"]   = total_strided_bytes();
+    res["total_bytes_compact"]   = total_bytes_compact();
+    res["total_bytes_allocated"] = total_bytes_allocated();
+    res["total_bytes_mmaped"]    = total_bytes_mmaped();
 }
 
 //---------------------------------------------------------------------------//
@@ -13273,6 +13249,40 @@ Node::serialize(uint8 *data,index_t curr_offset) const
         }
        
     }
+}
+
+
+//---------------------------------------------------------------------------//
+index_t
+Node::total_bytes_allocated() const
+{
+    index_t res = allocated_bytes();
+    
+    NodeConstIterator itr = children();
+    while(itr.has_next())
+    {
+        const Node &curr = itr.next();
+        res += curr.total_bytes_allocated();
+    }
+
+    return res;
+}
+
+
+//---------------------------------------------------------------------------//
+index_t
+Node::total_bytes_mmaped() const
+{
+    index_t res = mmaped_bytes();
+    
+    NodeConstIterator itr = children();
+    while(itr.has_next())
+    {
+        const Node &curr = itr.next();
+        res += curr.total_bytes_mmaped();
+    }
+
+    return res;
 }
 
 //---------------------------------------------------------------------------//
