@@ -152,9 +152,9 @@ xyz_contiguous(index_t nvals, // total number of "tuples"
     index_t offset = 0;
     Schema s;
     s["x"].set(DataType::float64(nvals));
-    offset += s["x"].dtype().total_bytes();
+    offset += s["x"].dtype().total_bytes_compact();
     s["y"].set(DataType::float64(nvals,offset));
-    offset += s["y"].dtype().total_bytes();
+    offset += s["y"].dtype().total_bytes_compact();
     s["z"].set(DataType::float64(nvals,offset));
     
     // init the output

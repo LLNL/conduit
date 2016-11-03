@@ -198,7 +198,7 @@ to_contiguous(const conduit::Node &src,
 
         // get the proper number of bytes for this data type, so we can use it
         // as the stride
-        index_t elem_bytes = DataType::default_dtype(curr_dt.id()).element_bytes();
+        index_t elem_bytes = chld.dtype().element_bytes();
         
         // set the stride and offset
         curr_dt.set_stride(elem_bytes);
@@ -233,7 +233,18 @@ to_interleaved(const conduit::Node &src,
     
     NodeConstIterator itr = src.children();
     index_t num_comps = src.number_of_children();
+    index_t stride = 0;
     index_t curr_offset = 0;
+   
+    while(itr.has_next())
+    {
+        // get the next child
+        const Node &chld = itr.next();
+        index_t elem_bytes = DataType::default_dtype(chld.dtype().id()).element_bytes();
+        stride += chld.dtype().element_bytes();
+    }
+    
+    itr.to_front();
     
     while(itr.has_next())
     {
@@ -242,18 +253,15 @@ to_interleaved(const conduit::Node &src,
         // get the next child's name
         std::string name = itr.name();
         
-        // use the child's data type to see our desired data type
+        // use the child's data type to seed our desired data type
         DataType curr_dt = chld.dtype();
 
         // get the proper number of bytes for this data type, so we can use it
         // as the stride
         index_t elem_bytes = DataType::default_dtype(curr_dt.id()).element_bytes();
-        
-        // ASSUMES THE elem_bytes is the same for each one of the components
-        // eg: all float64
-        
+                
         // set the stride and offset
-        curr_dt.set_stride(num_comps * elem_bytes);
+        curr_dt.set_stride(stride);
         curr_dt.set_offset(curr_offset);
         
         // put the dtype into our schema with the correct name
@@ -262,7 +270,7 @@ to_interleaved(const conduit::Node &src,
         // update the offset for the next component
         curr_offset += elem_bytes;
     }
-    
+
     // allocate using our schema
     dest.set(s_dest);
     // copy the data from the source

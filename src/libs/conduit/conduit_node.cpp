@@ -319,7 +319,7 @@ Node::load(const std::string &stream_path,
 {
     // clear out any existing structure
     reset();
-    index_t dsize = schema.total_bytes();
+    index_t dsize = schema.spanned_bytes();
 
     allocate(dsize);
     std::ifstream ifs;
@@ -417,7 +417,7 @@ Node::mmap(const std::string &stream_path,
            const Schema &schema)
 {
     reset();
-    index_t dsize = schema.total_bytes();
+    index_t dsize = schema.spanned_bytes();
     Node::mmap(stream_path,dsize);
 
     //
@@ -10603,7 +10603,7 @@ Node::to_base64_json(std::ostream &os,
     compact_to(n);
     
     // use libb64 to encode the data
-    index_t nbytes = n.schema().total_bytes();
+    index_t nbytes = n.schema().spanned_bytes();
     index_t enc_buff_size =  utils::base64_encode_buffer_size(nbytes);
     Node bb64_data;
     bb64_data.set(DataType::char8_str(enc_buff_size));
@@ -11102,7 +11102,7 @@ Node::list_of(const Schema &schema,
     Schema s_compact;
     schema.compact_to(s_compact);
     
-    index_t entry_bytes = s_compact.total_bytes();
+    index_t entry_bytes = s_compact.total_bytes_compact();
     index_t total_bytes = entry_bytes * num_entries;
 
     // allocate what we need
@@ -11131,7 +11131,7 @@ Node::list_of_external(void *data,
     Schema s_compact;
     schema.compact_to(s_compact);
     
-    index_t entry_bytes = s_compact.total_bytes();
+    index_t entry_bytes = s_compact.total_bytes_compact();
 
     m_data = data;
     uint8 *ptr = (uint8*) data;

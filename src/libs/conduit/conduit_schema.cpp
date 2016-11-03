@@ -1142,7 +1142,7 @@ Schema::compact_to(Schema &s_dest, index_t curr_offset) const
             Schema  *cld_src = children()[i];
             Schema &cld_dest = s_dest.fetch(object_order()[i]);
             cld_src->compact_to(cld_dest,curr_offset);
-            curr_offset += cld_dest.total_bytes();
+            curr_offset += cld_dest.total_bytes_compact();
         }
     }
     else if(dtype_id == DataType::LIST_ID)
@@ -1154,7 +1154,7 @@ Schema::compact_to(Schema &s_dest, index_t curr_offset) const
             Schema  *cld_src = children()[i];
             Schema &cld_dest = s_dest.append();
             cld_src->compact_to(cld_dest,curr_offset);
-            curr_offset += cld_dest.total_bytes();
+            curr_offset += cld_dest.total_bytes_compact();
         }
     }
     else if (dtype_id != DataType::EMPTY_ID)
