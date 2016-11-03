@@ -507,7 +507,7 @@ DataType::total_bytes_compact() const
 index_t
 DataType::spanned_bytes() const
 {
-    return total_bytes() + m_offset;
+    return m_offset + m_stride * (m_num_ele -1) + m_ele_bytes;;
 }
 
 //---------------------------------------------------------------------------//
