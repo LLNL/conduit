@@ -272,7 +272,7 @@ isend(Node &node,
     node.compact_to(*(request->_externalData));
 
     int mpi_error =  MPI_Isend((char*)request->_externalData->data_ptr(), 
-                               request->_externalData->total_bytes(), 
+                               request->_externalData->total_bytes_compact(), 
                                MPI_CHAR, 
                                dest, 
                                tag,
@@ -296,7 +296,7 @@ irecv(Node &node,
     request->_recvData = &node;
 
     int mpi_error =  MPI_Irecv((char*)request->_externalData->data_ptr(),
-                               request->_externalData->total_bytes(),
+                               request->_externalData->total_bytes_compact(),
                                MPI_CHAR,
                                src,
                                tag,

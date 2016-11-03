@@ -538,7 +538,7 @@ DataType::is_compact() const
     return ( (m_id != EMPTY_ID) &&
              (m_id != OBJECT_ID) && 
              (m_id != LIST_ID) &&
-             (total_bytes() == total_bytes_compact()));
+             (spanned_bytes() == total_bytes_compact()));
 }
 
 //---------------------------------------------------------------------------//

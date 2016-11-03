@@ -574,8 +574,8 @@ Node::set_data_using_dtype(const DataType &dtype,
 {
     release();
     m_schema->set(dtype);
-    allocate(m_schema->total_bytes());
-    memcpy(m_data, data, (size_t) m_schema->total_bytes());
+    allocate(m_schema->spanned_bytes());
+    memcpy(m_data, data, (size_t) m_schema->spanned_bytes());
     walk_schema(this,m_schema,m_data);
 }
 
@@ -13264,7 +13264,7 @@ Node::serialize(uint8 *data,index_t curr_offset) const
         {
             memcpy(&data[curr_offset],
                    m_data,
-                   (size_t)total_bytes());
+                   (size_t)total_bytes_compact());
         }
         else // ser as is. This copies stride * num_ele bytes
         {
@@ -13355,7 +13355,7 @@ Node::contiguous_with(uint8 *start_addy, uint8 *&end_addy) const
             if(curr_addy != NULL && curr_addy == start_addy)
             {
                 // ok, advance the end pointer
-                end_addy = curr_addy + total_bytes();
+                end_addy = curr_addy + m_schema->total_bytes();
             }
             else // bad
             {
