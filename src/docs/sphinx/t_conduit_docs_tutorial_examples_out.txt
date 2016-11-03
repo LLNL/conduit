@@ -1,19 +1,19 @@
 Running main() from gtest_main.cc
-[==========] Running 21 tests from 1 test case.
+[==========] Running 19 tests from 1 test case.
 [----------] Global test environment set-up.
-[----------] 21 tests from conduit_tutorial
+[----------] 19 tests from conduit_tutorial
 [ RUN      ] conduit_tutorial.basics_very_basic
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 62]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 63]
  basics_very_basic
 
 {
   "my": "data"
 }
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 68]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 69]
  basics_very_basic
 [       OK ] conduit_tutorial.basics_very_basic (0 ms)
 [ RUN      ] conduit_tutorial.basics_hierarchial
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 74]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 75]
  basics_hierarchial
 
 {
@@ -28,11 +28,11 @@ Running main() from gtest_main.cc
   }
 }
 total bytes: 15
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 84]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 85]
  basics_hierarchial
 [       OK ] conduit_tutorial.basics_hierarchial (1 ms)
 [ RUN      ] conduit_tutorial.basics_object_and_list
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 90]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 91]
  basics_object_and_list
 
 {
@@ -51,45 +51,45 @@ total bytes: 15
     4
   ]
 }
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 105]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 106]
  basics_object_and_list
 [       OK ] conduit_tutorial.basics_object_and_list (0 ms)
 [ RUN      ] conduit_tutorial.basics_mem_spaces
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 111]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 112]
  basics_mem_spaces
 
 {
   "mem_spaces": 
   {
-    "0x7fa102404e70": 
+    "0x7fb22ad026c0": 
     {
       "path": "my",
-      "type": "alloced",
+      "type": "allocated",
       "bytes": 5
     },
-    "0x7fa102405950": 
+    "0x7fb22ad02560": 
     {
       "path": "a/b/c",
-      "type": "alloced",
+      "type": "allocated",
       "bytes": 2
     },
-    "0x7fa102405940": 
+    "0x7fb22ad02550": 
     {
       "path": "a/b/e",
-      "type": "alloced",
+      "type": "allocated",
       "bytes": 8
     }
   },
-  "total_strided_bytes": 15,
+  "total_bytes_allocated": 15,
+  "total_bytes_mmaped": 0,
   "total_bytes_compact": 15,
-  "total_bytes_alloced": 15,
-  "total_bytes_mmaped": 0
+  "total_strided_bytes": 15
 }
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 122]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 123]
  basics_mem_spaces
 [       OK ] conduit_tutorial.basics_mem_spaces (0 ms)
 [ RUN      ] conduit_tutorial.basics_bw_style
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 128]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 129]
  basics_bw_style
 
 {
@@ -99,64 +99,64 @@ total bytes: 15
 {
   "test": {"dtype":"uint32", "number_of_elements": 1, "offset": 0, "stride": 4, "element_bytes": 4, "endianness": "little", "value": 100}
 }
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 136]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 137]
  basics_bw_style
 [       OK ] conduit_tutorial.basics_bw_style (0 ms)
 [ RUN      ] conduit_tutorial.basics_bw_style_from_native
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 142]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 143]
  basics_bw_style_from_native
 
 {
   "test": {"dtype":"int32", "number_of_elements": 1, "offset": 0, "stride": 4, "element_bytes": 4, "endianness": "little", "value": 100}
 }
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 149]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 150]
  basics_bw_style_from_native
 [       OK ] conduit_tutorial.basics_bw_style_from_native (0 ms)
 [ RUN      ] conduit_tutorial.numeric_as_dtype
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 157]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 158]
  numeric_as_dtype
 100
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 164]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 165]
  numeric_as_dtype
 [       OK ] conduit_tutorial.numeric_as_dtype (0 ms)
 [ RUN      ] conduit_tutorial.numeric_via_value
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 171]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 172]
  numeric_via_value
 100
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 179]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 180]
  numeric_via_value
 [       OK ] conduit_tutorial.numeric_via_value (0 ms)
 [ RUN      ] conduit_tutorial.numeric_ptr_as_dtype
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 187]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 188]
  numeric_ptr_as_dtype
 my_vals[0] = 100
 my_vals[1] = 200
 my_vals[2] = 300
 my_vals[3] = 400
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 201]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 202]
  numeric_ptr_as_dtype
 [       OK ] conduit_tutorial.numeric_ptr_as_dtype (0 ms)
 [ RUN      ] conduit_tutorial.numeric_ptr_via_value
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 208]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 209]
  numeric_ptr_via_value
 my_vals[0] = 100
 my_vals[1] = 200
 my_vals[2] = 300
 my_vals[3] = 400
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 222]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 223]
  numeric_ptr_via_value
 [       OK ] conduit_tutorial.numeric_ptr_via_value (0 ms)
 [ RUN      ] conduit_tutorial.numeric_strided_data_array
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 229]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 230]
  numeric_strided_data_array
 my_vals[0] = 100
 my_vals[1] = 300
 [100, 300]
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 247]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 248]
  numeric_strided_data_array
 [       OK ] conduit_tutorial.numeric_strided_data_array (0 ms)
 [ RUN      ] conduit_tutorial.numeric_double_conversion_start
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 253]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 254]
  numeric_double_conversion_start
 [       OK ] conduit_tutorial.numeric_double_conversion_start (0 ms)
 [ RUN      ] conduit_tutorial.numeric_double_conversion
@@ -176,11 +176,11 @@ vals[2] = 3000
 vals[3] = 4000
 [       OK ] conduit_tutorial.numeric_double_conversion (0 ms)
 [ RUN      ] conduit_tutorial.numeric_double_conversion_end
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 319]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 320]
  numeric_double_conversion_end
 [       OK ] conduit_tutorial.numeric_double_conversion_end (0 ms)
 [ RUN      ] conduit_tutorial.json_generator_std
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 326]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 327]
  json_generator_std
 100
 
@@ -191,11 +191,11 @@ vals[3] = 4000
 {
   "test": {"dtype":"float64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": 100.0}
 }
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 337]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 338]
  json_generator_std
-[       OK ] conduit_tutorial.json_generator_std (1 ms)
+[       OK ] conduit_tutorial.json_generator_std (0 ms)
 [ RUN      ] conduit_tutorial.json_generator_pure_json
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 343]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 344]
  json_generator_pure_json
 100
 
@@ -206,11 +206,11 @@ vals[3] = 4000
 {
   "test": 100.0
 }
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 354]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 355]
  json_generator_pure_json
-[       OK ] conduit_tutorial.json_generator_pure_json (0 ms)
+[       OK ] conduit_tutorial.json_generator_pure_json (1 ms)
 [ RUN      ] conduit_tutorial.json_generator_bind_to_incore
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 360]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 361]
  json_generator_bind_to_incore
 100 vs 100
 200 vs 200
@@ -223,22 +223,22 @@ vals[3] = 4000
 {
   "mem_spaces": 
   {
-    "0x7fff54bb1fd0": 
+    "0x7fff5907bf30": 
     {
       "path": "a",
       "type": "external"
     }
   },
-  "total_strided_bytes": 16,
+  "total_bytes_allocated": 0,
+  "total_bytes_mmaped": 0,
   "total_bytes_compact": 16,
-  "total_bytes_alloced": 0,
-  "total_bytes_mmaped": 0
+  "total_strided_bytes": 16
 }
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 379]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 380]
  json_generator_bind_to_incore
 [       OK ] conduit_tutorial.json_generator_bind_to_incore (0 ms)
 [ RUN      ] conduit_tutorial.json_generator_compact
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 386]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 387]
  json_generator_compact
 [100.0, 200.0, 300.0, 400.0, 500.0]
 [-100.0, -200.0, -300.0, -400.0, -500.0]
@@ -246,31 +246,31 @@ vals[3] = 4000
 {
   "mem_spaces": 
   {
-    "0x7fff54bb1f90": 
+    "0x7fff5907bef0": 
     {
       "path": "",
       "type": "external"
     }
   },
-  "total_strided_bytes": 80,
+  "total_bytes_allocated": 0,
+  "total_bytes_mmaped": 0,
   "total_bytes_compact": 40,
-  "total_bytes_alloced": 0,
-  "total_bytes_mmaped": 0
+  "total_strided_bytes": 72
 }
 
 {
   "mem_spaces": 
   {
-    "0x7fff54bb1f90": 
+    "0x7fff5907bef0": 
     {
       "path": "",
       "type": "external"
     }
   },
-  "total_strided_bytes": 80,
+  "total_bytes_allocated": 0,
+  "total_bytes_mmaped": 0,
   "total_bytes_compact": 40,
-  "total_bytes_alloced": 0,
-  "total_bytes_mmaped": 0
+  "total_strided_bytes": 72
 }
 [100.0, 200.0, 300.0, 400.0, 500.0]
 {"dtype":"float64", "number_of_elements": 5, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little"}
@@ -278,61 +278,61 @@ vals[3] = 4000
 {
   "mem_spaces": 
   {
-    "0x7fa102405960": 
+    "0x7fb22af00040": 
     {
       "path": "",
-      "type": "alloced",
+      "type": "allocated",
       "bytes": 40
     }
   },
-  "total_strided_bytes": 40,
+  "total_bytes_allocated": 40,
+  "total_bytes_mmaped": 0,
   "total_bytes_compact": 40,
-  "total_bytes_alloced": 40,
-  "total_bytes_mmaped": 0
+  "total_strided_bytes": 40
 }
 [-100.0, -200.0, -300.0, -400.0, -500.0]
 
 {
   "mem_spaces": 
   {
-    "0x7fa1024050b0": 
+    "0x7fb22af00750": 
     {
       "path": "",
-      "type": "alloced",
+      "type": "allocated",
       "bytes": 40
     }
   },
-  "total_strided_bytes": 40,
+  "total_bytes_allocated": 40,
+  "total_bytes_mmaped": 0,
   "total_bytes_compact": 40,
-  "total_bytes_alloced": 40,
-  "total_bytes_mmaped": 0
+  "total_strided_bytes": 40
 }
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 437]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 438]
  json_generator_compact
-[       OK ] conduit_tutorial.json_generator_compact (0 ms)
+[       OK ] conduit_tutorial.json_generator_compact (1 ms)
 [ RUN      ] conduit_tutorial.mem_ownership_external
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 444]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 445]
  mem_ownership_external
 
 {
   "mem_spaces": 
   {
-    "0x7fa102405630": 
+    "0x7fb22af00010": 
     {
       "path": "v_owned",
-      "type": "alloced",
+      "type": "allocated",
       "bytes": 40
     },
-    "0x7fa1024054b0": 
+    "0x7fb22af00070": 
     {
       "path": "v_external",
       "type": "external"
     }
   },
-  "total_strided_bytes": 80,
+  "total_bytes_allocated": 40,
+  "total_bytes_mmaped": 0,
   "total_bytes_compact": 80,
-  "total_bytes_alloced": 40,
-  "total_bytes_mmaped": 0
+  "total_strided_bytes": 80
 }
 
 {
@@ -344,112 +344,11 @@ vals[3] = 4000
   "v_owned": [0.0, 3.1415, 6.283, 9.4245, 12.566],
   "v_external": [0.0, -3.1415, 6.283, 9.4245, 12.566]
 }
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 464]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 465]
  mem_ownership_external
 [       OK ] conduit_tutorial.mem_ownership_external (0 ms)
-[ RUN      ] conduit_tutorial.blueprint_example_1
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 472]
- blueprint_example_1
-mesh verify succeeded.
-
-{
-  "coordsets": 
-  {
-    "coords": 
-    {
-      "values": null,
-      "valid": "true"
-    }
-  },
-  "topologies": 
-  {
-    "mesh": 
-    {
-      "elements": 
-      {
-        "shape": 
-        {
-          "info": 
-          [
-            "mesh::topology::shape: valid type: tet"
-          ],
-          "valid": "true"
-        }
-      },
-      "valid": "true"
-    }
-  },
-  "fields": 
-  {
-    "braid": 
-    {
-      "info": 
-      [
-        "mesh::field: is a single component numeric array."
-      ],
-      "association": 
-      {
-        "info": 
-        [
-          "mesh::field::association: association: point"
-        ],
-        "valid": "true"
-      },
-      "valid": "true"
-    },
-    "radial": 
-    {
-      "info": 
-      [
-        "mesh::field: is a single component numeric array."
-      ],
-      "association": 
-      {
-        "info": 
-        [
-          "mesh::field::association: association: element"
-        ],
-        "valid": "true"
-      },
-      "valid": "true"
-    },
-    "vel": 
-    {
-      "values": null,
-      "info": 
-      [
-        "mesh::field: is a mcarray."
-      ],
-      "association": 
-      {
-        "info": 
-        [
-          "mesh::field::association: association: point"
-        ],
-        "valid": "true"
-      },
-      "valid": "true"
-    }
-  },
-  "valid": "true"
-}
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 490]
- blueprint_example_1
-[       OK ] conduit_tutorial.blueprint_example_1 (1 ms)
-[ RUN      ] conduit_tutorial.blueprint_example_2
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 497]
- blueprint_example_2
-
-{
-  "x": [1.0, 1.0, 1.0, 1.0, 1.0],
-  "y": [2.0, 2.0, 2.0, 2.0, 2.0],
-  "z": [3.0, 3.0, 3.0, 3.0, 3.0]
-}
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_tutorial_examples.cpp : 519]
- blueprint_example_2
-[       OK ] conduit_tutorial.blueprint_example_2 (0 ms)
-[----------] 21 tests from conduit_tutorial (3 ms total)
+[----------] 19 tests from conduit_tutorial (3 ms total)
 
 [----------] Global test environment tear-down
-[==========] 21 tests from 1 test case ran. (3 ms total)
-[  PASSED  ] 21 tests.
+[==========] 19 tests from 1 test case ran. (3 ms total)
+[  PASSED  ] 19 tests.

@@ -50,7 +50,7 @@ Protocol
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-The mesh blueprint protocol defines a computational mesh using one or more Coordinate Sets (via child ``coordsets``), one or more Topologies (via child  ``topologies``), zero or more Fields (via child ``fields``), and optional State information (via child ``state``). For simplicity, the descriptions below outline one Coordinate Set named ``coords`` one Topology named ``topo``. s
+The mesh blueprint protocol defines a computational mesh using one or more Coordinate Sets (via child ``coordsets``), one or more Topologies (via child  ``topologies``), zero or more Fields (via child ``fields``), and optional State information (via child ``state``). For simplicity, the descriptions below outline one Coordinate Set named ``coords`` one Topology named ``topo``.
 
 
 

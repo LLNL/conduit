@@ -107,7 +107,6 @@ TEST(conduit_docs, blueprint_example_2)
             // copy data from n into the desired memory layout
             Node xform;
             conduit::blueprint::mcarray::to_interleaved(n,xform);
-            std::cout << "alloced? " << xform.allocated_bytes() << std::endl;
             std::cout << "transformed to 'interleaved' mcarray " << std::endl;
             xform.print_detailed();
             xform.info(mem_info);

@@ -34,29 +34,29 @@ example 'separate' mcarray
 {
   "mem_spaces": 
   {
-    "0x7f801ac03bd0": 
+    "0x7fd6c0600100": 
     {
       "path": "x",
-      "type": "alloced",
+      "type": "allocated",
       "bytes": 40
     },
-    "0x7f801ac03ed0": 
+    "0x7fd6c0600460": 
     {
       "path": "y",
-      "type": "alloced",
+      "type": "allocated",
       "bytes": 40
     },
-    "0x7f801ac03c00": 
+    "0x7fd6c0600130": 
     {
       "path": "z",
-      "type": "alloced",
+      "type": "allocated",
       "bytes": 40
     }
   },
-  "total_strided_bytes": 120,
+  "total_bytes_allocated": 120,
+  "total_bytes_mmaped": 0,
   "total_bytes_compact": 120,
-  "total_bytes_alloced": 120,
-  "total_bytes_mmaped": 0
+  "total_strided_bytes": 120
 }
 transformed to 'interleaved' mcarray 
 
@@ -69,19 +69,19 @@ transformed to 'interleaved' mcarray
 {
   "mem_spaces": 
   {
-    "0x7f801ac05b00": 
+    "0x7fd6c0602090": 
     {
       "path": "",
-      "type": "alloced",
-      "bytes": 136
+      "type": "allocated",
+      "bytes": 120
     }
   },
-  "total_strided_bytes": 360,
+  "total_bytes_allocated": 120,
+  "total_bytes_mmaped": 0,
   "total_bytes_compact": 120,
-  "total_bytes_alloced": 136,
-  "total_bytes_mmaped": 0
+  "total_strided_bytes": 312
 }
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_blueprint_examples.cpp : 118]
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_blueprint_examples.cpp : 117]
  blueprint_example_2
 [       OK ] conduit_docs.blueprint_example_2 (0 ms)
 [----------] 2 tests from conduit_docs (1 ms total)

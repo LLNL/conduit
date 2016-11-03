@@ -10667,10 +10667,10 @@ Node::info(Node &res) const
     info(res,std::string());
 
     // add summary 
-    res["total_strided_bytes"]   = total_strided_bytes();
-    res["total_bytes_compact"]   = total_bytes_compact();
     res["total_bytes_allocated"] = total_bytes_allocated();
     res["total_bytes_mmaped"]    = total_bytes_mmaped();
+    res["total_bytes_compact"]   = total_bytes_compact();
+    res["total_strided_bytes"]   = total_strided_bytes();
 }
 
 //---------------------------------------------------------------------------//
