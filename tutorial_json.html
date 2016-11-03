@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Generators &mdash; Conduit 0.2.0.pre documentation</title>
+  <title>Generators &mdash; Conduit 0.2.0 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="Conduit 0.2.0.pre documentation" href="index.html"/>
+    <link rel="top" title="Conduit 0.2.0 documentation" href="index.html"/>
         <link rel="up" title="Conduit" href="conduit.html"/>
         <link rel="next" title="Data Ownership" href="tutorial_ownership.html"/>
         <link rel="prev" title="Accessing Numeric Data" href="tutorial_numeric.html"/> 
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                0.2.0.pre
+                0.2.0
               </div>
             
           
@@ -170,11 +170,11 @@
 <div class="highlight-default"><div class="highlight"><pre><span class="mi">100</span>
 
 <span class="p">{</span>
-  <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="mi">100</span>
+  <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="mf">100.0</span>
 <span class="p">}</span>
 
 <span class="p">{</span>
-  <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;dtype&quot;</span><span class="p">:</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;length&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;endianness&quot;</span><span class="p">:</span> <span class="s2">&quot;little&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">}</span>
+  <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;dtype&quot;</span><span class="p">:</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;number_of_elements&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;stride&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;element_bytes&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;endianness&quot;</span><span class="p">:</span> <span class="s2">&quot;little&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -192,43 +192,44 @@
 <div class="highlight-default"><div class="highlight"><pre><span class="mi">100</span>
 
 <span class="p">{</span>
-  <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;dtype&quot;</span><span class="p">:</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;length&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;endianness&quot;</span><span class="p">:</span> <span class="s2">&quot;little&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">}</span>
+  <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;dtype&quot;</span><span class="p">:</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;number_of_elements&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;stride&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;element_bytes&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;endianness&quot;</span><span class="p">:</span> <span class="s2">&quot;little&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">}</span>
 <span class="p">}</span>
 
 <span class="p">{</span>
-  <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="mi">100</span>
+  <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="mf">100.0</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <p>Schemas can easily be bound to in-core data.</p>
 <div class="highlight-cpp"><div class="highlight"><pre><span class="n">float64</span> <span class="n">vals</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
-<span class="n">Generator</span> <span class="nf">g</span><span class="p">(</span><span class="s">&quot;{a: {dtype: float64, value: 100.0}, b: {dtype: float64, value: 200.0} }&quot;</span><span class="p">,</span><span class="n">vals</span><span class="p">);</span>
+<span class="n">Generator</span> <span class="nf">g</span><span class="p">(</span><span class="s">&quot;{a: {dtype: float64, value: 100.0}, b: {dtype: float64, value: 200.0} }&quot;</span><span class="p">,</span>
+            <span class="s">&quot;conduit_json&quot;</span><span class="p">,</span>
+            <span class="n">vals</span><span class="p">);</span>
 
 <span class="n">Node</span> <span class="n">n</span><span class="p">;</span>
-<span class="n">g</span><span class="p">.</span><span class="n">walk_external</span><span class="p">(</span><span class="n">n</span><span class="p">);</span>
 </pre></div>
 </div>
 <div class="highlight-default"><div class="highlight"><pre><span class="mi">100</span> <span class="n">vs</span> <span class="mi">100</span>
 <span class="mi">200</span> <span class="n">vs</span> <span class="mi">200</span>
 
 <span class="p">{</span>
-  <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
-  <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="mi">200</span>
+  <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>
+  <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="mf">200.0</span>
 <span class="p">}</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;mem_spaces&quot;</span><span class="p">:</span> 
   <span class="p">{</span>
-    <span class="s2">&quot;0x7fff5a5f1a60&quot;</span><span class="p">:</span> 
+    <span class="s2">&quot;0x7fff5907bf30&quot;</span><span class="p">:</span> 
     <span class="p">{</span>
       <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span>
       <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;external&quot;</span>
     <span class="p">}</span>
   <span class="p">},</span>
-  <span class="s2">&quot;total_bytes&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
+  <span class="s2">&quot;total_bytes_allocated&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="s2">&quot;total_bytes_mmaped&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
   <span class="s2">&quot;total_bytes_compact&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
-  <span class="s2">&quot;total_bytes_alloced&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-  <span class="s2">&quot;total_bytes_mmaped&quot;</span><span class="p">:</span> <span class="mi">0</span>
+  <span class="s2">&quot;total_strided_bytes&quot;</span><span class="p">:</span> <span class="mi">16</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -236,15 +237,21 @@
 <div class="section" id="compacting-nodes">
 <h2>Compacting Nodes<a class="headerlink" href="#compacting-nodes" title="Permalink to this headline">¶</a></h2>
 <p><em>Nodes</em> can be compacted to transform sparse data.</p>
-<div class="highlight-cpp"><div class="highlight"><pre><span class="n">float64</span> <span class="n">vals</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span> <span class="mf">100.0</span><span class="p">,</span><span class="o">-</span><span class="mf">100.0</span><span class="p">,</span>
+<div class="highlight-cpp"><div class="highlight"><pre><span class="n">CONDUIT_INFO</span><span class="p">(</span><span class="s">&quot;json_generator_compact&quot;</span><span class="p">);</span>
+
+<span class="n">float64</span> <span class="n">vals</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span> <span class="mf">100.0</span><span class="p">,</span><span class="o">-</span><span class="mf">100.0</span><span class="p">,</span>
                    <span class="mf">200.0</span><span class="p">,</span><span class="o">-</span><span class="mf">200.0</span><span class="p">,</span>
                    <span class="mf">300.0</span><span class="p">,</span><span class="o">-</span><span class="mf">300.0</span><span class="p">,</span>
                    <span class="mf">400.0</span><span class="p">,</span><span class="o">-</span><span class="mf">400.0</span><span class="p">,</span>
                    <span class="mf">500.0</span><span class="p">,</span><span class="o">-</span><span class="mf">500.0</span><span class="p">};</span>
 
 <span class="c1">// stride though the data with two different views. </span>
-<span class="n">Generator</span> <span class="nf">g1</span><span class="p">(</span><span class="s">&quot;{dtype: float64, length: 5, stride: 16}&quot;</span><span class="p">,</span><span class="n">vals</span><span class="p">);</span>
-<span class="n">Generator</span> <span class="nf">g2</span><span class="p">(</span><span class="s">&quot;{dtype: float64, length: 5, stride: 16, offset:8}&quot;</span><span class="p">,</span><span class="n">vals</span><span class="p">);</span>
+<span class="n">Generator</span> <span class="nf">g1</span><span class="p">(</span><span class="s">&quot;{dtype: float64, length: 5, stride: 16}&quot;</span><span class="p">,</span>
+             <span class="s">&quot;conduit_json&quot;</span><span class="p">,</span>
+             <span class="n">vals</span><span class="p">);</span>
+<span class="n">Generator</span> <span class="nf">g2</span><span class="p">(</span><span class="s">&quot;{dtype: float64, length: 5, stride: 16, offset:8}&quot;</span><span class="p">,</span>
+             <span class="s">&quot;conduit_json&quot;</span><span class="p">,</span>
+              <span class="n">vals</span><span class="p">);</span>
 
 <span class="n">Node</span> <span class="n">n1</span><span class="p">;</span>
 <span class="n">g1</span><span class="p">.</span><span class="n">walk_external</span><span class="p">(</span><span class="n">n1</span><span class="p">);</span>
@@ -275,79 +282,74 @@
 <span class="c1">// compact data from n2 to a new node</span>
 <span class="n">Node</span> <span class="n">n2c</span><span class="p">;</span>
 <span class="n">n2</span><span class="p">.</span><span class="n">compact_to</span><span class="p">(</span><span class="n">n2c</span><span class="p">);</span>
-
-<span class="c1">// look at the resulting compact data</span>
-<span class="n">n2c</span><span class="p">.</span><span class="n">print</span><span class="p">();</span>
-<span class="n">n2c</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="n">ninfo</span><span class="p">);</span>
-<span class="n">ninfo</span><span class="p">.</span><span class="n">print</span><span class="p">();</span>
 </pre></div>
 </div>
-<div class="highlight-default"><div class="highlight"><pre><span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="mi">500</span><span class="p">]</span>
-<span class="p">[</span><span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="o">-</span><span class="mi">200</span><span class="p">,</span> <span class="o">-</span><span class="mi">300</span><span class="p">,</span> <span class="o">-</span><span class="mi">400</span><span class="p">,</span> <span class="o">-</span><span class="mi">500</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span class="p">[</span><span class="mf">100.0</span><span class="p">,</span> <span class="mf">200.0</span><span class="p">,</span> <span class="mf">300.0</span><span class="p">,</span> <span class="mf">400.0</span><span class="p">,</span> <span class="mf">500.0</span><span class="p">]</span>
+<span class="p">[</span><span class="o">-</span><span class="mf">100.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">200.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">300.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">400.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">500.0</span><span class="p">]</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;mem_spaces&quot;</span><span class="p">:</span> 
   <span class="p">{</span>
-    <span class="s2">&quot;0x7fff5a5f1a80&quot;</span><span class="p">:</span> 
+    <span class="s2">&quot;0x7fff5907bef0&quot;</span><span class="p">:</span> 
     <span class="p">{</span>
       <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
       <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;external&quot;</span>
     <span class="p">}</span>
   <span class="p">},</span>
-  <span class="s2">&quot;total_bytes&quot;</span><span class="p">:</span> <span class="mi">80</span><span class="p">,</span>
+  <span class="s2">&quot;total_bytes_allocated&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="s2">&quot;total_bytes_mmaped&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
   <span class="s2">&quot;total_bytes_compact&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
-  <span class="s2">&quot;total_bytes_alloced&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-  <span class="s2">&quot;total_bytes_mmaped&quot;</span><span class="p">:</span> <span class="mi">0</span>
+  <span class="s2">&quot;total_strided_bytes&quot;</span><span class="p">:</span> <span class="mi">72</span>
 <span class="p">}</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;mem_spaces&quot;</span><span class="p">:</span> 
   <span class="p">{</span>
-    <span class="s2">&quot;0x7fff5a5f1a80&quot;</span><span class="p">:</span> 
+    <span class="s2">&quot;0x7fff5907bef0&quot;</span><span class="p">:</span> 
     <span class="p">{</span>
       <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
       <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;external&quot;</span>
     <span class="p">}</span>
   <span class="p">},</span>
-  <span class="s2">&quot;total_bytes&quot;</span><span class="p">:</span> <span class="mi">80</span><span class="p">,</span>
+  <span class="s2">&quot;total_bytes_allocated&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="s2">&quot;total_bytes_mmaped&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
   <span class="s2">&quot;total_bytes_compact&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
-  <span class="s2">&quot;total_bytes_alloced&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-  <span class="s2">&quot;total_bytes_mmaped&quot;</span><span class="p">:</span> <span class="mi">0</span>
+  <span class="s2">&quot;total_strided_bytes&quot;</span><span class="p">:</span> <span class="mi">72</span>
 <span class="p">}</span>
-<span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="mi">500</span><span class="p">]</span>
-<span class="p">{</span><span class="s2">&quot;dtype&quot;</span><span class="p">:</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;length&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;stride&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;element_bytes&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;endianness&quot;</span><span class="p">:</span> <span class="s2">&quot;little&quot;</span><span class="p">}</span>
+<span class="p">[</span><span class="mf">100.0</span><span class="p">,</span> <span class="mf">200.0</span><span class="p">,</span> <span class="mf">300.0</span><span class="p">,</span> <span class="mf">400.0</span><span class="p">,</span> <span class="mf">500.0</span><span class="p">]</span>
+<span class="p">{</span><span class="s2">&quot;dtype&quot;</span><span class="p">:</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;number_of_elements&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;stride&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;element_bytes&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;endianness&quot;</span><span class="p">:</span> <span class="s2">&quot;little&quot;</span><span class="p">}</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;mem_spaces&quot;</span><span class="p">:</span> 
   <span class="p">{</span>
-    <span class="s2">&quot;0x7fd4cac058b0&quot;</span><span class="p">:</span> 
+    <span class="s2">&quot;0x7fb22af00040&quot;</span><span class="p">:</span> 
     <span class="p">{</span>
       <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;alloced&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;allocated&quot;</span><span class="p">,</span>
       <span class="s2">&quot;bytes&quot;</span><span class="p">:</span> <span class="mi">40</span>
     <span class="p">}</span>
   <span class="p">},</span>
-  <span class="s2">&quot;total_bytes&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
+  <span class="s2">&quot;total_bytes_allocated&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
+  <span class="s2">&quot;total_bytes_mmaped&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
   <span class="s2">&quot;total_bytes_compact&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
-  <span class="s2">&quot;total_bytes_alloced&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
-  <span class="s2">&quot;total_bytes_mmaped&quot;</span><span class="p">:</span> <span class="mi">0</span>
+  <span class="s2">&quot;total_strided_bytes&quot;</span><span class="p">:</span> <span class="mi">40</span>
 <span class="p">}</span>
-<span class="p">[</span><span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="o">-</span><span class="mi">200</span><span class="p">,</span> <span class="o">-</span><span class="mi">300</span><span class="p">,</span> <span class="o">-</span><span class="mi">400</span><span class="p">,</span> <span class="o">-</span><span class="mi">500</span><span class="p">]</span>
+<span class="p">[</span><span class="o">-</span><span class="mf">100.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">200.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">300.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">400.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">500.0</span><span class="p">]</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;mem_spaces&quot;</span><span class="p">:</span> 
   <span class="p">{</span>
-    <span class="s2">&quot;0x7fd4cac05fd0&quot;</span><span class="p">:</span> 
+    <span class="s2">&quot;0x7fb22af00750&quot;</span><span class="p">:</span> 
     <span class="p">{</span>
       <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;alloced&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;allocated&quot;</span><span class="p">,</span>
       <span class="s2">&quot;bytes&quot;</span><span class="p">:</span> <span class="mi">40</span>
     <span class="p">}</span>
   <span class="p">},</span>
-  <span class="s2">&quot;total_bytes&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
+  <span class="s2">&quot;total_bytes_allocated&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
+  <span class="s2">&quot;total_bytes_mmaped&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
   <span class="s2">&quot;total_bytes_compact&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
-  <span class="s2">&quot;total_bytes_alloced&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
-  <span class="s2">&quot;total_bytes_mmaped&quot;</span><span class="p">:</span> <span class="mi">0</span>
+  <span class="s2">&quot;total_strided_bytes&quot;</span><span class="p">:</span> <span class="mi">40</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -395,7 +397,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.2.0.pre',
+            VERSION:'0.2.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

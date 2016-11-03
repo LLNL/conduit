@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Data Ownership &mdash; Conduit 0.2.0.pre documentation</title>
+  <title>Data Ownership &mdash; Conduit 0.2.0 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="Conduit 0.2.0.pre documentation" href="index.html"/>
+    <link rel="top" title="Conduit 0.2.0 documentation" href="index.html"/>
         <link rel="up" title="Conduit" href="conduit.html"/>
         <link rel="next" title="Node Update Methods" href="tutorial_update.html"/>
         <link rel="prev" title="Generators" href="tutorial_json.html"/> 
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                0.2.0.pre
+                0.2.0
               </div>
             
           
@@ -166,8 +166,7 @@
 <li><strong>set(...)</strong>: Makes a copy of the data passed into the <em>Node</em>. This will trigger an allocation if the current data type of the <em>Node</em> is incompatible with what was passed. The <em>Node</em> assignment operators use their respective <strong>set</strong> variants, so they follow the same copy semantics.</li>
 <li><strong>set_external(...)</strong>: Sets up the <em>Node</em> to describe data passed and access the data externally. Does not copy the data.</li>
 </ul>
-<div class="highlight-cpp"><div class="highlight"><pre> 
-<span class="n">index_t</span> <span class="n">vsize</span> <span class="o">=</span> <span class="mi">5</span><span class="p">;</span>
+<div class="highlight-cpp"><div class="highlight"><pre><span class="n">index_t</span> <span class="n">vsize</span> <span class="o">=</span> <span class="mi">5</span><span class="p">;</span>
 <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">float64</span><span class="o">&gt;</span> <span class="n">vals</span><span class="p">(</span><span class="n">vsize</span><span class="p">,</span><span class="mf">0.0</span><span class="p">);</span>
 <span class="k">for</span><span class="p">(</span><span class="n">index_t</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="n">i</span><span class="o">&lt;</span><span class="n">vsize</span><span class="p">;</span><span class="n">i</span><span class="o">++</span><span class="p">)</span>
 <span class="p">{</span>
@@ -189,32 +188,32 @@
 <div class="highlight-default"><div class="highlight"><pre><span class="p">{</span>
   <span class="s2">&quot;mem_spaces&quot;</span><span class="p">:</span> 
   <span class="p">{</span>
-    <span class="s2">&quot;0x7fd4cac05590&quot;</span><span class="p">:</span> 
+    <span class="s2">&quot;0x7fb22af00010&quot;</span><span class="p">:</span> 
     <span class="p">{</span>
       <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;v_owned&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;alloced&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;allocated&quot;</span><span class="p">,</span>
       <span class="s2">&quot;bytes&quot;</span><span class="p">:</span> <span class="mi">40</span>
     <span class="p">},</span>
-    <span class="s2">&quot;0x7fd4cac05680&quot;</span><span class="p">:</span> 
+    <span class="s2">&quot;0x7fb22af00070&quot;</span><span class="p">:</span> 
     <span class="p">{</span>
       <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;v_external&quot;</span><span class="p">,</span>
       <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;external&quot;</span>
     <span class="p">}</span>
   <span class="p">},</span>
-  <span class="s2">&quot;total_bytes&quot;</span><span class="p">:</span> <span class="mi">80</span><span class="p">,</span>
+  <span class="s2">&quot;total_bytes_allocated&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
+  <span class="s2">&quot;total_bytes_mmaped&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
   <span class="s2">&quot;total_bytes_compact&quot;</span><span class="p">:</span> <span class="mi">80</span><span class="p">,</span>
-  <span class="s2">&quot;total_bytes_alloced&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
-  <span class="s2">&quot;total_bytes_mmaped&quot;</span><span class="p">:</span> <span class="mi">0</span>
+  <span class="s2">&quot;total_strided_bytes&quot;</span><span class="p">:</span> <span class="mi">80</span>
 <span class="p">}</span>
 
 <span class="p">{</span>
-  <span class="s2">&quot;v_owned&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">3.1415</span><span class="p">,</span> <span class="mf">6.283</span><span class="p">,</span> <span class="mf">9.4245</span><span class="p">,</span> <span class="mf">12.566</span><span class="p">],</span>
-  <span class="s2">&quot;v_external&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">3.1415</span><span class="p">,</span> <span class="mf">6.283</span><span class="p">,</span> <span class="mf">9.4245</span><span class="p">,</span> <span class="mf">12.566</span><span class="p">]</span>
+  <span class="s2">&quot;v_owned&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">3.1415</span><span class="p">,</span> <span class="mf">6.283</span><span class="p">,</span> <span class="mf">9.4245</span><span class="p">,</span> <span class="mf">12.566</span><span class="p">],</span>
+  <span class="s2">&quot;v_external&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">3.1415</span><span class="p">,</span> <span class="mf">6.283</span><span class="p">,</span> <span class="mf">9.4245</span><span class="p">,</span> <span class="mf">12.566</span><span class="p">]</span>
 <span class="p">}</span>
 
 <span class="p">{</span>
-  <span class="s2">&quot;v_owned&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">3.1415</span><span class="p">,</span> <span class="mf">6.283</span><span class="p">,</span> <span class="mf">9.4245</span><span class="p">,</span> <span class="mf">12.566</span><span class="p">],</span>
-  <span class="s2">&quot;v_external&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.1415</span><span class="p">,</span> <span class="mf">6.283</span><span class="p">,</span> <span class="mf">9.4245</span><span class="p">,</span> <span class="mf">12.566</span><span class="p">]</span>
+  <span class="s2">&quot;v_owned&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">3.1415</span><span class="p">,</span> <span class="mf">6.283</span><span class="p">,</span> <span class="mf">9.4245</span><span class="p">,</span> <span class="mf">12.566</span><span class="p">],</span>
+  <span class="s2">&quot;v_external&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.1415</span><span class="p">,</span> <span class="mf">6.283</span><span class="p">,</span> <span class="mf">9.4245</span><span class="p">,</span> <span class="mf">12.566</span><span class="p">]</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -262,7 +261,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.2.0.pre',
+            VERSION:'0.2.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

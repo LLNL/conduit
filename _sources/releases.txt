@@ -43,27 +43,16 @@
 .. ############################################################################
 
 ================================
-Presentations 
+Releases
 ================================
 
-Slides
-------------------
-* :download:`SciPy 2016 talk on Conduit (July 2016) <2016_07_13_scipy2016_conduit_slides.pdf>`
-* :download:`Conduit Introduction (February 2015) <2015_conduit_intro.pdf>`
+Source distributions for Conduit releases are hosted on github:
 
+https://github.com/LLNL/conduit/releases
 
-Talks
-------------------
-* `SciPy 2016 talk on Conduit (July 2016) <https://youtu.be/3_GKjeRUPKg>`_
+* **0.2.0** 
+    * `Source Tarball <https://github.com/LLNL/conduit/archive/v0.2.0.tar.gz>`_
+    * `Docs <http://software.llnl.gov/conduit/0.2.0>`_
 
-Interviews
-------------------
-* `RCE HPC Podcast on Conduit  <http://www.rce-cast.com/Podcast/rce-101-conduit.html>`_
-
-------------------
-
-Articles
-------------------
-* `LLNL Computation Article on the 2014-2015 Harvey Mudd CS Conduit Clinic Project <http://computation.llnl.gov/newsroom/hpc-partnership-harvey-mudd-college-and-livermore>`_
 
 

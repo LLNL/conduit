@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Basic Concepts &mdash; Conduit 0.2.0.pre documentation</title>
+  <title>Basic Concepts &mdash; Conduit 0.2.0 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="Conduit 0.2.0.pre documentation" href="index.html"/>
+    <link rel="top" title="Conduit 0.2.0 documentation" href="index.html"/>
         <link rel="up" title="Conduit" href="conduit.html"/>
         <link rel="next" title="Accessing Numeric Data" href="tutorial_numeric.html"/>
         <link rel="prev" title="Conduit" href="conduit.html"/> 
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                0.2.0.pre
+                0.2.0
               </div>
             
           
@@ -175,7 +175,7 @@
 <span class="n">n</span><span class="p">[</span><span class="s">&quot;a&quot;</span><span class="p">][</span><span class="s">&quot;b&quot;</span><span class="p">][</span><span class="s">&quot;e&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">64.0</span><span class="p">;</span>
 <span class="n">n</span><span class="p">.</span><span class="n">print</span><span class="p">();</span>
 
-<span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;total bytes: &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">n</span><span class="p">.</span><span class="n">total_bytes</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;total bytes: &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">n</span><span class="p">.</span><span class="n">total_strided_bytes</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
 </pre></div>
 </div>
 <div class="highlight-default"><div class="highlight"><pre><span class="p">{</span>
@@ -185,7 +185,7 @@
     <span class="s2">&quot;b&quot;</span><span class="p">:</span> 
     <span class="p">{</span>
       <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="s2">&quot;d&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;e&quot;</span><span class="p">:</span> <span class="mi">64</span>
+      <span class="s2">&quot;e&quot;</span><span class="p">:</span> <span class="mf">64.0</span>
     <span class="p">}</span>
   <span class="p">}</span>
 <span class="p">}</span>
@@ -228,9 +228,7 @@ are leafs that represent concrete data.</p>
 </pre></div>
 </div>
 <p>Behind the scenes, <em>Node</em> instances manage a collection of memory spaces.</p>
-<div class="highlight-cpp"><div class="highlight"><pre><span class="n">Node</span> <span class="n">n</span><span class="p">;</span>
-<span class="n">n</span><span class="p">[</span><span class="s">&quot;my&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;data&quot;</span><span class="p">;</span>
-<span class="n">n</span><span class="p">[</span><span class="s">&quot;a/b/c&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;d&quot;</span><span class="p">;</span>
+<div class="highlight-cpp"><div class="highlight"><pre><span class="n">n</span><span class="p">[</span><span class="s">&quot;a/b/c&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;d&quot;</span><span class="p">;</span>
 <span class="n">n</span><span class="p">[</span><span class="s">&quot;a&quot;</span><span class="p">][</span><span class="s">&quot;b&quot;</span><span class="p">][</span><span class="s">&quot;e&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">64.0</span><span class="p">;</span>
 
 <span class="n">Node</span> <span class="n">ninfo</span><span class="p">;</span>
@@ -241,29 +239,29 @@ are leafs that represent concrete data.</p>
 <div class="highlight-default"><div class="highlight"><pre><span class="p">{</span>
   <span class="s2">&quot;mem_spaces&quot;</span><span class="p">:</span> 
   <span class="p">{</span>
-    <span class="s2">&quot;0x7fd4cac05590&quot;</span><span class="p">:</span> 
+    <span class="s2">&quot;0x7fb22ad026c0&quot;</span><span class="p">:</span> 
     <span class="p">{</span>
       <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;my&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;alloced&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;allocated&quot;</span><span class="p">,</span>
       <span class="s2">&quot;bytes&quot;</span><span class="p">:</span> <span class="mi">5</span>
     <span class="p">},</span>
-    <span class="s2">&quot;0x7fd4cac05bf0&quot;</span><span class="p">:</span> 
+    <span class="s2">&quot;0x7fb22ad02560&quot;</span><span class="p">:</span> 
     <span class="p">{</span>
       <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;a/b/c&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;alloced&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;allocated&quot;</span><span class="p">,</span>
       <span class="s2">&quot;bytes&quot;</span><span class="p">:</span> <span class="mi">2</span>
     <span class="p">},</span>
-    <span class="s2">&quot;0x7fd4cac05640&quot;</span><span class="p">:</span> 
+    <span class="s2">&quot;0x7fb22ad02550&quot;</span><span class="p">:</span> 
     <span class="p">{</span>
       <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;a/b/e&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;alloced&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;allocated&quot;</span><span class="p">,</span>
       <span class="s2">&quot;bytes&quot;</span><span class="p">:</span> <span class="mi">8</span>
     <span class="p">}</span>
   <span class="p">},</span>
-  <span class="s2">&quot;total_bytes&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span>
+  <span class="s2">&quot;total_bytes_allocated&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span>
+  <span class="s2">&quot;total_bytes_mmaped&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
   <span class="s2">&quot;total_bytes_compact&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span>
-  <span class="s2">&quot;total_bytes_alloced&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span>
-  <span class="s2">&quot;total_bytes_mmaped&quot;</span><span class="p">:</span> <span class="mi">0</span>
+  <span class="s2">&quot;total_strided_bytes&quot;</span><span class="p">:</span> <span class="mi">15</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -292,7 +290,7 @@ are leafs that represent concrete data.</p>
 </pre></div>
 </div>
 <div class="highlight-default"><div class="highlight"><pre><span class="p">{</span>
-  <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;dtype&quot;</span><span class="p">:</span><span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="s2">&quot;length&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;endianness&quot;</span><span class="p">:</span> <span class="s2">&quot;little&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">}</span>
+  <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;dtype&quot;</span><span class="p">:</span><span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="s2">&quot;number_of_elements&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;stride&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;element_bytes&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;endianness&quot;</span><span class="p">:</span> <span class="s2">&quot;little&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -367,7 +365,7 @@ are leafs that represent concrete data.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.2.0.pre',
+            VERSION:'0.2.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

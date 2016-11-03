@@ -54,24 +54,24 @@ You can access leaf types (numeric scalars or arrays) using Node's *as_{type}* m
 
 .. # from conduit_tutorial_examples: numeric_as_dtype
 
-.. literalinclude:: ../../tests/docs/t_conduit_tutorial_examples.cpp
-   :lines: 159-162
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
+   :lines: 161-164
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: tutorial_examples_out.txt
+.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
    :lines: 118
 
 Or you can use Node::value(), which can infer the correct return type via a cast.
 
 .. # from conduit_tutorial_examples: numeric_via_value
 
-.. literalinclude:: ../../tests/docs/t_conduit_tutorial_examples.cpp
-   :lines: 171-177
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
+   :lines: 173-179
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: tutorial_examples_out.txt
+.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
    :lines: 125
 
 
@@ -79,12 +79,12 @@ Accessing array data via pointers works the same way, using Node's *as_{type}* m
 
 .. # from conduit_tutorial_examples: numeric_ptr_as_dtype
 
-.. literalinclude:: ../../tests/docs/t_conduit_tutorial_examples.cpp
-   :lines: 188-199
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
+   :lines: 190-201
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: tutorial_examples_out.txt
+.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
    :lines: 132-135
 
 
@@ -92,12 +92,12 @@ Or using Node::value():
 
 .. # from conduit_tutorial_examples: numeric_ptr_via_value
 
-.. literalinclude:: ../../tests/docs/t_conduit_tutorial_examples.cpp
-   :lines: 209-220
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
+   :lines: 211-222
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: tutorial_examples_out.txt
+.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
    :lines: 142-145
 
 
@@ -106,12 +106,12 @@ For non-contiguous arrays, direct pointer access is complex due to the indexing 
 
 .. # from conduit_tutorial_examples: numeric_strided_data_array
 
-.. literalinclude:: ../../tests/docs/t_conduit_tutorial_examples.cpp
-   :lines: 229-245
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
+   :lines: 231-247
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: tutorial_examples_out.txt
+.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
    :lines: 152-154
 
 
@@ -125,10 +125,10 @@ to a contiguous double array.
 
 .. # from conduit_tutorial_examples: numeric_double_conversion
 
-.. literalinclude:: ../../tests/docs/t_conduit_tutorial_examples.cpp
-   :lines: 255-313
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
+   :lines: 257-315
    :language: cpp
 
-.. literalinclude:: tutorial_examples_out.txt
+.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
    :lines: 163-176
 

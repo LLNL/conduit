@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Conduit &mdash; Conduit 0.2.0.pre documentation</title>
+  <title>Conduit &mdash; Conduit 0.2.0 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="Conduit 0.2.0.pre documentation" href="#"/>
+    <link rel="top" title="Conduit 0.2.0 documentation" href="#"/>
         <link rel="next" title="User Documentation" href="user.html"/> 
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                0.2.0.pre
+                0.2.0
               </div>
             
           
@@ -83,6 +83,7 @@
                 <ul>
 <li class="toctree-l1"><a class="reference internal" href="user.html">User Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer.html">Developer Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html">Releases</a></li>
 <li class="toctree-l1"><a class="reference internal" href="presentations.html">Presentations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="licenses.html">License Info</a></li>
 </ul>
@@ -131,7 +132,7 @@
             
   <div class="section" id="conduit">
 <h1>Conduit<a class="headerlink" href="#conduit" title="Permalink to this headline">¶</a></h1>
-<p><strong>Conduit: A Scientific Data Exchange Library for HPC Simulations</strong></p>
+<p><strong>Conduit: Simplified Data Exchange for HPC Simulations</strong></p>
 <div class="section" id="introduction">
 <h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
 <p>Conduit is an open source project from Lawrence Livermore National Laboratory. It provides an intuitive model for describing hierarchical scientific data in C++, C, Fortran, and Python and is used for data coupling between packages in-core, serialization, and I/O tasks.</p>
@@ -139,7 +140,7 @@
 <ul>
 <li><p class="first">A flexible way to describe hierarchal data:</p>
 <blockquote>
-<div><p>A JSON-based schema for describing hierarchical in-core data structures.</p>
+<div><p>A JSON-inspired data model for describing hierarchical in-core scientific data.</p>
 </div></blockquote>
 </li>
 <li><p class="first">A sane API to access hierarchal data:</p>
@@ -148,8 +149,8 @@
 </div></blockquote>
 </li>
 </ul>
-<p>Conduit is under active development. The C++ API underpins the other language APIs and currently has the most features. We are still filling out the C, Fortran, and Python APIs.</p>
-<p>For more background, please see our <a class="reference download internal" href="_downloads/2015_conduit_intro.pdf" download=""><code class="xref download docutils literal"><span class="pre">Conduit</span> <span class="pre">Introduction</span></code></a> presentation slides.</p>
+<p>Conduit is under active development and targets Linux, OSX, and Windows platforms. The C++ API underpins the other language APIs and currently has the most features. We are still filling out the C, Fortran, and Python APIs.</p>
+<p>For more background, please see <a class="reference internal" href="presentations.html"><span class="doc">Presentations</span></a>.</p>
 </div>
 <div class="section" id="unique-features">
 <h2>Unique Features<a class="headerlink" href="#unique-features" title="Permalink to this headline">¶</a></h2>
@@ -162,11 +163,13 @@
 <div class="section" id="conduit-project-resources">
 <h2>Conduit Project Resources<a class="headerlink" href="#conduit-project-resources" title="Permalink to this headline">¶</a></h2>
 <p><strong>Online Documentation</strong></p>
-<p><a class="reference external" href="http://software.llnl.gov/conduit/index.html">http://software.llnl.gov/conduit/index.html</a></p>
+<p><a class="reference external" href="http://software.llnl.gov/conduit/">http://software.llnl.gov/conduit/</a></p>
 <p><strong>Github Source Repo</strong></p>
 <p><a class="reference external" href="https://github.com/llnl/conduit">https://github.com/llnl/conduit</a></p>
-<p><strong>LLNL Collaboration Zone Stash Source Repo (LLNL Users)</strong></p>
-<p><a class="reference external" href="https://lc.llnl.gov/stash/projects/CON/repos/conduit/browse">https://lc.llnl.gov/stash/projects/CON/repos/conduit/browse</a></p>
+<p><strong>Issue Tracker</strong></p>
+<p><a class="reference external" href="https://github.com/llnl/conduit/issues">https://github.com/llnl/conduit/issues</a></p>
+<p><strong>LLNL Collaboration Zone Bitbucket Server Source Repo (Mirror for LLNL Users)</strong></p>
+<p><a class="reference external" href="https://lc.llnl.gov/bitbucket/projects/CON/repos/conduit/browse">https://lc.llnl.gov/bitbucket/projects/CON/repos/conduit/browse</a></p>
 </div>
 <div class="section" id="conduit-libraries">
 <h2>Conduit Libraries<a class="headerlink" href="#conduit-libraries" title="Permalink to this headline">¶</a></h2>
@@ -180,7 +183,7 @@
 <blockquote>
 <div><ul class="simple">
 <li>Provides Conduit&#8217;s Core API in C++ and subsets of Core API in Python, C, and Fortran.</li>
-<li><em>Optionally depends on Python with NumPy and Fortran</em></li>
+<li><em>Optionally depends on Fortran and Python with NumPy</em></li>
 </ul>
 </div></blockquote>
 </div>
@@ -202,7 +205,7 @@
 <h3>blueprint<a class="headerlink" href="#blueprint" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
-<li>Provides interfaces for common higher-level conventions and data protocols (eg. describing a “mesh”) using Conduit.</li>
+<li>Provides interfaces for common higher-level conventions and data exchange protocols (eg. describing a “mesh”) using Conduit.</li>
 <li><em>No optional dependancies</em></li>
 </ul>
 </div></blockquote>
@@ -246,11 +249,12 @@
 <li class="toctree-l2"><a class="reference internal" href="developer.html#source-code-repo-layout">Source Code Repo Layout</a></li>
 <li class="toctree-l2"><a class="reference internal" href="developer.html#build-system-info">Build System Info</a></li>
 <li class="toctree-l2"><a class="reference internal" href="developer.html#git-development-workflow">Git Development Workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="developer.html#github">Github</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html">Releases</a></li>
 <li class="toctree-l1"><a class="reference internal" href="presentations.html">Presentations</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="presentations.html#slides">Slides</a></li>
+<li class="toctree-l2"><a class="reference internal" href="presentations.html#talks">Talks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="presentations.html#interviews">Interviews</a></li>
 <li class="toctree-l2"><a class="reference internal" href="presentations.html#articles">Articles</a></li>
 </ul>
@@ -310,7 +314,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.2.0.pre',
+            VERSION:'0.2.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Building &mdash; Conduit 0.2.0.pre documentation</title>
+  <title>Building &mdash; Conduit 0.2.0 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="Conduit 0.2.0.pre documentation" href="index.html"/>
+    <link rel="top" title="Conduit 0.2.0 documentation" href="index.html"/>
         <link rel="up" title="User Documentation" href="user.html"/>
         <link rel="next" title="Glossary" href="glossary.html"/>
         <link rel="prev" title="mesh" href="blueprint_mesh.html"/> 
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                0.2.0.pre
+                0.2.0
               </div>
             
           
@@ -93,7 +93,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#installation-path-options">Installation Path Options</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#host-config-files">Host Config Files</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#bootstrapping-third-party-dependencies">Bootstrapping Third Party Dependencies</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#compiler-settings-for-third-party-dependencies">Compiler Settings for Third Party Dependencies</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#uberenv-options-for-building-third-party-dependencies">Uberenv Options for Building Third Party Dependencies</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#building-with-spack">Building with Spack</a></li>
@@ -165,9 +165,9 @@
 </pre></div>
 </div>
 <ul class="simple">
-<li>From LLNL&#8217;s CZ Stash Instance (LLNL Users)</li>
+<li>From LLNL&#8217;s CZ Bitbucket Server (Mirror for LLNL Users)</li>
 </ul>
-<div class="code bash highlight-default"><div class="highlight"><pre><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="p">{</span><span class="n">USER_NAME</span><span class="p">}</span><span class="nd">@lc</span><span class="o">.</span><span class="n">llnl</span><span class="o">.</span><span class="n">gov</span><span class="o">/</span><span class="n">stash</span><span class="o">/</span><span class="n">scm</span><span class="o">/</span><span class="n">con</span><span class="o">/</span><span class="n">conduit</span><span class="o">.</span><span class="n">git</span>
+<div class="code bash highlight-default"><div class="highlight"><pre><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="p">{</span><span class="n">USER_NAME</span><span class="p">}</span><span class="nd">@lc</span><span class="o">.</span><span class="n">llnl</span><span class="o">.</span><span class="n">gov</span><span class="o">/</span><span class="n">bitbucket</span><span class="o">/</span><span class="n">scm</span><span class="o">/</span><span class="n">con</span><span class="o">/</span><span class="n">conduit</span><span class="o">.</span><span class="n">git</span>
 </pre></div>
 </div>
 <p>Configure a build:</p>
@@ -250,7 +250,8 @@ It optionally includes a <code class="docutils literal"><span class="pre">host-c
 </div>
 <div class="section" id="bootstrapping-third-party-dependencies">
 <h2>Bootstrapping Third Party Dependencies<a class="headerlink" href="#bootstrapping-third-party-dependencies" title="Permalink to this headline">¶</a></h2>
-<p>You can use <code class="docutils literal"><span class="pre">bootstrap-env.sh</span></code> (located at the root of the conduit repo) to help setup your development environment on OSX and Linux. This script uses <code class="docutils literal"><span class="pre">scripts/uberenv/uberenv.py</span></code>, which leverages <strong>Spack</strong> (<a class="reference external" href="http://software.llnl.gov/spack">http://software.llnl.gov/spack</a>) to build the external third party libraries and tools used by Conduit. Fortran support in is optional, dependencies should build without fortran. After building these libraries and tools, it writes an initial <em>host-config</em> file and adds the Spack built CMake binary to your PATH, so can immediately call the <code class="docutils literal"><span class="pre">config-build.sh</span></code> helper script to configure a conduit build.</p>
+<p>We use <strong>Spack</strong> (<a class="reference external" href="http://software.llnl.gov/spack">http://software.llnl.gov/spack</a>) automate builds of third party dependencies on OSX and Linux. Conduit builds on Windows as well, but there is no automated process to build dependencies necessary to support Conduit&#8217;s optional features.</p>
+<p>On OSX and Linux, you can use <code class="docutils literal"><span class="pre">bootstrap-env.sh</span></code> (located at the root of the conduit repo) to help setup your development environment. This script uses <code class="docutils literal"><span class="pre">scripts/uberenv/uberenv.py</span></code>, which leverages <strong>Spack</strong> to build all of the external third party libraries and tools used by Conduit. Fortran support is optional and all dependencies should build without a fortran compiler. After building these libraries and tools, it writes an initial <em>host-config</em> file and adds the Spack built CMake binary to your PATH so can immediately call the <code class="docutils literal"><span class="pre">config-build.sh</span></code> helper script to configure a conduit build.</p>
 <div class="code bash highlight-default"><div class="highlight"><pre>#build third party libs using spack
 source bootstrap-env.sh
 
@@ -265,17 +266,70 @@ cp uberenv_libs/`hostname`*.cmake to host-configs/
 ./config-build.sh uberenv_libs/`hostname`*.cmake
 </pre></div>
 </div>
-<div class="section" id="compiler-settings-for-third-party-dependencies">
-<h3>Compiler Settings for Third Party Dependencies<a class="headerlink" href="#compiler-settings-for-third-party-dependencies" title="Permalink to this headline">¶</a></h3>
-<p>You can edit <code class="docutils literal"><span class="pre">scripts/uberenv/compilers.yaml</span></code> to change the compiler settings
-passed to Spack. See the <a class="reference external" href="http://software.llnl.gov/spack/basic_usage.html#manual-compiler-configuration">Spack Compiler Configuration</a>
+<p>When <code class="docutils literal"><span class="pre">bootstrap-env.sh</span></code> runs <code class="docutils literal"><span class="pre">uberenv.py</span></code>, all command line arguments are forwarded:</p>
+<div class="code bash highlight-default"><div class="highlight"><pre>python scripts/uberenv/uberenv.py $@
+</pre></div>
+</div>
+<p>So any options to <code class="docutils literal"><span class="pre">bootstrap-env.sh</span></code> are effectively <code class="docutils literal"><span class="pre">uberenv.py</span></code> options.</p>
+<div class="section" id="uberenv-options-for-building-third-party-dependencies">
+<h3>Uberenv Options for Building Third Party Dependencies<a class="headerlink" href="#uberenv-options-for-building-third-party-dependencies" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">uberenv.py</span></code> has a few options that allow you to control how dependencies are built:</p>
+<blockquote>
+<div><table border="1" class="docutils">
+<colgroup>
+<col width="20%" />
+<col width="39%" />
+<col width="41%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Option</th>
+<th class="head">Description</th>
+<th class="head">Default</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>&#8211;prefix</td>
+<td>Destination directory</td>
+<td><code class="docutils literal"><span class="pre">uberenv_libs</span></code></td>
+</tr>
+<tr class="row-odd"><td>&#8211;spec</td>
+<td>Spack spec</td>
+<td>linux: <strong>%gcc</strong>
+osx: <strong>%clang</strong></td>
+</tr>
+<tr class="row-even"><td>&#8211;compilers-yaml</td>
+<td>Spack compilers settings file</td>
+<td><code class="docutils literal"><span class="pre">scripts/uberenv/compilers.yaml</span></code></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p>Default invocation on Linux:</p>
+<div class="code bash highlight-default"><div class="highlight"><pre><span class="n">python</span> <span class="n">scripts</span><span class="o">/</span><span class="n">uberenv</span><span class="o">/</span><span class="n">uberenv</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">prefix</span> <span class="n">uberenv_libs</span> \
+                                  <span class="o">--</span><span class="n">spec</span> <span class="o">%</span><span class="n">gcc</span> \
+                                  <span class="o">--</span><span class="n">compilers</span><span class="o">-</span><span class="n">yaml</span> <span class="n">scripts</span><span class="o">/</span><span class="n">uberenv</span><span class="o">/</span><span class="n">compilers</span><span class="o">.</span><span class="n">yaml</span>
+</pre></div>
+</div>
+<p>Default invocation on OSX:</p>
+<div class="code bash highlight-default"><div class="highlight"><pre><span class="n">python</span> <span class="n">scripts</span><span class="o">/</span><span class="n">uberenv</span><span class="o">/</span><span class="n">uberenv</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">prefix</span> <span class="n">uberenv_libs</span> \
+                                  <span class="o">--</span><span class="n">spec</span> <span class="o">%</span><span class="n">clang</span> \
+                                  <span class="o">--</span><span class="n">compilers</span><span class="o">-</span><span class="n">yaml</span> <span class="n">scripts</span><span class="o">/</span><span class="n">uberenv</span><span class="o">/</span><span class="n">compilers</span><span class="o">.</span><span class="n">yaml</span>
+</pre></div>
+</div>
+<p>For details on Spack&#8217;s spec syntax, see the <a class="reference external" href="http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies">Spack Specs &amp; dependencies</a> documentation.</p>
+<p>You can edit <code class="docutils literal"><span class="pre">scripts/uberenv/compilers.yaml</span></code> or use the <strong>&#8211;compilers-yaml</strong> option to change the compiler settings
+used by Spack. See the <a class="reference external" href="http://spack.readthedocs.io/en/latest/getting_started.html#manual-compiler-configuration">Spack Compiler Configuration</a>
 documentation for details.</p>
-<p>For OSX, the defaults in <code class="docutils literal"><span class="pre">compilers.yaml</span></code> are clang from X-Code and gfortran from <a class="reference external" href="https://gcc.gnu.org/wiki/GFortranBinaries#MacOS">https://gcc.gnu.org/wiki/GFortranBinaries#MacOS</a>.</p>
+<p>For OSX, the defaults in <code class="docutils literal"><span class="pre">compilers.yaml</span></code> are X-Code&#8217;s clang and gfortran from <a class="reference external" href="https://gcc.gnu.org/wiki/GFortranBinaries#MacOS">https://gcc.gnu.org/wiki/GFortranBinaries#MacOS</a>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">The bootstrapping process ignores <code class="docutils literal"><span class="pre">~/.spack/compilers.yaml</span></code> to avoid conflicts
 and surprises from a user&#8217;s specific Spack settings on HPC platforms.</p>
 </div>
+<p>When run, <code class="docutils literal"><span class="pre">uberenv.py</span></code> checkouts a specific version of Spack from github as <code class="docutils literal"><span class="pre">spack</span></code> in the
+destination directory. It then uses Spack to build and install Conduit&#8217;s dependencies into
+<code class="docutils literal"><span class="pre">spack/opt/spack/</span></code>. Finally, it generates a host-config file <code class="docutils literal"><span class="pre">{hostname}.cmake</span></code> in the
+destination directory that specifies the compiler settings and paths to all of the dependencies.</p>
 </div>
 </div>
 <div class="section" id="building-with-spack">
@@ -286,7 +340,7 @@ and surprises from a user&#8217;s specific Spack settings on HPC platforms.</p>
 development.  Due to this, the process builds more libraries than necessary for most use cases.
 For example, we build independent installs of Python 2 and Python 3 to make it easy
 to check Python C-API compatibility during development. In the near future, we plan to
-provide a Spack package to simplify deployment.</p>
+provide a Spack package that supports variants to simplify deployment.</p>
 </div>
 </div>
 <div class="section" id="using-conduit-in-another-project">
@@ -340,7 +394,7 @@ provide a Spack package to simplify deployment.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.2.0.pre',
+            VERSION:'0.2.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
