@@ -80,7 +80,7 @@ total bytes: 15
       "bytes": 8
     }
   },
-  "total_bytes": 15,
+  "total_strided_bytes": 15,
   "total_bytes_compact": 15,
   "total_bytes_alloced": 15,
   "total_bytes_mmaped": 0
@@ -229,7 +229,7 @@ vals[3] = 4000
       "type": "external"
     }
   },
-  "total_bytes": 16,
+  "total_strided_bytes": 16,
   "total_bytes_compact": 16,
   "total_bytes_alloced": 0,
   "total_bytes_mmaped": 0
@@ -252,7 +252,7 @@ vals[3] = 4000
       "type": "external"
     }
   },
-  "total_bytes": 80,
+  "total_strided_bytes": 80,
   "total_bytes_compact": 40,
   "total_bytes_alloced": 0,
   "total_bytes_mmaped": 0
@@ -267,7 +267,7 @@ vals[3] = 4000
       "type": "external"
     }
   },
-  "total_bytes": 80,
+  "total_strided_bytes": 80,
   "total_bytes_compact": 40,
   "total_bytes_alloced": 0,
   "total_bytes_mmaped": 0
@@ -285,7 +285,7 @@ vals[3] = 4000
       "bytes": 40
     }
   },
-  "total_bytes": 40,
+  "total_strided_bytes": 40,
   "total_bytes_compact": 40,
   "total_bytes_alloced": 40,
   "total_bytes_mmaped": 0
@@ -302,7 +302,7 @@ vals[3] = 4000
       "bytes": 40
     }
   },
-  "total_bytes": 40,
+  "total_strided_bytes": 40,
   "total_bytes_compact": 40,
   "total_bytes_alloced": 40,
   "total_bytes_mmaped": 0
@@ -329,7 +329,7 @@ vals[3] = 4000
       "type": "external"
     }
   },
-  "total_bytes": 80,
+  "total_strided_bytes": 80,
   "total_bytes_compact": 80,
   "total_bytes_alloced": 40,
   "total_bytes_mmaped": 0

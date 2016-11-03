@@ -260,13 +260,13 @@ module conduit
        end function c_conduit_node_has_path
 
        !--------------------------------------------------------------------------
-       function conduit_node_total_bytes(cnode) result(res) &
-               bind(C, name="conduit_node_total_bytes")
+       function conduit_node_total_strided_bytes(cnode) result(res) &
+               bind(C, name="conduit_node_total_strided_bytes")
            use iso_c_binding
            implicit none
            type(C_PTR), value, intent(IN) :: cnode
            integer(C_SIZE_T) :: res
-       end function conduit_node_total_bytes
+       end function conduit_node_total_strided_bytes
 
        !--------------------------------------------------------------------------
        function conduit_node_total_bytes_compact(cnode) result(res) &

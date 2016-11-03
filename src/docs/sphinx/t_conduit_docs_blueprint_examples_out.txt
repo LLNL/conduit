@@ -53,7 +53,7 @@ example 'separate' mcarray
       "bytes": 40
     }
   },
-  "total_bytes": 120,
+  "total_strided_bytes": 120,
   "total_bytes_compact": 120,
   "total_bytes_alloced": 120,
   "total_bytes_mmaped": 0
@@ -76,7 +76,7 @@ transformed to 'interleaved' mcarray
       "bytes": 136
     }
   },
-  "total_bytes": 360,
+  "total_strided_bytes": 360,
   "total_bytes_compact": 120,
   "total_bytes_alloced": 136,
   "total_bytes_mmaped": 0

@@ -80,7 +80,7 @@ TEST(conduit_tutorial, basics_hierarchial)
     n["a"]["b"]["e"] = 64.0;
     n.print();
     
-    std::cout << "total bytes: " << n.total_bytes() << std::endl;
+    std::cout << "total bytes: " << n.total_strided_bytes() << std::endl;
 
     CONDUIT_INFO("basics_hierarchial");
 }

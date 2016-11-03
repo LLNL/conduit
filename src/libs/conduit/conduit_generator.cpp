@@ -796,7 +796,7 @@ Generator::Parser::walk_json_schema(Schema *schema,
                     Schema &curr_schema =schema->append();
                     curr_schema.set(DataType::list());
                     walk_json_schema(&curr_schema,dt_value, curr_offset);
-                    curr_offset += curr_schema.total_bytes();
+                    curr_offset += curr_schema.total_strided_bytes();
                 }
             }
             else
@@ -823,7 +823,7 @@ Generator::Parser::walk_json_schema(Schema *schema,
                 Schema &curr_schema = schema->fetch(entry_name);
                 curr_schema.set(DataType::object());
                 walk_json_schema(&curr_schema,itr->value, curr_offset);
-                curr_offset += curr_schema.total_bytes();
+                curr_offset += curr_schema.total_strided_bytes();
             }
         }
     }
@@ -841,7 +841,7 @@ Generator::Parser::walk_json_schema(Schema *schema,
             Schema &curr_schema = schema->append();
             curr_schema.set(DataType::list());
             walk_json_schema(&curr_schema,jvalue[i], curr_offset);
-            curr_offset += curr_schema.total_bytes();
+            curr_offset += curr_schema.total_strided_bytes();
         }
     }
     // Simplest case, handles "uint32", "float64", etc
@@ -1028,7 +1028,7 @@ Generator::Parser::walk_json_schema(Node   *node,
                                      curr_offset);
                     // auto offset only makes sense when we have data
                     if(data != NULL)
-                        curr_offset += curr_schema->total_bytes();
+                        curr_offset += curr_schema->total_strided_bytes();
                     node->append_node_ptr(curr_node);
                 }
                 
@@ -1081,7 +1081,7 @@ Generator::Parser::walk_json_schema(Node   *node,
                                  curr_offset);
                 // auto offset only makes sense when we have data
                 if(data != NULL)
-                    curr_offset += curr_schema->total_bytes();
+                    curr_offset += curr_schema->total_strided_bytes();
                 node->append_node_ptr(curr_node);                
             }
             
@@ -1106,7 +1106,7 @@ Generator::Parser::walk_json_schema(Node   *node,
                              curr_offset);
             // auto offset only makes sense when we have data
             if(data != NULL)
-                curr_offset += curr_schema->total_bytes();
+                curr_offset += curr_schema->total_strided_bytes();
             node->append_node_ptr(curr_node);
         }
         

@@ -6925,7 +6925,7 @@ Node::serialize(std::ofstream &ofs) const
             // ser as is. This copies stride * num_ele bytes
             {
                 ofs.write((const char*)element_ptr(0),
-                          total_bytes());
+                          total_strided_bytes());
             }
         }
         else
@@ -10672,7 +10672,7 @@ Node::info(Node &res) const
     index_t tb_mmap  = 0;
 
     // for each in mem_spaces:
-    res["total_bytes"]         = total_bytes();
+    res["total_strided_bytes"] = total_strided_bytes();
     res["total_bytes_compact"] = total_bytes_compact();
     
     std::vector<std::string> mchildren;
@@ -10684,7 +10684,7 @@ Node::info(Node &res) const
     {
         Node &mspace = itr.next();
         std::string mtype  = mspace["type"].as_string();
-        if( mtype == "alloced")
+        if( mtype == "allocated")
         {
             tb_alloc += mspace["bytes"].to_index_t();
         }
@@ -13255,7 +13255,7 @@ Node::serialize(uint8 *data,index_t curr_offset) const
         for(itr = m_children.begin(); itr < m_children.end(); ++itr)
         {
             (*itr)->serialize(&data[0],curr_offset);
-            curr_offset+=(*itr)->total_bytes();
+            curr_offset+=(*itr)->total_strided_bytes();
         }
     }
     else
@@ -13355,7 +13355,7 @@ Node::contiguous_with(uint8 *start_addy, uint8 *&end_addy) const
             if(curr_addy != NULL && curr_addy == start_addy)
             {
                 // ok, advance the end pointer
-                end_addy = curr_addy + m_schema->total_bytes();
+                end_addy = curr_addy + m_schema->total_strided_bytes();
             }
             else // bad
             {
@@ -13369,7 +13369,7 @@ Node::contiguous_with(uint8 *start_addy, uint8 *&end_addy) const
             // 
             // by definition it is contiguous, so we simply 
             // advance the end pointer
-            end_addy  = curr_addy + total_bytes();
+            end_addy  = curr_addy + total_strided_bytes();
         }
         else // current address is NULL, nothing is contig with NULL
         {
@@ -13400,12 +13400,12 @@ Node::info(Node &res, const std::string &curr_path) const
             ptr_ref["path"] = curr_path;
             if(m_alloced)
             {
-                ptr_ref["type"]  = "alloced";
+                ptr_ref["type"]  = "allocated";
                 ptr_ref["bytes"] = m_data_size;
             }
             else if(m_mmaped)
             {
-                ptr_ref["type"]  = "mmap";
+                ptr_ref["type"]  = "mmaped";
                 ptr_ref["bytes"] = m_data_size;
             }
             else

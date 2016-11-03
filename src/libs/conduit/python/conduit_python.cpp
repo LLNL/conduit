@@ -1423,17 +1423,25 @@ PyConduit_DataType_id(PyConduit_DataType *self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduit_DataType_total_bytes(PyConduit_DataType *self)
+PyConduit_DataType_bytes_compact(PyConduit_DataType *self)
 {
-    return PyLong_FromSsize_t(self->dtype.total_bytes());
+    return PyLong_FromSsize_t(self->dtype.bytes_compact());
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduit_DataType_total_bytes_compact(PyConduit_DataType *self)
+PyConduit_DataType_strided_bytes(PyConduit_DataType *self)
 {
-    return PyLong_FromSsize_t(self->dtype.total_bytes_compact());
+    return PyLong_FromSsize_t(self->dtype.strided_bytes());
 }
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_spanned_bytes(PyConduit_DataType *self)
+{
+    return PyLong_FromSsize_t(self->dtype.spanned_bytes());
+}
+
 
 //---------------------------------------------------------------------------//
 static PyObject *
@@ -1674,13 +1682,18 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
      METH_NOARGS,
      "{todo}"},
     //-----------------------------------------------------------------------//
-    {"total_bytes",
-     (PyCFunction)PyConduit_DataType_total_bytes,
+    {"bytes_compact",
+     (PyCFunction)PyConduit_DataType_bytes_compact,
      METH_NOARGS,
      "{todo}"},
     //-----------------------------------------------------------------------//
-    {"total_bytes_compact",
-     (PyCFunction)PyConduit_DataType_total_bytes_compact,
+    {"strided_bytes",
+     (PyCFunction)PyConduit_DataType_strided_bytes,
+     METH_NOARGS,
+     "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"spanned_bytes",
+     (PyCFunction)PyConduit_DataType_spanned_bytes,
      METH_NOARGS,
      "{todo}"},
     //-----------------------------------------------------------------------//
@@ -2345,7 +2358,7 @@ PyConduit_Schema_python_attach(PyConduit_Schema *self)
 //
 //-----------------------------------------------------------------------------
     // const DataType &dtype() const
-    // index_t         total_bytes() const;
+    // index_t         total_strided_bytes() const;
     // index_t         total_bytes_compact() const;
     // index_t         element_index(index_t idx) const
     // Schema         *parent() const
@@ -2362,9 +2375,9 @@ PyConduit_Schema_dtype(PyConduit_Schema *self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduit_Schema_total_bytes(PyConduit_Schema *self)
+PyConduit_Schema_total_strided_bytes(PyConduit_Schema *self)
 {
-    return PyLong_FromSsize_t(self->schema->total_bytes());
+    return PyLong_FromSsize_t(self->schema->total_strided_bytes());
 }
 
 //---------------------------------------------------------------------------//
@@ -2536,8 +2549,8 @@ static PyMethodDef PyConduit_Schema_METHODS[] = {
       METH_NOARGS,
       "{todo}"},
      //-----------------------------------------------------------------------//
-     {"total_bytes",
-      (PyCFunction)PyConduit_Schema_total_bytes,
+     {"total_strided_bytes",
+      (PyCFunction)PyConduit_Schema_total_strided_bytes,
        METH_NOARGS,
        "{todo}"},
      //-----------------------------------------------------------------------//
@@ -3546,9 +3559,9 @@ PyConduit_Node_parent(PyConduit_Node* self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduit_Node_total_bytes(PyConduit_Node *self)
+PyConduit_Node_total_strided_bytes(PyConduit_Node *self)
 {
-    return PyLong_FromSsize_t(self->node->total_bytes());
+    return PyLong_FromSsize_t(self->node->total_strided_bytes());
 }
 
 //---------------------------------------------------------------------------//
@@ -3943,15 +3956,15 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      METH_NOARGS,
      "Returns this nodes parent, or None if no parent"}, 
     //-----------------------------------------------------------------------//
-    {"total_bytes",
-     (PyCFunction)PyConduit_Node_total_bytes, 
+    {"total_strided_bytes",
+     (PyCFunction)PyConduit_Node_total_strided_bytes, 
      METH_NOARGS,
-     "Returns the total bytes of this node's data"}, 
+     "Returns the total bytes strided by the all leaves in this node's tree"}, 
     //-----------------------------------------------------------------------//
     {"total_bytes_compact",
      (PyCFunction)PyConduit_Node_total_bytes_compact, 
      METH_NOARGS,
-     "Returns the total bytes of compact rep of node's data"}, 
+     "Returns the total bytes of compact rep of all the leaves in this node's tree"}, 
     //-----------------------------------------------------------------------//
     {"is_compact",
      (PyCFunction)PyConduit_Node_is_compact, 

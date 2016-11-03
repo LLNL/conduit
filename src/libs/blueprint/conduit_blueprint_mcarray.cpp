@@ -232,7 +232,6 @@ to_interleaved(const conduit::Node &src,
     Schema s_dest;
     
     NodeConstIterator itr = src.children();
-    index_t num_comps = src.number_of_children();
     index_t stride = 0;
     index_t curr_offset = 0;
    
@@ -241,7 +240,7 @@ to_interleaved(const conduit::Node &src,
         // get the next child
         const Node &chld = itr.next();
         index_t elem_bytes = DataType::default_dtype(chld.dtype().id()).element_bytes();
-        stride += chld.dtype().element_bytes();
+        stride += elem_bytes;
     }
     
     itr.to_front();

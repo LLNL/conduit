@@ -132,7 +132,7 @@ class Test_Conduit_Node(unittest.TestCase):
         vec = array(range(100), uint32)
         n = Node()
         n['a'] = vec
-        self.assertEqual(n.total_bytes(),4 * 100)
+        self.assertEqual(n.total_strided_bytes(),4 * 100)
         self.assertEqual(n.total_bytes_compact(),4 * 100)
         # TODO: check if n.is_compact() should pass as well?
         # it doesn't currently
@@ -183,7 +183,7 @@ class Test_Conduit_Node(unittest.TestCase):
         n['c'] = 3
         ni = n.info();
         #print ni
-        self.assertEqual(ni["total_bytes"],n.total_bytes())
+        self.assertEqual(ni["total_strided_bytes"],n.total_strided_bytes())
 
     def test_set_external(self):
         types = ['uint8', 'uint16', 'uint32', 'uint64', 'float32', 'float64']

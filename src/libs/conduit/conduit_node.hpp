@@ -3137,10 +3137,14 @@ public:
     const Node      *parent() const
                         {return m_parent;}
 
-    
     //memory space info
-    index_t          total_bytes() const 
-                        { return m_schema->total_bytes();}
+
+    /// stride() * (num_elements()-1) + element_bytes() summed over all 
+    /// leaves 
+    index_t          total_strided_bytes() const 
+                        { return m_schema->total_strided_bytes();}
+
+    /// num_elements() * element_bytes() summed over all leaves 
     index_t          total_bytes_compact() const
                         { return m_schema->total_bytes_compact();}
 
