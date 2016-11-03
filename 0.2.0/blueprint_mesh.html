@@ -1,0 +1,542 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>mesh &mdash; Conduit 0.2.0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="Conduit 0.2.0 documentation" href="index.html"/>
+        <link rel="up" title="Blueprint" href="blueprint.html"/>
+        <link rel="next" title="Building" href="building.html"/>
+        <link rel="prev" title="mcarray" href="blueprint_mcarray.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Conduit
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.2.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="user.html">User Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="conduit.html">Conduit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="relay.html">Relay</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="blueprint.html">Blueprint</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="blueprint.html#protocol-details">Protocol Details</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="blueprint_mcarray.html">mcarray</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">mesh</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="blueprint.html#blueprint-interface">Blueprint Interface</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="building.html">Building</a></li>
+<li class="toctree-l2"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer.html">Developer Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html">Releases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="presentations.html">Presentations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="licenses.html">License Info</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">Conduit</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="user.html">User Documentation</a> &raquo;</li>
+      
+          <li><a href="blueprint.html">Blueprint</a> &raquo;</li>
+      
+    <li>mesh</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/blueprint_mesh.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="mesh">
+<h1>mesh<a class="headerlink" href="#mesh" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="protocol">
+<h2>Protocol<a class="headerlink" href="#protocol" title="Permalink to this headline">¶</a></h2>
+<p>The mesh blueprint protocol defines a computational mesh using one or more Coordinate Sets (via child <code class="docutils literal"><span class="pre">coordsets</span></code>), one or more Topologies (via child  <code class="docutils literal"><span class="pre">topologies</span></code>), zero or more Fields (via child <code class="docutils literal"><span class="pre">fields</span></code>), and optional State information (via child <code class="docutils literal"><span class="pre">state</span></code>). For simplicity, the descriptions below outline one Coordinate Set named <code class="docutils literal"><span class="pre">coords</span></code> one Topology named <code class="docutils literal"><span class="pre">topo</span></code>.</p>
+<div class="section" id="coordinate-sets">
+<h3>Coordinate Sets<a class="headerlink" href="#coordinate-sets" title="Permalink to this headline">¶</a></h3>
+<p>To define a computational mesh, the first required entry is a set of spatial coordinate tuples that can underpin a mesh topology.</p>
+<p>The mesh blueprint protocol supports sets of spatial coordinates from three coordinate systems:</p>
+<ul class="simple">
+<li>Cartesian: {x,y,z}</li>
+<li>Cylindrical: {r,z}</li>
+<li>Spherical: {r,theta,phi}</li>
+</ul>
+<p>The mesh blueprint protocol supports three types of Coordinate Sets: <code class="docutils literal"><span class="pre">uniform</span></code>, <code class="docutils literal"><span class="pre">rectilinear</span></code>, and <code class="docutils literal"><span class="pre">explicit</span></code>.  To conform to the protocol, each entry under <code class="docutils literal"><span class="pre">coordsets</span></code> must be an <em>Object</em> with entries from one of the cases outlined below:</p>
+<ul>
+<li><p class="first"><strong>uniform</strong></p>
+<blockquote>
+<div><p>An implicit coordinate set defined as the cartesian product of i,j,k dimensions starting at an <code class="docutils literal"><span class="pre">origin</span></code> (ex: {x,y,z}) using a given <code class="docutils literal"><span class="pre">spacing</span></code> (ex: {dx,dy,dz}).</p>
+</div></blockquote>
+<ul class="simple">
+<li>Cartesian<ul>
+<li>coordsets/coords/type: “uniform”</li>
+<li>coordsets/coords/dims/{i,j,k}</li>
+<li>coordsets/coords/origin/{x,y,z} (optional, default = {0.0, 0.0, 0.0})</li>
+<li>coordsets/coords/spacing/{dx,dy,dz} (optional, default = {1.0, 1.0, 1.0})</li>
+</ul>
+</li>
+<li>Cylindrical<ul>
+<li>coordsets/coords/type: “uniform”</li>
+<li>coordsets/coords/dims/{i,j}</li>
+<li>coordsets/coords/origin/{r,z} (optional, default = {0.0, 0.0})</li>
+<li>coordsets/coords/spacing/{dr,dz} (optional, default = {1.0, 1.0})</li>
+</ul>
+</li>
+<li>Spherical<ul>
+<li>coordsets/coords/type: “uniform”</li>
+<li>coordsets/coords/dims/{i,j}</li>
+<li>coordsets/coords/origin/{r,theta,phi} (optional, default = {0.0, 0.0, 0.0})</li>
+<li>coordsets/coords/spacing/{dr,dtheta, dphi} (optional, default = {1.0, 1.0, 1.0})</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p class="first"><strong>rectilinear</strong></p>
+<p>An implicit coordinate set defined as the cartesian product of passed coordinate arrays.</p>
+<ul class="simple">
+<li>Cartesian<ul>
+<li>coordsets/coords/type: “rectilinear”</li>
+<li>coordsets/coords/values/{x,y,z}</li>
+</ul>
+</li>
+<li>Cylindrical:<ul>
+<li>coordsets/coords/type: “rectilinear”</li>
+<li>coordsets/coords/values/{r,z}</li>
+</ul>
+</li>
+<li>Spherical<ul>
+<li>coordsets/coords/type: “uniform”</li>
+<li>coordsets/coords/values/{r,theta,phi}</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p class="first"><strong>explicit</strong></p>
+<p>An explicit set of coordinates, which includes <code class="docutils literal"><span class="pre">values</span></code> that conforms to the  <strong>mcarray</strong> blueprint protocol.</p>
+<ul class="simple">
+<li>Cartesian<ul>
+<li>coordsets/coords/type: “explicit”</li>
+<li>coordsets/coords/values/{x,y,z}</li>
+</ul>
+</li>
+<li>Cylindrical<ul>
+<li>coordsets/coords/type: “explicit”</li>
+<li>coordsets/coords/values/{r,z}</li>
+</ul>
+</li>
+<li>Spherical<ul>
+<li>coordsets/coords/type: “explicit”</li>
+<li>coordsets/coords/values/{r,theta,phi}</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="toplogies">
+<h3>Toplogies<a class="headerlink" href="#toplogies" title="Permalink to this headline">¶</a></h3>
+<p>The next entry required to describe a computational mesh is its topology. To conform to the protocol, each entry under <em>topologies</em> must be an <em>Object</em> that contains one of the topology descriptions outlined below.</p>
+<div class="section" id="topology-nomenclature">
+<h4>Topology Nomenclature<a class="headerlink" href="#topology-nomenclature" title="Permalink to this headline">¶</a></h4>
+<p>The mesh blueprint protocol describes meshes in terms of <code class="docutils literal"><span class="pre">vertices</span></code>, <code class="docutils literal"><span class="pre">edges</span></code>, <code class="docutils literal"><span class="pre">faces</span></code>, and <code class="docutils literal"><span class="pre">elements</span></code>.</p>
+<p>The following element shape names are supported:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="8%" />
+<col width="22%" />
+<col width="70%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Geometric Type</th>
+<th class="head">Specified By</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>point</td>
+<td>point</td>
+<td>an index to a single coordinate tuple</td>
+</tr>
+<tr class="row-odd"><td>line</td>
+<td>line</td>
+<td>indices to 2 coordinate tuples</td>
+</tr>
+<tr class="row-even"><td>tri</td>
+<td>triangle</td>
+<td>indices to 3 coordinate tuples</td>
+</tr>
+<tr class="row-odd"><td>quad</td>
+<td>quadrilateral</td>
+<td>indices to 4 coordinate tuples</td>
+</tr>
+<tr class="row-even"><td>tet</td>
+<td>tetrahedron</td>
+<td>indices to 4 coordinate tuples</td>
+</tr>
+<tr class="row-odd"><td>hex</td>
+<td>hexahedron</td>
+<td>indices to 8 coordinate tuples</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="association-with-a-coordinate-set">
+<h4>Association with a Coordinate Set<a class="headerlink" href="#association-with-a-coordinate-set" title="Permalink to this headline">¶</a></h4>
+<p>Each topology entry must have a child <code class="docutils literal"><span class="pre">coordset</span></code> with a string that references a valid coordinate set by name.</p>
+<blockquote>
+<div><ul class="simple">
+<li>topologies/topo/coordset: &#8220;coords&#8221;</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="optional-association-with-a-grid-function">
+<h4>Optional association with a Grid Function<a class="headerlink" href="#optional-association-with-a-grid-function" title="Permalink to this headline">¶</a></h4>
+<p>Topologies can optionally include a child <code class="docutils literal"><span class="pre">grid_function</span></code> with a string that references a valid field by name.</p>
+<blockquote>
+<div><ul class="simple">
+<li>topologies/topo/grid_function: &#8220;gf&#8221;</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="implicit-topology">
+<h4>Implicit Topology<a class="headerlink" href="#implicit-topology" title="Permalink to this headline">¶</a></h4>
+<p>The mesh blueprint protocol accepts three implicit ways to define a grid of elements on top of a coordinate set. For coordinate set with 1D coordinate tuples, <em>line</em> elements are used, for sets with 2D coordinate tuples <em>quad</em> elements are used, and for 3D coordinate tuples <em>hex</em> elements are used.</p>
+<ul>
+<li><p class="first"><strong>uniform</strong>: An implicit topology that defines a grid of elements on top of a <em>uniform</em> coordinate set.</p>
+<blockquote>
+<div><ul class="simple">
+<li>topologies/topo/coordset: &#8220;coords&#8221;</li>
+<li>topologies/topo/type: “uniform”</li>
+<li>topologies/topo/elements/origin/{i0,j0,k0} (optional, default = {0,0,0})</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first"><strong>rectilinear</strong>: An implicit topology that defines a grid of elements on top of a <em>rectilinear</em> coordinate set.</p>
+<blockquote>
+<div><ul class="simple">
+<li>topologies/topo/coordset: &#8220;coords&#8221;</li>
+<li>topologies/topo/type: “rectilinear”</li>
+<li>topologies/topo/elements/origin/{i0,j0,k0} (optional, default = {0,0,0})</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<ul class="simple">
+<li><strong>structured</strong>: An implicit topology that defines a grid of elements on top of an <em>explicit</em> coordinate set.<ul>
+<li>topologies/topo/coordset: &#8220;coords&#8221;</li>
+<li>topologies/topo/type = “structured”</li>
+<li>topologies/topo/elements/dims/{i,j,k}</li>
+<li>topologies/topo/elements/origin/{i0,j0,k0} (optional, default = {0,0,0})</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="explicit-unstructured-topology">
+<h4>Explicit (Unstructured) Topology<a class="headerlink" href="#explicit-unstructured-topology" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="single-shape-topology">
+<h5>Single Shape Topology<a class="headerlink" href="#single-shape-topology" title="Permalink to this headline">¶</a></h5>
+<p>For topologies using a homogenous collection of element shapes (eg: all hexs), the topology can be specified by
+a connectivity array and a shape name.</p>
+<blockquote>
+<div><ul class="simple">
+<li>topologies/topo/coordset: &#8220;coords&#8221;</li>
+<li>topologies/topo/type: “unstructured”</li>
+<li>topologies/topo/elements/shape: (shape name)</li>
+<li>topologies/topo/elements/connectivity: (index array)</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="mixed-shape-toplogies">
+<h5>Mixed Shape Toplogies<a class="headerlink" href="#mixed-shape-toplogies" title="Permalink to this headline">¶</a></h5>
+<p>For topologies using a non-homogenous collections of element shapes (eg: hexs and texs), the topology can
+specified using a single shape topology for each element shape.</p>
+<ul class="simple">
+<li><strong>list</strong> - A Node in the <em>List</em> role, that contains a children that conform to the <em>Single Shape Topology</em> case.</li>
+<li><strong>object</strong> - A Node in the <em>Object</em> role, that contains a children that conform to the <em>Single Shape Topology</em> case.</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Future version of the mesh blueprint will expand support to include mixed elements types in a single array with related
+index arrays.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="fields">
+<h3>Fields<a class="headerlink" href="#fields" title="Permalink to this headline">¶</a></h3>
+<p>Fields are used to hold simulation state arrays associated with a mesh topology.</p>
+<p>A field contains an <strong>mcarray</strong> and information about how this data is associated with elements of the topology.
+To conform to the protocol, each entry under <code class="docutils literal"><span class="pre">fields</span></code> must be an <em>Object</em> that contains one of these two styles of field descriptions:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Standard Fields:<ul>
+<li>fields/den/topology: &#8220;topo&#8221;</li>
+<li>fields/den/association: “vertex” | &#8220;element&#8221;</li>
+<li>fields/den/values: (mcarray)</li>
+</ul>
+</li>
+<li>High Order Fields:<ul>
+<li>fields/den/topology: &#8220;topo&#8221;</li>
+<li>fields/den/basis: (a string that includes an mfem-style finite element collection name)</li>
+<li>fields/den/values: (mcarray)</li>
+</ul>
+</li>
+</ul>
+</div></blockquote>
+<div class="section" id="state">
+<h4>State<a class="headerlink" href="#state" title="Permalink to this headline">¶</a></h4>
+<p>Optional state information is used to provide metadata about the mesh. While the mesh blueprint is focused on describing a single domain of a domain decomposed mesh, the state info can be used to identify a specific mesh domain in the context of a domain decomposed mesh.</p>
+<p>To conform, the <code class="docutils literal"><span class="pre">state</span></code> entry must be an <em>Object</em> and can have the following optional entries:</p>
+<blockquote>
+<div><ul class="simple">
+<li>state/time: (number)</li>
+<li>state/cycle: (number)</li>
+<li>state/number_of_domains: (integer)</li>
+<li>state/domain_id: (integer)</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>The mesh blueprint namespace includes a function <em>braid()</em>, that generates examples
+that cover the range of coordinate sets and topologies supported.</p>
+<p>The example datasets include a vertex-centered scalar field <code class="docutils literal"><span class="pre">braid</span></code>, an element-centered scalar field <code class="docutils literal"><span class="pre">radial</span></code> and
+as a vertex-centered vector field <code class="docutils literal"><span class="pre">vel</span></code>.</p>
+<div class="code cpp highlight-default"><div class="highlight"><pre><span class="n">conduit</span><span class="p">::</span><span class="n">blueprint</span><span class="p">::</span><span class="n">mesh</span><span class="p">::</span><span class="n">examples</span><span class="p">::</span><span class="n">braid</span><span class="p">(</span><span class="n">const</span> <span class="n">std</span><span class="p">::</span><span class="n">string</span> <span class="o">&amp;</span><span class="n">mesh_type</span><span class="p">,</span>
+                                          <span class="n">index_t</span> <span class="n">nx</span><span class="p">,</span>
+                                          <span class="n">index_t</span> <span class="n">ny</span><span class="p">,</span>
+                                          <span class="n">index_t</span> <span class="n">nz</span><span class="p">,</span>
+                                          <span class="n">Node</span> <span class="o">&amp;</span><span class="n">out</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Here is a list of valid strings for the <em>mesh_type</em> argument:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="24%" />
+<col width="76%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Mesh Type</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>uniform</td>
+<td>2d or 3d uniform grid
+(implicit coords, implicit topology)</td>
+</tr>
+<tr class="row-odd"><td>rectilinear</td>
+<td>2d or 3d rectilinear grid
+(implicit coords, implicit topology)</td>
+</tr>
+<tr class="row-even"><td>structured</td>
+<td>2d or 3d structured grid
+(explicit coords, implicit topology)</td>
+</tr>
+<tr class="row-odd"><td>point</td>
+<td>2d or 3d unstructured mesh of point elements
+(explicit coords, explicit topology)</td>
+</tr>
+<tr class="row-even"><td>lines</td>
+<td>2d or 3d unstructured mesh of line elements
+(explicit coords, explicit topology)</td>
+</tr>
+<tr class="row-odd"><td>tris</td>
+<td>2d unstructured mesh of triangle elements
+(explicit coords, explicit topology)</td>
+</tr>
+<tr class="row-even"><td>quads</td>
+<td>2d unstructured mesh of quadrilateral elements
+(explicit coords, explicit topology)</td>
+</tr>
+<tr class="row-odd"><td>tets</td>
+<td>3d unstructured mesh of tetrahedral elements
+(explicit coords, explicit topology)</td>
+</tr>
+<tr class="row-even"><td>hexs</td>
+<td>3d unstructured mesh of hexahedral elements
+(explicit coords, explicit topology)</td>
+</tr>
+</tbody>
+</table>
+<p><em>nx,ny,nz</em> specify the number of elements in the <em>x,y,z</em> directions.</p>
+<p><em>nz</em> is ignored for 2d-only examples.</p>
+<p>The resulting data is placed the Node <em>out</em>, which is passed in via a reference.</p>
+<p>For more details, see the unit tests that exercise these examples in <code class="docutils literal"><span class="pre">src/tests/blueprint/t_blueprint_mesh_examples.cpp</span></code></p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="building.html" class="btn btn-neutral float-right" title="Building" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="blueprint_mcarray.html" class="btn btn-neutral" title="mcarray" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014-2016, LLNS.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.2.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
