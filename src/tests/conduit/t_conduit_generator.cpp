@@ -307,54 +307,54 @@ TEST(conduit_generator, gen_array_with_data)
     n.generate("{\"dtype\":\"int8\",\"length\": 2, \"value\": [-8,-8]}");
     int8 *vint8_ptr = n.value();
     EXPECT_EQ(-8,vint8_ptr[0]);
-    EXPECT_EQ(vint8_ptr[0],vint8_ptr[0]);
+    EXPECT_EQ(vint8_ptr[0],vint8_ptr[1]);
 
     n.generate("{\"dtype\":\"int16\",\"length\": 2, \"value\": [-16,-16]}");
     int16 *vint16_ptr = n.value();
     EXPECT_EQ(-16,vint16_ptr[0]);
-    EXPECT_EQ(vint16_ptr[0],vint16_ptr[0]);
+    EXPECT_EQ(vint16_ptr[0],vint16_ptr[1]);
 
     n.generate("{\"dtype\":\"int32\",\"length\": 2, \"value\": [-32,-32]}");
     int32 *vint32_ptr = n.value();
     EXPECT_EQ(-32,vint32_ptr[0]);
-    EXPECT_EQ(vint32_ptr[0],vint32_ptr[0]);
+    EXPECT_EQ(vint32_ptr[0],vint32_ptr[1]);
 
     n.generate("{\"dtype\":\"int64\",\"length\": 2, \"value\": [-64,-64]}");
     int64 *vint64_ptr = n.value();
     EXPECT_EQ(-64,vint64_ptr[0]);
-    EXPECT_EQ(vint64_ptr[0],vint64_ptr[0]);
+    EXPECT_EQ(vint64_ptr[0],vint64_ptr[1]);
     
     // unsigned ints
     n.generate("{\"dtype\":\"uint8\",\"length\": 2, \"value\": [8,8]}");
     uint8 *vuint8_ptr = n.value();
     EXPECT_EQ(8,vuint8_ptr[0]);
-    EXPECT_EQ(vuint8_ptr[0],vuint8_ptr[0]);
+    EXPECT_EQ(vuint8_ptr[0],vuint8_ptr[1]);
 
     n.generate("{\"dtype\":\"uint16\",\"length\": 2, \"value\": [16,16]}");
     uint16 *vuint16_ptr = n.value();
     EXPECT_EQ(16,vuint16_ptr[0]);
-    EXPECT_EQ(vuint16_ptr[0],vuint16_ptr[0]);
+    EXPECT_EQ(vuint16_ptr[0],vuint16_ptr[1]);
 
     n.generate("{\"dtype\":\"uint32\",\"length\": 2, \"value\": [32,32]}");
     uint32 *vuint32_ptr = n.value();
     EXPECT_EQ(32,vuint32_ptr[0]);
-    EXPECT_EQ(vuint32_ptr[0],vuint32_ptr[0]);
+    EXPECT_EQ(vuint32_ptr[0],vuint32_ptr[1]);
 
     n.generate("{\"dtype\":\"uint64\",\"length\": 2, \"value\": [64,64]}");
     uint64 *vuint64_ptr = n.value();
     EXPECT_EQ(64,vuint64_ptr[0]);
-    EXPECT_EQ(vuint64_ptr[0],vuint64_ptr[0]);
+    EXPECT_EQ(vuint64_ptr[0],vuint64_ptr[1]);
 
     // floating point
     n.generate("{\"dtype\":\"float32\",\"length\": 2, \"value\": [32.0,32.0]}");
     float32 *vfloat32_ptr = n.value();
     EXPECT_NEAR(32,vfloat32_ptr[0],1e-10);
-    EXPECT_EQ(vuint32_ptr[0],vuint32_ptr[0]);
+    EXPECT_EQ(vfloat32_ptr[0],vfloat32_ptr[1]);
 
     n.generate("{\"dtype\":\"float64\",\"length\": 2, \"value\": [64.0,64.0]}");
     float64 *vfloat64_ptr = n.value();
     EXPECT_NEAR(64,vfloat64_ptr[0],1e-10);
-    EXPECT_EQ(vuint64_ptr[0],vuint64_ptr[0]);
+    EXPECT_EQ(vfloat64_ptr[0],vfloat64_ptr[1]);
 
     
     
