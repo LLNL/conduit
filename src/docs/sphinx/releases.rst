@@ -50,9 +50,38 @@ Source distributions for Conduit releases are hosted on github:
 
 https://github.com/LLNL/conduit/releases
 
-* **0.2.0** 
-    * `Source Tarball <https://github.com/LLNL/conduit/archive/v0.2.0.tar.gz>`_
-    * `Docs <http://software.llnl.gov/conduit/0.2.0>`_
+v0.2.0
+-----------------
+
+* `Source Tarball <https://github.com/LLNL/conduit/archive/v0.2.0.tar.gz>`_
+* `Docs <http://software.llnl.gov/conduit/v0.2.0>`_
+    
+Highlights 
++++++++++++++
+* **General**
+
+ * Changes to clarify concepts in the conduit::Node API
+ * Added const access to conduit::Node's children and a new NodeConstIterator
+ * Added support for building on Windows
+ * Added more Python, C, and Fortran API support.
+ * Resolved several bugs across libraries
+ * Resolved compiler warnings and memory leaks
+ * Improved unit test coverage
+ * Renamed source and header files for clarity and to avoid potential conflicts with other projects
+
+* **Blueprint**
+    
+ * Added verify support for the mcarray and mesh protocols
+ * Added functions that create examples instances of mcarrays and meshes
+ * Added memory layout transform helpers for mcarrays
+ * Added a helper that creates a mesh blueprint index from a valid mesh
+
+* **Relay**
+
+ * Added extensive HDF5 I/O support for reading and writing between HDF5 files and conduit Node trees
+ * Changed I/O protocol string names for clarity
+ * Refactored the relay::WebServer and the Conduit Node Viewer application
+ * Added entangle, a python script ssh tunneling solution
 
 
 
