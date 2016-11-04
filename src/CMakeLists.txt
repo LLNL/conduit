@@ -91,7 +91,7 @@ include(CMake/SetupFortran.cmake)
 ################################
 # Checks for type sizes, etc
 ################################
-include(CMake/BasicChecks.cmake)
+include(CMake/BasicTypeChecks.cmake)
 
 ################################
 # Setup 3rd Party Libs
