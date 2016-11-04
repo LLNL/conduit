@@ -12963,7 +12963,7 @@ Node::allocate(const DataType &dtype)
 void
 Node::allocate(index_t dsize)
 {
-    m_data      = malloc((size_t)dsize);
+    m_data      = calloc((size_t)dsize,(size_t)1);
     m_data_size = dsize;
     m_alloced   = true;
     m_mmaped    = false;
