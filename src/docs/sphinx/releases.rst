@@ -63,7 +63,7 @@ Highlights
  * Changes to clarify concepts in the conduit::Node API
  * Added const access to conduit::Node's children and a new NodeConstIterator
  * Added support for building on Windows
- * Added More Python, C, and Fortran API support.
+ * Added more Python, C, and Fortran API support.
  * Resolved several bugs across libraries
  * Resolved compiler warnings and memory leaks
  * Improved unit test coverage
