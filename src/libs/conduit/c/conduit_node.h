@@ -126,7 +126,7 @@ CONDUIT_API bool conduit_node_is_data_external(const conduit_node *cnode);
 CONDUIT_API conduit_node *conduit_node_parent(conduit_node *cnode);
 
 //-----------------------------------------------------------------------------
-CONDUIT_API conduit_index_t conduit_node_total_bytes(const conduit_node *cnode);
+CONDUIT_API conduit_index_t conduit_node_total_strided_bytes(const conduit_node *cnode);
 CONDUIT_API conduit_index_t conduit_node_total_bytes_compact(const conduit_node *cnode);
     
 //-----------------------------------------------------------------------------

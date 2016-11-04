@@ -260,7 +260,7 @@ Schema::operator=(const std::string &json_schema)
 
 //---------------------------------------------------------------------------//
 index_t
-Schema::total_bytes() const
+Schema::total_strided_bytes() const
 {
     index_t res = 0;
     index_t dt_id = m_dtype.id();
@@ -270,12 +270,12 @@ Schema::total_bytes() const
         for (std::vector<Schema*>::const_iterator itr = lst.begin();
              itr < lst.end(); ++itr)
         {
-            res += (*itr)->total_bytes();
+            res += (*itr)->total_strided_bytes();
         }
     }
     else if (dt_id != DataType::EMPTY_ID)
     {
-        res = m_dtype.total_bytes();
+        res = m_dtype.strided_bytes();
     }
     return res;
 }
@@ -297,7 +297,7 @@ Schema::total_bytes_compact() const
     }
     else if (dt_id != DataType::EMPTY_ID)
     {
-        res = m_dtype.total_bytes_compact();
+        res = m_dtype.bytes_compact();
     }
     return res;
 }
@@ -306,7 +306,7 @@ Schema::total_bytes_compact() const
 bool
 Schema::is_compact() const
 {
-    return total_bytes_compact() == total_bytes();
+    return total_bytes_compact() == total_strided_bytes();
 }
 
 //---------------------------------------------------------------------------//
@@ -1142,7 +1142,7 @@ Schema::compact_to(Schema &s_dest, index_t curr_offset) const
             Schema  *cld_src = children()[i];
             Schema &cld_dest = s_dest.fetch(object_order()[i]);
             cld_src->compact_to(cld_dest,curr_offset);
-            curr_offset += cld_dest.total_bytes();
+            curr_offset += cld_dest.total_bytes_compact();
         }
     }
     else if(dtype_id == DataType::LIST_ID)
@@ -1154,7 +1154,7 @@ Schema::compact_to(Schema &s_dest, index_t curr_offset) const
             Schema  *cld_src = children()[i];
             Schema &cld_dest = s_dest.append();
             cld_src->compact_to(cld_dest,curr_offset);
-            curr_offset += cld_dest.total_bytes();
+            curr_offset += cld_dest.total_bytes_compact();
         }
     }
     else if (dtype_id != DataType::EMPTY_ID)

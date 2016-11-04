@@ -44,103 +44,76 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint.cpp
+/// file: t_conduit_docs_blueprint_examples.cpp
 ///
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-// std lib includes
-//-----------------------------------------------------------------------------
-#include <string.h>
-#include <math.h>
-
-//-----------------------------------------------------------------------------
-// conduit includes
-//-----------------------------------------------------------------------------
+#include "conduit.hpp"
 #include "conduit_blueprint.hpp"
+#include "conduit_relay.hpp"
 
-
-//-----------------------------------------------------------------------------
-// -- begin conduit:: --
-//-----------------------------------------------------------------------------
-namespace conduit
-{
+#include <iostream>
+#include "gtest/gtest.h"
+using namespace conduit;
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint --
-//-----------------------------------------------------------------------------
-namespace blueprint
+// 65-79
+TEST(conduit_docs, blueprint_example_1)
 {
+    CONDUIT_INFO("blueprint_example_1");
 
+    // setup our candidate and info nodes
+    Node n, info;
 
-//---------------------------------------------------------------------------//
-std::string
-about()
-{
-    Node n;
-    blueprint::about(n);
-    return n.to_json();
-}
-
-//---------------------------------------------------------------------------//
-void
-about(Node &n)
-{
-    n.reset();
-    n["protocols/mesh/coordset"] = "enabled";
-    n["protocols/mesh/topology"] = "enabled";
-    n["protocols/mesh/field"]    = "enabled";
-    n["protocols/mesh/index"]    = "enabled";
-    
-    n["protocols/mcarray"]  = "enabled";
-}
-
-//---------------------------------------------------------------------------//
-bool
-verify(const std::string &protocol,
-       const Node &n,
-       Node &info)
-{
-    bool res = false;
-    info.reset();
-    
-    std::string p_curr;
-    std::string p_next;
-    conduit::utils::split_path(protocol,p_curr,p_next);
-
-    if(!p_next.empty())
-    {
-        if(protocol == "mesh")
-        {
-            res = mesh::verify(p_next,n,info);
-        }
-        else if(protocol == "mcarray")
-        {
-            res = mcarray::verify(p_next,n,info);
-        }
-    }
+    //create an example mesh
+    conduit::blueprint::mesh::examples::braid("tets",
+                                               5,5,5,
+                                               n);
+    // check if n conforms
+    if(conduit::blueprint::verify("mesh",n,info))
+        std::cout << "mesh verify succeeded." << std::endl;
     else
+        std::cout << "mesh verify failed!" << std::endl;
+   
+    // show some of the verify details
+    info["coordsets"].print();
+    
+    CONDUIT_INFO("blueprint_example_1");
+}
+
+//-----------------------------------------------------------------------------
+// 90-110
+TEST(conduit_docs, blueprint_example_2)
+{
+    CONDUIT_INFO("blueprint_example_2");
+
+    // setup our candidate and info nodes
+    Node n, verify_info, mem_info;
+
+    // create an example mcarray
+    conduit::blueprint::mcarray::examples::xyz("separate",5,n);
+    
+    std::cout << "example 'separate' mcarray " << std::endl;
+    n.print();
+    n.info(mem_info);
+    mem_info.print();
+    
+    // check if n conforms
+    if(conduit::blueprint::verify("mcarray",n,verify_info))
     {
-        if(protocol == "mesh")
+        // check if our mcarray has a specific memory layout 
+        if(!conduit::blueprint::mcarray::is_interleaved(n))
         {
-            res = mesh::verify(n,info);
-        }
-        else if(protocol == "mcarray")
-        {
-            res = mcarray::verify(n,info);
+            // copy data from n into the desired memory layout
+            Node xform;
+            conduit::blueprint::mcarray::to_interleaved(n,xform);
+            std::cout << "transformed to 'interleaved' mcarray " << std::endl;
+            xform.print_detailed();
+            xform.info(mem_info);
+            mem_info.print();
         }
     }
 
-    return res;
+    CONDUIT_INFO("blueprint_example_2");
 }
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint --
-//-----------------------------------------------------------------------------
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit:: --
-//-----------------------------------------------------------------------------
 

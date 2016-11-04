@@ -67,14 +67,14 @@ TEST(conduit_node_compact, compact_1)
                 vals);
     Node n(g,true);
 
-    EXPECT_EQ(40,n.total_bytes());
+    EXPECT_EQ(36,n.total_strided_bytes());
     EXPECT_EQ(20,n.total_bytes_compact());
     n.print();
     Node nc;
     n.compact_to(nc);
     nc.schema().print();
     nc.print_detailed();
-    EXPECT_EQ(20,nc.total_bytes());
+    EXPECT_EQ(20,nc.total_strided_bytes());
     EXPECT_EQ(20,nc.total_bytes_compact());
 
     uint32_array n_arr  = n["vals"].as_uint32_array();

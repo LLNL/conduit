@@ -676,7 +676,7 @@ silo_write_ucd_zonelist(DBfile *dbfile,
     Node n_conn_final;
     n_conn.compact_to(n_conn_final);
 
-    int  conn_len = n_conn_final.total_bytes() / sizeof(int);
+    int  conn_len = n_conn_final.total_bytes_compact() / sizeof(int);
     int *conn_ptr = (int*) n_conn_final.data_ptr();
 
 

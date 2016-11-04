@@ -355,13 +355,7 @@ public:
 //-----------------------------------------------------------------------------
     index_t     id()    const { return m_id;}
     std::string name()  const { return id_to_name(m_id);}
-    index_t     total_bytes()   const;
-    index_t     total_bytes_compact() const;
-    index_t     spanned_bytes() const;
-    bool        is_compact() const;
 
-    bool        compatible(const DataType& type) const;
-    bool        equals(const DataType& type) const;
     
     index_t     number_of_elements()  const { return m_num_ele;}
     index_t     offset()              const { return m_offset;}
@@ -369,6 +363,18 @@ public:
     index_t     element_bytes()       const { return m_ele_bytes;}
     index_t     endianness()          const { return m_endianness;}
     index_t     element_index(index_t idx) const;
+
+    /// strided bytes = stride() * (number_of_elements() -1) + element_bytes()
+    index_t     strided_bytes() const;
+    // bytes compact = number_of_elements() * element_bytes()
+    index_t     bytes_compact() const;
+    /// spanned bytes = strided_bytes() + offet()
+    index_t     spanned_bytes() const;
+
+    bool        is_compact() const;
+    bool        compatible(const DataType& type) const;
+    bool        equals(const DataType& type) const;
+
 
     bool        is_empty()            const;
     bool        is_object()           const;

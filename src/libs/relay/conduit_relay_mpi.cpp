@@ -272,7 +272,7 @@ isend(Node &node,
     node.compact_to(*(request->_externalData));
 
     int mpi_error =  MPI_Isend((char*)request->_externalData->data_ptr(), 
-                               request->_externalData->total_bytes(), 
+                               request->_externalData->total_bytes_compact(), 
                                MPI_CHAR, 
                                dest, 
                                tag,
@@ -296,7 +296,7 @@ irecv(Node &node,
     request->_recvData = &node;
 
     int mpi_error =  MPI_Irecv((char*)request->_externalData->data_ptr(),
-                               request->_externalData->total_bytes(),
+                               request->_externalData->total_bytes_compact(),
                                MPI_CHAR,
                                src,
                                tag,
@@ -408,7 +408,7 @@ gather(Node &send_node,
 {
     Node n_snd_compact;
     send_node.compact_to(n_snd_compact);
-    int data_len = n_snd_compact.total_bytes();
+    int data_len = n_snd_compact.total_bytes_compact();
 
     int m_size = mpi::size(mpi_comm);
     int m_rank = mpi::rank(mpi_comm);
@@ -441,7 +441,7 @@ all_gather(Node &send_node,
 {
     Node n_snd_compact;
     send_node.compact_to(n_snd_compact);
-    int data_len = n_snd_compact.total_bytes();
+    int data_len = n_snd_compact.total_bytes_compact();
     
     int m_size = mpi::size(mpi_comm);
 
@@ -479,7 +479,7 @@ gatherv(Node &send_node,
     std::string schema_str = n_snd_compact.schema().to_json();
 
     int schema_len = schema_str.length() + 1;
-    int data_len   = n_snd_compact.total_bytes();
+    int data_len   = n_snd_compact.total_bytes_compact();
     
     // to do the conduit gatherv, first need a gather to get the 
     // schema and data buffer sizes
@@ -625,7 +625,7 @@ all_gatherv(Node &send_node,
     std::string schema_str = n_snd_compact.schema().to_json();
 
     int schema_len = schema_str.length() + 1;
-    int data_len   = n_snd_compact.total_bytes();
+    int data_len   = n_snd_compact.total_bytes_compact();
     
     // to do the conduit gatherv, first need a gather to get the 
     // schema and data buffer sizes

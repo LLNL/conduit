@@ -49,17 +49,14 @@
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// std lib includes
-//-----------------------------------------------------------------------------
-#include <string.h>
-#include <math.h>
-
-//-----------------------------------------------------------------------------
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "conduit_blueprint_mcarray.hpp"
+#include "conduit_blueprint_utils.hpp"
 
 using namespace conduit;
+// access verify logging helpers
+using namespace conduit::blueprint::utils;
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -86,9 +83,10 @@ verify(const std::string &/*protocol*/,
        const Node &/*n*/,
        Node &info)
 {
-    info.reset();
-    info["valid"] = "false";
     // mcarray doens't provide any nested protocols
+
+    info.reset();
+    log_verify_result(info,false);
     return false;
 }
 
@@ -100,10 +98,12 @@ bool verify(const conduit::Node &n,
     info.reset();
     bool res = true;
 
+    const std::string proto_name = "mcarray";
+
     // mcarray needs to be an object or a list
     if( ! (n.dtype().is_object() || n.dtype().is_list()) )
     {
-        info["errors"].append().set("mcarray has no children");
+        log_error(info,proto_name,"Node has no children");
         res = false;
     }
 
@@ -140,7 +140,7 @@ bool verify(const conduit::Node &n,
                 oss << " does not have the same number of "
                     << "elements as mcarray components.";
 
-                info["errors"].append().set(oss.str());
+                log_error(info,proto_name,oss.str());
 
                 res = false;
             }
@@ -160,11 +160,13 @@ bool verify(const conduit::Node &n,
             }
 
             oss << " is not a numeric type.";
-            info["errors"].append().set(oss.str());
 
+            log_error(info,proto_name,oss.str());
             res = false;
         }
     }
+    
+    log_verify_result(info,res);
 
     return res;
 }
@@ -196,7 +198,7 @@ to_contiguous(const conduit::Node &src,
 
         // get the proper number of bytes for this data type, so we can use it
         // as the stride
-        index_t elem_bytes = DataType::default_dtype(curr_dt.id()).element_bytes();
+        index_t elem_bytes = chld.dtype().element_bytes();
         
         // set the stride and offset
         curr_dt.set_stride(elem_bytes);
@@ -230,8 +232,18 @@ to_interleaved(const conduit::Node &src,
     Schema s_dest;
     
     NodeConstIterator itr = src.children();
-    index_t num_comps = src.number_of_children();
+    index_t stride = 0;
     index_t curr_offset = 0;
+   
+    while(itr.has_next())
+    {
+        // get the next child
+        const Node &chld = itr.next();
+        index_t elem_bytes = DataType::default_dtype(chld.dtype().id()).element_bytes();
+        stride += elem_bytes;
+    }
+    
+    itr.to_front();
     
     while(itr.has_next())
     {
@@ -240,18 +252,15 @@ to_interleaved(const conduit::Node &src,
         // get the next child's name
         std::string name = itr.name();
         
-        // use the child's data type to see our desired data type
+        // use the child's data type to seed our desired data type
         DataType curr_dt = chld.dtype();
 
         // get the proper number of bytes for this data type, so we can use it
         // as the stride
         index_t elem_bytes = DataType::default_dtype(curr_dt.id()).element_bytes();
-        
-        // ASSUMES THE elem_bytes is the same for each one of the components
-        // eg: all float64
-        
+                
         // set the stride and offset
-        curr_dt.set_stride(num_comps * elem_bytes);
+        curr_dt.set_stride(stride);
         curr_dt.set_offset(curr_offset);
         
         // put the dtype into our schema with the correct name
@@ -260,7 +269,7 @@ to_interleaved(const conduit::Node &src,
         // update the offset for the next component
         curr_offset += elem_bytes;
     }
-    
+
     // allocate using our schema
     dest.set(s_dest);
     // copy the data from the source

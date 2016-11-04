@@ -489,16 +489,16 @@ DataType::set(index_t dtype_id,
 
 //---------------------------------------------------------------------------// 
 index_t
-DataType::total_bytes() const
+DataType::strided_bytes() const
 {
-    // this is the memory extent
-    // non compact case
-    return m_stride * m_num_ele;
+    // this is the memory extent excluding the offset
+    return m_stride * (m_num_ele -1) + m_ele_bytes;
 }
+
 
 //---------------------------------------------------------------------------//
 index_t
-DataType::total_bytes_compact() const
+DataType::bytes_compact() const
 {
     return default_bytes(m_id) * m_num_ele;
 }
@@ -507,7 +507,7 @@ DataType::total_bytes_compact() const
 index_t
 DataType::spanned_bytes() const
 {
-    return total_bytes() + m_offset;
+    return m_offset + m_stride * (m_num_ele -1) + m_ele_bytes;
 }
 
 //---------------------------------------------------------------------------//
@@ -538,7 +538,7 @@ DataType::is_compact() const
     return ( (m_id != EMPTY_ID) &&
              (m_id != OBJECT_ID) && 
              (m_id != LIST_ID) &&
-             (total_bytes() == total_bytes_compact()));
+             (spanned_bytes() == bytes_compact()));
 }
 
 //---------------------------------------------------------------------------//

@@ -157,9 +157,6 @@ public:
     DataType       &dtype() 
                         {return m_dtype;}
 
-    index_t         total_bytes() const;
-    index_t         total_bytes_compact() const;
-
     index_t         element_index(index_t idx) const 
                         {return m_dtype.element_index(idx);}
 
@@ -174,6 +171,11 @@ public:
 
     /// is this schema equal to given schema
     bool            equals(const Schema &s) const;
+
+    /// sum of the strided bytes of all leaves
+    index_t         total_strided_bytes() const;
+    /// sum of the bytes of the compact form of all leaves
+    index_t         total_bytes_compact() const;
 
 
     /// parent access

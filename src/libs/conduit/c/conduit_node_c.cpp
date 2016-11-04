@@ -162,9 +162,9 @@ conduit_node_parent(conduit_node *cnode)
 
 //-----------------------------------------------------------------------------
 conduit_index_t
-conduit_node_total_bytes(const conduit_node *cnode)
+conduit_node_total_strided_bytes(const conduit_node *cnode)
 {
-    return cpp_node(cnode)->total_bytes();
+    return cpp_node(cnode)->total_strided_bytes();
 }
 
 //-----------------------------------------------------------------------------

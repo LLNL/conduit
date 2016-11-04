@@ -143,7 +143,7 @@ TEST(conduit_serialize, compact)
     Node n(g,true);
 
 
-    EXPECT_EQ(n.info()["total_bytes"].to_uint64(),80);
+    EXPECT_EQ(n.info()["total_strided_bytes"].to_uint64(),72);
     
     std::vector<uint8> nc_bytes;
     Schema nc_s;
@@ -165,7 +165,7 @@ TEST(conduit_serialize, compact)
     nc.print();
     nc.info().print();
     
-    EXPECT_EQ(nc.info()["total_bytes"].to_uint64(),40);
+    EXPECT_EQ(nc.info()["total_strided_bytes"].to_uint64(),40);
     
 }
 

@@ -54,6 +54,7 @@ ENABLE_WARNINGS()
 #            
 set(blueprint_headers 
     conduit_blueprint.hpp
+    conduit_blueprint_utils.hpp
     conduit_blueprint_mesh.hpp
     conduit_blueprint_mesh_examples.hpp
     conduit_blueprint_mcarray.hpp
@@ -76,6 +77,7 @@ set(blueprint_c_headers
 #
 set(blueprint_sources 
     conduit_blueprint.cpp
+    conduit_blueprint_utils.cpp
     conduit_blueprint_mesh.cpp
     conduit_blueprint_mesh_examples.cpp
     conduit_blueprint_mcarray.cpp
