@@ -54,6 +54,11 @@ include("CMake/BitwidthChecks.cmake")
 
 set(CONDUIT_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 
+if(FORTRAN_FOUND)
+    set(CONDUIT_FORTRAN_COMPILER ${CMAKE_Fortran_COMPILER})
+endif()
+
+
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/conduit_config.h")
 

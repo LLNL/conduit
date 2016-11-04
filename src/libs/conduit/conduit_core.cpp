@@ -79,12 +79,29 @@ void
 about(Node &n)
 {
     n.reset();
-    n["version"] = "{alpha}";
+    n["version"] = CONDUIT_VERSION;
+
+#ifdef CONDUIT_GIT_SHA1
+    n["git_sha1"] = CONDUIT_GIT_SHA1;
+#endif
+    
+    n["compilers/cpp"] = CONDUIT_CPP_COMPILER;
+#ifdef CONDUIT_FORTRAN_COMPILER
+    n["compilers/fortran"] = CONDUIT_FORTRAN_COMPILER;
+#endif
+
+#if   defined(CONDUIT_PLATFORM_WINDOWS)
+    n["platform"] = "windows";
+#elif defined(CONDUIT_PLATFORM_APPLE)
+    n["platform"] = "apple";
+#else 
+    n["platform"] = "linux";
+#endif
+    
+    n["system"] = CONDUIT_SYSTEM_TYPE;
     n["install_prefix"] = CONDUIT_INSTALL_PREFIX;
     n["license"] = CONDUIT_LICENSE_TEXT;
     
-    // TODO: include compiler info, etc ?
-
     // Type Info Map
     Node &nn = n["native_typemap"];
 
