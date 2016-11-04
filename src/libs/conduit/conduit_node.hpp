@@ -3137,16 +3137,27 @@ public:
     const Node      *parent() const
                         {return m_parent;}
 
-    
     //memory space info
-    index_t          total_bytes() const 
-                        { return m_schema->total_bytes();}
+
+    /// stride() * (num_elements()-1) + element_bytes() summed over all 
+    /// leaves 
+    index_t          total_strided_bytes() const 
+                        { return m_schema->total_strided_bytes();}
+
+    /// num_elements() * element_bytes() summed over all leaves 
     index_t          total_bytes_compact() const
                         { return m_schema->total_bytes_compact();}
 
+
+    /// total number of bytes allocated in this node hierarchy 
+    index_t           total_bytes_allocated() const;
+
+    /// total number of bytes memory mapped in this node hierarchy 
+    index_t           total_bytes_mmaped() const;
+
     /// Is this node using a compact data layout?
-    bool             is_compact() const 
-                        {return m_schema->is_compact();}
+    bool              is_compact() const 
+                         {return m_schema->is_compact();}
 
     //-------------------------------------------------------------------------
     /// contiguous checks
@@ -3402,9 +3413,13 @@ public:
     void            *data_ptr();
     const void      *data_ptr() const;
     
-    /// returns the number of bytes allocated or mmaped by this node
+    /// returns the number of bytes allocated by this node
     index_t          allocated_bytes() const
-                        {return m_data_size;}
+                        {return !m_mmaped ? m_data_size : 0;}
+
+    /// returns the number of bytes mmaped by this node
+    index_t          mmaped_bytes() const
+                        {return m_mmaped ? m_data_size : 0;}
 
     void  *element_ptr(index_t idx)
         {return static_cast<char*>(m_data) + dtype().element_index(idx);};

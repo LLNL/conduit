@@ -46,7 +46,7 @@
 Glossary
 =====================
 
-This page aims to provide succinct description of important concepts in Conduit. 
+This page aims to provide succinct descriptions of important concepts in Conduit. 
 
 
 children
@@ -73,7 +73,6 @@ Used for Node instances in *Object* role interface. In the Object role, a Node h
  - Node::fetch_ptr(string)
  - Node::operator=(string)
  - Node::has_path(string)
- - Node::paths(vector of strings)
  - Node::remove(string)
 
  - Schema::fetch(string)
@@ -81,7 +80,6 @@ Used for Node instances in *Object* role interface. In the Object role, a Node h
  - Schema::fetch_ptr(string)
  - Schema::operator=(string)
  - Schema::has_path(string)
- - Schema::paths(vector of strings)
  - Schema::remove(string)
 
 external

@@ -128,7 +128,7 @@ TEST(schema_basics, compatible_schemas)
 {
     Schema s1;
     s1["a"].set(DataType::int64(10));
-    s1["b"].set(DataType::float64(20,s1["a"].total_bytes()));
+    s1["b"].set(DataType::float64(20,s1["a"].total_strided_bytes()));
     
     std::string s2_json  = "{ a: {dtype:int64, length:10 }, ";
     s2_json              += " b: {dtype:float64, length:20 } }";
@@ -186,21 +186,17 @@ TEST(schema_basics, schema_alloc)
 {
     Schema s1;
     s1["a"].set(DataType::int64(10));
-    s1["b"].set(DataType::float64(20,s1.total_bytes()));
+    s1["b"].set(DataType::float64(20,s1.total_strided_bytes()));
     // pad
-    s1["c"].set(DataType::float64(1,s1.total_bytes()+ 10));
+    s1["c"].set(DataType::float64(1,s1.total_strided_bytes()+ 10));
     
-    EXPECT_EQ(s1.total_bytes(), sizeof(int64) * 10  + sizeof(float64) * 21);
+    EXPECT_EQ(s1.total_strided_bytes(), sizeof(int64) * 10  + sizeof(float64) * 21);
     
     Node n1(s1);
 
     // this is what we need & this does work
     EXPECT_EQ(n1.allocated_bytes(),
               sizeof(int64) * 10  + sizeof(float64) * 21 + 10);
-    
-    // but given this, the following is strange:
-    EXPECT_EQ(n1.total_bytes(), s1.total_bytes());
-    // total_bytes doesn't seem like a good name
 
 }
 
@@ -318,15 +314,15 @@ TEST(schema_basics, schema_errors)
 //
 //     s.set(DataType::int64(10));
 //
-//     EXPECT_EQ(s.total_bytes(),sizeof(int64) * 10);
+//     EXPECT_EQ(s.total_strided_bytes(),sizeof(int64) * 10);
 //
 //     s["a"].set(DataType::int64(10));
 //     s["b"].set(DataType::int64(10,80));
 //     s["c"].set(DataType::int64(10,160));
 //
 //
-//     EXPECT_EQ(s.total_bytes(),8 * 10 * 3);
-//     EXPECT_EQ(s.spanned_bytes(),s.total_bytes());
+//     EXPECT_EQ(s.total_strided_bytes(),8 * 10 * 3);
+//     EXPECT_EQ(s.spanned_bytes(),s.total_strided_bytes());
 //
 //     // at this point, we have a compact layout
 //     EXPECT_TRUE(s.is_compact());
@@ -336,8 +332,8 @@ TEST(schema_basics, schema_errors)
 //
 //     // now our spanned bytes is wider than total_bytes
 //     EXPECT_EQ(s.spanned_bytes(),400);
-//     EXPECT_EQ(s.total_bytes(),8 * 10 * 4);
-//     EXPECT_LT(s.total_bytes(),s.spanned_bytes());
+//     EXPECT_EQ(s.total_strided_bytes(),8 * 10 * 4);
+//     EXPECT_LT(s.total_strided_bytes(),s.spanned_bytes());
 // }
 
 

@@ -44,21 +44,16 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint.cpp
+/// file: conduit_blueprint_utils.cpp
 ///
 //-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// std lib includes
-//-----------------------------------------------------------------------------
-#include <string.h>
-#include <math.h>
 
 //-----------------------------------------------------------------------------
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "conduit_blueprint.hpp"
 
+using namespace conduit;
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -72,73 +67,72 @@ namespace conduit
 namespace blueprint
 {
 
-
-//---------------------------------------------------------------------------//
-std::string
-about()
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::utils --
+//-----------------------------------------------------------------------------
+namespace utils
 {
-    Node n;
-    blueprint::about(n);
-    return n.to_json();
-}
 
-//---------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------
+// Helpers for consistently logging info about the verification process.
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 void
-about(Node &n)
+log_info(Node &info,
+         const std::string &proto_name,
+         const std::string &msg)
 {
-    n.reset();
-    n["protocols/mesh/coordset"] = "enabled";
-    n["protocols/mesh/topology"] = "enabled";
-    n["protocols/mesh/field"]    = "enabled";
-    n["protocols/mesh/index"]    = "enabled";
-    
-    n["protocols/mcarray"]  = "enabled";
+    info["info"].append().set(proto_name + ": " + msg);
 }
 
-//---------------------------------------------------------------------------//
-bool
-verify(const std::string &protocol,
-       const Node &n,
-       Node &info)
+//-----------------------------------------------------------------------------
+void
+log_optional(Node &info,
+             const std::string &proto_name,
+             const std::string &msg)
 {
-    bool res = false;
-    info.reset();
-    
-    std::string p_curr;
-    std::string p_next;
-    conduit::utils::split_path(protocol,p_curr,p_next);
+    info["optional"].append().set(proto_name + ": " + msg);
+}
 
-    if(!p_next.empty())
+//-----------------------------------------------------------------------------
+void
+log_error(Node &info,
+         const std::string &proto_name,
+         const std::string &msg)
+{
+    info["errors"].append().set(proto_name + ": " + msg);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+log_verify_result(Node &info,
+                  bool res)
+{
+    if(res)
     {
-        if(protocol == "mesh")
-        {
-            res = mesh::verify(p_next,n,info);
-        }
-        else if(protocol == "mcarray")
-        {
-            res = mcarray::verify(p_next,n,info);
-        }
+        info["valid"] = "true";
     }
     else
     {
-        if(protocol == "mesh")
-        {
-            res = mesh::verify(n,info);
-        }
-        else if(protocol == "mcarray")
-        {
-            res = mcarray::verify(n,info);
-        }
+        info["valid"] = "false";
     }
-
-    return res;
 }
 
+//-----------------------------------------------------------------------------
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::utils --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint --
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
 // -- end conduit:: --

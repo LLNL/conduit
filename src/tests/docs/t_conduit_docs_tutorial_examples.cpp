@@ -44,11 +44,13 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_node.cpp
+/// file: t_conduit_docs_tutorial_examples.cpp
 ///
 //-----------------------------------------------------------------------------
 
 #include "conduit.hpp"
+#include "conduit_blueprint.hpp"
+#include "conduit_relay.hpp"
 
 #include <iostream>
 #include "gtest/gtest.h"
@@ -78,7 +80,7 @@ TEST(conduit_tutorial, basics_hierarchial)
     n["a"]["b"]["e"] = 64.0;
     n.print();
     
-    std::cout << "total bytes: " << n.total_bytes() << std::endl;
+    std::cout << "total bytes: " << n.total_strided_bytes() << std::endl;
 
     CONDUIT_INFO("basics_hierarchial");
 }
@@ -437,7 +439,7 @@ TEST(conduit_tutorial, json_generator_compact)
 }
 
 //-----------------------------------------------------------------------------
-// 383-401
+// 447-463
 TEST(conduit_tutorial, mem_ownership_external)
 {
     CONDUIT_INFO("mem_ownership_external");

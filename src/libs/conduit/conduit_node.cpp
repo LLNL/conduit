@@ -319,7 +319,7 @@ Node::load(const std::string &stream_path,
 {
     // clear out any existing structure
     reset();
-    index_t dsize = schema.total_bytes();
+    index_t dsize = schema.spanned_bytes();
 
     allocate(dsize);
     std::ifstream ifs;
@@ -417,7 +417,7 @@ Node::mmap(const std::string &stream_path,
            const Schema &schema)
 {
     reset();
-    index_t dsize = schema.total_bytes();
+    index_t dsize = schema.spanned_bytes();
     Node::mmap(stream_path,dsize);
 
     //
@@ -574,8 +574,8 @@ Node::set_data_using_dtype(const DataType &dtype,
 {
     release();
     m_schema->set(dtype);
-    allocate(m_schema->total_bytes());
-    memcpy(m_data, data, (size_t) m_schema->total_bytes());
+    allocate(m_schema->spanned_bytes());
+    memcpy(m_data, data, (size_t) m_schema->spanned_bytes());
     walk_schema(this,m_schema,m_data);
 }
 
@@ -6925,7 +6925,7 @@ Node::serialize(std::ofstream &ofs) const
             // ser as is. This copies stride * num_ele bytes
             {
                 ofs.write((const char*)element_ptr(0),
-                          total_bytes());
+                          total_strided_bytes());
             }
         }
         else
@@ -10603,7 +10603,7 @@ Node::to_base64_json(std::ostream &os,
     compact_to(n);
     
     // use libb64 to encode the data
-    index_t nbytes = n.schema().total_bytes();
+    index_t nbytes = n.schema().spanned_bytes();
     index_t enc_buff_size =  utils::base64_encode_buffer_size(nbytes);
     Node bb64_data;
     bb64_data.set(DataType::char8_str(enc_buff_size));
@@ -10666,35 +10666,11 @@ Node::info(Node &res) const
     res.reset();
     info(res,std::string());
 
-    
-    // update summary
-    index_t tb_alloc = 0;
-    index_t tb_mmap  = 0;
-
-    // for each in mem_spaces:
-    res["total_bytes"]         = total_bytes();
-    res["total_bytes_compact"] = total_bytes_compact();
-    
-    std::vector<std::string> mchildren;
-    Node &mspaces = res["mem_spaces"];
-    
-    NodeIterator itr = mspaces.children();
-    
-    while(itr.has_next())
-    {
-        Node &mspace = itr.next();
-        std::string mtype  = mspace["type"].as_string();
-        if( mtype == "alloced")
-        {
-            tb_alloc += mspace["bytes"].to_index_t();
-        }
-        else if(mtype == "mmaped")
-        {
-            tb_mmap  += mspace["bytes"].to_index_t();
-        }
-    }
-    res["total_bytes_alloced"] = tb_alloc;
-    res["total_bytes_mmaped"]  = tb_mmap;
+    // add summary 
+    res["total_bytes_allocated"] = total_bytes_allocated();
+    res["total_bytes_mmaped"]    = total_bytes_mmaped();
+    res["total_bytes_compact"]   = total_bytes_compact();
+    res["total_strided_bytes"]   = total_strided_bytes();
 }
 
 //---------------------------------------------------------------------------//
@@ -10715,6 +10691,7 @@ void
 Node::print() const
 {
     to_json_stream(std::cout);
+    std::cout << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -10722,6 +10699,7 @@ void
 Node::print_detailed() const
 {
     to_json_stream(std::cout,"conduit_json");
+    std::cout << std::endl;
 }
 
 
@@ -11100,7 +11078,7 @@ Node::list_of(const Schema &schema,
     Schema s_compact;
     schema.compact_to(s_compact);
     
-    index_t entry_bytes = s_compact.total_bytes();
+    index_t entry_bytes = s_compact.total_bytes_compact();
     index_t total_bytes = entry_bytes * num_entries;
 
     // allocate what we need
@@ -11129,7 +11107,7 @@ Node::list_of_external(void *data,
     Schema s_compact;
     schema.compact_to(s_compact);
     
-    index_t entry_bytes = s_compact.total_bytes();
+    index_t entry_bytes = s_compact.total_bytes_compact();
 
     m_data = data;
     uint8 *ptr = (uint8*) data;
@@ -13253,7 +13231,7 @@ Node::serialize(uint8 *data,index_t curr_offset) const
         for(itr = m_children.begin(); itr < m_children.end(); ++itr)
         {
             (*itr)->serialize(&data[0],curr_offset);
-            curr_offset+=(*itr)->total_bytes();
+            curr_offset+=(*itr)->total_strided_bytes();
         }
     }
     else
@@ -13262,7 +13240,7 @@ Node::serialize(uint8 *data,index_t curr_offset) const
         {
             memcpy(&data[curr_offset],
                    m_data,
-                   (size_t)total_bytes());
+                   (size_t)total_bytes_compact());
         }
         else // ser as is. This copies stride * num_ele bytes
         {
@@ -13271,6 +13249,40 @@ Node::serialize(uint8 *data,index_t curr_offset) const
         }
        
     }
+}
+
+
+//---------------------------------------------------------------------------//
+index_t
+Node::total_bytes_allocated() const
+{
+    index_t res = allocated_bytes();
+    
+    NodeConstIterator itr = children();
+    while(itr.has_next())
+    {
+        const Node &curr = itr.next();
+        res += curr.total_bytes_allocated();
+    }
+
+    return res;
+}
+
+
+//---------------------------------------------------------------------------//
+index_t
+Node::total_bytes_mmaped() const
+{
+    index_t res = mmaped_bytes();
+    
+    NodeConstIterator itr = children();
+    while(itr.has_next())
+    {
+        const Node &curr = itr.next();
+        res += curr.total_bytes_mmaped();
+    }
+
+    return res;
 }
 
 //---------------------------------------------------------------------------//
@@ -13353,7 +13365,7 @@ Node::contiguous_with(uint8 *start_addy, uint8 *&end_addy) const
             if(curr_addy != NULL && curr_addy == start_addy)
             {
                 // ok, advance the end pointer
-                end_addy = curr_addy + total_bytes();
+                end_addy = curr_addy + m_schema->total_strided_bytes();
             }
             else // bad
             {
@@ -13367,7 +13379,7 @@ Node::contiguous_with(uint8 *start_addy, uint8 *&end_addy) const
             // 
             // by definition it is contiguous, so we simply 
             // advance the end pointer
-            end_addy  = curr_addy + total_bytes();
+            end_addy  = curr_addy + total_strided_bytes();
         }
         else // current address is NULL, nothing is contig with NULL
         {
@@ -13398,12 +13410,12 @@ Node::info(Node &res, const std::string &curr_path) const
             ptr_ref["path"] = curr_path;
             if(m_alloced)
             {
-                ptr_ref["type"]  = "alloced";
+                ptr_ref["type"]  = "allocated";
                 ptr_ref["bytes"] = m_data_size;
             }
             else if(m_mmaped)
             {
-                ptr_ref["type"]  = "mmap";
+                ptr_ref["type"]  = "mmaped";
                 ptr_ref["bytes"] = m_data_size;
             }
             else

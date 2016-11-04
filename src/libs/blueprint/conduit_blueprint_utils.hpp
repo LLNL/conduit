@@ -44,20 +44,19 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint.cpp
+/// file: conduit_blueprint_utils.hpp
 ///
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-// std lib includes
-//-----------------------------------------------------------------------------
-#include <string.h>
-#include <math.h>
+#ifndef CONDUIT_BLUEPRINT_UTILS_HPP
+#define CONDUIT_BLUEPRINT_UTILS_HPP
 
 //-----------------------------------------------------------------------------
-// conduit includes
+// conduit lib includes
 //-----------------------------------------------------------------------------
-#include "conduit_blueprint.hpp"
+#include "conduit.hpp"
+
+#include "conduit_blueprint_exports.h"
 
 
 //-----------------------------------------------------------------------------
@@ -72,67 +71,41 @@ namespace conduit
 namespace blueprint
 {
 
-
-//---------------------------------------------------------------------------//
-std::string
-about()
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::utils --
+//-----------------------------------------------------------------------------
+namespace utils
 {
-    Node n;
-    blueprint::about(n);
-    return n.to_json();
+
+//-----------------------------------------------------------------------------
+// Helpers for consistently logging info about the verification process.
+// (These are used internally in blueprint.)
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API log_info(conduit::Node &info,
+                                    const std::string &proto_name,
+                                    const std::string &msg);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API log_optional(conduit::Node &info,
+                                        const std::string &proto_name,
+                                        const std::string &msg);
+                                        
+//-----------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API log_error(conduit::Node &info,
+                                     const std::string &proto_name,
+                                     const std::string &msg);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API log_verify_result(conduit::Node &info,
+                                             bool res);
+
+
 }
-
-//---------------------------------------------------------------------------//
-void
-about(Node &n)
-{
-    n.reset();
-    n["protocols/mesh/coordset"] = "enabled";
-    n["protocols/mesh/topology"] = "enabled";
-    n["protocols/mesh/field"]    = "enabled";
-    n["protocols/mesh/index"]    = "enabled";
-    
-    n["protocols/mcarray"]  = "enabled";
-}
-
-//---------------------------------------------------------------------------//
-bool
-verify(const std::string &protocol,
-       const Node &n,
-       Node &info)
-{
-    bool res = false;
-    info.reset();
-    
-    std::string p_curr;
-    std::string p_next;
-    conduit::utils::split_path(protocol,p_curr,p_next);
-
-    if(!p_next.empty())
-    {
-        if(protocol == "mesh")
-        {
-            res = mesh::verify(p_next,n,info);
-        }
-        else if(protocol == "mcarray")
-        {
-            res = mcarray::verify(p_next,n,info);
-        }
-    }
-    else
-    {
-        if(protocol == "mesh")
-        {
-            res = mesh::verify(n,info);
-        }
-        else if(protocol == "mcarray")
-        {
-            res = mcarray::verify(n,info);
-        }
-    }
-
-    return res;
-}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::utils --
+//-----------------------------------------------------------------------------
 
 }
 //-----------------------------------------------------------------------------
@@ -143,4 +116,8 @@ verify(const std::string &protocol,
 //-----------------------------------------------------------------------------
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
+
+#endif 
+
+
 

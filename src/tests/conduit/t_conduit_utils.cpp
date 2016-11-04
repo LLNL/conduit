@@ -297,7 +297,7 @@ TEST(conduit_utils, base64_enc_dec)
     n_src.compact_to(n);
     
     // use libb64 to encode the data
-    index_t nbytes = n.schema().total_bytes();
+    index_t nbytes = n.schema().total_strided_bytes();
     Node bb64_data;
     index_t enc_buff_size = utils::base64_encode_buffer_size(nbytes);
     
