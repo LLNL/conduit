@@ -144,6 +144,32 @@ if(ENABLE_TESTS)
     include(CTest)
 endif()
 
+##############################################################################
+# Try to extract the current git sha
+#
+# This solution is derived from:
+#  http://stackoverflow.com/a/21028226/203071
+#
+# This does not have full dependency tracking - it wont auto update when the
+# git HEAD changes or when a branch is checked out, unless a change causes
+# cmake to reconfigure.
+#
+# However, this limited approach will still be useful in many cases, 
+# including building and for installing  conduit as a tpl
+#
+##############################################################################
+find_package(Git)
+if(GIT_FOUND)
+  message("git executable: ${GIT_EXECUTABLE}")
+  execute_process(COMMAND
+    "${GIT_EXECUTABLE}" describe --match=NeVeRmAtCh --always --abbrev=40 --dirty
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    OUTPUT_VARIABLE CONDUIT_GIT_SHA1
+    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+  message("Repo SHA1:" ${CONDUIT_GIT_SHA1})
+endif()
+
+
 ###############################################################################
 # Provide macros to simplify creating libs
 ###############################################################################

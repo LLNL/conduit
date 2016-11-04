@@ -55,7 +55,7 @@ cmake_policy(SET CMP0054 OLD)
 # Conduit
 ################################
 
-project(conduit)
+project(conduit VERSION "0.2.0")
 
 ################################
 # Build Options
