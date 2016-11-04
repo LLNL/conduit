@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Glossary &mdash; Conduit 0.2.0 documentation</title>
+  <title>Node Update Methods &mdash; Conduit 0.2.0 documentation</title>
   
 
   
@@ -31,9 +31,9 @@
 
   
     <link rel="top" title="Conduit 0.2.0 documentation" href="index.html"/>
-        <link rel="up" title="User Documentation" href="user.html"/>
-        <link rel="next" title="Developer Documentation" href="developer.html"/>
-        <link rel="prev" title="Building" href="building.html"/> 
+        <link rel="up" title="Conduit" href="conduit.html"/>
+        <link rel="next" title="Relay" href="relay.html"/>
+        <link rel="prev" title="Data Ownership" href="tutorial_ownership.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -84,19 +84,25 @@
             
                 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="user.html">User Documentation</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="conduit.html">Conduit</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="conduit.html">Conduit</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="conduit.html#tutorial">Tutorial</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="tutorial_basics.html">Basic Concepts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_numeric.html">Accessing Numeric Data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_json.html">Generators</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_ownership.html">Data Ownership</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Node Update Methods</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="relay.html">Relay</a></li>
 <li class="toctree-l2"><a class="reference internal" href="blueprint.html">Blueprint</a></li>
 <li class="toctree-l2"><a class="reference internal" href="building.html">Building</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Glossary</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#children">children</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#paths">paths</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#external">external</a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="glossary.html">Glossary</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="developer.html">Developer Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html">Releases</a></li>
 <li class="toctree-l1"><a class="reference internal" href="presentations.html">Presentations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="licenses.html">License Info</a></li>
 </ul>
@@ -131,11 +137,13 @@
       
           <li><a href="user.html">User Documentation</a> &raquo;</li>
       
-    <li>Glossary</li>
+          <li><a href="conduit.html">Conduit</a> &raquo;</li>
+      
+    <li>Node Update Methods</li>
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="_sources/glossary.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/tutorial_update.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -145,51 +153,39 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="glossary">
-<h1>Glossary<a class="headerlink" href="#glossary" title="Permalink to this headline">¶</a></h1>
-<p>This page aims to provide succinct descriptions of important concepts in Conduit.</p>
-<div class="section" id="children">
-<h2>children<a class="headerlink" href="#children" title="Permalink to this headline">¶</a></h2>
-<p>Used for Node instances in the <em>Object</em> and <em>List</em> role interfaces. A Node may hold a set of indexed children (List role), or indexed and named children (Object role). In both of these cases the children of the Node can be accessed, or removed via their index. Methods related to this concept include:</p>
+  <div class="section" id="node-update-methods">
+<h1>Node Update Methods<a class="headerlink" href="#node-update-methods" title="Permalink to this headline">¶</a></h1>
+<p>The <em>Node</em> class provides three <strong>update</strong> methods which allow you to easily copy data or  the description of data from a source node.</p>
+<ul class="simple">
+<li><strong>Node::update(Node &amp;source)</strong>:</li>
+</ul>
 <blockquote>
-<div><ul class="simple">
-<li>Node::number_of_children()</li>
-<li>Node::child(index_t)</li>
-<li>Node::child_ptr(index_t)</li>
-<li>Node::operator=(index_t)</li>
-<li>Node::remove(index_t)</li>
-<li>Schema::number_of_children()</li>
-<li>Schema::child(index_t)</li>
-<li>Schema::child_ptr(index_t)</li>
-<li>Schema::operator=(index_t)</li>
-<li>Schema::remove(index_t)</li>
+<div><p>This method behaves similar to a python dictionary update. Entires from the source Node are copied into the calling Node, here are more concrete details:</p>
+<ul class="simple">
+<li><strong>If the source describes an Object</strong>:<ul>
+<li>Update copies the children of the source Node into the calling Node. Normal set semantics apply: if a compatible child with the same name already exists in the calling Node, the data will be copied.  If not, the calling Node will dynamically construct children to hold copies of each child of the source Node.</li>
+</ul>
+</li>
+<li><strong>If the source describes a List</strong>:<ul>
+<li>Update copies the children of the source Node into the calling Node. Normal set semantics apply: if a compatible child already exists in the same list order in the calling Node, the data will be copied.  If not, the calling Node will dynamically construct children to hold copies of each child of the source Node.</li>
+</ul>
+</li>
+<li><strong>If the source Node describes a leaf data type</strong>:<ul>
+<li>Update works exactly like a <strong>set</strong> (not true yet).</li>
+</ul>
+</li>
 </ul>
 </div></blockquote>
-</div>
-<div class="section" id="paths">
-<h2>paths<a class="headerlink" href="#paths" title="Permalink to this headline">¶</a></h2>
-<p>Used for Node instances in <em>Object</em> role interface. In the Object role, a Node has a collection of indexed and named children. Access by name is done via a <em>path</em>. The path is a forward-slash separated URI, where each segment maps to Node in a hierarchal tree. Methods related to this concept include:</p>
-<blockquote>
-<div><ul class="simple">
-<li>Node::fetch(string)</li>
-<li>Node::fetch_ptr(string)</li>
-<li>Node::operator=(string)</li>
-<li>Node::has_path(string)</li>
-<li>Node::remove(string)</li>
-<li>Schema::fetch(string)</li>
-<li>Schema::fetch_child(string)</li>
-<li>Schema::fetch_ptr(string)</li>
-<li>Schema::operator=(string)</li>
-<li>Schema::has_path(string)</li>
-<li>Schema::remove(string)</li>
+<ul class="simple">
+<li><strong>Node::update_compatible(Node &amp;source)</strong>:</li>
 </ul>
-</div></blockquote>
-</div>
-<div class="section" id="external">
-<h2>external<a class="headerlink" href="#external" title="Permalink to this headline">¶</a></h2>
-<p>Concept used throughout the Conduit API to specify ownership for passed data.
-When using Node constructors, Generators, or Node::set calls, you have the option of using an external variant. When external is specified, a Node does not own (allocate or deallocate) the memory for the data it holds.</p>
-</div>
+<blockquote>
+<div>This method copies data from the children in the source Node that are compatible with children in the calling node. No changes are made where children are incompatible.</div></blockquote>
+<ul class="simple">
+<li><strong>Node::update_external(Node &amp;source)</strong>:</li>
+</ul>
+<blockquote>
+<div>This method creates children in the calling Node that externally describe the children in the source node. It differs from <strong>Node::set_external(Node &amp;source)</strong> in that <strong>set_external()</strong> will clear the calling Node so it exactly match an external description of the source Node, whereas <strong>update_external()</strong> will only change the children in the calling Node that correspond to children in the source Node.</div></blockquote>
 </div>
 
 
@@ -199,10 +195,10 @@ When using Node constructors, Generators, or Node::set calls, you have the optio
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="developer.html" class="btn btn-neutral float-right" title="Developer Documentation" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="relay.html" class="btn btn-neutral float-right" title="Relay" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="building.html" class="btn btn-neutral" title="Building" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="tutorial_ownership.html" class="btn btn-neutral" title="Data Ownership" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
