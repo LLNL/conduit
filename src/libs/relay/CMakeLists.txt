@@ -155,7 +155,7 @@ endif()
 ###################################
 # add conduit_relay_node_viewer exe
 ###################################
-add_executable(conduit_relay_node_viewer conduit_relay_web_node_viewer.cpp)
+add_executable(conduit_relay_node_viewer conduit_relay_web_node_viewer_exe.cpp)
 target_link_libraries(conduit_relay_node_viewer conduit_relay)
 
 # add install target

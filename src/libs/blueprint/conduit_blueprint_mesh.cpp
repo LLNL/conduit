@@ -1456,12 +1456,12 @@ mesh::field::verify(const Node &field,
         }
         else
         {
-            log_info(info,proto_name,"is a mcarray.");
+            log_info(info,proto_name,"values is a mcarray.");
         }
     }
     else if(field["values"].dtype().is_number())
     {
-        log_info(info,proto_name,"is a single component numeric array.");
+        log_info(info,proto_name,"values is a single component numeric array.");
     }
     else
     {
@@ -1529,7 +1529,7 @@ mesh::field::association::verify(const Node &assoc,
         if(assoc_str == "vertex" ||
            assoc_str == "element")
         {
-            log_info(info,proto_name, "association: " + assoc_str );
+            log_info(info,proto_name, "valid type: " + assoc_str );
         }
         else
         {
@@ -1566,7 +1566,7 @@ mesh::field::basis::verify(const Node &basis,
     }
     else
     {
-        log_info(info,proto_name,"basis: " + basis.as_string());
+        log_info(info,proto_name,"valid type: " + basis.as_string());
     }
 
     log_verify_result(info,res);
