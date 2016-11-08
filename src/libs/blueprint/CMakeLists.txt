@@ -110,6 +110,16 @@ add_compiled_library(NAME conduit_blueprint
 #
 target_link_libraries(conduit_blueprint conduit)
 
+###################################
+# add conduit_blueprint_verify exe
+###################################
+add_executable(conduit_blueprint_verify conduit_blueprint_verify_exe.cpp)
+target_link_libraries(conduit_blueprint_verify conduit conduit_relay conduit_blueprint)
+
+# add install target
+install(TARGETS conduit_blueprint_verify
+        RUNTIME DESTINATION bin)
+
 
 ################################
 # Add python wrappers if python
