@@ -307,7 +307,7 @@ To conform to the protocol, each entry under ``fields`` must be an *Object* that
 
 
 State
-===================
+++++++++++++++++++++
 
 Optional state information is used to provide metadata about the mesh. While the mesh blueprint is focused on describing a single domain of a domain decomposed mesh, the state info can be used to identify a specific mesh domain in the context of a domain decomposed mesh.
 
