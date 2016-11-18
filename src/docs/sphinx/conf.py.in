@@ -298,7 +298,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'Conduit', u'Conduit Documentation',
-   u'LLNS', 'Conduit', 'Scientific Data Exchange Library for HPC Simulations',
+   u'LLNS', 'Conduit', 'Simplified Data Exchange for HPC Simulations',
    'Miscellaneous'),
 ]
 
