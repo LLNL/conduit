@@ -9,7 +9,7 @@
 .. # 
 .. # This file is part of Conduit. 
 .. # 
-.. # For details, see: http://software.llnl.gov/conduit/.
+.. # For details, see: http://llnl.github.io/conduit/.
 .. # 
 .. # Please also read conduit/LICENSE
 .. # 
@@ -86,7 +86,7 @@ Conduit Project Resources
 
 **Online Documentation**
 
-http://software.llnl.gov/conduit/
+http://llnl.github.io/conduit/
 
 **Github Source Repo**
 

@@ -9,7 +9,7 @@
 .. #
 .. # This file is part of Conduit.
 .. #
-.. # For details, see: http://software.llnl.gov/conduit/.
+.. # For details, see: http://llnl.github.io/conduit/.
 .. #
 .. # Please also read conduit/LICENSE
 .. #
@@ -77,7 +77,7 @@ Fortran Libraries
 Build System
 ~~~~~~~~~~~~~~~
 - *CMake*: http://www.cmake.org/licensing/ (BSD Style License)
-- *Spack*: http://software.llnl.gov/spack (LGPL License)
+- *Spack*: http://llnl.github.io/spack (LGPL License)
 
 
 Documentation

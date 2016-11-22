@@ -9,7 +9,7 @@
 .. #
 .. # This file is part of Conduit.
 .. #
-.. # For details, see: http://software.llnl.gov/conduit/.
+.. # For details, see: http://llnl.github.io/conduit/.
 .. #
 .. # Please also read conduit/LICENSE
 .. #
@@ -54,7 +54,7 @@ v0.2.0
 -----------------
 
 * `Source Tarball <https://github.com/LLNL/conduit/archive/v0.2.0.tar.gz>`_
-* `Docs <http://software.llnl.gov/conduit/v0.2.0>`_
+* `Docs <http://llnl.github.io/conduit/v0.2.0>`_
     
 Highlights 
 +++++++++++++
