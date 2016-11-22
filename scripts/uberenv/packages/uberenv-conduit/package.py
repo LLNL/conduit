@@ -9,7 +9,7 @@
 # 
 # This file is part of Conduit. 
 # 
-# For details, see: http://software.llnl.gov/conduit/.
+# For details, see: http://llnl.github.io/conduit/.
 # 
 # Please also read conduit/LICENSE
 # 
@@ -57,7 +57,7 @@ def cmake_cache_entry(name,value):
 class UberenvConduit(Package):
     """Spack Based Uberenv Build for Conduit Thirdparty Libs """
 
-    homepage = "http://software.llnl.gov/conduit"
+    homepage = "http://llnl.github.io/conduit"
 
     version('0.2.0', '8d378ef62dedc2df5db447b029b71200')
 
