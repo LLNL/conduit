@@ -45,11 +45,6 @@ sudo: false
 language: cpp
 compiler:
   - gcc
-matrix:
-  # we want to test both static and shared
-  include:
-    - env: BUILD_SHARED_LIBS=ON
-    - env: BUILD_SHARED_LIBS=OFF
 env:
   global:
     # std env vars CC + CXX get overridden
@@ -58,7 +53,11 @@ env:
     - CONDUIT_FC=gfortran-4.8
     # we need to know the root dir for our 3rd party lib installs
     - TRAVIS_HOME=`pwd`
-
+# we want to test both static and shared
+matrix:
+  include:
+    - env: BUILD_SHARED_LIBS=ON
+    - env: BUILD_SHARED_LIBS=OFF
 addons:
   apt:
     sources:
