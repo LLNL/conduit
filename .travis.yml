@@ -99,8 +99,8 @@ script:
   - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_FORTRAN=ON"
   # enable python support
   - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=ON"
-  # enable coverage
-  - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_COVERAGE=ON"
+  # enable coverage (only when using shared libs case)
+  - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_COVERAGE=${BUILD_SHARED_LIBS}"
   # configure with cmake
   - cmake  ${CMAKE_OPTS} ../src
   # build, test, and install
