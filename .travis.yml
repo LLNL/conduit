@@ -53,6 +53,9 @@ env:
     - CONDUIT_FC=gfortran-4.8
     # we need to know the root dir for our 3rd party lib installs
     - TRAVIS_HOME=`pwd`
+    # we want to test both static and shared
+    - BUILD_SHARED_LIBS=ON
+    - BUILD_SHARED_LIBS=OFF
 addons:
   apt:
     sources:
@@ -89,6 +92,8 @@ script:
   # c & c++ compilers
   - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_C_COMPILER=${CONDUIT_CC}"
   - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_CXX_COMPILER=${CONDUIT_CXX}"
+  # shared or static libs
+  - CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
   # enable fortran support
   - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_Fortran_COMPILER=${CONDUIT_FC}"
   - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_FORTRAN=ON"
