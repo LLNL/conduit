@@ -97,8 +97,8 @@ include_directories(thirdparty_builtin/libb64-1.2.1/include/)
 ################################
 # Setup and build civetweb
 ################################
-add_subdirectory(thirdparty_builtin/civetweb-1.8/)
-include_directories(thirdparty_builtin/civetweb-1.8/include)
+add_subdirectory(thirdparty_builtin/civetweb-0a95342/)
+include_directories(thirdparty_builtin/civetweb-0a95342/include)
 
 ################################
 # Optional Features
