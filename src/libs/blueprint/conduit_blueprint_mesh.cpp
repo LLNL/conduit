@@ -688,7 +688,6 @@ mesh::coordset::rectilinear::verify(const Node &coordset,
 
     std::string proto_name = "mesh::coordset::rectilinear";
 
-
     if(!coordset.has_child("values"))
     {
         log_error(info,proto_name, "missing child \"values\"");
@@ -696,9 +695,43 @@ mesh::coordset::rectilinear::verify(const Node &coordset,
     }
     else
     {
-        // values should be a mcarray
-        res = blueprint::mcarray::verify(coordset["values"],
-                                         info["values"]);
+        const Node &n_vals = coordset["values"];
+
+        if( ! (n_vals.dtype().is_object() || n_vals.dtype().is_list()) )
+        {
+            log_error(info,proto_name,"Node has no children");
+            res = false;
+        }
+        else
+        {
+            // each child should be a numeric array
+            NodeConstIterator itr = n_vals.children();
+
+            while(itr.has_next())
+            {
+                const Node &chld = itr.next();
+                // make sure every child is a numeric array
+                if(!chld.dtype().is_number())
+                {
+                    std::ostringstream oss;
+                    std::string chld_name = itr.name();
+
+                    if(chld_name.size() == 0)
+                    {
+                        oss << "child [" << itr.index() <<  "]";
+                    }
+                    else
+                    {
+                        oss << "child \"" << chld_name << "\"";
+                    }
+
+                    oss << " is not a numeric type.";
+
+                    log_error(info,proto_name,oss.str());
+                    res = false;
+                }
+            }
+        }
     }
 
     log_verify_result(info,res);

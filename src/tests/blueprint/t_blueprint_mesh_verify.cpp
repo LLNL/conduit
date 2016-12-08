@@ -269,8 +269,26 @@ TEST(conduit_blueprint_mesh_verify, coordset_rectilinear)
         {
             n["values"][coord_coordsys[cj]].set(DataType::float64(10));
             EXPECT_TRUE(blueprint::mesh::coordset::rectilinear::verify(n,info));
+            info.print();
         }
     }
+
+    // check case where number of elements for each child doesn't match 
+    // (rectilinear coordsets use cross product of input coord arrays, they
+    //  don't need to be mcarrays)
+    for(size_t ci = 0; ci < 3; ci++)
+    {
+        const std::vector<std::string>& coord_coordsys = COORDINATE_COORDSYSS[ci];
+
+        n["values"].reset();
+        for(size_t cj = 0; cj < coord_coordsys.size(); cj++)
+        {
+            n["values"][coord_coordsys[cj]].set(DataType::float64(cj + 5));
+            EXPECT_TRUE(blueprint::mesh::coordset::rectilinear::verify(n,info));
+            info.print();
+        }
+    }
+
 
     // FIXME: The logical coordinate system shouldn't be an accepted value
     // for the rectilinear verify function.
