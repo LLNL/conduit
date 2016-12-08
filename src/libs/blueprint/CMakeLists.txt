@@ -93,15 +93,29 @@ set(blueprint_c_sources
     c/conduit_blueprint_mesh_c.cpp
     )
 
+#################################
+# Add fortran interface
+# if fortran support was selected
+#################################
 
+if(FORTRAN_FOUND)
+    #
+    # Specify fortran sources
+    #
+    set(blueprint_fortran_sources
+        fortran/conduit_blueprint_fortran.f
+        fortran/conduit_blueprint_mcarray_fortran.f
+        fortran/conduit_blueprint_mesh_fortran.f)
+
+endif()
 
 #
 # Setup conduit blueprint lib
 #
 add_compiled_library(NAME conduit_blueprint
                      EXPORT conduit
-                     HEADERS ${blueprint_headers} ${blueprint_c_headers}
-                     SOURCES ${blueprint_sources} ${blueprint_c_sources}
+                     HEADERS ${blueprint_headers} ${blueprint_c_headers} 
+                     SOURCES ${blueprint_sources} ${blueprint_c_sources} ${blueprint_fortran_sources}
                      HEADERS_DEST_DIR include/conduit)
 
 
@@ -109,6 +123,27 @@ add_compiled_library(NAME conduit_blueprint
 # Link with conduit
 #
 target_link_libraries(conduit_blueprint conduit)
+
+if(FORTRAN_FOUND)
+    set_target_properties(conduit_blueprint
+                          PROPERTIES Fortran_FORMAT "FREE")
+
+    ###############################################################################
+    # Special install targets for conduit fortran modules 
+    ###############################################################################
+
+    set(conduit_blueprint_fortran_modules
+        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint.mod
+        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint_mesh.mod
+        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint_mcarray.mod)
+
+    # Setup install to copy the fortran modules 
+    install(FILES 
+            ${conduit_blueprint_fortran_modules}
+            DESTINATION include/conduit)
+
+endif()
+
 
 ###################################
 # add conduit_blueprint_verify exe
@@ -127,13 +162,5 @@ install(TARGETS conduit_blueprint_verify
 ################################
 if(PYTHON_FOUND)
     add_subdirectory(python)
-endif()
-
-#################################
-# Add fortran interface lib
-# if fortran support was selected
-#################################
-if(FORTRAN_FOUND)
-    add_subdirectory(fortran)
 endif()
 
