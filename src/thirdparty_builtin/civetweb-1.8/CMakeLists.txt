@@ -63,6 +63,16 @@ set(civetweb_sources
 
 add_definitions(-DUSE_WEBSOCKET)
 
+############################################
+# disable ssl support for the static case
+############################################
+# We don't want to rely on dlopen NO_SSL_DL and we don't require a
+# openssl install.
+if(NOT BUILD_SHARED_LIBS)
+    add_definitions(-DNO_SSL_DL -DNO_SSL)
+endif()
+
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 
