@@ -1460,8 +1460,8 @@ public:
 // -- set external for generic types --
 //-----------------------------------------------------------------------------              
     //-------------------------------------------------------------------------
-    void set_external_node(Node &n);
-    void set_external(Node &n);
+    void set_external_node(const Node &n);
+    void set_external(const Node &n);
 
     //-------------------------------------------------------------------------
     void set_external_data_using_schema(const Schema &schema,
@@ -3714,9 +3714,9 @@ private:
                                  Schema *schema,
                                  void   *data);
 
-    static void      mirror_node(Node   *node,
+    static void      mirror_node(Node *node,
                                  Schema *schema,
-                                 Node   *src);
+                                 const Node *src);
 
 //-----------------------------------------------------------------------------
 //

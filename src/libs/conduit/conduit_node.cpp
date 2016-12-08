@@ -3587,7 +3587,7 @@ Node::set_path(const std::string &path,
 
 //---------------------------------------------------------------------------//
 void
-Node::set_external_node(Node &node)
+Node::set_external_node(const Node &node)
 {
     reset();
     m_schema->set(node.schema());
@@ -3596,7 +3596,7 @@ Node::set_external_node(Node &node)
 
 //---------------------------------------------------------------------------//
 void
-Node::set_external(Node &node)
+Node::set_external(const Node &node)
 {
     set_external_node(node);
 }
@@ -13124,7 +13124,7 @@ Node::walk_schema(Node   *node,
 void 
 Node::mirror_node(Node   *node,
                   Schema *schema,
-                  Node   *src)
+                  const Node *src)
 {
     // we can have an object, list, or leaf
     node->set_data_ptr(src->m_data);
@@ -13137,7 +13137,7 @@ Node::mirror_node(Node   *node,
             std::string curr_name = schema->object_order()[i];
             Schema *curr_schema   = schema->fetch_ptr(curr_name);
             Node *curr_node = new Node();
-            Node *curr_src = src->child_ptr(i);
+            const Node *curr_src = src->child_ptr(i);
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
             mirror_node(curr_node,curr_schema,curr_src);
@@ -13151,7 +13151,7 @@ Node::mirror_node(Node   *node,
         {
             Schema *curr_schema = schema->child_ptr(i);
             Node *curr_node = new Node();
-            Node *curr_src = src->child_ptr(i);
+            const Node *curr_src = src->child_ptr(i);
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
             mirror_node(curr_node,curr_schema,curr_src);
