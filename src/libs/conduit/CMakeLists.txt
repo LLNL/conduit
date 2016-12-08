@@ -121,15 +121,60 @@ set(conduit_c_sources
     )
 
 
+
+#################################
+# Add fortran interface lib
+# if fortran support was selected
+#################################
+if(FORTRAN_FOUND)
+    # Create include file with bitwidth style mappings for fortran
+    configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/fortran/conduit_fortran_bitwidth_style_types.inc.in"
+                    "conduit_fortran_bitwidth_style_types.inc")
+
+    # Allow fortran compiler to include the Bitwidth_Style_Types.inc file
+    # Note: Unlike .h files, the .inc file will not be needed by client code
+    include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
+    #
+    # Specify fortran sources
+    #
+    set(conduit_fortran_sources
+        fortran/conduit_fortran.F)
+
+    #  add oo interface if the fortran compiler supports it
+    if(ENABLE_FORTRAN_OBJ_INTERFACE)
+        list(APPEND conduit_fortran_sources fortran/conduit_fortran_obj.f)
+    endif()
+
+endif()
+
 #
 # Setup the conduit lib
 #
 add_compiled_library(NAME   conduit
                      EXPORT conduit
                      HEADERS ${conduit_headers} ${conduit_c_headers}
-                     SOURCES ${conduit_sources} ${conduit_c_sources}
+                     SOURCES ${conduit_sources} ${conduit_c_sources} ${conduit_fortran_sources}
                              $<TARGET_OBJECTS:conduit_b64>
                      HEADERS_DEST_DIR include/conduit)
+
+
+#################################
+# Fortran related target options
+#################################
+if(FORTRAN_FOUND)
+    set_target_properties(conduit PROPERTIES Fortran_FORMAT "FREE")
+
+    if("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
+         # disable c <-> fortran binding warnings for gfortran 
+         message(STATUS "Disabling c <-> fortran binding warnings for "
+                         "conduit "
+                         "(Adding Fortran compiler flag: -Wno-c-binding-type)")
+
+        set_source_files_properties(${conduit_fortran_sources}
+                                    PROPERTIES COMPILE_FLAGS "-Wno-c-binding-type")
+    endif()
+endif()
 
 ################################
 # Add python wrappers if python
@@ -139,10 +184,23 @@ if(PYTHON_FOUND)
     add_subdirectory(python)
 endif()
 
-#################################
-# Add fortran interface lib
-# if fortran support was selected
-#################################
+
+####################################################################
+# Special install targets for conduit fortran modules 
+####################################################################
 if(FORTRAN_FOUND)
-    add_subdirectory(fortran)
+    set(conduit_fortran_modules
+        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit.mod)
+
+    if(ENABLE_FORTRAN_OBJ_INTERFACE)
+        list(APPEND conduit_fortran_modules
+                    ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_obj.mod)
+    endif()
+
+    # Setup install to copy the fortran modules 
+    install(FILES 
+            ${conduit_fortran_modules}
+            DESTINATION include/conduit)
 endif()
+
+

@@ -113,6 +113,15 @@ if(SILO_FOUND)
     list(APPEND conduit_relay_sources conduit_relay_silo.cpp)
 endif()
 
+################################
+# Add fortran interface if 
+# fortran support was selected
+################################
+#
+# Specify fortran sources
+#
+set(conduit_relay_fortran_sources
+    fortran/conduit_relay_fortran.f)
 
 #
 # setup conduit relay lib
@@ -120,9 +129,15 @@ endif()
 add_compiled_library(NAME conduit_relay
                      EXPORT conduit
                      HEADERS ${conduit_relay_headers} ${conduit_relay_c_headers}
-                     SOURCES ${conduit_relay_sources} ${conduit_relay_c_sources}
+                     SOURCES ${conduit_relay_sources} ${conduit_relay_c_sources} ${conduit_relay_fortran_sources}
                              $<TARGET_OBJECTS:conduit_civetweb>
                      HEADERS_DEST_DIR include/conduit)
+
+if(FORTRAN_FOUND)
+    set_target_properties(conduit_relay
+                          PROPERTIES Fortran_FORMAT "FREE")
+endif()
+
 
 #
 # Link with conduit
@@ -184,12 +199,18 @@ if(PYTHON_FOUND)
     add_subdirectory(python)
 endif()
 
-################################
-# Add fortran interface if 
-# fortran support was selected
-################################
+
+###############################################################################
+# Special install targets for conduit fortran modules 
+###############################################################################
 if(FORTRAN_FOUND)
-    add_subdirectory(fortran)
+    set(conduit_relay_fortran_modules
+        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_relay.mod)
+
+    # Setup install to copy the fortran modules 
+    install(FILES 
+            ${conduit_relay_fortran_modules}
+            DESTINATION include/conduit)
 endif()
 
 
