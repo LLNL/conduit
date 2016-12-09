@@ -57,11 +57,11 @@ env:
     # we want to test both static and shared
     # and python 2 + 3
     - BUILD_SHARED_LIBS=ON
-      PYTHON_VERSION=2.7
+      MINICONDA=Miniconda2
     - BUILD_SHARED_LIBS=ON
-      PYTHON_VERSION=3
+      MINICONDA=Miniconda3
     - BUILD_SHARED_LIBS=OFF
-      PYTHON_VERSION=2.7
+      MINICONDA=Miniconda2
 addons:
   apt:
     sources:
@@ -76,14 +76,14 @@ before_install:
   - mkdir ${TRAVIS_HOME}/cmake/
   - export PATH=${TRAVIS_HOME}/cmake/bin:$PATH
   # prep to use miniconda to get python and numpy
-  - wget --no-check-certificate http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - wget --no-check-certificate http://repo.continuum.io/miniconda/${MINICONDA}-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
   - ./miniconda.sh -b -p ${TRAVIS_HOME}/miniconda
   - export PATH=${TRAVIS_HOME}/miniconda/bin:$PATH
   - conda update --yes conda
 install:
   - sh cmake-3.3.0-Linux-x86_64.sh --skip-license --prefix=${TRAVIS_HOME}/cmake/
-  - conda install --yes python=${PYTHON_VERSION} numpy
+  - conda install --yes numpy
   - pip install cpp-coveralls
 script:
   - cmake --version
