@@ -41,16 +41,38 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
+"""
+ file: t_python_blueprint_mcarray.py
+ description: Simple unit test for the conduit blueprint mcarray python module.
 
-####################################
-# Add Python Module Tests
-####################################
-set(PYTHON_MODULE_TESTS t_python_blueprint_smoke
-                        t_python_blueprint_mcarray
-                        t_python_blueprint_mesh)
+"""
+
+import sys
+import unittest
+
+import conduit.blueprint as blueprint
+
+import conduit.blueprint.mesh
+import conduit.blueprint.mesh.examples
+
+from conduit import Node
+
+class Test_Blueprint_Mesh(unittest.TestCase):
+        
+    def test_braid_and_verify(self):
+        n = Node()
+        info = Node()
+        self.assertFalse(blueprint.verify("mesh",n,info))
+        self.assertFalse(blueprint.mesh.verify(n,info))
+        blueprint.mesh.examples.braid("hexs",2,2,2,n);
+        self.assertTrue(blueprint.mesh.verify(n,info))
+        n_idx = Node()
+        blueprint.mesh.generate_index(n,"",1,n_idx)
+        self.assertTrue(blueprint.verify("mesh/index",n_idx,info))
+        self.assertTrue(blueprint.mesh.verify(protocol="index",node=n_idx,info=info))
 
 
-foreach(TEST ${PYTHON_MODULE_TESTS})
-    add_python_test(${TEST})
-endforeach()
+if __name__ == '__main__':
+    unittest.main()
+
 

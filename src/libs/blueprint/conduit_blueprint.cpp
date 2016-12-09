@@ -110,22 +110,22 @@ verify(const std::string &protocol,
 
     if(!p_next.empty())
     {
-        if(protocol == "mesh")
+        if(p_curr == "mesh")
         {
             res = mesh::verify(p_next,n,info);
         }
-        else if(protocol == "mcarray")
+        else if(p_curr == "mcarray")
         {
             res = mcarray::verify(p_next,n,info);
         }
     }
     else
     {
-        if(protocol == "mesh")
+        if(p_curr == "mesh")
         {
             res = mesh::verify(n,info);
         }
-        else if(protocol == "mcarray")
+        else if(p_curr == "mcarray")
         {
             res = mcarray::verify(n,info);
         }

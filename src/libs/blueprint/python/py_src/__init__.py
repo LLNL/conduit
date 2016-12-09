@@ -48,6 +48,9 @@
 ###############################################################################
 from .conduit_blueprint_python import *
 
+from . import mcarray
+from . import mesh
+
 
 
 

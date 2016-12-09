@@ -42,6 +42,7 @@
 #
 ###############################################################################
 sudo: false
+
 language: cpp
 compiler:
   - gcc
@@ -55,8 +56,16 @@ env:
     - TRAVIS_HOME=`pwd`
   matrix:
     # we want to test both static and shared
+    # and python 2 + 3
     - BUILD_SHARED_LIBS=ON
+      MINICONDA=Miniconda2
+      ENABLE_COVERAGE=ON
+    - BUILD_SHARED_LIBS=ON
+      MINICONDA=Miniconda3
+      ENABLE_COVERAGE=OFF
     - BUILD_SHARED_LIBS=OFF
+      MINICONDA=Miniconda2
+      ENABLE_COVERAGE=OFF
 addons:
   apt:
     sources:
@@ -71,14 +80,14 @@ before_install:
   - mkdir ${TRAVIS_HOME}/cmake/
   - export PATH=${TRAVIS_HOME}/cmake/bin:$PATH
   # prep to use miniconda to get python and numpy
-  - wget --no-check-certificate http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - wget --no-check-certificate http://repo.continuum.io/miniconda/${MINICONDA}-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
   - ./miniconda.sh -b -p ${TRAVIS_HOME}/miniconda
   - export PATH=${TRAVIS_HOME}/miniconda/bin:$PATH
   - conda update --yes conda
 install:
   - sh cmake-3.3.0-Linux-x86_64.sh --skip-license --prefix=${TRAVIS_HOME}/cmake/
-  - conda install --yes python=2.7 numpy
+  - conda install --yes numpy
   - pip install cpp-coveralls
 script:
   - cmake --version
@@ -101,7 +110,7 @@ script:
   # enable python support
   - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=ON"
   # enable coverage (only when using shared libs case)
-  - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_COVERAGE=${BUILD_SHARED_LIBS}"
+  - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_COVERAGE=${ENABLE_COVERAGE}"
   # configure with cmake
   - cmake  ${CMAKE_OPTS} ../src
   # build, test, and install
@@ -122,7 +131,7 @@ script:
   - env LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/travis-debug-install/lib/ ./example
 
 after_success:
-  - test ${BUILD_SHARED_LIBS} = "ON" && coveralls --gcov /usr/bin/gcov-4.8 --include src/libs/conduit --include src/libs/blueprint --gcov-options '\-lp' --root $TRAVIS_BUILD_DIR --build-root $TRAVIS_BUILD_DIR/travis-debug-build;
+  - test ${ENABLE_COVERAGE} = "ON" && coveralls --gcov /usr/bin/gcov-4.8 --include src/libs/conduit --include src/libs/blueprint --gcov-options '\-lp' --root $TRAVIS_BUILD_DIR --build-root $TRAVIS_BUILD_DIR/travis-debug-build;
 notifications:
   email:
     recipients:

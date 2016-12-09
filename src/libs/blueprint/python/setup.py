@@ -53,7 +53,11 @@ class SkipEggInfo(install_egg_info):
 setup (name = 'conduit blueprint',
        description = 'conduit blueprint',
        package_dir = {'conduit.blueprint':'py_src'},
-       packages=['conduit.blueprint'],
+       packages=['conduit.blueprint',
+                 'conduit.blueprint.mcarray',
+                 'conduit.blueprint.mcarray.examples',
+                 'conduit.blueprint.mesh',
+                 'conduit.blueprint.mesh.examples'],
        cmdclass={'install_egg_info': SkipEggInfo})
 
 
