@@ -55,11 +55,15 @@ env:
     - TRAVIS_HOME=`pwd`
   matrix:
     # we want to test both static and shared
-    - BUILD_SHARED_LIBS=ON
-    - BUILD_SHARED_LIBS=OFF
     # and python 2 + 3
-    - PYTHON_VERSION=2.7
-    - PYTHON_VERSION=3.5
+    - BUILD_SHARED_LIBS=ON
+      PYTHON_VERSION=2.7
+    - BUILD_SHARED_LIBS=ON
+      PYTHON_VERSION=3.5
+    - BUILD_SHARED_LIBS=OFF
+      PYTHON_VERSION=2.7
+    - BUILD_SHARED_LIBS=OFF
+      PYTHON_VERSION=3.5
 addons:
   apt:
     sources:
