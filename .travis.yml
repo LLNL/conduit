@@ -57,6 +57,9 @@ env:
     # we want to test both static and shared
     - BUILD_SHARED_LIBS=ON
     - BUILD_SHARED_LIBS=OFF
+    # and python 2 + 3
+    - PYTHON_VERSION=2.7
+    - PYTHON_VERSION=3.5
 addons:
   apt:
     sources:
@@ -78,7 +81,7 @@ before_install:
   - conda update --yes conda
 install:
   - sh cmake-3.3.0-Linux-x86_64.sh --skip-license --prefix=${TRAVIS_HOME}/cmake/
-  - conda install --yes python=2.7 numpy
+  - conda install --yes python=${PYTHON_VERSION} numpy
   - pip install cpp-coveralls
 script:
   - cmake --version
@@ -122,7 +125,7 @@ script:
   - env LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/travis-debug-install/lib/ ./example
 
 after_success:
-  - test ${BUILD_SHARED_LIBS} = "ON" && coveralls --gcov /usr/bin/gcov-4.8 --include src/libs/conduit --include src/libs/blueprint --gcov-options '\-lp' --root $TRAVIS_BUILD_DIR --build-root $TRAVIS_BUILD_DIR/travis-debug-build;
+  - test ${BUILD_SHARED_LIBS} = "ON" && test ${PYTHON_VERSION} = "2.7" &&  coveralls --gcov /usr/bin/gcov-4.8 --include src/libs/conduit --include src/libs/blueprint --gcov-options '\-lp' --root $TRAVIS_BUILD_DIR --build-root $TRAVIS_BUILD_DIR/travis-debug-build;
 notifications:
   email:
     recipients:
