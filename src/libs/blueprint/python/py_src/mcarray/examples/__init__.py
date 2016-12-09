@@ -42,15 +42,12 @@
 # 
 ###############################################################################
 
-####################################
-# Add Python Module Tests
-####################################
-set(PYTHON_MODULE_TESTS t_python_blueprint_smoke
-                        t_python_blueprint_mcarray
-                        t_python_blueprint_mesh)
+###############################################################################
+# file: __init__.py
+# Purpose: Main init for the conduit blueprint mcarray examples module.
+###############################################################################
+from .conduit_blueprint_mcarray_examples_python import *
 
 
-foreach(TEST ${PYTHON_MODULE_TESTS})
-    add_python_test(${TEST})
-endforeach()
+
 

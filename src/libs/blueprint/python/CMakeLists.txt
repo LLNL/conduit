@@ -57,3 +57,65 @@ PYTHON_ADD_HYBRID_MODULE(conduit_blueprint_python
 # link with the proper libs (beyond python)
 target_link_libraries(conduit_blueprint_python conduit conduit_blueprint)
 
+#############################################################
+# blueprint.mcarray
+#############################################################
+
+# add mcarray submodule
+PYTHON_ADD_COMPILED_MODULE(conduit_blueprint_mcarray_python
+                           # dest_dir 
+                           python-modules
+                           # python module dir
+                           conduit/blueprint/mcarray
+                           # c srcs
+                           conduit_blueprint_mcarray_python.cpp)
+
+
+# link with the proper libs (beyond python)
+target_link_libraries(conduit_blueprint_mcarray_python conduit conduit_blueprint)
+
+# add mcarray examples submodule
+PYTHON_ADD_COMPILED_MODULE(conduit_blueprint_mcarray_examples_python
+                           # dest_dir 
+                           python-modules
+                           # python module dir
+                           conduit/blueprint/mcarray/examples
+                           # c srcs
+                           conduit_blueprint_mcarray_examples_python.cpp)
+
+
+# link with the proper libs (beyond python)
+target_link_libraries(conduit_blueprint_mcarray_examples_python conduit conduit_blueprint)
+
+#############################################################
+# blueprint.mesh
+#############################################################
+
+# add mesh submodule
+PYTHON_ADD_COMPILED_MODULE(conduit_blueprint_mesh_python
+                           # dest_dir 
+                           python-modules
+                           # python module dir
+                           conduit/blueprint/mesh
+                           # c srcs
+                           conduit_blueprint_mesh_python.cpp)
+
+
+# link with the proper libs (beyond python)
+target_link_libraries(conduit_blueprint_mesh_python conduit conduit_blueprint)
+
+
+# add mesh examples submodule
+PYTHON_ADD_COMPILED_MODULE(conduit_blueprint_mesh_examples_python
+                           # dest_dir 
+                           python-modules
+                           # python module dir
+                           conduit/blueprint/mesh/examples
+                           # c srcs
+                           conduit_blueprint_mesh_examples_python.cpp)
+
+
+# link with the proper libs (beyond python)
+target_link_libraries(conduit_blueprint_mesh_examples_python conduit conduit_blueprint)
+
+

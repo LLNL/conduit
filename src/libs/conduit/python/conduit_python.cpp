@@ -357,7 +357,7 @@ PyConduit_DataType_Set_Parse_Args(PyConduit_DataType* self,
         }
     }
 
-    std::cout << "parse_case = " << parse_case <<  std::endl;
+    //std::cout << "parse_case = " << parse_case <<  std::endl;
     /// if we aren't parsing any args, simply return
     if(parse_case == -1)
         return true;

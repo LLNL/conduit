@@ -65,10 +65,12 @@
 //---------------------------------------------------------------------------//
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
+
 #include "conduit_blueprint_python_exports.h"
 
 // conduit python module capi header
 #include "conduit_python.hpp"
+
 
 using namespace conduit;
 
@@ -78,6 +80,7 @@ using namespace conduit;
 // Begin Functions to help with Python 2/3 Compatibility.
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+
 
 #if defined(IS_PY3K)
 
@@ -156,51 +159,34 @@ PyInt_AsLong(PyObject *o)
 
 #endif
 
-
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // End Functions to help with Python 2/3 Compatibility.
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-
 //---------------------------------------------------------------------------//
-// conduit::blueprint::about
-//---------------------------------------------------------------------------//
-static PyObject *
-PyBlueprint_about()
-{
-    //create and return a node with the result of about
-    PyObject *py_node_res = PyConduit_Node_python_create();
-    Node *node = PyConduit_Node_Get_Node_Ptr(py_node_res);
-    conduit::blueprint::about(*node);
-    return (PyObject*)py_node_res;
-}
-
-//---------------------------------------------------------------------------//
-// conduit::blueprint::mesh::verify
+// conduit::blueprint::mesh::examples::braid
 //---------------------------------------------------------------------------//
 static PyObject * 
-PyBlueprint_verify(PyObject *, //self
-                   PyObject *args,
-                   PyObject *kwargs)
+PyBlueprint_mcarray_examples_xyz(PyObject *, //self
+                                 PyObject *args,
+                                 PyObject *kwargs)
 {
-    const char *protocol = NULL;
+    const char *mcarray_type = NULL;
+    Py_ssize_t  npts = 0;
     PyObject   *py_node  = NULL;
-    PyObject   *py_info  = NULL;
-
-    static const char *kwlist[] = {"protocol",
-                                   "node",
-                                   "info",
+    
+    static const char *kwlist[] = {"mcarray_type",
+                                   "npts",
+                                   "dest",
                                    NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
-                                     "sOO",
+                                     "snO",
                                      const_cast<char**>(kwlist),
-                                     &protocol,
-                                     &py_node,
-                                     &py_info))
+                                     &mcarray_type, &npts, &py_node))
     {
         return (NULL);
     }
@@ -208,52 +194,38 @@ PyBlueprint_verify(PyObject *, //self
     if(!PyConduit_Node_Check(py_node))
     {
         PyErr_SetString(PyExc_TypeError,
-                        "'node' argument must be a "
+                        "'dest' argument must be a "
                         "conduit.Node instance");
         return NULL;
     }
-
-    
-    if(!PyConduit_Node_Check(py_info))
-    {
-        PyErr_SetString(PyExc_TypeError,
-                        "'info' argument must be a "
-                        "conduit.Node instance");
-        return NULL;
-    }
-    
     
     Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
-    Node &info = *PyConduit_Node_Get_Node_Ptr(py_info);
     
+    blueprint::mcarray::examples::xyz(std::string(mcarray_type),
+                                      npts,
+                                      node);
 
-    if(blueprint::verify(std::string(protocol), node,info))
-        Py_RETURN_TRUE;
-    else
-        Py_RETURN_FALSE;
+    Py_RETURN_NONE;
 }
+
+
 
 
 //---------------------------------------------------------------------------//
 // Python Module Method Defs
 //---------------------------------------------------------------------------//
-static PyMethodDef blueprint_python_funcs[] =
+static PyMethodDef blueprint_mcarray_examples_python_funcs[] =
 {
     //-----------------------------------------------------------------------//
-    {"about",
-     (PyCFunction)PyBlueprint_about,
-      METH_NOARGS,
-      NULL},
-    {"verify",
-     (PyCFunction)PyBlueprint_verify,
+    {"xyz",
+     (PyCFunction)PyBlueprint_mcarray_examples_xyz,
       METH_VARARGS | METH_KEYWORDS,
       NULL},
     //-----------------------------------------------------------------------//
-    // end realy methods table
+    // end methods table
     //-----------------------------------------------------------------------//
     {NULL, NULL, METH_VARARGS, NULL}
 };
-
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
@@ -280,7 +252,7 @@ static struct module_state _state;
 #if defined(IS_PY3K)
 //---------------------------------------------------------------------------//
 static int
-blueprint_python_traverse(PyObject *m, visitproc visit, void *arg)
+blueprint_mcarray_examples_python_traverse(PyObject *m, visitproc visit, void *arg)
 {
     Py_VISIT(GETSTATE(m)->error);
     return 0;
@@ -288,25 +260,27 @@ blueprint_python_traverse(PyObject *m, visitproc visit, void *arg)
 
 //---------------------------------------------------------------------------//
 static int 
-blueprint_python_clear(PyObject *m)
+blueprint_mcarray_examples_python_clear(PyObject *m)
 {
     Py_CLEAR(GETSTATE(m)->error);
     return 0;
 }
 
 //---------------------------------------------------------------------------//
-static struct PyModuleDef blueprint_python_module_def = 
+static struct PyModuleDef blueprint_mcarray_examples_python_module_def = 
 {
         PyModuleDef_HEAD_INIT,
-        "blueprint_python",
+        "blueprint_mcarray_examples_python",
         NULL,
         sizeof(struct module_state),
-        blueprint_python_funcs,
+        blueprint_mcarray_examples_python_funcs,
         NULL,
-        blueprint_python_traverse,
-        blueprint_python_clear,
+        blueprint_mcarray_examples_python_traverse,
+        blueprint_mcarray_examples_python_clear,
         NULL
 };
+
+
 #endif
 
 //---------------------------------------------------------------------------//
@@ -327,9 +301,9 @@ static struct PyModuleDef blueprint_python_module_def =
 extern "C" 
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
-PyObject *CONDUIT_BLUEPRINT_PYTHON_API PyInit_conduit_blueprint_python(void)
+PyObject *CONDUIT_BLUEPRINT_PYTHON_API PyInit_conduit_blueprint_mcarray_examples_python(void)
 #else
-void CONDUIT_BLUEPRINT_PYTHON_API initconduit_blueprint_python(void)
+void CONDUIT_BLUEPRINT_PYTHON_API initconduit_blueprint_mcarray_examples_python(void)
 #endif
 //---------------------------------------------------------------------------//
 {    
@@ -338,25 +312,26 @@ void CONDUIT_BLUEPRINT_PYTHON_API initconduit_blueprint_python(void)
     //-----------------------------------------------------------------------//
 
 #if defined(IS_PY3K)
-    PyObject *blueprint_module = PyModule_Create(&blueprint_python_module_def);
+    PyObject *py_module = PyModule_Create(&blueprint_mcarray_examples_python_module_def);
 #else
-    PyObject *blueprint_module = Py_InitModule((char*)"conduit_blueprint_python",
-                                             blueprint_python_funcs);
+    PyObject *py_module = Py_InitModule((char*)"conduit_blueprint_mcarray_examples_python",
+                                               blueprint_mcarray_examples_python_funcs);
 #endif
 
-    if(blueprint_module == NULL)
+
+    if(py_module == NULL)
     {
         PY_MODULE_INIT_RETURN_ERROR;
     }
 
-    struct module_state *st = GETSTATE(blueprint_module);
+    struct module_state *st = GETSTATE(py_module);
     
-    st->error = PyErr_NewException((char*)"conduit_blueprint_python.Error",
+    st->error = PyErr_NewException((char*)"blueprint_mcarray_examples_python.Error",
                                    NULL,
                                    NULL);
     if (st->error == NULL)
     {
-        Py_DECREF(blueprint_module);
+        Py_DECREF(py_module);
         PY_MODULE_INIT_RETURN_ERROR;
     }
 
@@ -368,7 +343,7 @@ void CONDUIT_BLUEPRINT_PYTHON_API initconduit_blueprint_python(void)
 
 
 #if defined(IS_PY3K)
-    return blueprint_module;
+    return py_module;
 #endif
 
 }
