@@ -55,7 +55,8 @@ env:
     # we need to know the root dir for our 3rd party lib installs
     - TRAVIS_HOME=`pwd`
   matrix:
-    # we want to test both static and shared and python 2 + 3
+    # we want to test both static and shared
+    # and python 2 + 3
     - BUILD_SHARED_LIBS=ON
       MINICONDA=Miniconda2
       ENABLE_COVERAGE=ON
@@ -87,9 +88,7 @@ before_install:
 install:
   - sh cmake-3.3.0-Linux-x86_64.sh --skip-license --prefix=${TRAVIS_HOME}/cmake/
   - conda install --yes numpy
-  - if [ "${ENABLE_COVERAGE}" == "ON" ]; then
-        pip install cpp-coveralls
-    fi
+  - test ${ENABLE_COVERAGE} = "ON" && pip install cpp-coveralls
 script:
   - cmake --version
   - cd $TRAVIS_BUILD_DIR
@@ -132,9 +131,7 @@ script:
   - env LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/travis-debug-install/lib/ ./example
 
 after_success:
-  - if [ "${ENABLE_COVERAGE}" == "ON" ]; then
-        coveralls --gcov /usr/bin/gcov-4.8 --include src/libs/conduit --include src/libs/blueprint --gcov-options '\-lp' --root $TRAVIS_BUILD_DIR --build-root $TRAVIS_BUILD_DIR/travis-debug-build;
-    fi
+  - test ${ENABLE_COVERAGE} = "ON" && coveralls --gcov /usr/bin/gcov-4.8 --include src/libs/conduit --include src/libs/blueprint --gcov-options '\-lp' --root $TRAVIS_BUILD_DIR --build-root $TRAVIS_BUILD_DIR/travis-debug-build;
 notifications:
   email:
     recipients:
