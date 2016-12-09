@@ -88,7 +88,7 @@ before_install:
 install:
   - sh cmake-3.3.0-Linux-x86_64.sh --skip-license --prefix=${TRAVIS_HOME}/cmake/
   - conda install --yes numpy
-  - test ${ENABLE_COVERAGE} = "ON" && pip install cpp-coveralls
+  - pip install cpp-coveralls
 script:
   - cmake --version
   - cd $TRAVIS_BUILD_DIR
