@@ -43,7 +43,18 @@
 # 
 ###############################################################################
 
-# exec docker run to create a container from our image
-echo docker run -t -i conduit-ubuntu:master
+# remove old source tarball if it exists
+echo "rm -f conduit.docker.src.tar.gz"
+rm -f conduit.docker.src.tar.gz
 
-docker run -p 9000:9000 -t -i conduit-ubuntu:master
+# get current copy of the conduit source
+echo "cd ../../../../ && python package.py src/examples/docker/ubuntu/conduit.docker.src.tar.gz"
+cd ../../../../ && python package.py src/examples/docker/ubuntu/conduit.docker.src.tar.gz
+
+# change back to the dir with our Dockerfile
+echo "cd src/examples/docker/ubuntu/"
+cd src/examples/docker/ubuntu/
+
+# exec docker build to create image
+echo "docker build -t conduit-ubuntu:current ."
+docker build -t conduit-ubuntu:current .
