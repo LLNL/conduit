@@ -62,11 +62,15 @@ RUN apt-get update && apt-get install -y \
 #
 # to resolve this, either install the proper certs into the image, or use 
 # the following commands to  disable ssl for git and curl (used by spack):
-#RUN git config --global http.sslVerify false
-#RUN echo insecure >> ~/.curlrc
+RUN git config --global http.sslVerify false
+RUN echo insecure >> ~/.curlrc
 
-# clone conduit master
-RUN git clone --depth 1 https://github.com/LLNL/conduit.git
+# untar the current source  (created as part of example_build.sh)
+COPY conduit.docker.src.tar.gz /
+RUN tar -xzf conduit.docker.src.tar.gz
+
+# if you would like to clone conduit master directly, you can use:
+#RUN git clone --depth 1 https://github.com/LLNL/conduit.git
 
 # bootstrap third party libs using spack and uberenv
 #  for this example we use mpich for MPI and only build python2 (not python3)

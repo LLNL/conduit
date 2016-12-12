@@ -235,8 +235,10 @@ def main():
     if "darwin" in platform.system().lower():
         dep_tgt = platform.mac_ver()[0]
         dep_tgt = dep_tgt[:dep_tgt.rfind(".")]
-        print "[setting MACOSX_DEPLOYMENT_TARGET to %s]" % dep_tgt
         env["MACOSX_DEPLOYMENT_TARGET"] = dep_tgt
+        env["SDKROOT"] = "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX" + str(dep_tgt) + ".sdk"
+        print "[setting MACOSX_DEPLOYMENT_TARGET to %s]" % dep_tgt
+        print "[setting SDKROOT to %s]" % env[ "SDKROOT" ]
     # setup default spec
     if opts["spec"] is None:
         if "darwin" in platform.system().lower():
