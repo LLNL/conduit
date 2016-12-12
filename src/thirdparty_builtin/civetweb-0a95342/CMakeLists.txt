@@ -63,6 +63,8 @@ set(civetweb_sources
 
 add_definitions(-DUSE_WEBSOCKET)
 
+
+
 ############################################
 # disable ssl support for the static case
 ############################################
@@ -80,3 +82,12 @@ add_compiled_library(NAME   conduit_civetweb
                      OBJECT
                      HEADERS ${civetweb_headers}
                      SOURCES ${civetweb_sources})
+
+#  avoid unknown pragma warnings when compiling civetweb with clang
+if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+    add_target_compile_flags(TARGET conduit_civetweb
+                             FLAGS -Wno-unknown-pragmas)
+endif()
+
+
+
