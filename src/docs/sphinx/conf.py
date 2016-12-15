@@ -314,13 +314,14 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
 
-# try to add add breathe support
-try:
-    import breathe
-    breathe_projects = { "conduit ": "@CMAKE_CURRENT_BINARY_DIR@/../doxygen/xml/" }
-    breathe_default_project = "conduit"
-except:
-    pass
+# disable breath support for now
+# add breathe support
+#try:
+#    import breathe
+#    breathe_projects = { "conduit ": "@CMAKE_CURRENT_BINARY_DIR@/../doxygen/xml/" }
+#    breathe_default_project = "conduit"
+#except:
+#    pass
 
 # try to use the read the docs theme
 try:
