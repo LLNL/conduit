@@ -49,6 +49,7 @@ Node Update Methods
 The *Node* class provides three **update** methods which allow you to easily copy data or  the description of data from a source node. 
 
 - **Node::update(Node &source)**: 
+
  This method behaves similar to a python dictionary update. Entires from the source Node are copied into the calling Node, here are more concrete details:
 
  - **If the source describes an Object**: 
@@ -64,9 +65,11 @@ The *Node* class provides three **update** methods which allow you to easily cop
    - Update works exactly like a **set** (not true yet).
 
 - **Node::update_compatible(Node &source)**: 
+
  This method copies data from the children in the source Node that are compatible with children in the calling node. No changes are made where children are incompatible. 
 
 - **Node::update_external(Node &source)**: 
+
  This method creates children in the calling Node that externally describe the children in the source node. It differs from **Node::set_external(Node &source)** in that **set_external()** will clear the calling Node so it exactly match an external description of the source Node, whereas **update_external()** will only change the children in the calling Node that correspond to children in the source Node.
 
 

@@ -54,7 +54,7 @@ The *Node* class provides two ways to hold data, the data is either **owned** or
 *set* vs *set_external* 
 --------------------------------
 
-The **Node::set** methods support creating **owned** data and coping data values in both the **owned** and **externally described** cases. The **Node::set_external** methods allow you to create **externally described** data:
+The **Node::set** methods support creating **owned** data and copying data values in both the **owned** and **externally described** cases. The **Node::set_external** methods allow you to create **externally described** data:
 
 - **set(...)**: Makes a copy of the data passed into the *Node*. This will trigger an allocation if the current data type of the *Node* is incompatible with what was passed. The *Node* assignment operators use their respective **set** variants, so they follow the same copy semantics. 
 

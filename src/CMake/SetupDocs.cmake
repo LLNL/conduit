@@ -114,21 +114,35 @@ macro(add_sphinx_target sphinx_target_name )
     # HTML output directory
     set(SPHINX_HTML_DIR "${CMAKE_CURRENT_BINARY_DIR}/html")
 
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/conf.py.in"
-                   "${SPHINX_BUILD_DIR}/conf.py"
-                   @ONLY)
-
-    add_custom_target(${sphinx_target_name}
-            ${SPHINX_EXECUTABLE}
-            -q -b html
-            #-W disable warn on error for now, while our sphinx env is still in flux
-            -c "${SPHINX_BUILD_DIR}"
-            -d "${SPHINX_CACHE_DIR}"
-            "${CMAKE_CURRENT_SOURCE_DIR}"
-            "${SPHINX_HTML_DIR}"
-            COMMENT "Building HTML documentation with Sphinx"
-            DEPENDS ${deps})
+    # support both a cmake config-d sphinx input file (config.py.in)
+    # and direct use of a config.py file.
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/conf.py.in")
         
+        configure_file("${CMAKE_CURRENT_SOURCE_DIR}/conf.py.in"
+                       "${SPHINX_BUILD_DIR}/conf.py"
+                       @ONLY)
+
+        add_custom_target(${sphinx_target_name}
+                          ${SPHINX_EXECUTABLE}
+                          -q -b html
+                          #-W disable warn on error for now, while our sphinx env is still in flux
+                          -c "${SPHINX_BUILD_DIR}"
+                          -d "${SPHINX_CACHE_DIR}"
+                          "${CMAKE_CURRENT_SOURCE_DIR}"
+                          "${SPHINX_HTML_DIR}"
+                          COMMENT "Building HTML documentation with Sphinx"
+                          DEPENDS ${deps})
+    else()
+        add_custom_target(${sphinx_target_name}
+                          ${SPHINX_EXECUTABLE}
+                          -q -b html
+                          #-W disable warn on error for now, while our sphinx env is still in flux
+                          -d "${SPHINX_CACHE_DIR}"
+                          "${CMAKE_CURRENT_SOURCE_DIR}"
+                          "${SPHINX_HTML_DIR}"
+                          COMMENT "Building HTML documentation with Sphinx"
+                          DEPENDS ${deps})
+    endif()
     # hook our new target into the docs dependency chain
     add_dependencies(sphinx_docs ${sphinx_target_name})
 
