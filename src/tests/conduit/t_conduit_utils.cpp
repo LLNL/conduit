@@ -267,7 +267,7 @@ TEST(conduit_utils, remove_file)
 
     EXPECT_TRUE(utils::is_file("t_remove_file.txt"));
     
-    utils::remove_file("t_remove_file.txt");
+    utils::remove_file_path("t_remove_file.txt");
     
     EXPECT_FALSE(utils::is_file("t_remove_file.txt"));
 }
@@ -332,9 +332,25 @@ TEST(conduit_utils, base64_enc_dec)
     EXPECT_EQ(n_src["c"].as_int32(), n_res["c"].as_int32());
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, dir_create_and_remove_tests)
+{
+    std::string test_dir = utils::join_file_path(CONDUIT_T_BIN_DIR,
+                                                 "tout_dir_create_test");
+    
+    EXPECT_FALSE(utils::is_directory(test_dir));
+    
+    utils::create_directory(test_dir);
+
+    EXPECT_TRUE(utils::is_directory(test_dir));
+
+    utils::remove_file_path(test_dir);
+
+    EXPECT_FALSE(utils::is_directory(test_dir));
+}
 
 //-----------------------------------------------------------------------------
-TEST(conduit_utils, file_path_tests)
+TEST(conduit_utils, file_path_split_tests)
 {
 
     std::string sep = utils::file_path_separator();

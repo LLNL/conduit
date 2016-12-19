@@ -305,11 +305,20 @@ namespace utils
      bool CONDUIT_API is_directory(const std::string &path);
 
 //-----------------------------------------------------------------------------
-     bool CONDUIT_API remove_file(const std::string &path);
+/// Creates a new directory.
+/// 
+/// Does not recursively create parent directories if they do not already 
+/// exist.
+//-----------------------------------------------------------------------------
+     bool CONDUIT_API create_directory(const std::string &path);
+
+//-----------------------------------------------------------------------------
+/// Removes a file, or an empty directory.
+//-----------------------------------------------------------------------------
+     bool CONDUIT_API remove_file_path(const std::string &path);
 
 //-----------------------------------------------------------------------------
      int  CONDUIT_API system_execute(const std::string &cmd);
-
 
 
 //-----------------------------------------------------------------------------

@@ -57,6 +57,7 @@
 // for sleep funcs
 #if defined(CONDUIT_PLATFORM_WINDOWS)
 #include <Windows.h>
+#include <direct.h>
 #else
 #include <time.h>
 #endif
@@ -363,7 +364,20 @@ is_directory(const std::string &path)
 
 //-----------------------------------------------------------------------------
 bool
-remove_file(const std::string &path)
+create_directory(const std::string &path)
+{
+
+#if defined(CONDUIT_PLATFORM_WINDOWS)
+    return (_mkdir(path.c_str()) == 0);
+#else
+    return (mkdir(path.c_str(),S_IRWXU | S_IRWXG) == 0);
+#endif
+}
+
+
+//-----------------------------------------------------------------------------
+bool
+remove_file_path(const std::string &path)
 {
     int res = remove(path.c_str());
     return (res == 0);
