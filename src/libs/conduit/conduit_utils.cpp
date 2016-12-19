@@ -65,17 +65,19 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-
-// define for path sep
-#if defined(CONDUIT_PLATFORM_WINDOWS)
-const char CONDUIT_UTILS_FILE_PATH_SEPARATOR='\\';
-#else
-const char CONDUIT_UTILS_FILE_PATH_SEPARATOR='/';
-#endif
-
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+
+// define proper path sep
+#if defined(CONDUIT_PLATFORM_WINDOWS)
+#define CONDUIT_UTILS_FILE_PATH_SEPARATOR "\\"
+#else
+#define CONDUIT_UTILS_FILE_PATH_SEPARATOR "/"
+#endif
+
+static const std::string file_path_sep_string(CONDUIT_UTILS_FILE_PATH_SEPARATOR);
 
 
 //-----------------------------------------------------------------------------
@@ -92,8 +94,6 @@ using namespace base64;
 //-----------------------------------------------------------------------------
 namespace conduit
 {
-
-const std::string file_path_separartor_string(&CONDUIT_UTILS_FILE_PATH_SEPARATOR);
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::utils --
@@ -265,7 +265,10 @@ split_path(const std::string &path,
            std::string &curr,
            std::string &next)
 {
-    split_string(path,std::string("/"),curr,next);
+    split_string(path,
+                 std::string("/"),
+                 curr,
+                 next);
 }
 
 //-----------------------------------------------------------------------------
@@ -274,7 +277,10 @@ rsplit_path(const std::string &path,
             std::string &curr,
             std::string &next)
 {
-    rsplit_string(path,std::string("/"),curr,next);
+    rsplit_string(path,
+                  std::string("/"),
+                  curr,
+                  next);
 }
 
 
@@ -282,7 +288,7 @@ rsplit_path(const std::string &path,
 std::string 
 file_path_separator()
 {
-    return file_path_separartor_string;
+    return file_path_sep_string;
 }
 
 
@@ -292,7 +298,10 @@ split_file_path(const std::string &path,
                 std::string &curr,
                 std::string &next)
 {
-    split_string(path,file_path_separartor_string,curr,next);
+    split_string(path,
+                 file_path_sep_string,
+                 curr,
+                 next);
 }
 
 //-----------------------------------------------------------------------------
@@ -301,7 +310,10 @@ rsplit_file_path(const std::string &path,
                  std::string &curr,
                  std::string &next)
 {
-    rsplit_string(path,file_path_separartor_string,curr,next);
+    rsplit_string(path,
+                  file_path_sep_string,
+                  curr,
+                  next);
 }
 
 
@@ -311,9 +323,9 @@ join_file_path(const std::string &left,
                const std::string &right)
 {
     std::string res = left;
-    if(res.size() > 0 && res[res.size()-1] != CONDUIT_UTILS_FILE_PATH_SEPARATOR)
+    if(res.size() > 0 && res[res.size()-1] != file_path_sep_string[0])
     {
-        res += CONDUIT_UTILS_FILE_PATH_SEPARATOR;
+        res += file_path_sep_string;
     }
     res += right;
     return res;
