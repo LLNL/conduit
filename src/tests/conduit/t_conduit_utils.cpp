@@ -333,6 +333,61 @@ TEST(conduit_utils, base64_enc_dec)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, file_path_tests)
+{
+
+    std::string sep = utils::file_path_separator();
+
+#ifdef CONDUIT_PLATFORM_WINDOWS
+    EXPECT_EQ(sep,"\\");
+#else
+    EXPECT_EQ(sep,"/");
+#endif
+    
+
+    std::string my_path = "a" +  sep + "b" + sep + "c";
+
+    std::string my_path_via_join = utils::join_file_path("a","b");
+    my_path_via_join = utils::join_file_path(my_path_via_join,"c");
+    
+    EXPECT_EQ(my_path,my_path_via_join);
+
+    std::string curr,next;
+    utils::split_file_path(my_path,curr,next);
+    EXPECT_EQ(curr,"a");
+    EXPECT_EQ(next,"b" + sep + "c");
+    
+    my_path = next;
+    utils::split_file_path(my_path,curr,next);
+    EXPECT_EQ(curr,"b");
+    EXPECT_EQ(next,"c");
+    
+    my_path = next;
+    utils::split_file_path(my_path,curr,next);
+    EXPECT_EQ(curr,"c");
+    EXPECT_EQ(next,"");
+
+
+    my_path = "a" +  sep + "b" + sep + "c";
+
+    utils::rsplit_file_path(my_path,curr,next);
+    EXPECT_EQ(curr,"c");
+    EXPECT_EQ(next,"a" + sep + "b");
+    
+    my_path = next;
+    utils::rsplit_file_path(my_path,curr,next);
+    EXPECT_EQ(curr,"b");
+    EXPECT_EQ(next,"a");
+    
+    my_path = next;
+    utils::rsplit_file_path(my_path,curr,next);
+    EXPECT_EQ(curr,"a");
+    EXPECT_EQ(next,"");
+
+}
+    
+
 
 
 

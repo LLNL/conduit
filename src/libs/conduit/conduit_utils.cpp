@@ -93,6 +93,8 @@ using namespace base64;
 namespace conduit
 {
 
+const std::string file_path_separartor_string(&CONDUIT_UTILS_FILE_PATH_SEPARATOR);
+
 //-----------------------------------------------------------------------------
 // -- begin conduit::utils --
 //-----------------------------------------------------------------------------
@@ -267,8 +269,41 @@ split_path(const std::string &path,
 }
 
 //-----------------------------------------------------------------------------
-     std::string CONDUIT_API join_path(const std::string &left,
-                                       const std::string &right);
+void     
+rsplit_path(const std::string &path,
+            std::string &curr,
+            std::string &next)
+{
+    rsplit_string(path,std::string("/"),curr,next);
+}
+
+
+//-----------------------------------------------------------------------------
+std::string 
+file_path_separator()
+{
+    return file_path_separartor_string;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+split_file_path(const std::string &path,
+                std::string &curr,
+                std::string &next)
+{
+    split_string(path,file_path_separartor_string,curr,next);
+}
+
+//-----------------------------------------------------------------------------
+void
+rsplit_file_path(const std::string &path,
+                 std::string &curr,
+                 std::string &next)
+{
+    rsplit_string(path,file_path_separartor_string,curr,next);
+}
+
 
 //-----------------------------------------------------------------------------
 std::string 
@@ -322,7 +357,6 @@ remove_file(const std::string &path)
     return (res == 0);
 }
 
-
 //-----------------------------------------------------------------------------
 int
 system_execute(const std::string &cmd)
@@ -343,6 +377,7 @@ check_word_char(const char v)
     return res;
 }
 
+//-----------------------------------------------------------------------------
 bool
 check_num_char(const char v)
 {
