@@ -48,6 +48,14 @@
 
 # this header allows us to easily use the cmake source and binary paths in
 # our unit tests
+
+convert_to_native_escaped_file_path(${CMAKE_CURRENT_SOURCE_DIR}
+                                    CONDUIT_T_SRC_DIR)
+
+convert_to_native_escaped_file_path(${CMAKE_CURRENT_BINARY_DIR}
+                                    CONDUIT_T_BIN_DIR)
+
+
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/t_config.hpp.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/t_config.hpp")
 

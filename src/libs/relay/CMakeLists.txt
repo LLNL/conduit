@@ -65,7 +65,10 @@ if(MPI_FOUND)
   SET(CONDUIT_RELAY_MPI_ENABLED TRUE)
 endif()
 
-set(CONDUIT_RELAY_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+convert_to_native_escaped_file_path(${CMAKE_CURRENT_SOURCE_DIR}
+                                    CONDUIT_RELAY_SOURCE_DIR)
+
 
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_relay_config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_config.h")
