@@ -51,7 +51,10 @@ if(ENABLE_FORTRAN)
     if(CMAKE_Fortran_COMPILER)
         MESSAGE(STATUS  "Fortran Compiler: ${CMAKE_Fortran_COMPILER}")
         set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/fortran)
-
+        
+        # make sure the fortran compiler can see the module files it
+        # generates
+        include_directories(${CMAKE_Fortran_MODULE_DIRECTORY})
         try_compile(Fortran_COMPILER_SUPPORTS_CLASS ${CMAKE_BINARY_DIR}
                     ${CMAKE_SOURCE_DIR}/CMake/tests/fortran_test_obj_support.f
                     CMAKE_FLAGS "-DCMAKE_Fortran_FORMAT=FREE"
