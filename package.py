@@ -20,6 +20,7 @@ import os
 def create_package(output_file=None):
     repo_name = os.path.basename(os.path.dirname(os.path.abspath(__file__)))
     if output_file is None:
+        suffix = "tar";
         t = datetime.datetime.now()
         output_file = "%s.%04d.%02d.%02d.%s" % (repo_name,t.year,t.month,t.day,suffix)
     if output_file.endswith(".gz"):

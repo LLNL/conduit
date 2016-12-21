@@ -52,7 +52,7 @@ set(ENABLE_DOCS OFF CACHE PATH "")
 set(CMAKE_C_COMPILER "/usr/local/bin/bgxlc_r" CACHE PATH "")
 set(CMAKE_CXX_COMPILER "/usr/local/bin/bgxlc++_r" CACHE PATH "")
 
-set(ENABLE_FORTRAN OFF CACHE PATH "")
+set(ENABLE_FORTRAN ON CACHE PATH "")
 set(CMAKE_Fortran_COMPILER "/usr/local/bin/bgxlf2003_r" CACHE PATH "")
 
 ###############################################################################
