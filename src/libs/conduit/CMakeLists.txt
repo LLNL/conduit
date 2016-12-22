@@ -52,7 +52,8 @@ ENABLE_WARNINGS()
 include("CMake/BitwidthChecks.cmake")
 
 
-set(CONDUIT_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+convert_to_native_escaped_file_path(${CMAKE_INSTALL_PREFIX}
+                                    CONDUIT_INSTALL_PREFIX)
 
 if(FORTRAN_FOUND)
     set(CONDUIT_FORTRAN_COMPILER ${CMAKE_Fortran_COMPILER})

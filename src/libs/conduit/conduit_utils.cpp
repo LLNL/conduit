@@ -57,6 +57,7 @@
 // for sleep funcs
 #if defined(CONDUIT_PLATFORM_WINDOWS)
 #include <Windows.h>
+#include <direct.h>
 #else
 #include <time.h>
 #endif
@@ -65,17 +66,19 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-
-// define for path sep
-#if defined(CONDUIT_PLATFORM_WINDOWS)
-const char CONDUIT_UTILS_FILE_PATH_SEPARATOR='\\';
-#else
-const char CONDUIT_UTILS_FILE_PATH_SEPARATOR='/';
-#endif
-
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+
+// define proper path sep
+#if defined(CONDUIT_PLATFORM_WINDOWS)
+#define CONDUIT_UTILS_FILE_PATH_SEPARATOR "\\"
+#else
+#define CONDUIT_UTILS_FILE_PATH_SEPARATOR "/"
+#endif
+
+static const std::string file_path_sep_string(CONDUIT_UTILS_FILE_PATH_SEPARATOR);
 
 
 //-----------------------------------------------------------------------------
@@ -263,12 +266,57 @@ split_path(const std::string &path,
            std::string &curr,
            std::string &next)
 {
-    split_string(path,std::string("/"),curr,next);
+    split_string(path,
+                 std::string("/"),
+                 curr,
+                 next);
 }
 
 //-----------------------------------------------------------------------------
-     std::string CONDUIT_API join_path(const std::string &left,
-                                       const std::string &right);
+void     
+rsplit_path(const std::string &path,
+            std::string &curr,
+            std::string &next)
+{
+    rsplit_string(path,
+                  std::string("/"),
+                  curr,
+                  next);
+}
+
+
+//-----------------------------------------------------------------------------
+std::string 
+file_path_separator()
+{
+    return file_path_sep_string;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+split_file_path(const std::string &path,
+                std::string &curr,
+                std::string &next)
+{
+    split_string(path,
+                 file_path_sep_string,
+                 curr,
+                 next);
+}
+
+//-----------------------------------------------------------------------------
+void
+rsplit_file_path(const std::string &path,
+                 std::string &curr,
+                 std::string &next)
+{
+    rsplit_string(path,
+                  file_path_sep_string,
+                  curr,
+                  next);
+}
+
 
 //-----------------------------------------------------------------------------
 std::string 
@@ -276,9 +324,9 @@ join_file_path(const std::string &left,
                const std::string &right)
 {
     std::string res = left;
-    if(res.size() > 0 && res[res.size()-1] != CONDUIT_UTILS_FILE_PATH_SEPARATOR)
+    if(res.size() > 0 && res[res.size()-1] != file_path_sep_string[0])
     {
-        res += CONDUIT_UTILS_FILE_PATH_SEPARATOR;
+        res += file_path_sep_string;
     }
     res += right;
     return res;
@@ -316,10 +364,33 @@ is_directory(const std::string &path)
 
 //-----------------------------------------------------------------------------
 bool
+create_directory(const std::string &path)
+{
+
+#if defined(CONDUIT_PLATFORM_WINDOWS)
+    return (_mkdir(path.c_str()) == 0);
+#else
+    return (mkdir(path.c_str(),S_IRWXU | S_IRWXG) == 0);
+#endif
+}
+
+
+//-----------------------------------------------------------------------------
+bool
 remove_file(const std::string &path)
 {
-    int res = remove(path.c_str());
-    return (res == 0);
+    return ( remove(path.c_str()) == 0 );
+}
+
+//-----------------------------------------------------------------------------
+bool
+remove_directory(const std::string &path)
+{
+#if defined(CONDUIT_PLATFORM_WINDOWS)
+    return ( _rmdir(path.c_str()) == 0 );
+#else
+    return ( remove(path.c_str()) == 0 );
+#endif
 }
 
 
@@ -343,6 +414,7 @@ check_word_char(const char v)
     return res;
 }
 
+//-----------------------------------------------------------------------------
 bool
 check_num_char(const char v)
 {

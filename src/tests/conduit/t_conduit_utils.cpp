@@ -332,6 +332,79 @@ TEST(conduit_utils, base64_enc_dec)
     EXPECT_EQ(n_src["c"].as_int32(), n_res["c"].as_int32());
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, dir_create_and_remove_tests)
+{
+    std::string test_dir = utils::join_file_path(CONDUIT_T_BIN_DIR,
+                                                 "tout_dir_create_test");
+    
+    CONDUIT_INFO("test creating and removing dir: " << test_dir);
+    
+    EXPECT_FALSE(utils::is_directory(test_dir));
+    
+    EXPECT_TRUE(utils::create_directory(test_dir));
+
+    EXPECT_TRUE(utils::is_directory(test_dir));
+
+    EXPECT_TRUE(utils::remove_directory(test_dir));
+
+    EXPECT_FALSE(utils::is_directory(test_dir));
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, file_path_split_tests)
+{
+
+    std::string sep = utils::file_path_separator();
+
+#ifdef CONDUIT_PLATFORM_WINDOWS
+    EXPECT_EQ(sep,"\\");
+#else
+    EXPECT_EQ(sep,"/");
+#endif
+    
+
+    std::string my_path = "a" +  sep + "b" + sep + "c";
+
+    std::string my_path_via_join = utils::join_file_path("a","b");
+    my_path_via_join = utils::join_file_path(my_path_via_join,"c");
+    
+    EXPECT_EQ(my_path,my_path_via_join);
+
+    std::string curr,next;
+    utils::split_file_path(my_path,curr,next);
+    EXPECT_EQ(curr,"a");
+    EXPECT_EQ(next,"b" + sep + "c");
+    
+    my_path = next;
+    utils::split_file_path(my_path,curr,next);
+    EXPECT_EQ(curr,"b");
+    EXPECT_EQ(next,"c");
+    
+    my_path = next;
+    utils::split_file_path(my_path,curr,next);
+    EXPECT_EQ(curr,"c");
+    EXPECT_EQ(next,"");
+
+
+    my_path = "a" +  sep + "b" + sep + "c";
+
+    utils::rsplit_file_path(my_path,curr,next);
+    EXPECT_EQ(curr,"c");
+    EXPECT_EQ(next,"a" + sep + "b");
+    
+    my_path = next;
+    utils::rsplit_file_path(my_path,curr,next);
+    EXPECT_EQ(curr,"b");
+    EXPECT_EQ(next,"a");
+    
+    my_path = next;
+    utils::rsplit_file_path(my_path,curr,next);
+    EXPECT_EQ(curr,"a");
+    EXPECT_EQ(next,"");
+
+}
+    
 
 
 
