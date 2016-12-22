@@ -338,13 +338,15 @@ TEST(conduit_utils, dir_create_and_remove_tests)
     std::string test_dir = utils::join_file_path(CONDUIT_T_BIN_DIR,
                                                  "tout_dir_create_test");
     
+    CONDUIT_INFO("test creating and removing dir: " << test_dir);
+    
     EXPECT_FALSE(utils::is_directory(test_dir));
     
-    utils::create_directory(test_dir);
+    EXPECT_TRUE(utils::create_directory(test_dir));
 
     EXPECT_TRUE(utils::is_directory(test_dir));
 
-    utils::remove_file_path(test_dir);
+    EXPECT_TRUE(utils::remove_file_path(test_dir));
 
     EXPECT_FALSE(utils::is_directory(test_dir));
 }
