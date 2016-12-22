@@ -313,9 +313,11 @@ namespace utils
      bool CONDUIT_API create_directory(const std::string &path);
 
 //-----------------------------------------------------------------------------
-/// Removes a file, or an empty directory.
+/// Remove files, or empty directories
 //-----------------------------------------------------------------------------
-     bool CONDUIT_API remove_file_path(const std::string &path);
+     bool CONDUIT_API remove_file(const std::string &path);
+
+     bool CONDUIT_API remove_directory(const std::string &path);
 
 //-----------------------------------------------------------------------------
      int  CONDUIT_API system_execute(const std::string &cmd);

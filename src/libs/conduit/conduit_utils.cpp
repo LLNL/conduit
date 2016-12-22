@@ -377,11 +377,22 @@ create_directory(const std::string &path)
 
 //-----------------------------------------------------------------------------
 bool
-remove_file_path(const std::string &path)
+remove_file(const std::string &path)
 {
-    int res = remove(path.c_str());
-    return (res == 0);
+    return ( remove(path.c_str()) == 0 );
 }
+
+//-----------------------------------------------------------------------------
+bool
+remove_directory(const std::string &path)
+{
+#if defined(CONDUIT_PLATFORM_WINDOWS)
+    return ( rmdir(path.c_str()) == 0 );
+#else
+    return ( remove(path.c_str()) == 0 );
+#endif
+}
+
 
 //-----------------------------------------------------------------------------
 int

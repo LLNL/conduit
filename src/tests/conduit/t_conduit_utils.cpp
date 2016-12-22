@@ -267,7 +267,7 @@ TEST(conduit_utils, remove_file)
 
     EXPECT_TRUE(utils::is_file("t_remove_file.txt"));
     
-    utils::remove_file_path("t_remove_file.txt");
+    utils::remove_file("t_remove_file.txt");
     
     EXPECT_FALSE(utils::is_file("t_remove_file.txt"));
 }
@@ -346,7 +346,7 @@ TEST(conduit_utils, dir_create_and_remove_tests)
 
     EXPECT_TRUE(utils::is_directory(test_dir));
 
-    EXPECT_TRUE(utils::remove_file_path(test_dir));
+    EXPECT_TRUE(utils::remove_directory(test_dir));
 
     EXPECT_FALSE(utils::is_directory(test_dir));
 }

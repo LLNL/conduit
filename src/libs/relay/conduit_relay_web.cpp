@@ -1037,13 +1037,13 @@ WebServer::shutdown()
             if(utils::is_file(entangle_json))
             {
                 CONDUIT_INFO("Cleaning up entangle file:" << entangle_json);
-                utils::remove_file_path(entangle_json);
+                utils::remove_file(entangle_json);
             }
         
             if(utils::is_file(entangle_htpass))
             {
                 CONDUIT_INFO("Cleaning up entangle file:" << entangle_htpass);
-                utils::remove_file_path(entangle_htpass);
+                utils::remove_file(entangle_htpass);
             }
         }
 
