@@ -249,6 +249,43 @@ Building with Spack
   For example, we build independent installs of Python 2 and Python 3 to make it easy 
   to check Python C-API compatibility during development. In the near future, we plan to 
   provide a Spack package that supports variants to simplify deployment.
+  
+As of 12/ZZ/2016, Spack's develop branch includes a recipe to build and install Conduit.
+
+To install the latest released version of Conduit with all options (and also build all of its dependencies as necessary) run:
+
+.. code:: bash
+  
+  spack install conduit
+
+To build and install Conduit's github master branch run:
+  
+.. code:: bash
+  
+  spack install conduit@master
+
+
+The Conduit Spack package provides several `variants <http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies>`_ that customize the options and dependencies used to build Conduit:
+
+ ================== ==================================== ======================================
+  Variant             Description                          Default
+ ================== ==================================== ======================================
+  **shared**          Build Conduit as shared libraries    ON (+shared)
+  **cmake**           Build CMake with Spack               ON (+cmake)
+  **python**          Enable Conduit Python support        ON (+python)
+  **mpi**             Enable Conduit MPI support           ON (+mpi)
+  **hdf5**            Enable Conduit HDF5 support          ON (+hdf5)
+  **silo**            Enable Conduit Silo support          ON (+silo)
+  **doc**             Build Conduit's Documentation        OFF (+docs)
+ ================== ==================================== ======================================
+
+
+Variants are enabled using ``+`` and disabled using ``~``. For example, to build Conduit with the minimum set of options (and dependencies) run:
+
+.. code:: bash
+
+  spack install conduit~python~mpi~hdf5~silo~docs
+
 
 
 Using Conduit in Another Project
