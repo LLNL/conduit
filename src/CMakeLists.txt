@@ -49,7 +49,10 @@ cmake_minimum_required(VERSION 3.0)
 # avoid default mac osx rpath settings for cmake 3.0
 cmake_policy(SET CMP0042 OLD)
 # cmake var deref policy
-cmake_policy(SET CMP0054 OLD)
+if(POLICY CMP0054)
+  cmake_policy(SET CMP0054 OLD)
+endif()
+
 
 ################################
 # Conduit
