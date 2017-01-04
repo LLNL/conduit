@@ -143,7 +143,8 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
         CONDUIT_INFO(info.to_json());
         
         // skip unsupported types
-        if( mesh_name != "quads_and_tris" || mesh_name != "quads_and_tris_offsets" )
+        if( mesh_name != "quads_and_tris" &&
+            mesh_name != "quads_and_tris_offsets" )
         {
             CONDUIT_INFO("GEN MESH BP INDEX");        
             blueprint::mesh::generate_index(mesh,mesh_name,1,bp_idx[mesh_name]);
