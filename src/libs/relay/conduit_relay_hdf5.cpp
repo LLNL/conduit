@@ -199,15 +199,6 @@ private:
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-hid_t    conduit_dtype_to_hdf5_dtype(const DataType &dt,
-                                     const std::string &ref_path);
-
-//-----------------------------------------------------------------------------
-DataType hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
-                                     index_t num_elems,
-                                     const std::string &ref_path);
-
-//-----------------------------------------------------------------------------
 // helpers for checking if compatible 
 //-----------------------------------------------------------------------------
 
@@ -237,7 +228,7 @@ hid_t create_hdf5_dataset_for_conduit_leaf(const DataType &dt,
                                            hid_t hdf5_group_id,
                                            const std::string &hdf5_dset_name);
 
-//---------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------
 void  write_conduit_leaf_to_hdf5_dataset(const Node &node,
                                          const std::string &ref_path,
                                          hid_t hdf5_dset_id);
@@ -292,7 +283,7 @@ join_ref_paths(const std::string &parent, const std::string &child)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Data Type Helper methods that aren't part of public conduit::relay::io
+// Data Type Helper methods that are a part of public conduit::relay::io
 //
 //  conduit_dtype_to_hdf5_dtype
 //  hdf5_dtype_to_conduit_dtype
@@ -496,13 +487,6 @@ hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
     else if(H5Tequal(hdf5_dtype_id,H5T_C_S1))
     {
         res = DataType::char8_str(num_elems);
-    }
-    //-----------------------------------------------
-    // Empty
-    //-----------------------------------------------
-    else if(H5Tequal(hdf5_dtype_id,H5T_C_S1))
-    {
-        res = DataType::empty();
     }
     //-----------------------------------------------
     // Unsupported
