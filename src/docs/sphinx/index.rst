@@ -55,7 +55,7 @@ Conduit
 Introduction
 ------------
 
-Conduit is an open source project from Lawrence Livermore National Laboratory. It provides an intuitive model for describing hierarchical scientific data in C++, C, Fortran, and Python and is used for data coupling between packages in-core, serialization, and I/O tasks.
+Conduit is an open source project from Lawrence Livermore National Laboratory that provides an intuitive model for describing hierarchical scientific data in C++, C, Fortran, and Python. It is used for data coupling between packages in-core, serialization, and I/O tasks.
 
 Conduit's Core API provides:
 

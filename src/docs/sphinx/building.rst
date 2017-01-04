@@ -162,9 +162,14 @@ These files use standard CMake commands. CMake *set* commands need to specify th
     set(CMAKE_VARIABLE_NAME {VALUE} CACHE PATH "")
 
 
-Bootstrapping Third Party Dependencies 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Bootstrapping Third Party Dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 We use **Spack** (http://software.llnl.gov/spack) to automate builds of third party dependencies on OSX and Linux. Conduit builds on Windows as well, but there is no automated process to build dependencies necessary to support Conduit's optional features.
+
+.. note::
+  Conduit developers use ``bootstrap-env.sh`` and ``scripts/uberenv/uberenv.py`` to setup third party libraries for Conduit  development.  Due to this, the process builds more libraries than necessary for most use cases. For example, we build independent  installs of Python 2 and Python 3 to make it easy to check Python C-API compatibility during development. For users of conduit, we recommend using the Conduit package included with Spack. For info on how to use this package see :ref:`building_with_spack`.
+  
 
 On OSX and Linux, you can use ``bootstrap-env.sh`` (located at the root of the conduit repo) to help setup your development environment. This script uses ``scripts/uberenv/uberenv.py``, which leverages **Spack** to build all of the external third party libraries and tools used by Conduit. Fortran support is optional and all dependencies should build without a fortran compiler. After building these libraries and tools, it writes an initial *host-config* file and adds the Spack built CMake binary to your PATH so can immediately call the ``config-build.sh`` helper script to configure a conduit build.
 
@@ -241,14 +246,47 @@ destination directory. It then uses Spack to build and install Conduit's depende
 destination directory that specifies the compiler settings and paths to all of the dependencies.
 
 
-Building with Spack
+.. _building_with_spack:
+
+Building Conduit and its Dependencies with Spack
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. note::
-  Conduit developers use ``scripts/uberenv/uberenv.py`` to setup third party libraries for Conduit 
-  development.  Due to this, the process builds more libraries than necessary for most use cases.
-  For example, we build independent installs of Python 2 and Python 3 to make it easy 
-  to check Python C-API compatibility during development. In the near future, we plan to 
-  provide a Spack package that supports variants to simplify deployment.
+  
+As of 1/4/2017, Spack's develop branch includes a `recipe <https://github.com/LLNL/spack/blob/develop/var/spack/repos/builtin/packages/conduit/package.py>`_ to build and install Conduit.
+
+To install the latest released version of Conduit with all options (and also build all of its dependencies as necessary) run:
+
+.. code:: bash
+  
+  spack install conduit
+
+To build and install Conduit's github master branch run:
+  
+.. code:: bash
+  
+  spack install conduit@master
+
+
+The Conduit Spack package provides several `variants <http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies>`_ that customize the options and dependencies used to build Conduit:
+
+ ================== ==================================== ======================================
+  Variant             Description                          Default
+ ================== ==================================== ======================================
+  **shared**          Build Conduit as shared libraries    ON (+shared)
+  **cmake**           Build CMake with Spack               ON (+cmake)
+  **python**          Enable Conduit Python support        ON (+python)
+  **mpi**             Enable Conduit MPI support           ON (+mpi)
+  **hdf5**            Enable Conduit HDF5 support          ON (+hdf5)
+  **silo**            Enable Conduit Silo support          ON (+silo)
+  **doc**             Build Conduit's Documentation        OFF (+docs)
+ ================== ==================================== ======================================
+
+
+Variants are enabled using ``+`` and disabled using ``~``. For example, to build Conduit with the minimum set of options (and dependencies) run:
+
+.. code:: bash
+
+  spack install conduit~python~mpi~hdf5~silo~docs
+
 
 
 Using Conduit in Another Project

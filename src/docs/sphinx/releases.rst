@@ -50,6 +50,34 @@ Source distributions for Conduit releases are hosted on github:
 
 https://github.com/LLNL/conduit/releases
 
+v0.2.1
+-----------------
+
+* `Source Tarball <https://github.com/LLNL/conduit/archive/v0.2.1.tar.gz>`_
+* `Docs <http://software.llnl.gov/conduit/v0.2.1>`_
+
+
+Highlights
++++++++++++++
+
+* **General**
+
+ * Added fixes to support static builds on BGQ using xlc and gcc
+ * Fixed missing install of fortran module files
+ * Eliminated separate fortran libs by moving fortran symbols into their associated main libs
+ * Change Node set_external to support const Node ref
+ * Refactor path and file systems utils functions for clarity.
+
+* **Blueprint**
+
+ * Fixed bug with verify of mesh/coords for rectilinear case
+ * Added support to the blueprint python module for the mesh and mcarray protocol methods 
+ * Added stand alone blueprint verify executable
+
+* **Relay**
+ * Updated the version of civetweb used to avoid dlopen issues with SSL for static builds
+
+
 v0.2.0
 -----------------
 
@@ -63,7 +91,7 @@ Highlights
  * Changes to clarify concepts in the conduit::Node API
  * Added const access to conduit::Node's children and a new NodeConstIterator
  * Added support for building on Windows
- * Added more Python, C, and Fortran API support.
+ * Added more Python, C, and Fortran API support
  * Resolved several bugs across libraries
  * Resolved compiler warnings and memory leaks
  * Improved unit test coverage
