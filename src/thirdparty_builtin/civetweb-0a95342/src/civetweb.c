@@ -2609,7 +2609,7 @@ skip_quoted(char **buf,
 		*buf = end_word;
 	} else {
 
-#if defined(__GNUC__) || defined(__MINGW32__)
+#if defined(__MINGW32__) || defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
 /* Disable spurious conversion warning for GCC */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-conversion"
@@ -2617,7 +2617,7 @@ skip_quoted(char **buf,
 
 		end_whitespace = end_word + strspn(&end_word[1], whitespace) + 1;
 
-#if defined(__GNUC__) || defined(__MINGW32__)
+#if defined(__MINGW32__) || defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
 #pragma GCC diagnostic pop
 #endif
 
@@ -9478,7 +9478,7 @@ mg_websocket_write_exec(struct mg_connection *conn,
 
 	int retval = -1;
 
-#if defined(__GNUC__) || defined(__MINGW32__)
+#if defined(__MINGW32__) || defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
 /* Disable spurious conversion warning for GCC */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
@@ -9486,7 +9486,7 @@ mg_websocket_write_exec(struct mg_connection *conn,
 
 	header[0] = 0x80u | (unsigned char)((unsigned)opcode & 0xf);
 
-#if defined(__GNUC__) || defined(__MINGW32__)
+#if defined(__MINGW32__) || defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
 #pragma GCC diagnostic pop
 #endif
 
