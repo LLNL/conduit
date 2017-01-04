@@ -196,6 +196,35 @@ void CONDUIT_RELAY_API hdf5_read(hid_t hdf5_id,
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API hdf5_read(hid_t hdf5_id,
                                  Node &node);
+
+//-----------------------------------------------------------------------------
+/// Read from hdf5 id into the output node
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API hdf5_read(hid_t hdf5_id,
+                                 Node &node);
+
+//-----------------------------------------------------------------------------
+/// Helpers for converting between hdf5 dtypes and conduit dtypes
+/// 
+///  Throughout the relay hdf5 implementation, we use DataType::Empty when
+///  the hdf5 data space is H5S_NULL, regardless of what the hdf5 data type is.
+///  That isn't reflected in these helper functions,they handle
+///  mapping of endianness and leaf types other than empty.
+///
+///
+///  Note: In these functions, ref_path is used to provide context about the
+///  hdf5 tree when an error occurs. Using it is recommend but not required.
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+hid_t CONDUIT_RELAY_API    conduit_dtype_to_hdf5_dtype(const DataType &dt,
+                                                const std::string &ref_path="");
+
+//-----------------------------------------------------------------------------
+DataType CONDUIT_RELAY_API hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
+                                                       index_t num_elems,
+                                                const std::string &ref_path="");
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::relay::io --
