@@ -78,7 +78,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
     blueprint::mesh::examples::braid("uniform",
                                       npts_x,
                                       npts_y,
-                                      npts_y,
+                                      npts_z,
                                       dsets["uniform"]);
 
     blueprint::mesh::examples::braid("rectilinear",
@@ -243,7 +243,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
     blueprint::mesh::examples::braid("uniform",
                                       npts_x,
                                       npts_y,
-                                      npts_y,
+                                      npts_z,
                                       dsets["uniform"]);
 
     blueprint::mesh::examples::braid("rectilinear",
