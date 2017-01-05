@@ -1,7 +1,7 @@
 Running main() from gtest_main.cc
-[==========] Running 19 tests from 1 test case.
+[==========] Running 20 tests from 1 test case.
 [----------] Global test environment set-up.
-[----------] 19 tests from conduit_tutorial
+[----------] 20 tests from conduit_tutorial
 [ RUN      ] conduit_tutorial.basics_very_basic
 [/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 63]
  basics_very_basic
@@ -30,7 +30,7 @@ Running main() from gtest_main.cc
 total bytes: 15
 [/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 85]
  basics_hierarchial
-[       OK ] conduit_tutorial.basics_hierarchial (1 ms)
+[       OK ] conduit_tutorial.basics_hierarchial (0 ms)
 [ RUN      ] conduit_tutorial.basics_object_and_list
 [/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 91]
  basics_object_and_list
@@ -61,19 +61,19 @@ total bytes: 15
 {
   "mem_spaces": 
   {
-    "0x7fb22ad026c0": 
+    "0x7fdf90406910": 
     {
       "path": "my",
       "type": "allocated",
       "bytes": 5
     },
-    "0x7fb22ad02560": 
+    "0x7fdf90406800": 
     {
       "path": "a/b/c",
       "type": "allocated",
       "bytes": 2
     },
-    "0x7fb22ad02550": 
+    "0x7fdf904067f0": 
     {
       "path": "a/b/e",
       "type": "allocated",
@@ -101,7 +101,7 @@ total bytes: 15
 }
 [/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 137]
  basics_bw_style
-[       OK ] conduit_tutorial.basics_bw_style (0 ms)
+[       OK ] conduit_tutorial.basics_bw_style (1 ms)
 [ RUN      ] conduit_tutorial.basics_bw_style_from_native
 [/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 143]
  basics_bw_style_from_native
@@ -208,7 +208,7 @@ vals[3] = 4000
 }
 [/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 355]
  json_generator_pure_json
-[       OK ] conduit_tutorial.json_generator_pure_json (1 ms)
+[       OK ] conduit_tutorial.json_generator_pure_json (0 ms)
 [ RUN      ] conduit_tutorial.json_generator_bind_to_incore
 [/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 361]
  json_generator_bind_to_incore
@@ -223,7 +223,7 @@ vals[3] = 4000
 {
   "mem_spaces": 
   {
-    "0x7fff5907bf30": 
+    "0x7fff533bfff0": 
     {
       "path": "a",
       "type": "external"
@@ -236,7 +236,7 @@ vals[3] = 4000
 }
 [/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 380]
  json_generator_bind_to_incore
-[       OK ] conduit_tutorial.json_generator_bind_to_incore (0 ms)
+[       OK ] conduit_tutorial.json_generator_bind_to_incore (1 ms)
 [ RUN      ] conduit_tutorial.json_generator_compact
 [/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 387]
  json_generator_compact
@@ -246,7 +246,7 @@ vals[3] = 4000
 {
   "mem_spaces": 
   {
-    "0x7fff5907bef0": 
+    "0x7fff533bffb0": 
     {
       "path": "",
       "type": "external"
@@ -261,7 +261,7 @@ vals[3] = 4000
 {
   "mem_spaces": 
   {
-    "0x7fff5907bef0": 
+    "0x7fff533bffb0": 
     {
       "path": "",
       "type": "external"
@@ -278,7 +278,7 @@ vals[3] = 4000
 {
   "mem_spaces": 
   {
-    "0x7fb22af00040": 
+    "0x7fdf90406820": 
     {
       "path": "",
       "type": "allocated",
@@ -295,7 +295,7 @@ vals[3] = 4000
 {
   "mem_spaces": 
   {
-    "0x7fb22af00750": 
+    "0x7fdf90405f70": 
     {
       "path": "",
       "type": "allocated",
@@ -309,7 +309,7 @@ vals[3] = 4000
 }
 [/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 438]
  json_generator_compact
-[       OK ] conduit_tutorial.json_generator_compact (1 ms)
+[       OK ] conduit_tutorial.json_generator_compact (0 ms)
 [ RUN      ] conduit_tutorial.mem_ownership_external
 [/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 445]
  mem_ownership_external
@@ -317,13 +317,13 @@ vals[3] = 4000
 {
   "mem_spaces": 
   {
-    "0x7fb22af00010": 
+    "0x7fdf90600120": 
     {
       "path": "v_owned",
       "type": "allocated",
       "bytes": 40
     },
-    "0x7fb22af00070": 
+    "0x7fdf90600010": 
     {
       "path": "v_external",
       "type": "external"
@@ -346,9 +346,14 @@ vals[3] = 4000
 }
 [/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_examples.cpp : 465]
  mem_ownership_external
-[       OK ] conduit_tutorial.mem_ownership_external (0 ms)
-[----------] 19 tests from conduit_tutorial (3 ms total)
+[       OK ] conduit_tutorial.mem_ownership_external (1 ms)
+[ RUN      ] conduit_tutorial.error_handlers
+[INFO] An info message
+[WARNING!] Node::as_float32() const -- DataType float64 at path my_value does not equal expected DataType float32
+[ERROR!] Cannot const fetch_child, Node(my_value) is not an object
+[       OK ] conduit_tutorial.error_handlers (0 ms)
+[----------] 20 tests from conduit_tutorial (3 ms total)
 
 [----------] Global test environment tear-down
-[==========] 19 tests from 1 test case ran. (3 ms total)
-[  PASSED  ] 19 tests.
+[==========] 20 tests from 1 test case ran. (3 ms total)
+[  PASSED  ] 20 tests.

@@ -42,93 +42,77 @@
 .. # 
 .. ############################################################################
 
-=======================
-Accessing Numeric Data
-=======================
+======================
+Error Handling 
+======================
+
+Conduit's APIs emit three types of messages for logging and error handling:
+
+================ ===================================================
+Message Type      Description
+================ ===================================================
+**Info**          General Information
+**Warning**       Recoverable Error
+**Error**         Fatal Error
+================ ===================================================
 
 
-Accessing Scalars and Arrays
+Default Error Handlers
+---------------------------------------------------
+
+Conduit provides a default handler for each message type: 
+
+================ ===================================================
+Message Type      Default Action
+================ ===================================================
+**Info**          Prints the message to standard out
+**Warning**       Throws a C++ Exception (conduit::Error instance)
+**Error**         Throws a C++ Exception (conduit::Error instance)
+================ ===================================================
+
+Using Custom Error Handlers
 --------------------------------
 
-You can access leaf types (numeric scalars or arrays) using Node's *as_{type}* methods.
+The conduit::utils namespace provides functions to override each of the three default handlers with a method
+that provides the following signature: 
 
-.. # from conduit_tutorial_examples: numeric_as_dtype
+.. code-block:: cpp
+
+  void my_handler(const std::string &msg,
+                  const std::string &file,
+                  int line)
+  {
+    // your handling code here ...
+  }
+
+  conduit::utils::set_error_handler(my_handler);
+
+Here is an example that re-wires all three error handlers to print to standard out:
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 499-531
+   :lines: 472-496
+   :language: cpp
+
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
+   :lines: 502-530
    :language: cpp
    :dedent: 4
 
+
 .. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 118
+   :lines: 351-353
 
-Or you can use Node::value(), which can infer the correct return type via a cast.
 
-.. # from conduit_tutorial_examples: numeric_via_value
+
+Using Restoring Default Handlers
+--------------------------------
+
+The default handlers are part of the conduit::utils interface, so you can restore them using:
+
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 173-179
+   :lines: 531-535
    :language: cpp
    :dedent: 4
-
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 125
-
-
-Accessing array data via pointers works the same way, using Node's *as_{type}* methods.
-
-.. # from conduit_tutorial_examples: numeric_ptr_as_dtype
-
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 190-201
-   :language: cpp
-   :dedent: 4
-
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 132-135
-
-
-Or using Node::value():
-
-.. # from conduit_tutorial_examples: numeric_ptr_via_value
-
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 211-222
-   :language: cpp
-   :dedent: 4
-
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 142-145
-
-
-
-For non-contiguous arrays, direct pointer access is complex due to the indexing required. Conduit provides a simple DataArray class that handles per-element indexing for all types of arrays.
-
-.. # from conduit_tutorial_examples: numeric_strided_data_array
-
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 231-247
-   :language: cpp
-   :dedent: 4
-
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 152-154
-
-
-
-Using Introspection and Conversion
------------------------------------
-
-In this example, we have an array in a node that we are interested in processing using an and existing function that only handles doubles. We ensure the node is compatible with the function, or transform it 
-to a contiguous double array. 
-
-
-.. # from conduit_tutorial_examples: numeric_double_conversion
-
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 257-315
-   :language: cpp
-
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 163-176
 

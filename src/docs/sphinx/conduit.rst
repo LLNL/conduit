@@ -59,5 +59,6 @@ of examples for Conduit's Core API and additional libraries.
    tutorial_json
    tutorial_ownership
    tutorial_update
+   tutorial_errors
 
 ..    conduit_api
