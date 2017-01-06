@@ -1,5 +1,5 @@
 .. ############################################################################
-.. # Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+.. # Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.
 .. # 
 .. # Produced at the Lawrence Livermore National Laboratory
 .. # 
@@ -42,49 +42,35 @@
 .. # 
 .. ############################################################################
 
-=====================
-Glossary
-=====================
+============================================
+Node Update Methods
+============================================
 
-This page aims to provide succinct descriptions of important concepts in Conduit. 
+The *Node* class provides three **update** methods which allow you to easily copy data or  the description of data from a source node. 
 
+- **Node::update(Node &source)**: 
 
-children
-~~~~~~~~~
-Used for Node instances in the *Object* and *List* role interfaces. A Node may hold a set of indexed children (List role), or indexed and named children (Object role). In both of these cases the children of the Node can be accessed, or removed via their index. Methods related to this concept include:
+ This method behaves similar to a python dictionary update. Entires from the source Node are copied into the calling Node, here are more concrete details:
 
- - Node::number_of_children()
- - Node::child(index_t)
- - Node::child_ptr(index_t)
- - Node::operator=(index_t)
- - Node::remove(index_t)
+ - **If the source describes an Object**: 
+ 
+   - Update copies the children of the source Node into the calling Node. Normal set semantics apply: if a compatible child with the same name already exists in the calling Node, the data will be copied.  If not, the calling Node will dynamically construct children to hold copies of each child of the source Node. 
 
- - Schema::number_of_children()
- - Schema::child(index_t)
- - Schema::child_ptr(index_t)
- - Schema::operator=(index_t)
- - Schema::remove(index_t)
+ - **If the source describes a List**: 
+ 
+   - Update copies the children of the source Node into the calling Node. Normal set semantics apply: if a compatible child already exists in the same list order in the calling Node, the data will be copied.  If not, the calling Node will dynamically construct children to hold copies of each child of the source Node. 
 
-paths
-~~~~~~~~~
-Used for Node instances in *Object* role interface. In the Object role, a Node has a collection of indexed and named children. Access by name is done via a *path*. The path is a forward-slash separated URI, where each segment maps to Node in a hierarchal tree. Methods related to this concept include:
+ - **If the source Node describes a leaf data type**: 
 
- - Node::fetch(string)
- - Node::fetch_ptr(string)
- - Node::operator=(string)
- - Node::has_path(string)
- - Node::remove(string)
+   - Update works exactly like a **set** (not true yet).
 
- - Schema::fetch(string)
- - Schema::fetch_child(string)
- - Schema::fetch_ptr(string)
- - Schema::operator=(string)
- - Schema::has_path(string)
- - Schema::remove(string)
+- **Node::update_compatible(Node &source)**: 
 
-external
-~~~~~~~~~
-Concept used throughout the Conduit API to specify ownership for passed data.
-When using Node constructors, Generators, or Node::set calls, you have the option of using an external variant. When external is specified, a Node does not own (allocate or deallocate) the memory for the data it holds.
+ This method copies data from the children in the source Node that are compatible with children in the calling node. No changes are made where children are incompatible. 
+
+- **Node::update_external(Node &source)**: 
+
+ This method creates children in the calling Node that externally describe the children in the source node. It differs from **Node::set_external(Node &source)** in that **set_external()** will clear the calling Node so it exactly match an external description of the source Node, whereas **update_external()** will only change the children in the calling Node that correspond to children in the source Node.
+
 
 

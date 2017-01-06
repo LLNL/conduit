@@ -1,5 +1,5 @@
 .. ############################################################################
-.. # Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+.. # Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.
 .. # 
 .. # Produced at the Lawrence Livermore National Laboratory
 .. # 
@@ -42,19 +42,26 @@
 .. # 
 .. ############################################################################
 
+===================
+Relay
+===================
 
-================================
-User Documentation
-================================
-
-.. toctree::
-
-   conduit
-   relay
-   blueprint
-   building
-   glossary
+.. note::
+    The **relay** APIs and docs are work in progress.
 
 
-.. leave out the api docs for now, the doxygen comments are too sparse. 
+Conduit Relay is an umbrella project for I/O and communication functionality built on top of Conduit's Core API. It includes three components:
+
+* **io** - I/O functionally beyond binary, memory mapped, and json-based text file I/O. Includes optional Silo and HDF5 I/O support. 
+* **web** - An embedded web server (built using `CivetWeb <https://github.com/civetweb/civetweb>`_) that can host files and supports developing custom REST and WebSocket backends that use conduit::Node instances as payloads.
+* **mpi**  - Interfaces for MPI communication using conduit::Node instances as payloads.
+
+The **io** and **web** features are built into the *conduit_relay* library. The MPI functionality exists in a separate library *conduit_relay_mpi* to avoid include and linking issues for serial codes that want to use relay.
+
+
+.. .. toctree::
+..     relay_io
+..    relay_web
+..     relay_mpi
+
 

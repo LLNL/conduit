@@ -1,69 +1,64 @@
 .. ############################################################################
-.. # Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
-.. #
+.. # Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.
+.. # 
 .. # Produced at the Lawrence Livermore National Laboratory
-.. #
+.. # 
 .. # LLNL-CODE-666778
-.. #
+.. # 
 .. # All rights reserved.
-.. #
-.. # This file is part of Conduit.
-.. #
+.. # 
+.. # This file is part of Conduit. 
+.. # 
 .. # For details, see: http://software.llnl.gov/conduit/.
-.. #
+.. # 
 .. # Please also read conduit/LICENSE
-.. #
-.. # Redistribution and use in source and binary forms, with or without
+.. # 
+.. # Redistribution and use in source and binary forms, with or without 
 .. # modification, are permitted provided that the following conditions are met:
-.. #
-.. # * Redistributions of source code must retain the above copyright notice,
+.. # 
+.. # * Redistributions of source code must retain the above copyright notice, 
 .. #   this list of conditions and the disclaimer below.
-.. #
+.. # 
 .. # * Redistributions in binary form must reproduce the above copyright notice,
 .. #   this list of conditions and the disclaimer (as noted below) in the
 .. #   documentation and/or other materials provided with the distribution.
-.. #
+.. # 
 .. # * Neither the name of the LLNS/LLNL nor the names of its contributors may
 .. #   be used to endorse or promote products derived from this software without
 .. #   specific prior written permission.
-.. #
+.. # 
 .. # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 .. # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 .. # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 .. # ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 .. # LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-.. # DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.. # DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
 .. # DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 .. # OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-.. # HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+.. # HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
 .. # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-.. # IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+.. # IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 .. # POSSIBILITY OF SUCH DAMAGE.
-.. #
+.. # 
 .. ############################################################################
 
-================================
-Presentations 
-================================
+===========
+Conduit
+===========
 
-Slides
-------------------
-* :download:`SciPy 2016 talk on Conduit (July 2016) <2016_07_13_scipy2016_conduit_slides.pdf>`
-* :download:`Conduit Introduction (February 2015) <2015_conduit_intro.pdf>`
+Tutorial
+---------------
+This short tutorial provides C++ examples that demonstrate the Conduit's Core 
+API. Conduit's unit tests (*src/tests/{library_name}/*) also provide a rich set 
+of examples for Conduit's Core API and additional libraries. 
 
+.. toctree::
 
-Talks
-------------------
-* `SciPy 2016 talk on Conduit (July 2016) <https://youtu.be/3_GKjeRUPKg>`_
+   tutorial_basics
+   tutorial_numeric
+   tutorial_json
+   tutorial_ownership
+   tutorial_update
+   tutorial_errors
 
-Interviews
-------------------
-* `RCE HPC Podcast on Conduit  <http://www.rce-cast.com/Podcast/rce-101-conduit.html>`_
-
-------------------
-
-Articles
-------------------
-* `LLNL Computation Article on the 2014-2015 Harvey Mudd CS Conduit Clinic Project <http://computation.llnl.gov/newsroom/hpc-partnership-harvey-mudd-college-and-livermore>`_
-
-
+..    conduit_api
