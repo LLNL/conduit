@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -58,7 +58,7 @@ endif()
 # Conduit
 ################################
 
-project(conduit VERSION "0.2.0")
+project(conduit VERSION "0.2.1")
 
 ################################
 # Build Options
