@@ -209,7 +209,7 @@ Uberenv Options for Building Third Party Dependencies
   --spec             Spack spec                           linux: **%gcc**
                                                           osx: **%clang**
   --compilers-yaml   Spack compilers settings file        ``scripts/uberenv/compilers.yaml``
-  -k                 Ignore SSL Errors                    False
+  -k                 Ignore SSL Errors                    **False**
  ================== ==================================== ======================================
 
 The ``-k`` option exists for sites where SSL certificate interception undermines fetching
