@@ -57,13 +57,6 @@ RUN apt-get update && apt-get install -y \
     python \
  && rm -rf /var/lib/apt/lists/*
 
-# at some sites, ssl certs are intercepted, which
-# cases issues fetching source via https.
-#
-# to resolve this, either install the proper certs into the image, or use 
-# the following commands to  disable ssl for git and curl (used by spack):
-RUN git config --global http.sslVerify false
-RUN echo insecure >> ~/.curlrc
 
 # untar the current source  (created as part of example_build.sh)
 COPY conduit.docker.src.tar.gz /
@@ -72,9 +65,20 @@ RUN tar -xzf conduit.docker.src.tar.gz
 # if you would like to clone conduit master directly, you can use:
 #RUN git clone --depth 1 https://github.com/LLNL/conduit.git
 
+# at some sites ssl certs are intercepted, which cases issues fetching 
+# tpl sources via https
+
+# to resolve this, either:
+# 1) pass the "-k" option to uberenv (recommended), 
+# 2) install the proper certs into the image, or
+# 3) use  the following commands to disable ssl for git and 
+#    curl (both are used by spack):
+#RUN git config --global http.sslVerify false
+#RUN echo insecure >> ~/.curlrc
+
 # bootstrap third party libs using spack and uberenv
 #  for this example we use mpich for MPI and only build python2 (not python3)
-RUN cd conduit && python scripts/uberenv/uberenv.py --spec %gcc+mpich~python3
+RUN cd conduit && python scripts/uberenv/uberenv.py -k --spec %gcc+mpich~python3
 
 # configure a debug build with cmake
 RUN cd conduit && mkdir build-debug

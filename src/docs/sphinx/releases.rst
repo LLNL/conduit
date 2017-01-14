@@ -53,8 +53,8 @@ https://github.com/LLNL/conduit/releases
 v0.2.1
 -----------------
 
-* `Source Tarball <https://github.com/LLNL/conduit/archive/v0.2.1.tar.gz>`_
-* `Docs <http://software.llnl.gov/conduit/v0.2.1>`_
+* `Source Tarball <https://github.com/LLNL/conduit/archive/v0.2.1.tar.gz>`__
+* `Docs <http://software.llnl.gov/conduit/v0.2.1>`__
 
 
 Highlights
@@ -75,14 +75,15 @@ Highlights
  * Added stand alone blueprint verify executable
 
 * **Relay**
+
  * Updated the version of civetweb used to avoid dlopen issues with SSL for static builds
 
 
 v0.2.0
 -----------------
 
-* `Source Tarball <https://github.com/LLNL/conduit/archive/v0.2.0.tar.gz>`_
-* `Docs <http://software.llnl.gov/conduit/v0.2.0>`_
+* `Source Tarball <https://github.com/LLNL/conduit/archive/v0.2.0.tar.gz>`__
+* `Docs <http://software.llnl.gov/conduit/v0.2.0>`__
     
 Highlights 
 +++++++++++++

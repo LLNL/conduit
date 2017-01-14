@@ -209,7 +209,18 @@ Uberenv Options for Building Third Party Dependencies
   --spec             Spack spec                           linux: **%gcc**
                                                           osx: **%clang**
   --compilers-yaml   Spack compilers settings file        ``scripts/uberenv/compilers.yaml``
+  -k                 Ignore SSL Errors                    **False**
  ================== ==================================== ======================================
+
+The ``-k`` option exists for sites where SSL certificate interception undermines fetching
+from github and https hosted source tarballs. When enabled, ``uberenv.py`` clones spack using:
+
+.. code:: bash
+
+    git -c http.sslVerify=false clone https://github.com/llnl/spack.git
+
+And passes ``-k`` to any spack commands that may fetch via https.
+
 
 Default invocation on Linux:
 
