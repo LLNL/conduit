@@ -70,21 +70,6 @@
 #define CONDUIT_HDF5_STATUS_OK(hdf5_id )   hdf5_id  >= 0
 
 //-----------------------------------------------------------------------------
-/// The CONDUIT_CHECK_HDF5_ERROR macro is used to check error codes from HDF5.
-//-----------------------------------------------------------------------------
-#define CONDUIT_CHECK_HDF5_ERROR( hdf5_err, msg    )                \
-{                                                                   \
-    if( hdf5_err < 0 )                                              \
-    {                                                               \
-        std::ostringstream hdf5_err_oss;                            \
-        hdf5_err_oss << "HDF5 Error code"                           \
-            <<  hdf5_err                                            \
-            << " " << msg;                                          \
-        CONDUIT_ERROR( hdf5_err_oss.str());                         \
-    }                                                               \
-}
-
-//-----------------------------------------------------------------------------
 /// The CONDUIT_HDF5_ERROR macro is used for errors with ref paths.
 //-----------------------------------------------------------------------------
 #define CONDUIT_HDF5_ERROR( ref_path, msg )                               \
