@@ -165,6 +165,8 @@ NodeViewerRequestHandler::handle_get_schema(struct mg_connection *conn)
 {
     if(m_node != NULL)
     {
+        mg_printf(conn,
+                  "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n");
         mg_printf(conn, "%s",m_node->schema().to_json(true).c_str());
     }
     else
@@ -193,6 +195,8 @@ NodeViewerRequestHandler::handle_get_value(struct mg_connection *conn)
         
         mg_get_var(post_data, post_data_len, "cpath", cpath, sizeof(cpath));
         // TODO: value instead of datavalue
+        mg_printf(conn,
+                  "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n");
         mg_printf(conn, "{ \"datavalue\": %s }",
                   m_node->fetch(cpath).to_json().c_str());
     }
@@ -215,6 +219,9 @@ NodeViewerRequestHandler::handle_get_base64_json(struct mg_connection *conn)
     {
         std::ostringstream oss;
         m_node->to_json_stream(oss,"conduit_base64_json");
+        
+        mg_printf(conn,
+                  "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n");
         mg_printf(conn, "%s",oss.str().c_str());
     }
     else
