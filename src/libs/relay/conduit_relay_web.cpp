@@ -63,6 +63,7 @@
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "conduit_relay_config.h"
+#include "conduit_relay.hpp"
 #include "conduit_relay_web.hpp"
 
 //-----------------------------------------------------------------------------
@@ -98,9 +99,15 @@ web_client_root_directory()
     }
     
     Node n;
-    // conduit::relay::about(n)
-    about(n);
+    conduit::relay::about(n);
     
+    if(!n.has_child("web_client_root"))
+    {
+        CONDUIT_ERROR("conduit::relay::about result missing 'web_client_root'"
+                      << std::endl
+                      << n.to_json());
+    }
+
     web_root = n["web_client_root"].as_string();
 
     if(!conduit::utils::is_directory(web_root))
