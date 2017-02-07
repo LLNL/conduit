@@ -61,6 +61,11 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/t_config.hpp.in"
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
+
+if(MSVC AND MSVC_VERSION LESS 1800)
+   add_definitions("/D_VARIADIC_MAX=10")
+endif()
+
 add_subdirectory("thirdparty")
 
 add_subdirectory("conduit")
