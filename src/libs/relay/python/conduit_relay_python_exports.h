@@ -56,7 +56,7 @@
 //-----------------------------------------------------------------------------
 
 #if defined(_WIN32)
-#if defined(CONDUIT_RELAY_PYTHON_EXPORTS) || defined((CONDUIT_RELAY_IO_PYTHON_EXPORTS) || defined((CONDUIT_RELAY_WEB_PYTHON_EXPORTS)|| defined((conduit_relay_python_EXPORTS) || defined((conduit_relay_io_python_EXPORTS) || defined((conduit_relay_web_python_EXPORTS) 
+#if defined(CONDUIT_RELAY_PYTHON_EXPORTS) || defined(CONDUIT_RELAY_IO_PYTHON_EXPORTS) || defined(CONDUIT_RELAY_WEB_PYTHON_EXPORTS)|| defined(conduit_relay_python_EXPORTS) || defined(conduit_relay_io_python_EXPORTS) || defined(conduit_relay_web_python_EXPORTS) 
 #define CONDUIT_RELAY_PYTHON_API __declspec(dllexport)
 #else
 #define CONDUIT_RELAY_PYTHON_API __declspec(dllimport)
