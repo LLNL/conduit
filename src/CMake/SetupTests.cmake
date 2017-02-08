@@ -149,10 +149,18 @@ function(add_python_test TEST)
     message(STATUS " [*] Adding Python-based Unit Test: ${TEST}")
     add_test(NAME ${TEST} COMMAND
              ${PYTHON_EXECUTABLE} -B -m unittest -v ${TEST})
+
+    # use proper env var path sep for current platform
+    if(WIN32)
+        set(ENV_PATH_SEP "\\;")
+    else()
+        set(ENV_PATH_SEP ":")
+    endif()
     # make sure python can pick up the modules we built
     set_property(TEST ${TEST}
                  PROPERTY
-                 ENVIRONMENT "PYTHONPATH=${CMAKE_BINARY_DIR}/python-modules/:${CMAKE_CURRENT_SOURCE_DIR}")
+                 ENVIRONMENT "PYTHONPATH=${CMAKE_BINARY_DIR}/python-modules/${ENV_PATH_SEP}${CMAKE_CURRENT_SOURCE_DIR}")
+
 endfunction(add_python_test)
 
 
