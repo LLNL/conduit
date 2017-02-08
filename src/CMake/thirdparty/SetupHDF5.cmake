@@ -54,7 +54,8 @@ endif()
 # CMake's FindHDF5 module uses the HDF5_ROOT env var
 set(HDF5_ROOT ${HDF5_DIR})
 
-if(NOT WIN32)
+#if(NOT WIN32)
+if(TRUE)
     set(ENV{HDF5_ROOT} ${HDF5_ROOT}/bin)
     # Use CMake's FindHDF5 module, which uses hdf5's compiler wrappers to extract
     # all the info about the hdf5 install
