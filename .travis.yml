@@ -88,6 +88,7 @@ before_install:
 install:
   - sh cmake-3.3.0-Linux-x86_64.sh --skip-license --prefix=${TRAVIS_HOME}/cmake/
   - conda install --yes numpy
+  - conda install --yes hdf5
   - pip install cpp-coveralls
 script:
   - cmake --version
@@ -109,6 +110,8 @@ script:
   - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_FORTRAN=ON"
   # enable python support
   - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=ON"
+  # enable hdf5 support
+  - CMAKE_OPTS="${CMAKE_OPTS} -DHDF5_DIR=${TRAVIS_HOME}/miniconda"
   # enable coverage (only when using shared libs case)
   - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_COVERAGE=${ENABLE_COVERAGE}"
   # configure with cmake
