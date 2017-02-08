@@ -132,6 +132,8 @@ endif()
 # each of our tests and bins, but that was futile.
 ################################
 if(WIN32)
+    
+    MESSAGE(STATUS "build output location: ${CMAKE_BINARY_DIR}/bin")
     set(EXECUTABLE_OUTPUT_PATH  ${CMAKE_BINARY_DIR}/bin)
     set(ARCHIVE_OUTPUT_PATH     ${CMAKE_BINARY_DIR}/bin)
     set(LIBRARY_OUTPUT_PATH     ${CMAKE_BINARY_DIR}/bin)

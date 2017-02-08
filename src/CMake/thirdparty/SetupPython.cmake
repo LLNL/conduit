@@ -162,11 +162,15 @@ FUNCTION(PYTHON_ADD_COMPILED_MODULE target_name
     
     if(WIN32)
         SET_TARGET_PROPERTIES(${target_name} PROPERTIES PREFIX "")
+        SET_TARGET_PROPERTIES(${target_name} PROPERTIES IMPORT_PREFIX "")
+        SET_TARGET_PROPERTIES(${target_name} PROPERTIES SUFFIX ".pyd")
     endif()
-    
+
     SET_TARGET_PROPERTIES(${target_name} PROPERTIES
                                          LIBRARY_OUTPUT_DIRECTORY
                                          ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir})
+
+    MESSAGE(STATUS "${target_name} build location: ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir}")
 
     # link with python
     target_link_libraries(${target_name} ${PYTHON_LIBRARIES})
@@ -205,11 +209,16 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE target_name
 
     if(WIN32)
         SET_TARGET_PROPERTIES(${target_name} PROPERTIES PREFIX "")
+        SET_TARGET_PROPERTIES(${target_name} PROPERTIES IMPORT_PREFIX "")
+        SET_TARGET_PROPERTIES(${target_name} PROPERTIES SUFFIX ".pyd")
     endif()
 
     SET_TARGET_PROPERTIES(${target_name} PROPERTIES
                                          LIBRARY_OUTPUT_DIRECTORY
                                          ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir})
+
+    MESSAGE(STATUS "${target_name} build location: ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir}")
+
 
     # link with python
     target_link_libraries(${target_name} ${PYTHON_LIBRARIES})
