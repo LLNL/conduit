@@ -19,7 +19,6 @@ install:
   - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
   - conda update --yes conda
   - conda install --yes numpy
-  - conda install --yes hdf5
 
 before_build:
   # remove some noisy warnings from Xamarin
@@ -27,7 +26,7 @@ before_build:
   # configure
   - echo Running cmake ...
   # enable hdf5 support and use default python
-  - cmake -Hsrc -Bbuild -G "%CMAKE_GENERATOR%" -DHDF5_DIR="%MINICONDA%" -DENABLE_PYTHON=TRUE
+  - cmake -Hsrc -Bbuild -G "%CMAKE_GENERATOR%" -DENABLE_PYTHON=TRUE
   #- cmake -Hsrc -Bbuild -G "%CMAKE_GENERATOR%" -DHDF5_DIR="C:\\Program Files\\HDF_Group\\HDF5\\1.8.18" -DENABLE_PYTHON=TRUE
 
 build_script:
