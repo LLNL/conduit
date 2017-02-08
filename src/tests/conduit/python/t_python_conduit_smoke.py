@@ -50,6 +50,9 @@
 import sys
 import unittest
 
+# show sys.path
+print sys.path
+
 import conduit
 
 class Test_Condut_Basic(unittest.TestCase):
