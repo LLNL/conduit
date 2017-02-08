@@ -1,7 +1,5 @@
 environment:
-  - HDF5_DIR: "C:\\Program Files\\HDF_Group\\HDF5\\1.8.17"
-
-matrix:
+  matrix:
   - CMAKE_GENERATOR: "Visual Studio 14 2015 Win64"
 
 init:
@@ -20,7 +18,7 @@ before_build:
   # configure
   - echo Running cmake ...
   # enable hdf5 support and use default python
-  - cmake -Hsrc -Bbuild -G "%CMAKE_GENERATOR%" -DHDF5_DIR=$(HDF5_DIR) -DENABLE_PYTHON=TRUE
+  - cmake -Hsrc -Bbuild -G "%CMAKE_GENERATOR%" -DHDF5_DIR="C:\\Program Files\\HDF_Group\\HDF5\\1.8.17" -DENABLE_PYTHON=TRUE
 
 build_script:
   #build
