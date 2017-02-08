@@ -2316,7 +2316,7 @@ static PyObject *
 PyConduit_Schema_str(PyConduit_Schema *self)
 {
    std::ostringstream oss;
-   self->schema->to_json(oss);
+   self->schema->to_json_stream(oss);
    return (Py_BuildValue("s", oss.str().c_str()));
 }
 
@@ -3827,13 +3827,15 @@ PyConduit_Node_to_json(PyConduit_Node* self,
         eoe = std::string(eoe_c_str);
     }
     
-    std::string output = self->node->to_json(protocol,
-                                             indent,
-                                             depth,
-                                             pad,
-                                             eoe);
+    std::ostringstream oss;
+    self->node->to_json_stream(oss,
+                               protocol,
+                               indent,
+                               depth,
+                               pad,
+                               eoe);
 
-    return (Py_BuildValue("s", output.c_str()));
+    return (Py_BuildValue("s", oss.str().c_str()));
 }
 
 
