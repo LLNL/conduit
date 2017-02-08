@@ -160,15 +160,17 @@ FUNCTION(PYTHON_ADD_COMPILED_MODULE target_name
     MESSAGE(STATUS "Configuring python module: ${target_name}")
     PYTHON_ADD_MODULE(${target_name} ${ARGN})
     
-    if(WIN32)
-        SET_TARGET_PROPERTIES(${target_name} PROPERTIES PREFIX "")
-        SET_TARGET_PROPERTIES(${target_name} PROPERTIES IMPORT_PREFIX "")
-        SET_TARGET_PROPERTIES(${target_name} PROPERTIES SUFFIX ".pyd")
-    endif()
 
-    SET_TARGET_PROPERTIES(${target_name} PROPERTIES
+    set_target_properties(${target_name} PROPERTIES
                                          LIBRARY_OUTPUT_DIRECTORY
                                          ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir})
+
+    foreach(CFG_TYPE ${CMAKE_CONFIGURATION_TYPES})
+        string(TOUPPER ${CFG_TYPE} CFG_TYPE)
+        set_target_properties(${target_name} PROPERTIES
+                                             LIBRARY_OUTPUT_DIRECTORY_${CFG_TYPE}
+                                             ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir})
+    endforeach()
 
     MESSAGE(STATUS "${target_name} build location: ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir}")
 
@@ -207,15 +209,16 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE target_name
                                ${py_sources})
     PYTHON_ADD_MODULE(${target_name} ${ARGN})
 
-    if(WIN32)
-        SET_TARGET_PROPERTIES(${target_name} PROPERTIES PREFIX "")
-        SET_TARGET_PROPERTIES(${target_name} PROPERTIES IMPORT_PREFIX "")
-        SET_TARGET_PROPERTIES(${target_name} PROPERTIES SUFFIX ".pyd")
-    endif()
-
-    SET_TARGET_PROPERTIES(${target_name} PROPERTIES
+    set_target_properties(${target_name} PROPERTIES
                                          LIBRARY_OUTPUT_DIRECTORY
                                          ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir})
+
+    foreach(CFG_TYPE ${CMAKE_CONFIGURATION_TYPES})
+        string(TOUPPER ${CFG_TYPE} CFG_TYPE)
+        set_target_properties(${target_name} PROPERTIES
+                                             LIBRARY_OUTPUT_DIRECTORY_${CFG_TYPE}
+                                             ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir})
+    endforeach()
 
     MESSAGE(STATUS "${target_name} build location: ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir}")
 
