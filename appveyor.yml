@@ -8,9 +8,9 @@ init:
 
 install:
   - set PATH=%PATH%;%HDF5_BINDIR%
-  - ps: Invoke-WebRequest "http://www.hdfgroup.org/ftp/HDF5/current/bin/windows/extra/hdf5-1.8.17-win64-vs2015-shared.zip" -OutFile hdf5.zip
+  - ps: Invoke-WebRequest "https://support.hdfgroup.org/ftp/HDF5/current18/bin/windows/extra/hdf5-1.8.18-win64-vs2015-shared.zip" -OutFile hdf5.zip
   - 7z x hdf5.zip -y
-  - ps: Start-Process -FilePath msiexec -ArgumentList /i, "hdf5\HDF5-1.8.17-win64.msi", /quiet -Wait
+  - ps: Start-Process -FilePath msiexec -ArgumentList /i, "hdf5\HDF5-1.8.18-win64.msi", /quiet -Wait
 
 before_build:
   # remove some noisy warnings from Xamarin
@@ -18,7 +18,7 @@ before_build:
   # configure
   - echo Running cmake ...
   # enable hdf5 support and use default python
-  - cmake -Hsrc -Bbuild -G "%CMAKE_GENERATOR%" -DHDF5_DIR="C:\\Program Files\\HDF_Group\\HDF5\\1.8.17" -DENABLE_PYTHON=TRUE
+  - cmake -Hsrc -Bbuild -G "%CMAKE_GENERATOR%" -DHDF5_DIR="C:\\Program Files\\HDF_Group\\HDF5\\1.8.18" -DENABLE_PYTHON=TRUE
 
 build_script:
   #build
