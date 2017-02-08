@@ -74,12 +74,7 @@ if(PYTHONINTERP_FOUND)
         if(NOT WIN32)
             set(PYTHON_GLOB_TEST "${PYTHON_LIB_DIR}/libpython*")
         else()
-            if(PYTHON_LIB_DIR)
-                set(PYTHON_GLOB_TEST "${PYTHON_LIB_DIR}/python*.lib")
-            else()
-                get_filename_component(PYTHON_ROOT_DIR ${PYTHON_EXECUTABLE} DIRECTORY)
-                set(PYTHON_GLOB_TEST "${PYTHON_ROOT_DIR}/libs/python*.lib")
-            endif()
+            set(PYTHON_GLOB_TEST "${PYTHON_LIB_DIR}/python*.lib")
         endif()
             
         FILE(GLOB PYTHON_GLOB_RESULT ${PYTHON_GLOB_TEST})
@@ -158,13 +153,7 @@ FUNCTION(PYTHON_ADD_COMPILED_MODULE target_name
                                     dest_dir
                                     py_module_dir)
     MESSAGE(STATUS "Configuring python module: ${target_name}")
-
-    if(WIN32)
-        add_definitions(-DMS_NO_COREDLL)
-    endif()
-
     PYTHON_ADD_MODULE(${target_name} ${ARGN})
-    
     SET_TARGET_PROPERTIES(${target_name} PROPERTIES
                                          LIBRARY_OUTPUT_DIRECTORY
                                          ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir})
@@ -197,11 +186,6 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE target_name
                                   setup_file
                                   py_sources)
     MESSAGE(STATUS "Configuring hybrid python module: ${target_name}")
-   
-    if(WIN32)
-        add_definitions(-DMS_NO_COREDLL)
-    endif()
-   
     PYTHON_ADD_DISTUTILS_SETUP("${target_name}_py_setup"
                                ${dest_dir}
                                ${py_module_dir}
