@@ -1,16 +1,24 @@
 environment:
   matrix:
   - CMAKE_GENERATOR: "Visual Studio 14 2015 Win64"
+    PYTHON_VERSION: 2.7
+    MINICONDA: C:\Miniconda
 
 init:
   # line endings magic
   - git config --global core.autocrlf input
+  - "ECHO %PYTHON_VERSION% %MINICONDA%"
 
 install:
+  # setup hdf5
   - set PATH=%PATH%;%HDF5_BINDIR%
   - ps: Invoke-WebRequest "https://support.hdfgroup.org/ftp/HDF5/current18/bin/windows/extra/hdf5-1.8.18-win64-vs2015-shared.zip" -OutFile hdf5.zip
   - 7z x hdf5.zip -y
+  # setup python via mini conda
   - ps: Start-Process -FilePath msiexec -ArgumentList /i, "hdf5\HDF5-1.8.18-win64.msi", /quiet -Wait
+  - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
+  - conda update --yes conda
+  - conda install --yes numpy
 
 before_build:
   # remove some noisy warnings from Xamarin
