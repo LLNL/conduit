@@ -159,10 +159,11 @@ FUNCTION(PYTHON_ADD_COMPILED_MODULE target_name
                                     py_module_dir)
     MESSAGE(STATUS "Configuring python module: ${target_name}")
     PYTHON_ADD_MODULE(${target_name} ${ARGN})
+    
     if(WIN32)
-        SET_TARGET_PROPERTIES(${target_name} PROPERTIES PREFIX "../")
-        SET_TARGET_PROPERTIES(${target_name} PROPERTIES IMPORT_PREFIX "../")
+        SET_TARGET_PROPERTIES(${target_name} PROPERTIES PREFIX "")
     endif()
+    
     SET_TARGET_PROPERTIES(${target_name} PROPERTIES
                                          LIBRARY_OUTPUT_DIRECTORY
                                          ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir})
@@ -201,10 +202,11 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE target_name
                                ${setup_file}
                                ${py_sources})
     PYTHON_ADD_MODULE(${target_name} ${ARGN})
+
     if(WIN32)
-        SET_TARGET_PROPERTIES(${target_name} PROPERTIES PREFIX "../")
-        SET_TARGET_PROPERTIES(${target_name} PROPERTIES IMPORT_PREFIX "../")
+        SET_TARGET_PROPERTIES(${target_name} PROPERTIES PREFIX "")
     endif()
+
     SET_TARGET_PROPERTIES(${target_name} PROPERTIES
                                          LIBRARY_OUTPUT_DIRECTORY
                                          ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir})
