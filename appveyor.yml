@@ -1,6 +1,7 @@
 environment:
   - HDF5_DIR: "C:\\Program Files\\HDF_Group\\HDF5\\1.8.17"
-  matrix:
+
+matrix:
   - CMAKE_GENERATOR: "Visual Studio 14 2015 Win64"
 
 init:
