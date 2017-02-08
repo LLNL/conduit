@@ -65,6 +65,7 @@ else()
     # in HDF5_LIBRARY.  Instead, use the 'CONFIG' signature of find_package
     # with appropriate hints for where cmake can find hdf5-config.cmake.
     find_package(HDF5 CONFIG 
+                 REQUIRED
                  HINTS ${HDF5_DIR}/cmake/hdf5 
                        ${HDF5_DIR}/lib/cmake/hdf5
                        ${HDF5_DIR}/share/cmake/hdf5)
