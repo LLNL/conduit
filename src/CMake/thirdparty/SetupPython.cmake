@@ -107,12 +107,20 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP target_name
                                     py_module_dir
                                     setup_file)
     MESSAGE(STATUS "Configuring python distutils setup: ${target_name}")
+    
+    # dest for build dir
+    set(abs_dest_path ${CMAKE_BINARY_DIR}/${dest_dir})
+    if(WIN32)
+        # on windows, distutils seems to need standard "\" style paths
+        string(REGEX REPLACE "/" "\\\\" abs_dest_path  ${abs_dest_path})
+    endif()
+
     add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${target_name}_build
             COMMAND ${PYTHON_EXECUTABLE} ${setup_file} -v
             build
             --build-base=${CMAKE_CURRENT_BINARY_DIR}/${target_name}_build
             install
-            --install-purelib=${CMAKE_BINARY_DIR}/${dest_dir}
+            --install-purelib="${abs_dest_path}"
             DEPENDS  ${setup_file} ${ARGN}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
