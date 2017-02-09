@@ -56,7 +56,16 @@
 //-----------------------------------------------------------------------------
 
 #if defined(_WIN32)
-#if defined(CONDUIT_BLUEPRINT_PYTHON_EXPORTS) || defined(conduit_blueprint_python_EXPORTS)
+#if defined(CONDUIT_BLUEPRINT_PYTHON_EXPORTS) || \
+    defined(conduit_blueprint_python_EXPORTS) || \
+    defined(CONDUIT_BLUEPRINT_MCARRAY_PYTHON_EXPORTS) || \
+    defined(conduit_blueprint_mcarray_python_EXPORTS) || \
+    defined(CONDUIT_BLUEPRINT_MCARRAY_EXAMPLES_PYTHON_EXPORTS) || \
+    defined(conduit_blueprint_mcarray_examples_python_EXPORTS) || \
+    defined(CONDUIT_BLUEPRINT_MESH_PYTHON_EXPORTS) || \
+    defined(conduit_blueprint_mesh_python_EXPORTS) || \
+    defined(CONDUIT_BLUEPRINT_MESH_EXAMPLES_PYTHON_EXPORTS) || \
+    defined(conduit_blueprint_mesh_examples_python_EXPORTS)
 #define CONDUIT_BLUEPRINT_PYTHON_API __declspec(dllexport)
 #else
 #define CONDUIT_BLUEPRINT_PYTHON_API __declspec(dllimport)

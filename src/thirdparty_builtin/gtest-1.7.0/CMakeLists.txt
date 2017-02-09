@@ -59,6 +59,10 @@ include_directories(
 # Where Google Test's libraries can be found.
 link_directories(${gtest_BINARY_DIR}/src)
 
+if(MSVC AND MSVC_VERSION LESS 1800)
+   add_definitions("/D_VARIADIC_MAX=10")
+endif()
+
 ########################################################################
 #
 # Defines the gtest & gtest_main libraries.  User tests should link

@@ -58,6 +58,9 @@
 #if defined(CONDUIT_PLATFORM_WINDOWS)
 #include <Windows.h>
 #include <direct.h>
+#if (_MSC_VER && _MSC_VER < 1900)
+    #define snprintf _snprintf
+#endif
 #else
 #include <time.h>
 #endif

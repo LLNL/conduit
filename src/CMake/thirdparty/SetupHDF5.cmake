@@ -53,17 +53,69 @@ endif()
 
 # CMake's FindHDF5 module uses the HDF5_ROOT env var
 set(HDF5_ROOT ${HDF5_DIR})
-set(ENV{HDF5_ROOT} ${HDF5_ROOT}/bin)
 
-# Use CMake's FindHDF5 module, which uses hdf5's compiler wrappers to extract
-# all the info about the hdf5 install
-include(FindHDF5)
+if(NOT WIN32)
+    set(ENV{HDF5_ROOT} ${HDF5_ROOT}/bin)
+    # Use CMake's FindHDF5 module, which uses hdf5's compiler wrappers to extract
+    # all the info about the hdf5 install
+    include(FindHDF5)
+else()
+    # CMake's FindHDF5 module is buggy on windows and will put the dll
+    # in HDF5_LIBRARY.  Instead, use the 'CONFIG' signature of find_package
+    # with appropriate hints for where cmake can find hdf5-config.cmake.
+    find_package(HDF5 CONFIG 
+                 REQUIRED
+                 HINTS ${HDF5_DIR}/cmake/hdf5 
+                       ${HDF5_DIR}/lib/cmake/hdf5
+                       ${HDF5_DIR}/share/cmake/hdf5)
+endif()
 
-# FindHDF5 sets HDF5_DIR to it's installed CMake info if it exists
+# FindHDF5/find_package sets HDF5_DIR to it's installed CMake info if it exists
 # we want to keep HDF5_DIR as the root dir of the install to be 
 # consistent with other packages
 
 set(HDF5_DIR ${HDF5_ROOT} CACHE PATH "" FORCE)
+
+#
+# Sanity check to alert us if some how we found an hdf5 instance
+# in an unexpected location.  
+#
+message(STATUS "Checking that found HDF5_INCLUDE_DIRS are in HDF5_DIR")
+
+foreach(IDIR ${HDF5_INCLUDE_DIRS})
+    if("${IDIR}" MATCHES "${HDF5_DIR}")
+        message(STATUS " ${IDIR} includes HDF5_DIR")
+        
+    else()
+        message(FATAL_ERROR " ${IDIR} does not include HDF5_DIR")
+    endif()
+endforeach()
+
+#
+# filter HDF5_LIBRARIES to remove hdf5_hl if it exists
+# we don't use hdf5_hl, but if we link with it will become
+# a transitive dependency
+#
+set(HDF5_HL_LIB FALSE)
+foreach(LIB ${HDF5_LIBRARIES})
+    if("${LIB}" MATCHES "hdf5_hl")
+        set(HDF5_HL_LIB ${LIB})
+    endif()
+endforeach()
+
+if(HDF5_HL_LIB)
+    message(STATUS "Removing hdf5_hl from HDF5_LIBRARIES")
+    list(REMOVE_ITEM HDF5_LIBRARIES ${HDF5_HL_LIB})
+endif()
+
+
+#
+# Display main hdf5 cmake vars
+#
+message(STATUS "HDF5 Include Dirs ${HDF5_INCLUDE_DIRS}")
+message(STATUS "HDF5 Libraries    ${HDF5_LIBRARIES}")
+
+
 
 
 

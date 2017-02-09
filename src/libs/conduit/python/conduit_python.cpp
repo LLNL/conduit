@@ -1563,28 +1563,28 @@ PyConduit_DataType_number_of_elements(PyConduit_DataType *self)
 static PyObject *
 PyConduit_DataType_offset(PyConduit_DataType *self)
 {
-    return PyLong_FromSsize_t(self->dtype.offset());
+    return PyLong_FromSsize_t((Py_ssize_t)self->dtype.offset());
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
 PyConduit_DataType_stride(PyConduit_DataType *self)
 {
-    return PyLong_FromSsize_t(self->dtype.stride());
+    return PyLong_FromSsize_t((Py_ssize_t)self->dtype.stride());
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
 PyConduit_DataType_element_bytes(PyConduit_DataType *self)
 {
-    return PyLong_FromSsize_t(self->dtype.element_bytes());
+    return PyLong_FromSsize_t((Py_ssize_t)self->dtype.element_bytes());
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
 PyConduit_DataType_endianness(PyConduit_DataType *self)
 {
-    return PyLong_FromSsize_t(self->dtype.endianness());
+    return PyLong_FromSsize_t((Py_ssize_t)self->dtype.endianness());
 }
 
 //---------------------------------------------------------------------------//
@@ -2316,7 +2316,7 @@ static PyObject *
 PyConduit_Schema_str(PyConduit_Schema *self)
 {
    std::ostringstream oss;
-   self->schema->to_json(oss);
+   self->schema->to_json_stream(oss);
    return (Py_BuildValue("s", oss.str().c_str()));
 }
 
@@ -2377,14 +2377,14 @@ PyConduit_Schema_dtype(PyConduit_Schema *self)
 static PyObject *
 PyConduit_Schema_total_strided_bytes(PyConduit_Schema *self)
 {
-    return PyLong_FromSsize_t(self->schema->total_strided_bytes());
+    return PyLong_FromSsize_t((Py_ssize_t)self->schema->total_strided_bytes());
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
 PyConduit_Schema_total_bytes_compact(PyConduit_Schema *self)
 {
-    return PyLong_FromSsize_t(self->schema->total_bytes_compact());
+    return PyLong_FromSsize_t((Py_ssize_t)self->schema->total_bytes_compact());
 }
 
 //---------------------------------------------------------------------------//
@@ -2401,7 +2401,7 @@ PyConduit_Schema_element_index(PyConduit_Schema *self,
         return NULL;
     }
 
-    return PyLong_FromSsize_t(self->schema->element_index(idx));
+    return PyLong_FromSsize_t((Py_ssize_t)self->schema->element_index(idx));
 }
 
 //---------------------------------------------------------------------------//
@@ -2751,7 +2751,7 @@ PyConduit_NodeIterator_name(PyConduit_NodeIterator *self)
 static PyObject *
 PyConduit_NodeIterator_index(PyConduit_NodeIterator *self)
 {
-    return PyLong_FromSsize_t(self->itr.index());
+    return PyLong_FromSsize_t((Py_ssize_t)self->itr.index());
 }
 
 //---------------------------------------------------------------------------//
@@ -3025,7 +3025,7 @@ static void
 PyConduit_Fill_DataArray_From_PyArray(DataArray<T> &conduit_array,
                                       PyArrayObject *numpy_array)
 {
-    npy_int num_ele = conduit_array.number_of_elements();
+    npy_int num_ele = (npy_int)conduit_array.number_of_elements();
     
     T *numpy_data = (T*)PyArray_BYTES(numpy_array);
     
@@ -3408,7 +3408,7 @@ PyConduit_Node_child(PyConduit_Node* self,
 static PyObject *
 PyConduit_Node_number_of_children(PyConduit_Node *self)
 {
-    return PyLong_FromSsize_t(self->node->number_of_children());
+    return PyLong_FromSsize_t((Py_ssize_t)self->node->number_of_children());
 }
 
 //---------------------------------------------------------------------------//
@@ -3561,14 +3561,14 @@ PyConduit_Node_parent(PyConduit_Node* self)
 static PyObject *
 PyConduit_Node_total_strided_bytes(PyConduit_Node *self)
 {
-    return PyLong_FromSsize_t(self->node->total_strided_bytes());
+    return PyLong_FromSsize_t((Py_ssize_t)self->node->total_strided_bytes());
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
 PyConduit_Node_total_bytes_compact(PyConduit_Node *self)
 {
-    return PyLong_FromSsize_t(self->node->total_bytes_compact());
+    return PyLong_FromSsize_t((Py_ssize_t)self->node->total_bytes_compact());
 }
 
 //---------------------------------------------------------------------------//
@@ -3667,8 +3667,8 @@ PyConduit_Node_set_external(PyConduit_Node* self,
     PyArray_Descr *desc = PyArray_DESCR((PyArrayObject*)value);
     PyArrayObject *py_arr = (PyArrayObject*)value;
     npy_intp num_ele = PyArray_SIZE(py_arr);
-    int offset = 0;
-    int stride = PyArray_STRIDE(py_arr, 0);
+    index_t offset = 0;
+    index_t stride = (index_t) PyArray_STRIDE(py_arr, 0);
     int nd = PyArray_NDIM(py_arr);
 
     if (nd > 1) {
@@ -3827,13 +3827,15 @@ PyConduit_Node_to_json(PyConduit_Node* self,
         eoe = std::string(eoe_c_str);
     }
     
-    std::string output = self->node->to_json(protocol,
-                                             indent,
-                                             depth,
-                                             pad,
-                                             eoe);
+    std::ostringstream oss;
+    self->node->to_json_stream(oss,
+                               protocol,
+                               indent,
+                               depth,
+                               pad,
+                               eoe);
 
-    return (Py_BuildValue("s", output.c_str()));
+    return (Py_BuildValue("s", oss.str().c_str()));
 }
 
 
@@ -4324,7 +4326,7 @@ PyConduit_createNumpyType(Node& node,
     PyArray_Descr* descr = PyArray_DescrFromType(type);
     PyObject* retval = NULL;
     void* data = node.element_ptr(0);
-    npy_intp len = dtype.number_of_elements();
+    npy_intp len = (npy_intp)dtype.number_of_elements();
     // TODO: This only deals with contiguous data?
     if (len == 1) 
     {
@@ -4338,7 +4340,7 @@ PyConduit_createNumpyType(Node& node,
         // and a descriptor, we'll just modify the strides appropriately.
         // This should be OK since we only support 1D arrays currently.
         npy_intp * strides = PyArray_STRIDES((PyArrayObject*)retval);
-        strides[0] = dtype.stride();
+        strides[0] = (npy_intp)dtype.stride();
     }
     return (retval);
 }
@@ -4349,7 +4351,7 @@ PyConduit_convertNodeToPython(Node& node)
 {
     const DataType& type = node.dtype();
     int numpy_type = -1;
-    PyObject* retval;
+    PyObject* retval = NULL;
 
     switch (type.id()) {
         case DataType::EMPTY_ID:

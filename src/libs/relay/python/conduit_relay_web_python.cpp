@@ -352,7 +352,7 @@ PyRelay_Web_WebServer_set_port(PyRelay_Web_WebServer *self,
         return NULL;
     }
     
-    self->webserver->set_port(port);
+    self->webserver->set_port((int)port);
     
     Py_RETURN_NONE; 
 }

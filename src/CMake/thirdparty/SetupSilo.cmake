@@ -69,7 +69,7 @@ find_path(SILO_INCLUDE_DIR silo.h
           NO_CMAKE_SYSTEM_PATH)
         
 
-find_library(SILO_LIBS NAMES siloh5
+find_library(SILO_LIBS NAMES siloh5 silohdf5
              PATHS ${SILO_DIR}/lib
              NO_DEFAULT_PATH
              NO_CMAKE_ENVIRONMENT_PATH

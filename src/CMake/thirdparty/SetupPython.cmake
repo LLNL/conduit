@@ -74,7 +74,12 @@ if(PYTHONINTERP_FOUND)
         if(NOT WIN32)
             set(PYTHON_GLOB_TEST "${PYTHON_LIB_DIR}/libpython*")
         else()
-            set(PYTHON_GLOB_TEST "${PYTHON_LIB_DIR}/python*.lib")
+            if(PYTHON_LIB_DIR)
+                set(PYTHON_GLOB_TEST "${PYTHON_LIB_DIR}/python*.lib")
+            else()
+                get_filename_component(PYTHON_ROOT_DIR ${PYTHON_EXECUTABLE} DIRECTORY)
+                set(PYTHON_GLOB_TEST "${PYTHON_ROOT_DIR}/libs/python*.lib")
+            endif()
         endif()
             
         FILE(GLOB PYTHON_GLOB_RESULT ${PYTHON_GLOB_TEST})
@@ -102,12 +107,20 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP target_name
                                     py_module_dir
                                     setup_file)
     MESSAGE(STATUS "Configuring python distutils setup: ${target_name}")
+    
+    # dest for build dir
+    set(abs_dest_path ${CMAKE_BINARY_DIR}/${dest_dir})
+    if(WIN32)
+        # on windows, distutils seems to need standard "\" style paths
+        string(REGEX REPLACE "/" "\\\\" abs_dest_path  ${abs_dest_path})
+    endif()
+
     add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${target_name}_build
             COMMAND ${PYTHON_EXECUTABLE} ${setup_file} -v
             build
             --build-base=${CMAKE_CURRENT_BINARY_DIR}/${target_name}_build
             install
-            --install-purelib=${CMAKE_BINARY_DIR}/${dest_dir}
+            --install-purelib="${abs_dest_path}"
             DEPENDS  ${setup_file} ${ARGN}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -154,9 +167,20 @@ FUNCTION(PYTHON_ADD_COMPILED_MODULE target_name
                                     py_module_dir)
     MESSAGE(STATUS "Configuring python module: ${target_name}")
     PYTHON_ADD_MODULE(${target_name} ${ARGN})
-    SET_TARGET_PROPERTIES(${target_name} PROPERTIES
+    
+
+    set_target_properties(${target_name} PROPERTIES
                                          LIBRARY_OUTPUT_DIRECTORY
                                          ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir})
+
+    foreach(CFG_TYPE ${CMAKE_CONFIGURATION_TYPES})
+        string(TOUPPER ${CFG_TYPE} CFG_TYPE)
+        set_target_properties(${target_name} PROPERTIES
+                                             LIBRARY_OUTPUT_DIRECTORY_${CFG_TYPE}
+                                             ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir})
+    endforeach()
+
+    MESSAGE(STATUS "${target_name} build location: ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir}")
 
     # link with python
     target_link_libraries(${target_name} ${PYTHON_LIBRARIES})
@@ -192,9 +216,20 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE target_name
                                ${setup_file}
                                ${py_sources})
     PYTHON_ADD_MODULE(${target_name} ${ARGN})
-    SET_TARGET_PROPERTIES(${target_name} PROPERTIES
+
+    set_target_properties(${target_name} PROPERTIES
                                          LIBRARY_OUTPUT_DIRECTORY
                                          ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir})
+
+    foreach(CFG_TYPE ${CMAKE_CONFIGURATION_TYPES})
+        string(TOUPPER ${CFG_TYPE} CFG_TYPE)
+        set_target_properties(${target_name} PROPERTIES
+                                             LIBRARY_OUTPUT_DIRECTORY_${CFG_TYPE}
+                                             ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir})
+    endforeach()
+
+    MESSAGE(STATUS "${target_name} build location: ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir}")
+
 
     # link with python
     target_link_libraries(${target_name} ${PYTHON_LIBRARIES})
@@ -214,6 +249,5 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE target_name
     )
 
 ENDFUNCTION(PYTHON_ADD_HYBRID_MODULE)
-
 
 
