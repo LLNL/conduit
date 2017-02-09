@@ -160,6 +160,13 @@ function(add_python_test TEST)
     set_property(TEST ${TEST}
                  PROPERTY
                  ENVIRONMENT "PYTHONPATH=${CMAKE_BINARY_DIR}/python-modules/${ENV_PATH_SEP}${CMAKE_CURRENT_SOURCE_DIR}")
+    if(WIN32)
+        set_property(TEST ${TEST}
+                     APPEND
+                     PROPERTY
+                     ENVIRONMENT "PATH=${CMAKE_BINARY_DIR}/bin/${ENV_PATH_SEP}$ENV{PATH}")
+    endif()
+
 
 endfunction(add_python_test)
 
