@@ -3025,7 +3025,7 @@ static void
 PyConduit_Fill_DataArray_From_PyArray(DataArray<T> &conduit_array,
                                       PyArrayObject *numpy_array)
 {
-    npy_int num_ele = conduit_array.number_of_elements();
+    npy_int num_ele = (npy_int)conduit_array.number_of_elements();
     
     T *numpy_data = (T*)PyArray_BYTES(numpy_array);
     
@@ -3667,8 +3667,8 @@ PyConduit_Node_set_external(PyConduit_Node* self,
     PyArray_Descr *desc = PyArray_DESCR((PyArrayObject*)value);
     PyArrayObject *py_arr = (PyArrayObject*)value;
     npy_intp num_ele = PyArray_SIZE(py_arr);
-    int offset = 0;
-    int stride = PyArray_STRIDE(py_arr, 0);
+    index_t offset = 0;
+    index_t stride = (index_t) PyArray_STRIDE(py_arr, 0);
     int nd = PyArray_NDIM(py_arr);
 
     if (nd > 1) {
@@ -4351,7 +4351,7 @@ PyConduit_convertNodeToPython(Node& node)
 {
     const DataType& type = node.dtype();
     int numpy_type = -1;
-    PyObject* retval;
+    PyObject* retval = NULL;
 
     switch (type.id()) {
         case DataType::EMPTY_ID:
