@@ -99,6 +99,20 @@ bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
 bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                   conduit::Node &info);
 
+
+//-----------------------------------------------------------------------------
+/// blueprint mesh property and transform methods
+/// 
+/// These methods can be called on any verified blueprint mesh.
+//-----------------------------------------------------------------------------
+
+//-------------------------------------------------------------------------
+bool CONDUIT_BLUEPRINT_API is_multidomain(const conduit::Node &n);
+
+//-------------------------------------------------------------------------
+bool CONDUIT_BLUEPRINT_API to_multidomain(const conduit::Node &n,
+                                          conduit::Node &dest);
+
 //-------------------------------------------------------------------------
 void CONDUIT_BLUEPRINT_API generate_index(const conduit::Node &mesh,
                                           const std::string &ref_path,
