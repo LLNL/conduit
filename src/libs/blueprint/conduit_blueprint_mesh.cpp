@@ -116,10 +116,20 @@ mesh::verify(const std::string &protocol,
     return res;
 }
 
+
 //-----------------------------------------------------------------------------
 bool
 mesh::verify(const Node &n,
              Node &info)
+{
+    return mesh::is_multidomain(n, info) || mesh::is_unidomain(n, info);
+}
+
+
+//-----------------------------------------------------------------------------
+bool
+mesh::is_unidomain(const Node &n,
+                   Node &info)
 {
     info.reset();
     bool res = true;
@@ -307,6 +317,66 @@ mesh::verify(const Node &n,
 }
 
 
+//-------------------------------------------------------------------------
+bool mesh::is_multidomain(const Node &n,
+                          Node &info)
+{
+    info.reset();
+    bool res = true;
+
+    const std::string proto_name = "mesh";
+
+    if(!n.dtype().is_object() && !n.dtype().is_list())
+    {
+        log_error(info,proto_name,"not an object or a list");
+        res = false;
+    }
+    else
+    {
+        NodeConstIterator itr = n.children();
+        while(itr.has_next())
+        {
+            const Node &chld = itr.next();
+            std::string chld_name;
+            {
+                std::ostringstream oss;
+                if(n.dtype().is_object())
+                {
+                    oss << itr.name();
+                }
+                else
+                {
+                    oss << itr.index();
+                }
+                chld_name = oss.str();
+            }
+
+            if(!mesh::is_unidomain(chld, info[chld_name]))
+            {
+                log_error(info,proto_name,
+                          "child " + chld_name + " is not a valid mesh");
+                res = false;
+            }
+        }
+    }
+
+    return res;
+}
+
+
+//-------------------------------------------------------------------------
+bool mesh::to_multidomain(const conduit::Node &n,
+                          conduit::Node &dest)
+{
+    dest.reset();
+
+    conduit::Node& dest_dom = dest.append();
+    dest_dom.set_external(n);
+
+    return true;
+}
+
+
 //-----------------------------------------------------------------------------
 std::string 
 identify_coord_sys_type(const Node &coords)
@@ -464,21 +534,6 @@ mesh::generate_index(const Node &mesh,
             idx_fld["path"] = ref_path + "/fields/" + fld_name;
         }
     }
-}
-
-
-//-------------------------------------------------------------------------
-bool mesh::is_multidomain(const conduit::Node &n)
-{
-    return false;
-}
-
-
-//-------------------------------------------------------------------------
-bool mesh::to_multidomain(const conduit::Node &n,
-                          conduit::Node &dest)
-{
-    return false;
 }
 
 

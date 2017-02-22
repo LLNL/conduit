@@ -107,7 +107,12 @@ bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
 //-----------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------
-bool CONDUIT_BLUEPRINT_API is_multidomain(const conduit::Node &n);
+bool CONDUIT_BLUEPRINT_API is_unidomain(const conduit::Node &n,
+                                        conduit::Node &info);
+
+//-------------------------------------------------------------------------
+bool CONDUIT_BLUEPRINT_API is_multidomain(const conduit::Node &n,
+                                          conduit::Node &info);
 
 //-------------------------------------------------------------------------
 bool CONDUIT_BLUEPRINT_API to_multidomain(const conduit::Node &n,
