@@ -148,6 +148,11 @@ bool verify_field_index_protocol(const Node &n, Node &info)
     return blueprint::mesh::verify("field/index",n,info);
 }
 
+bool verify_mesh_multidomain_protocol(const Node &n, Node &info)
+{
+    return blueprint::mesh::is_multidomain(n);
+}
+
 /// Testing Constants ///
 
 const std::vector<std::string> LOGICAL_COORDSYS = create_coordsys("i","j","k");
@@ -1066,15 +1071,45 @@ TEST(conduit_blueprint_mesh_verify, index_general)
 /// Mesh Integration Tests ///
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, mesh_multidomain)
+{
+    Node mesh, info;
+    EXPECT_FALSE(blueprint::mesh::is_multidomain(mesh));
+
+    Node domains[2];
+    blueprint::mesh::examples::braid("quads",10,10,1,domains[0]);
+    blueprint::mesh::to_multidomain(domains[0],mesh);
+    EXPECT_TRUE(blueprint::mesh::is_multidomain(mesh));
+
+    blueprint::mesh::examples::braid("quads",5,5,1,domains[1]);
+    mesh.append().set_external(domains[1]);
+    EXPECT_TRUE(blueprint::mesh::is_multidomain(mesh));
+
+    for(index_t di = 0; di < 2; di++)
+    {
+        Node& domain = mesh.child(di);
+        EXPECT_FALSE(blueprint::mesh::is_multidomain(domain));
+
+        Node coordsets = domain["coordsets"];
+        domain.remove("coordsets");
+        EXPECT_FALSE(blueprint::mesh::is_multidomain(mesh));
+
+        domain["coordsets"].reset();
+        domain["coordsets"].set(coordsets);
+        EXPECT_TRUE(blueprint::mesh::is_multidomain(mesh));
+    }
+}
+
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, mesh_general)
 {
     VerifyFun verify_mesh_funs[] = {
-        blueprint::mesh::verify,
-        blueprint::mesh::verify,
-        blueprint::mesh::is_unidomain,
-        blueprint::mesh::is_multidomain};
+        blueprint::mesh::verify, // unidomain verify
+        blueprint::mesh::verify, // multidomain verify
+        verify_mesh_multidomain_protocol};
 
-    for(index_t fi = 0; fi < 4; fi++)
+    for(index_t fi = 0; fi < 3; fi++)
     {
         VerifyFun verify_mesh = verify_mesh_funs[fi];
 
@@ -1084,7 +1119,7 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
         blueprint::mesh::examples::braid("quads",10,10,1,mesh_data);
 
         Node* domain_ptr = NULL;
-        if(fi % 2 == 0)
+        if(fi == 0)
         {
             mesh.set_external(mesh_data);
             domain_ptr = &mesh;
