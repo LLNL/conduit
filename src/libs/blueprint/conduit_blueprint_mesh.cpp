@@ -60,8 +60,8 @@ using namespace conduit;
 using namespace conduit::blueprint::utils;
 
 namespace conduit { namespace blueprint { namespace mesh {
-    bool verify_unidomain(const conduit::Node &n, conduit::Node &info);
-    bool verify_multidomain(const conduit::Node &n, conduit::Node &info);
+    bool verify_single_domain(const conduit::Node &n, conduit::Node &info);
+    bool verify_multi_domain(const conduit::Node &n, conduit::Node &info);
 } } }
 
 //-----------------------------------------------------------------------------
@@ -122,8 +122,8 @@ mesh::verify(const std::string &protocol,
 
 //-----------------------------------------------------------------------------
 bool
-mesh::verify_unidomain(const Node &n,
-                       Node &info)
+mesh::verify_single_domain(const Node &n,
+                           Node &info)
 {
     info.reset();
     bool res = true;
@@ -312,8 +312,8 @@ mesh::verify_unidomain(const Node &n,
 
 
 //-------------------------------------------------------------------------
-bool mesh::verify_multidomain(const Node &n,
-                              Node &info)
+bool mesh::verify_multi_domain(const Node &n,
+                               Node &info)
 {
     info.reset();
     bool res = true;
@@ -345,13 +345,15 @@ bool mesh::verify_multidomain(const Node &n,
                 chld_name = oss.str();
             }
 
-            if(!mesh::verify_unidomain(chld, info[chld_name]))
+            if(!mesh::verify_single_domain(chld, info[chld_name]))
             {
                 log_error(info,proto_name,
                           "child " + chld_name + " is not a valid mesh");
                 res = false;
             }
         }
+
+        log_info(info,proto_name,"is a multi domain mesh");
     }
 
     return res;
@@ -363,21 +365,34 @@ bool
 mesh::verify(const Node &n,
              Node &info)
 {
-    return mesh::verify_multidomain(n, info) || mesh::verify_unidomain(n, info);
+    info.reset();
+    bool res = true;
+
+    if(mesh::verify_multi_domain(n, info))
+    {
+        res = true;
+    }
+    else
+    {
+        info.reset();
+        res = mesh::verify_single_domain(n, info);
+    }
+
+    return res;
 }
 
 
 //-------------------------------------------------------------------------
-bool mesh::is_multidomain(const conduit::Node &n)
+bool mesh::is_multi_domain(const conduit::Node &n)
 {
     Node info;
-    return mesh::verify_multidomain(n, info);
+    return mesh::verify_multi_domain(n, info);
 }
 
 
 //-------------------------------------------------------------------------
-bool mesh::to_multidomain(const conduit::Node &n,
-                          conduit::Node &dest)
+bool mesh::to_multi_domain(const conduit::Node &n,
+                           conduit::Node &dest)
 {
     dest.reset();
 

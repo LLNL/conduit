@@ -148,9 +148,9 @@ bool verify_field_index_protocol(const Node &n, Node &info)
     return blueprint::mesh::verify("field/index",n,info);
 }
 
-bool verify_mesh_multidomain_protocol(const Node &n, Node &info)
+bool verify_mesh_multi_domain_protocol(const Node &n, Node &info)
 {
-    return blueprint::mesh::is_multidomain(n);
+    return blueprint::mesh::is_multi_domain(n);
 }
 
 /// Testing Constants ///
@@ -1071,32 +1071,32 @@ TEST(conduit_blueprint_mesh_verify, index_general)
 /// Mesh Integration Tests ///
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_verify, mesh_multidomain)
+TEST(conduit_blueprint_mesh_verify, mesh_multi_domain)
 {
     Node mesh, info;
-    EXPECT_FALSE(blueprint::mesh::is_multidomain(mesh));
+    EXPECT_FALSE(blueprint::mesh::is_multi_domain(mesh));
 
     Node domains[2];
     blueprint::mesh::examples::braid("quads",10,10,1,domains[0]);
-    blueprint::mesh::to_multidomain(domains[0],mesh);
-    EXPECT_TRUE(blueprint::mesh::is_multidomain(mesh));
+    blueprint::mesh::to_multi_domain(domains[0],mesh);
+    EXPECT_TRUE(blueprint::mesh::is_multi_domain(mesh));
 
     blueprint::mesh::examples::braid("quads",5,5,1,domains[1]);
     mesh.append().set_external(domains[1]);
-    EXPECT_TRUE(blueprint::mesh::is_multidomain(mesh));
+    EXPECT_TRUE(blueprint::mesh::is_multi_domain(mesh));
 
     for(index_t di = 0; di < 2; di++)
     {
         Node& domain = mesh.child(di);
-        EXPECT_FALSE(blueprint::mesh::is_multidomain(domain));
+        EXPECT_FALSE(blueprint::mesh::is_multi_domain(domain));
 
         Node coordsets = domain["coordsets"];
         domain.remove("coordsets");
-        EXPECT_FALSE(blueprint::mesh::is_multidomain(mesh));
+        EXPECT_FALSE(blueprint::mesh::is_multi_domain(mesh));
 
         domain["coordsets"].reset();
         domain["coordsets"].set(coordsets);
-        EXPECT_TRUE(blueprint::mesh::is_multidomain(mesh));
+        EXPECT_TRUE(blueprint::mesh::is_multi_domain(mesh));
     }
 }
 
@@ -1105,9 +1105,9 @@ TEST(conduit_blueprint_mesh_verify, mesh_multidomain)
 TEST(conduit_blueprint_mesh_verify, mesh_general)
 {
     VerifyFun verify_mesh_funs[] = {
-        blueprint::mesh::verify, // unidomain verify
-        blueprint::mesh::verify, // multidomain verify
-        verify_mesh_multidomain_protocol};
+        blueprint::mesh::verify, // single_domain verify
+        blueprint::mesh::verify, // multi_domain verify
+        verify_mesh_multi_domain_protocol};
 
     for(index_t fi = 0; fi < 3; fi++)
     {
@@ -1126,7 +1126,7 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
         }
         else
         {
-            blueprint::mesh::to_multidomain(mesh_data,mesh);
+            blueprint::mesh::to_multi_domain(mesh_data,mesh);
             domain_ptr = &mesh.child(0);
         }
         Node& domain = *domain_ptr;

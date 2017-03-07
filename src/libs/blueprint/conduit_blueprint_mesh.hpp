@@ -107,11 +107,11 @@ bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
 //-----------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------
-bool CONDUIT_BLUEPRINT_API is_multidomain(const conduit::Node &n);
+bool CONDUIT_BLUEPRINT_API is_multi_domain(const conduit::Node &n);
 
 //-------------------------------------------------------------------------
-bool CONDUIT_BLUEPRINT_API to_multidomain(const conduit::Node &n,
-                                          conduit::Node &dest);
+bool CONDUIT_BLUEPRINT_API to_multi_domain(const conduit::Node &n,
+                                           conduit::Node &dest);
 
 //-------------------------------------------------------------------------
 void CONDUIT_BLUEPRINT_API generate_index(const conduit::Node &mesh,
