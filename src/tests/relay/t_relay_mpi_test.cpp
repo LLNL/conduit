@@ -381,14 +381,12 @@ TEST(conduit_mpi_test, allgatherv_simple)
 //-----------------------------------------------------------------------------
 TEST(conduit_mpi_test, bcast) 
 {
-    Node n;
-
     int rank = mpi::rank(MPI_COMM_WORLD);
     int com_size = mpi::size(MPI_COMM_WORLD);
     
     for(int root = 0; root < com_size; root++)
     {
-
+        Node n;
 
         std::vector<int64> vals;
         if(rank == root)
@@ -413,11 +411,11 @@ TEST(conduit_mpi_test, bcast)
                      << "rank: " << rank << " res = "
                      << n.to_json());
     }
-    
-    n.reset();
+
 
     for(int root = 0; root < com_size; root++)
     {
+        Node n;
 
         if(rank == root)
         {
