@@ -190,12 +190,13 @@ namespace mpi
                                       Node &recv_node,
                                       MPI_Comm mpi_comm);
 
+//-----------------------------------------------------------------------------
+/// Other MPI collectives
+//-----------------------------------------------------------------------------
 
-// TODO:
-//
-// int CONDUIT_RELAY_API broadcast(Node& node,
-//                                int root,
-//                                MPI_Comm comm );
+int CONDUIT_RELAY_API broadcast(Node& node,
+                               int root,
+                               MPI_Comm comm );
 //
 // int CONDUIT_RELAY_API scatter(Node &send_node,
 //                               Node &recv_node,

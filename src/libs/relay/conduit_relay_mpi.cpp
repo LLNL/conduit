@@ -744,6 +744,88 @@ all_gatherv(Node &send_node,
 
 
 //---------------------------------------------------------------------------//
+int
+broadcast(Node& node,
+          int root,
+          MPI_Comm comm )
+{
+    int rank = mpi::rank(comm);
+
+    int snd_sizes[2] = {0,0};
+    int rcv_sizes[2] = {0,0};
+
+    Node n_bcast_buffers;
+    
+    if(rank == root)
+    {
+        // we are the source
+        
+        node.compact_to(n_bcast_buffers["data"]);
+
+        std::string schema_str = n_bcast_buffers["data"].schema().to_json();
+
+        n_bcast_buffers["schema"] = schema_str;
+
+        int schema_size = schema_str.length() + 1;
+        int data_size   = n_bcast_buffers["data"].total_bytes_compact();
+
+        snd_sizes[0] = schema_size;
+        snd_sizes[1] = data_size;
+        
+    }
+
+     int mpi_error = MPI_Allreduce(snd_sizes,
+                                   rcv_sizes,
+                                   2,
+                                   MPI_INT,
+                                   MPI_MAX,
+                                   comm);
+
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+
+    int schema_size = rcv_sizes[0];
+    int data_size   = rcv_sizes[1];
+
+    if(rank != root)
+    {
+        n_bcast_buffers["schema"].set(DataType::c_char(schema_size));
+        n_bcast_buffers["data"].set(DataType::c_char(data_size + 1));
+    }
+
+
+    mpi_error = MPI_Bcast(n_bcast_buffers["schema"].data_ptr(),
+                          schema_size,
+                          MPI_CHAR,
+                          root,
+                          comm);
+
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+
+    mpi_error = MPI_Bcast(n_bcast_buffers["data"].data_ptr(),
+                          data_size,
+                          MPI_CHAR,
+                          root,
+                          comm);
+
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+
+    if(rank != root)
+    {
+        char *schema_ptr = n_bcast_buffers["schema"].value();
+        char *data_ptr   = n_bcast_buffers["data"].value();
+   
+        Generator node_gen(schema_ptr, "conduit_json", data_ptr);
+        /// gen copy 
+        node_gen.walk(node);
+
+    }
+
+    return mpi_error;
+}
+
+
+
+//---------------------------------------------------------------------------//
 std::string
 about()
 {

@@ -378,6 +378,66 @@ TEST(conduit_mpi_test, allgatherv_simple)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, bcast) 
+{
+    Node n;
+
+    int rank = mpi::rank(MPI_COMM_WORLD);
+    int com_size = mpi::size(MPI_COMM_WORLD);
+    
+    for(int root = 0; root < com_size; root++)
+    {
+
+
+        std::vector<int64> vals;
+        if(rank == root)
+        {
+            vals.push_back(11);
+            vals.push_back(22);
+            vals.push_back(33);
+        
+            n.set_external(vals);
+        }
+
+        mpi::broadcast(n,root,MPI_COMM_WORLD);
+
+        int64 *vals_ptr = n.value();
+
+        EXPECT_EQ(vals_ptr[0], 11);
+        EXPECT_EQ(vals_ptr[1], 22);
+        EXPECT_EQ(vals_ptr[2], 33);
+    
+        CONDUIT_INFO("Bcast from root = " 
+                     << root  << "\n"
+                     << "rank: " << rank << " res = "
+                     << n.to_json());
+    }
+    
+    n.reset();
+
+    for(int root = 0; root < com_size; root++)
+    {
+
+        if(rank == root)
+        {
+            n["a/b/c/d/e/f"] = "g";
+        }
+
+        mpi::broadcast(n,root,MPI_COMM_WORLD);
+
+        std::string val = n["a/b/c/d/e/f"].as_string();
+
+        EXPECT_EQ(val, "g");
+    
+        CONDUIT_INFO("Bcast from root = " 
+                     << root  << "\n"
+                     << "rank: " << rank << " res = "
+                     << n.to_json());
+    }
+    
+}
+
 
 
 //-----------------------------------------------------------------------------
