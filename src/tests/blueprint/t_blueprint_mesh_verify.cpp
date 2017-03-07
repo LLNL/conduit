@@ -1081,6 +1081,12 @@ TEST(conduit_blueprint_mesh_verify, mesh_multi_domain)
     blueprint::mesh::to_multi_domain(domains[0],mesh);
     EXPECT_TRUE(blueprint::mesh::is_multi_domain(mesh));
 
+    { // Redundant "to_multi_domain" Tests //
+        Node temp;
+        blueprint::mesh::to_multi_domain(mesh,temp);
+        EXPECT_TRUE(blueprint::mesh::is_multi_domain(temp));
+    }
+
     blueprint::mesh::examples::braid("quads",5,5,1,domains[1]);
     mesh.append().set_external(domains[1]);
     EXPECT_TRUE(blueprint::mesh::is_multi_domain(mesh));

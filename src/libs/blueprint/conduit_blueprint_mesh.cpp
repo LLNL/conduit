@@ -396,8 +396,15 @@ bool mesh::to_multi_domain(const conduit::Node &n,
 {
     dest.reset();
 
-    conduit::Node& dest_dom = dest.append();
-    dest_dom.set_external(n);
+    if(mesh::is_multi_domain(n))
+    {
+        dest.set_external(n);
+    }
+    else
+    {
+        conduit::Node& dest_dom = dest.append();
+        dest_dom.set_external(n);
+    }
 
     return true;
 }
