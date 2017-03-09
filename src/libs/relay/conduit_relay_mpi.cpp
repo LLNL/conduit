@@ -113,6 +113,54 @@ rank(MPI_Comm mpi_comm)
     return res;
 }
 
+//-----------------------------------------------------------------------------
+MPI_Datatype
+conduit_dtype_to_mpi_dtype(const DataType &dt)
+{
+    MPI_Datatype res = MPI_DATATYPE_NULL;
+    switch(dt.id())
+    {
+        // signed integer types
+        case CONDUIT_NATIVE_CHAR_ID:   res = MPI_CHAR;  break;
+        case CONDUIT_NATIVE_SHORT_ID:  res = MPI_SHORT; break;
+        case CONDUIT_NATIVE_INT_ID:    res = MPI_INT;   break;
+        case CONDUIT_NATIVE_LONG_ID:   res = MPI_LONG;  break;
+
+        #if defined(CONDUIT_USE_LONG_LONG)
+        case CONDUIT_NATIVE_LONG_LONG_ID: res = MPI_LONG_LONG; break;
+        #endif
+
+        // unsigned integer types 
+        case CONDUIT_NATIVE_UNSIGNED_CHAR_ID:  res = MPI_UNSIGNED_CHAR;  break;
+        case CONDUIT_NATIVE_UNSIGNED_SHORT_ID: res = MPI_UNSIGNED_SHORT; break;
+        case CONDUIT_NATIVE_UNSIGNED_INT_ID:   res = MPI_UNSIGNED;       break;
+        case CONDUIT_NATIVE_UNSIGNED_LONG_ID:  res = MPI_UNSIGNED_LONG;  break;
+        
+        #if defined(CONDUIT_USE_LONG_LONG)
+        case CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID:
+        {
+            res = MPI_UNSIGNED_LONG_LONG;
+            break;
+        }
+        #endif
+
+        // floating point types
+
+        case CONDUIT_NATIVE_FLOAT_ID:  res = MPI_FLOAT;  break;
+        case CONDUIT_NATIVE_DOUBLE_ID: res = MPI_DOUBLE; break;
+
+        #if defined(CONDUIT_USE_LONG_DOUBLE)
+        case CONDUIT_NATIVE_LONG_DOUBLE_ID: res = MPI_LONG_DOUBLE; break;
+        #endif
+
+
+        case DataType::CHAR8_STR_ID:  res = MPI_CHAR;  break;
+
+    }
+    
+    return res;
+}
+
 
 //---------------------------------------------------------------------------//
 int 

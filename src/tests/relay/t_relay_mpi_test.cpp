@@ -54,6 +54,54 @@
 
 using namespace conduit;
 using namespace conduit::relay;
+using namespace conduit::relay::mpi;
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, conduit_dtype_to_mpi_dtype) 
+{
+    MPI_Datatype dt_test = MPI_DATATYPE_NULL;
+    
+    // all support types should be mapped (eg: not MPI_DATATYPE_NULL)
+
+
+    // signed integers
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::int8()),MPI_DATATYPE_NULL);
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::int16()),MPI_DATATYPE_NULL);
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::int32()),MPI_DATATYPE_NULL);
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::int64()),MPI_DATATYPE_NULL);
+    
+    // unsigned integers
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::uint8()),MPI_DATATYPE_NULL);
+
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::uint16()),
+              MPI_DATATYPE_NULL);   
+
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::uint32()),
+              MPI_DATATYPE_NULL);
+
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::uint64()),
+              MPI_DATATYPE_NULL);
+
+    // floating point
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::float32()),
+              MPI_DATATYPE_NULL);
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::float64()),
+              MPI_DATATYPE_NULL);
+
+    // string
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::char8_str()),
+              MPI_DATATYPE_NULL);
+
+    // empty, object, and list should return null
+    EXPECT_EQ(conduit_dtype_to_mpi_dtype(DataType::empty()),MPI_DATATYPE_NULL);
+    EXPECT_EQ(conduit_dtype_to_mpi_dtype(DataType::object()),
+              MPI_DATATYPE_NULL);
+    EXPECT_EQ(conduit_dtype_to_mpi_dtype(DataType::object()),
+              MPI_DATATYPE_NULL);
+
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_mpi_test, allreduce) 

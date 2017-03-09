@@ -95,6 +95,8 @@ namespace mpi
     
     int CONDUIT_RELAY_API rank(MPI_Comm mpi_comm);
 
+    MPI_Datatype CONDUIT_RELAY_API conduit_dtype_to_mpi_dtype(const DataType &dtype);
+
 //-----------------------------------------------------------------------------
 /// Standard MPI Send Recv
 //-----------------------------------------------------------------------------
