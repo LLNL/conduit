@@ -50,6 +50,7 @@
 
 #include "conduit_relay_mpi.hpp"
 #include <iostream>
+#include "math.h"
 #include "gtest/gtest.h"
 
 using namespace conduit;
@@ -102,22 +103,316 @@ TEST(conduit_mpi_test, conduit_dtype_to_mpi_dtype)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, mpi_dtype_to_conduit_dtype) 
+{
+    EXPECT_TRUE(DataType(mpi_dtype_to_conduit_dtype_id(MPI_INT)).is_int());
+    EXPECT_TRUE(DataType(mpi_dtype_to_conduit_dtype_id(MPI_UNSIGNED)).is_unsigned_int());
+
+    EXPECT_TRUE(DataType(mpi_dtype_to_conduit_dtype_id(MPI_FLOAT)).is_float());
+    EXPECT_TRUE(DataType(mpi_dtype_to_conduit_dtype_id(MPI_DOUBLE)).is_double());
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, reduce) 
+{
+    Node n_snd, n_reduce;
+    
+    int rank = mpi::rank(MPI_COMM_WORLD);
+    int com_size = mpi::size(MPI_COMM_WORLD);
+    
+    int root = 0;
+
+    int val = rank * 10;
+    n_snd = val;
+
+    mpi::reduce(n_snd, n_reduce, MPI_MAX, root, MPI_COMM_WORLD);
+    
+    if(rank == root)
+    {
+        EXPECT_EQ(n_reduce.as_int(), 10 * (com_size-1));
+    }
+
+    // check non-compact case
+    
+    n_snd.set(DataType::c_int(2,0,sizeof(int)*2));
+    n_reduce.set(DataType::c_int(2,0,sizeof(int)*2));
+    
+    int_array snd_vals = n_snd.value();
+    
+    snd_vals[0] = 10;
+    snd_vals[1] = 20;
+            
+    void *reduce_ptr = n_reduce.data_ptr();
+    mpi::reduce(n_snd, n_reduce, MPI_SUM, root, MPI_COMM_WORLD);
+    
+    if(rank == root)
+    {
+        int_array reduce_vals = n_reduce.value();
+    
+        EXPECT_EQ(reduce_vals[0], 10 * com_size);
+        EXPECT_EQ(reduce_vals[1], 20 * com_size);
+    
+        // n_reduce should have the same data pointer before and after the reduce
+        EXPECT_EQ(reduce_ptr,n_reduce.data_ptr());
+    }
+
+    // set to something in-compat
+    n_reduce.set(3.1415);
+    
+    n_reduce.print();
+
+    Schema s_reduce_pre;
+    
+    s_reduce_pre =  n_reduce.schema();
+    
+    mpi::reduce(n_snd, n_reduce, MPI_SUM, root, MPI_COMM_WORLD);
+    
+    if(rank == root)
+    {
+        n_reduce.print();
+    
+        int_array reduce_vals = n_reduce.value();
+        
+        EXPECT_EQ(reduce_vals[0], 10 * com_size);
+        EXPECT_EQ(reduce_vals[1], 20 * com_size);
+
+        EXPECT_FALSE(s_reduce_pre.compatible(n_reduce.schema()));
+    }
+
+}
 
 //-----------------------------------------------------------------------------
 TEST(conduit_mpi_test, allreduce) 
 {
-    Node n1; 
-    int rank = 0;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    Node n_snd, n_reduce;
+    
+    int rank = mpi::rank(MPI_COMM_WORLD);
+    int com_size = mpi::size(MPI_COMM_WORLD);
 
-    n1["value"] = rank*10;
+    int val = rank * 10;
+    n_snd = val;
 
-    Node n2;
+    mpi::all_reduce(n_snd, n_reduce, MPI_MAX, MPI_COMM_WORLD);
+    EXPECT_EQ(n_reduce.as_int(), 10 * (com_size-1));
 
-    mpi::all_reduce(n1, n2, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+    // check non-compact case
+    
+    n_snd.set(DataType::c_int(2,0,sizeof(int)*2));
+    n_reduce.set(DataType::c_int(2,0,sizeof(int)*2));
+    
+    int_array snd_vals = n_snd.value();
+    
+    snd_vals[0] = 10;
+    snd_vals[1] = 20;
+            
+    void *reduce_ptr = n_reduce.data_ptr();
+    mpi::all_reduce(n_snd, n_reduce, MPI_SUM, MPI_COMM_WORLD);
+    
+    
+    int_array reduce_vals = n_reduce.value();
+    
+    EXPECT_EQ(reduce_vals[0], 10 * com_size);
+    EXPECT_EQ(reduce_vals[1], 20 * com_size);
+    
+    // n_reduce should have the same data pointer before and after the reduce
+    EXPECT_EQ(reduce_ptr,n_reduce.data_ptr());
+    
+    
+    // set to something in-compat
+    n_reduce.set(3.1415);
+    
+    n_reduce.print();
+    //n_reduce.reset();
 
-    EXPECT_EQ(n2["value"].as_int32(), 10);
+    Schema s_reduce_pre;
+    
+    s_reduce_pre =  n_reduce.schema();
+    
+    mpi::all_reduce(n_snd, n_reduce, MPI_SUM, MPI_COMM_WORLD);
+    
+    
+    n_reduce.print();
+    
+    reduce_vals = n_reduce.value();
+    
+    EXPECT_EQ(reduce_vals[0], 10 * com_size);
+    EXPECT_EQ(reduce_vals[1], 20 * com_size);
+
+
+    EXPECT_FALSE(s_reduce_pre.compatible(n_reduce.schema()));
+
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, reduce_helpers) 
+{
+    int rank     = mpi::rank(MPI_COMM_WORLD);
+    int com_size = mpi::size(MPI_COMM_WORLD);
+
+    Node snd(DataType::int64(5));
+    Node rcv(DataType::int64(5));
+        
+    int64 *snd_vals = snd.value();
+    int64 *rcv_vals = rcv.value();
+    
+    // sum
+
+    for(int i=0; i < 5; i++)
+    {
+        snd_vals[i] = 10;
+    }
+
+
+
+    mpi::sum_reduce(snd, rcv, 0, MPI_COMM_WORLD);
+
+
+    if(rank == 0)
+    {
+        for(int i=0; i < 5; i++)
+        {
+            EXPECT_EQ(rcv_vals[i], 10 * com_size);
+        }
+    }
+    
+    // prod
+
+    for(int i=0; i < 5; i++)
+    {
+        snd_vals[i] = 2;
+    }
+
+
+    mpi::prod_reduce(snd, rcv, 0, MPI_COMM_WORLD);
+
+
+    if(rank == 0)
+    {
+        for(int i=0; i < 5; i++)
+        {
+            EXPECT_EQ(rcv_vals[i], pow(com_size,2) );
+        }
+    }
+
+    
+    // max
+    
+    for(int i=0; i < 5; i++)
+    {
+        snd_vals[i] = rank * 10 + 1;
+    }
+
+    mpi::max_reduce(snd, rcv, 0, MPI_COMM_WORLD);
+
+
+    if(rank == 0)
+    {
+        for(int i=0; i < 5; i++)
+        {
+            EXPECT_EQ(rcv_vals[i], 10 * (com_size-1) + 1);
+        }
+    }
+
+    // min
+
+    for(int i=0; i < 5; i++)
+    {
+        snd_vals[i] = rank * 10 + 1;
+    }
+
+    mpi::min_reduce(snd, rcv, 0, MPI_COMM_WORLD);
+
+    if(rank == 0)
+    {
+        for(int i=0; i < 5; i++)
+        {
+            EXPECT_EQ(rcv_vals[i], 1);
+        }
+    }
+
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, all_reduce_helpers) 
+{
+    int rank     = mpi::rank(MPI_COMM_WORLD);
+    int com_size = mpi::size(MPI_COMM_WORLD);
+
+    Node snd(DataType::int64(5));
+    Node rcv(DataType::int64(5));
+    
+    int64 *snd_vals = snd.value();
+    int64 *rcv_vals = rcv.value();
+
+    // sum
+
+    for(int i=0; i < 5; i++)
+    {
+        snd_vals[i] = 10;
+    }
+
+    mpi::sum_all_reduce(snd, rcv, MPI_COMM_WORLD);
+
+
+    for(int i=0; i < 5; i++)
+    {
+        EXPECT_EQ(rcv_vals[i], 10 * com_size);
+    }
+
+    // prod
+
+    for(int i=0; i < 5; i++)
+    {
+        snd_vals[i] = 2;
+    }
+
+    mpi::prod_all_reduce(snd, rcv, MPI_COMM_WORLD);
+
+
+    for(int i=0; i < 5; i++)
+    {
+        EXPECT_EQ(rcv_vals[i], pow(com_size,2) );
+    }
+
+    
+    // max
+    
+    for(int i=0; i < 5; i++)
+    {
+        snd_vals[i] = rank * 10 + 1;
+    }
+    
+
+    mpi::max_all_reduce(snd, rcv, MPI_COMM_WORLD);
+
+
+    for(int i=0; i < 5; i++)
+    {
+        EXPECT_EQ(rcv_vals[i], 10 * (com_size-1) + 1);
+    }
+
+    // min
+
+    for(int i=0; i < 5; i++)
+    {
+        snd_vals[i] = rank * 10 + 1;
+    }
+    
+
+    mpi::min_all_reduce(snd, rcv, MPI_COMM_WORLD);
+
+
+    for(int i=0; i < 5; i++)
+    {
+        EXPECT_EQ(rcv_vals[i], 1);
+    }
+
+}
+
+
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_mpi_test, isend_irecv_wait) 

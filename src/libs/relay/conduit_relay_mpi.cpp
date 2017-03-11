@@ -162,6 +162,56 @@ conduit_dtype_to_mpi_dtype(const DataType &dt)
 }
 
 
+//-----------------------------------------------------------------------------
+index_t
+mpi_dtype_to_conduit_dtype_id(MPI_Datatype dt)
+{
+    index_t res = DataType::EMPTY_ID;
+
+    switch(dt)
+    {
+        // string type
+        case MPI_CHAR:  res = DataType::CHAR8_STR_ID;  break;
+
+        // signed integer types
+        case MPI_SHORT: res = CONDUIT_NATIVE_SHORT_ID; break;
+        case MPI_INT:   res = CONDUIT_NATIVE_INT_ID;   break;
+        case MPI_LONG:  res = CONDUIT_NATIVE_LONG_ID;  break;
+
+        #if defined(CONDUIT_USE_LONG_LONG)
+        case MPI_LONG_LONG: res = CONDUIT_NATIVE_LONG_LONG_ID; break;
+        #endif
+
+        // unsigned integer types 
+        case MPI_BYTE:           res = CONDUIT_NATIVE_UNSIGNED_CHAR_ID;  break;
+        case MPI_UNSIGNED_CHAR:  res = CONDUIT_NATIVE_UNSIGNED_CHAR_ID;  break;
+        case MPI_UNSIGNED_SHORT: res = CONDUIT_NATIVE_UNSIGNED_SHORT_ID; break;
+        case MPI_UNSIGNED:       res = CONDUIT_NATIVE_UNSIGNED_INT_ID;   break;
+        case MPI_UNSIGNED_LONG:  res = CONDUIT_NATIVE_UNSIGNED_LONG_ID;  break;
+        
+        #if defined(CONDUIT_USE_LONG_LONG)
+        case MPI_UNSIGNED_LONG_LONG:
+        {
+            res = CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID;
+            break;
+        }
+        #endif
+
+        // floating point types
+
+        case MPI_FLOAT:  res = CONDUIT_NATIVE_FLOAT_ID;  break;
+        case MPI_DOUBLE: res = CONDUIT_NATIVE_DOUBLE_ID; break;
+
+        #if defined(CONDUIT_USE_LONG_DOUBLE)
+        case MPI_LONG_DOUBLE: res = CONDUIT_NATIVE_LONG_DOUBLE_ID; break;
+        #endif
+
+    }
+
+    return res;
+}
+
+
 //---------------------------------------------------------------------------//
 int 
 send(Node &node, int dest, int tag, MPI_Comm comm)
@@ -226,42 +276,76 @@ recv(Node &node, int src, int tag, MPI_Comm comm)
 }
 //---------------------------------------------------------------------------//
 int 
-reduce(Node &send_node,
-       Node& recv_node,
-       MPI_Datatype mpi_datatype,
+reduce(Node &snd_node,
+       Node &rcv_node,
        MPI_Op mpi_op,
        int root,
        MPI_Comm mpi_comm) 
 {
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-    Schema schema_c;
-    send_node.schema().compact_to(schema_c);
-    std::string schema = schema_c.to_json();
-
-    std::vector<uint8> data;
-    send_node.serialize(data);
-    int data_len = data.size();
-
-    int data_size = 0;
-    MPI_Type_size(mpi_datatype, &data_size);
-
-    Node recv_buffer;
-    recv_buffer.set(DataType::c_char(data_len+1));
-    char *recv_ptr = recv_buffer.value();
-
-    int mpi_error = MPI_Reduce(&data[0],
-                               recv_ptr,
-                               (data_len / data_size) + 1,
-                               mpi_datatype, mpi_op, root, mpi_comm);
-    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+    MPI_Datatype mpi_dtype = conduit_dtype_to_mpi_dtype(snd_node.dtype());
     
-    if (rank == root)
+    if(mpi_dtype == MPI_DATATYPE_NULL)
     {
-        Generator node_gen(schema, "conduit_json", recv_ptr);
+        CONDUIT_ERROR("Unsupported send DataType for mpi::reduce"
+                      << snd_node.dtype().name());
+    }
+    
+    void *snd_ptr = NULL;
+    void *rcv_ptr = NULL;
+    
+    Node snd_compact;
+    Node rcv_compact;
+    
+    if(snd_node.is_compact())
+    {
+        snd_ptr = snd_node.data_ptr();
+    }
+    else
+    {
+        snd_node.compact_to(snd_compact);
+        snd_ptr = snd_compact.data_ptr();
+    }
 
-        node_gen.walk(recv_node);
+    bool cpy_out = false;
+    
+    int rank = mpi::rank(mpi_comm);
+    
+    if( rank == root )
+    {
+    
+        if( !snd_node.compatible(rcv_node) ||
+            !rcv_node.is_compact() ) 
+        {
+            // we will need to update into rcv node
+            cpy_out = true;
+
+            Schema s_snd_compact;
+            snd_node.schema().compact_to(s_snd_compact);
+        
+            rcv_compact.set_schema(s_snd_compact);
+            rcv_ptr = rcv_compact.data_ptr();
+        }
+        else
+        {
+            rcv_ptr = rcv_node.data_ptr();
+        }
+    }
+
+    int num_eles = (int) snd_node.dtype().number_of_elements();
+
+    int mpi_error = MPI_Reduce(snd_ptr,
+                               rcv_ptr,
+                               num_eles,
+                               mpi_dtype,
+                               mpi_op,
+                               root,
+                               mpi_comm);
+
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+
+    if( rank == root  && cpy_out )
+    {
+        rcv_node.update(rcv_compact);
     }
 
     return mpi_error;
@@ -269,44 +353,198 @@ reduce(Node &send_node,
 
 //--------------------------------------------------------------------------//
 int
-all_reduce(Node &send_node,
-           Node &recv_node,
-           MPI_Datatype mpi_datatype,
+all_reduce(Node &snd_node,
+           Node &rcv_node,
            MPI_Op mpi_op,
            MPI_Comm mpi_comm)
 {
+    MPI_Datatype mpi_dtype = conduit_dtype_to_mpi_dtype(snd_node.dtype());
+    
+    if(mpi_dtype == MPI_DATATYPE_NULL)
+    {
+        CONDUIT_ERROR("Unsupported send DataType for mpi::all_reduce"
+                      << snd_node.dtype().name());
+    }
 
-    Schema schema_c;
-    send_node.schema().compact_to(schema_c);
-    std::string schema = schema_c.to_json();
+    
+    void *snd_ptr = NULL;
+    void *rcv_ptr = NULL;
+    
+    Node snd_compact;
+    Node rcv_compact;
+    
+    if(snd_node.is_compact())
+    {
+        snd_ptr = snd_node.data_ptr();
+    }
+    else
+    {
+        snd_node.compact_to(snd_compact);
+        snd_ptr = snd_compact.data_ptr();
+    }
+
+    bool cpy_out = false;
+    
+    if( !snd_node.compatible(rcv_node) ||
+        !rcv_node.is_compact() ) 
+    {
+        // we will need to update into rcv node
+        cpy_out = true;
+
+        Schema s_snd_compact;
+        snd_node.schema().compact_to(s_snd_compact);
+        
+        rcv_compact.set_schema(s_snd_compact);
+        rcv_ptr = rcv_compact.data_ptr();
+    }
+    else
+    {
+        rcv_ptr = rcv_node.data_ptr();
+    }
 
 
-    std::vector<uint8> data;
-    send_node.serialize(data);
-    int data_len = data.size();
+    int num_eles = (int) snd_node.dtype().number_of_elements();
 
-    int data_size = 0;
-    MPI_Type_size(mpi_datatype, &data_size);
-
-    Node recv_buffer;
-    recv_buffer.set(DataType::c_char(data_len+1));
-    char *recv_ptr = recv_buffer.value();
-
-    int mpi_error = MPI_Allreduce(&data[0],
-                                  recv_ptr,
-                                  (data_len / data_size) + 1,
-                                  mpi_datatype,
+    int mpi_error = MPI_Allreduce(snd_ptr,
+                                  rcv_ptr,
+                                  num_eles,
+                                  mpi_dtype,
                                   mpi_op,
                                   mpi_comm);
+
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
-
-    Generator node_gen(schema, "conduit_json", recv_ptr);
-
-    node_gen.walk(recv_node);
-
+    
+    if(cpy_out)
+    {
+        rcv_node.update(rcv_compact);
+    }
+    
 
     return mpi_error;
 }
+
+//-- reduce helpers -- //
+
+//---------------------------------------------------------------------------//
+int 
+sum_reduce(Node &snd_node,
+           Node &rcv_node,
+           int root,
+           MPI_Comm mpi_comm) 
+{
+    return reduce(snd_node,
+                  rcv_node,
+                  MPI_SUM,
+                  root,
+                  mpi_comm);
+}
+
+
+//---------------------------------------------------------------------------//
+int 
+min_reduce(Node &snd_node,
+           Node &rcv_node,
+           int root,
+           MPI_Comm mpi_comm) 
+{
+    return reduce(snd_node,
+                  rcv_node,
+                  MPI_MIN,
+                  root,
+                  mpi_comm);
+}
+
+
+
+//---------------------------------------------------------------------------//
+int 
+max_reduce(Node &snd_node,
+           Node &rcv_node,
+           int root,
+           MPI_Comm mpi_comm) 
+{
+    return reduce(snd_node,
+                  rcv_node,
+                  MPI_MAX,
+                  root,
+                  mpi_comm);
+}
+
+
+
+//---------------------------------------------------------------------------//
+int 
+prod_reduce(Node &snd_node,
+            Node &rcv_node,
+            int root,
+            MPI_Comm mpi_comm) 
+{
+    return reduce(snd_node,
+                  rcv_node,
+                  MPI_PROD,
+                  root,
+                  mpi_comm);
+}
+
+
+
+//--- all reduce helpers -- /
+//---------------------------------------------------------------------------//
+int 
+sum_all_reduce(Node &snd_node,
+               Node &rcv_node,
+               MPI_Comm mpi_comm) 
+{
+    return all_reduce(snd_node,
+                      rcv_node,
+                      MPI_SUM,
+                      mpi_comm);
+}
+
+
+//---------------------------------------------------------------------------//
+int 
+min_all_reduce(Node &snd_node,
+               Node &rcv_node,
+               MPI_Comm mpi_comm) 
+{
+    return all_reduce(snd_node,
+                      rcv_node,
+                      MPI_MIN,
+                      mpi_comm);
+
+}
+
+
+
+//---------------------------------------------------------------------------//
+int 
+max_all_reduce(Node &snd_node,
+               Node &rcv_node,
+               MPI_Comm mpi_comm) 
+{
+    return all_reduce(snd_node,
+                      rcv_node,
+                      MPI_MAX,
+                      mpi_comm);
+
+}
+
+
+//---------------------------------------------------------------------------//
+int 
+prod_all_reduce(Node &snd_node,
+                Node &rcv_node,
+                MPI_Comm mpi_comm) 
+{
+    return all_reduce(snd_node,
+                      rcv_node,
+                      MPI_PROD,
+                      mpi_comm);
+
+}
+
+
 
 //---------------------------------------------------------------------------//
 int

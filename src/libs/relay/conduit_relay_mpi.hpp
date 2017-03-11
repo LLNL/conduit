@@ -95,7 +95,22 @@ namespace mpi
     
     int CONDUIT_RELAY_API rank(MPI_Comm mpi_comm);
 
-    MPI_Datatype CONDUIT_RELAY_API conduit_dtype_to_mpi_dtype(const DataType &dtype);
+//-----------------------------------------------------------------------------
+/// Helpers for converting between MPI data types  and conduit data types
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+/// Helpers for converting between mpi dtypes and conduit dtypes
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+    MPI_Datatype CONDUIT_RELAY_API conduit_dtype_to_mpi_dtype(
+                                                        const DataType &dtype);
+
+//-----------------------------------------------------------------------------
+    index_t CONDUIT_RELAY_API mpi_dtype_to_conduit_dtype_id(MPI_Datatype dt);
+
 
 //-----------------------------------------------------------------------------
 /// Standard MPI Send Recv
@@ -110,32 +125,85 @@ namespace mpi
                                int source,
                                int tag,
                                MPI_Comm comm);
-// TODO:
-// int CONDUIT_RELAY_API send_recv(Node &send_node,
-//                                int dest,
-//                                int send_tag,
-//                                Node &recv_node,
-//                                int source,
-//                                int recv_tag,
-//                                MPI_Comm mpi_comm, 
-//                                MPI_Status *status);
 
 //-----------------------------------------------------------------------------
 /// MPI Reduce
 //-----------------------------------------------------------------------------
     
+    /// MPI reduce and all reduce methods. 
+
+    /// Reductions require all MPI ranks have identical compact representations 
+
+    /// These methods do not check across ranks for identical compact 
+    /// representation.
+
+    /// Conduit empty, object, and list dtypes can not be reduced.
+
+    /// If the send_node is not compact, it will be compacted prior to sending.
+
+    /// for reduce on the root rank and all_reduce for all ranks:
+    ///   if the recv_node is compatible but not compact, data will be placed 
+    ///   into a compact buffer, then read back out into the recv_node node. 
+    /// 
+    ///   if the recv_node is not compatible, it will be reset to
+    ///   a compact compatible type.
+
     int CONDUIT_RELAY_API reduce(Node &send_node,
                                  Node &recv_node,
-                                 MPI_Datatype mpi_datatype,
                                  MPI_Op mpi_op,
                                  int root,
                                  MPI_Comm comm);
 
     int CONDUIT_RELAY_API all_reduce(Node &send_node,
-                                   Node &recv_node,
-                                   MPI_Datatype mpi_datatype,
-                                   MPI_Op mpi_op,
-                                   MPI_Comm comm);
+                                     Node &recv_node,
+                                     MPI_Op mpi_op,
+                                     MPI_Comm comm);
+
+
+//-----------------------------------------------------------------------------
+/// MPI Reduce Helpers
+//-----------------------------------------------------------------------------
+    
+    int CONDUIT_RELAY_API sum_reduce(Node &send_node,
+                                     Node &recv_node,
+                                     int root,
+                                     MPI_Comm comm);
+
+
+    int CONDUIT_RELAY_API min_reduce(Node &send_node,
+                                     Node &recv_node,
+                                     int root,
+                                     MPI_Comm comm);
+
+    int CONDUIT_RELAY_API max_reduce(Node &send_node,
+                                     Node &recv_node,
+                                     int root,
+                                     MPI_Comm comm);
+
+    int CONDUIT_RELAY_API prod_reduce(Node &send_node,
+                                      Node &recv_node,
+                                      int root,
+                                      MPI_Comm comm);
+
+
+    
+    int CONDUIT_RELAY_API sum_all_reduce(Node &send_node,
+                                         Node &recv_node,
+                                         MPI_Comm comm);
+
+
+    int CONDUIT_RELAY_API min_all_reduce(Node &send_node,
+                                         Node &recv_node,
+                                         MPI_Comm comm);
+
+    int CONDUIT_RELAY_API max_all_reduce(Node &send_node,
+                                         Node &recv_node,
+                                         MPI_Comm comm);
+
+    int CONDUIT_RELAY_API prod_all_reduce(Node &send_node,
+                                          Node &recv_node,
+                                          MPI_Comm comm);
+
 
 //-----------------------------------------------------------------------------
 /// Async MPI Send Recv
@@ -166,6 +234,17 @@ namespace mpi
     int CONDUIT_RELAY_API wait_all_recv(int count,
                                         ConduitMPIRequest requests[],
                                         MPI_Status statuses[]);
+
+// TODO ?:
+// int CONDUIT_RELAY_API send_recv(Node &send_node,
+//                                int dest,
+//                                int send_tag,
+//                                Node &recv_node,
+//                                int source,
+//                                int recv_tag,
+//                                MPI_Comm mpi_comm, 
+//                                MPI_Status *status);
+
 
 
 //-----------------------------------------------------------------------------
