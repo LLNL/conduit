@@ -276,7 +276,7 @@ recv(Node &node, int src, int tag, MPI_Comm comm)
 }
 //---------------------------------------------------------------------------//
 int 
-reduce(Node &snd_node,
+reduce(const Node &snd_node,
        Node &rcv_node,
        MPI_Op mpi_op,
        int root,
@@ -298,7 +298,7 @@ reduce(Node &snd_node,
     
     if(snd_node.is_compact())
     {
-        snd_ptr = snd_node.data_ptr();
+        snd_ptr = const_cast<void*>(snd_node.data_ptr());
     }
     else
     {
@@ -353,7 +353,7 @@ reduce(Node &snd_node,
 
 //--------------------------------------------------------------------------//
 int
-all_reduce(Node &snd_node,
+all_reduce(const Node &snd_node,
            Node &rcv_node,
            MPI_Op mpi_op,
            MPI_Comm mpi_comm)
@@ -375,7 +375,7 @@ all_reduce(Node &snd_node,
     
     if(snd_node.is_compact())
     {
-        snd_ptr = snd_node.data_ptr();
+        snd_ptr = const_cast<void*>(snd_node.data_ptr());
     }
     else
     {
@@ -427,7 +427,7 @@ all_reduce(Node &snd_node,
 
 //---------------------------------------------------------------------------//
 int 
-sum_reduce(Node &snd_node,
+sum_reduce(const Node &snd_node,
            Node &rcv_node,
            int root,
            MPI_Comm mpi_comm) 
@@ -442,7 +442,7 @@ sum_reduce(Node &snd_node,
 
 //---------------------------------------------------------------------------//
 int 
-min_reduce(Node &snd_node,
+min_reduce(const Node &snd_node,
            Node &rcv_node,
            int root,
            MPI_Comm mpi_comm) 
@@ -458,7 +458,7 @@ min_reduce(Node &snd_node,
 
 //---------------------------------------------------------------------------//
 int 
-max_reduce(Node &snd_node,
+max_reduce(const Node &snd_node,
            Node &rcv_node,
            int root,
            MPI_Comm mpi_comm) 
@@ -474,7 +474,7 @@ max_reduce(Node &snd_node,
 
 //---------------------------------------------------------------------------//
 int 
-prod_reduce(Node &snd_node,
+prod_reduce(const Node &snd_node,
             Node &rcv_node,
             int root,
             MPI_Comm mpi_comm) 
@@ -491,7 +491,7 @@ prod_reduce(Node &snd_node,
 //--- all reduce helpers -- /
 //---------------------------------------------------------------------------//
 int 
-sum_all_reduce(Node &snd_node,
+sum_all_reduce(const Node &snd_node,
                Node &rcv_node,
                MPI_Comm mpi_comm) 
 {
@@ -504,7 +504,7 @@ sum_all_reduce(Node &snd_node,
 
 //---------------------------------------------------------------------------//
 int 
-min_all_reduce(Node &snd_node,
+min_all_reduce(const Node &snd_node,
                Node &rcv_node,
                MPI_Comm mpi_comm) 
 {
@@ -519,7 +519,7 @@ min_all_reduce(Node &snd_node,
 
 //---------------------------------------------------------------------------//
 int 
-max_all_reduce(Node &snd_node,
+max_all_reduce(const Node &snd_node,
                Node &rcv_node,
                MPI_Comm mpi_comm) 
 {
@@ -533,7 +533,7 @@ max_all_reduce(Node &snd_node,
 
 //---------------------------------------------------------------------------//
 int 
-prod_all_reduce(Node &snd_node,
+prod_all_reduce(const Node &snd_node,
                 Node &rcv_node,
                 MPI_Comm mpi_comm) 
 {

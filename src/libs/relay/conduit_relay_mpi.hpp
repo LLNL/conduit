@@ -148,13 +148,13 @@ namespace mpi
     ///   if the recv_node is not compatible, it will be reset to
     ///   a compact compatible type.
 
-    int CONDUIT_RELAY_API reduce(Node &send_node,
+    int CONDUIT_RELAY_API reduce(const Node &send_node,
                                  Node &recv_node,
                                  MPI_Op mpi_op,
                                  int root,
                                  MPI_Comm comm);
 
-    int CONDUIT_RELAY_API all_reduce(Node &send_node,
+    int CONDUIT_RELAY_API all_reduce(const Node &send_node,
                                      Node &recv_node,
                                      MPI_Op mpi_op,
                                      MPI_Comm comm);
@@ -164,43 +164,43 @@ namespace mpi
 /// MPI Reduce Helpers
 //-----------------------------------------------------------------------------
     
-    int CONDUIT_RELAY_API sum_reduce(Node &send_node,
+    int CONDUIT_RELAY_API sum_reduce(const Node &send_node,
                                      Node &recv_node,
                                      int root,
                                      MPI_Comm comm);
 
 
-    int CONDUIT_RELAY_API min_reduce(Node &send_node,
+    int CONDUIT_RELAY_API min_reduce(const Node &send_node,
                                      Node &recv_node,
                                      int root,
                                      MPI_Comm comm);
 
-    int CONDUIT_RELAY_API max_reduce(Node &send_node,
+    int CONDUIT_RELAY_API max_reduce(const Node &send_node,
                                      Node &recv_node,
                                      int root,
                                      MPI_Comm comm);
 
-    int CONDUIT_RELAY_API prod_reduce(Node &send_node,
+    int CONDUIT_RELAY_API prod_reduce(const Node &send_node,
                                       Node &recv_node,
                                       int root,
                                       MPI_Comm comm);
 
 
     
-    int CONDUIT_RELAY_API sum_all_reduce(Node &send_node,
+    int CONDUIT_RELAY_API sum_all_reduce(const Node &send_node,
                                          Node &recv_node,
                                          MPI_Comm comm);
 
 
-    int CONDUIT_RELAY_API min_all_reduce(Node &send_node,
+    int CONDUIT_RELAY_API min_all_reduce(const Node &send_node,
                                          Node &recv_node,
                                          MPI_Comm comm);
 
-    int CONDUIT_RELAY_API max_all_reduce(Node &send_node,
+    int CONDUIT_RELAY_API max_all_reduce(const Node &send_node,
                                          Node &recv_node,
                                          MPI_Comm comm);
 
-    int CONDUIT_RELAY_API prod_all_reduce(Node &send_node,
+    int CONDUIT_RELAY_API prod_all_reduce(const Node &send_node,
                                           Node &recv_node,
                                           MPI_Comm comm);
 
