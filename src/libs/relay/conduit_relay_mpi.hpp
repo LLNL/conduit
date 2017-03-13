@@ -126,6 +126,28 @@ namespace mpi
                                int tag,
                                MPI_Comm comm);
 
+    int CONDUIT_RELAY_API send_using_schema(const Node &node,
+                                            int dest,
+                                            int tag,
+                                            MPI_Comm comm);
+
+
+    int CONDUIT_RELAY_API recv_using_schema(Node &node,
+                                            int source,
+                                            int tag,
+                                            MPI_Comm comm);
+              
+    int CONDUIT_RELAY_API send_without_schema(const Node &node,
+                                              int dest,
+                                              int tag,
+                                              MPI_Comm comm);
+ 
+
+    int CONDUIT_RELAY_API recv_without_schema(Node &node,
+                                              int source,
+                                              int tag,
+                                              MPI_Comm comm);
+
 //-----------------------------------------------------------------------------
 /// MPI Reduce
 //-----------------------------------------------------------------------------

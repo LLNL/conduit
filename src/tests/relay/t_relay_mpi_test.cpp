@@ -67,13 +67,21 @@ TEST(conduit_mpi_test, conduit_dtype_to_mpi_dtype)
 
 
     // signed integers
-    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::int8()),MPI_DATATYPE_NULL);
-    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::int16()),MPI_DATATYPE_NULL);
-    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::int32()),MPI_DATATYPE_NULL);
-    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::int64()),MPI_DATATYPE_NULL);
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::int8()),
+              MPI_DATATYPE_NULL);
+
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::int16()),
+              MPI_DATATYPE_NULL);
+
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::int32()),
+              MPI_DATATYPE_NULL);
+
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::int64()),
+              MPI_DATATYPE_NULL);
     
     // unsigned integers
-    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::uint8()),MPI_DATATYPE_NULL);
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::uint8()),
+              MPI_DATATYPE_NULL);
 
     EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::uint16()),
               MPI_DATATYPE_NULL);   
@@ -95,9 +103,12 @@ TEST(conduit_mpi_test, conduit_dtype_to_mpi_dtype)
               MPI_DATATYPE_NULL);
 
     // empty, object, and list should return null
-    EXPECT_EQ(conduit_dtype_to_mpi_dtype(DataType::empty()),MPI_DATATYPE_NULL);
+    EXPECT_EQ(conduit_dtype_to_mpi_dtype(DataType::empty()),
+              MPI_DATATYPE_NULL);
+              
     EXPECT_EQ(conduit_dtype_to_mpi_dtype(DataType::object()),
               MPI_DATATYPE_NULL);
+              
     EXPECT_EQ(conduit_dtype_to_mpi_dtype(DataType::object()),
               MPI_DATATYPE_NULL);
 
@@ -412,6 +423,65 @@ TEST(conduit_mpi_test, all_reduce_helpers)
 }
 
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, send_recv_using_schema) 
+{
+    Node n;
+    int rank = mpi::rank(MPI_COMM_WORLD);
+
+    if( rank == 0 )
+    {
+        n.set(DataType::c_double(3));
+        double_array vals = n.value();
+        vals[0] = rank + 1;
+        vals[1] = 3.4124 * rank;
+        vals[2] = 10.7 - rank;
+        
+        mpi::send_using_schema(n,1,0,MPI_COMM_WORLD);
+    }
+    else if( rank == 1 )
+    {
+        mpi::recv_using_schema(n,0,0,MPI_COMM_WORLD);
+    }
+
+    double_array vals = n.value();
+
+    EXPECT_EQ(vals[0], 1);
+    EXPECT_EQ(vals[1], 0);
+    EXPECT_EQ(vals[2], 10.7);
+}
+
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, send_recv_without_using_schema) 
+{
+    Node n;
+    int rank = mpi::rank(MPI_COMM_WORLD);
+
+    n.set(DataType::c_double(3));
+
+    if( rank == 0 )
+    {
+        double_array vals = n.value();
+        vals[0] = rank + 1;
+        vals[1] = 3.4124 * rank;
+        vals[2] = 10.7 - rank;
+        
+        mpi::send_without_schema(n,1,0,MPI_COMM_WORLD);
+    }
+    else if( rank == 1 )
+    {
+        mpi::recv_without_schema(n,0,0,MPI_COMM_WORLD);
+    }
+
+    double_array vals = n.value();
+
+    EXPECT_EQ(vals[0], 1);
+    EXPECT_EQ(vals[1], 0);
+    EXPECT_EQ(vals[2], 10.7);
+}
 
 
 //-----------------------------------------------------------------------------
