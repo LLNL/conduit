@@ -81,10 +81,11 @@ namespace relay
 namespace mpi
 {
 
-    struct ConduitMPIRequest {
-        MPI_Request _request;
-        Node* _externalData;
-        Node* _recvData;
+    struct Request
+    {
+        MPI_Request   m_request;
+        Node          m_buffer;
+        Node        * m_rcv_ptr;
     };
 
 
@@ -235,26 +236,26 @@ namespace mpi
                                 int dest,
                                 int tag,
                                 MPI_Comm mpi_comm,
-                                ConduitMPIRequest *request);
+                                Request *request);
 
     int CONDUIT_RELAY_API irecv(Node &node,
                                 int src,
                                 int tag,
                                 MPI_Comm comm,
-                                ConduitMPIRequest *request);
+                                Request *request);
 
-    int CONDUIT_RELAY_API wait_send(ConduitMPIRequest* request,
+    int CONDUIT_RELAY_API wait_send(Request* request,
                                     MPI_Status *status);
    
-    int CONDUIT_RELAY_API wait_recv(ConduitMPIRequest *request,
+    int CONDUIT_RELAY_API wait_recv(Request *request,
                                     MPI_Status *status);
 
     int CONDUIT_RELAY_API wait_all_send(int count,
-                                        ConduitMPIRequest requests[],
+                                        Request requests[],
                                         MPI_Status statuses[]);
 
     int CONDUIT_RELAY_API wait_all_recv(int count,
-                                        ConduitMPIRequest requests[],
+                                        Request requests[],
                                         MPI_Status statuses[]);
 
 // TODO ?:
@@ -283,6 +284,8 @@ namespace mpi
                                      Node &recv_node,
                                      MPI_Comm mpi_comm);
 
+
+    // TODO: Rename (using_schema and without_schema?)
     // the v variants work for varying schemas
     int CONDUIT_RELAY_API gatherv(Node &send_node,
                                   Node &recv_node,

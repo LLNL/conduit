@@ -501,7 +501,7 @@ TEST(conduit_mpi_test, isend_irecv_wait)
     n1.set_external(doubles);
     
 
-    mpi::ConduitMPIRequest request;
+    mpi::Request request;
 
     MPI_Status status;
     if (rank == 0) 
@@ -538,7 +538,7 @@ TEST(conduit_mpi_test, waitall)
     
 
 
-    mpi::ConduitMPIRequest requests[1];
+    mpi::Request requests[1];
 
     MPI_Status statuses[1];
     if (rank == 0) 
@@ -578,7 +578,7 @@ TEST(conduit_mpi_test, waitallmultirequest)
     
 
 
-    mpi::ConduitMPIRequest requests[2];
+    mpi::Request requests[2];
 
     MPI_Status statuses[2];
     if (rank == 0) 
@@ -586,7 +586,8 @@ TEST(conduit_mpi_test, waitallmultirequest)
         mpi::irecv(n1, 1, 0, MPI_COMM_WORLD, &requests[0]);
         mpi::irecv(n2, 1, 0, MPI_COMM_WORLD, &requests[1]);
         mpi::wait_all_recv(1, requests, statuses);
-    } else if (rank == 1) 
+    }
+    else if (rank == 1) 
     {
         mpi::isend(n1, 0, 0, MPI_COMM_WORLD, &requests[0]);
         mpi::isend(n2, 0, 0, MPI_COMM_WORLD, &requests[1]);
@@ -604,7 +605,7 @@ TEST(conduit_mpi_test, waitallmultirequest)
 //-----------------------------------------------------------------------------
 TEST(conduit_mpi_test, external) 
 {
-     Node n1;
+    Node n1;
     int rank = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -631,7 +632,7 @@ TEST(conduit_mpi_test, external)
 
     n1.append().set_external(doubles3);
 
-    mpi::ConduitMPIRequest request;
+    mpi::Request request;
 
     MPI_Status status;
     if (rank == 0) 
@@ -639,7 +640,8 @@ TEST(conduit_mpi_test, external)
         mpi::irecv(n1, 1, 0, MPI_COMM_WORLD, &request);
         mpi::wait_recv(&request, &status);
         
-    } else if (rank == 1)
+    }
+    else if (rank == 1)
     {
         mpi::isend(n1, 0, 0, MPI_COMM_WORLD, &request);
         mpi::wait_send(&request, &status);

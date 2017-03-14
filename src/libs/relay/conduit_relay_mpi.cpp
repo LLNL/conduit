@@ -222,7 +222,7 @@ send_using_schema(const Node &node, int dest, int tag, MPI_Comm comm)
     void *snd_ptr = NULL;
     int snd_data_size = 0;
     
-    if(node.is_compact())
+    if(node.is_compact() && node.is_contiguous())
     {
         snd_schema = node.schema().to_json();
         snd_ptr = const_cast<void*>(node.data_ptr());
@@ -311,20 +311,23 @@ recv_using_schema(Node &node, int src, int tag, MPI_Comm comm)
 
     // if its not compatible, or compact we will have to 
     // use an update to get the data into the output node
-    if( ! rcv_schema.compatible(node.schema()) ||
-        ! node.is_compact())
+    
+    
+    if( rcv_schema.compatible(node.schema()) &&
+        node.is_compact() && 
+        node.is_contiguous() )
+    {
+        rcv_data_ptr  = node.data_ptr();
+        rcv_data_size = node.total_bytes_compact();
+    }
+    else
     {
         rcv_buffers["data"].set(rcv_schema);
         rcv_data_ptr  = rcv_buffers["data"].data_ptr();
         rcv_data_size = rcv_schema.total_bytes_compact();
         cpy_out = true;
-        
     }
-    else
-    {
-        rcv_data_ptr  = node.data_ptr();
-        rcv_data_size = node.total_bytes_compact();
-    }
+
     
     mpi_error = MPI_Recv(rcv_data_ptr,
                          rcv_data_size,
@@ -352,33 +355,26 @@ send_without_schema(const Node &node, int dest, int tag, MPI_Comm comm)
 { 
     // assumes size and type are known on the other end
     
-    MPI_Datatype mpi_dtype = conduit_dtype_to_mpi_dtype(node.dtype());
-    
-    if(mpi_dtype == MPI_DATATYPE_NULL)
-    {
-        CONDUIT_ERROR("Unsupported send DataType for mpi::reduce"
-                      << node.dtype().name());
-    }
-    
     Node snd_compact;
-    void *snd_ptr = NULL;
+    void *snd_ptr  = NULL;
+    int   snd_size = 0;
     
-    if(node.is_compact())
+    if(node.is_compact() && node.is_contiguous() )
     {
          snd_ptr = const_cast<void*>(node.data_ptr());
+         snd_size = node.total_bytes_compact();
     }
     else
     {
          node.compact_to(snd_compact);
          snd_ptr = snd_compact.data_ptr();
+         snd_size = snd_compact.total_bytes_compact();
     }
 
 
-    int num_eles = (int) node.dtype().number_of_elements();
-
     int mpi_error = MPI_Send(snd_ptr,
-                             num_eles,
-                             mpi_dtype,
+                             snd_size,
+                             MPI_CHAR,
                              dest,
                              tag,
                              comm);
@@ -392,38 +388,33 @@ send_without_schema(const Node &node, int dest, int tag, MPI_Comm comm)
 int
 recv_without_schema(Node &node, int src, int tag, MPI_Comm comm)
 {  
-    MPI_Datatype mpi_dtype = conduit_dtype_to_mpi_dtype(node.dtype());
-    
-    if(mpi_dtype == MPI_DATATYPE_NULL)
-    {
-        CONDUIT_ERROR("Unsupported send DataType for mpi::reduce"
-                      << node.dtype().name());
-    }
 
     MPI_Status status;    
     Node rcv_compact;
     void *rcv_ptr = NULL;
+    int   rcv_size = 0;
     bool cpy_out = false;
 
-    if( !node.is_compact() ) 
+    if( node.is_compact() && node.is_contiguous()) 
+    {
+        rcv_ptr  = node.data_ptr();
+        rcv_size = node.total_bytes_compact();
+    }
+    else
     {
         // we will need to update into rcv node
         cpy_out = true;
         Schema s_rcv_compact;
         node.schema().compact_to(s_rcv_compact);
         rcv_compact.set_schema(s_rcv_compact);
-        rcv_ptr = rcv_compact.data_ptr();
-    }
-    else
-    {
-        rcv_ptr = node.data_ptr();
+        rcv_ptr  = rcv_compact.data_ptr();
+        rcv_size = rcv_compact.total_bytes_compact();
     }
 
-    int num_eles = (int) node.dtype().number_of_elements();
 
     int mpi_error = MPI_Recv(rcv_ptr,
-                             num_eles,
-                             mpi_dtype,
+                             rcv_size,
+                             MPI_CHAR,
                              src,
                              tag,
                              comm,
@@ -541,8 +532,13 @@ reduce(const Node &snd_node,
     if( rank == root )
     {
     
-        if( !snd_node.compatible(rcv_node) ||
-            !rcv_node.is_compact() ) 
+        if( snd_node.compatible(rcv_node) &&
+            rcv_node.is_compact() && 
+            rcv_node.is_contiguous() )  
+        {
+            rcv_ptr = rcv_node.data_ptr();
+        }
+        else
         {
             // we will need to update into rcv node
             cpy_out = true;
@@ -552,10 +548,6 @@ reduce(const Node &snd_node,
         
             rcv_compact.set_schema(s_snd_compact);
             rcv_ptr = rcv_compact.data_ptr();
-        }
-        else
-        {
-            rcv_ptr = rcv_node.data_ptr();
         }
     }
 
@@ -613,8 +605,14 @@ all_reduce(const Node &snd_node,
 
     bool cpy_out = false;
     
-    if( !snd_node.compatible(rcv_node) ||
-        !rcv_node.is_compact() ) 
+
+    if( snd_node.compatible(rcv_node) &&
+        rcv_node.is_compact() && 
+        rcv_node.is_contiguous() )  
+    {
+        rcv_ptr = rcv_node.data_ptr();
+    }
+    else
     {
         // we will need to update into rcv node
         cpy_out = true;
@@ -625,11 +623,6 @@ all_reduce(const Node &snd_node,
         rcv_compact.set_schema(s_snd_compact);
         rcv_ptr = rcv_compact.data_ptr();
     }
-    else
-    {
-        rcv_ptr = rcv_node.data_ptr();
-    }
-
 
     int num_eles = (int) snd_node.dtype().number_of_elements();
 
@@ -780,18 +773,33 @@ isend(Node &node,
       int dest,
       int tag,
       MPI_Comm mpi_comm,
-      ConduitMPIRequest* request) 
+      Request *request) 
 {
-    request->_externalData = new Node();
-    node.compact_to(*(request->_externalData));
+    int   data_size = 0;
+    void *data_ptr  = NULL;
+    
+    if(node.is_compact() && node.is_contiguous())
+    {
+        data_ptr  = node.data_ptr();
+        data_size = node.total_bytes_compact();
+    }
+    else
+    {
+        node.compact_to(request->m_buffer);
+        data_ptr  = request->m_buffer.data_ptr();
+        data_size = request->m_buffer.total_bytes_compact();
+    }
+    
+    request->m_rcv_ptr = NULL;
 
-    int mpi_error =  MPI_Isend((char*)request->_externalData->data_ptr(), 
-                               request->_externalData->total_bytes_compact(), 
+    int mpi_error =  MPI_Isend(data_ptr, 
+                               data_size, 
                                MPI_CHAR, 
                                dest, 
                                tag,
                                mpi_comm,
-                               &(request->_request));
+                               &(request->m_request));
+                               
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
     return mpi_error;
 }
@@ -802,52 +810,70 @@ irecv(Node &node,
       int src,
       int tag,
       MPI_Comm mpi_comm,
-      ConduitMPIRequest *request) 
+      Request *request) 
 {
-    request->_externalData = new Node();
-    node.compact_to(*(request->_externalData));
+    
+    // if rcv is compact, we can write directly into recv
+    // if its not compact, we need a recv_buffer
+    
+    int   data_size = 0;
+    void *data_ptr  = NULL;
+    
+    if(node.is_compact() && node.is_contiguous())
+    {
+        data_ptr  = node.data_ptr();
+        data_size = node.total_bytes_compact();
+        request->m_rcv_ptr = NULL;
+    }
+    else
+    {
+        node.compact_to(request->m_buffer);
+        data_ptr  = request->m_buffer.data_ptr();
+        data_size = request->m_buffer.total_bytes_compact();
+        request->m_rcv_ptr = &node;
+    }
 
-    request->_recvData = &node;
-
-    int mpi_error =  MPI_Irecv((char*)request->_externalData->data_ptr(),
-                               request->_externalData->total_bytes_compact(),
+    int mpi_error =  MPI_Irecv(data_ptr,
+                               data_size,
                                MPI_CHAR,
                                src,
                                tag,
                                mpi_comm,
-                               &(request->_request));
+                               &(request->m_request));
+
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
     return mpi_error;
 }
 
 //---------------------------------------------------------------------------//
 int
-wait_send(ConduitMPIRequest* request,
+wait_send(Request *request,
           MPI_Status *status) 
 {
-    int mpi_error = MPI_Wait(&(request->_request), status);
-    CONDUIT_CHECK_MPI_ERROR(mpi_error);
-        
-    delete request->_externalData;
-    request->_externalData = 0;
-
-    return mpi_error;
-}
-
-//---------------------------------------------------------------------------//
-int
-wait_recv(ConduitMPIRequest* request,
-          MPI_Status *status) 
-{
-    int mpi_error = MPI_Wait(&(request->_request), status);
+    int mpi_error = MPI_Wait(&(request->m_request), status);
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
     
-    request->_recvData->update(*(request->_externalData));
+    request->m_buffer.reset();
 
-    delete request->_externalData;
-    request->_externalData = 0;
+    return mpi_error;
+}
 
-    request->_recvData = 0;
+//---------------------------------------------------------------------------//
+int
+wait_recv(Request *request,
+          MPI_Status *status) 
+{
+    int mpi_error = MPI_Wait(&(request->m_request), status);
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+    
+    // we need to update if recvData was used
+    if(request->m_rcv_ptr)
+    {
+        request->m_rcv_ptr->update(request->m_buffer);
+    }
+
+    request->m_buffer.reset();
+    request->m_rcv_ptr = NULL;
     
     return mpi_error;
 }
@@ -855,14 +881,14 @@ wait_recv(ConduitMPIRequest* request,
 //---------------------------------------------------------------------------//
 int
 wait_all_send(int count,
-              ConduitMPIRequest requests[],
+              Request requests[],
               MPI_Status statuses[]) 
 {
      MPI_Request *justrequests = new MPI_Request[count];
      
      for (int i = 0; i < count; ++i) 
      {
-         justrequests[i] = requests[i]._request;
+         justrequests[i] = requests[i].m_request;
      }
      
      int mpi_error = MPI_Waitall(count, justrequests, statuses);
@@ -870,9 +896,8 @@ wait_all_send(int count,
 
      for (int i = 0; i < count; ++i)
      {
-         requests[i]._request = justrequests[i];
-         delete requests[i]._externalData;
-         requests[i]._externalData = 0;
+         requests[i].m_request = justrequests[i];
+         requests[i].m_buffer.reset();
      }
 
      delete [] justrequests;
@@ -885,14 +910,14 @@ wait_all_send(int count,
 //---------------------------------------------------------------------------//
 int
 wait_all_recv(int count,
-              ConduitMPIRequest requests[],
+              Request requests[],
               MPI_Status statuses[])
 {
      MPI_Request *justrequests = new MPI_Request[count];
      
      for (int i = 0; i < count; ++i)
      {
-         justrequests[i] = requests[i]._request;
+         justrequests[i] = requests[i].m_request;
      }
      
      int mpi_error = MPI_Waitall(count, justrequests, statuses);
@@ -900,11 +925,14 @@ wait_all_recv(int count,
 
      for (int i = 0; i < count; ++i)
      {
-         requests[i]._recvData->update(*(requests[i]._externalData));
+         if(requests[i].m_rcv_ptr)
+         {
+             requests[i].m_rcv_ptr->update(requests[i].m_buffer);
+             requests[i].m_rcv_ptr = NULL;
+         }
 
-         requests[i]._request = justrequests[i];
-         delete requests[i]._externalData;
-         requests[i]._externalData = 0;
+         requests[i].m_request = justrequests[i];
+         requests[i].m_buffer.reset();
      }
 
      delete [] justrequests;
@@ -920,24 +948,40 @@ gather(Node &send_node,
        int root,
        MPI_Comm mpi_comm)
 {
-    Node n_snd_compact;
-    send_node.compact_to(n_snd_compact);
-    int data_len = n_snd_compact.total_bytes_compact();
-
-    int m_size = mpi::size(mpi_comm);
-    int m_rank = mpi::rank(mpi_comm);
-
-    if(m_rank == root)
+    Node   n_snd_compact;
+    Schema s_snd_compact;
+    
+    send_node.schema().compact_to(s_snd_compact);
+    
+    void *snd_ptr = NULL;
+    int   snd_size = 0;
+    
+    if(send_node.is_compact() && send_node.is_contiguous())
     {
-        recv_node.list_of(n_snd_compact.schema(),
-                          m_size);
+        snd_ptr  = send_node.data_ptr();
+        snd_size = send_node.total_bytes_compact();
+    }
+    else
+    {
+        send_node.compact_to(n_snd_compact);
+        snd_ptr  = n_snd_compact.data_ptr();
+        snd_size = n_snd_compact.total_bytes_compact();
     }
 
-    int mpi_error = MPI_Gather( n_snd_compact.data_ptr(), // local data
-                                data_len, // local data len
+    int mpi_rank = mpi::rank(mpi_comm);
+    int mpi_size = mpi::size(mpi_comm);
+
+    if(mpi_rank == root)
+    {
+        recv_node.list_of(s_snd_compact,
+                          mpi_size);
+    }
+
+    int mpi_error = MPI_Gather( snd_ptr, // local data
+                                snd_size, // local data len
                                 MPI_CHAR, // send chars
                                 recv_node.data_ptr(),  // rcv buffer
-                                data_len, // data len 
+                                snd_size, // data len 
                                 MPI_CHAR,  // rcv chars
                                 root,
                                 mpi_comm); // mpi com
@@ -953,20 +997,38 @@ all_gather(Node &send_node,
            Node &recv_node,
            MPI_Comm mpi_comm)
 {
-    Node n_snd_compact;
-    send_node.compact_to(n_snd_compact);
-    int data_len = n_snd_compact.total_bytes_compact();
+    Node   n_snd_compact;
+    Schema s_snd_compact;
     
-    int m_size = mpi::size(mpi_comm);
+    send_node.schema().compact_to(s_snd_compact);
+    
+    void *snd_ptr = NULL;
+    int   snd_size = 0;
+    
+    if(send_node.is_compact() && send_node.is_contiguous())
+    {
+        snd_ptr  = send_node.data_ptr();
+        snd_size = send_node.total_bytes_compact();
+    }
+    else
+    {
+        send_node.compact_to(n_snd_compact);
+        snd_ptr  = n_snd_compact.data_ptr();
+        snd_size = n_snd_compact.total_bytes_compact();
+    }
+
+
+    int mpi_size = mpi::size(mpi_comm);
+
 
     recv_node.list_of(n_snd_compact.schema(),
-                      m_size);
+                      mpi_size);
 
-    int mpi_error = MPI_Allgather( n_snd_compact.data_ptr(), // local data
-                                   data_len, // local data len
+    int mpi_error = MPI_Allgather( snd_ptr, // local data
+                                   snd_size, // local data len
                                    MPI_CHAR, // send chars
                                    recv_node.data_ptr(),  // rcv buffer
-                                   data_len, // data len 
+                                   snd_size, // data len 
                                    MPI_CHAR,  // rcv chars
                                    mpi_comm); // mpi com
 
