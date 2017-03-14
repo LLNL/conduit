@@ -258,7 +258,7 @@ send_using_schema(const Node &node, int dest, int tag, MPI_Comm comm)
     
     mpi_error = MPI_Send(snd_ptr,
                          snd_data_size,
-                         MPI_CHAR,
+                         MPI_BYTE,
                          dest,
                          tag,
                          comm);
@@ -331,7 +331,7 @@ recv_using_schema(Node &node, int src, int tag, MPI_Comm comm)
     
     mpi_error = MPI_Recv(rcv_data_ptr,
                          rcv_data_size,
-                         MPI_CHAR,
+                         MPI_BYTE,
                          src,
                          tag,
                          comm,
@@ -374,7 +374,7 @@ send_without_schema(const Node &node, int dest, int tag, MPI_Comm comm)
 
     int mpi_error = MPI_Send(snd_ptr,
                              snd_size,
-                             MPI_CHAR,
+                             MPI_BYTE,
                              dest,
                              tag,
                              comm);
@@ -414,7 +414,7 @@ recv_without_schema(Node &node, int src, int tag, MPI_Comm comm)
 
     int mpi_error = MPI_Recv(rcv_ptr,
                              rcv_size,
-                             MPI_CHAR,
+                             MPI_BYTE,
                              src,
                              tag,
                              comm,
@@ -451,10 +451,16 @@ send(Node &node, int dest, int tag, MPI_Comm comm)
     int mpi_error = MPI_Send(intArray, 2, MPI_INT, dest, tag, comm);
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
 
-    mpi_error = MPI_Send(const_cast <char*> (schema.c_str()), schema_len, MPI_CHAR, dest, tag, comm);
+    mpi_error = MPI_Send(const_cast <char*> (schema.c_str()),
+                         schema_len,
+                         MPI_CHAR,
+                         dest,
+                         tag,
+                         comm);
+
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
     
-    mpi_error = MPI_Send((char*)&data[0], data_len, MPI_CHAR, dest, tag, comm);
+    mpi_error = MPI_Send((char*)&data[0], data_len, MPI_BYTE, dest, tag, comm);
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
 
     return mpi_error;
@@ -480,10 +486,24 @@ recv(Node &node, int src, int tag, MPI_Comm comm)
     char *schema_ptr = recv_buffers["schema"].value();
     char *data_ptr   = recv_buffers["data"].value();
 
-    mpi_error = MPI_Recv(schema_ptr, schema_len, MPI_CHAR, src, tag, comm, &status);
+    mpi_error = MPI_Recv(schema_ptr,
+                         schema_len,
+                         MPI_CHAR,
+                         src,
+                         tag,
+                         comm,
+                         &status);
+
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
 
-    mpi_error = MPI_Recv(data_ptr, data_len, MPI_CHAR, src, tag, comm, &status);
+    mpi_error = MPI_Recv(data_ptr,
+                         data_len,
+                         MPI_BYTE,
+                         src,
+                         tag,
+                         comm,
+                         &status);
+
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
     
     Generator node_gen(schema_ptr, "conduit_json", data_ptr);
@@ -515,6 +535,8 @@ reduce(const Node &snd_node,
     Node snd_compact;
     Node rcv_compact;
     
+    //note: we don't have to ask for contig in this case, since
+    // we can only reduce leaf types 
     if(snd_node.is_compact())
     {
         snd_ptr = const_cast<void*>(snd_node.data_ptr());
@@ -593,6 +615,8 @@ all_reduce(const Node &snd_node,
     Node snd_compact;
     Node rcv_compact;
     
+    //note: we don't have to ask for contig in this case, since
+    // we can only reduce leaf types 
     if(snd_node.is_compact())
     {
         snd_ptr = const_cast<void*>(snd_node.data_ptr());
@@ -794,7 +818,7 @@ isend(Node &node,
 
     int mpi_error =  MPI_Isend(data_ptr, 
                                data_size, 
-                               MPI_CHAR, 
+                               MPI_BYTE, 
                                dest, 
                                tag,
                                mpi_comm,
@@ -835,7 +859,7 @@ irecv(Node &node,
 
     int mpi_error =  MPI_Irecv(data_ptr,
                                data_size,
-                               MPI_CHAR,
+                               MPI_BYTE,
                                src,
                                tag,
                                mpi_comm,
@@ -979,10 +1003,10 @@ gather(Node &send_node,
 
     int mpi_error = MPI_Gather( snd_ptr, // local data
                                 snd_size, // local data len
-                                MPI_CHAR, // send chars
+                                MPI_BYTE, // send chars
                                 recv_node.data_ptr(),  // rcv buffer
                                 snd_size, // data len 
-                                MPI_CHAR,  // rcv chars
+                                MPI_BYTE,  // rcv chars
                                 root,
                                 mpi_comm); // mpi com
 
@@ -1026,10 +1050,10 @@ all_gather(Node &send_node,
 
     int mpi_error = MPI_Allgather( snd_ptr, // local data
                                    snd_size, // local data len
-                                   MPI_CHAR, // send chars
+                                   MPI_BYTE, // send chars
                                    recv_node.data_ptr(),  // rcv buffer
                                    snd_size, // data len 
-                                   MPI_CHAR,  // rcv chars
+                                   MPI_BYTE,  // rcv chars
                                    mpi_comm); // mpi com
 
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
@@ -1139,11 +1163,11 @@ gatherv(Node &send_node,
 
     mpi_error = MPI_Gatherv( const_cast <char*>(schema_str.c_str()),
                              schema_len,
-                             MPI_CHAR,
+                             MPI_BYTE,
                              schema_rcv_buff,
                              schema_rcv_counts,
                              schema_rcv_displs,
-                             MPI_CHAR,
+                             MPI_BYTE,
                              root,
                              mpi_comm);
 
@@ -1174,11 +1198,11 @@ gatherv(Node &send_node,
     
     mpi_error = MPI_Gatherv( n_snd_compact.data_ptr(),
                              data_len,
-                             MPI_CHAR,
+                             MPI_BYTE,
                              data_rcv_buff,
                              data_rcv_counts,
                              data_rcv_displs,
-                             MPI_CHAR,
+                             MPI_BYTE,
                              root,
                              mpi_comm);
 
@@ -1278,11 +1302,11 @@ all_gatherv(Node &send_node,
 
     mpi_error = MPI_Allgatherv( const_cast <char*>(schema_str.c_str()),
                                 schema_len,
-                                MPI_CHAR,
+                                MPI_BYTE,
                                 schema_rcv_buff,
                                 schema_rcv_counts,
                                 schema_rcv_displs,
-                                MPI_CHAR,
+                                MPI_BYTE,
                                 mpi_comm);
 
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
@@ -1305,11 +1329,11 @@ all_gatherv(Node &send_node,
     
     mpi_error = MPI_Allgatherv( n_snd_compact.data_ptr(),
                                 data_len,
-                                MPI_CHAR,
+                                MPI_BYTE,
                                 data_rcv_buff,
                                 data_rcv_counts,
                                 data_rcv_displs,
-                                MPI_CHAR,
+                                MPI_BYTE,
                                 mpi_comm);
 
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
@@ -1379,7 +1403,7 @@ broadcast(Node& node,
 
     mpi_error = MPI_Bcast(n_bcast_buffers["data"].data_ptr(),
                           data_size,
-                          MPI_CHAR,
+                          MPI_BYTE,
                           root,
                           comm);
 
