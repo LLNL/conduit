@@ -274,7 +274,7 @@ namespace mpi
 /// MPI gather
 //-----------------------------------------------------------------------------
 
-    // the non-v variants expect identical schemas
+    // these expect identical schemas
     int CONDUIT_RELAY_API gather(Node &send_node,
                                  Node &recv_node,
                                  int root,
@@ -287,22 +287,22 @@ namespace mpi
 
     // TODO: Rename (using_schema and without_schema?)
     // the v variants work for varying schemas
-    int CONDUIT_RELAY_API gatherv(Node &send_node,
-                                  Node &recv_node,
-                                  int root, 
-                                  MPI_Comm mpi_comm);
+    int CONDUIT_RELAY_API gather_using_schemas(Node &send_node,
+                                              Node &recv_node,
+                                              int root, 
+                                              MPI_Comm mpi_comm);
 
-    int CONDUIT_RELAY_API all_gatherv(Node &send_node,
-                                      Node &recv_node,
-                                      MPI_Comm mpi_comm);
+    int CONDUIT_RELAY_API all_gather_using_schemas(Node &send_node,
+                                                   Node &recv_node,
+                                                   MPI_Comm mpi_comm);
 
 //-----------------------------------------------------------------------------
 /// Other MPI collectives
 //-----------------------------------------------------------------------------
 
 int CONDUIT_RELAY_API broadcast(Node& node,
-                               int root,
-                               MPI_Comm comm );
+                                int root,
+                                MPI_Comm comm );
 //
 // int CONDUIT_RELAY_API scatter(Node &send_node,
 //                               Node &recv_node,

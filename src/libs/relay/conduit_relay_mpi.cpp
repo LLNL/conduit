@@ -1065,10 +1065,10 @@ all_gather(Node &send_node,
 
 //---------------------------------------------------------------------------//
 int
-gatherv(Node &send_node,
-        Node &recv_node,
-        int root, 
-        MPI_Comm mpi_comm)
+gather_using_schemas(Node &send_node,
+                     Node &recv_node,
+                     int root, 
+                     MPI_Comm mpi_comm)
 {
     Node n_snd_compact;
     send_node.compact_to(n_snd_compact);
@@ -1213,9 +1213,9 @@ gatherv(Node &send_node,
 
 //---------------------------------------------------------------------------//
 int
-all_gatherv(Node &send_node,
-            Node &recv_node,
-            MPI_Comm mpi_comm)
+all_gather_using_schemas(Node &send_node,
+                         Node &recv_node,
+                         MPI_Comm mpi_comm)
 {
     Node n_snd_compact;
     send_node.compact_to(n_snd_compact);

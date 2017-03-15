@@ -723,7 +723,7 @@ TEST(conduit_mpi_test, gather_simple)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_mpi_test, gatherv_simple) 
+TEST(conduit_mpi_test, gather_using_schemas_simple) 
 {
     Node n;
     
@@ -738,7 +738,7 @@ TEST(conduit_mpi_test, gatherv_simple)
     }
     
     Node rcv;
-    mpi::gatherv(n,rcv,0,MPI_COMM_WORLD);
+    mpi::gather_using_schemas(n,rcv,0,MPI_COMM_WORLD);
     rcv.print();
     
     if( rank == 0)
@@ -759,7 +759,7 @@ TEST(conduit_mpi_test, gatherv_simple)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_mpi_test, allgatherv_simple) 
+TEST(conduit_mpi_test, all_gather_using_schemas_simple) 
 {
     Node n;
     
@@ -774,7 +774,7 @@ TEST(conduit_mpi_test, allgatherv_simple)
     }
     
     Node rcv;
-    mpi::all_gatherv(n,rcv,MPI_COMM_WORLD);
+    mpi::all_gather_using_schemas(n,rcv,MPI_COMM_WORLD);
     rcv.print();
     
     Node res;
