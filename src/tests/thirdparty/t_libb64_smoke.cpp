@@ -54,9 +54,11 @@
 #include "b64/encode.h"
 #include "b64/decode.h"
 
-TEST(libb64_smoke, basic_use )
+
+std::string
+encode_decode(const std::string &val)
 {
-    std::string sin("test");
+    std::string sin(val);
     
     std::istringstream iss(sin);
     std::ostringstream oss;
@@ -77,6 +79,28 @@ TEST(libb64_smoke, basic_use )
 
     d.decode(iss,oss);
     
-    EXPECT_EQ(oss.str(),sin);
+    return oss.str();
+}
+
+
+TEST(libb64_smoke, basic_use )
+{
+    std::string t = "test";
+    EXPECT_EQ(encode_decode(t),t);
+
+    // test a shorter string ...
+    t = "t";
+    EXPECT_EQ(encode_decode(t),t);
+
+    // test an empty string
+    t = "";
+    EXPECT_EQ(encode_decode(t),t);
+
+    t = "test a longer string";
+    EXPECT_EQ(encode_decode(t),t);
+
+    t = "test an even longer string with more vowels.";
+    EXPECT_EQ(encode_decode(t),t);
+
 }
 
