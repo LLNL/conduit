@@ -418,7 +418,7 @@ TEST(conduit_endianness, node_swap_using_explicit_funcs)
                                  8, // elem_bytes
                                  Endianness::LITTLE_ID); // set not match
 
-        n["test32"].endian_swap_to_machine_default();
+        n["test64"].endian_swap_to_machine_default();
         EXPECT_EQ(0x0102030405060708,test64.vuint64);
 
         // swap all back back so we can do a full test on n
