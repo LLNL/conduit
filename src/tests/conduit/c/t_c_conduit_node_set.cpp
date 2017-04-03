@@ -473,7 +473,7 @@ TEST(c_conduit_node_set, set_native_int_ptr)
         // set(...) semantics imply a copy -- mem addys should differ
         EXPECT_NE(&icav_ptr[i],&icav[i]);
     }
-    EXPECT_EQ(icav_ptr[5],-64);
+    EXPECT_EQ(icav_ptr[5],char(-64));
     
     // using short* interface
     conduit_node_set_short_ptr(n,isav,6);

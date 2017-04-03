@@ -2294,7 +2294,7 @@ TEST(conduit_node_set, set_cstyle_int_array)
         // set(...) semantics imply a copy -- mem addys should differ
         EXPECT_NE(&char_ptr[i],&char_av[i]);
     }
-    EXPECT_EQ(char_ptr[5],-64);
+    EXPECT_EQ(char_ptr[5],char(-64));
 
     // short 
     n.set(short_av_a);
