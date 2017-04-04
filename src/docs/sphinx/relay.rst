@@ -59,8 +59,8 @@ Conduit Relay is an umbrella project for I/O and communication functionality bui
 The **io** and **web** features are built into the *conduit_relay* library. The MPI functionality exists in a separate library *conduit_relay_mpi* to avoid include and linking issues for serial codes that want to use relay.
 
 
-.. .. toctree::
-..     relay_io
+.. toctree::
+     relay_mpi
 ..    relay_web
 ..     relay_mpi
 

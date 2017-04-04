@@ -276,6 +276,8 @@ recv_using_schema(Node &node, int src, int tag, MPI_Comm comm)
     int rcv_schema_size = 0;
     MPI_Status status;
 
+    // TODO: use MPI_Probe?
+
     int mpi_error = MPI_Recv(&rcv_schema_size,
                              1,
                              MPI_INT,
@@ -890,7 +892,7 @@ wait_recv(Request *request,
     int mpi_error = MPI_Wait(&(request->m_request), status);
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
     
-    // we need to update if recvData was used
+    // we need to update if m_rcv_ptr was used
     if(request->m_rcv_ptr)
     {
         request->m_rcv_ptr->update(request->m_buffer);
@@ -912,6 +914,7 @@ wait_all_send(int count,
      
      for (int i = 0; i < count; ++i) 
      {
+         // mpi requests can be simply copied
          justrequests[i] = requests[i].m_request;
      }
      
@@ -941,6 +944,7 @@ wait_all_recv(int count,
      
      for (int i = 0; i < count; ++i)
      {
+         // mpi requests can be simply copied
          justrequests[i] = requests[i].m_request;
      }
      
@@ -997,6 +1001,7 @@ gather(Node &send_node,
 
     if(mpi_rank == root)
     {
+        // TODO: copy out support w/o always reallocing?
         recv_node.list_of(s_snd_compact,
                           mpi_size);
     }
@@ -1045,6 +1050,10 @@ all_gather(Node &send_node,
     int mpi_size = mpi::size(mpi_comm);
 
 
+    // TODO: copy out support w/o always reallocing?
+    // TODO: what about common case of scatter w/ leaf types?
+    //       instead of list_of, we would have a leaf of
+    //       of a given type w/ # of elements == # of ranks. 
     recv_node.list_of(n_snd_compact.schema(),
                       mpi_size);
 
@@ -1178,6 +1187,8 @@ gather_using_schemas(Node &send_node,
     if( m_rank == root )
     {
         //TODO: should we make it easer to create a compact schema?
+        // TODO: Revisit, I think we can do this better
+
         Schema s_tmp;
         for(int i=0;i < m_size; i++)
         {
@@ -1192,6 +1203,7 @@ gather_using_schemas(Node &send_node,
     if( m_rank == root )
     {
         // allocate data to hold the gather result
+        // TODO can we support copy out w/out realloc
         recv_node.set(rcv_schema);
         data_rcv_buff = (char*)recv_node.data_ptr();
     }
@@ -1314,6 +1326,7 @@ all_gather_using_schemas(Node &send_node,
     // build all schemas from JSON, compact them.
     Schema rcv_schema;
     //TODO: should we make it easer to create a compact schema?
+    // TODO: Revisit, I think we can do this better
     Schema s_tmp;
     for(int i=0;i < m_size; i++)
     {
@@ -1321,6 +1334,7 @@ all_gather_using_schemas(Node &send_node,
         s.set(&schema_rcv_buff[schema_rcv_displs[i]]);
     }
     
+    // TODO can we support copy out w/out realloc
     s_tmp.compact_to(rcv_schema);
 
     // allocate data to hold the gather result
@@ -1344,6 +1358,7 @@ all_gather_using_schemas(Node &send_node,
 
 
 //---------------------------------------------------------------------------//
+// TODO: this a broadcast_with_schema
 int
 broadcast(Node& node,
           int root,
@@ -1411,6 +1426,8 @@ broadcast(Node& node,
 
     if(rank != root)
     {
+        // TODO: can we support copy out?
+
         char *schema_ptr = n_bcast_buffers["schema"].value();
         char *data_ptr   = n_bcast_buffers["data"].value();
    
