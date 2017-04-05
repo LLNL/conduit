@@ -221,7 +221,7 @@ class UberenvConduit(Package):
                 cfg.write("# sphinx from uberenv\n")
                 cfg.write("#" + cmake_cache_entry("SPHINX_EXECUTABLE",py3_sphinx_build_exe))
 
-        if not "+python" in spec and "+python3" in spec:
+        if not "+python" in spec and not "+python3" in spec:
             cfg.write(cmake_cache_entry("ENABLE_PYTHON","OFF"))
 
         #######################
