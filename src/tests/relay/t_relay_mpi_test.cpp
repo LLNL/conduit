@@ -802,15 +802,15 @@ TEST(conduit_mpi_test, bcast)
     for(int root = 0; root < com_size; root++)
     {
         Node n;
+        n.set(DataType::int64(3));
 
         std::vector<int64> vals;
         if(rank == root)
         {
-            vals.push_back(11);
-            vals.push_back(22);
-            vals.push_back(33);
-        
-            n.set_external(vals);
+            int64_array vals = n.value();
+            vals[0] = 11;
+            vals[1] = 22;
+            vals[2] = 33;
         }
 
         mpi::broadcast(n,root,MPI_COMM_WORLD);
@@ -834,7 +834,99 @@ TEST(conduit_mpi_test, bcast)
 
         if(rank == root)
         {
+            n["a/b/c/d/e/f"].set_int64(10);
+        }
+        else
+        {
+            n["a/b/c/d/e/f"].set_int64(0);
+        }
+
+        mpi::broadcast(n,root,MPI_COMM_WORLD);
+
+        int64 val = n["a/b/c/d/e/f"].value();
+
+        EXPECT_EQ(val, 10);
+    
+        CONDUIT_INFO("Bcast from root = " 
+                     << root  << "\n"
+                     << "rank: " << rank << " res = "
+                     << n.to_json());
+    }
+    
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, bcast_using_schema) 
+{
+
+    int rank = mpi::rank(MPI_COMM_WORLD);
+    int com_size = mpi::size(MPI_COMM_WORLD);
+    
+    for(int root = 0; root < com_size; root++)
+    {
+        Node n;
+
+        std::vector<int64> vals;
+        if(rank == root)
+        {
+            vals.push_back(11);
+            vals.push_back(22);
+            vals.push_back(33);
+        
+            n.set_external(vals);
+        }
+
+        mpi::broadcast_using_schema(n,root,MPI_COMM_WORLD);
+
+        int64 *vals_ptr = n.value();
+
+        EXPECT_EQ(vals_ptr[0], 11);
+        EXPECT_EQ(vals_ptr[1], 22);
+        EXPECT_EQ(vals_ptr[2], 33);
+    
+        CONDUIT_INFO("Bcast from root = " 
+                     << root  << "\n"
+                     << "rank: " << rank << " res = "
+                     << n.to_json());
+    }
+
+
+    for(int root = 0; root < com_size; root++)
+    {
+        Node n;
+
+        if(rank == root)
+        {
+            n["a/b/c/d/e/f"].set_int64(10);
+        }
+
+        mpi::broadcast(n,root,MPI_COMM_WORLD);
+
+        int64 val = n["a/b/c/d/e/f"].value();
+
+        EXPECT_EQ(val, 10);
+    
+        CONDUIT_INFO("Bcast from root = " 
+                     << root  << "\n"
+                     << "rank: " << rank << " res = "
+                     << n.to_json());
+    }
+
+
+    for(int root = 0; root < com_size; root++)
+    {
+        Node n;
+
+        if(rank == root)
+        {
             n["a/b/c/d/e/f"] = "g";
+        }
+        // TODO: fails w/o the following, but we should't
+        // need for the generic case
+        else
+        {
+             n["a/b/c/d/e/f"] = "f";
         }
 
         mpi::broadcast(n,root,MPI_COMM_WORLD);
@@ -850,7 +942,6 @@ TEST(conduit_mpi_test, bcast)
     }
     
 }
-
 
 
 //-----------------------------------------------------------------------------

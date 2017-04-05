@@ -222,7 +222,9 @@ send_using_schema(const Node &node, int dest, int tag, MPI_Comm comm)
     void *snd_ptr = NULL;
     int snd_data_size = 0;
     
-    if(node.is_compact() && node.is_contiguous())
+    if(node.is_compact() && 
+       node.is_contiguous() && 
+       node.data_ptr() != NULL)
     {
         snd_schema = node.schema().to_json();
         snd_ptr = const_cast<void*>(node.data_ptr());
@@ -317,7 +319,8 @@ recv_using_schema(Node &node, int src, int tag, MPI_Comm comm)
     
     if( rcv_schema.compatible(node.schema()) &&
         node.is_compact() && 
-        node.is_contiguous() )
+        node.is_contiguous() &&
+        node.data_ptr() != NULL)
     {
         rcv_data_ptr  = node.data_ptr();
         rcv_data_size = node.total_bytes_compact();
@@ -361,7 +364,9 @@ send_without_schema(const Node &node, int dest, int tag, MPI_Comm comm)
     void *snd_ptr  = NULL;
     int   snd_size = 0;
     
-    if(node.is_compact() && node.is_contiguous() )
+    if(node.is_compact() &&
+       node.is_contiguous() &&
+       node.data_ptr() != NULL)
     {
          snd_ptr = const_cast<void*>(node.data_ptr());
          snd_size = node.total_bytes_compact();
@@ -397,7 +402,9 @@ recv_without_schema(Node &node, int src, int tag, MPI_Comm comm)
     int   rcv_size = 0;
     bool cpy_out = false;
 
-    if( node.is_compact() && node.is_contiguous()) 
+    if( node.is_compact() && 
+        node.is_contiguous() && 
+        node.data_ptr() != NULL)
     {
         rcv_ptr  = node.data_ptr();
         rcv_size = node.total_bytes_compact();
@@ -634,7 +641,8 @@ all_reduce(const Node &snd_node,
 
     if( snd_node.compatible(rcv_node) &&
         rcv_node.is_compact() && 
-        rcv_node.is_contiguous() )  
+        rcv_node.is_contiguous() && 
+         rcv_node.data_ptr() != NULL)
     {
         rcv_ptr = rcv_node.data_ptr();
     }
@@ -804,7 +812,9 @@ isend(Node &node,
     int   data_size = 0;
     void *data_ptr  = NULL;
     
-    if(node.is_compact() && node.is_contiguous())
+    if(node.is_compact() &&
+       node.is_contiguous() &&
+       node.data_ptr() != NULL)
     {
         data_ptr  = node.data_ptr();
         data_size = node.total_bytes_compact();
@@ -845,7 +855,9 @@ irecv(Node &node,
     int   data_size = 0;
     void *data_ptr  = NULL;
     
-    if(node.is_compact() && node.is_contiguous())
+    if(node.is_compact() &&
+       node.is_contiguous() && 
+       node.data_ptr() != NULL)
     {
         data_ptr  = node.data_ptr();
         data_size = node.total_bytes_compact();
@@ -984,7 +996,9 @@ gather(Node &send_node,
     void *snd_ptr = NULL;
     int   snd_size = 0;
     
-    if(send_node.is_compact() && send_node.is_contiguous())
+    if(send_node.is_compact() && 
+       send_node.is_contiguous() && 
+       send_node.data_ptr() != NULL)
     {
         snd_ptr  = send_node.data_ptr();
         snd_size = send_node.total_bytes_compact();
@@ -1034,7 +1048,9 @@ all_gather(Node &send_node,
     void *snd_ptr = NULL;
     int   snd_size = 0;
     
-    if(send_node.is_compact() && send_node.is_contiguous())
+    if(send_node.is_compact() && 
+       send_node.is_contiguous() && 
+       send_node.data_ptr() != NULL)
     {
         snd_ptr  = send_node.data_ptr();
         snd_size = send_node.total_bytes_compact();
@@ -1358,9 +1374,8 @@ all_gather_using_schemas(Node &send_node,
 
 
 //---------------------------------------------------------------------------//
-// TODO: this a broadcast_with_schema
 int
-broadcast(Node& node,
+broadcast_(Node& node,
           int root,
           MPI_Comm comm )
 {
@@ -1435,6 +1450,204 @@ broadcast(Node& node,
         /// gen copy 
         node_gen.walk(node);
 
+    }
+
+    return mpi_error;
+}
+
+//---------------------------------------------------------------------------//
+int
+broadcast(Node &node,
+          int root,
+          MPI_Comm comm)
+{
+    int rank = mpi::rank(comm);
+
+    Node bcast_buffer;
+
+    void *bcast_data_ptr  = NULL;
+    int   bcast_data_size = 0;
+
+    bool cpy_out = false;
+
+    // setup buffers on root for send
+    if(rank == root)
+    {
+        if(node.is_compact() && 
+           node.is_contiguous() && 
+           node.data_ptr() != NULL)
+        {
+            bcast_data_ptr  = node.data_ptr();
+            bcast_data_size = node.total_bytes_compact();
+        }
+        else
+        {
+            node.compact_to(bcast_buffer);
+            
+            bcast_data_ptr  = bcast_buffer.data_ptr();
+            bcast_data_size = bcast_buffer.total_bytes_compact();
+        }
+    
+    }
+    else // rank != root,  setup buffers on non root for rcv
+    {
+        if(node.is_compact() && 
+           node.is_contiguous() && 
+           node.data_ptr() != NULL)
+        {
+             bcast_data_ptr  = node.data_ptr();
+             bcast_data_size = node.total_bytes_compact();   
+        }
+        else
+        {
+            Schema s_compact;
+            node.schema().compact_to(s_compact);
+            bcast_buffer.set_schema(s_compact);
+            
+            bcast_data_ptr  = bcast_buffer.data_ptr();
+            bcast_data_size = bcast_buffer.total_bytes_compact();   
+            cpy_out = true;
+        }
+    }
+
+
+    int mpi_error = MPI_Bcast(bcast_data_ptr,
+                              bcast_data_size,
+                              MPI_BYTE,
+                              root,
+                              comm);
+
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+
+    // note: cpy_out will always be false when rank == root
+    if( cpy_out )
+    {
+        node.update(bcast_buffer);
+    }
+
+    return mpi_error;
+}
+
+//---------------------------------------------------------------------------//
+int
+broadcast_using_schema(Node &node,
+                       int root,
+                       MPI_Comm comm)
+{
+    int rank = mpi::rank(comm);
+
+    Node bcast_buffers;
+
+    void *bcast_data_ptr = NULL;
+    int   bcast_data_size = 0;
+
+    int bcast_schema_size = 0;
+    int rcv_bcast_schema_size = 0;
+
+    // setup buffers for send
+    if(rank == root)
+    {
+        if(node.is_compact() && 
+           node.is_contiguous() && 
+           node.data_ptr() != NULL)
+        {
+            bcast_data_ptr  = node.data_ptr();
+            bcast_data_size = node.total_bytes_compact();
+            
+            bcast_buffers["schema"] = node.schema().to_json();
+        }
+        else
+        {
+            Node &bcast_data_compact = bcast_buffers["data"];
+            node.compact_to(bcast_data_compact);
+            
+            bcast_data_ptr  = bcast_data_compact.data_ptr();
+            bcast_data_size = bcast_data_compact.total_bytes_compact();
+
+            bcast_buffers["schema"] =  bcast_data_compact.schema().to_json();
+        }
+     
+
+        
+        bcast_schema_size = bcast_buffers["schema"].dtype().number_of_elements();
+    }
+
+    int mpi_error = MPI_Allreduce(&bcast_schema_size,
+                                  &rcv_bcast_schema_size,
+                                  1,
+                                  MPI_INT,
+                                  MPI_MAX,
+                                  comm);
+
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+
+    bcast_schema_size = rcv_bcast_schema_size;
+
+    // alloc for rcv for schema
+    if(rank != root)
+    {
+        bcast_buffers["schema"].set(DataType::char8_str(bcast_schema_size));
+    }
+
+    // broadcast the schema 
+    mpi_error = MPI_Bcast(bcast_buffers["schema"].data_ptr(),
+                          bcast_schema_size,
+                          MPI_CHAR,
+                          root,
+                          comm);
+
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+    
+    bool cpy_out = false;
+    
+    // setup buffers for receive 
+    if(rank != root)
+    {
+        Schema bcast_schema;
+        Generator gen(bcast_buffers["schema"].as_char8_str());
+        gen.walk(bcast_schema);
+        
+        if( bcast_schema.compatible(node.schema()))
+        {
+            if( node.is_compact() && 
+                node.is_contiguous() && 
+                node.data_ptr() != NULL)
+            {
+                bcast_data_ptr  = node.data_ptr();
+                bcast_data_size = node.total_bytes_compact();
+            }
+            else
+            {
+                Node &bcast_data_buffer = bcast_buffers["data"];
+                bcast_data_buffer.set_schema(bcast_schema);
+                
+                bcast_data_ptr  = bcast_data_buffer.data_ptr();
+                bcast_data_size = bcast_data_buffer.total_bytes_compact();
+                
+                cpy_out = true;
+            }
+        }
+        else
+        {
+            node.set_schema(bcast_schema);
+
+            bcast_data_ptr  = node.data_ptr();
+            bcast_data_size = node.total_bytes_compact();
+        }
+    }
+    
+    mpi_error = MPI_Bcast(bcast_data_ptr,
+                          bcast_data_size,
+                          MPI_BYTE,
+                          root,
+                          comm);
+
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+
+    // note: cpy_out will always be false when rank == root
+    if( cpy_out )
+    {
+        node.update(bcast_buffers["data"]);
     }
 
     return mpi_error;

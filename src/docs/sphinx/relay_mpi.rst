@@ -61,6 +61,7 @@ Supported MPI Primitives:
  * send/recv
  * isend/irecv
  * reduce/all_reduce
+ * broadcast
  * gather/all_gather
  * scatter
  * all_to_all (?)
@@ -90,6 +91,7 @@ Methods that transfer both a Node's data and schema. These are useful for generi
 Supported MPI Primitives:
   * send/recv
   * gather/all_gather
+  * broadcast
   * scatter (?)
   * all_to_all
 

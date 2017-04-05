@@ -155,7 +155,8 @@ namespace mpi
     
     /// MPI reduce and all reduce methods. 
 
-    /// Reductions require all MPI ranks have identical compact representations 
+    /// While the input does not need to be compact, 
+    /// reductions require all MPI ranks have identical compact representations.
 
     /// These methods do not check across ranks for identical compact 
     /// representation.
@@ -303,6 +304,11 @@ namespace mpi
 int CONDUIT_RELAY_API broadcast(Node& node,
                                 int root,
                                 MPI_Comm comm );
+
+int CONDUIT_RELAY_API broadcast_using_schema(Node& node,
+                                             int root,
+                                             MPI_Comm comm );
+
 //
 // int CONDUIT_RELAY_API scatter(Node &send_node,
 //                               Node &recv_node,
