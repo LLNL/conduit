@@ -105,7 +105,6 @@
 }
 
 
-
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
@@ -124,6 +123,117 @@ namespace relay
 //-----------------------------------------------------------------------------
 namespace io
 {
+
+//-----------------------------------------------------------------------------
+// Private class used to hold options that control hdf5 i/o params.
+// 
+// These values are read by about(), and are set by io::hdf5_set_options()
+// 
+//
+//-----------------------------------------------------------------------------
+
+class HDF5Options
+{
+public:
+    static bool chunking_enabled;
+    static int  chunk_threshold;
+    static int  chunk_size;
+
+    static std::string compression_method;
+    static int         compression_level;
+
+public:
+    
+    //------------------------------------------------------------------------
+    static void set(const Node &opts)
+    {
+        if(opts.has_child("chunking"))
+        {
+            const Node &chunking = opts["chunking"];
+
+            if(chunking.has_child("enabled"))
+            {
+                std::string c_enable = chunking["enabled"].as_string();
+                if(c_enable == "false")
+                {
+                    chunking_enabled = false;
+                }
+            }
+        
+            if(chunking.has_child("chunk_threshold"))
+            {
+                chunk_threshold = chunking["chunk_threshold"].to_value();
+            }
+        
+            if(chunking.has_child("chunk_size"))
+            {
+                chunk_size = chunking["chunk_size"].to_value();
+            }
+        
+            if(chunking.has_child("compression"))
+            {
+                const Node &comp = chunking["compression"];
+                
+                if(comp.has_child("method"))
+                {
+                    compression_method = comp["method"].as_string();
+                }
+                if(comp.has_path("level"))
+                {
+                    compression_level = comp["level"].to_value();
+                }
+            }
+        }
+    }
+
+    //------------------------------------------------------------------------
+    static void about(Node &opts)
+    {
+        opts.reset();
+        
+        if(chunking_enabled)
+        {
+            opts["chunking/enabled"] = "true";
+        }
+        else
+        {
+            opts["chunking/enabled"] = "false";
+        }
+        
+        opts["chunking/chunk_threshold"] = chunk_threshold;
+        opts["chunking/chunk_size"] = chunk_size;
+
+        opts["chunking/compression/method"] = compression_method;
+        if(compression_method == "gzip")
+        {
+            opts["chunking/compression/level"] = compression_level;
+        }
+    }
+};
+
+// default hdf5 i/o settings
+
+bool        HDF5Options::chunking_enabled   = true;
+int         HDF5Options::chunk_size         = 1024;
+int         HDF5Options::chunk_threshold    = 0;
+std::string HDF5Options::compression_method = "gzip";
+int         HDF5Options::compression_level  = 9;
+
+
+
+//-----------------------------------------------------------------------------
+void
+hdf5_set_options(const Node &opts)
+{
+    HDF5Options::set(opts);
+}
+
+//-----------------------------------------------------------------------------
+void
+hdf5_options(Node &opts)
+{
+    HDF5Options::about(opts);
+}
 
 //-----------------------------------------------------------------------------
 // Private class used to suppress HDF5 error messages.
@@ -661,7 +771,7 @@ create_hdf5_compression_plist_for_conduit_leaf(const DataType &dtype)
 
     hsize_t num_eles = (hsize_t) dtype.number_of_elements();
     // Turn on chunking...needed for compression
-    hsize_t chunk_size = 1024;
+    hsize_t chunk_size = HDF5Options::chunk_size;
     double num_chunks = (double) num_eles / (double) chunk_size;
     double partial_chunk = num_chunks - (int) num_chunks;
     double chunk_waste = 1 - partial_chunk;
@@ -672,9 +782,12 @@ create_hdf5_compression_plist_for_conduit_leaf(const DataType &dtype)
 
     H5Pset_chunk(h5_cprops_id, 1, &chunk_size);
 
-    // Turn on compression
-    H5Pset_shuffle(h5_cprops_id);
-    H5Pset_deflate(h5_cprops_id, 9);
+    if(HDF5Options::compression_method == "gzip" )
+    {
+        // Turn on compression
+        H5Pset_shuffle(h5_cprops_id);
+        H5Pset_deflate(h5_cprops_id, HDF5Options::compression_level);
+    }
 
     return h5_cprops_id;
 }
@@ -693,7 +806,14 @@ create_hdf5_dataset_for_conduit_leaf(const DataType &dtype,
 
     hsize_t num_eles = (hsize_t) dtype.number_of_elements();
     
-    hid_t h5_cprops_id = create_hdf5_compression_plist_for_conduit_leaf(dtype);
+    
+    hid_t h5_cprops_id = H5P_DEFAULT;
+    
+    if( HDF5Options::chunking_enabled &&
+        dtype.bytes_compact() > HDF5Options::chunk_threshold)
+    {
+        h5_cprops_id = create_hdf5_compression_plist_for_conduit_leaf(dtype);
+    }
     
     hid_t h5_dspace_id = H5Screate_simple(1,
                                           &num_eles,
@@ -719,11 +839,14 @@ create_hdf5_dataset_for_conduit_leaf(const DataType &dtype,
                                            << hdf5_dset_name);
 
     // close plist used for compression
-    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Pclose(h5_cprops_id),
-                                           ref_path,
+    if(h5_cprops_id != H5P_DEFAULT)
+    {
+        CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Pclose(h5_cprops_id),
+                                                       ref_path,
                                            "Failed to close HDF5 compression "
                                            "property list " 
-                                           << h5_cprops_id);
+                                                       << h5_cprops_id);
+    }
 
     // close our dataspace
     CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Sclose(h5_dspace_id),
