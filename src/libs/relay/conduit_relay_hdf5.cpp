@@ -138,6 +138,9 @@ public:
     static bool chunking_enabled;
     static int  chunk_threshold;
     static int  chunk_size;
+    
+    static bool compact_storage_enabled;
+    static int  compact_storage_threshold;
 
     static std::string compression_method;
     static int         compression_level;
@@ -147,22 +150,42 @@ public:
     //------------------------------------------------------------------------
     static void set(const Node &opts)
     {
+        
+        if(opts.has_child("compact_storage"))
+        {
+            const Node &compact = opts["compact_storage"];
+            
+            if(compact.has_child("enabled"))
+            {
+                std::string enabled = compact["enabled"].as_string();
+                if(enabled == "false")
+                {
+                    compact_storage_enabled = false;
+                }
+            }
+
+            if(compact.has_child("compact_threshold"))
+            {
+                compact_storage_threshold = compact["threshold"].to_value();
+            }
+        }
+        
         if(opts.has_child("chunking"))
         {
             const Node &chunking = opts["chunking"];
 
             if(chunking.has_child("enabled"))
             {
-                std::string c_enable = chunking["enabled"].as_string();
-                if(c_enable == "false")
+                std::string enabled = chunking["enabled"].as_string();
+                if(enabled == "false")
                 {
                     chunking_enabled = false;
                 }
             }
         
-            if(chunking.has_child("chunk_threshold"))
+            if(chunking.has_child("threshold"))
             {
-                chunk_threshold = chunking["chunk_threshold"].to_value();
+                chunk_threshold = chunking["threshold"].to_value();
             }
         
             if(chunking.has_child("chunk_size"))
@@ -190,6 +213,18 @@ public:
     static void about(Node &opts)
     {
         opts.reset();
+
+        if(compact_storage_enabled)
+        {
+            opts["compact_storage/enabled"] = "true";
+        }
+        else
+        {
+            opts["compact_storage/enabled"] = "false";
+        }
+        
+        opts["compact_storage/threshold"] = compact_storage_threshold;
+
         
         if(chunking_enabled)
         {
@@ -200,7 +235,7 @@ public:
             opts["chunking/enabled"] = "false";
         }
         
-        opts["chunking/chunk_threshold"] = chunk_threshold;
+        opts["chunking/threshold"] = chunk_threshold;
         opts["chunking/chunk_size"] = chunk_size;
 
         opts["chunking/compression/method"] = compression_method;
@@ -213,12 +248,15 @@ public:
 
 // default hdf5 i/o settings
 
+bool HDF5Options::compact_storage_enabled   = true;
+int  HDF5Options::compact_storage_threshold = 256;
+
 bool        HDF5Options::chunking_enabled   = true;
 int         HDF5Options::chunk_size         = 1024;
 int         HDF5Options::chunk_threshold    = 0;
+
 std::string HDF5Options::compression_method = "gzip";
 int         HDF5Options::compression_level  = 9;
-
 
 
 //-----------------------------------------------------------------------------
@@ -762,10 +800,21 @@ check_if_conduit_node_is_compatible_with_hdf5_tree(const Node &node,
     return res;
 }
 
+//---------------------------------------------------------------------------//
+hid_t
+create_hdf5_compact_plist_for_conduit_leaf()
+{
+    hid_t h5_cprops_id = H5Pcreate(H5P_DATASET_CREATE);
+
+    H5Pset_layout(h5_cprops_id,H5D_COMPACT);
+    
+    return h5_cprops_id;
+}
+
 
 //---------------------------------------------------------------------------//
 hid_t
-create_hdf5_compression_plist_for_conduit_leaf(const DataType &dtype)
+create_hdf5_chunked_plist_for_conduit_leaf(const DataType &dtype)
 {
     hid_t h5_cprops_id = H5Pcreate(H5P_DATASET_CREATE);
 
@@ -809,12 +858,22 @@ create_hdf5_dataset_for_conduit_leaf(const DataType &dtype,
     
     hid_t h5_cprops_id = H5P_DEFAULT;
     
-    if( HDF5Options::chunking_enabled &&
-        dtype.bytes_compact() > HDF5Options::chunk_threshold)
+
+    if( HDF5Options::compact_storage_enabled &&
+        dtype.bytes_compact() <= HDF5Options::compact_storage_threshold)
     {
-        h5_cprops_id = create_hdf5_compression_plist_for_conduit_leaf(dtype);
+        h5_cprops_id = create_hdf5_compact_plist_for_conduit_leaf();
     }
-    
+    else if( HDF5Options::chunking_enabled &&
+             dtype.bytes_compact() > HDF5Options::chunk_threshold)
+    {
+        h5_cprops_id = create_hdf5_chunked_plist_for_conduit_leaf(dtype);
+    }
+
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_cprops_id,
+                                           ref_path,
+                                           "Failed to create HDF5 property list");
+
     hid_t h5_dspace_id = H5Screate_simple(1,
                                           &num_eles,
                                           NULL);

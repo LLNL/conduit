@@ -135,6 +135,7 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_synth)
         
         for(int j=0; j< num_l; j++)
         {
+            oss.str("");
             oss << "child_" << j;
             Node &cld = parent[oss.str()];
             
