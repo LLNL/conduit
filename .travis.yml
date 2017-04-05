@@ -130,7 +130,7 @@ script:
   - ./example
   # using with make example
   - cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-make
-  - env CXX=${CONDUIT_CXX} CONDUIT_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install make
+  - env CXX=${CONDUIT_CXX} CONDUIT_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install HDF5_DIR=${TRAVIS_HOME}/miniconda make
   - env LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/travis-debug-install/lib/ ./example
 
 after_success:
