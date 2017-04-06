@@ -138,7 +138,10 @@ public:
     static bool chunking_enabled;
     static int  chunk_threshold;
     static int  chunk_size;
-    
+
+    static bool attribute_storage_enabled;
+    static int  attribute_storage_threshold;
+
     static bool compact_storage_enabled;
     static int  compact_storage_threshold;
 
@@ -164,9 +167,28 @@ public:
                 }
             }
 
-            if(compact.has_child("compact_threshold"))
+            if(compact.has_child("threshold"))
             {
                 compact_storage_threshold = compact["threshold"].to_value();
+            }
+        }
+        
+        if(opts.has_child("attribute_storage"))
+        {
+            const Node &atts = opts["attribute_storage"];
+            
+            if(atts.has_child("enabled"))
+            {
+                std::string enabled = atts["enabled"].as_string();
+                if(enabled == "false")
+                {
+                    attribute_storage_enabled = false;
+                }
+            }
+
+            if(atts.has_child("threshold"))
+            {
+                attribute_storage_threshold = atts["threshold"].to_value();
             }
         }
         
@@ -225,7 +247,18 @@ public:
         
         opts["compact_storage/threshold"] = compact_storage_threshold;
 
+        if(attribute_storage_enabled)
+        {
+            opts["attribute_storage/enabled"] = "true";
+        }
+        else
+        {
+            opts["attribute_storage/enabled"] = "false";
+        }
         
+        opts["attribute_storage/threshold"] = attribute_storage_threshold;
+
+
         if(chunking_enabled)
         {
             opts["chunking/enabled"] = "true";
@@ -248,8 +281,12 @@ public:
 
 // default hdf5 i/o settings
 
+bool HDF5Options::attribute_storage_enabled   = false;
+int  HDF5Options::attribute_storage_threshold = 1024;
+
 bool HDF5Options::compact_storage_enabled   = true;
 int  HDF5Options::compact_storage_threshold = 256;
+
 
 bool        HDF5Options::chunking_enabled   = true;
 int         HDF5Options::chunk_size         = 1024;
@@ -917,6 +954,51 @@ create_hdf5_dataset_for_conduit_leaf(const DataType &dtype,
     return res;
 }
 
+//---------------------------------------------------------------------------//
+hid_t
+create_hdf5_attribute_for_conduit_leaf(const DataType &dtype,
+                                      const std::string &ref_path,
+                                      hid_t hdf5_group_id,
+                                      const std::string &hdf5_att_name)
+{
+    hid_t res = -1;
+    
+    hid_t h5_dtype = conduit_dtype_to_hdf5_dtype(dtype,ref_path);
+
+    hsize_t num_eles = (hsize_t) dtype.number_of_elements();
+    
+    hid_t h5_dspace_id = H5Screate_simple(1,
+                                          &num_eles,
+                                          NULL);
+
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_dspace_id,
+                                           ref_path,
+                                           "Failed to create HDF5 Dataspace");
+
+    // create new dataset
+    res = H5Acreate(hdf5_group_id,
+                    hdf5_att_name.c_str(),
+                    h5_dtype,
+                    h5_dspace_id,
+                    H5P_DEFAULT,
+                    H5P_DEFAULT);
+
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(res,
+                                           ref_path,
+                                           "Failed to create HDF5 Attribute " 
+                                           << hdf5_group_id << " " 
+                                           << hdf5_att_name);
+
+    // close our dataspace
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Sclose(h5_dspace_id),
+                                           ref_path,
+                                           "Failed to close HDF5 Dataspace " 
+                                           << h5_dspace_id);
+
+
+    return res;
+}
+
 
 //---------------------------------------------------------------------------//
 hid_t
@@ -1005,6 +1087,55 @@ write_conduit_leaf_to_hdf5_dataset(const Node &node,
                                            << hdf5_dset_id);
 
 }
+//---------------------------------------------------------------------------//
+void
+write_conduit_leaf_to_hdf5_group_attribute(const Node &node,
+                                           const std::string &ref_path,
+                                           hid_t hdf5_group_id,
+                                           const std::string &hdf5_att_name)
+{
+    DataType dt = node.dtype();
+    
+    hid_t h5_dtype_id = conduit_dtype_to_hdf5_dtype(dt,ref_path);
+    
+    
+    hid_t h5_att_id = create_hdf5_attribute_for_conduit_leaf(dt,
+                                                             ref_path,
+                                                             hdf5_group_id,
+                                                             hdf5_att_name);
+    
+    hid_t h5_status = -1;
+    
+    // if the node is compact, we can write directly from its data ptr
+    if(dt.is_compact()) 
+    {
+        // write data
+        h5_status = H5Awrite(h5_att_id,
+                             h5_dtype_id,
+                             node.data_ptr());
+    }
+    else 
+    {
+        // otherwise, we need to compact our data first
+        Node n;
+        node.compact_to(n);
+        h5_status = H5Awrite(h5_att_id,
+                             h5_dtype_id,
+                             n.data_ptr());
+    }
+    
+    // check write result
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_status,
+                                           ref_path,
+                                           "Failed to write to HDF5 Attribute "
+                                           << h5_att_id);
+
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Aclose(h5_att_id),
+                                           ref_path,
+                                           "Failed to close HDF5 Attribue: "
+                                           << h5_att_id);
+}
+
 
 //---------------------------------------------------------------------------//
 void 
@@ -1013,6 +1144,17 @@ write_conduit_leaf_to_hdf5_group(const Node &node,
                                  hid_t hdf5_group_id,
                                  const std::string &hdf5_dset_name)
 {
+    if(HDF5Options::attribute_storage_enabled && 
+       node.total_bytes_compact() < HDF5Options::attribute_storage_threshold)
+    {
+        return write_conduit_leaf_to_hdf5_group_attribute(node,
+                                                          ref_path,
+                                                          hdf5_group_id,
+                                                          hdf5_dset_name);
+    }
+
+    // data set case ...
+
 
     // check if the dataset exists
     H5O_info_t h5_obj_info;
