@@ -101,6 +101,7 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_synth)
     opts["data/leaf_size_min"]  = 5;
     opts["data/leaf_size_max"]  = 1000;
     opts["data/leaf_seed"]      = 0;
+    opts["output_file"]         = "tout_hdf5_opts_test.hdf5";
     
 
     if(opts_file != "")
@@ -149,10 +150,10 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_synth)
     
     CONDUIT_INFO("total data size = " << n.total_bytes_compact());
     
-    io::hdf5_write(n,"tout_hdf5_opts_test.hdf5");
+    std::string ofile = opts["output_file"].as_string();
     
-    //Node n_load;
-    //io::hdf5_read("tout_hdf5_opts_test.hdf5",n_load);
+    CONDUIT_INFO("Writing to " << ofile);
+    io::hdf5_write(n,ofile);
 
 }
 
