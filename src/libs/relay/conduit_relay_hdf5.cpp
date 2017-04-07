@@ -139,8 +139,13 @@ public:
     static int  chunk_threshold;
     static int  chunk_size;
 
-    static bool attribute_storage_enabled;
-    static int  attribute_storage_threshold;
+    static bool attributes_read_enabled;
+    static std::string attributes_read_dataset_prefix;
+    static std::string attributes_read_group_prefix;    
+
+
+    static bool attributes_write_enabled;
+    static int  attributes_write_threshold;
 
     static bool compact_storage_enabled;
     static int  compact_storage_threshold;
@@ -165,6 +170,10 @@ public:
                 {
                     compact_storage_enabled = false;
                 }
+                else
+                {
+                    compact_storage_enabled = true;
+                }
             }
 
             if(compact.has_child("threshold"))
@@ -173,22 +182,63 @@ public:
             }
         }
         
-        if(opts.has_child("attribute_storage"))
+        if(opts.has_child("attributes"))
         {
-            const Node &atts = opts["attribute_storage"];
+            const Node &atts = opts["attributes"];
             
-            if(atts.has_child("enabled"))
+            if(atts.has_child("read"))
             {
-                std::string enabled = atts["enabled"].as_string();
-                if(enabled == "false")
+                const Node &atts_read = atts["read"];
+                
+                if(atts_read.has_child("enabled"))
                 {
-                    attribute_storage_enabled = false;
+                    std::string enabled = atts_read["enabled"].as_string();
+                    if(enabled == "false")
+                    {
+                        attributes_read_enabled = false;
+                    }
+                    else
+                    {
+                        attributes_read_enabled = true;
+                    }
                 }
+                
+                if(atts_read.has_child("dataset_attribute_prefix"))
+                {
+                    attributes_read_dataset_prefix = atts_read["dataset_attribute_prefix"].as_string();
+                }
+
+                if(atts_read.has_child("group_attribute_prefix"))
+                {
+                    attributes_read_group_prefix = atts_read["group_attribute_prefix"].as_string();
+                }
+              
+
             }
 
-            if(atts.has_child("threshold"))
+            if(atts.has_child("write"))
             {
-                attribute_storage_threshold = atts["threshold"].to_value();
+                const Node &atts_write = atts["write"];
+                
+                if(atts_write.has_child("enabled"))
+                {
+                    std::string enabled = atts_write["enabled"].as_string();
+                    if(enabled == "false")
+                    {
+                        attributes_write_enabled = false;
+                    }
+                    else
+                    {
+                        attributes_write_enabled = true;
+                    }
+                    
+                }
+                
+                
+                if(atts_write.has_child("threshold"))
+                {
+                    attributes_write_threshold = atts_write["threshold"].to_value();
+                }
             }
         }
         
@@ -203,6 +253,11 @@ public:
                 {
                     chunking_enabled = false;
                 }
+                else
+                {
+                    chunking_enabled = true;
+                }
+                
             }
         
             if(chunking.has_child("threshold"))
@@ -247,16 +302,28 @@ public:
         
         opts["compact_storage/threshold"] = compact_storage_threshold;
 
-        if(attribute_storage_enabled)
+        if(attributes_read_enabled)
         {
-            opts["attribute_storage/enabled"] = "true";
+            opts["attributes/read/enabled"] = "true";
         }
         else
         {
-            opts["attribute_storage/enabled"] = "false";
+            opts["attributes/read/enabled"] = "false";
+        }
+
+        opts["attributes/read/dataset_attribute_prefix"] = attributes_read_dataset_prefix;
+        opts["attributes/read/group_attribute_prefix"]   = attributes_read_group_prefix;
+        
+        if(attributes_write_enabled)
+        {
+            opts["attributes/write/enabled"] = "true";
+        }
+        else
+        {
+            opts["attributes/write/enabled"] = "false";
         }
         
-        opts["attribute_storage/threshold"] = attribute_storage_threshold;
+        opts["attributes/write/threshold"] = attributes_write_threshold;
 
 
         if(chunking_enabled)
@@ -281,19 +348,24 @@ public:
 
 // default hdf5 i/o settings
 
-bool HDF5Options::attribute_storage_enabled   = false;
-int  HDF5Options::attribute_storage_threshold = 1024;
+bool HDF5Options::attributes_read_enabled   = false;
+std::string HDF5Options::attributes_read_dataset_prefix = "";
+std::string HDF5Options::attributes_read_group_prefix   = "";
 
-bool HDF5Options::compact_storage_enabled   = true;
+bool HDF5Options::attributes_write_enabled = false;
+int  HDF5Options::attributes_write_threshold = 1024;
+
+
+bool HDF5Options::compact_storage_enabled   = false;
 int  HDF5Options::compact_storage_threshold = 256;
 
 
 bool        HDF5Options::chunking_enabled   = true;
-int         HDF5Options::chunk_size         = 1024;
-int         HDF5Options::chunk_threshold    = 0;
+int         HDF5Options::chunk_size         = 1000000; // 1 mb 
+int         HDF5Options::chunk_threshold    = 2000000; // 2 mb
 
 std::string HDF5Options::compression_method = "gzip";
-int         HDF5Options::compression_level  = 9;
+int         HDF5Options::compression_level  = 5;
 
 
 //-----------------------------------------------------------------------------
@@ -419,6 +491,12 @@ void  write_conduit_object_to_hdf5_group(const Node &node,
 // helpers for reading
 //-----------------------------------------------------------------------------
 
+//---------------------------------------------------------------------------//
+void
+read_hdf5_attribute_into_conduit_leaf(hid_t hdf5_group_id,
+                                       const std::string &ref_path,
+                                       Node &dest);
+
 //-----------------------------------------------------------------------------
 void read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
                                          const std::string &ref_path,
@@ -433,6 +511,8 @@ void read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
 void read_hdf5_tree_into_conduit_node(hid_t hdf5_id,
                                       const std::string &ref_path,
                                       Node &dest);
+
+
 
 
 //-----------------------------------------------------------------------------
@@ -1144,8 +1224,8 @@ write_conduit_leaf_to_hdf5_group(const Node &node,
                                  hid_t hdf5_group_id,
                                  const std::string &hdf5_dset_name)
 {
-    if(HDF5Options::attribute_storage_enabled && 
-       node.total_bytes_compact() < HDF5Options::attribute_storage_threshold)
+    if(HDF5Options::attributes_write_enabled && 
+       node.total_bytes_compact() < HDF5Options::attributes_write_threshold)
     {
         return write_conduit_leaf_to_hdf5_group_attribute(node,
                                                           ref_path,
@@ -1499,7 +1579,7 @@ h5_group_check(h5_read_opdata *od,
 //  circular path in the file.
 //---------------------------------------------------------------------------//
 herr_t
-h5_literate_traverse_op_func(hid_t hdf5_id,
+h5l_iterate_traverse_op_func(hid_t hdf5_id,
                              const char *hdf5_path,
                              const H5L_info_t *,// hdf5_info -- unused
                              void *hdf5_operator_data)
@@ -1620,6 +1700,211 @@ h5_literate_traverse_op_func(hid_t hdf5_id,
 
 
 //---------------------------------------------------------------------------//
+/// Operator struct type for our H5Aiterate callback.
+//---------------------------------------------------------------------------//
+struct h5_attr_read_opdata
+{
+    // pointer to conduit node, ref_path, and att prefix
+    Node            *node;
+    std::string      ref_path;
+    const char      *prefix;
+};
+
+
+//---------------------------------------------------------------------------//
+/// Our main callback for H5Aiterate.
+/// adapted from: 
+/// https://support.hdfgroup.org/ftp/HDF5/examples/misc-examples/attrs.c
+//---------------------------------------------------------------------------//
+herr_t 
+h5a_iterate_traverse_op_func(hid_t hdf5_id,
+                            const char *attr_name,
+                            const H5A_info_t * /*unused*/,
+                            void *hdf5_operator_data)
+{
+    herr_t h5_return_val = 0;
+
+    /* Type conversion */
+    struct h5_attr_read_opdata *h5_od = (struct h5_attr_read_opdata*)hdf5_operator_data;
+
+    
+    hid_t h5_attr = H5Aopen_name(hdf5_id, attr_name);
+
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_attr,
+                                           h5_od->ref_path,
+                                           "Failed to open HDF5 "
+                                            << "attribute " << attr_name);
+
+    // hurray, we have the attribute :-)
+    std::string cld_name = std::string(h5_od->prefix) +  std::string(attr_name);
+    
+    Node &chld_node = h5_od->node->fetch(cld_name);
+    
+    std::string chld_ref_path = h5_od->ref_path  + 
+                                std::string("/(attribute)") + 
+                                std::string(cld_name);
+    
+    read_hdf5_attribute_into_conduit_leaf(h5_attr,
+                                          chld_ref_path,
+                                          chld_node);
+
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Aclose(h5_attr),
+                                           h5_od->ref_path,
+                                           "Failed to close HDF5 "
+                                            << "attribute " << attr_name);
+    return h5_return_val;
+}
+
+
+
+
+//---------------------------------------------------------------------------//
+void
+read_hdf5_attribute_into_conduit_leaf(hid_t hdf5_attr_id,
+                                       const std::string &ref_path,
+                                       Node &dest)
+{
+    hid_t h5_dspace_id = H5Aget_space(hdf5_attr_id);
+    
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_dspace_id,
+                                           ref_path,
+                                           "Error reading HDF5 Dataspace: " 
+                                           << hdf5_attr_id);
+
+    // check for empty case
+    if(H5Sget_simple_extent_type(h5_dspace_id) == H5S_NULL)
+    {
+        // change to empty
+        dest.reset();
+    }
+    else
+    {
+        hid_t h5_dtype_id  = H5Aget_type(hdf5_attr_id); 
+    
+        CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_dtype_id,
+                                               ref_path,
+                                               "Error reading HDF5 Datatype: "
+                                               << hdf5_attr_id);
+
+
+    
+        index_t nelems     = H5Sget_simple_extent_npoints(h5_dspace_id);
+        DataType dt        = hdf5_dtype_to_conduit_dtype(h5_dtype_id,
+                                                         nelems,
+                                                         ref_path);
+        // if the endianness of the dset in the file doesn't
+        // match the current machine we always want to convert it
+        // on read.
+
+        // check endianness
+        if(!dt.endianness_matches_machine())
+        {
+            // if they don't match, modify the dt
+            // and get the proper hdf5 data type handle
+            dt.set_endianness(Endianness::machine_default());
+            
+            // clean up our old handle
+            CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Tclose(h5_dtype_id),
+                                                   ref_path,
+                                        "Error closing HDF5 Datatype: "
+                                        << h5_dtype_id);
+            // get ref to standard variant of this dtype
+            h5_dtype_id  = conduit_dtype_to_hdf5_dtype(dt,
+                                                       ref_path);
+
+            CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_dtype_id,
+                                                   ref_path,
+                                        "Error creating HDF5 Datatype");
+
+            // copy this handle, b/c clean up code later will close it
+            h5_dtype_id  = H5Tcopy(h5_dtype_id);
+            CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_dtype_id,
+                                                   ref_path,
+                                        "Error copying HDF5 Datatype");
+        }
+        
+        hid_t h5_status    = 0;
+    
+        if(dest.dtype().is_compact() && 
+           dest.dtype().compatible(dt) )
+        {
+            // we can read directly from hdf5 dataset if compact 
+            // & compatible
+            
+            h5_status =  H5Aread(hdf5_attr_id,
+                                 h5_dtype_id,
+                                 dest.data_ptr());
+        }
+        else
+        {
+            // we create a temp Node b/c we want read to work for 
+            // strided data
+            // 
+            // the hdf5 data will always be compact, source node we are 
+            // reading will not unless it's already compatible and compact.
+            Node n_tmp(dt);
+            h5_status =  H5Aread(hdf5_attr_id,
+                                 h5_dtype_id,
+                                 n_tmp.data_ptr());
+        
+            // copy out to our dest
+            dest.set(n_tmp);
+        }
+
+        CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_status,
+                                               ref_path,
+                                               "Error reading HDF5 Dataset: "
+                                                << hdf5_attr_id);
+    
+        CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Tclose(h5_dtype_id),
+                                               ref_path,
+                                               "Error closing HDF5 Datatype: "
+                                               << h5_dtype_id);
+
+    }
+
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Sclose(h5_dspace_id),
+                                           ref_path,
+                                           "Error closing HDF5 Dataspace: "
+                                           << h5_dspace_id);
+    
+    
+}
+
+//---------------------------------------------------------------------------//
+void
+read_hdf5_group_attributes_into_conduit_node(hid_t hdf5_group_id,
+                                             const std::string &ref_path,
+                                             Node &dest)
+{
+    // setup the callback struct we will use for H5Aiterate
+    struct h5_attr_read_opdata  h5_od;
+    // attach the pointer to our node
+    h5_od.node = &dest;
+    // keep ref path
+    h5_od.ref_path = ref_path;
+    // keep prefix
+    h5_od.prefix = HDF5Options::attributes_read_group_prefix.c_str();
+
+    hsize_t h5_iterate_idx;
+    
+    // use H5Literate to traverse
+    herr_t h5_status = H5Aiterate(hdf5_group_id,
+                                  H5_INDEX_CRT_ORDER,
+                                  H5_ITER_INC,
+                                  &h5_iterate_idx,
+                                  h5a_iterate_traverse_op_func,
+                                  (void *) &h5_od);
+
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_status,
+                                           ref_path,
+                                           "Error calling H5Aiterate to "
+                                           << "read HDF5 group attributes "
+                                           << hdf5_group_id);
+
+}
+
+//---------------------------------------------------------------------------//
 void
 read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
                                   const std::string &ref_path,
@@ -1628,6 +1913,19 @@ read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
     // we want to make sure this is a conduit object
     // even if it doens't have any children
     dest.set(DataType::object());
+    
+    
+    // group attribute support
+    
+    if(HDF5Options::attributes_read_enabled &&
+       H5Aget_num_attrs(hdf5_group_id) > 0)
+    {
+        // 
+        read_hdf5_group_attributes_into_conduit_node(hdf5_group_id,
+                                                     ref_path,
+                                                     dest);
+    }
+    
     
     // get info, we need to get the obj addr for cycle tracking
     H5O_info_t h5_info_buf;
@@ -1683,7 +1981,7 @@ read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
                            h5_grp_index_type,
                            H5_ITER_INC,
                            NULL,
-                           h5_literate_traverse_op_func,
+                           h5l_iterate_traverse_op_func,
                            (void *) &h5_od);
 
     CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_status,
