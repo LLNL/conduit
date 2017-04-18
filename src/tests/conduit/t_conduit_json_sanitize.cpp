@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_json_sanitize.cpp
+/// file: t_conduit_json_sanitize.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -161,3 +161,13 @@ TEST(conduit_json_sanitize, simple_quoteless_schema)
     delete [] data4;
 }
 
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_json_sanitize, sci_notation)
+{
+    std::string json_in = "{ \"data\": { \"value\": 1.2e-11 } }";
+    
+    EXPECT_EQ(json_in,utils::json_sanitize(json_in));
+    
+}
