@@ -1396,13 +1396,51 @@ write_conduit_object_to_hdf5_group(const Node &node,
                 // if the hdf5 group doesn't exist, we need to create it
                 hid_t h5_gc_plist = H5Pcreate(H5P_GROUP_CREATE);
         
+                CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_gc_plist,
+                                                       ref_path,
+                                 "Failed to create H5P_GROUP_CREATE property "
+                                 << " list");
+        
+                // track creation order
                 herr_t h5_status = H5Pset_link_creation_order(h5_gc_plist, 
                         ( H5P_CRT_ORDER_TRACKED |  H5P_CRT_ORDER_INDEXED) );
 
                 CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_status,
                                                        ref_path,
-                                 "Failed to create H5P_GROUP_CREATE property "
-                                 << " list");
+                                 "Failed to set group link creation property");
+
+                // prefer compact storage 
+                // https://support.hdfgroup.org/HDF5/doc/RM/RM_H5G.html#Group-GroupStyles
+                h5_status = H5Pset_link_phase_change(h5_gc_plist,
+                                                     32,  // max for compact storage
+                                                     32); // min for dense storage
+
+                CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_status,
+                                                       ref_path,
+                            "Failed to set group link phase change property ");
+
+                // calc hints for meta data about link names
+                NodeConstIterator chld_itr = itr.node().children();
+                index_t chld_names_avg_size = 0;
+                index_t num_children = itr.node().number_of_children();
+                while(chld_itr.has_next())
+                {
+                    chld_itr.next();
+                    chld_names_avg_size +=chld_itr.name().size();
+                }
+                if(chld_names_avg_size > 0 && num_children > 0 )
+                {
+                    chld_names_avg_size = chld_names_avg_size / num_children;
+                }
+
+                // set hints for meta data about link names
+                h5_status = H5Pset_est_link_info(h5_gc_plist,
+                                                 num_children, // number of children
+                                                 chld_names_avg_size); // est name size
+
+                CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_status,
+                                                       ref_path,
+                            "Failed to set group est link info property ");
 
                 h5_child_id = H5Gcreate(hdf5_group_id,
                                         itr.name().c_str(),
