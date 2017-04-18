@@ -487,10 +487,17 @@ json_sanitize(const std::string &json)
                 
                 if( !in_id && check_word_char(json[i]))
                 {
-                    in_id = true;
-                    // accum id chars
-                    cur_id += json[i];
-                    emit = false;
+                    // ids can't start with numbers ,
+                    // check the prior char if it exists
+                    if(i > 0 && 
+                       !check_num_char(json[i-1]) &&
+                       json[i-1] != '.')
+                    {
+                        in_id = true;
+                        // accum id chars
+                        cur_id += json[i];
+                        emit = false;
+                    }
                 }
                 else if(in_id) // finish the id
                 {
