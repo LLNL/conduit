@@ -1421,13 +1421,16 @@ write_conduit_object_to_hdf5_group(const Node &node,
 
                 // calc hints for meta data about link names
                 NodeConstIterator chld_itr = itr.node().children();
+                
                 index_t chld_names_avg_size = 0;
                 index_t num_children = itr.node().number_of_children();
+                
                 while(chld_itr.has_next())
                 {
                     chld_itr.next();
                     chld_names_avg_size +=chld_itr.name().size();
                 }
+                
                 if(chld_names_avg_size > 0 && num_children > 0 )
                 {
                     chld_names_avg_size = chld_names_avg_size / num_children;
@@ -2502,6 +2505,32 @@ hdf5_read(hid_t hdf5_id,
     
     // enable hdf5 error stack
 }
+
+
+//---------------------------------------------------------------------------//
+bool
+hdf5_has_path(hid_t hdf5_id,
+              const std::string &hdf5_path)
+{
+    // disable hdf5 error stack
+    HDF5ErrorStackSupressor supress_hdf5_errors;
+    
+    int res = H5Lexists(hdf5_id,hdf5_path.c_str(),H5P_DEFAULT);
+    
+    
+    // H5Lexists returns:
+    //  a positive value if the link exists.
+    //
+    //  0 if it doens't exist
+    //
+    //  a negative # in some cases when it doens't exist, and in some cases
+    //    where there is an error. 
+    // For our cases, we treat 0 and negative as does not exist. 
+
+    return (res > 0);
+    // enable hdf5 error stack
+}
+
 
 
 }
