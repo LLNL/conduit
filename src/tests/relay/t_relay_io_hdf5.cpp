@@ -685,6 +685,55 @@ TEST(conduit_relay_io_hdf5, auto_endian)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, hdf5_path_exists)
+{
+
+    std::string test_file_name = "tout_hdf5_wr_hdf5_path_exists.hdf5";
+
+    Node n;
+    n["a/b/c/d"] = 10;
+    n["a/b/c/f"] = 20;
+
+    io::hdf5_write(n,test_file_name);
+    
+    
+    hid_t h5_file_id = H5Fopen(test_file_name.c_str(),
+                               H5F_ACC_RDONLY,
+                               H5P_DEFAULT);
+
+    hid_t h5_grp_a = H5Gopen(h5_file_id, "a", 0);
+    
+
+    EXPECT_TRUE(io::hdf5_has_path(h5_file_id,"a"));
+    EXPECT_TRUE(io::hdf5_has_path(h5_file_id,"a/b"));
+    EXPECT_TRUE(io::hdf5_has_path(h5_file_id,"a/b/c"));
+    EXPECT_TRUE(io::hdf5_has_path(h5_file_id,"a/b/c/d"));
+    EXPECT_TRUE(io::hdf5_has_path(h5_file_id,"a/b/c/f"));
+
+    EXPECT_TRUE(io::hdf5_has_path(h5_grp_a,"b"));
+    EXPECT_TRUE(io::hdf5_has_path(h5_grp_a,"b/c"));
+    EXPECT_TRUE(io::hdf5_has_path(h5_grp_a,"b/c/d"));
+    EXPECT_TRUE(io::hdf5_has_path(h5_grp_a,"b/c/f"));
+
+
+    EXPECT_FALSE(io::hdf5_has_path(h5_file_id,"BAD"));
+    EXPECT_FALSE(io::hdf5_has_path(h5_file_id,"a/BAD"));
+    EXPECT_FALSE(io::hdf5_has_path(h5_file_id,"a/b/BAD"));
+    EXPECT_FALSE(io::hdf5_has_path(h5_file_id,"a/b/c/BAD"));
+    EXPECT_FALSE(io::hdf5_has_path(h5_file_id,"a/b/c/d/e/f/g"));
+
+    EXPECT_FALSE(io::hdf5_has_path(h5_grp_a,"BAD"));
+    EXPECT_FALSE(io::hdf5_has_path(h5_grp_a,"b/BAD"));
+    EXPECT_FALSE(io::hdf5_has_path(h5_grp_a,"b/c/BAD"));
+    EXPECT_FALSE(io::hdf5_has_path(h5_grp_a,"b/c/d/e/f/g"));
+
+        
+    H5Gclose(h5_grp_a);
+    H5Fclose(h5_file_id);
+}
+
+
 
 
 

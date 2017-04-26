@@ -241,6 +241,23 @@ DataType CONDUIT_RELAY_API hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
                                                        index_t num_elems,
                                                 const std::string &ref_path="");
 
+
+//-----------------------------------------------------------------------------
+/// Check if path exists relative to hdf5 id
+//-----------------------------------------------------------------------------
+bool CONDUIT_RELAY_API hdf5_has_path(hid_t hdf5_id, const std::string &path);
+
+//-----------------------------------------------------------------------------
+/// Pass a Node to set hdf5 i/o options.
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API hdf5_set_options(const Node &opts);
+
+//-----------------------------------------------------------------------------
+/// Get a Node that contains hdf5 i/o options.
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API hdf5_options(Node &opts);
+
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::relay::io --
