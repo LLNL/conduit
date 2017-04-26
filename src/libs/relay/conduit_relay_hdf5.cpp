@@ -256,7 +256,7 @@ public:
 
 // default hdf5 i/o settings
 
-bool HDF5Options::compact_storage_enabled   = false;
+bool HDF5Options::compact_storage_enabled   = true;
 int  HDF5Options::compact_storage_threshold = 1024;
 
 bool        HDF5Options::chunking_enabled   = true;
@@ -828,18 +828,13 @@ create_hdf5_chunked_plist_for_conduit_leaf(const DataType &dtype)
 {
     hid_t h5_cprops_id = H5Pcreate(H5P_DATASET_CREATE);
 
-    hsize_t num_eles = (hsize_t) dtype.number_of_elements();
-    // Turn on chunking...needed for compression
-    hsize_t chunk_size = HDF5Options::chunk_size;
-    double num_chunks = (double) num_eles / (double) chunk_size;
-    double partial_chunk = num_chunks - (int) num_chunks;
-    double chunk_waste = 1 - partial_chunk;
-    if (chunk_waste > 0.1 || num_eles < chunk_size)
-    {
-        chunk_size = num_eles;
-    }
+    // Turn on chunking
+    
+    // hdf5 sets chunking in elements, not bytes, 
+    // our options are in bytes, so convert to # of elems
+    hsize_t h5_chunk_size =  (hsize_t) (HDF5Options::chunk_size / dtype.element_bytes()); 
 
-    H5Pset_chunk(h5_cprops_id, 1, &chunk_size);
+    H5Pset_chunk(h5_cprops_id, 1, &h5_chunk_size);
 
     if(HDF5Options::compression_method == "gzip" )
     {
@@ -1197,7 +1192,7 @@ write_conduit_object_to_hdf5_group(const Node &node,
                                                        ref_path,
                                  "Failed to set group link creation property");
 
-                // prefer compact storage 
+                // prefer compact group storage 
                 // https://support.hdfgroup.org/HDF5/doc/RM/RM_H5G.html#Group-GroupStyles
                 h5_status = H5Pset_link_phase_change(h5_gc_plist,
                                                      32,  // max for compact storage
@@ -1535,7 +1530,7 @@ read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
                                   Node &dest)
 {
     // we want to make sure this is a conduit object
-    // even if it doens't have any children
+    // even if it doesn't have any children
     dest.set(DataType::object());
     
     
@@ -2092,9 +2087,9 @@ hdf5_has_path(hid_t hdf5_id,
     // H5Lexists returns:
     //  a positive value if the link exists.
     //
-    //  0 if it doens't exist
+    //  0 if it doesn't exist
     //
-    //  a negative # in some cases when it doens't exist, and in some cases
+    //  a negative # in some cases when it doesn't exist, and in some cases
     //    where there is an error. 
     // For our cases, we treat 0 and negative as does not exist. 
 
