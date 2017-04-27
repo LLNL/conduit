@@ -51,6 +51,7 @@
 #include "conduit.hpp"
 
 #include <iostream>
+#include <limits>
 #include "gtest/gtest.h"
 
 using namespace conduit;
@@ -592,6 +593,28 @@ TEST(conduit_json, json_schema_preserve_floats)
 
     EXPECT_TRUE(n_parse["i"].dtype().is_int64());
     EXPECT_TRUE(n_parse["f"].dtype().is_float64());
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_json, json_inf_and_nan)
+{
+    Node n;
+    n["pos_inf"] =  std::numeric_limits<float64>::infinity();
+    n["neg_inf"] = -std::numeric_limits<float64>::infinity();
+    n["nan"]     =  std::numeric_limits<float64>::quiet_NaN();
+ 
+    CONDUIT_INFO(n.to_json());
+    
+    std::string json_str = n.to_json();
+    CONDUIT_INFO(json_str);
+    
+    Generator g(json_str,"json");
+    
+    Node n_res;
+    g.walk(n_res);
+
+    CONDUIT_INFO(n_res.to_json());
 
 }
 

@@ -52,9 +52,11 @@
 #include "conduit.hpp"
 
 #include <iostream>
+#include <limits>
 #include "gtest/gtest.h"
 
 #include "t_config.hpp"
+
 
 using namespace conduit;
 
@@ -214,8 +216,6 @@ TEST(conduit_utils, escape_special_chars)
 //-----------------------------------------------------------------------------
 TEST(conduit_utils, float64_to_string)
 {
-    
-
     float64 v = 10.0;
     
     EXPECT_EQ("10.0",utils::float64_to_string(v));
@@ -223,6 +223,20 @@ TEST(conduit_utils, float64_to_string)
     v = 10000000000000000;
     EXPECT_EQ("1e+16",utils::float64_to_string(v));
 
+    v = std::numeric_limits<float64>::infinity();
+    CONDUIT_INFO(utils::float64_to_string(v));
+
+    EXPECT_EQ("inf",utils::float64_to_string(v));
+
+    v = -std::numeric_limits<float64>::infinity();
+    CONDUIT_INFO(utils::float64_to_string(v));
+
+    EXPECT_EQ("-inf",utils::float64_to_string(v));
+
+    v = std::numeric_limits<float64>::quiet_NaN();
+    CONDUIT_INFO(utils::float64_to_string(v));
+
+    EXPECT_EQ("nan",utils::float64_to_string(v));
 }
 
 

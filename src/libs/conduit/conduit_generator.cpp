@@ -1272,6 +1272,8 @@ Generator::data_ptr() const
 // JSON Parsing interface
 //-----------------------------------------------------------------------------s
 
+const rapidjson::ParseFlag RAPIDJSON_PARSE_OPTS = rapidjson::kParseNoFlags;
+
 //---------------------------------------------------------------------------//
 void 
 Generator::walk(Schema &schema) const
@@ -1280,7 +1282,7 @@ Generator::walk(Schema &schema) const
     rapidjson::Document document;
     std::string res = utils::json_sanitize(m_json_schema);
 
-    if(document.Parse<0>(res.c_str()).HasParseError())
+    if(document.Parse<RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
     {
         CONDUIT_JSON_PARSE_ERROR(document);
     }
@@ -1309,7 +1311,7 @@ Generator::walk_external(Node &node) const
         rapidjson::Document document;
         std::string res = utils::json_sanitize(m_json_schema);
                 
-        if(document.Parse<0>(res.c_str()).HasParseError())
+        if(document.Parse<RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
         {
             CONDUIT_JSON_PARSE_ERROR(document);
         }
@@ -1323,7 +1325,7 @@ Generator::walk_external(Node &node) const
         rapidjson::Document document;
         std::string res = utils::json_sanitize(m_json_schema);
         
-        if(document.Parse<0>(res.c_str()).HasParseError())
+        if(document.Parse<RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
         {
             CONDUIT_JSON_PARSE_ERROR(document);
         }
@@ -1335,7 +1337,7 @@ Generator::walk_external(Node &node) const
         rapidjson::Document document;
         std::string res = utils::json_sanitize(m_json_schema);
         
-        if(document.Parse<0>(res.c_str()).HasParseError())
+        if(document.Parse<RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
         {
             CONDUIT_JSON_PARSE_ERROR(document);
         }
