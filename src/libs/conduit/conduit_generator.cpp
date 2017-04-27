@@ -1272,8 +1272,7 @@ Generator::data_ptr() const
 // JSON Parsing interface
 //-----------------------------------------------------------------------------s
 
-const rapidjson::ParseFlag RAPIDJSON_PARSE_OPTS = rapidjson::kParseCommentsFlag;
-// future add: & rapidjson::kParseNanAndInfFlag;
+const rapidjson::ParseFlag RAPIDJSON_PARSE_OPTS = rapidjson::kParseNoFlags;
 
 //---------------------------------------------------------------------------//
 void 
