@@ -184,7 +184,18 @@ DataArray<T>::to_json(std::ostream &os) const
             case DataType::FLOAT32_ID: 
             case DataType::FLOAT64_ID: 
             {
-                os << utils::float64_to_string((float64) element(idx));
+                std::string fs = utils::float64_to_string((float64)element(idx));
+                //check for inf and nan
+                // looking for 'n' covers inf and nan
+                bool inf_or_nan = fs.find('n') != std::string::npos;
+                
+                if(inf_or_nan)
+                    os << "\"";
+                
+                os << fs;
+
+                if(inf_or_nan)
+                    os << "\"";
                 break;
             }
             default:
