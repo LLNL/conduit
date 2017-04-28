@@ -46,7 +46,7 @@
 Relay MPI
 ===================
 
-The Conduit Relay MPI library enables MPI communication using conduit::Node instances as payloads. It provides two categories of functionality: :ref:`mpi_known_schema_methods` and :ref:`mpi_generic_methods`. These categories balance flexibly and performance tradeoffs. In all cases the implementation tries to avoid unnecessary reallocation, subject to the constraints of MPI's API input requirements.
+The Conduit Relay MPI library enables MPI communication using conduit::Node instances as payloads. It provides two categories of functionality: :ref:`mpi_known_schema_methods` and :ref:`mpi_generic_methods`. These categories balance flexibility and performance tradeoffs. In all cases the implementation tries to avoid unnecessary reallocation, subject to the constraints of MPI's API input requirements.
 
 
 
@@ -77,9 +77,9 @@ For both point to point and collectives, here is the basic logic for how input N
 
 * For Nodes used to hold output data:
 
- * If the Node is compact and contiguously allocated, the Node's pointers are passed directly to MPI.
+ * If the output Node is compact and contiguously allocated, the Node's pointers are passed directly to MPI.
 
- * If the Node is not compact or not contiguously allocated, a Node with a temporary contiguous buffer is created and that buffer is passed to MPI. An **update** call is used to copy out the data from the temporary buffer to the output Node. This avoids re-allocation and modifying the schema of the output Node.
+ * If the output Node is not compact or not contiguously allocated, a Node with a temporary contiguous buffer is created and that buffer is passed to MPI. An **update** call is used to copy out the data from the temporary buffer to the output Node. This avoids re-allocation and modifying the schema of the output Node.
 
 .. _mpi_generic_methods:
 
@@ -122,9 +122,9 @@ For both point to point and collectives, here is the basic logic for how input N
 
  * If the output Node is not compatible with the received schema, it is reset using the received schema.
 
- * If the Node is compact and contiguously allocated, the Node's pointers are passed directly to MPI.
+ * If the output Node is compact and contiguously allocated, its pointers are passed directly to MPI.
 
- * If the Node is not compact or not contiguously allocated, a Node with a temporary contiguous buffer is created and that buffer is passed to MPI. An **update** call is used to copy out the data from the temporary buffer to the output Node. This avoids re-allocation and modifying the schema of the output Node.
+ * If the output Node is not compact or not contiguously allocated, a Node with a temporary contiguous buffer is created and that buffer is passed to MPI. An **update** call is used to copy out the data from the temporary buffer to the output Node. This avoids re-allocation and modifying the schema of the output Node.
 
 
 
