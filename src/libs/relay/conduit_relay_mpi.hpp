@@ -137,7 +137,8 @@ namespace mpi
                                             int source,
                                             int tag,
                                             MPI_Comm comm);
-              
+
+    // TODO: rename these as send and recv
     int CONDUIT_RELAY_API send_without_schema(const Node &node,
                                               int dest,
                                               int tag,
