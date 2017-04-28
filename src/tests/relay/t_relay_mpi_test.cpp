@@ -469,11 +469,11 @@ TEST(conduit_mpi_test, send_recv_without_using_schema)
         vals[1] = 3.4124 * rank;
         vals[2] = 10.7 - rank;
         
-        mpi::send_without_schema(n,1,0,MPI_COMM_WORLD);
+        mpi::send(n,1,0,MPI_COMM_WORLD);
     }
     else if( rank == 1 )
     {
-        mpi::recv_without_schema(n,0,0,MPI_COMM_WORLD);
+        mpi::recv(n,0,0,MPI_COMM_WORLD);
     }
 
     double_array vals = n.value();

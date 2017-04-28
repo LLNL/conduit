@@ -356,7 +356,7 @@ recv_using_schema(Node &node, int src, int tag, MPI_Comm comm)
 
 //---------------------------------------------------------------------------//
 int 
-send_without_schema(const Node &node, int dest, int tag, MPI_Comm comm)
+send(const Node &node, int dest, int tag, MPI_Comm comm)
 { 
     // assumes size and type are known on the other end
     
@@ -393,7 +393,7 @@ send_without_schema(const Node &node, int dest, int tag, MPI_Comm comm)
 
 //---------------------------------------------------------------------------//
 int
-recv_without_schema(Node &node, int src, int tag, MPI_Comm comm)
+recv(Node &node, int src, int tag, MPI_Comm comm)
 {  
 
     MPI_Status status;    
@@ -439,88 +439,6 @@ recv_without_schema(Node &node, int src, int tag, MPI_Comm comm)
     return mpi_error;
 }
 
-//---------------------------------------------------------------------------//
-int 
-send(Node &node, int dest, int tag, MPI_Comm comm)
-{ 
-
-    Schema schema_c;
-    node.schema().compact_to(schema_c);
-    std::string schema = schema_c.to_json();
-    int schema_len = schema.length() + 1;
-
-    std::vector<uint8> data;
-    node.serialize(data);
-    int data_len = data.size();
-
-
-    int intArray[2] = { schema_len, data_len };
-
-
-    int mpi_error = MPI_Send(intArray, 2, MPI_INT, dest, tag, comm);
-    CONDUIT_CHECK_MPI_ERROR(mpi_error);
-
-    mpi_error = MPI_Send(const_cast <char*> (schema.c_str()),
-                         schema_len,
-                         MPI_CHAR,
-                         dest,
-                         tag,
-                         comm);
-
-    CONDUIT_CHECK_MPI_ERROR(mpi_error);
-    
-    mpi_error = MPI_Send((char*)&data[0], data_len, MPI_BYTE, dest, tag, comm);
-    CONDUIT_CHECK_MPI_ERROR(mpi_error);
-
-    return mpi_error;
-}
-
-//---------------------------------------------------------------------------//
-int
-recv(Node &node, int src, int tag, MPI_Comm comm)
-{  
-    int rcv_counts[2];
-    MPI_Status status;
-
-    int mpi_error = MPI_Recv(rcv_counts, 2, MPI_INT, src, tag, comm, &status);
-    CONDUIT_CHECK_MPI_ERROR(mpi_error);
-
-    int schema_len = rcv_counts[0];
-    int data_len   = rcv_counts[1];
-
-    Node recv_buffers;
-    recv_buffers["schema"].set(DataType::c_char(schema_len+1));
-    recv_buffers["data"].set(DataType::c_char(data_len+1));
-
-    char *schema_ptr = recv_buffers["schema"].value();
-    char *data_ptr   = recv_buffers["data"].value();
-
-    mpi_error = MPI_Recv(schema_ptr,
-                         schema_len,
-                         MPI_CHAR,
-                         src,
-                         tag,
-                         comm,
-                         &status);
-
-    CONDUIT_CHECK_MPI_ERROR(mpi_error);
-
-    mpi_error = MPI_Recv(data_ptr,
-                         data_len,
-                         MPI_BYTE,
-                         src,
-                         tag,
-                         comm,
-                         &status);
-
-    CONDUIT_CHECK_MPI_ERROR(mpi_error);
-    
-    Generator node_gen(schema_ptr, "conduit_json", data_ptr);
-    /// gen copy 
-    node_gen.walk(node);
-
-    return mpi_error;
-}
 
 //---------------------------------------------------------------------------//
 int 
