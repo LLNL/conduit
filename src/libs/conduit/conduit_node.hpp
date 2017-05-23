@@ -3188,6 +3188,12 @@ public:
     bool             contiguous_with(void *address) const;
     
 
+    /// if this node has a contiguous data layout, returns
+    /// the start address of its memory, otherwise returns NULL
+    
+    void            *contiguous_data_ptr();
+    const void      *contiguous_data_ptr() const;
+
     /// is this node compatible with given node
     bool             compatible(const Node &n) const
                         {return m_schema->compatible(n.schema());}
@@ -3756,6 +3762,10 @@ private:
 
     void              info(Node &res,
                            const std::string &curr_path) const;
+
+    /// helper that finds the first non null data pointer, used by 
+    /// contiguous_data_ptr()
+    const void       *find_first_data_ptr() const;
 
 //-----------------------------------------------------------------------------
 //

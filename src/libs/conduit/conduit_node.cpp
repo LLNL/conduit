@@ -13391,6 +13391,62 @@ Node::contiguous_with(uint8 *start_addy, uint8 *&end_addy) const
     return res;
 }
 
+//---------------------------------------------------------------------------//
+void *
+Node::contiguous_data_ptr()
+{
+    if(!is_contiguous())
+    {
+        return NULL;
+    }
+    
+    // if contiguous, we simply need the first non null pointer.
+    // Note: use const_cast so we can share the same helper func
+    return const_cast<void*>(find_first_data_ptr());
+}
+
+//---------------------------------------------------------------------------//
+const void *
+Node::contiguous_data_ptr() const
+{
+    if(!is_contiguous())
+    {
+        return NULL;
+    }
+    
+    // if contiguous, we simply need the first non null pointer.
+    return find_first_data_ptr();
+}
+
+//---------------------------------------------------------------------------//
+const void *
+Node::find_first_data_ptr() const
+{
+    const void *res = NULL;
+
+    index_t dtype_id = dtype().id();
+    
+    if(dtype_id == DataType::OBJECT_ID ||
+       dtype_id == DataType::LIST_ID)
+    {
+        std::vector<Node*>::const_iterator itr;
+        for(itr = m_children.begin();
+            itr < m_children.end() && res == NULL; // stop if found
+            ++itr)
+        {
+            // recurse 
+            res = (*itr)->find_first_data_ptr();
+        }
+    }
+    // empty should always be NULL, but keep check since it follows form
+    // of is_contig
+    else if(dtype_id != DataType::EMPTY_ID)
+    {
+        res = element_ptr(0);
+    }
+    
+    return res;
+}
 
 //---------------------------------------------------------------------------//
 void
