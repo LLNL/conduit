@@ -222,7 +222,7 @@ namespace mpi
 /// Async MPI Send Recv
 //-----------------------------------------------------------------------------
 
-    int CONDUIT_RELAY_API isend(Node &node,
+    int CONDUIT_RELAY_API isend(const Node &node,
                                 int dest,
                                 int tag,
                                 MPI_Comm mpi_comm,
@@ -234,7 +234,7 @@ namespace mpi
                                 MPI_Comm comm,
                                 Request *request);
 
-    int CONDUIT_RELAY_API wait_send(Request* request,
+    int CONDUIT_RELAY_API wait_send(Request *request,
                                     MPI_Status *status);
    
     int CONDUIT_RELAY_API wait_recv(Request *request,
@@ -275,12 +275,10 @@ namespace mpi
                                      MPI_Comm mpi_comm);
 
 
-    // TODO: Rename (using_schema and without_schema?)
-    // the v variants work for varying schemas
     int CONDUIT_RELAY_API gather_using_schemas(Node &send_node,
-                                              Node &recv_node,
-                                              int root, 
-                                              MPI_Comm mpi_comm);
+                                               Node &recv_node,
+                                               int root, 
+                                               MPI_Comm mpi_comm);
 
     int CONDUIT_RELAY_API all_gather_using_schemas(Node &send_node,
                                                    Node &recv_node,
@@ -290,16 +288,16 @@ namespace mpi
 /// Other MPI collectives
 //-----------------------------------------------------------------------------
 
-int CONDUIT_RELAY_API broadcast(Node& node,
+int CONDUIT_RELAY_API broadcast(Node &node,
                                 int root,
                                 MPI_Comm comm );
 
-int CONDUIT_RELAY_API broadcast_using_schema(Node& node,
+int CONDUIT_RELAY_API broadcast_using_schema(Node &node,
                                              int root,
                                              MPI_Comm comm );
 
 //
-// int CONDUIT_RELAY_API scatter(Node &send_node,
+// int CONDUIT_RELAY_API scatter(const Node &send_node,
 //                               Node &recv_node,
 //                               int root,
 //                               MPI_Comm mpi_comm );
@@ -308,9 +306,7 @@ int CONDUIT_RELAY_API broadcast_using_schema(Node& node,
 //                                  Node& recv_node,
 //                                  MPI_Comm mpi_comm);
 //
-// int CONDUIT_RELAY_API all_to_allv(Node& send_node,
-//                                   Node& recv_node,
-//                                   MPI_Comm mpi_comm);
+
 
 
 //-----------------------------------------------------------------------------
