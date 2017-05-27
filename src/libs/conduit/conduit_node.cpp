@@ -6970,7 +6970,7 @@ Node::update(const Node &n_src)
 {
     // walk src and add it contents to this node
     /// TODO:
-    /// arrays and non empty leafs will simply overwrite the current
+    /// arrays and non empty leaves will simply overwrite the current
     /// node, these semantics seem sensible, but we could revisit this
     index_t dtype_id = n_src.dtype().id();
     if( dtype_id == DataType::OBJECT_ID)

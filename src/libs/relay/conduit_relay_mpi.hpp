@@ -83,9 +83,9 @@ namespace mpi
 
     struct Request
     {
-        MPI_Request   m_request;
-        Node          m_buffer;
-        Node        * m_rcv_ptr;
+        MPI_Request  m_request;
+        Node         m_buffer;
+        Node        *m_rcv_ptr;
     };
 
 
@@ -248,17 +248,6 @@ namespace mpi
                                         Request requests[],
                                         MPI_Status statuses[]);
 
-// TODO ?:
-// int CONDUIT_RELAY_API send_recv(Node &send_node,
-//                                int dest,
-//                                int send_tag,
-//                                Node &recv_node,
-//                                int source,
-//                                int recv_tag,
-//                                MPI_Comm mpi_comm, 
-//                                MPI_Status *status);
-
-
 
 //-----------------------------------------------------------------------------
 /// MPI gather
@@ -285,29 +274,16 @@ namespace mpi
                                                    MPI_Comm mpi_comm);
 
 //-----------------------------------------------------------------------------
-/// Other MPI collectives
+/// MPI broadcast
 //-----------------------------------------------------------------------------
 
-int CONDUIT_RELAY_API broadcast(Node &node,
-                                int root,
-                                MPI_Comm comm );
+    int CONDUIT_RELAY_API broadcast(Node &node,
+                                    int root,
+                                    MPI_Comm comm );
 
-int CONDUIT_RELAY_API broadcast_using_schema(Node &node,
-                                             int root,
-                                             MPI_Comm comm );
-
-//
-// int CONDUIT_RELAY_API scatter(const Node &send_node,
-//                               Node &recv_node,
-//                               int root,
-//                               MPI_Comm mpi_comm );
-//
-// int CONDUIT_RELAY_API all_to_all(Node& send_node,
-//                                  Node& recv_node,
-//                                  MPI_Comm mpi_comm);
-//
-
-
+    int CONDUIT_RELAY_API broadcast_using_schema(Node &node,
+                                                 int root,
+                                                 MPI_Comm comm );
 
 //-----------------------------------------------------------------------------
 /// The about methods construct human readable info about how conduit_mpi was
