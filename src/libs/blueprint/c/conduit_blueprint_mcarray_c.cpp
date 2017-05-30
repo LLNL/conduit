@@ -66,56 +66,56 @@ using namespace conduit;
 //-----------------------------------------------------------------------------
 /// Verify passed node confirms to the blueprint mcarray protocol.
 //-----------------------------------------------------------------------------
-bool
+int
 conduit_blueprint_mcarray_verify(const conduit_node *cnode,
                                  conduit_node *cinfo)
 {
     const Node &n = cpp_node_ref(cnode);
     Node &info    = cpp_node_ref(cinfo);
-    return blueprint::mcarray::verify(n,info);
+    return (int)blueprint::mcarray::verify(n,info);
 }
 
 
 //-----------------------------------------------------------------------------
 /// Verify passed node confirms to given blueprint mcarray sub protocol.
 //-----------------------------------------------------------------------------
-bool
+int
 conduit_blueprint_mcarray_verify_sub_protocol(const char *protocol,
                                               const conduit_node *cnode,
                                               conduit_node *cinfo)
 {
     const Node &n = cpp_node_ref(cnode);
     Node &info    = cpp_node_ref(cinfo);
-    return blueprint::mcarray::verify(std::string(protocol),n,info);
+    return (int)blueprint::mcarray::verify(std::string(protocol),n,info);
 }
 
 
 //----------------------------------------------------------------------------
-bool
+int
 conduit_blueprint_mcarray_is_interleaved(const conduit_node *cnode)
 {
     const Node &n = cpp_node_ref(cnode);
-    return blueprint::mcarray::is_interleaved(n);
+    return (int)blueprint::mcarray::is_interleaved(n);
 }
 
 //-----------------------------------------------------------------------------
-bool
+int
 conduit_blueprint_mcarray_to_contiguous(const conduit_node *cnode,
                                         conduit_node *cdest)
 {
     const Node &n = cpp_node_ref(cnode);
     Node &dest    = cpp_node_ref(cdest);
-    return blueprint::mcarray::to_contiguous(n,dest);
+    return (int)blueprint::mcarray::to_contiguous(n,dest);
 }
 
 //-----------------------------------------------------------------------------
-bool
+int
 conduit_blueprint_mcarray_to_interleaved(const conduit_node *cnode,
                                          conduit_node *cdest)
 {
     const Node &n = cpp_node_ref(cnode);
     Node &dest    = cpp_node_ref(cdest);
-    return blueprint::mcarray::to_interleaved(n,dest);
+    return (int)blueprint::mcarray::to_interleaved(n,dest);
 }
 
 

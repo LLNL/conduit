@@ -73,14 +73,14 @@ conduit_blueprint_about(conduit_node *cnode)
 
 
 //-----------------------------------------------------------------------------
-bool
+int
 conduit_blueprint_verify(const char *protocol,
                          const conduit_node *cnode,
                          conduit_node *cinfo)
 {
     const Node *n = cpp_node(cnode);
     Node *info =  cpp_node(cinfo);
-    return blueprint::verify(std::string(protocol),*n,*info);
+    return (int)blueprint::verify(std::string(protocol),*n,*info);
 }
 
 }

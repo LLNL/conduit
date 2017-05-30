@@ -109,18 +109,18 @@ CONDUIT_API conduit_index_t conduit_node_number_of_elements(conduit_node *cnode)
 // CONDUIT_API char *conduit_node_path(const conduit_node *cnode);
 
 //-----------------------------------------------------------------------------
-CONDUIT_API bool conduit_node_has_child(const conduit_node *cnode, 
-                                        const char *name);
-CONDUIT_API bool conduit_node_has_path(const conduit_node *cnode, 
-                                       const char *path);
+CONDUIT_API int conduit_node_has_child(const conduit_node *cnode, 
+                                       const char *name);
+CONDUIT_API int conduit_node_has_path(const conduit_node *cnode, 
+                                      const char *path);
 
 //-----------------------------------------------------------------------------
 // -- node info --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-CONDUIT_API bool conduit_node_is_root(conduit_node *cnode);
-CONDUIT_API bool conduit_node_is_data_external(const conduit_node *cnode);
+CONDUIT_API int conduit_node_is_root(conduit_node *cnode);
+CONDUIT_API int conduit_node_is_data_external(const conduit_node *cnode);
 
 //-----------------------------------------------------------------------------
 CONDUIT_API conduit_node *conduit_node_parent(conduit_node *cnode);
@@ -130,18 +130,18 @@ CONDUIT_API conduit_index_t conduit_node_total_strided_bytes(const conduit_node 
 CONDUIT_API conduit_index_t conduit_node_total_bytes_compact(const conduit_node *cnode);
     
 //-----------------------------------------------------------------------------
-CONDUIT_API bool conduit_node_is_compact(const conduit_node *cnode);
+CONDUIT_API int conduit_node_is_compact(const conduit_node *cnode);
 
 //-----------------------------------------------------------------------------
-CONDUIT_API bool conduit_node_is_contiguous(const conduit_node *cnode);
-CONDUIT_API bool conduit_node_contiguous_with_node(const conduit_node *cnode,
-                                                   const conduit_node *cother);
-CONDUIT_API bool conduit_node_contiguous_with_address(const conduit_node *cnode,
-                                                      void *address);
+CONDUIT_API int conduit_node_is_contiguous(const conduit_node *cnode);
+CONDUIT_API int conduit_node_contiguous_with_node(const conduit_node *cnode,
+                                                  const conduit_node *cother);
+CONDUIT_API int conduit_node_contiguous_with_address(const conduit_node *cnode,
+                                                     void *address);
 
 //-----------------------------------------------------------------------------
-CONDUIT_API bool conduit_node_compatible(const conduit_node *cnode,
-                                         const conduit_node *cother);
+CONDUIT_API int conduit_node_compatible(const conduit_node *cnode,
+                                        const conduit_node *cother);
 
 CONDUIT_API void conduit_node_info(const conduit_node *cnode,
                                    const conduit_node *cnres);
