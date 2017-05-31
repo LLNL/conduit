@@ -299,6 +299,11 @@ Variants are enabled using ``+`` and disabled using ``~``. For example, to build
   spack install conduit~python~mpi~hdf5~silo~docs
 
 
+Supported CMake Versions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+We test building Conduit with CMake 3.3.1 and 3.8.1. Other versions of CMake may work, however CMake 3.4.x to 3.7.x have specific issues with finding and using HDF5 and Python.
+
+
 
 Using Conduit in Another Project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
