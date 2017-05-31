@@ -72,16 +72,16 @@ extern "C" {
 //-----------------------------------------------------------------------------
 /// Verify passed node confirms to the blueprint mesh protocol.
 //-----------------------------------------------------------------------------
-CONDUIT_BLUEPRINT_API bool conduit_blueprint_mesh_verify(const conduit_node *cnode,
-                                                         conduit_node *cinfo);
+CONDUIT_BLUEPRINT_API int conduit_blueprint_mesh_verify(const conduit_node *cnode,
+                                                        conduit_node *cinfo);
 
 
 //-----------------------------------------------------------------------------
 /// Verify passed node confirms to given blueprint mesh sub protocol.
 //-----------------------------------------------------------------------------
-CONDUIT_BLUEPRINT_API bool conduit_blueprint_mesh_verify_sub_protocol(const char *protocol,
-                                                                      const conduit_node *cnode,
-                                                                      conduit_node *cinfo);
+CONDUIT_BLUEPRINT_API int conduit_blueprint_mesh_verify_sub_protocol(const char *protocol,
+                                                                     const conduit_node *cnode,
+                                                                     conduit_node *cinfo);
 
 //-----------------------------------------------------------------------------
 /// Generate mesh::index from valid mesh.

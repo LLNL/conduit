@@ -66,27 +66,27 @@ using namespace conduit;
 //-----------------------------------------------------------------------------
 /// Verify passed node confirms to the blueprint mesh protocol.
 //-----------------------------------------------------------------------------
-bool
+int
 conduit_blueprint_mesh_verify(const conduit_node *cnode,
                               conduit_node *cinfo)
 {
     const Node &n = cpp_node_ref(cnode);
     Node &info    = cpp_node_ref(cinfo);
-    return blueprint::mesh::verify(n,info);
+    return (int)blueprint::mesh::verify(n,info);
 }
 
 
 //-----------------------------------------------------------------------------
 /// Verify passed node confirms to given blueprint mesh sub protocol.
 //-----------------------------------------------------------------------------
-bool
+int
 conduit_blueprint_mesh_verify_sub_protocol(const char *protocol,
                                            const conduit_node *cnode,
                                            conduit_node *cinfo)
 {
     const Node &n = cpp_node_ref(cnode);
     Node &info    = cpp_node_ref(cinfo);
-    return blueprint::mesh::verify(std::string(protocol),n,info);
+    return (int)blueprint::mesh::verify(std::string(protocol),n,info);
 }
 
 

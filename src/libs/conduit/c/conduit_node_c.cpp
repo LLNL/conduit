@@ -123,33 +123,33 @@ conduit_node_number_of_elements(conduit_node *cnode)
 }
 
 //-----------------------------------------------------------------------------
-bool 
+int 
 conduit_node_has_child(const conduit_node *cnode, 
                        const char *name)
 {
-    return cpp_node(cnode)->has_child(std::string(name));
+    return (int)cpp_node(cnode)->has_child(std::string(name));
 }
 
 //-----------------------------------------------------------------------------
-bool 
+int
 conduit_node_has_path(const conduit_node *cnode, 
                       const char *path)
 {
-    return cpp_node(cnode)->has_path(std::string(path));
+    return (int)cpp_node(cnode)->has_path(std::string(path));
 }
 
 //-----------------------------------------------------------------------------
-bool 
+int
 conduit_node_is_root(conduit_node *cnode)
 {
-    return cpp_node(cnode)->is_root();
+    return (int)cpp_node(cnode)->is_root();
 }
 
 //-----------------------------------------------------------------------------
-bool 
+int
 conduit_node_is_data_external(const conduit_node *cnode)
 {
-    return cpp_node(cnode)->is_data_external();
+    return (int)cpp_node(cnode)->is_data_external();
 }
 
 
@@ -175,33 +175,33 @@ conduit_node_total_bytes_compact(const conduit_node *cnode)
 }
 
 //-----------------------------------------------------------------------------
-bool 
+int
 conduit_node_is_compact(const conduit_node *cnode)
 {
-    return cpp_node(cnode)->is_compact();
+    return (int)cpp_node(cnode)->is_compact();
 }
 
 //-----------------------------------------------------------------------------
-bool 
+int 
 conduit_node_is_contiguous(const conduit_node *cnode)
 {
-    return cpp_node(cnode)->is_contiguous();
+    return (int)cpp_node(cnode)->is_contiguous();
 }
 
 //-----------------------------------------------------------------------------
-bool 
+int 
 conduit_node_contiguous_with_node(const conduit_node *cnode,
                                   const conduit_node *cother)
 {
-    return cpp_node(cnode)->contiguous_with(cpp_node_ref(cother));
+    return (int)cpp_node(cnode)->contiguous_with(cpp_node_ref(cother));
 }
 
 //-----------------------------------------------------------------------------
-bool 
+int 
 conduit_node_contiguous_with_address(const conduit_node *cnode,
                                      void *address)
 {
-    return cpp_node(cnode)->contiguous_with(address);
+    return (int)cpp_node(cnode)->contiguous_with(address);
 }
 
 //-----------------------------------------------------------------------------
