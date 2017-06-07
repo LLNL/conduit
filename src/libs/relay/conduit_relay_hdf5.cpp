@@ -1784,16 +1784,48 @@ read_hdf5_tree_into_conduit_node(hid_t hdf5_id,
 }
 
 
+
 //---------------------------------------------------------------------------//
 hid_t
-create_hdf5_libver_plist_for_open_and_create()
+create_hdf5_file_access_plist()
 {
     // create property list and set use latest lib ver settings 
     hid_t h5_fa_props = H5Pcreate(H5P_FILE_ACCESS);
-    H5Pset_libver_bounds(h5_fa_props, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
+    
+    CONDUIT_CHECK_HDF5_ERROR(h5_fa_props,
+                             "Failed to create H5P_FILE_ACCESS "
+                             << " property list");
+    
+    
+    herr_t h5_status = H5Pset_libver_bounds(h5_fa_props,
+                                            H5F_LIBVER_LATEST,
+                                            H5F_LIBVER_LATEST);
+
+    CONDUIT_CHECK_HDF5_ERROR(h5_status,
+                             "Failed to set libver options for "
+                             << "property list " << h5_fa_props);
     return h5_fa_props;
 }
 
+//---------------------------------------------------------------------------//
+hid_t
+create_hdf5_file_create_plist()
+{
+    // create property list and set it to preserve creation order
+    hid_t h5_fc_props = H5Pcreate(H5P_FILE_CREATE);
+
+    CONDUIT_CHECK_HDF5_ERROR(h5_fc_props,
+                             "Failed to create H5P_FILE_CREATE "
+                             << " property list");
+
+    herr_t h5_status = H5Pset_link_creation_order(h5_fc_props, 
+            ( H5P_CRT_ORDER_TRACKED |  H5P_CRT_ORDER_INDEXED) );
+
+    CONDUIT_CHECK_HDF5_ERROR(h5_status,
+                             "Failed to set creation order options for "
+                             << "property list " << h5_fc_props);
+    return h5_fc_props;
+}
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
@@ -1835,44 +1867,27 @@ hdf5_write(const Node &node,
            const std::string &file_path,
            const std::string &hdf5_path)
 {
-    // preserve creation order
-    hid_t h5_file_plist = H5Pcreate(H5P_FILE_CREATE);
 
-    CONDUIT_CHECK_HDF5_ERROR(h5_file_plist,
-                             "Failed to create H5P_FILE_CREATE property "
-                             << " list");
-
-
-    herr_t h5_status = H5Pset_link_creation_order(h5_file_plist, 
-            ( H5P_CRT_ORDER_TRACKED |  H5P_CRT_ORDER_INDEXED) );
-
-    CONDUIT_CHECK_HDF5_ERROR(h5_status,
-                             "Failed to set creation order options for "
-                             << "property list");
-
-    hid_t h5_libver_plist = create_hdf5_libver_plist_for_open_and_create();
-
-    CONDUIT_CHECK_HDF5_ERROR(h5_libver_plist,
-                             "Failed to create libver "
-                             << "property list");
+    hid_t h5_fc_plist = create_hdf5_file_create_plist();
+    hid_t h5_fa_plist = create_hdf5_file_access_plist();
 
     // open the hdf5 file for writing
     hid_t h5_file_id = H5Fcreate(file_path.c_str(),
                                  H5F_ACC_TRUNC,
-                                 h5_file_plist,
-                                 h5_libver_plist);
+                                 h5_fc_plist,
+                                 h5_fa_plist);
 
     CONDUIT_CHECK_HDF5_ERROR(h5_file_id,
                              "Error opening HDF5 file for writing: " 
                              << file_path);
 
-    CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_file_plist),
+    CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_fc_plist),
                              "Failed to close HDF5 H5P_GROUP_CREATE "
-                             << "property list: " << h5_file_plist);
+                             << "property list: " << h5_fc_plist);
 
-    CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_libver_plist),
+    CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_fa_plist),
                              "Failed to close HDF5 H5P_FILE_ACCESS "
-                             << "property list: " << h5_libver_plist);
+                             << "property list: " << h5_fa_plist);
 
     hdf5_write(node,
                h5_file_id,
@@ -2031,24 +2046,20 @@ hdf5_read(const std::string &file_path,
           Node &node)
 {
  
-    hid_t h5_libver_plist = create_hdf5_libver_plist_for_open_and_create();
-
-    CONDUIT_CHECK_HDF5_ERROR(h5_libver_plist,
-                             "Failed to create libver "
-                             << "property list");
+    hid_t h5_fa_plist = create_hdf5_file_access_plist();
     
     // open the hdf5 file for reading
     hid_t h5_file_id = H5Fopen(file_path.c_str(),
                                H5F_ACC_RDONLY,
-                               h5_libver_plist);
+                               h5_fa_plist);
 
     CONDUIT_CHECK_HDF5_ERROR(h5_file_id,
                              "Error opening HDF5 file for reading: " 
                               << file_path);
 
-    CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_libver_plist),
+    CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_fa_plist),
                              "Failed to close HDF5 H5P_FILE_ACCESS "
-                             << "property list: " << h5_libver_plist);
+                             << "property list: " << h5_fa_plist);
 
 
     hdf5_read(h5_file_id,
