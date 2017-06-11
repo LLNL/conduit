@@ -42,6 +42,16 @@
 .. # 
 .. ############################################################################
 
+.. TODO(JRC): Add the following information to this document:
+.. - Full explanation of the 'matsets' section (see the 'fields' section for guidance).
+.. - Revised documentation in the 'fields' section to explain the intracacies of
+..   per-material and uniform fields.
+.. - Explanation about multi-domain meshes.  This will be a bit awkward to explain
+..   since this entire page explains the contents of a single domain and 
+..   multi-domain involves optional infrastructure around this.
+.. - Full explanation of the 'domain_adjacencies' section (needs some reference to the
+..   multi-domain documentation).
+
 ===================
 mesh
 ===================
@@ -50,8 +60,7 @@ Protocol
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-The mesh blueprint protocol defines a computational mesh using one or more Coordinate Sets (via child ``coordsets``), one or more Topologies (via child  ``topologies``), zero or more Fields (via child ``fields``), and optional State information (via child ``state``). For simplicity, the descriptions below outline one Coordinate Set named ``coords`` one Topology named ``topo``.
-
+The mesh blueprint protocol defines a computational mesh using one or more Coordinate Sets (via child ``coordsets``), one or more Topologies (via child  ``topologies``), zero or more Materials Sets (via child ``matsets``), zero or more Fields (via child ``fields``), optional Domain Adjacency information (via child ``domain_adjacencies``), and optional State information (via child ``state``). For simplicity, the descriptions below outline one Coordinate Set named ``coords``, one Topology named ``topo``, and one Material Set named ``matset``.
 
 
 Coordinate Sets
@@ -282,27 +291,51 @@ specified using a single shape topology for each element shape.
 ..     * topology/elements/segment_index/element_counts: ()
 ..     * topology/elements/stream: ()
 
+Material Sets
+++++++++++++++++++++
+
+Materials Sets contain material name and volume fraction information defined over a specified mesh topology.
+
+A material set contains an **mcarray** that houses per-material, per-element volume fractions and a source topology over which these volume fractions are defined.
+To conform to protocol, each entry in the ``matsets`` section must be an *Object* that contains the following information:
+
+   * matsets/matset/topology: "topo"
+   * matsets/matset/volume_fractions: (mcarray)
+
+
+
 Fields
 ++++++++++++++++++++
 
-Fields are used to hold simulation state arrays associated with a mesh topology.
+Fields are used to hold simulation state arrays associated with a mesh topology and (optionally) a mesh material set.
 
+Each field entry can define an **mcarray** of material-independent values and/or an **mcarray** of per-material values.
+These data arrays must be specified alongside a source space, which specifies the space over which the field values are defined (i.e. a topology for material-independent values and a material set for material-dependent values).
+Minimally, each field entry must specify one of these data sets, the source space for the data set, an association type (e.g. per-vertex, per-element), and a volume scaling type (e.g. volume-dependent, volume-independent).
+Thus, to conform to protocol, each entry under the ``fields`` section must be an *Object* that adheres to one of the following descriptions 
 
-A field contains an **mcarray** and information about how this data is associated with elements of the topology. 
-To conform to the protocol, each entry under ``fields`` must be an *Object* that contains one of these two styles of field descriptions:
+ * Material-Independent Fields:
 
- * Standard Fields:
+   * fields/field/association: “vertex” | "element" | (mfem-style finite element collection name)
+   * fields/field/volume_dependent: "true" | "false"
+   * fields/field/topology: "topo"
+   * fields/field/values: (mcarray)
 
-   * fields/den/topology: "topo" 
-   * fields/den/association: “vertex” | "element"
-   * fields/den/values: (mcarray)
+ * Material-Dependent Fields:
 
+   * fields/field/association: “vertex” | "element" | (mfem-style finite element collection name)
+   * fields/field/volume_dependent: "true" | "false"
+   * fields/field/matset: "matset"
+   * fields/field/matset_values: (mcarray)
 
- * High Order Fields:
+ * Mixed Fields:
 
-   * fields/den/topology: "topo"
-   * fields/den/basis: (a string that includes an mfem-style finite element collection name)
-   * fields/den/values: (mcarray)
+   * fields/field/association: “vertex” | "element" | (mfem-style finite element collection name)
+   * fields/field/volume_dependent: "true" | "false"
+   * fields/field/topology: "topo"
+   * fields/field/values: (mcarray)
+   * fields/field/matset: "matset"
+   * fields/field/matset_values: (mcarray)
 
 
 
