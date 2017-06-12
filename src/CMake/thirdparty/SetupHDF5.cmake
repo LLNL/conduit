@@ -82,12 +82,24 @@ set(HDF5_DIR ${HDF5_ROOT} CACHE PATH "" FORCE)
 #
 message(STATUS "Checking that found HDF5_INCLUDE_DIRS are in HDF5_DIR")
 
+
 foreach(IDIR ${HDF5_INCLUDE_DIRS})
     if("${IDIR}" MATCHES "${HDF5_DIR}")
-        message(STATUS " ${IDIR} includes HDF5_DIR")
-        
+        message(STATUS " ${IDIR} includes HDF5_DIR (${HDF5_DIR})")
     else()
-        message(FATAL_ERROR " ${IDIR} does not include HDF5_DIR")
+        
+        # The check above could fail b/c of relative vs abs path
+        # compare. It's not clear if FindHDF5 will always resolve 
+        # relative paths to abs ones, so out of caution we check
+        # both.
+
+        get_filename_component(ABSOLUTE_PATH ${HDF5_DIR} HDF5_DIR_ABS)
+
+        if("${IDIR}" MATCHES "${HDF5_DIR_ABS}")
+            message(STATUS " ${IDIR} includes HDF5_DIR (${HDF5_DIR_ABS})")
+        else()
+            message(FATAL_ERROR " ${IDIR} does not include HDF5_DIR")
+        endif()
     endif()
 endforeach()
 
