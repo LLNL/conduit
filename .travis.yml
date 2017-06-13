@@ -106,14 +106,11 @@ addons:
        - g++-4.8
        - gfortran-4.8
 before_install:
-  ./scripts/ci/travis_download_tpl_binaries.sh
+  - ./scripts/ci/travis_download_tpl_binaries.sh
 install:
-  ./scripts/ci/travis_install_tpl_binaries.sh
-  # export env settings so they propagate to script step
-  - export PATH=${TRAVIS_HOME}/cmake/bin:$PATH
-  - export PATH=${TRAVIS_HOME}/miniconda/bin:$PATH
+  - ./scripts/ci/travis_install_tpl_binaries.sh
 script:
-  ./scripts/ci/travis_build_and_test.sh
+  - ./scripts/ci/travis_build_and_test.sh
 
 after_success:
   - test ${ENABLE_COVERAGE} = "ON" && coveralls --gcov /usr/bin/gcov-4.8 --include src/libs/conduit --include src/libs/blueprint --gcov-options '\-lp' --root $TRAVIS_BUILD_DIR --build-root $TRAVIS_BUILD_DIR/travis-debug-build;

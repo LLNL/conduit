@@ -51,6 +51,9 @@ if [ "${DOCKER}" = "ON" ]; then
     cd src/examples/docker/ubuntu/
     ./example_build.sh
 else
+    # add installed tpls to our path
+    export PATH=${TRAVIS_HOME}/cmake/bin:$PATH
+    export PATH=${TRAVIS_HOME}/miniconda/bin:$PATH
     # echo cmake version
     cmake --version
     cd $TRAVIS_BUILD_DIR
