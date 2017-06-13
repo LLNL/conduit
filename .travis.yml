@@ -110,8 +110,8 @@ before_install:
 install:
   ./scripts/ci/travis_install_tpl_binaries.sh
   # export env settings so they propagate to script step
-  export PATH=${TRAVIS_HOME}/cmake/bin:$PATH
-  export PATH=${TRAVIS_HOME}/miniconda/bin:$PATH
+  - export PATH=${TRAVIS_HOME}/cmake/bin:$PATH
+  - export PATH=${TRAVIS_HOME}/miniconda/bin:$PATH
 script:
   ./scripts/ci/travis_build_and_test.sh
 
