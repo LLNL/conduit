@@ -1,5 +1,6 @@
+#!/bin/bash
 ###############################################################################
-# Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -41,56 +42,25 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ###############################################################################
-sudo: false
 
-language: cpp
-compiler:
-  - gcc
-env:
-  global:
-    # std env vars CC + CXX get overridden
-    - CONDUIT_CC=gcc-4.8
-    - CONDUIT_CXX=g++-4.8
-    - CONDUIT_FC=gfortran-4.8
-    # we need to know the root dir for our 3rd party lib installs
-    - TRAVIS_HOME=`pwd`
-  matrix:
-    # we want to test both static and shared
-    # and python 2 + 3
-    - BUILD_SHARED_LIBS=ON
-      MINICONDA=Miniconda2
-      ENABLE_COVERAGE=ON
-      DOCKER=OFF
-    - BUILD_SHARED_LIBS=ON
-      MINICONDA=Miniconda3
-      ENABLE_COVERAGE=OFF
-      DOCKER=OFF
-    - BUILD_SHARED_LIBS=OFF
-      MINICONDA=Miniconda2
-      ENABLE_COVERAGE=OFF
-      DOCKER=OFF
-    #- DOCKER=ON
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-       - gcc-4.8
-       - g++-4.8
-       - gfortran-4.8
-before_install:
-  ./scripts/ci/travis_download_tpl_binaries.sh
-install:
-  ./scripts/ci/travis_install_tpl_binaries.sh
-script:
-  ./scripts/ci/travis_build_and_test.sh
+# stop on first error and echo commands
+set -ev
+
+if [ "${DOCKER}" = "OFF" ]; then
+    # install cmake
+    sh cmake-3.3.0-Linux-x86_64.sh --skip-license --prefix=${TRAVIS_HOME}/cmake/
+    # instlal mini-conda
+    chmod +x miniconda.sh
+    ./miniconda.sh -b -p ${TRAVIS_HOME}/miniconda
+    export PATH=${TRAVIS_HOME}/miniconda/bin:$PATH
+    # install numpy + hdf5
+    conda update --yes conda
+    conda install --yes numpy
+     conda install --yes hdf5
+     # install the coveralls python package if we are doing a coverage build
+     if [ "${ENABLE_COVERAGE}" = "ON" ]; then
+         pip install cpp-coveralls
+     fi
+fi
 
 
-after_success:
-  - test ${ENABLE_COVERAGE} = "ON" && coveralls --gcov /usr/bin/gcov-4.8 --include src/libs/conduit --include src/libs/blueprint --gcov-options '\-lp' --root $TRAVIS_BUILD_DIR --build-root $TRAVIS_BUILD_DIR/travis-debug-build;
-notifications:
-  email:
-    recipients:
-      - cyrush@llnl.gov
-    on_success: always
-    on_failure: always

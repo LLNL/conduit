@@ -1,5 +1,6 @@
+#!/bin/bash
 ###############################################################################
-# Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -41,56 +42,18 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ###############################################################################
-sudo: false
 
-language: cpp
-compiler:
-  - gcc
-env:
-  global:
-    # std env vars CC + CXX get overridden
-    - CONDUIT_CC=gcc-4.8
-    - CONDUIT_CXX=g++-4.8
-    - CONDUIT_FC=gfortran-4.8
-    # we need to know the root dir for our 3rd party lib installs
-    - TRAVIS_HOME=`pwd`
-  matrix:
-    # we want to test both static and shared
-    # and python 2 + 3
-    - BUILD_SHARED_LIBS=ON
-      MINICONDA=Miniconda2
-      ENABLE_COVERAGE=ON
-      DOCKER=OFF
-    - BUILD_SHARED_LIBS=ON
-      MINICONDA=Miniconda3
-      ENABLE_COVERAGE=OFF
-      DOCKER=OFF
-    - BUILD_SHARED_LIBS=OFF
-      MINICONDA=Miniconda2
-      ENABLE_COVERAGE=OFF
-      DOCKER=OFF
-    #- DOCKER=ON
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-       - gcc-4.8
-       - g++-4.8
-       - gfortran-4.8
-before_install:
-  ./scripts/ci/travis_download_tpl_binaries.sh
-install:
-  ./scripts/ci/travis_install_tpl_binaries.sh
-script:
-  ./scripts/ci/travis_build_and_test.sh
+# stop on first error and echo commands
+set -ev
+
+# only download tpls for non-docker case
+if [ "${DOCKER}" = "OFF" ]; then
+    # download a newer version of cmake
+    wget --no-check-certificate http://www.cmake.org/files/v3.3/cmake-3.3.0-Linux-x86_64.sh
+    mkdir ${TRAVIS_HOME}/cmake/
+    export PATH=${TRAVIS_HOME}/cmake/bin:$PATH
+    # download miniconda, which we will use to get python, numpy, and hdf5
+    wget --no-check-certificate http://repo.continuum.io/miniconda/${MINICONDA}-latest-Linux-x86_64.sh -O miniconda.sh
+fi
 
 
-after_success:
-  - test ${ENABLE_COVERAGE} = "ON" && coveralls --gcov /usr/bin/gcov-4.8 --include src/libs/conduit --include src/libs/blueprint --gcov-options '\-lp' --root $TRAVIS_BUILD_DIR --build-root $TRAVIS_BUILD_DIR/travis-debug-build;
-notifications:
-  email:
-    recipients:
-      - cyrush@llnl.gov
-    on_success: always
-    on_failure: always
