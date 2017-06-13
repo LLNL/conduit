@@ -97,6 +97,7 @@ env:
       ENABLE_COVERAGE=OFF
       CMAKE_MAJOR=3.8
       CMAKE_MINOR=1
+    - DOCKER=ON
 addons:
   apt:
     sources:
