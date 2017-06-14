@@ -42,16 +42,6 @@
 .. # 
 .. ############################################################################
 
-.. TODO(JRC): Add the following information to this document:
-.. - Full explanation of the 'matsets' section (see the 'fields' section for guidance).
-.. - Revised documentation in the 'fields' section to explain the intracacies of
-..   per-material and uniform fields.
-.. - Explanation about multi-domain meshes.  This will be a bit awkward to explain
-..   since this entire page explains the contents of a single domain and 
-..   multi-domain involves optional infrastructure around this.
-.. - Full explanation of the 'domain_adjacencies' section (needs some reference to the
-..   multi-domain documentation).
-
 ===================
 mesh
 ===================
@@ -60,7 +50,9 @@ Protocol
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-The mesh blueprint protocol defines a computational mesh using one or more Coordinate Sets (via child ``coordsets``), one or more Topologies (via child  ``topologies``), zero or more Materials Sets (via child ``matsets``), zero or more Fields (via child ``fields``), optional Domain Adjacency information (via child ``domain_adjacencies``), and optional State information (via child ``state``). For simplicity, the descriptions below outline one Coordinate Set named ``coords``, one Topology named ``topo``, and one Material Set named ``matset``.
+The Blueprint protocol defines a single-domain computational mesh using one or more Coordinate Sets (via child ``coordsets``), one or more Topologies (via child  ``topologies``), zero or more Materials Sets (via child ``matsets``), zero or more Fields (via child ``fields``), optional Domain Adjacency information (via child ``domain_adjacencies``), and optional State information (via child ``state``).
+The protocol defines multi-domain meshes as *Objects* that contain one or more single-domain mesh entries.
+For simplicity, the descriptions below are structured relative to a single-domain mesh *Object* that contains one Coordinate Set named ``coords``, one Topology named ``topo``, and one Material Set named ``matset``.
 
 
 Coordinate Sets
@@ -316,26 +308,42 @@ Thus, to conform to protocol, each entry under the ``fields`` section must be an
 
  * Material-Independent Fields:
 
-   * fields/field/association: “vertex” | "element" | (mfem-style finite element collection name)
+   * fields/field/association: "vertex" | "element" | (mfem-style finite element collection name)
    * fields/field/volume_dependent: "true" | "false"
    * fields/field/topology: "topo"
    * fields/field/values: (mcarray)
 
  * Material-Dependent Fields:
 
-   * fields/field/association: “vertex” | "element" | (mfem-style finite element collection name)
+   * fields/field/association: "vertex" | "element" | (mfem-style finite element collection name)
    * fields/field/volume_dependent: "true" | "false"
    * fields/field/matset: "matset"
    * fields/field/matset_values: (mcarray)
 
  * Mixed Fields:
 
-   * fields/field/association: “vertex” | "element" | (mfem-style finite element collection name)
+   * fields/field/association: "vertex" | "element" | (mfem-style finite element collection name)
    * fields/field/volume_dependent: "true" | "false"
    * fields/field/topology: "topo"
    * fields/field/values: (mcarray)
    * fields/field/matset: "matset"
    * fields/field/matset_values: (mcarray)
+
+
+
+Domain Adjacencies
+++++++++++++++++++++
+
+Domain Adjacencies are used to outline the shared geometry between subsets of domains in multi-domain meshes.
+
+Each entry in the Domain Adjacencies section represents an adjacency group, which consists of a subset of adjacent neighbor domains (given as a list of domain IDs) and a list of shared elements (given as a combination of source topology, element type, and element IDs).
+It's important to note that each adjacency group must represent a unique subset of neighbors and that the group's shared elements are defined relative to the current domain.
+The fully-defined Blueprint schema for the ``domain_adjacencies`` entries looks like the following:
+
+   * domain_adjacencies/group/association: "vertex" | "element"
+   * domain_adjacencies/group/topology: "topo"
+   * domain_adjacencies/group/neighbors: (integer array)
+   * domain_adjacencies/group/values: (integer array)
 
 
 
