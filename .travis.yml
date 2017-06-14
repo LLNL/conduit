@@ -97,7 +97,11 @@ env:
       ENABLE_COVERAGE=OFF
       CMAKE_MAJOR=3.8
       CMAKE_MINOR=1
+    # docker test case (requires sudo)
     - DOCKER=ON
+      sudo: true
+      dist: trusty
+      services: docker
 addons:
   apt:
     sources:
