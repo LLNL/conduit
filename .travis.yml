@@ -55,53 +55,56 @@ env:
     # we need to know the root dir for our 3rd party lib installs
     - TRAVIS_HOME=`pwd`
   matrix:
-    #################################
-    # we are testing:
-    #  static vs shared libs
-    #  python 2 vs 3
-    #  cmake 3.3.0 vs 3.8.1
-    #  coverage of unit tests
-    #################################
-    # cmake 3.3.1 + shared libs + python 2 + coverage
-    - DOCKER=OFF
-      BUILD_SHARED_LIBS=ON
-      MINICONDA=Miniconda2
-      ENABLE_COVERAGE=ON
-      CMAKE_MAJOR=3.3
-      CMAKE_MINOR=1
-    # cmake 3.3.1 + static libs + python 2
-    - DOCKER=OFF
-      BUILD_SHARED_LIBS=OFF
-      MINICONDA=Miniconda2
-      ENABLE_COVERAGE=OFF
-      CMAKE_MAJOR=3.3
-      CMAKE_MINOR=1
-    # cmake 3.3.1 + shared libs + python 3
-    - DOCKER=OFF
-      BUILD_SHARED_LIBS=ON
-      MINICONDA=Miniconda3
-      ENABLE_COVERAGE=OFF
-      CMAKE_MAJOR=3.3
-      CMAKE_MINOR=1
-    # cmake 3.8.1 + shared libs + python 2
-    - DOCKER=OFF
-      BUILD_SHARED_LIBS=ON
-      MINICONDA=Miniconda2
-      ENABLE_COVERAGE=OFF
-      CMAKE_MAJOR=3.8
-      CMAKE_MINOR=1
-    # cmake 3.8.1 + static libs + python 2
-    - DOCKER=OFF
-      BUILD_SHARED_LIBS=OFF
-      MINICONDA=Miniconda2
-      ENABLE_COVERAGE=OFF
-      CMAKE_MAJOR=3.8
-      CMAKE_MINOR=1
-    # docker test case (requires sudo)
-    - DOCKER=ON
-      sudo: true
-      dist: trusty
-      services: docker
+      # docker test case (requires sudo)
+    include:
+      - sudo: true
+        dist: trusty
+        services: docker
+        env:
+          - DOCKER=ON
+    # #################################
+    # # we are testing:
+    # #  static vs shared libs
+    # #  python 2 vs 3
+    # #  cmake 3.3.0 vs 3.8.1
+    # #  coverage of unit tests
+    # #################################
+    # # cmake 3.3.1 + shared libs + python 2 + coverage
+    # - DOCKER=OFF
+    #   BUILD_SHARED_LIBS=ON
+    #   MINICONDA=Miniconda2
+    #   ENABLE_COVERAGE=ON
+    #   CMAKE_MAJOR=3.3
+    #   CMAKE_MINOR=1
+    # # cmake 3.3.1 + static libs + python 2
+    # - DOCKER=OFF
+    #   BUILD_SHARED_LIBS=OFF
+    #   MINICONDA=Miniconda2
+    #   ENABLE_COVERAGE=OFF
+    #   CMAKE_MAJOR=3.3
+    #   CMAKE_MINOR=1
+    # # cmake 3.3.1 + shared libs + python 3
+    # - DOCKER=OFF
+    #   BUILD_SHARED_LIBS=ON
+    #   MINICONDA=Miniconda3
+    #   ENABLE_COVERAGE=OFF
+    #   CMAKE_MAJOR=3.3
+    #   CMAKE_MINOR=1
+    # # cmake 3.8.1 + shared libs + python 2
+    # - DOCKER=OFF
+    #   BUILD_SHARED_LIBS=ON
+    #   MINICONDA=Miniconda2
+    #   ENABLE_COVERAGE=OFF
+    #   CMAKE_MAJOR=3.8
+    #   CMAKE_MINOR=1
+    # # cmake 3.8.1 + static libs + python 2
+    # - DOCKER=OFF
+    #   BUILD_SHARED_LIBS=OFF
+    #   MINICONDA=Miniconda2
+    #   ENABLE_COVERAGE=OFF
+    #   CMAKE_MAJOR=3.8
+    #   CMAKE_MINOR=1
+
 addons:
   apt:
     sources:
