@@ -95,6 +95,10 @@ mesh::verify(const std::string &protocol,
     {
         res = topology::verify(n,info);
     }
+    else if(protocol == "matset")
+    {
+        res = matset::verify(n,info);
+    }
     else if(protocol == "field")
     {
         res = field::verify(n,info);
@@ -110,6 +114,10 @@ mesh::verify(const std::string &protocol,
     else if(protocol == "topology/index")
     {
         res = topology::index::verify(n,info);
+    }
+    else if(protocol == "matset/index")
+    {
+        res = matset::index::verify(n,info);
     }
     else if(protocol == "field/index")
     {
@@ -215,7 +223,55 @@ mesh::verify_single_domain(const Node &n,
             }
         }
     }
-    
+
+    // optional: "matsets", each child must conform to "mesh::matset"
+    if(n.has_path("matsets"))
+    {
+        if(n["matsets"].number_of_children() == 0)
+        {
+            log_error(info,proto_name,"\"matsets\" has no children");
+            res = false;
+        }
+        else
+        {
+            NodeConstIterator itr = n["matsets"].children();
+            while(itr.has_next())
+            {
+                const Node &chld = itr.next();
+                const std::string chld_name = itr.name();
+                const std::string topo_name = chld.has_child("topology") ?
+                    chld["topology"].as_string() : "";
+
+                if(!matset::verify(chld,info["matsets"][chld_name]))
+                {
+                    log_error(info,proto_name,chld_name 
+                                + " is not a valid mesh::matset");
+                    res = false;
+                }
+                else if(!n.has_child("topologies") || !n["topologies"].has_child(topo_name))
+                {
+                    std::ostringstream oss;
+                    oss << "matset "
+                        << "\"" << chld_name  << "\" "
+                        << "references a non-existent topology "
+                        << "\"" << topo_name  << "\" ";
+                    log_error(info,proto_name,oss.str());
+                    res = false;
+                }
+                else if(info["topologies"][topo_name]["valid"].as_string() != "true")
+                {
+                    std::ostringstream oss;
+                    oss << "matset "
+                        << "\"" << chld_name  << "\" "
+                        << "references an invalid topology "
+                        << "\"" << topo_name << "\" ";
+                    log_error(info,proto_name,oss.str());
+                    res = false;
+                }
+            }
+        }
+    }
+
     // optional: "fields", each child must conform to "mesh::field"
     if(n.has_path("fields"))
     {
@@ -534,6 +590,12 @@ mesh::generate_index(const Node &mesh,
         {
             idx_topo["grid_function"] = topo["grid_function"].as_string();
         }
+    }
+
+    if(mesh.has_child("matsets"))
+    {
+        // TODO(JRC): Figure out all of the contents that should be stored
+        // for each material set in the index.
     }
     
     if(mesh.has_child("fields"))
@@ -1553,6 +1615,78 @@ mesh::topology::type::verify(const Node &topo_type,
     return res;
 }
 
+//-----------------------------------------------------------------------------
+// blueprint::mesh::matset protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::matset::verify(const Node &matset,
+                     Node &info)
+{
+    info.reset();
+    bool res = true;
+
+    std::string proto_name = "mesh::matset";
+
+    // we need a topology
+    if(!matset.has_child("topology"))
+    {
+        log_error(info, proto_name,"missing child \"topology\"");
+        res = false;
+    }
+    else if(!matset["topology"].dtype().is_string())
+    {
+        log_error(info, proto_name, "\"topology\" is not a string");
+        res = false;
+    }
+
+    // we need a volume fractions mcarray
+    if(!matset.has_child("volume_fractions"))
+    {
+        log_error(info, proto_name, "missing child \"volume_fractions\"");
+        res = false;
+    }
+    else if(matset["volume_fractions"].dtype().is_object())
+    {
+        if(!blueprint::mcarray::verify(matset["volume_fractions"],info["volume_fractions"]))
+        {
+             res = false;
+        }
+        else
+        {
+            log_info(info,proto_name,"volume_fractions is a mcarray.");
+        }
+    }
+    else if(matset["volume_fractions"].dtype().is_number())
+    {
+        log_info(info,proto_name,"volume_fractions is a single component numeric array.");
+    }
+    else
+    {
+        log_error(info, proto_name, "\"volume_fractions\" is not a "
+                        " numeric array or mcarray.");
+        res = false;
+    }
+
+    log_verify_result(info,res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+// blueprint::mesh::field::association protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::matset::index::verify(const Node &index,
+                            Node &info)
+{
+    // TODO(JRC): Figure out what needs to be contained in the index for the
+    // material sets of the problem.
+    return true;
+}
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::field protocol interface
@@ -1898,7 +2032,14 @@ mesh::index::verify(const Node &n,
             }
         }
     }
-    
+
+    // optional: "matsets", each child must conform to "mesh::matset"
+    if(n.has_path("matset"))
+    {
+        // TODO(JRC): Verify the contents of the index after its contents
+        // have been finalized.
+    }
+
     // optional: "fields", each child must conform to "mesh::field"
     if(n.has_path("fields"))
     {
