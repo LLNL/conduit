@@ -44,8 +44,7 @@
 
 # required for docker
 sudo: required
-dist: precise
-group: legacy
+dist: trusty
 
 services:
   - docker
