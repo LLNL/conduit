@@ -103,6 +103,10 @@ mesh::verify(const std::string &protocol,
     {
         res = field::verify(n,info);
     }
+    else if(protocol == "domain_adjacency")
+    {
+        res = domain_adjacency::verify(n,info);
+    }
     else if(protocol == "index")
     {
         res = index::verify(n,info);
@@ -122,6 +126,10 @@ mesh::verify(const std::string &protocol,
     else if(protocol == "field/index")
     {
         res = field::index::verify(n,info);
+    }
+    else if(protocol == "domain_adjacency/index")
+    {
+        res = domain_adjacency::index::verify(n,info);
     }
 
     return res;
@@ -310,6 +318,54 @@ mesh::verify_single_domain(const Node &n,
                 {
                     std::ostringstream oss;
                     oss << "field "
+                        << "\"" << chld_name  << "\" "
+                        << "references an invalid topology "
+                        << "\"" << topo_name << "\" ";
+                    log_error(info,proto_name,oss.str());
+                    res = false;
+                }
+            }
+        }
+    }
+
+    // optional: "domain_adjacencies", each child must conform to "mesh::matset"
+    if(n.has_path("domain_adjacencies"))
+    {
+        if(n["domain_adjacencies"].number_of_children() == 0)
+        {
+            log_error(info,proto_name,"\"domain_adjacencies\" has no children");
+            res = false;
+        }
+        else
+        {
+            NodeConstIterator itr = n["domain_adjacencies"].children();
+            while(itr.has_next())
+            {
+                const Node &chld = itr.next();
+                const std::string chld_name = itr.name();
+                const std::string topo_name = chld.has_child("topology") ?
+                    chld["topology"].as_string() : "";
+
+                if(!domain_adjacency::verify(chld,info["domain_adjacencies"][chld_name]))
+                {
+                    log_error(info,proto_name,chld_name 
+                                + " is not a valid mesh::domain_adjacency");
+                    res = false;
+                }
+                else if(!n.has_child("topologies") || !n["topologies"].has_child(topo_name))
+                {
+                    std::ostringstream oss;
+                    oss << "domain_adjacency "
+                        << "\"" << chld_name  << "\" "
+                        << "references a non-existent topology "
+                        << "\"" << topo_name  << "\" ";
+                    log_error(info,proto_name,oss.str());
+                    res = false;
+                }
+                else if(info["topologies"][topo_name]["valid"].as_string() != "true")
+                {
+                    std::ostringstream oss;
+                    oss << "domain_adjacency "
                         << "\"" << chld_name  << "\" "
                         << "references an invalid topology "
                         << "\"" << topo_name << "\" ";
@@ -628,6 +684,12 @@ mesh::generate_index(const Node &mesh,
             }
             idx_fld["path"] = ref_path + "/fields/" + fld_name;
         }
+    }
+
+    if(mesh.has_child("domain_adjacencies"))
+    {
+        // TODO(JRC): Figure out all of the contents that should be stored
+        // for each adjacency group in the index.
     }
 }
 
@@ -1675,7 +1737,7 @@ mesh::matset::verify(const Node &matset,
 }
 
 //-----------------------------------------------------------------------------
-// blueprint::mesh::field::association protocol interface
+// blueprint::mesh::matset::index protocol interface
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -1928,6 +1990,127 @@ mesh::field::index::verify(const Node &field_idx,
     return res;
 }
 
+//-----------------------------------------------------------------------------
+// blueprint::mesh::domain_adjacency protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::domain_adjacency::verify(const Node &adjacency,
+                               Node &info)
+{
+    info.reset();
+    bool res = true;
+
+    std::string proto_name = "mesh::domain_adjacency";
+
+    // we need a topology
+    if(!adjacency.has_child("topology"))
+    {
+        log_error(info, proto_name,"missing child \"topology\"");
+        res = false;
+    }
+    else if(!adjacency["topology"].dtype().is_string())
+    {
+        log_error(info, proto_name, "\"topology\" is not a string");
+        res = false;
+    }
+
+    // we need an association
+    if(!adjacency.has_child("association"))
+    {
+        log_error(info, proto_name,"missing child \"association\"");
+        res = false;
+    }
+    else if(!domain_adjacency::association::verify(adjacency["association"],
+                                                   info["association"]))
+    {
+        res = false;
+    }
+
+    // we need a list of neighbors
+    if(!adjacency.has_child("neighbors"))
+    {
+        log_error(info, proto_name,"missing child \"neighbors\"");
+        res = false;
+    }
+    else if(!adjacency["neighbors"].dtype().is_integer())
+    {
+        log_error(info, proto_name,"child \"neighbors\" is not an integer array");
+        res = false;
+    }
+
+    // we need a list of elements
+    if(!adjacency.has_child("values"))
+    {
+        log_error(info, proto_name,"missing child \"values\"");
+        res = false;
+    }
+    else if(!adjacency["values"].dtype().is_integer())
+    {
+        log_error(info, proto_name,"child \"values\" is not an integer array");
+        res = false;
+    }
+
+    log_verify_result(info,res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+// blueprint::mesh::domain_adjacency::association protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::domain_adjacency::association::verify(const Node &assoc,
+                                            Node &info)
+{
+    info.reset();
+    bool res = true;
+
+    std::string proto_name = "mesh::domain_adjacency::association";
+
+    if(!assoc.dtype().is_string())
+    {
+        log_error(info,proto_name,"is not a string");
+        res = false;
+    }
+    else
+    {
+        std::string assoc_str = assoc.as_string();
+
+        if(assoc_str == "vertex" ||
+           assoc_str == "element")
+        {
+            log_info(info,proto_name, "valid type: " + assoc_str );
+        }
+        else
+        {
+            log_error(info,proto_name, "unsupported value:"
+                           + assoc_str);
+            res = false;
+        }
+    }
+
+    log_verify_result(info,res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+// blueprint::mesh::domain_adjacency::index protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::domain_adjacency::index::verify(const Node &index,
+                                      Node &info)
+{
+    // TODO(JRC): Figure out what needs to be contained in the index for the
+    // adjacency groups of the problem.
+    return true;
+}
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::index protocol interface
@@ -2087,6 +2270,13 @@ mesh::index::verify(const Node &n,
                 }
             }
         }
+    }
+
+    // optional: "domain_adjacencies", each child must conform to "mesh::domain_adjacencies"
+    if(n.has_path("domain_adjacencies"))
+    {
+        // TODO(JRC): Verify the contents of the index after its contents
+        // have been finalized.
     }
     
     log_verify_result(info,res);
