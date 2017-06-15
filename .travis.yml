@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -42,12 +42,7 @@
 #
 ###############################################################################
 
-# required for docker
-sudo: required
-dist: trusty
-
-services:
-  - docker
+sudo: false
 
 language: cpp
 compiler:
@@ -61,8 +56,11 @@ env:
     # we need to know the root dir for our 3rd party lib installs
     - TRAVIS_HOME=`pwd`
   matrix:
-      # docker test case (requires sudo)
-      - DOCKER=ON
+    # docker test case (requires sudo and other constraints )
+    - sudo: required
+      dist: trusty
+      services: docker
+      env: DOCKER=ON
     # #################################
     # # we are testing:
     # #  static vs shared libs
