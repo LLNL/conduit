@@ -216,51 +216,46 @@ mpi_dtype_to_conduit_dtype_id(MPI_Datatype dt)
 int 
 send_using_schema(const Node &node, int dest, int tag, MPI_Comm comm)
 { 
-
-    Node snd_compact;
-    std::string snd_schema = "";
-
+    std::string snd_schema ="";
     const void *snd_ptr = node.contiguous_data_ptr();
     int         snd_data_size = node.total_bytes_compact();
-    
+
+    Node n_msg;
     if(snd_ptr != NULL && 
        node.is_compact() )
     {
         snd_schema = node.schema().to_json();
+        n_msg["schema_len"].set((int64)snd_schema.length());
+        n_msg["schema"].set_external_char8_str(const_cast<char*>(snd_schema.c_str()));
+        n_msg["data"].set_external((uint8*)snd_ptr,(index_t)snd_data_size);
     }
     else
     {
-        node.compact_to(snd_compact);
-        snd_schema = snd_compact.schema().to_json();
-        snd_ptr = snd_compact.data_ptr();
+        // order matters for compact result, init schema len and schema to empty
+        // to create proper order
+        n_msg["schema_len"].set(DataType::empty());
+        n_msg["schema"].set(DataType::empty());
+        
+        // compact the data into our msg node
+        node.compact_to(n_msg["data"]);
+        // wire  up the 
+        snd_schema = n_msg["data"].schema().to_json();
+        n_msg["schema_len"].set((int64)snd_schema.length());
+        n_msg["schema"].set_external_char8_str(const_cast<char*>(snd_schema.c_str()));
     }
     
-    int snd_schema_size = snd_schema.length() + 1;
 
-
-    int mpi_error = MPI_Send(&snd_schema_size,
-                             1,
-                             MPI_INT,
-                             dest,
-                             tag,comm);
-
-    CONDUIT_CHECK_MPI_ERROR(mpi_error);
-
-    mpi_error = MPI_Send(const_cast <char*> (snd_schema.c_str()),
-                         snd_schema_size,
-                         MPI_CHAR,
-                         dest,
-                         tag,
-                         comm);
-
-    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+    Node n_msg_compact;
+    n_msg.compact_to(n_msg_compact);
     
-    mpi_error = MPI_Send(const_cast<void*>(snd_ptr),
-                         snd_data_size,
-                         MPI_BYTE,
-                         dest,
-                         tag,
-                         comm);
+    int msg_data_size = n_msg_compact.total_bytes_compact();
+
+    int mpi_error = MPI_Send(const_cast<void*>(n_msg_compact.data_ptr()),
+                             msg_data_size,
+                             MPI_BYTE,
+                             dest,
+                             tag,
+                             comm);
 
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
 
@@ -272,75 +267,50 @@ send_using_schema(const Node &node, int dest, int tag, MPI_Comm comm)
 int
 recv_using_schema(Node &node, int src, int tag, MPI_Comm comm)
 {  
-    int rcv_schema_size = 0;
     MPI_Status status;
-
-    // TODO: use MPI_Probe?
-
-    int mpi_error = MPI_Recv(&rcv_schema_size,
-                             1,
-                             MPI_INT,
-                             src,
-                             tag,
-                             comm,
-                             &status);
-                             
+    
+    int mpi_error = MPI_Probe(src, tag, comm, &status);
+    
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
-
-    Node rcv_buffers;
-    rcv_buffers["schema"].set(DataType::char8_str(rcv_schema_size+1));
-
-    char *rcv_schema_ptr = rcv_buffers["schema"].as_char8_str();
-
-    mpi_error = MPI_Recv(rcv_schema_ptr,
-                         rcv_schema_size,
-                         MPI_CHAR,
-                         src,
-                         tag,
-                         comm,&status);
-
-    CONDUIT_CHECK_MPI_ERROR(mpi_error);
-
-    Schema rcv_schema;
     
-    Generator gen(rcv_schema_ptr);
-    gen.walk(rcv_schema);
+    int buffer_size = 0;
+    MPI_Get_count(&status, MPI_BYTE, &buffer_size);
 
-
-    bool cpy_out = false;
-
-    // if its not compatible, or compact we will have to 
-    // use an update to get the data into the output node
+    Node n_buffer(DataType::uint8(buffer_size));
     
-
-    void *rcv_data_ptr  = node.contiguous_data_ptr();
-    int   rcv_data_size = node.total_bytes_compact();
+    CONDUIT_INFO("buffer size = " << buffer_size);
     
-    if( ! rcv_schema.compatible(node.schema()) ||
-        rcv_data_ptr == NULL ||
-        ! node.is_compact() )
-    {
-        rcv_buffers["data"].set(rcv_schema);
-        rcv_data_ptr  = rcv_buffers["data"].data_ptr();
-        rcv_data_size = rcv_schema.total_bytes_compact();
-        cpy_out = true;
-    }
-
-    
-    mpi_error = MPI_Recv(rcv_data_ptr,
-                         rcv_data_size,
+    mpi_error = MPI_Recv(n_buffer.data_ptr(),
+                         buffer_size,
                          MPI_BYTE,
                          src,
                          tag,
                          comm,
                          &status);
 
-    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+    uint8 *n_buff_ptr = (uint8*)n_buffer.data_ptr();
+
+    Node n_msg;
+    // length of the schema is sent as a 64-bit signed int
+    // NOTE: we aren't using this value  ... 
+    n_msg["schema_len"].set_external((int64*)n_buff_ptr);
+    n_buff_ptr +=8;
+    // wrap the schema string
+    n_msg["schema"].set_external_char8_str((char*)(n_buff_ptr));
     
-    if(cpy_out)
-    {
-        node.update(rcv_buffers["data"]);
-    }
+    // create the schema
+    Schema rcv_schema;
+    Generator gen(n_msg["schema"].as_char8_str());
+    gen.walk(rcv_schema);
+
+    // advance by the schema length
+    n_buff_ptr += n_msg["schema"].total_bytes_compact();
+    
+    // apply the schema to the data
+    n_msg["data"].set_external(rcv_schema,n_buff_ptr);
+    
+    // copy out to our result node
+    node.update(n_msg["data"]);
     
     return mpi_error;
 }
@@ -382,7 +352,7 @@ int
 recv(Node &node, int src, int tag, MPI_Comm comm)
 {  
 
-    MPI_Status status;    
+    MPI_Status status;
     Node rcv_compact;
 
     bool cpy_out = false;
