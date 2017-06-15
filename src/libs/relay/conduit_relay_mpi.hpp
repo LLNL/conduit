@@ -264,14 +264,14 @@ namespace mpi
                                      MPI_Comm mpi_comm);
 
 
-    int CONDUIT_RELAY_API gather_using_schemas(Node &send_node,
-                                               Node &recv_node,
-                                               int root, 
-                                               MPI_Comm mpi_comm);
+    int CONDUIT_RELAY_API gather_using_schema(Node &send_node,
+                                              Node &recv_node,
+                                              int root, 
+                                              MPI_Comm mpi_comm);
 
-    int CONDUIT_RELAY_API all_gather_using_schemas(Node &send_node,
-                                                   Node &recv_node,
-                                                   MPI_Comm mpi_comm);
+    int CONDUIT_RELAY_API all_gather_using_schema(Node &send_node,
+                                                  Node &recv_node,
+                                                  MPI_Comm mpi_comm);
 
 //-----------------------------------------------------------------------------
 /// MPI broadcast
