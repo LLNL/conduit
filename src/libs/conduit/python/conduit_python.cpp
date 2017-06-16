@@ -1636,6 +1636,112 @@ PyConduit_DataType_id_to_name(PyObject *, // cls -- unused
     return Py_BuildValue("s", DataType::id_to_name(dtype_id).c_str());
 }
 
+// -- id enum value access -- /
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_empty_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::EMPTY_ID);
+}
+
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_object_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::OBJECT_ID);
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_list_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::LIST_ID);
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_char8_str_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::CHAR8_STR_ID);
+}
+
+// -- signed int ids -- //
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_int8_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::INT8_ID);
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_int16_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::INT16_ID);
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_int32_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::INT32_ID);
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_int64_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::INT64_ID);
+}
+
+// -- uint ids -- //
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_uint8_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::UINT8_ID);
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_uint16_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::UINT16_ID);
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_uint32_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::UINT32_ID);
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_uint64_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::UINT64_ID);
+}
+
+// -- fp ids -- //
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_float32_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::FLOAT32_ID);
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_float64_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::FLOAT64_ID);
+}
 
 
 //----------------------------------------------------------------------------//
@@ -1889,6 +1995,81 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
      (PyCFunction)PyConduit_DataType_c_double,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
+     
+    // -- ids -- //
+    //-----------------------------------------------------------------------//
+     {"empty_id",
+      (PyCFunction)PyConduit_DataType_empty_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::EMPTY_ID"},
+    //-----------------------------------------------------------------------//
+     {"object_id",
+      (PyCFunction)PyConduit_DataType_object_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::OBJECT_ID"},
+    //-----------------------------------------------------------------------//
+     {"list_id",
+      (PyCFunction)PyConduit_DataType_list_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::LIST_ID"},
+    //-----------------------------------------------------------------------//
+     {"char8_str_id",
+      (PyCFunction)PyConduit_DataType_char8_str_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::CHAR8_STR_ID"},
+    // -- signed int ids -- //
+    //-----------------------------------------------------------------------//
+     {"int8_id",
+      (PyCFunction)PyConduit_DataType_int8_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::INT8_ID"},
+    //-----------------------------------------------------------------------//
+     {"int16_id",
+      (PyCFunction)PyConduit_DataType_int16_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::INT16_ID"},
+    //-----------------------------------------------------------------------//
+     {"int32_id",
+      (PyCFunction)PyConduit_DataType_int32_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::INT32_ID"},
+    //-----------------------------------------------------------------------//
+     {"int64_id",
+      (PyCFunction)PyConduit_DataType_int64_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::INT64_ID"},
+    // -- uint ids -- //
+    //-----------------------------------------------------------------------//
+     {"uint8_id",
+      (PyCFunction)PyConduit_DataType_uint8_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::UINT8_ID"},
+    //-----------------------------------------------------------------------//
+     {"uint16_id",
+      (PyCFunction)PyConduit_DataType_uint16_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::UINT16_ID"},
+    //-----------------------------------------------------------------------//
+     {"uint32_id",
+      (PyCFunction)PyConduit_DataType_uint32_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::UINT32_ID"},
+    //-----------------------------------------------------------------------//
+     {"uint64_id",
+      (PyCFunction)PyConduit_DataType_uint64_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::UINT64_ID"},
+    // -- fp ids -- //
+    //-----------------------------------------------------------------------//
+     {"float32_id",
+      (PyCFunction)PyConduit_DataType_float32_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::FLOAT32_ID"},
+    //-----------------------------------------------------------------------//
+     {"float64_id",
+      (PyCFunction)PyConduit_DataType_float64_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::FLOAT64_ID"},     
     //-----------------------------------------------------------------------//
     // end DataType methods table
     //-----------------------------------------------------------------------//
@@ -3754,7 +3935,7 @@ PyConduit_Node_set_external(PyConduit_Node* self,
 //---------------------------------------------------------------------------//
 static PyObject *
 PyConduit_Node_set_path(PyConduit_Node* self,
-                       PyObject* args)
+                        PyObject* args)
 {
     PyObject* value = NULL;
     PyObject *path  = NULL;
@@ -3837,6 +4018,60 @@ PyConduit_Node_to_json(PyConduit_Node* self,
 
     return (Py_BuildValue("s", oss.str().c_str()));
 }
+
+//----------------------------------------------------------------------------//
+// Endianness methods
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_endian_swap(PyConduit_Node *self,
+                           PyObject *args)
+{
+    Py_ssize_t value;
+
+    if (!PyArg_ParseTuple(args, "n", &value))
+    {
+        PyErr_SetString(PyExc_TypeError,
+            "endianness must be a signed integer");
+        return NULL;
+    }
+    
+    
+    self->node->endian_swap(value);
+    
+    
+    Py_RETURN_NONE; 
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_endian_swap_to_machine_default(PyConduit_Node *self)
+{
+    self->node->endian_swap_to_machine_default();
+    Py_RETURN_NONE; 
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_endian_swap_to_little(PyConduit_Node *self)
+{
+    self->node->endian_swap_to_little();
+    Py_RETURN_NONE; 
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_endian_swap_to_big(PyConduit_Node *self)
+{
+    self->node->endian_swap_to_big();
+     Py_RETURN_NONE; 
+}
+
+
+    void endian_swap(index_t endianness);
+
 
 
 //----------------------------------------------------------------------------//
@@ -3982,6 +4217,27 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
       (PyCFunction)PyConduit_Node_iter, 
       METH_NOARGS,
       "Returns a NodeIterator for this node"}, 
+      //-----------------------------------------------------------------------//
+      {"endian_swap",
+       (PyCFunction)PyConduit_Node_endian_swap, 
+       METH_VARARGS,
+       "Swaps data byte order to given endianness"}, 
+      //-----------------------------------------------------------------------//
+      {"endian_swap_to_machine_default",
+       (PyCFunction)PyConduit_Node_endian_swap_to_machine_default, 
+       METH_NOARGS,
+       "Swaps data byte order to default endianness"}, 
+      //-----------------------------------------------------------------------//
+      {"endian_swap_to_little",
+       (PyCFunction)PyConduit_Node_endian_swap_to_little, 
+       METH_NOARGS,
+       "Swaps data byte order to little endian"}, 
+      //-----------------------------------------------------------------------//
+      {"endian_swap_to_big",
+       (PyCFunction)PyConduit_Node_endian_swap_to_big, 
+       METH_NOARGS,
+       "Swaps data byte order to big endian"},
+
     //-----------------------------------------------------------------------//
     // end node methods table
     //-----------------------------------------------------------------------//
@@ -4418,6 +4674,205 @@ PyConduit_convertNodeToPython(Node& node)
     return (retval);
 }
 
+
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+//
+// Endianness
+//
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyEndianness_machine_default(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(Endianness::machine_default());
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyEndianness_machine_is_little_endian(PyObject *) // unused
+{
+    if(Endianness::machine_is_little_endian())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyEndianness_machine_is_big_endian(PyObject *) // unused
+{
+    if(Endianness::machine_is_big_endian())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyEndianness_name_to_id(PyObject *, // unused
+                        PyObject *args)
+{
+    const char *end_name;
+    if (!PyArg_ParseTuple(args, "s", &end_name))
+    {
+        PyErr_SetString(PyExc_TypeError, "Endianness name must be a string");
+        return NULL;
+    }
+
+    return PyLong_FromSsize_t(Endianness::name_to_id(std::string(end_name)));
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyEndianness_id_to_name(PyObject *, // unused
+                        PyObject *args)
+{
+    Py_ssize_t end_id;
+
+    if (!PyArg_ParseTuple(args, "n", &end_id))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                "Endianness id must be a signed integer");
+        return NULL;
+    }
+
+    return Py_BuildValue("s", Endianness::id_to_name(end_id).c_str());
+}
+
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyEndianness_default_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(Endianness::DEFAULT_ID);
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyEndianness_little_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(Endianness::LITTLE_ID);
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyEndianness_big_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(Endianness::BIG_ID);
+}
+
+
+
+static PyMethodDef PyConduit_Endianness_METHODS[] =
+{
+    //-----------------------------------------------------------------------//
+    {"machine_default",
+     (PyCFunction)PyEndianness_machine_default,
+      METH_NOARGS | METH_STATIC,
+     "Returns the id (Endianness::LITTLE_ID or Endianness::BIG_ID) for this machine's byte order."},
+    {"machine_is_little_endian",
+     (PyCFunction)PyEndianness_machine_is_little_endian,
+      METH_NOARGS | METH_STATIC,
+       "Returns if this machine uses little endian byte order."},
+    {"machine_is_big_endian",
+     (PyCFunction)PyEndianness_machine_is_big_endian,
+      METH_NOARGS | METH_STATIC,
+      "Returns if this machine uses big endian byte order."},
+    {"name_to_id",
+      (PyCFunction)PyEndianness_name_to_id,
+       METH_VARARGS | METH_STATIC,
+       "Returns the endianness id that correspondes to the passed string"},
+    {"id_to_name",
+      (PyCFunction)PyEndianness_id_to_name,
+       METH_VARARGS | METH_STATIC,
+       "Returns the string name of given endianness id"},
+     // -- direct access to enum ids -- //
+    {"default_id",
+      (PyCFunction)PyEndianness_default_id,
+       METH_VARARGS | METH_STATIC,
+       "Returns Endianness::DEFAULT_ID"},
+    {"little_id",
+      (PyCFunction)PyEndianness_little_id,
+       METH_VARARGS | METH_STATIC,
+       "Returns Endianness::LITTLE_ID"},
+    {"big_id",
+      (PyCFunction)PyEndianness_big_id,
+       METH_VARARGS | METH_STATIC,
+       "Returns Endianness::BIG_ID"},
+
+
+    //-----------------------------------------------------------------------//
+    // end methods table
+    //-----------------------------------------------------------------------//
+    {NULL, NULL, METH_VARARGS, NULL}
+};
+
+
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+static PyTypeObject PyConduit_Endianness_TYPE = {
+   PyVarObject_HEAD_INIT(NULL, 0)
+   "Endianness",
+   0, // sizeof(PyConduit_Endianness), /* tp_basicsize */
+   0, /* tp_itemsize */
+   0, /* tp_dealloc */
+   0, /* tp_print */
+   0, /* tp_getattr */
+   0, /* tp_setattr */
+   0, /* tp_compare */
+   0, /* tp_repr */
+   0, /* tp_as_number */
+   0, /* tp_as_sequence */
+   0, /* as_mapping */
+   0, /* hash */
+   0, /* call */
+   0, /* str */
+   0, /* getattro */
+   0, /* setattro */
+   0, /* asbuffer */
+   Py_TPFLAGS_DEFAULT,     /* flags */
+   "Conduit Endianness",
+   0, /* traverse */
+   0, /* clear */
+   0, /* tp_richcompare */
+   0, /* tp_weaklistoffset */
+   0, /* iter */
+   0, /* iternext */
+   PyConduit_Endianness_METHODS, /* METHODS */
+   0, /* MEMBERS */
+   0, /* get/set */
+   0, /* tp_base */
+   0, /* dict */
+   0, /* descr_get */
+   0, /* gescr_set */
+   0, /* dictoffset */
+   0,
+   0, /* alloc */
+   0, /* new */
+   0, /* tp_free */
+   0, /* tp_is_gc */
+   0, /* tp_bases */
+   0, /* tp_mro */
+   0, /* tp_cache */
+   0, /* tp_subclasses */
+   0,  /* tp_weaklist */
+   0,
+   0
+   PyVarObject_TAIL
+};
+
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 // Module Init Code
@@ -4552,6 +5007,12 @@ void CONDUIT_PYTHON_API initconduit_python(void)
         PY_MODULE_INIT_RETURN_ERROR;
     }
 
+    if (PyType_Ready(&PyConduit_Endianness_TYPE) < 0)
+    {
+        PY_MODULE_INIT_RETURN_ERROR;
+    }
+
+
     //-----------------------------------------------------------------------//
     // add DataType
     //-----------------------------------------------------------------------//
@@ -4595,6 +5056,18 @@ void CONDUIT_PYTHON_API initconduit_python(void)
     PyModule_AddObject(conduit_module,
                        "Node",
                        (PyObject*)&PyConduit_Node_TYPE);
+
+    //-----------------------------------------------------------------------//
+    // add Endianness
+    //-----------------------------------------------------------------------//
+
+
+    Py_INCREF(&PyConduit_Endianness_TYPE);
+    PyModule_AddObject(conduit_module,
+                       "Endianness",
+                       (PyObject*)&PyConduit_Endianness_TYPE);
+
+
 
     static void *PyConduit_API[PyConduit_API_number_of_entries];
 
