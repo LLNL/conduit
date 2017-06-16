@@ -93,7 +93,7 @@ foreach(IDIR ${HDF5_INCLUDE_DIRS})
         # relative paths to abs ones, so out of caution we check
         # both.
 
-        get_filename_component(ABSOLUTE_PATH ${HDF5_DIR} HDF5_DIR_ABS)
+        get_filename_component(HDF5_DIR_ABS "${HDF5_DIR}" ABSOLUTE)
 
         if("${IDIR}" MATCHES "${HDF5_DIR_ABS}")
             message(STATUS " ${IDIR} includes HDF5_DIR (${HDF5_DIR_ABS})")
