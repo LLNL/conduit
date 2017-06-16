@@ -341,7 +341,7 @@ namespace field
     //-------------------------------------------------------------------------
     bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                       conduit::Node &info);
-                              
+
     //-------------------------------------------------------------------------
     // blueprint::mesh::field::index protocol interface
     //-------------------------------------------------------------------------
@@ -351,28 +351,6 @@ namespace field
         bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                           conduit::Node &info);
     }
-    
-    //-------------------------------------------------------------------------
-    // blueprint::mesh::field::association  protocol interface
-    //-------------------------------------------------------------------------
-    namespace association
-    {
-        //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
-                                          conduit::Node &info);
-    }
-    
-    //-------------------------------------------------------------------------
-    // blueprint::mesh::field::basis protocol interface
-    //-------------------------------------------------------------------------
-    namespace basis
-    {
-        //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
-                                          conduit::Node &info);
-    }
-    
-    
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::field --
@@ -388,16 +366,6 @@ namespace domain_adjacency
                                       conduit::Node &info);
 
     //-------------------------------------------------------------------------
-    // blueprint::mesh::domain_adjacency::association  protocol interface
-    //-------------------------------------------------------------------------
-    namespace association
-    {
-        //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
-                                          conduit::Node &info);
-    }
-
-    //-------------------------------------------------------------------------
     // blueprint::mesh::domain_adjacencies::index protocol interface
     //-------------------------------------------------------------------------
     namespace index
@@ -407,10 +375,10 @@ namespace domain_adjacency
                                           conduit::Node &info);
     }
 }
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::domain_adjacency --
+//-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::matset --
-//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // blueprint::mesh::index protocol interface
 //-----------------------------------------------------------------------------

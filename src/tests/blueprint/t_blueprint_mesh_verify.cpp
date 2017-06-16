@@ -274,7 +274,7 @@ TEST(conduit_blueprint_mesh_verify, coordset_rectilinear)
         {
             n["values"][coord_coordsys[cj]].set(DataType::float64(10));
             EXPECT_TRUE(blueprint::mesh::coordset::rectilinear::verify(n,info));
-            info.print();
+            // info.print();
         }
     }
 
@@ -290,7 +290,7 @@ TEST(conduit_blueprint_mesh_verify, coordset_rectilinear)
         {
             n["values"][coord_coordsys[cj]].set(DataType::float64(cj + 5));
             EXPECT_TRUE(blueprint::mesh::coordset::rectilinear::verify(n,info));
-            info.print();
+            // info.print();
         }
     }
 
@@ -643,48 +643,6 @@ TEST(conduit_blueprint_mesh_verify, topology_general)
 }
 
 /// Mesh Field Tests ///
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_verify, field_association)
-{
-    Node n, info;
-    EXPECT_FALSE(blueprint::mesh::field::association::verify(n,info));
-
-    const std::string assoc_types[] = {"vertex", "element"};
-    for(index_t ti = 0; ti < 2; ti++)
-    {
-        n.reset();
-        n.set(assoc_types[ti]);
-        EXPECT_TRUE(blueprint::mesh::field::association::verify(n,info));
-    }
-
-    n.reset();
-    n.set(0);
-    EXPECT_FALSE(blueprint::mesh::field::association::verify(n,info));
-
-    n.reset();
-    n.set("zone");
-    EXPECT_FALSE(blueprint::mesh::field::association::verify(n,info));
-}
-
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_verify, field_basis)
-{
-    // FIXME: Does this have to be verified against anything else?  What does
-    // this basis refer to if it isn't a different path in the mesh structure?
-    Node n, info;
-    EXPECT_FALSE(blueprint::mesh::field::basis::verify(n,info));
-
-    n.reset();
-    n.set(0);
-    EXPECT_FALSE(blueprint::mesh::field::basis::verify(n,info));
-
-    n.reset();
-    n.set("basis");
-    EXPECT_TRUE(blueprint::mesh::field::basis::verify(n,info));
-}
-
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, field_general)
@@ -1138,7 +1096,7 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
         Node& domain = *domain_ptr;
 
         EXPECT_TRUE(verify_mesh(mesh,info));
-        info.print();
+        // info.print();
 
         { // Coordsets Field Tests //
             Node coordsets = domain["coordsets"];

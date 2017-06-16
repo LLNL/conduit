@@ -65,6 +65,142 @@ namespace conduit { namespace blueprint { namespace mesh {
 } } }
 
 //-----------------------------------------------------------------------------
+// -- begin internal helper functions --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool verify_integer_field(const std::string &proto_name,
+                          const conduit::Node &node,
+                          conduit::Node &info,
+                          const std::string &field_name)
+{
+    bool res = true;
+
+    if(!node.has_child(field_name))
+    {
+        log_error(info, proto_name, "missing child \"" + field_name + "\"");
+        res = false;
+    }
+    else if(!node[field_name].dtype().is_integer())
+    {
+        log_error(info, proto_name, "\"" + field_name + "\" is not an integer (array)");
+        res = false;
+    }
+
+    log_verify_result(info[field_name], res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+bool verify_string_field(const std::string &proto_name,
+                         const conduit::Node &node,
+                         conduit::Node &info,
+                         const std::string &field_name)
+{
+    bool res = true;
+
+    if(!node.has_child(field_name))
+    {
+        log_error(info, proto_name, "missing child \"" + field_name + "\"");
+        res = false;
+    }
+    else if(!node[field_name].dtype().is_string())
+    {
+        log_error(info, proto_name, "\"" + field_name + "\" is not a string");
+        res = false;
+    }
+
+    log_verify_result(info[field_name], res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+bool verify_mcarray_field(const std::string &proto_name,
+                          const conduit::Node &node,
+                          conduit::Node &info,
+                          const std::string &field_name,
+                          const bool allow_single = true)
+{
+    bool res = true;
+
+    if(!node.has_child(field_name))
+    {
+        log_error(info, proto_name, "missing child \"" + field_name + "\"");
+        res = false;
+    }
+    else if(node[field_name].dtype().is_object())
+    {
+        if(!blueprint::mcarray::verify(node[field_name],info[field_name]))
+        {
+             res = false;
+        }
+        else
+        {
+            log_info(info, proto_name, "\"" + field_name + "\" is a mcarray.");
+        }
+    }
+    else if(allow_single && node[field_name].dtype().is_number())
+    {
+        log_info(info, proto_name, "\"" + field_name + "\" " +
+                                   "is a single component numeric array.");
+    }
+    else
+    {
+        log_error(info, proto_name, "\"" + field_name + "\" is not a " +
+                                    (allow_single ? "numeric array or " : "") +
+                                    "mcarray.");
+        res = false;
+    }
+
+    log_verify_result(info[field_name], res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+bool verify_enum_field(const std::string &proto_name,
+                       const conduit::Node &node,
+                       conduit::Node &info,
+                       const std::string &field_name,
+                       const std::vector<std::string> &enum_values)
+{
+    bool res = verify_string_field(proto_name, node, info, field_name);
+
+    if(res)
+    {
+        const std::string field_value = node[field_name].as_string();
+
+        bool is_field_enum = false;
+        for(size_t i=0; i < enum_values.size(); i++)
+        {
+            is_field_enum |= (field_value == enum_values[i]);
+        }
+
+        if(is_field_enum)
+        {
+            log_info(info, proto_name, "\"" + field_name + "\" " +
+                                       "has valid value " + field_value);
+        }
+        else
+        {
+            log_error(info, proto_name, "\"" + field_name + "\" " +
+                                        "has invalid value " + field_value);
+            res = false;
+        }
+    }
+
+    log_verify_result(info[field_name], res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+// -- end internal helper functions --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
@@ -84,7 +220,6 @@ mesh::verify(const std::string &protocol,
              Node &info)
 {
     bool res = false;
-    
     info.reset();
 
     if(protocol == "coordset")
@@ -514,7 +649,7 @@ bool mesh::to_multi_domain(const conduit::Node &n,
     }
     else
     {
-        conduit::Node& dest_dom = dest.append();
+        conduit::Node &dest_dom = dest.append();
         dest_dom.set_external(n);
     }
 
@@ -1686,52 +1821,14 @@ bool
 mesh::matset::verify(const Node &matset,
                      Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh::matset";
     bool res = true;
+    info.reset();
 
-    std::string proto_name = "mesh::matset";
+    res &= verify_string_field(protocol, matset, info, "topology");
+    res &= verify_mcarray_field(protocol, matset, info, "volume_fractions", false);
 
-    // we need a topology
-    if(!matset.has_child("topology"))
-    {
-        log_error(info, proto_name,"missing child \"topology\"");
-        res = false;
-    }
-    else if(!matset["topology"].dtype().is_string())
-    {
-        log_error(info, proto_name, "\"topology\" is not a string");
-        res = false;
-    }
-
-    // we need a volume fractions mcarray
-    if(!matset.has_child("volume_fractions"))
-    {
-        log_error(info, proto_name, "missing child \"volume_fractions\"");
-        res = false;
-    }
-    else if(matset["volume_fractions"].dtype().is_object())
-    {
-        if(!blueprint::mcarray::verify(matset["volume_fractions"],info["volume_fractions"]))
-        {
-             res = false;
-        }
-        else
-        {
-            log_info(info,proto_name,"volume_fractions is a mcarray.");
-        }
-    }
-    else if(matset["volume_fractions"].dtype().is_number())
-    {
-        log_info(info,proto_name,"volume_fractions is a single component numeric array.");
-    }
-    else
-    {
-        log_error(info, proto_name, "\"volume_fractions\" is not a "
-                        " numeric array or mcarray.");
-        res = false;
-    }
-
-    log_verify_result(info,res);
+    log_verify_result(info, res);
 
     return res;
 }
@@ -1742,8 +1839,8 @@ mesh::matset::verify(const Node &matset,
 
 //-----------------------------------------------------------------------------
 bool
-mesh::matset::index::verify(const Node &index,
-                            Node &info)
+mesh::matset::index::verify(const Node &/*matset_idx*/,
+                            Node &/*info*/)
 {
     // TODO(JRC): Figure out what needs to be contained in the index for the
     // material sets of the problem.
@@ -1759,151 +1856,47 @@ bool
 mesh::field::verify(const Node &field,
                     Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh::field";
     bool res = true;
+    info.reset();
 
-    std::string proto_name = "mesh::field";
-        
-    // we need a topology
-    if(!field.has_child("topology"))
-    {
-        log_error(info, proto_name,"missing child \"topology\"");
-        res = false;
-    }
-    else if(!field["topology"].dtype().is_string())
-    {
-        log_error(info, proto_name, "\"topology\" is not a string");
-        res = false;
-    }
-
-
-    if(!field.has_child("values"))
-    {
-        log_error(info, proto_name, "missing child \"values\"");
-        res = false;
-    }
-    else if(field["values"].dtype().is_object())
-    {
-        if(!blueprint::mcarray::verify(field["values"],info["values"]))
-        {
-             res = false;
-        }
-        else
-        {
-            log_info(info,proto_name,"values is a mcarray.");
-        }
-    }
-    else if(field["values"].dtype().is_number())
-    {
-        log_info(info,proto_name,"values is a single component numeric array.");
-    }
-    else
-    {
-        log_error(info, proto_name, "\"values\" is not a "
-                        " numeric array or mcarray.");
-        res = false;
-    }
-
-
-    // make sure we have either a basis or assoc entry
     bool has_assoc = field.has_child("association");
     bool has_basis = field.has_child("basis");
-    
-    if( ! (has_assoc || has_basis))
+    if(!has_assoc && !has_basis)
     {
-        log_error(info,proto_name, "missing child "
-                       "\"association\" or \"basis\"");
+        log_error(info, protocol, "missing child \"association\" or \"basis\"");
         res = false;
     }
-    else if(has_assoc)
+    if(has_assoc)
     {
-        if(!field::association::verify(field["association"],
-                                       info["association"]))
-        {
-            res = false;
-        }
+        const std::string a[2] = {"vertex", "element"};
+        std::vector<std::string> assoc_values(a, a + sizeof(a) / sizeof(a[0]));
+        res &= verify_enum_field(protocol, field, info, "association", assoc_values);
     }
-    else if(has_basis)
+    if(has_basis)
     {
-        if(!field::basis::verify(field["basis"],info["basis"]))
-        {
-            res = false;
-        }
+        res &= verify_string_field(protocol, field, info, "basis");
     }
 
-    log_verify_result(info,res);
-
-    return res;
-}
-
-
-//-----------------------------------------------------------------------------
-// blueprint::mesh::field::association protocol interface
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-bool
-mesh::field::association::verify(const Node &assoc,
-                                 Node &info)
-{
-    info.reset();
-    bool res = true;
-
-    std::string proto_name = "mesh::field::association";
-
-    if(!assoc.dtype().is_string())
+    bool has_topo = field.has_child("topology");
+    bool has_matset = field.has_child("matset");
+    if(!has_topo && !has_matset)
     {
-        log_error(info,proto_name,"is not a string");
+        log_error(info, protocol, "missing child \"topology\" or \"matset\"");
         res = false;
     }
-    else
+    if(has_topo)
     {
-        std::string assoc_str = assoc.as_string();
-
-        if(assoc_str == "vertex" ||
-           assoc_str == "element")
-        {
-            log_info(info,proto_name, "valid type: " + assoc_str );
-        }
-        else
-        {
-            log_error(info,proto_name, "unsupported value:"
-                           + assoc_str);
-            res = false;
-        }
+        res &= verify_string_field(protocol, field, info, "topology");
+        res &= verify_mcarray_field(protocol, field, info, "values", true);
+    }
+    if(has_matset)
+    {
+        res &= verify_string_field(protocol, field, info, "matset");
+        res &= verify_mcarray_field(protocol, field, info, "matset_values", false);
     }
 
-    log_verify_result(info,res);
-
-    return res;
-}
-
-
-//-----------------------------------------------------------------------------
-// blueprint::mesh::field::basis protocol interface
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-bool
-mesh::field::basis::verify(const Node &basis,
-                        Node &info)
-{
-    info.reset();
-    bool res = true;
-
-    std::string proto_name = "mesh::field::basis";
-
-    if(!basis.dtype().is_string())
-    {
-        log_error(info,proto_name,"is not a string");
-        res = false;
-    }
-    else
-    {
-        log_info(info,proto_name,"valid type: " + basis.as_string());
-    }
-
-    log_verify_result(info,res);
+    log_verify_result(info, res);
 
     return res;
 }
@@ -1917,75 +1910,48 @@ bool
 mesh::field::index::verify(const Node &field_idx,
                            Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh::field::index";
     bool res = true;
-    std::string proto_name = "mesh::field::index";
+    info.reset();
 
-    // we need a topology
-    if(!field_idx.has_child("topology"))
-    {
-        log_error(info,proto_name,"missing child \"topology\"");
-        res = false;
-    }
-    else if(!field_idx["topology"].dtype().is_string())
-    {
-        log_error(info,proto_name,"\"topology\" is not a string");
-        res = false;
-    }
-
-    // we need number_of_components
-    if(!field_idx.has_child("number_of_components"))
-    {
-        log_error(info,proto_name,"missing child "
-                       "\"number_of_components\"");
-        res = false;
-    }
-    else if(!field_idx["number_of_components"].dtype().is_integer())
-    {
-        log_error(info,proto_name,"\"number_of_components\" "
-                       "is not an integer");
-        res = false;
-    }
-
-    // we need a path
-    if(!field_idx.has_child("path"))
-    {
-        log_error(info,proto_name,"missing child \"path\"");
-        res = false;
-    }
-    else if(!field_idx["path"].dtype().is_string())
-    {
-        log_error(info,proto_name,"\"path\" is not a string");
-        res = false;
-    }
-    
     bool has_assoc = field_idx.has_child("association");
     bool has_basis = field_idx.has_child("basis");
-    
-    // make sure we have either a basis or assoc entry
-    if( ! (has_assoc || has_basis))
+    if(!has_assoc && !has_basis)
     {
-        log_error(info,proto_name,"missing child "
-                       "\"association\" or \"basis\"");
+        log_error(info, protocol, "missing child \"association\" or \"basis\"");
         res = false;
     }
-    else if(has_assoc)
+    if(has_assoc)
     {
-        if(!field::association::verify(field_idx["association"],
-                                       info["association"]))
-        {
-            res = false;
-        }
+        const std::string a[2] = {"vertex", "element"};
+        std::vector<std::string> assoc_values(a, a + sizeof(a) / sizeof(a[0]));
+        res &= verify_enum_field(protocol, field_idx, info, "association", assoc_values);
     }
-    else if(has_basis)
+    if(has_basis)
     {
-        if(!field::basis::verify(field_idx["basis"],info["basis"]))
-        {
-            res = false;
-        }
+        res &= verify_string_field(protocol, field_idx, info, "basis");
     }
 
-    log_verify_result(info,res);
+    bool has_topo = field_idx.has_child("topology");
+    bool has_matset = field_idx.has_child("matset");
+    if(!has_topo && !has_matset)
+    {
+        log_error(info, protocol, "missing child \"topology\" or \"matset\"");
+        res = false;
+    }
+    if(has_topo)
+    {
+        res &= verify_string_field(protocol, field_idx, info, "topology");
+    }
+    if(has_matset)
+    {
+        res &= verify_string_field(protocol, field_idx, info, "matset");
+    }
+
+    res &= verify_integer_field(protocol, field_idx, info, "number_of_components");
+    res &= verify_string_field(protocol, field_idx, info, "path");
+
+    log_verify_result(info, res);
 
     return res;
 }
@@ -1999,101 +1965,19 @@ bool
 mesh::domain_adjacency::verify(const Node &adjacency,
                                Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh::domain_adjacency";
     bool res = true;
-
-    std::string proto_name = "mesh::domain_adjacency";
-
-    // we need a topology
-    if(!adjacency.has_child("topology"))
-    {
-        log_error(info, proto_name,"missing child \"topology\"");
-        res = false;
-    }
-    else if(!adjacency["topology"].dtype().is_string())
-    {
-        log_error(info, proto_name, "\"topology\" is not a string");
-        res = false;
-    }
-
-    // we need an association
-    if(!adjacency.has_child("association"))
-    {
-        log_error(info, proto_name,"missing child \"association\"");
-        res = false;
-    }
-    else if(!domain_adjacency::association::verify(adjacency["association"],
-                                                   info["association"]))
-    {
-        res = false;
-    }
-
-    // we need a list of neighbors
-    if(!adjacency.has_child("neighbors"))
-    {
-        log_error(info, proto_name,"missing child \"neighbors\"");
-        res = false;
-    }
-    else if(!adjacency["neighbors"].dtype().is_integer())
-    {
-        log_error(info, proto_name,"child \"neighbors\" is not an integer array");
-        res = false;
-    }
-
-    // we need a list of elements
-    if(!adjacency.has_child("values"))
-    {
-        log_error(info, proto_name,"missing child \"values\"");
-        res = false;
-    }
-    else if(!adjacency["values"].dtype().is_integer())
-    {
-        log_error(info, proto_name,"child \"values\" is not an integer array");
-        res = false;
-    }
-
-    log_verify_result(info,res);
-
-    return res;
-}
-
-//-----------------------------------------------------------------------------
-// blueprint::mesh::domain_adjacency::association protocol interface
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-bool
-mesh::domain_adjacency::association::verify(const Node &assoc,
-                                            Node &info)
-{
     info.reset();
-    bool res = true;
 
-    std::string proto_name = "mesh::domain_adjacency::association";
+    const std::string a[2] = {"vertex", "element"};
+    std::vector<std::string> assoc_values(a, a + sizeof(a) / sizeof(a[0]));
 
-    if(!assoc.dtype().is_string())
-    {
-        log_error(info,proto_name,"is not a string");
-        res = false;
-    }
-    else
-    {
-        std::string assoc_str = assoc.as_string();
+    res &= verify_string_field(protocol, adjacency, info, "topology");
+    res &= verify_enum_field(protocol, adjacency, info, "association", assoc_values);
+    res &= verify_integer_field(protocol, adjacency, info, "neighbors");
+    res &= verify_integer_field(protocol, adjacency, info, "values");
 
-        if(assoc_str == "vertex" ||
-           assoc_str == "element")
-        {
-            log_info(info,proto_name, "valid type: " + assoc_str );
-        }
-        else
-        {
-            log_error(info,proto_name, "unsupported value:"
-                           + assoc_str);
-            res = false;
-        }
-    }
-
-    log_verify_result(info,res);
+    log_verify_result(info, res);
 
     return res;
 }
@@ -2104,8 +1988,8 @@ mesh::domain_adjacency::association::verify(const Node &assoc,
 
 //-----------------------------------------------------------------------------
 bool
-mesh::domain_adjacency::index::verify(const Node &index,
-                                      Node &info)
+mesh::domain_adjacency::index::verify(const Node &/*adj_idx*/,
+                                      Node &/*info*/)
 {
     // TODO(JRC): Figure out what needs to be contained in the index for the
     // adjacency groups of the problem.
