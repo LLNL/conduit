@@ -117,6 +117,36 @@ bool verify_string_field(const std::string &proto_name,
 }
 
 //-----------------------------------------------------------------------------
+bool verify_object_field(const std::string &proto_name,
+                         const conduit::Node &node,
+                         conduit::Node &info,
+                         const std::string &field_name,
+                         const bool allow_empty = false)
+{
+    bool res = true;
+
+    if(!node.has_child(field_name))
+    {
+        log_error(info, proto_name, "missing child \"" + field_name + "\"");
+        res = false;
+    }
+    else if(!node[field_name].dtype().is_object())
+    {
+        log_error(info, proto_name, "\"" + field_name + "\" is not an object");
+        res = false;
+    }
+    else if(!allow_empty && node[field_name].number_of_children() == 0)
+    {
+        log_error(info,proto_name,"\"" + field_name + "\" has no children");
+        res = false;
+    }
+
+    log_verify_result(info[field_name], res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
 bool verify_mcarray_field(const std::string &proto_name,
                           const conduit::Node &node,
                           conduit::Node &info,
@@ -187,6 +217,40 @@ bool verify_enum_field(const std::string &proto_name,
         {
             log_error(info, proto_name, "\"" + field_name + "\" " +
                                         "has invalid value " + field_value);
+            res = false;
+        }
+    }
+
+    log_verify_result(info[field_name], res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+bool verify_reference_field(const std::string &proto_name,
+                            const conduit::Node &node_tree,
+                            conduit::Node &info_tree,
+                            const conduit::Node &node,
+                            conduit::Node &info,
+                            const std::string &field_name,
+                            const std::string &ref_path)
+{
+    bool res = verify_string_field(proto_name, node, info, field_name);
+
+    if(res)
+    {
+        const std::string ref_name = node[field_name].as_string();
+
+        if(!node_tree.has_child(ref_path) || !node_tree[ref_path].has_child(ref_name))
+        {
+            log_error(info, proto_name, "reference to non-existent " + ref_path +
+                                        " \"" + field_name + "\"");
+            res = false;
+        }
+        else if(info_tree[ref_path][ref_name]["valid"].as_string() != "true")
+        {
+            log_error(info, proto_name, "reference to invalid " + ref_path +
+                                        " \"" + field_name + "\"");
             res = false;
         }
     }
@@ -276,56 +340,33 @@ bool
 mesh::verify_single_domain(const Node &n,
                            Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh";
     bool res = true;
-
-    const std::string proto_name = "mesh";
+    info.reset();
 
     // Given that not conforming result is likely to trigger an error 
     // state in client code it seems like we should give as much info as
     // possible about what is wrong with the mesh, so we don't early
     // return when an error is found.
-    
-    // required: "coordsets", with at least one child
-    //  each child must conform to "mesh::coordset"
-    if(!n.has_child("coordsets"))
+
+    if(!verify_object_field(protocol, n, info, "coordsets"))
     {
-        log_error(info,proto_name,"missing child \"coordsets\"");
-        res = false;
-    }
-    else if(n["coordsets"].number_of_children() == 0)
-    {
-        log_error(info,proto_name,"\"coordsets\" has no children");
         res = false;
     }
     else
     {
         NodeConstIterator itr = n["coordsets"].children();
-    
         while(itr.has_next())
         {
             const Node &chld = itr.next();
             const std::string chld_name = itr.name();
 
-            if(!coordset::verify(chld,info["coordsets"][chld_name]))
-            {
-                log_error(info,proto_name,chld_name 
-                            + " is not a valid mesh::coordset");
-                res = false;
-            }
+            res &= coordset::verify(chld, info["coordsets"][chld_name]);
         }
     }
-    
-    // required: "topologies",  with at least one child
-    // each child must conform to "mesh::topology"
-    if(!n.has_child("topologies"))
+
+    if(!verify_object_field(protocol, n, info, "topologies"))
     {
-        log_error(info,proto_name,"missing child \"topologies\"");
-        res = false;
-    }
-    else if(n["topologies"].number_of_children() == 0)
-    {
-        log_error(info,proto_name,"\"topologies\" has no children");
         res = false;
     }
     else
@@ -335,44 +376,19 @@ mesh::verify_single_domain(const Node &n,
         {
             const Node &chld = itr.next();
             const std::string chld_name = itr.name();
-            const std::string coords_name = chld.has_child("coordset") ?
-                chld["coordset"].as_string() : "";
+            Node &chld_info = info["topologies"][chld_name];
 
-            if(!topology::verify(chld,info["topologies"][chld_name]))
-            {
-                log_error(info,proto_name,chld_name 
-                            + " is not a valid mesh::topology");
-                res = false;
-            }
-            else if(!n.has_child("coordsets") || !n["coordsets"].has_child(coords_name))
-            {
-                std::ostringstream oss;
-                oss << "topology "
-                    << "\"" << chld_name  << "\" "
-                    << "references a non-existent coordset "
-                    << "\"" << coords_name  << "\" ";
-                log_error(info,proto_name,oss.str());
-                res = false;
-            }
-            else if(info["coordsets"][coords_name]["valid"].as_string() != "true")
-            {
-                std::ostringstream oss;
-                oss << "topology "
-                    << "\"" << chld_name  << "\" "
-                    << "references an invalid coordset "
-                    << "\"" << coords_name  << "\" ";
-                log_error(info,proto_name,oss.str());
-                res = false;
-            }
+            res &= topology::verify(chld, chld_info);
+            res &= verify_reference_field(protocol, n, info,
+                chld, chld_info, "coordset", "coordsets");
         }
     }
 
     // optional: "matsets", each child must conform to "mesh::matset"
     if(n.has_path("matsets"))
     {
-        if(n["matsets"].number_of_children() == 0)
+        if(!verify_object_field(protocol, n, info, "matsets"))
         {
-            log_error(info,proto_name,"\"matsets\" has no children");
             res = false;
         }
         else
@@ -382,35 +398,11 @@ mesh::verify_single_domain(const Node &n,
             {
                 const Node &chld = itr.next();
                 const std::string chld_name = itr.name();
-                const std::string topo_name = chld.has_child("topology") ?
-                    chld["topology"].as_string() : "";
+                Node &chld_info = info["matsets"][chld_name];
 
-                if(!matset::verify(chld,info["matsets"][chld_name]))
-                {
-                    log_error(info,proto_name,chld_name 
-                                + " is not a valid mesh::matset");
-                    res = false;
-                }
-                else if(!n.has_child("topologies") || !n["topologies"].has_child(topo_name))
-                {
-                    std::ostringstream oss;
-                    oss << "matset "
-                        << "\"" << chld_name  << "\" "
-                        << "references a non-existent topology "
-                        << "\"" << topo_name  << "\" ";
-                    log_error(info,proto_name,oss.str());
-                    res = false;
-                }
-                else if(info["topologies"][topo_name]["valid"].as_string() != "true")
-                {
-                    std::ostringstream oss;
-                    oss << "matset "
-                        << "\"" << chld_name  << "\" "
-                        << "references an invalid topology "
-                        << "\"" << topo_name << "\" ";
-                    log_error(info,proto_name,oss.str());
-                    res = false;
-                }
+                res &= matset::verify(chld, chld_info);
+                res &= verify_reference_field(protocol, n, info,
+                    chld, chld_info, "topology", "topologies");
             }
         }
     }
@@ -418,9 +410,8 @@ mesh::verify_single_domain(const Node &n,
     // optional: "fields", each child must conform to "mesh::field"
     if(n.has_path("fields"))
     {
-        if(n["fields"].number_of_children() == 0)
+        if(!verify_object_field(protocol, n, info, "fields"))
         {
-            log_error(info,proto_name,"\"fields\" has no children");
             res = false;
         }
         else
@@ -430,34 +421,18 @@ mesh::verify_single_domain(const Node &n,
             {
                 const Node &chld = itr.next();
                 const std::string chld_name = itr.name();
-                const std::string topo_name = chld.has_child("topology") ?
-                    chld["topology"].as_string() : "";
+                Node &chld_info = info["fields"][chld_name];
 
-                if(!field::verify(chld,info["fields"][chld_name]))
+                res &= field::verify(chld, chld_info);
+                if(chld.has_child("topology"))
                 {
-                    log_error(info,proto_name,chld_name 
-                                + " is not a valid mesh::field");
-                    res = false;
+                    res &= verify_reference_field(protocol, n, info,
+                        chld, chld_info, "topology", "topologies");
                 }
-                else if(!n.has_child("topologies") || !n["topologies"].has_child(topo_name))
+                if(chld.has_child("matset"))
                 {
-                    std::ostringstream oss;
-                    oss << "field "
-                        << "\"" << chld_name  << "\" "
-                        << "references a non-existent topology "
-                        << "\"" << topo_name  << "\" ";
-                    log_error(info,proto_name,oss.str());
-                    res = false;
-                }
-                else if(info["topologies"][topo_name]["valid"].as_string() != "true")
-                {
-                    std::ostringstream oss;
-                    oss << "field "
-                        << "\"" << chld_name  << "\" "
-                        << "references an invalid topology "
-                        << "\"" << topo_name << "\" ";
-                    log_error(info,proto_name,oss.str());
-                    res = false;
+                    res &= verify_reference_field(protocol, n, info,
+                        chld, chld_info, "matset", "matsets");
                 }
             }
         }
@@ -466,9 +441,8 @@ mesh::verify_single_domain(const Node &n,
     // optional: "domain_adjacencies", each child must conform to "mesh::matset"
     if(n.has_path("domain_adjacencies"))
     {
-        if(n["domain_adjacencies"].number_of_children() == 0)
+        if(!verify_object_field(protocol, n, info, "domain_adjacencies"))
         {
-            log_error(info,proto_name,"\"domain_adjacencies\" has no children");
             res = false;
         }
         else
@@ -478,35 +452,11 @@ mesh::verify_single_domain(const Node &n,
             {
                 const Node &chld = itr.next();
                 const std::string chld_name = itr.name();
-                const std::string topo_name = chld.has_child("topology") ?
-                    chld["topology"].as_string() : "";
+                Node &chld_info = info["domain_adjacencies"][chld_name];
 
-                if(!domain_adjacency::verify(chld,info["domain_adjacencies"][chld_name]))
-                {
-                    log_error(info,proto_name,chld_name 
-                                + " is not a valid mesh::domain_adjacency");
-                    res = false;
-                }
-                else if(!n.has_child("topologies") || !n["topologies"].has_child(topo_name))
-                {
-                    std::ostringstream oss;
-                    oss << "domain_adjacency "
-                        << "\"" << chld_name  << "\" "
-                        << "references a non-existent topology "
-                        << "\"" << topo_name  << "\" ";
-                    log_error(info,proto_name,oss.str());
-                    res = false;
-                }
-                else if(info["topologies"][topo_name]["valid"].as_string() != "true")
-                {
-                    std::ostringstream oss;
-                    oss << "domain_adjacency "
-                        << "\"" << chld_name  << "\" "
-                        << "references an invalid topology "
-                        << "\"" << topo_name << "\" ";
-                    log_error(info,proto_name,oss.str());
-                    res = false;
-                }
+                res &= domain_adjacency::verify(chld, chld_info);
+                res &= verify_reference_field(protocol, n, info,
+                    chld, chld_info, "topology", "topologies");
             }
         }
     }
@@ -535,7 +485,7 @@ mesh::verify_single_domain(const Node &n,
                         << "\"" << chld_name << "\" "
                         << " grid_function references a non-existent field "
                         << "\"" << gf_name << "\" ";
-                    log_error(info, proto_name, oss.str());
+                    log_error(info, protocol, oss.str());
                     res = false;
                 }
                 else if (info["fields"][gf_name]["valid"].as_string() != "true")
@@ -545,7 +495,7 @@ mesh::verify_single_domain(const Node &n,
                         << "\"" << chld_name << "\" "
                         << " grid_function references an invalid field "
                         << "\"" << gf_name << "\" ";
-                    log_error(info, proto_name, oss.str());
+                    log_error(info, protocol, oss.str());
                     res = false;
                 }
             }

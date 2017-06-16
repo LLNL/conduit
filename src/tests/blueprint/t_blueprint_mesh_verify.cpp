@@ -1136,13 +1136,18 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
             domain["topologies"]["mesh"]["elements"]["shape"].set("quad");
             domain["topologies"]["mesh"]["elements"]["connectivity"].set(DataType::int32(10));
             EXPECT_FALSE(verify_mesh(mesh,info));
-
             domain["topologies"]["mesh"]["type"].set("unstructured");
             EXPECT_TRUE(verify_mesh(mesh,info));
 
             domain["coordsets"]["coords"]["type"].set("invalid");
             EXPECT_FALSE(verify_mesh(mesh,info));
             domain["coordsets"]["coords"]["type"].set("explicit");
+            EXPECT_TRUE(verify_mesh(mesh,info));
+
+            domain["topologies"]["mesh"]["coordset"].set("invalid");
+            EXPECT_FALSE(verify_mesh(mesh,info));
+            domain["topologies"]["mesh"]["coordset"].set("coords");
+            EXPECT_TRUE(verify_mesh(mesh,info));
 
             domain["topologies"]["grid"]["type"].set("invalid");
             EXPECT_FALSE(verify_mesh(mesh,info));
@@ -1165,13 +1170,18 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
             domain["fields"]["temp"]["topology"].set("mesh");
             domain["fields"]["temp"]["values"].set(DataType::float64(10));
             EXPECT_FALSE(verify_mesh(mesh,info));
-
             domain["fields"]["temp"]["association"].set("vertex");
             EXPECT_TRUE(verify_mesh(mesh,info));
 
             domain["topologies"]["mesh"]["type"].set("invalid");
             EXPECT_FALSE(verify_mesh(mesh,info));
             domain["topologies"]["mesh"]["type"].set("unstructured");
+            EXPECT_TRUE(verify_mesh(mesh,info));
+
+            domain["fields"]["temp"]["topology"].set("invalid");
+            EXPECT_FALSE(verify_mesh(mesh,info));
+            domain["fields"]["temp"]["topology"].set("mesh");
+            EXPECT_TRUE(verify_mesh(mesh,info));
 
             domain["fields"]["accel"]["association"].set("invalid");
             EXPECT_FALSE(verify_mesh(mesh,info));
