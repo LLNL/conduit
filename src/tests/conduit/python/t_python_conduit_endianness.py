@@ -60,7 +60,7 @@ class Test_Conduit_Endianness(unittest.TestCase):
         n = Node()
         n.set(100)
         if Endianness.machine_is_little_endian():
-            print "machine is little endian"
+            print("machine is little endian")
             self.assertTrue(Endianness.little_id() == Endianness.machine_default())
             # big and back
             n.endian_swap_to_big()
@@ -79,7 +79,7 @@ class Test_Conduit_Endianness(unittest.TestCase):
             self.assertTrue(v == 100)
 
         elif Endianness.machine_is_big_endian() :
-            print "machine is big endian"
+            print("machine is big endian")
             self.assertTrue(Endianness.big_id() == Endianness.machine_default())
             # little and back
             n.endian_swap_to_little()
