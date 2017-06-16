@@ -1636,6 +1636,112 @@ PyConduit_DataType_id_to_name(PyObject *, // cls -- unused
     return Py_BuildValue("s", DataType::id_to_name(dtype_id).c_str());
 }
 
+// -- id enum value access -- /
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_empty_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::EMPTY_ID);
+}
+
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_object_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::OBJECT_ID);
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_list_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::LIST_ID);
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_char8_str_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::CHAR8_STR_ID);
+}
+
+// -- signed int ids -- //
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_int8_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::INT8_ID);
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_int16_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::INT16_ID);
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_int32_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::INT32_ID);
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_int64_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::INT64_ID);
+}
+
+// -- uint ids -- //
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_uint8_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::UINT8_ID);
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_uint16_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::UINT16_ID);
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_uint32_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::UINT32_ID);
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_uint64_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::UINT64_ID);
+}
+
+// -- fp ids -- //
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_float32_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::FLOAT32_ID);
+}
+
+//-----------------------------------------------------------------------------
+static PyObject * 
+PyConduit_DataType_float64_id(PyObject *) // unused
+{
+    return PyLong_FromSsize_t(DataType::FLOAT64_ID);
+}
 
 
 //----------------------------------------------------------------------------//
@@ -1889,6 +1995,81 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
      (PyCFunction)PyConduit_DataType_c_double,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "{todo}"},
+     
+    // -- ids -- //
+    //-----------------------------------------------------------------------//
+     {"empty_id",
+      (PyCFunction)PyConduit_DataType_empty_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::EMPTY_ID"},
+    //-----------------------------------------------------------------------//
+     {"object_id",
+      (PyCFunction)PyConduit_DataType_object_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::OBJECT_ID"},
+    //-----------------------------------------------------------------------//
+     {"list_id",
+      (PyCFunction)PyConduit_DataType_list_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::LIST_ID"},
+    //-----------------------------------------------------------------------//
+     {"char8_str_id",
+      (PyCFunction)PyConduit_DataType_char8_str_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::CHAR8_STR_ID"},
+    // -- signed int ids -- //
+    //-----------------------------------------------------------------------//
+     {"int8_id",
+      (PyCFunction)PyConduit_DataType_int8_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::INT8_ID"},
+    //-----------------------------------------------------------------------//
+     {"int16_id",
+      (PyCFunction)PyConduit_DataType_int16_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::INT16_ID"},
+    //-----------------------------------------------------------------------//
+     {"int32_id",
+      (PyCFunction)PyConduit_DataType_int32_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::INT32_ID"},
+    //-----------------------------------------------------------------------//
+     {"int64_id",
+      (PyCFunction)PyConduit_DataType_int64_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::INT64_ID"},
+    // -- uint ids -- //
+    //-----------------------------------------------------------------------//
+     {"uint8_id",
+      (PyCFunction)PyConduit_DataType_uint8_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::UINT8_ID"},
+    //-----------------------------------------------------------------------//
+     {"uint16_id",
+      (PyCFunction)PyConduit_DataType_uint16_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::UINT16_ID"},
+    //-----------------------------------------------------------------------//
+     {"uint32_id",
+      (PyCFunction)PyConduit_DataType_uint32_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::UINT32_ID"},
+    //-----------------------------------------------------------------------//
+     {"uint64_id",
+      (PyCFunction)PyConduit_DataType_uint64_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::UINT64_ID"},
+    // -- fp ids -- //
+    //-----------------------------------------------------------------------//
+     {"float32_id",
+      (PyCFunction)PyConduit_DataType_float32_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::FLOAT32_ID"},
+    //-----------------------------------------------------------------------//
+     {"float64_id",
+      (PyCFunction)PyConduit_DataType_float64_id,
+      METH_NOARGS | METH_STATIC,
+      "Returns DataType::FLOAT64_ID"},     
     //-----------------------------------------------------------------------//
     // end DataType methods table
     //-----------------------------------------------------------------------//

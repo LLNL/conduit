@@ -156,8 +156,24 @@ class Test_Conduit_Node(unittest.TestCase):
         print(DataType.c_float());
         print(DataType.c_double());
 
-
-
+    def test_enum_ids(self):
+        # objs
+        self.assertEqual(DataType.empty().id(),  DataType.empty_id())
+        self.assertEqual(DataType.object().id(), DataType.object_id())
+        self.assertEqual(DataType.list().id(),   DataType.list_id())
+        # signed integers
+        self.assertEqual(DataType.int8().id(),  DataType.int8_id())
+        self.assertEqual(DataType.int16().id(), DataType.int16_id())
+        self.assertEqual(DataType.int32().id(), DataType.int32_id())
+        self.assertEqual(DataType.int64().id(), DataType.int64_id())
+        # unsigned integers
+        self.assertEqual(DataType.uint8().id(),  DataType.uint8_id())
+        self.assertEqual(DataType.uint16().id(), DataType.uint16_id())
+        self.assertEqual(DataType.uint32().id(), DataType.uint32_id())
+        self.assertEqual(DataType.uint64().id(), DataType.uint64_id())
+        # floating point
+        self.assertEqual(DataType.float32().id(), DataType.float32_id())
+        self.assertEqual(DataType.float64().id(), DataType.float64_id())
 
 if __name__ == '__main__':
     unittest.main()
