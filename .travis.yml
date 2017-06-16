@@ -57,10 +57,11 @@ env:
     - TRAVIS_HOME=`pwd`
   matrix:
     # docker test case (requires sudo and other constraints )
-    - sudo: required
-      dist: trusty
-      services: docker
-      env: DOCKER=ON
+    allow_failures:
+        - sudo: required
+          dist: trusty
+          services: docker
+          env: DOCKER=ON
     # #################################
     # # we are testing:
     # #  static vs shared libs
