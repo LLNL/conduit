@@ -944,7 +944,7 @@ TEST(conduit_blueprint_mesh_verify, index_general)
         blueprint::mesh::generate_index(mesh,"quads",1,index);
         EXPECT_TRUE(verify_index(index,info));
 
-        { // Topology Field Tests //
+        { // Coordsets Field Tests //
             info.reset();
             Node coords = index["coordsets"];
             index.remove("coordsets");
@@ -963,7 +963,7 @@ TEST(conduit_blueprint_mesh_verify, index_general)
             EXPECT_TRUE(verify_index(index,info));
         }
 
-        { // Components Field Tests //
+        { // Topologies Field Tests //
             info.reset();
             Node topos = index["topologies"];
             index.remove("topologies");
@@ -978,15 +978,22 @@ TEST(conduit_blueprint_mesh_verify, index_general)
             EXPECT_FALSE(verify_index(index,info));
 
             index["topologies"].reset();
-            index["topologies"]["mesh"]["type"].set("unstructured");
+            index["topologies"]["mesh"]["type"].set("invalid");
             index["topologies"]["mesh"]["path"].set("quads/topologies/mesh");
-            index["topologies"]["mesh"]["coordset"].set("nonexitent");
-            EXPECT_FALSE(verify_index(index,info));
-
             index["topologies"]["mesh"]["coordset"].set("coords");
+            EXPECT_FALSE(verify_index(index,info));
+            index["topologies"]["mesh"]["type"].set("unstructured");
+            EXPECT_TRUE(verify_index(index,info));
+
+            index["topologies"]["mesh"]["coordset"].set("nonexistent");
+            EXPECT_FALSE(verify_index(index,info));
+            index["topologies"]["mesh"]["coordset"].set("coords");
+            EXPECT_TRUE(verify_index(index,info));
+
             index["coordsets"]["coords"]["type"].set("invalid");
             EXPECT_FALSE(verify_index(index,info));
             index["coordsets"]["coords"]["type"].set("explicit");
+            EXPECT_TRUE(verify_index(index,info));
 
             index["topologies"].reset();
             index["topologies"].set(topos);
@@ -1008,16 +1015,23 @@ TEST(conduit_blueprint_mesh_verify, index_general)
             EXPECT_FALSE(verify_index(index,info));
 
             index["fields"].reset();
-            index["fields"]["field"]["number_of_components"].set(1);
+            index["fields"]["field"]["number_of_components"].set("invalid");
             index["fields"]["field"]["association"].set("vertex");
             index["fields"]["field"]["path"].set("quads/fields/braid");
-            index["fields"]["field"]["topology"].set("nonexitent");
-            EXPECT_FALSE(verify_index(index,info));
-
             index["fields"]["field"]["topology"].set("mesh");
+            EXPECT_FALSE(verify_index(index,info));
+            index["fields"]["field"]["number_of_components"].set(1);
+            EXPECT_TRUE(verify_index(index,info));
+
+            index["fields"]["field"]["topology"].set("nonexistent");
+            EXPECT_FALSE(verify_index(index,info));
+            index["fields"]["field"]["topology"].set("mesh");
+            EXPECT_TRUE(verify_index(index,info));
+
             index["topologies"]["mesh"]["type"].set("invalid");
             EXPECT_FALSE(verify_index(index,info));
             index["topologies"]["mesh"]["type"].set("unstructured");
+            EXPECT_TRUE(verify_index(index,info));
 
             index["fields"].reset();
             index["fields"].set(fields);
