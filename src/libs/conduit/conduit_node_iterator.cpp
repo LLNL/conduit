@@ -47,6 +47,8 @@
 /// file: conduit_node_iterator.cpp
 ///
 //-----------------------------------------------------------------------------
+#include <sstream>
+
 #include "conduit_node_iterator.hpp"
 #include "conduit_error.hpp"
 #include "conduit_utils.hpp"
@@ -132,6 +134,24 @@ index_t
 NodeIterator::index() const
 {
     return m_index-1;
+}
+
+//---------------------------------------------------------------------------//
+std::string
+NodeIterator::id() const
+{
+    std::ostringstream oss;
+
+    if(m_node->m_schema->dtype().is_list())
+    {
+        oss << index();
+    }
+    else
+    {
+        oss << name();
+    }
+
+    return oss.str();
 }
 
 //---------------------------------------------------------------------------//
@@ -361,6 +381,24 @@ index_t
 NodeConstIterator::index() const
 {
     return m_index-1;
+}
+
+//---------------------------------------------------------------------------//
+std::string
+NodeConstIterator::id() const
+{
+    std::ostringstream oss;
+
+    if(m_node->m_schema->dtype().is_list())
+    {
+        oss << index();
+    }
+    else
+    {
+        oss << name();
+    }
+
+    return oss.str();
 }
 
 //---------------------------------------------------------------------------//

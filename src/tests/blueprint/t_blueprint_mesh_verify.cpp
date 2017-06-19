@@ -538,7 +538,7 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
     }
 }
 
-
+/*
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, topology_types)
 {
@@ -560,6 +560,7 @@ TEST(conduit_blueprint_mesh_verify, topology_types)
     n.set("explicit");
     EXPECT_FALSE(blueprint::mesh::topology::type::verify(n,info));
 }
+*/
 
 /*
 //-----------------------------------------------------------------------------
