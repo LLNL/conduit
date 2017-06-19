@@ -341,7 +341,7 @@ TEST(conduit_blueprint_mesh_verify, coordset_explicit)
     */
 }
 
-
+/*
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, coordset_types)
 {
@@ -363,7 +363,7 @@ TEST(conduit_blueprint_mesh_verify, coordset_types)
     n.set("unstructured");
     EXPECT_FALSE(blueprint::mesh::coordset::type::verify(n,info));
 }
-
+*/
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, coordset_coordsys)
@@ -561,7 +561,7 @@ TEST(conduit_blueprint_mesh_verify, topology_types)
     EXPECT_FALSE(blueprint::mesh::topology::type::verify(n,info));
 }
 
-
+/*
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, topology_shape)
 {
@@ -584,7 +584,7 @@ TEST(conduit_blueprint_mesh_verify, topology_shape)
     n.set("poly");
     EXPECT_FALSE(blueprint::mesh::topology::shape::verify(n,info));
 }
-
+*/
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, topology_general)

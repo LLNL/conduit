@@ -200,16 +200,6 @@ namespace coordset
     }
     
     //-------------------------------------------------------------------------
-    // blueprint::mesh::coordset::type protocol interface
-    //-------------------------------------------------------------------------
-    namespace type
-    {
-        //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
-                                          conduit::Node &info);
-    }
-    
-    //-------------------------------------------------------------------------
     // blueprint::mesh::coordset::coord_system protocol interface
     //-------------------------------------------------------------------------
     namespace coord_system
@@ -243,7 +233,7 @@ namespace topology
         bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                           conduit::Node &info);
     }
-    
+
     //-------------------------------------------------------------------------
     // blueprint::mesh::topology::rectilinear protocol interface
     //-------------------------------------------------------------------------
@@ -274,17 +264,6 @@ namespace topology
                                           conduit::Node &info);
     }
 
-
-    //-------------------------------------------------------------------------
-    // blueprint::mesh::topology::shape protocol interface
-    //-------------------------------------------------------------------------
-    namespace shape
-    {
-        //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
-                                          conduit::Node &info);
-    }
-
     //-------------------------------------------------------------------------
     // blueprint::mesh::topology::index protocol interface
     //-------------------------------------------------------------------------
@@ -294,7 +273,7 @@ namespace topology
         bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                           conduit::Node &info);
     }
-    
+
     //-------------------------------------------------------------------------
     // blueprint::mesh::topology::type protocol interface
     //-------------------------------------------------------------------------
@@ -304,7 +283,6 @@ namespace topology
         bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                           conduit::Node &info);
     }
-    
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::topology --
