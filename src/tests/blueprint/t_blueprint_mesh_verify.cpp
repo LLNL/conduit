@@ -341,29 +341,36 @@ TEST(conduit_blueprint_mesh_verify, coordset_explicit)
     */
 }
 
-/*
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, coordset_types)
 {
     Node n, info;
 
     const std::string coordset_types[] = {"uniform", "rectilinear", "explicit"};
-    for(index_t ti = 0; ti < 3; ti++)
+    const std::string coordset_fids[] = {"uniform", "rectilinear", "quads"};
+    for(index_t ci = 0; ci < 3; ci++)
     {
         n.reset();
-        n.set(coordset_types[ti]);
-        EXPECT_TRUE(blueprint::mesh::coordset::type::verify(n,info));
+        blueprint::mesh::examples::braid(coordset_fids[ci],10,10,1,n);
+        Node& coordset_node = n["coordsets/coords"];
+        EXPECT_TRUE(blueprint::mesh::coordset::verify(coordset_node,info));
+
+        coordset_node["type"].set(0);
+        EXPECT_FALSE(blueprint::mesh::coordset::verify(coordset_node,info));
+
+        coordset_node["type"].set("unstructured");
+        EXPECT_FALSE(blueprint::mesh::coordset::verify(coordset_node,info));
+
+        if(ci != 2)
+        {
+            coordset_node["type"].set(coordset_types[2]);
+            EXPECT_FALSE(blueprint::mesh::topology::verify(coordset_node,info));
+        }
+
+        coordset_node["type"].set(coordset_types[ci]);
+        EXPECT_TRUE(blueprint::mesh::coordset::verify(coordset_node,info));
     }
-
-    n.reset();
-    n.set(0);
-    EXPECT_FALSE(blueprint::mesh::coordset::type::verify(n,info));
-
-    n.reset();
-    n.set("unstructured");
-    EXPECT_FALSE(blueprint::mesh::coordset::type::verify(n,info));
 }
-*/
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, coordset_coordsys)
@@ -538,54 +545,61 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
     }
 }
 
-/*
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, topology_types)
 {
     Node n, info;
 
     const std::string topology_types[] = {"uniform", "rectilinear", "structured", "unstructured"};
+    const std::string topology_fids[] = {"uniform", "rectilinear", "structured", "quads"};
     for(index_t ti = 0; ti < 4; ti++)
     {
         n.reset();
-        n.set(topology_types[ti]);
-        EXPECT_TRUE(blueprint::mesh::topology::type::verify(n,info));
+        blueprint::mesh::examples::braid(topology_fids[ti],10,10,1,n);
+        Node& topology_node = n["topologies/mesh"];
+        EXPECT_TRUE(blueprint::mesh::topology::verify(topology_node,info));
+
+        topology_node["type"].set(0);
+        EXPECT_FALSE(blueprint::mesh::topology::verify(topology_node,info));
+
+        topology_node["type"].set("explicit");
+        EXPECT_FALSE(blueprint::mesh::topology::verify(topology_node,info));
+
+        if(ti != 3)
+        {
+            topology_node["type"].set(topology_types[3]);
+            EXPECT_FALSE(blueprint::mesh::topology::verify(topology_node,info));
+        }
+
+        topology_node["type"].set(topology_types[ti]);
+        EXPECT_TRUE(blueprint::mesh::topology::verify(topology_node,info));
     }
-
-    n.reset();
-    n.set(0);
-    EXPECT_FALSE(blueprint::mesh::topology::type::verify(n,info));
-
-    n.reset();
-    n.set("explicit");
-    EXPECT_FALSE(blueprint::mesh::topology::type::verify(n,info));
 }
-*/
 
-/*
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, topology_shape)
 {
     Node n, info;
-    EXPECT_FALSE(blueprint::mesh::topology::shape::verify(n,info));
 
-    const std::string shape_types[] = {"point", "line", "tri", "quad", "tet", "hex"};
+    const std::string topology_shapes[] = {"point", "line", "tri", "quad", "tet", "hex"};
+    const std::string topology_fids[] = {"points", "lines", "tris", "quads", "tets", "hexs"};
     for(index_t ti = 0; ti < 6; ti++)
     {
         n.reset();
-        n.set(shape_types[ti]);
-        EXPECT_TRUE(blueprint::mesh::topology::shape::verify(n,info));
+        blueprint::mesh::examples::braid(topology_fids[ti],10,10,1,n);
+        Node& topology_node = n["topologies/mesh"];
+        EXPECT_TRUE(blueprint::mesh::topology::verify(topology_node,info));
+
+        topology_node["elements/shape"].set(0);
+        EXPECT_FALSE(blueprint::mesh::topology::verify(topology_node,info));
+
+        topology_node["elements/shape"].set("unstructured");
+        EXPECT_FALSE(blueprint::mesh::topology::verify(topology_node,info));
+
+        topology_node["elements/shape"].set(topology_shapes[ti]);
+        EXPECT_TRUE(blueprint::mesh::topology::verify(topology_node,info));
     }
-
-    n.reset();
-    n.set(10);
-    EXPECT_FALSE(blueprint::mesh::topology::shape::verify(n,info));
-
-    n.reset();
-    n.set("poly");
-    EXPECT_FALSE(blueprint::mesh::topology::shape::verify(n,info));
 }
-*/
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, topology_general)
