@@ -86,6 +86,15 @@ NodeIterator::NodeIterator(Node *node,
     m_num_children = node->number_of_children();
 }
 
+//---------------------------------------------------------------------------//
+NodeIterator::NodeIterator(Node &node,
+                           index_t idx)
+:m_node(&node),
+ m_index(idx)
+{
+    m_num_children = node.number_of_children();
+}
+
 
 //---------------------------------------------------------------------------//
 NodeIterator::NodeIterator(const NodeIterator &itr)
@@ -296,6 +305,15 @@ NodeConstIterator::NodeConstIterator(const Node *node,
     m_num_children = node->number_of_children();
 }
 
+
+//---------------------------------------------------------------------------//
+NodeConstIterator::NodeConstIterator(const Node &node,
+                                     index_t idx)
+:m_node(&node),
+ m_index(idx)
+{
+    m_num_children = node.number_of_children();
+}
 
 //---------------------------------------------------------------------------//
 NodeConstIterator::NodeConstIterator(const NodeConstIterator &itr)
