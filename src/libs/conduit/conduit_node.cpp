@@ -461,7 +461,9 @@ Node::set_node(const Node &node)
 {
     if(node.dtype().id() == DataType::OBJECT_ID)
     {
+        reset();
         init(DataType::object());
+        
         const std::vector<std::string> &cld_names = node.child_names();
 
         for (std::vector<std::string>::const_iterator itr = cld_names.begin();
@@ -473,11 +475,12 @@ Node::set_node(const Node &node)
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(this);
             curr_node->set(*node.m_children[idx]);
-            this->append_node_ptr(curr_node);       
-        }        
+            this->append_node_ptr(curr_node);
+        }
     }
-    else if(node.dtype().id() == DataType::LIST_ID)       
+    else if(node.dtype().id() == DataType::LIST_ID)
     {   
+        reset();
         init(DataType::list());
         for(size_t i=0;i< node.m_children.size(); i++)
         {

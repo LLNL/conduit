@@ -2680,6 +2680,33 @@ TEST(conduit_node_set, set_vector_external)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, node_set_existing_obj)
+{   
+    Node n_init;
+
+    n_init["a"] = DataType::list();
+    
+    CONDUIT_INFO("INITIAL");
+    CONDUIT_INFO(n_init.to_json());
+
+    Node n_des;
+    n_des["a"].append().set("value");
+
+    
+    CONDUIT_INFO("DES");
+    CONDUIT_INFO(n_des.to_json());
+    
+    n_init = n_des;
+    
+    EXPECT_EQ(n_init.number_of_children(),1);
+    
+    CONDUIT_INFO("POST SET");
+    CONDUIT_INFO(n_init.to_json());
+
+
+}
+
 
 
 
