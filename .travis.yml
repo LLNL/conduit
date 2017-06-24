@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -41,6 +41,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ###############################################################################
+
 sudo: false
 
 language: cpp
@@ -55,43 +56,55 @@ env:
     # we need to know the root dir for our 3rd party lib installs
     - TRAVIS_HOME=`pwd`
   matrix:
-    #################################
-    # we are testing:
-    #  static vs shared libs
-    #  python 2 vs 3
-    #  cmake 3.3.0 vs 3.8.1
-    #  coverage of unit tests
-    #################################
-    # cmake 3.3.1 + shared libs + python 2 + coverage
-    - BUILD_SHARED_LIBS=ON
-      MINICONDA=Miniconda2
-      ENABLE_COVERAGE=ON
-      CMAKE_MAJOR=3.3
-      CMAKE_MINOR=1
-    # cmake 3.3.1 + static libs + python 2
-    - BUILD_SHARED_LIBS=OFF
-      MINICONDA=Miniconda2
-      ENABLE_COVERAGE=OFF
-      CMAKE_MAJOR=3.3
-      CMAKE_MINOR=1
-    # cmake 3.3.1 + shared libs + python 3
-    - BUILD_SHARED_LIBS=ON
-      MINICONDA=Miniconda3
-      ENABLE_COVERAGE=OFF
-      CMAKE_MAJOR=3.3
-      CMAKE_MINOR=1
-    # cmake 3.8.1 + shared libs + python 2
-    - BUILD_SHARED_LIBS=ON
-      MINICONDA=Miniconda2
-      ENABLE_COVERAGE=OFF
-      CMAKE_MAJOR=3.8
-      CMAKE_MINOR=1
-    # cmake 3.8.1 + static libs + python 2
-    - BUILD_SHARED_LIBS=OFF
-      MINICONDA=Miniconda2
-      ENABLE_COVERAGE=OFF
-      CMAKE_MAJOR=3.8
-      CMAKE_MINOR=1
+    # docker test case (requires sudo and other constraints )
+    allow_failures:
+        - sudo: required
+          dist: trusty
+          services: docker
+          env: DOCKER=ON
+    # #################################
+    # # we are testing:
+    # #  static vs shared libs
+    # #  python 2 vs 3
+    # #  cmake 3.3.0 vs 3.8.1
+    # #  coverage of unit tests
+    # #################################
+    # # cmake 3.3.1 + shared libs + python 2 + coverage
+    # - DOCKER=OFF
+    #   BUILD_SHARED_LIBS=ON
+    #   MINICONDA=Miniconda2
+    #   ENABLE_COVERAGE=ON
+    #   CMAKE_MAJOR=3.3
+    #   CMAKE_MINOR=1
+    # # cmake 3.3.1 + static libs + python 2
+    # - DOCKER=OFF
+    #   BUILD_SHARED_LIBS=OFF
+    #   MINICONDA=Miniconda2
+    #   ENABLE_COVERAGE=OFF
+    #   CMAKE_MAJOR=3.3
+    #   CMAKE_MINOR=1
+    # # cmake 3.3.1 + shared libs + python 3
+    # - DOCKER=OFF
+    #   BUILD_SHARED_LIBS=ON
+    #   MINICONDA=Miniconda3
+    #   ENABLE_COVERAGE=OFF
+    #   CMAKE_MAJOR=3.3
+    #   CMAKE_MINOR=1
+    # # cmake 3.8.1 + shared libs + python 2
+    # - DOCKER=OFF
+    #   BUILD_SHARED_LIBS=ON
+    #   MINICONDA=Miniconda2
+    #   ENABLE_COVERAGE=OFF
+    #   CMAKE_MAJOR=3.8
+    #   CMAKE_MINOR=1
+    # # cmake 3.8.1 + static libs + python 2
+    # - DOCKER=OFF
+    #   BUILD_SHARED_LIBS=OFF
+    #   MINICONDA=Miniconda2
+    #   ENABLE_COVERAGE=OFF
+    #   CMAKE_MAJOR=3.8
+    #   CMAKE_MINOR=1
+
 addons:
   apt:
     sources:
@@ -101,67 +114,11 @@ addons:
        - g++-4.8
        - gfortran-4.8
 before_install:
-  # download the ver of cmake we want to test
-  - wget --no-check-certificate http://www.cmake.org/files/v${CMAKE_MAJOR}/cmake-${CMAKE_MAJOR}.${CMAKE_MINOR}-Linux-x86_64.sh
-  # download miniconda (used get python, numpy, and hdf5)
-  - wget --no-check-certificate http://repo.continuum.io/miniconda/${MINICONDA}-latest-Linux-x86_64.sh -O miniconda.sh
+  - ./scripts/ci/travis_download_tpl_binaries.sh
 install:
-  # install cmake
-  - mkdir ${TRAVIS_HOME}/cmake/
-  - sh cmake-${CMAKE_MAJOR}.${CMAKE_MINOR}-Linux-x86_64.sh --skip-license --prefix=${TRAVIS_HOME}/cmake/
-  - export PATH=${TRAVIS_HOME}/cmake/bin:$PATH
-  # install + update miniconda
-  - chmod +x miniconda.sh
-  - ./miniconda.sh -b -p ${TRAVIS_HOME}/miniconda
-  - export PATH=${TRAVIS_HOME}/miniconda/bin:$PATH
-  - conda update --yes conda
-  # install numpy + hdf5 and the coveralls python package
-  - conda install --yes numpy
-  - conda install --yes hdf5
-  - pip install cpp-coveralls
+  - ./scripts/ci/travis_install_tpl_binaries.sh
 script:
-  # echo cmake version
-  - cmake --version
-  - cd $TRAVIS_BUILD_DIR
-  # create out-of-source build dir, and an install dir
-  - mkdir travis-debug-build
-  - mkdir travis-debug-install
-  - cd    travis-debug-build
-  # build type and install loc
-  - CMAKE_OPTS="-DCMAKE_BUILD_TYPE=Debug"
-  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../travis-debug-install"
-  # c & c++ compilers
-  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_C_COMPILER=${CONDUIT_CC}"
-  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_CXX_COMPILER=${CONDUIT_CXX}"
-  # shared or static libs
-  - CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
-  # enable fortran support
-  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_Fortran_COMPILER=${CONDUIT_FC}"
-  - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_FORTRAN=ON"
-  # enable python support
-  - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=ON"
-  # enable hdf5 support
-  - CMAKE_OPTS="${CMAKE_OPTS} -DHDF5_DIR=${TRAVIS_HOME}/miniconda"
-  # enable coverage (only when using shared libs case)
-  - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_COVERAGE=${ENABLE_COVERAGE}"
-  # configure with cmake
-  - cmake  ${CMAKE_OPTS} ../src
-  # build, test, and install
-  - make
-  - env CTEST_OUTPUT_ON_FAILURE=1 make test
-  - make install
-  # test our examples that demo using an installed conduit
-  # using with cmake example
-  - cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-cmake
-  - mkdir build
-  - cd build
-  - cmake -DCONDUIT_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install ../
-  - make
-  - ./example
-  # using with make example
-  - cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-make
-  - env CXX=${CONDUIT_CXX} CONDUIT_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install HDF5_DIR=${TRAVIS_HOME}/miniconda/lib make
-  - env LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/travis-debug-install/lib/:${TRAVIS_HOME}/miniconda/lib ./example
+  - ./scripts/ci/travis_build_and_test.sh
 
 after_success:
   - test ${ENABLE_COVERAGE} = "ON" && coveralls --gcov /usr/bin/gcov-4.8 --include src/libs/conduit --include src/libs/blueprint --gcov-options '\-lp' --root $TRAVIS_BUILD_DIR --build-root $TRAVIS_BUILD_DIR/travis-debug-build;
