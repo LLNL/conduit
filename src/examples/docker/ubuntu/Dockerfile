@@ -59,8 +59,8 @@ RUN apt-get update && apt-get install -y \
 
 
 # untar the current source  (created as part of example_build.sh)
-COPY conduit.docker.src.tar.gz /
-RUN tar -xzf conduit.docker.src.tar.gz
+COPY conduit.docker.src.tar /
+RUN tar -xf conduit.docker.src.tar
 
 # if you would like to clone conduit master directly, you can use:
 #RUN git clone --depth 1 https://github.com/LLNL/conduit.git
