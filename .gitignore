@@ -7,5 +7,6 @@ src/examples/using-with-make/example
 .ipynb_checkpoints
 visitlog.py
 uberenv_libs
+conduit.docker.src.tar
 conduit.docker.src.tar.gz
 Testing/

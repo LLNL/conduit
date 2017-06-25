@@ -59,8 +59,8 @@ RUN apt-get update && apt-get install -y \
 
 
 # untar the current source  (created as part of example_build.sh)
-COPY conduit.docker.src.tar.gz /
-RUN tar -xzf conduit.docker.src.tar.gz
+COPY conduit.docker.src.tar /
+RUN tar -xf conduit.docker.src.tar
 
 # if you would like to clone conduit master directly, you can use:
 #RUN git clone --depth 1 https://github.com/LLNL/conduit.git
@@ -78,7 +78,7 @@ RUN tar -xzf conduit.docker.src.tar.gz
 
 # bootstrap third party libs using spack and uberenv
 #  for this example we use mpich for MPI and only build python2 (not python3)
-RUN cd conduit && python scripts/uberenv/uberenv.py -k --spec %gcc+mpich~python3
+RUN cd conduit && python scripts/uberenv/uberenv.py -k --spec %gcc+mpich~python3~doc~silo
 
 # configure a debug build with cmake
 RUN cd conduit && mkdir build-debug
