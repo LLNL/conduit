@@ -143,6 +143,11 @@ bool verify_topology_index_protocol(const Node &n, Node &info)
     return blueprint::mesh::verify("topology/index",n,info);
 }
 
+bool verify_matset_index_protocol(const Node &n, Node &info)
+{
+    return blueprint::mesh::verify("matset/index",n,info);
+}
+
 bool verify_field_index_protocol(const Node &n, Node &info)
 {
     return blueprint::mesh::verify("field/index",n,info);
@@ -853,6 +858,63 @@ TEST(conduit_blueprint_mesh_verify, index_topology)
 
             tindex["grid_function"].set("path");
             EXPECT_TRUE(verify_topo_index(tindex,info));
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, index_matset)
+{
+    VerifyFun verify_matset_index_funs[] = {
+        blueprint::mesh::matset::index::verify,
+        verify_matset_index_protocol};
+
+    for(index_t fi = 0; fi < 2; fi++)
+    {
+        VerifyFun verify_matset_index = verify_matset_index_funs[fi];
+
+        Node mesh, index, info;
+        EXPECT_FALSE(verify_matset_index(mesh,info));
+
+        blueprint::mesh::examples::braid("quads",10,10,1,mesh);
+        blueprint::mesh::generate_index(mesh,"quads",1,index);
+        Node& mindex = index["matsets"]["mesh"];
+        EXPECT_TRUE(verify_matset_index(mindex,info));
+
+        { // Topology Field Tests //
+            mindex.remove("coordset");
+            EXPECT_FALSE(verify_matset_index(mindex,info));
+
+            mindex["coordset"].set(0);
+            EXPECT_FALSE(verify_matset_index(mindex,info));
+
+            mindex["coordset"].set("path");
+            EXPECT_TRUE(verify_matset_index(mindex,info));
+        }
+
+        { // Materials Field Tests //
+            mindex.remove("materials");
+            EXPECT_FALSE(verify_matset_index(mindex,info));
+
+            mindex["materials"];
+            EXPECT_FALSE(verify_matset_index(mindex,info));
+
+            mindex["materials/mat1"].set(1);
+            EXPECT_TRUE(verify_matset_index(mindex,info));
+            mindex["materials/mat2"].set(2);
+            EXPECT_TRUE(verify_matset_index(mindex,info));
+        }
+
+        { // Path Field Tests //
+            mindex.remove("path");
+            EXPECT_FALSE(verify_matset_index(mindex,info));
+
+            mindex["path"].set(5);
+            EXPECT_FALSE(verify_matset_index(mindex,info));
+
+            mindex["path"].set("path");
+            EXPECT_TRUE(verify_matset_index(mindex,info));
         }
     }
 }

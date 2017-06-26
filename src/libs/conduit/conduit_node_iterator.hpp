@@ -105,7 +105,6 @@ public:
 //-----------------------------------------------------------------------------
     std::string name()  const;
     index_t     index() const;
-    std::string id()    const;
     Node       &node();
     void        to_front();
 
@@ -193,7 +192,6 @@ public:
 //-----------------------------------------------------------------------------
     std::string name()  const;
     index_t     index() const;
-    std::string id()    const;
     const Node &node();
     void        to_front();
 

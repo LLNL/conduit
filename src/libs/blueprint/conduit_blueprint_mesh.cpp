@@ -559,8 +559,8 @@ bool mesh::verify_multi_domain(const Node &n,
         while(itr.has_next())
         {
             const Node &chld = itr.next();
-            const std::string chld_id = itr.id();
-            res &= mesh::verify_single_domain(chld, info[chld_id]);
+            const std::string chld_name = itr.name();
+            res &= mesh::verify_single_domain(chld, info[chld_name]);
         }
 
         log_info(info, protocol, "is a multi domain mesh");
@@ -753,8 +753,12 @@ mesh::generate_index(const Node &mesh,
             Node &idx_matset = index_out["matsets"][matset_name];
 
             idx_matset["topology"] = matset["topology"].as_string();
-            idx_matset["number_of_components"] =
-                matset["volume_fractions"].number_of_children();
+            NodeConstIterator mats_itr = matset["volume_fractions"].children();
+            while(mats_itr.has_next())
+            {
+                mats_itr.next();
+                idx_matset["materials"][mats_itr.name()];
+            }
             idx_matset["path"] = ref_path + "/matsets/" + matset_name;
         }
     }
@@ -963,10 +967,10 @@ mesh::coordset::rectilinear::verify(const Node &coordset,
         while(itr.has_next())
         {
             const Node &chld = itr.next();
-            const std::string chld_id = itr.id();
+            const std::string chld_name = itr.name();
             if(!chld.dtype().is_number())
             {
-                log_error(info, protocol, "value child \"" + chld_id + "\" " +
+                log_error(info, protocol, "value child \"" + chld_name + "\" " +
                                           "is not a number array");
                 res = false;
             }
@@ -1368,8 +1372,11 @@ mesh::matset::index::verify(const Node &matset_idx,
     bool res = true;
     info.reset();
 
+    // TODO(JRC): Determine whether or not extra verification needs to be
+    // performed on the "materials" field.
+
     res &= verify_string_field(protocol, matset_idx, info, "topology");
-    res &= verify_integer_field(protocol, matset_idx, info, "number_of_components");
+    res &= verify_object_field(protocol, matset_idx, info, "materials");
     res &= verify_string_field(protocol, matset_idx, info, "path");
 
     log_verify_result(info, res);

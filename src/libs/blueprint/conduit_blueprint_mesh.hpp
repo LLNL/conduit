@@ -188,7 +188,6 @@ namespace coordset
                                           conduit::Node &info);
     }
 
-
     //-------------------------------------------------------------------------
     // blueprint::mesh::coordset::index protocol interface
     //-------------------------------------------------------------------------
@@ -198,7 +197,7 @@ namespace coordset
         bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                           conduit::Node &info);
     }
-    
+
     //-------------------------------------------------------------------------
     // blueprint::mesh::coordset::coord_system protocol interface
     //-------------------------------------------------------------------------
@@ -208,7 +207,6 @@ namespace coordset
         bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                           conduit::Node &info);
     }
-    
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::coordset --
