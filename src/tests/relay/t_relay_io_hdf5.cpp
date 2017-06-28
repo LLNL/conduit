@@ -600,6 +600,27 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_empty)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, hdf5_write_zero_sized_leaf)
+{
+    // this tests
+    Node n;
+    n["a"].set(DataType::float64(0));
+    n.print_detailed();
+    io::hdf5_write(n,"tout_hdf5_w_0.hdf5");
+
+    EXPECT_EQ(n["a"].dtype().number_of_elements(),0);
+    EXPECT_EQ(n["a"].dtype().id(),DataType::FLOAT64_ID);
+
+    Node n_load;
+    io::hdf5_read("tout_hdf5_w_0.hdf5",n_load);
+    n_load.print_detailed();
+    
+    EXPECT_EQ(n_load["a"].dtype().number_of_elements(),0);
+    EXPECT_EQ(n_load["a"].dtype().id(),DataType::FLOAT64_ID);
+}
+
+
+//-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_childless_object)
 {
     Node n;
@@ -732,7 +753,6 @@ TEST(conduit_relay_io_hdf5, hdf5_path_exists)
     H5Gclose(h5_grp_a);
     H5Fclose(h5_file_id);
 }
-
 
 
 
