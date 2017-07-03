@@ -52,8 +52,11 @@
 // std lib includes
 //-----------------------------------------------------------------------------
 #include <string.h>
+#include <stdio.h>
 #include <math.h>
 #include <cassert>
+#include <map>
+#include <set>
 
 //-----------------------------------------------------------------------------
 // conduit includes
@@ -90,6 +93,27 @@ namespace examples
 
 //---------------------------------------------------------------------------//
 const float64 PI_VALUE = 3.14159265359;
+
+
+//---------------------------------------------------------------------------//
+bool braid_float_equal(const float64& v1, const float64& v2)
+{
+    return fabs( v1 - v2 ) < 1e-6;
+}
+
+
+//---------------------------------------------------------------------------//
+bool braid_point_less(const float64 p1[3], const float64 p2[3])
+{
+    for(index_t i = 0; i < 3; ++i)
+    {
+        if(!braid_float_equal(p1[i], p2[i]))
+        {
+            return p1[i] < p2[i];
+        }
+    }
+    return false;
+}
 
 
 //---------------------------------------------------------------------------//
@@ -471,11 +495,118 @@ braid_init_explicit_coordset(index_t npts_x,
 
 
 //---------------------------------------------------------------------------//
-void braid_init_example_adjset(const Node &/*mesh*/,
-                               Node &/*res*/)
+void braid_init_example_adjset(const Node &mesh,
+                               Node &res)
 {
-    // TODO(JRC): Implement this function so that all of the adjacency data
-    // in the input 'mesh' node is placed in the given 'res' node.
+    const std::string dim_names[3] = { "x", "y", "z" };
+
+    typedef std::map<float64[3], std::map<index_t, index_t>,
+        bool(*)(const float64[3], const float64[3])> point_doms_map;
+    typedef std::map<std::set<index_t>, std::vector<std::vector<index_t> > >
+        group_idx_map;
+
+    // From mesh data, create a map from domain combination tuple to point list.
+    // These domain combination tuples represent groups and the point lists contain
+    // the points that lie on the shared boundary between these domains.
+    point_doms_map mesh_point_doms_map(braid_point_less);
+
+    conduit::NodeConstIterator doms_it = mesh.children();
+    while(doms_it.has_next())
+    {
+        doms_it.next();
+        const conduit::Node& dom_node = doms_it.node();
+        const conduit::Node& dom_coords = dom_node["coordsets/coords/values"];
+        const index_t dom_id = dom_node["state/domain_id"].to_uint64();
+
+        conduit::float64_array dom_dim_coords[3];
+        for(index_t d = 0; d < 3; d++)
+        {
+            dom_dim_coords[d] = dom_coords[dim_names[d]].as_float64_array();
+        }
+
+        for(index_t i = 0; i < dom_dim_coords[0].number_of_elements(); i++)
+        {
+            float64 coord[3];
+            for(index_t d = 0; d < 3; d++)
+            {
+                coord[d] = dom_dim_coords[d][i];
+            }
+            mesh_point_doms_map[coord][dom_id] = i;
+        }
+    }
+
+    group_idx_map groups_map;
+
+    point_doms_map::const_iterator pm_itr;
+    for(pm_itr = mesh_point_doms_map.begin();
+        pm_itr != mesh_point_doms_map.end(); ++pm_itr)
+    {
+        const std::map<index_t, index_t>& point_dom_idx_map = pm_itr->second;
+        if(point_dom_idx_map.size() > 1)
+        {
+            std::set<index_t> point_group;
+
+            std::map<index_t, index_t>::const_iterator pg_itr;
+            for(pg_itr = point_dom_idx_map.begin();
+                pg_itr != point_dom_idx_map.end(); ++pg_itr)
+            {
+                point_group.insert(pg_itr->first);
+            }
+
+            std::vector<std::vector<index_t> >& group_indices = groups_map[point_group];
+            if(group_indices.empty())
+            {
+                group_indices.resize(point_group.size());
+            }
+
+            std::set<index_t>::const_iterator gd_itr;
+            index_t gi = 0;
+            for(gd_itr = point_group.begin();
+                gd_itr != point_group.end(); ++gd_itr, ++gi)
+            {
+                group_indices[gi].push_back(point_dom_idx_map.find(*gd_itr)->second);
+            }
+        }
+    }
+
+    const index_t name_cstr_size = 30;
+    char group_name_cstr[name_cstr_size];
+    char dom_name_cstr[name_cstr_size];
+
+    group_idx_map::const_iterator gm_itr;
+    index_t gid = 0;
+    for(gm_itr = groups_map.begin();
+        gm_itr != groups_map.end(); ++gm_itr, ++gid)
+    {
+        const std::set<index_t>& group_doms = gm_itr->first;
+        const std::vector<std::vector<index_t> >& group_indices = gm_itr->second;
+
+        snprintf(group_name_cstr, name_cstr_size, "group%ld", gid);
+        const std::string group_name(group_name_cstr);
+
+        std::set<index_t>::const_iterator dg_itr;
+        index_t d = 0;
+        for(dg_itr = group_doms.begin();
+            dg_itr != group_doms.end(); ++dg_itr, ++d)
+        {
+          const index_t& dom_id = *dg_itr;
+          const std::vector<index_t>& dom_idxs = group_indices[d];
+
+          snprintf(dom_name_cstr, name_cstr_size, "group%ld", dom_id);
+          const std::string dom_name(dom_name_cstr);
+
+          std::vector<index_t> dom_neighbors(group_doms.begin(), group_doms.end());
+          dom_neighbors.erase(dom_neighbors.begin()+d);
+
+          conduit::Node& dom_node = res[dom_name]["adjsets/mesh_adj"];
+          dom_node["association"].set("vertex");
+          dom_node["topology"].set("mesh");
+          dom_node["groups"][group_name]["neighbors"].set(
+            const_cast<index_t*>(dom_neighbors.data()), dom_neighbors.size());
+          dom_node["groups"][group_name]["values"].set(
+            const_cast<index_t*>(dom_idxs.data()), dom_idxs.size());
+        }
+    }
 }
 
 
@@ -1674,9 +1805,16 @@ braid(const std::string &mesh_type,
     }
     // TODO(JRC): Remove this extra option and integrate it into
     // the existing examples.
-    // else if(mesh_type == "adjsets")
-    // {
-    // }
+    else if(mesh_type == "adjsets")
+    {
+        // TODO(JRC): Change the 'res' domain ids.
+        braid_quads(npts_x,npts_y,res["domain0"]);
+        braid_quads(npts_x,npts_y,res["domain1"]);
+        braid_quads(npts_x,npts_y,res["domain2"]);
+        braid_quads(npts_x,npts_y,res["domain3"]);
+
+        braid_init_example_adjset(res,res["adjsets"]);
+    }
     else
     {
         CONDUIT_ERROR("unknown mesh_type = " << mesh_type);

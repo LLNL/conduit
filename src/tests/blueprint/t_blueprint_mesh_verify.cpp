@@ -133,9 +133,9 @@ bool verify_field_protocol(const Node &n, Node &info)
     return blueprint::mesh::verify("field",n,info);
 }
 
-bool verify_domain_adjacency_protocol(const Node &n, Node &info)
+bool verify_adjset_protocol(const Node &n, Node &info)
 {
-    return blueprint::mesh::verify("domain_adjacency",n,info);
+    return blueprint::mesh::verify("adjset",n,info);
 }
 
 bool verify_index_protocol(const Node &n, Node &info)
@@ -163,9 +163,9 @@ bool verify_field_index_protocol(const Node &n, Node &info)
     return blueprint::mesh::verify("field/index",n,info);
 }
 
-bool verify_domain_adjacency_index_protocol(const Node &n, Node &info)
+bool verify_adjset_index_protocol(const Node &n, Node &info)
 {
-    return blueprint::mesh::verify("domain_adjacency/index",n,info);
+    return blueprint::mesh::verify("adjset/index",n,info);
 }
 
 bool verify_mesh_multi_domain_protocol(const Node &n, Node &info)
@@ -807,60 +807,82 @@ TEST(conduit_blueprint_mesh_verify, field_general)
 }
 
 /// Mesh Domain Adjacencies Tests ///
-/*
+
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_verify, domain_adjacency_general)
+TEST(conduit_blueprint_mesh_verify, adjset_general)
 {
-    VerifyFun verify_domadj_funs[] = {
-        blueprint::mesh::domain_adjacency::verify,
-        verify_domain_adjacency_protocol};
+    VerifyFun verify_adjset_funs[] = {
+        blueprint::mesh::adjset::verify,
+        verify_adjset_protocol};
 
     for(index_t fi = 0; fi < 2; fi++)
     {
-        VerifyFun verify_domadj = verify_domadj_funs[fi];
+        VerifyFun verify_adjset = verify_adjset_funs[fi];
 
         Node mesh, info;
-        EXPECT_FALSE(verify_domadj(mesh,info));
+        EXPECT_FALSE(verify_adjset(mesh,info));
 
-        blueprint::mesh::examples::braid("quads",10,10,1,mesh);
-        Node& n = mesh["domain_adjacencies"]["one"];
-        EXPECT_TRUE(verify_domadj(mesh,info));
+        blueprint::mesh::examples::braid("adjsets",10,10,1,mesh);
+        Node& n = mesh["adjsets"].child(0);
+        EXPECT_TRUE(verify_adjset(mesh,info));
 
         { // Topology Field Tests //
             n.remove("topology");
-            EXPECT_FALSE(verify_domadj(n,info));
+            EXPECT_FALSE(verify_adjset(n,info));
             n["topology"].set(10);
-            EXPECT_FALSE(verify_domadj(n,info));
+            EXPECT_FALSE(verify_adjset(n,info));
             n["topology"].set("mesh");
-            EXPECT_TRUE(verify_domadj(n,info));
+            EXPECT_TRUE(verify_adjset(n,info));
         }
 
-        { // Volume Fractions Field Tests //
-            Node vfs = n["volume_fractions"];
+        { // Groups Field Tests //
+            Node groups = n["groups"];
 
-            n.remove("volume_fractions");
-            EXPECT_FALSE(verify_domadj(n,info));
-            n["volume_fractions"].set("values");
-            EXPECT_FALSE(verify_domadj(n,info));
-            n["volume_fractions"].set(DataType::float64(10));
-            EXPECT_FALSE(verify_domadj(n,info));
+            n.remove("groups");
+            EXPECT_FALSE(verify_adjset(n,info));
+            n["groups"].set("groups");
+            EXPECT_FALSE(verify_adjset(n,info));
+            n["groups"].set(DataType::float64(10));
+            EXPECT_FALSE(verify_adjset(n,info));
 
-            n["volume_fractions"].reset();
-            n["volume_fractions"]["x"].set("Hello, ");
-            n["volume_fractions"]["y"].set("World!");
-            EXPECT_FALSE(verify_domadj(n,info));
+            n["groups"].reset();
+            n["groups"]["g1"].set("Hello, ");
+            EXPECT_FALSE(verify_adjset(n,info));
+            n["groups"]["g2"].set("World!");
+            EXPECT_FALSE(verify_adjset(n,info));
 
-            n["volume_fractions"].reset();
-            n["volume_fractions"]["m1"].set(DataType::float64(5));
-            n["volume_fractions"]["m2"].set(DataType::float64(5));
-            EXPECT_TRUE(verify_domadj(n,info));
+            n["groups"].reset();
+            n["groups"]["g1"]["neighbors"].set(DataType::int32(5));
+            EXPECT_FALSE(verify_adjset(n,info));
+            n["groups"]["g1"]["values"].set(DataType::float32(5));
+            EXPECT_FALSE(verify_adjset(n,info));
+            n["groups"]["g1"]["values"].set(DataType::int32(5));
+            EXPECT_TRUE(verify_adjset(n,info));
 
-            n["volume_fractions"].set(vfs);
-            EXPECT_TRUE(verify_domadj(n,info));
+            n["groups"].reset();
+            n["groups"]["g1"]["neighbors"].set(DataType::int32(5));
+            n["groups"]["g1"]["values"].set(DataType::int32(5));
+            EXPECT_TRUE(verify_adjset(n,info));
+            n["groups"]["g2"]["neighbors"].set(DataType::int32(5));
+            n["groups"]["g2"]["values"].set(DataType::int32(5));
+            EXPECT_TRUE(verify_adjset(n,info));
+
+            n["groups"].set(groups);
+            EXPECT_TRUE(verify_adjset(n,info));
+        }
+
+        { // Association Field Tests //
+            n.remove("association");
+            EXPECT_FALSE(verify_adjset(n,info));
+
+            n["association"].set("zone");
+            EXPECT_FALSE(verify_adjset(n,info));
+            n["association"].set("vertex");
+            EXPECT_TRUE(verify_adjset(n,info));
         }
     }
 }
-*/
+
 /// Mesh Index Tests ///
 
 //-----------------------------------------------------------------------------
@@ -1128,63 +1150,74 @@ TEST(conduit_blueprint_mesh_verify, index_field)
     }
 }
 
-/*
+
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_verify, index_domain_adjacency)
+TEST(conduit_blueprint_mesh_verify, index_adjset)
 {
-    VerifyFun verify_domadj_index_funs[] = {
-        blueprint::mesh::domain_adjacency::index::verify,
-        verify_domain_adjacency_index_protocol};
+    VerifyFun verify_adjset_index_funs[] = {
+        blueprint::mesh::adjset::index::verify,
+        verify_adjset_index_protocol};
 
     for(index_t fi = 0; fi < 2; fi++)
     {
-        VerifyFun verify_domadj_index = verify_domadj_index_funs[fi];
+        VerifyFun verify_adjset_index = verify_adjset_index_funs[fi];
 
         Node mesh, index, info;
-        EXPECT_FALSE(verify_domadj_index(mesh,info));
+        EXPECT_FALSE(verify_adjset_index(mesh,info));
 
-        blueprint::mesh::examples::braid("quads",10,10,1,mesh);
+        blueprint::mesh::examples::braid("adjsets",10,10,1,mesh);
         blueprint::mesh::generate_index(mesh,"quads",1,index);
-        Node& mindex = index["domain_adjacencies"]["one"];
-        EXPECT_TRUE(verify_domadj_index(mindex,info));
+        Node& aindex = index["adjsets"].child(0);
+        EXPECT_TRUE(verify_adjset_index(aindex,info));
 
         { // Topology Field Tests //
-            mindex.remove("coordset");
-            EXPECT_FALSE(verify_domadj_index(mindex,info));
+            Node topo = aindex["topology"];
+            aindex.remove("topology");
 
-            mindex["coordset"].set(0);
-            EXPECT_FALSE(verify_domadj_index(mindex,info));
+            EXPECT_FALSE(verify_adjset_index(aindex,info));
+            aindex["topology"].set(0);
+            EXPECT_FALSE(verify_adjset_index(aindex,info));
 
-            mindex["coordset"].set("path");
-            EXPECT_TRUE(verify_domadj_index(mindex,info));
-        }
+            aindex["topology"].set("path");
+            EXPECT_TRUE(verify_adjset_index(aindex,info));
 
-        { // Materials Field Tests //
-            mindex.remove("materials");
-            EXPECT_FALSE(verify_domadj_index(mindex,info));
-
-            mindex["materials"];
-            EXPECT_FALSE(verify_domadj_index(mindex,info));
-
-            mindex["materials/mat1"].set(1);
-            EXPECT_TRUE(verify_domadj_index(mindex,info));
-            mindex["materials/mat2"].set(2);
-            EXPECT_TRUE(verify_domadj_index(mindex,info));
+            aindex["topology"].reset();
+            aindex["topology"].set(topo);
+            EXPECT_TRUE(verify_adjset_index(aindex,info));
         }
 
         { // Path Field Tests //
-            mindex.remove("path");
-            EXPECT_FALSE(verify_domadj_index(mindex,info));
+            Node path = aindex["path"];
+            aindex.remove("path");
 
-            mindex["path"].set(5);
-            EXPECT_FALSE(verify_domadj_index(mindex,info));
+            EXPECT_FALSE(verify_adjset_index(aindex,info));
+            aindex["path"].set(0);
+            EXPECT_FALSE(verify_adjset_index(aindex,info));
 
-            mindex["path"].set("path");
-            EXPECT_TRUE(verify_domadj_index(mindex,info));
+            aindex["path"].set("path");
+            EXPECT_TRUE(verify_adjset_index(aindex,info));
+
+            aindex["path"].reset();
+            aindex["path"].set(path);
+            EXPECT_TRUE(verify_adjset_index(aindex,info));
+        }
+
+        { // Association Field Tests //
+            Node assoc = aindex["association"];
+            aindex.remove("topology");
+
+            aindex["association"].set("zone");
+            EXPECT_FALSE(verify_adjset_index(aindex,info));
+            aindex["association"].set("vertex");
+            EXPECT_TRUE(verify_adjset_index(aindex,info));
+
+            aindex["association"].reset();
+            aindex["association"].set(assoc);
+            EXPECT_TRUE(verify_adjset_index(aindex,info));
         }
     }
 }
-*/
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, index_general)
