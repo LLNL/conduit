@@ -678,7 +678,7 @@ TEST(conduit_blueprint_mesh_verify, topology_general)
 }
 
 /// Mesh Matsets Tests ///
-/*
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, matset_general)
 {
@@ -693,9 +693,9 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
         Node mesh, info;
         EXPECT_FALSE(verify_matset(mesh,info));
 
-        blueprint::mesh::examples::braid("quads",10,10,1,mesh);
+        blueprint::mesh::examples::braid("matsets",10,10,1,mesh);
         Node& n = mesh["matsets"]["mesh"];
-        EXPECT_TRUE(verify_matset(mesh,info));
+        EXPECT_TRUE(verify_matset(n,info));
 
         { // Topology Field Tests //
             n.remove("topology");
@@ -726,12 +726,13 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
             n["volume_fractions"]["m2"].set(DataType::float64(5));
             EXPECT_TRUE(verify_matset(n,info));
 
+            n["volume_fractions"].reset();
             n["volume_fractions"].set(vfs);
             EXPECT_TRUE(verify_matset(n,info));
         }
     }
 }
-*/
+
 /// Mesh Field Tests ///
 
 //-----------------------------------------------------------------------------
@@ -987,7 +988,7 @@ TEST(conduit_blueprint_mesh_verify, index_topology)
     }
 }
 
-/*
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, index_matset)
 {
@@ -1002,19 +1003,19 @@ TEST(conduit_blueprint_mesh_verify, index_matset)
         Node mesh, index, info;
         EXPECT_FALSE(verify_matset_index(mesh,info));
 
-        blueprint::mesh::examples::braid("quads",10,10,1,mesh);
+        blueprint::mesh::examples::braid("matsets",10,10,1,mesh);
         blueprint::mesh::generate_index(mesh,"quads",1,index);
         Node& mindex = index["matsets"]["mesh"];
         EXPECT_TRUE(verify_matset_index(mindex,info));
 
         { // Topology Field Tests //
-            mindex.remove("coordset");
+            mindex.remove("topology");
             EXPECT_FALSE(verify_matset_index(mindex,info));
 
-            mindex["coordset"].set(0);
+            mindex["topology"].set(0);
             EXPECT_FALSE(verify_matset_index(mindex,info));
 
-            mindex["coordset"].set("path");
+            mindex["topology"].set("path");
             EXPECT_TRUE(verify_matset_index(mindex,info));
         }
 
@@ -1043,7 +1044,7 @@ TEST(conduit_blueprint_mesh_verify, index_matset)
         }
     }
 }
-*/
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, index_field)

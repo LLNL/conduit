@@ -278,6 +278,40 @@ void braid_init_example_element_scalar_field(index_t nele_x,
     }
 }
 
+
+//---------------------------------------------------------------------------//
+void braid_init_example_matset(index_t nele_x,
+                               index_t nele_y,
+                               index_t nele_z,
+                               Node &res)
+{
+    index_t nele = nele_x * nele_y * ((nele_z > 0) ? nele_z : 1);
+
+    res["topology"] = "mesh";
+
+    Node &vfs = res["volume_fractions"];
+    vfs["mat1"].set(DataType::float64(nele));
+    vfs["mat2"].set(DataType::float64(nele));
+
+    float64 *mat1_vals = vfs["mat1"].value();
+    float64 *mat2_vals = vfs["mat2"].value();
+
+    for(index_t k = 0, idx = 0; (idx == 0 || k < nele_z); k++)
+    {
+        for(index_t j = 0; (idx == 0 || j < nele_y) ; j++)
+        {
+            for(index_t i = 0; (idx == 0 || i < nele_x) ; i++, idx++)
+            {
+                float64 mv = (nele_x == 1) ? 0.5 : i / (nele_x - 1.0);
+
+                mat1_vals[idx] = mv;
+                mat2_vals[idx] = 1.0 - mv;
+            }
+        }
+    }
+}
+
+
 //---------------------------------------------------------------------------//
 void braid_init_uniform_coordset(index_t npts_x,
                                  index_t npts_y,
@@ -433,6 +467,15 @@ braid_init_explicit_coordset(index_t npts_x,
         
         }
     }
+}
+
+
+//---------------------------------------------------------------------------//
+void braid_init_example_adjset(const Node &/*mesh*/,
+                               Node &/*res*/)
+{
+    // TODO(JRC): Implement this function so that all of the adjacency data
+    // in the input 'mesh' node is placed in the given 'res' node.
 }
 
 
@@ -1622,6 +1665,18 @@ braid(const std::string &mesh_type,
     {
         braid_points_explicit(npts_x,npts_y,npts_z,res);
     }
+    // TODO(JRC): Remove this extra option and integrate it into
+    // the existing examples.
+    else if(mesh_type == "matsets")
+    {
+        braid_quads(npts_x,npts_y,res);
+        braid_init_example_matset(npts_x-1,npts_y-1,0,res["matsets/mesh"]);
+    }
+    // TODO(JRC): Remove this extra option and integrate it into
+    // the existing examples.
+    // else if(mesh_type == "adjsets")
+    // {
+    // }
     else
     {
         CONDUIT_ERROR("unknown mesh_type = " << mesh_type);
