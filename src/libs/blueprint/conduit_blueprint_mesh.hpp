@@ -323,16 +323,16 @@ namespace field
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// blueprint::mesh::domain_adjacency protocol interface
+// blueprint::mesh::adjset protocol interface
 //-----------------------------------------------------------------------------
-namespace domain_adjacency
+namespace adjset
 {
     //-------------------------------------------------------------------------
     bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                       conduit::Node &info);
 
     //-------------------------------------------------------------------------
-    // blueprint::mesh::domain_adjacencies::index protocol interface
+    // blueprint::mesh::adjset::index protocol interface
     //-------------------------------------------------------------------------
     namespace index
     {
@@ -342,7 +342,7 @@ namespace domain_adjacency
     }
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::domain_adjacency --
+// -- end conduit::blueprint::mesh::adjset --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

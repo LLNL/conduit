@@ -123,9 +123,19 @@ bool verify_topology_protocol(const Node &n, Node &info)
     return blueprint::mesh::verify("topology",n,info);
 }
 
+bool verify_matset_protocol(const Node &n, Node &info)
+{
+    return blueprint::mesh::verify("matset",n,info);
+}
+
 bool verify_field_protocol(const Node &n, Node &info)
 {
     return blueprint::mesh::verify("field",n,info);
+}
+
+bool verify_domain_adjacency_protocol(const Node &n, Node &info)
+{
+    return blueprint::mesh::verify("domain_adjacency",n,info);
 }
 
 bool verify_index_protocol(const Node &n, Node &info)
@@ -151,6 +161,11 @@ bool verify_matset_index_protocol(const Node &n, Node &info)
 bool verify_field_index_protocol(const Node &n, Node &info)
 {
     return blueprint::mesh::verify("field/index",n,info);
+}
+
+bool verify_domain_adjacency_index_protocol(const Node &n, Node &info)
+{
+    return blueprint::mesh::verify("domain_adjacency/index",n,info);
 }
 
 bool verify_mesh_multi_domain_protocol(const Node &n, Node &info)
@@ -662,6 +677,61 @@ TEST(conduit_blueprint_mesh_verify, topology_general)
     }
 }
 
+/// Mesh Matsets Tests ///
+/*
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, matset_general)
+{
+    VerifyFun verify_matset_funs[] = {
+        blueprint::mesh::matset::verify,
+        verify_matset_protocol};
+
+    for(index_t fi = 0; fi < 2; fi++)
+    {
+        VerifyFun verify_matset = verify_matset_funs[fi];
+
+        Node mesh, info;
+        EXPECT_FALSE(verify_matset(mesh,info));
+
+        blueprint::mesh::examples::braid("quads",10,10,1,mesh);
+        Node& n = mesh["matsets"]["mesh"];
+        EXPECT_TRUE(verify_matset(mesh,info));
+
+        { // Topology Field Tests //
+            n.remove("topology");
+            EXPECT_FALSE(verify_matset(n,info));
+            n["topology"].set(10);
+            EXPECT_FALSE(verify_matset(n,info));
+            n["topology"].set("mesh");
+            EXPECT_TRUE(verify_matset(n,info));
+        }
+
+        { // Volume Fractions Field Tests //
+            Node vfs = n["volume_fractions"];
+
+            n.remove("volume_fractions");
+            EXPECT_FALSE(verify_matset(n,info));
+            n["volume_fractions"].set("values");
+            EXPECT_FALSE(verify_matset(n,info));
+            n["volume_fractions"].set(DataType::float64(10));
+            EXPECT_FALSE(verify_matset(n,info));
+
+            n["volume_fractions"].reset();
+            n["volume_fractions"]["x"].set("Hello, ");
+            n["volume_fractions"]["y"].set("World!");
+            EXPECT_FALSE(verify_matset(n,info));
+
+            n["volume_fractions"].reset();
+            n["volume_fractions"]["m1"].set(DataType::float64(5));
+            n["volume_fractions"]["m2"].set(DataType::float64(5));
+            EXPECT_TRUE(verify_matset(n,info));
+
+            n["volume_fractions"].set(vfs);
+            EXPECT_TRUE(verify_matset(n,info));
+        }
+    }
+}
+*/
 /// Mesh Field Tests ///
 
 //-----------------------------------------------------------------------------
@@ -735,6 +805,61 @@ TEST(conduit_blueprint_mesh_verify, field_general)
     }
 }
 
+/// Mesh Domain Adjacencies Tests ///
+/*
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, domain_adjacency_general)
+{
+    VerifyFun verify_domadj_funs[] = {
+        blueprint::mesh::domain_adjacency::verify,
+        verify_domain_adjacency_protocol};
+
+    for(index_t fi = 0; fi < 2; fi++)
+    {
+        VerifyFun verify_domadj = verify_domadj_funs[fi];
+
+        Node mesh, info;
+        EXPECT_FALSE(verify_domadj(mesh,info));
+
+        blueprint::mesh::examples::braid("quads",10,10,1,mesh);
+        Node& n = mesh["domain_adjacencies"]["one"];
+        EXPECT_TRUE(verify_domadj(mesh,info));
+
+        { // Topology Field Tests //
+            n.remove("topology");
+            EXPECT_FALSE(verify_domadj(n,info));
+            n["topology"].set(10);
+            EXPECT_FALSE(verify_domadj(n,info));
+            n["topology"].set("mesh");
+            EXPECT_TRUE(verify_domadj(n,info));
+        }
+
+        { // Volume Fractions Field Tests //
+            Node vfs = n["volume_fractions"];
+
+            n.remove("volume_fractions");
+            EXPECT_FALSE(verify_domadj(n,info));
+            n["volume_fractions"].set("values");
+            EXPECT_FALSE(verify_domadj(n,info));
+            n["volume_fractions"].set(DataType::float64(10));
+            EXPECT_FALSE(verify_domadj(n,info));
+
+            n["volume_fractions"].reset();
+            n["volume_fractions"]["x"].set("Hello, ");
+            n["volume_fractions"]["y"].set("World!");
+            EXPECT_FALSE(verify_domadj(n,info));
+
+            n["volume_fractions"].reset();
+            n["volume_fractions"]["m1"].set(DataType::float64(5));
+            n["volume_fractions"]["m2"].set(DataType::float64(5));
+            EXPECT_TRUE(verify_domadj(n,info));
+
+            n["volume_fractions"].set(vfs);
+            EXPECT_TRUE(verify_domadj(n,info));
+        }
+    }
+}
+*/
 /// Mesh Index Tests ///
 
 //-----------------------------------------------------------------------------
@@ -862,7 +987,7 @@ TEST(conduit_blueprint_mesh_verify, index_topology)
     }
 }
 
-
+/*
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, index_matset)
 {
@@ -918,7 +1043,7 @@ TEST(conduit_blueprint_mesh_verify, index_matset)
         }
     }
 }
-
+*/
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, index_field)
@@ -1002,6 +1127,63 @@ TEST(conduit_blueprint_mesh_verify, index_field)
     }
 }
 
+/*
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, index_domain_adjacency)
+{
+    VerifyFun verify_domadj_index_funs[] = {
+        blueprint::mesh::domain_adjacency::index::verify,
+        verify_domain_adjacency_index_protocol};
+
+    for(index_t fi = 0; fi < 2; fi++)
+    {
+        VerifyFun verify_domadj_index = verify_domadj_index_funs[fi];
+
+        Node mesh, index, info;
+        EXPECT_FALSE(verify_domadj_index(mesh,info));
+
+        blueprint::mesh::examples::braid("quads",10,10,1,mesh);
+        blueprint::mesh::generate_index(mesh,"quads",1,index);
+        Node& mindex = index["domain_adjacencies"]["one"];
+        EXPECT_TRUE(verify_domadj_index(mindex,info));
+
+        { // Topology Field Tests //
+            mindex.remove("coordset");
+            EXPECT_FALSE(verify_domadj_index(mindex,info));
+
+            mindex["coordset"].set(0);
+            EXPECT_FALSE(verify_domadj_index(mindex,info));
+
+            mindex["coordset"].set("path");
+            EXPECT_TRUE(verify_domadj_index(mindex,info));
+        }
+
+        { // Materials Field Tests //
+            mindex.remove("materials");
+            EXPECT_FALSE(verify_domadj_index(mindex,info));
+
+            mindex["materials"];
+            EXPECT_FALSE(verify_domadj_index(mindex,info));
+
+            mindex["materials/mat1"].set(1);
+            EXPECT_TRUE(verify_domadj_index(mindex,info));
+            mindex["materials/mat2"].set(2);
+            EXPECT_TRUE(verify_domadj_index(mindex,info));
+        }
+
+        { // Path Field Tests //
+            mindex.remove("path");
+            EXPECT_FALSE(verify_domadj_index(mindex,info));
+
+            mindex["path"].set(5);
+            EXPECT_FALSE(verify_domadj_index(mindex,info));
+
+            mindex["path"].set("path");
+            EXPECT_TRUE(verify_domadj_index(mindex,info));
+        }
+    }
+}
+*/
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, index_general)

@@ -357,9 +357,9 @@ mesh::verify(const std::string &protocol,
     {
         res = field::verify(n,info);
     }
-    else if(protocol == "domain_adjacency")
+    else if(protocol == "adjset")
     {
-        res = domain_adjacency::verify(n,info);
+        res = adjset::verify(n,info);
     }
     else if(protocol == "index")
     {
@@ -381,9 +381,9 @@ mesh::verify(const std::string &protocol,
     {
         res = field::index::verify(n,info);
     }
-    else if(protocol == "domain_adjacency/index")
+    else if(protocol == "adjset/index")
     {
-        res = domain_adjacency::index::verify(n,info);
+        res = adjset::index::verify(n,info);
     }
 
     return res;
@@ -492,23 +492,23 @@ mesh::verify_single_domain(const Node &n,
         }
     }
 
-    // optional: "domain_adjacencies", each child must conform to "mesh::matset"
-    if(n.has_path("domain_adjacencies"))
+    // optional: "adjsets", each child must conform to "mesh::matset"
+    if(n.has_path("adjsets"))
     {
-        if(!verify_object_field(protocol, n, info, "domain_adjacencies"))
+        if(!verify_object_field(protocol, n, info, "adjsets"))
         {
             res = false;
         }
         else
         {
-            NodeConstIterator itr = n["domain_adjacencies"].children();
+            NodeConstIterator itr = n["adjsets"].children();
             while(itr.has_next())
             {
                 const Node &chld = itr.next();
                 const std::string chld_name = itr.name();
-                Node &chld_info = info["domain_adjacencies"][chld_name];
+                Node &chld_info = info["adjsets"][chld_name];
 
-                res &= domain_adjacency::verify(chld, chld_info);
+                res &= adjset::verify(chld, chld_info);
                 res &= verify_reference_field(protocol, n, info,
                     chld, chld_info, "topology", "topologies");
             }
@@ -811,20 +811,20 @@ mesh::generate_index(const Node &mesh,
         }
     }
 
-    if(mesh.has_child("domain_adjacencies"))
+    if(mesh.has_child("adjsets"))
     {
-        itr = mesh["domain_adjacencies"].children();
+        itr = mesh["adjsets"].children();
         while(itr.has_next())
         {
-            const Node &adjacency = itr.next();
+            const Node &adjset = itr.next();
             const std::string adj_name = itr.name();
-            Node &idx_adjacency = index_out["domain_adjacencies"][adj_name];
+            Node &idx_adjset = index_out["adjsets"][adj_name];
 
             // TODO(JRC): Determine whether or not any information from the
             // "neighbors" and "values" sections need to be included in the index.
-            idx_adjacency["association"] = adjacency["association"].as_string();
-            idx_adjacency["topology"] = adjacency["topology"].as_string();
-            idx_adjacency["path"] = ref_path + "/domain_adjacencies/" + adj_name;
+            idx_adjset["association"] = adjset["association"].as_string();
+            idx_adjset["topology"] = adjset["topology"].as_string();
+            idx_adjset["path"] = ref_path + "/adjsets/" + adj_name;
         }
     }
 }
@@ -1492,23 +1492,39 @@ mesh::field::index::verify(const Node &field_idx,
 }
 
 //-----------------------------------------------------------------------------
-// blueprint::mesh::domain_adjacency protocol interface
+// blueprint::mesh::adjset protocol interface
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 bool
-mesh::domain_adjacency::verify(const Node &adjacency,
-                               Node &info)
+mesh::adjset::verify(const Node &adjset,
+                     Node &info)
 {
-    const std::string protocol = "mesh::domain_adjacency";
+    const std::string protocol = "mesh::adjset";
     bool res = true;
     info.reset();
 
-    res &= verify_string_field(protocol, adjacency, info, "topology");
-    res &= verify_enum_field(protocol, adjacency, info, "association",
+    res &= verify_string_field(protocol, adjset, info, "topology");
+    res &= verify_enum_field(protocol, adjset, info, "association",
                              mesh::associations);
-    res &= verify_integer_field(protocol, adjacency, info, "neighbors");
-    res &= verify_integer_field(protocol, adjacency, info, "values");
+
+    if(!verify_object_field(protocol, adjset, info, "groups"))
+    {
+        res = false;
+    }
+    else
+    {
+        NodeConstIterator itr = adjset["groups"].children();
+        while(itr.has_next())
+        {
+            const Node &chld = itr.next();
+            const std::string chld_name = itr.name();
+            Node &chld_info = info["groups"][chld_name];
+
+            res &= verify_integer_field(protocol, chld, chld_info, "neighbors");
+            res &= verify_integer_field(protocol, chld, chld_info, "values");
+        }
+    }
 
     log_verify_result(info, res);
 
@@ -1516,15 +1532,15 @@ mesh::domain_adjacency::verify(const Node &adjacency,
 }
 
 //-----------------------------------------------------------------------------
-// blueprint::mesh::domain_adjacency::index protocol interface
+// blueprint::mesh::adjset::index protocol interface
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 bool
-mesh::domain_adjacency::index::verify(const Node &adj_idx,
+mesh::adjset::index::verify(const Node &adj_idx,
                                       Node &info)
 {
-    const std::string protocol = "mesh::domain_adjacency::index";
+    const std::string protocol = "mesh::adjset::index";
     bool res = true;
     info.reset();
 
@@ -1646,24 +1662,24 @@ mesh::index::verify(const Node &n,
         }
     }
 
-    // optional: "domain_adjacencies", each child must conform to
-    // "mesh::index::domain_adjacencies"
-    if(n.has_path("domain_adjacencies"))
+    // optional: "adjsets", each child must conform to
+    // "mesh::index::adjsets"
+    if(n.has_path("adjsets"))
     {
-        if(!verify_object_field(protocol, n, info, "domain_adjacencies"))
+        if(!verify_object_field(protocol, n, info, "adjsets"))
         {
             res = false;
         }
         else
         {
-            NodeConstIterator itr = n["domain_adjacencies"].children();
+            NodeConstIterator itr = n["adjsets"].children();
             while(itr.has_next())
             {
                 const Node &chld = itr.next();
                 const std::string chld_name = itr.name();
-                Node &chld_info = info["domain_adjacencies"][chld_name];
+                Node &chld_info = info["adjsets"][chld_name];
 
-                res &= domain_adjacency::index::verify(chld, chld_info);
+                res &= adjset::index::verify(chld, chld_info);
                 res &= verify_reference_field(protocol, n, info,
                     chld, chld_info, "topology", "topologies");
             }
