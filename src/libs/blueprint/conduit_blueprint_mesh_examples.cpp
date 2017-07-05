@@ -522,7 +522,7 @@ void braid_init_example_adjset(Node &mesh)
         const conduit::Node& dom_coords = dom_node["coordsets/coords/values"];
         const index_t dom_id = dom_node["state/domain_id"].to_uint64();
 
-        conduit::float64_array dom_dim_coords[dim_count];
+        conduit::float64_array dom_dim_coords[3];
         for(index_t d = 0; d < dim_count; d++)
         {
             dom_dim_coords[d] = dom_coords[dim_names[d]].as_float64_array();
@@ -530,8 +530,11 @@ void braid_init_example_adjset(Node &mesh)
 
         for(index_t i = 0; i < dom_dim_coords[0].number_of_elements(); i++)
         {
-            point coord(dom_dim_coords[0][i], dom_dim_coords[1][i],
-                        mesh_3d ? dom_dim_coords[2][i] : 0.0);
+            point coord(dom_dim_coords[0][i], dom_dim_coords[1][i]);
+            if(mesh_3d)
+            {
+                coord.z = dom_dim_coords[2][i];
+            }
             mesh_point_doms_map[coord][dom_id] = i;
         }
     }
