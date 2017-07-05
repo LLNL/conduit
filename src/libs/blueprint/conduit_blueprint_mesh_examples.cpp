@@ -96,24 +96,29 @@ const float64 PI_VALUE = 3.14159265359;
 
 
 //---------------------------------------------------------------------------//
-bool braid_float_equal(const float64& v1, const float64& v2)
+struct point
 {
-    return fabs( v1 - v2 ) < 1e-6;
-}
-
-
-//---------------------------------------------------------------------------//
-bool braid_point_less(const float64 p1[3], const float64 p2[3])
-{
-    for(index_t i = 0; i < 3; ++i)
+    point(float64 px, float64 py, float64 pz = 0.0) : x(px), y(py), z(pz)
     {
-        if(!braid_float_equal(p1[i], p2[i]))
+    };
+
+    bool operator<(const point& other) const
+    {
+        float64 mvals[3] = {this->x, this->y, this->z};
+        float64 ovals[3] = {other.x, other.y, other.z};
+
+        for(index_t i = 0; i < 3; i++)
         {
-            return p1[i] < p2[i];
+            if(fabs(mvals[i] - ovals[i]) >= 1e-6)
+            {
+                return mvals[i] < ovals[i];
+            }
         }
-    }
-    return false;
-}
+        return false;
+    };
+
+    float64 x, y, z;
+};
 
 
 //---------------------------------------------------------------------------//
@@ -495,20 +500,19 @@ braid_init_explicit_coordset(index_t npts_x,
 
 
 //---------------------------------------------------------------------------//
-void braid_init_example_adjset(const Node &mesh,
-                               Node &res)
+void braid_init_example_adjset(Node &mesh)
 {
-    const std::string dim_names[3] = { "x", "y", "z" };
+    typedef std::map< point, std::map<index_t, index_t> > point_doms_map;
+    typedef std::map<std::set<index_t>, std::vector<std::vector<index_t> > > group_idx_map;
 
-    typedef std::map<float64[3], std::map<index_t, index_t>,
-        bool(*)(const float64[3], const float64[3])> point_doms_map;
-    typedef std::map<std::set<index_t>, std::vector<std::vector<index_t> > >
-        group_idx_map;
+    const std::string dim_names[3] = {"x", "y", "z"};
+    const bool mesh_3d = mesh.child(0)["coordsets/coords/values"].has_child("z");
+    const index_t dim_count = mesh_3d ? 3 : 2;
 
     // From mesh data, create a map from domain combination tuple to point list.
     // These domain combination tuples represent groups and the point lists contain
     // the points that lie on the shared boundary between these domains.
-    point_doms_map mesh_point_doms_map(braid_point_less);
+    point_doms_map mesh_point_doms_map;
 
     conduit::NodeConstIterator doms_it = mesh.children();
     while(doms_it.has_next())
@@ -518,19 +522,16 @@ void braid_init_example_adjset(const Node &mesh,
         const conduit::Node& dom_coords = dom_node["coordsets/coords/values"];
         const index_t dom_id = dom_node["state/domain_id"].to_uint64();
 
-        conduit::float64_array dom_dim_coords[3];
-        for(index_t d = 0; d < 3; d++)
+        conduit::float64_array dom_dim_coords[dim_count];
+        for(index_t d = 0; d < dim_count; d++)
         {
             dom_dim_coords[d] = dom_coords[dim_names[d]].as_float64_array();
         }
 
         for(index_t i = 0; i < dom_dim_coords[0].number_of_elements(); i++)
         {
-            float64 coord[3];
-            for(index_t d = 0; d < 3; d++)
-            {
-                coord[d] = dom_dim_coords[d][i];
-            }
+            point coord(dom_dim_coords[0][i], dom_dim_coords[1][i],
+                        mesh_3d ? dom_dim_coords[2][i] : 0.0);
             mesh_point_doms_map[coord][dom_id] = i;
         }
     }
@@ -592,13 +593,13 @@ void braid_init_example_adjset(const Node &mesh,
           const index_t& dom_id = *dg_itr;
           const std::vector<index_t>& dom_idxs = group_indices[d];
 
-          snprintf(dom_name_cstr, name_cstr_size, "group%ld", dom_id);
+          snprintf(dom_name_cstr, name_cstr_size, "domain%ld", dom_id);
           const std::string dom_name(dom_name_cstr);
 
           std::vector<index_t> dom_neighbors(group_doms.begin(), group_doms.end());
           dom_neighbors.erase(dom_neighbors.begin()+d);
 
-          conduit::Node& dom_node = res[dom_name]["adjsets/mesh_adj"];
+          conduit::Node& dom_node = mesh[dom_name]["adjsets"]["mesh_adj"];
           dom_node["association"].set("vertex");
           dom_node["topology"].set("mesh");
           dom_node["groups"][group_name]["neighbors"].set(
@@ -1807,13 +1808,35 @@ braid(const std::string &mesh_type,
     // the existing examples.
     else if(mesh_type == "adjsets")
     {
-        // TODO(JRC): Change the 'res' domain ids.
-        braid_quads(npts_x,npts_y,res["domain0"]);
-        braid_quads(npts_x,npts_y,res["domain1"]);
-        braid_quads(npts_x,npts_y,res["domain2"]);
-        braid_quads(npts_x,npts_y,res["domain3"]);
+        const index_t domain_name_size = 30;
+        char domain_name[domain_name_size];
 
-        braid_init_example_adjset(res,res["adjsets"]);
+        for(index_t j = 0; j < 2; j++)
+        {
+            for(index_t i = 0; i < 2; i++)
+            {
+                const index_t domain_id = j * 2 + i;
+                snprintf(domain_name, domain_name_size, "domain%ld", domain_id);
+
+                Node &domain_node = res[domain_name];
+                braid_quads(npts_x,npts_y,domain_node);
+                domain_node["state/domain_id"].set(domain_id);
+
+                Node &domain_coords = domain_node["coordsets/coords/values"];
+                float64_array domain_coords_x = domain_coords["x"].as_float64_array();
+                for(index_t x = 0; x < domain_coords_x.number_of_elements(); x++)
+                {
+                    domain_coords_x[x] += i * 20.0;
+                }
+                float64_array domain_coords_y = domain_coords["y"].as_float64_array();
+                for(index_t y = 0; y < domain_coords_y.number_of_elements(); y++)
+                {
+                    domain_coords_y[y] += j * 20.0;
+                }
+            }
+        }
+
+        braid_init_example_adjset(res);
     }
     else
     {

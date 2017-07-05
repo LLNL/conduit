@@ -823,8 +823,8 @@ TEST(conduit_blueprint_mesh_verify, adjset_general)
         EXPECT_FALSE(verify_adjset(mesh,info));
 
         blueprint::mesh::examples::braid("adjsets",10,10,1,mesh);
-        Node& n = mesh["adjsets"].child(0);
-        EXPECT_TRUE(verify_adjset(mesh,info));
+        Node& n = mesh.child(0)["adjsets"].child(0);
+        EXPECT_TRUE(verify_adjset(n,info));
 
         { // Topology Field Tests //
             n.remove("topology");
@@ -867,6 +867,7 @@ TEST(conduit_blueprint_mesh_verify, adjset_general)
             n["groups"]["g2"]["values"].set(DataType::int32(5));
             EXPECT_TRUE(verify_adjset(n,info));
 
+            n["groups"].reset();
             n["groups"].set(groups);
             EXPECT_TRUE(verify_adjset(n,info));
         }
@@ -1166,7 +1167,7 @@ TEST(conduit_blueprint_mesh_verify, index_adjset)
         EXPECT_FALSE(verify_adjset_index(mesh,info));
 
         blueprint::mesh::examples::braid("adjsets",10,10,1,mesh);
-        blueprint::mesh::generate_index(mesh,"quads",1,index);
+        blueprint::mesh::generate_index(mesh["domain0"],"quads",1,index);
         Node& aindex = index["adjsets"].child(0);
         EXPECT_TRUE(verify_adjset_index(aindex,info));
 
@@ -1204,7 +1205,7 @@ TEST(conduit_blueprint_mesh_verify, index_adjset)
 
         { // Association Field Tests //
             Node assoc = aindex["association"];
-            aindex.remove("topology");
+            aindex.remove("association");
 
             aindex["association"].set("zone");
             EXPECT_FALSE(verify_adjset_index(aindex,info));
