@@ -1294,6 +1294,42 @@ TEST(conduit_blueprint_mesh_verify, index_general)
             EXPECT_TRUE(verify_index(index,info));
         }
 
+        { // Matsets Field Tests //
+            info.reset();
+            Node matsets = index["matsets"];
+            index.remove("matsets");
+            EXPECT_TRUE(verify_index(index,info));
+
+            index["matsets"].set("matset");
+            EXPECT_FALSE(verify_index(index,info));
+
+            index["matsets"].reset();
+            index["matsets"]["matset1"].set("matset1");
+            index["matsets"]["matset1"].set("matset2");
+            EXPECT_FALSE(verify_index(index,info));
+
+            index["matsets"].reset();
+            index["matsets"]["matset"]["topology"].set("mesh");
+            index["matsets"]["matset"]["materials"].set("invalid");
+            index["matsets"]["matset"]["path"].set("quads/matsets/matset");
+            EXPECT_FALSE(verify_index(index,info));
+            index["matsets"]["matset"]["materials"]["mat1"];
+            EXPECT_TRUE(verify_index(index,info));
+            index["matsets"]["matset"]["materials"]["mat2"];
+            EXPECT_TRUE(verify_index(index,info));
+
+            index["matsets"]["matset"]["topology"].set("nonexistent");
+            EXPECT_FALSE(verify_index(index,info));
+            index["matsets"]["matset"]["topology"].set("mesh");
+            EXPECT_TRUE(verify_index(index,info));
+
+            // TODO(JRC): Change this code so that the "matsets" section is
+            // re-added once it's included in the test Blueprint mesh.
+            index["matsets"].reset();
+            index.remove("matsets");
+            EXPECT_TRUE(verify_index(index,info));
+        }
+
         { // Fields Field Tests //
             info.reset();
             Node fields = index["fields"];
@@ -1329,6 +1365,45 @@ TEST(conduit_blueprint_mesh_verify, index_general)
 
             index["fields"].reset();
             index["fields"].set(fields);
+            EXPECT_TRUE(verify_index(index,info));
+        }
+
+        { // Adjsets Field Tests //
+            info.reset();
+            Node adjsets = index["adjsets"];
+            index.remove("adjsets");
+            EXPECT_TRUE(verify_index(index,info));
+
+            index["adjsets"].set("adjset");
+            EXPECT_FALSE(verify_index(index,info));
+
+            index["adjsets"].reset();
+            index["adjsets"]["adjset1"].set("adjset1");
+            index["adjsets"]["adjset1"].set("adjset2");
+            EXPECT_FALSE(verify_index(index,info));
+
+            index["adjsets"].reset();
+            index["adjsets"]["adjset"]["topology"].set("mesh");
+            index["adjsets"]["adjset"]["association"].set("vertex");
+            index["adjsets"]["adjset"]["path"].set(0);
+            EXPECT_FALSE(verify_index(index,info));
+            index["adjsets"]["adjset"]["path"].set("quads/adjsets/adjset");
+            EXPECT_TRUE(verify_index(index,info));
+
+            index["adjsets"]["adjset"]["topology"].set("nonexistent");
+            EXPECT_FALSE(verify_index(index,info));
+            index["adjsets"]["adjset"]["topology"].set("mesh");
+            EXPECT_TRUE(verify_index(index,info));
+
+            index["adjsets"]["adjset"]["association"].set("nonexistent");
+            EXPECT_FALSE(verify_index(index,info));
+            index["adjsets"]["adjset"]["association"].set("element");
+            EXPECT_TRUE(verify_index(index,info));
+
+            // TODO(JRC): Change this code so that the "adjsets" section is
+            // re-added once it's included in the test Blueprint mesh.
+            index["adjsets"].reset();
+            index.remove("adjsets");
             EXPECT_TRUE(verify_index(index,info));
         }
     }
@@ -1465,6 +1540,40 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
             EXPECT_TRUE(verify_mesh(mesh,info));
         }
 
+        { // Matsets Field Tests //
+            Node matsets = domain["matsets"];
+            domain.remove("matsets");
+            EXPECT_TRUE(verify_mesh(mesh,info));
+
+            domain["matsets"].set("path");
+            EXPECT_FALSE(verify_mesh(mesh,info));
+
+            domain["matsets"].reset();
+            domain["matsets"]["mesh"]["topology"].set("mesh");
+            domain["matsets"]["mesh"]["volume_fractions"];
+            EXPECT_FALSE(verify_mesh(mesh,info));
+
+            Node &vfs = domain["matsets"]["mesh"]["volume_fractions"];
+            vfs["mat1"].set(DataType::float32(10));
+            EXPECT_TRUE(verify_mesh(mesh,info));
+            vfs["mat2"].set(DataType::float32(10));
+            EXPECT_TRUE(verify_mesh(mesh,info));
+
+            domain["matsets"]["mesh"]["topology"].set("invalid");
+            EXPECT_FALSE(verify_mesh(mesh,info));
+            domain["matsets"]["mesh"]["topology"].set("mesh");
+            EXPECT_TRUE(verify_mesh(mesh,info));
+
+            domain["matsets"]["boundary"]["topology"].set("mesh");
+            EXPECT_FALSE(verify_mesh(mesh,info));
+
+            // TODO(JRC): Change this code so that the "matsets" section is
+            // re-added once it's included in the test Blueprint mesh.
+            domain["matsets"].reset();
+            domain.remove("matsets");
+            EXPECT_TRUE(verify_mesh(mesh,info));
+        }
+
         { // Fields Field Tests //
             Node fields = domain["fields"];
             domain.remove("fields");
@@ -1519,6 +1628,47 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
 
             domain["topologies"].reset();
             domain["topologies"].set(topologies);
+            EXPECT_TRUE(verify_mesh(mesh,info));
+        }
+
+        { // Adjsets Field Tests //
+            Node adjsets = domain["adjsets"];
+            domain.remove("adjsets");
+            EXPECT_TRUE(verify_mesh(mesh,info));
+
+            domain["adjsets"].set("path");
+            EXPECT_FALSE(verify_mesh(mesh,info));
+
+            domain["adjsets"].reset();
+            domain["adjsets"]["mesh"]["association"].set("vertex");
+            domain["adjsets"]["mesh"]["topology"].set("mesh");
+            domain["adjsets"]["mesh"]["groups"];
+            EXPECT_FALSE(verify_mesh(mesh,info));
+
+            Node &groups = domain["adjsets"]["mesh"]["groups"];
+            groups["g1"]["neighbors"].set(DataType::int32(10));
+            EXPECT_FALSE(verify_mesh(mesh,info));
+            groups["g1"]["values"].set(DataType::float32(10));
+            EXPECT_FALSE(verify_mesh(mesh,info));
+            groups["g1"]["values"].set(DataType::int32(10));
+            EXPECT_TRUE(verify_mesh(mesh,info));
+            groups["g2"].set(groups["g1"]);
+            EXPECT_TRUE(verify_mesh(mesh,info));
+
+            domain["adjsets"]["mesh"]["topology"].set("invalid");
+            EXPECT_FALSE(verify_mesh(mesh,info));
+            domain["adjsets"]["mesh"]["topology"].set("mesh");
+            EXPECT_TRUE(verify_mesh(mesh,info));
+
+            domain["adjsets"]["mesh"]["association"].set("invalid");
+            EXPECT_FALSE(verify_mesh(mesh,info));
+            domain["adjsets"]["mesh"]["association"].set("element");
+            EXPECT_TRUE(verify_mesh(mesh,info));
+
+            // TODO(JRC): Change this code so that the "adjsets" section is
+            // re-added once it's included in the test Blueprint mesh.
+            domain["adjsets"].reset();
+            domain.remove("adjsets");
             EXPECT_TRUE(verify_mesh(mesh,info));
         }
     }
