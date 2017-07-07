@@ -904,6 +904,23 @@ TEST(conduit_node, node_more_set_cases)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, check_invalid_index_error)
+{ 
+    Node n;
+    
+    EXPECT_THROW(n.child(0),conduit::Error);
+    EXPECT_THROW(n[0],conduit::Error);
+    EXPECT_THROW(n.child(1),conduit::Error);
+    EXPECT_THROW(n[1],conduit::Error);
+    
+    n.append();
+    
+    Node &n_0 = n[0];
+    
+    
+}
+
 
 
 
