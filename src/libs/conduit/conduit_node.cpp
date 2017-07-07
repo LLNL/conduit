@@ -10899,6 +10899,11 @@ Node::fetch(const std::string &path) const
 Node&
 Node::child(index_t idx)
 {
+    if( ((size_t) idx) >= m_children.size())
+    {
+        CONDUIT_ERROR("Invalid child index: " << idx <<
+                      " (number of children: " << m_children.size() << ")");
+    }
     return *m_children[(size_t)idx];
 }
 
@@ -10907,6 +10912,11 @@ Node::child(index_t idx)
 const Node&
 Node::child(index_t idx) const
 {
+    if( ((size_t) idx) >= m_children.size())
+    {
+        CONDUIT_ERROR("Invalid child index: " << idx <<
+                      " (number of children: " << m_children.size() << ")");
+    }
     return *m_children[(size_t)idx];
 }
 
