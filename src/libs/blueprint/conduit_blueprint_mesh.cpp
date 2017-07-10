@@ -96,6 +96,22 @@ namespace conduit { namespace blueprint { namespace mesh {
     static const std::string coordinate_axis_list[7] = {"x", "y", "z", "r", "z", "theta", "phi"};
     static const std::vector<std::string> coordinate_axes(coordinate_axis_list,
         coordinate_axis_list + sizeof(coordinate_axis_list) / sizeof(coordinate_axis_list[0]));
+
+    static const std::string cartesian_axis_list[3] = {"x", "y", "z"};
+    static const std::vector<std::string> cartesian_axes(cartesian_axis_list,
+        cartesian_axis_list + sizeof(cartesian_axis_list) / sizeof(cartesian_axis_list[0]));
+
+    static const std::string cylindrical_axis_list[2] = {"r", "z"};
+    static const std::vector<std::string> cylindrical_axes(cylindrical_axis_list,
+        cylindrical_axis_list + sizeof(cylindrical_axis_list) / sizeof(cylindrical_axis_list[0]));
+
+    static const std::string spherical_axis_list[7] = {"r", "theta", "phi"};
+    static const std::vector<std::string> spherical_axes(spherical_axis_list,
+        spherical_axis_list + sizeof(spherical_axis_list) / sizeof(spherical_axis_list[0]));
+
+    static const std::string logical_axis_list[3] = {"i", "j", "k"};
+    static const std::vector<std::string> logical_axes(logical_axis_list,
+        logical_axis_list + sizeof(logical_axis_list) / sizeof(logical_axis_list[0]));
 } } }
 
 //-----------------------------------------------------------------------------
@@ -368,6 +384,44 @@ bool verify_reference_field(const std::string &protocol,
     log::validation(info, res);
 
     return res;
+}
+
+//-----------------------------------------------------------------------------
+std::string identify_coord_sys_type(const Node &coords)
+{
+    Node axes;
+    NodeConstIterator itr = coords.children();
+    while(itr.has_next())
+    {
+        itr.next();
+        const std::string axis_name = itr.name();
+
+        if(axis_name[0] == 'd')
+        {
+            axes[axis_name.substr(1, axis_name.length())];
+        }
+        else
+        {
+            axes[axis_name];
+        }
+    }
+
+    if(axes.has_child("theta") || axes.has_child("phi"))
+    {
+        return std::string("spherical");
+    }
+    else if(axes.has_child("r")) // rz, or r w/o theta, phi
+    {
+        return std::string("cylindrical");
+    }
+    else if(axes.has_child("x") || axes.has_child("y") || axes.has_child("z"))
+    {
+        return std::string("cartesian");
+    }
+    else
+    {
+        return std::string("unknown");
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -696,30 +750,154 @@ bool mesh::to_multi_domain(const conduit::Node &n,
 }
 
 
-//-----------------------------------------------------------------------------
-std::string 
-identify_coord_sys_type(const Node &coords)
+//-------------------------------------------------------------------------
+bool mesh::to_rectilinear(const conduit::Node &n,
+                          const std::string &src_topo_name,
+                          const std::string &dst_topo_name,
+                          conduit::Node &dest)
 {
-    if(coords.has_child("theta") || coords.has_child("phi"))
+    bool res = true;
+    dest.reset();
+
+    Node info;
+    if(!mesh::verify_single_domain(n, info))
     {
-        return std::string("spherical");
-    }
-    else if(coords.has_child("r")) // rz, or r w/o theta, phi
-    {
-        return std::string("cylindrical");
-    }
-    else if(coords.has_child("x") ||
-            coords.has_child("y") ||
-            coords.has_child("z"))
-    {
-        return std::string("cartesian");
+        res = false; // input mesh must be a single-domain mesh
     }
     else
     {
-        return std::string("unknown");
+        const Node &src_topo = n["topologies"][src_topo_name];
+        const std::string src_cset_name = src_topo["coordset"].as_string();
+        const Node &src_coords = n["coordsets"][src_cset_name];
+
+        bool is_uniform = mesh::topology::uniform::verify(src_topo, info);
+        bool is_rectilinear = mesh::topology::rectilinear::verify(src_topo, info);
+        if(is_uniform || is_rectilinear)
+        {
+            const std::string dst_cset_name = dst_topo_name + "_" + src_cset_name;
+            if(dest["topologies"].has_child(dst_topo_name) ||
+               dest["coordsets"].has_child(dst_cset_name))
+            {
+                // TODO(JRC): Add some logic here to inform the user that they're
+                // potentially overwriting an existing topology/coordinate set.
+            }
+
+            Node &dst_topo = dest["topologies"][dst_topo_name];
+            Node &dst_coords = dest["coordsets"][dst_cset_name];
+
+            dst_topo.set(src_topo);
+            dst_topo["coordset"].set(dst_cset_name);
+            dst_topo["type"].set("rectilinear");
+
+            if(is_rectilinear)
+            {
+                dst_coords.set_external(src_coords);
+            }
+            else
+            {
+                dst_coords["type"].set("rectilinear");
+
+                std::string csys_type = "cartesian"; 
+                if(src_coords.has_child("spacing"))
+                {
+                    csys_type = identify_coord_sys_type(src_coords["spacing"]);
+                }
+                else if(src_coords.has_child("origin"))
+                {
+                    csys_type = identify_coord_sys_type(src_coords["origin"]);
+                }
+
+                std::vector<std::string> csys_axes;
+                if(csys_type == "cartesian")
+                {
+                    csys_axes = cartesian_axes;
+                }
+                else if(csys_type == "cylindrical")
+                {
+                    csys_axes = cylindrical_axes;
+                }
+                else if(csys_type == "spherical")
+                {
+                    csys_axes = spherical_axes;
+                }
+
+                for(index_t i = 0; i < src_coords["dims"].number_of_children(); i++)
+                {
+                    const std::string& csys_axis = csys_axes[i];
+                    const std::string& logical_axis = logical_axes[i];
+
+                    float64 dim_origin = src_coords.has_child("origin") ?
+                        src_coords["origin"][csys_axis].value() : 0.0;
+                    float64 dim_scaling = src_coords.has_child("spacing") ?
+                        src_coords["spacing"]["d"+csys_axis].value() : 1.0;
+                    index_t dim_len = src_coords["dims"][logical_axis].value();
+
+                    Node &dst_cvals_node = dst_coords["values"][csys_axis];
+                    dst_cvals_node.set(DataType::float64(dim_len));
+
+                    float64_array dst_cvals = dst_cvals_node.as_float64_array();
+                    for(index_t d = 0; d < dim_len; d++)
+                    {
+                        dst_cvals[d] = dim_origin + d * dim_scaling;
+                    }
+                }
+            }
+        }
+        else
+        {
+            res = false; // can only do uniform/rectilinear -> rectilinear
+        }
     }
+
+    return res;
 }
 
+/*
+//-------------------------------------------------------------------------
+bool mesh::to_structured(const conduit::Node &n,
+                         const std::string &src_topo_name,
+                         const std::string &dst_topo_name,
+                         conduit::Node &dest)
+{
+    bool res = true;
+    dest.reset();
+
+    Node info;
+    if(!mesh::verify_single_domain(n, info))
+    {
+        res = false; // input mesh must be a single-domain mesh
+    }
+    else
+    {
+        // TODO(JRC)
+    }
+
+    return res;
+}
+
+
+//-------------------------------------------------------------------------
+bool mesh::to_unstructured(const conduit::Node &n,
+                           const std::string &src_topo_name,
+                           const std::string &dst_topo_name,
+                           conduit::Node &dest)
+{
+    bool res = true;
+    dest.reset();
+
+    Node info;
+    if(!mesh::verify_single_domain(n, info))
+    {
+        res = false; // input mesh must be a single-domain mesh
+    }
+    else
+    {
+        // TODO(JRC)
+    }
+
+    return res;
+}
+*/
 
 //-----------------------------------------------------------------------------
 void

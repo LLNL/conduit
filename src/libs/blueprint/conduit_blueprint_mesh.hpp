@@ -114,6 +114,24 @@ bool CONDUIT_BLUEPRINT_API to_multi_domain(const conduit::Node &n,
                                            conduit::Node &dest);
 
 //-------------------------------------------------------------------------
+bool CONDUIT_BLUEPRINT_API to_rectilinear(const conduit::Node &n,
+                                          const std::string &src_topo_name,
+                                          const std::string &dst_topo_name,
+                                          conduit::Node &dest);
+/*
+//-------------------------------------------------------------------------
+bool CONDUIT_BLUEPRINT_API to_structured(const conduit::Node &n,
+                                         const std::string &src_topo_name,
+                                         const std::string &dst_topo_name,
+                                         conduit::Node &dest);
+
+//-------------------------------------------------------------------------
+bool CONDUIT_BLUEPRINT_API to_unstructured(const conduit::Node &n,
+                                           const std::string &src_topo_name,
+                                           const std::string &dst_topo_name,
+                                           conduit::Node &dest);
+*/
+//-------------------------------------------------------------------------
 void CONDUIT_BLUEPRINT_API generate_index(const conduit::Node &mesh,
                                           const std::string &ref_path,
                                           index_t num_domains,
