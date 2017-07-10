@@ -1835,6 +1835,35 @@ create_hdf5_file_create_plist()
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
+
+//---------------------------------------------------------------------------//
+hid_t
+hdf5_open_file_for_write(const std::string &file_path)
+{
+    hid_t h5_fc_plist = create_hdf5_file_create_plist();
+    hid_t h5_fa_plist = create_hdf5_file_access_plist();
+
+    // open the hdf5 file for writing
+    hid_t h5_file_id = H5Fcreate(file_path.c_str(),
+                                 H5F_ACC_TRUNC,
+                                 h5_fc_plist,
+                                 h5_fa_plist);
+
+    CONDUIT_CHECK_HDF5_ERROR(h5_file_id,
+                             "Error opening HDF5 file for writing: " 
+                             << file_path);
+
+    CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_fc_plist),
+                             "Failed to close HDF5 H5P_GROUP_CREATE "
+                             << "property list: " << h5_fc_plist);
+
+    CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_fa_plist),
+                             "Failed to close HDF5 H5P_FILE_ACCESS "
+                             << "property list: " << h5_fa_plist);
+    
+    return h5_file_id;
+}
+
 //---------------------------------------------------------------------------//
 void 
 hdf5_write(const  Node &node,
@@ -1867,27 +1896,8 @@ hdf5_write(const Node &node,
            const std::string &file_path,
            const std::string &hdf5_path)
 {
-
-    hid_t h5_fc_plist = create_hdf5_file_create_plist();
-    hid_t h5_fa_plist = create_hdf5_file_access_plist();
-
     // open the hdf5 file for writing
-    hid_t h5_file_id = H5Fcreate(file_path.c_str(),
-                                 H5F_ACC_TRUNC,
-                                 h5_fc_plist,
-                                 h5_fa_plist);
-
-    CONDUIT_CHECK_HDF5_ERROR(h5_file_id,
-                             "Error opening HDF5 file for writing: " 
-                             << file_path);
-
-    CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_fc_plist),
-                             "Failed to close HDF5 H5P_GROUP_CREATE "
-                             << "property list: " << h5_fc_plist);
-
-    CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_fa_plist),
-                             "Failed to close HDF5 H5P_FILE_ACCESS "
-                             << "property list: " << h5_fa_plist);
+    hid_t h5_file_id = hdf5_open_file_for_write(file_path);
 
     hdf5_write(node,
                h5_file_id,
@@ -2015,6 +2025,28 @@ hdf5_write(const Node &node,
 
 
 //---------------------------------------------------------------------------//
+hid_t
+hdf5_open_file_for_read(const std::string &file_path)
+{
+    hid_t h5_fa_plist = create_hdf5_file_access_plist();
+    
+    // open the hdf5 file for reading
+    hid_t h5_file_id = H5Fopen(file_path.c_str(),
+                               H5F_ACC_RDONLY,
+                               h5_fa_plist);
+
+    CONDUIT_CHECK_HDF5_ERROR(h5_file_id,
+                             "Error opening HDF5 file for reading: " 
+                              << file_path);
+
+    CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_fa_plist),
+                             "Failed to close HDF5 H5P_FILE_ACCESS "
+                             << "property list: " << h5_fa_plist);
+    
+    return h5_file_id;
+}
+
+//---------------------------------------------------------------------------//
 void
 hdf5_read(const std::string &path,
           Node &node)
@@ -2045,22 +2077,8 @@ hdf5_read(const std::string &file_path,
           const std::string &hdf5_path,
           Node &node)
 {
- 
-    hid_t h5_fa_plist = create_hdf5_file_access_plist();
-    
     // open the hdf5 file for reading
-    hid_t h5_file_id = H5Fopen(file_path.c_str(),
-                               H5F_ACC_RDONLY,
-                               h5_fa_plist);
-
-    CONDUIT_CHECK_HDF5_ERROR(h5_file_id,
-                             "Error opening HDF5 file for reading: " 
-                              << file_path);
-
-    CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_fa_plist),
-                             "Failed to close HDF5 H5P_FILE_ACCESS "
-                             << "property list: " << h5_fa_plist);
-
+    hid_t h5_file_id = hdf5_open_file_for_read(file_path);
 
     hdf5_read(h5_file_id,
               hdf5_path,

@@ -150,6 +150,11 @@ namespace io
 
 
 //-----------------------------------------------------------------------------
+/// Open a hdf5 file for writing, using conduit's selected hdf5 plists.
+//-----------------------------------------------------------------------------
+hid_t hdf5_open_file_for_write(const std::string &file_path);
+
+//-----------------------------------------------------------------------------
 /// Write node data to a given path
 ///
 /// This methods supports a file system and hdf5 path, joined using a ":"
@@ -182,6 +187,12 @@ void CONDUIT_RELAY_API hdf5_write(const Node &node,
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API hdf5_write(const Node &node,
                                   hid_t hdf5_id);
+
+
+//-----------------------------------------------------------------------------
+/// Open a hdf5 file for reading, using conduit's selected hdf5 plists.
+//-----------------------------------------------------------------------------
+hid_t hdf5_open_file_for_write(const std::string &file_path);
 
 //-----------------------------------------------------------------------------
 /// Read hdf5 data from given path into the output node 
