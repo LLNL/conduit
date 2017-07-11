@@ -303,26 +303,29 @@ Fields are used to hold simulation state arrays associated with a mesh topology 
 
 Each field entry can define an **mcarray** of material-independent values and/or an **mcarray** of per-material values.
 These data arrays must be specified alongside a source space, which specifies the space over which the field values are defined (i.e. a topology for material-independent values and a material set for material-dependent values).
-Minimally, each field entry must specify one of these data sets, the source space for the data set, an association type (e.g. per-vertex, per-element), and a volume scaling type (e.g. volume-dependent, volume-independent).
-Thus, to conform to protocol, each entry under the ``fields`` section must be an *Object* that adheres to one of the following descriptions 
+Minimally, each field entry must specify one of these data sets, the source space for the data set, an association type (e.g. per-vertex, per-element, or per-grid-function-entity), and a volume scaling type (e.g. volume-dependent, volume-independent).
+Thus, to conform to protocol, each entry under the ``fields`` section must be an *Object* that adheres to one of the following descriptions:
 
  * Material-Independent Fields:
 
-   * fields/field/association: "vertex" | "element" | (mfem-style finite element collection name)
+   * fields/field/association: "vertex" | "element" 
+   * fields/field/grid_function: (mfem-style finite element collection name) (replaces "association")
    * fields/field/volume_dependent: "true" | "false"
    * fields/field/topology: "topo"
    * fields/field/values: (mcarray)
 
  * Material-Dependent Fields:
 
-   * fields/field/association: "vertex" | "element" | (mfem-style finite element collection name)
+   * fields/field/association: "vertex" | "element"
+   * fields/field/grid_function: (mfem-style finite element collection name) (replaces "association")
    * fields/field/volume_dependent: "true" | "false"
    * fields/field/matset: "matset"
    * fields/field/matset_values: (mcarray)
 
  * Mixed Fields:
 
-   * fields/field/association: "vertex" | "element" | (mfem-style finite element collection name)
+   * fields/field/association: "vertex" | "element"
+   * fields/field/grid_function: (mfem-style finite element collection name) (replaces "association")
    * fields/field/volume_dependent: "true" | "false"
    * fields/field/topology: "topo"
    * fields/field/values: (mcarray)
@@ -336,8 +339,9 @@ Adjacency Sets
 
 Adjacency Sets are used to outline the shared geometry between subsets of domains in multi-domain meshes.
 
-Each entry in the Adjacency Sets section represents an adjacency group, which is meant to encapsulate a set of adjacency information shared between domains.
-Each individual adjacency group contains a source topology, an element association, and list of shared element groups (which themselves contain a subset of adjacent neighbor domains IDs and a list of shared element IDs).
+Each entry in the Adjacency Sets section is meant to encapsulate a set of adjacency information shared between domains.
+Each individual adjacency set contains a source topology, an element association, and a list of adjacency groups.
+An adjacency set's contained groups describe adjacency information shared between subsets of domains, which is represented by a subset of adjacent neighbor domains IDs and a list of shared element IDs.
 The fully-defined Blueprint schema for the ``adjsets`` entries looks like the following:
 
    * adjsets/adjset/association: "vertex" | "element"
