@@ -902,6 +902,8 @@ mesh::association::verify(const Node &assoc,
     bool res = true;
     info.reset();
 
+    res &= verify_enum_field(protocol, assoc, info, "", mesh::associations);
+
     log_verify_result(info, res);
 
     return res;
@@ -1048,6 +1050,7 @@ mesh::coordset::_explicit::verify(const Node &coordset,
     return res;
 }
 
+
 //-----------------------------------------------------------------------------
 bool
 mesh::coordset::verify(const Node &coordset,
@@ -1057,7 +1060,8 @@ mesh::coordset::verify(const Node &coordset,
     bool res = true;
     info.reset();
 
-    res &= verify_enum_field(protocol, coordset, info, "type", mesh::coord_types);
+    res &= verify_field_exists(protocol, coordset, info, "type") &&
+           mesh::coordset::type::verify(coordset["type"], info["type"]);
 
     if(res)
     {
@@ -1081,6 +1085,28 @@ mesh::coordset::verify(const Node &coordset,
 
     return res;
 }
+
+
+//-----------------------------------------------------------------------------
+// blueprint::mesh::coordset::type protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::coordset::type::verify(const Node &type,
+                             Node &info)
+{
+    const std::string protocol = "mesh::coordset::type";
+    bool res = true;
+    info.reset();
+
+    res &= verify_enum_field(protocol, type, info, "", mesh::coord_types);
+
+    log_verify_result(info,res);
+
+    return res;
+}
+
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::coordset::coord_system protocol interface
@@ -1161,7 +1187,8 @@ mesh::coordset::index::verify(const Node &coordset_idx,
     bool res = true;
     info.reset();
 
-    res &= verify_enum_field(protocol, coordset_idx, info, "type", mesh::coord_types);
+    res &= verify_field_exists(protocol, coordset_idx, info, "type") &&
+           mesh::coordset::type::verify(coordset_idx["type"], info["type"]);
     res &= verify_string_field(protocol, coordset_idx, info, "path");
     res &= verify_object_field(protocol, coordset_idx, info, "coord_system") &&
            coordset::coord_system::verify(coordset_idx["coord_system"], info["coord_system"]);
@@ -1187,7 +1214,8 @@ mesh::topology::verify(const Node &topo,
 
     res &= verify_string_field(protocol, topo, info, "coordset");
 
-    if(!verify_enum_field(protocol, topo, info, "type", mesh::topo_types))
+    if(!(verify_field_exists(protocol, topo, info, "type") &&
+         mesh::topology::type::verify(topo["type"], info["type"])))
     {
         res = false;
     }
@@ -1213,7 +1241,7 @@ mesh::topology::verify(const Node &topo,
         }
     }
 
-    if (topo.has_child("grid_function"))
+    if(topo.has_child("grid_function"))
     {
         log_optional(info, protocol, "includes grid_function");
         res &= verify_string_field(protocol, topo, info, "grid_function");
@@ -1304,27 +1332,26 @@ mesh::topology::unstructured::verify(const Node &topo,
     }
     else
     {
-        const Node &topo_elements = topo["elements"];
-        Node &info_elements = info["elements"];
+        const Node &topo_elems = topo["elements"];
+        Node &info_elems = info["elements"];
 
         // single shape case
-        if(topo_elements.has_child("shape"))
+        if(topo_elems.has_child("shape"))
         {
-            res &= verify_enum_field(protocol, topo_elements, info_elements,
-                                     "shape", mesh::topo_shapes);
-            res &= verify_integer_field(protocol, topo_elements, info_elements,
-                                        "connectivity");
+            res &= verify_field_exists(protocol, topo_elems, info_elems, "shape") &&
+                   mesh::topology::shape::verify(topo_elems["shape"], info_elems["shape"]);
+            res &= verify_integer_field(protocol, topo_elems, info_elems, "connectivity");
         }
         // shape stream case
-        else if(topo_elements.has_child("element_types"))
+        else if(topo_elems.has_child("element_types"))
         {
             // TODO
         }
-        else if(topo_elements.number_of_children() != 0)
+        else if(topo_elems.number_of_children() != 0)
         {
-            bool has_names = topo_elements.dtype().is_object();
+            bool has_names = topo_elems.dtype().is_object();
 
-            NodeConstIterator itr = topo_elements.children();
+            NodeConstIterator itr = topo_elems.children();
             while(itr.has_next())
             {
                 const Node &cld  = itr.next();
@@ -1341,10 +1368,9 @@ mesh::topology::unstructured::verify(const Node &topo,
 
                 Node &cld_info = info["elements"][itr.index()];
 
-                res &= verify_enum_field(protocol, cld, cld_info,
-                                         "shape", mesh::topo_shapes);
-                res &= verify_integer_field(protocol, cld, cld_info,
-                                            "connectivity");
+                res &= verify_field_exists(protocol, cld, cld_info, "shape") &&
+                       mesh::topology::shape::verify(cld["shape"], cld_info["shape"]);
+                res &= verify_integer_field(protocol, cld, cld_info, "connectivity");
             }
         }
         else
@@ -1372,7 +1398,8 @@ mesh::topology::index::verify(const Node &topo_idx,
     bool res = true;
     info.reset();
 
-    res &= verify_enum_field(protocol, topo_idx, info, "type", mesh::topo_types);
+    res &= verify_field_exists(protocol, topo_idx, info, "type") &&
+           mesh::topology::type::verify(topo_idx["type"], info["type"]);
     res &= verify_string_field(protocol, topo_idx, info, "coordset");
     res &= verify_string_field(protocol, topo_idx, info, "path");
 
@@ -1381,6 +1408,46 @@ mesh::topology::index::verify(const Node &topo_idx,
         log_optional(info, protocol, "includes grid_function");
         res &= verify_string_field(protocol, topo_idx, info, "grid_function");
     }
+
+    log_verify_result(info,res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+// blueprint::mesh::topology::type protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::topology::type::verify(const Node &type,
+                             Node &info)
+{
+    const std::string protocol = "mesh::topology::type";
+    bool res = true;
+    info.reset();
+
+    res &= verify_enum_field(protocol, type, info, "", mesh::topo_types);
+
+    log_verify_result(info,res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+// blueprint::mesh::topology::shape protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::topology::shape::verify(const Node &shape,
+                              Node &info)
+{
+    const std::string protocol = "mesh::topology::shape";
+    bool res = true;
+    info.reset();
+
+    res &= verify_enum_field(protocol, shape, info, "", mesh::topo_shapes);
 
     log_verify_result(info,res);
 
@@ -1455,12 +1522,11 @@ mesh::field::verify(const Node &field,
     }
     if(has_assoc)
     {
-        res &= verify_enum_field(protocol, field, info, "association",
-                                 mesh::associations);
+        res &= mesh::association::verify(field["association"], info["association"]);
     }
     if(has_basis)
     {
-        res &= verify_string_field(protocol, field, info, "basis");
+        res &= mesh::field::basis::verify(field["basis"], info["basis"]);
     }
 
     bool has_topo = field.has_child("topology");
@@ -1480,6 +1546,26 @@ mesh::field::verify(const Node &field,
         res &= verify_string_field(protocol, field, info, "matset");
         res &= verify_mcarray_field(protocol, field, info, "matset_values", false);
     }
+
+    log_verify_result(info, res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+// blueprint::mesh::field::basis protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::field::basis::verify(const Node &basis,
+                           Node &info)
+{
+    const std::string protocol = "mesh::field::basis";
+    bool res = true;
+    info.reset();
+
+    res &= verify_string_field(protocol, basis, info);
 
     log_verify_result(info, res);
 
@@ -1554,8 +1640,8 @@ mesh::adjset::verify(const Node &adjset,
     info.reset();
 
     res &= verify_string_field(protocol, adjset, info, "topology");
-    res &= verify_enum_field(protocol, adjset, info, "association",
-                             mesh::associations);
+    res &= verify_field_exists(protocol, adjset, info, "association") &&
+           mesh::association::verify(adjset["association"], info["association"]);
 
     if(!verify_object_field(protocol, adjset, info, "groups"))
     {
