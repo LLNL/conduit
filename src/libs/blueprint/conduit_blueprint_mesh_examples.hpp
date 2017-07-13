@@ -82,12 +82,17 @@ namespace mesh
 //-----------------------------------------------------------------------------
 namespace examples
 {
-    
     void CONDUIT_BLUEPRINT_API braid(const std::string &mesh_type,
                                      conduit::index_t nx,
                                      conduit::index_t ny,
                                      conduit::index_t nz,
                                      conduit::Node &res);
+
+    void CONDUIT_BLUEPRINT_API misc(const std::string &mesh_type,
+                                    conduit::index_t nx,
+                                    conduit::index_t ny,
+                                    conduit::index_t nz,
+                                    conduit::Node &res);
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::examples --

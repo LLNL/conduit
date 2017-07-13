@@ -1800,15 +1800,29 @@ braid(const std::string &mesh_type,
     {
         braid_points_explicit(npts_x,npts_y,npts_z,res);
     }
-    // TODO(JRC): Remove this extra option and integrate it into
-    // the existing examples.
-    else if(mesh_type == "matsets")
+    else
+    {
+        CONDUIT_ERROR("unknown mesh_type = " << mesh_type);
+    }
+}
+
+
+
+//---------------------------------------------------------------------------//
+void
+misc(const std::string &mesh_type,
+     index_t npts_x, // number of points in x
+     index_t npts_y, // number of points in y
+     index_t /*npts_z*/, // number of points in z
+     Node &res)
+{
+    // TODO(JRC): Improve these examples so that they use different example
+    // geometry than is used in the "braid" examples.
+    if(mesh_type == "matsets")
     {
         braid_quads(npts_x,npts_y,res);
         braid_init_example_matset(npts_x-1,npts_y-1,0,res["matsets/mesh"]);
     }
-    // TODO(JRC): Remove this extra option and integrate it into
-    // the existing examples.
     else if(mesh_type == "adjsets")
     {
         const index_t domain_name_size = 30;

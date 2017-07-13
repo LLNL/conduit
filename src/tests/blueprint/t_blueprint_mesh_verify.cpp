@@ -693,7 +693,7 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
         Node mesh, info;
         EXPECT_FALSE(verify_matset(mesh,info));
 
-        blueprint::mesh::examples::braid("matsets",10,10,1,mesh);
+        blueprint::mesh::examples::misc("matsets",10,10,1,mesh);
         Node& n = mesh["matsets"]["mesh"];
         EXPECT_TRUE(verify_matset(n,info));
 
@@ -822,7 +822,7 @@ TEST(conduit_blueprint_mesh_verify, adjset_general)
         Node mesh, info;
         EXPECT_FALSE(verify_adjset(mesh,info));
 
-        blueprint::mesh::examples::braid("adjsets",10,10,1,mesh);
+        blueprint::mesh::examples::misc("adjsets",10,10,1,mesh);
         Node& n = mesh.child(0)["adjsets"].child(0);
         EXPECT_TRUE(verify_adjset(n,info));
 
@@ -1026,7 +1026,7 @@ TEST(conduit_blueprint_mesh_verify, index_matset)
         Node mesh, index, info;
         EXPECT_FALSE(verify_matset_index(mesh,info));
 
-        blueprint::mesh::examples::braid("matsets",10,10,1,mesh);
+        blueprint::mesh::examples::misc("matsets",10,10,1,mesh);
         blueprint::mesh::generate_index(mesh,"quads",1,index);
         Node& mindex = index["matsets"]["mesh"];
         EXPECT_TRUE(verify_matset_index(mindex,info));
@@ -1166,7 +1166,7 @@ TEST(conduit_blueprint_mesh_verify, index_adjset)
         Node mesh, index, info;
         EXPECT_FALSE(verify_adjset_index(mesh,info));
 
-        blueprint::mesh::examples::braid("adjsets",10,10,1,mesh);
+        blueprint::mesh::examples::misc("adjsets",10,10,1,mesh);
         blueprint::mesh::generate_index(mesh["domain0"],"quads",1,index);
         Node& aindex = index["adjsets"].child(0);
         EXPECT_TRUE(verify_adjset_index(aindex,info));

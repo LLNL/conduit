@@ -1594,12 +1594,11 @@ mesh::field::index::verify(const Node &field_idx,
     }
     if(has_assoc)
     {
-        res &= verify_enum_field(protocol, field_idx, info, "association",
-                                 mesh::associations);
+        res &= mesh::association::verify(field_idx["association"], info["association"]);
     }
     if(has_basis)
     {
-        res &= verify_string_field(protocol, field_idx, info, "basis");
+        res &= mesh::field::basis::verify(field_idx["basis"], info["basis"]);
     }
 
     bool has_topo = field_idx.has_child("topology");
@@ -1680,8 +1679,8 @@ mesh::adjset::index::verify(const Node &adj_idx,
     info.reset();
 
     res &= verify_string_field(protocol, adj_idx, info, "topology");
-    res &= verify_enum_field(protocol, adj_idx, info, "association", 
-                             mesh::associations);
+    res &= verify_field_exists(protocol, adj_idx, info, "association") &&
+           mesh::association::verify(adj_idx["association"], info["association"]);
     res &= verify_string_field(protocol, adj_idx, info, "path");
 
     log_verify_result(info, res);
