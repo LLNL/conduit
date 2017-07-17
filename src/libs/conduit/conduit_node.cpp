@@ -1165,7 +1165,20 @@ Node::set_string(const std::string &data)
                    sizeof(char),
                    Endianness::DEFAULT_ID);
     init(str_t);
-    memcpy(m_data,data.c_str(),sizeof(char)*str_size_with_term);
+
+    // if already compatible, init won't realloc.
+    // so we need to follow a 'compact_elements_to' style 
+    // of copying the data
+    index_t num_ele   = dtype().number_of_elements();
+    index_t ele_bytes = dtype().element_bytes();
+    const char *data_ptr = data.c_str();
+    for(index_t i=0;i<num_ele;i++)
+    {
+        memcpy(element_ptr(i),
+               data_ptr,
+               (size_t)ele_bytes);
+        data_ptr+=ele_bytes;
+    }
 }
 
 //---------------------------------------------------------------------------//

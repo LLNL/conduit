@@ -227,35 +227,23 @@ send_using_schema(const Node &node, int dest, int tag, MPI_Comm comm)
         node.schema().compact_to(s_data_compact);
     }
     
-    
     std::string snd_schema_json = s_data_compact.to_json();
-    
-    // TODO: Remove
-    CONDUIT_INFO(snd_schema_json);
-    
+        
     Schema s_msg;
     s_msg["schema_len"].set(DataType::int64());
     s_msg["schema"].set(DataType::char8_str(snd_schema_json.size()+1));
     s_msg["data"].set(s_data_compact);
     
+    // create a compact schema to use
     Schema s_msg_compact;
     s_msg.compact_to(s_msg_compact);
     
     Node n_msg(s_msg_compact);
+    // these sets won't realloc since schemas are compatible
     n_msg["schema_len"].set((int64)snd_schema_json.length());
-
-    Node n_schema_data;
-    n_schema_data.set_external_char8_str(const_cast<char*>(snd_schema_json.c_str()));
-    n_msg["schema"].update(n_schema_data);  
-
-    // TODO: why doesn't set work here?
-    //n_msg["schema"].set(snd_schema_json);
+    n_msg["schema"].set(snd_schema_json);
     n_msg["data"].update(node);
 
-    // TODO: Remove 
-    n_msg.schema().print();
-    n_msg.info().print();
-    
     
     int msg_data_size = n_msg.total_bytes_compact();
 
@@ -286,9 +274,6 @@ recv_using_schema(Node &node, int src, int tag, MPI_Comm comm)
     MPI_Get_count(&status, MPI_BYTE, &buffer_size);
 
     Node n_buffer(DataType::uint8(buffer_size));
-    
-    // TODO: Remove 
-    CONDUIT_INFO("buffer size = " << buffer_size);
     
     mpi_error = MPI_Recv(n_buffer.data_ptr(),
                          buffer_size,
