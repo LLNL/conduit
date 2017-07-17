@@ -243,12 +243,13 @@ send_using_schema(const Node &node, int dest, int tag, MPI_Comm comm)
     
     Node n_msg(s_msg_compact);
     n_msg["schema_len"].set((int64)snd_schema_json.length());
-    
+
+    Node n_schema_data;
+    n_schema_data.set_external_char8_str(const_cast<char*>(snd_schema_json.c_str()));
+    n_msg["schema"].update(n_schema_data);  
+
     // TODO: why doesn't set work here?
-    Node n_t;
-    n_t.set(snd_schema_json);
-    
-    n_msg["schema"].update(n_t);
+    //n_msg["schema"].set(snd_schema_json);
     n_msg["data"].update(node);
 
     // TODO: Remove 

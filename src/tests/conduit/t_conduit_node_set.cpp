@@ -2680,6 +2680,39 @@ TEST(conduit_node_set, set_vector_external)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, node_set_existing_char8)
+{   
+    
+    Schema s;
+    
+    std::string value = "my value";
+    
+    s["a"].set(DataType::int64());
+    s["b"].set(DataType::char8_str(value.length()+1));
+    
+    Schema s_compact;
+    s.compact_to(s_compact);
+    
+    
+    Node n2;
+    n2.set_external_char8_str(const_cast<char*>(value.c_str()));
+    
+    Node n(s_compact);
+    
+    n["a"].set_int64(10);
+    n["b"].update(n2);
+    
+    EXPECT_EQ(n["a"].as_int64(),10);
+    EXPECT_EQ(n["b"].as_string(),value);
+    
+    n.print();
 
+    n["b"].set(value);
+
+    n.print();
+    
+    EXPECT_EQ(n["b"].as_string(),value);
+}
 
 
