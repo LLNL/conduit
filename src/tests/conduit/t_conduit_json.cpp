@@ -630,6 +630,54 @@ TEST(conduit_json, json_inf_and_nan)
 
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_json, json_parse_error_detailed)
+{
+
+    try
+    {
+        std::string pure_json = "{\"value\": \n \n \n \n \"\\\"mystring!\\\"\" \n :}";
+        Generator g(pure_json,"json");
+    
+        Node n_res;
+        g.walk(n_res);
+    }
+    catch(conduit::Error e)
+    {
+        CONDUIT_INFO(e.message());
+    }
+
+
+    try
+    {
+        std::string pure_json = "{\"value\":\"\\\"mystring!\\\"\" :}";
+        Generator g(pure_json,"json");
+    
+        Node n_res;
+        g.walk(n_res);
+    }
+    catch(conduit::Error e)
+    {
+        CONDUIT_INFO(e.message());
+    }
+
+    try
+    {
+        std::string pure_json = "\n\n\n\n\n\n{\"value\":\"\\\"mystring!\\\"\" :}";
+        Generator g(pure_json,"json");
+    
+        Node n_res;
+        g.walk(n_res);
+    }
+    catch(conduit::Error e)
+    {
+        CONDUIT_INFO(e.message());
+    }
+
+
+}
+
+
 
 
 

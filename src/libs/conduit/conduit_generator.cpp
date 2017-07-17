@@ -74,14 +74,15 @@
 /// errors related to rapidjson parsing.
 //
 //-----------------------------------------------------------------------------
-#define CONDUIT_JSON_PARSE_ERROR( document )                                \
-{                                                                           \
-    CONDUIT_ERROR("JSON parse error: \n"                                    \
-                  << " offset: " << document.GetErrorOffset()               \
-                  << "\n"                                                   \
-                  << " message:\n"                                          \
-                  << GetParseError_En(document.GetParseError())             \
-                  << "\n");                                                 \
+#define CONDUIT_JSON_PARSE_ERROR(json_str, document )                        \
+{                                                                            \
+    std::ostringstream __json_parse_oss;                                     \
+    Generator::Parser::parse_error_details( json_str,                        \
+                                            document,                        \
+                                            __json_parse_oss);               \
+    CONDUIT_ERROR("JSON parse error: \n"                                     \
+                  << __json_parse_oss.str()                                  \
+                  << "\n");                                                  \
 }
 
 //-----------------------------------------------------------------------------
@@ -155,6 +156,10 @@ public:
     
     static void    parse_base64(Node *node,
                                 const rapidjson::Value &jvalue);
+
+    static void    parse_error_details(const std::string &json,
+                                       const rapidjson::Document &document,
+                                       std::ostream &os);
 
 };
 
@@ -1194,6 +1199,40 @@ Generator::Parser::parse_base64(Node *node,
     }
 }
 
+//---------------------------------------------------------------------------//
+void 
+Generator::Parser::parse_error_details(const std::string &json,
+                                       const rapidjson::Document &document,
+                                       std::ostream &os)
+{
+    // provide message with line + char from rapidjson parse error offset 
+    index_t doc_offset = (index_t)document.GetErrorOffset();
+    std::string json_curr = json.substr(0,doc_offset);
+
+    std::string curr = "";
+    std::string next = " ";
+    
+    index_t doc_line   = 0;
+    index_t doc_char   = 0;
+
+    while(!next.empty())
+    {
+        utils::split_string(json_curr, "\n", curr, next);
+        doc_char = curr.size();
+        json_curr = next;
+        if(!next.empty())
+        {
+            doc_line++;
+        }
+    }
+
+    os << " parse error message:\n"
+       << GetParseError_En(document.GetParseError()) << "\n"
+       << " offset: "    << doc_offset << "\n"
+       << " line: "      << doc_line << "\n"
+       << " character: " << doc_char << "\n"
+       << " json:\n"     << json << "\n"; 
+}
 
 //-----------------------------------------------------------------------------
 // -- end conduit::Generator::Parser --
@@ -1284,7 +1323,7 @@ Generator::walk(Schema &schema) const
 
     if(document.Parse<RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
     {
-        CONDUIT_JSON_PARSE_ERROR(document);
+        CONDUIT_JSON_PARSE_ERROR(res, document);
     }
     index_t curr_offset = 0;
     Parser::walk_json_schema(&schema,document,curr_offset);
@@ -1313,7 +1352,7 @@ Generator::walk_external(Node &node) const
                 
         if(document.Parse<RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
         {
-            CONDUIT_JSON_PARSE_ERROR(document);
+            CONDUIT_JSON_PARSE_ERROR(res, document);
         }
 
         Parser::walk_pure_json_schema(&node,
@@ -1327,7 +1366,7 @@ Generator::walk_external(Node &node) const
         
         if(document.Parse<RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
         {
-            CONDUIT_JSON_PARSE_ERROR(document);
+            CONDUIT_JSON_PARSE_ERROR(res, document);
         }
         Parser::parse_base64(&node,
                              document);
@@ -1339,7 +1378,7 @@ Generator::walk_external(Node &node) const
         
         if(document.Parse<RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
         {
-            CONDUIT_JSON_PARSE_ERROR(document);
+            CONDUIT_JSON_PARSE_ERROR(res, document);
         }
         index_t curr_offset = 0;
 
