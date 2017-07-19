@@ -123,9 +123,19 @@ bool verify_topology_protocol(const Node &n, Node &info)
     return blueprint::mesh::verify("topology",n,info);
 }
 
+bool verify_matset_protocol(const Node &n, Node &info)
+{
+    return blueprint::mesh::verify("matset",n,info);
+}
+
 bool verify_field_protocol(const Node &n, Node &info)
 {
     return blueprint::mesh::verify("field",n,info);
+}
+
+bool verify_adjset_protocol(const Node &n, Node &info)
+{
+    return blueprint::mesh::verify("adjset",n,info);
 }
 
 bool verify_index_protocol(const Node &n, Node &info)
@@ -143,9 +153,19 @@ bool verify_topology_index_protocol(const Node &n, Node &info)
     return blueprint::mesh::verify("topology/index",n,info);
 }
 
+bool verify_matset_index_protocol(const Node &n, Node &info)
+{
+    return blueprint::mesh::verify("matset/index",n,info);
+}
+
 bool verify_field_index_protocol(const Node &n, Node &info)
 {
     return blueprint::mesh::verify("field/index",n,info);
+}
+
+bool verify_adjset_index_protocol(const Node &n, Node &info)
+{
+    return blueprint::mesh::verify("adjset/index",n,info);
 }
 
 bool verify_mesh_multi_domain_protocol(const Node &n, Node &info)
@@ -274,7 +294,7 @@ TEST(conduit_blueprint_mesh_verify, coordset_rectilinear)
         {
             n["values"][coord_coordsys[cj]].set(DataType::float64(10));
             EXPECT_TRUE(blueprint::mesh::coordset::rectilinear::verify(n,info));
-            info.print();
+            // info.print();
         }
     }
 
@@ -290,7 +310,7 @@ TEST(conduit_blueprint_mesh_verify, coordset_rectilinear)
         {
             n["values"][coord_coordsys[cj]].set(DataType::float64(cj + 5));
             EXPECT_TRUE(blueprint::mesh::coordset::rectilinear::verify(n,info));
-            info.print();
+            // info.print();
         }
     }
 
@@ -341,29 +361,36 @@ TEST(conduit_blueprint_mesh_verify, coordset_explicit)
     */
 }
 
-
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, coordset_types)
 {
     Node n, info;
 
     const std::string coordset_types[] = {"uniform", "rectilinear", "explicit"};
-    for(index_t ti = 0; ti < 3; ti++)
+    const std::string coordset_fids[] = {"uniform", "rectilinear", "quads"};
+    for(index_t ci = 0; ci < 3; ci++)
     {
         n.reset();
-        n.set(coordset_types[ti]);
-        EXPECT_TRUE(blueprint::mesh::coordset::type::verify(n,info));
+        blueprint::mesh::examples::braid(coordset_fids[ci],10,10,1,n);
+        Node& coordset_node = n["coordsets/coords"];
+        EXPECT_TRUE(blueprint::mesh::coordset::verify(coordset_node,info));
+
+        coordset_node["type"].set(0);
+        EXPECT_FALSE(blueprint::mesh::coordset::verify(coordset_node,info));
+
+        coordset_node["type"].set("unstructured");
+        EXPECT_FALSE(blueprint::mesh::coordset::verify(coordset_node,info));
+
+        if(ci != 2)
+        {
+            coordset_node["type"].set(coordset_types[2]);
+            EXPECT_FALSE(blueprint::mesh::topology::verify(coordset_node,info));
+        }
+
+        coordset_node["type"].set(coordset_types[ci]);
+        EXPECT_TRUE(blueprint::mesh::coordset::verify(coordset_node,info));
     }
-
-    n.reset();
-    n.set(0);
-    EXPECT_FALSE(blueprint::mesh::coordset::type::verify(n,info));
-
-    n.reset();
-    n.set("unstructured");
-    EXPECT_FALSE(blueprint::mesh::coordset::type::verify(n,info));
 }
-
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, coordset_coordsys)
@@ -538,53 +565,61 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
     }
 }
 
-
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, topology_types)
 {
     Node n, info;
 
     const std::string topology_types[] = {"uniform", "rectilinear", "structured", "unstructured"};
+    const std::string topology_fids[] = {"uniform", "rectilinear", "structured", "quads"};
     for(index_t ti = 0; ti < 4; ti++)
     {
         n.reset();
-        n.set(topology_types[ti]);
-        EXPECT_TRUE(blueprint::mesh::topology::type::verify(n,info));
+        blueprint::mesh::examples::braid(topology_fids[ti],10,10,1,n);
+        Node& topology_node = n["topologies/mesh"];
+        EXPECT_TRUE(blueprint::mesh::topology::verify(topology_node,info));
+
+        topology_node["type"].set(0);
+        EXPECT_FALSE(blueprint::mesh::topology::verify(topology_node,info));
+
+        topology_node["type"].set("explicit");
+        EXPECT_FALSE(blueprint::mesh::topology::verify(topology_node,info));
+
+        if(ti != 3)
+        {
+            topology_node["type"].set(topology_types[3]);
+            EXPECT_FALSE(blueprint::mesh::topology::verify(topology_node,info));
+        }
+
+        topology_node["type"].set(topology_types[ti]);
+        EXPECT_TRUE(blueprint::mesh::topology::verify(topology_node,info));
     }
-
-    n.reset();
-    n.set(0);
-    EXPECT_FALSE(blueprint::mesh::topology::type::verify(n,info));
-
-    n.reset();
-    n.set("explicit");
-    EXPECT_FALSE(blueprint::mesh::topology::type::verify(n,info));
 }
-
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, topology_shape)
 {
     Node n, info;
-    EXPECT_FALSE(blueprint::mesh::topology::shape::verify(n,info));
 
-    const std::string shape_types[] = {"point", "line", "tri", "quad", "tet", "hex"};
+    const std::string topology_shapes[] = {"point", "line", "tri", "quad", "tet", "hex"};
+    const std::string topology_fids[] = {"points", "lines", "tris", "quads", "tets", "hexs"};
     for(index_t ti = 0; ti < 6; ti++)
     {
         n.reset();
-        n.set(shape_types[ti]);
-        EXPECT_TRUE(blueprint::mesh::topology::shape::verify(n,info));
+        blueprint::mesh::examples::braid(topology_fids[ti],10,10,1,n);
+        Node& topology_node = n["topologies/mesh"];
+        EXPECT_TRUE(blueprint::mesh::topology::verify(topology_node,info));
+
+        topology_node["elements/shape"].set(0);
+        EXPECT_FALSE(blueprint::mesh::topology::verify(topology_node,info));
+
+        topology_node["elements/shape"].set("unstructured");
+        EXPECT_FALSE(blueprint::mesh::topology::verify(topology_node,info));
+
+        topology_node["elements/shape"].set(topology_shapes[ti]);
+        EXPECT_TRUE(blueprint::mesh::topology::verify(topology_node,info));
     }
-
-    n.reset();
-    n.set(10);
-    EXPECT_FALSE(blueprint::mesh::topology::shape::verify(n,info));
-
-    n.reset();
-    n.set("poly");
-    EXPECT_FALSE(blueprint::mesh::topology::shape::verify(n,info));
 }
-
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, topology_general)
@@ -642,49 +677,63 @@ TEST(conduit_blueprint_mesh_verify, topology_general)
     }
 }
 
-/// Mesh Field Tests ///
+/// Mesh Matsets Tests ///
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_verify, field_association)
+TEST(conduit_blueprint_mesh_verify, matset_general)
 {
-    Node n, info;
-    EXPECT_FALSE(blueprint::mesh::field::association::verify(n,info));
+    VerifyFun verify_matset_funs[] = {
+        blueprint::mesh::matset::verify,
+        verify_matset_protocol};
 
-    const std::string assoc_types[] = {"vertex", "element"};
-    for(index_t ti = 0; ti < 2; ti++)
+    for(index_t fi = 0; fi < 2; fi++)
     {
-        n.reset();
-        n.set(assoc_types[ti]);
-        EXPECT_TRUE(blueprint::mesh::field::association::verify(n,info));
+        VerifyFun verify_matset = verify_matset_funs[fi];
+
+        Node mesh, info;
+        EXPECT_FALSE(verify_matset(mesh,info));
+
+        blueprint::mesh::examples::misc("matsets",10,10,1,mesh);
+        Node& n = mesh["matsets"]["mesh"];
+        EXPECT_TRUE(verify_matset(n,info));
+
+        { // Topology Field Tests //
+            n.remove("topology");
+            EXPECT_FALSE(verify_matset(n,info));
+            n["topology"].set(10);
+            EXPECT_FALSE(verify_matset(n,info));
+            n["topology"].set("mesh");
+            EXPECT_TRUE(verify_matset(n,info));
+        }
+
+        { // Volume Fractions Field Tests //
+            Node vfs = n["volume_fractions"];
+
+            n.remove("volume_fractions");
+            EXPECT_FALSE(verify_matset(n,info));
+            n["volume_fractions"].set("values");
+            EXPECT_FALSE(verify_matset(n,info));
+            n["volume_fractions"].set(DataType::float64(10));
+            EXPECT_FALSE(verify_matset(n,info));
+
+            n["volume_fractions"].reset();
+            n["volume_fractions"]["x"].set("Hello, ");
+            n["volume_fractions"]["y"].set("World!");
+            EXPECT_FALSE(verify_matset(n,info));
+
+            n["volume_fractions"].reset();
+            n["volume_fractions"]["m1"].set(DataType::float64(5));
+            n["volume_fractions"]["m2"].set(DataType::float64(5));
+            EXPECT_TRUE(verify_matset(n,info));
+
+            n["volume_fractions"].reset();
+            n["volume_fractions"].set(vfs);
+            EXPECT_TRUE(verify_matset(n,info));
+        }
     }
-
-    n.reset();
-    n.set(0);
-    EXPECT_FALSE(blueprint::mesh::field::association::verify(n,info));
-
-    n.reset();
-    n.set("zone");
-    EXPECT_FALSE(blueprint::mesh::field::association::verify(n,info));
 }
 
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_verify, field_basis)
-{
-    // FIXME: Does this have to be verified against anything else?  What does
-    // this basis refer to if it isn't a different path in the mesh structure?
-    Node n, info;
-    EXPECT_FALSE(blueprint::mesh::field::basis::verify(n,info));
-
-    n.reset();
-    n.set(0);
-    EXPECT_FALSE(blueprint::mesh::field::basis::verify(n,info));
-
-    n.reset();
-    n.set("basis");
-    EXPECT_TRUE(blueprint::mesh::field::basis::verify(n,info));
-}
-
+/// Mesh Field Tests ///
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, field_general)
@@ -753,6 +802,84 @@ TEST(conduit_blueprint_mesh_verify, field_general)
 
             n["association"].set("vertex");
             EXPECT_TRUE(verify_field(n,info));
+        }
+    }
+}
+
+/// Mesh Domain Adjacencies Tests ///
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, adjset_general)
+{
+    VerifyFun verify_adjset_funs[] = {
+        blueprint::mesh::adjset::verify,
+        verify_adjset_protocol};
+
+    for(index_t fi = 0; fi < 2; fi++)
+    {
+        VerifyFun verify_adjset = verify_adjset_funs[fi];
+
+        Node mesh, info;
+        EXPECT_FALSE(verify_adjset(mesh,info));
+
+        blueprint::mesh::examples::misc("adjsets",10,10,1,mesh);
+        Node& n = mesh.child(0)["adjsets"].child(0);
+        EXPECT_TRUE(verify_adjset(n,info));
+
+        { // Topology Field Tests //
+            n.remove("topology");
+            EXPECT_FALSE(verify_adjset(n,info));
+            n["topology"].set(10);
+            EXPECT_FALSE(verify_adjset(n,info));
+            n["topology"].set("mesh");
+            EXPECT_TRUE(verify_adjset(n,info));
+        }
+
+        { // Groups Field Tests //
+            Node groups = n["groups"];
+
+            n.remove("groups");
+            EXPECT_FALSE(verify_adjset(n,info));
+            n["groups"].set("groups");
+            EXPECT_FALSE(verify_adjset(n,info));
+            n["groups"].set(DataType::float64(10));
+            EXPECT_FALSE(verify_adjset(n,info));
+
+            n["groups"].reset();
+            n["groups"]["g1"].set("Hello, ");
+            EXPECT_FALSE(verify_adjset(n,info));
+            n["groups"]["g2"].set("World!");
+            EXPECT_FALSE(verify_adjset(n,info));
+
+            n["groups"].reset();
+            n["groups"]["g1"]["neighbors"].set(DataType::int32(5));
+            EXPECT_FALSE(verify_adjset(n,info));
+            n["groups"]["g1"]["values"].set(DataType::float32(5));
+            EXPECT_FALSE(verify_adjset(n,info));
+            n["groups"]["g1"]["values"].set(DataType::int32(5));
+            EXPECT_TRUE(verify_adjset(n,info));
+
+            n["groups"].reset();
+            n["groups"]["g1"]["neighbors"].set(DataType::int32(5));
+            n["groups"]["g1"]["values"].set(DataType::int32(5));
+            EXPECT_TRUE(verify_adjset(n,info));
+            n["groups"]["g2"]["neighbors"].set(DataType::int32(5));
+            n["groups"]["g2"]["values"].set(DataType::int32(5));
+            EXPECT_TRUE(verify_adjset(n,info));
+
+            n["groups"].reset();
+            n["groups"].set(groups);
+            EXPECT_TRUE(verify_adjset(n,info));
+        }
+
+        { // Association Field Tests //
+            n.remove("association");
+            EXPECT_FALSE(verify_adjset(n,info));
+
+            n["association"].set("zone");
+            EXPECT_FALSE(verify_adjset(n,info));
+            n["association"].set("vertex");
+            EXPECT_TRUE(verify_adjset(n,info));
         }
     }
 }
@@ -886,6 +1013,63 @@ TEST(conduit_blueprint_mesh_verify, index_topology)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, index_matset)
+{
+    VerifyFun verify_matset_index_funs[] = {
+        blueprint::mesh::matset::index::verify,
+        verify_matset_index_protocol};
+
+    for(index_t fi = 0; fi < 2; fi++)
+    {
+        VerifyFun verify_matset_index = verify_matset_index_funs[fi];
+
+        Node mesh, index, info;
+        EXPECT_FALSE(verify_matset_index(mesh,info));
+
+        blueprint::mesh::examples::misc("matsets",10,10,1,mesh);
+        blueprint::mesh::generate_index(mesh,"quads",1,index);
+        Node& mindex = index["matsets"]["mesh"];
+        EXPECT_TRUE(verify_matset_index(mindex,info));
+
+        { // Topology Field Tests //
+            mindex.remove("topology");
+            EXPECT_FALSE(verify_matset_index(mindex,info));
+
+            mindex["topology"].set(0);
+            EXPECT_FALSE(verify_matset_index(mindex,info));
+
+            mindex["topology"].set("path");
+            EXPECT_TRUE(verify_matset_index(mindex,info));
+        }
+
+        { // Materials Field Tests //
+            mindex.remove("materials");
+            EXPECT_FALSE(verify_matset_index(mindex,info));
+
+            mindex["materials"];
+            EXPECT_FALSE(verify_matset_index(mindex,info));
+
+            mindex["materials/mat1"].set(1);
+            EXPECT_TRUE(verify_matset_index(mindex,info));
+            mindex["materials/mat2"].set(2);
+            EXPECT_TRUE(verify_matset_index(mindex,info));
+        }
+
+        { // Path Field Tests //
+            mindex.remove("path");
+            EXPECT_FALSE(verify_matset_index(mindex,info));
+
+            mindex["path"].set(5);
+            EXPECT_FALSE(verify_matset_index(mindex,info));
+
+            mindex["path"].set("path");
+            EXPECT_TRUE(verify_matset_index(mindex,info));
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, index_field)
 {
     VerifyFun verify_field_index_funs[] = {
@@ -969,6 +1153,74 @@ TEST(conduit_blueprint_mesh_verify, index_field)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, index_adjset)
+{
+    VerifyFun verify_adjset_index_funs[] = {
+        blueprint::mesh::adjset::index::verify,
+        verify_adjset_index_protocol};
+
+    for(index_t fi = 0; fi < 2; fi++)
+    {
+        VerifyFun verify_adjset_index = verify_adjset_index_funs[fi];
+
+        Node mesh, index, info;
+        EXPECT_FALSE(verify_adjset_index(mesh,info));
+
+        blueprint::mesh::examples::misc("adjsets",10,10,1,mesh);
+        blueprint::mesh::generate_index(mesh["domain0"],"quads",1,index);
+        Node& aindex = index["adjsets"].child(0);
+        EXPECT_TRUE(verify_adjset_index(aindex,info));
+
+        { // Topology Field Tests //
+            Node topo = aindex["topology"];
+            aindex.remove("topology");
+
+            EXPECT_FALSE(verify_adjset_index(aindex,info));
+            aindex["topology"].set(0);
+            EXPECT_FALSE(verify_adjset_index(aindex,info));
+
+            aindex["topology"].set("path");
+            EXPECT_TRUE(verify_adjset_index(aindex,info));
+
+            aindex["topology"].reset();
+            aindex["topology"].set(topo);
+            EXPECT_TRUE(verify_adjset_index(aindex,info));
+        }
+
+        { // Path Field Tests //
+            Node path = aindex["path"];
+            aindex.remove("path");
+
+            EXPECT_FALSE(verify_adjset_index(aindex,info));
+            aindex["path"].set(0);
+            EXPECT_FALSE(verify_adjset_index(aindex,info));
+
+            aindex["path"].set("path");
+            EXPECT_TRUE(verify_adjset_index(aindex,info));
+
+            aindex["path"].reset();
+            aindex["path"].set(path);
+            EXPECT_TRUE(verify_adjset_index(aindex,info));
+        }
+
+        { // Association Field Tests //
+            Node assoc = aindex["association"];
+            aindex.remove("association");
+
+            aindex["association"].set("zone");
+            EXPECT_FALSE(verify_adjset_index(aindex,info));
+            aindex["association"].set("vertex");
+            EXPECT_TRUE(verify_adjset_index(aindex,info));
+
+            aindex["association"].reset();
+            aindex["association"].set(assoc);
+            EXPECT_TRUE(verify_adjset_index(aindex,info));
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, index_general)
 {
     VerifyFun verify_index_funs[] = {
@@ -986,7 +1238,7 @@ TEST(conduit_blueprint_mesh_verify, index_general)
         blueprint::mesh::generate_index(mesh,"quads",1,index);
         EXPECT_TRUE(verify_index(index,info));
 
-        { // Topology Field Tests //
+        { // Coordsets Field Tests //
             info.reset();
             Node coords = index["coordsets"];
             index.remove("coordsets");
@@ -1005,7 +1257,7 @@ TEST(conduit_blueprint_mesh_verify, index_general)
             EXPECT_TRUE(verify_index(index,info));
         }
 
-        { // Components Field Tests //
+        { // Topologies Field Tests //
             info.reset();
             Node topos = index["topologies"];
             index.remove("topologies");
@@ -1020,18 +1272,61 @@ TEST(conduit_blueprint_mesh_verify, index_general)
             EXPECT_FALSE(verify_index(index,info));
 
             index["topologies"].reset();
-            index["topologies"]["mesh"]["type"].set("unstructured");
+            index["topologies"]["mesh"]["type"].set("invalid");
             index["topologies"]["mesh"]["path"].set("quads/topologies/mesh");
-            index["topologies"]["mesh"]["coordset"].set("nonexitent");
-            EXPECT_FALSE(verify_index(index,info));
-
             index["topologies"]["mesh"]["coordset"].set("coords");
+            EXPECT_FALSE(verify_index(index,info));
+            index["topologies"]["mesh"]["type"].set("unstructured");
+            EXPECT_TRUE(verify_index(index,info));
+
+            index["topologies"]["mesh"]["coordset"].set("nonexistent");
+            EXPECT_FALSE(verify_index(index,info));
+            index["topologies"]["mesh"]["coordset"].set("coords");
+            EXPECT_TRUE(verify_index(index,info));
+
             index["coordsets"]["coords"]["type"].set("invalid");
             EXPECT_FALSE(verify_index(index,info));
             index["coordsets"]["coords"]["type"].set("explicit");
+            EXPECT_TRUE(verify_index(index,info));
 
             index["topologies"].reset();
             index["topologies"].set(topos);
+            EXPECT_TRUE(verify_index(index,info));
+        }
+
+        { // Matsets Field Tests //
+            info.reset();
+            Node matsets = index["matsets"];
+            index.remove("matsets");
+            EXPECT_TRUE(verify_index(index,info));
+
+            index["matsets"].set("matset");
+            EXPECT_FALSE(verify_index(index,info));
+
+            index["matsets"].reset();
+            index["matsets"]["matset1"].set("matset1");
+            index["matsets"]["matset1"].set("matset2");
+            EXPECT_FALSE(verify_index(index,info));
+
+            index["matsets"].reset();
+            index["matsets"]["matset"]["topology"].set("mesh");
+            index["matsets"]["matset"]["materials"].set("invalid");
+            index["matsets"]["matset"]["path"].set("quads/matsets/matset");
+            EXPECT_FALSE(verify_index(index,info));
+            index["matsets"]["matset"]["materials"]["mat1"];
+            EXPECT_TRUE(verify_index(index,info));
+            index["matsets"]["matset"]["materials"]["mat2"];
+            EXPECT_TRUE(verify_index(index,info));
+
+            index["matsets"]["matset"]["topology"].set("nonexistent");
+            EXPECT_FALSE(verify_index(index,info));
+            index["matsets"]["matset"]["topology"].set("mesh");
+            EXPECT_TRUE(verify_index(index,info));
+
+            // TODO(JRC): Change this code so that the "matsets" section is
+            // re-added once it's included in the test Blueprint mesh.
+            index["matsets"].reset();
+            index.remove("matsets");
             EXPECT_TRUE(verify_index(index,info));
         }
 
@@ -1050,19 +1345,65 @@ TEST(conduit_blueprint_mesh_verify, index_general)
             EXPECT_FALSE(verify_index(index,info));
 
             index["fields"].reset();
-            index["fields"]["field"]["number_of_components"].set(1);
+            index["fields"]["field"]["number_of_components"].set("invalid");
             index["fields"]["field"]["association"].set("vertex");
             index["fields"]["field"]["path"].set("quads/fields/braid");
-            index["fields"]["field"]["topology"].set("nonexitent");
-            EXPECT_FALSE(verify_index(index,info));
-
             index["fields"]["field"]["topology"].set("mesh");
+            EXPECT_FALSE(verify_index(index,info));
+            index["fields"]["field"]["number_of_components"].set(1);
+            EXPECT_TRUE(verify_index(index,info));
+
+            index["fields"]["field"]["topology"].set("nonexistent");
+            EXPECT_FALSE(verify_index(index,info));
+            index["fields"]["field"]["topology"].set("mesh");
+            EXPECT_TRUE(verify_index(index,info));
+
             index["topologies"]["mesh"]["type"].set("invalid");
             EXPECT_FALSE(verify_index(index,info));
             index["topologies"]["mesh"]["type"].set("unstructured");
+            EXPECT_TRUE(verify_index(index,info));
 
             index["fields"].reset();
             index["fields"].set(fields);
+            EXPECT_TRUE(verify_index(index,info));
+        }
+
+        { // Adjsets Field Tests //
+            info.reset();
+            Node adjsets = index["adjsets"];
+            index.remove("adjsets");
+            EXPECT_TRUE(verify_index(index,info));
+
+            index["adjsets"].set("adjset");
+            EXPECT_FALSE(verify_index(index,info));
+
+            index["adjsets"].reset();
+            index["adjsets"]["adjset1"].set("adjset1");
+            index["adjsets"]["adjset1"].set("adjset2");
+            EXPECT_FALSE(verify_index(index,info));
+
+            index["adjsets"].reset();
+            index["adjsets"]["adjset"]["topology"].set("mesh");
+            index["adjsets"]["adjset"]["association"].set("vertex");
+            index["adjsets"]["adjset"]["path"].set(0);
+            EXPECT_FALSE(verify_index(index,info));
+            index["adjsets"]["adjset"]["path"].set("quads/adjsets/adjset");
+            EXPECT_TRUE(verify_index(index,info));
+
+            index["adjsets"]["adjset"]["topology"].set("nonexistent");
+            EXPECT_FALSE(verify_index(index,info));
+            index["adjsets"]["adjset"]["topology"].set("mesh");
+            EXPECT_TRUE(verify_index(index,info));
+
+            index["adjsets"]["adjset"]["association"].set("nonexistent");
+            EXPECT_FALSE(verify_index(index,info));
+            index["adjsets"]["adjset"]["association"].set("element");
+            EXPECT_TRUE(verify_index(index,info));
+
+            // TODO(JRC): Change this code so that the "adjsets" section is
+            // re-added once it's included in the test Blueprint mesh.
+            index["adjsets"].reset();
+            index.remove("adjsets");
             EXPECT_TRUE(verify_index(index,info));
         }
     }
@@ -1138,7 +1479,7 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
         Node& domain = *domain_ptr;
 
         EXPECT_TRUE(verify_mesh(mesh,info));
-        info.print();
+        // info.print();
 
         { // Coordsets Field Tests //
             Node coordsets = domain["coordsets"];
@@ -1178,19 +1519,58 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
             domain["topologies"]["mesh"]["elements"]["shape"].set("quad");
             domain["topologies"]["mesh"]["elements"]["connectivity"].set(DataType::int32(10));
             EXPECT_FALSE(verify_mesh(mesh,info));
-
             domain["topologies"]["mesh"]["type"].set("unstructured");
             EXPECT_TRUE(verify_mesh(mesh,info));
 
             domain["coordsets"]["coords"]["type"].set("invalid");
             EXPECT_FALSE(verify_mesh(mesh,info));
             domain["coordsets"]["coords"]["type"].set("explicit");
+            EXPECT_TRUE(verify_mesh(mesh,info));
+
+            domain["topologies"]["mesh"]["coordset"].set("invalid");
+            EXPECT_FALSE(verify_mesh(mesh,info));
+            domain["topologies"]["mesh"]["coordset"].set("coords");
+            EXPECT_TRUE(verify_mesh(mesh,info));
 
             domain["topologies"]["grid"]["type"].set("invalid");
             EXPECT_FALSE(verify_mesh(mesh,info));
 
             domain["topologies"].reset();
             domain["topologies"].set(topologies);
+            EXPECT_TRUE(verify_mesh(mesh,info));
+        }
+
+        { // Matsets Field Tests //
+            Node matsets = domain["matsets"];
+            domain.remove("matsets");
+            EXPECT_TRUE(verify_mesh(mesh,info));
+
+            domain["matsets"].set("path");
+            EXPECT_FALSE(verify_mesh(mesh,info));
+
+            domain["matsets"].reset();
+            domain["matsets"]["mesh"]["topology"].set("mesh");
+            domain["matsets"]["mesh"]["volume_fractions"];
+            EXPECT_FALSE(verify_mesh(mesh,info));
+
+            Node &vfs = domain["matsets"]["mesh"]["volume_fractions"];
+            vfs["mat1"].set(DataType::float32(10));
+            EXPECT_TRUE(verify_mesh(mesh,info));
+            vfs["mat2"].set(DataType::float32(10));
+            EXPECT_TRUE(verify_mesh(mesh,info));
+
+            domain["matsets"]["mesh"]["topology"].set("invalid");
+            EXPECT_FALSE(verify_mesh(mesh,info));
+            domain["matsets"]["mesh"]["topology"].set("mesh");
+            EXPECT_TRUE(verify_mesh(mesh,info));
+
+            domain["matsets"]["boundary"]["topology"].set("mesh");
+            EXPECT_FALSE(verify_mesh(mesh,info));
+
+            // TODO(JRC): Change this code so that the "matsets" section is
+            // re-added once it's included in the test Blueprint mesh.
+            domain["matsets"].reset();
+            domain.remove("matsets");
             EXPECT_TRUE(verify_mesh(mesh,info));
         }
 
@@ -1207,13 +1587,18 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
             domain["fields"]["temp"]["topology"].set("mesh");
             domain["fields"]["temp"]["values"].set(DataType::float64(10));
             EXPECT_FALSE(verify_mesh(mesh,info));
-
             domain["fields"]["temp"]["association"].set("vertex");
             EXPECT_TRUE(verify_mesh(mesh,info));
 
             domain["topologies"]["mesh"]["type"].set("invalid");
             EXPECT_FALSE(verify_mesh(mesh,info));
             domain["topologies"]["mesh"]["type"].set("unstructured");
+            EXPECT_TRUE(verify_mesh(mesh,info));
+
+            domain["fields"]["temp"]["topology"].set("invalid");
+            EXPECT_FALSE(verify_mesh(mesh,info));
+            domain["fields"]["temp"]["topology"].set("mesh");
+            EXPECT_TRUE(verify_mesh(mesh,info));
 
             domain["fields"]["accel"]["association"].set("invalid");
             EXPECT_FALSE(verify_mesh(mesh,info));
@@ -1243,6 +1628,47 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
 
             domain["topologies"].reset();
             domain["topologies"].set(topologies);
+            EXPECT_TRUE(verify_mesh(mesh,info));
+        }
+
+        { // Adjsets Field Tests //
+            Node adjsets = domain["adjsets"];
+            domain.remove("adjsets");
+            EXPECT_TRUE(verify_mesh(mesh,info));
+
+            domain["adjsets"].set("path");
+            EXPECT_FALSE(verify_mesh(mesh,info));
+
+            domain["adjsets"].reset();
+            domain["adjsets"]["mesh"]["association"].set("vertex");
+            domain["adjsets"]["mesh"]["topology"].set("mesh");
+            domain["adjsets"]["mesh"]["groups"];
+            EXPECT_FALSE(verify_mesh(mesh,info));
+
+            Node &groups = domain["adjsets"]["mesh"]["groups"];
+            groups["g1"]["neighbors"].set(DataType::int32(10));
+            EXPECT_FALSE(verify_mesh(mesh,info));
+            groups["g1"]["values"].set(DataType::float32(10));
+            EXPECT_FALSE(verify_mesh(mesh,info));
+            groups["g1"]["values"].set(DataType::int32(10));
+            EXPECT_TRUE(verify_mesh(mesh,info));
+            groups["g2"].set(groups["g1"]);
+            EXPECT_TRUE(verify_mesh(mesh,info));
+
+            domain["adjsets"]["mesh"]["topology"].set("invalid");
+            EXPECT_FALSE(verify_mesh(mesh,info));
+            domain["adjsets"]["mesh"]["topology"].set("mesh");
+            EXPECT_TRUE(verify_mesh(mesh,info));
+
+            domain["adjsets"]["mesh"]["association"].set("invalid");
+            EXPECT_FALSE(verify_mesh(mesh,info));
+            domain["adjsets"]["mesh"]["association"].set("element");
+            EXPECT_TRUE(verify_mesh(mesh,info));
+
+            // TODO(JRC): Change this code so that the "adjsets" section is
+            // re-added once it's included in the test Blueprint mesh.
+            domain["adjsets"].reset();
+            domain.remove("adjsets");
             EXPECT_TRUE(verify_mesh(mesh,info));
         }
     }

@@ -47,6 +47,8 @@
 /// file: conduit_node_iterator.cpp
 ///
 //-----------------------------------------------------------------------------
+#include <sstream>
+
 #include "conduit_node_iterator.hpp"
 #include "conduit_error.hpp"
 #include "conduit_utils.hpp"
@@ -133,7 +135,19 @@ NodeIterator::operator=(const NodeIterator &itr)
 std::string
 NodeIterator::name() const
 {
-    return m_node->m_schema->object_order()[(size_t)(m_index-1)];
+    std::ostringstream oss;
+
+    index_t index = m_index-1;
+    if(m_node->m_schema->dtype().is_list())
+    {
+        oss << index;
+    }
+    else
+    {
+        oss << m_node->m_schema->object_order()[(size_t)(index)];
+    }
+
+    return oss.str();
 }
 
 //---------------------------------------------------------------------------//
@@ -371,7 +385,19 @@ NodeConstIterator::operator=(const NodeIterator &itr)
 std::string
 NodeConstIterator::name() const
 {
-    return m_node->m_schema->object_order()[(size_t)(m_index-1)];
+    std::ostringstream oss;
+
+    index_t index = m_index-1;
+    if(m_node->m_schema->dtype().is_list())
+    {
+        oss << index;
+    }
+    else
+    {
+        oss << m_node->m_schema->object_order()[(size_t)(index)];
+    }
+
+    return oss.str();
 }
 
 //---------------------------------------------------------------------------//

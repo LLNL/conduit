@@ -52,8 +52,11 @@
 // std lib includes
 //-----------------------------------------------------------------------------
 #include <string.h>
+#include <stdio.h>
 #include <math.h>
 #include <cassert>
+#include <map>
+#include <set>
 
 //-----------------------------------------------------------------------------
 // conduit includes
@@ -90,6 +93,32 @@ namespace examples
 
 //---------------------------------------------------------------------------//
 const float64 PI_VALUE = 3.14159265359;
+
+
+//---------------------------------------------------------------------------//
+struct point
+{
+    point(float64 px, float64 py, float64 pz = 0.0) : x(px), y(py), z(pz)
+    {
+    };
+
+    bool operator<(const point& other) const
+    {
+        float64 mvals[3] = {this->x, this->y, this->z};
+        float64 ovals[3] = {other.x, other.y, other.z};
+
+        for(index_t i = 0; i < 3; i++)
+        {
+            if(fabs(mvals[i] - ovals[i]) >= 1e-6)
+            {
+                return mvals[i] < ovals[i];
+            }
+        }
+        return false;
+    };
+
+    float64 x, y, z;
+};
 
 
 //---------------------------------------------------------------------------//
@@ -278,6 +307,40 @@ void braid_init_example_element_scalar_field(index_t nele_x,
     }
 }
 
+
+//---------------------------------------------------------------------------//
+void braid_init_example_matset(index_t nele_x,
+                               index_t nele_y,
+                               index_t nele_z,
+                               Node &res)
+{
+    index_t nele = nele_x * nele_y * ((nele_z > 0) ? nele_z : 1);
+
+    res["topology"] = "mesh";
+
+    Node &vfs = res["volume_fractions"];
+    vfs["mat1"].set(DataType::float64(nele));
+    vfs["mat2"].set(DataType::float64(nele));
+
+    float64 *mat1_vals = vfs["mat1"].value();
+    float64 *mat2_vals = vfs["mat2"].value();
+
+    for(index_t k = 0, idx = 0; (idx == 0 || k < nele_z); k++)
+    {
+        for(index_t j = 0; (idx == 0 || j < nele_y) ; j++)
+        {
+            for(index_t i = 0; (idx == 0 || i < nele_x) ; i++, idx++)
+            {
+                float64 mv = (nele_x == 1) ? 0.5 : i / (nele_x - 1.0);
+
+                mat1_vals[idx] = mv;
+                mat2_vals[idx] = 1.0 - mv;
+            }
+        }
+    }
+}
+
+
 //---------------------------------------------------------------------------//
 void braid_init_uniform_coordset(index_t npts_x,
                                  index_t npts_y,
@@ -431,6 +494,121 @@ braid_init_explicit_coordset(index_t npts_x,
                 idx++;
             }
         
+        }
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void braid_init_example_adjset(Node &mesh)
+{
+    typedef std::map< point, std::map<index_t, index_t> > point_doms_map;
+    typedef std::map<std::set<index_t>, std::vector<std::vector<index_t> > > group_idx_map;
+
+    const std::string dim_names[3] = {"x", "y", "z"};
+    const bool mesh_3d = mesh.child(0)["coordsets/coords/values"].has_child("z");
+    const index_t dim_count = mesh_3d ? 3 : 2;
+
+    // From mesh data, create a map from domain combination tuple to point list.
+    // These domain combination tuples represent groups and the point lists contain
+    // the points that lie on the shared boundary between these domains.
+    point_doms_map mesh_point_doms_map;
+
+    conduit::NodeConstIterator doms_it = mesh.children();
+    while(doms_it.has_next())
+    {
+        doms_it.next();
+        const conduit::Node& dom_node = doms_it.node();
+        const conduit::Node& dom_coords = dom_node["coordsets/coords/values"];
+        const index_t dom_id = dom_node["state/domain_id"].to_uint64();
+
+        conduit::float64_array dom_dim_coords[3];
+        for(index_t d = 0; d < dim_count; d++)
+        {
+            dom_dim_coords[d] = dom_coords[dim_names[d]].as_float64_array();
+        }
+
+        for(index_t i = 0; i < dom_dim_coords[0].number_of_elements(); i++)
+        {
+            point coord(dom_dim_coords[0][i], dom_dim_coords[1][i]);
+            if(mesh_3d)
+            {
+                coord.z = dom_dim_coords[2][i];
+            }
+            mesh_point_doms_map[coord][dom_id] = i;
+        }
+    }
+
+    group_idx_map groups_map;
+
+    point_doms_map::const_iterator pm_itr;
+    for(pm_itr = mesh_point_doms_map.begin();
+        pm_itr != mesh_point_doms_map.end(); ++pm_itr)
+    {
+        const std::map<index_t, index_t>& point_dom_idx_map = pm_itr->second;
+        if(point_dom_idx_map.size() > 1)
+        {
+            std::set<index_t> point_group;
+
+            std::map<index_t, index_t>::const_iterator pg_itr;
+            for(pg_itr = point_dom_idx_map.begin();
+                pg_itr != point_dom_idx_map.end(); ++pg_itr)
+            {
+                point_group.insert(pg_itr->first);
+            }
+
+            std::vector<std::vector<index_t> >& group_indices = groups_map[point_group];
+            if(group_indices.empty())
+            {
+                group_indices.resize(point_group.size());
+            }
+
+            std::set<index_t>::const_iterator gd_itr;
+            index_t gi = 0;
+            for(gd_itr = point_group.begin();
+                gd_itr != point_group.end(); ++gd_itr, ++gi)
+            {
+                group_indices[gi].push_back(point_dom_idx_map.find(*gd_itr)->second);
+            }
+        }
+    }
+
+    const index_t name_cstr_size = 30;
+    char group_name_cstr[name_cstr_size];
+    char dom_name_cstr[name_cstr_size];
+
+    group_idx_map::const_iterator gm_itr;
+    index_t gid = 0;
+    for(gm_itr = groups_map.begin();
+        gm_itr != groups_map.end(); ++gm_itr, ++gid)
+    {
+        const std::set<index_t>& group_doms = gm_itr->first;
+        const std::vector<std::vector<index_t> >& group_indices = gm_itr->second;
+
+        snprintf(group_name_cstr, name_cstr_size, "group%ld", gid);
+        const std::string group_name(group_name_cstr);
+
+        std::set<index_t>::const_iterator dg_itr;
+        index_t d = 0;
+        for(dg_itr = group_doms.begin();
+            dg_itr != group_doms.end(); ++dg_itr, ++d)
+        {
+          const index_t& dom_id = *dg_itr;
+          const std::vector<index_t>& dom_idxs = group_indices[d];
+
+          snprintf(dom_name_cstr, name_cstr_size, "domain%ld", dom_id);
+          const std::string dom_name(dom_name_cstr);
+
+          std::vector<index_t> dom_neighbors(group_doms.begin(), group_doms.end());
+          dom_neighbors.erase(dom_neighbors.begin()+d);
+
+          conduit::Node& dom_node = mesh[dom_name]["adjsets"]["mesh_adj"];
+          dom_node["association"].set("vertex");
+          dom_node["topology"].set("mesh");
+          dom_node["groups"][group_name]["neighbors"].set(
+            const_cast<index_t*>(dom_neighbors.data()), dom_neighbors.size());
+          dom_node["groups"][group_name]["values"].set(
+            const_cast<index_t*>(dom_idxs.data()), dom_idxs.size());
         }
     }
 }
@@ -1621,6 +1799,61 @@ braid(const std::string &mesh_type,
     else if(mesh_type == "points")
     {
         braid_points_explicit(npts_x,npts_y,npts_z,res);
+    }
+    else
+    {
+        CONDUIT_ERROR("unknown mesh_type = " << mesh_type);
+    }
+}
+
+
+
+//---------------------------------------------------------------------------//
+void
+misc(const std::string &mesh_type,
+     index_t npts_x, // number of points in x
+     index_t npts_y, // number of points in y
+     index_t /*npts_z*/, // number of points in z
+     Node &res)
+{
+    // TODO(JRC): Improve these examples so that they use different example
+    // geometry than is used in the "braid" examples.
+    if(mesh_type == "matsets")
+    {
+        braid_quads(npts_x,npts_y,res);
+        braid_init_example_matset(npts_x-1,npts_y-1,0,res["matsets/mesh"]);
+    }
+    else if(mesh_type == "adjsets")
+    {
+        const index_t domain_name_size = 30;
+        char domain_name[domain_name_size];
+
+        for(index_t j = 0; j < 2; j++)
+        {
+            for(index_t i = 0; i < 2; i++)
+            {
+                const index_t domain_id = j * 2 + i;
+                snprintf(domain_name, domain_name_size, "domain%ld", domain_id);
+
+                Node &domain_node = res[domain_name];
+                braid_quads(npts_x,npts_y,domain_node);
+                domain_node["state/domain_id"].set(domain_id);
+
+                Node &domain_coords = domain_node["coordsets/coords/values"];
+                float64_array domain_coords_x = domain_coords["x"].as_float64_array();
+                for(index_t x = 0; x < domain_coords_x.number_of_elements(); x++)
+                {
+                    domain_coords_x[x] += i * 20.0;
+                }
+                float64_array domain_coords_y = domain_coords["y"].as_float64_array();
+                for(index_t y = 0; y < domain_coords_y.number_of_elements(); y++)
+                {
+                    domain_coords_y[y] += j * 20.0;
+                }
+            }
+        }
+
+        braid_init_example_adjset(res);
     }
     else
     {

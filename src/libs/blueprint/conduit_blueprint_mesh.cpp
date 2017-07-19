@@ -62,7 +62,290 @@ using namespace conduit::blueprint::utils;
 namespace conduit { namespace blueprint { namespace mesh {
     bool verify_single_domain(const conduit::Node &n, conduit::Node &info);
     bool verify_multi_domain(const conduit::Node &n, conduit::Node &info);
+
+    static const std::string association_list[2] = {"vertex", "element"};
+    static const std::vector<std::string> associations(association_list,
+        association_list + sizeof(association_list) / sizeof(association_list[0]));
+
+    static const std::string coord_type_list[3] = {"uniform", "rectilinear", "explicit"};
+    static const std::vector<std::string> coord_types(coord_type_list,
+        coord_type_list + sizeof(coord_type_list) / sizeof(coord_type_list[0]));
+
+    static const std::string coord_system_list[3] = {"cartesian", "cylindrical", "spherical"};
+    static const std::vector<std::string> coord_systems(coord_system_list,
+        coord_system_list + sizeof(coord_system_list) / sizeof(coord_system_list[0]));
+
+    static const std::string topo_type_list[4] = {"uniform", "rectilinear", "structured", "unstructured"};
+    static const std::vector<std::string> topo_types(topo_type_list,
+        topo_type_list + sizeof(topo_type_list) / sizeof(topo_type_list[0]));
+    static const std::string topo_shape_list[6] = {"point", "line", "tri", "quad", "tet", "hex"};
+    static const std::vector<std::string> topo_shapes(topo_shape_list,
+        topo_shape_list + sizeof(topo_shape_list) / sizeof(topo_shape_list[0]));
+
+    static const std::string coordinate_axis_list[7] = {"x", "y", "z", "r", "z", "theta", "phi"};
+    static const std::vector<std::string> coordinate_axes(coordinate_axis_list,
+        coordinate_axis_list + sizeof(coordinate_axis_list) / sizeof(coordinate_axis_list[0]));
 } } }
+
+//-----------------------------------------------------------------------------
+// -- begin internal helper functions --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool verify_field_exists(const std::string &protocol,
+                         const conduit::Node &node,
+                         conduit::Node &info,
+                         const std::string &field_name = "")
+{
+    bool res = true;
+
+    if(field_name != "")
+    {
+        if(!node.has_child(field_name))
+        {
+            log_error(info, protocol, "missing child \"" + field_name + "\"");
+            res = false;
+        }
+
+        log_verify_result(info[field_name], res);
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+bool verify_integer_field(const std::string &protocol,
+                          const conduit::Node &node,
+                          conduit::Node &info,
+                          const std::string &field_name = "")
+{
+    Node &field_info = (field_name != "") ? info[field_name] : info;
+
+    bool res = verify_field_exists(protocol, node, info, field_name);
+    if(res)
+    {
+        const Node &field_node = (field_name != "") ? node[field_name] : node;
+
+        if(!field_node.dtype().is_integer())
+        {
+            log_error(info, protocol, "\"" + field_name + "\" is not an integer (array)");
+            res = false;
+        }
+    }
+
+    log_verify_result(field_info, res);
+
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+bool verify_number_field(const std::string &protocol,
+                         const conduit::Node &node,
+                         conduit::Node &info,
+                         const std::string &field_name = "")
+{
+    Node &field_info = (field_name != "") ? info[field_name] : info;
+
+    bool res = verify_field_exists(protocol, node, info, field_name);
+    if(res)
+    {
+        const Node &field_node = (field_name != "") ? node[field_name] : node;
+
+        if(!field_node.dtype().is_number())
+        {
+            log_error(info, protocol, "\"" + field_name + "\" is not a number");
+            res = false;
+        }
+    }
+
+    log_verify_result(field_info, res);
+
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+bool verify_string_field(const std::string &protocol,
+                         const conduit::Node &node,
+                         conduit::Node &info,
+                         const std::string &field_name = "")
+{
+    Node &field_info = (field_name != "") ? info[field_name] : info;
+
+    bool res = verify_field_exists(protocol, node, info, field_name);
+    if(res)
+    {
+        const Node &field_node = (field_name != "") ? node[field_name] : node;
+
+        if(!field_node.dtype().is_string())
+        {
+            log_error(info, protocol, "\"" + field_name + "\" is not a string");
+            res = false;
+        }
+    }
+
+    log_verify_result(field_info, res);
+
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+bool verify_object_field(const std::string &protocol,
+                         const conduit::Node &node,
+                         conduit::Node &info,
+                         const std::string &field_name = "",
+                         const bool allow_list = false)
+{
+    Node &field_info = (field_name != "") ? info[field_name] : info;
+
+    bool res = verify_field_exists(protocol, node, info, field_name);
+    if(res)
+    {
+        const Node &field_node = (field_name != "") ? node[field_name] : node;
+
+        if(!(field_node.dtype().is_object() ||
+            (allow_list && field_node.dtype().is_list())))
+        {
+            log_error(info, protocol, "\"" + field_name + "\" is not an object" +
+                                      (allow_list ? " or a list" : ""));
+            res = false;
+        }
+        else if(field_node.number_of_children() == 0)
+        {
+            log_error(info,protocol,"\"" + field_name + "\" has no children");
+            res = false;
+        }
+    }
+
+    log_verify_result(field_info, res);
+
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+bool verify_mcarray_field(const std::string &protocol,
+                          const conduit::Node &node,
+                          conduit::Node &info,
+                          const std::string &field_name = "",
+                          const bool allow_single = true)
+{
+    Node &field_info = (field_name != "") ? info[field_name] : info;
+
+    bool res = verify_field_exists(protocol, node, info, field_name);
+    if(res)
+    {
+        const Node &field_node = (field_name != "") ? node[field_name] : node;
+
+        if(field_node.dtype().is_object())
+        {
+            if(!blueprint::mcarray::verify(field_node,field_info))
+            {
+                 res = false;
+            }
+            else
+            {
+                log_info(info, protocol, "\"" + field_name + "\" is a mcarray.");
+            }
+        }
+        else if(allow_single && field_node.dtype().is_number())
+        {
+            log_info(info, protocol, "\"" + field_name + "\" " +
+                                       "is a single component numeric array.");
+        }
+        else
+        {
+            log_error(info, protocol, "\"" + field_name + "\" is not a " +
+                                        (allow_single ? "numeric array or " : "") +
+                                        "mcarray.");
+            res = false;
+        }
+    }
+
+    log_verify_result(field_info, res);
+
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+bool verify_enum_field(const std::string &protocol,
+                       const conduit::Node &node,
+                       conduit::Node &info,
+                       const std::string &field_name,
+                       const std::vector<std::string> &enum_values )
+{
+    Node &field_info = (field_name != "") ? info[field_name] : info;
+
+    bool res = verify_string_field(protocol, node, info, field_name);
+    if(res)
+    {
+        const Node &field_node = (field_name != "") ? node[field_name] : node;
+
+        const std::string field_value = field_node.as_string();
+        bool is_field_enum = false;
+        for(size_t i=0; i < enum_values.size(); i++)
+        {
+            is_field_enum |= (field_value == enum_values[i]);
+        }
+
+        if(is_field_enum)
+        {
+            log_info(info, protocol, "\"" + field_name + "\" " +
+                                       "has valid value " + field_value);
+        }
+        else
+        {
+            log_error(info, protocol, "\"" + field_name + "\" " +
+                                        "has invalid value " + field_value);
+            res = false;
+        }
+    }
+
+    log_verify_result(field_info, res);
+
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+bool verify_reference_field(const std::string &protocol,
+                            const conduit::Node &node_tree,
+                            conduit::Node &info_tree,
+                            const conduit::Node &node,
+                            conduit::Node &info,
+                            const std::string &field_name,
+                            const std::string &ref_path)
+{
+    bool res = verify_string_field(protocol, node, info, field_name);
+    if(res)
+    {
+        const std::string ref_name = node[field_name].as_string();
+
+        if(!node_tree.has_child(ref_path) || !node_tree[ref_path].has_child(ref_name))
+        {
+            log_error(info, protocol, "reference to non-existent " + ref_path +
+                                        " \"" + field_name + "\"");
+            res = false;
+        }
+        else if(info_tree[ref_path][ref_name]["valid"].as_string() != "true")
+        {
+            log_error(info, protocol, "reference to invalid " + ref_path +
+                                        " \"" + field_name + "\"");
+            res = false;
+        }
+    }
+
+    log_verify_result(info[field_name], res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+// -- end internal helper functions --
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -84,7 +367,6 @@ mesh::verify(const std::string &protocol,
              Node &info)
 {
     bool res = false;
-    
     info.reset();
 
     if(protocol == "coordset")
@@ -95,9 +377,17 @@ mesh::verify(const std::string &protocol,
     {
         res = topology::verify(n,info);
     }
+    else if(protocol == "matset")
+    {
+        res = matset::verify(n,info);
+    }
     else if(protocol == "field")
     {
         res = field::verify(n,info);
+    }
+    else if(protocol == "adjset")
+    {
+        res = adjset::verify(n,info);
     }
     else if(protocol == "index")
     {
@@ -111,9 +401,17 @@ mesh::verify(const std::string &protocol,
     {
         res = topology::index::verify(n,info);
     }
+    else if(protocol == "matset/index")
+    {
+        res = matset::index::verify(n,info);
+    }
     else if(protocol == "field/index")
     {
         res = field::index::verify(n,info);
+    }
+    else if(protocol == "adjset/index")
+    {
+        res = adjset::index::verify(n,info);
     }
 
     return res;
@@ -125,56 +423,32 @@ bool
 mesh::verify_single_domain(const Node &n,
                            Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh";
     bool res = true;
-
-    const std::string proto_name = "mesh";
+    info.reset();
 
     // Given that not conforming result is likely to trigger an error 
     // state in client code it seems like we should give as much info as
     // possible about what is wrong with the mesh, so we don't early
     // return when an error is found.
-    
-    // required: "coordsets", with at least one child
-    //  each child must conform to "mesh::coordset"
-    if(!n.has_child("coordsets"))
+    if(!verify_object_field(protocol, n, info, "coordsets"))
     {
-        log_error(info,proto_name,"missing child \"coordsets\"");
-        res = false;
-    }
-    else if(n["coordsets"].number_of_children() == 0)
-    {
-        log_error(info,proto_name,"\"coordsets\" has no children");
         res = false;
     }
     else
     {
         NodeConstIterator itr = n["coordsets"].children();
-    
         while(itr.has_next())
         {
             const Node &chld = itr.next();
             const std::string chld_name = itr.name();
 
-            if(!coordset::verify(chld,info["coordsets"][chld_name]))
-            {
-                log_error(info,proto_name,chld_name 
-                            + " is not a valid mesh::coordset");
-                res = false;
-            }
+            res &= coordset::verify(chld, info["coordsets"][chld_name]);
         }
     }
-    
-    // required: "topologies",  with at least one child
-    // each child must conform to "mesh::topology"
-    if(!n.has_child("topologies"))
+
+    if(!verify_object_field(protocol, n, info, "topologies"))
     {
-        log_error(info,proto_name,"missing child \"topologies\"");
-        res = false;
-    }
-    else if(n["topologies"].number_of_children() == 0)
-    {
-        log_error(info,proto_name,"\"topologies\" has no children");
         res = false;
     }
     else
@@ -184,44 +458,42 @@ mesh::verify_single_domain(const Node &n,
         {
             const Node &chld = itr.next();
             const std::string chld_name = itr.name();
-            const std::string coords_name = chld.has_child("coordset") ?
-                chld["coordset"].as_string() : "";
+            Node &chld_info = info["topologies"][chld_name];
 
-            if(!topology::verify(chld,info["topologies"][chld_name]))
+            res &= topology::verify(chld, chld_info);
+            res &= verify_reference_field(protocol, n, info,
+                chld, chld_info, "coordset", "coordsets");
+        }
+    }
+
+    // optional: "matsets", each child must conform to "mesh::matset"
+    if(n.has_path("matsets"))
+    {
+        if(!verify_object_field(protocol, n, info, "matsets"))
+        {
+            res = false;
+        }
+        else
+        {
+            NodeConstIterator itr = n["matsets"].children();
+            while(itr.has_next())
             {
-                log_error(info,proto_name,chld_name 
-                            + " is not a valid mesh::topology");
-                res = false;
-            }
-            else if(!n.has_child("coordsets") || !n["coordsets"].has_child(coords_name))
-            {
-                std::ostringstream oss;
-                oss << "topology "
-                    << "\"" << chld_name  << "\" "
-                    << "references a non-existent coordset "
-                    << "\"" << coords_name  << "\" ";
-                log_error(info,proto_name,oss.str());
-                res = false;
-            }
-            else if(info["coordsets"][coords_name]["valid"].as_string() != "true")
-            {
-                std::ostringstream oss;
-                oss << "topology "
-                    << "\"" << chld_name  << "\" "
-                    << "references an invalid coordset "
-                    << "\"" << coords_name  << "\" ";
-                log_error(info,proto_name,oss.str());
-                res = false;
+                const Node &chld = itr.next();
+                const std::string chld_name = itr.name();
+                Node &chld_info = info["matsets"][chld_name];
+
+                res &= matset::verify(chld, chld_info);
+                res &= verify_reference_field(protocol, n, info,
+                    chld, chld_info, "topology", "topologies");
             }
         }
     }
-    
+
     // optional: "fields", each child must conform to "mesh::field"
     if(n.has_path("fields"))
     {
-        if(n["fields"].number_of_children() == 0)
+        if(!verify_object_field(protocol, n, info, "fields"))
         {
-            log_error(info,proto_name,"\"fields\" has no children");
             res = false;
         }
         else
@@ -231,76 +503,61 @@ mesh::verify_single_domain(const Node &n,
             {
                 const Node &chld = itr.next();
                 const std::string chld_name = itr.name();
-                const std::string topo_name = chld.has_child("topology") ?
-                    chld["topology"].as_string() : "";
+                Node &chld_info = info["fields"][chld_name];
 
-                if(!field::verify(chld,info["fields"][chld_name]))
+                res &= field::verify(chld, chld_info);
+                if(chld.has_child("topology"))
                 {
-                    log_error(info,proto_name,chld_name 
-                                + " is not a valid mesh::field");
-                    res = false;
+                    res &= verify_reference_field(protocol, n, info,
+                        chld, chld_info, "topology", "topologies");
                 }
-                else if(!n.has_child("topologies") || !n["topologies"].has_child(topo_name))
+                if(chld.has_child("matset"))
                 {
-                    std::ostringstream oss;
-                    oss << "field "
-                        << "\"" << chld_name  << "\" "
-                        << "references a non-existent topology "
-                        << "\"" << topo_name  << "\" ";
-                    log_error(info,proto_name,oss.str());
-                    res = false;
+                    res &= verify_reference_field(protocol, n, info,
+                        chld, chld_info, "matset", "matsets");
                 }
-                else if(info["topologies"][topo_name]["valid"].as_string() != "true")
-                {
-                    std::ostringstream oss;
-                    oss << "field "
-                        << "\"" << chld_name  << "\" "
-                        << "references an invalid topology "
-                        << "\"" << topo_name << "\" ";
-                    log_error(info,proto_name,oss.str());
-                    res = false;
-                }
+            }
+        }
+    }
+
+    // optional: "adjsets", each child must conform to "mesh::matset"
+    if(n.has_path("adjsets"))
+    {
+        if(!verify_object_field(protocol, n, info, "adjsets"))
+        {
+            res = false;
+        }
+        else
+        {
+            NodeConstIterator itr = n["adjsets"].children();
+            while(itr.has_next())
+            {
+                const Node &chld = itr.next();
+                const std::string chld_name = itr.name();
+                Node &chld_info = info["adjsets"][chld_name];
+
+                res &= adjset::verify(chld, chld_info);
+                res &= verify_reference_field(protocol, n, info,
+                    chld, chld_info, "topology", "topologies");
             }
         }
     }
 
     // one last pass to make sure if a grid_function was specified by a topo,
     // it is valid
-
     if (n.has_child("topologies"))
     {
         NodeConstIterator itr = n["topologies"].children();
-
         while (itr.has_next())
         {
             const Node &chld = itr.next();
             const std::string chld_name = itr.name();
+            Node &chld_info = info["topologies"][chld_name];
 
-            if (chld.has_child("grid_function") &&
-                chld["grid_function"].dtype().is_string())
+            if(chld.has_child("grid_function"))
             {
-                std::string gf_name = chld["grid_function"].as_string();
-
-                if(!n.has_child("fields") || !n["fields"].has_child(gf_name))
-                {
-                    std::ostringstream oss;
-                    oss << "topology "
-                        << "\"" << chld_name << "\" "
-                        << " grid_function references a non-existent field "
-                        << "\"" << gf_name << "\" ";
-                    log_error(info, proto_name, oss.str());
-                    res = false;
-                }
-                else if (info["fields"][gf_name]["valid"].as_string() != "true")
-                {
-                    std::ostringstream oss;
-                    oss << "topology "
-                        << "\"" << chld_name << "\" "
-                        << " grid_function references an invalid field "
-                        << "\"" << gf_name << "\" ";
-                    log_error(info, proto_name, oss.str());
-                    res = false;
-                }
+                res &= verify_reference_field(protocol, n, info,
+                    chld, chld_info, "grid_function", "fields");
             }
         }
     }
@@ -315,14 +572,13 @@ mesh::verify_single_domain(const Node &n,
 bool mesh::verify_multi_domain(const Node &n,
                                Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh";
     bool res = true;
-
-    const std::string proto_name = "mesh";
+    info.reset();
 
     if(!n.dtype().is_object() && !n.dtype().is_list())
     {
-        log_error(info,proto_name,"not an object or a list");
+        log_error(info, protocol, "not an object or a list");
         res = false;
     }
     else
@@ -331,29 +587,11 @@ bool mesh::verify_multi_domain(const Node &n,
         while(itr.has_next())
         {
             const Node &chld = itr.next();
-            std::string chld_name;
-            {
-                std::ostringstream oss;
-                if(n.dtype().is_object())
-                {
-                    oss << itr.name();
-                }
-                else
-                {
-                    oss << itr.index();
-                }
-                chld_name = oss.str();
-            }
-
-            if(!mesh::verify_single_domain(chld, info[chld_name]))
-            {
-                log_error(info,proto_name,
-                          "child " + chld_name + " is not a valid mesh");
-                res = false;
-            }
+            const std::string chld_name = itr.name();
+            res &= mesh::verify_single_domain(chld, info[chld_name]);
         }
 
-        log_info(info,proto_name,"is a multi domain mesh");
+        log_info(info, protocol, "is a multi domain mesh");
     }
 
     return res;
@@ -365,8 +603,8 @@ bool
 mesh::verify(const Node &n,
              Node &info)
 {
-    info.reset();
     bool res = true;
+    info.reset();
 
     if(mesh::verify_multi_domain(n, info))
     {
@@ -402,7 +640,7 @@ bool mesh::to_multi_domain(const conduit::Node &n,
     }
     else
     {
-        conduit::Node& dest_dom = dest.append();
+        conduit::Node &dest_dom = dest.append();
         dest_dom.set_external(n);
     }
 
@@ -414,17 +652,17 @@ bool mesh::to_multi_domain(const conduit::Node &n,
 std::string 
 identify_coord_sys_type(const Node &coords)
 {
-    if( coords.has_child("theta") || coords.has_child("phi"))
+    if(coords.has_child("theta") || coords.has_child("phi"))
     {
         return std::string("spherical");
     }
-    else if( coords.has_child("r") ) // rz, or r w/o theta, phi
+    else if(coords.has_child("r")) // rz, or r w/o theta, phi
     {
         return std::string("cylindrical");
     }
-    else if( coords.has_child("x") || 
-             coords.has_child("y") || 
-             coords.has_child("z") )
+    else if(coords.has_child("x") ||
+            coords.has_child("y") ||
+            coords.has_child("z"))
     {
         return std::string("cartesian");
     }
@@ -443,20 +681,18 @@ mesh::generate_index(const Node &mesh,
                      Node &index_out)
 {
     index_out.reset();
-    
+
     index_out["state/number_of_domains"] = number_of_domains;
 
     NodeConstIterator itr = mesh["coordsets"].children();
-    
     while(itr.has_next())
     {
         const Node &coordset = itr.next();
         std::string coordset_name = itr.name();
         Node &idx_coordset = index_out["coordsets"][coordset_name];
-        
+
         std::string coordset_type =   coordset["type"].as_string();
         idx_coordset["type"] = coordset_type;
-    
         if(coordset_type == "uniform")
         {
             // default to cartesian, but check if origin or spacing exist
@@ -486,12 +722,12 @@ mesh::generate_index(const Node &mesh,
             {
                 // assume cartesian 
                 index_t num_comps = coordset["dims"].number_of_children();
-                
+
                 if(num_comps > 0)
                 {
                     idx_coordset["coord_system/axes/x"];
                 }
-                
+
                 if(num_comps > 1)
                 {
                     idx_coordset["coord_system/axes/y"];
@@ -520,7 +756,6 @@ mesh::generate_index(const Node &mesh,
     }
 
     itr = mesh["topologies"].children();
-    
     while(itr.has_next())
     {
         const Node &topo = itr.next();
@@ -535,27 +770,62 @@ mesh::generate_index(const Node &mesh,
             idx_topo["grid_function"] = topo["grid_function"].as_string();
         }
     }
-    
+
+    if(mesh.has_child("matsets"))
+    {
+        itr = mesh["matsets"].children();
+        while(itr.has_next())
+        {
+            const Node &matset = itr.next();
+            const std::string matset_name = itr.name();
+            Node &idx_matset = index_out["matsets"][matset_name];
+
+            idx_matset["topology"] = matset["topology"].as_string();
+            NodeConstIterator mats_itr = matset["volume_fractions"].children();
+            while(mats_itr.has_next())
+            {
+                mats_itr.next();
+                idx_matset["materials"][mats_itr.name()];
+            }
+            idx_matset["path"] = ref_path + "/matsets/" + matset_name;
+        }
+    }
+
     if(mesh.has_child("fields"))
     {
-    
         itr = mesh["fields"].children();
-        
         while(itr.has_next())
         {
             const Node &fld = itr.next();
             std::string fld_name = itr.name();
             Node &idx_fld = index_out["fields"][fld_name];
-            
+
             index_t ncomps = 1;
-            if(fld["values"].dtype().is_object())
+            if(fld.has_child("values"))
             {
-                ncomps = fld["values"].number_of_children();
+                if(fld["values"].dtype().is_object())
+                {
+                    ncomps = fld["values"].number_of_children();
+                }
             }
-            
+            else
+            {
+                if(fld["matset_values"].child(0).dtype().is_object())
+                {
+                    ncomps = fld["matset_values"].child(0).number_of_children();
+                }
+            }
             idx_fld["number_of_components"] = ncomps;
-            
-            idx_fld["topology"] = fld["topology"].as_string();
+
+            if(fld.has_child("topology"))
+            {
+                idx_fld["topology"] = fld["topology"].as_string();
+            }
+            if(fld.has_child("matset"))
+            {
+                idx_fld["matset"] = fld["matset"].as_string();
+            }
+
             if(fld.has_child("association"))
             {
                 idx_fld["association"] = fld["association"];
@@ -564,7 +834,25 @@ mesh::generate_index(const Node &mesh,
             {
                 idx_fld["basis"] = fld["basis"];
             }
+
             idx_fld["path"] = ref_path + "/fields/" + fld_name;
+        }
+    }
+
+    if(mesh.has_child("adjsets"))
+    {
+        itr = mesh["adjsets"].children();
+        while(itr.has_next())
+        {
+            const Node &adjset = itr.next();
+            const std::string adj_name = itr.name();
+            Node &idx_adjset = index_out["adjsets"][adj_name];
+
+            // TODO(JRC): Determine whether or not any information from the
+            // "neighbors" and "values" sections need to be included in the index.
+            idx_adjset["association"] = adjset["association"].as_string();
+            idx_adjset["topology"] = adjset["topology"].as_string();
+            idx_adjset["path"] = ref_path + "/adjsets/" + adj_name;
         }
     }
 }
@@ -580,45 +868,47 @@ bool
 mesh::logical_dims::verify(const Node &dims,
                            Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh::logical_dims";
     bool res = true;
-    const std::string proto_name = "mesh::logical_dims";
-    
-    if(!dims.has_child("i"))
-    {
-        log_error(info,proto_name, "missing child \"dims\"");
-        res = false;
-    }
-    else if(!dims["i"].dtype().is_number())
-    {
-        log_error(info,proto_name,"dims/i is not a number");
-        res = false;
-    }
-    
+    info.reset();
+
+    res &= verify_integer_field(protocol, dims, info, "i");
     if(dims.has_child("j"))
     {
-        log_optional(info,proto_name, "dims includes j");
-        if(!dims["j"].dtype().is_number())
-        {
-            log_error(info,proto_name,"dims/j is not a number");
-            res = false;
-        }
+        res &= verify_integer_field(protocol, dims, info, "j");
     }
-    
     if(dims.has_child("k"))
     {
-        log_optional(info,proto_name, "dims includes k");
-        if(!dims["k"].dtype().is_number())
-        {
-            log_error(info,proto_name,"dims/k is not a number");
-            res = false;
-        }
+        res &= verify_integer_field(protocol, dims, info, "k");
     }
-    
-    log_verify_result(info,res);
+
+    log_verify_result(info, res);
 
     return res;
 }
+
+
+//-----------------------------------------------------------------------------
+// blueprint::mesh::association protocol interface
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+bool
+mesh::association::verify(const Node &assoc,
+                          Node &info)
+{
+    const std::string protocol = "mesh::association";
+    bool res = true;
+    info.reset();
+
+    res &= verify_enum_field(protocol, assoc, info, "", mesh::associations);
+
+    log_verify_result(info, res);
+
+    return res;
+}
+
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::coordset protocol interface
@@ -634,48 +924,20 @@ bool
 mesh::coordset::uniform::origin::verify(const Node &origin,
                                         Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh::coordset::uniform::origin";
     bool res = true;
+    info.reset();
 
-    const std::string proto_name = "mesh::coordset::uniform::origin";
-
-    if(origin.has_child("x") && !origin["x"].dtype().is_number())
+    for(size_t i = 0; i < mesh::coordinate_axes.size(); i++)
     {
-        log_error(info,proto_name,"origin/x is not a number");
-        res = false;
+        const std::string &coord_axis = mesh::coordinate_axes[i];
+        if(origin.has_child(coord_axis))
+        {
+            res &= verify_number_field(protocol, origin, info, coord_axis);
+        }
     }
 
-    if(origin.has_child("y") && !origin["y"].dtype().is_number())
-    {
-        log_error(info,proto_name,"origin/y is not a number");
-        res = false;
-    }
-
-    if(origin.has_child("z") && !origin["z"].dtype().is_number())
-    {
-        log_error(info,proto_name,"origin/z is not a number");
-        res = false;
-    }
-    
-    if(origin.has_child("r") && !origin["r"].dtype().is_number())
-    {
-        log_error(info,proto_name,"origin/r is not a number");
-        res = false;
-    }
-
-    if(origin.has_child("theta") && !origin["theta"].dtype().is_number())
-    {
-        log_error(info,proto_name,"origin/theta is not a number");
-        res = false;
-    }
-
-    if(origin.has_child("phi") && !origin["phi"].dtype().is_number())
-    {
-        log_error(info,proto_name,"origin/phi is not a number");
-        res = false;
-    }
-
-    log_verify_result(info,res);
+    log_verify_result(info, res);
 
     return res;
 }
@@ -687,45 +949,18 @@ bool
 mesh::coordset::uniform::spacing::verify(const Node &spacing,
                                          Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh::coordset::uniform::spacing";
     bool res = true;
+    info.reset();
 
-    const std::string proto_name = "mesh::coordset::uniform::spacing";
-
-    if(spacing.has_child("dx") && !spacing["dx"].dtype().is_number())
+    for(size_t i = 0; i < mesh::coordinate_axes.size(); i++)
     {
-        log_error(info,proto_name,"spacing/dx is not a number");
-        res = false;
-    }
-
-    if(spacing.has_child("dy") && !spacing["dy"].dtype().is_number())
-    {
-        log_error(info,proto_name,"spacing/dy is not a number");
-        res = false;
-    }
-
-    if(spacing.has_child("dz") && !spacing["dz"].dtype().is_number())
-    {
-        log_error(info,proto_name,"spacing/dz is not a number");
-        res = false;
-    }
-    
-    if(spacing.has_child("dr") && !spacing["dr"].dtype().is_number())
-    {
-        log_error(info,proto_name,"spacing/dr is not a number");
-        res = false;
-    }
-
-    if(spacing.has_child("dtheta") && !spacing["dtheta"].dtype().is_number())
-    {
-        log_error(info,proto_name,"spacing/dtheta is not a number");
-        res = false;
-    }
-
-    if(spacing.has_child("dphi") && !spacing["dphi"].dtype().is_number())
-    {
-        log_error(info,proto_name,"spacing/phi is not a number");
-        res = false;
+        const std::string &coord_axis = mesh::coordinate_axes[i];
+        const std::string coord_axis_spacing = "d" + coord_axis;
+        if(spacing.has_child(coord_axis_spacing))
+        {
+            res &= verify_number_field(protocol, spacing, info, coord_axis_spacing);
+        }
     }
 
     log_verify_result(info,res);
@@ -738,44 +973,25 @@ bool
 mesh::coordset::uniform::verify(const Node &coordset,
                                 Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh::coordset::uniform";
     bool res = true;
+    info.reset();
 
-    const std::string proto_name = "mesh::coordset::uniform";
-
-    if(!coordset.has_child("dims"))
-    {
-        log_error(info,proto_name, "missing child \"dims\"");
-        res = false;
-    }
-    else
-    {
-        if(!mesh::logical_dims::verify(coordset["dims"],info["dims"]))
-        {
-            res= false;
-        }
-    }
+    res &= verify_object_field(protocol, coordset, info, "dims") &&
+           mesh::logical_dims::verify(coordset["dims"], info["dims"]);
 
     if(coordset.has_child("origin"))
     {
-        log_optional(info,proto_name, "has origin");
-
-        if(!mesh::coordset::uniform::origin::verify(coordset["origin"],
-                                                    info["origin"]))
-        {
-            res= false;
-        }
+        log_optional(info, protocol, "has origin");
+        res &= mesh::coordset::uniform::origin::verify(coordset["origin"],
+                                                       info["origin"]);
     }
 
     if(coordset.has_child("spacing"))
     {
-        log_optional(info,proto_name, "has spacing");
-
-        if(!mesh::coordset::uniform::spacing::verify(coordset["spacing"],
-                                                     info["spacing"]))
-        {
-            res= false;
-        }
+        log_optional(info,protocol, "has spacing");
+        res &= mesh::coordset::uniform::spacing::verify(coordset["spacing"],
+                                                        info["spacing"]);
     }
 
     log_verify_result(info,res);
@@ -788,53 +1004,26 @@ bool
 mesh::coordset::rectilinear::verify(const Node &coordset,
                                     Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh::coordset::rectilinear";
     bool res = true;
+    info.reset();
 
-    std::string proto_name = "mesh::coordset::rectilinear";
-
-    if(!coordset.has_child("values"))
+    if(!verify_object_field(protocol, coordset, info, "values", true))
     {
-        log_error(info,proto_name, "missing child \"values\"");
         res = false;
     }
     else
     {
-        const Node &n_vals = coordset["values"];
-
-        if( ! (n_vals.dtype().is_object() || n_vals.dtype().is_list()) )
+        NodeConstIterator itr = coordset["values"].children();
+        while(itr.has_next())
         {
-            log_error(info,proto_name,"Node has no children");
-            res = false;
-        }
-        else
-        {
-            // each child should be a numeric array
-            NodeConstIterator itr = n_vals.children();
-
-            while(itr.has_next())
+            const Node &chld = itr.next();
+            const std::string chld_name = itr.name();
+            if(!chld.dtype().is_number())
             {
-                const Node &chld = itr.next();
-                // make sure every child is a numeric array
-                if(!chld.dtype().is_number())
-                {
-                    std::ostringstream oss;
-                    std::string chld_name = itr.name();
-
-                    if(chld_name.size() == 0)
-                    {
-                        oss << "child [" << itr.index() <<  "]";
-                    }
-                    else
-                    {
-                        oss << "child \"" << chld_name << "\"";
-                    }
-
-                    oss << " is not a numeric type.";
-
-                    log_error(info,proto_name,oss.str());
-                    res = false;
-                }
+                log_error(info, protocol, "value child \"" + chld_name + "\" " +
+                                          "is not a number array");
+                res = false;
             }
         }
     }
@@ -850,50 +1039,33 @@ bool
 mesh::coordset::_explicit::verify(const Node &coordset,
                                  Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh::coordset::explicit";
     bool res = true;
-    
-    std::string proto_name = "mesh::coordset::explicit";
+    info.reset();
 
-    if(!coordset.has_child("values"))
-    {
-        log_error(info,proto_name, "missing child \"values\"");
-        res = false;
-    }
-    else
-    {
-        // values should be a mcarray
-        res = blueprint::mcarray::verify(coordset["values"],
-                                         info["values"]);
-    }
+    res &= verify_mcarray_field(protocol, coordset, info, "values", false);
 
     log_verify_result(info,res);
 
     return res;
 }
 
+
 //-----------------------------------------------------------------------------
 bool
 mesh::coordset::verify(const Node &coordset,
                        Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh::coordset";
     bool res = true;
+    info.reset();
 
-    std::string proto_name = "mesh::coordset";
-    
-    if(!coordset.has_child("type"))
+    res &= verify_field_exists(protocol, coordset, info, "type") &&
+           mesh::coordset::type::verify(coordset["type"], info["type"]);
+
+    if(res)
     {
-        log_error(info,proto_name, "missing child \"type\"");
-        res = false;
-    }
-    else if(!coordset::type::verify(coordset["type"],info["type"]))
-    {
-        res = false;
-    }
-    else
-    {
-        std::string type_name = coordset["type"].as_string();
+        const std::string type_name = coordset["type"].as_string();
 
         if(type_name == "uniform")
         {
@@ -914,48 +1086,27 @@ mesh::coordset::verify(const Node &coordset,
     return res;
 }
 
+
 //-----------------------------------------------------------------------------
 // blueprint::mesh::coordset::type protocol interface
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 bool
-mesh::coordset::type::verify(const Node &coordset_type,
+mesh::coordset::type::verify(const Node &type,
                              Node &info)
-{    
-    info.reset();
+{
+    const std::string protocol = "mesh::coordset::type";
     bool res = true;
-    std::string proto_name = "mesh::coordset::type";
+    info.reset();
 
-
-    if(!coordset_type.dtype().is_string())
-    {
-        log_error(info,proto_name,"is not a string");
-        res = false;
-    }
-    else
-    {
-        std::string coordset_type_str = coordset_type.as_string();
-
-        if(coordset_type_str == "uniform"     ||
-           coordset_type_str == "rectilinear" ||
-           coordset_type_str == "explicit")
-        {
-            log_info(info,proto_name,"valid type: " + coordset_type_str);
-        }
-        else
-        {
-            log_error(info,
-                      proto_name,
-                      "unsupported value:" + coordset_type_str);
-            res = false;
-        }
-    }
+    res &= verify_enum_field(protocol, type, info, "", mesh::coord_types);
 
     log_verify_result(info,res);
 
     return res;
 }
+
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::coordset::coord_system protocol interface
@@ -963,118 +1114,56 @@ mesh::coordset::type::verify(const Node &coordset_type,
 
 //-----------------------------------------------------------------------------
 bool
-check_cart_coord_sys_axis_name(std::string &name)
-{
-    return ( name == "x" || name == "y" || name == "z");
-}
-
-//-----------------------------------------------------------------------------
-bool
-check_sph_coord_sys_axis_name(std::string &name)
-{
-    return ( name == "r" || name == "theta" || name == "phi");
-}
-
-//-----------------------------------------------------------------------------
-bool
-check_cyln_coord_sys_axis_name(std::string &name)
-{
-    return ( name == "r" || name == "z");
-}
-
-
-//-----------------------------------------------------------------------------
-bool
 mesh::coordset::coord_system::verify(const Node &coord_sys,
                                      Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh::coordset::coord_system";
     bool res = true;
+    info.reset();
 
-    std::string proto_name = "mesh::coordset::coord_system";
     std::string coord_sys_str = "unknown";
-
-    if(!coord_sys.has_child("type"))
+    if(!verify_enum_field(protocol, coord_sys, info, "type", mesh::coord_systems))
     {
-        log_error(info,proto_name,"missing child \"type\"");
-        res = false;
-    }
-    else if(!coord_sys["type"].dtype().is_string())
-    {
-        log_error(info,proto_name,"is not a string");
         res = false;
     }
     else
     {
         coord_sys_str = coord_sys["type"].as_string();
-
-        if( coord_sys_str == "cartesian" ||
-            coord_sys_str == "cylindrical" ||
-            coord_sys_str == "spherical")
-        {
-            log_info(info,proto_name, "valid type: " + coord_sys_str);
-        }
-        else
-        {
-            log_error(info,proto_name,"unsupported value:"
-                                       + coord_sys_str);
-            res = false;
-        }
     }
 
-    if(!coord_sys.has_child("axes"))
+    if(!verify_object_field(protocol, coord_sys, info, "axes"))
     {
-        log_error(info,proto_name,"missing child \"axes\"");
         res = false;
     }
-    else
+    else if(coord_sys_str != "unknown")
     {
-        const Node &axes = coord_sys["axes"];
-
-        if(axes.number_of_children() == 0)
+        NodeConstIterator itr = coord_sys["axes"].children();
+        while(itr.has_next())
         {
-            log_error(info,proto_name,"axes has no children");
-            res = false;
-        }
-        else
-        {
-            NodeConstIterator itr  = axes.children();
+            itr.next();
+            const std::string axis_name = itr.name();
 
-            while(itr.has_next())
+            bool axis_name_ok = true;
+            if(coord_sys_str == "cartesian")
             {
-                bool axis_name_ok = true;
+                axis_name_ok = axis_name == "x" || axis_name == "y" ||
+                               axis_name == "z";
+            }
+            else if(coord_sys_str == "cylindrical")
+            {
+                axis_name_ok = axis_name == "r" || axis_name == "z";
+            }
+            else if(coord_sys_str == "spherical")
+            {
+                axis_name_ok = axis_name == "r" || axis_name == "theta" ||
+                               axis_name == "phi";
+            }
 
-                itr.next();
-                std::string axis_name = itr.name();
-                if(coord_sys_str == "cartesian")
-                {
-                    axis_name_ok = check_cart_coord_sys_axis_name(axis_name);
-                }
-                else if(coord_sys_str == "cylindrical")
-                {
-                    axis_name_ok = check_cyln_coord_sys_axis_name(axis_name);
-                }
-                else if(coord_sys_str == "spherical")
-                {
-                    axis_name_ok = check_sph_coord_sys_axis_name(axis_name);
-                }
-                else
-                {
-                    log_error(info,
-                              proto_name,
-                              "cannot verify axis name (" + axis_name + ") "
-                              "for coord_sys type " + coord_sys_str);
-                    res = false;
-                }
-
-                if(!axis_name_ok)
-                {
-                    log_error(info,
-                              proto_name,
-                              "unsupported " + coord_sys_str  + 
-                              " axis name: " + axis_name);
-                    res = false;
-                }
+            if(!axis_name_ok)
+            {
+                log_error(info, protocol, "unsupported " + coord_sys_str +
+                                          " axis name: " + axis_name);
+                res = false;
             }
         }
     }
@@ -1094,44 +1183,16 @@ bool
 mesh::coordset::index::verify(const Node &coordset_idx,
                               Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh::coordset::index";
     bool res = true;
-    std::string proto_name = "mesh::coordset::index";
-    // we need the mesh type
-    if(!coordset_idx.has_child("type"))
-    {
-        log_error(info,proto_name, "missing child \"type\"");
-        res = false;
-    }
-    else if(!coordset::type::verify(coordset_idx["type"],info["type"]))
-    {
-        res = false;
-    }
+    info.reset();
 
-    // we need a coord_system
-    if(!coordset_idx.has_child("coord_system"))
-    {
-        log_error(info,proto_name,"missing mesh::coordset::index child \"coord_system\"");
-        res = false;
-    }
-    else if(!coordset::coord_system::verify(coordset_idx["coord_system"],
-                                            info["coord_system"]))
-    {
-        res = false;
-    }
+    res &= verify_field_exists(protocol, coordset_idx, info, "type") &&
+           mesh::coordset::type::verify(coordset_idx["type"], info["type"]);
+    res &= verify_string_field(protocol, coordset_idx, info, "path");
+    res &= verify_object_field(protocol, coordset_idx, info, "coord_system") &&
+           coordset::coord_system::verify(coordset_idx["coord_system"], info["coord_system"]);
 
-    // we need a path
-    if(!coordset_idx.has_child("path"))
-    {
-        log_error(info,proto_name,"missing child \"path\"");
-        res = false;
-    }
-    else if(!coordset_idx["path"].dtype().is_string())
-    {
-        log_error(info,proto_name,"\"path\" is not a string");
-        res = false;
-    }
-    
     log_verify_result(info,res);
 
     return res;
@@ -1147,68 +1208,47 @@ bool
 mesh::topology::verify(const Node &topo,
                        Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh::topology";
     bool res = true;
-    std::string proto_name = "mesh::topology";
+    info.reset();
 
-    // we need the topo type
-    if(!topo.has_child("type"))
-    {
-        log_error(info,proto_name, "missing child \"type\"");
-        res = false;
-    }
-    else if(!mesh::topology::type::verify(topo["type"],info["type"]))
+    res &= verify_string_field(protocol, topo, info, "coordset");
+
+    if(!(verify_field_exists(protocol, topo, info, "type") &&
+         mesh::topology::type::verify(topo["type"], info["type"])))
     {
         res = false;
     }
     else
     {
-        std::string type_name = topo["type"].as_string();
+        const std::string topo_type = topo["type"].as_string();
 
-        if(type_name == "uniform")
+        if(topo_type == "uniform")
         {
-            res = mesh::topology::uniform::verify(topo,info);
+            res &= mesh::topology::uniform::verify(topo,info);
         }
-        else if(type_name == "rectilinear")
+        else if(topo_type == "rectilinear")
         {
-            res = mesh::topology::rectilinear::verify(topo,info);
+            res &= mesh::topology::rectilinear::verify(topo,info);
         }
-        else if(type_name == "structured")
+        else if(topo_type == "structured")
         {
-            res = mesh::topology::structured::verify(topo,info);
+            res &= mesh::topology::structured::verify(topo,info);
         }
-        else if(type_name == "unstructured")
+        else if(topo_type == "unstructured")
         {
-            res = mesh::topology::unstructured::verify(topo,info);
+            res &= mesh::topology::unstructured::verify(topo,info);
         }
     }
 
-    // we need a coordset ref
-    if (!topo.has_child("coordset"))
+    if(topo.has_child("grid_function"))
     {
-        log_error(info, proto_name, "missing child \"coordset\"");
-        res = false;
+        log_optional(info, protocol, "includes grid_function");
+        res &= verify_string_field(protocol, topo, info, "grid_function");
     }
-    else if (!topo["coordset"].dtype().is_string())
-    {
-        log_error(info, proto_name, "\"coordset\" is not a string");
-        res = false;
-    }
-
-    // optional grid_function ref
-    if (topo.has_child("grid_function"))
-    {
-        log_optional(info, proto_name, "includes grid_function");
-        if (!topo["grid_function"].dtype().is_string())
-        {
-            log_error(info, proto_name, "\"grid_function\" is not a string");
-            res = false;
-        }
-    }
-
 
     log_verify_result(info,res);
-    
+
     return res;
 
 }
@@ -1252,32 +1292,21 @@ bool
 mesh::topology::structured::verify(const Node &topo,
                                    Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh::topology::structured";
     bool res = true;
-    std::string proto_name = "mesh::topology::structured";
+    info.reset();
 
-    if(!topo.has_child("elements"))
+    if(!verify_object_field(protocol, topo, info, "elements"))
     {
-        log_error(info,proto_name, "missing child \"elements\"");
         res = false;
     }
     else
     {
         const Node &topo_elements = topo["elements"];
+        Node &info_elements = info["elements"];
 
-        if(!topo_elements.has_child("dims"))
-        {
-            log_error(info["elements"],proto_name, "missing child \"dims\"");
-            res = false;
-        }
-        else
-        {
-            if(!mesh::logical_dims::verify(topo_elements["dims"],
-                                           info["elements/dims"]))
-            {
-                res = false;
-            }
-        }
+        res &= verify_object_field(protocol, topo_elements, info_elements, "dims") &&
+               mesh::logical_dims::verify(topo_elements["dims"], info_elements["dims"]);
     }
 
     // FIXME: Add some verification code here for the optional origin in the
@@ -1288,58 +1317,41 @@ mesh::topology::structured::verify(const Node &topo,
     return res;
 }
 
-
-
 //-----------------------------------------------------------------------------
 bool
 mesh::topology::unstructured::verify(const Node &topo,
                                    Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh::topology::unstructured";
     bool res = true;
-    std::string proto_name = "mesh::topology::unstructured";
+    info.reset();
 
-    if(!topo.has_child("elements"))
+    if(!verify_object_field(protocol, topo, info, "elements"))
     {
-        log_error(info,proto_name, "missing child \"elements\"");
         res = false;
     }
     else
     {
-        const Node &topo_elements = topo["elements"];
+        const Node &topo_elems = topo["elements"];
+        Node &info_elems = info["elements"];
 
-        if(topo_elements.has_child("shape"))
+        // single shape case
+        if(topo_elems.has_child("shape"))
         {
-            // single shape case
-            if(!mesh::topology::shape::verify(topo_elements["shape"],
-                                             info["elements/shape"]))
-            {
-                res = false;
-            }
-
-            if(!topo_elements.has_child("connectivity"))
-            {
-                log_error(info["elements"],
-                          proto_name, "missing child \"connectivity\"");
-                res = false;
-            }
-            else if(!topo_elements["connectivity"].dtype().is_integer())
-            {
-                log_error(info["elements"],
-                         proto_name,
-                         "\"connectivity\" is not an integer array");
-                res = false;
-            }
+            res &= verify_field_exists(protocol, topo_elems, info_elems, "shape") &&
+                   mesh::topology::shape::verify(topo_elems["shape"], info_elems["shape"]);
+            res &= verify_integer_field(protocol, topo_elems, info_elems, "connectivity");
         }
-        else if(topo_elements.has_child("element_types"))
+        // shape stream case
+        else if(topo_elems.has_child("element_types"))
         {
-            // TODO stream cases
+            // TODO
         }
-        else if(topo_elements.number_of_children() != 0)
+        else if(topo_elems.number_of_children() != 0)
         {
-            bool has_names = topo_elements.dtype().is_object();
+            bool has_names = topo_elems.dtype().is_object();
 
-            NodeConstIterator itr = topo_elements.children();
+            NodeConstIterator itr = topo_elems.children();
             while(itr.has_next())
             {
                 const Node &cld  = itr.next();
@@ -1356,39 +1368,14 @@ mesh::topology::unstructured::verify(const Node &topo,
 
                 Node &cld_info = info["elements"][itr.index()];
 
-                if(!cld.has_child("shape"))
-                {
-                    log_error(cld_info,proto_name, "missing child \"shape\"");
-                    res = false;
-                }
-                else
-                {
-                    // verify shape
-                    if(!mesh::topology::shape::verify(cld["shape"],
-                                                      cld_info["shape"]))
-                    {
-                        res = false;
-                    }
-                }
-
-                if(!cld.has_child("connectivity"))
-                {
-                    log_error(cld_info,
-                              proto_name,
-                              "missing child \"connectivity\"");
-                    res = false;
-                }
-                else if(!cld["connectivity"].dtype().is_integer())
-                {
-                    log_error(cld_info,proto_name,"\"connectivity\" "
-                              "is not an integer array");
-                    res = false;
-                }
+                res &= verify_field_exists(protocol, cld, cld_info, "shape") &&
+                       mesh::topology::shape::verify(cld["shape"], cld_info["shape"]);
+                res &= verify_integer_field(protocol, cld, cld_info, "connectivity");
             }
         }
         else
         {
-            log_error(info,proto_name,"invalid child \"elements\"");
+            log_error(info,protocol,"invalid child \"elements\"");
             res = false;
         }
     }
@@ -1397,53 +1384,6 @@ mesh::topology::unstructured::verify(const Node &topo,
 
     return res;
 }
-
-
-
-//-----------------------------------------------------------------------------
-// blueprint::mesh::shape::index protocol interface
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-bool
-mesh::topology::shape::verify(const Node &shape,
-                              Node &info)
-{
-    info.reset();
-    bool res = true;
-    std::string proto_name = "mesh::topology::shape";
-
-    if(!shape.dtype().is_string())
-    {
-        log_error(info,proto_name,"is not a string");
-        res = false;
-    }
-    else
-    {
-        std::string shape_str = shape.as_string();
-
-        if(shape_str == "point" ||
-           shape_str == "line"  ||
-           shape_str == "tri"   ||
-           shape_str == "quad"  ||
-           shape_str == "tet"   ||
-           shape_str == "hex" )
-        {
-            log_info(info,proto_name,"valid type: " + shape_str);
-        }
-        else
-        {
-            log_error(info,proto_name, "unsupported value:"
-                           + shape_str);
-            res = false;
-        }
-    }
-
-    log_verify_result(info,res);
-
-    return res;
-}
-
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::topology::index protocol interface
@@ -1454,57 +1394,21 @@ bool
 mesh::topology::index::verify(const Node &topo_idx,
                               Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh::topology::index";
     bool res = true;
-    std::string proto_name = "mesh::topology::index";
+    info.reset();
 
-    // we need the mesh type
-    if(!topo_idx.has_child("type"))
-    {
-        log_error(info,proto_name,"missing child \"type\"");
-        res = false;
-    }
-    else if(!topology::type::verify(topo_idx["type"],info["type"]))
-    {
-        res = false;
-    }
+    res &= verify_field_exists(protocol, topo_idx, info, "type") &&
+           mesh::topology::type::verify(topo_idx["type"], info["type"]);
+    res &= verify_string_field(protocol, topo_idx, info, "coordset");
+    res &= verify_string_field(protocol, topo_idx, info, "path");
 
-    // we need a coordset ref
-    if(!topo_idx.has_child("coordset"))
-    {
-        log_error(info,proto_name,"missing child \"coordset\"");
-        res = false;
-    }
-    else if(!topo_idx["coordset"].dtype().is_string())
-    {
-        log_error(info,proto_name,"\"coordset\" is not a string");
-        res = false;
-    }
-
-    // we need a path
-    if(!topo_idx.has_child("path"))
-    {
-        log_error(info,proto_name, "missing child \"path\"");
-        res = false;
-    }
-    else if(!topo_idx["path"].dtype().is_string())
-    {
-        log_error(info,proto_name, "\"path\" is not a string");
-        res = false;
-    }
-
-    // optional grid_function ref
     if (topo_idx.has_child("grid_function"))
     {
-        log_optional(info, proto_name, "includes grid_function");
-        if (!topo_idx["grid_function"].dtype().is_string())
-        {
-            log_error(info, proto_name, "\"grid_function\" is not a string");
-            res = false;
-        }
+        log_optional(info, protocol, "includes grid_function");
+        res &= verify_string_field(protocol, topo_idx, info, "grid_function");
     }
 
-    
     log_verify_result(info,res);
 
     return res;
@@ -1516,43 +1420,85 @@ mesh::topology::index::verify(const Node &topo_idx,
 
 //-----------------------------------------------------------------------------
 bool
-mesh::topology::type::verify(const Node &topo_type,
+mesh::topology::type::verify(const Node &type,
                              Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh::topology::type";
     bool res = true;
-    
-    std::string proto_name = "mesh::topology::type";
+    info.reset();
 
-    if(!topo_type.dtype().is_string())
-    {
-        log_error(info,proto_name,"is not a string");
-        res = false;
-    }
-    else
-    {
-        std::string topo_type_str = topo_type.as_string();
-
-        if(topo_type_str == "uniform"     ||
-           topo_type_str == "rectilinear" ||
-           topo_type_str == "structured"  ||
-           topo_type_str == "unstructured" )
-        {
-            log_info(info,proto_name, "valid type: " + topo_type_str);
-        }
-        else
-        {
-            log_error(info,proto_name, "unsupported value:"
-                           + topo_type_str);
-            res = false;
-        }
-    }
+    res &= verify_enum_field(protocol, type, info, "", mesh::topo_types);
 
     log_verify_result(info,res);
 
     return res;
 }
 
+//-----------------------------------------------------------------------------
+// blueprint::mesh::topology::shape protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::topology::shape::verify(const Node &shape,
+                              Node &info)
+{
+    const std::string protocol = "mesh::topology::shape";
+    bool res = true;
+    info.reset();
+
+    res &= verify_enum_field(protocol, shape, info, "", mesh::topo_shapes);
+
+    log_verify_result(info,res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+// blueprint::mesh::matset protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::matset::verify(const Node &matset,
+                     Node &info)
+{
+    const std::string protocol = "mesh::matset";
+    bool res = true;
+    info.reset();
+
+    res &= verify_string_field(protocol, matset, info, "topology");
+    res &= verify_mcarray_field(protocol, matset, info, "volume_fractions", false);
+
+    log_verify_result(info, res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+// blueprint::mesh::matset::index protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::matset::index::verify(const Node &matset_idx,
+                            Node &info)
+{
+    const std::string protocol = "mesh::matset::index";
+    bool res = true;
+    info.reset();
+
+    // TODO(JRC): Determine whether or not extra verification needs to be
+    // performed on the "materials" field.
+
+    res &= verify_string_field(protocol, matset_idx, info, "topology");
+    res &= verify_object_field(protocol, matset_idx, info, "materials");
+    res &= verify_string_field(protocol, matset_idx, info, "path");
+
+    log_verify_result(info, res);
+
+    return res;
+}
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::field protocol interface
@@ -1563,125 +1509,48 @@ bool
 mesh::field::verify(const Node &field,
                     Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh::field";
     bool res = true;
+    info.reset();
 
-    std::string proto_name = "mesh::field";
-        
-    // we need a topology
-    if(!field.has_child("topology"))
-    {
-        log_error(info, proto_name,"missing child \"topology\"");
-        res = false;
-    }
-    else if(!field["topology"].dtype().is_string())
-    {
-        log_error(info, proto_name, "\"topology\" is not a string");
-        res = false;
-    }
-
-
-    if(!field.has_child("values"))
-    {
-        log_error(info, proto_name, "missing child \"values\"");
-        res = false;
-    }
-    else if(field["values"].dtype().is_object())
-    {
-        if(!blueprint::mcarray::verify(field["values"],info["values"]))
-        {
-             res = false;
-        }
-        else
-        {
-            log_info(info,proto_name,"values is a mcarray.");
-        }
-    }
-    else if(field["values"].dtype().is_number())
-    {
-        log_info(info,proto_name,"values is a single component numeric array.");
-    }
-    else
-    {
-        log_error(info, proto_name, "\"values\" is not a "
-                        " numeric array or mcarray.");
-        res = false;
-    }
-
-
-    // make sure we have either a basis or assoc entry
     bool has_assoc = field.has_child("association");
     bool has_basis = field.has_child("basis");
-    
-    if( ! (has_assoc || has_basis))
+    if(!has_assoc && !has_basis)
     {
-        log_error(info,proto_name, "missing child "
-                       "\"association\" or \"basis\"");
+        log_error(info, protocol, "missing child \"association\" or \"basis\"");
         res = false;
     }
-    else if(has_assoc)
+    if(has_assoc)
     {
-        if(!field::association::verify(field["association"],
-                                       info["association"]))
-        {
-            res = false;
-        }
+        res &= mesh::association::verify(field["association"], info["association"]);
     }
-    else if(has_basis)
+    if(has_basis)
     {
-        if(!field::basis::verify(field["basis"],info["basis"]))
-        {
-            res = false;
-        }
+        res &= mesh::field::basis::verify(field["basis"], info["basis"]);
     }
 
-    log_verify_result(info,res);
+    bool has_topo = field.has_child("topology");
+    bool has_matset = field.has_child("matset");
+    if(!has_topo && !has_matset)
+    {
+        log_error(info, protocol, "missing child \"topology\" or \"matset\"");
+        res = false;
+    }
+    if(has_topo)
+    {
+        res &= verify_string_field(protocol, field, info, "topology");
+        res &= verify_mcarray_field(protocol, field, info, "values", true);
+    }
+    if(has_matset)
+    {
+        res &= verify_string_field(protocol, field, info, "matset");
+        res &= verify_mcarray_field(protocol, field, info, "matset_values", false);
+    }
+
+    log_verify_result(info, res);
 
     return res;
 }
-
-
-//-----------------------------------------------------------------------------
-// blueprint::mesh::field::association protocol interface
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-bool
-mesh::field::association::verify(const Node &assoc,
-                                 Node &info)
-{
-    info.reset();
-    bool res = true;
-
-    std::string proto_name = "mesh::field::association";
-
-    if(!assoc.dtype().is_string())
-    {
-        log_error(info,proto_name,"is not a string");
-        res = false;
-    }
-    else
-    {
-        std::string assoc_str = assoc.as_string();
-
-        if(assoc_str == "vertex" ||
-           assoc_str == "element")
-        {
-            log_info(info,proto_name, "valid type: " + assoc_str );
-        }
-        else
-        {
-            log_error(info,proto_name, "unsupported value:"
-                           + assoc_str);
-            res = false;
-        }
-    }
-
-    log_verify_result(info,res);
-
-    return res;
-}
-
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::field::basis protocol interface
@@ -1690,24 +1559,15 @@ mesh::field::association::verify(const Node &assoc,
 //-----------------------------------------------------------------------------
 bool
 mesh::field::basis::verify(const Node &basis,
-                        Node &info)
+                           Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh::field::basis";
     bool res = true;
+    info.reset();
 
-    std::string proto_name = "mesh::field::basis";
+    res &= verify_string_field(protocol, basis, info);
 
-    if(!basis.dtype().is_string())
-    {
-        log_error(info,proto_name,"is not a string");
-        res = false;
-    }
-    else
-    {
-        log_info(info,proto_name,"valid type: " + basis.as_string());
-    }
-
-    log_verify_result(info,res);
+    log_verify_result(info, res);
 
     return res;
 }
@@ -1721,79 +1581,112 @@ bool
 mesh::field::index::verify(const Node &field_idx,
                            Node &info)
 {
-    info.reset();
+    const std::string protocol = "mesh::field::index";
     bool res = true;
-    std::string proto_name = "mesh::field::index";
+    info.reset();
 
-    // we need a topology
-    if(!field_idx.has_child("topology"))
-    {
-        log_error(info,proto_name,"missing child \"topology\"");
-        res = false;
-    }
-    else if(!field_idx["topology"].dtype().is_string())
-    {
-        log_error(info,proto_name,"\"topology\" is not a string");
-        res = false;
-    }
-
-    // we need number_of_components
-    if(!field_idx.has_child("number_of_components"))
-    {
-        log_error(info,proto_name,"missing child "
-                       "\"number_of_components\"");
-        res = false;
-    }
-    else if(!field_idx["number_of_components"].dtype().is_integer())
-    {
-        log_error(info,proto_name,"\"number_of_components\" "
-                       "is not an integer");
-        res = false;
-    }
-
-    // we need a path
-    if(!field_idx.has_child("path"))
-    {
-        log_error(info,proto_name,"missing child \"path\"");
-        res = false;
-    }
-    else if(!field_idx["path"].dtype().is_string())
-    {
-        log_error(info,proto_name,"\"path\" is not a string");
-        res = false;
-    }
-    
     bool has_assoc = field_idx.has_child("association");
     bool has_basis = field_idx.has_child("basis");
-    
-    // make sure we have either a basis or assoc entry
-    if( ! (has_assoc || has_basis))
+    if(!has_assoc && !has_basis)
     {
-        log_error(info,proto_name,"missing child "
-                       "\"association\" or \"basis\"");
+        log_error(info, protocol, "missing child \"association\" or \"basis\"");
         res = false;
     }
-    else if(has_assoc)
+    if(has_assoc)
     {
-        if(!field::association::verify(field_idx["association"],
-                                       info["association"]))
-        {
-            res = false;
-        }
+        res &= mesh::association::verify(field_idx["association"], info["association"]);
     }
-    else if(has_basis)
+    if(has_basis)
     {
-        if(!field::basis::verify(field_idx["basis"],info["basis"]))
-        {
-            res = false;
-        }
+        res &= mesh::field::basis::verify(field_idx["basis"], info["basis"]);
     }
 
-    log_verify_result(info,res);
+    bool has_topo = field_idx.has_child("topology");
+    bool has_matset = field_idx.has_child("matset");
+    if(!has_topo && !has_matset)
+    {
+        log_error(info, protocol, "missing child \"topology\" or \"matset\"");
+        res = false;
+    }
+    if(has_topo)
+    {
+        res &= verify_string_field(protocol, field_idx, info, "topology");
+    }
+    if(has_matset)
+    {
+        res &= verify_string_field(protocol, field_idx, info, "matset");
+    }
+
+    res &= verify_integer_field(protocol, field_idx, info, "number_of_components");
+    res &= verify_string_field(protocol, field_idx, info, "path");
+
+    log_verify_result(info, res);
 
     return res;
 }
 
+//-----------------------------------------------------------------------------
+// blueprint::mesh::adjset protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::adjset::verify(const Node &adjset,
+                     Node &info)
+{
+    const std::string protocol = "mesh::adjset";
+    bool res = true;
+    info.reset();
+
+    res &= verify_string_field(protocol, adjset, info, "topology");
+    res &= verify_field_exists(protocol, adjset, info, "association") &&
+           mesh::association::verify(adjset["association"], info["association"]);
+
+    if(!verify_object_field(protocol, adjset, info, "groups"))
+    {
+        res = false;
+    }
+    else
+    {
+        NodeConstIterator itr = adjset["groups"].children();
+        while(itr.has_next())
+        {
+            const Node &chld = itr.next();
+            const std::string chld_name = itr.name();
+            Node &chld_info = info["groups"][chld_name];
+
+            res &= verify_integer_field(protocol, chld, chld_info, "neighbors");
+            res &= verify_integer_field(protocol, chld, chld_info, "values");
+        }
+    }
+
+    log_verify_result(info, res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+// blueprint::mesh::adjset::index protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::adjset::index::verify(const Node &adj_idx,
+                                      Node &info)
+{
+    const std::string protocol = "mesh::adjset::index";
+    bool res = true;
+    info.reset();
+
+    res &= verify_string_field(protocol, adj_idx, info, "topology");
+    res &= verify_field_exists(protocol, adj_idx, info, "association") &&
+           mesh::association::verify(adj_idx["association"], info["association"]);
+    res &= verify_string_field(protocol, adj_idx, info, "path");
+
+    log_verify_result(info, res);
+
+    return res;
+}
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::index protocol interface
@@ -1804,60 +1697,32 @@ bool
 mesh::index::verify(const Node &n,
                     Node &info)
 {
-    info.reset();
-    // the mesh blueprint index provides metadata about a valid 
-    // mesh blueprint conf
-    //
-    
+    const std::string protocol = "mesh::index";
     bool res = true;
-    std::string proto_name = "mesh::index";
+    info.reset();
 
     // note "errors" is a list, this allows us to log multiple errors.
     // Given that not conforming result is likely to trigger an error 
     // state in client code it seems like we should give as much info as
     // possible about what is wrong with the mesh, so we don't early
     // return when an error is found.
-    
-    // required: "coordsets", with at least one child
-    //  each child must conform to "mesh::coordset"
-    if(!n.has_child("coordsets"))
+    if(!verify_object_field(protocol, n, info, "coordsets"))
     {
-        log_error(info,proto_name,"missing child \"coordsets\"");
-        res = false;
-    }
-    else if(n["coordsets"].number_of_children() == 0)
-    {
-        log_error(info,proto_name,"\"coordsets\" has no children");
         res = false;
     }
     else
     {
         NodeConstIterator itr = n["coordsets"].children();
-    
         while(itr.has_next())
         {
             const Node &chld = itr.next();
             const std::string chld_name = itr.name();
-
-            if(!coordset::index::verify(chld,info["coordsets"][chld_name]))
-            {
-                log_error(info,proto_name,chld_name 
-                                + " is not a valid mesh::coordset::index");
-                res = false;
-            }
+            res &= coordset::index::verify(chld, info["coordsets"][chld_name]);
         }
     }
-    
-    // required: "topologies",  with at least one child
-    // each child must conform to "mesh::topology"
-    if(!n.has_child("topologies"))
+
+    if(!verify_object_field(protocol, n, info, "topologies"))
     {
-        log_error(info,proto_name,"missing child \"topologies\"");
-        res = false;
-    }
-    else if(n["topologies"].number_of_children() == 0)
-    {
-        log_error(info,proto_name,"\"topologies\" has no children");
         res = false;
     }
     else
@@ -1867,88 +1732,95 @@ mesh::index::verify(const Node &n,
         {
             const Node &chld = itr.next();
             const std::string chld_name = itr.name();
-            const std::string coords_name = chld.has_child("coordset") ?
-                chld["coordset"].as_string() : "";
+            Node &chld_info = info["topologies"][chld_name];
 
-            if(!topology::index::verify(chld,info["topologies"][chld_name]))
+            res &= topology::index::verify(chld, chld_info);
+            res &= verify_reference_field(protocol, n, info,
+                chld, chld_info, "coordset", "coordsets");
+        }
+    }
+
+    // optional: "matsets", each child must conform to
+    // "mesh::index::matset"
+    if(n.has_path("matsets"))
+    {
+        if(!verify_object_field(protocol, n, info, "matsets"))
+        {
+            res = false;
+        }
+        else
+        {
+            NodeConstIterator itr = n["matsets"].children();
+            while(itr.has_next())
             {
-                log_error(info,proto_name,chld_name 
-                                + " is not a valid mesh::topology::index");
-                res = false;
-            }
-            else if(!n.has_child("coordsets") || !n["coordsets"].has_child(coords_name))
-            {
-                std::ostringstream oss;
-                oss << "topology index entry "
-                    << "\"" << chld_name  << "\" "
-                    << "references a non-existent coordset index entry"
-                    << "\"" << coords_name  << "\" ";
-                log_error(info,proto_name,oss.str());
-                res = false;
-            }
-            else if(info["coordsets"][coords_name]["valid"].as_string() != "true")
-            {
-                std::ostringstream oss;
-                oss << "topology index entry "
-                    << "\"" << chld_name  << "\" "
-                    << "references an invalid coordset index entry "
-                    << "\"" << coords_name  << "\" ";
-                log_error(info,proto_name,oss.str());
-                res = false;
+                const Node &chld = itr.next();
+                const std::string chld_name = itr.name();
+                Node &chld_info = info["matsets"][chld_name];
+
+                res &= matset::index::verify(chld, chld_info);
+                res &= verify_reference_field(protocol, n, info,
+                    chld, chld_info, "topology", "topologies");
             }
         }
     }
-    
-    // optional: "fields", each child must conform to "mesh::field"
+
+    // optional: "fields", each child must conform to
+    // "mesh::index::field"
     if(n.has_path("fields"))
     {
-        if(n["fields"].number_of_children() == 0)
+        if(!verify_object_field(protocol, n, info, "fields"))
         {
-            log_error(info,proto_name,"\"fields\" has no children");
             res = false;
         }
         else
         {
             NodeConstIterator itr = n["fields"].children();
-
             while(itr.has_next())
             {
                 const Node &chld = itr.next();
                 const std::string chld_name = itr.name();
-                const std::string topo_name = chld.has_child("topology") ?
-                    chld["topology"].as_string() : "";
+                Node &chld_info = info["fields"][chld_name];
 
-                if(!field::index::verify(chld,info["fields"][chld_name]))
+                res &= field::index::verify(chld, chld_info);
+                if(chld.has_child("topology"))
                 {
-                    log_error(info,proto_name,chld_name 
-                                    + " is not a valid mesh::field::index");
-                    res = false;
+                    res &= verify_reference_field(protocol, n, info,
+                        chld, chld_info, "topology", "topologies");
                 }
-                else if(!n.has_child("topologies") || !n["topologies"].has_child(topo_name))
+                if(chld.has_child("matset"))
                 {
-                    std::ostringstream oss;
-                    oss << "field index entry "
-                        << "\"" << chld_name  << "\" "
-                        << "references a non-existent topology index entry"
-                        << "\"" << topo_name  << "\" ";
-                    log_error(info,proto_name,oss.str());
-                    res = false;
-                }
-                else if(info["topologies"][topo_name]["valid"].as_string() != "true")
-                {
-                    std::ostringstream oss;
-                    oss << "field index entry "
-                        << "\"" << chld_name  << "\" "
-                        << "references an invalid topology index entry"
-                        << "\"" << topo_name << "\" ";
-                    log_error(info,proto_name,oss.str());
-                    res = false;
+                    res &= verify_reference_field(protocol, n, info,
+                        chld, chld_info, "matset", "matsets");
                 }
             }
         }
     }
-    
-    log_verify_result(info,res);
+
+    // optional: "adjsets", each child must conform to
+    // "mesh::index::adjsets"
+    if(n.has_path("adjsets"))
+    {
+        if(!verify_object_field(protocol, n, info, "adjsets"))
+        {
+            res = false;
+        }
+        else
+        {
+            NodeConstIterator itr = n["adjsets"].children();
+            while(itr.has_next())
+            {
+                const Node &chld = itr.next();
+                const std::string chld_name = itr.name();
+                Node &chld_info = info["adjsets"][chld_name];
+
+                res &= adjset::index::verify(chld, chld_info);
+                res &= verify_reference_field(protocol, n, info,
+                    chld, chld_info, "topology", "topologies");
+            }
+        }
+    }
+
+    log_verify_result(info, res);
 
     return res;
 }
