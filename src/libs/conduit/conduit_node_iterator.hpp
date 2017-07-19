@@ -92,8 +92,14 @@ public:
     NodeIterator();
     /// Copy constructor.
     NodeIterator(const NodeIterator &itr);
+    
     /// Primary iterator constructor.
     NodeIterator(Node *node,index_t idx=0);
+    
+    /// Primary iterator constructor.
+    /// this will use the pointer to the passed Node ref.
+    NodeIterator(Node &node,index_t idx=0);
+    
     /// Destructor 
     ~NodeIterator();
  
@@ -175,6 +181,9 @@ public:
     NodeConstIterator(const NodeConstIterator &itr);
     /// Primary iterator constructor.
     NodeConstIterator(const Node *node,index_t idx=0);
+    /// Primary iterator constructor.
+    /// this will use the pointer to the passed Node ref.
+    NodeConstIterator(const Node &node,index_t idx=0);
     /// Destructor 
     ~NodeConstIterator();
 

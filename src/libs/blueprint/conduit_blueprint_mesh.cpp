@@ -59,6 +59,10 @@ using namespace conduit;
 // access verify logging helpers
 using namespace conduit::blueprint::utils;
 
+namespace conduit { namespace blueprint { namespace mesh {
+    bool verify_single_domain(const conduit::Node &n, conduit::Node &info);
+    bool verify_multi_domain(const conduit::Node &n, conduit::Node &info);
+} } }
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -72,7 +76,6 @@ namespace conduit
 //-----------------------------------------------------------------------------
 namespace blueprint
 {
-
 
 //-----------------------------------------------------------------------------
 bool
@@ -116,10 +119,11 @@ mesh::verify(const std::string &protocol,
     return res;
 }
 
+
 //-----------------------------------------------------------------------------
 bool
-mesh::verify(const Node &n,
-             Node &info)
+mesh::verify_single_domain(const Node &n,
+                           Node &info)
 {
     info.reset();
     bool res = true;
@@ -307,6 +311,105 @@ mesh::verify(const Node &n,
 }
 
 
+//-------------------------------------------------------------------------
+bool mesh::verify_multi_domain(const Node &n,
+                               Node &info)
+{
+    info.reset();
+    bool res = true;
+
+    const std::string proto_name = "mesh";
+
+    if(!n.dtype().is_object() && !n.dtype().is_list())
+    {
+        log_error(info,proto_name,"not an object or a list");
+        res = false;
+    }
+    else
+    {
+        NodeConstIterator itr = n.children();
+        while(itr.has_next())
+        {
+            const Node &chld = itr.next();
+            std::string chld_name;
+            {
+                std::ostringstream oss;
+                if(n.dtype().is_object())
+                {
+                    oss << itr.name();
+                }
+                else
+                {
+                    oss << itr.index();
+                }
+                chld_name = oss.str();
+            }
+
+            if(!mesh::verify_single_domain(chld, info[chld_name]))
+            {
+                log_error(info,proto_name,
+                          "child " + chld_name + " is not a valid mesh");
+                res = false;
+            }
+        }
+
+        log_info(info,proto_name,"is a multi domain mesh");
+    }
+
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+bool
+mesh::verify(const Node &n,
+             Node &info)
+{
+    info.reset();
+    bool res = true;
+
+    if(mesh::verify_multi_domain(n, info))
+    {
+        res = true;
+    }
+    else
+    {
+        info.reset();
+        res = mesh::verify_single_domain(n, info);
+    }
+
+    return res;
+}
+
+
+//-------------------------------------------------------------------------
+bool mesh::is_multi_domain(const conduit::Node &n)
+{
+    Node info;
+    return mesh::verify_multi_domain(n, info);
+}
+
+
+//-------------------------------------------------------------------------
+bool mesh::to_multi_domain(const conduit::Node &n,
+                           conduit::Node &dest)
+{
+    dest.reset();
+
+    if(mesh::is_multi_domain(n))
+    {
+        dest.set_external(n);
+    }
+    else
+    {
+        conduit::Node& dest_dom = dest.append();
+        dest_dom.set_external(n);
+    }
+
+    return true;
+}
+
+
 //-----------------------------------------------------------------------------
 std::string 
 identify_coord_sys_type(const Node &coords)
@@ -466,9 +569,11 @@ mesh::generate_index(const Node &mesh,
     }
 }
 
+
 //-----------------------------------------------------------------------------
 // blueprint::mesh::logical_dims protocol interface
 //-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 bool

@@ -73,6 +73,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <limits>
+
 
 // define proper path sep
 #if defined(CONDUIT_PLATFORM_WINDOWS)
@@ -487,10 +489,17 @@ json_sanitize(const std::string &json)
                 
                 if( !in_id && check_word_char(json[i]))
                 {
-                    in_id = true;
-                    // accum id chars
-                    cur_id += json[i];
-                    emit = false;
+                    // ids can't start with numbers ,
+                    // check the prior char if it exists
+                    if(i > 0 && 
+                       !check_num_char(json[i-1]) &&
+                       json[i-1] != '.')
+                    {
+                        in_id = true;
+                        // accum id chars
+                        cur_id += json[i];
+                        emit = false;
+                    }
                 }
                 else if(in_id) // finish the id
                 {
@@ -786,8 +795,14 @@ float64_to_string(float64 value)
     snprintf(buffer,64,"%.15g",value);
 
     std::string res(buffer);
+    
+    // we check for inf or nan in string form.
+    // std::isnan, isn't portable until c++11
+    // http://stackoverflow.com/questions/570669/checking-if-a-double-or-float-is-nan-in-c
 
-    if(res.find('.') == std::string::npos &&
+    // searching for 'n' covers inf and nan
+    if(res.find('n') == std::string::npos &&
+       res.find('.') == std::string::npos &&
        res.find('e') == std::string::npos )
     {
         res += ".0";

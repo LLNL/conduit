@@ -9,7 +9,7 @@
 # 
 # This file is part of Conduit. 
 # 
-# For details, see https://lc.llnl.gov/conduit/.
+# For details, see: http://software.llnl.gov/conduit/.
 # 
 # Please also read conduit/LICENSE
 # 
@@ -41,27 +41,69 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
-#
-# Example that shows how to use an installed instance of Conduit in Makefile
-# based build system.
-#
-# To build:
-#  env CONDUIT_DIR={conduit install path} make
-#  ./example
-#
-# Note:
-#  If you use features that leverage external third party libraries 
-#  (ex: relay hdf5 features), you may need to pass additional include 
-#   and linking flags. 
-# 
-#
-###############################################################################
+"""
+ file: t_python_conduit_endianness.py
+ description: Unit tests for conduit::Endianness python module interface.
+
+"""
+
+import sys
+import unittest
+
+from conduit import Node, Endianness
+
+from numpy import *
 
 
-INC_FLAGS=-I$(CONDUIT_DIR)/include/conduit
-LINK_FLAGS=-L$(CONDUIT_DIR)/lib/ -lconduit -lconduit_relay -lconduit_blueprint -L$(HDF5_DIR) -lhdf5 
+class Test_Conduit_Endianness(unittest.TestCase):
+    def test_endianness(self):
+        n = Node()
+        n.set(100)
+        if Endianness.machine_is_little_endian():
+            print("machine is little endian")
+            self.assertTrue(Endianness.little_id() == Endianness.machine_default())
+            # big and back
+            n.endian_swap_to_big()
+            v = n.value()
+            self.assertTrue(v != 100)
+            n.endian_swap_to_little()
+            v = n.value()
+            self.assertTrue(v == 100)
 
-main:
-	$(CXX) $(INC_FLAGS) example.cpp $(LINK_FLAGS) -o example
+            # big and back w/ default swap
+            n.endian_swap_to_big()
+            v = n.value()
+            self.assertTrue(v != 100)
+            n.endian_swap_to_machine_default()
+            v = n.value()
+            self.assertTrue(v == 100)
+
+        elif Endianness.machine_is_big_endian() :
+            print("machine is big endian")
+            self.assertTrue(Endianness.big_id() == Endianness.machine_default())
+            # little and back
+            n.endian_swap_to_little()
+            v = n.value()
+            self.assertTrue(v != 100)
+            n.endian_swap_to_big()
+            v = n.value()
+            self.assertTrue(v == 100)
+
+            # little and back w/ default swap
+            n.endian_swap_to_little()
+            v = n.value()
+            self.assertTrue(v != 100)
+            n.endian_swap_to_machine_default()
+            v = n.value()
+            self.assertTrue(v == 100)
+        n.set(20)
+        n.endian_swap(Endianness.big_id())
+        n.endian_swap(Endianness.little_id())
+        v = n.value()
+        self.assertTrue(v == 20)
+
+
+if __name__ == '__main__':
+    unittest.main()
 
 

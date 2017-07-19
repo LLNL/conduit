@@ -315,7 +315,6 @@ To conform, the ``state`` entry must be an *Object* and can have the following o
 
    * state/time: (number)
    * state/cycle: (number)
-   * state/number_of_domains: (integer)
    * state/domain_id: (integer)
 
 

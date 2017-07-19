@@ -62,7 +62,8 @@ set(RELAY_SILO_TESTS     t_relay_io_silo)
 
 set(RELAY_HDF5_TESTS t_relay_io_hdf5 
                      t_relay_io_hdf5_read_and_print
-                     t_relay_io_hdf5_slab)
+                     t_relay_io_hdf5_slab
+                     t_relay_io_hdf5_opts)
 
 
 ################################

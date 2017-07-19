@@ -50,6 +50,10 @@
 
 #include "conduit_relay.hpp"
 
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+#include "conduit_relay_hdf5.hpp"
+#endif
+
 //-----------------------------------------------------------------------------
 // standard lib includes
 //-----------------------------------------------------------------------------
@@ -103,6 +107,8 @@ about(Node &n)
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
     // straight hdf5 
     io_protos["hdf5"] = "enabled";
+    
+    io::hdf5_options(n["io/options/hdf5"]);
 #else
     // straight hdf5 
     io_protos["hdf5"] = "disabled";

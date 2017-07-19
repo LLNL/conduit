@@ -51,6 +51,7 @@
 #include "conduit.hpp"
 
 #include <iostream>
+#include <limits>
 #include "gtest/gtest.h"
 
 using namespace conduit;
@@ -545,7 +546,17 @@ TEST(conduit_json, json_string_value_with_escapes)
     n.print_detailed();
     EXPECT_EQ(n["value"].dtype().id(),DataType::CHAR8_STR_ID);
     EXPECT_EQ(n["value"].as_string(),"\"mystring!\"");
+    
+    // this tests a specific bug conduit 0.2.1 json parsing logic
+    std::string pure_json_2 = "{ \"testing\" : \"space_before_colon\"}";
+    CONDUIT_INFO(pure_json_2);
+    Generator g2(pure_json_2,"json");
+    Node n2(g2,true);
+    n2.print_detailed();
+    
 }
+
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_json, json_schema_string_value_with_escapes)
@@ -594,6 +605,79 @@ TEST(conduit_json, json_schema_preserve_floats)
     EXPECT_TRUE(n_parse["f"].dtype().is_float64());
 
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_json, json_inf_and_nan)
+{
+    Node n;
+    n["pos_inf"] =  std::numeric_limits<float64>::infinity();
+    n["neg_inf"] = -std::numeric_limits<float64>::infinity();
+    n["nan"]     =  std::numeric_limits<float64>::quiet_NaN();
+ 
+    CONDUIT_INFO(n.to_json());
+    
+    std::string json_str = n.to_json();
+    CONDUIT_INFO(json_str);
+    
+    Generator g(json_str,"json");
+    
+    Node n_res;
+    g.walk(n_res);
+
+    CONDUIT_INFO(n_res.to_json());
+
+}
+
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_json, json_parse_error_detailed)
+{
+
+    try
+    {
+        std::string pure_json = "{\"value\": \n \n \n \n \"\\\"mystring!\\\"\" \n :}";
+        Generator g(pure_json,"json");
+    
+        Node n_res;
+        g.walk(n_res);
+    }
+    catch(conduit::Error e)
+    {
+        CONDUIT_INFO(e.message());
+    }
+
+
+    try
+    {
+        std::string pure_json = "{\"value\":\"\\\"mystring!\\\"\" :}";
+        Generator g(pure_json,"json");
+    
+        Node n_res;
+        g.walk(n_res);
+    }
+    catch(conduit::Error e)
+    {
+        CONDUIT_INFO(e.message());
+    }
+
+    try
+    {
+        std::string pure_json = "\n\n\n\n\n\n{\"value\":\"\\\"mystring!\\\"\" :}";
+        Generator g(pure_json,"json");
+    
+        Node n_res;
+        g.walk(n_res);
+    }
+    catch(conduit::Error e)
+    {
+        CONDUIT_INFO(e.message());
+    }
+
+
+}
+
+
 
 
 

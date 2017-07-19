@@ -76,9 +76,9 @@ CONDUIT_BLUEPRINT_API void conduit_blueprint_about(conduit_node *cnode);
 /// Verify passed node confirms to given blueprint protocol.
 /// Messages related to the verification are be placed in the "info" node.
 //-----------------------------------------------------------------------------
-CONDUIT_BLUEPRINT_API bool conduit_blueprint_verify(const char *protocol,
-                                                    const conduit_node *cnode,
-                                                    conduit_node *cinfo);
+CONDUIT_BLUEPRINT_API int conduit_blueprint_verify(const char *protocol,
+                                                   const conduit_node *cnode,
+                                                   conduit_node *cinfo);
 
 #ifdef __cplusplus
 }

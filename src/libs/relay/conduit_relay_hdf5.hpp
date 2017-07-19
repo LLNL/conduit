@@ -150,6 +150,11 @@ namespace io
 
 
 //-----------------------------------------------------------------------------
+/// Open a hdf5 file for writing, using conduit's selected hdf5 plists.
+//-----------------------------------------------------------------------------
+hid_t hdf5_open_file_for_write(const std::string &file_path);
+
+//-----------------------------------------------------------------------------
 /// Write node data to a given path
 ///
 /// This methods supports a file system and hdf5 path, joined using a ":"
@@ -182,6 +187,12 @@ void CONDUIT_RELAY_API hdf5_write(const Node &node,
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API hdf5_write(const Node &node,
                                   hid_t hdf5_id);
+
+
+//-----------------------------------------------------------------------------
+/// Open a hdf5 file for reading, using conduit's selected hdf5 plists.
+//-----------------------------------------------------------------------------
+hid_t hdf5_open_file_for_write(const std::string &file_path);
 
 //-----------------------------------------------------------------------------
 /// Read hdf5 data from given path into the output node 
@@ -240,6 +251,23 @@ hid_t CONDUIT_RELAY_API    conduit_dtype_to_hdf5_dtype(const DataType &dt,
 DataType CONDUIT_RELAY_API hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
                                                        index_t num_elems,
                                                 const std::string &ref_path="");
+
+
+//-----------------------------------------------------------------------------
+/// Check if path exists relative to hdf5 id
+//-----------------------------------------------------------------------------
+bool CONDUIT_RELAY_API hdf5_has_path(hid_t hdf5_id, const std::string &path);
+
+//-----------------------------------------------------------------------------
+/// Pass a Node to set hdf5 i/o options.
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API hdf5_set_options(const Node &opts);
+
+//-----------------------------------------------------------------------------
+/// Get a Node that contains hdf5 i/o options.
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API hdf5_options(Node &opts);
+
 
 }
 //-----------------------------------------------------------------------------

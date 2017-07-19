@@ -82,14 +82,36 @@ set(HDF5_DIR ${HDF5_ROOT} CACHE PATH "" FORCE)
 #
 message(STATUS "Checking that found HDF5_INCLUDE_DIRS are in HDF5_DIR")
 
+#
+# HDF5_INCLUDE_DIRS may also include paths to external lib headers 
+# (such as szip), so we check that *at least one* of the includes
+# listed in HDF5_INCLUDE_DIRS exists in the HDF5_DIR specified. 
+#
+
+set(check_hdf5_inc_dir_ok 0)
 foreach(IDIR ${HDF5_INCLUDE_DIRS})
     if("${IDIR}" MATCHES "${HDF5_DIR}")
-        message(STATUS " ${IDIR} includes HDF5_DIR")
-        
+        message(STATUS " ${IDIR} includes HDF5_DIR (${HDF5_DIR})")
+        set(check_hdf5_inc_dir_ok 1)
     else()
-        message(FATAL_ERROR " ${IDIR} does not include HDF5_DIR")
+        
+        # The check above could fail b/c of relative vs abs path
+        # compare. It's not clear if FindHDF5 will always resolve 
+        # relative paths to abs ones, so out of caution we check
+        # both.
+
+        get_filename_component(HDF5_DIR_ABS "${HDF5_DIR}" ABSOLUTE)
+
+        if("${IDIR}" MATCHES "${HDF5_DIR_ABS}")
+            message(STATUS " ${IDIR} includes HDF5_DIR (${HDF5_DIR_ABS})")
+            set(check_hdf5_inc_dir_ok 1)
+        endif()
     endif()
 endforeach()
+
+if(NOT check_hdf5_inc_dir_ok)
+    message(FATAL_ERROR " ${HDF5_INCLUDE_DIRS} does not include HDF5_DIR")
+endif()
 
 #
 # filter HDF5_LIBRARIES to remove hdf5_hl if it exists

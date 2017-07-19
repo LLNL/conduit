@@ -105,7 +105,6 @@
 }
 
 
-
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
@@ -124,6 +123,163 @@ namespace relay
 //-----------------------------------------------------------------------------
 namespace io
 {
+
+//-----------------------------------------------------------------------------
+// Private class used to hold options that control hdf5 i/o params.
+// 
+// These values are read by about(), and are set by io::hdf5_set_options()
+// 
+//
+//-----------------------------------------------------------------------------
+
+class HDF5Options
+{
+public:
+    static bool chunking_enabled;
+    static int  chunk_threshold;
+    static int  chunk_size;
+
+    static bool compact_storage_enabled;
+    static int  compact_storage_threshold;
+
+    static std::string compression_method;
+    static int         compression_level;
+
+public:
+    
+    //------------------------------------------------------------------------
+    static void set(const Node &opts)
+    {
+        
+        if(opts.has_child("compact_storage"))
+        {
+            const Node &compact = opts["compact_storage"];
+            
+            if(compact.has_child("enabled"))
+            {
+                std::string enabled = compact["enabled"].as_string();
+                if(enabled == "false")
+                {
+                    compact_storage_enabled = false;
+                }
+                else
+                {
+                    compact_storage_enabled = true;
+                }
+            }
+
+            if(compact.has_child("threshold"))
+            {
+                compact_storage_threshold = compact["threshold"].to_value();
+            }
+        }
+
+        if(opts.has_child("chunking"))
+        {
+            const Node &chunking = opts["chunking"];
+
+            if(chunking.has_child("enabled"))
+            {
+                std::string enabled = chunking["enabled"].as_string();
+                if(enabled == "false")
+                {
+                    chunking_enabled = false;
+                }
+                else
+                {
+                    chunking_enabled = true;
+                }
+                
+            }
+        
+            if(chunking.has_child("threshold"))
+            {
+                chunk_threshold = chunking["threshold"].to_value();
+            }
+        
+            if(chunking.has_child("chunk_size"))
+            {
+                chunk_size = chunking["chunk_size"].to_value();
+            }
+        
+            if(chunking.has_child("compression"))
+            {
+                const Node &comp = chunking["compression"];
+                
+                if(comp.has_child("method"))
+                {
+                    compression_method = comp["method"].as_string();
+                }
+                if(comp.has_path("level"))
+                {
+                    compression_level = comp["level"].to_value();
+                }
+            }
+        }
+    }
+
+    //------------------------------------------------------------------------
+    static void about(Node &opts)
+    {
+        opts.reset();
+
+        if(compact_storage_enabled)
+        {
+            opts["compact_storage/enabled"] = "true";
+        }
+        else
+        {
+            opts["compact_storage/enabled"] = "false";
+        }
+        
+        opts["compact_storage/threshold"] = compact_storage_threshold;
+
+        if(chunking_enabled)
+        {
+            opts["chunking/enabled"] = "true";
+        }
+        else
+        {
+            opts["chunking/enabled"] = "false";
+        }
+        
+        opts["chunking/threshold"] = chunk_threshold;
+        opts["chunking/chunk_size"] = chunk_size;
+
+        opts["chunking/compression/method"] = compression_method;
+        if(compression_method == "gzip")
+        {
+            opts["chunking/compression/level"] = compression_level;
+        }
+    }
+};
+
+// default hdf5 i/o settings
+
+bool HDF5Options::compact_storage_enabled   = true;
+int  HDF5Options::compact_storage_threshold = 1024;
+
+bool        HDF5Options::chunking_enabled   = true;
+int         HDF5Options::chunk_size         = 1000000; // 1 mb 
+int         HDF5Options::chunk_threshold    = 2000000; // 2 mb
+
+std::string HDF5Options::compression_method = "gzip";
+int         HDF5Options::compression_level  = 5;
+
+
+//-----------------------------------------------------------------------------
+void
+hdf5_set_options(const Node &opts)
+{
+    HDF5Options::set(opts);
+}
+
+//-----------------------------------------------------------------------------
+void
+hdf5_options(Node &opts)
+{
+    HDF5Options::about(opts);
+}
 
 //-----------------------------------------------------------------------------
 // Private class used to suppress HDF5 error messages.
@@ -250,6 +406,8 @@ void read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
 void read_hdf5_tree_into_conduit_node(hid_t hdf5_id,
                                       const std::string &ref_path,
                                       Node &dest);
+
+
 
 
 //-----------------------------------------------------------------------------
@@ -654,29 +812,38 @@ check_if_conduit_node_is_compatible_with_hdf5_tree(const Node &node,
     return res;
 }
 
-
 //---------------------------------------------------------------------------//
 hid_t
-create_hdf5_compression_plist_for_conduit_leaf(const DataType &dtype)
+create_hdf5_compact_plist_for_conduit_leaf()
 {
     hid_t h5_cprops_id = H5Pcreate(H5P_DATASET_CREATE);
 
-    hsize_t num_eles = (hsize_t) dtype.number_of_elements();
-    // Turn on chunking...needed for compression
-    hsize_t chunk_size = 1024;
-    double num_chunks = (double) num_eles / (double) chunk_size;
-    double partial_chunk = num_chunks - (int) num_chunks;
-    double chunk_waste = 1 - partial_chunk;
-    if (chunk_waste > 0.1 || num_eles < chunk_size)
+    H5Pset_layout(h5_cprops_id,H5D_COMPACT);
+    
+    return h5_cprops_id;
+}
+
+
+//---------------------------------------------------------------------------//
+hid_t
+create_hdf5_chunked_plist_for_conduit_leaf(const DataType &dtype)
+{
+    hid_t h5_cprops_id = H5Pcreate(H5P_DATASET_CREATE);
+
+    // Turn on chunking
+    
+    // hdf5 sets chunking in elements, not bytes, 
+    // our options are in bytes, so convert to # of elems
+    hsize_t h5_chunk_size =  (hsize_t) (HDF5Options::chunk_size / dtype.element_bytes()); 
+
+    H5Pset_chunk(h5_cprops_id, 1, &h5_chunk_size);
+
+    if(HDF5Options::compression_method == "gzip" )
     {
-        chunk_size = num_eles;
+        // Turn on compression
+        H5Pset_shuffle(h5_cprops_id);
+        H5Pset_deflate(h5_cprops_id, HDF5Options::compression_level);
     }
-
-    H5Pset_chunk(h5_cprops_id, 1, &chunk_size);
-
-    // Turn on compression
-    H5Pset_shuffle(h5_cprops_id);
-    H5Pset_deflate(h5_cprops_id, 9);
 
     return h5_cprops_id;
 }
@@ -695,8 +862,25 @@ create_hdf5_dataset_for_conduit_leaf(const DataType &dtype,
 
     hsize_t num_eles = (hsize_t) dtype.number_of_elements();
     
-    hid_t h5_cprops_id = create_hdf5_compression_plist_for_conduit_leaf(dtype);
     
+    hid_t h5_cprops_id = H5P_DEFAULT;
+    
+
+    if( HDF5Options::compact_storage_enabled &&
+        dtype.bytes_compact() <= HDF5Options::compact_storage_threshold)
+    {
+        h5_cprops_id = create_hdf5_compact_plist_for_conduit_leaf();
+    }
+    else if( HDF5Options::chunking_enabled &&
+             dtype.bytes_compact() > HDF5Options::chunk_threshold)
+    {
+        h5_cprops_id = create_hdf5_chunked_plist_for_conduit_leaf(dtype);
+    }
+
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_cprops_id,
+                                           ref_path,
+                                           "Failed to create HDF5 property list");
+
     hid_t h5_dspace_id = H5Screate_simple(1,
                                           &num_eles,
                                           NULL);
@@ -721,11 +905,14 @@ create_hdf5_dataset_for_conduit_leaf(const DataType &dtype,
                                            << hdf5_dset_name);
 
     // close plist used for compression
-    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Pclose(h5_cprops_id),
-                                           ref_path,
+    if(h5_cprops_id != H5P_DEFAULT)
+    {
+        CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Pclose(h5_cprops_id),
+                                                       ref_path,
                                            "Failed to close HDF5 compression "
                                            "property list " 
-                                           << h5_cprops_id);
+                                                       << h5_cprops_id);
+    }
 
     // close our dataspace
     CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Sclose(h5_dspace_id),
@@ -736,7 +923,6 @@ create_hdf5_dataset_for_conduit_leaf(const DataType &dtype,
 
     return res;
 }
-
 
 //---------------------------------------------------------------------------//
 hid_t
@@ -833,6 +1019,7 @@ write_conduit_leaf_to_hdf5_group(const Node &node,
                                  hid_t hdf5_group_id,
                                  const std::string &hdf5_dset_name)
 {
+    // data set case ...
 
     // check if the dataset exists
     H5O_info_t h5_obj_info;
@@ -994,13 +1181,54 @@ write_conduit_object_to_hdf5_group(const Node &node,
                 // if the hdf5 group doesn't exist, we need to create it
                 hid_t h5_gc_plist = H5Pcreate(H5P_GROUP_CREATE);
         
+                CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_gc_plist,
+                                                       ref_path,
+                                 "Failed to create H5P_GROUP_CREATE property "
+                                 << " list");
+        
+                // track creation order
                 herr_t h5_status = H5Pset_link_creation_order(h5_gc_plist, 
                         ( H5P_CRT_ORDER_TRACKED |  H5P_CRT_ORDER_INDEXED) );
 
                 CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_status,
                                                        ref_path,
-                                 "Failed to create H5P_GROUP_CREATE property "
-                                 << " list");
+                                 "Failed to set group link creation property");
+
+                // prefer compact group storage 
+                // https://support.hdfgroup.org/HDF5/doc/RM/RM_H5G.html#Group-GroupStyles
+                h5_status = H5Pset_link_phase_change(h5_gc_plist,
+                                                     32,  // max for compact storage
+                                                     32); // min for dense storage
+
+                CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_status,
+                                                       ref_path,
+                            "Failed to set group link phase change property ");
+
+                // calc hints for meta data about link names
+                NodeConstIterator chld_itr = itr.node().children();
+                
+                index_t chld_names_avg_size = 0;
+                index_t num_children = itr.node().number_of_children();
+                
+                while(chld_itr.has_next())
+                {
+                    chld_itr.next();
+                    chld_names_avg_size +=chld_itr.name().size();
+                }
+                
+                if(chld_names_avg_size > 0 && num_children > 0 )
+                {
+                    chld_names_avg_size = chld_names_avg_size / num_children;
+                }
+
+                // set hints for meta data about link names
+                h5_status = H5Pset_est_link_info(h5_gc_plist,
+                                                 num_children, // number of children
+                                                 chld_names_avg_size); // est name size
+
+                CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_status,
+                                                       ref_path,
+                            "Failed to set group est link info property ");
 
                 h5_child_id = H5Gcreate(hdf5_group_id,
                                         itr.name().c_str(),
@@ -1177,7 +1405,7 @@ h5_group_check(h5_read_opdata *od,
 //  circular path in the file.
 //---------------------------------------------------------------------------//
 herr_t
-h5_literate_traverse_op_func(hid_t hdf5_id,
+h5l_iterate_traverse_op_func(hid_t hdf5_id,
                              const char *hdf5_path,
                              const H5L_info_t *,// hdf5_info -- unused
                              void *hdf5_operator_data)
@@ -1304,8 +1532,9 @@ read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
                                   Node &dest)
 {
     // we want to make sure this is a conduit object
-    // even if it doens't have any children
+    // even if it doesn't have any children
     dest.set(DataType::object());
+    
     
     // get info, we need to get the obj addr for cycle tracking
     H5O_info_t h5_info_buf;
@@ -1361,7 +1590,7 @@ read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
                            h5_grp_index_type,
                            H5_ITER_INC,
                            NULL,
-                           h5_literate_traverse_op_func,
+                           h5l_iterate_traverse_op_func,
                            (void *) &h5_od);
 
     CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_status,
@@ -1559,12 +1788,83 @@ read_hdf5_tree_into_conduit_node(hid_t hdf5_id,
 
 
 //---------------------------------------------------------------------------//
+hid_t
+create_hdf5_file_access_plist()
+{
+    // create property list and set use latest lib ver settings 
+    hid_t h5_fa_props = H5Pcreate(H5P_FILE_ACCESS);
+    
+    CONDUIT_CHECK_HDF5_ERROR(h5_fa_props,
+                             "Failed to create H5P_FILE_ACCESS "
+                             << " property list");
+    
+    
+    herr_t h5_status = H5Pset_libver_bounds(h5_fa_props,
+                                            H5F_LIBVER_LATEST,
+                                            H5F_LIBVER_LATEST);
+
+    CONDUIT_CHECK_HDF5_ERROR(h5_status,
+                             "Failed to set libver options for "
+                             << "property list " << h5_fa_props);
+    return h5_fa_props;
+}
+
+//---------------------------------------------------------------------------//
+hid_t
+create_hdf5_file_create_plist()
+{
+    // create property list and set it to preserve creation order
+    hid_t h5_fc_props = H5Pcreate(H5P_FILE_CREATE);
+
+    CONDUIT_CHECK_HDF5_ERROR(h5_fc_props,
+                             "Failed to create H5P_FILE_CREATE "
+                             << " property list");
+
+    herr_t h5_status = H5Pset_link_creation_order(h5_fc_props, 
+            ( H5P_CRT_ORDER_TRACKED |  H5P_CRT_ORDER_INDEXED) );
+
+    CONDUIT_CHECK_HDF5_ERROR(h5_status,
+                             "Failed to set creation order options for "
+                             << "property list " << h5_fc_props);
+    return h5_fc_props;
+}
+
+//---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 // Public interface: Write Methods
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
+hid_t
+hdf5_open_file_for_write(const std::string &file_path)
+{
+    hid_t h5_fc_plist = create_hdf5_file_create_plist();
+    hid_t h5_fa_plist = create_hdf5_file_access_plist();
+
+    // open the hdf5 file for writing
+    hid_t h5_file_id = H5Fcreate(file_path.c_str(),
+                                 H5F_ACC_TRUNC,
+                                 h5_fc_plist,
+                                 h5_fa_plist);
+
+    CONDUIT_CHECK_HDF5_ERROR(h5_file_id,
+                             "Error opening HDF5 file for writing: " 
+                             << file_path);
+
+    CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_fc_plist),
+                             "Failed to close HDF5 H5P_GROUP_CREATE "
+                             << "property list: " << h5_fc_plist);
+
+    CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_fa_plist),
+                             "Failed to close HDF5 H5P_FILE_ACCESS "
+                             << "property list: " << h5_fa_plist);
+    
+    return h5_file_id;
+}
 
 //---------------------------------------------------------------------------//
 void 
@@ -1598,35 +1898,9 @@ hdf5_write(const Node &node,
            const std::string &file_path,
            const std::string &hdf5_path)
 {
-    // preserve creation order
-    hid_t h5_file_plist = H5Pcreate(H5P_FILE_CREATE);
-
-    CONDUIT_CHECK_HDF5_ERROR(h5_file_plist,
-                             "Failed to create H5P_FILE_CREATE property "
-                             << " list");
-
-
-    herr_t h5_status = H5Pset_link_creation_order(h5_file_plist, 
-            ( H5P_CRT_ORDER_TRACKED |  H5P_CRT_ORDER_INDEXED) );
-
-    CONDUIT_CHECK_HDF5_ERROR(h5_status,
-                             "Failed to set creation order options for "
-                             << "property list");
-
     // open the hdf5 file for writing
-    hid_t h5_file_id = H5Fcreate(file_path.c_str(),
-                                 H5F_ACC_TRUNC,
-                                 h5_file_plist,
-                                 H5P_DEFAULT);
+    hid_t h5_file_id = hdf5_open_file_for_write(file_path);
 
-    CONDUIT_CHECK_HDF5_ERROR(h5_file_id,
-                             "Error opening HDF5 file for writing: " 
-                             << file_path);
-
-    CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_file_plist),
-                             "Failed to close HDF5 H5P_GROUP_CREATE "
-                             << "property list: " << h5_file_plist);
-    
     hdf5_write(node,
                h5_file_id,
                hdf5_path);
@@ -1753,6 +2027,28 @@ hdf5_write(const Node &node,
 
 
 //---------------------------------------------------------------------------//
+hid_t
+hdf5_open_file_for_read(const std::string &file_path)
+{
+    hid_t h5_fa_plist = create_hdf5_file_access_plist();
+    
+    // open the hdf5 file for reading
+    hid_t h5_file_id = H5Fopen(file_path.c_str(),
+                               H5F_ACC_RDONLY,
+                               h5_fa_plist);
+
+    CONDUIT_CHECK_HDF5_ERROR(h5_file_id,
+                             "Error opening HDF5 file for reading: " 
+                              << file_path);
+
+    CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_fa_plist),
+                             "Failed to close HDF5 H5P_FILE_ACCESS "
+                             << "property list: " << h5_fa_plist);
+    
+    return h5_file_id;
+}
+
+//---------------------------------------------------------------------------//
 void
 hdf5_read(const std::string &path,
           Node &node)
@@ -1784,13 +2080,7 @@ hdf5_read(const std::string &file_path,
           Node &node)
 {
     // open the hdf5 file for reading
-    hid_t h5_file_id = H5Fopen(file_path.c_str(),
-                               H5F_ACC_RDONLY,
-                               H5P_DEFAULT);
-
-    CONDUIT_CHECK_HDF5_ERROR(h5_file_id,
-                             "Error opening HDF5 file for reading: " 
-                              << file_path);
+    hid_t h5_file_id = hdf5_open_file_for_read(file_path);
 
     hdf5_read(h5_file_id,
               hdf5_path,
@@ -1844,6 +2134,32 @@ hdf5_read(hid_t hdf5_id,
     
     // enable hdf5 error stack
 }
+
+
+//---------------------------------------------------------------------------//
+bool
+hdf5_has_path(hid_t hdf5_id,
+              const std::string &hdf5_path)
+{
+    // disable hdf5 error stack
+    HDF5ErrorStackSupressor supress_hdf5_errors;
+    
+    int res = H5Lexists(hdf5_id,hdf5_path.c_str(),H5P_DEFAULT);
+    
+    
+    // H5Lexists returns:
+    //  a positive value if the link exists.
+    //
+    //  0 if it doesn't exist
+    //
+    //  a negative # in some cases when it doesn't exist, and in some cases
+    //    where there is an error. 
+    // For our cases, we treat 0 and negative as does not exist. 
+
+    return (res > 0);
+    // enable hdf5 error stack
+}
+
 
 
 }

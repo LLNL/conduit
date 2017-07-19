@@ -73,27 +73,27 @@ extern "C" {
 //-----------------------------------------------------------------------------
 /// Verify passed node confirms to the blueprint mcarray protocol.
 //-----------------------------------------------------------------------------
-CONDUIT_BLUEPRINT_API bool conduit_blueprint_mcarray_verify(const conduit_node *cnode,
-                                                            conduit_node *cinfo);
+CONDUIT_BLUEPRINT_API int conduit_blueprint_mcarray_verify(const conduit_node *cnode,
+                                                           conduit_node *cinfo);
 
 
 //-----------------------------------------------------------------------------
 /// Verify passed node confirms to given blueprint mcarray sub protocol.
 //-----------------------------------------------------------------------------
-CONDUIT_BLUEPRINT_API bool conduit_blueprint_mcarray_verify_sub_protocol(const char *protocol,
-                                                                         const conduit_node *cnode,
-                                                                         conduit_node *cinfo);
+CONDUIT_BLUEPRINT_API int conduit_blueprint_mcarray_verify_sub_protocol(const char *protocol,
+                                                                        const conduit_node *cnode,
+                                                                        conduit_node *cinfo);
 
 //----------------------------------------------------------------------------
-CONDUIT_BLUEPRINT_API bool conduit_blueprint_mcarray_is_interleaved(const conduit_node *cnode);
+CONDUIT_BLUEPRINT_API int conduit_blueprint_mcarray_is_interleaved(const conduit_node *cnode);
 
 //----------------------------------------------------------------------------
-CONDUIT_BLUEPRINT_API bool conduit_blueprint_mcarray_to_contiguous(const conduit_node *cnode,
-                                                                   conduit_node *cdest);
+CONDUIT_BLUEPRINT_API int conduit_blueprint_mcarray_to_contiguous(const conduit_node *cnode,
+                                                                  conduit_node *cdest);
 
 //-----------------------------------------------------------------------------
-CONDUIT_BLUEPRINT_API bool conduit_blueprint_mcarray_to_interleaved(const conduit_node *cnode,
-                                                                    conduit_node *cdest);
+CONDUIT_BLUEPRINT_API int conduit_blueprint_mcarray_to_interleaved(const conduit_node *cnode,
+                                                                   conduit_node *cdest);
 
 //-----------------------------------------------------------------------------
 /// Interface to generate example mesh blueprint data.
