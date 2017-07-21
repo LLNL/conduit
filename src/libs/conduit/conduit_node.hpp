@@ -3299,8 +3299,21 @@ public:
     void    remove(const std::string &path);
 
 
-    /// helpers to create a list of a homogenous type
+    /// helpers to create a list of a homogenous types
+    ///
+    /// these allocates contiguous chunk of data to 
+    /// hold num_entries copies of the given schema or 
+    /// dtype, and change the node into a list with
+    /// children pointing into this chunk of data
+    /// 
+    /// the node owns the data, and the children
+    /// are "set_external" to the proper location. 
+    /// 
     void list_of(const Schema &schema,
+                 index_t num_entries);
+
+
+    void list_of(const DataType &dtype,
                  index_t num_entries);
     
     void list_of_external(void *data,

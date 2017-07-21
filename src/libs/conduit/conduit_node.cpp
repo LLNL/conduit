@@ -11108,11 +11108,13 @@ Node::remove(const std::string &path)
 
 
 //---------------------------------------------------------------------------//
-// helper to create a Schema the describes a list of a homogenous type
+// helper to create a node using Schema the describes a list of a homogenous 
+// type
 void
 Node::list_of(const Schema &schema, 
               index_t num_entries)
 {
+    reset();
     init_list();
 
     Schema s_compact;
@@ -11132,6 +11134,18 @@ Node::list_of(const Schema &schema,
         ptr += entry_bytes;
     }
 }
+
+//---------------------------------------------------------------------------//
+// helper to create node that is a list of a homogenous type
+void
+Node::list_of(const DataType &dtype, 
+              index_t num_entries)
+{
+    Schema s(dtype);
+    // let the schema case do the heavy lifting.
+    list_of(s,num_entries);
+}
+
 
 //---------------------------------------------------------------------------//
 // helper to create a Schema the describes a list of a homogenous type

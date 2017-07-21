@@ -207,4 +207,34 @@ TEST(conduit_list_of, without_json)
     delete [] data;
 }
     
+    
 
+//-----------------------------------------------------------------------------
+TEST(conduit_list_of, dtype)
+{
+    Node n;
+    n.list_of(DataType::empty(),5);
+    n.info().print();
+    n.print();
+    EXPECT_TRUE(n.dtype().is_list());
+    EXPECT_EQ(n.number_of_children(),5);
+    
+    
+    n.list_of(DataType::float64(2),5);
+    n.print();
+    n.info().print();
+    EXPECT_EQ(n.allocated_bytes(), 5 * 2 * 8);
+    
+
+    NodeIterator itr = n.children();
+    while(itr.has_next())
+    {
+        float64_array vals = itr.next().value();
+        vals[0] = 10;
+        vals[1] = 20;
+    }    
+    
+    n.print();
+    
+    
+}
