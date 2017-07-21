@@ -1188,8 +1188,10 @@ Schema::Schema_Object_Hierarchy *
 Schema::object_hierarchy()
 {
     if(m_dtype.id() != DataType::OBJECT_ID)
-        CONDUIT_ERROR("<Schema::object_hierarchy[OBJECT_ID]>: Schema is not OBJECT_ID");
-
+    {
+        CONDUIT_ERROR("Schema::object_hierarchy() - Schema dtype().id()"
+                      " is not OBJECT_ID");
+    }
     return static_cast<Schema_Object_Hierarchy*>(m_hierarchy_data);
 }
 
@@ -1197,6 +1199,11 @@ Schema::object_hierarchy()
 Schema::Schema_List_Hierarchy *
 Schema::list_hierarchy()
 {
+    if(m_dtype.id() != DataType::LIST_ID)
+    {
+        CONDUIT_ERROR("Schema::list_hierarchy() - Schema dtype().id()" 
+                      " is not LIST_ID");
+    }
     return static_cast<Schema_List_Hierarchy*>(m_hierarchy_data);
 }
 
@@ -1206,15 +1213,22 @@ const Schema::Schema_Object_Hierarchy *
 Schema::object_hierarchy() const 
 {
     if(m_dtype.id() != DataType::OBJECT_ID)
-        CONDUIT_ERROR("<Schema::object_hierarchy[OBJECT_ID]>: Schema is not OBJECT_ID");
-
+    {
+        CONDUIT_ERROR("Schema::object_hierarchy() - Schema dtype().id()"
+                      " is not OBJECT_ID");
+    }
     return static_cast<Schema_Object_Hierarchy*>(m_hierarchy_data);
 }
 
 //---------------------------------------------------------------------------//
 const Schema::Schema_List_Hierarchy *
 Schema::list_hierarchy() const 
-{
+{    
+    if(m_dtype.id() != DataType::LIST_ID)
+    {
+        CONDUIT_ERROR("Schema::list_hierarchy() - Schema dtype().id()" 
+                      " is not LIST_ID");
+    }
     return static_cast<Schema_List_Hierarchy*>(m_hierarchy_data);
 }
 
@@ -1224,18 +1238,22 @@ std::vector<Schema*> &
 Schema::children()
 {
     index_t dtype_id = m_dtype.id();
+    if( ! ( dtype_id == DataType::OBJECT_ID || 
+            dtype_id ==  DataType::LIST_ID ))
+    {
+        CONDUIT_ERROR("Schema::children() -  Schema dtype().id()"
+                      " is not (OBJECT_ID or LIST_ID)");
+    }
+    
     if ( dtype_id == DataType::OBJECT_ID)
     {
         return object_hierarchy()->children;
     } 
-    else if( dtype_id == DataType::LIST_ID)
+    else
     {
-        return list_hierarchy()->children;        
+        return list_hierarchy()->children;
     }
-    else 
-    {
-        CONDUIT_ERROR("Schema::children() requires an object or list schema.");
-    }
+
 }
 
 //---------------------------------------------------------------------------//
