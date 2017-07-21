@@ -1097,7 +1097,7 @@ Schema::release()
     if(dtype().id() == DataType::OBJECT_ID ||
        dtype().id() == DataType::LIST_ID)
     {
-        std::vector<Schema*> chld = children();
+        std::vector<Schema*> &chld = children();
         for(size_t i=0; i< chld.size(); i++)
         {
             delete chld[i];
@@ -1223,13 +1223,18 @@ Schema::list_hierarchy() const
 std::vector<Schema*> &
 Schema::children()
 {
-    if (m_dtype.id() == DataType::OBJECT_ID)
+    index_t dtype_id = m_dtype.id();
+    if ( dtype_id == DataType::OBJECT_ID)
     {
         return object_hierarchy()->children;
     } 
+    else if( dtype_id == DataType::LIST_ID)
+    {
+        return list_hierarchy()->children;        
+    }
     else 
     {
-        return list_hierarchy()->children;
+        CONDUIT_ERROR("Schema::children() requires an object or list schema.");
     }
 }
 
