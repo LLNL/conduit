@@ -12981,8 +12981,7 @@ Node::init(const DataType& dtype)
 void
 Node::allocate(const DataType &dtype)
 {
-    // TODO: This implies compact storage
-    allocate(dtype.number_of_elements()*dtype.element_bytes());
+    allocate(dtype.spanned_bytes());
 }
 
 //---------------------------------------------------------------------------//
