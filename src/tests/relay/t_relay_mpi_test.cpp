@@ -585,13 +585,13 @@ TEST(conduit_mpi_test, waitallmultirequest)
     {
         mpi::irecv(n1, 1, 0, MPI_COMM_WORLD, &requests[0]);
         mpi::irecv(n2, 1, 0, MPI_COMM_WORLD, &requests[1]);
-        mpi::wait_all_recv(1, requests, statuses);
+        mpi::wait_all_recv(2, requests, statuses);
     }
     else if (rank == 1) 
     {
         mpi::isend(n1, 0, 0, MPI_COMM_WORLD, &requests[0]);
         mpi::isend(n2, 0, 0, MPI_COMM_WORLD, &requests[1]);
-        mpi::wait_all_send(1, requests, statuses);
+        mpi::wait_all_send(2, requests, statuses);
     }
 
     EXPECT_EQ(n1.as_float64_ptr()[0], 2);
