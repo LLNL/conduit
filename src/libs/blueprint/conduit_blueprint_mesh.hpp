@@ -115,8 +115,7 @@ bool CONDUIT_BLUEPRINT_API to_multi_domain(const conduit::Node &n,
 
 //-------------------------------------------------------------------------
 bool CONDUIT_BLUEPRINT_API to_rectilinear(const conduit::Node &n,
-                                          const std::string &src_topo_name,
-                                          const std::string &dst_topo_name,
+                                          const std::string &topo_name,
                                           conduit::Node &dest);
 /*
 //-------------------------------------------------------------------------

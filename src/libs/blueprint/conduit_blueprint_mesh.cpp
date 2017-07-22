@@ -752,41 +752,45 @@ bool mesh::to_multi_domain(const conduit::Node &n,
 
 //-------------------------------------------------------------------------
 bool mesh::to_rectilinear(const conduit::Node &n,
-                          const std::string &src_topo_name,
-                          const std::string &dst_topo_name,
+                          const std::string &topo_name,
                           conduit::Node &dest)
 {
     bool res = true;
     dest.reset();
 
     Node info;
-    if(!mesh::verify_single_domain(n, info))
+    if(!mesh::verify_single_domain(n, info) || &n == &dest)
     {
-        res = false; // input mesh must be a single-domain mesh
+        // The input mesh must be a single-domain mesh and the output node
+        // must be a different node than the input node.
+        res = false;
     }
     else
     {
-        const Node &src_topo = n["topologies"][src_topo_name];
-        const std::string src_cset_name = src_topo["coordset"].as_string();
-        const Node &src_coords = n["coordsets"][src_cset_name];
+        const Node &src_topo = n["topologies"][topo_name];
+        const std::string cset_name = src_topo["coordset"].as_string();
+        const Node &src_coords = n["coordsets"][cset_name];
 
         bool is_uniform = mesh::topology::uniform::verify(src_topo, info);
         bool is_rectilinear = mesh::topology::rectilinear::verify(src_topo, info);
-        if(is_uniform || is_rectilinear)
+        if(!is_uniform && !is_rectilinear)
         {
-            const std::string dst_cset_name = dst_topo_name + "_" + src_cset_name;
-            if(dest["topologies"].has_child(dst_topo_name) ||
-               dest["coordsets"].has_child(dst_cset_name))
+            res = false; // can only do uniform/rectilinear -> rectilinear
+        }
+        else
+        {
+            if(dest["topologies"].has_child(topo_name) ||
+               dest["coordsets"].has_child(cset_name))
             {
                 // TODO(JRC): Add some logic here to inform the user that they're
                 // potentially overwriting an existing topology/coordinate set.
             }
 
-            Node &dst_topo = dest["topologies"][dst_topo_name];
-            Node &dst_coords = dest["coordsets"][dst_cset_name];
+            Node &dst_topo = dest["topologies"][topo_name];
+            Node &dst_coords = dest["coordsets"][cset_name];
 
             dst_topo.set(src_topo);
-            dst_topo["coordset"].set(dst_cset_name);
+            dst_topo["coordset"].set(cset_name);
             dst_topo["type"].set("rectilinear");
 
             if(is_rectilinear)
@@ -842,10 +846,6 @@ bool mesh::to_rectilinear(const conduit::Node &n,
                     }
                 }
             }
-        }
-        else
-        {
-            res = false; // can only do uniform/rectilinear -> rectilinear
         }
     }
 
