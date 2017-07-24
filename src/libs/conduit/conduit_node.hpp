@@ -3188,6 +3188,12 @@ public:
     bool             contiguous_with(void *address) const;
     
 
+    /// if this node has a contiguous data layout, returns
+    /// the start address of its memory, otherwise returns NULL
+    
+    void            *contiguous_data_ptr();
+    const void      *contiguous_data_ptr() const;
+
     /// is this node compatible with given node
     bool             compatible(const Node &n) const
                         {return m_schema->compatible(n.schema());}
@@ -3293,8 +3299,21 @@ public:
     void    remove(const std::string &path);
 
 
-    /// helpers to create a list of a homogenous type
+    /// helpers to create a list of a homogenous types
+    ///
+    /// these allocates contiguous chunk of data to 
+    /// hold num_entries copies of the given schema or 
+    /// dtype, and change the node into a list with
+    /// children pointing into this chunk of data
+    /// 
+    /// the node owns the data, and the children
+    /// are "set_external" to the proper location. 
+    /// 
     void list_of(const Schema &schema,
+                 index_t num_entries);
+
+
+    void list_of(const DataType &dtype,
                  index_t num_entries);
     
     void list_of_external(void *data,
@@ -3756,6 +3775,10 @@ private:
 
     void              info(Node &res,
                            const std::string &curr_path) const;
+
+    /// helper that finds the first non null data pointer, used by 
+    /// contiguous_data_ptr()
+    const void       *find_first_data_ptr() const;
 
 //-----------------------------------------------------------------------------
 //

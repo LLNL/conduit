@@ -50,26 +50,439 @@
 
 #include "conduit_relay_mpi.hpp"
 #include <iostream>
+#include "math.h"
 #include "gtest/gtest.h"
 
 using namespace conduit;
 using namespace conduit::relay;
+using namespace conduit::relay::mpi;
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, conduit_dtype_to_mpi_dtype) 
+{
+    MPI_Datatype dt_test = MPI_DATATYPE_NULL;
+    
+    // all support types should be mapped (eg: not MPI_DATATYPE_NULL)
+
+
+    // signed integers
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::int8()),
+              MPI_DATATYPE_NULL);
+
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::int16()),
+              MPI_DATATYPE_NULL);
+
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::int32()),
+              MPI_DATATYPE_NULL);
+
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::int64()),
+              MPI_DATATYPE_NULL);
+    
+    // unsigned integers
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::uint8()),
+              MPI_DATATYPE_NULL);
+
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::uint16()),
+              MPI_DATATYPE_NULL);   
+
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::uint32()),
+              MPI_DATATYPE_NULL);
+
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::uint64()),
+              MPI_DATATYPE_NULL);
+
+    // floating point
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::float32()),
+              MPI_DATATYPE_NULL);
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::float64()),
+              MPI_DATATYPE_NULL);
+
+    // string
+    EXPECT_NE(conduit_dtype_to_mpi_dtype(DataType::char8_str()),
+              MPI_DATATYPE_NULL);
+
+    // empty, object, and list should return null
+    EXPECT_EQ(conduit_dtype_to_mpi_dtype(DataType::empty()),
+              MPI_DATATYPE_NULL);
+              
+    EXPECT_EQ(conduit_dtype_to_mpi_dtype(DataType::object()),
+              MPI_DATATYPE_NULL);
+              
+    EXPECT_EQ(conduit_dtype_to_mpi_dtype(DataType::object()),
+              MPI_DATATYPE_NULL);
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, mpi_dtype_to_conduit_dtype) 
+{
+    EXPECT_TRUE(DataType(mpi_dtype_to_conduit_dtype_id(MPI_INT)).is_int());
+    EXPECT_TRUE(DataType(mpi_dtype_to_conduit_dtype_id(MPI_UNSIGNED)).is_unsigned_int());
+
+    EXPECT_TRUE(DataType(mpi_dtype_to_conduit_dtype_id(MPI_FLOAT)).is_float());
+    EXPECT_TRUE(DataType(mpi_dtype_to_conduit_dtype_id(MPI_DOUBLE)).is_double());
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, reduce) 
+{
+    Node n_snd, n_reduce;
+    
+    int rank = mpi::rank(MPI_COMM_WORLD);
+    int com_size = mpi::size(MPI_COMM_WORLD);
+    
+    int root = 0;
+
+    int val = rank * 10;
+    n_snd = val;
+
+    mpi::reduce(n_snd, n_reduce, MPI_MAX, root, MPI_COMM_WORLD);
+    
+    if(rank == root)
+    {
+        EXPECT_EQ(n_reduce.as_int(), 10 * (com_size-1));
+    }
+
+    // check non-compact case
+    
+    n_snd.set(DataType::c_int(2,0,sizeof(int)*2));
+    n_reduce.set(DataType::c_int(2,0,sizeof(int)*2));
+    
+    int_array snd_vals = n_snd.value();
+    
+    snd_vals[0] = 10;
+    snd_vals[1] = 20;
+            
+    void *reduce_ptr = n_reduce.data_ptr();
+    mpi::reduce(n_snd, n_reduce, MPI_SUM, root, MPI_COMM_WORLD);
+    
+    if(rank == root)
+    {
+        int_array reduce_vals = n_reduce.value();
+    
+        EXPECT_EQ(reduce_vals[0], 10 * com_size);
+        EXPECT_EQ(reduce_vals[1], 20 * com_size);
+    
+        // n_reduce should have the same data pointer before and after the reduce
+        EXPECT_EQ(reduce_ptr,n_reduce.data_ptr());
+    }
+
+    // set to something in-compat
+    n_reduce.set(3.1415);
+    
+    n_reduce.print();
+
+    Schema s_reduce_pre;
+    
+    s_reduce_pre =  n_reduce.schema();
+    
+    mpi::reduce(n_snd, n_reduce, MPI_SUM, root, MPI_COMM_WORLD);
+    
+    if(rank == root)
+    {
+        n_reduce.print();
+    
+        int_array reduce_vals = n_reduce.value();
+        
+        EXPECT_EQ(reduce_vals[0], 10 * com_size);
+        EXPECT_EQ(reduce_vals[1], 20 * com_size);
+
+        EXPECT_FALSE(s_reduce_pre.compatible(n_reduce.schema()));
+    }
+
+}
 
 //-----------------------------------------------------------------------------
 TEST(conduit_mpi_test, allreduce) 
 {
-    Node n1; 
-    int rank = 0;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    Node n_snd, n_reduce;
+    
+    int rank = mpi::rank(MPI_COMM_WORLD);
+    int com_size = mpi::size(MPI_COMM_WORLD);
 
-    n1["value"] = rank*10;
+    int val = rank * 10;
+    n_snd = val;
 
-    Node n2;
+    mpi::all_reduce(n_snd, n_reduce, MPI_MAX, MPI_COMM_WORLD);
+    EXPECT_EQ(n_reduce.as_int(), 10 * (com_size-1));
 
-    mpi::all_reduce(n1, n2, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+    // check non-compact case
+    
+    n_snd.set(DataType::c_int(2,0,sizeof(int)*2));
+    n_reduce.set(DataType::c_int(2,0,sizeof(int)*2));
+    
+    int_array snd_vals = n_snd.value();
+    
+    snd_vals[0] = 10;
+    snd_vals[1] = 20;
+            
+    void *reduce_ptr = n_reduce.data_ptr();
+    mpi::all_reduce(n_snd, n_reduce, MPI_SUM, MPI_COMM_WORLD);
+    
+    
+    int_array reduce_vals = n_reduce.value();
+    
+    EXPECT_EQ(reduce_vals[0], 10 * com_size);
+    EXPECT_EQ(reduce_vals[1], 20 * com_size);
+    
+    // n_reduce should have the same data pointer before and after the reduce
+    EXPECT_EQ(reduce_ptr,n_reduce.data_ptr());
+    
+    
+    // set to something in-compat
+    n_reduce.set(3.1415);
+    
+    n_reduce.print();
+    //n_reduce.reset();
 
-    EXPECT_EQ(n2["value"].as_int32(), 10);
+    Schema s_reduce_pre;
+    
+    s_reduce_pre =  n_reduce.schema();
+    
+    mpi::all_reduce(n_snd, n_reduce, MPI_SUM, MPI_COMM_WORLD);
+    
+    
+    n_reduce.print();
+    
+    reduce_vals = n_reduce.value();
+    
+    EXPECT_EQ(reduce_vals[0], 10 * com_size);
+    EXPECT_EQ(reduce_vals[1], 20 * com_size);
+
+
+    EXPECT_FALSE(s_reduce_pre.compatible(n_reduce.schema()));
+
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, reduce_helpers) 
+{
+    int rank     = mpi::rank(MPI_COMM_WORLD);
+    int com_size = mpi::size(MPI_COMM_WORLD);
+
+    Node snd(DataType::int64(5));
+    Node rcv(DataType::int64(5));
+        
+    int64 *snd_vals = snd.value();
+    int64 *rcv_vals = rcv.value();
+    
+    // sum
+
+    for(int i=0; i < 5; i++)
+    {
+        snd_vals[i] = 10;
+    }
+
+
+
+    mpi::sum_reduce(snd, rcv, 0, MPI_COMM_WORLD);
+
+
+    if(rank == 0)
+    {
+        for(int i=0; i < 5; i++)
+        {
+            EXPECT_EQ(rcv_vals[i], 10 * com_size);
+        }
+    }
+    
+    // prod
+
+    for(int i=0; i < 5; i++)
+    {
+        snd_vals[i] = 2;
+    }
+
+
+    mpi::prod_reduce(snd, rcv, 0, MPI_COMM_WORLD);
+
+
+    if(rank == 0)
+    {
+        for(int i=0; i < 5; i++)
+        {
+            EXPECT_EQ(rcv_vals[i], pow(com_size,2) );
+        }
+    }
+
+    
+    // max
+    
+    for(int i=0; i < 5; i++)
+    {
+        snd_vals[i] = rank * 10 + 1;
+    }
+
+    mpi::max_reduce(snd, rcv, 0, MPI_COMM_WORLD);
+
+
+    if(rank == 0)
+    {
+        for(int i=0; i < 5; i++)
+        {
+            EXPECT_EQ(rcv_vals[i], 10 * (com_size-1) + 1);
+        }
+    }
+
+    // min
+
+    for(int i=0; i < 5; i++)
+    {
+        snd_vals[i] = rank * 10 + 1;
+    }
+
+    mpi::min_reduce(snd, rcv, 0, MPI_COMM_WORLD);
+
+    if(rank == 0)
+    {
+        for(int i=0; i < 5; i++)
+        {
+            EXPECT_EQ(rcv_vals[i], 1);
+        }
+    }
+
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, all_reduce_helpers) 
+{
+    int rank     = mpi::rank(MPI_COMM_WORLD);
+    int com_size = mpi::size(MPI_COMM_WORLD);
+
+    Node snd(DataType::int64(5));
+    Node rcv(DataType::int64(5));
+    
+    int64 *snd_vals = snd.value();
+    int64 *rcv_vals = rcv.value();
+
+    // sum
+
+    for(int i=0; i < 5; i++)
+    {
+        snd_vals[i] = 10;
+    }
+
+    mpi::sum_all_reduce(snd, rcv, MPI_COMM_WORLD);
+
+
+    for(int i=0; i < 5; i++)
+    {
+        EXPECT_EQ(rcv_vals[i], 10 * com_size);
+    }
+
+    // prod
+
+    for(int i=0; i < 5; i++)
+    {
+        snd_vals[i] = 2;
+    }
+
+    mpi::prod_all_reduce(snd, rcv, MPI_COMM_WORLD);
+
+
+    for(int i=0; i < 5; i++)
+    {
+        EXPECT_EQ(rcv_vals[i], pow(com_size,2) );
+    }
+
+    
+    // max
+    
+    for(int i=0; i < 5; i++)
+    {
+        snd_vals[i] = rank * 10 + 1;
+    }
+    
+
+    mpi::max_all_reduce(snd, rcv, MPI_COMM_WORLD);
+
+
+    for(int i=0; i < 5; i++)
+    {
+        EXPECT_EQ(rcv_vals[i], 10 * (com_size-1) + 1);
+    }
+
+    // min
+
+    for(int i=0; i < 5; i++)
+    {
+        snd_vals[i] = rank * 10 + 1;
+    }
+    
+
+    mpi::min_all_reduce(snd, rcv, MPI_COMM_WORLD);
+
+
+    for(int i=0; i < 5; i++)
+    {
+        EXPECT_EQ(rcv_vals[i], 1);
+    }
+
+}
+
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, send_recv_using_schema) 
+{
+    Node n;
+    int rank = mpi::rank(MPI_COMM_WORLD);
+
+    if( rank == 0 )
+    {
+        n.set(DataType::c_double(3));
+        double_array vals = n.value();
+        vals[0] = rank + 1;
+        vals[1] = 3.4124 * rank;
+        vals[2] = 10.7 - rank;
+        
+        mpi::send_using_schema(n,1,0,MPI_COMM_WORLD);
+    }
+    else if( rank == 1 )
+    {
+        mpi::recv_using_schema(n,0,0,MPI_COMM_WORLD);
+    }
+
+    double_array vals = n.value();
+
+    EXPECT_EQ(vals[0], 1);
+    EXPECT_EQ(vals[1], 0);
+    EXPECT_EQ(vals[2], 10.7);
+}
+
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, send_recv_without_using_schema) 
+{
+    Node n;
+    int rank = mpi::rank(MPI_COMM_WORLD);
+
+    n.set(DataType::c_double(3));
+
+    if( rank == 0 )
+    {
+        double_array vals = n.value();
+        vals[0] = rank + 1;
+        vals[1] = 3.4124 * rank;
+        vals[2] = 10.7 - rank;
+        
+        mpi::send(n,1,0,MPI_COMM_WORLD);
+    }
+    else if( rank == 1 )
+    {
+        mpi::recv(n,0,0,MPI_COMM_WORLD);
+    }
+
+    double_array vals = n.value();
+
+    EXPECT_EQ(vals[0], 1);
+    EXPECT_EQ(vals[1], 0);
+    EXPECT_EQ(vals[2], 10.7);
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_mpi_test, isend_irecv_wait) 
@@ -88,7 +501,7 @@ TEST(conduit_mpi_test, isend_irecv_wait)
     n1.set_external(doubles);
     
 
-    mpi::ConduitMPIRequest request;
+    mpi::Request request;
 
     MPI_Status status;
     if (rank == 0) 
@@ -125,7 +538,7 @@ TEST(conduit_mpi_test, waitall)
     
 
 
-    mpi::ConduitMPIRequest requests[1];
+    mpi::Request requests[1];
 
     MPI_Status statuses[1];
     if (rank == 0) 
@@ -165,19 +578,20 @@ TEST(conduit_mpi_test, waitallmultirequest)
     
 
 
-    mpi::ConduitMPIRequest requests[2];
+    mpi::Request requests[2];
 
     MPI_Status statuses[2];
     if (rank == 0) 
     {
         mpi::irecv(n1, 1, 0, MPI_COMM_WORLD, &requests[0]);
         mpi::irecv(n2, 1, 0, MPI_COMM_WORLD, &requests[1]);
-        mpi::wait_all_recv(1, requests, statuses);
-    } else if (rank == 1) 
+        mpi::wait_all_recv(2, requests, statuses);
+    }
+    else if (rank == 1) 
     {
         mpi::isend(n1, 0, 0, MPI_COMM_WORLD, &requests[0]);
         mpi::isend(n2, 0, 0, MPI_COMM_WORLD, &requests[1]);
-        mpi::wait_all_send(1, requests, statuses);
+        mpi::wait_all_send(2, requests, statuses);
     }
 
     EXPECT_EQ(n1.as_float64_ptr()[0], 2);
@@ -191,7 +605,7 @@ TEST(conduit_mpi_test, waitallmultirequest)
 //-----------------------------------------------------------------------------
 TEST(conduit_mpi_test, external) 
 {
-     Node n1;
+    Node n1;
     int rank = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -218,7 +632,7 @@ TEST(conduit_mpi_test, external)
 
     n1.append().set_external(doubles3);
 
-    mpi::ConduitMPIRequest request;
+    mpi::Request request;
 
     MPI_Status status;
     if (rank == 0) 
@@ -226,7 +640,8 @@ TEST(conduit_mpi_test, external)
         mpi::irecv(n1, 1, 0, MPI_COMM_WORLD, &request);
         mpi::wait_recv(&request, &status);
         
-    } else if (rank == 1)
+    }
+    else if (rank == 1)
     {
         mpi::isend(n1, 0, 0, MPI_COMM_WORLD, &request);
         mpi::wait_send(&request, &status);
@@ -308,7 +723,7 @@ TEST(conduit_mpi_test, gather_simple)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_mpi_test, gatherv_simple) 
+TEST(conduit_mpi_test, gather_using_schema_simple) 
 {
     Node n;
     
@@ -323,7 +738,7 @@ TEST(conduit_mpi_test, gatherv_simple)
     }
     
     Node rcv;
-    mpi::gatherv(n,rcv,0,MPI_COMM_WORLD);
+    mpi::gather_using_schema(n,rcv,0,MPI_COMM_WORLD);
     rcv.print();
     
     if( rank == 0)
@@ -344,7 +759,7 @@ TEST(conduit_mpi_test, gatherv_simple)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_mpi_test, allgatherv_simple) 
+TEST(conduit_mpi_test, all_gather_using_schema_simple) 
 {
     Node n;
     
@@ -359,7 +774,7 @@ TEST(conduit_mpi_test, allgatherv_simple)
     }
     
     Node rcv;
-    mpi::all_gatherv(n,rcv,MPI_COMM_WORLD);
+    mpi::all_gather_using_schema(n,rcv,MPI_COMM_WORLD);
     rcv.print();
     
     Node res;
@@ -378,6 +793,175 @@ TEST(conduit_mpi_test, allgatherv_simple)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, bcast) 
+{
+    int rank = mpi::rank(MPI_COMM_WORLD);
+    int com_size = mpi::size(MPI_COMM_WORLD);
+    
+    for(int root = 0; root < com_size; root++)
+    {
+        Node n;
+        n.set(DataType::int64(3));
+
+        std::vector<int64> vals;
+        if(rank == root)
+        {
+            int64_array vals = n.value();
+            vals[0] = 11;
+            vals[1] = 22;
+            vals[2] = 33;
+        }
+
+        mpi::broadcast(n,root,MPI_COMM_WORLD);
+
+        int64 *vals_ptr = n.value();
+
+        EXPECT_EQ(vals_ptr[0], 11);
+        EXPECT_EQ(vals_ptr[1], 22);
+        EXPECT_EQ(vals_ptr[2], 33);
+    
+        CONDUIT_INFO("Bcast from root = " 
+                     << root  << "\n"
+                     << "rank: " << rank << " res = "
+                     << n.to_json());
+    }
+
+
+    for(int root = 0; root < com_size; root++)
+    {
+        Node n;
+
+        if(rank == root)
+        {
+            n["a/b/c/d/e/f"].set_int64(10);
+        }
+        else
+        {
+            n["a/b/c/d/e/f"].set_int64(0);
+        }
+
+        mpi::broadcast(n,root,MPI_COMM_WORLD);
+
+        int64 val = n["a/b/c/d/e/f"].value();
+
+        EXPECT_EQ(val, 10);
+    
+        CONDUIT_INFO("Bcast from root = " 
+                     << root  << "\n"
+                     << "rank: " << rank << " res = "
+                     << n.to_json());
+    }
+    
+    
+    for(int root = 0; root < com_size; root++)
+    {
+        Node n;
+
+        if(rank == root)
+        {
+            n["a/b/c/d/e/f"] = "g";
+        }
+        else
+        {
+            n["a/b/c/d/e/f"] = "f";
+        }
+
+        mpi::broadcast(n,root,MPI_COMM_WORLD);
+
+        std::string val = n["a/b/c/d/e/f"].as_string();
+
+        EXPECT_EQ(val, "g");
+    
+        CONDUIT_INFO("Bcast from root = " 
+                     << root  << "\n"
+                     << "rank: " << rank << " res = "
+                     << n.to_json());
+    }
+    
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, bcast_using_schema) 
+{
+
+    int rank = mpi::rank(MPI_COMM_WORLD);
+    int com_size = mpi::size(MPI_COMM_WORLD);
+    
+    for(int root = 0; root < com_size; root++)
+    {
+        Node n;
+
+        std::vector<int64> vals;
+        if(rank == root)
+        {
+            vals.push_back(11);
+            vals.push_back(22);
+            vals.push_back(33);
+        
+            n.set_external(vals);
+        }
+
+        mpi::broadcast_using_schema(n,root,MPI_COMM_WORLD);
+
+        int64 *vals_ptr = n.value();
+
+        EXPECT_EQ(vals_ptr[0], 11);
+        EXPECT_EQ(vals_ptr[1], 22);
+        EXPECT_EQ(vals_ptr[2], 33);
+    
+        CONDUIT_INFO("Bcast from root = " 
+                     << root  << "\n"
+                     << "rank: " << rank << " res = "
+                     << n.to_json());
+    }
+
+
+    for(int root = 0; root < com_size; root++)
+    {
+        Node n;
+
+        if(rank == root)
+        {
+            n["a/b/c/d/e/f"].set_int64(10);
+        }
+
+        mpi::broadcast_using_schema(n,root,MPI_COMM_WORLD);
+
+        int64 val = n["a/b/c/d/e/f"].value();
+
+        EXPECT_EQ(val, 10);
+    
+        CONDUIT_INFO("Bcast from root = " 
+                     << root  << "\n"
+                     << "rank: " << rank << " res = "
+                     << n.to_json());
+    }
+
+
+    for(int root = 0; root < com_size; root++)
+    {
+        Node n;
+
+        if(rank == root)
+        {
+            n["a/b/c/d/e/f"] = "g";
+        }
+
+        mpi::broadcast_using_schema(n,root,MPI_COMM_WORLD);
+
+        std::string val = n["a/b/c/d/e/f"].as_string();
+
+        EXPECT_EQ(val, "g");
+    
+        CONDUIT_INFO("Bcast from root = " 
+                     << root  << "\n"
+                     << "rank: " << rank << " res = "
+                     << n.to_json());
+    }
+    
+}
 
 
 //-----------------------------------------------------------------------------

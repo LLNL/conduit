@@ -293,6 +293,8 @@ class HDF5ErrorStackSupressor
 {
 public:
         HDF5ErrorStackSupressor()
+        :  herr_func(NULL),
+           herr_func_client_data(NULL)
         {
             disable_hdf5_error_func();
         }

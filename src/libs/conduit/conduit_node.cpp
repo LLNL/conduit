@@ -1168,7 +1168,20 @@ Node::set_string(const std::string &data)
                    sizeof(char),
                    Endianness::DEFAULT_ID);
     init(str_t);
-    memcpy(m_data,data.c_str(),sizeof(char)*str_size_with_term);
+
+    // if already compatible, init won't realloc.
+    // so we need to follow a 'compact_elements_to' style 
+    // of copying the data
+
+    index_t ele_bytes = dtype().element_bytes();
+    const char *data_ptr = data.c_str();
+    for(index_t i=0; i< (index_t) str_size_with_term; i++)
+    {
+        memcpy(element_ptr(i),
+               data_ptr,
+               (size_t)ele_bytes);
+        data_ptr+=ele_bytes;
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -1191,7 +1204,21 @@ Node::set_char8_str(const char *data)
                    sizeof(char),
                    Endianness::DEFAULT_ID);
     init(str_t);
-    memcpy(m_data,data,sizeof(char)*str_size_with_term);
+
+    // if already compatible, init won't realloc.
+    // so we need to follow a 'compact_elements_to' style 
+    // of copying the data
+
+    const char *data_ptr = data;
+
+    index_t ele_bytes = dtype().element_bytes();
+    for(index_t i=0; i< (index_t)str_size_with_term; i++)
+    {
+        memcpy(element_ptr(i),
+               data_ptr,
+               (size_t)ele_bytes);
+        data_ptr+=ele_bytes;
+    }
 }
 
 
@@ -6973,7 +7000,7 @@ Node::update(const Node &n_src)
 {
     // walk src and add it contents to this node
     /// TODO:
-    /// arrays and non empty leafs will simply overwrite the current
+    /// arrays and non empty leaves will simply overwrite the current
     /// node, these semantics seem sensible, but we could revisit this
     index_t dtype_id = n_src.dtype().id();
     if( dtype_id == DataType::OBJECT_ID)
@@ -11081,11 +11108,13 @@ Node::remove(const std::string &path)
 
 
 //---------------------------------------------------------------------------//
-// helper to create a Schema the describes a list of a homogenous type
+// helper to create a node using Schema the describes a list of a homogenous 
+// type
 void
 Node::list_of(const Schema &schema, 
               index_t num_entries)
 {
+    reset();
     init_list();
 
     Schema s_compact;
@@ -11105,6 +11134,18 @@ Node::list_of(const Schema &schema,
         ptr += entry_bytes;
     }
 }
+
+//---------------------------------------------------------------------------//
+// helper to create node that is a list of a homogenous type
+void
+Node::list_of(const DataType &dtype, 
+              index_t num_entries)
+{
+    Schema s(dtype);
+    // let the schema case do the heavy lifting.
+    list_of(s,num_entries);
+}
+
 
 //---------------------------------------------------------------------------//
 // helper to create a Schema the describes a list of a homogenous type
@@ -12968,8 +13009,7 @@ Node::init(const DataType& dtype)
 void
 Node::allocate(const DataType &dtype)
 {
-    // TODO: This implies compact storage
-    allocate(dtype.number_of_elements()*dtype.element_bytes());
+    allocate(dtype.spanned_bytes());
 }
 
 //---------------------------------------------------------------------------//
@@ -13404,6 +13444,62 @@ Node::contiguous_with(uint8 *start_addy, uint8 *&end_addy) const
     return res;
 }
 
+//---------------------------------------------------------------------------//
+void *
+Node::contiguous_data_ptr()
+{
+    if(!is_contiguous())
+    {
+        return NULL;
+    }
+    
+    // if contiguous, we simply need the first non null pointer.
+    // Note: use const_cast so we can share the same helper func
+    return const_cast<void*>(find_first_data_ptr());
+}
+
+//---------------------------------------------------------------------------//
+const void *
+Node::contiguous_data_ptr() const
+{
+    if(!is_contiguous())
+    {
+        return NULL;
+    }
+    
+    // if contiguous, we simply need the first non null pointer.
+    return find_first_data_ptr();
+}
+
+//---------------------------------------------------------------------------//
+const void *
+Node::find_first_data_ptr() const
+{
+    const void *res = NULL;
+
+    index_t dtype_id = dtype().id();
+    
+    if(dtype_id == DataType::OBJECT_ID ||
+       dtype_id == DataType::LIST_ID)
+    {
+        std::vector<Node*>::const_iterator itr;
+        for(itr = m_children.begin();
+            itr < m_children.end() && res == NULL; // stop if found
+            ++itr)
+        {
+            // recurse 
+            res = (*itr)->find_first_data_ptr();
+        }
+    }
+    // empty should always be NULL, but keep check since it follows form
+    // of is_contig
+    else if(dtype_id != DataType::EMPTY_ID)
+    {
+        res = element_ptr(0);
+    }
+    
+    return res;
+}
 
 //---------------------------------------------------------------------------//
 void

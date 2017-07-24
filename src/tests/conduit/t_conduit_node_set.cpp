@@ -2681,6 +2681,43 @@ TEST(conduit_node_set, set_vector_external)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_node, node_set_existing_char8)
+{   
+    
+    Schema s;
+    
+    std::string value = "my value";
+    
+    s["a"].set(DataType::int64());
+    s["b"].set(DataType::char8_str(value.length()+1));
+    
+    Schema s_compact;
+    s.compact_to(s_compact);
+    
+    
+    Node n2;
+    n2.set_external_char8_str(const_cast<char*>(value.c_str()));
+    
+    Node n(s_compact);
+    
+    n["a"].set_int64(10);
+    n["b"].update(n2);
+    
+    EXPECT_EQ(n["a"].as_int64(),10);
+    EXPECT_EQ(n["b"].as_string(),value);
+    
+    n.print();
+    
+
+
+    n["b"].set(value);
+
+    n.print();
+
+    EXPECT_EQ(n["b"].as_string(),value);
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_node, node_set_existing_obj)
 {   
     Node n_init;
@@ -2704,9 +2741,45 @@ TEST(conduit_node, node_set_existing_obj)
     CONDUIT_INFO("POST SET");
     CONDUIT_INFO(n_init.to_json());
 
-
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, node_set_non_compact_dtype)
+{   
+
+    // These checks node set for a non-compact datatype
+    // matches the results of node set for a schema with
+    // the same data type.
+    
+    Node n1;
+
+    DataType dt = DataType::c_int(2,0,sizeof(int)*2);
+    Schema s(dt);
+    n1.set(s);
+    
+    n1.info().print();
+    
+    int_array n1_vals = n1.value();
+    
+    n1_vals[0] = 10;
+    n1_vals[1] = 20;
+    
+    Node n2;
+    n2.set(dt);
+
+    n2.info().print();
+    
+    int_array n2_vals = n1.value();
+    
+    n2_vals[0] = 10;
+    n2_vals[1] = 20;
+    
+    
+    EXPECT_EQ(n1.dtype().strided_bytes(),n2.dtype().strided_bytes());
+    EXPECT_EQ(n1.total_bytes_allocated(),n2.total_bytes_allocated());
+    
+    
+}
 
 

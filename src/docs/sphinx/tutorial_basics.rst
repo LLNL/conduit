@@ -78,7 +78,7 @@ The *Node* class supports hierarchical construction.
 
 Borrowing form JSON (and other similar notations), collections of named nodes are
 called *Objects* and collections of unnamed nodes are called *Lists*, all other types
-are leafs that represent concrete data. 
+are leaves that represent concrete data. 
 
 .. # from conduit_tutorial_examples: basics_object_and_list
 

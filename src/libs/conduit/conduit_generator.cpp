@@ -716,7 +716,7 @@ Generator::Parser::parse_inline_value(const rapidjson::Value &jvalue,
 {
     if(jvalue.IsArray())
     {
-        // we assume a "value" is a leaf or list of compatible leafs
+        // we assume a "value" is a leaf or list of compatible leaves
         index_t hval_type = check_homogenous_json_array(jvalue);
         
         CONDUIT_ASSERT( (node.dtype().number_of_elements() >= jvalue.Size() ),

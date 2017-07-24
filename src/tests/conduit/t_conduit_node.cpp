@@ -679,16 +679,22 @@ TEST(conduit_node, check_contiguous)
     EXPECT_TRUE(n.is_compact());
     // but not contig
     EXPECT_FALSE(n.is_contiguous());
+    // contig dptr should be null if not contig 
+    EXPECT_FALSE(n.contiguous_data_ptr() != NULL);
     
     // compact to create compact + contig
     Node n2;
     n.compact_to(n2);
     EXPECT_TRUE(n2.is_compact());
     EXPECT_TRUE(n2.is_contiguous());
+    // contig dptr should not be null if contig 
+    EXPECT_TRUE(n2.contiguous_data_ptr() != NULL);
 
     // no longer contig
     n2["e"] = 10;
     EXPECT_FALSE(n2.is_contiguous());
+    // contig dptr should be null if not contig 
+    EXPECT_FALSE(n2.contiguous_data_ptr() != NULL);
     // still compact
     EXPECT_TRUE(n2.is_compact());
 
@@ -697,10 +703,16 @@ TEST(conduit_node, check_contiguous)
     n3["a"].set_external(u64av,2);
     n3["b"].set_external(u64av,4,sizeof(uint64)*2);
     EXPECT_TRUE(n3.is_contiguous());
+    // contig dptr should not be null if contig 
+    EXPECT_TRUE(n3.contiguous_data_ptr() != NULL);
+    
     
     // make non contig
     n3["c"].set_external(u64av,3,sizeof(uint64)*3);
     EXPECT_FALSE(n3.is_contiguous());
+    // contig dptr should be null if not contig 
+    EXPECT_TRUE(n3.contiguous_data_ptr() == NULL);
+    
     
     // contig but not compact
     Node n4;
@@ -708,6 +720,28 @@ TEST(conduit_node, check_contiguous)
     n4["b"].set_external(u64av,2,sizeof(uint64)*2,sizeof(uint64)*2);
     EXPECT_FALSE(n4.is_compact());
     EXPECT_TRUE(n4.is_contiguous());
+    
+    
+    // nested contig and compact
+    Node n5;
+    n5["a/b/c/d/e/f"].set_int64(10);
+    
+    EXPECT_TRUE(n5.is_compact());
+    EXPECT_TRUE(n5.is_contiguous());
+    
+    void *n5_contg_ptr = n5.contiguous_data_ptr();
+    
+    // contig dptr should be null if not contig 
+    EXPECT_TRUE(n5_contg_ptr != NULL);
+   
+    // check loc and value of contig dptr
+
+    EXPECT_EQ(n5_contg_ptr,
+              n5["a/b/c/d/e/f"].data_ptr());
+
+    int64 *n5_v_ptr = (int64*)n5_contg_ptr;
+    EXPECT_EQ(n5_v_ptr[0],
+              n5["a/b/c/d/e/f"].as_int64());
 
 
 }
@@ -772,6 +806,7 @@ TEST(conduit_node, check_contiguous_with)
     EXPECT_TRUE(n2.is_contiguous());
 
 }
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node, check_path)
