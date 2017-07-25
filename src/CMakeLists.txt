@@ -95,32 +95,32 @@ include(blt/SetupBLT.cmake)
 ################################
 # Set some standard cmake opts
 ################################
-include(CMake/CMakeBasics.cmake)
+include(cmake/CMakeBasics.cmake)
 
 ################################
 # Fortran Support
 ################################
-include(CMake/SetupFortran.cmake)
+include(cmake/SetupFortran.cmake)
 
 ################################
 # Checks for type sizes, etc
 ################################
-include(CMake/BasicTypeChecks.cmake)
+include(cmake/BasicTypeChecks.cmake)
 
 ################################
 # Setup 3rd Party Libs
 ################################
-include(CMake/Setup3rdParty.cmake)
+include(cmake/Setup3rdParty.cmake)
 
 ################################
 # Setup tests helpers
 ################################
-include(CMake/SetupTests.cmake)
+include(cmake/SetupTests.cmake)
 
 ################################
 # Setup project wide includes
 ################################
-include(CMake/SetupIncludes.cmake)
+include(cmake/SetupIncludes.cmake)
 
 ################################
 # Add our libs

@@ -56,7 +56,7 @@ if(ENABLE_FORTRAN)
         # generates
         include_directories(${CMAKE_Fortran_MODULE_DIRECTORY})
         try_compile(Fortran_COMPILER_SUPPORTS_CLASS ${CMAKE_BINARY_DIR}
-                    ${CMAKE_SOURCE_DIR}/CMake/tests/fortran_test_obj_support.f
+                    ${CMAKE_SOURCE_DIR}/cmake/tests/fortran_test_obj_support.f
                     CMAKE_FLAGS "-DCMAKE_Fortran_FORMAT=FREE"
                     OUTPUT_VARIABLE OUTPUT)
 
