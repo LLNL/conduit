@@ -49,7 +49,7 @@
 ################################
 # Core (conduit lib) Unit Tests
 ################################
-set(TPL_TESTS t_gtest_smoke
+set(TPL_TESTS #t_gtest_smoke
               t_rapidjson_smoke)
 
 set(B64_TPL_TEST   t_libb64_smoke)
@@ -59,12 +59,12 @@ set(CIVET_TPL_TEST t_civetweb_smoke)
 # Optional Unit Tests
 ################################
 set(PYTHON_TESTS      t_numpy_smoke)
-set(MPI_TESTS         t_mpi_smoke)
+#set(MPI_TESTS         t_mpi_smoke)
 set(HDF5_TESTS        t_hdf5_smoke)
 set(SILO_TESTS        t_silo_smoke)
 
 
-set(FORTRAN_TESTS t_fortran_smoke t_fruit_smoke)
+#set(FORTRAN_TESTS t_fortran_smoke t_fruit_smoke)
 
 ################################
 # Add our Main Unit Tests
@@ -84,15 +84,21 @@ message(STATUS "Adding civetweb unit test")
 
 
 foreach(TEST ${CIVET_TPL_TEST})
-    add_cpp_test(TEST ${TEST}
-                 SOURCES $<TARGET_OBJECTS:conduit_civetweb>
-                 DEPENDS_ON ${CIVETWEB_LIB_DEPENDS} )
-
+    
+    set(civet_test_deps ${CIVETWEB_LIB_DEPENDS})
+    
     if(UNIX AND NOT APPLE)
         # we need these for civetweb on linux, we may need similar libs
         # on windows (OSX appears ok without them)
-        target_link_libraries(${TEST} dl rt ${CMAKE_THREAD_LIBS_INIT})
+        #target_link_libraries(${TEST} )
+        list(APPEND civet_test_deps dl rt ${CMAKE_THREAD_LIBS_INIT})
     endif()
+
+    
+    add_cpp_test(TEST ${TEST}
+                 SOURCES $<TARGET_OBJECTS:conduit_civetweb>
+                 DEPENDS_ON ${civet_test_deps})
+    
 endforeach()
 
 
@@ -104,29 +110,29 @@ if(PYTHON_FOUND)
     message(STATUS "Python enabled: Adding related unit tests")
     foreach(TEST ${PYTHON_TESTS})
         add_cpp_test(TEST ${TEST})
-        target_link_libraries(${TEST} ${PYTHON_LIBRARIES})
+        target_link_libraries(${TEST} PUBLIC ${PYTHON_LIBRARIES})
     endforeach()
 else()
     message(STATUS "Python disabled: Skipping related tests")
 endif()
 
 
-if(MPI_FOUND)
-    message(STATUS "MPI enabled: Adding related unit tests")
-    foreach(TEST ${MPI_TESTS})
-        # this uses 2 procs
-        add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2)
-    endforeach()
-else()
-    message(STATUS "MPI disabled: Skipping related tests")
-endif()
+# if(MPI_FOUND)
+#     message(STATUS "MPI enabled: Adding related unit tests")
+#     foreach(TEST ${MPI_TESTS})
+#         # this uses 2 procs
+#         add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2)
+#     endforeach()
+# else()
+#     message(STATUS "MPI disabled: Skipping related tests")
+# endif()
 
 
 if(HDF5_FOUND)
     message(STATUS "HDF5 enabled: Adding related unit tests")
     foreach(TEST ${HDF5_TESTS})
-        add_cpp_test(TEST ${TEST})
-        target_link_libraries(${TEST} ${HDF5_LIBRARIES})
+        add_cpp_test(TEST ${TEST} DEPENDS_ON hdf5)
+        #target_link_libraries(${TEST} ${HDF5_LIBRARIES})
     endforeach()
 else()
     message(STATUS "HDF5 disabled: Skipping related tests")
@@ -136,19 +142,19 @@ endif()
 if(SILO_FOUND)
     message(STATUS "Silo enabled: Adding related unit tests")
     foreach(TEST ${SILO_TESTS})
-        add_cpp_test(TEST ${TEST})
-        target_link_libraries(${TEST} ${SILO_LIBRARIES})
+        add_cpp_test(TEST ${TEST} DEPENDS_ON silo)
+        #target_link_libraries(${TEST} ${SILO_LIBRARIES})
     endforeach()
 else()
     message(STATUS "Silo disabled: Skipping related tests")
 endif()
 
 
-if(FORTRAN_FOUND)
-    message(STATUS "Fortran enabled: Adding related unit tests")
-    foreach(TEST ${FORTRAN_TESTS})
-        add_fortran_test(TEST ${TEST})
-    endforeach()
-else()
-    message(STATUS "Fortran disabled: Skipping related tests")
-endif()
+# if(FORTRAN_FOUND)
+#     message(STATUS "Fortran enabled: Adding related unit tests")
+#     foreach(TEST ${FORTRAN_TESTS})
+#         add_fortran_test(TEST ${TEST})
+#     endforeach()
+# else()
+#     message(STATUS "Fortran disabled: Skipping related tests")
+# endif()

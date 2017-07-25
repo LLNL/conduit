@@ -63,23 +63,26 @@ function(add_cpp_test)
 
     message(STATUS " [*] Adding Unit Test: ${arg_TEST} ")
 
-    add_executable( ${arg_TEST} ${arg_TEST}.cpp ${arg_SOURCES})
+    blt_add_executable( NAME ${arg_TEST}
+                        SOURCES ${arg_TEST}.cpp ${fortran_driver_source} ${arg_SOURCES}
+                        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
+                        DEPENDS_ON "${arg_DEPENDS_ON}" gtest)
 
-    target_link_libraries( ${arg_TEST} ${UNIT_TEST_BASE_LIBS})
-    target_link_libraries( ${arg_TEST} "${arg_DEPENDS_ON}" )
-
-
+    # default test command is simply the test exe name
+    set(test_cmd  ${arg_TEST})
 
     if(WIN32)
-        add_test( ${arg_TEST} ${CMAKE_BINARY_DIR}/bin/${arg_TEST}.exe)
-    else()
-        add_test( ${arg_TEST} ${arg_TEST} )
+        set(test_cmd ${CMAKE_BINARY_DIR}/bin/${arg_TEST}.exe)
     endif()
 
-    if(ENABLE_GPREF_TOOLS)
-      # Set HEAPCHECK to local to enable explicit gpref heap checking
-      set_property(TEST ${arg_TEST}  PROPERTY ENVIRONMENT "HEAPCHECK=local")
-    endif()
+    blt_add_test( NAME ${arg_TEST}
+                  COMMAND ${test_cmd})
+
+    #
+    # if(ENABLE_GPREF_TOOLS)
+    #   # Set HEAPCHECK to local to enable explicit gpref heap checking
+    #   set_property(TEST ${arg_TEST}  PROPERTY ENVIRONMENT "HEAPCHECK=local")
+    # endif()
 
 endfunction()
 
@@ -93,7 +96,7 @@ function(add_cpp_mpi_test)
 
     set(options)
     set(singleValueArgs TEST NUM_PROCS)
-    set(multiValueArgs DEPENDS_ON)
+    set(multiValueArgs DEPENDS_ON SOURCES)
 
     # parse our arguments
     cmake_parse_arguments(arg
@@ -102,40 +105,57 @@ function(add_cpp_mpi_test)
                          "${multiValueArgs}" ${ARGN} )
 
     message(STATUS " [*] Adding Unit Test: ${arg_TEST}")
+    
+    
+    blt_add_executable( NAME ${arg_TEST}
+                        SOURCES ${arg_TEST}.cpp ${arg_SOURCES}
+                        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
+                        DEPENDS_ON "${arg_DEPENDS_ON}" gtest mpi)
+                        
+    # default test command is simply the test exe name
+    set(test_cmd  ${arg_TEST})
 
-    # make sure the test can see the mpi headers
-    include_directories(${MPI_CXX_INCLUDE_PATH})
-    # guard against empty mpi params
-    if(NOT "${MPI_CXX_COMPILE_FLAGS}" STREQUAL "")
-        set_source_files_properties(${arg_TEST}.cpp
-                                    PROPERTIES
-                                    COMPILE_FLAGS  ${MPI_CXX_COMPILE_FLAGS} )
-    endif()
-    if(NOT "${MPI_CXX_LINK_FLAGS}" STREQUAL "")
-        set_source_files_properties(${arg_TEST}.cpp
-                                    PROPERTIES
-                                    LINK_FLAGS  ${MPI_CXX_LINK_FLAGS} )
-    endif()
-
-
-    add_executable( ${arg_TEST} ${arg_TEST}.cpp )
-
-    target_link_libraries( ${arg_TEST} ${UNIT_TEST_BASE_LIBS} )
-    target_link_libraries( ${arg_TEST} ${MPI_CXX_LIBRARIES} )
-    target_link_libraries( ${arg_TEST} "${arg_DEPENDS_ON}" )
-
-    # setup custom test command to launch the test via mpi
     if(WIN32)
-        set(test_params ${MPIEXEC_NUMPROC_FLAG}
-                        ${arg_NUM_PROCS}
-                        "${CMAKE_BINARY_DIR}/bin/${arg_TEST}.exe)")
-    else()
-        set(test_params ${MPIEXEC_NUMPROC_FLAG}
-                        ${arg_NUM_PROCS}
-                        "./${arg_TEST}")
+        set(test_cmd ${CMAKE_BINARY_DIR}/bin/${arg_TEST}.exe)
     endif()
 
-    add_test(NAME ${arg_TEST} COMMAND ${MPIEXEC} ${test_params})
+    blt_add_test( NAME ${arg_TEST}
+                  COMMAND ${test_cmd}
+                  NUM_PROCS ${arg_NUM_PROCS})
+
+    # # make sure the test can see the mpi headers
+    # include_directories(${MPI_CXX_INCLUDE_PATH})
+    # # guard against empty mpi params
+    # if(NOT "${MPI_CXX_COMPILE_FLAGS}" STREQUAL "")
+    #     set_source_files_properties(${arg_TEST}.cpp
+    #                                 PROPERTIES
+    #                                 COMPILE_FLAGS  ${MPI_CXX_COMPILE_FLAGS} )
+    # endif()
+    # if(NOT "${MPI_CXX_LINK_FLAGS}" STREQUAL "")
+    #     set_source_files_properties(${arg_TEST}.cpp
+    #                                 PROPERTIES
+    #                                 LINK_FLAGS  ${MPI_CXX_LINK_FLAGS} )
+    # endif()
+    #
+    #
+    # add_executable( ${arg_TEST} ${arg_TEST}.cpp )
+    #
+    # target_link_libraries( ${arg_TEST} ${UNIT_TEST_BASE_LIBS} )
+    # target_link_libraries( ${arg_TEST} ${MPI_CXX_LIBRARIES} )
+    # target_link_libraries( ${arg_TEST} "${arg_DEPENDS_ON}" )
+    #
+    # # setup custom test command to launch the test via mpi
+    # if(WIN32)
+    #     set(test_params ${MPIEXEC_NUMPROC_FLAG}
+    #                     ${arg_NUM_PROCS}
+    #                     "${CMAKE_BINARY_DIR}/bin/${arg_TEST}.exe)")
+    # else()
+    #     set(test_params ${MPIEXEC_NUMPROC_FLAG}
+    #                     ${arg_NUM_PROCS}
+    #                     "./${arg_TEST}")
+    # endif()
+    #
+    # add_test(NAME ${arg_TEST} COMMAND ${MPIEXEC} ${test_params})
 
 endfunction()
 
@@ -179,7 +199,7 @@ endfunction(add_python_test)
 macro(add_fortran_test)
     set(options)
     set(singleValueArgs TEST)
-    set(multiValueArgs DEPENDS_ON)
+    set(multiValueArgs DEPENDS_ON SOURCES)
 
     # parse our arguments
     cmake_parse_arguments(arg
@@ -188,16 +208,35 @@ macro(add_fortran_test)
                          "${multiValueArgs}" ${ARGN} )
 
     message(STATUS " [*] Adding Fortran Unit Test: ${arg_TEST}")
-    set(fortran_driver_source
-        ${CMAKE_SOURCE_DIR}/thirdparty_builtin/fruit-3.3.9/gtest_fortran_driver.cpp)
 
-    add_executable( ${arg_TEST} ${arg_TEST}.f ${fortran_driver_source})
-    set_target_properties(${arg_TEST} PROPERTIES Fortran_FORMAT "FREE")
+    message(STATUS " [*] Adding Fortran Unit Test: ${arg_TEST}")
+    blt_add_executable( NAME ${arg_TEST}
+                        SOURCES ${arg_TEST}.f ${arg_SOURCES}
+                        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
+                        DEPENDS_ON fruit gtest "${arg_DEPENDS_ON}")
 
-    target_link_libraries( ${arg_TEST} fruit)
-    target_link_libraries( ${arg_TEST} ${UNIT_TEST_BASE_LIBS})
-    target_link_libraries( ${arg_TEST} "${arg_DEPENDS_ON}" )
 
-    add_test( ${arg_TEST} ${arg_TEST})
+    # default test command is simply the test exe name
+    set(test_cmd  ${arg_TEST})
+
+    if(WIN32)
+        set(test_cmd ${CMAKE_BINARY_DIR}/bin/${arg_TEST}.exe)
+    endif()
+
+    blt_add_test( NAME ${arg_TEST}
+                  COMMAND ${test_cmd})
+
+
+    # set(fortran_driver_source
+    #     ${CMAKE_SOURCE_DIR}/thirdparty_builtin/fruit-3.3.9/gtest_fortran_driver.cpp)
+    #
+    # add_executable( ${arg_TEST} ${arg_TEST}.f ${fortran_driver_source})
+    # set_target_properties(${arg_TEST} PROPERTIES Fortran_FORMAT "FREE")
+    #
+    # target_link_libraries( ${arg_TEST} fruit)
+    # target_link_libraries( ${arg_TEST} ${UNIT_TEST_BASE_LIBS})
+    # target_link_libraries( ${arg_TEST} "${arg_DEPENDS_ON}" )
+    #
+    # add_test( ${arg_TEST} ${arg_TEST})
 
 endmacro(add_fortran_test)

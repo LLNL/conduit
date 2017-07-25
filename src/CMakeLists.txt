@@ -81,6 +81,8 @@ if(ENABLE_FORTRAN)
     enable_language(Fortran)
 endif()
 
+include(blt/SetupBLT.cmake)
+
 ################################
 # Set some standard cmake opts
 ################################
@@ -104,7 +106,7 @@ include(CMake/Setup3rdParty.cmake)
 ################################
 # Setup docs targets
 ################################
-include(CMake/SetupDocs.cmake)
+#include(CMake/SetupDocs.cmake)
 
 ################################
 # Setup tests helpers

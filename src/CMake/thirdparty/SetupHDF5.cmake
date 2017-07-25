@@ -138,6 +138,9 @@ message(STATUS "HDF5 Include Dirs ${HDF5_INCLUDE_DIRS}")
 message(STATUS "HDF5 Libraries    ${HDF5_LIBRARIES}")
 
 
+blt_register_library(NAME hdf5
+                     INCLUDES ${HDF5_INCLUDE_DIRS}
+                     LIBRARIES ${HDF5_LIBRARIES} )
 
 
 

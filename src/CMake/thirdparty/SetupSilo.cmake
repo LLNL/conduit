@@ -109,3 +109,9 @@ find_package_handle_standard_args(Silo  DEFAULT_MSG
 mark_as_advanced(SILO_INCLUDE_DIR 
                  SILO_LIBS 
                  SILO_JSON_LIBS)
+
+
+blt_register_library(NAME silo
+                     INCLUDES ${SILO_INCLUDE_DIRS}
+                     LIBRARIES ${SILO_LIBRARIES} )
+

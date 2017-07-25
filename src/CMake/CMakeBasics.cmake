@@ -183,7 +183,7 @@ endif()
 macro(add_compiled_library)
     set(options OBJECT)
     set(singleValuedArgs NAME EXPORT HEADERS_DEST_DIR LIB_DEST_DIR )
-    set(multiValuedArgs  HEADERS SOURCES)
+    set(multiValuedArgs  HEADERS SOURCES DEPENDS_ON)
 
     ## parse the arguments to the macro
     cmake_parse_arguments(args
@@ -207,15 +207,22 @@ macro(add_compiled_library)
                     ${args_HEADERS})
 
     else()
-        if(BUILD_SHARED_LIBS)
-            add_library(${args_NAME} SHARED
-                        ${args_SOURCES}
-                        ${args_HEADERS})
-        else()
-            add_library(${args_NAME} STATIC
-                        ${args_SOURCES}
-                        ${args_HEADERS})
-        endif()
+        # if(BUILD_SHARED_LIBS)
+        #     add_library(${args_NAME} SHARED
+        #                 ${args_SOURCES}
+        #                 ${args_HEADERS})
+        # else()
+        #     add_library(${args_NAME} STATIC
+        #                 ${args_SOURCES}
+        #                 ${args_HEADERS})
+        # endif()
+        
+        blt_add_library(
+            NAME        ${args_NAME}
+            SOURCES     ${args_SOURCES} 
+            HEADERS     ${args_HEADERS}
+            DEPENDS_ON  ${args_DEPENDS_ON})
+        
     endif()
 
     #############################

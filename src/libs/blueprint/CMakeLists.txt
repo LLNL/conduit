@@ -116,13 +116,14 @@ add_compiled_library(NAME conduit_blueprint
                      EXPORT conduit
                      HEADERS ${blueprint_headers} ${blueprint_c_headers} 
                      SOURCES ${blueprint_sources} ${blueprint_c_sources} ${blueprint_fortran_sources}
+                     DEPENDS_ON conduit
                      HEADERS_DEST_DIR include/conduit)
 
 
-#
-# Link with conduit
-#
-target_link_libraries(conduit_blueprint conduit)
+# #
+# # Link with conduit
+# #
+# target_link_libraries(conduit_blueprint conduit)
 
 if(FORTRAN_FOUND)
     set_target_properties(conduit_blueprint
@@ -148,8 +149,15 @@ endif()
 ###################################
 # add conduit_blueprint_verify exe
 ###################################
-add_executable(conduit_blueprint_verify conduit_blueprint_verify_exe.cpp)
-target_link_libraries(conduit_blueprint_verify conduit conduit_relay conduit_blueprint)
+
+blt_add_executable(
+    NAME        conduit_blueprint_verify
+    SOURCES     conduit_blueprint_verify_exe.cpp
+    DEPENDS_ON  conduit conduit_relay conduit_blueprint
+    OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
+# add_executable(conduit_blueprint_verify conduit_blueprint_verify_exe.cpp)
+# target_link_libraries(conduit_blueprint_verify conduit conduit_relay conduit_blueprint)
 
 # add install target
 install(TARGETS conduit_blueprint_verify
