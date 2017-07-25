@@ -43,73 +43,39 @@
 ###############################################################################
 
 ################################
-# Conduit Unit Tests
+# Unit Tests for 3rd Party Libs
 ################################
 
-################################
-# Core (conduit lib) Unit Tests
-################################
-set(TPL_TESTS #t_gtest_smoke
-              t_rapidjson_smoke)
-
-set(B64_TPL_TEST   t_libb64_smoke)
-set(CIVET_TPL_TEST t_civetweb_smoke)
-
-################################
-# Optional Unit Tests
-################################
-set(PYTHON_TESTS      t_numpy_smoke)
-#set(MPI_TESTS         t_mpi_smoke)
-set(HDF5_TESTS        t_hdf5_smoke)
-set(SILO_TESTS        t_silo_smoke)
-
-
-#set(FORTRAN_TESTS t_fortran_smoke t_fruit_smoke)
-
-################################
-# Add our Main Unit Tests
-################################
 message(STATUS "Adding thirdparty lib unit tests")
-foreach(TEST ${TPL_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON)
-endforeach()
 
-message(STATUS "Adding b64 unit test")
-foreach(TEST ${B64_TPL_TEST})
-    add_cpp_test(TEST ${TEST}
+
+add_cpp_test(TEST t_rapidjson_smoke)
+
+add_cpp_test(TEST t_libb64_smoke
                  SOURCES $<TARGET_OBJECTS:conduit_b64>)
-endforeach()
 
-message(STATUS "Adding civetweb unit test")
+set(civet_test_deps ${CIVETWEB_LIB_DEPENDS})
+
+if(UNIX AND NOT APPLE)
+    # we need these for civetweb on linux, we may need similar libs
+    # on windows (OSX appears ok without them)
+    list(APPEND civet_test_deps dl rt ${CMAKE_THREAD_LIBS_INIT})
+endif()
 
 
-foreach(TEST ${CIVET_TPL_TEST})
-    
-    set(civet_test_deps ${CIVETWEB_LIB_DEPENDS})
-    
-    if(UNIX AND NOT APPLE)
-        # we need these for civetweb on linux, we may need similar libs
-        # on windows (OSX appears ok without them)
-        #target_link_libraries(${TEST} )
-        list(APPEND civet_test_deps dl rt ${CMAKE_THREAD_LIBS_INIT})
-    endif()
-
-    
-    add_cpp_test(TEST ${TEST}
-                 SOURCES $<TARGET_OBJECTS:conduit_civetweb>
-                 DEPENDS_ON ${civet_test_deps})
-    
-endforeach()
+add_cpp_test(TEST t_civetweb_smoke
+             SOURCES $<TARGET_OBJECTS:conduit_civetweb>
+             DEPENDS_ON ${civet_test_deps})
 
 
 ################################
-# Add our Optional Unit Tests
+# Optional TPL Unit Tests
 ################################
 
 if(PYTHON_FOUND)
     message(STATUS "Python enabled: Adding related unit tests")
-    foreach(TEST ${PYTHON_TESTS})
-        add_cpp_test(TEST ${TEST})
+    foreach(TEST t_numpy_smoke)
+        add_cpp_test(TEST t_numpy_smoke)
         target_link_libraries(${TEST} PUBLIC ${PYTHON_LIBRARIES})
     endforeach()
 else()
@@ -117,23 +83,9 @@ else()
 endif()
 
 
-# if(MPI_FOUND)
-#     message(STATUS "MPI enabled: Adding related unit tests")
-#     foreach(TEST ${MPI_TESTS})
-#         # this uses 2 procs
-#         add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2)
-#     endforeach()
-# else()
-#     message(STATUS "MPI disabled: Skipping related tests")
-# endif()
-
-
 if(HDF5_FOUND)
     message(STATUS "HDF5 enabled: Adding related unit tests")
-    foreach(TEST ${HDF5_TESTS})
-        add_cpp_test(TEST ${TEST} DEPENDS_ON hdf5)
-        #target_link_libraries(${TEST} ${HDF5_LIBRARIES})
-    endforeach()
+    add_cpp_test(TEST t_hdf5_smoke DEPENDS_ON hdf5)
 else()
     message(STATUS "HDF5 disabled: Skipping related tests")
 endif()
@@ -141,20 +93,15 @@ endif()
 
 if(SILO_FOUND)
     message(STATUS "Silo enabled: Adding related unit tests")
-    foreach(TEST ${SILO_TESTS})
-        add_cpp_test(TEST ${TEST} DEPENDS_ON silo)
-        #target_link_libraries(${TEST} ${SILO_LIBRARIES})
-    endforeach()
+        add_cpp_test(TEST t_silo_smoke DEPENDS_ON silo)
 else()
     message(STATUS "Silo disabled: Skipping related tests")
 endif()
 
 
-# if(FORTRAN_FOUND)
-#     message(STATUS "Fortran enabled: Adding related unit tests")
-#     foreach(TEST ${FORTRAN_TESTS})
-#         add_fortran_test(TEST ${TEST})
-#     endforeach()
-# else()
-#     message(STATUS "Fortran disabled: Skipping related tests")
-# endif()
+if(FORTRAN_FOUND)
+    message(STATUS "Fortran enabled: Adding related unit tests")
+    add_fortran_test(TEST t_fortran_smoke)
+else()
+    message(STATUS "Fortran disabled: Skipping related tests")
+endif()

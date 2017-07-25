@@ -81,6 +81,15 @@ if(ENABLE_FORTRAN)
     enable_language(Fortran)
 endif()
 
+################################
+# Set BLT Options
+################################
+# don't use BLT's all warnings feature
+set(ENABLE_ALL_WARNINGS OFF)
+
+################################
+# Init BLT
+################################
 include(blt/SetupBLT.cmake)
 
 ################################
@@ -102,11 +111,6 @@ include(CMake/BasicTypeChecks.cmake)
 # Setup 3rd Party Libs
 ################################
 include(CMake/Setup3rdParty.cmake)
-
-################################
-# Setup docs targets
-################################
-#include(CMake/SetupDocs.cmake)
 
 ################################
 # Setup tests helpers

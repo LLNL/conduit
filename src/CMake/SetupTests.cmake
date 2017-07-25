@@ -78,12 +78,6 @@ function(add_cpp_test)
     blt_add_test( NAME ${arg_TEST}
                   COMMAND ${test_cmd})
 
-    #
-    # if(ENABLE_GPREF_TOOLS)
-    #   # Set HEAPCHECK to local to enable explicit gpref heap checking
-    #   set_property(TEST ${arg_TEST}  PROPERTY ENVIRONMENT "HEAPCHECK=local")
-    # endif()
-
 endfunction()
 
 
@@ -122,40 +116,6 @@ function(add_cpp_mpi_test)
     blt_add_test( NAME ${arg_TEST}
                   COMMAND ${test_cmd}
                   NUM_PROCS ${arg_NUM_PROCS})
-
-    # # make sure the test can see the mpi headers
-    # include_directories(${MPI_CXX_INCLUDE_PATH})
-    # # guard against empty mpi params
-    # if(NOT "${MPI_CXX_COMPILE_FLAGS}" STREQUAL "")
-    #     set_source_files_properties(${arg_TEST}.cpp
-    #                                 PROPERTIES
-    #                                 COMPILE_FLAGS  ${MPI_CXX_COMPILE_FLAGS} )
-    # endif()
-    # if(NOT "${MPI_CXX_LINK_FLAGS}" STREQUAL "")
-    #     set_source_files_properties(${arg_TEST}.cpp
-    #                                 PROPERTIES
-    #                                 LINK_FLAGS  ${MPI_CXX_LINK_FLAGS} )
-    # endif()
-    #
-    #
-    # add_executable( ${arg_TEST} ${arg_TEST}.cpp )
-    #
-    # target_link_libraries( ${arg_TEST} ${UNIT_TEST_BASE_LIBS} )
-    # target_link_libraries( ${arg_TEST} ${MPI_CXX_LIBRARIES} )
-    # target_link_libraries( ${arg_TEST} "${arg_DEPENDS_ON}" )
-    #
-    # # setup custom test command to launch the test via mpi
-    # if(WIN32)
-    #     set(test_params ${MPIEXEC_NUMPROC_FLAG}
-    #                     ${arg_NUM_PROCS}
-    #                     "${CMAKE_BINARY_DIR}/bin/${arg_TEST}.exe)")
-    # else()
-    #     set(test_params ${MPIEXEC_NUMPROC_FLAG}
-    #                     ${arg_NUM_PROCS}
-    #                     "./${arg_TEST}")
-    # endif()
-    #
-    # add_test(NAME ${arg_TEST} COMMAND ${MPIEXEC} ${test_params})
 
 endfunction()
 
@@ -209,7 +169,6 @@ macro(add_fortran_test)
 
     message(STATUS " [*] Adding Fortran Unit Test: ${arg_TEST}")
 
-    message(STATUS " [*] Adding Fortran Unit Test: ${arg_TEST}")
     blt_add_executable( NAME ${arg_TEST}
                         SOURCES ${arg_TEST}.f ${arg_SOURCES}
                         OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
@@ -225,18 +184,5 @@ macro(add_fortran_test)
 
     blt_add_test( NAME ${arg_TEST}
                   COMMAND ${test_cmd})
-
-
-    # set(fortran_driver_source
-    #     ${CMAKE_SOURCE_DIR}/thirdparty_builtin/fruit-3.3.9/gtest_fortran_driver.cpp)
-    #
-    # add_executable( ${arg_TEST} ${arg_TEST}.f ${fortran_driver_source})
-    # set_target_properties(${arg_TEST} PROPERTIES Fortran_FORMAT "FREE")
-    #
-    # target_link_libraries( ${arg_TEST} fruit)
-    # target_link_libraries( ${arg_TEST} ${UNIT_TEST_BASE_LIBS})
-    # target_link_libraries( ${arg_TEST} "${arg_DEPENDS_ON}" )
-    #
-    # add_test( ${arg_TEST} ${arg_TEST})
 
 endmacro(add_fortran_test)

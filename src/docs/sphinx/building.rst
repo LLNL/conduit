@@ -57,14 +57,7 @@ Clone the Conduit repo:
 
 .. code:: bash
     
-    git clone https://github.com/llnl/conduit.git
-
-
-* From LLNL's CZ Bitbucket Server (Mirror for LLNL Users)
-
-.. code:: bash
-    
-    git clone https://{USER_NAME}@lc.llnl.gov/bitbucket/scm/con/conduit.git
+    git clone --recursive https://github.com/llnl/conduit.git
 
 Configure a build:
 
@@ -104,7 +97,7 @@ Conduit's build system supports the following CMake options:
 * **ENABLE_PYTHON** - Controls if the Conduit Python module is built. *(default = OFF)*
 
 
- The Conduit Python module will build for both Python 2 and Python 3. To select a specific Python, set the CMake variable **PYTHON_EXECUTABLE** to path of the desired python binary. The Conduit Python module requires Numpy. The selected Python instance must provide Numpy, or PYTHONPATH must be set to include a Numpy install compatible with the selected Python install. 
+The Conduit Python module will build for both Python 2 and Python 3. To select a specific Python, set the CMake variable **PYTHON_EXECUTABLE** to path of the desired python binary. The Conduit Python module requires Numpy. The selected Python instance must provide Numpy, or PYTHONPATH must be set to include a Numpy install compatible with the selected Python install. 
 
 * **ENABLE_MPI** - Controls if the conduit_relay_mpi library is built. *(default = OFF)*
 

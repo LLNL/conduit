@@ -207,16 +207,6 @@ macro(add_compiled_library)
                     ${args_HEADERS})
 
     else()
-        # if(BUILD_SHARED_LIBS)
-        #     add_library(${args_NAME} SHARED
-        #                 ${args_SOURCES}
-        #                 ${args_HEADERS})
-        # else()
-        #     add_library(${args_NAME} STATIC
-        #                 ${args_SOURCES}
-        #                 ${args_HEADERS})
-        # endif()
-        
         blt_add_library(
             NAME        ${args_NAME}
             SOURCES     ${args_SOURCES} 

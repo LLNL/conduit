@@ -46,33 +46,11 @@
 # Conduit 3rd Party Dependencies
 ################################
 
-# if(ENABLE_TESTS)
-#     ################################
-#     # Enable GTest
-#     ################################
-#
-#     if(NOT WIN32)
-#         #
-#         # If we aren't in Windows, we always want to build gtest
-#         # as a static lib, however it shares our "BUILD_SHARED_LIBS" option,
-#         # so we need to force this value to OFF, and then restore the
-#         # previous setting for other targets
-#         #
-#         set(BSL_ORIG_VALUE ${BUILD_SHARED_LIBS})
-#
-#         set(BUILD_SHARED_LIBS OFF)
-#         add_subdirectory(thirdparty_builtin/gtest-1.7.0)
-#
-#         set(BUILD_SHARED_LIBS ${BSL_ORIG_VALUE})
-#     else()
-#         # for Windows simply add gtest and propagate BUILD_SHARED_LIBS
-#         add_subdirectory(thirdparty_builtin/gtest-1.7.0)
-#     endif()
-#
-#     enable_testing()
-#     include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
-# endif()
 
+################################
+# BLT provides support for:
+#  gtest, fruit, and mpi
+################################
 
 if(UNIX AND NOT APPLE)
     # on some linux platforms we need to explicitly link threading
@@ -104,14 +82,6 @@ include_directories(thirdparty_builtin/civetweb-0a95342/include)
 # Optional Features
 ################################
 
-################################
-# Documentation Packages
-################################
-# if(ENABLE_DOCS)
-#     find_package(Doxygen)
-#     include(CMake/thirdparty/FindSphinx.cmake)
-# endif()
-
 if(ENABLE_PYTHON)
     ################################
     # Setup includes for Python & Numpy
@@ -134,18 +104,6 @@ if(ENABLE_PYTHON)
         message(FATAL_ERROR "ENABLE_PYTHON is true, but NumPy wasn't found.")
     endif()
 endif()
-
-################################
-# Setup MPI if available
-################################
-# Search for MPI.
-# if(ENABLE_MPI)
-#     include(FindMPI)
-#     # if we don't find mpi, throw a fatal error
-#     if(NOT MPI_FOUND)
-#         message(FATAL_ERROR "ENABLE_MPI is true, but MPI wasn't found.")
-#     endif()
-# endif()
 
 
 ################################
@@ -174,9 +132,3 @@ if(SILO_DIR)
     endif()
 endif()
 
-################################
-# Setup fruit (fortran uint testing framework) if fortran is enabled
-################################
-# if(FORTRAN_FOUND)
-#     add_subdirectory(thirdparty_builtin/fruit-3.3.9)
-# endif()
