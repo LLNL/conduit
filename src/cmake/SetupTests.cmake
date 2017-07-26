@@ -63,17 +63,21 @@ function(add_cpp_test)
 
     message(STATUS " [*] Adding Unit Test: ${arg_TEST} ")
 
-    blt_add_executable( NAME ${arg_TEST}
-                        SOURCES ${arg_TEST}.cpp ${fortran_driver_source} ${arg_SOURCES}
-                        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
-                        DEPENDS_ON "${arg_DEPENDS_ON}" gtest)
-
     # default test command is simply the test exe name
     set(test_cmd  ${arg_TEST})
+    set(test_output_dir ${CMAKE_CURRENT_BINARY_DIR})
 
+    # shared libs on windows need to live in the same dir as the libs
     if(WIN32)
         set(test_cmd ${CMAKE_BINARY_DIR}/bin/${arg_TEST}.exe)
+        set(test_output_dir ${CMAKE_BINARY_DIR}/bin)
     endif()
+
+    blt_add_executable( NAME ${arg_TEST}
+                        SOURCES ${arg_TEST}.cpp ${fortran_driver_source} ${arg_SOURCES}
+                        OUTPUT_DIR ${test_output_dir}
+                        DEPENDS_ON "${arg_DEPENDS_ON}" gtest)
+
 
     blt_add_test( NAME ${arg_TEST}
                   COMMAND ${test_cmd})
@@ -100,18 +104,20 @@ function(add_cpp_mpi_test)
 
     message(STATUS " [*] Adding Unit Test: ${arg_TEST}")
     
+    # default test command is simply the test exe name
+    set(test_cmd  ${arg_TEST})
+    set(test_output_dir ${CMAKE_CURRENT_BINARY_DIR})
+
+    # shared libs on windows need to live in the same dir as the libs
+    if(WIN32)
+        set(test_cmd ${CMAKE_BINARY_DIR}/bin/${arg_TEST}.exe)
+        set(test_output_dir ${CMAKE_BINARY_DIR}/bin)
+    endif()
     
     blt_add_executable( NAME ${arg_TEST}
                         SOURCES ${arg_TEST}.cpp ${arg_SOURCES}
-                        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
+                        OUTPUT_DIR ${test_output_dir}
                         DEPENDS_ON "${arg_DEPENDS_ON}" gtest mpi)
-                        
-    # default test command is simply the test exe name
-    set(test_cmd  ${arg_TEST})
-
-    if(WIN32)
-        set(test_cmd ${CMAKE_BINARY_DIR}/bin/${arg_TEST}.exe)
-    endif()
 
     blt_add_test( NAME ${arg_TEST}
                   COMMAND ${test_cmd}
@@ -169,18 +175,21 @@ macro(add_fortran_test)
 
     message(STATUS " [*] Adding Fortran Unit Test: ${arg_TEST}")
 
-    blt_add_executable( NAME ${arg_TEST}
-                        SOURCES ${arg_TEST}.f ${arg_SOURCES}
-                        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
-                        DEPENDS_ON fruit gtest "${arg_DEPENDS_ON}")
-
-
     # default test command is simply the test exe name
     set(test_cmd  ${arg_TEST})
+    set(test_output_dir ${CMAKE_CURRENT_BINARY_DIR})
 
+    # shared libs on windows need to live in the same dir as the libs
     if(WIN32)
         set(test_cmd ${CMAKE_BINARY_DIR}/bin/${arg_TEST}.exe)
+        set(test_output_dir ${CMAKE_BINARY_DIR}/bin)
     endif()
+
+
+    blt_add_executable( NAME ${arg_TEST}
+                        SOURCES ${arg_TEST}.f ${arg_SOURCES}
+                        OUTPUT_DIR ${test_output_dir}
+                        DEPENDS_ON fruit gtest "${arg_DEPENDS_ON}")
 
     blt_add_test( NAME ${arg_TEST}
                   COMMAND ${test_cmd})

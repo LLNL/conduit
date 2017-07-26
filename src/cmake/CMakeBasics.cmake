@@ -207,12 +207,20 @@ macro(add_compiled_library)
                     ${args_HEADERS})
 
     else()
-        blt_add_library(
-            NAME        ${args_NAME}
-            SOURCES     ${args_SOURCES} 
-            HEADERS     ${args_HEADERS}
-            DEPENDS_ON  ${args_DEPENDS_ON})
         
+        # general case build libs into lib dir
+        set(lib_output_dir ${CMAKE_BINARY_DIR}/lib)
+
+        # on windows we need the libs to live next to the tests
+        if(WIN32)
+            set(lib_output_dir ${CMAKE_BINARY_DIR}/bin)
+        endif()
+        
+        blt_add_library( NAME        ${args_NAME}
+                         SOURCES     ${args_SOURCES} 
+                         HEADERS     ${args_HEADERS}
+                         OUTPUT_DIR  ${lib_output_dir}
+                         DEPENDS_ON  ${args_DEPENDS_ON})
     endif()
 
     #############################
