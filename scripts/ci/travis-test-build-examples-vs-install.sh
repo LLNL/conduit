@@ -45,7 +45,7 @@
 set -ev
 
 if [ "${ENABLE_COVERAGE}" == "ON" ]; then
-    echo "skipping examples vs install tests (ENABLE_COVERAGE=ON)")
+    echo "skipping examples vs install tests (ENABLE_COVERAGE=ON)"
     exit 0
 fi
 
