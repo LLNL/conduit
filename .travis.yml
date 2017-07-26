@@ -150,8 +150,8 @@ script:
   - make
   - env CTEST_OUTPUT_ON_FAILURE=1 make test
   - make install
-  # if coverage is off, test our examples that demo using an installed conduit
-  - test ${ENABLE_COVERAGE} = "OFF" && ./scripts/ci/travis-test-build-examples-vs-install.sh
+  # test our examples that demo using an installed conduit
+  - ./scripts/ci/travis-test-build-examples-vs-install.sh
 
 after_success:
   - test ${ENABLE_COVERAGE} = "ON" && coveralls --gcov /usr/bin/gcov-4.8 --include src/libs/conduit --include src/libs/blueprint --gcov-options '\-lp' --root $TRAVIS_BUILD_DIR --build-root $TRAVIS_BUILD_DIR/travis-debug-build;

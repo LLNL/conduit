@@ -44,6 +44,11 @@
 #!/bin/bash
 set -ev
 
+if [ "${ENABLE_COVERAGE}" == "ON" ]; then
+    echo "ENABLE_COVERAGE=ON< skipping examples vs install tests"
+    return 0
+fi
+
 ##########################################################
 # test our examples that demo using an installed conduit
 ##########################################################
