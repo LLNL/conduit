@@ -85,9 +85,9 @@ endif()
 # Set BLT Options
 ################################
 # forward conduit's build shared libs option to blt
-set(ENABLE_SHARED_LIBS ${BUILD_SHARED_LIBS})
+set(ENABLE_SHARED_LIBS ${BUILD_SHARED_LIBS} CACHE BOOL "")
 # don't use BLT's all warnings feature
-set(ENABLE_ALL_WARNINGS OFF)
+set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "")
 
 ################################
 # Init BLT
