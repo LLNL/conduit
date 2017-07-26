@@ -84,6 +84,8 @@ endif()
 ################################
 # Set BLT Options
 ################################
+# forward conduit's build shared libs option to blt
+set(ENABLE_SHARED_LIBS ${BUILD_SHARED_LIBS})
 # don't use BLT's all warnings feature
 set(ENABLE_ALL_WARNINGS OFF)
 
