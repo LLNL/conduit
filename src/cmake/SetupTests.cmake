@@ -129,15 +129,10 @@ function(add_python_test TEST)
                  PROPERTY
                  ENVIRONMENT "PYTHONPATH=${CMAKE_BINARY_DIR}/python-modules/${ENV_PATH_SEP}${CMAKE_CURRENT_SOURCE_DIR}")
     if(WIN32)
-        # TODO: 
-        # Adding "Release" as part of the PATH is a temporary fix 
-        # for testing python unit tests on windows
-        # I tried using CMAKE_CFG_INTDIR here, but that didn't work.
-        # Need to hunt for a general solution.
         set_property(TEST ${TEST}
                      APPEND
                      PROPERTY
-                     ENVIRONMENT "PATH=${CMAKE_BINARY_DIR}/bin/Release/${ENV_PATH_SEP}$ENV{PATH}")
+                     ENVIRONMENT "PATH=${CMAKE_BINARY_DIR}/bin/$<CONFIG>/${ENV_PATH_SEP}$ENV{PATH}")
     endif()
 
 
