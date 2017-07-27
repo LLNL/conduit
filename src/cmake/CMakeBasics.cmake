@@ -123,27 +123,6 @@ if(BUILD_SHARED_LIBS)
 endif()
 
 ################################
-# Win32 Output Dir Settings
-################################
-# On windows we place all of the libs and execs in one dir.
-# dlls need to be located next to the execs since there is no
-# rpath equiv on windows. I tried some gymnastics to extract
-# and append the output dir of each dependent lib to the PATH for
-# each of our tests and bins, but that was futile.
-################################
-if(WIN32)
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY   ${CMAKE_BINARY_DIR}/bin)
-    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY   ${CMAKE_BINARY_DIR}/lib)
-    
-    foreach(CFG_TYPE ${CMAKE_CONFIGURATION_TYPES})
-        string(TOUPPER ${CFG_TYPE} CFG_TYPE)
-        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${CFG_TYPE} ${CMAKE_BINARY_DIR}/bin)
-        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${CFG_TYPE} ${CMAKE_BINARY_DIR}/lib)
-    endforeach()
-    
-endif()
-
-################################
 # Standard CTest Options
 ################################
 if(ENABLE_TESTS)
