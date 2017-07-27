@@ -124,12 +124,12 @@ end module t_f_blueprint_mcarray
 !------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------
-integer(C_INT) function fortran_test() bind(C,name="fortran_test")
+program fortran_test
 !------------------------------------------------------------------------------
   use fruit
   use t_f_blueprint_mcarray
   implicit none
-  logical res
+  logical ok
   
   call init_fruit
 
@@ -140,15 +140,14 @@ integer(C_INT) function fortran_test() bind(C,name="fortran_test")
 
   call fruit_summary
   call fruit_finalize
-  call is_all_successful(res)
-  if (res) then
-     fortran_test = 0
-  else
-     fortran_test = 1
+  call is_all_successful(ok)
+
+  if (.not. ok) then
+     call exit(1)
   endif
 
 !------------------------------------------------------------------------------
-end function fortran_test
+end program fortran_test
 !------------------------------------------------------------------------------
 
 
