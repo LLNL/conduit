@@ -9,5 +9,6 @@ machine:
    - sudo rm -rf /home/ubuntu/.android
 test:
   override:
+    - git submodule update --init --recursive
     - cd src/examples/docker/ubuntu/ && ./example_build.sh:
         timeout: 30000

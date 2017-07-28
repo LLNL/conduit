@@ -41,67 +41,31 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ###############################################################################
+#!/bin/bash
+set -ev
 
-################################
-# Unit Tests for 3rd Party Libs
-################################
+if [ "${ENABLE_COVERAGE}" == "ON" ]; then
+    echo "skipping examples vs install tests (ENABLE_COVERAGE=ON)"
+    exit 0
+fi
 
-message(STATUS "Adding thirdparty lib unit tests")
+##########################################################
+# test our examples that demo using an installed conduit
+##########################################################
 
+##########################################
+# using with cmake example
+##########################################
+cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-cmake
+mkdir build
+cd build
+cmake -DCONDUIT_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install ../
+make
+./example
+##########################################
+# using with make example
+##########################################
+cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-make
+env CXX=${CONDUIT_CXX} CONDUIT_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install HDF5_DIR=${TRAVIS_HOME}/miniconda/lib make
+env LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/travis-debug-install/lib/:${TRAVIS_HOME}/miniconda/lib ./example
 
-add_cpp_test(TEST t_rapidjson_smoke)
-
-add_cpp_test(TEST t_libb64_smoke
-                 SOURCES $<TARGET_OBJECTS:conduit_b64>)
-
-set(civet_test_deps ${CIVETWEB_LIB_DEPENDS})
-
-if(UNIX AND NOT APPLE)
-    # we need these for civetweb on linux, we may need similar libs
-    # on windows (OSX appears ok without them)
-    list(APPEND civet_test_deps dl rt ${CMAKE_THREAD_LIBS_INIT})
-endif()
-
-
-add_cpp_test(TEST t_civetweb_smoke
-             SOURCES $<TARGET_OBJECTS:conduit_civetweb>
-             DEPENDS_ON ${civet_test_deps})
-
-
-################################
-# Optional TPL Unit Tests
-################################
-
-if(PYTHON_FOUND)
-    message(STATUS "Python enabled: Adding related unit tests")
-    foreach(TEST t_numpy_smoke)
-        add_cpp_test(TEST t_numpy_smoke)
-        target_link_libraries(${TEST} PUBLIC ${PYTHON_LIBRARIES})
-    endforeach()
-else()
-    message(STATUS "Python disabled: Skipping related tests")
-endif()
-
-
-if(HDF5_FOUND)
-    message(STATUS "HDF5 enabled: Adding related unit tests")
-    add_cpp_test(TEST t_hdf5_smoke DEPENDS_ON hdf5)
-else()
-    message(STATUS "HDF5 disabled: Skipping related tests")
-endif()
-
-
-if(SILO_FOUND)
-    message(STATUS "Silo enabled: Adding related unit tests")
-        add_cpp_test(TEST t_silo_smoke DEPENDS_ON silo)
-else()
-    message(STATUS "Silo disabled: Skipping related tests")
-endif()
-
-
-if(FORTRAN_FOUND)
-    message(STATUS "Fortran enabled: Adding related unit tests")
-    add_fortran_test(TEST t_fortran_smoke)
-else()
-    message(STATUS "Fortran disabled: Skipping related tests")
-endif()

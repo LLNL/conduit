@@ -129,52 +129,72 @@ set(conduit_relay_fortran_sources
 #
 # setup conduit relay lib
 #
+
+
+##################################
+# system dependencies for civetweb
+##################################
+
+
+#
+# Link with conduit
+#
+# target_link_libraries(conduit_relay PUBLIC conduit)
+
+
+set(conduit_relay_deps conduit)
+
+if(UNIX AND NOT APPLE)
+    # we need these for civetweb on linux, we may need similar libs
+    # on windows (OSX appears ok without them)
+    #target_link_libraries(conduit_relay PUBLIC dl rt ${CMAKE_THREAD_LIBS_INIT})
+    list(APPEND conduit_relay_deps dl rt ${CMAKE_THREAD_LIBS_INIT})
+endif()
+
+#
+# Link with silo and hdf5 if these are enabled
+#
+if(SILO_FOUND)
+    list(APPEND conduit_relay_deps silo)
+    #target_link_libraries(conduit_relay PUBLIC ${SILO_LIBRARIES})
+endif()
+
+if(HDF5_FOUND)
+    list(APPEND conduit_relay_deps hdf5)
+    #target_link_libraries(conduit_relay PUBLIC ${HDF5_LIBRARIES})
+endif()
+
+
+
+
 add_compiled_library(NAME conduit_relay
                      EXPORT conduit
                      HEADERS ${conduit_relay_headers} ${conduit_relay_c_headers}
                      SOURCES ${conduit_relay_sources} ${conduit_relay_c_sources} ${conduit_relay_fortran_sources}
                              $<TARGET_OBJECTS:conduit_civetweb>
+                     DEPENDS_ON ${conduit_relay_deps}
                      HEADERS_DEST_DIR include/conduit)
 
+#  todo?
 if(FORTRAN_FOUND)
     set_target_properties(conduit_relay
                           PROPERTIES Fortran_FORMAT "FREE")
 endif()
 
 
-#
-# Link with conduit
-#
-target_link_libraries(conduit_relay PUBLIC conduit)
-
-##################################
-# system dependencies for civetweb
-##################################
-
-if(UNIX AND NOT APPLE)
-    # we need these for civetweb on linux, we may need similar libs
-    # on windows (OSX appears ok without them)
-    target_link_libraries(conduit_relay PUBLIC dl rt ${CMAKE_THREAD_LIBS_INIT})
-endif()
-
-
-#
-# Link with silo and hdf5 if these are enabled
-#
-if(SILO_FOUND)
-    target_link_libraries(conduit_relay PUBLIC ${SILO_LIBRARIES})
-endif()
-
-if(HDF5_FOUND)
-    target_link_libraries(conduit_relay PUBLIC ${HDF5_LIBRARIES})
-endif()
-
 
 ###################################
 # add conduit_relay_node_viewer exe
 ###################################
-add_executable(conduit_relay_node_viewer conduit_relay_web_node_viewer_exe.cpp)
-target_link_libraries(conduit_relay_node_viewer conduit_relay)
+
+blt_add_executable(
+    NAME        conduit_relay_node_viewer
+    SOURCES     conduit_relay_web_node_viewer_exe.cpp
+    DEPENDS_ON  conduit_relay
+    OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
+#add_executable(conduit_relay_node_viewer conduit_relay_web_node_viewer_exe.cpp)
+#target_link_libraries(conduit_relay_node_viewer conduit_relay)
 
 # add install target
 install(TARGETS conduit_relay_node_viewer
@@ -235,7 +255,7 @@ set(conduit_relay_mpi_headers
 #
 set(conduit_relay_mpi_sources conduit_relay_mpi.cpp)
 
-include_directories(${MPI_CXX_INCLUDE_PATH})
+# include_directories(${MPI_CXX_INCLUDE_PATH})
 
 #
 # setup conduit relay mpi lib
@@ -244,23 +264,24 @@ add_compiled_library(NAME conduit_relay_mpi
                      EXPORT conduit
                      HEADERS ${conduit_relay_mpi_headers}
                      SOURCES ${conduit_relay_mpi_sources}
+                     DEPENDS_ON conduit mpi
                      HEADERS_DEST_DIR include/conduit)
 
 
 #
 # add compile and link flags necessary to use mpi
+# #
+# add_target_compile_flags(TARGET conduit_relay_mpi
+#                          FLAGS ${MPI_CXX_COMPILE_FLAGS})
 #
-add_target_compile_flags(TARGET conduit_relay_mpi
-                         FLAGS ${MPI_CXX_COMPILE_FLAGS})
-
-add_target_link_flags(TARGET conduit_relay_mpi
-                      FLAGS ${MPI_CXX_LINK_FLAGS})
-
-
+# add_target_link_flags(TARGET conduit_relay_mpi
+#                       FLAGS ${MPI_CXX_LINK_FLAGS})
 #
-# Link with conduit and MPI
 #
-target_link_libraries(conduit_relay_mpi conduit ${MPI_CXX_LIBRARIES})
+# #
+# # Link with conduit and MPI
+# #
+# target_link_libraries(conduit_relay_mpi conduit ${MPI_CXX_LIBRARIES})
 
 
 endif() # end if MPI_FOUND

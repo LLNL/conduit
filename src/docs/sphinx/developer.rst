@@ -99,6 +99,10 @@ Adding a Unit Test
 - Add the test to build system by editing ``src/tests/{lib_name}/CMakeLists.txt``
 
 
+BLT
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Conduit's CMake-based build system uses BLT (https://github.com/llnl/blt).
+
 Git Development Workflow 
 ------------------------
 

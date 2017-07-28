@@ -82,39 +82,52 @@ if(ENABLE_FORTRAN)
 endif()
 
 ################################
+# Set BLT Options
+################################
+# BLT defaults to C++11, but we aren't currently using C++11 features,
+# so we use BLT_CXX_STD to specific c++98 so we don't have issues with 
+# older compilers. 
+set(BLT_CXX_STD "c++98" CACHE STRING "")
+
+# forward conduit's build shared libs option to blt
+set(ENABLE_SHARED_LIBS ${BUILD_SHARED_LIBS} CACHE BOOL "")
+# don't use BLT's all warnings feature
+set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "")
+
+################################
+# Init BLT
+################################
+include(blt/SetupBLT.cmake)
+
+################################
 # Set some standard cmake opts
 ################################
-include(CMake/CMakeBasics.cmake)
+include(cmake/CMakeBasics.cmake)
 
 ################################
 # Fortran Support
 ################################
-include(CMake/SetupFortran.cmake)
+include(cmake/SetupFortran.cmake)
 
 ################################
 # Checks for type sizes, etc
 ################################
-include(CMake/BasicTypeChecks.cmake)
+include(cmake/BasicTypeChecks.cmake)
 
 ################################
 # Setup 3rd Party Libs
 ################################
-include(CMake/Setup3rdParty.cmake)
-
-################################
-# Setup docs targets
-################################
-include(CMake/SetupDocs.cmake)
+include(cmake/Setup3rdParty.cmake)
 
 ################################
 # Setup tests helpers
 ################################
-include(CMake/SetupTests.cmake)
+include(cmake/SetupTests.cmake)
 
 ################################
 # Setup project wide includes
 ################################
-include(CMake/SetupIncludes.cmake)
+include(cmake/SetupIncludes.cmake)
 
 ################################
 # Add our libs
