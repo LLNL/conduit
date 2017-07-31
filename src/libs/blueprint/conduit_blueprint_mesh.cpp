@@ -387,7 +387,7 @@ bool verify_reference_field(const std::string &protocol,
 }
 
 //-----------------------------------------------------------------------------
-std::string identify_coord_sys_type(const Node &coords)
+std::string identify_coords_coordsys(const Node &coords)
 {
     Node axes;
     NodeConstIterator itr = coords.children();
@@ -406,22 +406,77 @@ std::string identify_coord_sys_type(const Node &coords)
         }
     }
 
+    std::string coordsys = "unknown";
     if(axes.has_child("theta") || axes.has_child("phi"))
     {
-        return std::string("spherical");
+        coordsys = "spherical";
     }
     else if(axes.has_child("r")) // rz, or r w/o theta, phi
     {
-        return std::string("cylindrical");
+        coordsys = "cylindrical";
     }
     else if(axes.has_child("x") || axes.has_child("y") || axes.has_child("z"))
     {
-        return std::string("cartesian");
+        coordsys = "cartesian";
+    }
+    return coordsys;
+}
+
+//-----------------------------------------------------------------------------
+const Node& identify_coordset_coords(const Node &coordset)
+{
+    std::string coords_path = "unknown";
+    if(coordset["type"].as_string() != "uniform")
+    {
+        coords_path = "values";
+    }
+    else if(coordset.has_child("spacing"))
+    {
+        coords_path = "spacing";
+    }
+    else if(coordset.has_child("origin"))
+    {
+        coords_path = "origin";
+    }
+    return coordset[coords_path];
+}
+
+//-----------------------------------------------------------------------------
+std::vector<std::string> identify_coordset_axes(const Node &coordset)
+{
+    const Node &coords = identify_coordset_coords(coordset);
+    const std::string coordset_coordsys = identify_coords_coordsys(coords);
+
+    // NOTE: The dimension of the "dims" child is taken for uniform coordinate
+    // sets because its guaranteed to exist unlike the coords children "origin"
+    // and "spacing".
+    index_t coordset_len = 1;
+    if(coordset["type"].as_string() != "uniform")
+    {
+        coordset_len = coords.number_of_children();
     }
     else
     {
-        return std::string("unknown");
+        coordset_len = coordset["dims"].number_of_children();
     }
+
+    std::vector<std::string> coordset_axes;
+    if(coordset_coordsys == "cartesian")
+    {
+        coordset_axes = conduit::blueprint::mesh::cartesian_axes;
+    }
+    else if(coordset_coordsys == "cylindrical")
+    {
+        coordset_axes = conduit::blueprint::mesh::cylindrical_axes;
+    }
+    else if(coordset_coordsys == "spherical")
+    {
+        coordset_axes = conduit::blueprint::mesh::spherical_axes;
+    }
+
+    return std::vector<std::string>(
+        coordset_axes.begin(),
+        coordset_axes.begin() + coordset_len);
 }
 
 //-----------------------------------------------------------------------------
@@ -801,31 +856,9 @@ bool mesh::to_rectilinear(const conduit::Node &n,
             {
                 dst_coords["type"].set("rectilinear");
 
-                std::string csys_type = "cartesian"; 
-                if(src_coords.has_child("spacing"))
-                {
-                    csys_type = identify_coord_sys_type(src_coords["spacing"]);
-                }
-                else if(src_coords.has_child("origin"))
-                {
-                    csys_type = identify_coord_sys_type(src_coords["origin"]);
-                }
-
-                std::vector<std::string> csys_axes;
-                if(csys_type == "cartesian")
-                {
-                    csys_axes = cartesian_axes;
-                }
-                else if(csys_type == "cylindrical")
-                {
-                    csys_axes = cylindrical_axes;
-                }
-                else if(csys_type == "spherical")
-                {
-                    csys_axes = spherical_axes;
-                }
-
-                for(index_t i = 0; i < src_coords["dims"].number_of_children(); i++)
+                std::vector<std::string> csys_axes = identify_coordset_axes(src_coords);
+                index_t csys_dims = csys_axes.size();
+                for(index_t i = 0; i < csys_dims; i++)
                 {
                     const std::string& csys_axis = csys_axes[i];
                     const std::string& logical_axis = logical_axes[i];
@@ -874,30 +907,112 @@ bool mesh::to_structured(const conduit::Node &n,
 
     return res;
 }
-
+*/
 
 //-------------------------------------------------------------------------
 bool mesh::to_unstructured(const conduit::Node &n,
-                           const std::string &src_topo_name,
-                           const std::string &dst_topo_name,
+                           const std::string &topo_name,
                            conduit::Node &dest)
 {
     bool res = true;
     dest.reset();
 
     Node info;
-    if(!mesh::verify_single_domain(n, info))
+    if(!mesh::verify_single_domain(n, info) || &n == &dest)
     {
-        res = false; // input mesh must be a single-domain mesh
+        // The input mesh must be a single-domain mesh and the output node
+        // must be a different node than the input node.
+        res = false;
     }
     else
     {
-        // TODO(JRC)
+        const Node &src_topo = n["topologies"][topo_name];
+        const std::string cset_name = src_topo["coordset"].as_string();
+        const Node &src_coords = n["coordsets"][cset_name];
+
+        if(dest["topologies"].has_child(topo_name) ||
+           dest["coordsets"].has_child(cset_name))
+        {
+            // TODO(JRC): Add some logic here to inform the user that they're
+            // potentially overwriting an existing topology/coordinate set.
+        }
+
+        Node &dst_topo = dest["topologies"][topo_name];
+        Node &dst_coords = dest["coordsets"][cset_name];
+
+        dst_topo["coordset"].set(cset_name);
+        dst_topo["type"].set("unstructured");
+
+        std::vector<std::string> csys_axes = identify_coordset_axes(src_coords);
+        index_t csys_dims = csys_axes.size();
+        dst_topo["elements/shape"].set((csys_dims == 2) ? "quad" : "hex");
+
+        if(mesh::topology::unstructured::verify(src_topo, info))
+        {
+            dst_coords.set_external(src_coords);
+            dst_topo["elements/connectivity"].set_external(
+                src_topo["elements/connectivity"]);
+        }
+        else if(mesh::topology::structured::verify(src_topo, info))
+        {
+            // TODO(JRC)
+        }
+        else if(mesh::topology::rectilinear::verify(src_topo, info))
+        {
+            // TODO(JRC)
+        }
+        else if(mesh::topology::uniform::verify(src_topo, info))
+        {
+            dst_coords["type"].set("explicit");
+
+            index_t coords_len = 1;
+            for(index_t i = 0; i < csys_dims; i++)
+            {
+                coords_len *= src_coords["dims"][logical_axes[i]].as_int();
+            }
+
+            for(index_t i = 0; i < csys_dims; i++)
+            {
+                const std::string& csys_axis = csys_axes[i];
+                const std::string& logical_axis = logical_axes[i];
+
+                float64 dim_origin = src_coords.has_child("origin") ?
+                    src_coords["origin"][csys_axis].value() : 0.0;
+                float64 dim_scaling = src_coords.has_child("spacing") ?
+                    src_coords["spacing"]["d"+csys_axis].value() : 1.0;
+                index_t dim_len = src_coords["dims"][logical_axis].value();
+
+                Node &dst_cvals_node = dst_coords["values"][csys_axis];
+                dst_cvals_node.set(DataType::float64(coords_len));
+
+                index_t dim_block_size = 1, dim_block_count = 1;
+                for(index_t j = 0; j < csys_dims; j++)
+                {
+                    index_t j_len = src_coords["dims"][logical_axes[i]].value();
+                    dim_block_size *= (j < i) ? j_len : 1;
+                    dim_block_count *= (i < j) ? j_len : 1;
+                }
+                index_t dim_block_stride = dim_block_size * dim_len;
+
+                float64_array dst_cvals = dst_cvals_node.as_float64_array();
+                for(index_t b = 0; b < dim_block_count; b++)
+                {
+                    index_t bstart = b * dim_block_stride;
+                    for(index_t bi = 0; bi < dim_block_size; bi++)
+                    {
+                        dst_cvals[bstart + bi] = dim_origin + b * dim_scaling;
+                    }
+                }
+            }
+
+            // TODO(JRC)
+            // dst_topo[""] = ...;
+        }
     }
 
     return res;
 }
-*/
+
 
 //-----------------------------------------------------------------------------
 void
@@ -976,7 +1091,7 @@ mesh::generate_index(const Node &mesh,
             }
         }
 
-        idx_coordset["coord_system/type"] = identify_coord_sys_type(idx_coordset["coord_system/axes"]);
+        idx_coordset["coord_system/type"] = identify_coords_coordsys(idx_coordset["coord_system/axes"]);
 
 std::string cs_ref_path = join_path(ref_path, "coordsets");
         cs_ref_path = join_path(cs_ref_path, coordset_name);
