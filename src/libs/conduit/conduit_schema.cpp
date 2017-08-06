@@ -713,7 +713,7 @@ Schema::fetch_child(const std::string &path)
     // check for parent
     if(p_curr == "..")
     {
-        if(m_parent == NULL)// TODO: check for erro (no parent)
+        if(m_parent == NULL)
         {
             CONDUIT_ERROR("Tried to fetch non-existent parent Schema.")
         }
