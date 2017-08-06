@@ -10792,7 +10792,7 @@ Node::fetch_child(const std::string &path) const
     if(!m_schema->has_child(p_curr))
     {
         CONDUIT_ERROR("Cannot const fetch non-existent " 
-                      << "child " << p_curr << " from Node("
+                      << "child \"" << p_curr << "\" from Node("
                       << this->path()
                       << ")");
     }
@@ -10841,7 +10841,7 @@ Node::fetch_child(const std::string &path)
     if(!m_schema->has_child(p_curr))
     {
         CONDUIT_ERROR("Cannot const fetch non-existent "
-                      << "child " << p_curr << " from Node("
+                      << "child \"" << p_curr << "\" from Node("
                       << this->path()
                       << ")");
     }
