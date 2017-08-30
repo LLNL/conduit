@@ -118,44 +118,77 @@ MPI_Datatype
 conduit_dtype_to_mpi_dtype(const DataType &dt)
 {
     MPI_Datatype res = MPI_DATATYPE_NULL;
-    switch(dt.id())
+
+    // can't use case statement there b/c NATIVE_IDS may actually 
+    // be overloaded on some platforms (this happens on windows)
+    
+    index_t dt_id = dt.id();
+    
+    // signed integer types
+    if(dt_id == CONDUIT_NATIVE_CHAR_ID)
     {
-        // signed integer types
-        case CONDUIT_NATIVE_CHAR_ID:   res = MPI_CHAR;  break;
-        case CONDUIT_NATIVE_SHORT_ID:  res = MPI_SHORT; break;
-        case CONDUIT_NATIVE_INT_ID:    res = MPI_INT;   break;
-        case CONDUIT_NATIVE_LONG_ID:   res = MPI_LONG;  break;
-
-        #if defined(CONDUIT_USE_LONG_LONG)
-        case CONDUIT_NATIVE_LONG_LONG_ID: res = MPI_LONG_LONG; break;
-        #endif
-
-        // unsigned integer types 
-        case CONDUIT_NATIVE_UNSIGNED_CHAR_ID:  res = MPI_UNSIGNED_CHAR;  break;
-        case CONDUIT_NATIVE_UNSIGNED_SHORT_ID: res = MPI_UNSIGNED_SHORT; break;
-        case CONDUIT_NATIVE_UNSIGNED_INT_ID:   res = MPI_UNSIGNED;       break;
-        case CONDUIT_NATIVE_UNSIGNED_LONG_ID:  res = MPI_UNSIGNED_LONG;  break;
-        
-        #if defined(CONDUIT_USE_LONG_LONG)
-        case CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID:
-        {
-            res = MPI_UNSIGNED_LONG_LONG;
-            break;
-        }
-        #endif
-
-        // floating point types
-
-        case CONDUIT_NATIVE_FLOAT_ID:  res = MPI_FLOAT;  break;
-        case CONDUIT_NATIVE_DOUBLE_ID: res = MPI_DOUBLE; break;
-
-        #if defined(CONDUIT_USE_LONG_DOUBLE)
-        case CONDUIT_NATIVE_LONG_DOUBLE_ID: res = MPI_LONG_DOUBLE; break;
-        #endif
-
-
-        case DataType::CHAR8_STR_ID:  res = MPI_CHAR;  break;
-
+        res = MPI_CHAR;         
+    }
+    else if( dt_id == CONDUIT_NATIVE_SHORT_ID)
+    {
+        res = MPI_SHORT;
+    }
+    else if( dt_id == CONDUIT_NATIVE_INT_ID)
+    {
+        res = MPI_INT;
+    }
+    else if( dt_id == CONDUIT_NATIVE_LONG_ID)
+    {
+        res = MPI_LONG;
+    }
+    #if defined(CONDUIT_USE_LONG_LONG)
+    else if( dt_id == CONDUIT_NATIVE_LONG_LONG_ID)
+    {
+        res = MPI_LONG_LONG;
+    }
+    #endif
+    // unsigned integer types
+    else if( dt_id == CONDUIT_NATIVE_UNSIGNED_CHAR_ID)
+    {
+        res = MPI_UNSIGNED_CHAR;
+    }
+    else if( dt_id == CONDUIT_NATIVE_UNSIGNED_SHORT_ID)
+    {
+        res = MPI_UNSIGNED_SHORT;
+    }
+    else if( dt_id == CONDUIT_NATIVE_UNSIGNED_INT_ID)
+    {
+        res = MPI_UNSIGNED;
+    }
+    else if( dt_id == CONDUIT_NATIVE_UNSIGNED_LONG_ID)
+    {
+        res = MPI_UNSIGNED_LONG;
+    }
+    #if defined(CONDUIT_USE_LONG_LONG)
+    else if( dt_id == CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID)
+    {
+        res = MPI_UNSIGNED_LONG_LONG;
+    }
+    // floating point types
+    #endif
+    else if( dt_id == CONDUIT_NATIVE_FLOAT_ID)
+    {
+        res = MPI_FLOAT;
+    }
+    else if( dt_id == CONDUIT_NATIVE_DOUBLE_ID)
+    {
+        res = MPI_DOUBLE;
+    }
+    #if defined(CONDUIT_USE_LONG_DOUBLE)
+    else if( dt_id == CONDUIT_NATIVE_LONG_DOUBLE_ID)
+    {
+        res = MPI_LONG_DOUBLE;
+    }
+    #endif
+    // string type
+    else if( dt_id == DataType::CHAR8_STR_ID)
+    {
+        res = MPI_CHAR;
     }
     
     return res;
