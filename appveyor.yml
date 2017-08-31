@@ -4,6 +4,7 @@ environment:
     CONFIG: Release
     PYTHON_VERSION: 2.7
     MINICONDA: C:\Miniconda
+    ENABLE_MPI: ON
 
 init:
   # line endings magic
@@ -21,6 +22,15 @@ install:
   - conda update --yes conda
   - conda install --yes numpy
 
+  # Install MS-MPI
+  - ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/MSMpiSetup.exe'
+  - MSMpiSetup.exe -unattend
+  - set PATH=C:\Program Files\Microsoft MPI\Bin;%PATH%
+
+  # Install MS-MPI SDK
+  - ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/msmpisdk.msi'
+  - msmpisdk.msi /passive
+
 before_build:
   # remove some noisy warnings from Xamarin
   - del "C:\Program Files (x86)\MSBuild\14.0\Microsoft.Common.targets\ImportAfter\Xamarin.Common.targets"
@@ -28,9 +38,11 @@ before_build:
   - git submodule update --init --recursive
   # configure
   - echo Running cmake ...
-  # enable hdf5 support and use default python
-  - cmake -Hsrc -Bbuild -G "%CMAKE_GENERATOR%" -DENABLE_PYTHON=TRUE
+  # TODO enable hdf5 support
   #- cmake -Hsrc -Bbuild -G "%CMAKE_GENERATOR%" -DHDF5_DIR="C:\\Program Files\\HDF_Group\\HDF5\\1.8.18" -DENABLE_PYTHON=TRUE
+  #
+  # enable mpi support and use default python
+  - cmake -Hsrc -Bbuild -G "%CMAKE_GENERATOR%" -DENABLE_PYTHON=TRUE -DENABLE_MPI=%ENABLE_MPI% -DMPI_HOME:PATH="C:/Program Files (x86)/Microsoft SDKs/MPI" -DMPI_C_INCLUDE_PATH:PATH="${MPI_HOME}/Include" -DMPI_C_LIBRARIES:PATH="${MPI_HOME}/Lib/x86/msmpi.lib" -DMPI_CXX_INCLUDE_PATH:PATH="${MPI_HOME}/Include" -DMPI_CXX_LIBRARIES:PATH="${MPI_HOME}/Lib/x86/msmpi.lib"
 
 build_script:
   #build
