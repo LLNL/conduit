@@ -568,14 +568,11 @@ void braid_init_example_adjset(Node &mesh)
             for(gd_itr = point_group.begin();
                 gd_itr != point_group.end(); ++gd_itr, ++gi)
             {
-                group_indices[gi].push_back(point_dom_idx_map.find(*gd_itr)->second);
+                index_t g_idx = static_cast<index_t>(point_dom_idx_map.find(*gd_itr)->second);
+                group_indices[gi].push_back(g_idx);
             }
         }
     }
-
-    const index_t name_cstr_size = 30;
-    char group_name_cstr[name_cstr_size];
-    char dom_name_cstr[name_cstr_size];
 
     group_idx_map::const_iterator gm_itr;
     index_t gid = 0;
@@ -585,8 +582,9 @@ void braid_init_example_adjset(Node &mesh)
         const std::set<index_t>& group_doms = gm_itr->first;
         const std::vector<std::vector<index_t> >& group_indices = gm_itr->second;
 
-        snprintf(group_name_cstr, name_cstr_size, "group%ld", gid);
-        const std::string group_name(group_name_cstr);
+        std::ostringstream oss;
+        oss << "group" << gid;
+        const std::string group_name = oss.str();
 
         std::set<index_t>::const_iterator dg_itr;
         index_t d = 0;
@@ -596,8 +594,9 @@ void braid_init_example_adjset(Node &mesh)
           const index_t& dom_id = *dg_itr;
           const std::vector<index_t>& dom_idxs = group_indices[d];
 
-          snprintf(dom_name_cstr, name_cstr_size, "domain%ld", dom_id);
-          const std::string dom_name(dom_name_cstr);
+          std::ostringstream oss;
+          oss << "domain" << dom_id;
+          const std::string dom_name = oss.str();
 
           std::vector<index_t> dom_neighbors(group_doms.begin(), group_doms.end());
           dom_neighbors.erase(dom_neighbors.begin()+d);
@@ -1825,15 +1824,15 @@ misc(const std::string &mesh_type,
     }
     else if(mesh_type == "adjsets")
     {
-        const index_t domain_name_size = 30;
-        char domain_name[domain_name_size];
-
         for(index_t j = 0; j < 2; j++)
         {
             for(index_t i = 0; i < 2; i++)
             {
                 const index_t domain_id = j * 2 + i;
-                snprintf(domain_name, domain_name_size, "domain%ld", domain_id);
+                
+                std::ostringstream oss;
+                oss << "domain" << domain_id;
+                const std::string domain_name = oss.str();
 
                 Node &domain_node = res[domain_name];
                 braid_quads(npts_x,npts_y,domain_node);
