@@ -410,7 +410,7 @@ PyConduit_DataType_Set_Parse_Args(PyConduit_DataType* self,
             return false;
         }
 
-        dtype_id = DataType::name_to_id(std::string(dtype_name));
+        dtype_id = (Py_ssize_t) DataType::name_to_id(std::string(dtype_name));
 
         self->dtype.set(dtype_id,
                         num_elements,
@@ -1418,21 +1418,21 @@ PyConduit_DataType_set_endianness(PyConduit_DataType *self,
 static PyObject *
 PyConduit_DataType_id(PyConduit_DataType *self)
 {
-    return PyLong_FromSsize_t(self->dtype.id());
+    return PyLong_FromSsize_t((Py_ssize_t)self->dtype.id());
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
 PyConduit_DataType_bytes_compact(PyConduit_DataType *self)
 {
-    return PyLong_FromSsize_t(self->dtype.bytes_compact());
+    return PyLong_FromSsize_t((Py_ssize_t)self->dtype.bytes_compact());
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
 PyConduit_DataType_strided_bytes(PyConduit_DataType *self)
 {
-    return PyLong_FromSsize_t(self->dtype.strided_bytes());
+    return PyLong_FromSsize_t((Py_ssize_t)self->dtype.strided_bytes());
 }
 
 //---------------------------------------------------------------------------//
@@ -1556,7 +1556,7 @@ PyConduit_DataType_is_unsigned_integer(PyConduit_DataType *self)
 static PyObject *
 PyConduit_DataType_number_of_elements(PyConduit_DataType *self)
 {
-    return PyLong_FromSsize_t(self->dtype.number_of_elements());
+    return PyLong_FromSsize_t((Py_ssize_t)self->dtype.number_of_elements());
 }
 
 //---------------------------------------------------------------------------//
@@ -1601,7 +1601,7 @@ PyConduit_DataType_element_index(PyConduit_DataType *self,
         return NULL;
     }
 
-    return PyLong_FromSsize_t(self->dtype.element_index(idx));
+    return PyLong_FromSsize_t((Py_ssize_t)self->dtype.element_index(idx));
 }
 
 //---------------------------------------------------------------------------//
@@ -1616,7 +1616,7 @@ PyConduit_DataType_name_to_id(PyObject *, // cls -- unused
         return NULL;
     }
 
-    return PyLong_FromSsize_t(DataType::name_to_id(std::string(dtype_name)));
+    return PyLong_FromSsize_t((Py_ssize_t)DataType::name_to_id(std::string(dtype_name)));
 }
 
 //---------------------------------------------------------------------------//
@@ -4687,7 +4687,7 @@ PyConduit_convertNodeToPython(Node& node)
 static PyObject * 
 PyEndianness_machine_default(PyObject *) // unused
 {
-    return PyLong_FromSsize_t(Endianness::machine_default());
+    return PyLong_FromSsize_t((Py_ssize_t)Endianness::machine_default());
 }
 
 //-----------------------------------------------------------------------------
@@ -4731,7 +4731,7 @@ PyEndianness_name_to_id(PyObject *, // unused
         return NULL;
     }
 
-    return PyLong_FromSsize_t(Endianness::name_to_id(std::string(end_name)));
+    return PyLong_FromSsize_t((Py_ssize_t)Endianness::name_to_id(std::string(end_name)));
 }
 
 //-----------------------------------------------------------------------------
