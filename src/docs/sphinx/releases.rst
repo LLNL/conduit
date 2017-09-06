@@ -50,6 +50,48 @@ Source distributions for Conduit releases are hosted on github:
 
 https://github.com/LLNL/conduit/releases
 
+v0.3.0
+-----------------
+
+* `Source Tarball <https://github.com/LLNL/conduit/archive/v0.3.0.tar.gz>`__
+* `Docs <http://software.llnl.gov/conduit/v0.3.0>`__
+
+
+Highlights
++++++++++++++
+
+* **General**
+
+ * Move to use BLT (https://github.com/llnl/blt) as core cmake-based build system
+ * Bug fixes to suport building on Visual Studio 2013
+ * Bug fixes for `conduit::Nodes` in the List Role
+ * Expose more of the Conduit API in Python
+ * Use ints instead of bools in the Conduit C-APIs for wider compiler compatibility   
+ * Fixed memory leaks in *conduit* and *conduit_relay*
+ 
+
+* **Blueprint**
+
+ * Mesh Protocol
+ 
+   * Added support for multi-material fields via *matsets* (volume fractions and per-material values)
+   * Added initial support for domain boundary info via *adjsets* for distributed-memory unstructured meshes  
+  
+
+* **Relay**
+
+ * Major improvements *conduit_relay* I/O HDF5 support 
+ 
+   * Add heuristics with knobs for controlling use of HDF5 compact datasets and compression support
+   * Improved error checking and error messages 
+   
+ * Major improvements to *conduit_relay_mpi* support 
+ 
+   * Add support for reductions and broadcast
+   * Add support zero-copy pass to MPI for a wide set of calls
+   * Harden notion of `known schema` vs `generic` MPI support
+ 
+
 v0.2.1
 -----------------
 

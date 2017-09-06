@@ -257,6 +257,19 @@ specified using a single shape topology for each element shape.
    Future version of the mesh blueprint will expand support to include mixed elements types in a single array with related
    index arrays.
 
+
+Element Windings
+^^^^^^^^^^^^^^^^^^^^^^
+
+The mesh blueprint does yet not have a prescribed winding convention (a way to order the association of vertices to elements) or more generally to 
+outline a topology's `dimensional cascade`  (how elements are related to faces, faces are related to edges, and edges are related to vertices. )
+
+This is a gap we are working to solve in future versions of the mesh blueprint, with a goal of providing transforms to
+help converting between windows, or different cascade schemes. 
+
+That said VTK (and VTK-m) winding conventions are assumed by MFEM, VisIt, or ALPINE when using Blueprint data.
+
+
 .. * **stream** - (strem description)
 ..   (specifying stream ids and stream connectivity)
 ..
@@ -332,6 +345,15 @@ Thus, to conform to protocol, each entry under the ``fields`` section must be an
    * fields/field/matset: "matset"
    * fields/field/matset_values: (mcarray)
 
+
+
+
+Topology Association for Field Values
+======================================
+
+For implicit topologies, the field values are associated with the topology by fast varying logical dimensions starting with ``i``, then ``j``, then ``k``.
+
+For explicit topologies, the field values are associated with the topology by assuming the order of the field values matches the order the elements are defined in the topology. 
 
 
 Adjacency Sets
