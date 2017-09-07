@@ -564,7 +564,7 @@ void braid_init_example_adjset(Node &mesh)
             }
 
             std::set<index_t>::const_iterator gd_itr;
-            index_t gi = 0;
+            std::set<index_t>::size_type gi = 0;
             for(gd_itr = point_group.begin();
                 gd_itr != point_group.end(); ++gd_itr, ++gi)
             {
@@ -587,7 +587,7 @@ void braid_init_example_adjset(Node &mesh)
         const std::string group_name = oss.str();
 
         std::set<index_t>::const_iterator dg_itr;
-        index_t d = 0;
+        std::set<index_t>::size_type d = 0;
         for(dg_itr = group_doms.begin();
             dg_itr != group_doms.end(); ++dg_itr, ++d)
         {
