@@ -594,7 +594,7 @@ void braid_init_example_adjset(Node &mesh)
           const index_t& dom_id = *dg_itr;
           const std::vector<index_t>& dom_idxs = group_indices[d];
 
-          std::ostringstream oss;
+          oss.str("");
           oss << "domain" << dom_id;
           const std::string dom_name = oss.str();
 
