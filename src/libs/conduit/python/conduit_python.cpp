@@ -1439,7 +1439,7 @@ PyConduit_DataType_strided_bytes(PyConduit_DataType *self)
 static PyObject *
 PyConduit_DataType_spanned_bytes(PyConduit_DataType *self)
 {
-    return PyLong_FromSsize_t(self->dtype.spanned_bytes());
+    return PyLong_FromSsize_t((Py_ssize_t)self->dtype.spanned_bytes());
 }
 
 
