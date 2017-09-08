@@ -148,7 +148,7 @@ The ``config-build.sh`` script uses your machine's hostname, the SYS_TYPE enviro
 
 You can find example files in the ``host-configs`` directory. 
 
-These files use standard CMake commands. CMake *set* commands need to specify the root cache path as follows:
+These files use standard CMake commands. To properly seed the cache, CMake *set* commands need to specify ``CACHE`` as follows:
 
 .. code:: cmake
 
