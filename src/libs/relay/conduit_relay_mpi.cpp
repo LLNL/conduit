@@ -57,7 +57,7 @@
 //-----------------------------------------------------------------------------
 #define CONDUIT_CHECK_MPI_ERROR( check_mpi_err_code )               \
 {                                                                   \
-    if( check_mpi_err_code  != MPI_SUCCESS)                         \
+    if( static_cast<int>(check_mpi_err_code) != MPI_SUCCESS)        \
     {                                                               \
         char check_mpi_err_str_buff[MPI_MAX_ERROR_STRING];          \
         int  check_mpi_err_str_len=0;                               \
@@ -278,10 +278,10 @@ send_using_schema(const Node &node, int dest, int tag, MPI_Comm comm)
     n_msg["data"].update(node);
 
     
-    int msg_data_size = n_msg.total_bytes_compact();
+    index_t msg_data_size = n_msg.total_bytes_compact();
 
     int mpi_error = MPI_Send(const_cast<void*>(n_msg.data_ptr()),
-                             msg_data_size,
+                             static_cast<int>(msg_data_size),
                              MPI_BYTE,
                              dest,
                              tag,
@@ -354,8 +354,8 @@ send(const Node &node, int dest, int tag, MPI_Comm comm)
     
     Node snd_compact;
 
-    const void *snd_ptr   = node.contiguous_data_ptr();;
-    int          snd_size = node.total_bytes_compact();;
+    const void *snd_ptr = node.contiguous_data_ptr();;
+    index_t    snd_size = node.total_bytes_compact();;
     
     if( snd_ptr == NULL ||
         ! node.is_compact())
@@ -365,7 +365,7 @@ send(const Node &node, int dest, int tag, MPI_Comm comm)
     }
 
     int mpi_error = MPI_Send(const_cast<void*>(snd_ptr),
-                             snd_size,
+                             static_cast<int>(snd_size),
                              MPI_BYTE,
                              dest,
                              tag,
@@ -387,7 +387,7 @@ recv(Node &node, int src, int tag, MPI_Comm comm)
     bool cpy_out = false;
 
     const void *rcv_ptr  = node.contiguous_data_ptr();
-    int         rcv_size = node.total_bytes_compact();
+    index_t     rcv_size = node.total_bytes_compact();
 
     if( rcv_ptr == NULL  ||
         ! node.is_compact() )
@@ -401,7 +401,7 @@ recv(Node &node, int src, int tag, MPI_Comm comm)
     }
 
     int mpi_error = MPI_Recv(const_cast<void*>(rcv_ptr),
-                             rcv_size,
+                             static_cast<int>(rcv_size),
                              MPI_BYTE,
                              src,
                              tag,
@@ -705,7 +705,7 @@ isend(const Node &node,
 {
     
     const void *data_ptr  = node.contiguous_data_ptr();
-    int         data_size = node.total_bytes_compact();
+    index_t     data_size = node.total_bytes_compact();
     
     if( data_ptr == NULL ||
        !node.is_compact() )
@@ -717,7 +717,7 @@ isend(const Node &node,
     request->m_rcv_ptr = NULL;
 
     int mpi_error =  MPI_Isend(const_cast<void*>(data_ptr), 
-                               data_size, 
+                               static_cast<int>(data_size),
                                MPI_BYTE, 
                                dest, 
                                tag,
@@ -740,8 +740,8 @@ irecv(Node &node,
     // if rcv is compact, we can write directly into recv
     // if its not compact, we need a recv_buffer
     
-    void *data_ptr  = node.contiguous_data_ptr();
-    int   data_size = node.total_bytes_compact();
+    void    *data_ptr  = node.contiguous_data_ptr();
+    index_t  data_size = node.total_bytes_compact();
     
     if(data_ptr != NULL && 
        node.is_compact() )
@@ -756,7 +756,7 @@ irecv(Node &node,
     }
 
     int mpi_error =  MPI_Irecv(data_ptr,
-                               data_size,
+                               static_cast<int>(data_size),
                                MPI_BYTE,
                                src,
                                tag,
@@ -878,7 +878,7 @@ gather(Node &send_node,
     send_node.schema().compact_to(s_snd_compact);
     
     const void *snd_ptr = send_node.contiguous_data_ptr();
-    int   snd_size = 0;
+    index_t    snd_size = 0;
     
     
     if(snd_ptr != NULL && 
@@ -905,10 +905,10 @@ gather(Node &send_node,
     }
 
     int mpi_error = MPI_Gather( const_cast<void*>(snd_ptr), // local data
-                                snd_size, // local data len
+                                static_cast<int>(snd_size), // local data len
                                 MPI_BYTE, // send chars
                                 recv_node.data_ptr(),  // rcv buffer
-                                snd_size, // data len 
+                                static_cast<int>(snd_size), // data len 
                                 MPI_BYTE,  // rcv chars
                                 root,
                                 mpi_comm); // mpi com
@@ -930,7 +930,7 @@ all_gather(Node &send_node,
     send_node.schema().compact_to(s_snd_compact);
     
     const void *snd_ptr  = send_node.contiguous_data_ptr();
-    int         snd_size = send_node.total_bytes_compact();
+    index_t     snd_size = send_node.total_bytes_compact();
     
     if( snd_ptr == NULL ||
        !send_node.is_compact() )
@@ -951,10 +951,10 @@ all_gather(Node &send_node,
                       mpi_size);
 
     int mpi_error = MPI_Allgather( const_cast<void*>(snd_ptr), // local data
-                                   snd_size, // local data len
+                                   static_cast<int>(snd_size), // local data len
                                    MPI_BYTE, // send chars
                                    recv_node.data_ptr(),  // rcv buffer
-                                   snd_size, // data len 
+                                   static_cast<int>(snd_size), // data len 
                                    MPI_BYTE,  // rcv chars
                                    mpi_comm); // mpi com
 
@@ -980,8 +980,8 @@ gather_using_schema(Node &send_node,
 
     std::string schema_str = n_snd_compact.schema().to_json();
 
-    int schema_len = schema_str.length() + 1;
-    int data_len   = n_snd_compact.total_bytes_compact();
+    int schema_len = static_cast<int>(schema_str.length() + 1);
+    int data_len   = static_cast<int>(n_snd_compact.total_bytes_compact());
     
     // to do the conduit gatherv, first need a gather to get the 
     // schema and data buffer sizes
@@ -1129,8 +1129,8 @@ all_gather_using_schema(Node &send_node,
 
     std::string schema_str = n_snd_compact.schema().to_json();
 
-    int schema_len = schema_str.length() + 1;
-    int data_len   = n_snd_compact.total_bytes_compact();
+    int schema_len = static_cast<int>(schema_str.length() + 1);
+    int data_len   = static_cast<int>(n_snd_compact.total_bytes_compact());
     
     // to do the conduit gatherv, first need a gather to get the 
     // schema and data buffer sizes
@@ -1181,9 +1181,11 @@ all_gather_using_schema(Node &send_node,
 
     int schema_curr_displ = 0;
     int data_curr_displ   = 0;
-    int i=0;
     
     NodeIterator itr = n_rcv_sizes.children();
+
+    index_t child_idx = 0;
+    
     while(itr.has_next())
     {
         Node &curr = itr.next();
@@ -1191,15 +1193,15 @@ all_gather_using_schema(Node &send_node,
         int schema_curr_count = curr["schema_len"].value();
         int data_curr_count   = curr["data_len"].value();
         
-        schema_rcv_counts[i] = schema_curr_count;
-        schema_rcv_displs[i] = schema_curr_displ;
+        schema_rcv_counts[child_idx] = schema_curr_count;
+        schema_rcv_displs[child_idx] = schema_curr_displ;
         schema_curr_displ   += schema_curr_count;
         
-        data_rcv_counts[i] = data_curr_count;
-        data_rcv_displs[i] = data_curr_displ;
+        data_rcv_counts[child_idx] = data_curr_count;
+        data_rcv_displs[child_idx] = data_curr_displ;
         data_curr_displ   += data_curr_count;
         
-        i++;
+        child_idx+=1;
     }
     
     n_rcv_tmp["schemas/data"].set(DataType::c_char(schema_curr_displ));
@@ -1221,10 +1223,10 @@ all_gather_using_schema(Node &send_node,
     //TODO: should we make it easer to create a compact schema?
     // TODO: Revisit, I think we can do this better
     Schema s_tmp;
-    for(int i=0;i < m_size; i++)
+    for(int s_idx=0; s_idx < m_size; s_idx++)
     {
-        Schema &s = s_tmp.append();
-        s.set(&schema_rcv_buff[schema_rcv_displs[i]]);
+        Schema &s_new = s_tmp.append();
+        s_new.set(&schema_rcv_buff[schema_rcv_displs[s_idx]]);
     }
     
     // TODO can we support copy out w/out realloc
@@ -1261,10 +1263,9 @@ broadcast(Node &node,
 
     bool cpy_out = false;
 
-    void *bcast_data_ptr  = node.contiguous_data_ptr();
-    int   bcast_data_size = node.total_bytes_compact();
+    void    *bcast_data_ptr  = node.contiguous_data_ptr();
+    index_t  bcast_data_size = node.total_bytes_compact();
         
-
     // setup buffers on root for send
     if(rank == root)
     {
@@ -1292,7 +1293,7 @@ broadcast(Node &node,
 
 
     int mpi_error = MPI_Bcast(bcast_data_ptr,
-                              bcast_data_size,
+                              static_cast<int>(bcast_data_size),
                               MPI_BYTE,
                               root,
                               comm);
@@ -1329,7 +1330,7 @@ broadcast_using_schema(Node &node,
     {
         
         bcast_data_ptr  = node.contiguous_data_ptr();
-        bcast_data_size = node.total_bytes_compact();
+        bcast_data_size = static_cast<int>(node.total_bytes_compact());
         
         if(bcast_data_ptr != NULL &&
            node.is_compact() )
@@ -1347,7 +1348,7 @@ broadcast_using_schema(Node &node,
      
 
         
-        bcast_schema_size = bcast_buffers["schema"].dtype().number_of_elements();
+        bcast_schema_size = static_cast<int>(bcast_buffers["schema"].dtype().number_of_elements());
     }
 
     int mpi_error = MPI_Allreduce(&bcast_schema_size,
@@ -1389,7 +1390,7 @@ broadcast_using_schema(Node &node,
         {
             
             bcast_data_ptr  = node.contiguous_data_ptr();
-            bcast_data_size = node.total_bytes_compact();
+            bcast_data_size = static_cast<int>(node.total_bytes_compact());
             
             if( bcast_data_ptr == NULL ||
                 ! node.is_compact() )
@@ -1406,7 +1407,7 @@ broadcast_using_schema(Node &node,
             node.set_schema(bcast_schema);
 
             bcast_data_ptr  = node.data_ptr();
-            bcast_data_size = node.total_bytes_compact();
+            bcast_data_size = static_cast<int>(node.total_bytes_compact());
         }
     }
     
