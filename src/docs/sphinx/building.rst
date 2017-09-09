@@ -59,6 +59,17 @@ Clone the Conduit repo:
     
     git clone --recursive https://github.com/llnl/conduit.git
 
+
+``--recursive`` is necessary because we are using a git submodule to pull in BLT (https://github.com/llnl/blt). 
+If you cloned without ``--recursive``, you can checkout this submodule using:
+
+.. code:: bash
+    
+    cd conduit
+    git submodule init
+    git submodule update
+
+
 Configure a build:
 
 ``config-build.sh`` is a simple wrapper for the cmake call to configure conduit. 

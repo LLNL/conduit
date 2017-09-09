@@ -53,8 +53,9 @@ https://github.com/LLNL/conduit/releases
 v0.3.0
 -----------------
 
-* `Source Tarball <https://github.com/LLNL/conduit/archive/v0.3.0.tar.gz>`__
+* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.3.0/conduit-v0.3.0-src-with-blt.tar.gz>`__
 * `Docs <http://software.llnl.gov/conduit/v0.3.0>`__
+
 
 
 Highlights
@@ -62,8 +63,8 @@ Highlights
 
 * **General**
 
- * Move to use BLT (https://github.com/llnl/blt) as core cmake-based build system
- * Bug fixes to suport building on Visual Studio 2013
+ * Moved to use BLT (https://github.com/llnl/blt) as our core CMake-based build system
+ * Bug fixes to support building on Visual Studio 2013
  * Bug fixes for `conduit::Nodes` in the List Role
  * Expose more of the Conduit API in Python
  * Use ints instead of bools in the Conduit C-APIs for wider compiler compatibility   
