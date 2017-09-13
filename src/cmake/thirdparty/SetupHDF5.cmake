@@ -55,7 +55,7 @@ endif()
 get_filename_component(HDF5_DIR_ABS "${HDF5_DIR}" REALPATH)
 
 set(HDF5_DIR ${HDF5_DIR_ABS} CACHE PATH "" FORCE)
-message(STATUS "Looking for HDF5 at: " ${HDF5_DIR_ABS})
+message(STATUS "Looking for HDF5 at: " ${HDF5_DIR})
 
 # CMake's FindHDF5 module uses the HDF5_ROOT env var
 set(HDF5_ROOT ${HDF5_DIR})
@@ -81,8 +81,6 @@ endif()
 # consistent with other packages
 
 set(HDF5_DIR ${HDF5_ROOT} CACHE PATH "" FORCE)
-
-message(STATUS "HDF5_DIR: " ${HDF5_DIR_ABS})
 
 #
 # Sanity check to alert us if some how we found an hdf5 instance
