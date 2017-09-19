@@ -111,7 +111,7 @@ if(MPI_FOUND)
     message(STATUS "MPI enabled: Adding conduit_relay_mpi unit tests")
     foreach(TEST ${RELAY_MPI_TESTS})
         # this uses 2 procs
-        add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2 DEPENDS_ON conduit conduit_relay_mpi) 
+        add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON conduit conduit_relay_mpi) 
     endforeach()
 else()
     message(STATUS "MPI disabled: Skipping conduit_relay_mpi tests")

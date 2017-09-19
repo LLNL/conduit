@@ -48,7 +48,7 @@
 
 # add a target to generate documentation with Sphinx
 
-add_sphinx_target( conduit_sphinx )
+blt_add_sphinx_target( conduit_sphinx )
 
 if(DOXYGEN_FOUND)
    add_dependencies(conduit_sphinx conduit_doxygen) 
