@@ -46,10 +46,16 @@
 #
 
 # first Check for HDF5_DIR
-
 if(NOT HDF5_DIR)
     MESSAGE(FATAL_ERROR "HDF5 support needs explicit HDF5_DIR")
 endif()
+
+# find the absolute path w/ symlinks resolved of the passed HDF5_DIR, 
+# since sanity checks later need to compare against the real path
+get_filename_component(HDF5_DIR_ABS "${HDF5_DIR}" REALPATH)
+
+set(HDF5_DIR ${HDF5_DIR_ABS} CACHE PATH "" FORCE)
+message(STATUS "Looking for HDF5 at: " ${HDF5_DIR})
 
 # CMake's FindHDF5 module uses the HDF5_ROOT env var
 set(HDF5_ROOT ${HDF5_DIR})
@@ -90,22 +96,14 @@ message(STATUS "Checking that found HDF5_INCLUDE_DIRS are in HDF5_DIR")
 
 set(check_hdf5_inc_dir_ok 0)
 foreach(IDIR ${HDF5_INCLUDE_DIRS})
-    if("${IDIR}" MATCHES "${HDF5_DIR}")
-        message(STATUS " ${IDIR} includes HDF5_DIR (${HDF5_DIR})")
+    
+    # get real path of the include dir 
+    # w/ abs and symlinks resolved
+    get_filename_component(IDIR_REAL "${IDIR}" REALPATH)
+    # check if idir_real is a substring of hdf5_dir
+    if("${IDIR_REAL}" MATCHES "${HDF5_DIR}")
+        message(STATUS " ${IDIR_REAL} includes HDF5_DIR (${HDF5_DIR})")
         set(check_hdf5_inc_dir_ok 1)
-    else()
-        
-        # The check above could fail b/c of relative vs abs path
-        # compare. It's not clear if FindHDF5 will always resolve 
-        # relative paths to abs ones, so out of caution we check
-        # both.
-
-        get_filename_component(HDF5_DIR_ABS "${HDF5_DIR}" ABSOLUTE)
-
-        if("${IDIR}" MATCHES "${HDF5_DIR_ABS}")
-            message(STATUS " ${IDIR} includes HDF5_DIR (${HDF5_DIR_ABS})")
-            set(check_hdf5_inc_dir_ok 1)
-        endif()
     endif()
 endforeach()
 
