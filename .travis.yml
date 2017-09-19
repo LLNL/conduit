@@ -65,29 +65,34 @@ env:
     # cmake 3.3.1 + shared libs + python 2 + coverage
     - BUILD_SHARED_LIBS=ON
       MINICONDA=Miniconda2
+      ENABLE_MPI=OFF # don't use mpi w/ coverage ... 
       ENABLE_COVERAGE=ON
       CMAKE_MAJOR=3.3
       CMAKE_MINOR=1
     # cmake 3.3.1 + static libs + python 2
     - BUILD_SHARED_LIBS=OFF
       MINICONDA=Miniconda2
+      ENABLE_MPI=ON
       ENABLE_COVERAGE=OFF
       CMAKE_MAJOR=3.3
       CMAKE_MINOR=1
     # cmake 3.3.1 + shared libs + python 3
     - BUILD_SHARED_LIBS=ON
       MINICONDA=Miniconda3
+      ENABLE_MPI=ON
       ENABLE_COVERAGE=OFF
       CMAKE_MAJOR=3.3
       CMAKE_MINOR=1
     # cmake 3.8.1 + shared libs + python 2
     - BUILD_SHARED_LIBS=ON
       MINICONDA=Miniconda2
+      ENABLE_MPI=ON
       ENABLE_COVERAGE=OFF
       CMAKE_MAJOR=3.8
       CMAKE_MINOR=1
     # cmake 3.8.1 + static libs + python 2
     - BUILD_SHARED_LIBS=OFF
+      ENABLE_MPI=ON
       MINICONDA=Miniconda2
       ENABLE_COVERAGE=OFF
       CMAKE_MAJOR=3.8
@@ -100,6 +105,9 @@ addons:
        - gcc-4.8
        - g++-4.8
        - gfortran-4.8
+       - openmpi-bin
+       - openmpi-doc
+       - libopenmpi-dev
 before_install:
   # download the ver of cmake we want to test
   - wget --no-check-certificate http://www.cmake.org/files/v${CMAKE_MAJOR}/cmake-${CMAKE_MAJOR}.${CMAKE_MINOR}-Linux-x86_64.sh
@@ -138,6 +146,8 @@ script:
   # enable fortran support
   - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_Fortran_COMPILER=${CONDUIT_FC}"
   - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_FORTRAN=ON"
+  # enable mpi support
+  - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_MPI=${ENABLE_MPI}"
   # enable python support
   - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=ON"
   # enable hdf5 support
