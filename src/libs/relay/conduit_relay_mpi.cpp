@@ -119,7 +119,7 @@ conduit_dtype_to_mpi_dtype(const DataType &dt)
 {
     MPI_Datatype res = MPI_DATATYPE_NULL;
 
-    // can't use case statement there b/c NATIVE_IDS may actually 
+    // can't use switch w/ case statements here b/c NATIVE_IDS may actually 
     // be overloaded on some platforms (this happens on windows)
     
     index_t dt_id = dt.id();
@@ -200,6 +200,10 @@ index_t
 mpi_dtype_to_conduit_dtype_id(MPI_Datatype dt)
 {
     index_t res = DataType::EMPTY_ID;
+
+    // can't use switch w/ case statements here b/c in some 
+    // MPI implementations MPI_Datatype is a struct (or something more complex)
+    // that won't compile when used in a switch statement.
 
     // string type
     if(dt == MPI_CHAR)
