@@ -48,6 +48,6 @@
 
 # add a target to generate API documentation with Doxygen
 
-add_doxygen_target( conduit_doxygen )
+blt_add_doxygen_target( conduit_doxygen )
 
 

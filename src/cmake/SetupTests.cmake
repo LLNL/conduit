@@ -79,12 +79,12 @@ endfunction()
 ##------------------------------------------------------------------------------
 ## - Builds and adds a test that uses gtest and mpi
 ##
-## add_cpp_mpi_test( TEST test NUM_PROCS 2 DEPENDS_ON dep1 dep2... )
+## add_cpp_mpi_test( TEST test NUM_MPI_TASKS 2 DEPENDS_ON dep1 dep2... )
 ##------------------------------------------------------------------------------
 function(add_cpp_mpi_test)
 
     set(options)
-    set(singleValueArgs TEST NUM_PROCS)
+    set(singleValueArgs TEST NUM_MPI_TASKS)
     set(multiValueArgs DEPENDS_ON SOURCES)
 
     # parse our arguments
@@ -103,7 +103,7 @@ function(add_cpp_mpi_test)
 
     blt_add_test( NAME ${arg_TEST}
                   COMMAND ${arg_TEST}
-                  NUM_PROCS ${arg_NUM_PROCS})
+                  NUM_MPI_TASKS ${arg_NUM_MPI_TASKS})
 
 endfunction()
 
