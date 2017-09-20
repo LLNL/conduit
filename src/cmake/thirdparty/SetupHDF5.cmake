@@ -52,13 +52,11 @@ endif()
 
 # find the absolute path w/ symlinks resolved of the passed HDF5_DIR, 
 # since sanity checks later need to compare against the real path
-get_filename_component(HDF5_DIR_ABS "${HDF5_DIR}" REALPATH)
-
-set(HDF5_DIR ${HDF5_DIR_ABS} CACHE PATH "" FORCE)
-message(STATUS "Looking for HDF5 at: " ${HDF5_DIR})
+get_filename_component(HDF5_DIR_REAL "${HDF5_DIR}" REALPATH)
+message(STATUS "Looking for HDF5 at: " ${HDF5_DIR_REAL})
 
 # CMake's FindHDF5 module uses the HDF5_ROOT env var
-set(HDF5_ROOT ${HDF5_DIR})
+set(HDF5_ROOT ${HDF5_DIR_REAL})
 
 if(NOT WIN32)
     set(ENV{HDF5_ROOT} ${HDF5_ROOT}/bin)
@@ -80,8 +78,12 @@ endif()
 # we want to keep HDF5_DIR as the root dir of the install to be 
 # consistent with other packages
 
-set(HDF5_DIR ${HDF5_ROOT} CACHE PATH "" FORCE)
+# find the absolute path w/ symlinks resolved of the passed HDF5_DIR, 
+# since sanity checks later need to compare against the real path
+get_filename_component(HDF5_DIR_REAL "${HDF5_ROOT}" REALPATH)
 
+set(HDF5_DIR ${HDF5_DIR_REAL} CACHE PATH "" FORCE)
+message(STATUS "HDF5_DIR_REAL=${HDF5_DIR_REAL}")
 #
 # Sanity check to alert us if some how we found an hdf5 instance
 # in an unexpected location.  
@@ -94,6 +96,7 @@ message(STATUS "Checking that found HDF5_INCLUDE_DIRS are in HDF5_DIR")
 # listed in HDF5_INCLUDE_DIRS exists in the HDF5_DIR specified. 
 #
 
+message(STATUS "HDF5_INCLUDE_DIRS=${HDF5_INCLUDE_DIRS}")
 set(check_hdf5_inc_dir_ok 0)
 foreach(IDIR ${HDF5_INCLUDE_DIRS})
     
@@ -101,6 +104,7 @@ foreach(IDIR ${HDF5_INCLUDE_DIRS})
     # w/ abs and symlinks resolved
     get_filename_component(IDIR_REAL "${IDIR}" REALPATH)
     # check if idir_real is a substring of hdf5_dir
+
     if("${IDIR_REAL}" MATCHES "${HDF5_DIR}")
         message(STATUS " ${IDIR_REAL} includes HDF5_DIR (${HDF5_DIR})")
         set(check_hdf5_inc_dir_ok 1)
