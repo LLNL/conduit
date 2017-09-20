@@ -99,6 +99,19 @@ Adding a Unit Test
 - Add the test to build system by editing ``src/tests/{lib_name}/CMakeLists.txt``
 
 
+Running Unit Tests via Valgrind
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We can use ctest's built-in  valgrind support to check for memory leaks in unit tests. Assuming valgrind is automatically detected when you run CMake to configure conduit, you can check for leaks by running:
+
+.. code:: bash
+    
+    ctest -D ExperimentalBuild
+    ctest -D ExperimentalMemCheck
+    
+The build system is setup to use **src/cmake/valgrind.supp** to filter memcheck results. We don't yet have all spurious issues suppressed, expect to see leaks reported for python and mpi tests. 
+
+
 BLT
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Conduit's CMake-based build system uses BLT (https://github.com/llnl/blt).

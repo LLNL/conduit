@@ -59,6 +59,17 @@ Clone the Conduit repo:
     
     git clone --recursive https://github.com/llnl/conduit.git
 
+
+``--recursive`` is necessary because we are using a git submodule to pull in BLT (https://github.com/llnl/blt). 
+If you cloned without ``--recursive``, you can checkout this submodule using:
+
+.. code:: bash
+    
+    cd conduit
+    git submodule init
+    git submodule update
+
+
 Configure a build:
 
 ``config-build.sh`` is a simple wrapper for the cmake call to configure conduit. 
@@ -148,7 +159,7 @@ The ``config-build.sh`` script uses your machine's hostname, the SYS_TYPE enviro
 
 You can find example files in the ``host-configs`` directory. 
 
-These files use standard CMake commands. CMake *set* commands need to specify the root cache path as follows:
+These files use standard CMake commands. To properly seed the cache, CMake *set* commands need to specify ``CACHE`` as follows:
 
 .. code:: cmake
 

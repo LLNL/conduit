@@ -58,7 +58,7 @@ Here is a list of the software components used by conduit in source form and the
 
 C and C++ Libraries
 =====================
-- *gtest*: thirdparty_builtin/gtest-1.7.0/LICENSE (BSD Style License)
+- *gtest*: From BLT - (BSD Style License)
 - *libb64*: thirdparty_builtin/libb64/LICENSE (Public Domain)
 - *rapidjson*: thirdparty_builtin/rapidjson/license.txt (MIT License)
 - *civetweb*: thirdparty_builtin/civetweb-1.8/LICENSE.md (MIT License)
@@ -72,11 +72,12 @@ JavaScript Libraries
 
 Fortran Libraries
 =====================
-- *fruit*: thirdparty_builtin/fruit-3.3.9/LICENSE.txt (BSD Style License)
+- *fruit*: From BLT - (BSD Style License)
 
 Build System
 ~~~~~~~~~~~~~~~
 - *CMake*: http://www.cmake.org/licensing/ (BSD Style License)
+- *BLT*: https://github.com/llnl/blt (BSD Style License)
 - *Spack*: http://software.llnl.gov/spack (LGPL License)
 
 

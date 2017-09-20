@@ -63,8 +63,6 @@ Supported MPI Primitives:
  * reduce/all_reduce
  * broadcast
  * gather/all_gather
- * scatter
- * all_to_all (?)
 
 
 For both point to point and collectives, here is the basic logic for how input Nodes are treated by these methods:
@@ -92,9 +90,6 @@ Supported MPI Primitives:
   * send/recv
   * gather/all_gather
   * broadcast
-  * scatter (?)
-  * all_to_all
-
 
 
 Unsupported MPI Primitives:

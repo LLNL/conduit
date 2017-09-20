@@ -57,7 +57,7 @@ import os
 
 from os.path import join as pjoin
 
-def create_package(output_file=None):
+def create_package(output_file,version):
     scripts_dir = pjoin(os.path.abspath(os.path.split(__file__)[0]),"scripts")
     pkg_script = pjoin(scripts_dir,"git_archive_all.py");
     repo_name = os.path.basename(os.path.dirname(os.path.abspath(__file__)))
@@ -65,14 +65,20 @@ def create_package(output_file=None):
          suffix = "tar"
          t = datetime.datetime.now()
          output_file = "%s.%04d.%02d.%02d.%s" % (repo_name,t.year,t.month,t.day,suffix)
-    cmd = "python " + pkg_script + " --prefix=conduit " + output_file
+    cmd = "python " + pkg_script + " --prefix=conduit" 
+    if not version is None:
+        cmd += "-" + version
+    cmd +=  " " + output_file
     print "[exe: %s]" % cmd
     subprocess.call(cmd,shell=True)
     
 if __name__ == "__main__":
-    ofile  = None
+    ofile   = None
+    version = None
     if len(sys.argv) > 1:
-        ofile  = sys.argv[1]
-    create_package(ofile)
+        ofile = sys.argv[1]
+    if len(sys.argv) > 2:
+        version = sys.argv[2]
+    create_package(ofile,version)
 
 

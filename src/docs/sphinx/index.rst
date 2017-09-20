@@ -107,8 +107,6 @@ Conduit Libraries
 
 The *conduit* library provides Conduit's core data API. The *relay* and *blueprint* libraries provide higher-level services built on top of the core API. 
 
-.. note::
-    **Caveat Emptor**: The APIs for *relay* and *blueprint* are still in flux.
 
 conduit
 ~~~~~~~~
