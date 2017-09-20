@@ -50,12 +50,13 @@ Source distributions for Conduit releases are hosted on github:
 
 https://github.com/LLNL/conduit/releases
 
+.. note:: As of v0.3.0, Conduit uses `BLT <https://github.com/LLNL/blt>`__ as its core CMake build system. We leverage BLT as a git submodule, however github does not include submodule contents in its automatically created source tarballs. To avoid confusion, starting with v0.3.0 we will provide our own source tarballs that include BLT. 
+
 v0.3.0
 -----------------
 
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.3.0/conduit-v0.3.0-src-with-blt.tar.gz>`__
 * `Docs <http://software.llnl.gov/conduit/v0.3.0>`__
-
 
 
 Highlights
