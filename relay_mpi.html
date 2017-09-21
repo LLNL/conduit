@@ -1,0 +1,315 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Relay MPI &mdash; Conduit 0.3.0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="Conduit 0.3.0 documentation" href="index.html"/>
+        <link rel="up" title="Relay" href="relay.html"/>
+        <link rel="next" title="Blueprint" href="blueprint.html"/>
+        <link rel="prev" title="Relay" href="relay.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Conduit
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="user.html">User Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="conduit.html">Conduit</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="relay.html">Relay</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Relay MPI</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#known-schema-methods">Known Schema Methods</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#generic-methods">Generic Methods</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="blueprint.html">Blueprint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="building.html">Building</a></li>
+<li class="toctree-l2"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer.html">Developer Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html">Releases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="presentations.html">Presentations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="licenses.html">License Info</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">Conduit</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="user.html">User Documentation</a> &raquo;</li>
+      
+          <li><a href="relay.html">Relay</a> &raquo;</li>
+      
+    <li>Relay MPI</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/relay_mpi.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="relay-mpi">
+<h1>Relay MPI<a class="headerlink" href="#relay-mpi" title="Permalink to this headline">¶</a></h1>
+<p>The Conduit Relay MPI library enables MPI communication using conduit::Node instances as payloads. It provides two categories of functionality: <a class="reference internal" href="#mpi-known-schema-methods"><span class="std std-ref">Known Schema Methods</span></a> and <a class="reference internal" href="#mpi-generic-methods"><span class="std std-ref">Generic Methods</span></a>. These categories balance flexibility and performance tradeoffs. In all cases the implementation tries to avoid unnecessary reallocation, subject to the constraints of MPI&#8217;s API input requirements.</p>
+<div class="section" id="known-schema-methods">
+<span id="mpi-known-schema-methods"></span><h2>Known Schema Methods<a class="headerlink" href="#known-schema-methods" title="Permalink to this headline">¶</a></h2>
+<p>Methods that transfer a Node&#8217;s data, assuming the schema is known. They assume that Nodes used for output are implicitly <strong>compatible</strong> with their sources.</p>
+<dl class="docutils">
+<dt>Supported MPI Primitives:</dt>
+<dd><ul class="first last simple">
+<li>send/recv</li>
+<li>isend/irecv</li>
+<li>reduce/all_reduce</li>
+<li>broadcast</li>
+<li>gather/all_gather</li>
+</ul>
+</dd>
+</dl>
+<p>For both point to point and collectives, here is the basic logic for how input Nodes are treated by these methods:</p>
+<ul class="simple">
+<li>For Nodes holding data to be sent:</li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li>If the Node is compact and contiguously allocated, the Node&#8217;s pointers are passed directly to MPI.</li>
+<li>If the Node is not compact or not contiguously allocated, the data is compacted to temporary contiguous buffers that are passed to MPI.</li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li>For Nodes used to hold output data:</li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li>If the output Node is compact and contiguously allocated, the Node&#8217;s pointers are passed directly to MPI.</li>
+<li>If the output Node is not compact or not contiguously allocated, a Node with a temporary contiguous buffer is created and that buffer is passed to MPI. An <strong>update</strong> call is used to copy out the data from the temporary buffer to the output Node. This avoids re-allocation and modifying the schema of the output Node.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="generic-methods">
+<span id="mpi-generic-methods"></span><h2>Generic Methods<a class="headerlink" href="#generic-methods" title="Permalink to this headline">¶</a></h2>
+<p>Methods that transfer both a Node&#8217;s data and schema. These are useful for generic messaging, since the schema does not need to be known by receiving tasks. The semantics of MPI place constraints on what can be supported in this category.</p>
+<dl class="docutils">
+<dt>Supported MPI Primitives:</dt>
+<dd><ul class="first last simple">
+<li>send/recv</li>
+<li>gather/all_gather</li>
+<li>broadcast</li>
+</ul>
+</dd>
+<dt>Unsupported MPI Primitives:</dt>
+<dd><ul class="first last simple">
+<li>isend/irecv</li>
+<li>reduce/all_reduce</li>
+</ul>
+</dd>
+</dl>
+<p>For both point to point and collectives, here is the basic logic for how input Nodes are treated by these methods:</p>
+<ul class="simple">
+<li>For Nodes holding data to be sent:</li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li>If the Node is compact and contiguously allocated:</li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li>The Node&#8217;s schema is sent as JSON</li>
+<li>The Node&#8217;s pointers are passed directly to MPI</li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li>If the Node is not compact or not contiguously allocated:</li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li>The Node is compacted to temporary Node</li>
+<li>The temporary Node&#8217;s schema is sent as JSON</li>
+<li>The temporary Nodes&#8217;s pointers are passed to MPI</li>
+</ul>
+</div></blockquote>
+</div></blockquote>
+<ul class="simple">
+<li>For Nodes used to hold output data:</li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li>If the output Node is not compatible with the received schema, it is reset using the received schema.</li>
+<li>If the output Node is compact and contiguously allocated, its pointers are passed directly to MPI.</li>
+<li>If the output Node is not compact or not contiguously allocated, a Node with a temporary contiguous buffer is created and that buffer is passed to MPI. An <strong>update</strong> call is used to copy out the data from the temporary buffer to the output Node. This avoids re-allocation and modifying the schema of the output Node.</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="blueprint.html" class="btn btn-neutral float-right" title="Blueprint" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="relay.html" class="btn btn-neutral" title="Relay" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014-2017, LLNS.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.3.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
