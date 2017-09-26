@@ -104,10 +104,10 @@ silo_write(const Node &node,
     // check for ":" split
     std::string file_path;
     std::string silo_obj_base;
-    conduit::utils::split_string(path,
-                                 std::string(":"),
-                                 file_path,
-                                 silo_obj_base);
+    io::split_path(path,
+                   std::string(":"),
+                   file_path,
+                   silo_obj_base);
 
     /// If silo_obj_base is empty, we have a problem ... 
     if(silo_obj_base.size() == 0)
@@ -126,10 +126,10 @@ silo_read(const std::string &path,
     // check for ":" split    
     std::string file_path;
     std::string silo_obj_base;
-    conduit::utils::split_string(path,
-                                 std::string(":"),
-                                 file_path,
-                                 silo_obj_base);
+    io::split_path(path,
+                   std::string(":"),
+                   file_path,
+                   silo_obj_base);
 
     /// If silo_obj_base is empty, we have a problem ... 
     if(silo_obj_base.size() == 0)
@@ -1340,10 +1340,10 @@ silo_mesh_write(const Node &node,
     // check for ":" split
     std::string file_path;
     std::string silo_obj_base;
-    conduit::utils::split_string(path,
-                                 std::string(":"),
-                                 file_path,
-                                 silo_obj_base);
+    io::split_path(path,
+                   std::string(":"),
+                   file_path,
+                   silo_obj_base);
 
     /// If silo_obj_base is empty, we have a problem ... 
     if(silo_obj_base.size() == 0)

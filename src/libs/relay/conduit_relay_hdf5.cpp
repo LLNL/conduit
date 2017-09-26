@@ -1874,10 +1874,11 @@ hdf5_write(const  Node &node,
     // check for ":" split
     std::string file_path;
     std::string hdf5_path;
-    conduit::utils::split_string(path,
-                                 std::string(":"),
-                                 file_path,
-                                 hdf5_path);
+
+    io::split_path(path,
+                   std::string(":"),
+                   file_path,
+                   hdf5_path);
 
     // we will write to the root if no hdf5_path is given.
     // this should be fine for OBJECT_T, not sure about others ...
@@ -2056,10 +2057,11 @@ hdf5_read(const std::string &path,
     // check for ":" split
     std::string file_path;
     std::string hdf5_path;
-    conduit::utils::split_string(path,
-                                 std::string(":"),
-                                 file_path,
-                                 hdf5_path);
+    
+    io::split_path(path,
+                   std::string(":"),
+                   file_path,
+                   hdf5_path);
 
     // We will read the root if no hdf5_path is given.
     if(hdf5_path.size() == 0)

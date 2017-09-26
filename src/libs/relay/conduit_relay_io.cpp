@@ -83,6 +83,52 @@ namespace relay
 namespace io
 {
 
+//---------------------------------------------------------------------------//
+void
+split_path(const std::string &path,
+           const std::string &sep,
+           std::string &curr,
+           std::string &next)
+{
+    // if we are splitting by ":", we need to be careful on windows
+    // since drive letters include ":"
+    //
+    // NOTE: We could if-def for windows, but its nice to be able
+    // to run unit tests on other platforms.
+    if( sep == std::string(":") && 
+        path.size() > 1 && 
+        path[1] == ':')
+    {
+        // eval w/o drive letter
+        if(path.size() > 2)
+        {
+            std::string check_path = path.substr(2);
+            conduit::utils::split_string(check_path,
+                                         sep,
+                                         curr,
+                                         next);
+            // add drive letter back
+            curr = path.substr(0,2) + curr;
+        }
+        else
+        {
+            // degen case, we we only have the drive letter
+            curr = path;
+            next = "";
+        }
+    }
+    else
+    {
+        // normal case
+        conduit::utils::split_string(path,
+                                     sep,
+                                     curr,
+                                     next);
+
+    }
+    
+}
+
 
 //---------------------------------------------------------------------------//
 void
@@ -95,10 +141,10 @@ identify_protocol(const std::string &path,
     std::string obj_base;
 
     // check for ":" split
-    conduit::utils::split_string(path,
-                                 std::string(":"),
-                                 file_path,
-                                 obj_base);
+    io::split_path(path,
+                   std::string(":"),
+                   file_path,
+                   obj_base);
 
     std::string file_name_base;
     std::string file_name_ext;

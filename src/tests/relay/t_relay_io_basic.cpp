@@ -133,3 +133,38 @@ TEST(conduit_relay_io_basic, json)
     EXPECT_EQ(n_load["c"].as_uint32(), c_val);
 }
 
+
+TEST(conduit_relay_io_basic, split_io_windows_paths)
+{
+    std::string drive_letter_only      = "D:\\";
+    std::string drive_letter_with_path = "D:\\test\\some\\path";
+    std::string drive_letter_with_path_and_subpath = "D:\\test\\some\\path:subpath";
+    
+    std::string curr, next;
+    io::split_path( drive_letter_only,
+                    std::string(":"),
+                    curr,next);
+    
+    EXPECT_EQ(curr,std::string("D:\\"));
+    EXPECT_EQ(next,std::string(""));    
+    
+    
+    io::split_path( drive_letter_with_path,
+                    std::string(":"),
+                    curr,next);
+    
+    
+    EXPECT_EQ(curr,std::string("D:\\test\\some\\path"));
+    EXPECT_EQ(next,std::string(""));
+
+    
+    io::split_path( drive_letter_with_path_and_subpath,
+                    std::string(":"),
+                    curr,next);
+    
+    EXPECT_EQ(curr,std::string("D:\\test\\some\\path"));
+    EXPECT_EQ(next,std::string("subpath"));
+
+
+}
+
