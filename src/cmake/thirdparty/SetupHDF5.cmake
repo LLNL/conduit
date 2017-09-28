@@ -96,6 +96,16 @@ message(STATUS "Checking that found HDF5_INCLUDE_DIRS are in HDF5_DIR")
 # listed in HDF5_INCLUDE_DIRS exists in the HDF5_DIR specified. 
 #
 
+# HDF5_INCLUDE_DIR is deprecated, but there are still some cases
+# where HDF5_INCLUDE_DIR is set, but HDF5_INCLUDE_DIRS is not
+if(NOT HDF5_INCLUDE_DIRS)
+    if(HDF5_INCLUDE_DIR)
+        set(HDF5_INCLUDE_DIRS ${HDF5_INCLUDE_DIR})
+    else()
+        message(FATAL_ERROR "FindHDF5 did not provide HDF5_INCLUDE_DIRS or HDF5_INCLUDE_DIR.")
+    endif()
+endif()
+
 message(STATUS "HDF5_INCLUDE_DIRS=${HDF5_INCLUDE_DIRS}")
 set(check_hdf5_inc_dir_ok 0)
 foreach(IDIR ${HDF5_INCLUDE_DIRS})
