@@ -56,7 +56,7 @@ using namespace conduit;
 using namespace conduit::relay;
 
 
-
+//-----------------------------------------------------------------------------
 TEST(conduit_relay_io_basic, basic_bin)
 {
     uint32 a_val = 20;
@@ -83,6 +83,7 @@ TEST(conduit_relay_io_basic, basic_bin)
     EXPECT_EQ(n_load["c"].as_uint32(), c_val);
 }
 
+//-----------------------------------------------------------------------------
 TEST(conduit_relay_io_basic, json)
 {
     uint32 a_val = 20;
@@ -134,14 +135,12 @@ TEST(conduit_relay_io_basic, json)
 }
 
 
+//-----------------------------------------------------------------------------
 TEST(conduit_relay_io_basic, split_io_windows_paths)
 {
-    std::string drive_letter_only      = "D:\\";
-    std::string drive_letter_with_path = "D:\\test\\some\\path";
-    std::string drive_letter_with_path_and_subpath = "D:\\test\\some\\path:subpath";
     
     std::string curr, next;
-    io::split_path( drive_letter_only,
+    io::split_path( "D:\\",
                     std::string(":"),
                     curr,next);
     
@@ -149,7 +148,7 @@ TEST(conduit_relay_io_basic, split_io_windows_paths)
     EXPECT_EQ(next,std::string(""));    
     
     
-    io::split_path( drive_letter_with_path,
+    io::split_path( "D:\\test\\some\\path",
                     std::string(":"),
                     curr,next);
     
@@ -158,13 +157,22 @@ TEST(conduit_relay_io_basic, split_io_windows_paths)
     EXPECT_EQ(next,std::string(""));
 
     
-    io::split_path( drive_letter_with_path_and_subpath,
+    io::split_path( "D:\\test\\some\\path:subpath",
                     std::string(":"),
                     curr,next);
     
     EXPECT_EQ(curr,std::string("D:\\test\\some\\path"));
     EXPECT_EQ(next,std::string("subpath"));
 
+    
+    // drive letter needs '\\', so check corner case where its
+    // not there, which should be treat as non-windows case
+    io::split_path( "a:subpath",
+                    std::string(":"),
+                    curr,next);
+    
+    EXPECT_EQ(curr,std::string("a"));
+    EXPECT_EQ(next,std::string("subpath"));
 
 }
 

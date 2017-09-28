@@ -96,19 +96,20 @@ split_path(const std::string &path,
     // NOTE: We could if-def for windows, but its nice to be able
     // to run unit tests on other platforms.
     if( sep == std::string(":") && 
-        path.size() > 1 && 
-        path[1] == ':')
+        path.size() > 2 && 
+        path[1] == ':' && 
+        path[2] == '\\')
     {
         // eval w/o drive letter
-        if(path.size() > 2)
+        if(path.size() > 3)
         {
-            std::string check_path = path.substr(2);
+            std::string check_path = path.substr(3);
             conduit::utils::split_string(check_path,
                                          sep,
                                          curr,
                                          next);
             // add drive letter back
-            curr = path.substr(0,2) + curr;
+            curr = path.substr(0,3) + curr;
         }
         else
         {
