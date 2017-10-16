@@ -79,3 +79,41 @@ TEST(conduit_char8_str, basic)
 
     n.print_detailed();
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_char8_str, list_of_per_alloc)
+{
+    Node n;
+    n.list_of(DataType::char8_str(10),5);
+ 
+    n[0].set("a");
+    n[1].set("bb");
+    n[2].set("ccc");
+    n[3].set("bbbb");
+    n[4].set("ddddd");
+    
+    n.print();
+
+    EXPECT_EQ(n.number_of_children(),5);
+ 
+    Node n_info;
+    n.info(n_info);
+    n_info.print();
+    
+    NodeConstIterator itr = n_info["mem_spaces"].children();
+
+    int alloc_count = 0;
+    while(itr.has_next())
+    {
+        const Node &curr = itr.next();
+        if( curr["type"].as_string() == std::string("allocated") )
+        {
+            alloc_count++;
+        }
+    }
+    
+    // make sure there is only one alloc
+    EXPECT_EQ(alloc_count,1);
+}
+
