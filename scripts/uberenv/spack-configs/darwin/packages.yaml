@@ -35,7 +35,7 @@ packages:
       szip: [libszip, libaec]
       tbb: [intel-tbb]
       jpeg: [libjpeg-turbo, libjpeg]
-# NVIDIA provided CUDA tools from Nvidia.com
+# CUDA standard MacOS install
   cuda:
     paths:
       cuda@8.0: /Developer/NVIDIA/CUDA-8.0

@@ -35,7 +35,7 @@ packages:
       szip: [libszip, libaec]
       tbb: [intel-tbb]
       jpeg: [libjpeg-turbo, libjpeg]
-# NVIDIA provided CUDA tools from Nvidia.com
+# LLNL chaos5 CUDA 
   cuda:
     paths:
       cuda@8.0: /opt/cudatoolkit-8.0
