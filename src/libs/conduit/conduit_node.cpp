@@ -13292,7 +13292,7 @@ Node::serialize(uint8 *data,index_t curr_offset) const
         if(is_compact())
         {
             memcpy(&data[curr_offset],
-                   m_data,
+                   element_ptr(0),
                    (size_t)total_bytes_compact());
         }
         else // ser as is. This copies stride * num_ele bytes
