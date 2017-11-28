@@ -159,13 +159,29 @@ class Test_Conduit_Node(unittest.TestCase):
         n = Node()
         n.append().set(1)
         self.assertTrue(n.child(0).value(),1)
-        # TODO: this needs to work but doesn't
-        #self.assertTrue(n[0],1)
+        self.assertTrue(n[0],1)
         n2 = Node()
         n2_c = n2.append()
         n2_c.set(2)
         self.assertEqual(n2.child(0).value(),2)
-        
+
+        n3 = Node()
+        n3.fetch("here").append().set("a")
+        n3.fetch("here").append().set("b")
+        self.assertTrue(n3.fetch("here").child(0).value(),"a")
+        self.assertTrue(n3.fetch("here").child(1).value(),"b")
+
+        n4 = Node()
+        n4["here"].append().set("a")
+        n5 = n4["here"]
+        n5.append().set("b")
+        self.assertTrue(n4["here"].child(0).value(),"a")
+        self.assertTrue(n4["here"].child(1).value(),"b")
+        self.assertTrue(n4["here"][0],"a")
+        self.assertTrue(n4["here"][1],"b")
+
+
+    
     def test_remove(self):
         n = Node()
         n['a'] = 1
