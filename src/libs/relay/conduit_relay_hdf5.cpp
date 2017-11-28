@@ -716,7 +716,7 @@ check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
     if(res == false)
     {
         CONDUIT_INFO("leaf in Conduit Node at path " << ref_path <<
-                     " is not compatible with given HDF5 tree at path"
+                     " is not compatible with given HDF5 tree at path "
                      << ref_path);
     }
 
@@ -773,7 +773,7 @@ check_if_conduit_object_is_compatible_with_hdf5_tree(const Node &node,
     else // bad id or not a group
     {
         CONDUIT_INFO("object in Conduit Node at path " << ref_path << 
-                     " is not compatible with given HDF5 tree at path"
+                     " is not compatible with given HDF5 tree at path "
                      << ref_path );
         res = false;
     }
@@ -1837,10 +1837,9 @@ create_hdf5_file_create_plist()
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
-
 //---------------------------------------------------------------------------//
 hid_t
-hdf5_open_file_for_write(const std::string &file_path)
+hdf5_create_file(const std::string &file_path)
 {
     hid_t h5_fc_plist = create_hdf5_file_create_plist();
     hid_t h5_fa_plist = create_hdf5_file_access_plist();
@@ -1865,6 +1864,7 @@ hdf5_open_file_for_write(const std::string &file_path)
     
     return h5_file_id;
 }
+
 
 //---------------------------------------------------------------------------//
 void 
@@ -1900,7 +1900,7 @@ hdf5_write(const Node &node,
            const std::string &hdf5_path)
 {
     // open the hdf5 file for writing
-    hid_t h5_file_id = hdf5_open_file_for_write(file_path);
+    hid_t h5_file_id = hdf5_create_file(file_path);
 
     hdf5_write(node,
                h5_file_id,
@@ -2048,6 +2048,29 @@ hdf5_open_file_for_read(const std::string &file_path)
     
     return h5_file_id;
 }
+
+//---------------------------------------------------------------------------//
+hid_t
+hdf5_open_file_for_read_write(const std::string &file_path)
+{
+    hid_t h5_fa_plist = create_hdf5_file_access_plist();
+    
+    // open the hdf5 file for read + write
+    hid_t h5_file_id = H5Fopen(file_path.c_str(),
+                               H5F_ACC_RDWR,
+                               h5_fa_plist);
+
+    CONDUIT_CHECK_HDF5_ERROR(h5_file_id,
+                             "Error opening HDF5 file for reading: " 
+                              << file_path);
+
+    CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_fa_plist),
+                             "Failed to close HDF5 H5P_FILE_ACCESS "
+                             << "property list: " << h5_fa_plist);
+    
+    return h5_file_id;
+}
+
 
 //---------------------------------------------------------------------------//
 void
