@@ -1517,7 +1517,7 @@ Node::set(const std::vector<double> &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_int8_ptr(int8  *data,
+Node::set_int8_ptr(const int8  *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -1533,7 +1533,7 @@ Node::set_int8_ptr(int8  *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(int8  *data,
+Node::set(const int8  *data,
           index_t num_elements,
           index_t offset,
           index_t stride,
@@ -1545,7 +1545,7 @@ Node::set(int8  *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_int16_ptr(int16 *data, 
+Node::set_int16_ptr(const int16 *data, 
                     index_t num_elements,
                     index_t offset,
                     index_t stride,
@@ -1561,7 +1561,7 @@ Node::set_int16_ptr(int16 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(int16 *data, 
+Node::set(const int16 *data, 
           index_t num_elements,
           index_t offset,
           index_t stride,
@@ -1573,7 +1573,7 @@ Node::set(int16 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_int32_ptr(int32 *data,
+Node::set_int32_ptr(const int32 *data,
                     index_t num_elements,
                     index_t offset,
                     index_t stride,
@@ -1589,19 +1589,19 @@ Node::set_int32_ptr(int32 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(int32 *data,
-         index_t num_elements,
-         index_t offset,
-         index_t stride,
-         index_t element_bytes,
-         index_t endianness)
+Node::set(const int32 *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
 {
     set_int32_ptr(data,num_elements,offset,stride,element_bytes,endianness);
 }
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_int64_ptr(int64 *data,
+Node::set_int64_ptr(const int64 *data,
                     index_t num_elements,
                     index_t offset,
                     index_t stride,
@@ -1617,12 +1617,12 @@ Node::set_int64_ptr(int64 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(int64 *data,
-         index_t num_elements,
-         index_t offset,
-         index_t stride,
-         index_t element_bytes,
-         index_t endianness)
+Node::set(const int64 *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
 {
     set_int64_ptr(data,num_elements,offset,stride,element_bytes,endianness);
 }
@@ -1634,7 +1634,7 @@ Node::set(int64 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_uint8_ptr(uint8  *data,
+Node::set_uint8_ptr(const uint8 *data,
                     index_t num_elements,
                     index_t offset,
                     index_t stride,
@@ -1650,7 +1650,7 @@ Node::set_uint8_ptr(uint8  *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(uint8  *data,
+Node::set(const uint8 *data,
           index_t num_elements,
           index_t offset,
           index_t stride,
@@ -1662,7 +1662,7 @@ Node::set(uint8  *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_uint16_ptr(uint16 *data,
+Node::set_uint16_ptr(const uint16 *data,
                      index_t num_elements,
                      index_t offset,
                      index_t stride,
@@ -1678,7 +1678,7 @@ Node::set_uint16_ptr(uint16 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(uint16 *data,
+Node::set(const uint16 *data,
          index_t num_elements,
          index_t offset,
          index_t stride,
@@ -1689,7 +1689,7 @@ Node::set(uint16 *data,
 }
 //---------------------------------------------------------------------------//
 void 
-Node::set_uint32_ptr(uint32 *data, 
+Node::set_uint32_ptr(const uint32 *data, 
                      index_t num_elements,
                      index_t offset,
                      index_t stride,
@@ -1705,19 +1705,19 @@ Node::set_uint32_ptr(uint32 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(uint32 *data, 
-         index_t num_elements,
-         index_t offset,
-         index_t stride,
-         index_t element_bytes,
-         index_t endianness)
+Node::set(const uint32 *data, 
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
 {
     set_uint32_ptr(data,num_elements,offset,stride,element_bytes,endianness);
 }
                
 //---------------------------------------------------------------------------//   
 void 
-Node::set_uint64_ptr(uint64 *data,
+Node::set_uint64_ptr(const uint64 *data,
                      index_t num_elements,
                      index_t offset,
                      index_t stride,
@@ -1734,7 +1734,7 @@ Node::set_uint64_ptr(uint64 *data,
 
 //---------------------------------------------------------------------------//   
 void 
-Node::set(uint64 *data,
+Node::set(const uint64 *data,
           index_t num_elements,
           index_t offset,
           index_t stride,
@@ -1750,7 +1750,7 @@ Node::set(uint64 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_float32_ptr(float32 *data,
+Node::set_float32_ptr(const float32 *data,
                       index_t num_elements,
                       index_t offset,
                       index_t stride,
@@ -1766,19 +1766,19 @@ Node::set_float32_ptr(float32 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(float32 *data,
-         index_t num_elements,
-         index_t offset,
-         index_t stride,
-         index_t element_bytes,
-         index_t endianness)
+Node::set(const float32 *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
 {
     set_float32_ptr(data,num_elements,offset,stride,element_bytes,endianness);
 }
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_float64_ptr(float64 *data, 
+Node::set_float64_ptr(const float64 *data, 
                       index_t num_elements,
                       index_t offset,
                       index_t stride,
@@ -1794,7 +1794,7 @@ Node::set_float64_ptr(float64 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(float64 *data, 
+Node::set(const float64 *data, 
           index_t num_elements,
           index_t offset,
           index_t stride,
@@ -1813,7 +1813,7 @@ Node::set(float64 *data,
 #ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
 void
-Node::set(signed char *data,
+Node::set(const signed char *data,
           index_t num_elements,
           index_t offset,
           index_t stride,
@@ -1829,7 +1829,7 @@ Node::set(signed char *data,
 
 //-----------------------------------------------------------------------------
 void
-Node::set(unsigned char *data,
+Node::set(const unsigned char *data,
           index_t num_elements,
           index_t offset,
           index_t stride,
@@ -1850,7 +1850,7 @@ Node::set(unsigned char *data,
 #ifndef CONDUIT_USE_SHORT
 //-----------------------------------------------------------------------------
 void
-Node::set(short *data,
+Node::set(const short *data,
           index_t num_elements,
           index_t offset,
           index_t stride,
@@ -1866,7 +1866,7 @@ Node::set(short *data,
 
 //-----------------------------------------------------------------------------
 void
-Node::set(unsigned short *data,
+Node::set(const unsigned short *data,
           index_t num_elements,
           index_t offset,
           index_t stride,
@@ -1887,7 +1887,7 @@ Node::set(unsigned short *data,
 #ifndef CONDUIT_USE_INT
 //-----------------------------------------------------------------------------
 void
-Node::set(int *data,
+Node::set(const int *data,
           index_t num_elements,
           index_t offset,
           index_t stride,
@@ -1903,7 +1903,7 @@ Node::set(int *data,
 
 //-----------------------------------------------------------------------------
 void
-Node::set(unsigned int *data,
+Node::set(const unsigned int *data,
           index_t num_elements,
           index_t offset,
           index_t stride,
@@ -1924,7 +1924,7 @@ Node::set(unsigned int *data,
 #ifndef CONDUIT_USE_LONG
 //-----------------------------------------------------------------------------
 void
-Node::set(long *data,
+Node::set(const long *data,
           index_t num_elements,
           index_t offset,
           index_t stride,
@@ -1940,7 +1940,7 @@ Node::set(long *data,
 
 //-----------------------------------------------------------------------------
 void
-Node::set(unsigned long *data,
+Node::set(const unsigned long *data,
           index_t num_elements,
           index_t offset,
           index_t stride,
@@ -1962,7 +1962,7 @@ Node::set(unsigned long *data,
 #ifndef CONDUIT_USE_FLOAT
 //-----------------------------------------------------------------------------
 void
-Node::set(float *data,
+Node::set(const float *data,
           index_t num_elements,
           index_t offset,
           index_t stride,
@@ -1983,7 +1983,7 @@ Node::set(float *data,
 #ifndef CONDUIT_USE_DOUBLE
 //-----------------------------------------------------------------------------
 void
-Node::set(double *data,
+Node::set(const double *data,
           index_t num_elements,
           index_t offset,
           index_t stride,
@@ -3011,12 +3011,12 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_int8_ptr(const std::string &path,
-                       int8  *data,
-                       index_t num_elements,
-                       index_t offset,
-                       index_t stride,
-                       index_t element_bytes,
-                       index_t endianness)
+                        const int8  *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
 {
     fetch(path).set_int8_ptr(data,
                              num_elements,
@@ -3029,7 +3029,7 @@ Node::set_path_int8_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               int8  *data,
+               const int8  *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -3048,7 +3048,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_int16_ptr(const std::string &path,
-                         int16 *data, 
+                         const int16 *data, 
                          index_t num_elements,
                          index_t offset,
                          index_t stride,
@@ -3066,7 +3066,7 @@ Node::set_path_int16_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               int16 *data, 
+               const int16 *data, 
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -3085,7 +3085,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_int32_ptr(const std::string &path,
-                         int32 *data,
+                         const int32 *data,
                          index_t num_elements,
                          index_t offset,
                          index_t stride,
@@ -3103,7 +3103,7 @@ Node::set_path_int32_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               int32 *data,
+               const int32 *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -3122,7 +3122,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_int64_ptr(const std::string &path,
-                         int64 *data,
+                         const int64 *data,
                          index_t num_elements,
                          index_t offset,
                          index_t stride,
@@ -3140,7 +3140,7 @@ Node::set_path_int64_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               int64 *data,
+               const int64 *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -3163,7 +3163,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               uint8  *data,
+               const uint8  *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -3181,7 +3181,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_uint8_ptr(const std::string &path,
-                         uint8  *data,
+                         const uint8  *data,
                          index_t num_elements,
                          index_t offset,
                          index_t stride,
@@ -3199,7 +3199,7 @@ Node::set_path_uint8_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_uint16_ptr(const std::string &path,
-                          uint16 *data,
+                          const uint16 *data,
                           index_t num_elements,
                           index_t offset,
                           index_t stride,
@@ -3217,7 +3217,7 @@ Node::set_path_uint16_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               uint16 *data,
+               const uint16 *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -3236,7 +3236,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_uint32_ptr(const std::string &path,
-                          uint32 *data, 
+                          const uint32 *data,
                           index_t num_elements,
                           index_t offset,
                           index_t stride,
@@ -3253,7 +3253,7 @@ Node::set_path_uint32_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               uint32 *data, 
+               const uint32 *data, 
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -3272,7 +3272,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_uint64_ptr(const std::string &path,
-                          uint64 *data,
+                          const uint64 *data,
                           index_t num_elements,
                           index_t offset,
                           index_t stride,
@@ -3290,7 +3290,7 @@ Node::set_path_uint64_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               uint64 *data,
+               const uint64 *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -3313,7 +3313,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_float32_ptr(const std::string &path,
-                           float32 *data,
+                           const float32 *data,
                            index_t num_elements,
                            index_t offset,
                            index_t stride,
@@ -3331,7 +3331,7 @@ Node::set_path_float32_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               float32 *data,
+               const float32 *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -3350,7 +3350,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_float64_ptr(const std::string &path,
-                           float64 *data, 
+                           const float64 *data, 
                            index_t num_elements,
                            index_t offset,
                            index_t stride,
@@ -3367,7 +3367,7 @@ Node::set_path_float64_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               float64 *data, 
+               const float64 *data, 
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -3392,7 +3392,7 @@ Node::set_path(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path(const std::string &path,
-               signed char *data,
+               const signed char *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -3410,7 +3410,7 @@ Node::set_path(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path(const std::string &path,
-               unsigned char *data,
+               const unsigned char *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -3433,7 +3433,7 @@ Node::set_path(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path(const std::string &path,
-               short *data,
+               const short *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -3451,7 +3451,7 @@ Node::set_path(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path(const std::string &path,
-               unsigned short *data,
+               const unsigned short *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -3474,7 +3474,7 @@ Node::set_path(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path(const std::string &path,
-               int *data,
+               const int *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -3492,7 +3492,7 @@ Node::set_path(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path(const std::string &path,
-               unsigned int *data,
+               const unsigned int *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -3515,7 +3515,7 @@ Node::set_path(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path(const std::string &path,
-               long *data,
+               const long *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -3533,7 +3533,7 @@ Node::set_path(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path(const std::string &path,
-               unsigned long *data,
+               const unsigned long *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -3557,7 +3557,7 @@ Node::set_path(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path(const std::string &path,
-               float *data,
+               const float *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -3580,7 +3580,7 @@ Node::set_path(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path(const std::string &path,
-               double *data,
+               const double *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
