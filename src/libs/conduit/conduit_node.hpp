@@ -446,7 +446,6 @@ public:
 
 //-----------------------------------------------------------------------------
 // -- set for bitwidth style std::vector types ---
-//  TODO IMP: move std::vector cases
 //-----------------------------------------------------------------------------
     //-------------------------------------------------------------------------
     // signed integer array types via std::vector
@@ -532,14 +531,14 @@ public:
     //-------------------------------------------------------------------------
     // signed integer pointer cases
     //-------------------------------------------------------------------------
-    void set_int8_ptr(const int8  *data,
+    void set_int8_ptr(const int8 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::int8),
                       index_t element_bytes = sizeof(conduit::int8),
                       index_t endianness = Endianness::DEFAULT_ID);
 
-    void set(const int8  *data,
+    void set(const int8 *data,
              index_t num_elements = 1,
              index_t offset = 0,
              index_t stride = sizeof(conduit::int8),
@@ -595,14 +594,14 @@ public:
     //-------------------------------------------------------------------------
     // unsigned integer pointer cases
     //-------------------------------------------------------------------------
-    void set_uint8_ptr(const uint8  *data,
+    void set_uint8_ptr(const uint8 *data,
                        index_t num_elements = 1,
                        index_t offset = 0,
                        index_t stride = sizeof(conduit::uint8),
                        index_t element_bytes = sizeof(conduit::uint8),
                        index_t endianness = Endianness::DEFAULT_ID);
 
-    void set(const uint8  *data,
+    void set(const uint8 *data,
              index_t num_elements = 1,
              index_t offset = 0,
              index_t stride = sizeof(conduit::uint8),
@@ -625,14 +624,14 @@ public:
              index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
-    void set_uint32_ptr(const uint32 *data, 
+    void set_uint32_ptr(const uint32 *data,
                         index_t num_elements = 1,
                         index_t offset = 0,
                         index_t stride = sizeof(conduit::uint32),
                         index_t element_bytes = sizeof(conduit::uint32),
                         index_t endianness = Endianness::DEFAULT_ID);
 
-    void set(const uint32 *data, 
+    void set(const uint32 *data,
              index_t num_elements = 1,
              index_t offset = 0,
              index_t stride = sizeof(conduit::uint32),
@@ -672,14 +671,14 @@ public:
              index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
-    void set_float64_ptr(const float64 *data, 
+    void set_float64_ptr(const float64 *data,
                          index_t num_elements = 1,
                          index_t offset = 0,
                          index_t stride = sizeof(conduit::float64),
                          index_t element_bytes = sizeof(conduit::float64),
                          index_t endianness = Endianness::DEFAULT_ID);
 
-    void set(const float64 *data, 
+    void set(const float64 *data,
              index_t num_elements = 1,
              index_t offset = 0,
              index_t stride = sizeof(conduit::float64),
@@ -923,7 +922,7 @@ public:
     void set_path_int8_array(const std::string &path,
                              const int8_array  &data);
 
-    void set_path(const std::string &path, const int8_array  &data);
+    void set_path(const std::string &path, const int8_array &data);
 
     //-------------------------------------------------------------------------
     void set_path_int16_array(const std::string &path,
@@ -1170,7 +1169,7 @@ public:
     // signed integer pointer cases
     //-------------------------------------------------------------------------
     void set_path_int8_ptr(const std::string &path,
-                           const int8  *data,
+                           const int8 *data,
                            index_t num_elements = 1,
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::int8),
@@ -1178,7 +1177,7 @@ public:
                            index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path(const std::string &path,
-                  const int8  *data,
+                  const int8 *data,
                   index_t num_elements = 1,
                   index_t offset = 0,
                   index_t stride = sizeof(conduit::int8),
@@ -1274,7 +1273,7 @@ public:
 
     //-------------------------------------------------------------------------
     void set_path_uint32_ptr(const std::string &path,
-                             const uint32 *data, 
+                             const uint32 *data,
                              index_t num_elements = 1,
                              index_t offset = 0,
                              index_t stride = sizeof(conduit::uint32),
@@ -1282,7 +1281,7 @@ public:
                              index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path(const std::string &path,
-                  const uint32 *data, 
+                  const uint32 *data,
                   index_t num_elements = 1,
                   index_t offset = 0,
                   index_t stride = sizeof(conduit::uint32),
@@ -1335,7 +1334,7 @@ public:
                               index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path(const std::string &path,
-                  const float64 *data, 
+                  const float64 *data,
                   index_t num_elements = 1,
                   index_t offset = 0,
                   index_t stride = sizeof(conduit::float64),
@@ -1950,7 +1949,7 @@ public:
     // signed integer pointer cases
     //-------------------------------------------------------------------------
     void set_path_external_int8_ptr(const std::string &path,
-                                    int8  *data,
+                                    int8 *data,
                                     index_t num_elements = 1,
                                     index_t offset = 0,
                                     index_t stride = sizeof(conduit::int8),
@@ -1958,7 +1957,7 @@ public:
                                     index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path_external(const std::string &path,
-                           int8  *data,
+                           int8 *data,
                            index_t num_elements = 1,
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::int8),
@@ -2230,7 +2229,7 @@ public:
                                       const int8_array &data);
 
     void set_path_external(const std::string &path,
-                           const int8_array  &data);
+                           const int8_array &data);
 
     //-------------------------------------------------------------------------
     void set_path_external_int16_array(const std::string &path,
@@ -2503,7 +2502,7 @@ public:
 //-----------------------------------------------------------------------------
     Node &operator=(const Node &node);
     Node &operator=(const DataType &dtype);
-    Node &operator=(const Schema  &schema);
+    Node &operator=(const Schema &schema);
 
 //-----------------------------------------------------------------------------
 // --  assignment operators for scalar types ---
@@ -2711,8 +2710,6 @@ public:
     /// update() adds children from n_src to current Node (analogous to a 
     /// python dictionary update) 
     ///
-    /// NOTE: The input should be const, but the lack of a const fetch prevents
-    /// this for now.
     void        update(const Node &n_src);
 
     /// update_compatible() copies data from the children in n_src that match
@@ -2827,7 +2824,7 @@ public:
 // -- Node::Value Helper class --
 //
 // This class allows us to support casting return semantics.
-// we can't support these methods directly in conduit::Node  because doing so
+// we can't support these methods directly in conduit::Node because doing so
 // undermines our operator=() overloads. 
 //-----------------------------------------------------------------------------
     class CONDUIT_API Value
@@ -3115,9 +3112,9 @@ public:
 //-----------------------------------------------------------------------------
     // schema access
     const Schema     &schema() const 
-                        { return *m_schema;}   
+                        { return *m_schema;}
 
-    const DataType   &dtype() const       
+    const DataType   &dtype() const
                         { return m_schema->dtype();}
 
     Schema          *schema_ptr() 
@@ -3129,7 +3126,7 @@ public:
                         {return !m_alloced;}
 
     // check if this node is the root of a tree nodes.
-    bool             is_root() const 
+    bool             is_root() const
                         {return m_parent == NULL;}
 
     // parent access
@@ -3143,7 +3140,7 @@ public:
 
     /// stride() * (num_elements()-1) + element_bytes() summed over all 
     /// leaves 
-    index_t          total_strided_bytes() const 
+    index_t          total_strided_bytes() const
                         { return m_schema->total_strided_bytes();}
 
     /// num_elements() * element_bytes() summed over all leaves 
@@ -3790,15 +3787,15 @@ private:
     //-------------------------------------------------------------------------
     // the generic to_json methods are used by the specialized cases 
     //-------------------------------------------------------------------------
-    std::string         to_json_generic(bool detailed, 
-                                        index_t indent=2, 
+    std::string         to_json_generic(bool detailed,
+                                        index_t indent=2,
                                         index_t depth=0,
                                         const std::string &pad=" ",
                                         const std::string &eoe="\n") const;
 
     void                to_json_generic(const std::string &stream_path,
-                                        bool detailed, 
-                                        index_t indent=2, 
+                                        bool detailed,
+                                        index_t indent=2,
                                         index_t depth=0,
                                         const std::string &pad=" ",
                                         const std::string &eoe="\n") const;

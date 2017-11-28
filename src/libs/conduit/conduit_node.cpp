@@ -1517,7 +1517,7 @@ Node::set(const std::vector<double> &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_int8_ptr(const int8  *data,
+Node::set_int8_ptr(const int8 *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -1533,7 +1533,7 @@ Node::set_int8_ptr(const int8  *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(const int8  *data,
+Node::set(const int8 *data,
           index_t num_elements,
           index_t offset,
           index_t stride,
@@ -1545,7 +1545,7 @@ Node::set(const int8  *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_int16_ptr(const int16 *data, 
+Node::set_int16_ptr(const int16 *data,
                     index_t num_elements,
                     index_t offset,
                     index_t stride,
@@ -1561,7 +1561,7 @@ Node::set_int16_ptr(const int16 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(const int16 *data, 
+Node::set(const int16 *data,
           index_t num_elements,
           index_t offset,
           index_t stride,
@@ -3011,7 +3011,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_int8_ptr(const std::string &path,
-                        const int8  *data,
+                        const int8 *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -3029,7 +3029,7 @@ Node::set_path_int8_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               const int8  *data,
+               const int8 *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -3163,7 +3163,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               const uint8  *data,
+               const uint8 *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
