@@ -86,24 +86,32 @@
 #define PyConduit_Node_Check_PROTO (PyObject* obj)
 
 //---------------------------------------------------------------------------//
-// PyNode_Object *PyConduit_Node_python_create();
+// PyNode_Object *PyConduit_Node_Python_Create();
 //---------------------------------------------------------------------------//
-#define PyConduit_Node_python_create_INDEX 1
-#define PyConduit_Node_python_create_RETURN PyObject*
-#define PyConduit_Node_python_create_PROTO ()
+#define PyConduit_Node_Python_Create_INDEX 1
+#define PyConduit_Node_Python_Create_RETURN PyObject*
+#define PyConduit_Node_Python_Create_PROTO ()
+
+//---------------------------------------------------------------------------//
+// PyNode_Object *PyConduit_Node_Python_Wrap(Node, owns);
+//---------------------------------------------------------------------------//
+#define PyConduit_Node_Python_Wrap_INDEX 2
+#define PyConduit_Node_Python_Wrap_RETURN PyObject*
+#define PyConduit_Node_Python_Wrap_PROTO (conduit::Node *n, int owns)
 
 
 //---------------------------------------------------------------------------//
 // Node     *PyConduit_Node_Get_Node_Ptr(PyObject* obj);
 //---------------------------------------------------------------------------//
-#define PyConduit_Node_Get_Node_Ptr_INDEX 2
+#define PyConduit_Node_Get_Node_Ptr_INDEX 3
 #define PyConduit_Node_Get_Node_Ptr_RETURN conduit::Node*
 #define PyConduit_Node_Get_Node_Ptr_PROTO (PyObject* obj)
+
 
 //---------------------------------------------------------------------------//
 // Total number of CAPI pointers
 //---------------------------------------------------------------------------//
-#define PyConduit_API_number_of_entries 3
+#define PyConduit_API_number_of_entries 4
 
 //---------------------------------------------------------------------------//
 #ifdef CONDUIT_MODULE
@@ -113,9 +121,12 @@
 
 static PyConduit_Node_Check_RETURN PyConduit_Node_Check PyConduit_Node_Check_PROTO;
 
-static PyConduit_Node_python_create_RETURN PyConduit_Node_python_create PyConduit_Node_python_create_PROTO;
+static PyConduit_Node_Python_Create_RETURN PyConduit_Node_Python_Create PyConduit_Node_Python_Create_PROTO;
+
+static PyConduit_Node_Python_Wrap_RETURN PyConduit_Node_Python_Wrap PyConduit_Node_Python_Wrap_PROTO;
 
 static PyConduit_Node_Get_Node_Ptr_RETURN PyConduit_Node_Get_Node_Ptr PyConduit_Node_Get_Node_Ptr_PROTO;
+
 
 //---------------------------------------------------------------------------//
 #else
@@ -131,12 +142,19 @@ static void **PyConduit_API;
  (*(PyConduit_Node_Check_RETURN (*)PyConduit_Node_Check_PROTO) PyConduit_API[PyConduit_Node_Check_INDEX])
 
 //---------------------------------------------------------------------------//
-#define PyConduit_Node_python_create  \
- (*(PyConduit_Node_python_create_RETURN (*)PyConduit_Node_python_create_PROTO) PyConduit_API[PyConduit_Node_python_create_INDEX])
+#define PyConduit_Node_Python_Create  \
+ (*(PyConduit_Node_Python_Create_RETURN (*)PyConduit_Node_Python_Create_PROTO) PyConduit_API[PyConduit_Node_Python_Create_INDEX])
+
+//---------------------------------------------------------------------------//
+#define PyConduit_Node_Python_Wrap  \
+ (*(PyConduit_Node_Python_Wrap_RETURN (*)PyConduit_Node_Python_Wrap_PROTO) PyConduit_API[PyConduit_Node_Python_Wrap_INDEX])
 
 //---------------------------------------------------------------------------//
 #define PyConduit_Node_Get_Node_Ptr  \
  (*(PyConduit_Node_Get_Node_Ptr_RETURN (*)PyConduit_Node_Get_Node_Ptr_PROTO) PyConduit_API[PyConduit_Node_Get_Node_Ptr_INDEX])
+
+
+
 
 //---------------------------------------------------------------------------//
 // import_conduit()
