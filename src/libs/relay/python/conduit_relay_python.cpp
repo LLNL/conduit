@@ -169,7 +169,7 @@ static PyObject *
 PyRelay_about()
 {
     //create and return a node with the result of about
-    PyObject *py_node_res = PyConduit_Node_python_create();
+    PyObject *py_node_res = PyConduit_Node_Python_Create();
     Node *node = PyConduit_Node_Get_Node_Ptr(py_node_res);
     conduit::relay::about(*node);
     return (PyObject*)py_node_res;

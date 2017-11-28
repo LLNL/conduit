@@ -219,28 +219,27 @@ struct PyConduit_Node
 };
 
 //---------------------------------------------------------------------------//
-static PyConduit_DataType *PyConduit_DataType_python_create();
+static PyConduit_DataType *PyConduit_DataType_Python_Create();
 static int       PyConduit_DataType_Check(PyObject* obj);
 
 //---------------------------------------------------------------------------//
 static int       PyConduit_Generator_Check(PyObject* obj);
 
 //---------------------------------------------------------------------------//
-static PyObject* PyConduit_Schema_python_wrap(Schema *schema,int python_owns);
+static PyObject* PyConduit_Schema_Python_Wrap(Schema *schema,int python_owns);
 static int       PyConduit_Schema_Check(PyObject* obj);
 
 //---------------------------------------------------------------------------//
-// static PyConduit_Node* PyConduit_Node_python_create();
-static PyObject* PyConduit_Node_python_wrap(Node *node,int python_owns);
-static int       PyConduit_Node_SetFromPython(Node& node, PyObject* value);
-static PyObject* PyConduit_createNumpyType(Node& node, int type);
-static PyObject* PyConduit_convertNodeToPython(Node& node);
+static int       PyConduit_Node_Set_From_Python(Node& node, PyObject* value);
+static PyObject* PyConduit_Create_Numpy_Type(Node& node, int type);
+static PyObject* PyConduit_Convert_Node_To_Python(Node& node);
 
 //-----------------------------------------------------------------------------
 // c api decls from conduit_python.hpp
 //-----------------------------------------------------------------------------
 //static int       PyConduit_Node_Check(PyObject* obj);
-//static PyObject *PyConduit_Node_python_create();
+//static PyObject *PyConduit_Node_Python_Create();
+//static PyObject *PyConduit_Node_Python_Wrap(Node *n, int owns);
 //static Node     *PyConduit_Node_Get_Node_Ptr(PyObject* obj);
 
 
@@ -521,7 +520,7 @@ PyConduit_DataType_Parse_Standard_Set_Keyword_Args(PyObject *args,
 static PyObject *
 PyConduit_DataType_empty(PyObject *) // cls -- unused
 {
-    PyConduit_DataType *res = PyConduit_DataType_python_create();
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
     res->dtype.set_id(DataType::EMPTY_ID);
     return (PyObject*)res;
 }
@@ -530,7 +529,7 @@ PyConduit_DataType_empty(PyObject *) // cls -- unused
 PyObject *
 PyConduit_DataType_object(PyObject *) // cls -- unused
 {
-    PyConduit_DataType *res = PyConduit_DataType_python_create();
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
     res->dtype.set_id(DataType::OBJECT_ID);
     return (PyObject*)res;
 }
@@ -539,7 +538,7 @@ PyConduit_DataType_object(PyObject *) // cls -- unused
 PyObject *
 PyConduit_DataType_list(PyObject *) // cls -- unused
 {
-    PyConduit_DataType *res = PyConduit_DataType_python_create();
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
     res->dtype.set_id(DataType::LIST_ID);
     return (PyObject*)res;
 }
@@ -574,7 +573,7 @@ PyConduit_DataType_int8(PyObject *, // cls -- unused
         return NULL;
     }
     
-    PyConduit_DataType *res = PyConduit_DataType_python_create();
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
     
     res->dtype.set(DataType::int8(num_elements,
                                   offset,
@@ -611,7 +610,7 @@ PyConduit_DataType_int16(PyObject *, // cls -- unused
         return NULL;
     }
 
-    PyConduit_DataType *res = PyConduit_DataType_python_create();
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
         
     res->dtype.set(DataType::int16(num_elements,
                                    offset,
@@ -646,7 +645,7 @@ PyConduit_DataType_int32(PyObject *, // cls -- unused
         return NULL;
     }
 
-    PyConduit_DataType *res = PyConduit_DataType_python_create();
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
         
     res->dtype.set(DataType::int32(num_elements,
                                    offset,
@@ -681,7 +680,7 @@ PyConduit_DataType_int64(PyObject *, // cls -- unused
         return NULL;
     }
     
-    PyConduit_DataType *res = PyConduit_DataType_python_create();
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
     
     res->dtype.set(DataType::int64(num_elements,
                                    offset,
@@ -722,7 +721,7 @@ PyConduit_DataType_uint8(PyObject *, // cls -- unused
         return NULL;
     }
     
-    PyConduit_DataType *res = PyConduit_DataType_python_create();
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
     
     res->dtype.set(DataType::uint8(num_elements,
                                    offset,
@@ -758,7 +757,7 @@ PyConduit_DataType_uint16(PyObject *, // cls -- unused
         return NULL;
     }
     
-    PyConduit_DataType *res = PyConduit_DataType_python_create();
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
     
     res->dtype.set(DataType::uint16(num_elements,
                                     offset,
@@ -793,7 +792,7 @@ PyConduit_DataType_uint32(PyObject *, // cls -- unused
         return NULL;
     }
 
-    PyConduit_DataType *res = PyConduit_DataType_python_create();    
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();    
 
     res->dtype.set(DataType::uint32(num_elements,
                                     offset,
@@ -828,7 +827,7 @@ PyConduit_DataType_uint64(PyObject *, // cls -- unused
         return NULL;
     }
 
-    PyConduit_DataType *res = PyConduit_DataType_python_create();
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
         
     res->dtype.set(DataType::uint64(num_elements,
                                     offset,
@@ -868,7 +867,7 @@ PyConduit_DataType_float32(PyObject *, // cls -- unused
         return NULL;
     }
 
-    PyConduit_DataType *res = PyConduit_DataType_python_create();
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
     
     res->dtype.set(DataType::float32(num_elements,
                                      offset,
@@ -902,7 +901,7 @@ PyConduit_DataType_float64(PyObject *, // cls -- unused
         return NULL;
     }
 
-    PyConduit_DataType *res = PyConduit_DataType_python_create();
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
         
     res->dtype.set(DataType::float64(num_elements,
                                      offset,
@@ -941,7 +940,7 @@ PyConduit_DataType_c_char(PyObject *, // cls -- unused
         return NULL;
     }
 
-    PyConduit_DataType *res = PyConduit_DataType_python_create();
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
         
     res->dtype.set(DataType::c_char(num_elements,
                                     offset,
@@ -976,7 +975,7 @@ PyConduit_DataType_c_short(PyObject *, // cls -- unused
         return NULL;
     }
 
-    PyConduit_DataType *res = PyConduit_DataType_python_create();
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
     
     res->dtype.set(DataType::c_short(num_elements,
                                      offset,
@@ -1011,7 +1010,7 @@ PyConduit_DataType_c_int(PyObject *, // cls -- unused
         return NULL;
     }
 
-    PyConduit_DataType *res = PyConduit_DataType_python_create();
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
         
     res->dtype.set(DataType::c_int(num_elements,
                                    offset,
@@ -1045,7 +1044,7 @@ PyConduit_DataType_c_long(PyObject *, // cls -- unused
         return NULL;
     }
 
-    PyConduit_DataType *res = PyConduit_DataType_python_create();
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
     
     res->dtype.set(DataType::c_long(num_elements,
                                     offset,
@@ -1086,7 +1085,7 @@ PyConduit_DataType_c_unsigned_char(PyObject *, // cls -- unused
         return NULL;
     }
 
-    PyConduit_DataType *res = PyConduit_DataType_python_create();
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
     
     res->dtype.set(DataType::c_unsigned_char(num_elements,
                                              offset,
@@ -1121,7 +1120,7 @@ PyConduit_DataType_c_unsigned_short(PyObject *, // cls -- unused
         return NULL;
     }
     
-    PyConduit_DataType *res = PyConduit_DataType_python_create();
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
     
     res->dtype.set(DataType::c_unsigned_short(num_elements,
                                               offset,
@@ -1157,7 +1156,7 @@ PyConduit_DataType_c_unsigned_int(PyObject *, // cls -- unused
         return NULL;
     }
     
-    PyConduit_DataType *res = PyConduit_DataType_python_create();
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
     
     res->dtype.set(DataType::c_unsigned_int(num_elements,
                                             offset,
@@ -1192,7 +1191,7 @@ PyConduit_DataType_c_unsigned_long(PyObject *, // cls -- unused
         return NULL;
     }
 
-    PyConduit_DataType *res = PyConduit_DataType_python_create();    
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();    
     res->dtype.set(DataType::c_unsigned_long(num_elements,
                                              offset,
                                              stride,
@@ -1231,7 +1230,7 @@ PyConduit_DataType_c_float(PyObject *, // cls -- unused
         return NULL;
     }
 
-    PyConduit_DataType *res = PyConduit_DataType_python_create();
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
     
     res->dtype.set(DataType::c_float(num_elements,
                                      offset,
@@ -1266,7 +1265,7 @@ PyConduit_DataType_c_double(PyObject *, // cls -- unused
         return NULL;
     }
 
-    PyConduit_DataType *res = PyConduit_DataType_python_create();
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
     
     res->dtype.set(DataType::c_double(num_elements,
                                       offset,
@@ -2131,7 +2130,7 @@ static PyTypeObject PyConduit_DataType_TYPE = {
 
 //---------------------------------------------------------------------------//
 static PyConduit_DataType *
-PyConduit_DataType_python_create()
+PyConduit_DataType_Python_Create()
 {
     PyTypeObject* type = (PyTypeObject*)&PyConduit_DataType_TYPE;
     return (PyConduit_DataType*)type->tp_alloc(type,0);
@@ -2549,7 +2548,7 @@ PyConduit_Schema_python_attach(PyConduit_Schema *self)
 static PyObject *
 PyConduit_Schema_dtype(PyConduit_Schema *self)
 {
-    PyConduit_DataType *retval = PyConduit_DataType_python_create();
+    PyConduit_DataType *retval = PyConduit_DataType_Python_Create();
     retval->dtype = self->schema->dtype();
     return (PyObject*)retval;
 }
@@ -2610,7 +2609,7 @@ PyConduit_Schema_parent(PyConduit_Schema* self)
     else
     {
         // python owned == 0 (at least for this instance)
-        return PyConduit_Schema_python_wrap(self->schema->parent(),0);
+        return PyConduit_Schema_Python_Wrap(self->schema->parent(),0);
     }
 }
 
@@ -2628,7 +2627,7 @@ PyConduit_Schema_get_item(PyConduit_Schema* self,
     PyObject* retval = NULL;
     char* ckey = PyString_AsString(key);
 
-    retval = PyConduit_Schema_python_wrap(self->schema->fetch_ptr(ckey),
+    retval = PyConduit_Schema_Python_Wrap(self->schema->fetch_ptr(ckey),
                                           0); // schema owns
     
     PyString_AsString_Cleanup(ckey);
@@ -2939,7 +2938,7 @@ PyConduit_NodeIterator_index(PyConduit_NodeIterator *self)
 static PyObject *
 PyConduit_NodeIterator_node(PyConduit_NodeIterator *self)
 {
-    return PyConduit_Node_python_wrap(&(self->itr.node()),0);
+    return PyConduit_Node_Python_Wrap(&(self->itr.node()),0);
 }
 
 //---------------------------------------------------------------------------//
@@ -2971,7 +2970,7 @@ PyConduit_NodeIterator_next(PyConduit_NodeIterator *self)
     if(self->itr.has_next())
     {
         Node &n = self->itr.next();
-        return PyConduit_Node_python_wrap(&n,0);
+        return PyConduit_Node_Python_Wrap(&n,0);
     }
     else
     {
@@ -2987,7 +2986,7 @@ PyConduit_NodeIterator_peek_next(PyConduit_NodeIterator *self)
     if(self->itr.has_next())
     {
         Node &n = self->itr.peek_next();
-        return PyConduit_Node_python_wrap(&n,0);
+        return PyConduit_Node_Python_Wrap(&n,0);
     }
     else
     {
@@ -3017,7 +3016,7 @@ PyConduit_NodeIterator_previous(PyConduit_NodeIterator *self)
     if(self->itr.has_previous())
     {
         Node &n = self->itr.previous();
-        return PyConduit_Node_python_wrap(&n,0);
+        return PyConduit_Node_Python_Wrap(&n,0);
     }
     else
     {
@@ -3033,7 +3032,7 @@ PyConduit_NodeIterator_peek_previous(PyConduit_NodeIterator *self)
     if(self->itr.has_previous())
     {
         Node &n = self->itr.peek_previous();
-        return PyConduit_Node_python_wrap(&n,0);
+        return PyConduit_Node_Python_Wrap(&n,0);
     }
     else
     {
@@ -3056,7 +3055,7 @@ static PyObject *
 PyConduit_NodeIterator_info(PyConduit_NodeIterator *self)
 {
     //create and return a node with the result of info
-    PyConduit_Node *retval = (PyConduit_Node *)PyConduit_Node_python_create();
+    PyConduit_Node *retval = (PyConduit_Node *)PyConduit_Node_Python_Create();
     self->itr.info(*retval->node);
     return (PyObject*)retval;
 }
@@ -3185,7 +3184,7 @@ static PyTypeObject PyConduit_NodeIterator_TYPE = {
 
 //---------------------------------------------------------------------------//
 static PyConduit_NodeIterator *
-PyConduit_NodeIterator_python_create()
+PyConduit_NodeIterator_Python_Create()
 {
     PyTypeObject* type = (PyTypeObject*)&PyConduit_NodeIterator_TYPE;
     return (PyConduit_NodeIterator*)type->tp_alloc(type,0);
@@ -3272,7 +3271,7 @@ PyConduit_Node_init(PyConduit_Node* self,
 
     if (value)
     {
-        return (PyConduit_Node_SetFromPython(*self->node, value));
+        return (PyConduit_Node_Set_From_Python(*self->node, value));
     }
     else 
     {
@@ -3326,11 +3325,11 @@ PyConduit_Node_GetItem(PyConduit_Node* self,
     if(self->node->has_path(ckey))
     {
         Node& node = (*self->node)[ckey];
-        retval = PyConduit_convertNodeToPython(node);
+        retval = PyConduit_Convert_Node_To_Python(node);
     }
     else
     {
-        retval = PyConduit_Node_python_wrap(&(*self->node)[ckey],0);
+        retval = PyConduit_Node_Python_Wrap(&(*self->node)[ckey],0);
     }
     
     PyString_AsString_Cleanup(ckey);
@@ -3380,7 +3379,7 @@ static PyObject *
 PyConduit_Node_value(PyConduit_Node* self)
 {
     PyObject* retval = NULL;
-    retval = PyConduit_convertNodeToPython(*self->node);
+    retval = PyConduit_Convert_Node_To_Python(*self->node);
     return (retval);
 }
 
@@ -3564,7 +3563,7 @@ PyConduit_Node_fetch(PyConduit_Node* self,
          return NULL;
      }
 
-    retval = PyConduit_Node_python_wrap(&(*self->node).fetch(key),0);
+    retval = PyConduit_Node_Python_Wrap(&(*self->node).fetch(key),0);
     return (retval);
 }
 
@@ -3581,7 +3580,7 @@ PyConduit_Node_child(PyConduit_Node* self,
          return NULL;
      }
 
-    retval = PyConduit_Node_python_wrap(&(*self->node).child(idx),0);
+    retval = PyConduit_Node_Python_Wrap(&(*self->node).child(idx),0);
     return (retval);
 }
 
@@ -3641,7 +3640,7 @@ PyConduit_Node_child_names(PyConduit_Node *self)
 static PyObject *
 PyConduit_Node_append(PyConduit_Node* self)
 {
-    return  PyConduit_Node_python_wrap(&(self->node->append()),0);
+    return  PyConduit_Node_Python_Wrap(&(self->node->append()),0);
 }
 
 
@@ -3690,14 +3689,14 @@ static PyObject *
 PyConduit_Node_schema(PyConduit_Node *self)
 {
     // python_owns = 0
-    return (PyConduit_Schema_python_wrap(self->node->schema_ptr(),0));
+    return (PyConduit_Schema_Python_Wrap(self->node->schema_ptr(),0));
 }
 
 //---------------------------------------------------------------------------//
 static PyObject *
 PyConduit_Node_dtype(PyConduit_Node *self)
 {
-    PyConduit_DataType *retval = PyConduit_DataType_python_create();
+    PyConduit_DataType *retval = PyConduit_DataType_Python_Create();
     retval->dtype = self->node->dtype();
     return (PyObject*)retval;
 }
@@ -3730,7 +3729,7 @@ PyConduit_Node_parent(PyConduit_Node* self)
     }
     else
     {
-        return PyConduit_Node_python_wrap(self->node->parent(),0);
+        return PyConduit_Node_Python_Wrap(self->node->parent(),0);
     }
 }
 
@@ -3770,7 +3769,7 @@ PyConduit_Node_is_compact(PyConduit_Node *self)
 static PyObject * 
 PyConduit_Node_info(PyConduit_Node *self)
 {
-    PyConduit_Node *retval = (PyConduit_Node*)PyConduit_Node_python_create();
+    PyConduit_Node *retval = (PyConduit_Node*)PyConduit_Node_Python_Create();
     self->node->info(*retval->node);
     return (PyObject*)retval;
 }
@@ -3790,7 +3789,7 @@ static int PyConduit_Node_SetItem(PyConduit_Node *self,
     char* ckey = PyString_AsString(key);
     Node& node = (*self->node)[ckey];
     PyString_AsString_Cleanup(ckey);
-    return (PyConduit_Node_SetFromPython(node, value));
+    return (PyConduit_Node_Set_From_Python(node, value));
 }
 
 //---------------------------------------------------------------------------//
@@ -3800,7 +3799,7 @@ PyConduit_Node_iter(PyObject *self)
     PyConduit_Node *py_n = (PyConduit_Node *)self;
 
     PyConduit_NodeIterator *retval = NULL;
-    retval = PyConduit_NodeIterator_python_create();
+    retval = PyConduit_NodeIterator_Python_Create();
     retval->itr =  py_n->node->children();
 
     return ((PyObject *)retval);
@@ -3818,7 +3817,7 @@ PyConduit_Node_set(PyConduit_Node* self,
          return (NULL);
     }
 
-    if (PyConduit_Node_SetFromPython(*self->node, value))
+    if (PyConduit_Node_Set_From_Python(*self->node, value))
     {
          return (NULL);
     }
@@ -4311,7 +4310,7 @@ static PyObject*
 PyConduit_about()
 {
     //create and return a node with the result of about
-    PyObject *py_node_res = PyConduit_Node_python_create();
+    PyObject *py_node_res = PyConduit_Node_Python_Create();
     Node *node = PyConduit_Node_Get_Node_Ptr(py_node_res);
     conduit::about(*node);
     return (PyObject*)py_node_res;
@@ -4345,7 +4344,7 @@ PyConduit_Schema_Check(PyObject* obj)
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduit_Schema_python_wrap(Schema *schema, int python_owns)
+PyConduit_Schema_Python_Wrap(Schema *schema, int python_owns)
 {
     PyTypeObject *type = (PyTypeObject*)&PyConduit_Schema_TYPE;
 
@@ -4372,7 +4371,7 @@ PyConduit_Node_Get_Node_Ptr(PyObject *obj)
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduit_Node_python_wrap(Node *node, int python_owns)
+PyConduit_Node_Python_Wrap(Node *node, int python_owns)
 {
     PyTypeObject* type = (PyTypeObject*)&PyConduit_Node_TYPE;
     PyConduit_Node* retval = (PyConduit_Node*)type->tp_alloc(type, 0);
@@ -4381,19 +4380,20 @@ PyConduit_Node_python_wrap(Node *node, int python_owns)
     return ((PyObject*)retval);
 }
 
+
 //---------------------------------------------------------------------------//
 static PyObject*
-PyConduit_Node_python_create()
+PyConduit_Node_Python_Create()
 {
     Node *node = new Node();
     // python_owns = 1
-    return PyConduit_Node_python_wrap(node,1); 
+    return PyConduit_Node_Python_Wrap(node,1); 
 }
 
 
 //---------------------------------------------------------------------------//
 static int
-PyConduit_Node_SetFromPython(Node &node,
+PyConduit_Node_Set_From_Python(Node &node,
                              PyObject *value)
 {
     if (PyConduit_Node_Check(value))
@@ -4575,7 +4575,7 @@ PyConduit_Node_SetFromPython(Node &node,
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduit_createNumpyType(Node& node,
+PyConduit_Create_Numpy_Type(Node& node,
                           int type)
 {
     const DataType& dtype = node.dtype();
@@ -4603,7 +4603,7 @@ PyConduit_createNumpyType(Node& node,
 
 //---------------------------------------------------------------------------//
 static PyObject *
-PyConduit_convertNodeToPython(Node& node)
+PyConduit_Convert_Node_To_Python(Node& node)
 {
     const DataType& type = node.dtype();
     int numpy_type = -1;
@@ -4612,7 +4612,7 @@ PyConduit_convertNodeToPython(Node& node)
     switch (type.id()) {
         case DataType::EMPTY_ID:
         case DataType::OBJECT_ID: {
-            retval = PyConduit_Node_python_wrap(&node,0);
+            retval = PyConduit_Node_Python_Wrap(&node,0);
             break;
         }
         case DataType::CHAR8_STR_ID: {
@@ -4668,7 +4668,7 @@ PyConduit_convertNodeToPython(Node& node)
     if (type.id() != DataType::OBJECT_ID&&
         type.id() != DataType::CHAR8_STR_ID) {
 
-        retval = PyConduit_createNumpyType(node, numpy_type);
+        retval = PyConduit_Create_Numpy_Type(node, numpy_type);
     }
 
     return (retval);
@@ -5073,7 +5073,8 @@ void CONDUIT_PYTHON_API initconduit_python(void)
 
     /* Initialize the C API pointer array */
     PyConduit_API[PyConduit_Node_Check_INDEX] = (void *)PyConduit_Node_Check;
-    PyConduit_API[PyConduit_Node_python_create_INDEX] = (void *)PyConduit_Node_python_create;
+    PyConduit_API[PyConduit_Node_Python_Create_INDEX] = (void *)PyConduit_Node_Python_Create;
+    PyConduit_API[PyConduit_Node_Python_Wrap_INDEX] = (void *)PyConduit_Node_Python_Wrap;
     PyConduit_API[PyConduit_Node_Get_Node_Ptr_INDEX] = (void *)PyConduit_Node_Get_Node_Ptr;
 
     /* Create a Capsule containing the API pointer array's address */
