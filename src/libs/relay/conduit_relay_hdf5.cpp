@@ -1865,6 +1865,15 @@ hdf5_create_file(const std::string &file_path)
     return h5_file_id;
 }
 
+//-----------------------------------------------------------------------------
+void
+hdf5_close_file(hid_t hdf5_id)
+{
+    // close the hdf5 file
+    CONDUIT_CHECK_HDF5_ERROR(H5Fclose(hdf5_id),
+                             "Error closing HDF5 file handle: " << hdf5_id);
+}
+
 
 //---------------------------------------------------------------------------//
 void 

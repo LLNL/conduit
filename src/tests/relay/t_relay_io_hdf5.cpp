@@ -767,7 +767,7 @@ TEST(conduit_relay_io_hdf5, hdf5_create_open_methods)
     
     hid_t h5_file_id = io::hdf5_create_file(test_file_name);
     io::hdf5_write(n,h5_file_id);
-    H5Fclose(h5_file_id);
+    io::hdf5_close_file(h5_file_id);
     
     h5_file_id = io::hdf5_open_file_for_read(test_file_name);
 
@@ -780,7 +780,7 @@ TEST(conduit_relay_io_hdf5, hdf5_create_open_methods)
     
     EXPECT_EQ(10,n_read.to_int());
     
-    H5Fclose(h5_file_id);
+    io::hdf5_close_file(h5_file_id);
     
     h5_file_id = io::hdf5_open_file_for_read_write(test_file_name);
     
@@ -791,7 +791,7 @@ TEST(conduit_relay_io_hdf5, hdf5_create_open_methods)
     io::hdf5_read(h5_file_id,"a/b/c/e",n_read);
     EXPECT_EQ(12,n_read.to_int());
     
-    H5Fclose(h5_file_id);
+    io::hdf5_close_file(h5_file_id);
 
 }
 

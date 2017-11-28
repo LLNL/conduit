@@ -155,6 +155,11 @@ namespace io
 hid_t hdf5_create_file(const std::string &file_path);
 
 //-----------------------------------------------------------------------------
+/// Close hdf5 file handle
+//-----------------------------------------------------------------------------
+void hdf5_close_file(hid_t hdf5_id);
+
+//-----------------------------------------------------------------------------
 /// Write node data to a given path
 ///
 /// This methods supports a file system and hdf5 path, joined using a ":"
