@@ -125,7 +125,6 @@ struct point
 void braid_init_example_state(Node &res)
 {
     res["state/time"]   = (float64)3.1415;
-    res["state/domain"] = (uint64) 0;
     res["state/cycle"]  = (uint64) 100;
 }
 
