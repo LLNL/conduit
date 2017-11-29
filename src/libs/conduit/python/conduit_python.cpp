@@ -3312,27 +3312,37 @@ PyConduit_Node_repr(PyConduit_Node* self)
 //---------------------------------------------------------------------------//
 static PyObject *
 PyConduit_Node_GetItem(PyConduit_Node* self,
-                      PyObject* key)
+                       PyObject* key)
 {
-    if (!PyString_Check(key)) {
-        PyErr_SetString(PyExc_TypeError, "Key must be a string");
-        return (NULL);
-    }
-
     PyObject* retval = NULL;
-    char* ckey = PyString_AsString(key);
 
-    if(self->node->has_path(ckey))
+    if(PyString_Check(key))
     {
-        Node& node = (*self->node)[ckey];
+        char* ckey = PyString_AsString(key);
+
+        if(self->node->has_path(ckey))
+        {
+            Node& node = (*self->node)[ckey];
+            retval = PyConduit_Convert_Node_To_Python(node);
+        }
+        else
+        {
+            retval = PyConduit_Node_Python_Wrap(&(*self->node)[ckey],0);
+        }
+    
+        PyString_AsString_Cleanup(ckey);
+    }
+    else if(PyNumber_Check(key))
+    {
+        Py_ssize_t idx = PyNumber_AsSsize_t(key,NULL);
+        Node& node = (*self->node)[idx];
         retval = PyConduit_Convert_Node_To_Python(node);
     }
     else
     {
-        retval = PyConduit_Node_Python_Wrap(&(*self->node)[ckey],0);
+        PyErr_SetString(PyExc_TypeError,
+                        "Key must be a string or integer index");
     }
-    
-    PyString_AsString_Cleanup(ckey);
     
     return (retval);
 }
@@ -4611,7 +4621,9 @@ PyConduit_Convert_Node_To_Python(Node& node)
 
     switch (type.id()) {
         case DataType::EMPTY_ID:
-        case DataType::OBJECT_ID: {
+        case DataType::OBJECT_ID: 
+        case DataType::LIST_ID: 
+        {
             retval = PyConduit_Node_Python_Wrap(&node,0);
             break;
         }
@@ -4664,9 +4676,10 @@ PyConduit_Convert_Node_To_Python(Node& node)
             return (NULL);
         }
     }
-
-    if (type.id() != DataType::OBJECT_ID&&
-        type.id() != DataType::CHAR8_STR_ID) {
+    
+    // if we don't already have a result, we need to create a numpy result
+    if (retval == NULL)
+    {
 
         retval = PyConduit_Create_Numpy_Type(node, numpy_type);
     }
