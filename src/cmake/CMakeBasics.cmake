@@ -201,7 +201,7 @@ macro(add_compiled_library)
                     EXPORT ${args_EXPORT}
                     LIBRARY DESTINATION ${args_LIB_DEST_DIR}
                     ARCHIVE DESTINATION ${args_LIB_DEST_DIR}
-                    RUNTIME DESTINATION ${args_LIB_DEST_DIRT})
+                    RUNTIME DESTINATION ${args_LIB_DEST_DIR})
         else()
             install(TARGETS ${args_NAME}
                     EXPORT ${args_EXPORT}
