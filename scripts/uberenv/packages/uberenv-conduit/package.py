@@ -47,6 +47,11 @@ class UberenvConduit(Conduit):
 
     version('0.0.0', '8d378ef62dedc2df5db447b029b71200',preferred=True)
 
+    # default to building docs when using uberenv
+    variant("doc",
+            default=True,
+            description="Build deps needed to create Conduit's Docs")
+
     def url_for_version(self, version):
         dummy_tar_path =  os.path.abspath(pjoin(os.path.split(__file__)[0]))
         dummy_tar_path = pjoin(dummy_tar_path,"uberenv-conduit.tar.gz")
