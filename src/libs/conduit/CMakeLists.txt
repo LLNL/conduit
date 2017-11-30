@@ -66,6 +66,10 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_config.h.in"
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_bitwidth_style_types.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/conduit_bitwidth_style_types.h")
 
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_exports.h.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/conduit_exports.h")
+
+
 #
 # Specify conduit cpp headers
 #
@@ -82,7 +86,7 @@ set(conduit_headers
     conduit_node_iterator.hpp
     conduit_schema.hpp
     conduit_utils.hpp
-    conduit_exports.h
+    ${CMAKE_CURRENT_BINARY_DIR}/conduit_exports.h
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_config.h
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_bitwidth_style_types.h
     )

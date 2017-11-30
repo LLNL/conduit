@@ -42,7 +42,9 @@
 # 
 ###############################################################################
 
-
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_relay_python_exports.h.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h")
+                
 # Setup our modules
 PYTHON_ADD_HYBRID_MODULE(conduit_relay_python
                          # dest dir
@@ -53,8 +55,9 @@ PYTHON_ADD_HYBRID_MODULE(conduit_relay_python
                          setup.py
                          # python srcs
                          py_src/__init__.py
-                         # c srcs
-                         conduit_relay_python.cpp)
+                         # c srcs + headers
+                         conduit_relay_python.cpp
+                         ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h)
 
 # link with the proper libs
 target_link_libraries(conduit_relay_python conduit conduit_relay ${PYTHON_LIBRARIES})
@@ -65,8 +68,9 @@ PYTHON_ADD_COMPILED_MODULE(conduit_relay_io_python
                            python-modules
                            # python module dir
                            conduit/relay/io
-                           # c srcs
-                           conduit_relay_io_python.cpp)
+                           # c srcs + headers
+                           conduit_relay_io_python.cpp
+                           ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h)
 
 
 # link with the proper libs (beyond python)
@@ -79,8 +83,9 @@ PYTHON_ADD_COMPILED_MODULE(conduit_relay_web_python
                            python-modules
                            # python module dir
                            conduit/relay/web
-                           # c srcs
-                           conduit_relay_web_python.cpp)
+                           # c srcs + headers
+                           conduit_relay_web_python.cpp
+                           ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h)
 
 # link with the proper libs (beyond python)
 target_link_libraries(conduit_relay_web_python conduit conduit_relay)

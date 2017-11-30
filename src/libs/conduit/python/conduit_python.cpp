@@ -83,11 +83,10 @@
 // conduit includes
 //---------------------------------------------------------------------------//
 #include "conduit.hpp"
-#include "conduit_python_exports.hpp"
+#include "conduit_python_exports.h"
 
 #define CONDUIT_MODULE
 #include "conduit_python.hpp"
-
 
 using namespace conduit;
 

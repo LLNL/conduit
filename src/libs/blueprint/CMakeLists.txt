@@ -49,6 +49,11 @@
 
 ENABLE_WARNINGS()
 
+
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_blueprint_exports.h.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/conduit_blueprint_exports.h")
+
+
 #
 # Specify all headers
 #            
@@ -59,7 +64,7 @@ set(blueprint_headers
     conduit_blueprint_mesh_examples.hpp
     conduit_blueprint_mcarray.hpp
     conduit_blueprint_mcarray_examples.hpp
-    conduit_blueprint_exports.h
+    ${CMAKE_CURRENT_BINARY_DIR}/conduit_blueprint_exports.h
 )
 
 #
