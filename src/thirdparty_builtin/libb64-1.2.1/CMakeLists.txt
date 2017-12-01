@@ -51,8 +51,8 @@
 #
 
 set(libb64_sources
-    src/cdecode.c
-    src/cencode.c
+    src/cdecode.cpp
+    src/cencode.cpp
     )
 
 set(libb64_headers
