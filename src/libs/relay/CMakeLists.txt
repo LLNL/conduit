@@ -73,6 +73,10 @@ convert_to_native_escaped_file_path(${CMAKE_CURRENT_SOURCE_DIR}
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_relay_config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_config.h")
 
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_relay_exports.h.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_exports.h")
+
+
 #
 # Specify cpp headers
 #
@@ -81,7 +85,7 @@ set(conduit_relay_headers
     conduit_relay_io.hpp
     conduit_relay_web.hpp
     conduit_relay_web_node_viewer_server.hpp
-    conduit_relay_exports.h
+    ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_exports.h
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_config.h)
 
 #
@@ -248,7 +252,7 @@ if(MPI_FOUND)
 #
 set(conduit_relay_mpi_headers
     conduit_relay_mpi.hpp
-    conduit_relay_exports.h)
+    ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_config.h)
 
 #
 # Specify relay mpi sources

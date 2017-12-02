@@ -86,6 +86,10 @@ else()
     message(STATUS "Building static libraries (BUILD_SHARED_LIBS == OFF)")
 endif()
 
+if(WIN32 AND BUILD_SHARED_LIBS)
+    set(CONDUIT_WINDOWS_DLL_EXPORTS TRUE)
+endif()
+
 ################################
 # Coverage Flags
 ################################

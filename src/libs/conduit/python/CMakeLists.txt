@@ -42,9 +42,15 @@
 # 
 ###############################################################################
 
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_python_exports.h.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/conduit_python_exports.h")
+
 # Specify the sources of the pure python and compiled portions of our module.
 SET(conduit_py_python_sources  py_src/__init__.py)
-SET(conduit_py_headers         conduit_python.hpp)
+
+SET(conduit_py_headers         conduit_python.hpp
+                               ${CMAKE_CURRENT_BINARY_DIR}/conduit_python_exports.h)
+
 SET(conduit_py_cpp_sources     conduit_python.cpp)
 
 # Make sure we have access to numpy
