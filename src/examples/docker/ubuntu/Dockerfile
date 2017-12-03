@@ -77,8 +77,7 @@ RUN tar -xf conduit.docker.src.tar
 #RUN echo insecure >> ~/.curlrc
 
 # bootstrap third party libs using spack and uberenv
-#  for this example we use mpich for MPI and only build python2 (not python3)
-RUN cd conduit && python scripts/uberenv/uberenv.py -k --spec %gcc+mpich~python3~doc~silo
+RUN cd conduit && python scripts/uberenv/uberenv.py -k --spec %gcc+mpi~doc~silo
 
 # configure a debug build with cmake
 RUN cd conduit && mkdir build-debug
