@@ -112,7 +112,7 @@ Conduit uses well defined bitwidth style types (inspired by NumPy) for leaf valu
 .. # from conduit_tutorial_examples: basics_bw_style
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 130-136
+   :lines: 130-135
    :language: cpp
    :dedent: 4
 

@@ -53,6 +53,10 @@ set(DOCS_TESTS
     t_conduit_docs_tutorial_examples
     t_conduit_docs_blueprint_examples)
 
+set(DOCS_PYTHON_TESTS  
+    t_conduit_docs_tutorial_python_examples)
+
+
 
 ################################
 # Add our tests
@@ -61,6 +65,17 @@ message(STATUS "Adding docs related unit tests")
 foreach(TEST ${DOCS_TESTS})
     add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_blueprint conduit_relay )
 endforeach()
+
+################################
+# Add Python Tests
+################################
+if(PYTHON_FOUND)
+    foreach(TEST ${DOCS_PYTHON_TESTS})
+        add_python_test(${TEST})
+    endforeach()
+else()
+    message(STATUS "Python disabled: Skipping conduit python tutorial examples")
+endif()
 
 
 

@@ -55,7 +55,7 @@ You can access leaf types (numeric scalars or arrays) using Node's *as_{type}* m
 .. # from conduit_tutorial_examples: numeric_as_dtype
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 499-531
+   :lines: 159-164
    :language: cpp
    :dedent: 4
 
