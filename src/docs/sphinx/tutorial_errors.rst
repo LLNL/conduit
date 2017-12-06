@@ -89,19 +89,18 @@ that provides the following signature:
 
 Here is an example that re-wires all three error handlers to print to standard out:
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 472-496
+.. # from t_conduit_docs_tutorial_errors: custom range
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_errors.cpp
+   :lines:  65-90
    :language: cpp
 
-
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 502-530
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_errors.cpp
+   :lines:  103-130
    :language: cpp
-   :dedent: 4
 
-
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 351-353
+.. literalinclude:: t_conduit_docs_tutorial_errors_out.txt
+   :lines: 16-18
 
 
 
@@ -111,8 +110,8 @@ Using Restoring Default Handlers
 The default handlers are part of the conduit::utils interface, so you can restore them using:
 
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 531-535
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_errors.cpp
+   :lines: 132-135
    :language: cpp
    :dedent: 4
 

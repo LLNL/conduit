@@ -60,15 +60,15 @@ The **Node::set** methods support creating **owned** data and copying data value
 
 - **set_external(...)**: Sets up the *Node* to describe data passed and access the data externally. Does not copy the data.
 
-.. # from conduit_tutorial_examples: mem_ownership_external
+.. # from t_conduit_docs_tutorial_ownership: mem_ownership_external
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 447-463
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_ownership.cpp
+   :lines: 64-82
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 317-346
+.. literalinclude:: t_conduit_docs_tutorial_ownership_out.txt
+   :lines: 9-32
 
 
 

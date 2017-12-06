@@ -53,54 +53,68 @@ The *Node* class is the primary object in conduit.
 
 Think of it as a hierarchical variant object.
 
-.. # from conduit_tutorial_examples: basics_very_basic
+.. # from t_conduit_docs_tutorial_basics: basics_very_basic
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_basics.cpp
    :lines: 65-68
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
+.. literalinclude:: t_conduit_docs_tutorial_basics_out.txt
    :lines: 9-11
 
-.. # from conduit_tutorial_examples: basics_hierarchial
+.. # from t_conduit_docs_tutorial_basics: basics_hierarchial
 
 The *Node* class supports hierarchical construction.
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_basics.cpp
    :lines: 76-84
    :language: cpp
    :dedent: 4
 
 
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
+.. literalinclude:: t_conduit_docs_tutorial_basics_out.txt
    :lines: 19-30
 
 Borrowing form JSON (and other similar notations), collections of named nodes are
 called *Objects* and collections of unnamed nodes are called *Lists*, all other types
 are leaves that represent concrete data. 
 
-.. # from conduit_tutorial_examples: basics_object_and_list
+.. # from t_conduit_docs_tutorial_basics: basics_object_and_list
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_basics.cpp
    :lines: 92-105
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
+.. literalinclude:: t_conduit_docs_tutorial_basics_out.txt
    :lines: 38-53
 
-Behind the scenes, *Node* instances manage a collection of memory spaces.
+You can use a *NodeIterator* ( or a *NodeConstIterator*) to iterate through a Node's 
+children.
 
-.. # from conduit_tutorial_examples: basics_mem_spaces
+.. # from t_conduit_docs_tutorial_basics: basics_object_and_list_itr
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 116-122
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_basics.cpp
+   :lines: 113-142
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 61-87
+.. literalinclude:: t_conduit_docs_tutorial_basics_out.txt
+   :lines: 61-84
+
+
+Behind the scenes, *Node* instances manage a collection of memory spaces.
+
+.. # from t_conduit_docs_tutorial_basics: basics_mem_spaces
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_basics.cpp
+   :lines: 151-160
+   :language: cpp
+   :dedent: 4
+
+.. literalinclude:: t_conduit_docs_tutorial_basics_out.txt
+   :lines: 92-118
 
 Bitwidth Style Types
 --------------------------------
@@ -109,28 +123,28 @@ When sharing data in scientific codes, knowing the precision of the underlining 
 
 Conduit uses well defined bitwidth style types (inspired by NumPy) for leaf values.
 
-.. # from conduit_tutorial_examples: basics_bw_style
+.. # from t_conduit_docs_tutorial_basics: basics_bw_style
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 130-135
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_basics.cpp
+   :lines: 168-174
    :language: cpp
    :dedent: 4
 
 
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 95-97
+.. literalinclude:: t_conduit_docs_tutorial_basics_out.txt
+   :lines: 126-132
 
 Standard C++ numeric types will be mapped by the compiler to bitwidth style types.
 
-.. # from conduit_tutorial_examples: basics_bw_style_from_native
+.. # from t_conduit_docs_tutorial_basics: basics_bw_style_from_native
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 145-149
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_basics.cpp
+   :lines: 182-187
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 109-111
+.. literalinclude:: t_conduit_docs_tutorial_basics_out.txt
+   :lines: 140-142
 
 
 Supported Bitwidth Style Types:

@@ -54,7 +54,7 @@ import conduit
 def echo_src(s,fname,lineno):
     print("{}: {},{}".format(s,fname,lineno))
 
-class Conduit_Tutorial_Python_Examples(unittest.TestCase):
+class Conduit_Tutorial_Python_Basics(unittest.TestCase):
 
     def test_001_basics_very_basic(self):
         echo_src("begin",inspect.stack()[0][3],inspect.currentframe().f_lineno)
@@ -140,58 +140,10 @@ class Conduit_Tutorial_Python_Examples(unittest.TestCase):
 
         n = conduit.Node()
         n["test"] = 10
-        #n.print_detailed()
+        n.print_detailed()
 
         echo_src("end",inspect.stack()[0][3],inspect.currentframe().f_lineno)
 
-    def test_008_basics_numeric_via_value(self):
-        echo_src("begin",inspect.stack()[0][3],inspect.currentframe().f_lineno)
-        
-        n = conduit.Node()
-        n["test"] = 10 
-        print(n.fetch("test").value())
-        
-        echo_src("begin",inspect.stack()[0][3],inspect.currentframe().f_lineno)
-
-    def test_009_json_generator_std(self):
-        echo_src("begin",inspect.stack()[0][3],inspect.currentframe().f_lineno)
-        
-        g = conduit.Generator("{test: {dtype: float64, value: 100.0}}",
-                              "conduit_json")
-        n = conduit.Node()
-        g.walk(n)
-        print(n["test"])
-        print(n)
-        
-        echo_src("end",inspect.stack()[0][3],inspect.currentframe().f_lineno)
-
-    def test_010_json_generator_pure_json(self):
-        echo_src("begin",inspect.stack()[0][3],inspect.currentframe().f_lineno)
-        
-        g = conduit.Generator("{test: 100.0}",
-                              "json")
-        n = conduit.Node()
-        g.walk(n)
-        print(n["test"])
-        print(n)
-        
-        echo_src("end",inspect.stack()[0][3],inspect.currentframe().f_lineno)
-
-    def test_011_mem_ownership_external(self):
-        echo_src("begin",inspect.stack()[0][3],inspect.currentframe().f_lineno)
-        
-        vals = numpy.zeros((5,),dtype=numpy.float64)
-        n = conduit.Node()
-        n["v_owned"].set(vals)
-        n["v_external"].set_external(vals)
-
-        print(n.info())
-        print(n)
-        vals[0] = 3.1415
-        print(n)
-        print(vals)
-        
-        echo_src("end",inspect.stack()[0][3],inspect.currentframe().f_lineno)
 
 
 

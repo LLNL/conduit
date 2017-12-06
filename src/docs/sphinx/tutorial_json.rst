@@ -53,41 +53,40 @@ Using *Generator* instances to parse JSON schemas
 The *Generator* class is used to parse conduit JSON schemas into a *Node*.
 
 
-.. # from conduit_tutorial_examples: json_generator_std
+.. # from t_conduit_docs_tutorial_json: json_generator_std
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 328-337
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_json.cpp
+   :lines: 63-72
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 185-193
+.. literalinclude:: t_conduit_docs_tutorial_json_out.txt
+   :lines: 8-16
 
 
 The *Generator* can also parse pure json. For leaf nodes: wide types such as *int64*, *uint64*, and *float64* are inferred.
 
-.. # from conduit_tutorial_examples: json_generator_pure_json
+.. # from t_conduit_docs_tutorial_json: json_generator_pure_json
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 345-354
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_json.cpp
+   :lines: 80-89
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 200-208
+.. literalinclude:: t_conduit_docs_tutorial_json_out.txt
+   :lines: 23-31
 
 Schemas can easily be bound to in-core data.
 
-.. # from conduit_tutorial_examples: json_generator_bind_to_incore
+.. # from t_conduit_docs_tutorial_json: json_generator_bind_to_incore
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 362-368
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_json.cpp
+   :lines: 97-114
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 215-236
-
+.. literalinclude:: t_conduit_docs_tutorial_json_out.txt
+   :lines: 38-59
 
 
 Compacting Nodes
@@ -95,15 +94,15 @@ Compacting Nodes
 
 *Nodes* can be compacted to transform sparse data.
 
-.. # from conduit_tutorial_examples: json_generator_compact
+.. # from t_conduit_docs_tutorial_json: json_generator_compact
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 386-431
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_json.cpp
+   :lines: 123-172
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 243-309
+.. literalinclude:: t_conduit_docs_tutorial_json_out.txt
+   :lines: 101-132
 
 
 

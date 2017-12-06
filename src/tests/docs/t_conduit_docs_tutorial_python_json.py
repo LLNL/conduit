@@ -41,49 +41,44 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
+"""
+ file: t_conduit_docs_tutorial_python_examples.py
+"""
 
-################################
-# Conduit Unit Tests
-################################
+import sys
+import unittest
+import inspect
+import numpy
+import conduit
 
-################################
-# Docs Related Unit Tests
-################################
-set(DOCS_TESTS  
-    t_conduit_docs_tutorial_basics
-    t_conduit_docs_tutorial_numeric
-    t_conduit_docs_tutorial_json
-    t_conduit_docs_tutorial_ownership
-    t_conduit_docs_tutorial_errors
-    t_conduit_docs_blueprint_examples)
+def echo_src(s,fname,lineno):
+    print("{}: {},{}".format(s,fname,lineno))
 
-set(DOCS_PYTHON_TESTS  
-    t_conduit_docs_tutorial_python_basics
-    t_conduit_docs_tutorial_python_numeric
-    t_conduit_docs_tutorial_python_json
-    t_conduit_docs_tutorial_python_ownership)
+class Conduit_Tutorial_Python_JSON(unittest.TestCase):
 
+    def test_001_json_generator_std(self):
+        echo_src("begin",inspect.stack()[0][3],inspect.currentframe().f_lineno)
+        
+        g = conduit.Generator("{test: {dtype: float64, value: 100.0}}",
+                              "conduit_json")
+        n = conduit.Node()
+        g.walk(n)
+        print(n["test"])
+        print(n)
+        
+        echo_src("end",inspect.stack()[0][3],inspect.currentframe().f_lineno)
 
-
-################################
-# Add our tests
-################################
-message(STATUS "Adding docs related unit tests")
-foreach(TEST ${DOCS_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_blueprint conduit_relay )
-endforeach()
-
-################################
-# Add Python Tests
-################################
-if(PYTHON_FOUND)
-    foreach(TEST ${DOCS_PYTHON_TESTS})
-        add_python_test(${TEST})
-    endforeach()
-else()
-    message(STATUS "Python disabled: Skipping conduit python tutorial examples")
-endif()
-
+    def test_002_json_generator_pure_json(self):
+        echo_src("begin",inspect.stack()[0][3],inspect.currentframe().f_lineno)
+        
+        g = conduit.Generator("{test: 100.0}",
+                              "json")
+        n = conduit.Node()
+        g.walk(n)
+        print(n["test"])
+        print(n)
+        
+        echo_src("end",inspect.stack()[0][3],inspect.currentframe().f_lineno)
 
 
 

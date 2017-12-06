@@ -50,85 +50,92 @@ Accessing Numeric Data
 Accessing Scalars and Arrays
 --------------------------------
 
-You can access leaf types (numeric scalars or arrays) using Node's *as_{type}* methods.
+You can access leaf types (numeric scalars or arrays) using Node's *as_{type}*
+methods.
 
-.. # from conduit_tutorial_examples: numeric_as_dtype
+.. # from t_conduit_docs_tutorial_numeric: numeric_as_dtype
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 159-164
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_numeric.cpp
+   :lines: 64-69
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 118
+.. literalinclude:: t_conduit_docs_tutorial_numeric_out.txt
+   :lines: 8
 
-Or you can use Node::value(), which can infer the correct return type via a cast.
+Or you can use Node::value(), which can infer the correct return type via a
+cast.
 
-.. # from conduit_tutorial_examples: numeric_via_value
+.. # from t_conduit_docs_tutorial_numeric: numeric_via_value
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 173-179
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_numeric.cpp
+   :lines: 77-83
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 125
+.. literalinclude:: t_conduit_docs_tutorial_numeric_out.txt
+   :lines: 15
 
 
-Accessing array data via pointers works the same way, using Node's *as_{type}* methods.
+Accessing array data via pointers works the same way, using Node's *as_{type}*
+methods.
 
-.. # from conduit_tutorial_examples: numeric_ptr_as_dtype
+.. # from t_conduit_docs_tutorial_numeric: numeric_ptr_as_dtype
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 190-201
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_numeric.cpp
+   :lines: 92-103
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 132-135
+.. literalinclude:: t_conduit_docs_tutorial_numeric_out.txt
+   :lines: 22-25
 
 
 Or using Node::value():
 
-.. # from conduit_tutorial_examples: numeric_ptr_via_value
+.. # from t_conduit_docs_tutorial_numeric: numeric_ptr_via_value
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 211-222
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_numeric.cpp
+   :lines: 112-124
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 142-145
+.. literalinclude:: t_conduit_docs_tutorial_numeric_out.txt
+   :lines: 32-35
 
 
 
-For non-contiguous arrays, direct pointer access is complex due to the indexing required. Conduit provides a simple DataArray class that handles per-element indexing for all types of arrays.
+For non-contiguous arrays, direct pointer access is complex due to the indexing
+required. Conduit provides a simple DataArray class that handles per-element 
+indexing for all types of arrays.
 
-.. # from conduit_tutorial_examples: numeric_strided_data_array
+.. # from t_conduit_docs_tutorial_numeric: numeric_strided_data_array
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 231-247
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_numeric.cpp
+   :lines: 132-148
    :language: cpp
    :dedent: 4
 
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 152-154
+.. literalinclude:: t_conduit_docs_tutorial_numeric_out.txt
+   :lines: 42-44
 
 
 
 Using Introspection and Conversion
 -----------------------------------
 
-In this example, we have an array in a node that we are interested in processing using an and existing function that only handles doubles. We ensure the node is compatible with the function, or transform it 
-to a contiguous double array. 
+In this example, we have an array in a node that we are interested in
+processing using an and existing function that only handles doubles. We ensure
+the node is compatible with the function, or transform it to a contiguous
+double array. 
 
 
-.. # from conduit_tutorial_examples: numeric_double_conversion
+.. # from t_conduit_docs_tutorial_numeric: numeric_double_conversion
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 257-315
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_numeric.cpp
+   :lines: 157-218
    :language: cpp
 
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 163-176
+.. literalinclude:: t_conduit_docs_tutorial_numeric_out.txt
+   :lines: 53-66
 
