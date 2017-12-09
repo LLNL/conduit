@@ -52,13 +52,13 @@ import numpy
 import conduit
 
 def echo_src(s,fname,lineno):
-    print("{}: {},{}".format(s,fname,lineno))
+    print("\n{}: {},{}".format(s,fname,lineno))
 
 class Conduit_Tutorial_Python_Basics(unittest.TestCase):
 
     def test_001_basics_very_basic(self):
         echo_src("begin",inspect.stack()[0][3],inspect.currentframe().f_lineno)
-
+        import conduit
         n = conduit.Node()
         n["my"] = "data"
         print(n)
@@ -88,7 +88,7 @@ class Conduit_Tutorial_Python_Basics(unittest.TestCase):
 
         for i in range(5):
             l_entry = n["list_example"].append()
-            l_entry = l_entry.set(i)
+            l_entry.set(i)
         print(n)
 
         echo_src("end",inspect.stack()[0][3],inspect.currentframe().f_lineno)
@@ -103,7 +103,7 @@ class Conduit_Tutorial_Python_Basics(unittest.TestCase):
 
         for i in range(5):
             l_entry = n["list_example"].append()
-            l_entry = l_entry.set(i)
+            l_entry.set(i)
         print(n)
         
         for v in n["object_example"].children():

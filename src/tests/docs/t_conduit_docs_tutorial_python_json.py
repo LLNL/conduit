@@ -52,7 +52,7 @@ import numpy
 import conduit
 
 def echo_src(s,fname,lineno):
-    print("{}: {},{}".format(s,fname,lineno))
+    print("\n{}: {},{}".format(s,fname,lineno))
 
 class Conduit_Tutorial_Python_JSON(unittest.TestCase):
 

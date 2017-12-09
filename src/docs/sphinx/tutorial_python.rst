@@ -42,13 +42,15 @@
 .. # 
 .. ############################################################################
 
-===========
-Conduit
-===========
+======================
+Python Tutorial
+======================
+
+This short tutorial provides Python examples that demonstrate the Conduit's Core 
+API. Conduit's unit tests (*src/tests/{library_name}/python*) also provide a rich set 
+of examples for Conduit's Core API and additional libraries. 
 
 .. toctree::
 
-   tutorial_cpp
-   tutorial_python
+   tutorial_python_basics
 
-..    conduit_api
