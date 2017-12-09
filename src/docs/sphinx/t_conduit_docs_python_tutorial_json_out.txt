@@ -1,0 +1,51 @@
+UpdateCTestConfiguration  from :/Users/harrison37/Work/conduit/build-debug/DartConfiguration.tcl
+Parse Config file:/Users/harrison37/Work/conduit/build-debug/DartConfiguration.tcl
+UpdateCTestConfiguration  from :/Users/harrison37/Work/conduit/build-debug/DartConfiguration.tcl
+Parse Config file:/Users/harrison37/Work/conduit/build-debug/DartConfiguration.tcl
+Test project /Users/harrison37/Work/conduit/build-debug
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 89
+    Start 89: t_conduit_docs_tutorial_python_json
+
+89: Test command: /Users/harrison37/Work/conduit/uberenv_libs/spack/opt/spack/darwin-elcapitan-x86_64/clang-7.3.0-apple/python-2.7.14-hnuoilo6bgembdfjyozsi5sztwgnnwac/bin/python2.7 "-B" "-m" "unittest" "-v" "t_conduit_docs_tutorial_python_json"
+89: Environment variables: 
+89:  PYTHONPATH=/Users/harrison37/Work/conduit/build-debug/python-modules/:/Users/harrison37/Work/conduit/src/tests/docs
+89: Test timeout computed to be: 1500
+89: test_001_json_generator_std (t_conduit_docs_tutorial_python_json.Conduit_Tutorial_Python_JSON) ... ok
+89: test_002_json_generator_pure_json (t_conduit_docs_tutorial_python_json.Conduit_Tutorial_Python_JSON) ... ok
+89: 
+89: ----------------------------------------------------------------------
+89: Ran 2 tests in 0.024s
+89: 
+89: OK
+89: 
+89: begin: test_001_json_generator_std,60
+89: 100.0
+89: 
+89: {
+89:   "test": 100.0
+89: }
+89: 
+89: end: test_001_json_generator_std,69
+89: 
+89: begin: test_002_json_generator_pure_json,72
+89: 100.0
+89: 
+89: {
+89:   "test": 100.0
+89: }
+89: 
+89: end: test_002_json_generator_pure_json,81
+1/1 Test #89: t_conduit_docs_tutorial_python_json ...   Passed    0.13 sec
+
+The following tests passed:
+	t_conduit_docs_tutorial_python_json
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.14 sec

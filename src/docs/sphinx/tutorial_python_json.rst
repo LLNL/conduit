@@ -43,15 +43,40 @@
 .. ############################################################################
 
 ======================
-Python Tutorial
+Generators 
 ======================
 
-This short tutorial provides Python examples that demonstrate the Conduit's Core 
-API. Conduit's unit tests (*src/tests/{library_name}/python*) also provide a rich set 
-of examples for Conduit's Core API and additional libraries. 
 
-.. toctree::
+Using *Generator* instances to parse JSON schemas
+---------------------------------------------------
 
-   tutorial_python_basics
-   tutorial_python_json
+The *Generator* class is used to parse conduit JSON schemas into a *Node*.
 
+
+.. # from t_conduit_docs_tutorial_python_json: json_generator_std
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_json.py
+   :lines: 62-67
+   :language: python
+   :dedent: 8
+
+.. literalinclude:: t_conduit_docs_python_tutorial_json_out.txt
+   :lines: 29-32
+   :dedent: 4
+
+
+The *Generator* can also parse pure json. For leaf nodes: wide types such as *int64*, *uint64*, and *float64* are inferred.
+
+.. # from t_conduit_docs_tutorial_python_json: json_generator_pure_json
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_json.py
+   :lines: 74-79
+   :language: python
+   :dedent: 8
+
+.. literalinclude:: t_conduit_docs_python_tutorial_json_out.txt
+   :lines: 37-42
+   :dedent: 4
+
+
+.. # TODO, analog to C++ Compacting Nodes
