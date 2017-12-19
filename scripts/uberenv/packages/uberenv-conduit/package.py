@@ -57,7 +57,7 @@ class UberenvConduit(Conduit):
 
     def install(self, spec, prefix):
         """
-        Build and install Conduit.
+        Create a host config for use in conduit
         """
         with working_dir('spack-build', create=True):
             host_cfg_fname = self.create_host_config(spec, prefix)
@@ -65,3 +65,4 @@ class UberenvConduit(Conduit):
             mkdirp(prefix)
             install(host_cfg_fname,prefix)
             install(host_cfg_fname,env["SPACK_DEBUG_LOG_DIR"])
+

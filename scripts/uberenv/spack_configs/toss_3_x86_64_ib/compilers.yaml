@@ -11,6 +11,7 @@ compilers:
       f77: /usr/tce/packages/gcc/gcc-4.9.3/bin/gfortran
       fc:  /usr/tce/packages/gcc/gcc-4.9.3/bin/gfortran
     spec: gcc@4.9.3
+    target: x86_64
 - compiler:
     environment: {}
     extra_rpaths: []
@@ -23,6 +24,7 @@ compilers:
       f77: /usr/tce/packages/intel/intel-17.0.0/bin/ifort
       fc: /usr/tce/packages/intel/intel-17.0.0/bin/ifort
     spec: intel@17.0.0
+    target: x86_64
 - compiler:
     environment: {}
     extra_rpaths: []
@@ -35,4 +37,5 @@ compilers:
       f77: None
       fc:  None
     spec: clang@3.9.0
+    target: x86_64
 
