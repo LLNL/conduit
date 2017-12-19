@@ -78,7 +78,7 @@ RUN tar -xf conduit.docker.src.tar
 #RUN echo insecure >> ~/.curlrc
 
 # bootstrap third party libs using spack and uberenv
-RUN cd conduit && python scripts/uberenv/uberenv.py -k --spec %gcc+mpi~doc~silo
+RUN cd conduit && python scripts/uberenv/uberenv.py -k --spec "%gcc+mpi~doc~silo ^mpich"
 
 # configure a debug build with cmake
 RUN cd conduit && mkdir build-debug
