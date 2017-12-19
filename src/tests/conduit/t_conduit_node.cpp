@@ -957,5 +957,32 @@ TEST(conduit_node, check_invalid_index_error)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, path_empty_slashes)
+{ 
+    Node n;
+    
+    n["a/b/c/d/e/f"] = 10;
+    
+    n.print();
+    
+    Node &n_sub = n["a/b/c/d/e/f"];
+    EXPECT_EQ(n_sub.to_int64(),10);
+
+    Node &n_sub_2 = n["/a/b/c/d/e/f"];
+    EXPECT_EQ(n_sub_2.to_int64(),10);
+    
+
+    Node &n_sub_3 = n["/////a/b/c/d/e/f"];
+    EXPECT_EQ(n_sub_3.to_int64(),10);
+    
+
+    Node &n_sub_4 = n["/////a/b/c/////d/e/f"];
+    EXPECT_EQ(n_sub_4.to_int64(),10);
+
+    n.print();
+}
+
+
 
 
