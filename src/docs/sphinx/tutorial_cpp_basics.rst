@@ -116,6 +116,15 @@ Behind the scenes, *Node* instances manage a collection of memory spaces.
 .. literalinclude:: t_conduit_docs_tutorial_basics_out.txt
    :lines: 92-118
 
+.. # we could add an example here
+
+There is no absolute path construct, all paths are fetched relative to the current node (a leading 
+``/`` is ignored when fetching). Empty paths names are also ignored, fetching ``a///b`` is 
+equalvalent to fetching ``a/b``. 
+
+.. # You can fetch a Node's parent using ``..``.
+
+
 Bitwidth Style Types
 --------------------------------
 
