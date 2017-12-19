@@ -37,7 +37,7 @@ compilers:
       f77: /usr/tce/packages/xl/xl-beta-2017.10.13/bin/xlf-gpu
       fc: //usr/tce/packages/xl/xl-beta-2017.10.13/xlf2003-gpu
     spec: xl@13.1
-    target: ppc64les
+    target: ppc64le
 
 
  
