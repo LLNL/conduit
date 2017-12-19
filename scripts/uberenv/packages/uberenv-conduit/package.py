@@ -29,14 +29,6 @@ import os
 
 from os.path import join as pjoin
 from os import environ as env
-<<<<<<< HEAD
-
-import llnl.util.tty as tty
-
-spack_pkg_dir = os.path.split(os.path.abspath(__file__))[0]
-spack_conduit_pkg_dir = pjoin(spack_pkg_dir,"..","conduit")
-=======
->>>>>>> 81cf4c063e0386a4cbef358259da10fecbc28429
 
 from conduit import Conduit
 
@@ -67,18 +59,10 @@ class UberenvConduit(Conduit):
         """
         Create a host config for use in conduit
         """
-<<<<<<< HEAD
-        host_cfg_fname = self.create_host_config(spec, prefix)
-        # place a copy in the spack install dir for the uberenv-conduit package 
-        mkdirp(prefix)
-        install(host_cfg_fname,prefix)
-        install(host_cfg_fname,env["SPACK_DEBUG_LOG_DIR"])
-            
-=======
         with working_dir('spack-build', create=True):
             host_cfg_fname = self.create_host_config(spec, prefix)
             # place a copy in the spack install dir for the uberenv-conduit package 
             mkdirp(prefix)
             install(host_cfg_fname,prefix)
             install(host_cfg_fname,env["SPACK_DEBUG_LOG_DIR"])
->>>>>>> 81cf4c063e0386a4cbef358259da10fecbc28429
+
