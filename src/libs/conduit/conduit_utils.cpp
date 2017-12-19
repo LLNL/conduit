@@ -289,6 +289,21 @@ rsplit_path(const std::string &path,
                   next);
 }
 
+//-----------------------------------------------------------------------------
+std::string 
+join_paths(const std::string &left,
+           const std::string &right)
+{
+    std::string res = left;
+    if(res.size() > 0 && 
+       res[res.size()-1] != '/' &&
+       right.size() > 0 )
+    {
+        res += "/";
+    }
+    res += right;
+    return res;
+}
 
 //-----------------------------------------------------------------------------
 std::string 

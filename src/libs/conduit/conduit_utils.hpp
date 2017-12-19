@@ -269,7 +269,7 @@ namespace utils
                                    std::string &next);
 
 //-----------------------------------------------------------------------------
-/// Helpers for splitting for conduit paths (which always use "/")
+/// Helpers for splitting and joining conduit paths (which always use "/")
 //-----------------------------------------------------------------------------
     void  CONDUIT_API split_path(const std::string &path,
                                  std::string &curr,
@@ -279,6 +279,8 @@ namespace utils
                                   std::string &curr,
                                   std::string &next);
 
+    std::string CONDUIT_API join_paths(const std::string &left,
+                                       const std::string &right);
 
 //-----------------------------------------------------------------------------
 /// Helpers for splitting and joining file system paths.

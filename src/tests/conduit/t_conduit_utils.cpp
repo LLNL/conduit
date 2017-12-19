@@ -418,7 +418,34 @@ TEST(conduit_utils, file_path_split_tests)
     EXPECT_EQ(next,"");
 
 }
+
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, join_paths_tests)
+{
+    // note: these test joining conduit paths, not file system paths
     
+    
+    std::string res = utils::join_paths("","mypath");
+    EXPECT_EQ(res,"mypath");
+    
+    res = utils::join_paths("mypath","");
+    EXPECT_EQ(res,"mypath");
+    
+    res = utils::join_paths("","");
+    EXPECT_EQ(res,"");
+
+    res = utils::join_paths("here/","mypath");
+    EXPECT_EQ(res,"here/mypath");
+
+    res = utils::join_paths("/","mypath");
+    EXPECT_EQ(res,"/mypath");
+
+    res = utils::join_paths("/here","mypath");
+    EXPECT_EQ(res,"/here/mypath");
+
+}
 
 
 
