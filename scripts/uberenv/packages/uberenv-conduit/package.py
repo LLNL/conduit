@@ -27,17 +27,10 @@ from spack import *
 import socket
 import os
 
-
 from os.path import join as pjoin
 from os import environ as env
 
-import llnl.util.tty as tty
-
-spack_pkg_dir = os.path.split(os.path.abspath(__file__))[0]
-spack_conduit_pkg_dir = pjoin(spack_pkg_dir,"..","conduit")
-
 from conduit import Conduit
-
 
 class UberenvConduit(Conduit):
     """Conduit is an open source project from Lawrence Livermore National
