@@ -27,17 +27,18 @@ from spack import *
 import socket
 import os
 
-
 from os.path import join as pjoin
 from os import environ as env
+<<<<<<< HEAD
 
 import llnl.util.tty as tty
 
 spack_pkg_dir = os.path.split(os.path.abspath(__file__))[0]
 spack_conduit_pkg_dir = pjoin(spack_pkg_dir,"..","conduit")
+=======
+>>>>>>> 81cf4c063e0386a4cbef358259da10fecbc28429
 
 from conduit import Conduit
-
 
 class UberenvConduit(Conduit):
     """Conduit is an open source project from Lawrence Livermore National
@@ -46,6 +47,15 @@ class UberenvConduit(Conduit):
     coupling between packages in-core, serialization, and I/O tasks."""
 
     version('0.0.0', '8d378ef62dedc2df5db447b029b71200',preferred=True)
+
+    # default to building docs when using uberenv
+    variant("doc",
+            default=True,
+            description="Build deps needed to create Conduit's Docs")
+
+    # stick with cmake 3.8 or 3.9 until we use MPIEXEC_EXECUTABLE for 3.10+
+    # in upstream spack package
+    depends_on("cmake@3.8.2:3.9.999", when="+cmake")
 
     def url_for_version(self, version):
         dummy_tar_path =  os.path.abspath(pjoin(os.path.split(__file__)[0]))
@@ -57,9 +67,18 @@ class UberenvConduit(Conduit):
         """
         Create a host config for use in conduit
         """
+<<<<<<< HEAD
         host_cfg_fname = self.create_host_config(spec, prefix)
         # place a copy in the spack install dir for the uberenv-conduit package 
         mkdirp(prefix)
         install(host_cfg_fname,prefix)
         install(host_cfg_fname,env["SPACK_DEBUG_LOG_DIR"])
             
+=======
+        with working_dir('spack-build', create=True):
+            host_cfg_fname = self.create_host_config(spec, prefix)
+            # place a copy in the spack install dir for the uberenv-conduit package 
+            mkdirp(prefix)
+            install(host_cfg_fname,prefix)
+            install(host_cfg_fname,env["SPACK_DEBUG_LOG_DIR"])
+>>>>>>> 81cf4c063e0386a4cbef358259da10fecbc28429

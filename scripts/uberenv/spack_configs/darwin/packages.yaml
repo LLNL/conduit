@@ -27,7 +27,7 @@ packages:
       lapack: [openblas]
       mkl: [intel-mkl]
       mpe: [mpe2]
-      mpi: [mvapich]
+      mpi: [openmpi, mpich]
       opencl: [pocl]
       openfoam: [openfoam-com, openfoam-org, foam-extend]
       pil: [py-pillow]
@@ -35,13 +35,8 @@ packages:
       szip: [libszip, libaec]
       tbb: [intel-tbb]
       jpeg: [libjpeg-turbo, libjpeg]
-# NVIDIA provided CUDA tools from Nvidia.com
+# CUDA standard MacOS install
   cuda:
     paths:
-      cuda@8.0: /opt/cudatoolkit-8.0
-    buildable: False
-# LLNL chaos5 mvapich for gcc
-  mvapich:
-    paths:
-      mvapich@2: /usr/local/tools/mvapich2-gnu-2.0/
+      cuda@8.0: /Developer/NVIDIA/CUDA-8.0
     buildable: False

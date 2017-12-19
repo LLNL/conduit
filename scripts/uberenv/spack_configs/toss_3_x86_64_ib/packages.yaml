@@ -1,3 +1,4 @@
+
 # -------------------------------------------------------------------------
 # This file controls default concretization preferences for Spack.
 #
@@ -27,7 +28,7 @@ packages:
       lapack: [openblas]
       mkl: [intel-mkl]
       mpe: [mpe2]
-      mpi: [openmpi, mpich]
+      mpi: [mvapich2]
       opencl: [pocl]
       openfoam: [openfoam-com, openfoam-org, foam-extend]
       pil: [py-pillow]
@@ -35,8 +36,15 @@ packages:
       szip: [libszip, libaec]
       tbb: [intel-tbb]
       jpeg: [libjpeg-turbo, libjpeg]
-# NVIDIA provided CUDA tools from Nvidia.com
+# LLNL toss3 CUDA 
   cuda:
     paths:
-      cuda@8.0: /Developer/NVIDIA/CUDA-8.0
+      cuda@8.0: /opt/cudatoolkit-8.0
+    buildable: False
+# LLNL toss3 mvapich2
+  mvapich2:
+    paths:
+      mvapich2@2.2%gcc@4.9.3: /usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
+      mvapich2@2.2%intel@17.0.0: /usr/tce/packages/mvapich2/mvapich2-2.2-intel-17.0.0
+      mvapich2@2.2%clang@3.9.0: /usr/tce/packages/mvapich2/mvapich2-2.2-clang-3.9.0
     buildable: False
