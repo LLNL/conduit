@@ -3197,6 +3197,13 @@ public:
     bool             compatible(const Node &n) const
                         {return m_schema->compatible(n.schema());}
 
+    /// is this node equal to given node
+    bool             equals(const Node &n) const;
+
+    /// is this node equal to given node
+    bool             compare(const Node &n,
+                             Node &info) const;
+
     ///
     /// info() creates a node that contains metadata about the current
     /// node's memory properties
@@ -3204,8 +3211,6 @@ public:
     /// TODO: this is inefficient w/o move semantics, but is very 
     /// convenient for testing and example programs.
     Node             info() const;
-
-    /// TODO: compare or operator== ?
 
 //-----------------------------------------------------------------------------
 // -- stdout print methods ---
