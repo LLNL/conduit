@@ -286,18 +286,36 @@ namespace utils
 /// Helpers for splitting and joining file system paths.
 /// These use the proper platform specific separator (/ or \).
 //-----------------------------------------------------------------------------
-     std::string CONDUIT_API file_path_separator();
+    std::string CONDUIT_API file_path_separator();
 
-     void CONDUIT_API        split_file_path(const std::string &path,
+    void CONDUIT_API        split_file_path(const std::string &path,
+                                            std::string &curr,
+                                            std::string &next);
+
+    void CONDUIT_API        rsplit_file_path(const std::string &path,
                                              std::string &curr,
                                              std::string &next);
 
-     void CONDUIT_API        rsplit_file_path(const std::string &path,
-                                              std::string &curr,
-                                              std::string &next);
+     //------------------------------------------------------------------------
+    /// `split_file_path` and `rsplit_file_path` are helpers that allows us to 
+    ///  use  ":" for subpaths even on Windows when a drive letter including 
+    ///  ":" is in the path. 
+    //-------------------------------------------------------------------------
+    void CONDUIT_API split_file_path(const std::string &str,
+                                     const std::string &sep,
+                                     std::string &curr,
+                                     std::string &next);
 
-     std::string CONDUIT_API join_file_path(const std::string &left,
-                                            const std::string &right);
+    void CONDUIT_API rsplit_file_path(const std::string &str,
+                                      const std::string &sep,
+                                      std::string &curr,
+                                      std::string &next);
+
+
+    std::string CONDUIT_API join_file_path(const std::string &left,
+                                           const std::string &right);
+
+
 
 
 //-----------------------------------------------------------------------------

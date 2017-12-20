@@ -337,6 +337,109 @@ rsplit_file_path(const std::string &path,
                   next);
 }
 
+//---------------------------------------------------------------------------//
+void
+split_file_path(const std::string &path,
+                const std::string &sep,
+                std::string &curr,
+                std::string &next)
+{
+    // if we are splitting by ":", we need to be careful on windows
+    // since drive letters include ":"
+    //
+    // NOTE: We could if-def for windows, but its nice to be able
+    // to run unit tests on other platforms.
+    if( sep == std::string(":") && 
+        path.size() > 2 && 
+        path[1] == ':' && 
+        path[2] == '\\')
+    {
+        // eval w/o drive letter
+        if(path.size() > 3)
+        {
+            std::string check_path = path.substr(3);
+            conduit::utils::split_string(check_path,
+                                         sep,
+                                         curr,
+                                         next);
+            // add drive letter back
+            curr = path.substr(0,3) + curr;
+        }
+        else
+        {
+            // degen case, we we only have the drive letter
+            curr = path;
+            next = "";
+        }
+    }
+    else
+    {
+        // normal case
+        conduit::utils::split_string(path,
+                                     sep,
+                                     curr,
+                                     next);
+
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void
+rsplit_file_path(const std::string &path,
+                 const std::string &sep,
+                 std::string &curr,
+                 std::string &next)
+{
+    // if we are splitting by ":", we need to be careful on windows
+    // since drive letters include ":"
+    //
+    // NOTE: We could if-def for windows, but its nice to be able
+    // to run unit tests on other platforms.
+    if( sep == std::string(":") && 
+        path.size() > 2 && 
+        path[1] == ':' && 
+        path[2] == '\\')
+    {
+        // eval w/o drive letter
+        if(path.size() > 3)
+        {
+            std::string check_path = path.substr(3);
+            conduit::utils::rsplit_string(check_path,
+                                          sep,
+                                          curr,
+                                          next);
+            // add drive letter back
+            if(next == "")
+            {
+                // there was no split
+                curr = path.substr(0,3) + curr;
+            }
+            else
+            {
+                // there was a split
+                next = path.substr(0,3) + next;
+            }
+        }
+        else
+        {
+            // degen case, we we only have the drive letter
+            curr = path;
+            next = "";
+        }
+    }
+    else
+    {
+        // normal case
+        conduit::utils::rsplit_string(path,
+                                      sep,
+                                      curr,
+                                      next);
+
+    }
+}
+
+
 
 //-----------------------------------------------------------------------------
 std::string 
