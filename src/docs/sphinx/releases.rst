@@ -56,8 +56,6 @@ v0.3.0
 -----------------
 
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.3.0/conduit-v0.3.0-src-with-blt.tar.gz>`__
-* `Docs <http://software.llnl.gov/conduit/v0.3.0>`__
-
 
 Highlights
 +++++++++++++
@@ -98,7 +96,6 @@ v0.2.1
 -----------------
 
 * `Source Tarball <https://github.com/LLNL/conduit/archive/v0.2.1.tar.gz>`__
-* `Docs <http://software.llnl.gov/conduit/v0.2.1>`__
 
 
 Highlights
@@ -127,7 +124,6 @@ v0.2.0
 -----------------
 
 * `Source Tarball <https://github.com/LLNL/conduit/archive/v0.2.0.tar.gz>`__
-* `Docs <http://software.llnl.gov/conduit/v0.2.0>`__
     
 Highlights 
 +++++++++++++

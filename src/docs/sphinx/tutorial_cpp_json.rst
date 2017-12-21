@@ -43,76 +43,66 @@
 .. ############################################################################
 
 ======================
-Error Handling 
+Generators 
 ======================
 
-Conduit's APIs emit three types of messages for logging and error handling:
 
-================ ===================================================
-Message Type      Description
-================ ===================================================
-**Info**          General Information
-**Warning**       Recoverable Error
-**Error**         Fatal Error
-================ ===================================================
-
-
-Default Error Handlers
+Using *Generator* instances to parse JSON schemas
 ---------------------------------------------------
 
-Conduit provides a default handler for each message type: 
-
-================ ===================================================
-Message Type      Default Action
-================ ===================================================
-**Info**          Prints the message to standard out
-**Warning**       Throws a C++ Exception (conduit::Error instance)
-**Error**         Throws a C++ Exception (conduit::Error instance)
-================ ===================================================
-
-Using Custom Error Handlers
---------------------------------
-
-The conduit::utils namespace provides functions to override each of the three default handlers with a method
-that provides the following signature: 
-
-.. code-block:: cpp
-
-  void my_handler(const std::string &msg,
-                  const std::string &file,
-                  int line)
-  {
-    // your handling code here ...
-  }
-
-  conduit::utils::set_error_handler(my_handler);
-
-Here is an example that re-wires all three error handlers to print to standard out:
-
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 472-496
-   :language: cpp
+The *Generator* class is used to parse conduit JSON schemas into a *Node*.
 
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 502-530
+.. # from t_conduit_docs_tutorial_json: json_generator_std
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_json.cpp
+   :lines: 63-72
    :language: cpp
    :dedent: 4
 
-
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 351-353
-
+.. literalinclude:: t_conduit_docs_tutorial_json_out.txt
+   :lines: 8-16
 
 
-Using Restoring Default Handlers
---------------------------------
+The *Generator* can also parse pure json. For leaf nodes: wide types such as *int64*, *uint64*, and *float64* are inferred.
 
-The default handlers are part of the conduit::utils interface, so you can restore them using:
+.. # from t_conduit_docs_tutorial_json: json_generator_pure_json
 
-
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 531-535
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_json.cpp
+   :lines: 80-89
    :language: cpp
    :dedent: 4
+
+.. literalinclude:: t_conduit_docs_tutorial_json_out.txt
+   :lines: 23-31
+
+Schemas can easily be bound to in-core data.
+
+.. # from t_conduit_docs_tutorial_json: json_generator_bind_to_incore
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_json.cpp
+   :lines: 97-114
+   :language: cpp
+   :dedent: 4
+
+.. literalinclude:: t_conduit_docs_tutorial_json_out.txt
+   :lines: 38-59
+
+
+Compacting Nodes
+--------------------------------
+
+*Nodes* can be compacted to transform sparse data.
+
+.. # from t_conduit_docs_tutorial_json: json_generator_compact
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_json.cpp
+   :lines: 123-172
+   :language: cpp
+   :dedent: 4
+
+.. literalinclude:: t_conduit_docs_tutorial_json_out.txt
+   :lines: 101-132
+
+
 

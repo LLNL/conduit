@@ -42,33 +42,16 @@
 .. # 
 .. ############################################################################
 
-============================================
-Data Ownership
-============================================
+======================
+Python Tutorial
+======================
 
-The *Node* class provides two ways to hold data, the data is either **owned** or **externally described**:
+This short tutorial provides Python examples that demonstrate the Conduit's Core 
+API. Conduit's unit tests (*src/tests/{library_name}/python*) also provide a rich set 
+of examples for Conduit's Core API and additional libraries. 
 
-- If a *Node* **owns** data, the *Node* allocated the memory holding the data and is responsible or deallocating it. 
--  If a *Node* **externally describes** data, the *Node* holds a pointer to the memory where the data resides and is not responsible for deallocating it. 
+.. toctree::
 
-*set* vs *set_external* 
---------------------------------
-
-The **Node::set** methods support creating **owned** data and copying data values in both the **owned** and **externally described** cases. The **Node::set_external** methods allow you to create **externally described** data:
-
-- **set(...)**: Makes a copy of the data passed into the *Node*. This will trigger an allocation if the current data type of the *Node* is incompatible with what was passed. The *Node* assignment operators use their respective **set** variants, so they follow the same copy semantics. 
-
-- **set_external(...)**: Sets up the *Node* to describe data passed and access the data externally. Does not copy the data.
-
-.. # from conduit_tutorial_examples: mem_ownership_external
-
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 447-463
-   :language: cpp
-   :dedent: 4
-
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 317-346
-
-
+   tutorial_python_basics
+   tutorial_python_json
 

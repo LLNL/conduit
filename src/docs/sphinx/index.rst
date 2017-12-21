@@ -81,6 +81,10 @@ Conduit was built around the concept that an intuitive in-core data description 
 - Supports a mix of externally owned and Conduit allocated memory semantics.
 
 
+.. #Projects Using Conduit
+.. #------------------------
+.. # TODO: Conduit is used in VisIt, MFEM, 
+
 Conduit Project Resources
 --------------------------
 
@@ -95,11 +99,6 @@ https://github.com/llnl/conduit
 **Issue Tracker**
 
 https://github.com/llnl/conduit/issues
-
-
-**LLNL Collaboration Zone Bitbucket Server Source Repo (Mirror for LLNL Users)**
-
-https://lc.llnl.gov/bitbucket/projects/CON/repos/conduit/browse
 
 
 Conduit Libraries 

@@ -43,67 +43,20 @@
 .. ############################################################################
 
 ======================
-Generators 
+C++ Tutorial
 ======================
 
+This short tutorial provides C++ examples that demonstrate the Conduit's Core 
+API. Conduit's unit tests (*src/tests/{library_name}/*) also provide a rich set 
+of examples for Conduit's Core API and additional libraries. 
 
-Using *Generator* instances to parse JSON schemas
----------------------------------------------------
+.. toctree::
 
-The *Generator* class is used to parse conduit JSON schemas into a *Node*.
-
-
-.. # from conduit_tutorial_examples: json_generator_std
-
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 328-337
-   :language: cpp
-   :dedent: 4
-
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 185-193
-
-
-The *Generator* can also parse pure json. For leaf nodes: wide types such as *int64*, *uint64*, and *float64* are inferred.
-
-.. # from conduit_tutorial_examples: json_generator_pure_json
-
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 345-354
-   :language: cpp
-   :dedent: 4
-
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 200-208
-
-Schemas can easily be bound to in-core data.
-
-.. # from conduit_tutorial_examples: json_generator_bind_to_incore
-
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 362-368
-   :language: cpp
-   :dedent: 4
-
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 215-236
-
-
-
-Compacting Nodes
---------------------------------
-
-*Nodes* can be compacted to transform sparse data.
-
-.. # from conduit_tutorial_examples: json_generator_compact
-
-.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_examples.cpp
-   :lines: 386-431
-   :language: cpp
-   :dedent: 4
-
-.. literalinclude:: t_conduit_docs_tutorial_examples_out.txt
-   :lines: 243-309
-
+   tutorial_cpp_basics
+   tutorial_cpp_numeric
+   tutorial_cpp_json
+   tutorial_cpp_ownership
+   tutorial_cpp_update
+   tutorial_cpp_errors
 
 

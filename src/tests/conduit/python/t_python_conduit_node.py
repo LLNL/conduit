@@ -42,7 +42,7 @@
 # 
 ###############################################################################
 """
- file: python_conduit_node.py
+ file: t_python_conduit_node.py
  description: Unit tests for conduit::Node python module interface.
 
 """

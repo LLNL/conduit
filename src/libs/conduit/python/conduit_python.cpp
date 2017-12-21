@@ -3783,6 +3783,15 @@ PyConduit_Node_info(PyConduit_Node *self)
     return (PyObject*)retval;
 }
 
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyConduit_Node_print_detailed(PyConduit_Node *self)
+{
+    self->node->print_detailed();
+    Py_RETURN_NONE;
+}
+
+
 
 //---------------------------------------------------------------------------//
 static int PyConduit_Node_SetItem(PyConduit_Node *self,
@@ -4140,6 +4149,12 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
       (PyCFunction)PyConduit_Node_info,
       METH_VARARGS, 
       "Returns a node populated with the memory space details for this node"},
+
+     //-----------------------------------------------------------------------//
+     {"print_detailed",
+      (PyCFunction)PyConduit_Node_print_detailed,
+      METH_NOARGS, 
+      "Prints detailed json description of this node to standard out"},
     //-----------------------------------------------------------------------//
     {"append",
      (PyCFunction)PyConduit_Node_append,

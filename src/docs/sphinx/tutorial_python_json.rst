@@ -42,14 +42,41 @@
 .. # 
 .. ############################################################################
 
-===========
-Conduit
-===========
+======================
+Generators 
+======================
 
-.. toctree::
-   :maxdepth: 2
-   
-   tutorial_cpp
-   tutorial_python
 
-..    conduit_api
+Using *Generator* instances to parse JSON schemas
+---------------------------------------------------
+
+The *Generator* class is used to parse conduit JSON schemas into a *Node*.
+
+
+.. # from t_conduit_docs_tutorial_python_json: json_generator_std
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_json.py
+   :lines: 62-67
+   :language: python
+   :dedent: 8
+
+.. literalinclude:: t_conduit_docs_python_tutorial_json_out.txt
+   :lines: 29-32
+   :dedent: 4
+
+
+The *Generator* can also parse pure json. For leaf nodes: wide types such as *int64*, *uint64*, and *float64* are inferred.
+
+.. # from t_conduit_docs_tutorial_python_json: json_generator_pure_json
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_json.py
+   :lines: 74-79
+   :language: python
+   :dedent: 8
+
+.. literalinclude:: t_conduit_docs_python_tutorial_json_out.txt
+   :lines: 37-42
+   :dedent: 4
+
+
+.. # TODO, analog to C++ Compacting Nodes

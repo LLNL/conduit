@@ -41,49 +41,34 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
+"""
+ file: t_conduit_docs_tutorial_python_examples.py
+"""
 
-################################
-# Conduit Unit Tests
-################################
+import sys
+import unittest
+import inspect
+import numpy
+import conduit
 
-################################
-# Docs Related Unit Tests
-################################
-set(DOCS_TESTS  
-    t_conduit_docs_tutorial_basics
-    t_conduit_docs_tutorial_numeric
-    t_conduit_docs_tutorial_json
-    t_conduit_docs_tutorial_ownership
-    t_conduit_docs_tutorial_errors
-    t_conduit_docs_blueprint_examples)
+def echo_src(s,fname,lineno):
+    print("\n{}: {},{}".format(s,fname,lineno))
 
-set(DOCS_PYTHON_TESTS  
-    t_conduit_docs_tutorial_python_basics
-    t_conduit_docs_tutorial_python_numeric
-    t_conduit_docs_tutorial_python_json
-    t_conduit_docs_tutorial_python_ownership)
+class Conduit_Tutorial_Python_Ownership(unittest.TestCase):
+    def test_001_mem_ownership_external(self):
+        echo_src("begin",inspect.stack()[0][3],inspect.currentframe().f_lineno)
+        
+        vals = numpy.zeros((5,),dtype=numpy.float64)
+        n = conduit.Node()
+        n["v_owned"].set(vals)
+        n["v_external"].set_external(vals)
 
-
-
-################################
-# Add our tests
-################################
-message(STATUS "Adding docs related unit tests")
-foreach(TEST ${DOCS_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_blueprint conduit_relay )
-endforeach()
-
-################################
-# Add Python Tests
-################################
-if(PYTHON_FOUND)
-    foreach(TEST ${DOCS_PYTHON_TESTS})
-        add_python_test(${TEST})
-    endforeach()
-else()
-    message(STATUS "Python disabled: Skipping conduit python tutorial examples")
-endif()
-
-
+        print(n.info())
+        print(n)
+        vals[0] = 3.1415
+        print(n)
+        print(vals)
+        
+        echo_src("end",inspect.stack()[0][3],inspect.currentframe().f_lineno)
 
 
