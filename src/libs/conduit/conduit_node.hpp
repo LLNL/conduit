@@ -3240,6 +3240,11 @@ public:
     /// return a iterator that give access to this nodes children
     NodeIterator        children();
     NodeConstIterator   children() const;
+    
+    // When fetching, there is no absolute path construct, all paths are 
+    /// fetched relative to the current node (a leading "/" is ignored when
+    /// fetching). Empty path names are also ignored, fetching "a///b" is
+    /// equalvalent to fetching "a/b".
 
     /// fetch the node at the given path
     /// non-const `fetch' methods do modify map structure if a path 

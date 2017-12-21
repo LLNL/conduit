@@ -418,9 +418,173 @@ TEST(conduit_utils, file_path_split_tests)
     EXPECT_EQ(next,"");
 
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, join_paths_tests)
+{
+    // note: these test joining conduit paths, not file system paths
+    
+    
+    std::string res = utils::join_paths("","mypath");
+    EXPECT_EQ(res,"mypath");
+    
+    res = utils::join_paths("mypath","");
+    EXPECT_EQ(res,"mypath");
+    
+    res = utils::join_paths("","");
+    EXPECT_EQ(res,"");
+
+    res = utils::join_paths("here/","mypath");
+    EXPECT_EQ(res,"here/mypath");
+
+    res = utils::join_paths("/","mypath");
+    EXPECT_EQ(res,"/mypath");
+
+    res = utils::join_paths("/here","mypath");
+    EXPECT_EQ(res,"/here/mypath");
+
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, split_windows_paths)
+{
+    std::string curr, next;
+    utils::split_file_path("D:\\",
+                           std::string(":"),
+                           curr, next);
+    
+    EXPECT_EQ(curr,std::string("D:\\"));
+    EXPECT_EQ(next,std::string(""));
+    
+    utils::split_file_path("D:\\test\\some\\path",
+                           std::string(":"),
+                           curr, next);
+
+    EXPECT_EQ(curr,std::string("D:\\test\\some\\path"));
+    EXPECT_EQ(next,std::string(""));
+
+    utils::split_file_path("D:\\test\\some\\path:subpath",
+                           std::string(":"),
+                           curr, next);
+    
+    EXPECT_EQ(curr,std::string("D:\\test\\some\\path"));
+    EXPECT_EQ(next,std::string("subpath"));
+
+    utils::split_file_path(std::string(next),
+                           std::string(":"),
+                           curr, next);
+    
+    EXPECT_EQ(curr,std::string("subpath"));
+    EXPECT_EQ(next,std::string(""));
     
 
 
+    // drive letter needs '\\', so check corner case where its
+    // not there, which should be treat as non-windows case
+    utils::split_file_path("a:subpath",
+                           std::string(":"),
+                           curr, next);
+    
+    EXPECT_EQ(curr,std::string("a"));
+    EXPECT_EQ(next,std::string("subpath"));
 
+    utils::split_file_path(std::string(next),
+                           std::string(":"),
+                           curr, next);
+
+    EXPECT_EQ(curr,std::string("subpath"));
+    EXPECT_EQ(next,std::string(""));
+
+
+    // rsplit tests
+    //
+    utils::rsplit_file_path("D:\\",
+                            std::string(":"),
+                            curr,next);
+
+    EXPECT_EQ(curr,std::string("D:\\"));
+    EXPECT_EQ(next,std::string(""));
+
+
+    utils::rsplit_file_path("D:\\test\\some\\path",
+                            std::string(":"),
+                            curr,next);
+
+    EXPECT_EQ(curr,std::string("D:\\test\\some\\path"));
+    EXPECT_EQ(next,std::string(""));
+
+    utils::rsplit_file_path("D:\\test\\some\\path:subpath",
+                            std::string(":"),
+                            curr,next);
+
+    EXPECT_EQ(curr,std::string("subpath"));
+    EXPECT_EQ(next,std::string("D:\\test\\some\\path"));
+
+
+    // drive letter needs '\\', so check corner case where its
+    // not there, which should be treat as non-windows case
+    utils::rsplit_file_path("a:subpath",
+                            std::string(":"),
+                            curr,next);
+
+    EXPECT_EQ(curr,std::string("subpath"));
+    EXPECT_EQ(next,std::string("a"));
+    
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, split_tests)
+{
+    // forward split
+    // expect a,b,c then empty
+    std::string t("a b c");
+
+    std::string p = t;
+    
+    std::string curr;
+    std::string next;
+    
+    utils::split_string(p," ",curr,next);
+    EXPECT_EQ(curr,std::string("a"));
+    p = next;
+
+    utils::split_string(p," ",curr,next);
+    EXPECT_EQ(curr,std::string("b"));
+    p = next;
+
+    utils::split_string(p," ",curr,next);
+    EXPECT_EQ(curr,std::string("c"));
+    p = next;
+
+    utils::split_string(p," ",curr,next);
+    EXPECT_EQ(curr,std::string(""));
+    p = next;
+
+    // reverse split
+    // expect c,b,a then empty
+    p = t;
+    
+    curr = "";
+    next = "";
+    
+    utils::rsplit_string(p," ",curr,next);
+    EXPECT_EQ(curr,std::string("c"));
+    p = next;
+
+    utils::rsplit_string(p," ",curr,next);
+    EXPECT_EQ(curr,std::string("b"));
+    p = next;
+
+    utils::rsplit_string(p," ",curr,next);
+    EXPECT_EQ(curr,std::string("a"));
+    p = next;
+
+    utils::rsplit_string(p," ",curr,next);
+    EXPECT_EQ(curr,std::string(""));
+    p = next;
+
+}
 
 

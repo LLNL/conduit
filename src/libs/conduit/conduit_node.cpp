@@ -10765,33 +10765,39 @@ Node::children() const
 const Node&
 Node::fetch_child(const std::string &path) const
 {
-    // const fetch w/ path requires object role
+    // const fetch_child w/ path requires object role
     if(!dtype().is_object())
     {
-        CONDUIT_ERROR("Cannot const fetch_child, Node(" << this->path()
+        CONDUIT_ERROR("Cannot fetch_child, Node(" << this->path()
                       << ") is not an object");
     }
     
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
+    
+    // cull empty paths
+    if(p_curr == "")
+    {
+        return this->fetch_child(p_next);
+    }
 
     // check for parent
     if(p_curr == "..")
     {
         if(m_parent == NULL)
         {
-            CONDUIT_ERROR("Cannot const fetch from NULL parent" << path);
+            CONDUIT_ERROR("Cannot fetch_child from NULL parent" << path);
         }
         else
         {
-            return m_parent->fetch(p_next);
+            return m_parent->fetch_child(p_next);
         }
     }
 
     if(!m_schema->has_child(p_curr))
     {
-        CONDUIT_ERROR("Cannot const fetch non-existent " 
+        CONDUIT_ERROR("Cannot fetch non-existent " 
                       << "child \"" << p_curr << "\" from Node("
                       << this->path()
                       << ")");
@@ -10801,11 +10807,11 @@ Node::fetch_child(const std::string &path) const
 
     if(p_next.empty())
     {
-        return  *m_children[idx];
+        return *m_children[idx];
     }
     else
     {
-        return m_children[idx]->fetch(p_next);
+        return m_children[idx]->fetch_child(p_next);
     }
 }
 
@@ -10814,7 +10820,7 @@ Node::fetch_child(const std::string &path) const
 Node&
 Node::fetch_child(const std::string &path)
 {
-    // const fetch w/ path requires object role
+    // fetch_child w/ path requires object role
     if(!dtype().is_object())
     {
         CONDUIT_ERROR("Cannot fetch_child, Node(" << this->path()
@@ -10825,22 +10831,28 @@ Node::fetch_child(const std::string &path)
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
 
+    // cull empty paths
+    if(p_curr == "")
+    {
+        return this->fetch_child(p_next);
+    }
+
     // check for parent
     if(p_curr == "..")
     {
         if(m_parent == NULL)
         {
-            CONDUIT_ERROR("Cannot const fetch from NULL parent" << path);
+            CONDUIT_ERROR("Cannot fetch_child from NULL parent" << path);
         }
         else
         {
-            return m_parent->fetch(p_next);
+            return m_parent->fetch_child(p_next);
         }
     }
 
     if(!m_schema->has_child(p_curr))
     {
-        CONDUIT_ERROR("Cannot const fetch non-existent "
+        CONDUIT_ERROR("Cannot fetch non-existent "
                       << "child \"" << p_curr << "\" from Node("
                       << this->path()
                       << ")");
@@ -10850,11 +10862,11 @@ Node::fetch_child(const std::string &path)
 
     if(p_next.empty())
     {
-        return  *m_children[idx];
+        return *m_children[idx];
     }
     else
     {
-        return m_children[idx]->fetch(p_next);
+        return m_children[idx]->fetch_child(p_next);
     }
 }
 
@@ -10871,6 +10883,12 @@ Node::fetch(const std::string &path)
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
+
+    // cull empty paths
+    if(p_curr == "")
+    {
+        return this->fetch(p_next);
+    }
 
     // check for parent
     if(p_curr == "..")
