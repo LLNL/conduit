@@ -3200,9 +3200,10 @@ public:
     /// is this node equal to given node
     bool             equals(const Node &n) const;
 
-    /// is this node equal to given node
-    bool             compare(const Node &n,
-                             Node &info) const;
+    /// diff this node to the given node, storing the results digest
+    //  in the provided data node
+    bool             diff(const Node &n,
+                          Node &info) const;
 
     ///
     /// info() creates a node that contains metadata about the current

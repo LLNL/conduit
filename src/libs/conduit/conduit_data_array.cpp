@@ -58,6 +58,7 @@
 //-----------------------------------------------------------------------------
 // -- conduit includes -- 
 //-----------------------------------------------------------------------------
+#include "conduit_node.hpp"
 #include "conduit_utils.hpp"
 
 //-----------------------------------------------------------------------------
@@ -134,6 +135,33 @@ T &
 DataArray<T>::element(index_t idx) const 
 { 
     return (*(T*)(element_ptr(idx)));
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+bool
+DataArray<T>::compatible(const DataArray<T> &/*array*/) const 
+{ 
+    // TODO(JRC)
+    return false;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+bool
+DataArray<T>::equals(const DataArray<T> &array) const 
+{ 
+    Node info;
+    return !diff(array, info);
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+bool
+DataArray<T>::diff(const DataArray<T> &/*array*/, Node &/*info*/) const 
+{ 
+    // TODO(JRC)
+    return false;
 }
 
 //---------------------------------------------------------------------------//

@@ -13506,53 +13506,46 @@ Node::find_first_data_ptr() const
 bool
 Node::equals(const Node &n) const
 {
-    Node res;
-    return compare(n, res);
+    Node info;
+    return !diff(n, info);
 }
 
 //---------------------------------------------------------------------------//
 bool
-Node::compare(const Node &n, Node &info) const
+Node::diff(const Node &n, Node &info) const
 {
     // TODO(JRC): Improve all of the messages for all of the different
     // scenarios in this function.
 
-    bool res = true;
     info.reset();
 
-    index_t m_dtid  = dtype().id();
+    index_t t_dtid  = dtype().id();
     index_t n_dtid  = n.dtype().id();
 
-    if(m_dtid != n_dtid)
+    if(t_dtid != n_dtid)
     {
         info.set("Data type mismatch.");
-        res = false;
     }
-    else if(m_dtid == DataType::OBJECT_ID)
+    else if(t_dtid == DataType::OBJECT_ID)
     {
         NodeConstIterator child_itr;
 
         child_itr = children();
         while(child_itr.has_next())
         {
-            const conduit::Node &m_child = child_itr.next();
+            const conduit::Node &t_child = child_itr.next();
             const std::string child_path = child_itr.name();
 
             Node &info_child = info[child_path];
             if(!n.has_child(child_path))
             {
                 info_child.set("Missing from other.");
-                res = false;
             }
             else
             {
-                if(m_child.compare(n.fetch(child_path), info_child))
+                if(!t_child.diff(n.fetch(child_path), info_child))
                 {
                     info.remove(child_path);
-                }
-                else
-                {
-                    res = false;
                 }
             }
         }
@@ -13567,22 +13560,17 @@ Node::compare(const Node &n, Node &info) const
             if(!has_child(child_path))
             {
                 info_child.set("Missing from self.");
-                res = false;
             }
             else
             {
-                if(fetch(child_path).compare(n_child, info_child))
+                if(!fetch(child_path).diff(n_child, info_child))
                 {
                     info.remove(child_path);
-                }
-                else
-                {
-                    res = false;
                 }
             }
         }
     }
-    else if(m_dtid == DataType::LIST_ID)
+    else if(t_dtid == DataType::LIST_ID)
     {
         // NOTE: This case is a bit strange in the comparison; fortunately, it
         // can be distilled to two primary cases:
@@ -13591,30 +13579,33 @@ Node::compare(const Node &n, Node &info) const
         //   nodes between the comparison parents are filled in the list.
         //   All other nodes in the list are empty.
 
-        index_t m_nchild = number_of_children();
+        index_t t_nchild = number_of_children();
         index_t n_nchild = n.number_of_children();
 
+        bool is_diff = t_nchild != n_nchild;
         size_t i = 0;
-        for(; i < (size_t)std::min(m_nchild, n_nchild); i++)
+        for(; i < (size_t)std::min(t_nchild, n_nchild); i++)
         {
-            const Node &m_child = child(i);
+            const Node &t_child = child(i);
             const Node &n_child = n.child(i);
             Node &info_child = info.append();
-            res &= m_child.compare(n_child, info_child);
+            is_diff |= t_child.diff(n_child, info_child);
         }
-
-        res &= m_nchild != n_nchild;
-        for(; i < (size_t)std::max(m_nchild, n_nchild); i++)
+        for(; i < (size_t)std::max(t_nchild, n_nchild); i++)
         {
             Node &info_child = info.append();
-            std::string loc_str = (i >= (size_t)m_nchild) ? "self" : "other";
-            info_child.set("Missing from " + loc_str);
+            std::string loc_str = (i >= (size_t)t_nchild) ? "self" : "other";
+            info_child.set("Missing from " + loc_str + ".");
+        }
+
+        if(!is_diff)
+        {
+            info.reset();
         }
     }
     else if(!dtype().compatible(n.dtype()) || !n.dtype().compatible(dtype()))
     {
         info.set("Data type incompatibility.");
-        res = false;
     }
     else
     {
@@ -13623,23 +13614,18 @@ Node::compare(const Node &n, Node &info) const
         DataType elem_dtype(dtype().id(), 1, 0, 0, dtype().element_bytes(), dtype().endianness());
         for(size_t i = 0; i < (size_t)dtype().number_of_elements(); i++)
         {
-            const conduit::Node m_elem(elem_dtype, (void*)element_ptr(i), true);
+            const conduit::Node t_elem(elem_dtype, (void*)element_ptr(i), true);
             const conduit::Node n_elem(elem_dtype, (void*)n.element_ptr(i), true);
             // TODO(JRC): Figure out how to make this work to enable better
             // element-by-element comparisons.
-            if(m_elem.value() != n_elem.value())
+            if(t_elem.value() != n_elem.value())
             {
                 info.set("Data value mismatch.");
-                res = false;
             }
         }
     }
 
-    if(res)
-    {
-        info.reset();
-    }
-    return res;
+    return !info.dtype().is_empty();
 }
 
 //---------------------------------------------------------------------------//
