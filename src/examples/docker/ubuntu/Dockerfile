@@ -55,6 +55,7 @@ RUN apt-get update && apt-get install -y \
     gfortran \
     zlib1g-dev \
     python \
+    unzip \
  && rm -rf /var/lib/apt/lists/*
 
 
@@ -77,8 +78,9 @@ RUN tar -xf conduit.docker.src.tar
 #RUN echo insecure >> ~/.curlrc
 
 # bootstrap third party libs using spack and uberenv
-#  for this example we use mpich for MPI and only build python2 (not python3)
-RUN cd conduit && python scripts/uberenv/uberenv.py -k --spec %gcc+mpich~python3~doc~silo
+#  for this example we use mpich for MPI b/c openmpi's mpiexec
+#  will not run for the root user
+RUN cd conduit && python scripts/uberenv/uberenv.py -k --spec "%gcc+mpi~doc~silo ^mpich"
 
 # configure a debug build with cmake
 RUN cd conduit && mkdir build-debug
@@ -91,7 +93,7 @@ RUN cd conduit/build-debug && \
 
 # build, test, and install conduit
 RUN cd conduit/build-debug && make
-RUN cd conduit/build-debug && make test
+RUN cd conduit/build-debug && env CTEST_OUTPUT_ON_FAILURE=1 make test
 RUN cd conduit/build-debug && make install
 
 # open port 9000, for use by conduit relay
