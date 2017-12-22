@@ -13526,6 +13526,10 @@ Node::diff(const Node &n, Node &info) const
     {
         info.set("Data type mismatch.");
     }
+    else if(t_dtid == DataType::EMPTY_ID)
+    {
+        // no-op; empty nodes cannot have differences
+    }
     else if(t_dtid == DataType::OBJECT_ID)
     {
         NodeConstIterator child_itr;
@@ -13667,9 +13671,14 @@ Node::diff(const Node &n, Node &info) const
         }
         else if(dtype().is_char8_str())
         {
-            char_array t_array = value();
-            char_array n_array = n.value();
-            t_array.diff(n_array, info);
+            // TODO(JRC): Improve how this case is handled in terms of both
+            // error message and value.
+            std::string t_array = as_string();
+            std::string n_array = n.as_string();
+            if(t_array != n_array)
+            {
+                info.set("Strings do not match.");
+            }
         }
         else
         {

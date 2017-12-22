@@ -160,7 +160,6 @@ template <typename T>
 bool
 DataArray<T>::diff(const DataArray<T> &array, Node &info) const 
 { 
-
     info.reset();
 
     index_t t_nelems = number_of_elements();
