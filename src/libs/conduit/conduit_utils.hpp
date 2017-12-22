@@ -312,8 +312,8 @@ namespace utils
                                       std::string &next);
 
 
-    std::string CONDUIT_API join_file_path(const std::string &left,
-                                           const std::string &right);
+    std::string CONDUIT_API join_file_paths(const std::string &left,
+                                            const std::string &right);
 
 
 

@@ -262,7 +262,7 @@ NodeViewerServer::NodeViewerServer()
 : WebServer()
 {
     set_request_handler(new NodeViewerRequestHandler());
-    set_document_root(utils::join_file_path(web_client_root_directory(),
+    set_document_root(utils::join_file_paths(web_client_root_directory(),
                                             "node_viewer"));
     
 }

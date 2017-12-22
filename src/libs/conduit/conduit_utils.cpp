@@ -443,8 +443,8 @@ rsplit_file_path(const std::string &path,
 
 //-----------------------------------------------------------------------------
 std::string 
-join_file_path(const std::string &left,
-               const std::string &right)
+join_file_paths(const std::string &left,
+                const std::string &right)
 {
     std::string res = left;
     if(res.size() > 0 && res[res.size()-1] != file_path_sep_string[0])

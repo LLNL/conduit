@@ -93,9 +93,9 @@ about(Node &n)
     conduit::about(conduit_about);
     
     std::string install_prefix = conduit_about["install_prefix"].as_string();
-    std::string web_root = utils::join_file_path(install_prefix,"share");
-    web_root = utils::join_file_path(web_root,"conduit");
-    web_root = utils::join_file_path(web_root,"web_clients");
+    std::string web_root = utils::join_file_paths(install_prefix,"share");
+    web_root = utils::join_file_paths(web_root,"conduit");
+    web_root = utils::join_file_paths(web_root,"web_clients");
     
     n["web_client_root"] =  web_root;
 

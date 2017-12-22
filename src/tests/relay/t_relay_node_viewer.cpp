@@ -84,17 +84,17 @@ TEST(conduit_relay_web, node_viewer)
                   
         if(use_ssl)
         {
-            std::string cert_file = utils::join_file_path(CONDUIT_T_SRC_DIR,
+            std::string cert_file = utils::join_file_paths(CONDUIT_T_SRC_DIR,
                                                           "relay");
-            cert_file = utils::join_file_path(cert_file,"t_ssl_cert.pem");
+            cert_file = utils::join_file_paths(cert_file,"t_ssl_cert.pem");
             svr.set_ssl_certificate_file(cert_file);
         }
 
         if(use_auth)
         {
-            std::string auth_file = utils::join_file_path(CONDUIT_T_SRC_DIR,
+            std::string auth_file = utils::join_file_paths(CONDUIT_T_SRC_DIR,
                                                           "relay");
-            auth_file = utils::join_file_path(auth_file,"t_htpasswd.txt");
+            auth_file = utils::join_file_paths(auth_file,"t_htpasswd.txt");
             svr.set_htpasswd_auth_domain("test");
             svr.set_htpasswd_auth_file(auth_file);
         }
