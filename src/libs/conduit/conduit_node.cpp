@@ -13603,25 +13603,77 @@ Node::diff(const Node &n, Node &info) const
             info.reset();
         }
     }
-    else if(!dtype().compatible(n.dtype()) || !n.dtype().compatible(dtype()))
+    else // leaf node
     {
-        info.set("Data type incompatibility.");
-    }
-    else
-    {
-        // TODO(JRC): Determine how to customize this function so that users that
-        // want the stride/endianness to be the same can still perform a proper query.
-        DataType elem_dtype(dtype().id(), 1, 0, 0, dtype().element_bytes(), dtype().endianness());
-        for(size_t i = 0; i < (size_t)dtype().number_of_elements(); i++)
+        if(dtype().is_int8())
         {
-            const conduit::Node t_elem(elem_dtype, (void*)element_ptr(i), true);
-            const conduit::Node n_elem(elem_dtype, (void*)n.element_ptr(i), true);
-            // TODO(JRC): Figure out how to make this work to enable better
-            // element-by-element comparisons.
-            if(t_elem.value() != n_elem.value())
-            {
-                info.set("Data value mismatch.");
-            }
+            int8_array t_array = value();
+            int8_array n_array = n.value();
+            t_array.diff(n_array, info);
+        }
+        else if(dtype().is_int16())
+        {
+            int16_array t_array = value();
+            int16_array n_array = n.value();
+            t_array.diff(n_array, info);
+        }
+        else if(dtype().is_int32())
+        {
+            int32_array t_array = value();
+            int32_array n_array = n.value();
+            t_array.diff(n_array, info);
+        }
+        else if(dtype().is_int64())
+        {
+            int64_array t_array = value();
+            int64_array n_array = n.value();
+            t_array.diff(n_array, info);
+        }
+        else if(dtype().is_uint8())
+        {
+            uint8_array t_array = value();
+            uint8_array n_array = n.value();
+            t_array.diff(n_array, info);
+        }
+        else if(dtype().is_uint16())
+        {
+            uint16_array t_array = value();
+            uint16_array n_array = n.value();
+            t_array.diff(n_array, info);
+        }
+        else if(dtype().is_uint32())
+        {
+            uint32_array t_array = value();
+            uint32_array n_array = n.value();
+            t_array.diff(n_array, info);
+        }
+        else if(dtype().is_uint64())
+        {
+            uint64_array t_array = value();
+            uint64_array n_array = n.value();
+            t_array.diff(n_array, info);
+        }
+        else if(dtype().is_float32())
+        {
+            float32_array t_array = value();
+            float32_array n_array = n.value();
+            t_array.diff(n_array, info);
+        }
+        else if(dtype().is_float64())
+        {
+            float64_array t_array = value();
+            float64_array n_array = n.value();
+            t_array.diff(n_array, info);
+        }
+        else if(dtype().is_char8_str())
+        {
+            char_array t_array = value();
+            char_array n_array = n.value();
+            t_array.diff(n_array, info);
+        }
+        else
+        {
+            CONDUIT_ERROR("<Node::diff> unrecognized data type");
         }
     }
 

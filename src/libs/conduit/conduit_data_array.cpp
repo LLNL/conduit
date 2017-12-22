@@ -52,6 +52,7 @@
 //-----------------------------------------------------------------------------
 // -- standard includes -- 
 //-----------------------------------------------------------------------------
+#include <cmath>
 #include <cstring>
 
 
@@ -140,10 +141,9 @@ DataArray<T>::element(index_t idx) const
 //---------------------------------------------------------------------------//
 template <typename T> 
 bool
-DataArray<T>::compatible(const DataArray<T> &/*array*/) const 
+DataArray<T>::compatible(const DataArray<T> &array) const 
 { 
-    // TODO(JRC)
-    return false;
+    return dtype().compatible(array.dtype());
 }
 
 //---------------------------------------------------------------------------//
@@ -158,10 +158,37 @@ DataArray<T>::equals(const DataArray<T> &array) const
 //---------------------------------------------------------------------------//
 template <typename T> 
 bool
-DataArray<T>::diff(const DataArray<T> &/*array*/, Node &/*info*/) const 
+DataArray<T>::diff(const DataArray<T> &array, Node &info) const 
 { 
-    // TODO(JRC)
-    return false;
+
+    info.reset();
+
+    index_t t_nelems = number_of_elements();
+    index_t o_nelems = array.number_of_elements();
+
+    for(size_t i = 0; i < (size_t)std::min(t_nelems, o_nelems); i++)
+    {
+        T &t_elem = (*this)[i];
+        T &o_elem = array[i];
+        if(t_elem != o_elem)
+        {
+            std::ostringstream oss;
+            oss << i << ": (" << t_elem << ", " << o_elem << ")";
+            info.append().set(oss.str());
+        }
+    }
+
+    if(t_nelems != o_nelems)
+    {
+        std::ostringstream oss;
+        oss << std::min(t_nelems, o_nelems) << "..." <<
+            std::max(t_nelems, o_nelems) << ": " <<
+            "Missing from " <<
+            ((t_nelems < o_nelems) ? "self" : "other") << ".";
+        info.append().set(oss.str());
+    }
+
+    return !info.dtype().is_empty();
 }
 
 //---------------------------------------------------------------------------//
