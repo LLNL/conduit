@@ -90,7 +90,7 @@ std::string
 web_client_root_directory()
 {
     // check for source dir
-    std::string web_root = utils::join_file_paths(CONDUIT_RELAY_SOURCE_DIR,
+    std::string web_root = utils::join_file_path(CONDUIT_RELAY_SOURCE_DIR,
                                                  "web_clients");
     
     if(conduit::utils::is_directory(web_root))
@@ -755,17 +755,17 @@ void
 WebServer::entangle_register()
 {
     // check for source dir
-    std::string et_script = utils::join_file_paths(CONDUIT_RELAY_SOURCE_DIR,
+    std::string et_script = utils::join_file_path(CONDUIT_RELAY_SOURCE_DIR,
                                                   "scripts");
-    et_script = utils::join_file_paths(et_script,"conduit_relay_entangle.py");
+    et_script = utils::join_file_path(et_script,"conduit_relay_entangle.py");
 
     if(!utils::is_file(et_script))
     {
         Node n;
         conduit::about(n);
         et_script = n["install_prefix"].as_string();
-        et_script = utils::join_file_paths(et_script,"bin");
-        et_script = utils::join_file_paths(et_script,"conduit_relay_entangle.py");
+        et_script = utils::join_file_path(et_script,"bin");
+        et_script = utils::join_file_path(et_script,"conduit_relay_entangle.py");
     }
     
     if(!utils::is_file(et_script))

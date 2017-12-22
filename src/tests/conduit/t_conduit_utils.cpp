@@ -255,10 +255,10 @@ TEST(conduit_utils, is_dir)
 TEST(conduit_utils, is_file)
 {
 
-    std::string tf_path = utils::join_file_paths(CONDUIT_T_SRC_DIR,
+    std::string tf_path = utils::join_file_path(CONDUIT_T_SRC_DIR,
                                                 "conduit");
 
-    tf_path = utils::join_file_paths(tf_path,"t_conduit_utils.cpp");
+    tf_path = utils::join_file_path(tf_path,"t_conduit_utils.cpp");
 
     EXPECT_TRUE(utils::is_file(tf_path));
     
@@ -349,7 +349,7 @@ TEST(conduit_utils, base64_enc_dec)
 //-----------------------------------------------------------------------------
 TEST(conduit_utils, dir_create_and_remove_tests)
 {
-    std::string test_dir = utils::join_file_paths(CONDUIT_T_BIN_DIR,
+    std::string test_dir = utils::join_file_path(CONDUIT_T_BIN_DIR,
                                                  "tout_dir_create_test");
     
     CONDUIT_INFO("test creating and removing dir: " << test_dir);
@@ -380,8 +380,8 @@ TEST(conduit_utils, file_path_split_tests)
 
     std::string my_path = "a" +  sep + "b" + sep + "c";
 
-    std::string my_path_via_join = utils::join_file_paths("a","b");
-    my_path_via_join = utils::join_file_paths(my_path_via_join,"c");
+    std::string my_path_via_join = utils::join_file_path("a","b");
+    my_path_via_join = utils::join_file_path(my_path_via_join,"c");
     
     EXPECT_EQ(my_path,my_path_via_join);
 
@@ -421,27 +421,27 @@ TEST(conduit_utils, file_path_split_tests)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_utils, join_paths_tests)
+TEST(conduit_utils, join_path_tests)
 {
     // note: these test joining conduit paths, not file system paths
     
     
-    std::string res = utils::join_paths("","mypath");
+    std::string res = utils::join_path("","mypath");
     EXPECT_EQ(res,"mypath");
     
-    res = utils::join_paths("mypath","");
+    res = utils::join_path("mypath","");
     EXPECT_EQ(res,"mypath");
     
-    res = utils::join_paths("","");
+    res = utils::join_path("","");
     EXPECT_EQ(res,"");
 
-    res = utils::join_paths("here/","mypath");
+    res = utils::join_path("here/","mypath");
     EXPECT_EQ(res,"here/mypath");
 
-    res = utils::join_paths("/","mypath");
+    res = utils::join_path("/","mypath");
     EXPECT_EQ(res,"/mypath");
 
-    res = utils::join_paths("/here","mypath");
+    res = utils::join_path("/here","mypath");
     EXPECT_EQ(res,"/here/mypath");
 
 }

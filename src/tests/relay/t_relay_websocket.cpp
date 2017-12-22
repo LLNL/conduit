@@ -71,10 +71,10 @@ TEST(conduit_relay_web_websocket, websocket_test)
     }
 
     // read png data into a string.
-    std::string wsock_path = utils::join_file_paths(web::web_client_root_directory(),
+    std::string wsock_path = utils::join_file_path(web::web_client_root_directory(),
                                                    "wsock_test");
 
-    std::string example_png_path = utils::join_file_paths(wsock_path,
+    std::string example_png_path = utils::join_file_path(wsock_path,
                                                          "example.png");
 
     CONDUIT_INFO("Reading Example PNG file:" << example_png_path);
@@ -120,15 +120,15 @@ TEST(conduit_relay_web_websocket, websocket_test)
 
     if(use_ssl)
     {
-        std::string cert_file = utils::join_file_paths(CONDUIT_T_SRC_DIR,"relay");
-        cert_file = utils::join_file_paths(cert_file,"t_ssl_cert.pem");
+        std::string cert_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"relay");
+        cert_file = utils::join_file_path(cert_file,"t_ssl_cert.pem");
         svr.set_ssl_certificate_file(cert_file);
     }
 
     if(use_auth)
     {
-        std::string auth_file = utils::join_file_paths(CONDUIT_T_SRC_DIR,"relay");
-        auth_file = utils::join_file_paths(auth_file,"t_htpasswd.txt");
+        std::string auth_file = utils::join_file_path(CONDUIT_T_SRC_DIR,"relay");
+        auth_file = utils::join_file_path(auth_file,"t_htpasswd.txt");
         svr.set_htpasswd_auth_domain("test");
         svr.set_htpasswd_auth_file(auth_file);
     }
