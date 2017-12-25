@@ -382,6 +382,19 @@ namespace utils
            return  oss.str();
      }
 
+     // implement to avoid complications with visual c++
+     template< typename T >
+     const T& min(const T& value1, const T& value2)
+     {
+        return (value1 < value2) ? value1 : value2;
+     }
+
+     template< typename T >
+     const T& max(const T& value1, const T& value2)
+     {
+        return (value1 > value2) ? value1 : value2;
+     }
+
 
 //-----------------------------------------------------------------------------
 // floating point to string helper, strikes a balance of what we want 
