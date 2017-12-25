@@ -13687,6 +13687,12 @@ Node::diff(const Node &n, Node &info) const
         }
     }
 
+    if((info.dtype().is_object() || info.dtype().is_list()) &&
+        info.number_of_children() == 0)
+    {
+        info.set(DataType::empty());
+    }
+
     return !info.dtype().is_empty();
 }
 

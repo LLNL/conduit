@@ -51,6 +51,7 @@
 #include "conduit.hpp"
 
 #include <cmath>
+#include <iostream>
 #include <vector>
 #include <string>
 #include "gtest/gtest.h"
@@ -204,21 +205,103 @@ TEST(conduit_node_compare, leaf_mismatch)
 //-----------------------------------------------------------------------------
 TEST(conduit_node_compare, object_item_diff)
 {
-    // TODO(JRC): Add a test case here.
-    // - verify for the object case
-    //   - no difference
-    //   - different leaf values
-    EXPECT_TRUE(true);
+    const size_t n_num_children = 5;
+    Node n, o, info;
+    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    {
+        std::ostringstream oss;
+        oss << leaf_idx;
+        n[oss.str()].set(leaf_idx);
+        o[oss.str()].set(leaf_idx+(leaf_idx%2));
+    }
+
+    EXPECT_TRUE(n.diff(o, info));
+    EXPECT_FALSE(info.dtype().is_empty());
+
+    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    {
+        std::ostringstream oss;
+        oss << leaf_idx;
+        std::string leaf_str = oss.str();
+        if(leaf_idx % 2 == 1)
+        {
+            EXPECT_TRUE(info.has_child(leaf_str));
+            EXPECT_TRUE(info[leaf_str].dtype().is_list());
+        }
+        else
+        {
+            EXPECT_FALSE(info.has_child(leaf_str));
+        }
+    }
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node_compare, object_size_diff)
 {
-    // TODO(JRC): Add a test case here.
-    // - verify for the object case
-    //   - only extra items in the self
-    //   - only extra items in the other
-    EXPECT_TRUE(true);
+    const size_t n_num_children = 5;
+    Node n, info;
+    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    {
+        std::ostringstream oss;
+        oss << leaf_idx;
+        n[oss.str()].set(leaf_idx);
+    }
+
+    // Full vs. Empty Node Check //
+
+    Node o(DataType::object());
+    info.reset();
+    EXPECT_TRUE(n.diff(o, info));
+    EXPECT_FALSE(info.dtype().is_empty());
+    EXPECT_EQ(info.number_of_children(), n_num_children);
+    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    {
+        std::ostringstream oss;
+        oss << leaf_idx;
+        std::string leaf_str = oss.str();
+
+        EXPECT_TRUE(info.has_child(leaf_str));
+        EXPECT_TRUE(info[leaf_str].dtype().is_string());
+        EXPECT_NE(info[leaf_str].as_string().find("subtree"), std::string::npos);
+    }
+
+    // Equal Node Check //
+
+    o.set(n);
+    info.reset();
+    EXPECT_FALSE(n.diff(o, info));
+    EXPECT_TRUE(info.dtype().is_empty());
+
+    // Half-Full Node Check //
+
+    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    {
+        if(leaf_idx % 2 == 1)
+        {
+            std::ostringstream oss;
+            oss << leaf_idx;
+            o.remove(oss.str());
+        }
+    }
+    info.reset();
+    EXPECT_TRUE(n.diff(o, info));
+    EXPECT_FALSE(info.dtype().is_empty());
+    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    {
+        std::ostringstream oss;
+        oss << leaf_idx;
+        std::string leaf_str = oss.str();
+        if(leaf_idx % 2 == 1)
+        {
+            EXPECT_TRUE(info.has_child(leaf_str));
+            EXPECT_TRUE(info[leaf_str].dtype().is_string());
+            EXPECT_NE(info[leaf_str].as_string().find("subtree"), std::string::npos);
+        }
+        else
+        {
+            EXPECT_FALSE(info.has_child(leaf_str));
+        }
+    }
 }
 
 //-----------------------------------------------------------------------------
