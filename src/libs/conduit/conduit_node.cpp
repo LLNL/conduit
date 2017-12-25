@@ -58,6 +58,7 @@
 //-----------------------------------------------------------------------------
 // -- standard c lib includes -- 
 //-----------------------------------------------------------------------------
+#define NOMINMAX
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -13588,14 +13589,14 @@ Node::diff(const Node &n, Node &info) const
 
         bool is_diff = t_nchild != n_nchild;
         size_t i = 0;
-        for(; i < (size_t)std::min(t_nchild, n_nchild); i++)
+        for(; i < (size_t)(std::min)(t_nchild, n_nchild); i++)
         {
             const Node &t_child = child(i);
             const Node &n_child = n.child(i);
             Node &info_child = info.append();
             is_diff |= t_child.diff(n_child, info_child);
         }
-        for(; i < (size_t)std::max(t_nchild, n_nchild); i++)
+        for(; i < (size_t)(std::max)(t_nchild, n_nchild); i++)
         {
             Node &info_child = info.append();
             std::string loc_str = (i >= (size_t)t_nchild) ? "instance" : "argument";

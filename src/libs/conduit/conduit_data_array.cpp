@@ -52,6 +52,7 @@
 //-----------------------------------------------------------------------------
 // -- standard includes -- 
 //-----------------------------------------------------------------------------
+#define NOMINMAX
 #include <cmath>
 #include <cstring>
 
@@ -165,7 +166,7 @@ DataArray<T>::diff(const DataArray<T> &array, Node &info) const
     index_t t_nelems = number_of_elements();
     index_t o_nelems = array.number_of_elements();
 
-    for(size_t i = 0; i < (size_t)std::min(t_nelems, o_nelems); i++)
+    for(size_t i = 0; i < (size_t)(std::min)(t_nelems, o_nelems); i++)
     {
         T &t_elem = (*this)[i];
         T &o_elem = array[i];
@@ -180,8 +181,8 @@ DataArray<T>::diff(const DataArray<T> &array, Node &info) const
     if(t_nelems != o_nelems)
     {
         std::ostringstream oss;
-        oss << std::min(t_nelems, o_nelems) << "..." <<
-            std::max(t_nelems, o_nelems) << ": " <<
+        oss << (std::min)(t_nelems, o_nelems) << "..." <<
+            (std::max)(t_nelems, o_nelems) << ": " <<
             "missing from " <<
             ((t_nelems < o_nelems) ? "instance" : "argument");
         info.append().set(oss.str());
@@ -207,7 +208,7 @@ DataArray<T>::ndiff(const DataArray<T> &array, Node &info) const
     index_t o_nelems = array.number_of_elements();
 
     size_t i = 0;
-    for(; i < (size_t)std::min(t_nelems, o_nelems); i++)
+    for(; i < (size_t)(std::min)(t_nelems, o_nelems); i++)
     {
         T &t_elem = (*this)[i];
         T &o_elem = array[i];
