@@ -13514,9 +13514,6 @@ Node::equals(const Node &n) const
 bool
 Node::diff(const Node &n, Node &info) const
 {
-    // TODO(JRC): Improve all of the messages for all of the different
-    // scenarios in this function.
-
     info.reset();
 
     index_t t_dtid  = dtype().id();
@@ -13524,7 +13521,10 @@ Node::diff(const Node &n, Node &info) const
 
     if(t_dtid != n_dtid)
     {
-        info.set("Data type mismatch.");
+        std::ostringstream oss;
+        oss << "data types do not match (" <<
+            dtype().name() << " vs. " << n.dtype().name() << ")";
+        info.set(oss.str());
     }
     else if(t_dtid == DataType::EMPTY_ID)
     {
@@ -13543,7 +13543,7 @@ Node::diff(const Node &n, Node &info) const
             Node &info_child = info[child_path];
             if(!n.has_child(child_path))
             {
-                info_child.set("Missing from other.");
+                info_child.set("data subtree missing from argument");
             }
             else
             {
@@ -13563,7 +13563,7 @@ Node::diff(const Node &n, Node &info) const
             Node &info_child = info[child_path];
             if(!has_child(child_path))
             {
-                info_child.set("Missing from self.");
+                info_child.set("data subtree missing from instance");
             }
             else
             {
@@ -13598,8 +13598,8 @@ Node::diff(const Node &n, Node &info) const
         for(; i < (size_t)std::max(t_nchild, n_nchild); i++)
         {
             Node &info_child = info.append();
-            std::string loc_str = (i >= (size_t)t_nchild) ? "self" : "other";
-            info_child.set("Missing from " + loc_str + ".");
+            std::string loc_str = (i >= (size_t)t_nchild) ? "instance" : "argument";
+            info_child.set("data item missing from " + loc_str);
         }
 
         if(!is_diff)
@@ -13671,13 +13671,14 @@ Node::diff(const Node &n, Node &info) const
         }
         else if(dtype().is_char8_str())
         {
-            // TODO(JRC): Improve how this case is handled in terms of both
-            // error message and value.
             std::string t_array = as_string();
             std::string n_array = n.as_string();
             if(t_array != n_array)
             {
-                info.set("Strings do not match.");
+                std::ostringstream oss;
+                oss << "data strings do not match ('" <<
+                    t_array << "' vs. '" << n_array << "')";
+                info.set(oss.str());
             }
         }
         else

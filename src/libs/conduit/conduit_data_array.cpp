@@ -182,8 +182,8 @@ DataArray<T>::diff(const DataArray<T> &array, Node &info) const
         std::ostringstream oss;
         oss << std::min(t_nelems, o_nelems) << "..." <<
             std::max(t_nelems, o_nelems) << ": " <<
-            "Missing from " <<
-            ((t_nelems < o_nelems) ? "self" : "other") << ".";
+            "missing from " <<
+            ((t_nelems < o_nelems) ? "instance" : "argument");
         info.append().set(oss.str());
     }
 

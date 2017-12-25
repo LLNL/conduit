@@ -50,25 +50,12 @@
 
 #include "conduit.hpp"
 
+#include <cmath>
 #include <vector>
 #include <string>
 #include "gtest/gtest.h"
 
 using namespace conduit;
-
-// test cases:
-// - verify that a node always diffs properly against itself
-// - verify that nodes with different data types are always diff
-// - verify that a number of leaf node types work (esp. arrays)
-// - verify for the object case
-//   - no difference
-//   - only extra items in the self
-//   - only extra items in the other
-//   - different leaf values
-// - verify for the list case
-//   - no difference
-//   - only difference is size
-//   - different in a few elements, which show up properly
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node_compare, basic)
@@ -91,15 +78,15 @@ TEST(conduit_node_compare, basic)
 //-----------------------------------------------------------------------------
 TEST(conduit_node_compare, leaf_numeric)
 {
-    DataType::TypeID leaf_tids[10] = {
+    const DataType::TypeID leaf_tids[10] = {
         DataType::INT8_ID, DataType::INT16_ID, DataType::INT32_ID, DataType::INT64_ID,
         DataType::UINT8_ID, DataType::UINT16_ID, DataType::UINT32_ID, DataType::UINT64_ID,
         DataType::FLOAT32_ID, DataType::FLOAT64_ID
     };
 
-    for(size_t leaf_idx = 0; leaf_idx < 1; leaf_idx++)
+    for(size_t type_idx = 0; type_idx < 10; type_idx++)
     {
-        DataType::TypeID leaf_tid = leaf_tids[leaf_idx];
+        const DataType::TypeID leaf_tid = leaf_tids[type_idx];
         DataType leaf_type_tmp(leaf_tid, 1, 0, 0, 0, Endianness::DEFAULT_ID);
         DataType leaf_type(leaf_tid, 5, 0, leaf_type_tmp.bytes_compact(),
             0, Endianness::DEFAULT_ID);
@@ -148,20 +135,107 @@ TEST(conduit_node_compare, leaf_numeric)
 //-----------------------------------------------------------------------------
 TEST(conduit_node_compare, leaf_string)
 {
-    // TODO(JRC): Add a test case here.
-    EXPECT_TRUE(true);
+    const std::string test_strs[4] = {"I", "me", "You", "tHeM"};
+
+    for(size_t test_idx = 0; test_idx < 4; test_idx++)
+    {
+        const std::string test_str = test_strs[test_idx];
+        std::string diff_str = test_str;
+        {
+            size_t test_len = test_str.length();
+            diff_str[test_len-1] += 1;
+        }
+
+        Node n, o, info;
+        n.set(test_str);
+        o.set(test_str);
+        EXPECT_FALSE(n.diff(o, info));
+        EXPECT_TRUE(info.dtype().is_empty());
+
+        info.reset();
+        n.set(test_str);
+        o.set(diff_str);
+        EXPECT_TRUE(n.diff(o, info));
+        EXPECT_FALSE(info.dtype().is_empty());
+
+        const std::string info_str = info.as_string();
+        EXPECT_NE(info_str.find(test_str), std::string::npos);
+        EXPECT_NE(info_str.find(diff_str), std::string::npos);
+    }
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node_compare, leaf_mismatch)
 {
+    const DataType::TypeID leaf_tids[6] = {
+        DataType::INT32_ID, DataType::INT64_ID,
+        DataType::UINT32_ID, DataType::UINT64_ID,
+        DataType::FLOAT32_ID, DataType::FLOAT64_ID
+    };
+
+    for(size_t type_idx = 0; type_idx < 6; type_idx++)
+    {
+        const DataType::TypeID curr_tid = leaf_tids[(type_idx+0)%6];
+        const DataType::TypeID next_tid = leaf_tids[(type_idx+1)%6];
+
+        DataType curr_type_tmp(curr_tid, 1, 0, 0, 0, Endianness::DEFAULT_ID);
+        DataType curr_type(curr_tid, 1, 0, curr_type_tmp.bytes_compact(),
+            0, Endianness::DEFAULT_ID);
+        DataType next_type_tmp(next_tid, 1, 0, 0, 0, Endianness::DEFAULT_ID);
+        DataType next_type(next_tid, 1, 0, next_type_tmp.bytes_compact(),
+            0, Endianness::DEFAULT_ID);
+
+        const size_t max_bytes = std::max(
+            curr_type.bytes_compact(), next_type.bytes_compact());
+        conduit_byte* max_data = new conduit_byte[max_bytes];
+        memset(max_data, 0, max_bytes);
+
+        Node n(curr_type, (void*)max_data, true);
+        Node o(next_type, (void*)max_data, true);
+
+        Node info;
+        EXPECT_TRUE(n.diff(o, info));
+        EXPECT_FALSE(info.dtype().is_empty());
+
+        delete [] max_data;
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_compare, object_item_diff)
+{
     // TODO(JRC): Add a test case here.
+    // - verify for the object case
+    //   - no difference
+    //   - different leaf values
     EXPECT_TRUE(true);
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_node_compare, test)
+TEST(conduit_node_compare, object_size_diff)
 {
     // TODO(JRC): Add a test case here.
+    // - verify for the object case
+    //   - only extra items in the self
+    //   - only extra items in the other
+    EXPECT_TRUE(true);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_compare, list_item_diff)
+{
+    // TODO(JRC): Add a test case here.
+    // - verify for the list case
+    //   - no difference
+    //   - different in a few elements, which show up properly
+    EXPECT_TRUE(true);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_compare, list_size_diff)
+{
+    // TODO(JRC): Add a test case here.
+    // - verify for the list case
+    //   - only difference is size
     EXPECT_TRUE(true);
 }
