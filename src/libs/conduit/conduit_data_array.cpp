@@ -52,7 +52,8 @@
 //-----------------------------------------------------------------------------
 // -- standard includes -- 
 //-----------------------------------------------------------------------------
-#define NOMINMAX
+#undef min
+#undef max
 #include <cmath>
 #include <cstring>
 
@@ -191,7 +192,6 @@ DataArray<T>::diff(const DataArray<T> &array, Node &info) const
     return !info.dtype().is_empty();
 }
 
-/*
 //---------------------------------------------------------------------------//
 template <typename T> 
 T
@@ -212,16 +212,18 @@ DataArray<T>::ndiff(const DataArray<T> &array, Node &info) const
     {
         T &t_elem = (*this)[i];
         T &o_elem = array[i];
-        res += (info[i] = std::abs(t_elem - o_elem));
+
+        T diff_elem = std::abs(t_elem - o_elem);
+        info[i] = diff_elem;
+        res += diff_elem;
     }
-    for(; i < t_nelems; i++)
+    for(; i < (size_t)t_nelems; i++)
     {
-        info[i] = 0;
+        info[i] = (T)0;
     }
 
     return res;
 }
-*/
 
 //---------------------------------------------------------------------------//
 template <typename T> 

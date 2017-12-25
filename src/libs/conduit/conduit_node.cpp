@@ -58,7 +58,8 @@
 //-----------------------------------------------------------------------------
 // -- standard c lib includes -- 
 //-----------------------------------------------------------------------------
-#define NOMINMAX
+#undef min
+#undef max
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
