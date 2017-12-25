@@ -190,6 +190,38 @@ DataArray<T>::diff(const DataArray<T> &array, Node &info) const
     return !info.dtype().is_empty();
 }
 
+/*
+//---------------------------------------------------------------------------//
+template <typename T> 
+T
+DataArray<T>::ndiff(const DataArray<T> &array, Node &info) const 
+{ 
+    T res = 0;
+    info.reset();
+
+    DataType info_dtype;
+    dtype().compact_to(info_dtype);
+    info.set(info_dtype);
+
+    index_t t_nelems = number_of_elements();
+    index_t o_nelems = array.number_of_elements();
+
+    size_t i = 0;
+    for(; i < (size_t)std::min(t_nelems, o_nelems); i++)
+    {
+        T &t_elem = (*this)[i];
+        T &o_elem = array[i];
+        res += (info[i] = std::abs(t_elem - o_elem));
+    }
+    for(; i < t_nelems; i++)
+    {
+        info[i] = 0;
+    }
+
+    return res;
+}
+*/
+
 //---------------------------------------------------------------------------//
 template <typename T> 
 std::string             
