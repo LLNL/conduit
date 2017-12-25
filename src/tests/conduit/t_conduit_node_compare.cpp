@@ -307,18 +307,80 @@ TEST(conduit_node_compare, object_size_diff)
 //-----------------------------------------------------------------------------
 TEST(conduit_node_compare, list_item_diff)
 {
-    // TODO(JRC): Add a test case here.
-    // - verify for the list case
-    //   - no difference
-    //   - different in a few elements, which show up properly
-    EXPECT_TRUE(true);
+    const size_t n_num_children = 5;
+    Node n, o, info;
+    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    {
+        n.append().set(leaf_idx);
+        o.append().set(leaf_idx+(leaf_idx%2));
+    }
+
+    EXPECT_TRUE(n.diff(o, info));
+    EXPECT_FALSE(info.dtype().is_empty());
+    EXPECT_EQ(info.number_of_children(), n_num_children);
+
+    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    {
+        if(leaf_idx % 2 == 1)
+        {
+            EXPECT_TRUE(info.child(leaf_idx).dtype().is_list());
+        }
+        else
+        {
+            EXPECT_TRUE(info.child(leaf_idx).dtype().is_empty());
+        }
+    }
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node_compare, list_size_diff)
 {
-    // TODO(JRC): Add a test case here.
-    // - verify for the list case
-    //   - only difference is size
-    EXPECT_TRUE(true);
+    const size_t n_num_children = 5;
+    Node n, info;
+    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    {
+        n.append().set(leaf_idx);
+    }
+
+    // Full vs. Empty Node Check //
+
+    Node o(DataType::list());
+    info.reset();
+    EXPECT_TRUE(n.diff(o, info));
+    EXPECT_FALSE(info.dtype().is_empty());
+    EXPECT_EQ(info.number_of_children(), n_num_children);
+    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    {
+        EXPECT_TRUE(info[leaf_idx].dtype().is_string());
+        EXPECT_NE(info[leaf_idx].as_string().find("item"), std::string::npos);
+    }
+
+    // Equal Node Check //
+
+    o.set(n);
+    info.reset();
+    EXPECT_FALSE(n.diff(o, info));
+    EXPECT_TRUE(info.dtype().is_empty());
+
+    // Half-Full Node Check //
+
+    for(int32 leaf_idx = n_num_children - 1; leaf_idx > n_num_children / 2; leaf_idx--)
+    {
+        o.remove(leaf_idx);
+    }
+    info.reset();
+    EXPECT_TRUE(n.diff(o, info));
+    EXPECT_FALSE(info.dtype().is_empty());
+    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    {
+        if(leaf_idx > n_num_children / 2)
+        {
+            EXPECT_TRUE(info[leaf_idx].dtype().is_string());
+            EXPECT_NE(info[leaf_idx].as_string().find("item"), std::string::npos);
+        }
+        else
+        {
+            EXPECT_TRUE(info[leaf_idx].dtype().is_empty());
+        }
+    }
 }
