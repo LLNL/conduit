@@ -293,7 +293,7 @@ public:
     /// copy constructor
     DataType(const DataType& type);
     /// construct simplest dtype for given type id
-    explicit DataType(index_t id);
+    explicit DataType(index_t id, index_t num_elements=0);
 
     /// construct from full details, given a data type name
     DataType(const std::string &dtype_name,

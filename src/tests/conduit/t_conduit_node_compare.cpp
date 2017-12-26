@@ -89,12 +89,10 @@ TEST(conduit_node_compare, leaf_numeric)
     for(size_t type_idx = 0; type_idx < 10; type_idx++)
     {
         const DataType::TypeID leaf_tid = leaf_tids[type_idx];
-        DataType leaf_type_tmp(leaf_tid, 1, 0, 0, 0, Endianness::DEFAULT_ID);
-        DataType leaf_type(leaf_tid, 5, 0, leaf_type_tmp.bytes_compact(),
-            0, Endianness::DEFAULT_ID);
+        DataType leaf_type(leaf_tid, 5);
 
-        const size_t type_bytes = leaf_type_tmp.bytes_compact();
-        const size_t leaf_bytes = 5 * type_bytes;
+        const size_t type_bytes = leaf_type.stride();
+        const size_t leaf_bytes = leaf_type.bytes_compact();
 
         conduit_byte* n_data = new conduit_byte[leaf_bytes];
         if(leaf_tid == DataType::INT8_ID)         *((int8*)n_data) = 0;
@@ -180,12 +178,8 @@ TEST(conduit_node_compare, leaf_mismatch)
         const DataType::TypeID curr_tid = leaf_tids[(type_idx+0)%6];
         const DataType::TypeID next_tid = leaf_tids[(type_idx+1)%6];
 
-        DataType curr_type_tmp(curr_tid, 1, 0, 0, 0, Endianness::DEFAULT_ID);
-        DataType curr_type(curr_tid, 1, 0, curr_type_tmp.bytes_compact(),
-            0, Endianness::DEFAULT_ID);
-        DataType next_type_tmp(next_tid, 1, 0, 0, 0, Endianness::DEFAULT_ID);
-        DataType next_type(next_tid, 1, 0, next_type_tmp.bytes_compact(),
-            0, Endianness::DEFAULT_ID);
+        DataType curr_type(curr_tid, 1);
+        DataType next_type(next_tid, 1);
 
         const size_t max_bytes = utils::max(
             curr_type.bytes_compact(), next_type.bytes_compact());

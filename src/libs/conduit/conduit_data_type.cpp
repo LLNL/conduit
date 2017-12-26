@@ -374,11 +374,11 @@ DataType::DataType(const DataType& value)
 
 
 //---------------------------------------------------------------------------//
-DataType::DataType(index_t id)
+DataType::DataType(index_t id, index_t num_elements)
 : m_id(id),
-  m_num_ele(0),
+  m_num_ele(num_elements),
   m_offset(0),
-  m_stride(0),
+  m_stride(DataType::default_bytes(id)),
   m_ele_bytes(0),
   m_endianness(Endianness::DEFAULT_ID)
 {}
