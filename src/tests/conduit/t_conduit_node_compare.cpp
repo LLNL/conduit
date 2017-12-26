@@ -181,7 +181,7 @@ TEST(conduit_node_compare, leaf_mismatch)
         DataType curr_type(curr_tid, 1);
         DataType next_type(next_tid, 1);
 
-        const size_t max_bytes = utils::max(
+        const size_t max_bytes = std::max(
             curr_type.bytes_compact(), next_type.bytes_compact());
         conduit_byte* max_data = new conduit_byte[max_bytes];
         memset(max_data, 0, max_bytes);
