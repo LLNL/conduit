@@ -53,7 +53,6 @@
 // -- standard includes -- 
 //-----------------------------------------------------------------------------
 #include <algorithm>
-#include <cmath>
 #include <cstring>
 
 
@@ -212,7 +211,12 @@ DataArray<T>::ndiff(const DataArray<T> &array, Node &info) const
         T &t_elem = (*this)[i];
         T &o_elem = array[i];
 
-        T diff_elem = std::abs(t_elem - o_elem);
+        T diff_elem = t_elem - o_elem;
+        if(diff_elem < (T)0.0)
+        {
+            diff_elem *= (T)-1.0;
+        }
+
         info[i] = diff_elem;
         res += diff_elem;
     }
