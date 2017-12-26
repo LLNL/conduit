@@ -95,16 +95,7 @@ TEST(conduit_node_compare, leaf_numeric)
         const size_t leaf_bytes = leaf_type.bytes_compact();
 
         conduit_byte* n_data = new conduit_byte[leaf_bytes];
-        if(leaf_tid == DataType::INT8_ID)         *((int8*)n_data) = 0;
-        else if(leaf_tid == DataType::INT16_ID)   *((int16*)n_data) = 0;
-        else if(leaf_tid == DataType::INT32_ID)   *((int32*)n_data) = 0;
-        else if(leaf_tid == DataType::INT64_ID)   *((int64*)n_data) = 0;
-        else if(leaf_tid == DataType::UINT8_ID)   *((uint8*)n_data) = 0;
-        else if(leaf_tid == DataType::UINT16_ID)  *((uint16*)n_data) = 0;
-        else if(leaf_tid == DataType::UINT32_ID)  *((uint32*)n_data) = 0;
-        else if(leaf_tid == DataType::UINT64_ID)  *((uint64*)n_data) = 0;
-        else if(leaf_tid == DataType::FLOAT32_ID) *((float32*)n_data) = 0.0f;
-        else if(leaf_tid == DataType::FLOAT64_ID) *((float64*)n_data) = 0.0;
+        memset(n_data, 0, leaf_bytes);
         Node n(leaf_type, (void*)n_data, true);
 
         conduit_byte* o_data = new conduit_byte[leaf_bytes];
@@ -115,8 +106,6 @@ TEST(conduit_node_compare, leaf_numeric)
         EXPECT_FALSE(n.diff(o, info));
         EXPECT_TRUE(info.dtype().is_empty());
 
-        // TODO(JRC): There's something wrong with how the fourth element
-        // of the list is being set here that needs to be fixed.
         info.reset();
         memset(&o_data[0*type_bytes], 1, 1);
         memset(&o_data[4*type_bytes], 1, 1);
