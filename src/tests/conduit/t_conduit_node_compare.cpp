@@ -51,7 +51,7 @@
 #include "conduit.hpp"
 #include "conduit_utils.hpp"
 
-#include <cmath>
+#include <algorithm>
 #include <iostream>
 #include <vector>
 #include <string>

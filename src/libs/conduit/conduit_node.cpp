@@ -65,6 +65,7 @@
 //-----------------------------------------------------------------------------
 // -- standard cpp lib includes -- 
 //-----------------------------------------------------------------------------
+#include <algorithm>
 #include <iostream>
 #include <map>
 
@@ -74,7 +75,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <cmath>
 
 #include <sys/types.h>
 #include <sys/stat.h>
