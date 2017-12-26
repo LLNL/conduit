@@ -49,6 +49,7 @@
 //-----------------------------------------------------------------------------
 
 #include "conduit.hpp"
+#include "conduit_utils.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -186,7 +187,7 @@ TEST(conduit_node_compare, leaf_mismatch)
         DataType next_type(next_tid, 1, 0, next_type_tmp.bytes_compact(),
             0, Endianness::DEFAULT_ID);
 
-        const size_t max_bytes = std::max(
+        const size_t max_bytes = utils::max(
             curr_type.bytes_compact(), next_type.bytes_compact());
         conduit_byte* max_data = new conduit_byte[max_bytes];
         memset(max_data, 0, max_bytes);

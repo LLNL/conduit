@@ -384,13 +384,19 @@ namespace utils
 
      // implement to avoid complications with visual c++
      template< typename T >
-     const T& min(const T& value1, const T& value2)
+     T min(const T &value1, const T &value2);
+
+     template< typename T >
+     T min(const T &value1, const T &value2)
      {
         return (value1 < value2) ? value1 : value2;
      }
 
      template< typename T >
-     const T& max(const T& value1, const T& value2)
+     T max(const T &value1, const T &value2);
+
+     template< typename T >
+     T max(const T &value1, const T &value2)
      {
         return (value1 > value2) ? value1 : value2;
      }
