@@ -59,7 +59,7 @@ using namespace conduit;
 // access verify logging helpers
 using namespace conduit::blueprint::utils;
 // access conduit path helper
-using ::conduit::utils::join_paths;
+using ::conduit::utils::join_path;
 
 
 namespace conduit { namespace blueprint { namespace mesh {
@@ -755,8 +755,8 @@ mesh::generate_index(const Node &mesh,
 
         idx_coordset["coord_system/type"] = identify_coord_sys_type(idx_coordset["coord_system/axes"]);
 
-        std::string cs_ref_path = join_paths(ref_path, "coordsets");
-        cs_ref_path = join_paths(cs_ref_path, coordset_name);
+        std::string cs_ref_path = join_path(ref_path, "coordsets");
+        cs_ref_path = join_path(cs_ref_path, coordset_name);
         idx_coordset["path"] = cs_ref_path;
     }
 
@@ -769,8 +769,8 @@ mesh::generate_index(const Node &mesh,
         idx_topo["type"] = topo["type"].as_string();
         idx_topo["coordset"] = topo["coordset"].as_string();
 
-        std::string tp_ref_path = join_paths(ref_path,"topologies");
-        tp_ref_path = join_paths(tp_ref_path,topo_name);
+        std::string tp_ref_path = join_path(ref_path,"topologies");
+        tp_ref_path = join_path(tp_ref_path,topo_name);
         idx_topo["path"] = tp_ref_path;
         
         // a topology may also specify a grid_function
@@ -797,8 +797,8 @@ mesh::generate_index(const Node &mesh,
                 idx_matset["materials"][mats_itr.name()];
             }
             
-            std::string ms_ref_path = join_paths(ref_path, "matsets");
-            ms_ref_path = join_paths(ms_ref_path, matset_name);
+            std::string ms_ref_path = join_path(ref_path, "matsets");
+            ms_ref_path = join_path(ms_ref_path, matset_name);
             idx_matset["path"] = ms_ref_path;
         }
     }
@@ -847,8 +847,8 @@ mesh::generate_index(const Node &mesh,
                 idx_fld["basis"] = fld["basis"];
             }
 
-            std::string fld_ref_path = join_paths(ref_path,"fields");
-            fld_ref_path = join_paths(fld_ref_path, fld_name);
+            std::string fld_ref_path = join_path(ref_path,"fields");
+            fld_ref_path = join_path(fld_ref_path, fld_name);
             idx_fld["path"] = fld_ref_path;
         }
     }
@@ -867,8 +867,8 @@ mesh::generate_index(const Node &mesh,
             idx_adjset["association"] = adjset["association"].as_string();
             idx_adjset["topology"] = adjset["topology"].as_string();
 
-            std::string adj_ref_path = join_paths(ref_path,"adjsets");
-            adj_ref_path = join_paths(adj_ref_path, adj_name);
+            std::string adj_ref_path = join_path(ref_path,"adjsets");
+            adj_ref_path = join_path(adj_ref_path, adj_name);
             idx_adjset["path"] = adj_ref_path;
         }
     }

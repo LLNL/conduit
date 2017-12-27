@@ -279,8 +279,8 @@ namespace utils
                                   std::string &curr,
                                   std::string &next);
 
-    std::string CONDUIT_API join_paths(const std::string &left,
-                                       const std::string &right);
+    std::string CONDUIT_API join_path(const std::string &left,
+                                      const std::string &right);
 
 //-----------------------------------------------------------------------------
 /// Helpers for splitting and joining file system paths.

@@ -291,8 +291,8 @@ rsplit_path(const std::string &path,
 
 //-----------------------------------------------------------------------------
 std::string 
-join_paths(const std::string &left,
-           const std::string &right)
+join_path(const std::string &left,
+          const std::string &right)
 {
     std::string res = left;
     if(res.size() > 0 && 
