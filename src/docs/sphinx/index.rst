@@ -81,9 +81,10 @@ Conduit was built around the concept that an intuitive in-core data description 
 - Supports a mix of externally owned and Conduit allocated memory semantics.
 
 
-.. #Projects Using Conduit
-.. #------------------------
-.. # TODO: Conduit is used in VisIt, MFEM, 
+Projects Using Conduit
+------------------------
+Conduit is used in `VisIt <https://wci.llnl.gov/simulation/computer-codes/visit/>`_, `ALPINE Ascent <https://github.com/Alpine-DAV/ascent>`_, `MFEM <http://mfem.org/>`_, 
+and LLNL's Axom Toolkit (to be released).
 
 Conduit Project Resources
 --------------------------

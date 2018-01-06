@@ -58,12 +58,12 @@ Talks
 
 Interviews
 ------------------
-* `RCE HPC Podcast on Conduit  <http://www.rce-cast.com/Podcast/rce-101-conduit.html>`_
+* `RCE HPC Podcast on Conduit (October 2015) <http://www.rce-cast.com/Podcast/rce-101-conduit.html>`_
 
 ------------------
 
 Articles
 ------------------
-* `LLNL Computation Article on the 2014-2015 Harvey Mudd CS Conduit Clinic Project <http://computation.llnl.gov/newsroom/hpc-partnership-harvey-mudd-college-and-livermore>`_
+* `LLNL Article on the 2014-2015 Conduit Harvey Mudd CS Clinic Project (May 2015) <http://computation.llnl.gov/newsroom/hpc-partnership-harvey-mudd-college-and-livermore>`_
 
 
