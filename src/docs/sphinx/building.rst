@@ -116,6 +116,9 @@ The Conduit Python module will build for both Python 2 and Python 3. To select a
 
  To run the mpi unit tests on LLNL's LC platforms, you may also need change the CMake variables **MPIEXEC** and **MPIEXEC_NUMPROC_FLAG**, so you can use srun and select a partition. (for an example see: src/host-configs/chaos_5_x86_64.cmake)
 
+.. warning::
+  Starting in CMake 3.10, the FindMPI **MPIEXEC** variable was changed to **MPIEXEC_EXECUTABLE**. FindMPI will still set **MPIEXEC**, but any attempt to change it before calling FindMPI with your own cached value of **MPIEXEC** will not survive, so you need to set **MPIEXEC_EXECUTABLE** `[reference] <https://cmake.org/cmake/help/v3.10/module/FindMPI.html>`_. 
+
 * **HDF5_DIR** - Path to a HDF5 install *(optional)*. 
 
  Controls if HDF5 I/O support is built into *conduit_relay*.
@@ -172,7 +175,8 @@ Bootstrapping Third Party Dependencies
 We use **Spack** (http://software.llnl.gov/spack) to automate builds of third party dependencies on OSX and Linux. Conduit builds on Windows as well, but there is no automated process to build dependencies necessary to support Conduit's optional features.
 
 .. note::
-  Conduit developers use ``bootstrap-env.sh`` and ``scripts/uberenv/uberenv.py`` to setup third party libraries for Conduit  development.  Due to this, the process builds more libraries than necessary for most use cases. For example, we build independent  installs of Python 2 and Python 3 to make it easy to check Python C-API compatibility during development. For users of conduit, we recommend using the Conduit package included with Spack. For info on how to use this package see :ref:`building_with_spack`.
+  Conduit developers use ``bootstrap-env.sh`` and ``scripts/uberenv/uberenv.py`` to setup third party libraries for Conduit development.
+  This path uses the Conduit Spack package and extra settings, including Spack compiler and external third party package details for some platforms.  For info on how to use the Conduit Spack package see :ref:`building_with_spack`.
   
 
 On OSX and Linux, you can use ``bootstrap-env.sh`` (located at the root of the conduit repo) to help setup your development environment. This script uses ``scripts/uberenv/uberenv.py``, which leverages **Spack** to build all of the external third party libraries and tools used by Conduit. Fortran support is optional and all dependencies should build without a fortran compiler. After building these libraries and tools, it writes an initial *host-config* file and adds the Spack built CMake binary to your PATH so can immediately call the ``config-build.sh`` helper script to configure a conduit build.
