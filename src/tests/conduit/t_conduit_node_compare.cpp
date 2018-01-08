@@ -114,12 +114,11 @@ TEST(conduit_node_compare, leaf_numeric)
 
         EXPECT_EQ(info.dtype().id(), leaf_tid);
         EXPECT_EQ(info.dtype().number_of_elements(), 5);
-        // TODO(JRC): This should compare through the fourth index, but there
-        // are some weird issues running 'memcmp' on that index for >2 byte arrays.
-        for(size_t val_idx = 0; val_idx < 4; val_idx++)
+        for(size_t val_idx = 0; val_idx < 5; val_idx++)
         {
             bool should_uneq = val_idx == 0 || val_idx == 4;
-            bool are_uneq = memcmp(&n_data[val_idx], &o_data[val_idx], type_bytes) != 0;
+            bool are_uneq = memcmp(&n_data[val_idx*type_bytes],
+                                   &o_data[val_idx*type_bytes], type_bytes);
             EXPECT_EQ(are_uneq, should_uneq);
         }
 
