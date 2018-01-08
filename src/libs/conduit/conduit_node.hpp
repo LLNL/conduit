@@ -3198,12 +3198,14 @@ public:
                         {return m_schema->compatible(n.schema());}
 
     /// is this node equal to given node
-    bool             equals(const Node &n) const;
+    bool             equals(const Node &n,
+                            const Node &config = Node()) const;
 
     /// diff this node to the given node, storing the results digest
     //  in the provided data node
     bool             diff(const Node &n,
-                          Node &info) const;
+                          Node &info,
+                          const Node &config = Node()) const;
 
     ///
     /// info() creates a node that contains metadata about the current

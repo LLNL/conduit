@@ -150,17 +150,21 @@ DataArray<T>::compatible(const DataArray<T> &array) const
 //---------------------------------------------------------------------------//
 template <typename T> 
 bool
-DataArray<T>::equals(const DataArray<T> &array) const 
+DataArray<T>::equals(const DataArray<T> &array, const Node &config) const 
 { 
     Node info;
-    return !diff(array, info);
+    return !diff(array, info, config);
 }
 
 //---------------------------------------------------------------------------//
 template <typename T> 
 bool
-DataArray<T>::diff(const DataArray<T> &array, Node &info) const 
+DataArray<T>::diff(const DataArray<T> &array, Node &info, const Node &config) const 
 { 
+    // TODO(JRC): Consider moving the default machine epsilon to a constant
+    // value somewhere more generally accessible within Conduit.
+    float64 epsilon = config.has_child("eps") ? config["eps"].as_float64() : 1e-12;
+
     bool res = false;
     info.reset();
 
@@ -190,11 +194,16 @@ DataArray<T>::diff(const DataArray<T> &array, Node &info) const
     size_t i = 0;
     for(; i < (size_t)std::min(t_nelems, o_nelems); i++)
     {
-        // TODO(JRC): Figure out how floating point epsilon can be
-        // specified and leveraged here (perhaps just have an additional
-        // keyword argument for this function?).
         info_ptr[i] = (*this)[i] - array[i];
         res |= (*this)[i] != array[i];
+        if(dtype().is_floating_point())
+        {
+            res |= info_ptr[i] > epsilon || info_ptr[i] < -epsilon;
+        }
+        else
+        {
+            res |= (*this)[i] != array[i];
+        }
     }
     for(; i < (size_t)std::max(t_nelems, o_nelems); i++)
     {
