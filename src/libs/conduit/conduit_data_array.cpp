@@ -54,6 +54,7 @@
 //-----------------------------------------------------------------------------
 #include <algorithm>
 #include <cstring>
+#include <limits>
 
 
 //-----------------------------------------------------------------------------
@@ -160,69 +161,51 @@ template <typename T>
 bool
 DataArray<T>::diff(const DataArray<T> &array, Node &info) const 
 { 
+    bool res = false;
     info.reset();
 
     index_t t_nelems = number_of_elements();
     index_t o_nelems = array.number_of_elements();
 
-    for(size_t i = 0; i < (size_t)std::min(t_nelems, o_nelems); i++)
-    {
-        T &t_elem = (*this)[i];
-        T &o_elem = array[i];
-        if(t_elem != o_elem)
-        {
-            std::ostringstream oss;
-            oss << i << ": (" << t_elem << ", " << o_elem << ")";
-            info.append().set(oss.str());
-        }
-    }
-
-    if(t_nelems != o_nelems)
-    {
-        std::ostringstream oss;
-        oss << std::min(t_nelems, o_nelems) << "..." <<
-            std::max(t_nelems, o_nelems) << ": " <<
-            "missing from " <<
-            ((t_nelems < o_nelems) ? "instance" : "argument");
-        info.append().set(oss.str());
-    }
-
-    return !info.dtype().is_empty();
-}
-
-//---------------------------------------------------------------------------//
-template <typename T> 
-T
-DataArray<T>::ndiff(const DataArray<T> &array, Node &info) const 
-{ 
-    T res = 0;
-    info.reset();
-
-    DataType info_dtype;
-    dtype().compact_to(info_dtype);
+    DataType info_dtype(array.dtype().id(), std::max(t_nelems, o_nelems));
     info.set(info_dtype);
+    T* info_ptr = (T*)info.data_ptr();
 
-    index_t t_nelems = number_of_elements();
-    index_t o_nelems = array.number_of_elements();
+    // TODO(JRC): This is a bit sloppy, but it feels like the only decent
+    // way to signal missing values in cases where the lengths are mismatched.
+    T t_fill, o_fill;
+    if(std::numeric_limits<T>::has_infinity)
+    {
+        t_fill = std::numeric_limits<T>::infinity();
+        o_fill = -std::numeric_limits<T>::infinity();
+    }
+    else
+    {
+        t_fill = std::numeric_limits<T>::max();
+        o_fill = std::numeric_limits<T>::is_signed ?
+            std::numeric_limits<T>::min() : std::numeric_limits<T>::max();
+    }
+    T fill_val = (t_nelems > o_nelems) ? t_fill : o_fill;
 
     size_t i = 0;
     for(; i < (size_t)std::min(t_nelems, o_nelems); i++)
     {
-        T &t_elem = (*this)[i];
-        T &o_elem = array[i];
-
-        T diff_elem = t_elem - o_elem;
-        if(diff_elem < (T)0.0)
-        {
-            diff_elem *= (T)-1.0;
-        }
-
-        info[i] = diff_elem;
-        res += diff_elem;
+        // TODO(JRC): Figure out how floating point epsilon can be
+        // specified and leveraged here (perhaps just have an additional
+        // keyword argument for this function?).
+        info_ptr[i] = (*this)[i] - array[i];
+        res |= (*this)[i] != array[i];
     }
-    for(; i < (size_t)t_nelems; i++)
+    for(; i < (size_t)std::max(t_nelems, o_nelems); i++)
     {
-        info[i] = (T)0;
+        info_ptr[i] = fill_val;
+        res |= true;
+    }
+
+    if(!res)
+    {
+        info.reset();
+        info.set(DataType::empty());
     }
 
     return res;

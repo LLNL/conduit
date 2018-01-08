@@ -133,7 +133,6 @@ public:
     bool            compatible(const DataArray<T> &array) const;
     bool            equals(const DataArray<T> &array) const;
     bool            diff(const DataArray<T> &array, Node &info) const;
-    T               ndiff(const DataArray<T> &array, Node &info) const;
 
 //-----------------------------------------------------------------------------
 // Setters
