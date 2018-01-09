@@ -97,7 +97,14 @@ set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "")
 ################################
 # Init BLT
 ################################
-include(blt/SetupBLT.cmake)
+# if BLT_SOURCE_DIR is not set - use "blt" as default
+if(NOT BLT_SOURCE_DIR)
+    set(BLT_SOURCE_DIR "blt")
+endif()
+
+# init blt using BLT_SOURCE_DIR
+include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
+
 
 ################################
 # Set some standard cmake opts
