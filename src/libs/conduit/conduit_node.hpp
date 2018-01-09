@@ -70,6 +70,7 @@
 #include "conduit_schema.hpp"
 #include "conduit_generator.hpp"
 #include "conduit_node_iterator.hpp"
+#include "conduit_utils.hpp"
 
 
 //-----------------------------------------------------------------------------
@@ -3199,13 +3200,13 @@ public:
 
     /// is this node equal to given node
     bool             equals(const Node &n,
-                            const Node &config = Node()) const;
+                            const float64 epsilon = utils::epsilon) const;
 
     /// diff this node to the given node, storing the results digest
     //  in the provided data node
     bool             diff(const Node &n,
                           Node &info,
-                          const Node &config = Node()) const;
+                          const float64 epsilon = utils::epsilon) const;
 
     ///
     /// info() creates a node that contains metadata about the current

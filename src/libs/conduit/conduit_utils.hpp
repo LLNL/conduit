@@ -183,6 +183,11 @@ namespace utils
 {
 
 //-----------------------------------------------------------------------------
+/// Constant values used within the Conduit library
+//-----------------------------------------------------------------------------
+    extern const float64 epsilon;
+
+//-----------------------------------------------------------------------------
 /// Primary interface used by the conduit API when an info message is issued 
 /// This simply dispatches the message to the currently configured info handler.
 /// The default info handler prints a the message to std::cout;

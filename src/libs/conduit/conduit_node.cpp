@@ -13507,15 +13507,15 @@ Node::find_first_data_ptr() const
 
 //---------------------------------------------------------------------------//
 bool
-Node::equals(const Node &n, const Node &config) const
+Node::equals(const Node &n, const float64 epsilon) const
 {
     Node info;
-    return !diff(n, info, config);
+    return !diff(n, info, epsilon);
 }
 
 //---------------------------------------------------------------------------//
 bool
-Node::diff(const Node &n, Node &info, const Node &config) const
+Node::diff(const Node &n, Node &info, const float64 epsilon) const
 {
     info.reset();
 
@@ -13550,7 +13550,7 @@ Node::diff(const Node &n, Node &info, const Node &config) const
             }
             else
             {
-                if(!t_child.diff(n.fetch(child_path), info_child, config))
+                if(!t_child.diff(n.fetch(child_path), info_child, epsilon))
                 {
                     info.remove(child_path);
                 }
@@ -13570,7 +13570,7 @@ Node::diff(const Node &n, Node &info, const Node &config) const
             }
             else
             {
-                if(!fetch(child_path).diff(n_child, info_child, config))
+                if(!fetch(child_path).diff(n_child, info_child, epsilon))
                 {
                     info.remove(child_path);
                 }
@@ -13596,7 +13596,7 @@ Node::diff(const Node &n, Node &info, const Node &config) const
             const Node &t_child = child(i);
             const Node &n_child = n.child(i);
             Node &info_child = info.append();
-            is_diff |= t_child.diff(n_child, info_child, config);
+            is_diff |= t_child.diff(n_child, info_child, epsilon);
         }
         for(; i < (size_t)std::max(t_nchild, n_nchild); i++)
         {
@@ -13616,61 +13616,61 @@ Node::diff(const Node &n, Node &info, const Node &config) const
         {
             int8_array t_array = value();
             int8_array n_array = n.value();
-            t_array.diff(n_array, info, config);
+            t_array.diff(n_array, info, epsilon);
         }
         else if(dtype().is_int16())
         {
             int16_array t_array = value();
             int16_array n_array = n.value();
-            t_array.diff(n_array, info, config);
+            t_array.diff(n_array, info, epsilon);
         }
         else if(dtype().is_int32())
         {
             int32_array t_array = value();
             int32_array n_array = n.value();
-            t_array.diff(n_array, info, config);
+            t_array.diff(n_array, info, epsilon);
         }
         else if(dtype().is_int64())
         {
             int64_array t_array = value();
             int64_array n_array = n.value();
-            t_array.diff(n_array, info, config);
+            t_array.diff(n_array, info, epsilon);
         }
         else if(dtype().is_uint8())
         {
             uint8_array t_array = value();
             uint8_array n_array = n.value();
-            t_array.diff(n_array, info, config);
+            t_array.diff(n_array, info, epsilon);
         }
         else if(dtype().is_uint16())
         {
             uint16_array t_array = value();
             uint16_array n_array = n.value();
-            t_array.diff(n_array, info, config);
+            t_array.diff(n_array, info, epsilon);
         }
         else if(dtype().is_uint32())
         {
             uint32_array t_array = value();
             uint32_array n_array = n.value();
-            t_array.diff(n_array, info, config);
+            t_array.diff(n_array, info, epsilon);
         }
         else if(dtype().is_uint64())
         {
             uint64_array t_array = value();
             uint64_array n_array = n.value();
-            t_array.diff(n_array, info, config);
+            t_array.diff(n_array, info, epsilon);
         }
         else if(dtype().is_float32())
         {
             float32_array t_array = value();
             float32_array n_array = n.value();
-            t_array.diff(n_array, info, config);
+            t_array.diff(n_array, info, epsilon);
         }
         else if(dtype().is_float64())
         {
             float64_array t_array = value();
             float64_array n_array = n.value();
-            t_array.diff(n_array, info, config);
+            t_array.diff(n_array, info, epsilon);
         }
         else if(dtype().is_char8_str())
         {

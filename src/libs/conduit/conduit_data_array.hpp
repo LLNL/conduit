@@ -56,6 +56,7 @@
 //-----------------------------------------------------------------------------
 #include "conduit_core.hpp"
 #include "conduit_data_type.hpp"
+#include "conduit_utils.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -132,10 +133,10 @@ public:
 
     bool            compatible(const DataArray<T> &array) const;
     bool            equals(const DataArray<T> &array,
-                           const Node &config = Node()) const;
+                           const float64 epsilon = utils::epsilon) const;
     bool            diff(const DataArray<T> &array,
                          Node &info,
-                         const Node &config = Node()) const;
+                         const float64 epsilon = utils::epsilon) const;
 
 //-----------------------------------------------------------------------------
 // Setters

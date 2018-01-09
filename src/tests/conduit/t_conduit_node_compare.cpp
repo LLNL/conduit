@@ -80,6 +80,8 @@ TEST(conduit_node_compare, basic)
 //-----------------------------------------------------------------------------
 TEST(conduit_node_compare, leaf_numeric)
 {
+    const float64 test_epsilon = 0.0f;
+
     const DataType::TypeID leaf_tids[10] = {
         DataType::INT8_ID, DataType::INT16_ID, DataType::INT32_ID, DataType::INT64_ID,
         DataType::UINT8_ID, DataType::UINT16_ID, DataType::UINT32_ID, DataType::UINT64_ID,
@@ -103,13 +105,13 @@ TEST(conduit_node_compare, leaf_numeric)
         Node o(leaf_type, (void*)o_data, true);
 
         Node info;
-        EXPECT_FALSE(n.diff(o, info));
+        EXPECT_FALSE(n.diff(o, info, test_epsilon));
         EXPECT_TRUE(info.dtype().is_empty());
 
         info.reset();
         memset(&o_data[0*type_bytes], 1, 1);
         memset(&o_data[4*type_bytes], 1, 1);
-        EXPECT_TRUE(n.diff(o, info));
+        EXPECT_TRUE(n.diff(o, info, test_epsilon));
         EXPECT_FALSE(info.dtype().is_empty());
 
         EXPECT_EQ(info.dtype().id(), leaf_tid);

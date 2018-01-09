@@ -150,21 +150,17 @@ DataArray<T>::compatible(const DataArray<T> &array) const
 //---------------------------------------------------------------------------//
 template <typename T> 
 bool
-DataArray<T>::equals(const DataArray<T> &array, const Node &config) const 
+DataArray<T>::equals(const DataArray<T> &array, const float64 epsilon) const 
 { 
     Node info;
-    return !diff(array, info, config);
+    return !diff(array, info, epsilon);
 }
 
 //---------------------------------------------------------------------------//
 template <typename T> 
 bool
-DataArray<T>::diff(const DataArray<T> &array, Node &info, const Node &config) const 
+DataArray<T>::diff(const DataArray<T> &array, Node &info, const float64 epsilon) const 
 { 
-    // TODO(JRC): Consider moving the default machine epsilon to a constant
-    // value somewhere more generally accessible within Conduit.
-    float64 epsilon = config.has_child("eps") ? config["eps"].as_float64() : 1e-12;
-
     bool res = false;
     info.reset();
 
@@ -177,25 +173,15 @@ DataArray<T>::diff(const DataArray<T> &array, Node &info, const Node &config) co
 
     // TODO(JRC): This is a bit sloppy, but it feels like the only decent
     // way to signal missing values in cases where the lengths are mismatched.
-    T t_fill, o_fill;
-    if(std::numeric_limits<T>::has_infinity)
-    {
-        t_fill = std::numeric_limits<T>::infinity();
-        o_fill = -std::numeric_limits<T>::infinity();
-    }
-    else
-    {
-        t_fill = std::numeric_limits<T>::max();
-        o_fill = std::numeric_limits<T>::is_signed ?
-            std::numeric_limits<T>::min() : std::numeric_limits<T>::max();
-    }
+    T t_fill = std::numeric_limits<T>::max();
+    T o_fill = std::numeric_limits<T>::is_signed ?
+        std::numeric_limits<T>::min() : std::numeric_limits<T>::max();
     T fill_val = (t_nelems > o_nelems) ? t_fill : o_fill;
 
     size_t i = 0;
     for(; i < (size_t)std::min(t_nelems, o_nelems); i++)
     {
         info_ptr[i] = (*this)[i] - array[i];
-        res |= (*this)[i] != array[i];
         if(dtype().is_floating_point())
         {
             res |= info_ptr[i] > epsilon || info_ptr[i] < -epsilon;
