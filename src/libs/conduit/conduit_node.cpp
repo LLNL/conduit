@@ -13590,18 +13590,18 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
         index_t n_nchild = n.number_of_children();
 
         bool is_diff = t_nchild != n_nchild;
-        size_t i = 0;
-        for(; i < (size_t)std::min(t_nchild, n_nchild); i++)
+        index_t i = 0;
+        for(; i < std::min(t_nchild, n_nchild); i++)
         {
             const Node &t_child = child(i);
             const Node &n_child = n.child(i);
             Node &info_child = info.append();
             is_diff |= t_child.diff(n_child, info_child, epsilon);
         }
-        for(; i < (size_t)std::max(t_nchild, n_nchild); i++)
+        for(; i < std::max(t_nchild, n_nchild); i++)
         {
             Node &info_child = info.append();
-            std::string loc_str = (i >= (size_t)t_nchild) ? "instance" : "argument";
+            std::string loc_str = (i >= t_nchild) ? "instance" : "argument";
             info_child.set("data item missing from " + loc_str);
         }
 

@@ -178,8 +178,8 @@ DataArray<T>::diff(const DataArray<T> &array, Node &info, const float64 epsilon)
         std::numeric_limits<T>::min() : std::numeric_limits<T>::max();
     T fill_val = (t_nelems > o_nelems) ? t_fill : o_fill;
 
-    size_t i = 0;
-    for(; i < (size_t)std::min(t_nelems, o_nelems); i++)
+    index_t i = 0;
+    for(; i < std::min(t_nelems, o_nelems); i++)
     {
         info_ptr[i] = (*this)[i] - array[i];
         if(dtype().is_floating_point())
@@ -191,7 +191,7 @@ DataArray<T>::diff(const DataArray<T> &array, Node &info, const float64 epsilon)
             res |= (*this)[i] != array[i];
         }
     }
-    for(; i < (size_t)std::max(t_nelems, o_nelems); i++)
+    for(; i < std::max(t_nelems, o_nelems); i++)
     {
         info_ptr[i] = fill_val;
         res |= true;
