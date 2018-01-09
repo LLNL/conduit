@@ -129,6 +129,12 @@ The Conduit Python module will build for both Python 2 and Python 3. To select a
  
  * **HDF5_DIR** - Path to a HDF5 install. (Silo support depends on HDF5) 
 
+
+* **BLT_SOURCE_DIR** - Path to BLT.  *(default = "blt")*
+
+ Defaults to "blt", where we expect the blt submodule. The most compelling reason to override is to share a single instance of BLT across multiple projects.
+  
+
 Installation Path Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Conduit's build system provides an **install** target that installs the Conduit libraires, headers, python modules, and documentation. These CMake options allow you to control install destination paths:
