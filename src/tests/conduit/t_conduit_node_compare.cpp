@@ -88,13 +88,13 @@ TEST(conduit_node_compare, leaf_numeric)
         DataType::FLOAT32_ID, DataType::FLOAT64_ID
     };
 
-    for(size_t type_idx = 0; type_idx < 10; type_idx++)
+    for(index_t type_idx = 0; type_idx < 10; type_idx++)
     {
         const DataType::TypeID leaf_tid = leaf_tids[type_idx];
         DataType leaf_type(leaf_tid, 5);
 
-        const size_t type_bytes = leaf_type.stride();
-        const size_t leaf_bytes = leaf_type.bytes_compact();
+        const index_t type_bytes = leaf_type.stride();
+        const index_t leaf_bytes = leaf_type.bytes_compact();
 
         conduit_byte* n_data = new conduit_byte[leaf_bytes];
         memset(n_data, 0, leaf_bytes);
@@ -116,7 +116,7 @@ TEST(conduit_node_compare, leaf_numeric)
 
         EXPECT_EQ(info.dtype().id(), leaf_tid);
         EXPECT_EQ(info.dtype().number_of_elements(), 5);
-        for(size_t val_idx = 0; val_idx < 5; val_idx++)
+        for(index_t val_idx = 0; val_idx < 5; val_idx++)
         {
             bool should_uneq = val_idx == 0 || val_idx == 4;
             bool are_uneq = memcmp(&n_data[val_idx*type_bytes],
@@ -134,12 +134,12 @@ TEST(conduit_node_compare, leaf_string)
 {
     const std::string test_strs[4] = {"I", "me", "You", "tHeM"};
 
-    for(size_t test_idx = 0; test_idx < 4; test_idx++)
+    for(index_t test_idx = 0; test_idx < 4; test_idx++)
     {
         const std::string test_str = test_strs[test_idx];
         std::string diff_str = test_str;
         {
-            size_t test_len = test_str.length();
+            index_t test_len = test_str.length();
             diff_str[test_len-1] += 1;
         }
 
@@ -170,7 +170,7 @@ TEST(conduit_node_compare, leaf_mismatch)
         DataType::FLOAT32_ID, DataType::FLOAT64_ID
     };
 
-    for(size_t type_idx = 0; type_idx < 6; type_idx++)
+    for(index_t type_idx = 0; type_idx < 6; type_idx++)
     {
         const DataType::TypeID curr_tid = leaf_tids[(type_idx+0)%6];
         const DataType::TypeID next_tid = leaf_tids[(type_idx+1)%6];
@@ -178,7 +178,7 @@ TEST(conduit_node_compare, leaf_mismatch)
         DataType curr_type(curr_tid, 1);
         DataType next_type(next_tid, 1);
 
-        const size_t max_bytes = std::max(
+        const index_t max_bytes = std::max(
             curr_type.bytes_compact(), next_type.bytes_compact());
         conduit_byte* max_data = new conduit_byte[max_bytes];
         memset(max_data, 0, max_bytes);
@@ -197,9 +197,9 @@ TEST(conduit_node_compare, leaf_mismatch)
 //-----------------------------------------------------------------------------
 TEST(conduit_node_compare, object_item_diff)
 {
-    const size_t n_num_children = 5;
+    const index_t n_num_children = 5;
     Node n, o, info;
-    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
     {
         std::ostringstream oss;
         oss << leaf_idx;
@@ -210,7 +210,7 @@ TEST(conduit_node_compare, object_item_diff)
     EXPECT_TRUE(n.diff(o, info));
     EXPECT_FALSE(info.dtype().is_empty());
 
-    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
     {
         std::ostringstream oss;
         oss << leaf_idx;
@@ -231,9 +231,9 @@ TEST(conduit_node_compare, object_item_diff)
 //-----------------------------------------------------------------------------
 TEST(conduit_node_compare, object_size_diff)
 {
-    const size_t n_num_children = 5;
+    const index_t n_num_children = 5;
     Node n, info;
-    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
     {
         std::ostringstream oss;
         oss << leaf_idx;
@@ -247,7 +247,7 @@ TEST(conduit_node_compare, object_size_diff)
     EXPECT_TRUE(n.diff(o, info));
     EXPECT_FALSE(info.dtype().is_empty());
     EXPECT_EQ(info.number_of_children(), n_num_children);
-    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
     {
         std::ostringstream oss;
         oss << leaf_idx;
@@ -267,7 +267,7 @@ TEST(conduit_node_compare, object_size_diff)
 
     // Half-Full Node Check //
 
-    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
     {
         if(leaf_idx % 2 == 1)
         {
@@ -279,7 +279,7 @@ TEST(conduit_node_compare, object_size_diff)
     info.reset();
     EXPECT_TRUE(n.diff(o, info));
     EXPECT_FALSE(info.dtype().is_empty());
-    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
     {
         std::ostringstream oss;
         oss << leaf_idx;
@@ -300,9 +300,9 @@ TEST(conduit_node_compare, object_size_diff)
 //-----------------------------------------------------------------------------
 TEST(conduit_node_compare, list_item_diff)
 {
-    const size_t n_num_children = 5;
+    const index_t n_num_children = 5;
     Node n, o, info;
-    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
     {
         n.append().set(leaf_idx);
         o.append().set(leaf_idx+(leaf_idx%2));
@@ -312,7 +312,7 @@ TEST(conduit_node_compare, list_item_diff)
     EXPECT_FALSE(info.dtype().is_empty());
     EXPECT_EQ(info.number_of_children(), n_num_children);
 
-    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
     {
         if(leaf_idx % 2 == 1)
         {
@@ -329,9 +329,9 @@ TEST(conduit_node_compare, list_item_diff)
 //-----------------------------------------------------------------------------
 TEST(conduit_node_compare, list_size_diff)
 {
-    const size_t n_num_children = 5;
+    const index_t n_num_children = 5;
     Node n, info;
-    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
     {
         n.append().set(leaf_idx);
     }
@@ -343,7 +343,7 @@ TEST(conduit_node_compare, list_size_diff)
     EXPECT_TRUE(n.diff(o, info));
     EXPECT_FALSE(info.dtype().is_empty());
     EXPECT_EQ(info.number_of_children(), n_num_children);
-    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
     {
         EXPECT_TRUE(info[leaf_idx].dtype().is_string());
         EXPECT_NE(info[leaf_idx].as_string().find("item"), std::string::npos);
@@ -358,14 +358,14 @@ TEST(conduit_node_compare, list_size_diff)
 
     // Half-Full Node Check //
 
-    for(int32 leaf_idx = n_num_children - 1; leaf_idx > n_num_children / 2; leaf_idx--)
+    for(index_t leaf_idx = n_num_children - 1; leaf_idx > n_num_children / 2; leaf_idx--)
     {
         o.remove(leaf_idx);
     }
     info.reset();
     EXPECT_TRUE(n.diff(o, info));
     EXPECT_FALSE(info.dtype().is_empty());
-    for(int32 leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
     {
         if(leaf_idx > n_num_children / 2)
         {
