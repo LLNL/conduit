@@ -315,7 +315,7 @@ Variants are enabled using ``+`` and disabled using ``~``. For example, to build
 
 Supported CMake Versions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-We test building Conduit with CMake 3.3.1 and 3.8.1. Other versions of CMake may work, however CMake 3.4.x to 3.7.x have specific issues with finding and using HDF5 and Python.
+We test building Conduit with CMake 3.3.1, 3.8.1 and 3.9.4. Other versions of CMake may work, however CMake 3.4.x to 3.7.x have specific issues with finding and using HDF5 and Python.
 
 
 
