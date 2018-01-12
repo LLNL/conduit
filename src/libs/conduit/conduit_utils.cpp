@@ -112,10 +112,6 @@ namespace utils
 {
 
 //-----------------------------------------------------------------------------
-// define values for internal constant values
-const float64 epsilon = 1e-12;
-
-//-----------------------------------------------------------------------------
 // default info message handler callback, simply prints to std::cout.
 void 
 default_info_handler(const std::string &msg,

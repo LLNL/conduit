@@ -185,7 +185,7 @@ namespace utils
 //-----------------------------------------------------------------------------
 /// Constant values used within the Conduit library
 //-----------------------------------------------------------------------------
-    extern const float64 epsilon;
+    const float64 epsilon = 1e-12;
 
 //-----------------------------------------------------------------------------
 /// Primary interface used by the conduit API when an info message is issued 
