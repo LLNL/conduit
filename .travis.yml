@@ -49,9 +49,9 @@ compiler:
 env:
   global:
     # std env vars CC + CXX get overridden
-    - CONDUIT_CC=gcc-4.8
-    - CONDUIT_CXX=g++-4.8
-    - CONDUIT_FC=gfortran-4.8
+    - CONDUIT_CC=gcc-4.9
+    - CONDUIT_CXX=g++-4.9
+    - CONDUIT_FC=gfortran-4.9
     # we need to know the root dir for our 3rd party lib installs
     - TRAVIS_HOME=`pwd`
   matrix:
@@ -125,9 +125,9 @@ addons:
     sources:
     - ubuntu-toolchain-r-test
     packages:
-       - gcc-4.8
-       - g++-4.8
-       - gfortran-4.8
+       - gcc-4.9
+       - g++-4.9
+       - gfortran-4.
        - openmpi-bin
        - openmpi-doc
        - libopenmpi-dev
