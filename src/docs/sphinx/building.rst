@@ -330,6 +330,22 @@ Building Conduit in a Docker Container
 Under ``src/examples/docker/ubuntu`` there is an example ``Dockerfile`` which can be used to create an ubuntu-based docker image with a build of the Conduit. There is also a script that demonstrates how to build a Docker image from the Dockerfile (``example_build.sh``) and a script that runs this image in a Docker container (``example_run.sh``). The Conduit repo is cloned into the image's file system at ``/conduit``, the build directory is ``/conduit/build-debug``, and the install directory is ``/conduit/install-debug``.
 
 
+Notes for building on Cray systems
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+HDF5 and gtest use runtime features such as ``dlopen``. Because of this, building static on Cray systems commonly yields the following flavor of compiler warning:
+
+.. code:: 
+
+   Using 'zzz' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+
+You can avoid related linking warnings by adding the ``-dynamic`` compiler flag, or by setting the CRAYPE_LINK_TYPE environment variable:
+
+.. code:: bash
+
+  export CRAYPE_LINK_TYPE=dynamic
+
+
 
 
 
