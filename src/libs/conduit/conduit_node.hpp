@@ -3200,6 +3200,7 @@ public:
 
     /// is this node equal to given node
     bool             equals(const Node &n,
+                            Node &info,
                             const float64 epsilon = CONDUIT_EPSILON) const;
 
     /// diff this node to the given node, storing the results digest

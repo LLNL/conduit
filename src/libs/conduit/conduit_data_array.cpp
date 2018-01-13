@@ -150,60 +150,55 @@ DataArray<T>::compatible(const DataArray<T> &array) const
 //---------------------------------------------------------------------------//
 template <typename T> 
 bool
-DataArray<T>::equals(const DataArray<T> &array, const float64 epsilon) const 
+DataArray<T>::equals(const DataArray<T> &array, Node &info, const float64 epsilon) const 
 { 
-    Node info;
-    return !diff(array, info, epsilon);
-}
-
-//---------------------------------------------------------------------------//
-template <typename T> 
-bool
-DataArray<T>::diff(const DataArray<T> &array, Node &info, const float64 epsilon) const 
-{ 
-    bool res = false;
+    bool res = true;
     info.reset();
 
     index_t t_nelems = number_of_elements();
     index_t o_nelems = array.number_of_elements();
 
-    DataType info_dtype(array.dtype().id(), std::max(t_nelems, o_nelems));
-    info.set(info_dtype);
-    T* info_ptr = (T*)info.data_ptr();
-
-    // TODO(JRC): This is a bit sloppy, but it feels like the only decent
-    // way to signal missing values in cases where the lengths are mismatched.
-    T t_fill = std::numeric_limits<T>::max();
-    T o_fill = std::numeric_limits<T>::is_signed ?
-        std::numeric_limits<T>::min() : std::numeric_limits<T>::max();
-    T fill_val = (t_nelems > o_nelems) ? t_fill : o_fill;
-
-    index_t i = 0;
-    for(; i < std::min(t_nelems, o_nelems); i++)
+    if(t_nelems != o_nelems)
     {
-        info_ptr[i] = (*this)[i] - array[i];
-        if(dtype().is_floating_point())
+        std::ostringstream oss;
+        oss << "data length mismatch (" << t_nelems << "/" << o_nelems << ")";
+        info.set(oss.str());
+        res = false;
+    }
+    else
+    {
+        info.set(DataType(array.dtype().id(), t_nelems));
+        T* info_ptr = (T*)info.data_ptr();
+
+        for(index_t i = 0; i < t_nelems; i++)
         {
-            res |= info_ptr[i] > epsilon || info_ptr[i] < -epsilon;
-        }
-        else
-        {
-            res |= (*this)[i] != array[i];
+            info_ptr[i] = (*this)[i] - array[i];
+            if(dtype().is_floating_point())
+            {
+                res &= info_ptr[i] <= epsilon && info_ptr[i] >= -epsilon;
+            }
+            else
+            {
+                res &= (*this)[i] == array[i];
+            }
         }
     }
-    for(; i < std::max(t_nelems, o_nelems); i++)
-    {
-        info_ptr[i] = fill_val;
-        res |= true;
-    }
 
-    if(!res)
+    if(res)
     {
         info.reset();
         info.set(DataType::empty());
     }
 
     return res;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+bool
+DataArray<T>::diff(const DataArray<T> &/*array*/, Node &/*info*/, const float64 /*epsilon*/) const 
+{ 
+    return true;
 }
 
 //---------------------------------------------------------------------------//
