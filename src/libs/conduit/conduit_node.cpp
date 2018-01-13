@@ -13525,8 +13525,7 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
     if(t_dtid != n_dtid)
     {
         std::ostringstream oss;
-        oss << "data types do not match (" <<
-            dtype().name() << " vs. " << n.dtype().name() << ")";
+        oss << "data types mismatch (" << dtype().name() << "/" << n.dtype().name() << ")";
         info.set(oss.str());
     }
     else if(t_dtid == DataType::EMPTY_ID)
@@ -13679,8 +13678,7 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
             if(t_array != n_array)
             {
                 std::ostringstream oss;
-                oss << "data strings do not match ('" <<
-                    t_array << "' vs. '" << n_array << "')";
+                oss << "data strings mismatch (" << t_array << "/" << n_array << ")";
                 info.set(oss.str());
             }
         }

@@ -133,10 +133,10 @@ public:
 
     bool            compatible(const DataArray<T> &array) const;
     bool            equals(const DataArray<T> &array,
-                           const float64 epsilon = utils::epsilon) const;
+                           const float64 epsilon = CONDUIT_EPSILON) const;
     bool            diff(const DataArray<T> &array,
                          Node &info,
-                         const float64 epsilon = utils::epsilon) const;
+                         const float64 epsilon = CONDUIT_EPSILON) const;
 
 //-----------------------------------------------------------------------------
 // Setters

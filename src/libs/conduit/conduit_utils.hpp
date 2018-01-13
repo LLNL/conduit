@@ -171,6 +171,16 @@
 }                                                                    \
 
 //-----------------------------------------------------------------------------
+//
+/// The CONDUIT_EPSILON macro defines the default machine epsilon
+/// value used when comparing floating-point values. This value is used
+/// by default in all of the Conduit comparison operations (e.g.
+/// 'conduit::Node::equals' and 'conduit::Node::diff').
+//
+//-----------------------------------------------------------------------------
+#define CONDUIT_EPSILON 1e-12
+
+//-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
@@ -181,11 +191,6 @@ namespace conduit
 //-----------------------------------------------------------------------------
 namespace utils
 {
-
-//-----------------------------------------------------------------------------
-/// Constant values used within the Conduit library
-//-----------------------------------------------------------------------------
-    const float64 epsilon = 1e-12;
 
 //-----------------------------------------------------------------------------
 /// Primary interface used by the conduit API when an info message is issued 

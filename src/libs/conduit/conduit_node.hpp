@@ -3200,13 +3200,13 @@ public:
 
     /// is this node equal to given node
     bool             equals(const Node &n,
-                            const float64 epsilon = utils::epsilon) const;
+                            const float64 epsilon = CONDUIT_EPSILON) const;
 
     /// diff this node to the given node, storing the results digest
     //  in the provided data node
     bool             diff(const Node &n,
                           Node &info,
-                          const float64 epsilon = utils::epsilon) const;
+                          const float64 epsilon = CONDUIT_EPSILON) const;
 
     ///
     /// info() creates a node that contains metadata about the current
