@@ -52,9 +52,9 @@ env:
     #- CONDUIT_CC=gcc-4.9
     #- CONDUIT_CXX=g++-4.9
     #- CONDUIT_FC=gfortran-4.9
-    - CONDUIT_CC=gcc
-    - CONDUIT_CXX=g++
-    - CONDUIT_FC=gfortran
+    - CONDUIT_CC=x86_64-conda_cos6-linux-gnu-gcc
+    - CONDUIT_CXX=x86_64-conda_cos6-linux-gnu-g++
+    - CONDUIT_FC=x86_64-conda_cos6-linux-gnu-gfortran
     # we need to know the root dir for our 3rd party lib installs
     - TRAVIS_HOME=`pwd`
   matrix:
