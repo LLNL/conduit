@@ -63,24 +63,31 @@ env:
     #################################
     # cmake 3.3.1 + shared libs + python 2 + coverage
     #  (don't use mpi w/ coverage)
-    - BUILD_SHARED_LIBS=ON
-      ENABLE_MPI=ON
-      ENABLE_DOCS=OFF
-      ENABLE_COVERAGE=OFF
-      PYTHON_VERSION=2.7
-      CMAKE_VERSION=3.9.4
+    # - BUILD_SHARED_LIBS=ON
+    #   ENABLE_MPI=ON
+    #   ENABLE_DOCS=OFF
+    #   ENABLE_COVERAGE=OFF
+    #   PYTHON_VERSION=2.7
+    #   CMAKE_VERSION=3.9.4
     # cmake 3.3.1 + static libs + python 2 + mpi
-    - BUILD_SHARED_LIBS=OFF
-      ENABLE_MPI=ON
-      ENABLE_COVERAGE=OFF
-      PYTHON_VERSION=2.7
-      CMAKE_VERSION=3.9.4
+    # - BUILD_SHARED_LIBS=OFF
+    #   ENABLE_MPI=ON
+    #   ENABLE_COVERAGE=OFF
+    #   PYTHON_VERSION=2.7
+    #   CMAKE_VERSION=3.9.4
     - BUILD_SHARED_LIBS=ON
       ENABLE_MPI=OFF
       ENABLE_DOCS=OFF
       ENABLE_COVERAGE=OFF
       PYTHON_VERSION=3.6
       CMAKE_VERSION=3.9.4
+    # 
+    # - BUILD_SHARED_LIBS=ON
+    #   ENABLE_MPI=OFF
+    #   ENABLE_DOCS=OFF
+    #   ENABLE_COVERAGE=OFF
+    #   PYTHON_VERSION=3.6
+    #   CMAKE_VERSION=3.9.4
     # # cmake 3.3.1 + shared libs + python 3 + mpi
     # - BUILD_SHARED_LIBS=ON
     #   MINICONDA=Miniconda3
@@ -160,8 +167,6 @@ addons:
 #   - conda install --yes hdf5
 #   - pip install cpp-coveralls
 script:
-  # echo cmake version
-  script:
   - which g++
   - g++ --version
   - export CC=${COMPILER_CC}
@@ -179,10 +184,7 @@ script:
   - export SPACK_SPEC="SPACK_SPEC=${SPACK_SPEC} ^python@${PYTHON_VERSION}"
   - echo $SPACK_SPEC
   # build deps using uberenv
-  - cd ..
-  - export TPL_ROOT=`pwd`
-  - python conduit/scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}"
-  - cd $TRAVIS_BUILD_DIR
+  - python scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}"
    #create out-of-source build dir and install dir
   - mkdir travis-debug-build
   - mkdir travis-debug-install
@@ -195,15 +197,15 @@ script:
   # enable coverage (only when using shared libs case)
   - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_COVERAGE=${ENABLE_COVERAGE}"
   # install path
-  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../travis-debug-install"
+  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR}/travis-debug-install"
   # make sure cmake is in our path
-  - export CMAKE_BIN_DIR=`ls -d ${TPL_ROOT}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+  - export CMAKE_BIN_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
   - export PATH=${CMAKE_BIN_DIR}:$PATH
   - echo $PATH
   - which cmake
   - cmake --version
-  - export HOST_CONFIG=`ls ${TPL_ROOT}/uberenv_libs/*.cmake`
-  - cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
+  - export HOST_CONFIG=`ls ${TRAVIS_BUILD_DIR}/uberenv_libs/*.cmake`
+  - cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ${TRAVIS_BUILD_DIR}/src
   - cmake --version
   - cd $TRAVIS_BUILD_DIR
   # create out-of-source build dir, and an install dir
