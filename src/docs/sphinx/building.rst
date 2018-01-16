@@ -48,6 +48,17 @@
 Building
 =================
 
+
+This page provides details on several ways to build Conduit.
+
+If you are building features that depend on third party libraries we recommend using :ref:`Spack <building_with_spack>`,
+or :ref:`uberenv <building_with_uberenv>`, which leverages Spack. We also provide a 
+:ref:`Docker example <building_with_docker>` that leverages Spack.
+
+
+
+
+
 Getting Started
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -174,6 +185,9 @@ These files use standard CMake commands. To properly seed the cache, CMake *set*
 
     set(CMAKE_VARIABLE_NAME {VALUE} CACHE PATH "")
 
+
+
+.. _building_with_uberenv:
 
 Bootstrapping Third Party Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -313,6 +327,15 @@ Variants are enabled using ``+`` and disabled using ``~``. For example, to build
   spack install conduit~python~mpi~hdf5~silo~docs
 
 
+You can specify specific versions of a dependency using ``^``. For Example, to build Conduit with Python 3:
+
+
+.. code:: bash
+
+  spack install conduit+python ^python@3
+
+
+
 Supported CMake Versions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 We recommend CMake 3.9. We test building Conduit with CMake 3.3.1, 3.8.1 and 3.9.4. Other versions of CMake may work, however CMake 3.4.x to 3.7.x have specific issues with finding and using HDF5 and Python.
@@ -323,6 +346,9 @@ Using Conduit in Another Project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Under ``src/examples`` there are examples demonstrating how to use Conduit in a CMake-based build system (``using-with-cmake``) and via a Makefile (``using-with-make``).
+
+
+.. _building_with_docker:
 
 Building Conduit in a Docker Container
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -345,7 +371,7 @@ You can avoid related linking warnings by adding the ``-dynamic`` compiler flag,
 
   export CRAYPE_LINK_TYPE=dynamic
 
-`Shared Memory Maps are read only < https://pubs.cray.com/content/S-0005/CLE%206.0.UP02/xctm-series-dvs-administration-guide-cle-60up02-s-0005/dvs-caveats>`_
+`Shared Memory Maps are read only <https://pubs.cray.com/content/S-0005/CLE%206.0.UP02/xctm-series-dvs-administration-guide-cle-60up02-s-0005/dvs-caveats>`_
 on Cray systems, so updates to data using ``Node::mmap`` will not be seen between processes.
 
 
