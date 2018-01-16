@@ -379,7 +379,7 @@ DataType::DataType(index_t id, index_t num_elements)
   m_num_ele(num_elements),
   m_offset(0),
   m_stride(DataType::default_bytes(id)),
-  m_ele_bytes(0),
+  m_ele_bytes(DataType::default_bytes(id)),
   m_endianness(Endianness::DEFAULT_ID)
 {}
 
