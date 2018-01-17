@@ -185,7 +185,7 @@ script:
   - echo $SPACK_SPEC
   # build deps using uberenv
   - python scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}"
-   #create out-of-source build dir and install dir
+  #create out-of-source build dir and install dir
   - mkdir travis-debug-build
   - mkdir travis-debug-install
   - cd    travis-debug-build
@@ -204,11 +204,10 @@ script:
   - echo $PATH
   - which cmake
   - cmake --version
+  # find the spack generated host-config file that describes tpls
   - export HOST_CONFIG=`ls ${TRAVIS_BUILD_DIR}/uberenv_libs/*.cmake`
+  # configure with cmake using host-config
   - cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ${TRAVIS_BUILD_DIR}/src
-  - cmake --version
-  - cd $TRAVIS_BUILD_DIR
-  # create out-of-source build dir, and an install dir
   # build, test, and install
   - make
   - env CTEST_OUTPUT_ON_FAILURE=1 make test
