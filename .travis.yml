@@ -55,81 +55,41 @@ env:
     - TRAVIS_HOME=`pwd`
   matrix:
     #################################
-    # we are testing:
+    # test:
     #  static vs shared libs
     #  python 2 vs 3
-    #  cmake 3.3.0, 3.8.1, 3.9.4
+    #  cmake 3.9.4
     #  coverage of unit tests
     #################################
-    # cmake 3.3.1 + shared libs + python 2 + coverage
-    #  (don't use mpi w/ coverage)
-    # - BUILD_SHARED_LIBS=ON
-    #   ENABLE_MPI=ON
-    #   ENABLE_DOCS=OFF
-    #   ENABLE_COVERAGE=OFF
-    #   PYTHON_VERSION=2.7
-    #   CMAKE_VERSION=3.9.4
-    # cmake 3.3.1 + static libs + python 2 + mpi
-    # - BUILD_SHARED_LIBS=OFF
-    #   ENABLE_MPI=ON
-    #   ENABLE_COVERAGE=OFF
-    #   PYTHON_VERSION=2.7
-    #   CMAKE_VERSION=3.9.4
+    # everything on, shared libs, python 2.7
+    # TODO turn on coverage for this case
     - BUILD_SHARED_LIBS=ON
-      ENABLE_MPI=OFF
-      ENABLE_DOCS=OFF
       ENABLE_COVERAGE=OFF
+      ENABLE_MPI=ON
+      ENABLE_DOCS=ON
       PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
-    # 
-    # - BUILD_SHARED_LIBS=ON
-    #   ENABLE_MPI=OFF
-    #   ENABLE_DOCS=OFF
-    #   ENABLE_COVERAGE=OFF
-    #   PYTHON_VERSION=3.6
-    #   CMAKE_VERSION=3.9.4
-    # # cmake 3.3.1 + shared libs + python 3 + mpi
-    # - BUILD_SHARED_LIBS=ON
-    #   MINICONDA=Miniconda3
-    #   ENABLE_MPI=ON
-    #   ENABLE_COVERAGE=OFF
-    #   CMAKE_MAJOR=3.3
-    #   CMAKE_MINOR=1
-    # # cmake 3.8.1 + shared libs + python 2 + mpi
-    # - BUILD_SHARED_LIBS=ON
-    #   MINICONDA=Miniconda2
-    #   ENABLE_MPI=ON
-    #   ENABLE_COVERAGE=OFF
-    #   CMAKE_MAJOR=3.8
-    #   CMAKE_MINOR=1
-    # # cmake 3.8.1 + static libs + python 2 + mpi
-    # - BUILD_SHARED_LIBS=OFF
-    #   ENABLE_MPI=ON
-    #   MINICONDA=Miniconda2
-    #   ENABLE_COVERAGE=OFF
-    #   CMAKE_MAJOR=3.8
-    #   CMAKE_MINOR=1
-    # # cmake 3.9.4 + shared libs + python 2 + mpi
-    # - BUILD_SHARED_LIBS=ON
-    #   MINICONDA=Miniconda2
-    #   ENABLE_MPI=ON
-    #   ENABLE_COVERAGE=OFF
-    #   CMAKE_MAJOR=3.9
-    #   CMAKE_MINOR=4
-    # # cmake 3.9.4 + shared libs + python 3 + mpi
-    # - BUILD_SHARED_LIBS=ON
-    #   MINICONDA=Miniconda3
-    #   ENABLE_MPI=ON
-    #   ENABLE_COVERAGE=OFF
-    #   CMAKE_MAJOR=3.9
-    #   CMAKE_MINOR=4
-    # # cmake 3.9.4 + static libs + python 2 + mpi
-    # - BUILD_SHARED_LIBS=OFF
-    #   ENABLE_MPI=ON
-    #   MINICONDA=Miniconda2
-    #   ENABLE_COVERAGE=OFF
-    #   CMAKE_MAJOR=3.9
-    #   CMAKE_MINOR=4
+    # mpi and docs on, shared libs, python 2.7
+    - BUILD_SHARED_LIBS=OFF
+      ENABLE_COVERAGE=OFF
+      ENABLE_MPI=ON
+      ENABLE_DOCS=ON
+      PYTHON_VERSION=2.7.14
+      CMAKE_VERSION=3.9.4
+    # mpi and docs on, shared libs, python 3.6
+    - BUILD_SHARED_LIBS=ON
+      ENABLE_COVERAGE=OFF
+      ENABLE_MPI=ON
+      ENABLE_DOCS=ON
+      PYTHON_VERSION=3.6.3
+      CMAKE_VERSION=3.9.4
+    # mpi and docs on, static libs, python 3.6
+    - BUILD_SHARED_LIBS=OFF
+      ENABLE_COVERAGE=OFF
+      ENABLE_MPI=ON
+      ENABLE_DOCS=ON
+      PYTHON_VERSION=3.6.3
+      CMAKE_VERSION=3.9.4
 addons:
   apt:
     sources:
@@ -139,33 +99,6 @@ addons:
        - gcc-4.8
        - g++-4.8
        - gfortran-4.8
-# addons:
-#   apt:
-#     sources:
-#     - ubuntu-toolchain-r-test
-#     packages:
-#        - gcc-4.9
-#        - g++-4.9
-#        - gfortran-4.9
-#        # - openmpi-bin
-#        # - openmpi-doc
-#        # - libopenmpi-dev
-# install:
-#   # install cmake
-#   - mkdir ${TRAVIS_HOME}/cmake/
-#   - sh cmake-${CMAKE_MAJOR}.${CMAKE_MINOR}-Linux-x86_64.sh --skip-license --prefix=${TRAVIS_HOME}/cmake/
-#   - export PATH=${TRAVIS_HOME}/cmake/bin:$PATH
-#   # install + update miniconda
-#   - chmod +x miniconda.sh
-#   - ./miniconda.sh -b -p ${TRAVIS_HOME}/miniconda
-#   - export PATH=${TRAVIS_HOME}/miniconda/bin:$PATH
-#   - conda update --yes conda
-#   # use conda compilers
-#   - conda install --yes gcc_linux-64 gxx_linux-64 gfortran_linux-64
-#   # install numpy + hdf5 and the coveralls python package
-#   - conda install --yes numpy
-#   - conda install --yes hdf5
-#   - pip install cpp-coveralls
 script:
   - which g++
   - g++ --version
@@ -185,6 +118,9 @@ script:
   - echo $SPACK_SPEC
   # build deps using uberenv
   - python scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}"
+  # todo:
+  #- export SPACK_PYTHON_BIN_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/python*/bin`
+  #- pip install cpp-coveralls
   #create out-of-source build dir and install dir
   - mkdir travis-debug-build
   - mkdir travis-debug-install
