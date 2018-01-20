@@ -48,115 +48,109 @@ compiler:
   - gcc
 env:
   global:
-    # std env vars CC + CXX get overridden
-    - CONDUIT_CC=gcc-4.8
-    - CONDUIT_CXX=g++-4.8
-    - CONDUIT_FC=gfortran-4.8
+    - COMPILER_CC=gcc-4.8
+    - COMPILER_CXX=g++-4.8
+    - COMPILER_FC=gfortran-4.8
     # we need to know the root dir for our 3rd party lib installs
     - TRAVIS_HOME=`pwd`
   matrix:
     #################################
-    # we are testing:
+    # test:
     #  static vs shared libs
     #  python 2 vs 3
-    #  cmake 3.3.0 vs 3.8.1
+    #  cmake 3.9.4
     #  coverage of unit tests
     #################################
-    # cmake 3.3.1 + shared libs + python 2 + coverage
-    #  (don't use mpi w/ coverage)
+    # everything on, shared libs, python 2.7
+    # TODO turn on coverage for this case
     - BUILD_SHARED_LIBS=ON
-      MINICONDA=Miniconda2
-      ENABLE_MPI=OFF
-      ENABLE_COVERAGE=ON
-      CMAKE_MAJOR=3.3
-      CMAKE_MINOR=1
-    # cmake 3.3.1 + static libs + python 2 + mpi
+      ENABLE_COVERAGE=OFF
+      ENABLE_MPI=ON
+      ENABLE_DOCS=ON
+      PYTHON_VERSION=2.7.14
+      CMAKE_VERSION=3.9.4
+    # mpi and docs on, shared libs, python 2.7
     - BUILD_SHARED_LIBS=OFF
-      MINICONDA=Miniconda2
-      ENABLE_MPI=ON
       ENABLE_COVERAGE=OFF
-      CMAKE_MAJOR=3.3
-      CMAKE_MINOR=1
-    # cmake 3.3.1 + shared libs + python 3 + mpi
+      ENABLE_MPI=ON
+      ENABLE_DOCS=ON
+      PYTHON_VERSION=2.7.14
+      CMAKE_VERSION=3.9.4
+    # mpi and docs on, shared libs, python 3.6
     - BUILD_SHARED_LIBS=ON
-      MINICONDA=Miniconda3
-      ENABLE_MPI=ON
       ENABLE_COVERAGE=OFF
-      CMAKE_MAJOR=3.3
-      CMAKE_MINOR=1
-    # cmake 3.8.1 + shared libs + python 2 + mpi
-    - BUILD_SHARED_LIBS=ON
-      MINICONDA=Miniconda2
       ENABLE_MPI=ON
-      ENABLE_COVERAGE=OFF
-      CMAKE_MAJOR=3.8
-      CMAKE_MINOR=1
-    # cmake 3.8.1 + static libs + python 2 + mpi
+      ENABLE_DOCS=ON
+      PYTHON_VERSION=3.6.3
+      CMAKE_VERSION=3.9.4
+    # mpi and docs on, static libs, python 3.6
     - BUILD_SHARED_LIBS=OFF
-      ENABLE_MPI=ON
-      MINICONDA=Miniconda2
       ENABLE_COVERAGE=OFF
-      CMAKE_MAJOR=3.8
-      CMAKE_MINOR=1
+      ENABLE_MPI=ON
+      ENABLE_DOCS=ON
+      PYTHON_VERSION=3.6.3
+      CMAKE_VERSION=3.9.4
 addons:
   apt:
     sources:
     - ubuntu-toolchain-r-test
     packages:
+       - binutils
        - gcc-4.8
        - g++-4.8
        - gfortran-4.8
        - openmpi-bin
        - openmpi-doc
        - libopenmpi-dev
-before_install:
-  # download the ver of cmake we want to test
-  - wget --no-check-certificate http://www.cmake.org/files/v${CMAKE_MAJOR}/cmake-${CMAKE_MAJOR}.${CMAKE_MINOR}-Linux-x86_64.sh
-  # download miniconda (used get python, numpy, and hdf5)
-  - wget --no-check-certificate http://repo.continuum.io/miniconda/${MINICONDA}-latest-Linux-x86_64.sh -O miniconda.sh
-install:
-  # install cmake
-  - mkdir ${TRAVIS_HOME}/cmake/
-  - sh cmake-${CMAKE_MAJOR}.${CMAKE_MINOR}-Linux-x86_64.sh --skip-license --prefix=${TRAVIS_HOME}/cmake/
-  - export PATH=${TRAVIS_HOME}/cmake/bin:$PATH
-  # install + update miniconda
-  - chmod +x miniconda.sh
-  - ./miniconda.sh -b -p ${TRAVIS_HOME}/miniconda
-  - export PATH=${TRAVIS_HOME}/miniconda/bin:$PATH
-  - conda update --yes conda
-  # install numpy + hdf5 and the coveralls python package
-  - conda install --yes numpy
-  - conda install --yes hdf5
-  - pip install cpp-coveralls
 script:
-  # echo cmake version
-  - cmake --version
+  - which g++
+  - g++ --version
+  - export CC=${COMPILER_CC}
+  - export CXX=${COMPILER_CXX}
+  - export FC=${COMPILER_FC}
+  - ${CC} --version
   - cd $TRAVIS_BUILD_DIR
-  # create out-of-source build dir, and an install dir
+  - echo $TRAVIS_BUILD_DIR 
+  # setup spack spec based on our travis options
+  # note: mpi takes quite a while to build, so we use binary pkgs 
+  - export SPACK_SPEC="%gcc@4.8+cmake+python~mpi"
+  # variants
+  - if [ $ENABLE_DOCS = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+doc"; fi
+  - if [ $ENABLE_DOCS = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~doc"; fi
+  # versions and package selections
+  - export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
+  - export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"
+  - echo $SPACK_SPEC
+  # build deps using uberenv
+  - python scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}"
+  # todo:
+  #- export SPACK_PYTHON_BIN_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/python*/bin`
+  #- pip install cpp-coveralls
+  #create out-of-source build dir and install dir
   - mkdir travis-debug-build
   - mkdir travis-debug-install
   - cd    travis-debug-build
-  # build type and install loc
+  # cmake options
+  # build type
   - CMAKE_OPTS="-DCMAKE_BUILD_TYPE=Debug"
-  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../travis-debug-install"
-  # c & c++ compilers
-  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_C_COMPILER=${CONDUIT_CC}"
-  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_CXX_COMPILER=${CONDUIT_CXX}"
   # shared or static libs
   - CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
-  # enable fortran support
-  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_Fortran_COMPILER=${CONDUIT_FC}"
-  - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_FORTRAN=ON"
-  # enable mpi support
-  - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_MPI=${ENABLE_MPI}"
-  # enable python support
-  - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=ON"
-  # enable hdf5 support
-  - CMAKE_OPTS="${CMAKE_OPTS} -DHDF5_DIR=${TRAVIS_HOME}/miniconda"
   # enable coverage (only when using shared libs case)
   - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_COVERAGE=${ENABLE_COVERAGE}"
-  # configure with cmake
-  - cmake  ${CMAKE_OPTS} ../src
+  # enable mpi if selected
+  - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_MPI=${ENABLE_MPI}"
+  # install path
+  - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR}/travis-debug-install"
+  # make sure cmake is in our path
+  - export CMAKE_BIN_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+  - export PATH=${CMAKE_BIN_DIR}:$PATH
+  - echo $PATH
+  - which cmake
+  - cmake --version
+  # find the spack generated host-config file that describes tpls
+  - export HOST_CONFIG=`ls ${TRAVIS_BUILD_DIR}/uberenv_libs/*.cmake`
+  # configure with cmake using host-config
+  - cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ${TRAVIS_BUILD_DIR}/src
   # build, test, and install
   - make
   - env CTEST_OUTPUT_ON_FAILURE=1 make test

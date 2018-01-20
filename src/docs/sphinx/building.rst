@@ -48,6 +48,17 @@
 Building
 =================
 
+
+This page provides details on several ways to build Conduit.
+
+If you are building features that depend on third party libraries we recommend using :ref:`Spack <building_with_spack>`,
+or :ref:`uberenv <building_with_uberenv>`, which leverages Spack. We also provide a 
+:ref:`Docker example <building_with_docker>` that leverages Spack.
+
+
+
+
+
 Getting Started
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -116,6 +127,9 @@ The Conduit Python module will build for both Python 2 and Python 3. To select a
 
  To run the mpi unit tests on LLNL's LC platforms, you may also need change the CMake variables **MPIEXEC** and **MPIEXEC_NUMPROC_FLAG**, so you can use srun and select a partition. (for an example see: src/host-configs/chaos_5_x86_64.cmake)
 
+.. warning::
+  Starting in CMake 3.10, the FindMPI **MPIEXEC** variable was changed to **MPIEXEC_EXECUTABLE**. FindMPI will still set **MPIEXEC**, but any attempt to change it before calling FindMPI with your own cached value of **MPIEXEC** will not survive, so you need to set **MPIEXEC_EXECUTABLE** `[reference] <https://cmake.org/cmake/help/v3.10/module/FindMPI.html>`_. 
+
 * **HDF5_DIR** - Path to a HDF5 install *(optional)*. 
 
  Controls if HDF5 I/O support is built into *conduit_relay*.
@@ -125,6 +139,12 @@ The Conduit Python module will build for both Python 2 and Python 3. To select a
  Controls if Silo I/O support is built into *conduit_relay*. When used, the following CMake variables must also be set:
  
  * **HDF5_DIR** - Path to a HDF5 install. (Silo support depends on HDF5) 
+
+
+* **BLT_SOURCE_DIR** - Path to BLT.  *(default = "blt")*
+
+ Defaults to "blt", where we expect the blt submodule. The most compelling reason to override is to share a single instance of BLT across multiple projects.
+  
 
 Installation Path Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -166,13 +186,17 @@ These files use standard CMake commands. To properly seed the cache, CMake *set*
     set(CMAKE_VARIABLE_NAME {VALUE} CACHE PATH "")
 
 
+
+.. _building_with_uberenv:
+
 Bootstrapping Third Party Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We use **Spack** (http://software.llnl.gov/spack) to automate builds of third party dependencies on OSX and Linux. Conduit builds on Windows as well, but there is no automated process to build dependencies necessary to support Conduit's optional features.
 
 .. note::
-  Conduit developers use ``bootstrap-env.sh`` and ``scripts/uberenv/uberenv.py`` to setup third party libraries for Conduit  development.  Due to this, the process builds more libraries than necessary for most use cases. For example, we build independent  installs of Python 2 and Python 3 to make it easy to check Python C-API compatibility during development. For users of conduit, we recommend using the Conduit package included with Spack. For info on how to use this package see :ref:`building_with_spack`.
+  Conduit developers use ``bootstrap-env.sh`` and ``scripts/uberenv/uberenv.py`` to setup third party libraries for Conduit development.
+  This path uses the Conduit Spack package and extra settings, including Spack compiler and external third party package details for some platforms.  For info on how to use the Conduit Spack package see :ref:`building_with_spack`.
   
 
 On OSX and Linux, you can use ``bootstrap-env.sh`` (located at the root of the conduit repo) to help setup your development environment. This script uses ``scripts/uberenv/uberenv.py``, which leverages **Spack** to build all of the external third party libraries and tools used by Conduit. Fortran support is optional and all dependencies should build without a fortran compiler. After building these libraries and tools, it writes an initial *host-config* file and adds the Spack built CMake binary to your PATH so can immediately call the ``config-build.sh`` helper script to configure a conduit build.
@@ -303,9 +327,18 @@ Variants are enabled using ``+`` and disabled using ``~``. For example, to build
   spack install conduit~python~mpi~hdf5~silo~docs
 
 
+You can specify specific versions of a dependency using ``^``. For Example, to build Conduit with Python 3:
+
+
+.. code:: bash
+
+  spack install conduit+python ^python@3
+
+
+
 Supported CMake Versions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-We test building Conduit with CMake 3.3.1 and 3.8.1. Other versions of CMake may work, however CMake 3.4.x to 3.7.x have specific issues with finding and using HDF5 and Python.
+We recommend CMake 3.9. We test building Conduit with CMake 3.3.1, 3.8.1 and 3.9.4. Other versions of CMake may work, however CMake 3.4.x to 3.7.x have specific issues with finding and using HDF5 and Python.
 
 
 
@@ -314,10 +347,32 @@ Using Conduit in Another Project
 
 Under ``src/examples`` there are examples demonstrating how to use Conduit in a CMake-based build system (``using-with-cmake``) and via a Makefile (``using-with-make``).
 
+
+.. _building_with_docker:
+
 Building Conduit in a Docker Container
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Under ``src/examples/docker/ubuntu`` there is an example ``Dockerfile`` which can be used to create an ubuntu-based docker image with a build of the Conduit. There is also a script that demonstrates how to build a Docker image from the Dockerfile (``example_build.sh``) and a script that runs this image in a Docker container (``example_run.sh``). The Conduit repo is cloned into the image's file system at ``/conduit``, the build directory is ``/conduit/build-debug``, and the install directory is ``/conduit/install-debug``.
+
+
+Notes for Cray systems
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+HDF5 and gtest use runtime features such as ``dlopen``. Because of this, building static on Cray systems commonly yields the following flavor of compiler warning:
+
+.. code:: 
+
+   Using 'zzz' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+
+You can avoid related linking warnings by adding the ``-dynamic`` compiler flag, or by setting the CRAYPE_LINK_TYPE environment variable:
+
+.. code:: bash
+
+  export CRAYPE_LINK_TYPE=dynamic
+
+`Shared Memory Maps are read only <https://pubs.cray.com/content/S-0005/CLE%206.0.UP02/xctm-series-dvs-administration-guide-cle-60up02-s-0005/dvs-caveats>`_
+on Cray systems, so updates to data using ``Node::mmap`` will not be seen between processes.
 
 
 

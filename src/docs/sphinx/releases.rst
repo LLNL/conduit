@@ -52,6 +52,32 @@ https://github.com/LLNL/conduit/releases
 
 .. note:: As of v0.3.0, Conduit uses `BLT <https://github.com/LLNL/blt>`__ as its core CMake build system. We leverage BLT as a git submodule, however github does not include submodule contents in its automatically created source tarballs. To avoid confusion, starting with v0.3.0 we will provide our own source tarballs that include BLT. 
 
+v0.3.1-pre
+-----------------
+Highlights
++++++++++++++
+
+* **General**
+ 
+ * Added new Node::equals and Node::diff methods
+ * Updated uberenv to use a newer spack and removed several custom packages
+ * C++ Node::set methods now take const pointers for data
+ * Added Python version of basic tutorial
+ * Expanded the Node Python Capsule API
+ * Added Python API bug fixes
+ * Fixed API exports for static libs on Windows
+
+* **Blueprint**
+ 
+ * Mesh Protocol
+ 
+   * Removed unnecessary state member in the braid example
+ 
+* **Relay**
+ 
+ * Added bug fixes for Relay HDF5 support on Windows
+ 
+
 v0.3.0
 -----------------
 
