@@ -59,7 +59,6 @@ before_build:
       -DBUILD_SHARED_LIBS=%BUILD_SHARED_LIBS% ^
       -DENABLE_PYTHON=%ENABLE_PYTHON% ^ 
       -DENABLE_MPI=%ENABLE_MPI% ^
-      -DMPI_HOME:PATH="%MPI_HOME%" ^
       -DMPI_C_INCLUDE_PATH:PATH="%MPI_HOME%/Include" ^
       -DMPI_C_LIBRARIES:PATH="%MPI_HOME%/Lib/x86/msmpi.lib" ^
       -DMPI_CXX_INCLUDE_PATH:PATH="%MPI_HOME%/Include" ^
