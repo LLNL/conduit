@@ -41,14 +41,18 @@ install:
   # Install MS-MPI SDK
   - ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/msmpisdk.msi'
   - msmpisdk.msi /passive
+  
+  # Install CMake 3.9
+  ############################################################################
+  - ps: Start-FileDownload 'https://cmake.org/files/v3.9/cmake-3.9.6-win64-x64.msi'
+  - cmake-3.9.6-win64-x64.msi /passive
+  - cmake --version
 
 before_build:
   # remove some noisy warnings from Xamarin
   - del "C:\Program Files (x86)\MSBuild\14.0\Microsoft.Common.targets\ImportAfter\Xamarin.Common.targets"
   # init submodules
   - git submodule update --init --recursive
-  # show cmake version 
-  - cmake --version
   # configure
   - echo Running cmake ...
   # TODO enable hdf5 support
