@@ -41,33 +41,13 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ###############################################################################
-#!/bin/bash
-set -ev
 
-if [ "${ENABLE_COVERAGE}" == "ON" ]; then
-    echo "skipping examples vs install tests (ENABLE_COVERAGE=ON)"
-    exit 0
-fi
+###############################################################################
+#
+# file: src/examples/CMakeLists.txt
+#
+###############################################################################
 
-##########################################################
-# test our examples that demo using an installed conduit
-##########################################################
-
-##########################################
-# using with cmake example
-##########################################
-cd ${TRAVIS_BUILD_DIR}/travis-debug-install/examples/using-with-cmake
-mkdir build
-cd build
-cmake -DCONDUIT_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install ../
-make
-./example
-##########################################
-# using with make example
-##########################################
-# find spack installed HDF5_DIR
-export HDF5_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/hdf5*`
-cd ${TRAVIS_BUILD_DIR}/travis-debug-install/examples/using-with-make
-env CXX=${COMPILER_CXX} CONDUIT_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install HDF5_DIR=${HDF5_DIR} make
-env LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/travis-debug-install/lib/:${HDF5_DIR}/lib ./example
-
+# install using and python examples
+install(DIRECTORY using-with-cmake using-with-make python
+        DESTINATION examples)
