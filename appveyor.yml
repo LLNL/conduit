@@ -51,7 +51,8 @@ before_build:
   #- cmake -Hsrc -Bbuild -G "%CMAKE_GENERATOR%" -DHDF5_DIR="C:\\Program Files\\HDF_Group\\HDF5\\1.8.18" -DENABLE_PYTHON=TRUE
   #
   # enable mpi support and use default python
-  - cmake -Hsrc -Bbuild -G "%CMAKE_GENERATOR%" -DBUILD_SHARED_LIBS=%BUILD_SHARED_LIBS% -DENABLE_PYTHON=%ENABLE_PYTHON% -DENABLE_MPI=%ENABLE_MPI% -DMPI_HOME:PATH="C:/Program Files (x86)/Microsoft SDKs/MPI" -DMPI_C_INCLUDE_PATH:PATH="${MPI_HOME}/Include" -DMPI_C_LIBRARIES:PATH="${MPI_HOME}/Lib/x86/msmpi.lib" -DMPI_CXX_INCLUDE_PATH:PATH="${MPI_HOME}/Include" -DMPI_CXX_LIBRARIES:PATH="${MPI_HOME}/Lib/x86/msmpi.lib"
+  - $env:MPI_HOME = "C:/Program Files (x86)/Microsoft SDKs/MPI"
+  - cmake -Hsrc -Bbuild -G "%CMAKE_GENERATOR%" -DBUILD_SHARED_LIBS=%BUILD_SHARED_LIBS% -DENABLE_PYTHON=%ENABLE_PYTHON% -DENABLE_MPI=%ENABLE_MPI% -DMPI_HOME:PATH="%MPI_HOME%" -DMPI_C_INCLUDE_PATH:PATH="%MPI_HOME%/Include" -DMPI_C_LIBRARIES:PATH="%MPI_HOME%/Lib/x86/msmpi.lib" -DMPI_CXX_INCLUDE_PATH:PATH="%MPI_HOME%/Include" -DMPI_CXX_LIBRARIES:PATH="%MPI_HOME%/Lib/x86/msmpi.lib"
 
 build_script:
   #build
