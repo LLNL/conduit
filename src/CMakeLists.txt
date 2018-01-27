@@ -142,6 +142,11 @@ include(cmake/SetupIncludes.cmake)
 add_subdirectory(libs)
 
 ################################
+# Add our examples
+################################
+add_subdirectory(examples)
+
+################################
 # Add docs
 ################################
 if(ENABLE_DOCS)

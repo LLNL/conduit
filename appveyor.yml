@@ -7,6 +7,7 @@ environment:
     ENABLE_PYTHON: ON
     MINICONDA: C:\Miniconda
     ENABLE_MPI: ON
+    MPI_HOME: "C:/Program Files (x86)/Microsoft SDKs/MPI"
   - CMAKE_GENERATOR: "Visual Studio 14 2015"
     CONFIG: Release
     PYTHON_VERSION: 2.7
@@ -14,6 +15,7 @@ environment:
     ENABLE_PYTHON: OFF
     MINICONDA: C:\Miniconda
     ENABLE_MPI: ON
+    MPI_HOME: "C:/Program Files (x86)/Microsoft SDKs/MPI"
 
 init:
   # line endings magic
@@ -39,6 +41,13 @@ install:
   # Install MS-MPI SDK
   - ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/msmpisdk.msi'
   - msmpisdk.msi /passive
+  
+  # Install CMake 3.9
+  ############################################################################
+  - ps: Start-FileDownload 'https://cmake.org/files/v3.9/cmake-3.9.6-win64-x64.msi'
+  - cmake-3.9.6-win64-x64.msi /passive
+  - set PATH=C:\Program Files\CMake\bin;%PATH%
+  - cmake --version
 
 before_build:
   # remove some noisy warnings from Xamarin
@@ -51,7 +60,14 @@ before_build:
   #- cmake -Hsrc -Bbuild -G "%CMAKE_GENERATOR%" -DHDF5_DIR="C:\\Program Files\\HDF_Group\\HDF5\\1.8.18" -DENABLE_PYTHON=TRUE
   #
   # enable mpi support and use default python
-  - cmake -Hsrc -Bbuild -G "%CMAKE_GENERATOR%" -DBUILD_SHARED_LIBS=%BUILD_SHARED_LIBS% -DENABLE_PYTHON=%ENABLE_PYTHON% -DENABLE_MPI=%ENABLE_MPI% -DMPI_HOME:PATH="C:/Program Files (x86)/Microsoft SDKs/MPI" -DMPI_C_INCLUDE_PATH:PATH="${MPI_HOME}/Include" -DMPI_C_LIBRARIES:PATH="${MPI_HOME}/Lib/x86/msmpi.lib" -DMPI_CXX_INCLUDE_PATH:PATH="${MPI_HOME}/Include" -DMPI_CXX_LIBRARIES:PATH="${MPI_HOME}/Lib/x86/msmpi.lib"
+  - cmake -Hsrc -Bbuild -G "%CMAKE_GENERATOR%" ^
+      -DBUILD_SHARED_LIBS=%BUILD_SHARED_LIBS% ^
+      -DENABLE_PYTHON=%ENABLE_PYTHON% ^ 
+      -DENABLE_MPI=%ENABLE_MPI% ^
+      -DMPI_C_INCLUDE_PATH:PATH="%MPI_HOME%/Include" ^
+      -DMPI_C_LIBRARIES:PATH="%MPI_HOME%/Lib/x86/msmpi.lib" ^
+      -DMPI_CXX_INCLUDE_PATH:PATH="%MPI_HOME%/Include" ^
+      -DMPI_CXX_LIBRARIES:PATH="%MPI_HOME%/Lib/x86/msmpi.lib"
 
 build_script:
   #build
