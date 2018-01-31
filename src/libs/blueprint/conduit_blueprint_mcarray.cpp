@@ -354,20 +354,15 @@ bool verify(const conduit::Node &n,
 
     if(n.dtype().is_empty())
     {
-        log_info(info,protocol,"ndarray is empty");
-        res = true;
-    }
-    // TODO(JRC): This function currently doesn't support list ND-arrays, but
-    // it should at some point in the future.
-    else if(!n.dtype().is_object())
-    {
-        log_error(info,protocol,"incorrect node type");
+        log_error(info,protocol,"ndarray is empty");
         res = false;
     }
 
     // TODO(JRC): Consider updating the logging in this function to better
     // indicate the exact points in the subtree rooted at 'n' at which
     // there are problems.
+    // TODO(JRC): This function currently doesn't support list ND-arrays, but
+    // it should at some point in the future.
 
     // Organize Nodes by Tree Depth //
 
@@ -434,7 +429,6 @@ bool verify(const conduit::Node &n,
 
     // Verify Correctness/Uniformity of Leaves //
 
-    if(node_max_depth > 0)
     {
         index_t curr_depth = node_max_depth;
         const NodeVector &depth_nodes = nodes_by_depth[curr_depth];

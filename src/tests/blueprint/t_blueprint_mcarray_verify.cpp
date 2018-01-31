@@ -169,15 +169,6 @@ TEST(conduit_blueprint_mcarray_verify, mcarray_verify_with_protocol)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mcarray_verify, ndarray_valid_empty)
-{
-    Node n, info;
-
-    EXPECT_TRUE(blueprint::ndarray::verify(n,info));
-}
-
-
-//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mcarray_verify, ndarray_valid_simple)
 {
     Node n, info;
@@ -228,6 +219,8 @@ TEST(conduit_blueprint_mcarray_verify, ndarray_valid_complex)
 TEST(conduit_blueprint_mcarray_verify, ndarray_invalid_type)
 {
     Node n, info;
+
+    EXPECT_FALSE(blueprint::ndarray::verify(n,info));
 
     n.set(DataType::char8_str(2));
     EXPECT_FALSE(blueprint::ndarray::verify(n,info));

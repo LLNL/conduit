@@ -229,38 +229,51 @@ bool verify_object_field(const std::string &protocol,
 bool verify_mcarray_field(const std::string &protocol,
                           const conduit::Node &node,
                           conduit::Node &info,
-                          const std::string &field_name = "",
-                          const bool allow_single = true)
+                          const std::string &field_name)
 {
-    Node &field_info = (field_name != "") ? info[field_name] : info;
+    Node &field_info = info[field_name];
 
     bool res = verify_field_exists(protocol, node, info, field_name);
     if(res)
     {
-        const Node &field_node = (field_name != "") ? node[field_name] : node;
+        const Node &field_node = node[field_name];
 
-        if(field_node.dtype().is_object())
+        if((res = blueprint::mcarray::verify(field_node,field_info)))
         {
-            if(!blueprint::mcarray::verify(field_node,field_info))
-            {
-                 res = false;
-            }
-            else
-            {
-                log_info(info, protocol, "\"" + field_name + "\" is a mcarray.");
-            }
-        }
-        else if(allow_single && field_node.dtype().is_number())
-        {
-            log_info(info, protocol, "\"" + field_name + "\" " +
-                                       "is a single component numeric array.");
+            log_info(info, protocol, "\"" + field_name + "\" is an mcarray.");
         }
         else
         {
-            log_error(info, protocol, "\"" + field_name + "\" is not a " +
-                                        (allow_single ? "numeric array or " : "") +
-                                        "mcarray.");
-            res = false;
+            log_error(info, protocol, "\"" + field_name + "\" is not an mcarray.");
+        }
+    }
+
+    log_verify_result(field_info, res);
+
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+bool verify_ndarray_field(const std::string &protocol,
+                          const conduit::Node &node,
+                          conduit::Node &info,
+                          const std::string &field_name)
+{
+    Node &field_info = info[field_name];
+
+    bool res = verify_field_exists(protocol, node, info, field_name);
+    if(res)
+    {
+        const Node &field_node = node[field_name];
+
+        if((res = blueprint::ndarray::verify(field_node,field_info)))
+        {
+            log_info(info, protocol, "\"" + field_name + "\" is an ndarray.");
+        }
+        else
+        {
+            log_error(info, protocol, "\"" + field_name + "\" is not an ndarray.");
         }
     }
 
@@ -1043,7 +1056,7 @@ mesh::coordset::_explicit::verify(const Node &coordset,
     bool res = true;
     info.reset();
 
-    res &= verify_mcarray_field(protocol, coordset, info, "values", false);
+    res &= verify_mcarray_field(protocol, coordset, info, "values");
 
     log_verify_result(info,res);
 
@@ -1468,7 +1481,7 @@ mesh::matset::verify(const Node &matset,
     info.reset();
 
     res &= verify_string_field(protocol, matset, info, "topology");
-    res &= verify_mcarray_field(protocol, matset, info, "volume_fractions", false);
+    res &= verify_mcarray_field(protocol, matset, info, "volume_fractions");
 
     log_verify_result(info, res);
 
@@ -1539,12 +1552,12 @@ mesh::field::verify(const Node &field,
     if(has_topo)
     {
         res &= verify_string_field(protocol, field, info, "topology");
-        res &= verify_mcarray_field(protocol, field, info, "values", true);
+        res &= verify_ndarray_field(protocol, field, info, "values");
     }
     if(has_matset)
     {
         res &= verify_string_field(protocol, field, info, "matset");
-        res &= verify_mcarray_field(protocol, field, info, "matset_values", false);
+        res &= verify_ndarray_field(protocol, field, info, "matset_values");
     }
 
     log_verify_result(info, res);
