@@ -54,6 +54,13 @@
 #include "conduit_blueprint_mcarray.hpp"
 #include "conduit_blueprint_utils.hpp"
 
+//-----------------------------------------------------------------------------
+// -- standard cpp lib includes -- 
+//-----------------------------------------------------------------------------
+#include <algorithm>
+#include <map>
+#include <set>
+
 using namespace conduit;
 // access verify logging helpers
 using namespace conduit::blueprint::utils;
@@ -316,6 +323,146 @@ bool is_interleaved(const conduit::Node &n)
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mcarray --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::ndarray --
+//-----------------------------------------------------------------------------
+namespace ndarray
+{
+
+//-----------------------------------------------------------------------------
+bool
+verify(const std::string &/*protocol*/,
+       const Node &/*n*/,
+       Node &info)
+{
+    // ndarray doens't provide any nested protocols
+    info.reset();
+    log_verify_result(info,false);
+    return false;
+}
+
+//----------------------------------------------------------------------------
+bool verify(const conduit::Node &n,
+            Node &info)
+{
+    info.reset();
+    bool res = true;
+
+    const std::string protocol = "ndarray";
+
+    if(n.dtype().is_empty())
+    {
+        log_info(info,protocol,"ndarray is empty");
+        res = true;
+    }
+    // TODO(JRC): This function currently doesn't support list ND-arrays, but
+    // it should at some point in the future.
+    else if(!n.dtype().is_object())
+    {
+        log_error(info,protocol,"incorrect node type");
+        res = false;
+    }
+
+    // TODO(JRC): Consider updating the logging in this function to better
+    // indicate the exact points in the subtree rooted at 'n' at which
+    // there are problems.
+
+    // Organize Nodes by Tree Depth //
+
+    typedef std::map<const conduit::Node*, index_t> NodeMap;
+    typedef std::vector<const conduit::Node*> NodeVector;
+
+    NodeMap node_depth_map;
+    index_t node_max_depth = 0;
+    {
+        std::vector<const conduit::Node*> n_node_stack( 1, &n );
+        std::vector<index_t> n_depth_stack( 1, 0 );
+        while(!n_node_stack.empty())
+        {
+            const conduit::Node *curr_node = n_node_stack.back();
+            n_node_stack.pop_back();
+            index_t curr_depth = n_depth_stack.back();
+            n_depth_stack.pop_back();
+            if(node_depth_map.find(curr_node) == node_depth_map.end())
+            {
+                node_depth_map[curr_node] = curr_depth;
+                node_max_depth = std::max(node_max_depth, curr_depth);
+
+                NodeConstIterator child_it = curr_node->children();
+                while(child_it.has_next())
+                {
+                    const Node &curr_child = child_it.next();
+                    n_node_stack.push_back(&curr_child);
+                    n_depth_stack.push_back(curr_depth + 1);
+                }
+            }
+        }
+    }
+
+    std::vector<NodeVector> nodes_by_depth(node_max_depth + 1);
+    for(NodeMap::iterator node_it = node_depth_map.begin();
+        node_it != node_depth_map.end(); ++node_it)
+    {
+        nodes_by_depth[node_it->second].push_back(node_it->first);
+    }
+
+    // Verify Uniformity of Internal Tree Structure //
+
+    for(index_t curr_depth = 0; curr_depth < node_max_depth; curr_depth++)
+    {
+        const NodeVector &depth_nodes = nodes_by_depth[curr_depth];
+        std::vector<std::string> depth_children = depth_nodes[0]->child_names();
+        std::set<std::string> depth_childset(depth_children.begin(), depth_children.end());
+
+        for(index_t node_idx = 0; node_idx < (index_t)depth_nodes.size() && res; node_idx++)
+        {
+            const conduit::Node* curr_node = depth_nodes[node_idx];
+            const std::vector<std::string> curr_children = curr_node->child_names();
+            std::set<std::string> curr_childset(curr_children.begin(), curr_children.end());
+
+            if(curr_childset != depth_childset)
+            {
+                std::ostringstream oss;
+                oss << "node subdepth " << curr_depth << " has subtree mismatches";
+                log_error(info,protocol,oss.str());
+                res = false;
+            }
+        }
+    }
+
+    // Verify Correctness/Uniformity of Leaves //
+
+    if(node_max_depth > 0)
+    {
+        index_t curr_depth = node_max_depth;
+        const NodeVector &depth_nodes = nodes_by_depth[curr_depth];
+        const index_t depth_elems = depth_nodes[0]->dtype().number_of_elements();
+
+        for(index_t node_idx = 0; node_idx < (index_t)depth_nodes.size() && res; node_idx++)
+        {
+            const conduit::Node* curr_node = depth_nodes[node_idx];
+
+            if(!curr_node->dtype().is_number())
+            {
+                log_error(info,protocol,"node leaves have non-numerical types");
+                res = false;
+            }
+            else if(curr_node->dtype().number_of_elements() != depth_elems)
+            {
+                log_error(info,protocol,"node leaves have element count differences");
+                res = false;
+            }
+        }
+    }
+
+    return res;
+}
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::ndarray --
 //-----------------------------------------------------------------------------
 
 
