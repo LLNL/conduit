@@ -52,7 +52,7 @@
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "conduit_blueprint_mcarray.hpp"
-#include "conduit_blueprint_utils.hpp"
+#include "conduit_log.hpp"
 
 //-----------------------------------------------------------------------------
 // -- standard cpp lib includes -- 
@@ -62,8 +62,6 @@
 #include <set>
 
 using namespace conduit;
-// access verify logging helpers
-using namespace conduit::blueprint::utils;
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -93,7 +91,7 @@ verify(const std::string &/*protocol*/,
     // mcarray doens't provide any nested protocols
 
     info.reset();
-    log_verify_result(info,false);
+    log::validation(info,false);
     return false;
 }
 
@@ -110,7 +108,7 @@ bool verify(const conduit::Node &n,
     // mcarray needs to be an object or a list
     if( ! (n.dtype().is_object() || n.dtype().is_list()) )
     {
-        log_error(info,proto_name,"Node has no children");
+        log::error(info,proto_name,"Node has no children");
         res = false;
     }
 
@@ -147,7 +145,7 @@ bool verify(const conduit::Node &n,
                 oss << " does not have the same number of "
                     << "elements as mcarray components.";
 
-                log_error(info,proto_name,oss.str());
+                log::error(info,proto_name,oss.str());
 
                 res = false;
             }
@@ -168,12 +166,12 @@ bool verify(const conduit::Node &n,
 
             oss << " is not a numeric type.";
 
-            log_error(info,proto_name,oss.str());
+            log::error(info,proto_name,oss.str());
             res = false;
         }
     }
     
-    log_verify_result(info,res);
+    log::validation(info,res);
 
     return res;
 }
@@ -339,7 +337,7 @@ verify(const std::string &/*protocol*/,
 {
     // mlarray doens't provide any nested protocols
     info.reset();
-    log_verify_result(info,false);
+    log::validation(info,false);
     return false;
 }
 
@@ -354,7 +352,7 @@ bool verify(const conduit::Node &n,
 
     if(n.dtype().is_empty())
     {
-        log_error(info,protocol,"mlarray is empty");
+        log::error(info,protocol,"mlarray is empty");
         res = false;
     }
 
@@ -421,7 +419,7 @@ bool verify(const conduit::Node &n,
             {
                 std::ostringstream oss;
                 oss << "node subdepth " << curr_depth << " has subtree mismatches";
-                log_error(info,protocol,oss.str());
+                log::error(info,protocol,oss.str());
                 res = false;
             }
         }
@@ -440,12 +438,12 @@ bool verify(const conduit::Node &n,
 
             if(!curr_node->dtype().is_number())
             {
-                log_error(info,protocol,"node leaves have non-numerical types");
+                log::error(info,protocol,"node leaves have non-numerical types");
                 res = false;
             }
             else if(curr_node->dtype().number_of_elements() != depth_elems)
             {
-                log_error(info,protocol,"node leaves have element count differences");
+                log::error(info,protocol,"node leaves have element count differences");
                 res = false;
             }
         }

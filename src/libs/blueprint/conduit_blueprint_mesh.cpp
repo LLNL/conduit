@@ -53,11 +53,9 @@
 //-----------------------------------------------------------------------------
 #include "conduit_blueprint_mcarray.hpp"
 #include "conduit_blueprint_mesh.hpp"
-#include "conduit_blueprint_utils.hpp"
+#include "conduit_log.hpp"
 
 using namespace conduit;
-// access verify logging helpers
-using namespace conduit::blueprint::utils;
 
 namespace conduit { namespace blueprint { namespace mesh {
     bool verify_single_domain(const conduit::Node &n, conduit::Node &info);
@@ -94,9 +92,7 @@ namespace conduit { namespace blueprint { namespace mesh {
 std::string to_log_field(const std::string &field_name, bool pad_before = false)
 {
     std::ostringstream oss;
-    oss << (pad_before ? " " : "") <<
-        "'" << field_name << "'" <<
-        (pad_before ? "" : " ");
+    oss << (pad_before ? " " : "") << "'" << field_name << "'" << (pad_before ? "" : " ");
     return (field_name != "") ? oss.str() : "";
 }
 
@@ -112,11 +108,11 @@ bool verify_field_exists(const std::string &protocol,
     {
         if(!node.has_child(field_name))
         {
-            log_error(info, protocol, "missing child" + to_log_field(field_name, true));
+            log::error(info, protocol, "missing child" + to_log_field(field_name, true));
             res = false;
         }
 
-        log_verify_result(info[field_name], res);
+        log::validation(info[field_name], res);
     }
 
     return res;
@@ -137,12 +133,12 @@ bool verify_integer_field(const std::string &protocol,
 
         if(!field_node.dtype().is_integer())
         {
-            log_error(info, protocol, to_log_field(field_name) + "is not an integer (array)");
+            log::error(info, protocol, to_log_field(field_name) + "is not an integer (array)");
             res = false;
         }
     }
 
-    log_verify_result(field_info, res);
+    log::validation(field_info, res);
 
     return res;
 }
@@ -163,12 +159,12 @@ bool verify_number_field(const std::string &protocol,
 
         if(!field_node.dtype().is_number())
         {
-            log_error(info, protocol, to_log_field(field_name) + "is not a number");
+            log::error(info, protocol, to_log_field(field_name) + "is not a number");
             res = false;
         }
     }
 
-    log_verify_result(field_info, res);
+    log::validation(field_info, res);
 
     return res;
 }
@@ -189,12 +185,12 @@ bool verify_string_field(const std::string &protocol,
 
         if(!field_node.dtype().is_string())
         {
-            log_error(info, protocol, to_log_field(field_name) + "is not a string");
+            log::error(info, protocol, to_log_field(field_name) + "is not a string");
             res = false;
         }
     }
 
-    log_verify_result(field_info, res);
+    log::validation(field_info, res);
 
     return res;
 }
@@ -217,18 +213,18 @@ bool verify_object_field(const std::string &protocol,
         if(!(field_node.dtype().is_object() ||
             (allow_list && field_node.dtype().is_list())))
         {
-            log_error(info, protocol, to_log_field(field_name) + "is not an object" +
-                                      (allow_list ? " or a list" : ""));
+            log::error(info, protocol, to_log_field(field_name) + "is not an object" +
+                                       (allow_list ? " or a list" : ""));
             res = false;
         }
         else if(field_node.number_of_children() == 0)
         {
-            log_error(info,protocol, "has no children");
+            log::error(info,protocol, "has no children");
             res = false;
         }
     }
 
-    log_verify_result(field_info, res);
+    log::validation(field_info, res);
 
     return res;
 }
@@ -249,15 +245,15 @@ bool verify_mcarray_field(const std::string &protocol,
 
         if((res = blueprint::mcarray::verify(field_node,field_info)))
         {
-            log_info(info, protocol, to_log_field(field_name) + "is an mcarray");
+            log::info(info, protocol, to_log_field(field_name) + "is an mcarray");
         }
         else
         {
-            log_error(info, protocol, to_log_field(field_name) + "is not an mcarray");
+            log::error(info, protocol, to_log_field(field_name) + "is not an mcarray");
         }
     }
 
-    log_verify_result(field_info, res);
+    log::validation(field_info, res);
 
     return res;
 }
@@ -278,15 +274,15 @@ bool verify_mlarray_field(const std::string &protocol,
 
         if((res = blueprint::mlarray::verify(field_node,field_info)))
         {
-            log_info(info, protocol, to_log_field(field_name) + "is an mlarray");
+            log::info(info, protocol, to_log_field(field_name) + "is an mlarray");
         }
         else
         {
-            log_error(info, protocol, to_log_field(field_name) + "is not an mlarray");
+            log::error(info, protocol, to_log_field(field_name) + "is not an mlarray");
         }
     }
 
-    log_verify_result(field_info, res);
+    log::validation(field_info, res);
 
     return res;
 }
@@ -315,20 +311,20 @@ bool verify_enum_field(const std::string &protocol,
 
         if(is_field_enum)
         {
-            log_info(info, protocol, to_log_field(field_name) +
+            log::info(info, protocol, to_log_field(field_name) +
                                         "has valid value" +
                                         to_log_field(field_value, true));
         }
         else
         {
-            log_error(info, protocol, to_log_field(field_name) +
-                                        "has invalid value" +
-                                        to_log_field(field_value, true));
+            log::error(info, protocol, to_log_field(field_name) +
+                                       "has invalid value" +
+                                       to_log_field(field_value, true));
             res = false;
         }
     }
 
-    log_verify_result(field_info, res);
+    log::validation(field_info, res);
 
     return res;
 }
@@ -350,19 +346,19 @@ bool verify_reference_field(const std::string &protocol,
 
         if(!node_tree.has_child(ref_path) || !node_tree[ref_path].has_child(ref_name))
         {
-            log_error(info, protocol, "reference to non-existent " + ref_path +
+            log::error(info, protocol, "reference to non-existent " + ref_path +
                                         to_log_field(field_name, true));
             res = false;
         }
         else if(info_tree[ref_path][ref_name]["valid"].as_string() != "true")
         {
-            log_error(info, protocol, "reference to invalid " + ref_path +
-                                      to_log_field(field_name, true));
+            log::error(info, protocol, "reference to invalid " + ref_path +
+                                       to_log_field(field_name, true));
             res = false;
         }
     }
 
-    log_verify_result(info[field_name], res);
+    log::validation(info[field_name], res);
 
     return res;
 }
@@ -586,7 +582,7 @@ mesh::verify_single_domain(const Node &n,
         }
     }
 
-    log_verify_result(info,res);
+    log::validation(info,res);
 
     return res;
 }
@@ -602,7 +598,7 @@ bool mesh::verify_multi_domain(const Node &n,
 
     if(!n.dtype().is_object() && !n.dtype().is_list())
     {
-        log_error(info, protocol, "not an object or a list");
+        log::error(info, protocol, "not an object or a list");
         res = false;
     }
     else
@@ -615,7 +611,7 @@ bool mesh::verify_multi_domain(const Node &n,
             res &= mesh::verify_single_domain(chld, info[chld_name]);
         }
 
-        log_info(info, protocol, "is a multi domain mesh");
+        log::info(info, protocol, "is a multi domain mesh");
     }
 
     return res;
@@ -906,7 +902,7 @@ mesh::logical_dims::verify(const Node &dims,
         res &= verify_integer_field(protocol, dims, info, "k");
     }
 
-    log_verify_result(info, res);
+    log::validation(info, res);
 
     return res;
 }
@@ -928,7 +924,7 @@ mesh::association::verify(const Node &assoc,
 
     res &= verify_enum_field(protocol, assoc, info, "", mesh::associations);
 
-    log_verify_result(info, res);
+    log::validation(info, res);
 
     return res;
 }
@@ -961,7 +957,7 @@ mesh::coordset::uniform::origin::verify(const Node &origin,
         }
     }
 
-    log_verify_result(info, res);
+    log::validation(info, res);
 
     return res;
 }
@@ -987,7 +983,7 @@ mesh::coordset::uniform::spacing::verify(const Node &spacing,
         }
     }
 
-    log_verify_result(info,res);
+    log::validation(info,res);
 
     return res;
 }
@@ -1006,19 +1002,19 @@ mesh::coordset::uniform::verify(const Node &coordset,
 
     if(coordset.has_child("origin"))
     {
-        log_optional(info, protocol, "has origin");
+        log::optional(info, protocol, "has origin");
         res &= mesh::coordset::uniform::origin::verify(coordset["origin"],
                                                        info["origin"]);
     }
 
     if(coordset.has_child("spacing"))
     {
-        log_optional(info,protocol, "has spacing");
+        log::optional(info,protocol, "has spacing");
         res &= mesh::coordset::uniform::spacing::verify(coordset["spacing"],
                                                         info["spacing"]);
     }
 
-    log_verify_result(info,res);
+    log::validation(info,res);
 
     return res;
 }
@@ -1045,14 +1041,14 @@ mesh::coordset::rectilinear::verify(const Node &coordset,
             const std::string chld_name = itr.name();
             if(!chld.dtype().is_number())
             {
-                log_error(info, protocol, "value child \"" + chld_name + "\" " +
-                                          "is not a number array");
+                log::error(info, protocol, "value child \"" + chld_name + "\" " +
+                                           "is not a number array");
                 res = false;
             }
         }
     }
 
-    log_verify_result(info,res);
+    log::validation(info,res);
 
     return res;
 }
@@ -1069,7 +1065,7 @@ mesh::coordset::_explicit::verify(const Node &coordset,
 
     res &= verify_mcarray_field(protocol, coordset, info, "values");
 
-    log_verify_result(info,res);
+    log::validation(info,res);
 
     return res;
 }
@@ -1105,7 +1101,7 @@ mesh::coordset::verify(const Node &coordset,
         }
     }
 
-    log_verify_result(info,res);
+    log::validation(info,res);
 
     return res;
 }
@@ -1126,7 +1122,7 @@ mesh::coordset::type::verify(const Node &type,
 
     res &= verify_enum_field(protocol, type, info, "", mesh::coord_types);
 
-    log_verify_result(info,res);
+    log::validation(info,res);
 
     return res;
 }
@@ -1185,14 +1181,14 @@ mesh::coordset::coord_system::verify(const Node &coord_sys,
 
             if(!axis_name_ok)
             {
-                log_error(info, protocol, "unsupported " + coord_sys_str +
-                                          " axis name: " + axis_name);
+                log::error(info, protocol, "unsupported " + coord_sys_str +
+                                           " axis name: " + axis_name);
                 res = false;
             }
         }
     }
 
-    log_verify_result(info,res);
+    log::validation(info,res);
 
     return res;
 }
@@ -1217,7 +1213,7 @@ mesh::coordset::index::verify(const Node &coordset_idx,
     res &= verify_object_field(protocol, coordset_idx, info, "coord_system") &&
            coordset::coord_system::verify(coordset_idx["coord_system"], info["coord_system"]);
 
-    log_verify_result(info,res);
+    log::validation(info,res);
 
     return res;
 }
@@ -1267,11 +1263,11 @@ mesh::topology::verify(const Node &topo,
 
     if(topo.has_child("grid_function"))
     {
-        log_optional(info, protocol, "includes grid_function");
+        log::optional(info, protocol, "includes grid_function");
         res &= verify_string_field(protocol, topo, info, "grid_function");
     }
 
-    log_verify_result(info,res);
+    log::validation(info,res);
 
     return res;
 
@@ -1290,7 +1286,7 @@ mesh::topology::uniform::verify(const Node & /*topo*/,
     // future: will be used to verify optional info from "elements"
     // child of a uniform topology
     bool res = true;
-    log_verify_result(info,res);
+    log::validation(info,res);
     return res;
 }
 
@@ -1307,7 +1303,7 @@ mesh::topology::rectilinear::verify(const Node &/*topo*/,
     // future: will be used to verify optional info from "elements"
     // child of a rectilinear topology
     bool res = true;
-    log_verify_result(info,res);
+    log::validation(info,res);
     return res;
 }
 
@@ -1336,7 +1332,7 @@ mesh::topology::structured::verify(const Node &topo,
     // FIXME: Add some verification code here for the optional origin in the
     // structured topology.
 
-    log_verify_result(info,res);
+    log::validation(info,res);
 
     return res;
 }
@@ -1399,12 +1395,12 @@ mesh::topology::unstructured::verify(const Node &topo,
         }
         else
         {
-            log_error(info,protocol,"invalid child \"elements\"");
+            log::error(info,protocol,"invalid child \"elements\"");
             res = false;
         }
     }
 
-    log_verify_result(info,res);
+    log::validation(info,res);
 
     return res;
 }
@@ -1429,11 +1425,11 @@ mesh::topology::index::verify(const Node &topo_idx,
 
     if (topo_idx.has_child("grid_function"))
     {
-        log_optional(info, protocol, "includes grid_function");
+        log::optional(info, protocol, "includes grid_function");
         res &= verify_string_field(protocol, topo_idx, info, "grid_function");
     }
 
-    log_verify_result(info,res);
+    log::validation(info,res);
 
     return res;
 }
@@ -1453,7 +1449,7 @@ mesh::topology::type::verify(const Node &type,
 
     res &= verify_enum_field(protocol, type, info, "", mesh::topo_types);
 
-    log_verify_result(info,res);
+    log::validation(info,res);
 
     return res;
 }
@@ -1473,7 +1469,7 @@ mesh::topology::shape::verify(const Node &shape,
 
     res &= verify_enum_field(protocol, shape, info, "", mesh::topo_shapes);
 
-    log_verify_result(info,res);
+    log::validation(info,res);
 
     return res;
 }
@@ -1494,7 +1490,7 @@ mesh::matset::verify(const Node &matset,
     res &= verify_string_field(protocol, matset, info, "topology");
     res &= verify_mcarray_field(protocol, matset, info, "volume_fractions");
 
-    log_verify_result(info, res);
+    log::validation(info, res);
 
     return res;
 }
@@ -1519,7 +1515,7 @@ mesh::matset::index::verify(const Node &matset_idx,
     res &= verify_object_field(protocol, matset_idx, info, "materials");
     res &= verify_string_field(protocol, matset_idx, info, "path");
 
-    log_verify_result(info, res);
+    log::validation(info, res);
 
     return res;
 }
@@ -1541,7 +1537,7 @@ mesh::field::verify(const Node &field,
     bool has_basis = field.has_child("basis");
     if(!has_assoc && !has_basis)
     {
-        log_error(info, protocol, "missing child \"association\" or \"basis\"");
+        log::error(info, protocol, "missing child \"association\" or \"basis\"");
         res = false;
     }
     if(has_assoc)
@@ -1557,7 +1553,7 @@ mesh::field::verify(const Node &field,
     bool has_matset = field.has_child("matset");
     if(!has_topo && !has_matset)
     {
-        log_error(info, protocol, "missing child \"topology\" or \"matset\"");
+        log::error(info, protocol, "missing child \"topology\" or \"matset\"");
         res = false;
     }
     if(has_topo)
@@ -1571,7 +1567,7 @@ mesh::field::verify(const Node &field,
         res &= verify_mlarray_field(protocol, field, info, "matset_values");
     }
 
-    log_verify_result(info, res);
+    log::validation(info, res);
 
     return res;
 }
@@ -1591,7 +1587,7 @@ mesh::field::basis::verify(const Node &basis,
 
     res &= verify_string_field(protocol, basis, info);
 
-    log_verify_result(info, res);
+    log::validation(info, res);
 
     return res;
 }
@@ -1613,7 +1609,7 @@ mesh::field::index::verify(const Node &field_idx,
     bool has_basis = field_idx.has_child("basis");
     if(!has_assoc && !has_basis)
     {
-        log_error(info, protocol, "missing child \"association\" or \"basis\"");
+        log::error(info, protocol, "missing child \"association\" or \"basis\"");
         res = false;
     }
     if(has_assoc)
@@ -1629,7 +1625,7 @@ mesh::field::index::verify(const Node &field_idx,
     bool has_matset = field_idx.has_child("matset");
     if(!has_topo && !has_matset)
     {
-        log_error(info, protocol, "missing child \"topology\" or \"matset\"");
+        log::error(info, protocol, "missing child \"topology\" or \"matset\"");
         res = false;
     }
     if(has_topo)
@@ -1644,7 +1640,7 @@ mesh::field::index::verify(const Node &field_idx,
     res &= verify_integer_field(protocol, field_idx, info, "number_of_components");
     res &= verify_string_field(protocol, field_idx, info, "path");
 
-    log_verify_result(info, res);
+    log::validation(info, res);
 
     return res;
 }
@@ -1684,7 +1680,7 @@ mesh::adjset::verify(const Node &adjset,
         }
     }
 
-    log_verify_result(info, res);
+    log::validation(info, res);
 
     return res;
 }
@@ -1707,7 +1703,7 @@ mesh::adjset::index::verify(const Node &adj_idx,
            mesh::association::verify(adj_idx["association"], info["association"]);
     res &= verify_string_field(protocol, adj_idx, info, "path");
 
-    log_verify_result(info, res);
+    log::validation(info, res);
 
     return res;
 }
@@ -1844,7 +1840,7 @@ mesh::index::verify(const Node &n,
         }
     }
 
-    log_verify_result(info, res);
+    log::validation(info, res);
 
     return res;
 }

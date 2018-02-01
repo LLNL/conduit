@@ -44,20 +44,16 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_utils.hpp
+/// file: conduit_log.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_BLUEPRINT_UTILS_HPP
-#define CONDUIT_BLUEPRINT_UTILS_HPP
-
 //-----------------------------------------------------------------------------
-// conduit lib includes
+// conduit includes
 //-----------------------------------------------------------------------------
-#include "conduit.hpp"
+#include "conduit_log.hpp"
 
-#include "conduit_blueprint_exports.h"
-
+using namespace conduit;
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -66,58 +62,56 @@ namespace conduit
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint --
+// -- begin conduit::log --
 //-----------------------------------------------------------------------------
-namespace blueprint
+namespace log
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::utils --
-//-----------------------------------------------------------------------------
-namespace utils
+void
+info(Node &info,
+     const std::string &proto_name,
+     const std::string &msg)
 {
+    info["info"].append().set(proto_name + ": " + msg);
+}
 
 //-----------------------------------------------------------------------------
-// Helpers for consistently logging info about the verification process.
-// (These are used internally in blueprint.)
-//-----------------------------------------------------------------------------
+void
+optional(Node &info,
+         const std::string &proto_name,
+         const std::string &msg)
+{
+    info["optional"].append().set(proto_name + ": " + msg);
+}
 
 //-----------------------------------------------------------------------------
-void CONDUIT_BLUEPRINT_API log_info(conduit::Node &info,
-                                    const std::string &proto_name,
-                                    const std::string &msg);
+void
+error(Node &info,
+      const std::string &proto_name,
+      const std::string &msg)
+{
+    info["errors"].append().set(proto_name + ": " + msg);
+}
+
 
 //-----------------------------------------------------------------------------
-void CONDUIT_BLUEPRINT_API log_optional(conduit::Node &info,
-                                        const std::string &proto_name,
-                                        const std::string &msg);
-                                        
-//-----------------------------------------------------------------------------
-void CONDUIT_BLUEPRINT_API log_error(conduit::Node &info,
-                                     const std::string &proto_name,
-                                     const std::string &msg);
+void
+validation(Node &info,
+           bool res)
+{
+    info["valid"] = res ? "true" : "false";
+}
 
 //-----------------------------------------------------------------------------
-void CONDUIT_BLUEPRINT_API log_verify_result(conduit::Node &info,
-                                             bool res);
-
-
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::utils --
+// -- end conduit::log --
 //-----------------------------------------------------------------------------
 
-}
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint --
-//-----------------------------------------------------------------------------
-
 }
 //-----------------------------------------------------------------------------
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
-
-#endif 
-
-
 
