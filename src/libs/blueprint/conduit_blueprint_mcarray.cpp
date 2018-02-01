@@ -326,9 +326,9 @@ bool is_interleaved(const conduit::Node &n)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::ndarray --
+// -- begin conduit::blueprint::mlarray --
 //-----------------------------------------------------------------------------
-namespace ndarray
+namespace mlarray
 {
 
 //-----------------------------------------------------------------------------
@@ -337,7 +337,7 @@ verify(const std::string &/*protocol*/,
        const Node &/*n*/,
        Node &info)
 {
-    // ndarray doens't provide any nested protocols
+    // mlarray doens't provide any nested protocols
     info.reset();
     log_verify_result(info,false);
     return false;
@@ -350,18 +350,18 @@ bool verify(const conduit::Node &n,
     info.reset();
     bool res = true;
 
-    const std::string protocol = "ndarray";
+    const std::string protocol = "mlarray";
 
     if(n.dtype().is_empty())
     {
-        log_error(info,protocol,"ndarray is empty");
+        log_error(info,protocol,"mlarray is empty");
         res = false;
     }
 
     // TODO(JRC): Consider updating the logging in this function to better
     // indicate the exact points in the subtree rooted at 'n' at which
     // there are problems.
-    // TODO(JRC): This function currently doesn't support list ND-arrays, but
+    // TODO(JRC): This function currently doesn't support list ML-arrays, but
     // it should at some point in the future.
 
     // Organize Nodes by Tree Depth //
@@ -456,7 +456,7 @@ bool verify(const conduit::Node &n,
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::ndarray --
+// -- end conduit::blueprint::mlarray --
 //-----------------------------------------------------------------------------
 
 

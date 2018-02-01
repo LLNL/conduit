@@ -264,7 +264,7 @@ bool verify_mcarray_field(const std::string &protocol,
 
 
 //-----------------------------------------------------------------------------
-bool verify_ndarray_field(const std::string &protocol,
+bool verify_mlarray_field(const std::string &protocol,
                           const conduit::Node &node,
                           conduit::Node &info,
                           const std::string &field_name)
@@ -276,13 +276,13 @@ bool verify_ndarray_field(const std::string &protocol,
     {
         const Node &field_node = node[field_name];
 
-        if((res = blueprint::ndarray::verify(field_node,field_info)))
+        if((res = blueprint::mlarray::verify(field_node,field_info)))
         {
-            log_info(info, protocol, to_log_field(field_name) + "is an ndarray");
+            log_info(info, protocol, to_log_field(field_name) + "is an mlarray");
         }
         else
         {
-            log_error(info, protocol, to_log_field(field_name) + "is not an ndarray");
+            log_error(info, protocol, to_log_field(field_name) + "is not an mlarray");
         }
     }
 
@@ -1563,12 +1563,12 @@ mesh::field::verify(const Node &field,
     if(has_topo)
     {
         res &= verify_string_field(protocol, field, info, "topology");
-        res &= verify_ndarray_field(protocol, field, info, "values");
+        res &= verify_mlarray_field(protocol, field, info, "values");
     }
     if(has_matset)
     {
         res &= verify_string_field(protocol, field, info, "matset");
-        res &= verify_ndarray_field(protocol, field, info, "matset_values");
+        res &= verify_mlarray_field(protocol, field, info, "matset_values");
     }
 
     log_verify_result(info, res);

@@ -169,7 +169,7 @@ TEST(conduit_blueprint_mcarray_verify, mcarray_verify_with_protocol)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mcarray_verify, ndarray_valid_simple)
+TEST(conduit_blueprint_mcarray_verify, mlarray_valid_simple)
 {
     Node n, info;
 
@@ -177,33 +177,33 @@ TEST(conduit_blueprint_mcarray_verify, ndarray_valid_simple)
     n["a/y"].set(DataType::float64(2));
     n["b/x"].set(DataType::float64(2));
     n["b/y"].set(DataType::float64(2));
-    EXPECT_TRUE(blueprint::ndarray::verify(n,info));
+    EXPECT_TRUE(blueprint::mlarray::verify(n,info));
 
     n["a/x"].set(DataType::int64(2));
     n["b/x"].set(DataType::int64(2));
-    EXPECT_TRUE(blueprint::ndarray::verify(n,info));
+    EXPECT_TRUE(blueprint::mlarray::verify(n,info));
 }
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mcarray_verify, ndarray_valid_complex)
+TEST(conduit_blueprint_mcarray_verify, mlarray_valid_complex)
 {
     Node n, info;
 
     n["a/x/1"].set(DataType::float64(2));
-    EXPECT_TRUE(blueprint::ndarray::verify(n,info));
+    EXPECT_TRUE(blueprint::mlarray::verify(n,info));
     n["a/x/2"].set(DataType::float64(2));
-    EXPECT_TRUE(blueprint::ndarray::verify(n,info));
+    EXPECT_TRUE(blueprint::mlarray::verify(n,info));
 
     n["b/x/1"].set(DataType::float64(2));
-    EXPECT_FALSE(blueprint::ndarray::verify(n,info));
+    EXPECT_FALSE(blueprint::mlarray::verify(n,info));
     n["b/x/2"].set(DataType::float64(2));
-    EXPECT_TRUE(blueprint::ndarray::verify(n,info));
+    EXPECT_TRUE(blueprint::mlarray::verify(n,info));
 
     n["a/y"].set(DataType::float64(2));
-    EXPECT_FALSE(blueprint::ndarray::verify(n,info));
+    EXPECT_FALSE(blueprint::mlarray::verify(n,info));
     n["b/y"].set(DataType::float64(2));
-    EXPECT_FALSE(blueprint::ndarray::verify(n,info));
+    EXPECT_FALSE(blueprint::mlarray::verify(n,info));
 
     n["a/y"].reset();
     n["b/y"].reset();
@@ -211,55 +211,55 @@ TEST(conduit_blueprint_mcarray_verify, ndarray_valid_complex)
     n["a/y/2"].set(DataType::float64(2));
     n["b/y/1"].set(DataType::float64(2));
     n["b/y/2"].set(DataType::float64(2));
-    EXPECT_TRUE(blueprint::ndarray::verify(n,info));
+    EXPECT_TRUE(blueprint::mlarray::verify(n,info));
 }
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mcarray_verify, ndarray_invalid_type)
+TEST(conduit_blueprint_mcarray_verify, mlarray_invalid_type)
 {
     Node n, info;
 
-    EXPECT_FALSE(blueprint::ndarray::verify(n,info));
+    EXPECT_FALSE(blueprint::mlarray::verify(n,info));
 
     n.set(DataType::char8_str(2));
-    EXPECT_FALSE(blueprint::ndarray::verify(n,info));
+    EXPECT_FALSE(blueprint::mlarray::verify(n,info));
 
     n.reset();
     n["a/x"].set(DataType::float64(2));
     n["a/y"].set(DataType::float64(2));
     n["b/x"].set(DataType::float64(2));
     n["b/y"].set(DataType::char8_str(2));
-    EXPECT_FALSE(blueprint::ndarray::verify(n,info));
+    EXPECT_FALSE(blueprint::mlarray::verify(n,info));
 }
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mcarray_verify, ndarray_invalid_structure)
+TEST(conduit_blueprint_mcarray_verify, mlarray_invalid_structure)
 {
     Node n, info;
 
     n["a/x"].set(DataType::float64(2));
     n["a/y"].set(DataType::float64(2));
     n["b/x"].set(DataType::float64(2));
-    EXPECT_FALSE(blueprint::ndarray::verify(n,info));
+    EXPECT_FALSE(blueprint::mlarray::verify(n,info));
 
     n["b/z"].set(DataType::float64(2));
-    EXPECT_FALSE(blueprint::ndarray::verify(n,info));
+    EXPECT_FALSE(blueprint::mlarray::verify(n,info));
 
     n["b/y"].set(DataType::float64(2));
-    EXPECT_FALSE(blueprint::ndarray::verify(n,info));
+    EXPECT_FALSE(blueprint::mlarray::verify(n,info));
 
     n["a/z"].set(DataType::float64(3));
-    EXPECT_FALSE(blueprint::ndarray::verify(n,info));
+    EXPECT_FALSE(blueprint::mlarray::verify(n,info));
 }
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mcarray_verify, ndarray_verify_with_protocol)
+TEST(conduit_blueprint_mcarray_verify, mlarray_verify_with_protocol)
 {
     Node n, info;
 
-    EXPECT_FALSE(blueprint::ndarray::verify("protocol",n,info));
-    EXPECT_FALSE(blueprint::ndarray::verify("ndarray",n,info));
+    EXPECT_FALSE(blueprint::mlarray::verify("protocol",n,info));
+    EXPECT_FALSE(blueprint::mlarray::verify("mlarray",n,info));
 }
