@@ -3198,7 +3198,8 @@ public:
     bool             compatible(const Node &n) const
                         {return m_schema->compatible(n.schema());}
 
-    /// is this node equal to given node
+    /// check for equality between this node and the given node, storing
+    //  the results digest in the provided data node
     bool             equals(const Node &n,
                             Node &info,
                             const float64 epsilon = CONDUIT_EPSILON) const;

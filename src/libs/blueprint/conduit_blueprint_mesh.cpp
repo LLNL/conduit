@@ -91,6 +91,15 @@ namespace conduit { namespace blueprint { namespace mesh {
 // -- begin internal helper functions --
 //-----------------------------------------------------------------------------
 
+std::string to_log_field(const std::string &field_name, bool pad_before = false)
+{
+    std::ostringstream oss;
+    oss << (pad_before ? " " : "") <<
+        "'" << field_name << "'" <<
+        (pad_before ? "" : " ");
+    return (field_name != "") ? oss.str() : "";
+}
+
 //-----------------------------------------------------------------------------
 bool verify_field_exists(const std::string &protocol,
                          const conduit::Node &node,
@@ -103,7 +112,7 @@ bool verify_field_exists(const std::string &protocol,
     {
         if(!node.has_child(field_name))
         {
-            log_error(info, protocol, "missing child \"" + field_name + "\"");
+            log_error(info, protocol, "missing child" + to_log_field(field_name, true));
             res = false;
         }
 
@@ -128,7 +137,7 @@ bool verify_integer_field(const std::string &protocol,
 
         if(!field_node.dtype().is_integer())
         {
-            log_error(info, protocol, "\"" + field_name + "\" is not an integer (array)");
+            log_error(info, protocol, to_log_field(field_name) + "is not an integer (array)");
             res = false;
         }
     }
@@ -154,7 +163,7 @@ bool verify_number_field(const std::string &protocol,
 
         if(!field_node.dtype().is_number())
         {
-            log_error(info, protocol, "\"" + field_name + "\" is not a number");
+            log_error(info, protocol, to_log_field(field_name) + "is not a number");
             res = false;
         }
     }
@@ -180,7 +189,7 @@ bool verify_string_field(const std::string &protocol,
 
         if(!field_node.dtype().is_string())
         {
-            log_error(info, protocol, "\"" + field_name + "\" is not a string");
+            log_error(info, protocol, to_log_field(field_name) + "is not a string");
             res = false;
         }
     }
@@ -208,13 +217,13 @@ bool verify_object_field(const std::string &protocol,
         if(!(field_node.dtype().is_object() ||
             (allow_list && field_node.dtype().is_list())))
         {
-            log_error(info, protocol, "\"" + field_name + "\" is not an object" +
+            log_error(info, protocol, to_log_field(field_name) + "is not an object" +
                                       (allow_list ? " or a list" : ""));
             res = false;
         }
         else if(field_node.number_of_children() == 0)
         {
-            log_error(info,protocol,"\"" + field_name + "\" has no children");
+            log_error(info,protocol, "has no children");
             res = false;
         }
     }
@@ -240,11 +249,11 @@ bool verify_mcarray_field(const std::string &protocol,
 
         if((res = blueprint::mcarray::verify(field_node,field_info)))
         {
-            log_info(info, protocol, "\"" + field_name + "\" is an mcarray.");
+            log_info(info, protocol, to_log_field(field_name) + "is an mcarray");
         }
         else
         {
-            log_error(info, protocol, "\"" + field_name + "\" is not an mcarray.");
+            log_error(info, protocol, to_log_field(field_name) + "is not an mcarray");
         }
     }
 
@@ -269,11 +278,11 @@ bool verify_ndarray_field(const std::string &protocol,
 
         if((res = blueprint::ndarray::verify(field_node,field_info)))
         {
-            log_info(info, protocol, "\"" + field_name + "\" is an ndarray.");
+            log_info(info, protocol, to_log_field(field_name) + "is an ndarray");
         }
         else
         {
-            log_error(info, protocol, "\"" + field_name + "\" is not an ndarray.");
+            log_error(info, protocol, to_log_field(field_name) + "is not an ndarray");
         }
     }
 
@@ -306,13 +315,15 @@ bool verify_enum_field(const std::string &protocol,
 
         if(is_field_enum)
         {
-            log_info(info, protocol, "\"" + field_name + "\" " +
-                                       "has valid value " + field_value);
+            log_info(info, protocol, to_log_field(field_name) +
+                                        "has valid value" +
+                                        to_log_field(field_value, true));
         }
         else
         {
-            log_error(info, protocol, "\"" + field_name + "\" " +
-                                        "has invalid value " + field_value);
+            log_error(info, protocol, to_log_field(field_name) +
+                                        "has invalid value" +
+                                        to_log_field(field_value, true));
             res = false;
         }
     }
@@ -340,13 +351,13 @@ bool verify_reference_field(const std::string &protocol,
         if(!node_tree.has_child(ref_path) || !node_tree[ref_path].has_child(ref_name))
         {
             log_error(info, protocol, "reference to non-existent " + ref_path +
-                                        " \"" + field_name + "\"");
+                                        to_log_field(field_name, true));
             res = false;
         }
         else if(info_tree[ref_path][ref_name]["valid"].as_string() != "true")
         {
             log_error(info, protocol, "reference to invalid " + ref_path +
-                                        " \"" + field_name + "\"");
+                                      to_log_field(field_name, true));
             res = false;
         }
     }
