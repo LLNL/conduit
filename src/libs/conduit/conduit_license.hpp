@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -9,7 +9,7 @@
 // 
 // This file is part of Conduit. 
 // 
-// For details, see https://lc.llnl.gov/conduit/.
+// For details, see: http://software.llnl.gov/conduit/.
 // 
 // Please also read conduit/LICENSE
 // 
@@ -68,7 +68,7 @@
 #ifndef CONDUIT_LICENSE_TEXT_HPP
 #define CONDUIT_LICENSE_TEXT_HPP
 
-std::string CONDUIT_LICENSE_TEXT = "Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.\n"
+std::string CONDUIT_LICENSE_TEXT = "Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.\n"
 "\n"
 "Produced at the Lawrence Livermore National Laboratory\n"
 "\n"
@@ -78,7 +78,7 @@ std::string CONDUIT_LICENSE_TEXT = "Copyright (c) 2014-2017, Lawrence Livermore 
 "\n"
 "This file is part of Conduit.\n"
 "\n"
-"For details, see https://lc.llnl.gov/conduit/.\n"
+"For details, see: http://software.llnl.gov/conduit/.\n"
 "\n"
 "Please also read conduit/LICENSE\n"
 "\n"

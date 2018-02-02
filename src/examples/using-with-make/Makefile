@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.
+# Copyright (c) Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -59,7 +59,7 @@
 
 
 INC_FLAGS=-I$(CONDUIT_DIR)/include/conduit
-LINK_FLAGS=-L$(CONDUIT_DIR)/lib/ -lconduit -lconduit_relay -lconduit_blueprint -L$(HDF5_DIR) -lhdf5 
+LINK_FLAGS=-L$(CONDUIT_DIR)/lib/ -lconduit -lconduit_relay -lconduit_blueprint -L$(HDF5_DIR)/lib/ -lhdf5 
 
 main:
 	$(CXX) $(INC_FLAGS) example.cpp $(LINK_FLAGS) -o example

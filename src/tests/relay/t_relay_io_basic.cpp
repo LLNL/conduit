@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -134,45 +134,4 @@ TEST(conduit_relay_io_basic, json)
     EXPECT_EQ(n_load["c"].as_uint32(), c_val);
 }
 
-
-//-----------------------------------------------------------------------------
-TEST(conduit_relay_io_basic, split_io_windows_paths)
-{
-    
-    std::string curr, next;
-    io::split_path( "D:\\",
-                    std::string(":"),
-                    curr,next);
-    
-    EXPECT_EQ(curr,std::string("D:\\"));
-    EXPECT_EQ(next,std::string(""));    
-    
-    
-    io::split_path( "D:\\test\\some\\path",
-                    std::string(":"),
-                    curr,next);
-    
-    
-    EXPECT_EQ(curr,std::string("D:\\test\\some\\path"));
-    EXPECT_EQ(next,std::string(""));
-
-    
-    io::split_path( "D:\\test\\some\\path:subpath",
-                    std::string(":"),
-                    curr,next);
-    
-    EXPECT_EQ(curr,std::string("D:\\test\\some\\path"));
-    EXPECT_EQ(next,std::string("subpath"));
-
-    
-    // drive letter needs '\\', so check corner case where its
-    // not there, which should be treat as non-windows case
-    io::split_path( "a:subpath",
-                    std::string(":"),
-                    curr,next);
-    
-    EXPECT_EQ(curr,std::string("a"));
-    EXPECT_EQ(next,std::string("subpath"));
-
-}
 

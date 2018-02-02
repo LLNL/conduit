@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.
+# Copyright (c) Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -97,7 +97,14 @@ set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "")
 ################################
 # Init BLT
 ################################
-include(blt/SetupBLT.cmake)
+# if BLT_SOURCE_DIR is not set - use "blt" as default
+if(NOT BLT_SOURCE_DIR)
+    set(BLT_SOURCE_DIR "blt")
+endif()
+
+# init blt using BLT_SOURCE_DIR
+include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
+
 
 ################################
 # Set some standard cmake opts
@@ -133,6 +140,11 @@ include(cmake/SetupIncludes.cmake)
 # Add our libs
 ################################
 add_subdirectory(libs)
+
+################################
+# Add our examples
+################################
+add_subdirectory(examples)
 
 ################################
 # Add docs

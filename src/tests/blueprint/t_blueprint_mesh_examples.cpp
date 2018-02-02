@@ -188,39 +188,51 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
         }
     }
     
+    
+    Node info;
+    NodeConstIterator idx_itr = root["blueprint_index"].children();
+    while(idx_itr.has_next())
+    {
+
+        const Node &chld = idx_itr.next();
+        EXPECT_TRUE(blueprint::mesh::index::verify(chld,info[idx_itr.name()]));
+    }
+
+    CONDUIT_INFO("blueprint::mesh::index verify info:");
+    CONDUIT_INFO(info.to_json());
+
+    // save json
+    root["protocol/name"] = "json";
+    root["protocol/version"] = "0.3.1";
+    
+    root["number_of_files"] = 1;
+    root["number_of_trees"] = 1;
+    root["file_pattern"] = "braid_2d_examples_json.json";
+    root["tree_pattern"] = "";
+    
+    CONDUIT_INFO("Creating ")
+    CONDUIT_INFO("Creating: braid_2d_examples_json.root")
+    relay::io::save(root,"braid_2d_examples_json.root","json");
+    CONDUIT_INFO("Creating: braid_2d_examples_json.json")
+    relay::io::save(dsets,"braid_2d_examples_json.json");
+
+
+    // save hdf5 files if enabled
     if(hdf5_enabled)
     {
-        
-        //Node root;
-        //create_blueprint_index_for_2d_examples(root["blueprint_index"]);
-
-        Node info;
-        NodeConstIterator idx_itr = root["blueprint_index"].children();
-        while(idx_itr.has_next())
-        {
-
-            const Node &chld = idx_itr.next();
-            EXPECT_TRUE(blueprint::mesh::index::verify(chld,info[idx_itr.name()]));
-        }
-
-        CONDUIT_INFO("blueprint::mesh::index verify info:");
-        CONDUIT_INFO(info.to_json());
-        
         root["protocol/name"] = "conduit_hdf5";
-        root["protocol/version"] = "0.1";
+        root["protocol/version"] = "0.3.1";
         
         root["number_of_files"] = 1;
         root["number_of_trees"] = 1;
         root["file_pattern"] = "braid_2d_examples.hdf5";
         root["tree_pattern"] = "/";
         
-        CONDUIT_INFO("Creating ")
-        CONDUIT_INFO("Creating: braid_2d_examples.hdf5.blueprint_root")
+        CONDUIT_INFO("Creating: braid_2d_examples.blueprint_root_hdf5")
         relay::io::save(root,"braid_2d_examples.blueprint_root_hdf5","hdf5");
         CONDUIT_INFO("Creating: braid_2d_examples.hdf5")
         relay::io::save(dsets,"braid_2d_examples.hdf5");
     }
-    
 }
 
 
@@ -345,32 +357,44 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
         }
     }
     
+    Node info;
+    NodeConstIterator idx_itr = root["blueprint_index"].children();
+    while(idx_itr.has_next())
+    {
+
+        const Node &chld = idx_itr.next();
+        EXPECT_TRUE(blueprint::mesh::index::verify(chld,info[idx_itr.name()]));
+    }
+    
+    CONDUIT_INFO("blueprint::mesh::index verify info:");
+    CONDUIT_INFO(info.to_json());
+    
+    // save json
+    root["protocol/name"] = "json";
+    root["protocol/version"] = "0.3.1";
+    
+    root["number_of_files"] = 1;
+    root["number_of_trees"] = 1;
+    root["file_pattern"] = "braid_3d_examples_json.json";
+    root["tree_pattern"] = "";
+    
+    CONDUIT_INFO("Creating: braid_3d_examples_json.root")
+    relay::io::save(root,"braid_3d_examples_json.root","json");
+    CONDUIT_INFO("Creating: braid_3d_examples_json.json")
+    relay::io::save(dsets,"braid_3d_examples_json.json");
+    
+    // save hdf5 files if enabled
     if(hdf5_enabled)
     {
-        //Node root;
-        //create_blueprint_index_for_3d_examples(root["blueprint_index"]);
-        
-        Node info;
-        NodeConstIterator idx_itr = root["blueprint_index"].children();
-        while(idx_itr.has_next())
-        {
-
-            const Node &chld = idx_itr.next();
-            EXPECT_TRUE(blueprint::mesh::index::verify(chld,info[idx_itr.name()]));
-        }
-        
-        CONDUIT_INFO("blueprint::mesh::index verify info:");
-        CONDUIT_INFO(info.to_json());
-
         root["protocol/name"]    = "hdf5";
-        root["protocol/version"] = "0.1";
+        root["protocol/version"] = "0.3.1";
         
         root["number_of_files"] = 1;
         root["number_of_trees"] = 1;
         root["file_pattern"] = "braid_3d_examples.hdf5";
         root["tree_pattern"] = "/";
 
-        CONDUIT_INFO("Creating: braid_3d_examples.hdf5.blueprint_root")
+        CONDUIT_INFO("Creating: braid_3d_examples.blueprint_root_hdf5")
         relay::io::save(root,"braid_3d_examples.blueprint_root_hdf5","hdf5");
         CONDUIT_INFO("Creating: braid_3d_examples.hdf5")
         relay::io::save(dsets,"braid_3d_examples.hdf5");

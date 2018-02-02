@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -42,7 +42,7 @@
 # 
 ###############################################################################
 """
- file: python_conduit_node.py
+ file: t_python_conduit_node.py
  description: Unit tests for conduit::Node python module interface.
 
 """

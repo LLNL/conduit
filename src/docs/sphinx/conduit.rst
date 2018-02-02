@@ -1,5 +1,5 @@
 .. ############################################################################
-.. # Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.
+.. # Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
 .. # 
 .. # Produced at the Lawrence Livermore National Laboratory
 .. # 
@@ -46,19 +46,10 @@
 Conduit
 ===========
 
-Tutorial
----------------
-This short tutorial provides C++ examples that demonstrate the Conduit's Core 
-API. Conduit's unit tests (*src/tests/{library_name}/*) also provide a rich set 
-of examples for Conduit's Core API and additional libraries. 
-
 .. toctree::
-
-   tutorial_basics
-   tutorial_numeric
-   tutorial_json
-   tutorial_ownership
-   tutorial_update
-   tutorial_errors
+   :maxdepth: 2
+   
+   tutorial_cpp
+   tutorial_python
 
 ..    conduit_api

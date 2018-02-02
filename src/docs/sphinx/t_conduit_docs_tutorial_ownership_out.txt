@@ -1,0 +1,46 @@
+Running main() from gtest_main.cc
+[==========] Running 1 test from 1 test case.
+[----------] Global test environment set-up.
+[----------] 1 test from conduit_tutorial
+[ RUN      ] conduit_tutorial.mem_ownership_external
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_ownership.cpp : 63]
+ mem_ownership_external
+
+{
+  "mem_spaces": 
+  {
+    "0x7fdebac044d0": 
+    {
+      "path": "v_owned",
+      "type": "allocated",
+      "bytes": 40
+    },
+    "0x7fdebac045a0": 
+    {
+      "path": "v_external",
+      "type": "external"
+    }
+  },
+  "total_bytes_allocated": 40,
+  "total_bytes_mmaped": 0,
+  "total_bytes_compact": 80,
+  "total_strided_bytes": 80
+}
+
+{
+  "v_owned": [0.0, 3.1415, 6.283, 9.4245, 12.566],
+  "v_external": [0.0, 3.1415, 6.283, 9.4245, 12.566]
+}
+
+{
+  "v_owned": [0.0, 3.1415, 6.283, 9.4245, 12.566],
+  "v_external": [0.0, -3.1415, 6.283, 9.4245, 12.566]
+}
+[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_ownership.cpp : 83]
+ mem_ownership_external
+[       OK ] conduit_tutorial.mem_ownership_external (0 ms)
+[----------] 1 test from conduit_tutorial (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test case ran. (0 ms total)
+[  PASSED  ] 1 test.

@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -137,18 +137,6 @@ void CONDUIT_RELAY_API load_merged(const std::string &path,
 void CONDUIT_RELAY_API load_merged(const std::string &path,
                                    const std::string &protocol,
                                    Node &node);
-
-
-
-///
-/// ``split_path`` is a helper that allows us to use  ":" for subpaths
-///  even on Windows when a drive letter including ":" is in the path. 
-/// 
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API split_path(const std::string &str,
-                                  const std::string &sep,
-                                  std::string &curr,
-                                  std::string &next);
 
 }
 //-----------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 .. ############################################################################
-.. # Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.
+.. # Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
 .. # 
 .. # Produced at the Lawrence Livermore National Laboratory
 .. # 
@@ -81,6 +81,11 @@ Conduit was built around the concept that an intuitive in-core data description 
 - Supports a mix of externally owned and Conduit allocated memory semantics.
 
 
+Projects Using Conduit
+------------------------
+Conduit is used in `VisIt <https://wci.llnl.gov/simulation/computer-codes/visit/>`_, `ALPINE Ascent <https://github.com/Alpine-DAV/ascent>`_, `MFEM <http://mfem.org/>`_, 
+and LLNL's Axom Toolkit (to be released).
+
 Conduit Project Resources
 --------------------------
 
@@ -95,11 +100,6 @@ https://github.com/llnl/conduit
 **Issue Tracker**
 
 https://github.com/llnl/conduit/issues
-
-
-**LLNL Collaboration Zone Bitbucket Server Source Repo (Mirror for LLNL Users)**
-
-https://lc.llnl.gov/bitbucket/projects/CON/repos/conduit/browse
 
 
 Conduit Libraries 
@@ -134,13 +134,14 @@ Contributors
 - Cyrus Harrison (LLNL)
 - Brian Ryujin (LLNL)
 - Adam Kunen (LLNL)
+- Joe Ciurej (LLNL)
 - Kathleen Biagas (LLNL)
 - Eric Brugger (LLNL)
 - Aaron Black (LLNL)
 - George Zagaris (LLNL)
 - Kenny Weiss (LLNL)
 - Matt Larsen (LLNL)
-- Joe Ciurej (LLNL)
+- Todd Gamblin (LLNL)
 - George Aspesi (Harvey Mudd)
 - Justin Bai (Harvey Mudd)
 - Rupert Deese (Harvey Mudd)

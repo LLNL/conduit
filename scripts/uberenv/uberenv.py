@@ -57,6 +57,7 @@ import socket
 import platform
 import json
 import datetime
+import glob
 
 from optparse import OptionParser
 
@@ -104,11 +105,11 @@ def parse_args():
                       default=False,
                       help="Create spack mirror")
     # this option allows a user to explicitly to select a
-    # spack compilers.yaml 
-    parser.add_option("--compilers-yaml",
-                      dest="compilers_yaml",
-                      default=pjoin(uberenv_script_dir(),"compilers.yaml"),
-                      help="spack compiler settings file")
+    # group of spack settings files (compilers.yaml , packages.yaml)
+    parser.add_option("--spack-config-dir",
+                      dest="spack_config_dir",
+                      default=None,
+                      help="dir with spack settings files (compilers.yaml, packages.yaml, etc)")
 
     # a file that holds settings for a specific project 
     # using uberenv.py 
@@ -131,7 +132,8 @@ def parse_args():
     # we want a dict b/c the values could 
     # be passed without using optparse
     opts = vars(opts)
-    opts["compilers_yaml"] = os.path.abspath(opts["compilers_yaml"] )
+    if not opts["spack_config_dir"] is None:
+        opts["spack_config_dir"] = os.path.abspath(opts["spack_config_dir"])
     return opts, extras
 
 
@@ -143,35 +145,92 @@ def load_json_file(json_file):
     # reads json file
     return json.load(open(json_file))
 
-def uberenv_compilers_yaml_file(opts):
+def uberenv_detect_platform():
+    # find supported sets of compilers.yaml, packages,yaml
+    res = None
+    if "darwin" in platform.system().lower():
+        res = "darwin"
+    elif "SYS_TYPE" in os.environ.keys():
+        sys_type = os.environ["SYS_TYPE"].lower()
+        res = sys_type
+    return res
+
+def uberenv_spack_config_dir(opts, uberenv_dir):
     # path to compilers.yaml, which we will for compiler setup for spack
-    compilers_yaml = opts["compilers_yaml"]
-    if not os.path.isfile(compilers_yaml):
-        print "[failed to find uberenv 'compilers.yaml' file: %s]" % compilers_yaml
-        sys.exit(-1)
-    return compilers_yaml
+    spack_config_dir = opts["spack_config_dir"]
+    if spack_config_dir is None:
+        uberenv_plat = uberenv_detect_platform()
+        if not uberenv_plat is None:
+            spack_config_dir = os.path.abspath(pjoin(uberenv_dir,"spack_configs",uberenv_plat))
+    return spack_config_dir
 
 
-def patch_spack(spack_dir,compilers_yaml,pkgs):
-    # force uberenv config
+def disable_spack_config_scopes(spack_dir):
+    # disables all config scopes except "default", which we will 
+    # force our settings into
     spack_lib_config = pjoin(spack_dir,"lib","spack","spack","config.py")
-    print "[disabling user config scope in: %s]" % spack_lib_config
+    print "[disabling config scope (except default) in: %s]" % spack_lib_config
     cfg_script = open(spack_lib_config).read()
-    src = "ConfigScope('user', os.path.expanduser('~/.spack'))"
-    cfg_script = cfg_script.replace(src, "#DISABLED BY UBERENV: " + src)
+    for cfg_scope_stmt in ["ConfigScope('system', _system_path)",
+                           "ConfigScope('system/%s' % _platform, os.path.join(_system_path, _platform))",
+                           "ConfigScope('site', _site_path)",
+                           "ConfigScope('site/%s' % _platform, os.path.join(_site_path, _platform))",
+                           "ConfigScope('user', _user_path)",
+                           "ConfigScope('user/%s' % _platform, os.path.join(_user_path, _platform))"]:
+        cfg_script = cfg_script.replace(cfg_scope_stmt,
+                                        "#DISABLED BY UBERENV: " + cfg_scope_stmt)
     open(spack_lib_config,"w").write(cfg_script)
-    # copy in the compiler spec
-    print "[copying uberenv compiler specs]"
-    spack_etc = pjoin(spack_dir,"etc")
-    if not os.path.isdir(spack_etc):
-        os.mkdir(spack_etc)
-    spack_etc = pjoin(spack_etc,"spack")
-    if not os.path.isdir(spack_etc):
-        os.mkdir(spack_etc)
-    sexe("cp %s spack/etc/spack/compilers.yaml" % compilers_yaml, echo=True)
+
+
+
+def patch_spack(spack_dir,uberenv_dir,cfg_dir,pkgs):
+    # force spack to use only default config scope
+    disable_spack_config_scopes(spack_dir)
+    spack_etc_defaults_dir = pjoin(spack_dir,"etc","spack","defaults")
+    # copy in default config.yaml
+    config_yaml = os.path.abspath(pjoin(uberenv_dir,"spack_configs","config.yaml"))
+    sexe("cp %s %s/" % (config_yaml, spack_etc_defaults_dir ), echo=True)
+    # copy in other settings per platform
+    if not cfg_dir is None:
+        print "[copying uberenv compiler and packages settings from %s]" % cfg_dir
+
+        config_yaml    = pjoin(cfg_dir,"config.yaml")
+        compilers_yaml = pjoin(cfg_dir,"compilers.yaml")
+        packages_yaml  = pjoin(cfg_dir,"packages.yaml")
+
+        if os.path.isfile(config_yaml):
+            sexe("cp %s %s/" % (config_yaml , spack_etc_defaults_dir ), echo=True)
+                    
+        if os.path.isfile(compilers_yaml):
+            sexe("cp %s %s/" % (compilers_yaml, spack_etc_defaults_dir ), echo=True)
+
+        if os.path.isfile(packages_yaml):
+            sexe("cp %s %s/" % (packages_yaml, spack_etc_defaults_dir ), echo=True)
     dest_spack_pkgs = pjoin(spack_dir,"var","spack","repos","builtin","packages")
     # hot-copy our packages into spack
     sexe("cp -Rf %s %s" % (pkgs,dest_spack_pkgs))
+
+
+# def patch_spack_old(spack_dir,compilers_yaml,pkgs):
+#     # force uberenv config
+#     spack_lib_config = pjoin(spack_dir,"lib","spack","spack","config.py")
+#     print "[disabling user config scope in: %s]" % spack_lib_config
+#     cfg_script = open(spack_lib_config).read()
+#     src = "ConfigScope('user', os.path.expanduser('~/.spack'))"
+#     cfg_script = cfg_script.replace(src, "#DISABLED BY UBERENV: " + src)
+#     open(spack_lib_config,"w").write(cfg_script)
+#     # copy in the compiler spec
+#     print "[copying uberenv compiler specs]"
+#     spack_etc = pjoin(spack_dir,"etc")
+#     if not os.path.isdir(spack_etc):
+#         os.mkdir(spack_etc)
+#     spack_etc = pjoin(spack_etc,"spack")
+#     if not os.path.isdir(spack_etc):
+#         os.mkdir(spack_etc)
+#     sexe("cp %s spack/etc/spack/compilers.yaml" % compilers_yaml, echo=True)
+#     dest_spack_pkgs = pjoin(spack_dir,"var","spack","repos","builtin","packages")
+#     # hot-copy our packages into spack
+#     sexe("cp -Rf %s %s" % (pkgs,dest_spack_pkgs))
 
 
 def create_spack_mirror(mirror_path,pkg_name,ignore_ssl_errors=False):
@@ -230,6 +289,47 @@ def use_spack_mirror(spack_dir,
                 mirror_name, mirror_path), echo=True)
         print "[using mirror %s]" % mirror_path
 
+
+def find_osx_sdks():
+    """
+    Finds installed osx sdks, returns dict mapping version to file system path
+    """
+    res = {}
+    sdks = glob.glob("/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX*.sdk")
+    for sdk in sdks:
+        sdk_base = os.path.split(sdk)[1]
+        ver = sdk_base[len("MacOSX"):sdk_base.rfind(".")]
+        res[ver] = sdk
+    return res
+
+def setup_osx_sdk_env_vars():
+    """
+    Finds installed osx sdks, returns dict mapping version to file system path
+    """
+    # find current osx version (10.11.6)
+    dep_tgt = platform.mac_ver()[0]
+    # sdk file names use short version (ex: 10.11)
+    dep_tgt_short = dep_tgt[:dep_tgt.rfind(".")]
+    # find installed sdks, ideally we want the sdk that matches the current os
+    sdk_root = None
+    sdks = find_osx_sdks()
+    if dep_tgt_short in sdks.keys():
+        # matches our osx, use this one
+        sdk_root = sdks[dep_tgt_short]
+    elif len(sdks) > 0:
+        # for now, choose first one:
+        dep_tgt  = sdks.keys()[0]
+        sdk_root = sdks[dep_tgt]
+    else:
+        # no valid sdks, error out
+        print "[ERROR: Could not find OSX SDK @ /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/]"
+        sys.exit(-1)
+    
+    env["MACOSX_DEPLOYMENT_TARGET"] = dep_tgt
+    env["SDKROOT"] = sdk_root
+    print "[setting MACOSX_DEPLOYMENT_TARGET to %s]" % env["MACOSX_DEPLOYMENT_TARGET"]
+    print "[setting SDKROOT to %s]" % env[ "SDKROOT" ]
+
 def main():
     """
     clones and runs spack to setup our third_party libs and
@@ -246,12 +346,7 @@ def main():
     # setup osx deployment target
     print "[uberenv options: %s]" % str(opts)
     if "darwin" in platform.system().lower():
-        dep_tgt = platform.mac_ver()[0]
-        dep_tgt = dep_tgt[:dep_tgt.rfind(".")]
-        env["MACOSX_DEPLOYMENT_TARGET"] = dep_tgt
-        env["SDKROOT"] = "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX" + str(dep_tgt) + ".sdk"
-        print "[setting MACOSX_DEPLOYMENT_TARGET to %s]" % dep_tgt
-        print "[setting SDKROOT to %s]" % env[ "SDKROOT" ]
+        setup_osx_sdk_env_vars()
     # setup default spec
     if opts["spec"] is None:
         if "darwin" in platform.system().lower():
@@ -274,7 +369,7 @@ def main():
         print "[info: destination '%s' already exists]"  % dest_dir
     if os.path.isdir(dest_spack):
         print "[info: destination '%s' already exists]"  % dest_spack
-    compilers_yaml = uberenv_compilers_yaml_file(opts)
+    # compilers_yaml = uberenv_compilers_yaml_file(opts)
     if not os.path.isdir(dest_spack):
         print "[info: cloning spack develop branch from github]"
         os.chdir(dest_dir)
@@ -282,7 +377,7 @@ def main():
         clone_cmd ="git "
         if opts["ignore_ssl_errors"]:
             clone_cmd +="-c http.sslVerify=false "
-        clone_cmd += "clone -b develop https://github.com/llnl/spack.git"
+        clone_cmd += "clone -b develop https://github.com/spack/spack.git"
         sexe(clone_cmd, echo=True)
         if "spack_develop_commit" in project_opts:
             sha1 = project_opts["spack_develop_commit"]
@@ -292,7 +387,8 @@ def main():
 
     os.chdir(dest_dir)
     # twist spack's arms 
-    patch_spack(dest_spack, compilers_yaml, pkgs)
+    cfg_dir = uberenv_spack_config_dir(opts, uberenv_path)
+    patch_spack(dest_spack, uberenv_path, cfg_dir, pkgs)
 
     ##########################################################
     # we now have an instance of spack configured how we 
@@ -319,7 +415,14 @@ def main():
         if opts["ignore_ssl_errors"]:
             install_cmd += "-k "
         install_cmd += "install " + uberenv_pkg_name + opts["spec"]
-        return sexe(install_cmd, echo=True)
+        res = sexe(install_cmd, echo=True)
+        if res != 0:
+            return res
+        if "spack_activate" in project_opts:
+            for pkg_name in project_opts["spack_activate"]:
+              activate_cmd = "spack/bin/spack activate " + pkg_name
+              sexe(activate_cmd, echo=True)   
+        return res
 
 if __name__ == "__main__":
     sys.exit(main())

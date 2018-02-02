@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.
+# Copyright (c) Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -56,7 +56,7 @@ fi
 ##########################################
 # using with cmake example
 ##########################################
-cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-cmake
+cd ${TRAVIS_BUILD_DIR}/travis-debug-install/examples/using-with-cmake
 mkdir build
 cd build
 cmake -DCONDUIT_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install ../
@@ -65,7 +65,9 @@ make
 ##########################################
 # using with make example
 ##########################################
-cd ${TRAVIS_BUILD_DIR}/src/examples/using-with-make
-env CXX=${CONDUIT_CXX} CONDUIT_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install HDF5_DIR=${TRAVIS_HOME}/miniconda/lib make
-env LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/travis-debug-install/lib/:${TRAVIS_HOME}/miniconda/lib ./example
+# find spack installed HDF5_DIR
+export HDF5_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/hdf5*`
+cd ${TRAVIS_BUILD_DIR}/travis-debug-install/examples/using-with-make
+env CXX=${COMPILER_CXX} CONDUIT_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install HDF5_DIR=${HDF5_DIR} make
+env LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/travis-debug-install/lib/:${HDF5_DIR}/lib ./example
 

@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -85,54 +85,6 @@ namespace io
 
 //---------------------------------------------------------------------------//
 void
-split_path(const std::string &path,
-           const std::string &sep,
-           std::string &curr,
-           std::string &next)
-{
-    // if we are splitting by ":", we need to be careful on windows
-    // since drive letters include ":"
-    //
-    // NOTE: We could if-def for windows, but its nice to be able
-    // to run unit tests on other platforms.
-    if( sep == std::string(":") && 
-        path.size() > 2 && 
-        path[1] == ':' && 
-        path[2] == '\\')
-    {
-        // eval w/o drive letter
-        if(path.size() > 3)
-        {
-            std::string check_path = path.substr(3);
-            conduit::utils::split_string(check_path,
-                                         sep,
-                                         curr,
-                                         next);
-            // add drive letter back
-            curr = path.substr(0,3) + curr;
-        }
-        else
-        {
-            // degen case, we we only have the drive letter
-            curr = path;
-            next = "";
-        }
-    }
-    else
-    {
-        // normal case
-        conduit::utils::split_string(path,
-                                     sep,
-                                     curr,
-                                     next);
-
-    }
-    
-}
-
-
-//---------------------------------------------------------------------------//
-void
 identify_protocol(const std::string &path,
                   std::string &io_type)
 {
@@ -142,10 +94,10 @@ identify_protocol(const std::string &path,
     std::string obj_base;
 
     // check for ":" split
-    io::split_path(path,
-                   std::string(":"),
-                   file_path,
-                   obj_base);
+    conduit::utils::split_file_path(path,
+                                    std::string(":"),
+                                    file_path,
+                                    obj_base);
 
     std::string file_name_base;
     std::string file_name_ext;

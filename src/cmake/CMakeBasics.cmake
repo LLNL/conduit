@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.
+# Copyright (c) Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -132,7 +132,7 @@ if(GIT_FOUND)
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     OUTPUT_VARIABLE CONDUIT_GIT_SHA1
     ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-  message("Repo SHA1:" ${CONDUIT_GIT_SHA1})
+  message(STATUS "Repo SHA1:" ${CONDUIT_GIT_SHA1})
 endif()
 
 

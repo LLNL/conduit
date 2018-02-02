@@ -1,5 +1,5 @@
 .. ############################################################################
-.. # Copyright (c) 2014-2017, Lawrence Livermore National Security, LLC.
+.. # Copyright (c) Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
 .. #
 .. # Produced at the Lawrence Livermore National Laboratory
 .. #
@@ -58,12 +58,12 @@ Talks
 
 Interviews
 ------------------
-* `RCE HPC Podcast on Conduit  <http://www.rce-cast.com/Podcast/rce-101-conduit.html>`_
+* `RCE HPC Podcast on Conduit (October 2015) <http://www.rce-cast.com/Podcast/rce-101-conduit.html>`_
 
 ------------------
 
 Articles
 ------------------
-* `LLNL Computation Article on the 2014-2015 Harvey Mudd CS Conduit Clinic Project <http://computation.llnl.gov/newsroom/hpc-partnership-harvey-mudd-college-and-livermore>`_
+* `LLNL Article on the 2014-2015 Conduit Harvey Mudd CS Clinic Project (May 2015) <http://computation.llnl.gov/newsroom/hpc-partnership-harvey-mudd-college-and-livermore>`_
 
 
