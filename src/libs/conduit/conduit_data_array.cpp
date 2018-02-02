@@ -64,6 +64,9 @@
 #include "conduit_utils.hpp"
 #include "conduit_log.hpp"
 
+// Easier access to the Conduit logging functions
+using namespace conduit::utils;
+
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------

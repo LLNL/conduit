@@ -62,6 +62,8 @@
 #include <set>
 
 using namespace conduit;
+// Easier access to the Conduit logging functions
+using namespace conduit::utils;
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --

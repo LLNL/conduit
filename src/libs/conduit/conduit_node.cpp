@@ -87,6 +87,8 @@
 #include "conduit_error.hpp"
 #include "conduit_utils.hpp"
 
+// Easier access to the Conduit logging functions
+using namespace conduit::utils;
 
 //-----------------------------------------------------------------------------
 //

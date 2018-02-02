@@ -56,6 +56,8 @@
 #include "conduit_log.hpp"
 
 using namespace conduit;
+// Easier access to the Conduit logging functions
+using namespace conduit::utils;
 
 namespace conduit { namespace blueprint { namespace mesh {
     bool verify_single_domain(const conduit::Node &n, conduit::Node &info);
