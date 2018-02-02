@@ -48,6 +48,7 @@
 ///
 //-----------------------------------------------------------------------------
 #include "conduit_node.hpp"
+#include "conduit_log.hpp"
 
 #if !defined(CONDUIT_PLATFORM_WINDOWS)
 //
@@ -13509,7 +13510,15 @@ Node::find_first_data_ptr() const
 bool
 Node::equals(const Node &n, Node &info, const float64 epsilon) const
 {
+    const std::string protocol = "node::equals";
+    bool res = true;
     info.reset();
+
+    // NOTE: The 'info' is separated into two distinct list items at each level
+    // in order to prevent naming conflicts for 'conduit::log' functions when
+    // descending into subtrees (e.g. consider a node with child 'error').
+    Node &info_n = info.append();
+    Node &info_sub = info.append();
 
     index_t t_dtid  = dtype().id();
     index_t n_dtid  = n.dtype().id();
@@ -13517,8 +13526,9 @@ Node::equals(const Node &n, Node &info, const float64 epsilon) const
     if(t_dtid != n_dtid)
     {
         std::ostringstream oss;
-        oss << "data types mismatch (" << dtype().name() << "/" << n.dtype().name() << ")";
-        info.set(oss.str());
+        oss << "data type mismatch (" << dtype().name() << "/" << n.dtype().name() << ")";
+        log::error(info_n, protocol, oss.str());
+        res = false;
     }
     else if(t_dtid == DataType::EMPTY_ID)
     {
@@ -13534,17 +13544,15 @@ Node::equals(const Node &n, Node &info, const float64 epsilon) const
             const conduit::Node &t_child = child_itr.next();
             const std::string child_path = child_itr.name();
 
-            Node &info_child = info[child_path];
             if(!n.has_child(child_path))
             {
-                info_child.set("data subtree missing from argument");
+                log::error(info_n, protocol, "arg missing subtree" +
+                                             log::quote(child_path, 1));
+                res = false;
             }
             else
             {
-                if(t_child.equals(n.fetch(child_path), info_child, epsilon))
-                {
-                    info.remove(child_path);
-                }
+                res &= t_child.equals(n.fetch(child_path), info_sub[child_path], epsilon);
             }
         }
 
@@ -13554,51 +13562,36 @@ Node::equals(const Node &n, Node &info, const float64 epsilon) const
             const conduit::Node &n_child = child_itr.next();
             const std::string child_path = child_itr.name();
 
-            Node &info_child = info[child_path];
             if(!has_child(child_path))
             {
-                info_child.set("data subtree missing from instance");
+                log::error(info_n, protocol, "self missing subtree" +
+                                             log::quote(child_path, 1));
+                res = false;
             }
             else
             {
-                if(fetch(child_path).equals(n_child, info_child, epsilon))
-                {
-                    info.remove(child_path);
-                }
+                res &= fetch(child_path).equals(n_child, info_sub[child_path], epsilon);
             }
         }
     }
     else if(t_dtid == DataType::LIST_ID)
     {
-        // NOTE: This case is a bit strange in the comparison; fortunately, it
-        // can be distilled to two primary cases:
-        // - Nodes Have 0 Diffs: The info node is completely empty.
-        // - Nodes Have >1 Diffs: The info node is a list where the differing
-        //   nodes between the comparison parents are filled in the list.
-        //   All other nodes in the list are empty.
-
         index_t t_nchild = number_of_children();
         index_t n_nchild = n.number_of_children();
 
-        bool is_same = t_nchild == n_nchild;
         index_t i = 0;
         for(; i < std::min(t_nchild, n_nchild); i++)
         {
             const Node &t_child = child(i);
             const Node &n_child = n.child(i);
-            Node &info_child = info.append();
-            is_same &= t_child.equals(n_child, info_child, epsilon);
+            res &= t_child.equals(n_child, info_sub.append(), epsilon);
         }
         for(; i < std::max(t_nchild, n_nchild); i++)
         {
-            Node &info_child = info.append();
-            std::string loc_str = (i >= t_nchild) ? "instance" : "argument";
-            info_child.set("data item missing from " + loc_str);
-        }
-
-        if(is_same)
-        {
-            info.reset();
+            std::ostringstream oss;
+            oss << ((i >= t_nchild) ? "self" : "arg") << " missing subtree " << i;
+            log::error(info_n.append(), protocol, oss.str());
+            res = false;
         }
     }
     else // leaf node
@@ -13607,61 +13600,61 @@ Node::equals(const Node &n, Node &info, const float64 epsilon) const
         {
             int8_array t_array = value();
             int8_array n_array = n.value();
-            t_array.equals(n_array, info, epsilon);
+            res &= t_array.equals(n_array, info, epsilon);
         }
         else if(dtype().is_int16())
         {
             int16_array t_array = value();
             int16_array n_array = n.value();
-            t_array.equals(n_array, info, epsilon);
+            res &= t_array.equals(n_array, info, epsilon);
         }
         else if(dtype().is_int32())
         {
             int32_array t_array = value();
             int32_array n_array = n.value();
-            t_array.equals(n_array, info, epsilon);
+            res &= t_array.equals(n_array, info, epsilon);
         }
         else if(dtype().is_int64())
         {
             int64_array t_array = value();
             int64_array n_array = n.value();
-            t_array.equals(n_array, info, epsilon);
+            res &= t_array.equals(n_array, info, epsilon);
         }
         else if(dtype().is_uint8())
         {
             uint8_array t_array = value();
             uint8_array n_array = n.value();
-            t_array.equals(n_array, info, epsilon);
+            res &= t_array.equals(n_array, info, epsilon);
         }
         else if(dtype().is_uint16())
         {
             uint16_array t_array = value();
             uint16_array n_array = n.value();
-            t_array.equals(n_array, info, epsilon);
+            res &= t_array.equals(n_array, info, epsilon);
         }
         else if(dtype().is_uint32())
         {
             uint32_array t_array = value();
             uint32_array n_array = n.value();
-            t_array.equals(n_array, info, epsilon);
+            res &= t_array.equals(n_array, info, epsilon);
         }
         else if(dtype().is_uint64())
         {
             uint64_array t_array = value();
             uint64_array n_array = n.value();
-            t_array.equals(n_array, info, epsilon);
+            res &= t_array.equals(n_array, info, epsilon);
         }
         else if(dtype().is_float32())
         {
             float32_array t_array = value();
             float32_array n_array = n.value();
-            t_array.equals(n_array, info, epsilon);
+            res &= t_array.equals(n_array, info, epsilon);
         }
         else if(dtype().is_float64())
         {
             float64_array t_array = value();
             float64_array n_array = n.value();
-            t_array.equals(n_array, info, epsilon);
+            res &= t_array.equals(n_array, info, epsilon);
         }
         else if(dtype().is_char8_str())
         {
@@ -13670,23 +13663,23 @@ Node::equals(const Node &n, Node &info, const float64 epsilon) const
             if(t_array != n_array)
             {
                 std::ostringstream oss;
-                oss << "data strings mismatch (" << t_array << "/" << n_array << ")";
-                info.set(oss.str());
+                oss << "data string mismatch (" << t_array << "/" << n_array << ")";
+                log::error(info_n, protocol, oss.str());
+                res = false;
             }
         }
         else
         {
             CONDUIT_ERROR("<Node::equals> unrecognized data type");
+            res = false;
         }
     }
 
-    if((info.dtype().is_object() || info.dtype().is_list()) &&
-        info.number_of_children() == 0)
-    {
-        info.set(DataType::empty());
-    }
+    // NOTE: Need to use 'info.child(0)' instead of 'info_n' since the latter
+    // can change if this is a leaf node.
+    log::validation(info.child(0), res);
 
-    return info.dtype().is_empty();
+    return res;
 }
 
 //---------------------------------------------------------------------------//

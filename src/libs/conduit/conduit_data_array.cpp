@@ -62,6 +62,7 @@
 //-----------------------------------------------------------------------------
 #include "conduit_node.hpp"
 #include "conduit_utils.hpp"
+#include "conduit_log.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -152,8 +153,15 @@ template <typename T>
 bool
 DataArray<T>::equals(const DataArray<T> &array, Node &info, const float64 epsilon) const 
 { 
+    const std::string protocol = "dataarray::equals";
     bool res = true;
     info.reset();
+
+    // NOTE: The 'info' node
+    // in order to prevent naming conflicts for 'conduit::log' functions when
+    // descending into subtrees (e.g. consider a node with child 'error').
+    Node &info_meta = info.append();
+    Node &info_content = info.append();
 
     index_t t_nelems = number_of_elements();
     index_t o_nelems = array.number_of_elements();
@@ -162,13 +170,17 @@ DataArray<T>::equals(const DataArray<T> &array, Node &info, const float64 epsilo
     {
         std::ostringstream oss;
         oss << "data length mismatch (" << t_nelems << "/" << o_nelems << ")";
-        info.set(oss.str());
+        log::error(info_meta, protocol, oss.str());
         res = false;
     }
     else
     {
-        info.set(DataType(array.dtype().id(), t_nelems));
-        T* info_ptr = (T*)info.data_ptr();
+        std::ostringstream oss;
+        oss << "data length match (" << t_nelems << ")";
+        log::info(info_meta, protocol, oss.str());
+
+        info_content.set(DataType(array.dtype().id(), t_nelems));
+        T* info_ptr = (T*)info_content.data_ptr();
 
         for(index_t i = 0; i < t_nelems; i++)
         {
@@ -184,11 +196,7 @@ DataArray<T>::equals(const DataArray<T> &array, Node &info, const float64 epsilo
         }
     }
 
-    if(res)
-    {
-        info.reset();
-        info.set(DataType::empty());
-    }
+    log::validation(info_meta, res);
 
     return res;
 }

@@ -87,6 +87,10 @@ void CONDUIT_API error(conduit::Node &info,
 void CONDUIT_API validation(conduit::Node &info,
                             bool res);
 
+//-----------------------------------------------------------------------------
+std::string CONDUIT_API quote(const std::string &str,
+                              bool pad_before = false);
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::log --
