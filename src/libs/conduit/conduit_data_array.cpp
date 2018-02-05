@@ -197,6 +197,11 @@ DataArray<T>::equals(const DataArray<T> &array, Node &info, const float64 epsilo
                 res &= (*this)[i] == array[i];
             }
         }
+
+        if(!res)
+        {
+            log::error(info_meta, protocol, "data item(s) mismatch");
+        }
     }
 
     log::validation(info_meta, res);

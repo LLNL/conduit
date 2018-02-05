@@ -190,27 +190,27 @@ TEST(conduit_node_compare, equals_object_item_diff)
 {
     const index_t n_num_children = 5;
     Node n, o, info;
-    for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    for(index_t child_idx = 0; child_idx < n_num_children; child_idx++)
     {
         std::ostringstream oss;
-        oss << leaf_idx;
-        n[oss.str()].set(leaf_idx);
-        o[oss.str()].set(leaf_idx+(leaf_idx%2));
+        oss << child_idx;
+        n[oss.str()].set(child_idx);
+        o[oss.str()].set(child_idx+(child_idx%2));
     }
 
     EXPECT_FALSE(n.equals(o, info));
 
-    Node &info_obj = info.child(1);
-    for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    Node &info_this = info.child(0), &info_children = info.child(1);
+    for(index_t child_idx = 0; child_idx < n_num_children; child_idx++)
     {
         std::ostringstream oss;
-        oss << leaf_idx;
-        std::string leaf_str = oss.str();
+        oss << child_idx;
+        std::string child_str = oss.str();
 
-        EXPECT_TRUE(info_obj.has_child(leaf_str));
+        EXPECT_TRUE(info_children.has_child(child_str));
         EXPECT_EQ(
-            info_obj.fetch(leaf_str).child(0).fetch("valid").as_string(),
-            (leaf_idx % 2 == 0) ? "true" : "false");
+            info_children.fetch(child_str).child(0).fetch("valid").as_string(),
+            (child_idx % 2 == 0) ? "true" : "false");
     }
 }
 
@@ -218,71 +218,79 @@ TEST(conduit_node_compare, equals_object_item_diff)
 TEST(conduit_node_compare, equals_object_size_diff)
 {
     const index_t n_num_children = 5;
-    Node n, info;
-    for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    Node n;
+    for(index_t child_idx = 0; child_idx < n_num_children; child_idx++)
     {
         std::ostringstream oss;
-        oss << leaf_idx;
-        n[oss.str()].set(leaf_idx);
+        oss << child_idx;
+        n[oss.str()].set(child_idx);
     }
 
-    // Full vs. Empty Node Check //
+    { // Full vs. Empty Node Check //
+        Node o(DataType::object()), info;
+        EXPECT_FALSE(n.equals(o, info));
 
-    Node o(DataType::object());
-    info.reset();
-    EXPECT_FALSE(n.equals(o, info));
+        Node &info_this = info.child(0), &info_children = info.child(1);
+        EXPECT_TRUE(info_this.has_child("errors"));
+        EXPECT_EQ(info_children.number_of_children(), 0);
 
-    /*
-    EXPECT_EQ(info.number_of_children(), n_num_children);
-    for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
-    {
-        std::ostringstream oss;
-        oss << leaf_idx;
-        std::string leaf_str = oss.str();
-
-        EXPECT_TRUE(info.has_child(leaf_str));
-        EXPECT_TRUE(info[leaf_str].dtype().is_string());
-        EXPECT_NE(info[leaf_str].as_string().find("subtree"), std::string::npos);
+        Node &info_errors = info_this.fetch("errors");
+        EXPECT_EQ(info_errors.number_of_children(), n_num_children);
+        for(index_t child_idx = 0; child_idx < n_num_children; child_idx++)
+        {
+            Node &info_child = info_errors.child(child_idx);
+            EXPECT_TRUE(info_child.dtype().is_string());
+            EXPECT_NE(info_child.as_string().find("arg"), std::string::npos);
+        }
     }
-    */
 
-    // Equal Node Check //
+    { // Equal Node Check //
+        Node o(n), info;
+        EXPECT_TRUE(n.equals(o, info));
 
-    o.set(n);
-    info.reset();
-    EXPECT_TRUE(n.equals(o, info));
+        Node &info_this = info.child(0), &info_children = info.child(1);
+        EXPECT_FALSE(info_this.has_child("errors"));
+        EXPECT_EQ(info_children.number_of_children(), n_num_children);
 
-    // Half-Full Node Check //
-
-    for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
-    {
-        if(leaf_idx % 2 == 1)
+        for(index_t child_idx = 0; child_idx < n_num_children; child_idx++)
         {
             std::ostringstream oss;
-            oss << leaf_idx;
-            o.remove(oss.str());
+            oss << child_idx;
+            std::string child_str = oss.str();
+            EXPECT_TRUE(info_children.has_child(child_str));
         }
     }
-    info.reset();
-    EXPECT_FALSE(n.equals(o, info));
-    /*
-    for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
-    {
-        std::ostringstream oss;
-        oss << leaf_idx;
-        std::string leaf_str = oss.str();
-        if(leaf_idx % 2 == 1)
+
+    { // Half-Full Node Check //
+        Node o(n), info;
+        for(index_t child_idx = 0; child_idx < n_num_children; child_idx++)
         {
-            EXPECT_TRUE(info.has_child(leaf_str));
-            EXPECT_TRUE(info[leaf_str].dtype().is_string());
-            EXPECT_NE(info[leaf_str].as_string().find("subtree"), std::string::npos);
+            if(child_idx % 2 == 1)
+            {
+                std::ostringstream oss;
+                oss << child_idx;
+                o.remove(oss.str());
+            }
         }
-        else
+
+        EXPECT_FALSE(n.equals(o, info));
+
+        Node &info_this = info.child(0), &info_children = info.child(1);
+        EXPECT_TRUE(info_this.has_child("errors"));
+        EXPECT_EQ(info_this.fetch("errors").number_of_children(), n_num_children/2);
+
+        for(index_t child_idx = 0; child_idx < n_num_children; child_idx++)
         {
-            EXPECT_FALSE(info.has_child(leaf_str));
+            std::ostringstream oss;
+            oss << child_idx;
+            std::string child_str = oss.str();
+
+            if(child_idx % 2 != 1)
+            {
+                EXPECT_TRUE(info_children.has_child(child_str));
+            }
         }
     }
-    */
 }
 
 //-----------------------------------------------------------------------------
@@ -298,21 +306,18 @@ TEST(conduit_node_compare, equals_list_item_diff)
 
     EXPECT_FALSE(n.equals(o, info));
 
-    /*
-    EXPECT_EQ(info.number_of_children(), n_num_children);
+    Node &info_this = info.child(0), &info_children = info.child(1);
+    EXPECT_FALSE(info_this.has_child("errors"));
+    EXPECT_EQ(info_children.number_of_children(), n_num_children);
+
     for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
     {
-        if(leaf_idx % 2 == 1)
-        {
-            EXPECT_TRUE(info.child(leaf_idx).dtype().is_integer());
-            EXPECT_EQ(info.child(leaf_idx).dtype().number_of_elements(), 1);
-        }
-        else
-        {
-            EXPECT_TRUE(info.child(leaf_idx).dtype().is_empty());
-        }
+        EXPECT_TRUE(info_children.child(leaf_idx).dtype().is_list());
+        EXPECT_EQ(info_children.child(leaf_idx).number_of_children(), 2);
+
+        Node &info_child = info_children.child(leaf_idx).child(0);
+        EXPECT_EQ(info_child.has_child("errors"), leaf_idx % 2 == 1);
     }
-    */
 }
 
 //-----------------------------------------------------------------------------
@@ -325,45 +330,66 @@ TEST(conduit_node_compare, equals_list_size_diff)
         n.append().set(leaf_idx);
     }
 
-    // Full vs. Empty Node Check //
+    { // Full vs. Empty Node Check //
+        Node o(DataType::list()), info;
+        EXPECT_FALSE(n.equals(o, info));
 
-    Node o(DataType::list());
-    info.reset();
-    EXPECT_FALSE(n.equals(o, info));
+        Node &info_this = info.child(0), &info_children = info.child(1);
+        EXPECT_TRUE(info_this.has_child("errors"));
+        EXPECT_EQ(info_children.number_of_children(), 0);
 
-    /*
-    EXPECT_EQ(info.number_of_children(), n_num_children);
-    for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
-    {
-        EXPECT_TRUE(info[leaf_idx].dtype().is_string());
-        EXPECT_NE(info[leaf_idx].as_string().find("item"), std::string::npos);
-    }
-
-    // Equal Node Check //
-
-    o.set(n);
-    info.reset();
-    EXPECT_TRUE(n.equals(o, info));
-
-    // Half-Full Node Check //
-
-    for(index_t leaf_idx = n_num_children - 1; leaf_idx > n_num_children / 2; leaf_idx--)
-    {
-        o.remove(leaf_idx);
-    }
-    info.reset();
-    EXPECT_FALSE(n.equals(o, info));
-    for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
-    {
-        if(leaf_idx > n_num_children / 2)
+        Node &info_errors = info_this.fetch("errors");
+        EXPECT_EQ(info_errors.number_of_children(), n_num_children);
+        for(index_t child_idx = 0; child_idx < n_num_children; child_idx++)
         {
-            EXPECT_TRUE(info[leaf_idx].dtype().is_string());
-            EXPECT_NE(info[leaf_idx].as_string().find("item"), std::string::npos);
-        }
-        else
-        {
-            EXPECT_TRUE(info[leaf_idx].dtype().is_empty());
+            Node &info_child = info_errors.child(child_idx);
+            EXPECT_TRUE(info_child.dtype().is_string());
+            EXPECT_NE(info_child.as_string().find("arg"), std::string::npos);
         }
     }
-    */
+
+    { // Equal Node Check //
+        Node o(n), info;
+        EXPECT_TRUE(n.equals(o, info));
+
+        Node &info_this = info.child(0), &info_children = info.child(1);
+        EXPECT_FALSE(info_this.has_child("errors"));
+        EXPECT_EQ(info_children.number_of_children(), n_num_children);
+
+        for(index_t child_idx = 0; child_idx < n_num_children; child_idx++)
+        {
+            EXPECT_EQ(
+                info_children.child(child_idx).child(0).fetch("valid").as_string(),
+                "true");
+        }
+    }
+
+    { // Half-Full Node Check //
+        Node o(n), info;
+        for(index_t child_idx = n_num_children - 1; child_idx >= n_num_children / 2; child_idx--)
+        {
+            o.remove(child_idx);
+        }
+
+        EXPECT_FALSE(n.equals(o, info));
+
+        Node &info_this = info.child(0), &info_children = info.child(1);
+        EXPECT_TRUE(info_this.has_child("errors"));
+        EXPECT_EQ(info_this.fetch("errors").number_of_children(), n_num_children - n_num_children/2);
+
+        Node &info_errors = info_this.fetch("errors");
+        index_t child_idx = 0;
+        for(; child_idx < n_num_children / 2; child_idx++)
+        {
+            EXPECT_EQ(
+                info_children.child(child_idx).child(0).fetch("valid").as_string(),
+                "true");
+        }
+        for(index_t error_idx = 0; child_idx < n_num_children; child_idx++, error_idx++)
+        {
+            Node &info_child = info_errors.child(error_idx);
+            EXPECT_TRUE(info_child.dtype().is_string());
+            EXPECT_NE(info_child.as_string().find("arg"), std::string::npos);
+        }
+    }
 }

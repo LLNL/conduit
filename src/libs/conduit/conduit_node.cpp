@@ -13537,8 +13537,8 @@ Node::equals(const Node &n, Node &info, const float64 epsilon) const
     // NOTE: The 'info' is separated into two distinct list items at each level
     // in order to prevent naming conflicts for 'conduit::log' functions when
     // descending into subtrees (e.g. consider a node with child 'error').
-    Node &info_n = info.append();
-    Node &info_sub = info.append();
+    Node &info_this = info.append();
+    Node &info_child = info.append();
 
     index_t t_dtid  = dtype().id();
     index_t n_dtid  = n.dtype().id();
@@ -13547,7 +13547,7 @@ Node::equals(const Node &n, Node &info, const float64 epsilon) const
     {
         std::ostringstream oss;
         oss << "data type mismatch (" << dtype().name() << "/" << n.dtype().name() << ")";
-        log::error(info_n, protocol, oss.str());
+        log::error(info_this, protocol, oss.str());
         res = false;
     }
     else if(t_dtid == DataType::EMPTY_ID)
@@ -13566,13 +13566,13 @@ Node::equals(const Node &n, Node &info, const float64 epsilon) const
 
             if(!n.has_child(child_path))
             {
-                log::error(info_n, protocol, "arg missing subtree" +
-                                             log::quote(child_path, 1));
+                log::error(info_this, protocol, "arg missing child" +
+                                                log::quote(child_path, 1));
                 res = false;
             }
             else
             {
-                res &= t_child.equals(n.fetch(child_path), info_sub[child_path], epsilon);
+                res &= t_child.equals(n.fetch(child_path), info_child[child_path], epsilon);
             }
         }
 
@@ -13584,13 +13584,13 @@ Node::equals(const Node &n, Node &info, const float64 epsilon) const
 
             if(!has_child(child_path))
             {
-                log::error(info_n, protocol, "self missing subtree" +
-                                             log::quote(child_path, 1));
+                log::error(info_this, protocol, "self missing child" +
+                                                log::quote(child_path, 1));
                 res = false;
             }
             else
             {
-                res &= fetch(child_path).equals(n_child, info_sub[child_path], epsilon);
+                res &= fetch(child_path).equals(n_child, info_child[child_path], epsilon);
             }
         }
     }
@@ -13604,13 +13604,13 @@ Node::equals(const Node &n, Node &info, const float64 epsilon) const
         {
             const Node &t_child = child(i);
             const Node &n_child = n.child(i);
-            res &= t_child.equals(n_child, info_sub.append(), epsilon);
+            res &= t_child.equals(n_child, info_child.append(), epsilon);
         }
         for(; i < std::max(t_nchild, n_nchild); i++)
         {
             std::ostringstream oss;
-            oss << ((i >= t_nchild) ? "self" : "arg") << " missing subtree " << i;
-            log::error(info_n.append(), protocol, oss.str());
+            oss << ((i >= t_nchild) ? "self" : "arg") << " missing index " << i;
+            log::error(info_this, protocol, oss.str());
             res = false;
         }
     }
@@ -13684,7 +13684,7 @@ Node::equals(const Node &n, Node &info, const float64 epsilon) const
             {
                 std::ostringstream oss;
                 oss << "data string mismatch (" << t_array << "/" << n_array << ")";
-                log::error(info_n, protocol, oss.str());
+                log::error(info_this, protocol, oss.str());
                 res = false;
             }
         }
@@ -13695,7 +13695,7 @@ Node::equals(const Node &n, Node &info, const float64 epsilon) const
         }
     }
 
-    // NOTE: Need to use 'info.child(0)' instead of 'info_n' since the latter
+    // NOTE: Need to use 'info.child(0)' instead of 'info_this' since the latter
     // can change if this is a leaf node.
     log::validation(info.child(0), res);
 
