@@ -3204,8 +3204,8 @@ public:
                             Node &info,
                             const float64 epsilon = CONDUIT_EPSILON) const;
 
-    /// diff this node to the given node, storing the results digest
-    //  in the provided data node
+    /// diff this node to the given node (i.e. validate it has everything that
+    //  the instance node has), storing the results digest in the provided data node
     bool             diff(const Node &n,
                           Node &info,
                           const float64 epsilon = CONDUIT_EPSILON) const;

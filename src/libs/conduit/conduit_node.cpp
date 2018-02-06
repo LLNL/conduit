@@ -13703,9 +13703,8 @@ Node::equals(const Node &n, Node &info, const float64 epsilon) const
 
 //---------------------------------------------------------------------------//
 bool
-Node::diff(const Node &/*n*/, Node &/*info*/, const float64 /*epsilon*/) const
+Node::diff(const Node &n, Node &info, const float64 epsilon) const
 {
-    /*
     const std::string protocol = "node::diff";
     bool res = false;
     info.reset();
@@ -13722,7 +13721,7 @@ Node::diff(const Node &/*n*/, Node &/*info*/, const float64 /*epsilon*/) const
     if(t_dtid != n_dtid)
     {
         std::ostringstream oss;
-        oss << "data type mismatch (" << dtype().name() << "/" << n.dtype().name() << ")";
+        oss << "data type incompatibility (" << dtype().name() << "/" << n.dtype().name() << ")";
         log::error(info_this, protocol, oss.str());
         res = true;
     }
@@ -13762,7 +13761,7 @@ Node::diff(const Node &/*n*/, Node &/*info*/, const float64 /*epsilon*/) const
             const Node &n_child = n.child(i);
             res |= t_child.diff(n_child, info_child.append(), epsilon);
         }
-        for(; i < t_ncdhild; i++)
+        for(; i < t_nchild; i++)
         {
             std::ostringstream oss; oss << i;
             log::error(info_this, protocol, "arg missing index" +
@@ -13834,30 +13833,24 @@ Node::diff(const Node &/*n*/, Node &/*info*/, const float64 /*epsilon*/) const
         }
         else if(dtype().is_char8_str())
         {
-            std::string t_array = as_string();
-            std::string n_array = n.as_string();
-            if(t_array != n_array)
-            {
-                std::ostringstream oss;
-                oss << "data string mismatch (" << t_array << "/" << n_array << ")";
-                log::error(info_this, protocol, oss.str());
-                res = false;
-            }
+            // NOTE: Can't use 'value' for characters since type aliasing can
+            // confuse the 'char' type on various platforms.
+            char_array t_array((const void*)as_char8_str(), dtype());
+            char_array n_array((const void*)n.as_char8_str(), n.dtype());
+            res |= t_array.diff(n_array, info, epsilon);
         }
         else
         {
             CONDUIT_ERROR("<Node::diff> unrecognized data type");
-            res = false;
+            res = true;
         }
     }
 
     // NOTE: Need to use 'info.child(0)' instead of 'info_this' since the latter
     // can change if this is a leaf node.
-    log::validation(info.child(0), res);
+    log::validation(info.child(0), !res);
 
     return res;
-    */
-    return true;
 }
 
 //---------------------------------------------------------------------------//

@@ -222,7 +222,7 @@ DataArray<T>::equals(const DataArray<T> &array, Node &info, const float64 epsilo
 
             if(!res)
             {
-                log::error(info_meta, protocol, "data item(s) mismatch");
+                log::error(info_meta, protocol, "data item(s) mismatch; see diff below");
             }
         }
     }
@@ -235,9 +235,89 @@ DataArray<T>::equals(const DataArray<T> &array, Node &info, const float64 epsilo
 //---------------------------------------------------------------------------//
 template <typename T> 
 bool
-DataArray<T>::diff(const DataArray<T> &/*array*/, Node &/*info*/, const float64 /*epsilon*/) const 
+DataArray<T>::diff(const DataArray<T> &array, Node &info, const float64 epsilon) const 
 { 
-    return true;
+    const std::string protocol = "dataarray::diff";
+    bool res = false;
+    info.reset();
+
+    // NOTE: The 'info' node is split into two sections to provide a diff digest
+    // and full diff details in separate parts of the node.
+    Node &info_meta = info.append();
+    Node &info_content = info.append();
+
+    index_t t_nelems = number_of_elements();
+    index_t o_nelems = array.number_of_elements();
+
+    if(t_nelems > o_nelems)
+    {
+        std::ostringstream oss;
+        oss << "arg data length incompatible (" << t_nelems << "/" << o_nelems << ")";
+        log::error(info_meta, protocol, oss.str());
+        res = true;
+    }
+    else
+    {
+        std::ostringstream oss;
+        oss << "arg data length compatible (" << t_nelems << "/" << o_nelems << ")";
+        log::info(info_meta, protocol, oss.str());
+
+        if(dtype().is_char8_str())
+        {
+            // TODO(JRC): Currently, due to the way that strings are represented
+            // in C/C++ (i.e. null-terminated), this comparison isn't very useful.
+            // Consider comparing "a" with "aa"; the first string has two elements
+            // (i.e. "a" and "\0"), so will come back true for this diff when
+            // compared against "aa" (whose first two elements are "a" and "a").
+            // This behavior should be updated if a reasonable and useful
+            // interpretation is discovered for string diffs.
+            uint8 *t_compact_data = new uint8[dtype().bytes_compact()];
+            compact_elements_to(t_compact_data);
+            std::string t_string((const char*)t_compact_data, t_nelems);
+
+            uint8 *o_compact_data = new uint8[array.dtype().bytes_compact()];
+            array.compact_elements_to(o_compact_data);
+            std::string o_string((const char*)o_compact_data, t_nelems);
+
+            if(t_string != o_string)
+            {
+                std::ostringstream oss;
+                oss << "data string mismatch (" << t_string << "/" << o_string << ")";
+                log::error(info_meta, protocol, oss.str());
+                res = true;
+            }
+
+            delete [] t_compact_data;
+            delete [] o_compact_data;
+        }
+        else
+        {
+            info_content.set(DataType(array.dtype().id(), t_nelems));
+            T* info_ptr = (T*)info_content.data_ptr();
+
+            for(index_t i = 0; i < t_nelems; i++)
+            {
+                info_ptr[i] = (*this)[i] - array[i];
+                if(dtype().is_floating_point())
+                {
+                    res |= info_ptr[i] > epsilon || info_ptr[i] < -epsilon;
+                }
+                else
+                {
+                    res |= (*this)[i] != array[i];
+                }
+            }
+
+            if(res)
+            {
+                log::error(info_meta, protocol, "data item(s) mismatch; see diff below");
+            }
+        }
+    }
+
+    log::validation(info_meta, !res);
+
+    return res;
 }
 
 //---------------------------------------------------------------------------//
