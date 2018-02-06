@@ -154,87 +154,6 @@ DataArray<T>::compatible(const DataArray<T> &array) const
 //---------------------------------------------------------------------------//
 template <typename T> 
 bool
-DataArray<T>::equals(const DataArray<T> &array, Node &info, const float64 epsilon) const 
-{ 
-    const std::string protocol = "dataarray::equals";
-    bool res = true;
-    info.reset();
-
-    // NOTE: The 'info' node is split into two sections to provide a diff digest
-    // and full diff details in separate parts of the node.
-    Node &info_meta = info.append();
-    Node &info_content = info.append();
-
-    index_t t_nelems = number_of_elements();
-    index_t o_nelems = array.number_of_elements();
-
-    if(t_nelems != o_nelems)
-    {
-        std::ostringstream oss;
-        oss << "data length mismatch (" << t_nelems << "/" << o_nelems << ")";
-        log::error(info_meta, protocol, oss.str());
-        res = false;
-    }
-    else
-    {
-        std::ostringstream oss;
-        oss << "data length match (" << t_nelems << ")";
-        log::info(info_meta, protocol, oss.str());
-
-        if(dtype().is_char8_str())
-        {
-            uint8 *t_compact_data = new uint8[dtype().bytes_compact()];
-            compact_elements_to(t_compact_data);
-            std::string t_string((const char*)t_compact_data, t_nelems);
-
-            uint8 *o_compact_data = new uint8[array.dtype().bytes_compact()];
-            array.compact_elements_to(o_compact_data);
-            std::string o_string((const char*)o_compact_data, o_nelems);
-
-            if(t_string != o_string)
-            {
-                std::ostringstream oss;
-                oss << "data string mismatch (" << t_string << "/" << o_string << ")";
-                log::error(info_meta, protocol, oss.str());
-                res = false;
-            }
-
-            delete [] t_compact_data;
-            delete [] o_compact_data;
-        }
-        else
-        {
-            info_content.set(DataType(array.dtype().id(), t_nelems));
-            T* info_ptr = (T*)info_content.data_ptr();
-
-            for(index_t i = 0; i < t_nelems; i++)
-            {
-                info_ptr[i] = (*this)[i] - array[i];
-                if(dtype().is_floating_point())
-                {
-                    res &= info_ptr[i] <= epsilon && info_ptr[i] >= -epsilon;
-                }
-                else
-                {
-                    res &= (*this)[i] == array[i];
-                }
-            }
-
-            if(!res)
-            {
-                log::error(info_meta, protocol, "data item(s) mismatch; see diff below");
-            }
-        }
-    }
-
-    log::validation(info_meta, res);
-
-    return res;
-}
-
-//---------------------------------------------------------------------------//
-template <typename T> 
-bool
 DataArray<T>::diff(const DataArray<T> &array, Node &info, const float64 epsilon) const 
 { 
     const std::string protocol = "dataarray::diff";
@@ -316,6 +235,87 @@ DataArray<T>::diff(const DataArray<T> &array, Node &info, const float64 epsilon)
     }
 
     log::validation(info_meta, !res);
+
+    return res;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+bool
+DataArray<T>::equals(const DataArray<T> &array, Node &info, const float64 epsilon) const 
+{ 
+    const std::string protocol = "dataarray::equals";
+    bool res = true;
+    info.reset();
+
+    // NOTE: The 'info' node is split into two sections to provide a diff digest
+    // and full diff details in separate parts of the node.
+    Node &info_meta = info.append();
+    Node &info_content = info.append();
+
+    index_t t_nelems = number_of_elements();
+    index_t o_nelems = array.number_of_elements();
+
+    if(t_nelems != o_nelems)
+    {
+        std::ostringstream oss;
+        oss << "data length mismatch (" << t_nelems << "/" << o_nelems << ")";
+        log::error(info_meta, protocol, oss.str());
+        res = false;
+    }
+    else
+    {
+        std::ostringstream oss;
+        oss << "data length match (" << t_nelems << ")";
+        log::info(info_meta, protocol, oss.str());
+
+        if(dtype().is_char8_str())
+        {
+            uint8 *t_compact_data = new uint8[dtype().bytes_compact()];
+            compact_elements_to(t_compact_data);
+            std::string t_string((const char*)t_compact_data, t_nelems);
+
+            uint8 *o_compact_data = new uint8[array.dtype().bytes_compact()];
+            array.compact_elements_to(o_compact_data);
+            std::string o_string((const char*)o_compact_data, o_nelems);
+
+            if(t_string != o_string)
+            {
+                std::ostringstream oss;
+                oss << "data string mismatch (" << t_string << "/" << o_string << ")";
+                log::error(info_meta, protocol, oss.str());
+                res = false;
+            }
+
+            delete [] t_compact_data;
+            delete [] o_compact_data;
+        }
+        else
+        {
+            info_content.set(DataType(array.dtype().id(), t_nelems));
+            T* info_ptr = (T*)info_content.data_ptr();
+
+            for(index_t i = 0; i < t_nelems; i++)
+            {
+                info_ptr[i] = (*this)[i] - array[i];
+                if(dtype().is_floating_point())
+                {
+                    res &= info_ptr[i] <= epsilon && info_ptr[i] >= -epsilon;
+                }
+                else
+                {
+                    res &= (*this)[i] == array[i];
+                }
+            }
+
+            if(!res)
+            {
+                log::error(info_meta, protocol, "data item(s) mismatch; see diff below");
+            }
+        }
+    }
+
+    log::validation(info_meta, res);
 
     return res;
 }
