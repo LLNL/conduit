@@ -160,9 +160,8 @@ DataArray<T>::equals(const DataArray<T> &array, Node &info, const float64 epsilo
     bool res = true;
     info.reset();
 
-    // NOTE: The 'info' node
-    // in order to prevent naming conflicts for 'conduit::log' functions when
-    // descending into subtrees (e.g. consider a node with child 'error').
+    // NOTE: The 'info' node is split into two sections to provide a diff digest
+    // and full diff details in separate parts of the node.
     Node &info_meta = info.append();
     Node &info_content = info.append();
 
@@ -182,25 +181,49 @@ DataArray<T>::equals(const DataArray<T> &array, Node &info, const float64 epsilo
         oss << "data length match (" << t_nelems << ")";
         log::info(info_meta, protocol, oss.str());
 
-        info_content.set(DataType(array.dtype().id(), t_nelems));
-        T* info_ptr = (T*)info_content.data_ptr();
-
-        for(index_t i = 0; i < t_nelems; i++)
+        if(dtype().is_char8_str())
         {
-            info_ptr[i] = (*this)[i] - array[i];
-            if(dtype().is_floating_point())
+            uint8 *t_compact_data = new uint8[dtype().bytes_compact()];
+            compact_elements_to(t_compact_data);
+            std::string t_string((const char*)t_compact_data, t_nelems);
+
+            uint8 *o_compact_data = new uint8[array.dtype().bytes_compact()];
+            array.compact_elements_to(o_compact_data);
+            std::string o_string((const char*)o_compact_data, o_nelems);
+
+            if(t_string != o_string)
             {
-                res &= info_ptr[i] <= epsilon && info_ptr[i] >= -epsilon;
+                std::ostringstream oss;
+                oss << "data string mismatch (" << t_string << "/" << o_string << ")";
+                log::error(info_meta, protocol, oss.str());
+                res = false;
             }
-            else
-            {
-                res &= (*this)[i] == array[i];
-            }
+
+            delete [] t_compact_data;
+            delete [] o_compact_data;
         }
-
-        if(!res)
+        else
         {
-            log::error(info_meta, protocol, "data item(s) mismatch");
+            info_content.set(DataType(array.dtype().id(), t_nelems));
+            T* info_ptr = (T*)info_content.data_ptr();
+
+            for(index_t i = 0; i < t_nelems; i++)
+            {
+                info_ptr[i] = (*this)[i] - array[i];
+                if(dtype().is_floating_point())
+                {
+                    res &= info_ptr[i] <= epsilon && info_ptr[i] >= -epsilon;
+                }
+                else
+                {
+                    res &= (*this)[i] == array[i];
+                }
+            }
+
+            if(!res)
+            {
+                log::error(info_meta, protocol, "data item(s) mismatch");
+            }
         }
     }
 
