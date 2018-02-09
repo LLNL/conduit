@@ -448,6 +448,46 @@ TEST(conduit_node_save_load, load_save_with_childless_list)
     n_load.print_detailed();
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node_save_load, load_save_array)
+{
+    // Regression test for Node::load() problem in Win32 configurations
+    // where some data was not loaded without the ios::binary flag.
+
+    const int SZ = 20;
+
+    int64 i64 = 100;
+    float64 f64 = 1.2;
+    int64 arr[SZ];
+    
+    for(int i = 0; i< SZ; ++i)
+    {
+        arr[i] = 2 * i;
+    }
+
+    Node n;
+    n["arr"] = int64_array(arr,DataType::int64(SZ));
+    n["f"] = f64;
+    n["i"] = i64;
+    
+    n.print_detailed();
+   
+    std::string fname = "tout_node_load_save_load_save_array.conduit_bin";
+    n.save(fname);
+
+
+    Node n_load;
+    n_load.load(fname);
+
+    for(int i = 0; i< SZ; ++i)
+    {
+      EXPECT_EQ(n["arr"].as_int64_ptr()[i], n_load["arr"].as_int64_ptr()[i] );
+    }
+    EXPECT_EQ(n["f"].as_float64(), n_load["f"].as_float64());
+    EXPECT_EQ(n["i"].as_int64(), n_load["i"].as_int64());
+
+    n_load.print_detailed();
+}
 
 
 

@@ -323,7 +323,7 @@ Node::load(const std::string &stream_path,
 
     allocate(dsize);
     std::ifstream ifs;
-    ifs.open(stream_path.c_str());
+    ifs.open(stream_path.c_str(), std::ios_base::binary);
     if(!ifs.is_open())
         CONDUIT_ERROR("<Node::load> failed to open: " << stream_path);
     ifs.read((char *)m_data,dsize);
