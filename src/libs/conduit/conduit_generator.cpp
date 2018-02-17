@@ -866,7 +866,7 @@ Generator::Parser::walk_json_schema(Schema *schema,
 
 //---------------------------------------------------------------------------//
 void 
-Generator::Parser::walk_pure_json_schema(Node  *node,
+Generator::Parser::walk_pure_json_schema(Node *node,
                                          Schema *schema,
                                          const rapidjson::Value &jvalue)
 {
@@ -882,13 +882,31 @@ Generator::Parser::walk_pure_json_schema(Node  *node,
              itr != jvalue.MemberEnd(); ++itr)
         {
             std::string entry_name(itr->name.GetString());
+            
+            // json files may have duplicate object names
+            // we could provide some clear semantics, such as:
+            //   always use first instance, or always use last instance
+            // however duplicate object names are most likely a
+            // typo, so it's best to throw an error
+
+            if(schema->has_child(entry_name))
+            {
+                CONDUIT_ERROR("JSON Generator error:\n"
+                              << "Duplicate JSON object name: " 
+                              << "\"" << entry_name << "\"");
+            }
+
             Schema *curr_schema = schema->fetch_ptr(entry_name);
-            Node *curr_node  = new Node();
+
+            Node *curr_node = new Node();
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
-            walk_pure_json_schema(curr_node,curr_schema,itr->value);
+            
+            walk_pure_json_schema(curr_node,
+                                  curr_schema,
+                                  itr->value);
+        
             node->append_node_ptr(curr_node);
-
         }
     }
     // List case 
@@ -1075,19 +1093,41 @@ Generator::Parser::walk_json_schema(Node   *node,
                  itr != jvalue.MemberEnd(); ++itr)
             {
                 std::string entry_name(itr->name.GetString());
+                
+                // json files may have duplicate object names
+                // we could provide some clear semantics, such as:
+                //   always use first instance, or always use last instance.
+                // however duplicate object names are most likely a
+                // typo, so it's best to throw an error
+                //
+                // also its highly unlikely that the auto offset case
+                // could safely deal with offsets for the
+                // duplicate key case
+
+                if(schema->has_child(entry_name))
+                {
+                    CONDUIT_ERROR("JSON Generator error:\n"
+                                  << "Duplicate JSON object name: " 
+                                  << "\"" << entry_name << "\"");
+                }
+
                 Schema *curr_schema = schema->fetch_ptr(entry_name);
+                
                 Node *curr_node = new Node();
                 curr_node->set_schema_ptr(curr_schema);
                 curr_node->set_parent(node);
+                
                 walk_json_schema(curr_node,
                                  curr_schema,
                                  data,
                                  itr->value,
                                  curr_offset);
+                
                 // auto offset only makes sense when we have data
                 if(data != NULL)
                     curr_offset += curr_schema->total_strided_bytes();
-                node->append_node_ptr(curr_node);                
+                
+                node->append_node_ptr(curr_node);
             }
             
         }
