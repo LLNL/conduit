@@ -893,7 +893,7 @@ Generator::Parser::walk_pure_json_schema(Node *node,
             {
                 CONDUIT_ERROR("JSON Generator error:\n"
                               << "Duplicate JSON object name: " 
-                              << "\"" << entry_name << "\"");
+                              << utils::join_path(node->path(),entry_name));
             }
 
             Schema *curr_schema = schema->fetch_ptr(entry_name);
@@ -1103,12 +1103,11 @@ Generator::Parser::walk_json_schema(Node   *node,
                 // also its highly unlikely that the auto offset case
                 // could safely deal with offsets for the
                 // duplicate key case
-
                 if(schema->has_child(entry_name))
                 {
                     CONDUIT_ERROR("JSON Generator error:\n"
                                   << "Duplicate JSON object name: " 
-                                  << "\"" << entry_name << "\"");
+                                  << utils::join_path(node->path(),entry_name));
                 }
 
                 Schema *curr_schema = schema->fetch_ptr(entry_name);
