@@ -677,6 +677,59 @@ TEST(conduit_json, json_parse_error_detailed)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_json, dup_object_name_error)
+{
+    std::ostringstream oss;
+
+    // test pure json case for dup child keys
+    oss << "{\n";
+    oss << "\"t1_key\" : { \"sub\": 10 }, \n";
+    oss << "\"t1_key\" : { \"sub\": \"my_string\"}\n";
+    oss << "}"; 
+    
+    CONDUIT_INFO(oss.str());
+    
+    Generator g(oss.str(),"json");
+
+    Node n;
+    ASSERT_THROW(g.walk(n),conduit::Error);
+    EXPECT_TRUE(n.dtype().is_empty());
+    
+    // test conduit json case for dup child keys
+    oss.str("");
+    
+    oss << "{\n";
+    oss << "\"t2_key\" : { \"sub\": { \"dtype\" : \"int64\", \"value\" : 10 } }, \n ";
+    oss << "\"t2_key\" : { \"sub\":  { \"dtype\" : \"char8_str\", \"value\" : \"my_string\"} } \n";
+    oss << "}"; 
+    
+    CONDUIT_INFO(oss.str());
+    Generator g2(oss.str(),"conduit_json");
+
+    Node n2;
+    ASSERT_THROW(g2.walk(n2),conduit::Error);
+    EXPECT_TRUE(n2.dtype().is_empty());
+    
+    oss.str("");
+    
+    // dup keys at path
+    oss << "{\n";
+    oss << "\"a\" : { \"sub\": 10  , \"sub\": \"my_string\"}\n";
+    oss << "}"; 
+    
+    CONDUIT_INFO(oss.str());
+    
+    Generator g3(oss.str(),"json");
+
+    Node n3;
+    ASSERT_THROW(g3.walk(n),conduit::Error);
+    EXPECT_TRUE(n3.dtype().is_empty());
+    
+    
+    
+
+}
 
 
 
