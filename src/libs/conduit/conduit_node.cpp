@@ -13534,20 +13534,14 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
     bool res = false;
     info.reset();
 
-    // NOTE: The 'info' is separated into two distinct list items at each level
-    // in order to prevent naming conflicts for 'conduit::log' functions when
-    // descending into subtrees (e.g. consider a node with child 'error').
-    Node &info_this = info.append();
-    Node &info_child = info.append();
-
     index_t t_dtid  = dtype().id();
     index_t n_dtid  = n.dtype().id();
 
     if(t_dtid != n_dtid)
     {
         std::ostringstream oss;
-        oss << "data type incompatibility (" << dtype().name() << "/" << n.dtype().name() << ")";
-        log::error(info_this, protocol, oss.str());
+        oss << "data type mismatch (" << dtype().name() << "/" << n.dtype().name() << ")";
+        log::error(info, protocol, oss.str());
         res = true;
     }
     else if(t_dtid == DataType::EMPTY_ID)
@@ -13556,7 +13550,10 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
     }
     else if(t_dtid == DataType::OBJECT_ID)
     {
-        NodeConstIterator child_itr = children();
+        Node &info_children = info["children"];
+
+        NodeConstIterator child_itr;
+        child_itr = children();
         while(child_itr.has_next())
         {
             const conduit::Node &t_child = child_itr.next();
@@ -13564,18 +13561,38 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
 
             if(!n.has_child(child_path))
             {
-                log::error(info_this, protocol, "arg missing child" +
-                                                log::quote(child_path, 1));
+                info_children["extra"].append().set(child_path);
                 res = true;
             }
             else
             {
-                res |= t_child.diff(n.fetch(child_path), info_child[child_path], epsilon);
+                Node &info_child = info_children["diff"][child_path];
+                res |= t_child.diff(n.fetch(child_path), info_child, epsilon);
+            }
+        }
+
+        child_itr = n.children();
+        while(child_itr.has_next())
+        {
+            const conduit::Node &n_child = child_itr.next();
+            const std::string child_path = child_itr.name();
+
+            if(!has_child(child_path))
+            {
+                info_children["missing"].append().set(child_path);
+                res = true;
+            }
+            else
+            {
+                Node &info_child = info_children["diff"][child_path];
+                res |= fetch(child_path).diff(n_child, info_child, epsilon);
             }
         }
     }
     else if(t_dtid == DataType::LIST_ID)
     {
+        Node &info_children = info["children"];
+
         index_t t_nchild = number_of_children();
         index_t n_nchild = n.number_of_children();
 
@@ -13584,13 +13601,12 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
         {
             const Node &t_child = child(i);
             const Node &n_child = n.child(i);
-            res |= t_child.diff(n_child, info_child.append(), epsilon);
+            res |= t_child.diff(n_child, info_children["diff"].append(), epsilon);
         }
-        for(; i < t_nchild; i++)
+        for(; i < std::max(t_nchild, n_nchild); i++)
         {
-            std::ostringstream oss; oss << i;
-            log::error(info_this, protocol, "arg missing index" +
-                                            log::quote(oss.str(), 1));
+            const std::string diff_type = (i >= t_nchild) ? "missing" : "extra";
+            info_children[diff_type].append().set(i);
             res = true;
         }
     }
@@ -13671,26 +13687,18 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
         }
     }
 
-    // NOTE: Need to use 'info.child(0)' instead of 'info_this' since the latter
-    // can change if this is a leaf node.
-    log::validation(info.child(0), !res);
+    log::validation(info, !res);
 
     return res;
 }
 
 //---------------------------------------------------------------------------//
 bool
-Node::equals(const Node &n, Node &info, const float64 epsilon) const
+Node::diff_compatible(const Node &n, Node &info, const float64 epsilon) const
 {
-    const std::string protocol = "node::equals";
-    bool res = true;
+    const std::string protocol = "node::diff_compatible";
+    bool res = false;
     info.reset();
-
-    // NOTE: The 'info' is separated into two distinct list items at each level
-    // in order to prevent naming conflicts for 'conduit::log' functions when
-    // descending into subtrees (e.g. consider a node with child 'error').
-    Node &info_this = info.append();
-    Node &info_child = info.append();
 
     index_t t_dtid  = dtype().id();
     index_t n_dtid  = n.dtype().id();
@@ -13698,9 +13706,9 @@ Node::equals(const Node &n, Node &info, const float64 epsilon) const
     if(t_dtid != n_dtid)
     {
         std::ostringstream oss;
-        oss << "data type mismatch (" << dtype().name() << "/" << n.dtype().name() << ")";
-        log::error(info_this, protocol, oss.str());
-        res = false;
+        oss << "data type incompatibility (" << dtype().name() << "/" << n.dtype().name() << ")";
+        log::error(info, protocol, oss.str());
+        res = true;
     }
     else if(t_dtid == DataType::EMPTY_ID)
     {
@@ -13708,9 +13716,9 @@ Node::equals(const Node &n, Node &info, const float64 epsilon) const
     }
     else if(t_dtid == DataType::OBJECT_ID)
     {
-        NodeConstIterator child_itr;
+        Node &info_children = info["children"];
 
-        child_itr = children();
+        NodeConstIterator child_itr = children();
         while(child_itr.has_next())
         {
             const conduit::Node &t_child = child_itr.next();
@@ -13718,36 +13726,20 @@ Node::equals(const Node &n, Node &info, const float64 epsilon) const
 
             if(!n.has_child(child_path))
             {
-                log::error(info_this, protocol, "arg missing child" +
-                                                log::quote(child_path, 1));
-                res = false;
+                info_children["extra"].append().set(child_path);
+                res = true;
             }
             else
             {
-                res &= t_child.equals(n.fetch(child_path), info_child[child_path], epsilon);
-            }
-        }
-
-        child_itr = n.children();
-        while(child_itr.has_next())
-        {
-            const conduit::Node &n_child = child_itr.next();
-            const std::string child_path = child_itr.name();
-
-            if(!has_child(child_path))
-            {
-                log::error(info_this, protocol, "self missing child" +
-                                                log::quote(child_path, 1));
-                res = false;
-            }
-            else
-            {
-                res &= fetch(child_path).equals(n_child, info_child[child_path], epsilon);
+                Node &info_child = info_children["diff"][child_path];
+                res |= t_child.diff_compatible(n.fetch(child_path), info_child, epsilon);
             }
         }
     }
     else if(t_dtid == DataType::LIST_ID)
     {
+        Node &info_children = info["children"];
+
         index_t t_nchild = number_of_children();
         index_t n_nchild = n.number_of_children();
 
@@ -13756,14 +13748,12 @@ Node::equals(const Node &n, Node &info, const float64 epsilon) const
         {
             const Node &t_child = child(i);
             const Node &n_child = n.child(i);
-            res &= t_child.equals(n_child, info_child.append(), epsilon);
+            res |= t_child.diff_compatible(n_child, info_children["diff"].append(), epsilon);
         }
-        for(; i < std::max(t_nchild, n_nchild); i++)
+        for(; i < t_nchild; i++)
         {
-            std::ostringstream oss;
-            oss << ((i >= t_nchild) ? "self" : "arg") << " missing index " << i;
-            log::error(info_this, protocol, oss.str());
-            res = false;
+            info_children["extra"].append().set(i);
+            res = true;
         }
     }
     else // leaf node
@@ -13772,61 +13762,61 @@ Node::equals(const Node &n, Node &info, const float64 epsilon) const
         {
             int8_array t_array = value();
             int8_array n_array = n.value();
-            res &= t_array.equals(n_array, info, epsilon);
+            res |= t_array.diff_compatible(n_array, info, epsilon);
         }
         else if(dtype().is_int16())
         {
             int16_array t_array = value();
             int16_array n_array = n.value();
-            res &= t_array.equals(n_array, info, epsilon);
+            res |= t_array.diff_compatible(n_array, info, epsilon);
         }
         else if(dtype().is_int32())
         {
             int32_array t_array = value();
             int32_array n_array = n.value();
-            res &= t_array.equals(n_array, info, epsilon);
+            res |= t_array.diff_compatible(n_array, info, epsilon);
         }
         else if(dtype().is_int64())
         {
             int64_array t_array = value();
             int64_array n_array = n.value();
-            res &= t_array.equals(n_array, info, epsilon);
+            res |= t_array.diff_compatible(n_array, info, epsilon);
         }
         else if(dtype().is_uint8())
         {
             uint8_array t_array = value();
             uint8_array n_array = n.value();
-            res &= t_array.equals(n_array, info, epsilon);
+            res |= t_array.diff_compatible(n_array, info, epsilon);
         }
         else if(dtype().is_uint16())
         {
             uint16_array t_array = value();
             uint16_array n_array = n.value();
-            res &= t_array.equals(n_array, info, epsilon);
+            res |= t_array.diff_compatible(n_array, info, epsilon);
         }
         else if(dtype().is_uint32())
         {
             uint32_array t_array = value();
             uint32_array n_array = n.value();
-            res &= t_array.equals(n_array, info, epsilon);
+            res |= t_array.diff_compatible(n_array, info, epsilon);
         }
         else if(dtype().is_uint64())
         {
             uint64_array t_array = value();
             uint64_array n_array = n.value();
-            res &= t_array.equals(n_array, info, epsilon);
+            res |= t_array.diff_compatible(n_array, info, epsilon);
         }
         else if(dtype().is_float32())
         {
             float32_array t_array = value();
             float32_array n_array = n.value();
-            res &= t_array.equals(n_array, info, epsilon);
+            res |= t_array.diff_compatible(n_array, info, epsilon);
         }
         else if(dtype().is_float64())
         {
             float64_array t_array = value();
             float64_array n_array = n.value();
-            res &= t_array.equals(n_array, info, epsilon);
+            res |= t_array.diff_compatible(n_array, info, epsilon);
         }
         else if(dtype().is_char8_str())
         {
@@ -13834,18 +13824,16 @@ Node::equals(const Node &n, Node &info, const float64 epsilon) const
             // confuse the 'char' type on various platforms.
             char_array t_array((const void*)as_char8_str(), dtype());
             char_array n_array((const void*)n.as_char8_str(), n.dtype());
-            res &= t_array.equals(n_array, info, epsilon);
+            res |= t_array.diff_compatible(n_array, info, epsilon);
         }
         else
         {
-            CONDUIT_ERROR("<Node::equals> unrecognized data type");
-            res = false;
+            CONDUIT_ERROR("<Node::diff_compatible> unrecognized data type");
+            res = true;
         }
     }
 
-    // NOTE: Need to use 'info.child(0)' instead of 'info_this' since the latter
-    // can change if this is a leaf node.
-    log::validation(info.child(0), res);
+    log::validation(info, !res);
 
     return res;
 }

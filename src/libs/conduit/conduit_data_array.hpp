@@ -135,9 +135,9 @@ public:
     bool            diff(const DataArray<T> &array,
                          Node &info,
                          const float64 epsilon = CONDUIT_EPSILON) const;
-    bool            equals(const DataArray<T> &array,
-                           Node &info,
-                           const float64 epsilon = CONDUIT_EPSILON) const;
+    bool            diff_compatible(const DataArray<T> &array,
+                                    Node &info,
+                                    const float64 epsilon = CONDUIT_EPSILON) const;
 
 //-----------------------------------------------------------------------------
 // Setters

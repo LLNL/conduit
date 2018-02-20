@@ -59,10 +59,8 @@
 
 using namespace conduit;
 
-// TODO(JRC): Revise all of the more intricate test cases below once the format
-// for the 'info' node returned by 'Node::equals' is finalized.
-// TODO(JRC): Update these tests to more extensively test the 'Node:diff' function
-// and its behavior to only compare against its own contents.
+// TODO(JRC): Update these tests to more extensively test the 'Node:diff_compatible'
+// function and its behavior to only compare against its own contents.
 
 /// Helper Functions ///
 
@@ -75,19 +73,19 @@ std::string to_string(index_t index)
 
 /// Wrapper Functions ///
 
-bool compare_nodes_diff(const Node &lnode, const Node &rnode, Node &info)
+bool diff_nodes(const Node &lnode, const Node &rnode, Node &info)
 {
     return lnode.diff(rnode, info, 0.0);
 }
 
-bool compare_nodes_equal(const Node &lnode, const Node &rnode, Node &info)
+bool compatible_diff_nodes(const Node &lnode, const Node &rnode, Node &info)
 {
-    return lnode.equals(rnode, info, 0.0);
+    return lnode.diff_compatible(rnode, info, 0.0);
 }
 
-typedef bool (*NodeCompFun)(const Node&, const Node&, Node&);
+typedef bool (*NodeDiffFun)(const Node&, const Node&, Node&);
 
-const NodeCompFun NODE_COMPARE_FUNS[2] = {compare_nodes_diff, compare_nodes_equal};
+const NodeDiffFun NODE_DIFF_FUNS[2] = {diff_nodes, compatible_diff_nodes};
 
 /// Testing Functions ///
 
@@ -96,19 +94,18 @@ TEST(conduit_node_compare, compare_basic)
 {
     for(index_t fi = 0; fi < 2; fi++)
     {
-        NodeCompFun compare_nodes = NODE_COMPARE_FUNS[fi];
-        bool compare_same_result = static_cast<bool>(fi);
+        NodeDiffFun diff_nodes = NODE_DIFF_FUNS[fi];
 
         { // Self-Similarity Test //
             Node n, info;
             n.set("");
-            EXPECT_EQ(compare_nodes(n, n, info), compare_same_result);
+            EXPECT_FALSE(diff_nodes(n, n, info));
         }
 
         { // Basic Difference Test //
             Node n, o, info;
             n.set(1); o.set(2);
-            EXPECT_EQ(compare_nodes(n, o, info), !compare_same_result);
+            EXPECT_TRUE(diff_nodes(n, o, info));
         }
 
         { // Complex Difference Test //
@@ -118,14 +115,14 @@ TEST(conduit_node_compare, compare_basic)
             n.set(data, 2);
             o.set(data, 3);
 
-            if(compare_nodes == compare_nodes_diff)
+            if(diff_nodes == compatible_diff_nodes)
             {
-                EXPECT_EQ(compare_nodes(n, o, info), compare_same_result);
-                EXPECT_EQ(compare_nodes(o, n, info), !compare_same_result);
+                EXPECT_FALSE(diff_nodes(n, o, info));
+                EXPECT_TRUE(diff_nodes(o, n, info));
             }
             else
             {
-                EXPECT_EQ(compare_nodes(n, o, info), !compare_same_result);
+                EXPECT_TRUE(diff_nodes(n, o, info));
             }
         }
     }
@@ -142,8 +139,7 @@ TEST(conduit_node_compare, compare_leaf_numeric)
 
     for(index_t fi = 0; fi < 2; fi++)
     {
-        NodeCompFun compare_nodes = NODE_COMPARE_FUNS[fi];
-        bool compare_same_result = static_cast<bool>(fi);
+        NodeDiffFun diff_nodes = NODE_DIFF_FUNS[fi];
 
         for(index_t ti = 0; ti < 10; ti++)
         {
@@ -163,16 +159,16 @@ TEST(conduit_node_compare, compare_leaf_numeric)
 
             { // Leaf Similarity Test //
                 Node info;
-                EXPECT_EQ(compare_nodes(n, o, info), compare_same_result);
+                EXPECT_FALSE(diff_nodes(n, o, info));
             }
 
             { // Leaf Difference Test //
                 Node info;
                 memset(&o_data[0*type_bytes], 1, 1);
                 memset(&o_data[4*type_bytes], 1, 1);
-                EXPECT_EQ(compare_nodes(n, o, info), !compare_same_result);
+                EXPECT_TRUE(diff_nodes(n, o, info));
 
-                Node &info_diff = info.child(1);
+                Node &info_diff = info["value"];
                 EXPECT_EQ(info_diff.dtype().id(), leaf_tid);
                 EXPECT_EQ(info_diff.dtype().number_of_elements(), 5);
                 for(index_t vi = 0; vi < 5; vi++)
@@ -197,8 +193,7 @@ TEST(conduit_node_compare, compare_leaf_string)
 
     for(index_t fi = 0; fi < 2; fi++)
     {
-        NodeCompFun compare_nodes = NODE_COMPARE_FUNS[fi];
-        bool compare_same_result = static_cast<bool>(fi);
+        NodeDiffFun diff_nodes = NODE_DIFF_FUNS[fi];
 
         for(index_t ci = 0; ci < 4; ci++)
         {
@@ -213,14 +208,14 @@ TEST(conduit_node_compare, compare_leaf_string)
                 Node n, o, info;
                 n.set(comp_str);
                 o.set(comp_str);
-                EXPECT_EQ(compare_nodes(n, o, info), compare_same_result);
+                EXPECT_FALSE(diff_nodes(n, o, info));
             }
 
             { // String Difference Test //
                 Node n, o, info;
                 n.set(comp_str);
                 o.set(diff_str);
-                EXPECT_EQ(compare_nodes(n, o, info), !compare_same_result);
+                EXPECT_TRUE(diff_nodes(n, o, info));
             }
         }
     }
@@ -237,8 +232,7 @@ TEST(conduit_node_compare, compare_leaf_mismatch)
 
     for(index_t fi = 0; fi < 2; fi++)
     {
-        NodeCompFun compare_nodes = NODE_COMPARE_FUNS[fi];
-        bool compare_same_result = static_cast<bool>(fi);
+        NodeDiffFun diff_nodes = NODE_DIFF_FUNS[fi];
 
         for(index_t ti = 0; ti < 6; ti++)
         {
@@ -257,8 +251,8 @@ TEST(conduit_node_compare, compare_leaf_mismatch)
             Node o(next_type, (void*)max_data, true);
             Node info;
 
-            EXPECT_EQ(compare_nodes(n, o, info), !compare_same_result);
-            EXPECT_EQ(compare_nodes(o, n, info), !compare_same_result);
+            EXPECT_TRUE(diff_nodes(n, o, info));
+            EXPECT_TRUE(diff_nodes(o, n, info));
 
             delete [] max_data;
         }
@@ -280,20 +274,19 @@ TEST(conduit_node_compare, compare_object_item_diff)
 
     for(index_t fi = 0; fi < 2; fi++)
     {
-        NodeCompFun compare_nodes = NODE_COMPARE_FUNS[fi];
-        bool compare_same_result = static_cast<bool>(fi);
+        NodeDiffFun diff_nodes = NODE_DIFF_FUNS[fi];
 
         const Node n(n_ref), o(o_ref);
         Node info;
-        EXPECT_EQ(compare_nodes(n, o, info), !compare_same_result);
+        EXPECT_TRUE(diff_nodes(n, o, info));
 
-        Node &info_this = info.child(0), &info_children = info.child(1);
+        Node &info_children = info["children/diff"];
         for(index_t ci = 0; ci < n_num_children; ci++)
         {
             std::string cs = to_string(ci);
             EXPECT_TRUE(info_children.has_child(cs));
             EXPECT_EQ(
-                info_children.fetch(cs).child(0).fetch("valid").as_string(),
+                info_children.fetch(cs).fetch("valid").as_string(),
                 (ci % 2 == 0) ? "true" : "false");
         }
     }
@@ -312,39 +305,37 @@ TEST(conduit_node_compare, compare_object_size_diff)
 
     for(index_t fi = 0; fi < 2; fi++)
     {
-        NodeCompFun compare_nodes = NODE_COMPARE_FUNS[fi];
-        bool compare_same_result = static_cast<bool>(fi);
+        NodeDiffFun diff_nodes = NODE_DIFF_FUNS[fi];
 
         { // Full vs. Empty Node Test //
             Node n(n_ref), o(DataType::object()), info;
-            EXPECT_EQ(compare_nodes(n, o, info), !compare_same_result);
+            EXPECT_TRUE(diff_nodes(n, o, info));
 
-            Node &info_this = info.child(0), &info_children = info.child(1);
-            EXPECT_TRUE(info_this.has_child("errors"));
-            EXPECT_EQ(info_children.number_of_children(), 0);
+            EXPECT_EQ(info["valid"].as_string(), "false");
+            EXPECT_TRUE(info["children"].has_child("extra"));
+            EXPECT_FALSE(info["children"].has_child("missing"));
+            EXPECT_FALSE(info["children"].has_child("diff"));
 
-            Node &info_errors = info_this.fetch("errors");
-            EXPECT_EQ(info_errors.number_of_children(), n_num_children);
-            for(index_t ci = 0; ci < n_num_children; ci++)
-            {
-                Node &info_child = info_errors.child(ci);
-                EXPECT_TRUE(info_child.dtype().is_string());
-                EXPECT_NE(info_child.as_string().find("arg"), std::string::npos);
-            }
+            Node &info_extra = info["children/extra"];
+            EXPECT_EQ(info_extra.number_of_children(), n_num_children);
         }
 
         { // Equal Node Test //
             Node n(n_ref), o(n_ref), info;
-            EXPECT_EQ(compare_nodes(n, o, info), compare_same_result);
+            EXPECT_FALSE(diff_nodes(n, o, info));
 
-            Node &info_this = info.child(0), &info_children = info.child(1);
-            EXPECT_FALSE(info_this.has_child("errors"));
-            EXPECT_EQ(info_children.number_of_children(), n_num_children);
+            EXPECT_EQ(info["valid"].as_string(), "true");
+            EXPECT_TRUE(info["children"].has_child("diff"));
+            EXPECT_FALSE(info["children"].has_child("extra"));
+            EXPECT_FALSE(info["children"].has_child("missing"));
+
+            Node &info_diff = info["children/diff"];
+            EXPECT_EQ(info_diff.number_of_children(), n_num_children);
 
             for(index_t ci = 0; ci < n_num_children; ci++)
             {
                 std::string cs = to_string(ci);
-                EXPECT_TRUE(info_children.has_child(cs));
+                EXPECT_TRUE(info_diff.has_child(cs));
             }
         }
 
@@ -358,17 +349,22 @@ TEST(conduit_node_compare, compare_object_size_diff)
                 }
             }
 
-            EXPECT_EQ(compare_nodes(n, o, info), !compare_same_result);
+            EXPECT_TRUE(diff_nodes(n, o, info));
 
-            Node &info_this = info.child(0), &info_children = info.child(1);
-            EXPECT_TRUE(info_this.has_child("errors"));
-            EXPECT_EQ(info_this.fetch("errors").number_of_children(), n_num_children/2);
+            EXPECT_EQ(info["valid"].as_string(), "false");
+            EXPECT_TRUE(info["children"].has_child("diff"));
+            EXPECT_TRUE(info["children"].has_child("extra"));
+            EXPECT_FALSE(info["children"].has_child("missing"));
 
+            Node &info_extra = info["children/extra"];
+            EXPECT_EQ(info_extra.number_of_children(), n_num_children/2);
+
+            Node &info_diff = info["children/diff"];
             for(index_t ci = 0; ci < n_num_children; ci++)
             {
                 if(ci % 2 != 1)
                 {
-                    EXPECT_TRUE(info_children.has_child(to_string(ci)));
+                    EXPECT_TRUE(info_diff.has_child(to_string(ci)));
                 }
             }
         }
@@ -379,33 +375,28 @@ TEST(conduit_node_compare, compare_object_size_diff)
 TEST(conduit_node_compare, compare_list_item_diff)
 {
     const index_t n_num_children = 5;
+
     Node n_ref, o_ref, info;
-    for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    for(index_t ci = 0; ci < n_num_children; ci++)
     {
-        n_ref.append().set(leaf_idx);
-        o_ref.append().set(leaf_idx+(leaf_idx%2));
+        n_ref.append().set(ci);
+        o_ref.append().set(ci+(ci%2));
     }
 
     for(index_t fi = 0; fi < 2; fi++)
     {
-        NodeCompFun compare_nodes = NODE_COMPARE_FUNS[fi];
-        bool compare_same_result = static_cast<bool>(fi);
+        NodeDiffFun diff_nodes = NODE_DIFF_FUNS[fi];
 
         const Node n(n_ref), o(o_ref);
         Node info;
-        EXPECT_EQ(compare_nodes(n, o, info), !compare_same_result);
+        EXPECT_TRUE(diff_nodes(n, o, info));
 
-        Node &info_this = info.child(0), &info_children = info.child(1);
-        EXPECT_FALSE(info_this.has_child("errors"));
-        EXPECT_EQ(info_children.number_of_children(), n_num_children);
-
-        for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+        Node &info_children = info["children/diff"];
+        for(index_t ci = 0; ci < n_num_children; ci++)
         {
-            EXPECT_TRUE(info_children.child(leaf_idx).dtype().is_list());
-            EXPECT_EQ(info_children.child(leaf_idx).number_of_children(), 2);
-
-            Node &info_child = info_children.child(leaf_idx).child(0);
-            EXPECT_EQ(info_child.has_child("errors"), leaf_idx % 2 == 1);
+            EXPECT_EQ(
+                info_children.child(ci).fetch("valid").as_string(),
+                (ci % 2 == 0) ? "true" : "false");
         }
     }
 }
@@ -416,48 +407,39 @@ TEST(conduit_node_compare, compare_list_size_diff)
     const index_t n_num_children = 5;
 
     Node n_ref;
-    for(index_t leaf_idx = 0; leaf_idx < n_num_children; leaf_idx++)
+    for(index_t ci = 0; ci < n_num_children; ci++)
     {
-        n_ref.append().set(leaf_idx);
+        n_ref.append().set(ci);
     }
 
     for(index_t fi = 0; fi < 2; fi++)
     {
-        NodeCompFun compare_nodes = NODE_COMPARE_FUNS[fi];
-        bool compare_same_result = static_cast<bool>(fi);
+        NodeDiffFun diff_nodes = NODE_DIFF_FUNS[fi];
 
         { // Full vs. Empty Node Check //
             Node n(n_ref), o(DataType::list()), info;
-            EXPECT_EQ(compare_nodes(n, o, info), !compare_same_result);
+            EXPECT_TRUE(diff_nodes(n, o, info));
 
-            Node &info_this = info.child(0), &info_children = info.child(1);
-            EXPECT_TRUE(info_this.has_child("errors"));
-            EXPECT_EQ(info_children.number_of_children(), 0);
+            EXPECT_EQ(info["valid"].as_string(), "false");
+            EXPECT_TRUE(info["children"].has_child("extra"));
+            EXPECT_FALSE(info["children"].has_child("missing"));
+            EXPECT_FALSE(info["children"].has_child("diff"));
 
-            Node &info_errors = info_this.fetch("errors");
-            EXPECT_EQ(info_errors.number_of_children(), n_num_children);
-            for(index_t ci = 0; ci < n_num_children; ci++)
-            {
-                Node &info_child = info_errors.child(ci);
-                EXPECT_TRUE(info_child.dtype().is_string());
-                EXPECT_NE(info_child.as_string().find("arg"), std::string::npos);
-            }
+            Node &info_extra = info["children/extra"];
+            EXPECT_EQ(info_extra.number_of_children(), n_num_children);
         }
 
         { // Equal Node Check //
             Node n(n_ref), o(n_ref), info;
-            EXPECT_EQ(compare_nodes(n, o, info), compare_same_result);
+            EXPECT_FALSE(diff_nodes(n, o, info));
 
-            Node &info_this = info.child(0), &info_children = info.child(1);
-            EXPECT_FALSE(info_this.has_child("errors"));
-            EXPECT_EQ(info_children.number_of_children(), n_num_children);
+            EXPECT_EQ(info["valid"].as_string(), "true");
+            EXPECT_TRUE(info["children"].has_child("diff"));
+            EXPECT_FALSE(info["children"].has_child("extra"));
+            EXPECT_FALSE(info["children"].has_child("missing"));
 
-            for(index_t ci = 0; ci < n_num_children; ci++)
-            {
-                EXPECT_EQ(
-                    info_children.child(ci).child(0).fetch("valid").as_string(),
-                    "true");
-            }
+            Node &info_diff = info["children/diff"];
+            EXPECT_EQ(info_diff.number_of_children(), n_num_children);
         }
 
         { // Half-Full Node Check //
@@ -467,26 +449,18 @@ TEST(conduit_node_compare, compare_list_size_diff)
                 o.remove(ci);
             }
 
-            EXPECT_EQ(compare_nodes(n, o, info), !compare_same_result);
+            EXPECT_TRUE(diff_nodes(n, o, info));
 
-            Node &info_this = info.child(0), &info_children = info.child(1);
-            EXPECT_TRUE(info_this.has_child("errors"));
-            EXPECT_EQ(info_this.fetch("errors").number_of_children(), n_num_children - n_num_children/2);
+            EXPECT_EQ(info["valid"].as_string(), "false");
+            EXPECT_TRUE(info["children"].has_child("diff"));
+            EXPECT_TRUE(info["children"].has_child("extra"));
+            EXPECT_FALSE(info["children"].has_child("missing"));
 
-            Node &info_errors = info_this.fetch("errors");
-            index_t ci = 0;
-            for(; ci < n_num_children / 2; ci++)
-            {
-                EXPECT_EQ(
-                    info_children.child(ci).child(0).fetch("valid").as_string(),
-                    "true");
-            }
-            for(index_t ei = 0; ci < n_num_children; ci++, ei++)
-            {
-                Node &info_child = info_errors.child(ei);
-                EXPECT_TRUE(info_child.dtype().is_string());
-                EXPECT_NE(info_child.as_string().find("arg"), std::string::npos);
-            }
+            Node &info_extra = info["children/extra"];
+            EXPECT_EQ(info_extra.number_of_children(), n_num_children/2+1);
+
+            Node &info_diff = info["children/diff"];
+            EXPECT_EQ(info_diff.number_of_children(), n_num_children/2);
         }
     }
 }
