@@ -156,7 +156,7 @@ TEST(conduit_tutorial, numeric_double_conversion_start)
 }
 
 //-----------------------------------------------------------------------------
-void must_have_doubles_function(double *vals,int num_vals)
+void must_have_doubles_function(double *vals,index_t num_vals)
 {
     for(int i = 0; i < num_vals; i++)
     {
@@ -191,7 +191,7 @@ void process_doubles(Node & n)
     res.print();
 
     double *dbl_vals = res.value();
-    int num_vals = res.dtype().number_of_elements();
+    index_t num_vals = res.dtype().number_of_elements();
     must_have_doubles_function(dbl_vals,num_vals);
 }
 
