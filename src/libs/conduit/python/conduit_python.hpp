@@ -62,6 +62,7 @@
 // conduit includes
 //---------------------------------------------------------------------------//
 #include "conduit.hpp"
+#include "conduit_python_exports.h"
 
 //---------------------------------------------------------------------------//
 // These methods are exposed via python capsule at conduit._C_API, 
@@ -153,8 +154,14 @@ static void **PyConduit_API;
 #define PyConduit_Node_Get_Node_Ptr  \
  (*(PyConduit_Node_Get_Node_Ptr_RETURN (*)PyConduit_Node_Get_Node_Ptr_PROTO) PyConduit_API[PyConduit_Node_Get_Node_Ptr_INDEX])
 
-
-
+//---------------------------------------------------------------------------//
+// Module entry point
+//---------------------------------------------------------------------------//
+#if PY_MAJOR_VERSION >= 3
+PyObject *CONDUIT_PYTHON_API PyInit_conduit_python(void);
+#else
+void CONDUIT_PYTHON_API initconduit_python(void);
+#endif
 
 //---------------------------------------------------------------------------//
 // import_conduit()
