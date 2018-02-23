@@ -158,9 +158,9 @@ static void **PyConduit_API;
 // Module entry point
 //---------------------------------------------------------------------------//
 #if PY_MAJOR_VERSION >= 3
-PyObject *CONDUIT_PYTHON_API PyInit_conduit_python(void);
+extern "C" PyObject *CONDUIT_PYTHON_API PyInit_conduit_python(void);
 #else
-void CONDUIT_PYTHON_API initconduit_python(void);
+extern "C" void CONDUIT_PYTHON_API initconduit_python(void);
 #endif
 
 //---------------------------------------------------------------------------//
