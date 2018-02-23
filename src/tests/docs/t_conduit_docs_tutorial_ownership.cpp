@@ -62,9 +62,9 @@ TEST(conduit_tutorial, mem_ownership_external)
 {
     CONDUIT_INFO("mem_ownership_external");
      
-    index_t vsize = 5;
+    int vsize = 5;
     std::vector<float64> vals(vsize,0.0);
-    for(index_t i=0;i<vsize;i++)
+    for(int i=0;i<vsize;i++)
     {
         vals[i] = 3.1415 * i;
     }
