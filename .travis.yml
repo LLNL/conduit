@@ -119,7 +119,7 @@ script:
   - if [ $ENABLE_DOCS = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~doc"; fi
   # versions and package selections (disable default options to speedup build)
   - export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}~openssl~ncurses"
-  - export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}~sqlite~readline"
+  - export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"
   - echo $SPACK_SPEC
   # build deps using uberenv
   - python scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}"
