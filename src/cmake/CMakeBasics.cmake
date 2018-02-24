@@ -106,8 +106,10 @@ endif()
 # Standard CTest Options
 ################################
 if(ENABLE_TESTS)
-    set(MEMORYCHECK_SUPPRESSIONS_FILE "${CMAKE_SOURCE_DIR}/cmake/valgrind.supp" CACHE PATH "")
+    set(MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes --leak-check=full --gen-suppressions=all")
+    file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}/cmake/valgrind.supp" MEMORYCHECK_SUPPRESSIONS_FILE)
     include(CTest)
+    message(STATUS "Memcheck suppressions file: ${MEMORYCHECK_SUPPRESSIONS_FILE}")
 endif()
 
 ##############################################################################
