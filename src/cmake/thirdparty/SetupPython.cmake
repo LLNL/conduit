@@ -72,7 +72,12 @@ if(PYTHONINTERP_FOUND)
         
         # check for python libs differs for windows python installs
         if(NOT WIN32)
-            set(PYTHON_GLOB_TEST "${PYTHON_LIB_DIR}/libpython*")
+            # use shared python if we are using shared libs
+            if(BUILD_SHARED_LIBS)
+                set(PYTHON_GLOB_TEST "${PYTHON_LIB_DIR}/libpython*${CMAKE_SHARED_LIBRARY_SUFFIX}")
+            else()
+                set(PYTHON_GLOB_TEST "${PYTHON_LIB_DIR}/libpython*${CMAKE_STATIC_LIBRARY_SUFFIX}")
+            endif()
         else()
             if(PYTHON_LIB_DIR)
                 set(PYTHON_GLOB_TEST "${PYTHON_LIB_DIR}/python*.lib")
