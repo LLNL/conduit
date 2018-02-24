@@ -901,12 +901,11 @@ Generator::Parser::walk_pure_json_schema(Node *node,
             Node *curr_node = new Node();
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
-            
+            node->append_node_ptr(curr_node);
+
             walk_pure_json_schema(curr_node,
                                   curr_schema,
                                   itr->value);
-        
-            node->append_node_ptr(curr_node);
         }
     }
     // List case 
