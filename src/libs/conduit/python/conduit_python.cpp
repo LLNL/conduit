@@ -83,7 +83,6 @@
 // conduit includes
 //---------------------------------------------------------------------------//
 #include "conduit.hpp"
-#include "conduit_python_exports.h"
 
 #define CONDUIT_MODULE
 #include "conduit_python.hpp"
@@ -4972,9 +4971,9 @@ static struct PyModuleDef conduit_python_module_def =
 extern "C" 
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
-PyObject *CONDUIT_PYTHON_API PyInit_conduit_python(void)
+PyObject *PyInit_conduit_python(void)
 #else
-void CONDUIT_PYTHON_API initconduit_python(void)
+void initconduit_python(void)
 #endif
 //---------------------------------------------------------------------------//
 {    
