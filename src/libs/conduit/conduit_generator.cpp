@@ -938,8 +938,8 @@ Generator::Parser::walk_pure_json_schema(Node *node,
                 Node * curr_node = new Node();
                 curr_node->set_schema_ptr(curr_schema);
                 curr_node->set_parent(node);
-                walk_pure_json_schema(curr_node,curr_schema,jvalue[i]);
                 node->append_node_ptr(curr_node);
+                walk_pure_json_schema(curr_node,curr_schema,jvalue[i]);
             }
         }
     }
@@ -1043,6 +1043,7 @@ Generator::Parser::walk_json_schema(Node   *node,
                     Node *curr_node = new Node();
                     curr_node->set_schema_ptr(curr_schema);
                     curr_node->set_parent(node);
+                    node->append_node_ptr(curr_node);
                     walk_json_schema(curr_node,
                                      curr_schema,
                                      data,
@@ -1051,7 +1052,6 @@ Generator::Parser::walk_json_schema(Node   *node,
                     // auto offset only makes sense when we have data
                     if(data != NULL)
                         curr_offset += curr_schema->total_strided_bytes();
-                    node->append_node_ptr(curr_node);
                 }
                 
             }
@@ -1114,7 +1114,7 @@ Generator::Parser::walk_json_schema(Node   *node,
                 Node *curr_node = new Node();
                 curr_node->set_schema_ptr(curr_schema);
                 curr_node->set_parent(node);
-                
+                node->append_node_ptr(curr_node);
                 walk_json_schema(curr_node,
                                  curr_schema,
                                  data,
@@ -1124,8 +1124,6 @@ Generator::Parser::walk_json_schema(Node   *node,
                 // auto offset only makes sense when we have data
                 if(data != NULL)
                     curr_offset += curr_schema->total_strided_bytes();
-                
-                node->append_node_ptr(curr_node);
             }
             
         }
@@ -1142,6 +1140,7 @@ Generator::Parser::walk_json_schema(Node   *node,
             Node *curr_node = new Node();
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
+            node->append_node_ptr(curr_node);
             walk_json_schema(curr_node,
                              curr_schema,
                              data,
@@ -1150,9 +1149,7 @@ Generator::Parser::walk_json_schema(Node   *node,
             // auto offset only makes sense when we have data
             if(data != NULL)
                 curr_offset += curr_schema->total_strided_bytes();
-            node->append_node_ptr(curr_node);
         }
-        
     }
     // Simplest case, handles "uint32", "float64", with extended type info
     else if(jvalue.IsString())
