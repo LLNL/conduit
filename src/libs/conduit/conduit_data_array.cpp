@@ -248,19 +248,18 @@ DataArray<T>::diff_compatible(const DataArray<T> &array, Node &info, const float
         if(dtype().is_char8_str())
         {
             // TODO(JRC): Currently, due to the way that strings are represented
-            // in C/C++ (i.e. null-terminated), this comparison isn't very useful.
-            // Consider comparing "a" with "aa"; the first string has two elements
-            // (i.e. "a" and "\0"), so will come back true for this diff when
-            // compared against "aa" (whose first two elements are "a" and "a").
-            // This behavior should be updated if a reasonable and useful
-            // interpretation is discovered for string diffs.
+            // in C/C++ (i.e. null-terminated), a 'compatible'-type comparison
+            // isn't very useful/intuitive (e.g. "a" isn't compatible with "aa"
+            // because of the null terminator). Until a better compatible compare
+            // strategy is found, 'diff_compatible' just uses the 'diff' comparison
+            // operation for strings.
             uint8 *t_compact_data = new uint8[dtype().bytes_compact()];
             compact_elements_to(t_compact_data);
             std::string t_string((const char*)t_compact_data, t_nelems);
 
             uint8 *o_compact_data = new uint8[array.dtype().bytes_compact()];
             array.compact_elements_to(o_compact_data);
-            std::string o_string((const char*)o_compact_data, t_nelems);
+            std::string o_string((const char*)o_compact_data, o_nelems);
 
             if(t_string != o_string)
             {
