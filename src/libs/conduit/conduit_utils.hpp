@@ -175,7 +175,7 @@
 /// The CONDUIT_EPSILON macro defines the default machine epsilon
 /// value used when comparing floating-point values. This value is used
 /// by default in all of the Conduit comparison operations (e.g.
-/// 'conduit::Node::equals' and 'conduit::Node::diff').
+/// 'conduit::Node::diff' and 'conduit::Node::diff_compatible').
 //
 //-----------------------------------------------------------------------------
 #define CONDUIT_EPSILON 1e-12

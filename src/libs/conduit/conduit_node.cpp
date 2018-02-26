@@ -13540,7 +13540,11 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
     if(t_dtid != n_dtid)
     {
         std::ostringstream oss;
-        oss << "data type mismatch (" << dtype().name() << "/" << n.dtype().name() << ")";
+        oss << "data type mismatch (" 
+            << dtype().name() 
+            << " vs " 
+            << n.dtype().name() 
+            << ")";
         log::error(info, protocol, oss.str());
         res = true;
     }
@@ -13706,7 +13710,11 @@ Node::diff_compatible(const Node &n, Node &info, const float64 epsilon) const
     if(t_dtid != n_dtid)
     {
         std::ostringstream oss;
-        oss << "data type incompatibility (" << dtype().name() << "/" << n.dtype().name() << ")";
+        oss << "data type incompatibility (" 
+            << dtype().name()
+            << " vs "
+            << n.dtype().name()
+            << ")";
         log::error(info, protocol, oss.str());
         res = true;
     }

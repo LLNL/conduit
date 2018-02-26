@@ -156,7 +156,7 @@ template <typename T>
 bool
 DataArray<T>::diff(const DataArray<T> &array, Node &info, const float64 epsilon) const 
 { 
-    const std::string protocol = "dataarray::diff";
+    const std::string protocol = "data_array::diff";
     bool res = false;
     info.reset();
 
@@ -166,7 +166,11 @@ DataArray<T>::diff(const DataArray<T> &array, Node &info, const float64 epsilon)
     if(t_nelems != o_nelems)
     {
         std::ostringstream oss;
-        oss << "data length mismatch (" << t_nelems << "/" << o_nelems << ")";
+        oss << "data length mismatch ("
+            << t_nelems
+            << " vs "
+            << o_nelems
+            << ")";
         log::error(info, protocol, oss.str());
         res = true;
     }
@@ -185,7 +189,11 @@ DataArray<T>::diff(const DataArray<T> &array, Node &info, const float64 epsilon)
             if(t_string != o_string)
             {
                 std::ostringstream oss;
-                oss << "data string mismatch (" << t_string << "/" << o_string << ")";
+                oss << "data string mismatch ("
+                    << "\"" << t_string << "\""
+                    << " vs "
+                    << "\"" << o_string << "\""
+                    << ")";
                 log::error(info, protocol, oss.str());
                 res = true;
             }
@@ -229,7 +237,7 @@ template <typename T>
 bool
 DataArray<T>::diff_compatible(const DataArray<T> &array, Node &info, const float64 epsilon) const 
 { 
-    const std::string protocol = "dataarray::diff_compatible";
+    const std::string protocol = "data_array::diff_compatible";
     bool res = false;
     info.reset();
 
@@ -239,7 +247,11 @@ DataArray<T>::diff_compatible(const DataArray<T> &array, Node &info, const float
     if(t_nelems > o_nelems)
     {
         std::ostringstream oss;
-        oss << "arg data length incompatible (" << t_nelems << "/" << o_nelems << ")";
+        oss << "arg data length incompatible ("
+            << t_nelems
+            << " vs "
+            << o_nelems
+            << ")";
         log::error(info, protocol, oss.str());
         res = true;
     }
@@ -264,7 +276,11 @@ DataArray<T>::diff_compatible(const DataArray<T> &array, Node &info, const float
             if(t_string != o_string)
             {
                 std::ostringstream oss;
-                oss << "data string mismatch (" << t_string << "/" << o_string << ")";
+                oss << "data string mismatch ("
+                    << "\"" << t_string << "\""
+                    << " vs "
+                    << "\"" << o_string << "\""
+                    << ")";
                 log::error(info, protocol, oss.str());
                 res = true;
             }
