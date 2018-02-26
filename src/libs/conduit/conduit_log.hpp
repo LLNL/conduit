@@ -44,20 +44,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_utils.hpp
+/// file: conduit_log.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_BLUEPRINT_UTILS_HPP
-#define CONDUIT_BLUEPRINT_UTILS_HPP
+#ifndef CONDUIT_LOG_HPP
+#define CONDUIT_LOG_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-
-#include "conduit_blueprint_exports.h"
-
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -66,50 +63,48 @@ namespace conduit
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint --
-//-----------------------------------------------------------------------------
-namespace blueprint
-{
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::utils --
+// -- begin conduit::utils --
 //-----------------------------------------------------------------------------
 namespace utils
 {
 
 //-----------------------------------------------------------------------------
-// Helpers for consistently logging info about the verification process.
-// (These are used internally in blueprint.)
+// -- begin conduit::utils::log --
 //-----------------------------------------------------------------------------
+namespace log
+{
 
 //-----------------------------------------------------------------------------
-void CONDUIT_BLUEPRINT_API log_info(conduit::Node &info,
-                                    const std::string &proto_name,
-                                    const std::string &msg);
+void CONDUIT_API info(conduit::Node &info,
+                      const std::string &proto_name,
+                      const std::string &msg);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_BLUEPRINT_API log_optional(conduit::Node &info,
-                                        const std::string &proto_name,
-                                        const std::string &msg);
-                                        
-//-----------------------------------------------------------------------------
-void CONDUIT_BLUEPRINT_API log_error(conduit::Node &info,
-                                     const std::string &proto_name,
-                                     const std::string &msg);
+void CONDUIT_API optional(conduit::Node &info,
+                          const std::string &proto_name,
+                          const std::string &msg);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_BLUEPRINT_API log_verify_result(conduit::Node &info,
-                                             bool res);
+void CONDUIT_API error(conduit::Node &info,
+                       const std::string &proto_name,
+                       const std::string &msg);
 
+//-----------------------------------------------------------------------------
+void CONDUIT_API validation(conduit::Node &info,
+                            bool res);
+
+//-----------------------------------------------------------------------------
+std::string CONDUIT_API quote(const std::string &str,
+                              bool pad_before = false);
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::utils --
+// -- end conduit::utils::log --
 //-----------------------------------------------------------------------------
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint --
+// -- end conduit::utils --
 //-----------------------------------------------------------------------------
 
 }
@@ -118,6 +113,3 @@ void CONDUIT_BLUEPRINT_API log_verify_result(conduit::Node &info,
 //-----------------------------------------------------------------------------
 
 #endif 
-
-
-

@@ -222,6 +222,52 @@ contains
 
     end subroutine t_node_set_float64
 
+    !--------------------------------------------------------------------------
+    subroutine t_node_diff
+        type(C_PTR) cnode1
+        type(C_PTR) cnode2
+        type(C_PTR) cinfo
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_diff")
+        !----------------------------------------------------------------------
+        
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n1;
+        ! Node n2;
+        ! Node info;
+        cnode1 = conduit_node_create()
+        cnode2 = conduit_node_create()
+        cinfo  = conduit_node_create()
+
+        ! n1["a"].set_float64(3.1415);
+        call conduit_node_set_path_float64(cnode1,"a",3.1415d+0)
+        ! n1.diff(n2,info,1e-12)
+        !! there is a diff
+        call assert_true( conduit_node_diff(cnode1,cnode2,cinfo,1d-12) .eqv. .true.)
+        ! n2["a"].set_float64(3.1415);
+        call conduit_node_set_path_float64(cnode2,"a",3.1415d+0)
+        ! n1.diff(n2,info,1e-12)
+        !! no diff
+        call assert_true( conduit_node_diff(cnode1,cnode2,cinfo,1d-12) .eqv. .false.)
+        ! n2["b"].set_float64(3.1415);
+        call conduit_node_set_path_float64(cnode2,"b",3.1415d+0)
+        ! n1.diff(n2,info,1e-12)
+        !! there is a diff
+        call assert_true( conduit_node_diff(cnode1,cnode2,cinfo,1d-12) .eqv. .true.)
+        
+        ! n1.diff(n2,info,1e-12)
+        !! but no diff compat
+        call assert_true( conduit_node_diff_compatible(cnode1,cnode2,cinfo,1d-12) .eqv. .false.)
+        
+        call conduit_node_destroy(cnode1)
+        call conduit_node_destroy(cnode2)
+        call conduit_node_destroy(cinfo)
+
+    end subroutine t_node_diff
+
 
 !------------------------------------------------------------------------------
 end module f_conduit_node
@@ -245,6 +291,7 @@ program fortran_test
   call t_node_set_int
   call t_node_set_double
   call t_node_set_float64
+  call t_node_diff
 
   
   call fruit_summary

@@ -70,6 +70,7 @@
 #include "conduit_schema.hpp"
 #include "conduit_generator.hpp"
 #include "conduit_node_iterator.hpp"
+#include "conduit_utils.hpp"
 
 
 //-----------------------------------------------------------------------------
@@ -3197,6 +3198,19 @@ public:
     bool             compatible(const Node &n) const
                         {return m_schema->compatible(n.schema());}
 
+    /// check for differences between this node and the given node, storing
+    //  the results digest in the provided data node
+    bool             diff(const Node &n,
+                          Node &info,
+                          const float64 epsilon = CONDUIT_EPSILON) const;
+
+    /// diff this node to the given node for compatibility (i.e. validate it
+    //  has everything that the instance node has), storing the results
+    //  digest in the provided data node
+    bool             diff_compatible(const Node &n,
+                                     Node &info,
+                                     const float64 epsilon = CONDUIT_EPSILON) const;
+
     ///
     /// info() creates a node that contains metadata about the current
     /// node's memory properties
@@ -3204,8 +3218,6 @@ public:
     /// TODO: this is inefficient w/o move semantics, but is very 
     /// convenient for testing and example programs.
     Node             info() const;
-
-    /// TODO: compare or operator== ?
 
 //-----------------------------------------------------------------------------
 // -- stdout print methods ---

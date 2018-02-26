@@ -171,6 +171,16 @@
 }                                                                    \
 
 //-----------------------------------------------------------------------------
+//
+/// The CONDUIT_EPSILON macro defines the default machine epsilon
+/// value used when comparing floating-point values. This value is used
+/// by default in all of the Conduit comparison operations (e.g.
+/// 'conduit::Node::diff' and 'conduit::Node::diff_compatible').
+//
+//-----------------------------------------------------------------------------
+#define CONDUIT_EPSILON 1e-12
+
+//-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
@@ -401,7 +411,6 @@ namespace utils
            oss << std::hex << value;
            return  oss.str();
      }
-
 
 //-----------------------------------------------------------------------------
 // floating point to string helper, strikes a balance of what we want 

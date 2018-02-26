@@ -56,6 +56,7 @@
 //-----------------------------------------------------------------------------
 #include "conduit_core.hpp"
 #include "conduit_data_type.hpp"
+#include "conduit_utils.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -129,6 +130,14 @@ public:
                         { return m_dtype;} 
     void           *data_ptr() const 
                         { return m_data;}
+
+    bool            compatible(const DataArray<T> &array) const;
+    bool            diff(const DataArray<T> &array,
+                         Node &info,
+                         const float64 epsilon = CONDUIT_EPSILON) const;
+    bool            diff_compatible(const DataArray<T> &array,
+                                    Node &info,
+                                    const float64 epsilon = CONDUIT_EPSILON) const;
 
 //-----------------------------------------------------------------------------
 // Setters

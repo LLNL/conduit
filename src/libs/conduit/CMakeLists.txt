@@ -85,6 +85,7 @@ set(conduit_headers
     conduit_error.hpp
     conduit_node_iterator.hpp
     conduit_schema.hpp
+    conduit_log.hpp
     conduit_utils.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_exports.h
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_config.h
@@ -113,6 +114,7 @@ set(conduit_sources
     conduit_node.cpp
     conduit_node_iterator.cpp
     conduit_schema.cpp
+    conduit_log.cpp
     conduit_utils.cpp
     )
 

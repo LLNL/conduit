@@ -305,6 +305,29 @@ module conduit
           logical(C_BOOL) :: res
         end function conduit_node_contiguous_with_node
 
+        !--------------------------------------------------------------------------
+        function conduit_node_diff(cnode,cother,cinfo,epsilon) result(res) &
+              bind(C, name="conduit_node_diff")
+          use iso_c_binding
+          implicit none
+          type(C_PTR), value, intent(IN) :: cnode
+          type(C_PTR), value, intent(IN) :: cother
+          type(C_PTR), value, intent(IN) :: cinfo
+          real(8), value, intent(IN) :: epsilon
+          logical(C_BOOL) :: res
+        end function conduit_node_diff
+
+        !--------------------------------------------------------------------------
+        function conduit_node_diff_compatible(cnode,cother,cinfo,epsilon) result(res) &
+              bind(C, name="conduit_node_diff_compatible")
+          use iso_c_binding
+          implicit none
+          type(C_PTR), value, intent(IN) :: cnode
+          type(C_PTR), value, intent(IN) :: cother
+          type(C_PTR), value, intent(IN) :: cinfo
+          real(8), value, intent(IN) :: epsilon
+          logical(C_BOOL) :: res
+        end function conduit_node_diff_compatible
 
        !--------------------------------------------------------------------------
        function conduit_node_compatible(cnode,cother) result(res) &
@@ -1370,6 +1393,7 @@ contains
         sub_node = c_conduit_node_fetch(cnode,trim(path) // C_NULL_CHAR)
         call conduit_node_as_char8_str(sub_node,f_out)
     end subroutine conduit_node_fetch_path_as_char8_str
+
 
 !------------------------------------------------------------------------------
 end module conduit

@@ -56,11 +56,14 @@
 
 // for sleep funcs
 #if defined(CONDUIT_PLATFORM_WINDOWS)
+#define NOMINMAX
 #include <Windows.h>
 #include <direct.h>
 #if (_MSC_VER && _MSC_VER < 1900)
     #define snprintf _snprintf
 #endif
+#undef min
+#undef max
 #else
 #include <time.h>
 #endif
@@ -73,6 +76,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <algorithm>
 #include <limits>
 
 

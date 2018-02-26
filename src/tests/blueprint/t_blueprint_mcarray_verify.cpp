@@ -58,7 +58,7 @@
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mcarray_verify, valid_separate)
+TEST(conduit_blueprint_mcarray_verify, mcarray_valid_separate)
 {
     Node n, info;
 
@@ -74,7 +74,7 @@ TEST(conduit_blueprint_mcarray_verify, valid_separate)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mcarray_verify, valid_contiguous)
+TEST(conduit_blueprint_mcarray_verify, mcarray_valid_contiguous)
 {
     Node n, info;
 
@@ -89,7 +89,7 @@ TEST(conduit_blueprint_mcarray_verify, valid_contiguous)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mcarray_verify, valid_interleaved)
+TEST(conduit_blueprint_mcarray_verify, mcarray_valid_interleaved)
 {
     Node n, info;
 
@@ -104,7 +104,7 @@ TEST(conduit_blueprint_mcarray_verify, valid_interleaved)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mcarray_verify, invalid_node_type)
+TEST(conduit_blueprint_mcarray_verify, mcarray_invalid_node_type)
 {
     Node n, info;
 
@@ -117,7 +117,7 @@ TEST(conduit_blueprint_mcarray_verify, invalid_node_type)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mcarray_verify, invalid_array_types)
+TEST(conduit_blueprint_mcarray_verify, mcarray_invalid_array_types)
 {
     Node n, info;
 
@@ -135,7 +135,7 @@ TEST(conduit_blueprint_mcarray_verify, invalid_array_types)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mcarray_verify, invalid_array_contents)
+TEST(conduit_blueprint_mcarray_verify, mcarray_invalid_array_contents)
 {
     Node n, info;
 
@@ -159,10 +159,107 @@ TEST(conduit_blueprint_mcarray_verify, invalid_array_contents)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mcarray_verify, verify_with_protocol)
+TEST(conduit_blueprint_mcarray_verify, mcarray_verify_with_protocol)
 {
     Node n, info;
 
     EXPECT_FALSE(blueprint::mcarray::verify("protocol",n,info));
     EXPECT_FALSE(blueprint::mcarray::verify("mcarray",n,info));
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mcarray_verify, mlarray_valid_simple)
+{
+    Node n, info;
+
+    n["a/x"].set(DataType::float64(2));
+    n["a/y"].set(DataType::float64(2));
+    n["b/x"].set(DataType::float64(2));
+    n["b/y"].set(DataType::float64(2));
+    EXPECT_TRUE(blueprint::mlarray::verify(n,info));
+
+    n["a/x"].set(DataType::int64(2));
+    n["b/x"].set(DataType::int64(2));
+    EXPECT_TRUE(blueprint::mlarray::verify(n,info));
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mcarray_verify, mlarray_valid_complex)
+{
+    Node n, info;
+
+    n["a/x/1"].set(DataType::float64(2));
+    EXPECT_TRUE(blueprint::mlarray::verify(n,info));
+    n["a/x/2"].set(DataType::float64(2));
+    EXPECT_TRUE(blueprint::mlarray::verify(n,info));
+
+    n["b/x/1"].set(DataType::float64(2));
+    EXPECT_FALSE(blueprint::mlarray::verify(n,info));
+    n["b/x/2"].set(DataType::float64(2));
+    EXPECT_TRUE(blueprint::mlarray::verify(n,info));
+
+    n["a/y"].set(DataType::float64(2));
+    EXPECT_FALSE(blueprint::mlarray::verify(n,info));
+    n["b/y"].set(DataType::float64(2));
+    EXPECT_FALSE(blueprint::mlarray::verify(n,info));
+
+    n["a/y"].reset();
+    n["b/y"].reset();
+    n["a/y/1"].set(DataType::float64(2));
+    n["a/y/2"].set(DataType::float64(2));
+    n["b/y/1"].set(DataType::float64(2));
+    n["b/y/2"].set(DataType::float64(2));
+    EXPECT_TRUE(blueprint::mlarray::verify(n,info));
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mcarray_verify, mlarray_invalid_type)
+{
+    Node n, info;
+
+    EXPECT_FALSE(blueprint::mlarray::verify(n,info));
+
+    n.set(DataType::char8_str(2));
+    EXPECT_FALSE(blueprint::mlarray::verify(n,info));
+
+    n.reset();
+    n["a/x"].set(DataType::float64(2));
+    n["a/y"].set(DataType::float64(2));
+    n["b/x"].set(DataType::float64(2));
+    n["b/y"].set(DataType::char8_str(2));
+    EXPECT_FALSE(blueprint::mlarray::verify(n,info));
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mcarray_verify, mlarray_invalid_structure)
+{
+    Node n, info;
+
+    n["a/x"].set(DataType::float64(2));
+    n["a/y"].set(DataType::float64(2));
+    n["b/x"].set(DataType::float64(2));
+    EXPECT_FALSE(blueprint::mlarray::verify(n,info));
+
+    n["b/z"].set(DataType::float64(2));
+    EXPECT_FALSE(blueprint::mlarray::verify(n,info));
+
+    n["b/y"].set(DataType::float64(2));
+    EXPECT_FALSE(blueprint::mlarray::verify(n,info));
+
+    n["a/z"].set(DataType::float64(3));
+    EXPECT_FALSE(blueprint::mlarray::verify(n,info));
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mcarray_verify, mlarray_verify_with_protocol)
+{
+    Node n, info;
+
+    EXPECT_FALSE(blueprint::mlarray::verify("protocol",n,info));
+    EXPECT_FALSE(blueprint::mlarray::verify("mlarray",n,info));
 }

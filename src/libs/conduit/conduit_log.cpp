@@ -44,14 +44,14 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_utils.cpp
+/// file: conduit_log.cpp
 ///
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // conduit includes
 //-----------------------------------------------------------------------------
-#include "conduit_blueprint.hpp"
+#include "conduit_log.hpp"
 
 using namespace conduit;
 
@@ -62,44 +62,40 @@ namespace conduit
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint --
-//-----------------------------------------------------------------------------
-namespace blueprint
-{
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::utils --
+// -- begin conduit::utils --
 //-----------------------------------------------------------------------------
 namespace utils
 {
 
 //-----------------------------------------------------------------------------
-// Helpers for consistently logging info about the verification process.
+// -- begin conduit::utils::log --
 //-----------------------------------------------------------------------------
+namespace log
+{
 
 //-----------------------------------------------------------------------------
 void
-log_info(Node &info,
-         const std::string &proto_name,
-         const std::string &msg)
+info(Node &info,
+     const std::string &proto_name,
+     const std::string &msg)
 {
     info["info"].append().set(proto_name + ": " + msg);
 }
 
 //-----------------------------------------------------------------------------
 void
-log_optional(Node &info,
-             const std::string &proto_name,
-             const std::string &msg)
+optional(Node &info,
+         const std::string &proto_name,
+         const std::string &msg)
 {
     info["optional"].append().set(proto_name + ": " + msg);
 }
 
 //-----------------------------------------------------------------------------
 void
-log_error(Node &info,
-         const std::string &proto_name,
-         const std::string &msg)
+error(Node &info,
+      const std::string &proto_name,
+      const std::string &msg)
 {
     info["errors"].append().set(proto_name + ": " + msg);
 }
@@ -107,29 +103,33 @@ log_error(Node &info,
 
 //-----------------------------------------------------------------------------
 void
-log_verify_result(Node &info,
-                  bool res)
+validation(Node &info,
+           bool res)
 {
-    if(res)
-    {
-        info["valid"] = "true";
-    }
-    else
-    {
-        info["valid"] = "false";
-    }
+    info["valid"] = res ? "true" : "false";
+}
+
+
+//-----------------------------------------------------------------------------
+std::string
+quote(const std::string &str,
+      bool pad_before)
+{
+    std::ostringstream oss;
+    oss << (pad_before ? " " : "") << "'" << str << "'" << (pad_before ? "" : " ");
+    return (str != "") ? oss.str() : "";
 }
 
 //-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::utils --
+// -- end conduit::utils::log --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint --
+// -- end conduit::utils --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

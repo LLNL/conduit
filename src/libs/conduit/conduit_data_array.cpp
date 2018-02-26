@@ -52,13 +52,20 @@
 //-----------------------------------------------------------------------------
 // -- standard includes -- 
 //-----------------------------------------------------------------------------
+#include <algorithm>
 #include <cstring>
+#include <limits>
 
 
 //-----------------------------------------------------------------------------
 // -- conduit includes -- 
 //-----------------------------------------------------------------------------
+#include "conduit_node.hpp"
 #include "conduit_utils.hpp"
+#include "conduit_log.hpp"
+
+// Easier access to the Conduit logging functions
+using namespace conduit::utils;
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -138,7 +145,183 @@ DataArray<T>::element(index_t idx) const
 
 //---------------------------------------------------------------------------//
 template <typename T> 
-std::string             
+bool
+DataArray<T>::compatible(const DataArray<T> &array) const 
+{ 
+    return dtype().compatible(array.dtype());
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+bool
+DataArray<T>::diff(const DataArray<T> &array, Node &info, const float64 epsilon) const 
+{ 
+    const std::string protocol = "data_array::diff";
+    bool res = false;
+    info.reset();
+
+    index_t t_nelems = number_of_elements();
+    index_t o_nelems = array.number_of_elements();
+
+    if(t_nelems != o_nelems)
+    {
+        std::ostringstream oss;
+        oss << "data length mismatch ("
+            << t_nelems
+            << " vs "
+            << o_nelems
+            << ")";
+        log::error(info, protocol, oss.str());
+        res = true;
+    }
+    else
+    {
+        if(dtype().is_char8_str())
+        {
+            uint8 *t_compact_data = new uint8[(size_t)dtype().bytes_compact()];
+            compact_elements_to(t_compact_data);
+            std::string t_string((const char*)t_compact_data, (size_t)t_nelems);
+
+            uint8 *o_compact_data = new uint8[(size_t)array.dtype().bytes_compact()];
+            array.compact_elements_to(o_compact_data);
+            std::string o_string((const char*)o_compact_data, (size_t)o_nelems);
+
+            if(t_string != o_string)
+            {
+                std::ostringstream oss;
+                oss << "data string mismatch ("
+                    << "\"" << t_string << "\""
+                    << " vs "
+                    << "\"" << o_string << "\""
+                    << ")";
+                log::error(info, protocol, oss.str());
+                res = true;
+            }
+
+            delete [] t_compact_data;
+            delete [] o_compact_data;
+        }
+        else
+        {
+            Node &info_value = info["value"];
+            info_value.set(DataType(array.dtype().id(), t_nelems));
+            T* info_ptr = (T*)info_value.data_ptr();
+
+            for(index_t i = 0; i < t_nelems; i++)
+            {
+                info_ptr[i] = (*this)[i] - array[i];
+                if(dtype().is_floating_point())
+                {
+                    res |= info_ptr[i] > epsilon || info_ptr[i] < -epsilon;
+                }
+                else
+                {
+                    res |= (*this)[i] != array[i];
+                }
+            }
+
+            if(res)
+            {
+                log::error(info, protocol, "data item(s) mismatch; see 'value' section");
+            }
+        }
+    }
+
+    log::validation(info, !res);
+
+    return res;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+bool
+DataArray<T>::diff_compatible(const DataArray<T> &array, Node &info, const float64 epsilon) const 
+{ 
+    const std::string protocol = "data_array::diff_compatible";
+    bool res = false;
+    info.reset();
+
+    index_t t_nelems = number_of_elements();
+    index_t o_nelems = array.number_of_elements();
+
+    if(t_nelems > o_nelems)
+    {
+        std::ostringstream oss;
+        oss << "arg data length incompatible ("
+            << t_nelems
+            << " vs "
+            << o_nelems
+            << ")";
+        log::error(info, protocol, oss.str());
+        res = true;
+    }
+    else
+    {
+        if(dtype().is_char8_str())
+        {
+            // TODO(JRC): Currently, due to the way that strings are represented
+            // in C/C++ (i.e. null-terminated), a 'compatible'-type comparison
+            // isn't very useful/intuitive (e.g. "a" isn't compatible with "aa"
+            // because of the null terminator). Until a better compatible compare
+            // strategy is found, 'diff_compatible' just uses the 'diff' comparison
+            // operation for strings.
+            uint8 *t_compact_data = new uint8[(size_t)dtype().bytes_compact()];
+            compact_elements_to(t_compact_data);
+            std::string t_string((const char*)t_compact_data, (size_t)t_nelems);
+
+            uint8 *o_compact_data = new uint8[(size_t)array.dtype().bytes_compact()];
+            array.compact_elements_to(o_compact_data);
+            std::string o_string((const char*)o_compact_data, (size_t)o_nelems);
+
+            if(t_string != o_string)
+            {
+                std::ostringstream oss;
+                oss << "data string mismatch ("
+                    << "\"" << t_string << "\""
+                    << " vs "
+                    << "\"" << o_string << "\""
+                    << ")";
+                log::error(info, protocol, oss.str());
+                res = true;
+            }
+
+            delete [] t_compact_data;
+            delete [] o_compact_data;
+        }
+        else
+        {
+            Node &info_value = info["value"];
+            info_value.set(DataType(array.dtype().id(), t_nelems));
+            T* info_ptr = (T*)info_value.data_ptr();
+
+            for(index_t i = 0; i < t_nelems; i++)
+            {
+                info_ptr[i] = (*this)[i] - array[i];
+                if(dtype().is_floating_point())
+                {
+                    res |= info_ptr[i] > epsilon || info_ptr[i] < -epsilon;
+                }
+                else
+                {
+                    res |= (*this)[i] != array[i];
+                }
+            }
+
+            if(res)
+            {
+                log::error(info, protocol, "data item(s) mismatch; see diff below");
+            }
+        }
+    }
+
+    log::validation(info, !res);
+
+    return res;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+std::string
 DataArray<T>::to_json() const 
 { 
     std::ostringstream oss;

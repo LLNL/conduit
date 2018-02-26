@@ -573,6 +573,44 @@ contains
         
     end subroutine t_node_obj_set_generic_fetch_ptr
 
+    !--------------------------------------------------------------------------
+    subroutine t_node_obj_diff
+        type(node) obj
+        type(node) other
+        type(node) info
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_obj_diff")
+        !----------------------------------------------------------------------
+        
+        obj   = conduit_node_obj_create()
+        other = conduit_node_obj_create()
+        info  = conduit_node_obj_create()
+
+        call obj%set_path("a",42)
+        call other%set_path("a",42)
+
+        ! no diff
+        call assert_true( obj%diff(other,info,1d-12) .eqv. .false.)
+        call other%set_path("b",3.1415d+0)
+
+        ! there is a  diff
+        call assert_true( obj%diff(other,info,1d-12) .eqv. .true.)
+
+        ! no compat diff
+        call assert_true( obj%diff_compatible(other,info,1d-12) .eqv. .false.)
+
+        call obj%set_path("b",3.1415d+0)
+
+        ! no diff
+        call assert_true( obj%diff(other,info,1d-12) .eqv. .false.)  
+
+        call conduit_node_obj_destroy(obj)
+        call conduit_node_obj_destroy(other)
+        call conduit_node_obj_destroy(info)
+        
+    end subroutine t_node_obj_diff
+
+
 !------------------------------------------------------------------------------
 end module f_conduit_node
 !------------------------------------------------------------------------------
@@ -593,12 +631,17 @@ program fortran_test
   call t_node_obj_set_int32
   call t_node_obj_set_double
   call t_node_obj_set_float64
+  call t_node_obj_set_and_fetch_path_float64_ptr
   call t_node_obj_fetch_int32
   call t_node_obj_set_int32_ptr
   call t_node_obj_set_external_int32_ptr
+  call t_node_obj_as_int32_ptr
+  call t_node_obj_as_int32_ptr_read_scalar
   call t_node_obj_append
   call t_node_obj_set_fetch_path_int32
   call t_node_obj_set_fetch_generic
+  call t_node_obj_set_generic_fetch_ptr
+  call t_node_obj_diff
 
   call fruit_summary
   call fruit_finalize

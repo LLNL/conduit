@@ -48,10 +48,25 @@
 ///
 //-----------------------------------------------------------------------------
 #include "conduit_node.hpp"
+#include "conduit_log.hpp"
+
+#if !defined(CONDUIT_PLATFORM_WINDOWS)
+//
+// mmap interface not available on windows
+// 
+#include <sys/mman.h>
+#include <unistd.h>
+#else
+#define NOMINMAX
+#undef min
+#undef max
+#include "Windows.h"
+#endif
 
 //-----------------------------------------------------------------------------
 // -- standard cpp lib includes -- 
 //-----------------------------------------------------------------------------
+#include <algorithm>
 #include <iostream>
 #include <map>
 
@@ -66,22 +81,14 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#if !defined(CONDUIT_PLATFORM_WINDOWS)
-//
-// mmap interface not available on windows
-// 
-#include <sys/mman.h>
-#include <unistd.h>
-#else
-#include "Windows.h"
-#endif
-
 //-----------------------------------------------------------------------------
 // -- conduit includes -- 
 //-----------------------------------------------------------------------------
 #include "conduit_error.hpp"
 #include "conduit_utils.hpp"
 
+// Easier access to the Conduit logging functions
+using namespace conduit::utils;
 
 //-----------------------------------------------------------------------------
 //
@@ -13516,6 +13523,326 @@ Node::find_first_data_ptr() const
         res = element_ptr(0);
     }
     
+    return res;
+}
+
+//---------------------------------------------------------------------------//
+bool
+Node::diff(const Node &n, Node &info, const float64 epsilon) const
+{
+    const std::string protocol = "node::diff";
+    bool res = false;
+    info.reset();
+
+    index_t t_dtid  = dtype().id();
+    index_t n_dtid  = n.dtype().id();
+
+    if(t_dtid != n_dtid)
+    {
+        std::ostringstream oss;
+        oss << "data type mismatch (" 
+            << dtype().name() 
+            << " vs " 
+            << n.dtype().name() 
+            << ")";
+        log::error(info, protocol, oss.str());
+        res = true;
+    }
+    else if(t_dtid == DataType::EMPTY_ID)
+    {
+        // no-op; empty nodes cannot have differences
+    }
+    else if(t_dtid == DataType::OBJECT_ID)
+    {
+        Node &info_children = info["children"];
+
+        NodeConstIterator child_itr;
+        child_itr = children();
+        while(child_itr.has_next())
+        {
+            const conduit::Node &t_child = child_itr.next();
+            const std::string child_path = child_itr.name();
+
+            if(!n.has_child(child_path))
+            {
+                info_children["extra"].append().set(child_path);
+                res = true;
+            }
+            else
+            {
+                Node &info_child = info_children["diff"][child_path];
+                res |= t_child.diff(n.fetch(child_path), info_child, epsilon);
+            }
+        }
+
+        child_itr = n.children();
+        while(child_itr.has_next())
+        {
+            const conduit::Node &n_child = child_itr.next();
+            const std::string child_path = child_itr.name();
+
+            if(!has_child(child_path))
+            {
+                info_children["missing"].append().set(child_path);
+                res = true;
+            }
+            else
+            {
+                Node &info_child = info_children["diff"][child_path];
+                res |= fetch(child_path).diff(n_child, info_child, epsilon);
+            }
+        }
+    }
+    else if(t_dtid == DataType::LIST_ID)
+    {
+        Node &info_children = info["children"];
+
+        index_t t_nchild = number_of_children();
+        index_t n_nchild = n.number_of_children();
+
+        index_t i = 0;
+        for(; i < std::min(t_nchild, n_nchild); i++)
+        {
+            const Node &t_child = child(i);
+            const Node &n_child = n.child(i);
+            res |= t_child.diff(n_child, info_children["diff"].append(), epsilon);
+        }
+        for(; i < std::max(t_nchild, n_nchild); i++)
+        {
+            const std::string diff_type = (i >= t_nchild) ? "missing" : "extra";
+            info_children[diff_type].append().set(i);
+            res = true;
+        }
+    }
+    else // leaf node
+    {
+        if(dtype().is_int8())
+        {
+            int8_array t_array = value();
+            int8_array n_array = n.value();
+            res |= t_array.diff(n_array, info, epsilon);
+        }
+        else if(dtype().is_int16())
+        {
+            int16_array t_array = value();
+            int16_array n_array = n.value();
+            res |= t_array.diff(n_array, info, epsilon);
+        }
+        else if(dtype().is_int32())
+        {
+            int32_array t_array = value();
+            int32_array n_array = n.value();
+            res |= t_array.diff(n_array, info, epsilon);
+        }
+        else if(dtype().is_int64())
+        {
+            int64_array t_array = value();
+            int64_array n_array = n.value();
+            res |= t_array.diff(n_array, info, epsilon);
+        }
+        else if(dtype().is_uint8())
+        {
+            uint8_array t_array = value();
+            uint8_array n_array = n.value();
+            res |= t_array.diff(n_array, info, epsilon);
+        }
+        else if(dtype().is_uint16())
+        {
+            uint16_array t_array = value();
+            uint16_array n_array = n.value();
+            res |= t_array.diff(n_array, info, epsilon);
+        }
+        else if(dtype().is_uint32())
+        {
+            uint32_array t_array = value();
+            uint32_array n_array = n.value();
+            res |= t_array.diff(n_array, info, epsilon);
+        }
+        else if(dtype().is_uint64())
+        {
+            uint64_array t_array = value();
+            uint64_array n_array = n.value();
+            res |= t_array.diff(n_array, info, epsilon);
+        }
+        else if(dtype().is_float32())
+        {
+            float32_array t_array = value();
+            float32_array n_array = n.value();
+            res |= t_array.diff(n_array, info, epsilon);
+        }
+        else if(dtype().is_float64())
+        {
+            float64_array t_array = value();
+            float64_array n_array = n.value();
+            res |= t_array.diff(n_array, info, epsilon);
+        }
+        else if(dtype().is_char8_str())
+        {
+            // NOTE: Can't use 'value' for characters since type aliasing can
+            // confuse the 'char' type on various platforms.
+            char_array t_array((const void*)as_char8_str(), dtype());
+            char_array n_array((const void*)n.as_char8_str(), n.dtype());
+            res |= t_array.diff(n_array, info, epsilon);
+        }
+        else
+        {
+            CONDUIT_ERROR("<Node::diff> unrecognized data type");
+            res = true;
+        }
+    }
+
+    log::validation(info, !res);
+
+    return res;
+}
+
+//---------------------------------------------------------------------------//
+bool
+Node::diff_compatible(const Node &n, Node &info, const float64 epsilon) const
+{
+    const std::string protocol = "node::diff_compatible";
+    bool res = false;
+    info.reset();
+
+    index_t t_dtid  = dtype().id();
+    index_t n_dtid  = n.dtype().id();
+
+    if(t_dtid != n_dtid)
+    {
+        std::ostringstream oss;
+        oss << "data type incompatibility (" 
+            << dtype().name()
+            << " vs "
+            << n.dtype().name()
+            << ")";
+        log::error(info, protocol, oss.str());
+        res = true;
+    }
+    else if(t_dtid == DataType::EMPTY_ID)
+    {
+        // no-op; empty nodes cannot have differences
+    }
+    else if(t_dtid == DataType::OBJECT_ID)
+    {
+        Node &info_children = info["children"];
+
+        NodeConstIterator child_itr = children();
+        while(child_itr.has_next())
+        {
+            const conduit::Node &t_child = child_itr.next();
+            const std::string child_path = child_itr.name();
+
+            if(!n.has_child(child_path))
+            {
+                info_children["extra"].append().set(child_path);
+                res = true;
+            }
+            else
+            {
+                Node &info_child = info_children["diff"][child_path];
+                res |= t_child.diff_compatible(n.fetch(child_path), info_child, epsilon);
+            }
+        }
+    }
+    else if(t_dtid == DataType::LIST_ID)
+    {
+        Node &info_children = info["children"];
+
+        index_t t_nchild = number_of_children();
+        index_t n_nchild = n.number_of_children();
+
+        index_t i = 0;
+        for(; i < std::min(t_nchild, n_nchild); i++)
+        {
+            const Node &t_child = child(i);
+            const Node &n_child = n.child(i);
+            res |= t_child.diff_compatible(n_child, info_children["diff"].append(), epsilon);
+        }
+        for(; i < t_nchild; i++)
+        {
+            info_children["extra"].append().set(i);
+            res = true;
+        }
+    }
+    else // leaf node
+    {
+        if(dtype().is_int8())
+        {
+            int8_array t_array = value();
+            int8_array n_array = n.value();
+            res |= t_array.diff_compatible(n_array, info, epsilon);
+        }
+        else if(dtype().is_int16())
+        {
+            int16_array t_array = value();
+            int16_array n_array = n.value();
+            res |= t_array.diff_compatible(n_array, info, epsilon);
+        }
+        else if(dtype().is_int32())
+        {
+            int32_array t_array = value();
+            int32_array n_array = n.value();
+            res |= t_array.diff_compatible(n_array, info, epsilon);
+        }
+        else if(dtype().is_int64())
+        {
+            int64_array t_array = value();
+            int64_array n_array = n.value();
+            res |= t_array.diff_compatible(n_array, info, epsilon);
+        }
+        else if(dtype().is_uint8())
+        {
+            uint8_array t_array = value();
+            uint8_array n_array = n.value();
+            res |= t_array.diff_compatible(n_array, info, epsilon);
+        }
+        else if(dtype().is_uint16())
+        {
+            uint16_array t_array = value();
+            uint16_array n_array = n.value();
+            res |= t_array.diff_compatible(n_array, info, epsilon);
+        }
+        else if(dtype().is_uint32())
+        {
+            uint32_array t_array = value();
+            uint32_array n_array = n.value();
+            res |= t_array.diff_compatible(n_array, info, epsilon);
+        }
+        else if(dtype().is_uint64())
+        {
+            uint64_array t_array = value();
+            uint64_array n_array = n.value();
+            res |= t_array.diff_compatible(n_array, info, epsilon);
+        }
+        else if(dtype().is_float32())
+        {
+            float32_array t_array = value();
+            float32_array n_array = n.value();
+            res |= t_array.diff_compatible(n_array, info, epsilon);
+        }
+        else if(dtype().is_float64())
+        {
+            float64_array t_array = value();
+            float64_array n_array = n.value();
+            res |= t_array.diff_compatible(n_array, info, epsilon);
+        }
+        else if(dtype().is_char8_str())
+        {
+            // NOTE: Can't use 'value' for characters since type aliasing can
+            // confuse the 'char' type on various platforms.
+            char_array t_array((const void*)as_char8_str(), dtype());
+            char_array n_array((const void*)n.as_char8_str(), n.dtype());
+            res |= t_array.diff_compatible(n_array, info, epsilon);
+        }
+        else
+        {
+            CONDUIT_ERROR("<Node::diff_compatible> unrecognized data type");
+            res = true;
+        }
+    }
+
+    log::validation(info, !res);
+
     return res;
 }
 
