@@ -174,9 +174,9 @@ TEST(conduit_node_compare, compare_leaf_numeric)
                 for(index_t vi = 0; vi < 5; vi++)
                 {
                     bool should_uneq = vi == 0 || vi == 4;
-                    bool are_uneq = (bool) memcmp(&n_data[vi*type_bytes],
-                                                  &o_data[vi*type_bytes],
-                                                  (size_t)type_bytes);
+                    bool are_uneq = (0 != memcmp(&n_data[vi*type_bytes],
+                                                 &o_data[vi*type_bytes],
+                                                 (size_t)type_bytes));
                     EXPECT_EQ(are_uneq, should_uneq);
                 }
             }
