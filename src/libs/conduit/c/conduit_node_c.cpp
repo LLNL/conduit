@@ -204,6 +204,32 @@ conduit_node_contiguous_with_address(const conduit_node *cnode,
     return (int)cpp_node(cnode)->contiguous_with(address);
 }
 
+
+//-----------------------------------------------------------------------------
+int
+conduit_node_diff(const conduit_node *cnode,
+                  const conduit_node *cother,
+                  conduit_node *cinfo,
+                  conduit_float64 epsilon)
+{
+    return (int) cpp_node(cnode)->diff(cpp_node_ref(cother),
+                                       cpp_node_ref(cinfo),
+                                       epsilon);
+}
+
+
+//-----------------------------------------------------------------------------
+int
+conduit_node_diff_compatible(const conduit_node *cnode,
+                             const conduit_node *cother,
+                             conduit_node *cinfo,
+                             conduit_float64 epsilon)
+{
+    return (int) cpp_node(cnode)->diff_compatible(cpp_node_ref(cother),
+                                                  cpp_node_ref(cinfo),
+                                                  epsilon);
+}
+
 //-----------------------------------------------------------------------------
 void
 conduit_node_info(const conduit_node *cnode,

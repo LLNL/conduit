@@ -122,3 +122,62 @@ TEST(c_conduit_node, simple_hier)
 }
 
 
+
+//-----------------------------------------------------------------------------
+TEST(c_conduit_node, c_diff)
+{
+    int     a_val  = 10;
+    int     b_val  = 20;
+    double  c_val  = 30.0;
+    
+    conduit_node *ninfo = conduit_node_create();
+    
+    conduit_node *n1 = conduit_node_create();
+    
+    conduit_node *a1 = conduit_node_fetch(n1,"a");
+    conduit_node *b1 = conduit_node_fetch(n1,"b");
+    conduit_node *c1 = conduit_node_fetch(n1,"c");
+
+    conduit_node_set_int(a1,a_val);
+    conduit_node_set_int(b1,b_val);
+    conduit_node_set_double(c1,c_val);
+
+    conduit_node *n2 = conduit_node_create();
+    
+    conduit_node *a2 = conduit_node_fetch(n2,"a");
+    conduit_node *b2 = conduit_node_fetch(n2,"b");
+    conduit_node *c2 = conduit_node_fetch(n2,"c");
+
+    conduit_node_set_int(a2,a_val);
+    conduit_node_set_int(b2,b_val);
+    conduit_node_set_double(c2,c_val);
+    
+    // no diff
+    EXPECT_FALSE(conduit_node_diff(n1,n2,ninfo,1e-12));
+
+    conduit_node_set_double(c2,32.0);
+
+    // there is a diff
+    EXPECT_TRUE(conduit_node_diff(n1,n2,ninfo,1e-12));
+    
+    conduit_node_set_double(c2,30.0);
+    
+    conduit_node *d2 = conduit_node_fetch(n2,"d");
+    conduit_node_set_double(d2,42.0);
+
+    // there is diff
+    EXPECT_TRUE(conduit_node_diff(n1,n2,ninfo,1e-12));
+    // no diff compat
+    EXPECT_FALSE(conduit_node_diff_compatible(n1,n2,ninfo,1e-12));
+    
+    conduit_node_set_double(c2,32.0);
+    
+    // there is a diff compat
+    EXPECT_TRUE(conduit_node_diff_compatible(n1,n2,ninfo,1e-12));
+    
+    conduit_node_destroy(n1);
+    conduit_node_destroy(n2);
+    conduit_node_destroy(ninfo);
+
+    
+}

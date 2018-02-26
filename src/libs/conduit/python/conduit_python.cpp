@@ -3685,6 +3685,114 @@ PyConduit_Node_remove(PyConduit_Node *self,
 }
 
 
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_diff(PyConduit_Node* self,
+                    PyObject* args,
+                    PyObject* kwargs)
+{
+     PyObject *py_other = NULL;
+     PyObject *py_info  = NULL;
+     double    eps      = CONDUIT_EPSILON;
+    
+     static const char *kwlist[] = {"other",
+                                    "info",
+                                    "epsilon",
+                                    NULL};
+
+     if (!PyArg_ParseTupleAndKeywords(args,
+                                      kwargs,
+                                      "OO|d",
+                                      const_cast<char**>(kwlist),
+                                      &py_other, &py_info, &eps))
+     {
+         return (NULL);
+     }
+     
+     if(!PyConduit_Node_Check(py_other))
+     {
+         PyErr_SetString(PyExc_TypeError,
+                         "Node diff 'other' argument must be a "
+                         "Conduit Node");
+         return NULL;
+     }
+
+     if(!PyConduit_Node_Check(py_info))
+     {
+         PyErr_SetString(PyExc_TypeError,
+                         "Node diff 'info' argument must be a "
+                         "Conduit Node");
+         return NULL;
+     }
+
+    Node *other_ptr = ((PyConduit_Node*)py_other)->node;
+    Node *info_ptr  = ((PyConduit_Node*)py_info)->node;
+
+    if( self->node->diff(*other_ptr,*info_ptr,eps) )
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_diff_compatible(PyConduit_Node* self,
+                               PyObject* args,
+                               PyObject* kwargs)
+{
+     PyObject *py_other = NULL;
+     PyObject *py_info  = NULL;
+     double    eps      = CONDUIT_EPSILON;
+    
+     static const char *kwlist[] = {"other",
+                                    "info",
+                                    "epsilon",
+                                    NULL};
+
+     if (!PyArg_ParseTupleAndKeywords(args,
+                                      kwargs,
+                                      "OO|d",
+                                      const_cast<char**>(kwlist),
+                                      &py_other, &py_info, &eps))
+     {
+         return (NULL);
+     }
+     
+     if(!PyConduit_Node_Check(py_other))
+     {
+         PyErr_SetString(PyExc_TypeError,
+                         "Node diff_compatible 'other' argument must be a "
+                         "Conduit Node");
+         return NULL;
+     }
+
+     if(!PyConduit_Node_Check(py_info))
+     {
+         PyErr_SetString(PyExc_TypeError,
+                         "Node diff_compatible 'info' argument must be a "
+                         "Conduit Node");
+         return NULL;
+     }
+
+    Node *other_ptr = ((PyConduit_Node*)py_other)->node;
+    Node *info_ptr  = ((PyConduit_Node*)py_info)->node;
+
+    if( self->node->diff_compatible(*other_ptr,*info_ptr,eps) )
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+
+
 //-----------------------------------------------------------------------------
 //
 // -- Node information methods --
@@ -4165,6 +4273,16 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      (PyCFunction)PyConduit_Node_remove,
      METH_VARARGS | METH_KEYWORDS, 
      "Remove as node at a given index or path."},
+    //-----------------------------------------------------------------------//
+    {"diff", 
+     (PyCFunction)PyConduit_Node_diff,
+     METH_VARARGS | METH_KEYWORDS, 
+     "Diff node with another node."},
+    //-----------------------------------------------------------------------//
+    {"diff_compatible", 
+     (PyCFunction)PyConduit_Node_diff_compatible,
+     METH_VARARGS | METH_KEYWORDS, 
+     "Diff node with compatible parts of another node."},
     //-----------------------------------------------------------------------//
     {"value",
      (PyCFunction)PyConduit_Node_value,

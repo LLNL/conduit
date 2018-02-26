@@ -251,6 +251,25 @@ class Test_Conduit_Node(unittest.TestCase):
             for i in range(len(ext_data)):
                 self.assertEqual(n.value()[i], ext_data[i])
 
+    def test_diff(self):
+        n1 = Node()
+        n2 = Node()
+        info = Node()
+        n1['a'] = 1
+        self.assertTrue(n1.diff(n2,info))
+        print(info)
+        n2['a'] = 1
+        self.assertFalse(n1.diff(n2,info))
+
+        
+        n2['b'] = 2.0
+        self.assertTrue(n1.diff(n2,info))
+        self.assertFalse(n1.diff_compatible(n2,info))
+        n1['b'] = 1.0
+        self.assertFalse(n1.diff(n2,info,10))
+
+
+
 if __name__ == '__main__':
     unittest.main()
 

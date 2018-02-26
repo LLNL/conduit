@@ -140,6 +140,17 @@ CONDUIT_API int conduit_node_contiguous_with_address(const conduit_node *cnode,
                                                      void *address);
 
 //-----------------------------------------------------------------------------
+CONDUIT_API int conduit_node_diff(const conduit_node *cnode,
+                                  const conduit_node *cother,
+                                  conduit_node *cinfo,
+                                  conduit_float64 epsilon);
+
+CONDUIT_API int conduit_node_diff_compatible(const conduit_node *cnode,
+                                             const conduit_node *cother,
+                                             conduit_node *cinfo,
+                                             conduit_float64 epsilon);
+
+//-----------------------------------------------------------------------------
 CONDUIT_API int conduit_node_compatible(const conduit_node *cnode,
                                         const conduit_node *cother);
 
