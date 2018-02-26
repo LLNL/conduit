@@ -149,12 +149,12 @@ TEST(conduit_node_compare, compare_leaf_numeric)
             const index_t type_bytes = leaf_type.stride();
             const index_t leaf_bytes = leaf_type.bytes_compact();
 
-            conduit_byte* n_data = new conduit_byte[leaf_bytes];
-            memset(n_data, 0, leaf_bytes);
+            conduit_byte* n_data = new conduit_byte[(size_t)leaf_bytes];
+            memset(n_data, 0, (size_t)leaf_bytes);
             Node n(leaf_type, (void*)n_data, true);
 
-            conduit_byte* o_data = new conduit_byte[leaf_bytes];
-            memcpy(o_data, n_data, leaf_bytes);
+            conduit_byte* o_data = new conduit_byte[(size_t)leaf_bytes];
+            memcpy(o_data, n_data, (size_t)leaf_bytes);
             Node o(leaf_type, (void*)o_data, true);
 
             { // Leaf Similarity Test //
@@ -174,8 +174,9 @@ TEST(conduit_node_compare, compare_leaf_numeric)
                 for(index_t vi = 0; vi < 5; vi++)
                 {
                     bool should_uneq = vi == 0 || vi == 4;
-                    bool are_uneq = memcmp(&n_data[vi*type_bytes],
-                                           &o_data[vi*type_bytes], type_bytes);
+                    bool are_uneq = (bool) memcmp(&n_data[vi*type_bytes],
+                                                  &o_data[vi*type_bytes],
+                                                  (size_t)type_bytes);
                     EXPECT_EQ(are_uneq, should_uneq);
                 }
             }
@@ -200,7 +201,7 @@ TEST(conduit_node_compare, compare_leaf_string)
             std::string comp_str = compare_strs[ci];
             std::string diff_str = comp_str;
             {
-                index_t test_len = comp_str.length();
+                size_t test_len = comp_str.length();
                 diff_str[test_len-1] += 1;
             }
 
@@ -244,8 +245,8 @@ TEST(conduit_node_compare, compare_leaf_mismatch)
 
             const index_t max_bytes = std::max(
                 curr_type.bytes_compact(), next_type.bytes_compact());
-            conduit_byte* max_data = new conduit_byte[max_bytes];
-            memset(max_data, 0, max_bytes);
+            conduit_byte* max_data = new conduit_byte[(size_t)max_bytes];
+            memset(max_data, 0, (size_t)max_bytes);
 
             Node n(curr_type, (void*)max_data, true);
             Node o(next_type, (void*)max_data, true);
