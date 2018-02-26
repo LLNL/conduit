@@ -61,33 +61,35 @@ env:
     #  cmake 3.9.4
     #  coverage of unit tests
     #################################
+    # TODO re-enable docs after resolving doxygen dep build issues
+    #################################
     # everything on, shared libs, python 2.7
     # TODO turn on coverage for this case
     - BUILD_SHARED_LIBS=ON
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
-      ENABLE_DOCS=ON
+      ENABLE_DOCS=OFF
       PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
     # mpi and docs on, shared libs, python 2.7
     - BUILD_SHARED_LIBS=OFF
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
-      ENABLE_DOCS=ON
+      ENABLE_DOCS=OFF
       PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
     # mpi and docs on, shared libs, python 3.6
     - BUILD_SHARED_LIBS=ON
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
-      ENABLE_DOCS=ON
+      ENABLE_DOCS=OFF
       PYTHON_VERSION=3.6.3
       CMAKE_VERSION=3.9.4
     # mpi and docs on, static libs, python 3.6
     - BUILD_SHARED_LIBS=OFF
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
-      ENABLE_DOCS=ON
+      ENABLE_DOCS=OFF
       PYTHON_VERSION=3.6.3
       CMAKE_VERSION=3.9.4
 addons:
