@@ -239,8 +239,8 @@ bool verify_mcarray_field(const std::string &protocol,
     if(res)
     {
         const Node &field_node = node[field_name];
-
-        if((res = blueprint::mcarray::verify(field_node,field_info)))
+        res = blueprint::mcarray::verify(field_node,field_info);
+        if(res)
         {
             log::info(info, protocol, log::quote(field_name) + "is an mcarray");
         }
@@ -268,8 +268,8 @@ bool verify_mlarray_field(const std::string &protocol,
     if(res)
     {
         const Node &field_node = node[field_name];
-
-        if((res = blueprint::mlarray::verify(field_node,field_info)))
+        res = blueprint::mlarray::verify(field_node,field_info);
+        if(res)
         {
             log::info(info, protocol, log::quote(field_name) + "is an mlarray");
         }

@@ -396,24 +396,24 @@ bool verify(const conduit::Node &n,
         }
     }
 
-    std::vector<NodeVector> nodes_by_depth(node_max_depth + 1);
+    std::vector<NodeVector> nodes_by_depth((size_t)(node_max_depth + 1));
     for(NodeMap::iterator node_it = node_depth_map.begin();
         node_it != node_depth_map.end(); ++node_it)
     {
-        nodes_by_depth[node_it->second].push_back(node_it->first);
+        nodes_by_depth[(size_t)node_it->second].push_back(node_it->first);
     }
 
     // Verify Uniformity of Internal Tree Structure //
 
     for(index_t curr_depth = 0; curr_depth < node_max_depth; curr_depth++)
     {
-        const NodeVector &depth_nodes = nodes_by_depth[curr_depth];
+        const NodeVector &depth_nodes = nodes_by_depth[(size_t)curr_depth];
         std::vector<std::string> depth_children = depth_nodes[0]->child_names();
         std::set<std::string> depth_childset(depth_children.begin(), depth_children.end());
 
         for(index_t node_idx = 0; node_idx < (index_t)depth_nodes.size() && res; node_idx++)
         {
-            const conduit::Node* curr_node = depth_nodes[node_idx];
+            const conduit::Node* curr_node = depth_nodes[(size_t)node_idx];
             const std::vector<std::string> curr_children = curr_node->child_names();
             std::set<std::string> curr_childset(curr_children.begin(), curr_children.end());
 
@@ -431,12 +431,12 @@ bool verify(const conduit::Node &n,
 
     {
         index_t curr_depth = node_max_depth;
-        const NodeVector &depth_nodes = nodes_by_depth[curr_depth];
+        const NodeVector &depth_nodes = nodes_by_depth[(size_t)curr_depth];
         const index_t depth_elems = depth_nodes[0]->dtype().number_of_elements();
 
         for(index_t node_idx = 0; node_idx < (index_t)depth_nodes.size() && res; node_idx++)
         {
-            const conduit::Node* curr_node = depth_nodes[node_idx];
+            const conduit::Node* curr_node = depth_nodes[(size_t)node_idx];
 
             if(!curr_node->dtype().is_number())
             {

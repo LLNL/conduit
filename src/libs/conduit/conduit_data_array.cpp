@@ -178,13 +178,13 @@ DataArray<T>::diff(const DataArray<T> &array, Node &info, const float64 epsilon)
     {
         if(dtype().is_char8_str())
         {
-            uint8 *t_compact_data = new uint8[dtype().bytes_compact()];
+            uint8 *t_compact_data = new uint8[(size_t)dtype().bytes_compact()];
             compact_elements_to(t_compact_data);
-            std::string t_string((const char*)t_compact_data, t_nelems);
+            std::string t_string((const char*)t_compact_data, (size_t)t_nelems);
 
-            uint8 *o_compact_data = new uint8[array.dtype().bytes_compact()];
+            uint8 *o_compact_data = new uint8[(size_t)array.dtype().bytes_compact()];
             array.compact_elements_to(o_compact_data);
-            std::string o_string((const char*)o_compact_data, o_nelems);
+            std::string o_string((const char*)o_compact_data, (size_t)o_nelems);
 
             if(t_string != o_string)
             {
@@ -265,13 +265,13 @@ DataArray<T>::diff_compatible(const DataArray<T> &array, Node &info, const float
             // because of the null terminator). Until a better compatible compare
             // strategy is found, 'diff_compatible' just uses the 'diff' comparison
             // operation for strings.
-            uint8 *t_compact_data = new uint8[dtype().bytes_compact()];
+            uint8 *t_compact_data = new uint8[(size_t)dtype().bytes_compact()];
             compact_elements_to(t_compact_data);
-            std::string t_string((const char*)t_compact_data, t_nelems);
+            std::string t_string((const char*)t_compact_data, (size_t)t_nelems);
 
-            uint8 *o_compact_data = new uint8[array.dtype().bytes_compact()];
+            uint8 *o_compact_data = new uint8[(size_t)array.dtype().bytes_compact()];
             array.compact_elements_to(o_compact_data);
-            std::string o_string((const char*)o_compact_data, o_nelems);
+            std::string o_string((const char*)o_compact_data, (size_t)o_nelems);
 
             if(t_string != o_string)
             {
@@ -321,7 +321,7 @@ DataArray<T>::diff_compatible(const DataArray<T> &array, Node &info, const float
 
 //---------------------------------------------------------------------------//
 template <typename T> 
-std::string             
+std::string
 DataArray<T>::to_json() const 
 { 
     std::ostringstream oss;
