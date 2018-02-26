@@ -52,16 +52,20 @@ https://github.com/LLNL/conduit/releases
 
 .. note:: As of v0.3.0, Conduit uses `BLT <https://github.com/LLNL/blt>`__ as its core CMake build system. We leverage BLT as a git submodule, however github does not include submodule contents in its automatically created source tarballs. To avoid confusion, starting with v0.3.0 we will provide our own source tarballs that include BLT. 
 
-v0.3.1-pre
+v0.3.1
 -----------------
+
+* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.3.1/conduit-v0.3.1-src-with-blt.tar.gz>`__
+
+
 Highlights
 +++++++++++++
 
 * **General**
  
- * Added new Node::equals and Node::diff methods
+ * Added new ``Node::diff`` and ``Node::diff_compatible`` methods
  * Updated uberenv to use a newer spack and removed several custom packages
- * C++ Node::set methods now take const pointers for data
+ * C++ ``Node::set`` methods now take const pointers for data
  * Added Python version of basic tutorial
  * Expanded the Node Python Capsule API
  * Added Python API bug fixes
@@ -73,6 +77,8 @@ Highlights
  
    * Removed unnecessary state member in the braid example
  
+ * Added Multi-level Array Protocol (conduit::blueprint::mlarray)
+
 * **Relay**
  
  * Added bug fixes for Relay HDF5 support on Windows
@@ -90,7 +96,7 @@ Highlights
 
  * Moved to use BLT (https://github.com/llnl/blt) as our core CMake-based build system
  * Bug fixes to support building on Visual Studio 2013
- * Bug fixes for `conduit::Nodes` in the List Role
+ * Bug fixes for ``conduit::Node`` in the List Role
  * Expose more of the Conduit API in Python
  * Use ints instead of bools in the Conduit C-APIs for wider compiler compatibility   
  * Fixed memory leaks in *conduit* and *conduit_relay*
@@ -132,8 +138,8 @@ Highlights
  * Added fixes to support static builds on BGQ using xlc and gcc
  * Fixed missing install of fortran module files
  * Eliminated separate fortran libs by moving fortran symbols into their associated main libs
- * Change Node set_external to support const Node ref
- * Refactor path and file systems utils functions for clarity.
+ * Changed ``Node::set_external`` to support const Node references
+ * Refactored path and file systems utils functions for clarity.
 
 * **Blueprint**
 
@@ -155,8 +161,8 @@ Highlights
 +++++++++++++
 * **General**
 
- * Changes to clarify concepts in the conduit::Node API
- * Added const access to conduit::Node's children and a new NodeConstIterator
+ * Changes to clarify concepts in the ``conduit::Node`` API
+ * Added const access to ``conduit::Node`` children and a new ``NodeConstIterator``
  * Added support for building on Windows
  * Added more Python, C, and Fortran API support
  * Resolved several bugs across libraries
@@ -175,7 +181,7 @@ Highlights
 
  * Added extensive HDF5 I/O support for reading and writing between HDF5 files and conduit Node trees
  * Changed I/O protocol string names for clarity
- * Refactored the relay::WebServer and the Conduit Node Viewer application
+ * Refactored the ``relay::WebServer`` and the Conduit Node Viewer application
  * Added entangle, a python script ssh tunneling solution
 
 
