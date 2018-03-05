@@ -1,8 +1,7 @@
 version: 2
 jobs:
   build:
-    services:
-      - docker
+    machine: true
     steps:
       - checkout
       - run:
