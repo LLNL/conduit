@@ -9,6 +9,5 @@ jobs:
           command: git submodule update --init --recursive
       - run:
           name: Docker Build
-          working_directory: ~/src/examples/docker/ubuntu/
-          command: ./example_build.sh
+          command: cd src/examples/docker/ubuntu/ && ./example_build.sh
           no_output_timeout: 30m
