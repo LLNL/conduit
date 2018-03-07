@@ -204,6 +204,12 @@ TEST(conduit_node_compare, compare_leaf_string)
         {
             index_t leaf_tid = DataType::CHAR8_STR_ID;
             std::string leaf_str = compare_strs[ci];
+            // NOTE(JRC): This test applies a buffer offset to the data being
+            // tested to push the data to the end of the buffer. For an
+            // example test phrase "me", this buffer looks like the following:
+            //         leaf_buff
+            //   [ _ _ _ _ _ _ _ m e / ]
+            //     0 1 2 3 4 5 6 7 8 9
             DataType leaf_type(leaf_tid, leaf_str.length() + 1,
                 (10 - leaf_str.length() - 1) * DataType::default_bytes(leaf_tid),
                 DataType::default_bytes(leaf_tid), DataType::default_bytes(leaf_tid),
