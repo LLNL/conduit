@@ -55,6 +55,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <string.h>
 #include "gtest/gtest.h"
 
 using namespace conduit;
@@ -144,10 +145,12 @@ TEST(conduit_node_compare, compare_leaf_numeric)
         for(index_t ti = 0; ti < 10; ti++)
         {
             const DataType::TypeID leaf_tid = leaf_tids[ti];
-            DataType leaf_type(leaf_tid, 5);
+            DataType leaf_type(leaf_tid, 5, 5 * DataType::default_bytes(leaf_tid),
+                DataType::default_bytes(leaf_tid), DataType::default_bytes(leaf_tid),
+                Endianness::DEFAULT_ID);
 
             const index_t type_bytes = leaf_type.stride();
-            const index_t leaf_bytes = leaf_type.bytes_compact();
+            const index_t leaf_bytes = leaf_type.spanned_bytes();
 
             conduit_byte* n_data = new conduit_byte[(size_t)leaf_bytes];
             memset(n_data, 0, (size_t)leaf_bytes);
@@ -164,8 +167,8 @@ TEST(conduit_node_compare, compare_leaf_numeric)
 
             { // Leaf Difference Test //
                 Node info;
-                memset(&o_data[0*type_bytes], 1, 1);
-                memset(&o_data[4*type_bytes], 1, 1);
+                memset(o.element_ptr(0), 1, 1);
+                memset(o.element_ptr(4), 1, 1);
                 EXPECT_TRUE(diff_nodes(n, o, info));
 
                 Node &info_diff = info["value"];
@@ -174,8 +177,8 @@ TEST(conduit_node_compare, compare_leaf_numeric)
                 for(index_t vi = 0; vi < 5; vi++)
                 {
                     bool should_uneq = vi == 0 || vi == 4;
-                    bool are_uneq = (0 != memcmp(&n_data[vi*type_bytes],
-                                                 &o_data[vi*type_bytes],
+                    bool are_uneq = (0 != memcmp(n.element_ptr(vi),
+                                                 o.element_ptr(vi),
                                                  (size_t)type_bytes));
                     EXPECT_EQ(are_uneq, should_uneq);
                 }
@@ -191,6 +194,7 @@ TEST(conduit_node_compare, compare_leaf_numeric)
 TEST(conduit_node_compare, compare_leaf_string)
 {
     const std::string compare_strs[4] = {"I", "me", "You", "tHeM"};
+    char compare_buffs[5][10];
 
     for(index_t fi = 0; fi < 2; fi++)
     {
@@ -198,24 +202,31 @@ TEST(conduit_node_compare, compare_leaf_string)
 
         for(index_t ci = 0; ci < 4; ci++)
         {
-            std::string comp_str = compare_strs[ci];
-            std::string diff_str = comp_str;
-            {
-                size_t test_len = comp_str.length();
-                diff_str[test_len-1] += 1;
-            }
+            index_t leaf_tid = DataType::CHAR8_STR_ID;
+            std::string leaf_str = compare_strs[ci];
+            DataType leaf_type(leaf_tid, leaf_str.length() + 1,
+                (10 - leaf_str.length() - 1) * DataType::default_bytes(leaf_tid),
+                DataType::default_bytes(leaf_tid), DataType::default_bytes(leaf_tid),
+                Endianness::DEFAULT_ID);
+
+            char* leaf_buff = (char*)&compare_buffs[ci];
+            char* leaf_cstr = (char*)&compare_buffs[ci+1] - leaf_str.length() - 1;
+            memset(leaf_buff, 0, (size_t)leaf_type.spanned_bytes());
+            strcpy(leaf_cstr, leaf_str.c_str());
+
+            Node n(leaf_type, (void*)leaf_buff, true);
 
             { // String Similarity Test //
-                Node n, o, info;
-                n.set(comp_str);
-                o.set(comp_str);
+                Node  o(leaf_type, (void*)leaf_buff, true), info;
                 EXPECT_FALSE(diff_nodes(n, o, info));
             }
 
             { // String Difference Test //
-                Node n, o, info;
-                n.set(comp_str);
-                o.set(diff_str);
+                char* diff_buff = (char*)&compare_buffs[4];
+                memcpy(diff_buff, leaf_buff, (size_t)leaf_type.spanned_bytes());
+                diff_buff[8] += 1;
+
+                Node  o(leaf_type, (void*)diff_buff, true), info;
                 EXPECT_TRUE(diff_nodes(n, o, info));
             }
         }

@@ -13680,8 +13680,8 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
         {
             // NOTE: Can't use 'value' for characters since type aliasing can
             // confuse the 'char' type on various platforms.
-            char_array t_array((const void*)as_char8_str(), dtype());
-            char_array n_array((const void*)n.as_char8_str(), n.dtype());
+            char_array t_array((const void*)m_data, dtype());
+            char_array n_array((const void*)n.m_data, n.dtype());
             res |= t_array.diff(n_array, info, epsilon);
         }
         else
@@ -13830,8 +13830,8 @@ Node::diff_compatible(const Node &n, Node &info, const float64 epsilon) const
         {
             // NOTE: Can't use 'value' for characters since type aliasing can
             // confuse the 'char' type on various platforms.
-            char_array t_array((const void*)as_char8_str(), dtype());
-            char_array n_array((const void*)n.as_char8_str(), n.dtype());
+            char_array t_array((const void*)m_data, dtype());
+            char_array n_array((const void*)n.m_data, n.dtype());
             res |= t_array.diff_compatible(n_array, info, epsilon);
         }
         else
