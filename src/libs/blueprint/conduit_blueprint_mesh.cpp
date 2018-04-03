@@ -343,14 +343,14 @@ bool verify_reference_field(const std::string &protocol,
 
         if(!node_tree.has_child(ref_path) || !node_tree[ref_path].has_child(ref_name))
         {
-            log::error(info, protocol, "reference to non-existent " + ref_path +
-                                        log::quote(field_name, 1));
+            log::error(info, protocol, "reference to non-existent " + field_name +
+                                        log::quote(ref_name, 1));
             res = false;
         }
         else if(info_tree[ref_path][ref_name]["valid"].as_string() != "true")
         {
-            log::error(info, protocol, "reference to invalid " + ref_path +
-                                       log::quote(field_name, 1));
+            log::error(info, protocol, "reference to invalid " + field_name +
+                                       log::quote(ref_name, 1));
             res = false;
         }
     }
