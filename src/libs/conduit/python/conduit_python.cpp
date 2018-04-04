@@ -4602,28 +4602,28 @@ PyConduit_Node_Set_From_Python(Node &node,
             case NPY_INT8 :
             {
                 node.set(DataType::int8(num_ele));
-                uint8_array c_arr = node.value();
+                int8_array c_arr = node.value();
                 PyConduit_Fill_DataArray_From_PyArray(c_arr, py_arr);
                 break;
             }
             case NPY_INT16 :
             {
                 node.set(DataType::int16(num_ele));
-                uint16_array c_arr = node.value();
+                int16_array c_arr = node.value();
                 PyConduit_Fill_DataArray_From_PyArray(c_arr, py_arr);
                 break;
             }
             case NPY_INT32 :
             {
                 node.set(DataType::int32(num_ele));
-                uint32_array c_arr = node.value();
+                int32_array c_arr = node.value();
                 PyConduit_Fill_DataArray_From_PyArray(c_arr, py_arr);
                 break;
             }
             case NPY_INT64 :
             {
                 node.set(DataType::int64(num_ele));
-                uint64_array c_arr = node.value();
+                int64_array c_arr = node.value();
                 PyConduit_Fill_DataArray_From_PyArray(c_arr, py_arr);
                 break;
             }

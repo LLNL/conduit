@@ -207,6 +207,17 @@ class Test_Conduit_Node(unittest.TestCase):
         #print ni
         self.assertEqual(ni["total_strided_bytes"],n.total_strided_bytes())
 
+    def test_set_all_types(self):
+        types = [ 'int8', 'int16', 'int32', 'int64',
+                  'uint8', 'uint16', 'uint32', 'uint64',
+                  'float32', 'float64']
+        for type in types:
+            data = array(range(10), dtype=type)
+            n = Node()
+            n.set(data)
+            for i in range(len(data)):
+                self.assertEqual(n.value()[i], data[i])
+
     def test_set_external(self):
         types = ['uint8', 'uint16', 'uint32', 'uint64', 'float32', 'float64']
         for type in types:
@@ -268,7 +279,16 @@ class Test_Conduit_Node(unittest.TestCase):
         n1['b'] = 1.0
         self.assertFalse(n1.diff(n2,info,10))
 
-
+    def test_list_of_ints(self):
+        # also covered by test_set_all_types
+        # but this was the reproducer for 
+        #  https://github.com/LLNL/conduit/issues/281
+        n = Node()
+        a = array(list((1,2,3)))
+        n['a'] = a
+        self.assertEqual(n['a'][0], 1)
+        self.assertEqual(n['a'][1], 2)
+        self.assertEqual(n['a'][2], 3)
 
 if __name__ == '__main__':
     unittest.main()
