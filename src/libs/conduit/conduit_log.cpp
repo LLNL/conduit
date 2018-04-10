@@ -102,11 +102,39 @@ error(Node &info,
 
 
 //-----------------------------------------------------------------------------
+// private recursive helper for the 'log::validation' function
+void
+_validation(Node &info,
+            bool res)
+{
+    if(info.has_child("valid"))
+    {
+        bool info_res = info["valid"].as_string() == "true";
+        info_res &= res;
+        info["valid"].set(res ? "true" : "false");
+
+        if(!info.is_root())
+        {
+            _validation(*info.parent(), info_res);
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------
 void
 validation(Node &info,
            bool res)
 {
-    info["valid"] = res ? "true" : "false";
+    // NOTE: if the given node already has a "valid" child, it's updated to
+    // be the logical and of its current value and the new value so that
+    // invalid nodes aren't changed to valid by later updates
+    bool info_res = info.has_child("valid") ? info["valid"].as_string() == "true" : true;
+    info["valid"].set(res && info_res ? "true" : "false");
+
+    // NOTE(JRC): This behavior is currently disabled due to performance and
+    // ambiguity concerns.
+    // _validation(info,res);
 }
 
 
