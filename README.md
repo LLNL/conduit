@@ -16,7 +16,7 @@ Documentation
 
 To get started building and using Conduit, check out the full documentation:
 
-http://software.llnl.gov/conduit/
+http://llnl-conduit.readthedocs.io/
 
 
 Source Repo
