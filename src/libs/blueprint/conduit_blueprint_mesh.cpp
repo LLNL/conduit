@@ -356,6 +356,7 @@ bool verify_reference_field(const std::string &protocol,
     }
 
     log::validation(info[field_name], res);
+    log::validation(info, res);
 
     return res;
 }
@@ -444,24 +445,24 @@ mesh::verify_single_domain(const Node &n,
     bool res = true;
     info.reset();
 
-    // Given that not conforming result is likely to trigger an error 
-    // state in client code it seems like we should give as much info as
-    // possible about what is wrong with the mesh, so we don't early
-    // return when an error is found.
     if(!verify_object_field(protocol, n, info, "coordsets"))
     {
         res = false;
     }
     else
     {
+        bool cset_res = true;
         NodeConstIterator itr = n["coordsets"].children();
         while(itr.has_next())
         {
             const Node &chld = itr.next();
             const std::string chld_name = itr.name();
 
-            res &= coordset::verify(chld, info["coordsets"][chld_name]);
+            cset_res &= coordset::verify(chld, info["coordsets"][chld_name]);
         }
+
+        log::validation(info["coordsets"],cset_res);
+        res &= cset_res;
     }
 
     if(!verify_object_field(protocol, n, info, "topologies"))
@@ -470,6 +471,7 @@ mesh::verify_single_domain(const Node &n,
     }
     else
     {
+        bool topo_res = true;
         NodeConstIterator itr = n["topologies"].children();
         while(itr.has_next())
         {
@@ -477,10 +479,13 @@ mesh::verify_single_domain(const Node &n,
             const std::string chld_name = itr.name();
             Node &chld_info = info["topologies"][chld_name];
 
-            res &= topology::verify(chld, chld_info);
-            res &= verify_reference_field(protocol, n, info,
+            topo_res &= topology::verify(chld, chld_info);
+            topo_res &= verify_reference_field(protocol, n, info,
                 chld, chld_info, "coordset", "coordsets");
         }
+
+        log::validation(info["topologies"],topo_res);
+        res &= topo_res;
     }
 
     // optional: "matsets", each child must conform to "mesh::matset"
@@ -492,6 +497,7 @@ mesh::verify_single_domain(const Node &n,
         }
         else
         {
+            bool mset_res = true;
             NodeConstIterator itr = n["matsets"].children();
             while(itr.has_next())
             {
@@ -499,10 +505,13 @@ mesh::verify_single_domain(const Node &n,
                 const std::string chld_name = itr.name();
                 Node &chld_info = info["matsets"][chld_name];
 
-                res &= matset::verify(chld, chld_info);
-                res &= verify_reference_field(protocol, n, info,
+                mset_res &= matset::verify(chld, chld_info);
+                mset_res &= verify_reference_field(protocol, n, info,
                     chld, chld_info, "topology", "topologies");
             }
+
+            log::validation(info["matsets"],mset_res);
+            res &= mset_res;
         }
     }
 
@@ -515,6 +524,7 @@ mesh::verify_single_domain(const Node &n,
         }
         else
         {
+            bool field_res = true;
             NodeConstIterator itr = n["fields"].children();
             while(itr.has_next())
             {
@@ -522,18 +532,21 @@ mesh::verify_single_domain(const Node &n,
                 const std::string chld_name = itr.name();
                 Node &chld_info = info["fields"][chld_name];
 
-                res &= field::verify(chld, chld_info);
+                field_res &= field::verify(chld, chld_info);
                 if(chld.has_child("topology"))
                 {
-                    res &= verify_reference_field(protocol, n, info,
+                    field_res &= verify_reference_field(protocol, n, info,
                         chld, chld_info, "topology", "topologies");
                 }
                 if(chld.has_child("matset"))
                 {
-                    res &= verify_reference_field(protocol, n, info,
+                    field_res &= verify_reference_field(protocol, n, info,
                         chld, chld_info, "matset", "matsets");
                 }
             }
+
+            log::validation(info["fields"],field_res);
+            res &= field_res;
         }
     }
 
@@ -546,6 +559,7 @@ mesh::verify_single_domain(const Node &n,
         }
         else
         {
+            bool aset_res = true;
             NodeConstIterator itr = n["adjsets"].children();
             while(itr.has_next())
             {
@@ -553,10 +567,13 @@ mesh::verify_single_domain(const Node &n,
                 const std::string chld_name = itr.name();
                 Node &chld_info = info["adjsets"][chld_name];
 
-                res &= adjset::verify(chld, chld_info);
-                res &= verify_reference_field(protocol, n, info,
+                aset_res &= adjset::verify(chld, chld_info);
+                aset_res &= verify_reference_field(protocol, n, info,
                     chld, chld_info, "topology", "topologies");
             }
+
+            log::validation(info["adjsets"],aset_res);
+            res &= aset_res;
         }
     }
 
@@ -564,6 +581,7 @@ mesh::verify_single_domain(const Node &n,
     // it is valid
     if (n.has_child("topologies"))
     {
+        bool topo_res = true;
         NodeConstIterator itr = n["topologies"].children();
         while (itr.has_next())
         {
@@ -573,10 +591,13 @@ mesh::verify_single_domain(const Node &n,
 
             if(chld.has_child("grid_function"))
             {
-                res &= verify_reference_field(protocol, n, info,
+                topo_res &= verify_reference_field(protocol, n, info,
                     chld, chld_info, "grid_function", "fields");
             }
         }
+
+        log::validation(info["topologies"],topo_res);
+        res &= topo_res;
     }
 
     log::validation(info,res);
@@ -609,6 +630,7 @@ bool mesh::verify_multi_domain(const Node &n,
         }
 
         log::info(info, protocol, "is a multi domain mesh");
+        log::validation(info,res);
     }
 
     return res;
@@ -1336,8 +1358,12 @@ mesh::topology::structured::verify(const Node &topo,
         const Node &topo_elements = topo["elements"];
         Node &info_elements = info["elements"];
 
-        res &= verify_object_field(protocol, topo_elements, info_elements, "dims") &&
-               mesh::logical_dims::verify(topo_elements["dims"], info_elements["dims"]);
+        bool elements_res =
+            verify_object_field(protocol, topo_elements, info_elements, "dims") &&
+            mesh::logical_dims::verify(topo_elements["dims"], info_elements["dims"]);
+
+        log::validation(info_elements,elements_res);
+        res &= elements_res;
     }
 
     // FIXME: Add some verification code here for the optional origin in the
@@ -1366,12 +1392,13 @@ mesh::topology::unstructured::verify(const Node &topo,
         const Node &topo_elems = topo["elements"];
         Node &info_elems = info["elements"];
 
+        bool elems_res = true;
         // single shape case
         if(topo_elems.has_child("shape"))
         {
-            res &= verify_field_exists(protocol, topo_elems, info_elems, "shape") &&
+            elems_res &= verify_field_exists(protocol, topo_elems, info_elems, "shape") &&
                    mesh::topology::shape::verify(topo_elems["shape"], info_elems["shape"]);
-            res &= verify_integer_field(protocol, topo_elems, info_elems, "connectivity");
+            elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "connectivity");
         }
         // shape stream case
         else if(topo_elems.has_child("element_types"))
@@ -1385,23 +1412,18 @@ mesh::topology::unstructured::verify(const Node &topo,
             NodeConstIterator itr = topo_elems.children();
             while(itr.has_next())
             {
-                const Node &cld  = itr.next();
+                const Node &chld  = itr.next();
                 std::string name = itr.name();
-
-                if(has_names)
-                {
-                    info["elements"][name];
-                }
-                else
-                {
+                Node &chld_info = has_names ? info["elements"][name] :
                     info["elements"].append();
-                }
 
-                Node &cld_info = info["elements"][itr.index()];
+                bool chld_res = true;
+                chld_res &= verify_field_exists(protocol, chld, chld_info, "shape") &&
+                       mesh::topology::shape::verify(chld["shape"], chld_info["shape"]);
+                chld_res &= verify_integer_field(protocol, chld, chld_info, "connectivity");
 
-                res &= verify_field_exists(protocol, cld, cld_info, "shape") &&
-                       mesh::topology::shape::verify(cld["shape"], cld_info["shape"]);
-                res &= verify_integer_field(protocol, cld, cld_info, "connectivity");
+                log::validation(chld_info,chld_res);
+                elems_res &= chld_res;
             }
         }
         else
@@ -1409,6 +1431,9 @@ mesh::topology::unstructured::verify(const Node &topo,
             log::error(info,protocol,"invalid child \"elements\"");
             res = false;
         }
+
+        log::validation(info_elems,elems_res);
+        res &= elems_res;
     }
 
     log::validation(info,res);
@@ -1679,6 +1704,7 @@ mesh::adjset::verify(const Node &adjset,
     }
     else
     {
+        bool groups_res = true;
         NodeConstIterator itr = adjset["groups"].children();
         while(itr.has_next())
         {
@@ -1686,9 +1712,16 @@ mesh::adjset::verify(const Node &adjset,
             const std::string chld_name = itr.name();
             Node &chld_info = info["groups"][chld_name];
 
-            res &= verify_integer_field(protocol, chld, chld_info, "neighbors");
-            res &= verify_integer_field(protocol, chld, chld_info, "values");
+            bool group_res = true;
+            group_res &= verify_integer_field(protocol, chld, chld_info, "neighbors");
+            group_res &= verify_integer_field(protocol, chld, chld_info, "values");
+
+            log::validation(chld_info,group_res);
+            groups_res &= group_res;
         }
+
+        log::validation(info["groups"],groups_res);
+        res &= groups_res;
     }
 
     log::validation(info, res);
@@ -1732,24 +1765,23 @@ mesh::index::verify(const Node &n,
     bool res = true;
     info.reset();
 
-    // note "errors" is a list, this allows us to log multiple errors.
-    // Given that not conforming result is likely to trigger an error 
-    // state in client code it seems like we should give as much info as
-    // possible about what is wrong with the mesh, so we don't early
-    // return when an error is found.
     if(!verify_object_field(protocol, n, info, "coordsets"))
     {
         res = false;
     }
     else
     {
+        bool cset_res = true;
         NodeConstIterator itr = n["coordsets"].children();
         while(itr.has_next())
         {
             const Node &chld = itr.next();
             const std::string chld_name = itr.name();
-            res &= coordset::index::verify(chld, info["coordsets"][chld_name]);
+            cset_res &= coordset::index::verify(chld, info["coordsets"][chld_name]);
         }
+
+        log::validation(info["coordsets"],cset_res);
+        res &= cset_res;
     }
 
     if(!verify_object_field(protocol, n, info, "topologies"))
@@ -1758,6 +1790,7 @@ mesh::index::verify(const Node &n,
     }
     else
     {
+        bool topo_res = true;
         NodeConstIterator itr = n["topologies"].children();
         while(itr.has_next())
         {
@@ -1765,10 +1798,13 @@ mesh::index::verify(const Node &n,
             const std::string chld_name = itr.name();
             Node &chld_info = info["topologies"][chld_name];
 
-            res &= topology::index::verify(chld, chld_info);
-            res &= verify_reference_field(protocol, n, info,
+            topo_res &= topology::index::verify(chld, chld_info);
+            topo_res &= verify_reference_field(protocol, n, info,
                 chld, chld_info, "coordset", "coordsets");
         }
+
+        log::validation(info["topologies"],topo_res);
+        res &= topo_res;
     }
 
     // optional: "matsets", each child must conform to
@@ -1781,6 +1817,7 @@ mesh::index::verify(const Node &n,
         }
         else
         {
+            bool mset_res = true;
             NodeConstIterator itr = n["matsets"].children();
             while(itr.has_next())
             {
@@ -1788,10 +1825,13 @@ mesh::index::verify(const Node &n,
                 const std::string chld_name = itr.name();
                 Node &chld_info = info["matsets"][chld_name];
 
-                res &= matset::index::verify(chld, chld_info);
-                res &= verify_reference_field(protocol, n, info,
+                mset_res &= matset::index::verify(chld, chld_info);
+                mset_res &= verify_reference_field(protocol, n, info,
                     chld, chld_info, "topology", "topologies");
             }
+
+            log::validation(info["matsets"],mset_res);
+            res &= mset_res;
         }
     }
 
@@ -1805,6 +1845,7 @@ mesh::index::verify(const Node &n,
         }
         else
         {
+            bool field_res = true;
             NodeConstIterator itr = n["fields"].children();
             while(itr.has_next())
             {
@@ -1812,18 +1853,21 @@ mesh::index::verify(const Node &n,
                 const std::string chld_name = itr.name();
                 Node &chld_info = info["fields"][chld_name];
 
-                res &= field::index::verify(chld, chld_info);
+                field_res &= field::index::verify(chld, chld_info);
                 if(chld.has_child("topology"))
                 {
-                    res &= verify_reference_field(protocol, n, info,
+                    field_res &= verify_reference_field(protocol, n, info,
                         chld, chld_info, "topology", "topologies");
                 }
                 if(chld.has_child("matset"))
                 {
-                    res &= verify_reference_field(protocol, n, info,
+                    field_res &= verify_reference_field(protocol, n, info,
                         chld, chld_info, "matset", "matsets");
                 }
             }
+
+            log::validation(info["fields"],field_res);
+            res &= field_res;
         }
     }
 
@@ -1837,6 +1881,7 @@ mesh::index::verify(const Node &n,
         }
         else
         {
+            bool aset_res = true;
             NodeConstIterator itr = n["adjsets"].children();
             while(itr.has_next())
             {
@@ -1844,10 +1889,13 @@ mesh::index::verify(const Node &n,
                 const std::string chld_name = itr.name();
                 Node &chld_info = info["adjsets"][chld_name];
 
-                res &= adjset::index::verify(chld, chld_info);
-                res &= verify_reference_field(protocol, n, info,
+                aset_res &= adjset::index::verify(chld, chld_info);
+                aset_res &= verify_reference_field(protocol, n, info,
                     chld, chld_info, "topology", "topologies");
             }
+
+            log::validation(info["adjsets"],aset_res);
+            res &= aset_res;
         }
     }
 

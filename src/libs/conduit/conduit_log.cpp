@@ -106,7 +106,11 @@ void
 validation(Node &info,
            bool res)
 {
-    info["valid"] = res ? "true" : "false";
+    // NOTE: if the given node already has a "valid" child, it's updated to
+    // be the logical and of its current value and the new value so that
+    // invalid nodes aren't changed to valid by later updates
+    bool info_res = info.has_child("valid") ? info["valid"].as_string() == "true" : true;
+    info["valid"].set(res && info_res ? "true" : "false");
 }
 
 
