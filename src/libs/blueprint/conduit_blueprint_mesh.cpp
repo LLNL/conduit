@@ -577,6 +577,31 @@ mesh::verify_single_domain(const Node &n,
         }
     }
 
+    if(n.has_path("nestsets"))
+    {
+        if(!verify_object_field(protocol, n, info, "nestsets"))
+        {
+            res = false;
+        }
+        else
+        {
+            bool nset_res = true;
+            NodeConstIterator itr = n["nestsets"].children();
+            while(itr.has_next())
+            {
+                const Node &chld = itr.next();
+                const std::string chld_name = itr.name();
+                Node &chld_info = info["nestsets"][chld_name];
+
+                nset_res &= nestset::verify(chld, chld_info);
+            }
+
+            log::validation(info["nestets"],nset_res);
+            res &= nset_res;
+        }
+    }
+
+
     // one last pass to make sure if a grid_function was specified by a topo,
     // it is valid
     if (n.has_child("topologies"))
@@ -1730,6 +1755,53 @@ mesh::adjset::verify(const Node &adjset,
 }
 
 //-----------------------------------------------------------------------------
+// blueprint::mesh::nestset protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::nestset::verify(const Node &nestset,
+                      Node &info)
+{
+    const std::string protocol = "mesh::nestset";
+    bool res = true;
+    info.reset();
+
+    res &= verify_field_exists(protocol, nestset, info, "association") &&
+           mesh::association::verify(nestset["association"], info["association"]);
+
+    res &= verify_integer_field(protocol, nestset, info, "parent") ||
+           verify_integer_field(protocol, nestset, info, "child");
+
+    res &= verify_integer_field(protocol, nestset, info, "ratio");
+    index_t dim_size = 0;
+    if (nestset.has_child("ratio"))
+    {
+        dim_size = nestset["ratio"].dtype().number_of_elements();
+    }
+
+    res &= verify_integer_field(protocol, nestset, info, "local");
+    if (nestset.has_child("local")) {
+        if (nestset["local"].dtype().number_of_elements() != dim_size * 2)
+        {
+            res = false;
+        }
+    }
+
+    res &= verify_integer_field(protocol, nestset, info, "remote");
+    if (nestset.has_child("remote")) {
+        if (nestset["remote"].dtype().number_of_elements() != dim_size * 2)
+        {
+            res = false;
+        }
+    }
+
+    log::validation(info, res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
 // blueprint::mesh::adjset::index protocol interface
 //-----------------------------------------------------------------------------
 
@@ -1751,6 +1823,7 @@ mesh::adjset::index::verify(const Node &adj_idx,
 
     return res;
 }
+
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::index protocol interface
