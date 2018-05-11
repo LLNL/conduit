@@ -44,45 +44,75 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay.h
+/// file: conduit_relay_c.cpp
 ///
 //-----------------------------------------------------------------------------
+#include "conduit_relay.h"
 
-#ifndef CONDUIT_RELAY_H
-#define CONDUIT_RELAY_H
-
-//-----------------------------------------------------------------------------
-// -- includes for the public conduit relay c interface -- 
-//-----------------------------------------------------------------------------
-
-#include "conduit.h"
-#include "conduit_relay_config.h"
-#include "conduit_relay_exports.h"
-
+#include "conduit.hpp"
+#include "conduit_relay.hpp"
+#include "conduit_cpp_to_c.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin extern C
 //-----------------------------------------------------------------------------
-#ifdef __cplusplus
+
 extern "C" {
-#endif
+
+using namespace conduit;
 
 //-----------------------------------------------------------------------------
-// -- conduit_relay c interface  --
-//-----------------------------------------------------------------------------
-
-CONDUIT_RELAY_API void conduit_relay_about(conduit_node *cnode);
-
-#ifdef __cplusplus
+void
+conduit_relay_io_save(conduit_node *cnode, const char *path)
+{
+    Node *n = cpp_node(cnode);
+    relay::io::save(*n, std::string(path));
 }
-#endif
+
+//-----------------------------------------------------------------------------
+void
+conduit_relay_io_save2(conduit_node *cnode,
+    const char *path, const char *protocol)
+{
+    Node *n = cpp_node(cnode);
+    relay::io::save(*n, std::string(path), std::string(protocol));
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_relay_io_save_merged(conduit_node *cnode, const char *path)
+{
+    Node *n = cpp_node(cnode);
+    relay::io::save_merged(*n, std::string(path));
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_relay_io_save_merged2(conduit_node *cnode,
+    const char *path, const char *protocol)
+{
+    Node *n = cpp_node(cnode);
+    relay::io::save_merged(*n, std::string(path), std::string(protocol));
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_relay_io_load(const char *path, conduit_node *cnode)
+{
+    Node *n = cpp_node(cnode);
+    relay::io::load(std::string(path), *n);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_relay_io_load2(const char *path,
+    const char *protocol, conduit_node *cnode)
+{
+    Node *n = cpp_node(cnode);
+    relay::io::load(std::string(path), std::string(protocol), *n);
+}
+
+}
 //-----------------------------------------------------------------------------
 // -- end extern C
 //-----------------------------------------------------------------------------
-
-#include  "conduit_relay_io.h"
-
-//-----------------------------------------------------------------------------
-// -- end header guard ifdef
-//-----------------------------------------------------------------------------
-#endif

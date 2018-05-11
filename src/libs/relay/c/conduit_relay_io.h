@@ -48,17 +48,8 @@
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_RELAY_H
-#define CONDUIT_RELAY_H
-
-//-----------------------------------------------------------------------------
-// -- includes for the public conduit relay c interface -- 
-//-----------------------------------------------------------------------------
-
-#include "conduit.h"
-#include "conduit_relay_config.h"
-#include "conduit_relay_exports.h"
-
+#ifndef CONDUIT_RELAY_IO_H
+#define CONDUIT_RELAY_IO_H
 
 //-----------------------------------------------------------------------------
 // -- begin extern C
@@ -68,10 +59,47 @@ extern "C" {
 #endif
 
 //-----------------------------------------------------------------------------
-// -- conduit_relay c interface  --
+// -- conduit_relay io c interface  --
 //-----------------------------------------------------------------------------
 
-CONDUIT_RELAY_API void conduit_relay_about(conduit_node *cnode);
+///
+/// ``save`` works like a 'set' to the file.
+///
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API conduit_relay_io_save(conduit_node *cnode,
+                                             const char *path);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API conduit_relay_io_save2(conduit_node *cnode,
+                                              const char *path,
+                                              const char *protocol);
+
+///
+/// ``save_merged`` works like an update to the file.
+///
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API conduit_relay_io_save_merged(conduit_node *cnode,
+                                                    const char *path);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API conduit_relay_io_save_merged2(conduit_node *cnode,
+                                                     const char *path,
+                                                     const char *protocol);
+
+///
+/// ``load`` works like a 'set', the node is reset and then populated
+///
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API conduit_relay_io_load(const char *path,
+                                             conduit_node *cnode);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API conduit_relay_io_load2(const char *path,
+                                              const char *protocol,
+                                              conduit_node *cnode);
 
 #ifdef __cplusplus
 }
@@ -80,7 +108,6 @@ CONDUIT_RELAY_API void conduit_relay_about(conduit_node *cnode);
 // -- end extern C
 //-----------------------------------------------------------------------------
 
-#include  "conduit_relay_io.h"
 
 //-----------------------------------------------------------------------------
 // -- end header guard ifdef

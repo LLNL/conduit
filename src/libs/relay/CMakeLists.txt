@@ -92,7 +92,8 @@ set(conduit_relay_headers
 # Specify c headers
 #
 set(conduit_relay_c_headers
-    c/conduit_relay.h)
+    c/conduit_relay.h
+    c/conduit_relay_io.h)
 
 #
 # Specify cpp sources
@@ -107,7 +108,8 @@ set(conduit_relay_sources
 # Specify c sources
 #
 set(conduit_relay_c_sources
-    c/conduit_relay_c.cpp)
+    c/conduit_relay_c.cpp
+    c/conduit_relay_io_c.cpp)
 
 
 if(HDF5_FOUND)
