@@ -315,11 +315,25 @@ silo_write_field(DBfile *dbfile,
                         << "/topology");
     }
 
-    NodeConstIterator fld_topos_itr = n_var["topology"].children();
-
-    while(fld_topos_itr.has_next())
+    std::vector<std::string> topos;
+    if(n_var["topology"].number_of_children() > 0)
     {
-        std::string topo_name = fld_topos_itr.next().as_string();
+        // NOTE: this case doesn't seem to make sense WRT the blueprint web doc.
+        NodeConstIterator fld_topos_itr = n_var["topology"].children();
+        while(fld_topos_itr.has_next())
+        {
+            std::string topo_name = fld_topos_itr.next().as_string();
+            topos.push_back(topo_name);
+        }
+    }
+    else
+    {
+        topos.push_back(n_var["topology"].as_string());
+    }
+
+    for(size_t i = 0; i < topos.size(); ++i)
+    {
+        const std::string &topo_name = topos[i];
 
         if(!n_mesh_info.has_path(topo_name))
         {
@@ -373,16 +387,30 @@ silo_write_field(DBfile *dbfile,
 
         DataType dtype = n_var["values"].dtype();
 
-        if( dtype.is_float() )
+        if( dtype.is_float() || dtype.is_float32() )
         {
             vals_type = DB_FLOAT;
             vals_ptr = (void*)n_values.as_float_ptr();
         }
-        else  if( dtype.is_double() )
-
+        else  if( dtype.is_double() || dtype.is_float64() )
         {
             vals_type = DB_DOUBLE;
             vals_ptr = (void*)n_values.as_double_ptr();
+        }
+        else  if( dtype.is_int() || dtype.is_int32() )
+        {
+            vals_type = DB_INT;
+            vals_ptr = (void*)n_values.as_int_ptr();
+        }
+        else  if( dtype.is_char() || dtype.is_int8() )
+        {
+            vals_type = DB_CHAR;
+            vals_ptr = (void*)n_values.as_char_ptr();
+        }
+        else  if( dtype.is_short() || dtype.is_int16() )
+        {
+            vals_type = DB_SHORT;
+            vals_ptr = (void*)n_values.as_short_ptr();
         }
         else
         {
@@ -1189,14 +1217,17 @@ silo_mesh_write(const Node &n,
 {
     int silo_error = 0;
     char silo_prev_dir[256];
+
+    if(!silo_obj_path.empty())
+    {
+        silo_error += DBGetDir(dbfile,silo_prev_dir);
+        silo_error += DBMkDir(dbfile,silo_obj_path.c_str());
+        silo_error += DBSetDir(dbfile,silo_obj_path.c_str());
     
-    silo_error += DBGetDir(dbfile,silo_prev_dir);
-    silo_error += DBMkDir(dbfile,silo_obj_path.c_str());
-    silo_error += DBSetDir(dbfile,silo_obj_path.c_str());
-    
-    CONDUIT_CHECK_SILO_ERROR(silo_error,
-                             " failed to make silo directory:"
-                             << silo_obj_path);
+        CONDUIT_CHECK_SILO_ERROR(silo_error,
+                                 " failed to make silo directory:"
+                                 << silo_obj_path);
+    }
 
     DBoptlist *state_optlist = silo_generate_state_optlist(n);
     
@@ -1255,7 +1286,7 @@ silo_mesh_write(const Node &n,
         }
     
         const Node &n_coords = n["coordsets"][coordset_name];
-    
+
         if(topo_type == "unstructured")
         {
             silo_write_ucd_mesh(dbfile,
@@ -1299,15 +1330,6 @@ silo_mesh_write(const Node &n,
                                  n_mesh_info);
         }
     }
-    
-    
-    if(state_optlist)
-    {
-        silo_error = DBFreeOptlist(state_optlist);
-    }
-    
-    CONDUIT_CHECK_SILO_ERROR(silo_error,
-                             " freeing state optlist.");
 
     if (n.has_path("fields")) 
     {
@@ -1317,6 +1339,7 @@ silo_mesh_write(const Node &n,
         {
             const Node &n_var = itr.next();
             std::string var_name = itr.name();
+
             silo_write_field(dbfile,
                              var_name,
                              n_var,
@@ -1325,10 +1348,21 @@ silo_mesh_write(const Node &n,
         }
     }
 
-    silo_error = DBSetDir(dbfile,silo_prev_dir);
-
+    if(state_optlist)
+    {
+        silo_error = DBFreeOptlist(state_optlist);
+    }
+    
     CONDUIT_CHECK_SILO_ERROR(silo_error,
-                             " changing silo directory to previous path");
+                             " freeing state optlist.");
+
+    if(!silo_obj_path.empty())
+    {
+        silo_error = DBSetDir(dbfile,silo_prev_dir);
+
+        CONDUIT_CHECK_SILO_ERROR(silo_error,
+                                 " changing silo directory to previous path");
+    }
 }
 
 
@@ -1344,12 +1378,6 @@ silo_mesh_write(const Node &node,
                                     std::string(":"),
                                     file_path,
                                     silo_obj_base);
-
-    /// If silo_obj_base is empty, we have a problem ... 
-    if(silo_obj_base.size() == 0)
-    {
-        CONDUIT_ERROR("Invalid path for save: " << path);
-    }
 
     silo_mesh_write(node,file_path,silo_obj_base);
 }
