@@ -1285,7 +1285,11 @@ mesh::topology::verify(const Node &topo,
     {
         const std::string topo_type = topo["type"].as_string();
 
-        if(topo_type == "uniform")
+        if(topo_type == "points")
+        {
+            res &= mesh::topology::points::verify(topo,info);
+        }
+        else if(topo_type == "uniform")
         {
             res &= mesh::topology::uniform::verify(topo,info);
         }
@@ -1313,6 +1317,23 @@ mesh::topology::verify(const Node &topo,
 
     return res;
 
+}
+
+//-----------------------------------------------------------------------------
+// blueprint::mesh::topology::points protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::topology::points::verify(const Node & /*topo*/,
+                               Node &info)
+{
+    info.reset();
+    // future: will be used to verify optional info from "elements"
+    // child of a uniform topology
+    bool res = true;
+    log::validation(info,res);
+    return res;
 }
 
 //-----------------------------------------------------------------------------
