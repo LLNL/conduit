@@ -9513,6 +9513,289 @@ Node::to_double_array(Node &res) const
 
 }
 
+//---------------------------------------------------------------------------//
+/// zero copy if possible array to other array types
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+void
+Node::zcip_int8_array(Node &res) const
+{
+    if(!dtype().is_int8())
+    {
+        this->to_int8_array(res);
+    }
+    else
+    {
+        res.set_external(*this);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::zcip_int16_array(Node &res) const
+{
+    if(!dtype().is_int16())
+    {
+        this->to_int16_array(res);
+    }
+    else
+    {
+        res.set_external(*this);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::zcip_int32_array(Node &res) const
+{
+    if(!dtype().is_int32())
+    {
+        this->to_int32_array(res);
+    }
+    else
+    {
+        res.set_external(*this);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::zcip_int64_array(Node &res) const
+{
+    if(!dtype().is_int64())
+    {
+        this->to_int64_array(res);
+    }
+    else
+    {
+        res.set_external(*this);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::zcip_uint8_array(Node &res) const
+{
+    if(!dtype().is_uint8())
+    {
+        this->to_uint8_array(res);
+    }
+    else
+    {
+        res.set_external(*this);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::zcip_uint16_array(Node &res) const
+{
+    if(!dtype().is_uint16())
+    {
+        this->to_uint16_array(res);
+    }
+    else
+    {
+        res.set_external(*this);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::zcip_uint32_array(Node &res) const
+{
+    if(!dtype().is_uint32())
+    {
+        this->to_uint32_array(res);
+    }
+    else
+    {
+        res.set_external(*this);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::zcip_uint64_array(Node &res) const
+{
+    if(!dtype().is_uint64())
+    {
+        this->to_uint64_array(res);
+    }
+    else
+    {
+        res.set_external(*this);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::zcip_float32_array(Node &res) const
+{
+    if(!dtype().is_float32())
+    {
+        this->to_float32_array(res);
+    }
+    else
+    {
+        res.set_external(*this);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::zcip_float64_array(Node &res) const
+{
+    if(!dtype().is_float64())
+    {
+        this->to_float64_array(res);
+    }
+    else
+    {
+        res.set_external(*this);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::zcip_char_array(Node &res) const
+{
+    if(!dtype().is_char())
+    {
+        this->to_char_array(res);
+    }
+    else
+    {
+        res.set_external(*this);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::zcip_short_array(Node &res) const
+{
+    if(!dtype().is_short())
+    {
+        this->to_short_array(res);
+    }
+    else
+    {
+        res.set_external(*this);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::zcip_int_array(Node &res) const
+{
+    if(!dtype().is_int())
+    {
+        this->to_int_array(res);
+    }
+    else
+    {
+        res.set_external(*this);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::zcip_long_array(Node &res) const
+{
+    if(!dtype().is_long())
+    {
+        this->to_long_array(res);
+    }
+    else
+    {
+        res.set_external(*this);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::zcip_unsigned_char_array(Node &res) const
+{
+    if(!dtype().is_unsigned_char())
+    {
+        this->to_unsigned_char_array(res);
+    }
+    else
+    {
+        res.set_external(*this);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::zcip_unsigned_short_array(Node &res) const
+{
+    if(!dtype().is_unsigned_short())
+    {
+        this->to_unsigned_short_array(res);
+    }
+    else
+    {
+        res.set_external(*this);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::zcip_unsigned_int_array(Node &res) const
+{
+    if(!dtype().is_unsigned_int())
+    {
+        this->to_unsigned_int_array(res);
+    }
+    else
+    {
+        res.set_external(*this);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::zcip_unsigned_long_array(Node &res) const
+{
+    if(!dtype().is_unsigned_long())
+    {
+        this->to_unsigned_long_array(res);
+    }
+    else
+    {
+        res.set_external(*this);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::zcip_float_array(Node &res) const
+{
+    if(!dtype().is_float())
+    {
+        this->to_float_array(res);
+    }
+    else
+    {
+        res.set_external(*this);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::zcip_double_array(Node &res) const
+{
+    if(!dtype().is_double())
+    {
+        this->to_double_array(res);
+    }
+    else
+    {
+        res.set_external(*this);
+    }
+}
 
 //-----------------------------------------------------------------------------
 // -- Value Helper class ---
