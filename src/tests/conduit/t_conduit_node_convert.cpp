@@ -81,27 +81,6 @@ void convert_to_unsigned_long_array(const Node &n, Node &res) { n.to_unsigned_lo
 void convert_to_float_array(const Node &n, Node &res) { n.to_float_array(res); }
 void convert_to_double_array(const Node &n, Node &res) { n.to_double_array(res); }
 
-void convert_zcip_int8_array(const Node &n, Node &res) { n.zcip_int8_array(res); }
-void convert_zcip_int16_array(const Node &n, Node &res) { n.zcip_int16_array(res); }
-void convert_zcip_int32_array(const Node &n, Node &res) { n.zcip_int32_array(res); }
-void convert_zcip_int64_array(const Node &n, Node &res) { n.zcip_int64_array(res); }
-void convert_zcip_uint8_array(const Node &n, Node &res) { n.zcip_uint8_array(res); }
-void convert_zcip_uint16_array(const Node &n, Node &res) { n.zcip_uint16_array(res); }
-void convert_zcip_uint32_array(const Node &n, Node &res) { n.zcip_uint32_array(res); }
-void convert_zcip_uint64_array(const Node &n, Node &res) { n.zcip_uint64_array(res); }
-void convert_zcip_float32_array(const Node &n, Node &res) { n.zcip_float32_array(res); }
-void convert_zcip_float64_array(const Node &n, Node &res) { n.zcip_float64_array(res); }
-void convert_zcip_char_array(const Node &n, Node &res) { n.zcip_char_array(res); }
-void convert_zcip_short_array(const Node &n, Node &res) { n.zcip_short_array(res); }
-void convert_zcip_int_array(const Node &n, Node &res) { n.zcip_int_array(res); }
-void convert_zcip_long_array(const Node &n, Node &res) { n.zcip_long_array(res); }
-void convert_zcip_unsigned_char_array(const Node &n, Node &res) { n.zcip_unsigned_char_array(res); }
-void convert_zcip_unsigned_short_array(const Node &n, Node &res) { n.zcip_unsigned_short_array(res); }
-void convert_zcip_unsigned_int_array(const Node &n, Node &res) { n.zcip_unsigned_int_array(res); }
-void convert_zcip_unsigned_long_array(const Node &n, Node &res) { n.zcip_unsigned_long_array(res); }
-void convert_zcip_float_array(const Node &n, Node &res) { n.zcip_float_array(res); }
-void convert_zcip_double_array(const Node &n, Node &res) { n.zcip_double_array(res); }
-
 const int CONVERT_TYPES[20] = {
     DataType::INT8_ID, DataType::INT16_ID, DataType::INT32_ID, DataType::INT64_ID,
     DataType::UINT8_ID, DataType::UINT16_ID, DataType::UINT32_ID, DataType::UINT64_ID,
@@ -118,15 +97,6 @@ const NodeConvertFun CONVERT_TO_FUNS[20] = {
     convert_to_char_array, convert_to_short_array, convert_to_int_array, convert_to_long_array,
     convert_to_unsigned_char_array, convert_to_unsigned_short_array, convert_to_unsigned_int_array, convert_to_unsigned_long_array,
     convert_to_float_array, convert_to_double_array
-};
-
-const NodeConvertFun CONVERT_ZCIP_FUNS[20] = {
-    convert_zcip_int8_array, convert_zcip_int16_array, convert_zcip_int32_array, convert_zcip_int64_array,
-    convert_zcip_uint8_array, convert_zcip_uint16_array, convert_zcip_uint32_array, convert_zcip_uint64_array,
-    convert_zcip_float32_array, convert_zcip_float64_array,
-    convert_zcip_char_array, convert_zcip_short_array, convert_zcip_int_array, convert_zcip_long_array,
-    convert_zcip_unsigned_char_array, convert_zcip_unsigned_short_array, convert_zcip_unsigned_int_array, convert_zcip_unsigned_long_array,
-    convert_zcip_float_array, convert_zcip_double_array
 };
 
 //-----------------------------------------------------------------------------
@@ -152,48 +122,5 @@ TEST(conduit_node_convert, to_arrays)
         convert_to_uint8_array(type_node, temp_node);
         EXPECT_FALSE(memcmp(temp_node.data_ptr(), data_node.data_ptr(),
             data_node.total_bytes_allocated()));
-    }
-}
-
-//-----------------------------------------------------------------------------
-TEST(conduit_node_convert, zcip_arrays)
-{
-    uint8 data_vals[3] = {1,2,3};
-    Node data_node;
-    data_node.set(data_vals,3);
-
-    for(index_t ti = 0; ti < 20; ti++)
-    {
-        DataType node_type(CONVERT_TYPES[ti], 3);
-        NodeConvertFun to_fun = CONVERT_TO_FUNS[ti];
-
-        Node type_node(node_type);
-        to_fun(data_node, type_node);
-
-        for(index_t fi = 0; fi < 20; fi++)
-        {
-            NodeConvertFun convert_fun = CONVERT_ZCIP_FUNS[fi];
-
-            Node convert_node;
-            convert_fun(type_node, convert_node);
-            EXPECT_EQ(convert_node.dtype().number_of_elements(),
-                type_node.dtype().number_of_elements());
-
-            if(CONVERT_TYPES[ti] == CONVERT_TYPES[fi])
-            {
-                EXPECT_EQ(convert_node.dtype().id(), type_node.dtype().id());
-                EXPECT_EQ(convert_node.data_ptr(), type_node.data_ptr());
-            }
-            else
-            {
-                EXPECT_NE(convert_node.dtype().id(), type_node.dtype().id());
-                EXPECT_NE(convert_node.data_ptr(), type_node.data_ptr());
-
-                Node temp_node;
-                convert_to_uint8_array(convert_node, temp_node);
-                EXPECT_FALSE(memcmp(temp_node.data_ptr(), data_node.data_ptr(),
-                    data_node.total_bytes_allocated()));
-            }
-        }
     }
 }

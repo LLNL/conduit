@@ -2821,50 +2821,6 @@ public:
     void    to_double_array(Node &res) const;
 
 //-----------------------------------------------------------------------------
-// -- array "zero copy if possible" methods -- 
-//
-/// These methods convert an array to a specific array type.
-/// Unlike the coercion methods, these methods will zero-copy
-/// the source node into the destination if its type matches
-/// the requested result and will only allocate new memory
-/// and copy data if this isn't possible.
-//
-//-----------------------------------------------------------------------------
-
-    /// convert to a signed integer types
-    void    zcip_int8_array(Node &res)  const;
-    void    zcip_int16_array(Node &res) const;
-    void    zcip_int32_array(Node &res) const;
-    void    zcip_int64_array(Node &res) const;
-
-    /// convert to a unsigned integer types
-    void    zcip_uint8_array(Node &res)  const;
-    void    zcip_uint16_array(Node &res) const;
-    void    zcip_uint32_array(Node &res) const;
-    void    zcip_uint64_array(Node &res) const;
-
-    /// convert to a floating point type
-    void    zcip_float32_array(Node &res) const;
-    void    zcip_float64_array(Node &res) const;
-
-    /// convert to c signed integer types
-    void    zcip_char_array(Node &res)  const;
-    void    zcip_short_array(Node &res) const;
-    void    zcip_int_array(Node &res)   const;
-    void    zcip_long_array(Node &res)  const;
-
-    /// convert to c unsigned integer types
-    void    zcip_unsigned_char_array(Node &res)  const;
-    void    zcip_unsigned_short_array(Node &res) const;
-    void    zcip_unsigned_int_array(Node &res)   const;
-    void    zcip_unsigned_long_array(Node &res)  const;
-
-    /// convert to c floating point types
-    void    zcip_float_array(Node &res) const;
-    void    zcip_double_array(Node &res) const;
-
-
-//-----------------------------------------------------------------------------
 // -- Node::Value Helper class --
 //
 // This class allows us to support casting return semantics.
