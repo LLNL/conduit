@@ -129,6 +129,14 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
                                      npts_z,
                                      dsets["points"]);
     
+    
+    blueprint::mesh::examples::braid("points_implicit",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["points_implicit"]);
+    
+    
     NodeConstIterator itr = dsets.children();
 
     Node root;
@@ -275,6 +283,12 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
                                      npts_y,
                                      npts_z,
                                      dsets["points"]);
+
+    blueprint::mesh::examples::braid("points_implicit",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["points_implicit"]);
 
     blueprint::mesh::examples::braid("lines",
                                      npts_x,

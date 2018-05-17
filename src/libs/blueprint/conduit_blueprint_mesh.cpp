@@ -61,7 +61,10 @@ using namespace conduit::utils;
 // access conduit path helper
 using ::conduit::utils::join_path;
 
+//-----------------------------------------------------------------------------
 namespace conduit { namespace blueprint { namespace mesh {
+//-----------------------------------------------------------------------------
+
     bool verify_single_domain(const conduit::Node &n, conduit::Node &info);
     bool verify_multi_domain(const conduit::Node &n, conduit::Node &info);
 
@@ -77,9 +80,15 @@ namespace conduit { namespace blueprint { namespace mesh {
     static const std::vector<std::string> coord_systems(coord_system_list,
         coord_system_list + sizeof(coord_system_list) / sizeof(coord_system_list[0]));
 
-    static const std::string topo_type_list[4] = {"uniform", "rectilinear", "structured", "unstructured"};
+    static const std::string topo_type_list[5] = {"points",
+                                                  "uniform",
+                                                  "rectilinear",
+                                                  "structured",
+                                                  "unstructured"};
+
     static const std::vector<std::string> topo_types(topo_type_list,
         topo_type_list + sizeof(topo_type_list) / sizeof(topo_type_list[0]));
+        
     static const std::string topo_shape_list[6] = {"point", "line", "tri", "quad", "tet", "hex"};
     static const std::vector<std::string> topo_shapes(topo_shape_list,
         topo_shape_list + sizeof(topo_shape_list) / sizeof(topo_shape_list[0]));

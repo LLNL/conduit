@@ -193,8 +193,12 @@ Topologies can optionally include a child ``grid_function`` with a string that r
 Implicit Topology
 ===============================
 
-The mesh blueprint protocol accepts three implicit ways to define a grid of elements on top of a coordinate set. For coordinate set with 1D coordinate tuples, *line* elements are used, for sets with 2D coordinate tuples *quad* elements are used, and for 3D coordinate tuples *hex* elements are used.
+The mesh blueprint protocol accepts four implicit ways to define a topology on a coordinate set. The first simply uses all the points in a given coordinate set and the rest define grids of elements on top of a coordinate set. For the grid cases with a coordinate set with 1D coordinate tuples, *line* elements are used, for sets with 2D coordinate tuples *quad* elements are used, and for 3D coordinate tuples *hex* elements are used.
 
+* **points**: An implicit topology using all of the points in a coordinate set. 
+   
+   * topologies/topo/coordset: "coords"
+   * topologies/topo/type: "points"
 
 * **uniform**: An implicit topology that defines a grid of elements on top of a *uniform* coordinate set. 
    
@@ -265,9 +269,9 @@ The mesh blueprint does yet not have a prescribed winding convention (a way to o
 outline a topology's `dimensional cascade`  (how elements are related to faces, faces are related to edges, and edges are related to vertices. )
 
 This is a gap we are working to solve in future versions of the mesh blueprint, with a goal of providing transforms to
-help converting between windows, or different cascade schemes. 
+help convert between different winding or cascade schemes.
 
-That said VTK (and VTK-m) winding conventions are assumed by MFEM, VisIt, or ALPINE when using Blueprint data.
+That said VTK (and VTK-m) winding conventions are assumed by MFEM, VisIt, or Ascent when using Blueprint data.
 
 
 .. * **stream** - (strem description)
