@@ -707,6 +707,17 @@ DataType::is_long() const
 
 //---------------------------------------------------------------------------//
 bool
+DataType::is_long_long() const
+{
+#ifdef CONDUIT_USE_LONG_LONG
+    return m_id == CONDUIT_NATIVE_LONG_LONG_ID;
+#else
+    return false;
+#endif
+}
+
+//---------------------------------------------------------------------------//
+bool
 DataType::is_unsigned_char() const
 {
     return m_id == CONDUIT_NATIVE_UNSIGNED_CHAR_ID;
@@ -736,6 +747,18 @@ DataType::is_unsigned_long() const
 
 //---------------------------------------------------------------------------//
 bool
+DataType::is_unsigned_long_long() const
+{
+#ifdef CONDUIT_USE_LONG_LONG
+    return m_id == CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID;
+#else
+    return false;
+#endif
+}
+
+
+//---------------------------------------------------------------------------//
+bool
 DataType::is_float() const
 {
     return m_id == CONDUIT_NATIVE_FLOAT_ID;
@@ -747,6 +770,19 @@ DataType::is_double() const
 {
     return m_id == CONDUIT_NATIVE_DOUBLE_ID;
 }
+
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_long_double() const
+{
+#ifdef CONDUIT_USE_LONG_DOUBLE
+    return m_id == CONDUIT_NATIVE_LONG_DOUBLE_ID;
+#else
+    return false;
+#endif
+}
+
 
 //---------------------------------------------------------------------------//
 bool

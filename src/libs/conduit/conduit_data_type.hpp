@@ -404,14 +404,25 @@ public:
     bool        is_short()            const;
     bool        is_int()              const;
     bool        is_long()             const;
-    
+    /// note: is_long_long() always returns false if conduit is not
+    /// using long long to fill its support for bitwidth style types
+    bool        is_long_long()      const;
+
     bool        is_unsigned_char()    const;
     bool        is_unsigned_short()   const;
     bool        is_unsigned_int()     const;
     bool        is_unsigned_long()    const;
+    /// note: is_unsigned_long_long() always returns false if conduit is not
+    /// using long long to fill its support for bitwidth style types
+    bool        is_unsigned_long_long() const;
+
 
     bool        is_float()            const;
     bool        is_double()           const;
+
+    /// note: is_long_double() always returns false if conduit is not using 
+    /// long double to fill its support for bitwidth style types
+    bool        is_long_double()      const;
     
     bool        is_string()           const;
     bool        is_char8_str()        const;
