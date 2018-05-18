@@ -1329,8 +1329,8 @@ mesh::topology::points::verify(const Node & /*topo*/,
                                Node &info)
 {
     info.reset();
-    // future: will be used to verify optional info from "elements"
-    // child of a uniform topology
+    // if needed in the future, can be used to verify optional info for 
+    // implicit 'points' topology
     bool res = true;
     log::validation(info,res);
     return res;
