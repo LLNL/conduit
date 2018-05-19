@@ -522,6 +522,16 @@ TEST(conduit_blueprint_mesh_verify, coordset_general)
 /// Mesh Topology Tests ///
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, topology_points)
+{
+    // FIXME: Implement once 'mesh::topology::points::verify' is implemented.
+    VerifyFun verify_points_topology = blueprint::mesh::topology::points::verify;
+    Node n, info;
+
+    CHECK_MESH(verify_points_topology,n,info,true);
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, topology_uniform)
 {
     // FIXME: Implement once 'mesh::topology::uniform::verify' is implemented.
@@ -640,9 +650,9 @@ TEST(conduit_blueprint_mesh_verify, topology_types)
 
     Node n, info;
 
-    const std::string topology_types[] = {"uniform", "rectilinear", "structured", "unstructured"};
-    const std::string topology_fids[] = {"uniform", "rectilinear", "structured", "quads"};
-    for(index_t ti = 0; ti < 4; ti++)
+    const std::string topology_types[] = {"points", "uniform", "rectilinear", "structured", "unstructured"};
+    const std::string topology_fids[] = {"points_implicit", "uniform", "rectilinear", "structured", "quads"};
+    for(index_t ti = 0; ti < 5; ti++)
     {
         n.reset();
         blueprint::mesh::examples::braid(topology_fids[ti],10,10,1,n);
@@ -655,9 +665,9 @@ TEST(conduit_blueprint_mesh_verify, topology_types)
         topology_node["type"].set("explicit");
         CHECK_MESH(verify_topology,topology_node,info,false);
 
-        if(ti != 3)
+        if(ti != 4)
         {
-            topology_node["type"].set(topology_types[3]);
+            topology_node["type"].set(topology_types[4]);
             CHECK_MESH(verify_topology,topology_node,info,false);
         }
 

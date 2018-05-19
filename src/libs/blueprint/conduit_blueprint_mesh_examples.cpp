@@ -794,6 +794,44 @@ braid_points_explicit(index_t npts_x,
 
 //---------------------------------------------------------------------------//
 void
+braid_points_implicit(index_t npts_x,
+                      index_t npts_y,
+                      index_t npts_z,
+                      Node &res)
+{
+    res.reset();
+    
+    braid_init_example_state(res);
+    braid_init_explicit_coordset(npts_x,
+                                 npts_y,
+                                 npts_z,
+                                 res["coordsets/coords"]);
+    
+    res["topologies/mesh/type"] = "points";
+    res["topologies/mesh/coordset"] = "coords";
+
+    Node &fields = res["fields"];
+    
+    braid_init_example_point_scalar_field(npts_x,
+                                          npts_y,
+                                          npts_z,
+                                          fields["braid"]);
+    
+    braid_init_example_element_scalar_field(npts_x,
+                                            npts_y, 
+                                            npts_z,
+                                            fields["radial"]);
+
+    braid_init_example_point_vector_field(npts_x,
+                                          npts_y,
+                                          npts_z,
+                                          fields["vel"]);
+
+}
+
+
+//---------------------------------------------------------------------------//
+void
 braid_quads(index_t npts_x,
             index_t npts_y,
             Node &res)
@@ -1797,6 +1835,10 @@ braid(const std::string &mesh_type,
     else if(mesh_type == "points")
     {
         braid_points_explicit(npts_x,npts_y,npts_z,res);
+    }
+    else if(mesh_type == "points_implicit")
+    {
+        braid_points_implicit(npts_x,npts_y,npts_z,res);
     }
     else
     {
