@@ -268,8 +268,8 @@ conduit_node_print_detailed(conduit_node *cnode)
 // -- set for generic types --
 //-----------------------------------------------------------------------------
 void
-conduit_set_node(conduit_node *cnode,
-                 conduit_node *data)
+conduit_node_set_node(conduit_node *cnode,
+                      conduit_node *data)
 {
     cpp_node(cnode)->set_node(*cpp_node(data));
 }
@@ -279,9 +279,9 @@ conduit_set_node(conduit_node *cnode,
 // -- set path for generic types --
 //-----------------------------------------------------------------------------
 void
-conduit_set_path_node(conduit_node *cnode,
-                      const char* path,
-                      conduit_node *data)
+conduit_node_set_path_node(conduit_node *cnode,
+                           const char* path,
+                           conduit_node *data)
 {
     cpp_node(cnode)->set_path_node(path,*cpp_node(data));
 }
@@ -290,8 +290,8 @@ conduit_set_path_node(conduit_node *cnode,
 // -- set external for generic types --
 //-----------------------------------------------------------------------------
 void
-conduit_set_external_node(conduit_node *cnode,
-                          conduit_node *data)
+conduit_node_set_external_node(conduit_node *cnode,
+                               conduit_node *data)
 {
     cpp_node(cnode)->set_external_node(*cpp_node(data));
 }
@@ -301,9 +301,9 @@ conduit_set_external_node(conduit_node *cnode,
 // -- set path external for generic types --
 //-----------------------------------------------------------------------------
 void
-conduit_set_path_external_node(conduit_node *cnode,
-                               const char* path,
-                               conduit_node *data)
+conduit_node_set_path_external_node(conduit_node *cnode,
+                                    const char* path,
+                                    conduit_node *data)
 {
     cpp_node(cnode)->set_path_external_node(path,*cpp_node(data));
 }
