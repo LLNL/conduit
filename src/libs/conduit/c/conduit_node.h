@@ -172,8 +172,8 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
 // -- set for generic types --
 //-----------------------------------------------------------------------------
     //-------------------------------------------------------------------------
-    CONDUIT_API void conduit_set_node(conduit_node *cnode,
-                                      conduit_node *data);
+    CONDUIT_API void conduit_node_set_node(conduit_node *cnode,
+                                           conduit_node *data);
 
     // TODO: These req c-interfaces for datatype, schema, etc
     //void set_dtype(const DataType &dtype);
@@ -185,9 +185,9 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
 // -- set_path for generic types --
 //-----------------------------------------------------------------------------
     //-------------------------------------------------------------------------
-    CONDUIT_API void conduit_set_path_node(conduit_node *cnode,
-                                           const char* path,
-                                           conduit_node *data);
+    CONDUIT_API void conduit_node_set_path_node(conduit_node *cnode,
+                                                const char* path,
+                                                conduit_node *data);
 
     // TODO: These req c-interfaces for datatype, schema, etc
     // //-------------------------------------------------------------------------
@@ -229,9 +229,9 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
 //-----------------------------------------------------------------------------
 
     //-------------------------------------------------------------------------
-    CONDUIT_API void set_path_external_node(conduit_node *cnode,
-                                            const char *path,
-                                            conduit_node *data);
+    CONDUIT_API void conduit_node_set_path_external_node(conduit_node *cnode,
+                                                         const char *path,
+                                                         conduit_node *data);
 
     // TODO: These req c-interfaces for datatype, schema, etc
     // //-------------------------------------------------------------------------
