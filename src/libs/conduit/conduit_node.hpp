@@ -2820,7 +2820,6 @@ public:
     void    to_float_array(Node &res) const;
     void    to_double_array(Node &res) const;
 
-
 //-----------------------------------------------------------------------------
 // -- Node::Value Helper class --
 //
