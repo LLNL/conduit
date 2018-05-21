@@ -236,6 +236,14 @@ public:
                            index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG),
                            index_t endianness = Endianness::DEFAULT_ID);
 
+#ifdef CONDUIT_USE_LONG_LONG
+    static DataType c_long_long(index_t num_elements=1,
+                                index_t offset = 0,
+                                index_t stride = sizeof(CONDUIT_NATIVE_LONG_LONG),
+                                index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG_LONG),
+                                index_t endianness = Endianness::DEFAULT_ID);
+#endif
+
     /// unsigned integer arrays
     static DataType c_unsigned_char(index_t num_elements=1,
                                     index_t offset = 0,
@@ -261,6 +269,14 @@ public:
                                     index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
                                     index_t endianness = Endianness::DEFAULT_ID);
 
+#ifdef CONDUIT_USE_LONG_LONG
+    static DataType c_unsigned_long_long(index_t num_elements=1,
+                                         index_t offset = 0,
+                                         index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG_LONG),
+                                         index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG_LONG),
+                                         index_t endianness = Endianness::DEFAULT_ID);
+#endif
+
     /// floating point arrays
     static DataType c_float(index_t num_elements=1,
                             index_t offset = 0,
@@ -273,6 +289,15 @@ public:
                              index_t stride = sizeof(CONDUIT_NATIVE_DOUBLE),
                              index_t element_bytes=sizeof(CONDUIT_NATIVE_DOUBLE),
                              index_t endianness = Endianness::DEFAULT_ID);
+
+#ifdef CONDUIT_USE_LONG_DOUBLE
+    static DataType c_long_double(index_t num_elements=1,
+                             index_t offset = 0,
+                             index_t stride = sizeof(CONDUIT_NATIVE_LONG_DOUBLE),
+                             index_t element_bytes=sizeof(CONDUIT_NATIVE_LONG_DOUBLE),
+                             index_t endianness = Endianness::DEFAULT_ID);
+#endif
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::DataType C Native Leaf Constructor Helpers 

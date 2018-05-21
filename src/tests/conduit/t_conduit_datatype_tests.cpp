@@ -156,7 +156,7 @@ TEST(dtype_tests, c_types_value_print)
     print_dt(dt);
 
 #ifdef CONDUIT_USE_LONG_LONG
-    dt = DataType::DataType(CONDUIT_NATIVE_LONG_LONG_ID);
+    dt = DataType::c_long_long();
     EXPECT_TRUE(dt.is_long_long());
     print_dt(dt);
 #else
@@ -181,7 +181,7 @@ TEST(dtype_tests, c_types_value_print)
     print_dt(dt);
 
 #ifdef CONDUIT_USE_LONG_LONG
-    dt = DataType::DataType(CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID);
+    dt = DataType::c_unsigned_long_long();
     EXPECT_TRUE(dt.is_unsigned_long_long());
     print_dt(dt);
 #else
@@ -198,7 +198,7 @@ TEST(dtype_tests, c_types_value_print)
     print_dt(dt);
     
 #ifdef CONDUIT_USE_LONG_DOUBLE
-        dt = DataType::DataType(CONDUIT_NATIVE_LONG_DOUBLE_ID);
+        dt = DataType::c_long_double();
         EXPECT_TRUE(dt.is_long_double());
         print_dt(dt);
 #else

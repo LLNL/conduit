@@ -263,6 +263,20 @@ DataType::c_long(index_t num_elements,
                     num_elements,offset,stride,element_bytes,endianness);
 }
 
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+DataType
+DataType::c_long_long(index_t num_elements,
+                      index_t offset,
+                      index_t stride,
+                      index_t element_bytes,
+                      index_t endianness)
+{
+    return DataType(CONDUIT_NATIVE_LONG_LONG_ID,
+                    num_elements,offset,stride,element_bytes,endianness);
+}
+#endif
+
 /// unsigned integer arrays
 //---------------------------------------------------------------------------//
 DataType
@@ -312,6 +326,20 @@ DataType::c_unsigned_long(index_t num_elements,
                     num_elements,offset,stride,element_bytes,endianness);
 }
 
+#ifdef CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+DataType
+DataType::c_unsigned_long_long(index_t num_elements,
+                               index_t offset,
+                               index_t stride,
+                               index_t element_bytes,
+                               index_t endianness)
+{
+    return DataType(CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
+                    num_elements,offset,stride,element_bytes,endianness);
+}
+#endif
+
  /// floating point arrays
 //---------------------------------------------------------------------------//
 DataType 
@@ -336,6 +364,20 @@ DataType::c_double(index_t num_elements,
     return DataType(CONDUIT_NATIVE_DOUBLE_ID,
                     num_elements,offset,stride,element_bytes,endianness);
 }
+
+#ifdef CONDUIT_USE_LONG_DOUBLE
+//---------------------------------------------------------------------------//
+DataType
+DataType::c_long_double(index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    return DataType(CONDUIT_NATIVE_LONG_DOUBLE_ID,
+                    num_elements,offset,stride,element_bytes,endianness);
+}
+#endif
 
 
 //=============================================================================
