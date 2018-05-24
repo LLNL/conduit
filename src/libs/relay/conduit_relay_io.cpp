@@ -244,7 +244,8 @@ save_merged(const Node &node,
     else if( protocol == "hdf5")
     {
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-        hdf5_write(node,path);
+        //hdf5_write(node,path);
+        hdf5_append(node,path);
 #else
         CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
                       "Failed to save conduit node to path " << path);

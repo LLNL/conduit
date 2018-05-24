@@ -1876,9 +1876,33 @@ hdf5_close_file(hid_t hdf5_id)
 
 
 //---------------------------------------------------------------------------//
-void 
-hdf5_write(const  Node &node,
-           const std::string &path)
+static void
+hdf5_write_internal_b(const Node &node,
+           const std::string &file_path,
+           const std::string &hdf5_path,
+           bool append)
+{
+    // open the hdf5 file for writing
+    hid_t h5_file_id;
+    if(append)
+        h5_file_id = hdf5_open_file_for_read_write(file_path);
+    else
+        h5_file_id = hdf5_create_file(file_path);
+
+    hdf5_write(node,
+               h5_file_id,
+               hdf5_path);
+
+    // close the hdf5 file
+    CONDUIT_CHECK_HDF5_ERROR(H5Fclose(h5_file_id),
+                             "Error closing HDF5 file: " << file_path);
+}
+
+//---------------------------------------------------------------------------//
+static void 
+hdf5_write_internal_a(const  Node &node,
+                      const std::string &path,
+                      bool append)
 {
     // check for ":" split
     std::string file_path;
@@ -1896,30 +1920,35 @@ hdf5_write(const  Node &node,
         hdf5_path = "/";
     }
 
-    hdf5_write(node,
-               file_path,
-               hdf5_path);
+    hdf5_write_internal_b(node,
+                          file_path,
+                          hdf5_path,
+                          append);
 }
 
+void 
+hdf5_write(const  Node &node,
+           const std::string &path)
+{
+    hdf5_write_internal_a(node, path, false);
+}
+
+void 
+hdf5_append(const  Node &node,
+            const std::string &path)
+{
+    hdf5_write_internal_a(node, path, true);
+}
 
 //---------------------------------------------------------------------------//
+
 void
 hdf5_write(const Node &node,
            const std::string &file_path,
            const std::string &hdf5_path)
 {
-    // open the hdf5 file for writing
-    hid_t h5_file_id = hdf5_create_file(file_path);
-
-    hdf5_write(node,
-               h5_file_id,
-               hdf5_path);
-
-    // close the hdf5 file
-    CONDUIT_CHECK_HDF5_ERROR(H5Fclose(h5_file_id),
-                             "Error closing HDF5 file: " << file_path);
+    hdf5_write_internal_b(node, file_path, hdf5_path, false);
 }
-
 
 //---------------------------------------------------------------------------//
 void

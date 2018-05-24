@@ -170,6 +170,16 @@ void CONDUIT_RELAY_API hdf5_write(const Node &node,
                                   const std::string &path);
 
 //-----------------------------------------------------------------------------
+/// Write node data to a given path in an existing file.
+///
+/// This methods supports a file system and hdf5 path, joined using a ":"
+///  ex: "/path/on/file/system.hdf5:/path/inside/hdf5/file"
+/// 
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API hdf5_append(const Node &node,
+                                   const std::string &path);
+
+//-----------------------------------------------------------------------------
 /// Write node data to given file system path and internal hdf5 path
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API hdf5_write(const Node &node,
