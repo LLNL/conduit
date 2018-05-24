@@ -97,6 +97,7 @@ set(conduit_headers
 #
 set(conduit_c_headers
     c/conduit.h
+    c/conduit_datatype.h
     c/conduit_node.h
     c/conduit_cpp_to_c.hpp
     c/conduit_utils.h
@@ -124,6 +125,7 @@ set(conduit_sources
 #
 set(conduit_c_sources
     c/conduit_c.cpp
+    c/conduit_datatype_c.cpp
     c/conduit_node_c.cpp
     c/conduit_cpp_to_c.cpp
     c/conduit_utils_c.cpp
