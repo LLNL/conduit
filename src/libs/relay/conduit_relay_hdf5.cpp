@@ -216,6 +216,11 @@ public:
                 }
             }
         }
+#if 0
+        Node tmp;
+        about(tmp);
+        std::cout << "HDF5 options: " << tmp.to_json() << std::endl;
+#endif
     }
 
     //------------------------------------------------------------------------

@@ -194,6 +194,9 @@ save(const Node &node,
     else if( protocol == "hdf5")
     {
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+        if(node.has_path("options/hdf5"))
+            hdf5_set_options(node["options/hdf5"]);
+
         hdf5_write(node,path);
 #else
         CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
@@ -244,7 +247,9 @@ save_merged(const Node &node,
     else if( protocol == "hdf5")
     {
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-        //hdf5_write(node,path);
+        if(node.has_path("options/hdf5"))
+            hdf5_set_options(node["options/hdf5"]);
+
         hdf5_append(node,path);
 #else
         CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
