@@ -101,6 +101,10 @@ about(Node &n)
 
     Node &io_protos = n["io/protocols"];
 
+    // json io
+    io_protos["json"] = "enabled";
+    io_protos["conduit_json"] = "enabled";
+
     // standard binary io
     io_protos["conduit_bin"] = "enabled";
 

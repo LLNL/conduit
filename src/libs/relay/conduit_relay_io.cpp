@@ -175,12 +175,22 @@ load_merged(const std::string &path,
     load_merged(path,protocol,node);
 }
 
-
 //---------------------------------------------------------------------------//
 void 
 save(const Node &node,
      const std::string &path,
      const std::string &protocol)
+{
+    Node options;
+    save(node, path, protocol, options);
+}
+
+//---------------------------------------------------------------------------//
+void 
+save(const Node &node,
+     const std::string &path,
+     const std::string &protocol,
+     const Node &options)
 {
     // support conduit::Node's basic save cases
     if(protocol == "conduit_bin" ||
@@ -188,15 +198,12 @@ save(const Node &node,
        protocol == "conduit_json" ||
        protocol == "conduit_base64_json" )
     {
-
         node.save(path,protocol);
     }
     else if( protocol == "hdf5")
     {
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-        if(node.has_path("options/hdf5"))
-            hdf5_set_options(node["options/hdf5"]);
-
+        hdf5_set_options(options);
         hdf5_write(node,path);
 #else
         CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
@@ -233,6 +240,17 @@ save_merged(const Node &node,
             const std::string &path,
             const std::string &protocol)
 {
+    Node options;
+    save_merged(node, path, protocol, options);
+}
+
+//---------------------------------------------------------------------------//
+void 
+save_merged(const Node &node,
+            const std::string &path,
+            const std::string &protocol,
+            const Node &options)
+{
     // support conduit::Node's basic save cases
     if(protocol == "conduit_bin" ||
        protocol == "json" || 
@@ -247,9 +265,7 @@ save_merged(const Node &node,
     else if( protocol == "hdf5")
     {
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-        if(node.has_path("options/hdf5"))
-            hdf5_set_options(node["options/hdf5"]);
-
+        hdf5_set_options(options);
         hdf5_append(node,path);
 #else
         CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
