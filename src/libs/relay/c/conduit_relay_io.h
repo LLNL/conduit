@@ -75,6 +75,12 @@ void CONDUIT_RELAY_API conduit_relay_io_save2(conduit_node *cnode,
                                               const char *path,
                                               const char *protocol);
 
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API conduit_relay_io_save3(conduit_node *cnode,
+                                              const char *path,
+                                              const char *protocol,
+                                              conduit_node *copt);
+
 ///
 /// ``save_merged`` works like an update to the file.
 ///
@@ -87,6 +93,12 @@ void CONDUIT_RELAY_API conduit_relay_io_save_merged(conduit_node *cnode,
 void CONDUIT_RELAY_API conduit_relay_io_save_merged2(conduit_node *cnode,
                                                      const char *path,
                                                      const char *protocol);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API conduit_relay_io_save_merged3(conduit_node *cnode,
+                                                     const char *path,
+                                                     const char *protocol,
+                                                     conduit_node *copt);
 
 ///
 /// ``load`` works like a 'set', the node is reset and then populated
