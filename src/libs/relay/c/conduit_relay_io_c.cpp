@@ -85,7 +85,10 @@ conduit_relay_io_save3(conduit_node *cnode,
 {
     Node *n = cpp_node(cnode);
     Node *opt = cpp_node(copt);
-    relay::io::save(*n, std::string(path), std::string(protocol), *opt);
+    if(opt != NULL)
+        relay::io::save(*n, std::string(path), std::string(protocol), *opt);
+    else
+        relay::io::save(*n, std::string(path), std::string(protocol));
 }
 
 //-----------------------------------------------------------------------------
@@ -112,7 +115,10 @@ conduit_relay_io_save_merged3(conduit_node *cnode,
 {
     Node *n = cpp_node(cnode);
     Node *opt = cpp_node(copt);
-    relay::io::save_merged(*n, std::string(path), std::string(protocol), *opt);
+    if(opt != NULL)
+        relay::io::save_merged(*n, std::string(path), std::string(protocol), *opt);
+    else
+        relay::io::save_merged(*n, std::string(path), std::string(protocol));
 }
 
 //-----------------------------------------------------------------------------
