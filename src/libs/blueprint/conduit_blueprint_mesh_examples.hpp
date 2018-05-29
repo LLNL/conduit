@@ -78,7 +78,6 @@ namespace mesh
 
 //-----------------------------------------------------------------------------
 /// Methods that generate example meshes.
-/// We should move these to a better place in the future.
 //-----------------------------------------------------------------------------
 namespace examples
 {
@@ -93,6 +92,23 @@ namespace examples
                                     conduit::index_t ny,
                                     conduit::index_t nz,
                                     conduit::Node &res);
+
+    /// Generates a rectilinear grid with a scalar field that
+    /// visualizes the julia set (https://en.wikipedia.org/wiki/Julia_set)
+    void CONDUIT_BLUEPRINT_API julia(conduit::index_t nx,
+                                     conduit::index_t ny,
+                                     conduit::float64 x_min,
+                                     conduit::float64 x_max,
+                                     conduit::float64 y_min,
+                                     conduit::float64 y_max,
+                                     conduit::float64 c_re,
+                                     conduit::float64 c_im,
+                                     conduit::Node &res);
+
+    /// Generates a multi-domain fibonacci estimation of a golden spiral.
+    void CONDUIT_BLUEPRINT_API spiral(conduit::index_t ndomains,
+                                      conduit::Node &res);
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::examples --

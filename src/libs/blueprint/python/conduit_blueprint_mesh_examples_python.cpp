@@ -220,6 +220,115 @@ PyBlueprint_mesh_examples_braid(PyObject *, //self
     Py_RETURN_NONE;
 }
 
+//---------------------------------------------------------------------------//
+// conduit::blueprint::mesh::examples::julia
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyBlueprint_mesh_examples_julia(PyObject *, //self
+                                PyObject *args,
+                                PyObject *kwargs)
+{
+    Py_ssize_t nx = 0;
+    Py_ssize_t ny = 0;
+    double     x_min = 0.0;
+    double     x_max = 0.0;
+    double     y_min = 0.0;
+    double     y_max = 0.0;
+    double     c_re = 0.0;
+    double     c_im = 0.0;
+
+    PyObject   *py_node  = NULL;
+    
+    static const char *kwlist[] = {"nx",
+                                   "ny",
+                                   "x_min",
+                                   "x_max",
+                                   "y_min",
+                                   "y_max",
+                                   "c_re",
+                                   "c_im",
+                                   "dest",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "nnddddddO",
+                                     const_cast<char**>(kwlist),
+                                     &nx,
+                                     &ny,
+                                     &x_min,
+                                     &x_max,
+                                     &y_min,
+                                     &y_max,
+                                     &c_re,
+                                     &c_im,
+                                     &py_node))
+    {
+        return (NULL);
+    }
+
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'dest' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+    
+    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+    
+    blueprint::mesh::examples::julia(nx,ny,
+                                     x_min,x_max,
+                                     y_min,y_max,
+                                     c_re,c_im,
+                                     node);
+
+    Py_RETURN_NONE;
+}
+
+//---------------------------------------------------------------------------//
+// conduit::blueprint::mesh::examples::spiral
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyBlueprint_mesh_examples_spiral(PyObject *, //self
+                                 PyObject *args,
+                                 PyObject *kwargs)
+{
+    Py_ssize_t ndoms = 0;
+    PyObject   *py_node  = NULL;
+    
+    static const char *kwlist[] = {"ndoms",
+                                   "dest",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "nO",
+                                     const_cast<char**>(kwlist),
+                                     &ndoms,
+                                     &py_node))
+    {
+        return (NULL);
+    }
+
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'dest' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+    
+    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+    
+    blueprint::mesh::examples::spiral(ndoms,
+                                     node);
+
+    Py_RETURN_NONE;
+}
+
+
+
 
 
 
@@ -231,6 +340,16 @@ static PyMethodDef blueprint_mesh_examples_python_funcs[] =
     //-----------------------------------------------------------------------//
     {"braid",
      (PyCFunction)PyBlueprint_mesh_examples_braid,
+      METH_VARARGS | METH_KEYWORDS,
+      NULL},
+    //-----------------------------------------------------------------------//
+    {"julia",
+     (PyCFunction)PyBlueprint_mesh_examples_julia,
+      METH_VARARGS | METH_KEYWORDS,
+      NULL},
+    //-----------------------------------------------------------------------//
+    {"spiral",
+     (PyCFunction)PyBlueprint_mesh_examples_spiral,
       METH_VARARGS | METH_KEYWORDS,
       NULL},
     //-----------------------------------------------------------------------//
