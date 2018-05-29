@@ -405,6 +405,15 @@ namespace nestset
     bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                       conduit::Node &info);
 
+    //-------------------------------------------------------------------------
+    // blueprint::mesh::coordset::type protocol interface
+    //-------------------------------------------------------------------------
+    namespace type
+    {
+        //---------------------------------------------------------------------
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+                                          conduit::Node &info);
+    }
 }
 
 //-----------------------------------------------------------------------------
