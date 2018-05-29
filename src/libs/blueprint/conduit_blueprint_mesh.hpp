@@ -406,7 +406,17 @@ namespace nestset
                                       conduit::Node &info);
 
     //-------------------------------------------------------------------------
-    // blueprint::mesh::coordset::type protocol interface
+    // blueprint::mesh::nestset::index protocol interface
+    //-------------------------------------------------------------------------
+    namespace index
+    {
+        //---------------------------------------------------------------------
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+                                          conduit::Node &info);
+    }
+
+    //-------------------------------------------------------------------------
+    // blueprint::mesh::nestset::type protocol interface
     //-------------------------------------------------------------------------
     namespace type
     {

@@ -423,6 +423,10 @@ mesh::verify(const std::string &protocol,
     {
         res = adjset::verify(n,info);
     }
+    else if(protocol == "nestset")
+    {
+        res = nestset::verify(n,info);
+    }
     else if(protocol == "index")
     {
         res = index::verify(n,info);
@@ -446,6 +450,10 @@ mesh::verify(const std::string &protocol,
     else if(protocol == "adjset/index")
     {
         res = adjset::index::verify(n,info);
+    }
+    else if(protocol == "nestset/index")
+    {
+        res = nestset::index::verify(n,info);
     }
 
     return res;
@@ -1774,6 +1782,29 @@ mesh::adjset::verify(const Node &adjset,
 }
 
 //-----------------------------------------------------------------------------
+// blueprint::mesh::adjset::index protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::adjset::index::verify(const Node &adj_idx,
+                                      Node &info)
+{
+    const std::string protocol = "mesh::adjset::index";
+    bool res = true;
+    info.reset();
+
+    res &= verify_string_field(protocol, adj_idx, info, "topology");
+    res &= verify_field_exists(protocol, adj_idx, info, "association") &&
+           mesh::association::verify(adj_idx["association"], info["association"]);
+    res &= verify_string_field(protocol, adj_idx, info, "path");
+
+    log::validation(info, res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
 // blueprint::mesh::nestset protocol interface
 //-----------------------------------------------------------------------------
 
@@ -1841,6 +1872,29 @@ mesh::nestset::verify(const Node &nestset,
 }
 
 //-----------------------------------------------------------------------------
+// blueprint::mesh::nestset::index protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::nestset::index::verify(const Node &nest_idx,
+                            Node &info)
+{
+    const std::string protocol = "mesh::nestset::index";
+    bool res = true;
+    info.reset();
+
+    res &= verify_string_field(protocol, nest_idx, info, "topology");
+    res &= verify_field_exists(protocol, nest_idx, info, "association") &&
+           mesh::association::verify(nest_idx["association"], info["association"]);
+    res &= verify_string_field(protocol, nest_idx, info, "path");
+
+    log::validation(info, res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
 // blueprint::mesh::topology::type protocol interface
 //-----------------------------------------------------------------------------
 
@@ -1856,29 +1910,6 @@ mesh::nestset::type::verify(const Node &type,
     res &= verify_enum_field(protocol, type, info, "", mesh::nestset_types);
 
     log::validation(info,res);
-
-    return res;
-}
-
-//-----------------------------------------------------------------------------
-// blueprint::mesh::adjset::index protocol interface
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-bool
-mesh::adjset::index::verify(const Node &adj_idx,
-                                      Node &info)
-{
-    const std::string protocol = "mesh::adjset::index";
-    bool res = true;
-    info.reset();
-
-    res &= verify_string_field(protocol, adj_idx, info, "topology");
-    res &= verify_field_exists(protocol, adj_idx, info, "association") &&
-           mesh::association::verify(adj_idx["association"], info["association"]);
-    res &= verify_string_field(protocol, adj_idx, info, "path");
-
-    log::validation(info, res);
 
     return res;
 }
@@ -2028,6 +2059,34 @@ mesh::index::verify(const Node &n,
 
             log::validation(info["adjsets"],aset_res);
             res &= aset_res;
+        }
+    }
+
+    // optional: "nestsets", each child must conform to
+    // "mesh::index::nestsets"
+    if(n.has_path("nestsets"))
+    {
+        if(!verify_object_field(protocol, n, info, "nestsets"))
+        {
+            res = false;
+        }
+        else
+        {
+            bool nset_res = true;
+            NodeConstIterator itr = n["nestsets"].children();
+            while(itr.has_next())
+            {
+                const Node &chld = itr.next();
+                const std::string chld_name = itr.name();
+                Node &chld_info = info["nestsets"][chld_name];
+
+                nset_res &= nestset::index::verify(chld, chld_info);
+                nset_res &= verify_reference_field(protocol, n, info,
+                    chld, chld_info, "topology", "topologies");
+            }
+
+            log::validation(info["nestsets"],nset_res);
+            res &= nset_res;
         }
     }
 
