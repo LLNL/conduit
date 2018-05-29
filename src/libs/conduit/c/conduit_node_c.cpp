@@ -53,6 +53,7 @@
 #include "conduit_cpp_to_c.hpp"
 
 #include <stdlib.h>
+#include <string.h>
 
 //-----------------------------------------------------------------------------
 // -- begin extern C
