@@ -98,7 +98,7 @@ const float64 PI_VALUE = 3.14159265359;
 //---------------------------------------------------------------------------//
 struct point
 {
-    point(float64 px, float64 py, float64 pz = 0.0) : x(px), y(py), z(pz)
+    point(float64 px = 0.0, float64 py = 0.0, float64 pz = 0.0) : x(px), y(py), z(pz)
     {
     };
 
@@ -607,6 +607,261 @@ void braid_init_example_adjset(Node &mesh)
             const_cast<index_t*>(dom_neighbors.data()), dom_neighbors.size());
           dom_node["groups"][group_name]["values"].set(
             const_cast<index_t*>(dom_idxs.data()), dom_idxs.size());
+        }
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void braid_init_example_nestset(Node &mesh)
+{
+    // TODO(JRC): Implement this function properly (will be easier once transforms
+    // between different mesh types is possible).
+
+    // TODO(JRC): Implement the following general algorithm:
+    //   construct temporary point lists for every domain (cartesian product of x, y, and z)
+    //   create point maps from level N+1 domains to level N domains for each N
+    //   the minimum/maximum point in the per-domain mappings define the extents (need to associate points with indices in original)
+    //   use info on where minimum/maximum lies in embedded to get offset/extents
+    //   define ratio w/ number of elements in child as compared to parent in range
+    typedef std::map<point, index_t> point_id_map;
+    typedef std::pair<index_t, index_t> window;
+
+    // NOTE(JRC): This function currently assumes that the given mesh contains
+    // exclusively domains created with "braid_rectilinear"
+    const std::string cartesian_dims[3] = {"x", "y", "z"};
+    const std::string logical_dims[3] = {"i", "j", "k"};
+    const bool mesh_3d = mesh.child(0)["coordsets/coords/values"].has_child("z");
+    const index_t dim_count = mesh_3d ? 3 : 2;
+
+    // map from level to list of all domtains
+
+    std::map<index_t, const Node*> mesh_id_map;
+    index_t max_dom_id = 0, max_level_id = 0;
+    {
+        conduit::NodeConstIterator doms_it = mesh.children();
+        while(doms_it.has_next())
+        {
+            const conduit::Node& dom_node = doms_it.next();
+            const index_t dom_id = dom_node["state/domain_id"].to_uint64();
+            mesh_id_map[dom_id] = &dom_node;
+
+            max_dom_id = std::max(dom_id, max_dom_id);
+            const index_t dom_level = dom_node["state/level_id"].to_uint64();
+            max_level_id = std::max(dom_level, max_level_id);
+        }
+    }
+
+    std::vector<point_id_map> mesh_point_maps(max_dom_id + 1);
+    std::vector< std::vector<const Node*> > mesh_level_map(max_level_id + 1);
+    {
+        conduit::NodeConstIterator doms_it = mesh.children();
+        while(doms_it.has_next())
+        {
+            const conduit::Node &dom_node = doms_it.next();
+            const index_t dom_id = dom_node["state/domain_id"].to_uint64();
+            const index_t level_id = dom_node["state/level_id"].to_uint64();
+            const conduit::Node &dom_coords = dom_node["coordsets/coords/values"];
+
+            point_id_map &dom_point_map = mesh_point_maps[dom_id];
+            {
+                std::vector<point> dom_points(1);
+                for(index_t d = 0; d < dim_count; d++)
+                {
+                    std::vector<point> prev_dom_points = dom_points;
+                    dom_points.clear();
+
+                    float64_array dim_coords = dom_coords[cartesian_dims[d]].as_float64_array();
+                    for(index_t i = 0; i < dim_coords.number_of_elements(); i++)
+                    {
+                        for(index_t p = 0; p < (index_t)prev_dom_points.size(); p++)
+                        {
+                            point base_point = prev_dom_points[p];
+                            float64 dim_val = dim_coords[i];
+                            // TODO(JRC): Is there any way that this could be improved?
+                            memcpy((uint8*)(&base_point) + d * (sizeof(float64)/sizeof(uint8)), &dim_val, sizeof(float64));
+                            dom_points.push_back(base_point);
+                        }
+                    }
+                }
+
+                for(index_t i = 0; i < (index_t)dom_points.size(); i++)
+                {
+                    dom_point_map[dom_points[i]] = i;
+                }
+            }
+
+            mesh_level_map[level_id].push_back(&dom_node);
+        }
+    }
+
+    // NOTE(JRC): 'mesh_window_maps' maps a given domain ID to all of the windows
+    // for that domain, which are returned via a map from other domain ID to
+    // the indices of the extents in the primary domain.
+    std::map< index_t, std::map<index_t, window> > mesh_window_maps;
+    {
+        for(index_t l = 0; l < (index_t)mesh_level_map.size() - 1; l++)
+        {
+            std::vector<const Node*> &hi_nodes = mesh_level_map[l];
+            std::vector<const Node*> &lo_nodes = mesh_level_map[l+1];
+            for(index_t hi = 0; hi < (index_t)hi_nodes.size(); hi++)
+            {
+                for(index_t lo = 0; lo < (index_t)lo_nodes.size(); lo++)
+                {
+                    const Node &hi_node = *hi_nodes[hi];
+                    const Node &lo_node = *lo_nodes[lo];
+                    const index_t hi_dom_id = hi_node["state/domain_id"].to_uint64();
+                    const index_t lo_dom_id = lo_node["state/domain_id"].to_uint64();
+
+                    const point_id_map &hi_point_map = mesh_point_maps[hi_dom_id];
+                    const point_id_map &lo_point_map = mesh_point_maps[lo_dom_id];
+
+                    std::vector<point> point_intx_list;
+                    point_id_map::const_iterator hi_pt_itr = hi_point_map.begin();
+                    point_id_map::const_iterator lo_pt_itr = lo_point_map.begin();
+                    while(hi_pt_itr != hi_point_map.end() && lo_pt_itr != lo_point_map.end())
+                    {
+                        if(hi_pt_itr->first < lo_pt_itr->first)
+                        {
+                            ++hi_pt_itr;
+                        }
+                        else if(lo_pt_itr->first < hi_pt_itr->first)
+                        {
+                            ++lo_pt_itr;
+
+                        }
+                        else
+                        {
+                            point_intx_list.push_back(hi_pt_itr->first);
+                            ++hi_pt_itr;
+                            ++lo_pt_itr;
+                        }
+                    }
+                    // TODO(JRC): Handle cases wherein the low mesh doesn't
+                    // have a sensible window with the high mesh.
+                    const point min_intx_point = point_intx_list.front();
+                    const point max_intx_point = point_intx_list.back();
+
+                    window &hi_window = mesh_window_maps[hi_dom_id][lo_dom_id];
+                    hi_window.first = hi_point_map.at(min_intx_point);
+                    hi_window.second = hi_point_map.at(max_intx_point);
+
+                    window &lo_window = mesh_window_maps[lo_dom_id][hi_dom_id];
+                    lo_window.first = lo_point_map.at(min_intx_point);
+                    lo_window.second = lo_point_map.at(max_intx_point);
+                }
+            }
+        }
+    }
+
+    conduit::NodeIterator doms_it = mesh.children();
+    while(doms_it.has_next())
+    {
+        conduit::Node &dom_node = doms_it.next();
+        index_t dom_id = dom_node["state/domain_id"].to_uint64();
+        index_t dom_level = dom_node["state/level_id"].to_uint64();
+
+        index_t dom_dims[3] = {0, 0, 0}; // needed for 1d to 3d xform per domain
+        {
+            const conduit::Node &dom_coords = dom_node["coordsets/coords/values"];
+            for(index_t d = 0; d < 3; d++)
+            {
+                dom_dims[d] = !dom_coords.has_child(cartesian_dims[d]) ? 1 :
+                    dom_coords[cartesian_dims[d]].dtype().number_of_elements();
+            }
+        }
+
+        // TODO(JRC): Create an entry in "nestsets" for each entry in "mesh_window_maps"
+        // and figure out other crap too.
+        conduit::Node &dom_nestset = dom_node["nestsets/mesh_nest"];
+        dom_nestset["association"].set("element");
+        dom_nestset["topology"].set("mesh");
+
+        std::map<index_t, window>::const_iterator dom_window_itr;
+        for(dom_window_itr = mesh_window_maps[dom_id].begin();
+            dom_window_itr != mesh_window_maps[dom_id].end(); ++dom_window_itr)
+        {
+            index_t odom_id = dom_window_itr->first;
+            const conduit::Node &odom_node = *mesh_id_map[odom_id];
+            index_t odom_level = odom_node["state/level_id"].to_uint64();
+
+            window window_extrema = dom_window_itr->second;
+            std::string window_name;
+            {
+                index_t min_dom_id = std::min(dom_id, odom_id);
+                index_t max_dom_id = std::max(dom_id, odom_id);
+
+                std::ostringstream oss;
+                oss << "window_" <<  min_dom_id << "_" << max_dom_id;
+                window_name = oss.str();
+            }
+
+            conduit::Node &dom_window = dom_nestset["windows"][window_name];
+            dom_window["domain_id"].set(odom_id);
+            dom_window["domain_type"].set(dom_level < odom_level ? "child" : "parent");
+
+            index_t window_extents[2][3] = {{0, 0, 0}, {0, 0, 0}};
+            for(index_t e = 0; e < 2; e++)
+            {
+                index_t window_extreme = e == 0 ? window_extrema.first : window_extrema.second;
+                index_t *window_extent = &window_extents[e][0];
+
+                index_t dim_remainder = window_extreme;
+                for(index_t d = 3; d-- > 0;)
+                {
+                    index_t dim_stride = 1;
+                    for(index_t dd = 0; dd < d; dd++)
+                    {
+                        dim_stride *= dom_dims[dd];
+                    }
+
+                    window_extent[d] = dim_remainder / dim_stride;
+                    dim_remainder = dim_remainder % dim_stride;
+                }
+            }
+
+            for(index_t d = 0; d < dim_count; d++)
+            {
+                dom_window["origin"][logical_dims[d]].set(window_extents[0][d]);
+                dom_window["dims"][logical_dims[d]].set(window_extents[1][d] - window_extents[0][d]);
+            }
+        }
+    }
+
+    doms_it = mesh.children();
+    while(doms_it.has_next())
+    {
+        conduit::Node &dom_node = doms_it.next();
+        conduit::Node &dom_windows_node = dom_node["nestsets/mesh_nest/windows"];
+        conduit::NodeIterator windows_it = dom_windows_node.children();
+        while(windows_it.has_next())
+        {
+            conduit::Node &dom_window_node = windows_it.next();
+            const std::string dom_window_name = windows_it.name();
+            index_t odom_id = dom_window_node["domain_id"].to_uint64();
+
+            const conduit::Node &odom_node = *mesh_id_map[odom_id];
+            const conduit::Node &odom_window_node =
+                odom_node["nestsets/mesh_nest/windows"][dom_window_name];
+
+            const conduit::Node *parent_window_node, *child_window_node;
+            if(dom_window_node["domain_type"].as_string() == "child")
+            {
+                parent_window_node = &dom_window_node;
+                child_window_node = &odom_window_node;
+            }
+            else
+            {
+                parent_window_node = &odom_window_node;
+                child_window_node = &dom_window_node;
+            }
+
+            for(index_t d = 0; d < dim_count; d++)
+            {
+                dom_window_node["ratio"][logical_dims[d]].set(
+                    (*child_window_node)["dims"][logical_dims[d]].to_uint64() /
+                    (*parent_window_node)["dims"][logical_dims[d]].to_uint64());
+            }
         }
     }
 }
@@ -1828,7 +2083,7 @@ misc(const std::string &mesh_type,
             for(index_t i = 0; i < 2; i++)
             {
                 const index_t domain_id = j * 2 + i;
-                
+
                 std::ostringstream oss;
                 oss << "domain" << domain_id;
                 const std::string domain_name = oss.str();
@@ -1852,6 +2107,43 @@ misc(const std::string &mesh_type,
         }
 
         braid_init_example_adjset(res);
+    }
+    else if(mesh_type == "nestsets")
+    {
+        braid_rectilinear(npts_x,npts_y,1,res["domain0"]);
+        res["domain0/state/domain_id"].set(0);
+        res["domain0/state/level_id"].set(0);
+
+        for(index_t j = 0; j < 2; j++)
+        {
+            for(index_t i = 0; i < 2; i++)
+            {
+                const index_t domain_id = j * 2 + i + 1;
+
+                std::ostringstream oss;
+                oss << "domain" << domain_id;
+                const std::string domain_name = oss.str();
+
+                Node &domain_node = res[domain_name];
+                braid_rectilinear(npts_x,npts_y,1,domain_node);
+                domain_node["state/domain_id"].set(domain_id);
+                domain_node["state/level_id"].set(1);
+
+                Node &domain_coords = domain_node["coordsets/coords/values"];
+                float64_array domain_coords_x = domain_coords["x"].as_float64_array();
+                for(index_t x = 0; x < domain_coords_x.number_of_elements(); x++)
+                {
+                    domain_coords_x[x] = ( domain_coords_x[x] / 2.0 ) - 5.0 + i * 10.0;
+                }
+                float64_array domain_coords_y = domain_coords["y"].as_float64_array();
+                for(index_t y = 0; y < domain_coords_y.number_of_elements(); y++)
+                {
+                    domain_coords_y[y] = ( domain_coords_y[y] / 2.0 ) - 5.0 + j * 10.0;
+                }
+            }
+        }
+
+        braid_init_example_nestset(res);
     }
     else
     {

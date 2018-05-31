@@ -960,6 +960,26 @@ std::string cs_ref_path = join_path(ref_path, "coordsets");
             idx_adjset["path"] = adj_ref_path;
         }
     }
+
+    if(mesh.has_child("nestsets"))
+    {
+        itr = mesh["nestsets"].children();
+        while(itr.has_next())
+        {
+            const Node &nestset = itr.next();
+            const std::string nest_name = itr.name();
+            Node &idx_nestset = index_out["nestsets"][nest_name];
+
+            // TODO(JRC): Determine whether or not any information from the
+            // "domain_id" or "ratio" sections need to be included in the index.
+            idx_nestset["association"] = nestset["association"].as_string();
+            idx_nestset["topology"] = nestset["topology"].as_string();
+
+            std::string adj_ref_path = join_path(ref_path,"nestsets");
+            adj_ref_path = join_path(adj_ref_path, nest_name);
+            idx_nestset["path"] = adj_ref_path;
+        }
+    }
 }
 
 
@@ -1788,7 +1808,7 @@ mesh::adjset::verify(const Node &adjset,
 //-----------------------------------------------------------------------------
 bool
 mesh::adjset::index::verify(const Node &adj_idx,
-                                      Node &info)
+                            Node &info)
 {
     const std::string protocol = "mesh::adjset::index";
     bool res = true;
