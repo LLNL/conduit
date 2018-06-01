@@ -152,7 +152,7 @@ int conduit_datatype_is_float64(const conduit_datatype *cdatatype)
     return cpp_datatype_ref(cdatatype).is_float64() ? 1 : 0;
 }
 
-int conduit_datatype_is_index_t(const conduit_datatype *cdatatype)
+int conduit_datatype_is_index_t(const conduit_datatype */*cdatatype*/)
 {
 // NOTE: conduit::DataType::is_index_t() const does not seem to exist
 //    return cpp_datatype_ref(cdatatype).is_index_t() ? 1 : 0;
