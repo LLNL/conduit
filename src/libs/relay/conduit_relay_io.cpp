@@ -64,6 +64,9 @@
 #include "conduit_relay_silo.hpp"
 #endif
 
+#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+#include "conduit_relay_adios.hpp"
+#endif
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -130,7 +133,12 @@ identify_protocol(const std::string &path,
     {
         io_type = "conduit_base64_json";
     }
-    
+    else if(file_name_ext == "bp" ||
+            file_name_ext == "conduit_adios")
+    {
+        io_type = "conduit_adios";
+    }
+
     // default to conduit_bin
 
 }
@@ -228,6 +236,16 @@ save(const Node &node,
                       "Failed to save conduit mesh node to path " << path);
 #endif
     }
+    else if( protocol == "conduit_adios")
+    {
+#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+        adios_set_options(options);
+        adios_save(node,path);
+#else
+        CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
+                      "Failed to save conduit node to path " << path);
+#endif
+    }
     else
     {
         CONDUIT_ERROR("unknown conduit_relay protocol: " << protocol);
@@ -294,6 +312,16 @@ save_merged(const Node &node,
                       "Failed to save conduit mesh node to path " << path);
 #endif
     }
+    else if( protocol == "conduit_adios")
+    {
+#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+        adios_set_options(options);
+        adios_append(node,path);
+#else
+        CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
+                      "Failed to save conduit node to path " << path);
+#endif
+    }
     else
     {
         CONDUIT_ERROR("unknown conduit_relay protocol: " << protocol);
@@ -339,6 +367,16 @@ load(const std::string &path,
     {
         CONDUIT_ERROR("the conduit_relay conduit_silo_mesh protocol does not "
                       "support \"load\"");
+    }
+    else if( protocol == "conduit_adios")
+    {
+#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+        node.reset();
+        adios_load(path,node);
+#else
+        CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
+                    "Failed to load conduit node from path " << path);
+#endif
     }
     else
     {
@@ -392,6 +430,17 @@ load_merged(const std::string &path,
     {
         CONDUIT_ERROR("the relay conduit_silo_mesh protocol does not "
                       "support \"load\"");
+    }
+    else if( protocol == "conduit_adios")
+    {
+#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+        Node n;
+        adios_load(path,n);
+        node.update(n);
+#else
+        CONDUIT_ERROR("relay lacks ADIOS support: " << 
+                      "Failed to read conduit node from path " << path);
+#endif
     }
     else
     {

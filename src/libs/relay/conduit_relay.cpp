@@ -53,6 +53,9 @@
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
 #include "conduit_relay_hdf5.hpp"
 #endif
+#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+#include "conduit_relay_adios.hpp"
+#endif
 
 //-----------------------------------------------------------------------------
 // standard lib includes
@@ -141,6 +144,13 @@ about(Node &n)
     n["mpi"] = "disabled";
 #endif
 
+    // ADIOS aware
+#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+    io_protos["conduit_adios"] = "enabled";
+    io::adios_options(n["io/options/adios"]);
+#else
+    io_protos["conduit_adios"] = "disabled";
+#endif
 
 }
 

@@ -61,6 +61,10 @@ if(SILO_FOUND)
   SET(CONDUIT_RELAY_IO_SILO_ENABLED TRUE)
 endif()
 
+if(ADIOS_FOUND)
+  SET(CONDUIT_RELAY_IO_ADIOS_ENABLED TRUE)
+endif()
+
 if(MPI_FOUND)
   SET(CONDUIT_RELAY_MPI_ENABLED TRUE)
 endif()
@@ -122,6 +126,11 @@ if(SILO_FOUND)
     list(APPEND conduit_relay_sources conduit_relay_silo.cpp)
 endif()
 
+if(ADIOS_FOUND)
+    list(APPEND conduit_relay_headers conduit_relay_adios.hpp)
+    list(APPEND conduit_relay_sources conduit_relay_adios.cpp)
+endif()
+
 ################################
 # Add fortran interface if 
 # fortran support was selected
@@ -158,7 +167,7 @@ if(UNIX AND NOT APPLE)
 endif()
 
 #
-# Link with silo and hdf5 if these are enabled
+# Link with silo and hdf5 and adios if these are enabled
 #
 if(SILO_FOUND)
     list(APPEND conduit_relay_deps silo)
@@ -168,12 +177,18 @@ endif()
 if(HDF5_FOUND)
     list(APPEND conduit_relay_deps hdf5)
     #target_link_libraries(conduit_relay PUBLIC ${HDF5_LIBRARIES})
-    if(HDF5_IS_PARALLEL AND ENABLE_MPI)
+    if(HDF5_IS_PARALLEL AND MPI_FOUND)
         list(APPEND conduit_relay_deps mpi)
     endif()
 endif()
 
-
+if(ADIOS_FOUND)
+    if(MPI_FOUND)
+        list(APPEND conduit_relay_deps adios adiosread mpi)
+    else()
+        list(APPEND conduit_relay_deps adios_nompi adiosread_nompi)
+    endif()
+endif()
 
 
 add_compiled_library(NAME conduit_relay
