@@ -168,6 +168,9 @@ endif()
 if(HDF5_FOUND)
     list(APPEND conduit_relay_deps hdf5)
     #target_link_libraries(conduit_relay PUBLIC ${HDF5_LIBRARIES})
+    if(HDF5_IS_PARALLEL AND ENABLE_MPI)
+        list(APPEND conduit_relay_deps mpi)
+    endif()
 endif()
 
 
