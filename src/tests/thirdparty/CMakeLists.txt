@@ -95,8 +95,11 @@ endif()
 
 
 if(SILO_FOUND)
+    if(HDF5_FOUND AND HDF5_IS_PARALLEL AND ENABLE_MPI)
+       set(SILO_HDF5_MPI_DEP mpi)
+    endif()
     message(STATUS "Silo enabled: Adding related unit tests")
-        add_cpp_test(TEST t_silo_smoke DEPENDS_ON silo)
+        add_cpp_test(TEST t_silo_smoke DEPENDS_ON silo ${SILO_HDF5_MPI_DEP})
 else()
     message(STATUS "Silo disabled: Skipping related tests")
 endif()
