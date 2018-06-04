@@ -2068,6 +2068,7 @@ void spiral(index_t ndoms,
         index_t idx = 0;
         // fill the scalar with approx dist to spiral 
         yv = y;
+
         for(int j=0; j < f+1; j++)
         {
             xv = x;
@@ -2090,7 +2091,10 @@ void spiral(index_t ndoms,
                 x += f;
                 // next loc orig == top left
                 loc_xo = x;
-                loc_yo = y + (f + f_1);
+                if (f <= 1)
+                    loc_yo = y + f;
+                else
+                    loc_yo = y + f + f_1;
                 break;
             }
             case 1:
