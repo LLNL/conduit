@@ -392,11 +392,23 @@ To conform, the ``state`` entry must be an *Object* and can have the following o
 Examples
 ~~~~~~~~~~~~~~~~~~~~~
 
-The mesh blueprint namespace includes a function *braid()*, that generates examples 
-that cover the range of coordinate sets and topologies supported.
+In C++, the ``conduit::blueprint::mesh::examples`` namespace and in Python the `conduit.blueprint.mesh.examples` module provide
+functions that generate example mesh blueprint data. For details on how to write these data sets to files, see the unit tests that exercise these examples in ``src/tests/blueprint/t_blueprint_mesh_examples.cpp``. This section outlines ``braid``, ``sprial``, and ``julia`` examples.
+
+
+braid
+++++++
+
+.. figure:: braid_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of a 3D braid example ``braid`` field
+    
+The ``braid()`` generates example meshes that cover the range of coordinate sets and topologies supported by the Mesh Blueprint.
 
 The example datasets include a vertex-centered scalar field ``braid``, an element-centered scalar field ``radial`` and
-as a vertex-centered vector field ``vel``.
+a vertex-centered vector field ``vel``.
 
 .. code:: cpp
 
@@ -404,9 +416,9 @@ as a vertex-centered vector field ``vel``.
                                               index_t nx,
                                               index_t ny,
                                               index_t nz,
-                                              Node &out);
+                                              Node &res);
 
-Here is a list of valid strings for the *mesh_type* argument:
+Here is a list of valid strings for the ``mesh_type`` argument:
 
 +---------------+-----------------------------------------------+
 | **Mesh Type** | **Description**                               |
@@ -439,22 +451,82 @@ Here is a list of valid strings for the *mesh_type* argument:
 |               | (explicit coords, explicit topology)          | 
 +---------------+-----------------------------------------------+
 
-*nx,ny,nz* specify the number of elements in the *x,y,z* directions.
+``nx``, ``ny``, ``nz`` specify the number of elements in the x, y, and z directions.
 
-*nz* is ignored for 2d-only examples.
+``nz`` is ignored for 2d-only examples.
 
-The resulting data is placed the Node *out*, which is passed in via a reference.
+The resulting data is placed the Node ``res``, which is passed in via reference.
 
-For more details, see the unit tests that exercise these examples in ``src/tests/blueprint/t_blueprint_mesh_examples.cpp``
+spiral
++++++++
+
+.. figure:: spiral_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor and Contour plots of the spiral example ``dist`` field.
+
+The ``sprial()`` function generates a multi-domain mesh composed of 2D square 
+domains with the area of successive fibonacci numbers. The result estimates the 
+`Golden spiral <https://en.wikipedia.org/wiki/Golden_spiral>`_.
+
+The example dataset provides a vertex-centered scalar field ``dist`` that estimates the distance from 
+each vertex to the Golden spiral.
+
+.. code:: cpp
+
+    conduit::blueprint::mesh::examples::spiral(conduit::index_t ndomains,
+                                               Node &res);
+
+
+``ndomains`` specifies the number of domains to generate, which is also the number of entries from fibonacci sequence used.
+
+The resulting data is placed the Node ``res``, which is passed in via reference.
+
+julia
++++++++
+
+
+.. figure:: julia_render.png
+    :width: 350px
+    :align: center
+
+    Pseudocolor plot of the julia example ``iter`` field
+    
+
+The ``julia()`` function creates a uniform grid that visualizes
+`Julia set fractals <https://en.wikipedia.org/wiki/Julia_set>`_.
+
+
+The example dataset provides an element-centered scalar field ``iter`` that represents the number of iterations
+for each point tested or zero if not found in the set.
+ 
+
+
+.. code:: cpp
+
+    conduit::blueprint::mesh::examples::julia(index_t nx,
+                                              index_t ny,
+                                              float64 x_min,
+                                              float64 x_max,
+                                              float64 y_min,
+                                              float64 y_max,
+                                              float64 c_re,
+                                              float64 c_im,
+                                              Node &res);
+
+
+``nx``, ``ny`` specify the number of elements in the x and y directions.
+
+``x_min``, ``x_max``, ``y_min``, ``y_max`` specify the x and y extents.
+
+``c_re``, ``c_im`` specify real and complex parts of the constant used.
+
+The resulting data is placed the Node ``res``, which is passed in via reference.
 
 .. Properties and Transforms
 .. ---------------------------
 
-.. Coordinate Sets
-.. ~~~~~~~~~~~~~~~~~~~~~
-..
-.. Toplogies
-.. ~~~~~~~~~~~~~~~~~~~~~
 
 
 
