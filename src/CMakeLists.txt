@@ -47,7 +47,7 @@ cmake_minimum_required(VERSION 3.0)
 # cmake policy selections
 ################################
 # avoid default mac osx rpath settings for cmake 3.0
-cmake_policy(SET CMP0042 OLD)
+# cmake_policy(SET CMP0042 NEW)
 # cmake var deref policy
 if(POLICY CMP0054)
   cmake_policy(SET CMP0054 OLD)
@@ -89,8 +89,6 @@ endif()
 # older compilers. 
 set(BLT_CXX_STD "c++98" CACHE STRING "")
 
-# forward conduit's build shared libs option to blt
-set(ENABLE_SHARED_LIBS ${BUILD_SHARED_LIBS} CACHE BOOL "")
 # don't use BLT's all warnings feature
 set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "")
 
