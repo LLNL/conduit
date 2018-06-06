@@ -46,8 +46,7 @@ cmake_minimum_required(VERSION 3.0)
 ################################
 # cmake policy selections
 ################################
-# avoid default mac osx rpath settings for cmake 3.0
-# cmake_policy(SET CMP0042 NEW)
+
 # cmake var deref policy
 if(POLICY CMP0054)
   cmake_policy(SET CMP0054 OLD)
