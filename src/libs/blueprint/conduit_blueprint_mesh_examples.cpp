@@ -615,15 +615,8 @@ void braid_init_example_adjset(Node &mesh)
 //---------------------------------------------------------------------------//
 void braid_init_example_nestset(Node &mesh)
 {
-    // TODO(JRC): Implement this function properly (will be easier once transforms
-    // between different mesh types is possible).
-
-    // TODO(JRC): Implement the following general algorithm:
-    //   construct temporary point lists for every domain (cartesian product of x, y, and z)
-    //   create point maps from level N+1 domains to level N domains for each N
-    //   the minimum/maximum point in the per-domain mappings define the extents (need to associate points with indices in original)
-    //   use info on where minimum/maximum lies in embedded to get offset/extents
-    //   define ratio w/ number of elements in child as compared to parent in range
+    // TODO(JRC): Implement this function using transforms to different spaces
+    // to transform uniform/rectilinear grids into unstructured grids.
     typedef std::map<point, index_t> point_id_map;
     typedef std::pair<index_t, index_t> window;
 
@@ -634,7 +627,7 @@ void braid_init_example_nestset(Node &mesh)
     const bool mesh_3d = mesh.child(0)["coordsets/coords/values"].has_child("z");
     const index_t dim_count = mesh_3d ? 3 : 2;
 
-    // map from level to list of all domtains
+    // initialize data to easily index domains by id/level //
 
     std::map<index_t, const Node*> mesh_id_map;
     index_t max_dom_id = 0, max_level_id = 0;
@@ -645,12 +638,14 @@ void braid_init_example_nestset(Node &mesh)
             const conduit::Node& dom_node = doms_it.next();
             const index_t dom_id = dom_node["state/domain_id"].to_uint64();
             mesh_id_map[dom_id] = &dom_node;
-
             max_dom_id = std::max(dom_id, max_dom_id);
+
             const index_t dom_level = dom_node["state/level_id"].to_uint64();
             max_level_id = std::max(dom_level, max_level_id);
         }
     }
+
+    // transform rectilinear input data into unstructured data //
 
     std::vector<point_id_map> mesh_point_maps(max_dom_id + 1);
     std::vector< std::vector<const Node*> > mesh_level_map(max_level_id + 1);
@@ -668,6 +663,8 @@ void braid_init_example_nestset(Node &mesh)
                 std::vector<point> dom_points(1);
                 for(index_t d = 0; d < dim_count; d++)
                 {
+                    index_t dim_offset = d * (sizeof(float64) / sizeof(uint8));
+
                     std::vector<point> prev_dom_points = dom_points;
                     dom_points.clear();
 
@@ -676,11 +673,10 @@ void braid_init_example_nestset(Node &mesh)
                     {
                         for(index_t p = 0; p < (index_t)prev_dom_points.size(); p++)
                         {
-                            point base_point = prev_dom_points[p];
-                            float64 dim_val = dim_coords[i];
-                            // TODO(JRC): Is there any way that this could be improved?
-                            memcpy((uint8*)(&base_point) + d * (sizeof(float64)/sizeof(uint8)), &dim_val, sizeof(float64));
-                            dom_points.push_back(base_point);
+                            point new_point = prev_dom_points[p];
+                            memcpy((uint8*)&new_point + dim_offset, &dim_coords[i],
+                                sizeof(float64));
+                            dom_points.push_back(new_point);
                         }
                     }
                 }
@@ -702,17 +698,17 @@ void braid_init_example_nestset(Node &mesh)
     {
         for(index_t l = 0; l < (index_t)mesh_level_map.size() - 1; l++)
         {
-            std::vector<const Node*> &hi_nodes = mesh_level_map[l];
-            std::vector<const Node*> &lo_nodes = mesh_level_map[l+1];
+            const std::vector<const Node*> &hi_nodes = mesh_level_map[l];
+            const std::vector<const Node*> &lo_nodes = mesh_level_map[l+1];
             for(index_t hi = 0; hi < (index_t)hi_nodes.size(); hi++)
             {
                 for(index_t lo = 0; lo < (index_t)lo_nodes.size(); lo++)
                 {
                     const Node &hi_node = *hi_nodes[hi];
                     const Node &lo_node = *lo_nodes[lo];
+
                     const index_t hi_dom_id = hi_node["state/domain_id"].to_uint64();
                     const index_t lo_dom_id = lo_node["state/domain_id"].to_uint64();
-
                     const point_id_map &hi_point_map = mesh_point_maps[hi_dom_id];
                     const point_id_map &lo_point_map = mesh_point_maps[lo_dom_id];
 
@@ -771,8 +767,6 @@ void braid_init_example_nestset(Node &mesh)
             }
         }
 
-        // TODO(JRC): Create an entry in "nestsets" for each entry in "mesh_window_maps"
-        // and figure out other crap too.
         conduit::Node &dom_nestset = dom_node["nestsets/mesh_nest"];
         dom_nestset["association"].set("element");
         dom_nestset["topology"].set("mesh");
@@ -822,8 +816,13 @@ void braid_init_example_nestset(Node &mesh)
 
             for(index_t d = 0; d < dim_count; d++)
             {
+                // NOTE(JRC): These values may seem incorrect since they're relative
+                // to point space, but they actually work out to calculate the proper
+                // values because the coordinate indices for an element will always
+                // match its minimum point indices and h-l points is number of elements.
                 dom_window["origin"][logical_dims[d]].set(window_extents[0][d]);
-                dom_window["dims"][logical_dims[d]].set(window_extents[1][d] - window_extents[0][d]);
+                dom_window["dims"][logical_dims[d]].set(
+                    window_extents[1][d] - window_extents[0][d]);
             }
         }
     }
