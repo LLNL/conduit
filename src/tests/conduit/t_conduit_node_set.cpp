@@ -2215,7 +2215,7 @@ TEST(conduit_node_set, set_cstyle_uint_array)
     unsigned long   ulong_av[6]  = {2,4,8,16,32,64};
 
 #if defined CONDUIT_HAS_LONG_LONG
-    unsigned long long   ulonglong_av[6]  = {2,4,8,16,32,64};    
+    unsigned long long   ulonglong_av[6]  = {2,4,8,16,32,64};
 #endif
     
     unsigned_char_array  uchar_av_a(uchar_av,DataType::c_unsigned_char(6));
@@ -2224,7 +2224,7 @@ TEST(conduit_node_set, set_cstyle_uint_array)
     unsigned_long_array  ulong_av_a(ulong_av,DataType::c_unsigned_long(6));
     
 #if defined CONDUIT_HAS_LONG_LONG
-    unsigned_long_long_array  ulonglong_av_a(ulong_av,DataType::c_unsigned_long_long(6));
+    unsigned_long_long_array  ulonglong_av_a(ulonglong_av,DataType::c_unsigned_long_long(6));
 #endif 
     
     Node n;
@@ -2416,7 +2416,7 @@ TEST(conduit_node_set, set_cstyle_int_array)
     for(index_t i=0;i<6;i++)
     {
         EXPECT_EQ(longlong_ptr[i],longlong_av[i]);
-        // set(...) semantics imply a copy -- mem addys should differ
+        // set(...) semantics imply a copy -- mem addy should differ
         EXPECT_NE(&longlong_ptr[i],&longlong_av[i]);
     }
 
