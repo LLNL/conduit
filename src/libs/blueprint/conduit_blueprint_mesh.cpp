@@ -804,7 +804,7 @@ bool mesh::to_multi_domain(const conduit::Node &n,
     return true;
 }
 
-
+/*
 //-------------------------------------------------------------------------
 bool mesh::to_rectilinear(const conduit::Node &n,
                           const std::string &topo_name,
@@ -857,8 +857,7 @@ bool mesh::to_rectilinear(const conduit::Node &n,
                 dst_coords["type"].set("rectilinear");
 
                 std::vector<std::string> csys_axes = identify_coordset_axes(src_coords);
-                index_t csys_dims = csys_axes.size();
-                for(index_t i = 0; i < csys_dims; i++)
+                for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
                 {
                     const std::string& csys_axis = csys_axes[i];
                     const std::string& logical_axis = logical_axes[i];
@@ -878,6 +877,13 @@ bool mesh::to_rectilinear(const conduit::Node &n,
                         dst_cvals[d] = dim_origin + d * dim_scaling;
                     }
                 }
+
+                // TODO(JRC): Transform all dependent fields on the source mesh
+                // to the destination mesh.
+                // TODO(JRC): Are the implied element orderings for uniform and
+                // rectilinear meshes assumed to be the same? If so, then we're
+                // done at this point in the process; all dependent fields/matsets
+                // will already have the correct ordering.
             }
         }
     }
@@ -885,7 +891,7 @@ bool mesh::to_rectilinear(const conduit::Node &n,
     return res;
 }
 
-/*
+
 //-------------------------------------------------------------------------
 bool mesh::to_structured(const conduit::Node &n,
                          const std::string &src_topo_name,
@@ -907,7 +913,7 @@ bool mesh::to_structured(const conduit::Node &n,
 
     return res;
 }
-*/
+
 
 //-------------------------------------------------------------------------
 bool mesh::to_unstructured(const conduit::Node &n,
@@ -1012,7 +1018,7 @@ bool mesh::to_unstructured(const conduit::Node &n,
 
     return res;
 }
-
+*/
 
 //-----------------------------------------------------------------------------
 void
@@ -1442,6 +1448,171 @@ mesh::coordset::verify(const Node &coordset,
 }
 
 
+//-------------------------------------------------------------------------
+bool
+mesh::coordset::to_uniform(const conduit::Node &coordset,
+                           conduit::Node &dest)
+{
+    bool res = true;
+    dest.reset();
+
+    Node info;
+    if(!mesh::coordset::verify(coordset, info))
+    {
+        res = false; // can only transform a valid input coordset
+    }
+    else
+    {
+        if(!mesh::coordset::uniform::verify(coordset, info))
+        {
+            res = false; // can only do uniform -> uniform
+        }
+        else
+        {
+            dest.set_external(coordset);
+        }
+    }
+
+    return res;
+}
+
+
+//-------------------------------------------------------------------------
+bool
+mesh::coordset::to_rectilinear(const conduit::Node &coordset,
+                               conduit::Node &dest)
+{
+    bool res = true;
+    dest.reset();
+
+    Node info;
+    if(!mesh::coordset::verify(coordset, info))
+    {
+        res = false; // can only transform a valid input coordset
+    }
+    else
+    {
+        bool is_uniform = mesh::coordset::uniform::verify(coordset, info);
+        bool is_rectilinear = mesh::coordset::rectilinear::verify(coordset, info);
+        if(!is_uniform && !is_rectilinear)
+        {
+            res = false; // can only do uniform/rectilinear -> rectilinear
+        }
+        else if(is_rectilinear)
+        {
+            dest.set_external(coordset);
+        }
+        else if(is_uniform)
+        {
+            dest["type"].set("rectilinear");
+
+            std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
+            for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
+            {
+                const std::string& csys_axis = csys_axes[i];
+                const std::string& logical_axis = logical_axes[i];
+
+                float64 dim_origin = coordset.has_child("origin") ?
+                    coordset["origin"][csys_axis].value() : 0.0;
+                float64 dim_scaling = coordset.has_child("spacing") ?
+                    coordset["spacing"]["d"+csys_axis].value() : 1.0;
+                index_t dim_len = coordset["dims"][logical_axis].value();
+
+                Node &dst_cvals_node = dest["values"][csys_axis];
+                dst_cvals_node.set(DataType::float64(dim_len));
+
+                float64_array dst_cvals = dst_cvals_node.as_float64_array();
+                for(index_t d = 0; d < dim_len; d++)
+                {
+                    dst_cvals[d] = dim_origin + d * dim_scaling;
+                }
+            }
+        }
+    }
+
+    return res;
+}
+
+
+//-------------------------------------------------------------------------
+bool
+mesh::coordset::to_explicit(const conduit::Node &coordset,
+                            conduit::Node &dest)
+{
+    bool res = true;
+    dest.reset();
+
+    Node info;
+    if(!mesh::coordset::verify(coordset, info))
+    {
+        res = false; // can only transform a valid input coordset
+    }
+    else
+    {
+        std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
+        index_t csys_dims = csys_axes.size();
+
+        if(mesh::coordset::_explicit::verify(coordset, info))
+        {
+            dest.set_external(coordset);
+        }
+        else if(mesh::coordset::rectilinear::verify(coordset, info))
+        {
+            // TODO(JRC): Take the cross product of the different dimensions
+            // to construct the explicit set of points.
+
+            dest["type"].set("explicit");
+        }
+        else // if(mesh::coordset::uniform::verify(src_topo, info))
+        {
+            dest["type"].set("explicit");
+
+            index_t coords_len = 1;
+            for(index_t i = 0; i < csys_dims; i++)
+            {
+                coords_len *= coordset["dims"][logical_axes[i]].as_int();
+            }
+
+            for(index_t i = 0; i < csys_dims; i++)
+            {
+                const std::string& csys_axis = csys_axes[i];
+                const std::string& logical_axis = logical_axes[i];
+
+                float64 dim_origin = coordset.has_child("origin") ?
+                    coordset["origin"][csys_axis].value() : 0.0;
+                float64 dim_scaling = coordset.has_child("spacing") ?
+                    coordset["spacing"]["d"+csys_axis].value() : 1.0;
+                index_t dim_len = coordset["dims"][logical_axis].value();
+
+                Node &dst_cvals_node = dest["values"][csys_axis];
+                dst_cvals_node.set(DataType::float64(coords_len));
+
+                index_t dim_block_size = 1, dim_block_count = 1;
+                for(index_t j = 0; j < csys_dims; j++)
+                {
+                    index_t j_len = coordset["dims"][logical_axes[i]].value();
+                    dim_block_size *= (j < i) ? j_len : 1;
+                    dim_block_count *= (i < j) ? j_len : 1;
+                }
+                index_t dim_block_stride = dim_block_size * dim_len;
+
+                float64_array dst_cvals = dst_cvals_node.as_float64_array();
+                for(index_t b = 0; b < dim_block_count; b++)
+                {
+                    index_t bstart = b * dim_block_stride;
+                    for(index_t bi = 0; bi < dim_block_size; bi++)
+                    {
+                        dst_cvals[bstart + bi] = dim_origin + b * dim_scaling;
+                    }
+                }
+            }
+        }
+    }
+
+    return res;
+}
+
+
 //-----------------------------------------------------------------------------
 // blueprint::mesh::coordset::type protocol interface
 //-----------------------------------------------------------------------------
@@ -1610,6 +1781,117 @@ mesh::topology::verify(const Node &topo,
 
     return res;
 
+}
+
+
+//-------------------------------------------------------------------------
+bool
+mesh::topology::to_points(const conduit::Node &/*topo*/,
+                          conduit::Node &dest)
+{
+    bool res = true;
+    dest.reset();
+
+    // TODO(JRC)
+
+    return res;
+}
+
+
+//-------------------------------------------------------------------------
+bool
+mesh::topology::to_uniform(const conduit::Node &/*topo*/,
+                           conduit::Node &dest)
+{
+    bool res = true;
+    dest.reset();
+
+    // TODO(JRC)
+
+    return res;
+}
+
+
+//-------------------------------------------------------------------------
+bool
+mesh::topology::to_rectilinear(const conduit::Node &/*topo*/,
+                               conduit::Node &dest)
+{
+    bool res = true;
+    dest.reset();
+
+    // TODO(JRC)
+
+    /*
+            Node &dst_topo = dest["topologies"][topo_name];
+            Node &dst_coords = dest["coordsets"][cset_name];
+
+            dst_topo.set(src_topo);
+            dst_topo["coordset"].set(cset_name);
+            dst_topo["type"].set("rectilinear");
+
+            if(is_rectilinear)
+            {
+                dst_coords.set_external(src_coords);
+            }
+            else
+            {
+            }
+        }
+    */
+
+    return res;
+}
+
+
+//-------------------------------------------------------------------------
+bool
+mesh::topology::to_structured(const conduit::Node &/*topo*/,
+                              conduit::Node &dest)
+{
+    bool res = true;
+    dest.reset();
+
+    // TODO(JRC)
+
+    return res;
+}
+
+
+//-------------------------------------------------------------------------
+bool
+mesh::topology::to_unstructured(const conduit::Node &/*topo*/,
+                                conduit::Node &dest)
+{
+    bool res = true;
+    dest.reset();
+
+    // TODO(JRC)
+
+    /*
+        Node &dst_topo = dest["topologies"][topo_name];
+        Node &dst_coords = dest["coordsets"][cset_name];
+
+        dst_topo["coordset"].set(cset_name);
+        dst_topo["type"].set("unstructured");
+
+        std::vector<std::string> csys_axes = identify_coordset_axes(src_coords);
+        index_t csys_dims = csys_axes.size();
+        dst_topo["elements/shape"].set((csys_dims == 2) ? "quad" : "hex");
+
+        if(mesh::coordset::_explicit::verify(coordset, info))
+        {
+            dest.set_external(coordset);
+        }
+        else if(mesh::coordset::rectilinear::verify(coordset, info))
+        {
+            // TODO(JRC)
+        }
+        else // if(mesh::coordset::uniform::verify(src_topo, info))
+        {
+    */
+
+    return res;
 }
 
 //-----------------------------------------------------------------------------
