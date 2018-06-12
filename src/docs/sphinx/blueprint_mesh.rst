@@ -117,7 +117,7 @@ The mesh blueprint protocol supports three types of Coordinate Sets: ``uniform``
   * Spherical
 
 
-    * coordsets/coords/type: “uniform”
+    * coordsets/coords/type: “rectilinear”
     * coordsets/coords/values/{r,theta,phi}
 
 
