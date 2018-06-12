@@ -80,14 +80,6 @@ if(ENABLE_FORTRAN)
     enable_language(Fortran)
 endif()
 
-################################
-# Set BLT Options
-################################
-# BLT defaults to C++11, but we aren't currently using C++11 features,
-# so we use BLT_CXX_STD to specific c++98 so we don't have issues with 
-# older compilers. 
-set(BLT_CXX_STD "c++98" CACHE STRING "")
-
 # don't use BLT's all warnings feature
 set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "")
 

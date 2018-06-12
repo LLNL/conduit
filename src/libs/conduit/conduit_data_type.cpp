@@ -263,7 +263,7 @@ DataType::c_long(index_t num_elements,
                     num_elements,offset,stride,element_bytes,endianness);
 }
 
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 DataType
 DataType::c_long_long(index_t num_elements,
@@ -326,7 +326,7 @@ DataType::c_unsigned_long(index_t num_elements,
                     num_elements,offset,stride,element_bytes,endianness);
 }
 
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 DataType
 DataType::c_unsigned_long_long(index_t num_elements,
@@ -751,7 +751,7 @@ DataType::is_long() const
 bool
 DataType::is_long_long() const
 {
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
     return m_id == CONDUIT_NATIVE_LONG_LONG_ID;
 #else
     return false;
@@ -791,7 +791,7 @@ DataType::is_unsigned_long() const
 bool
 DataType::is_unsigned_long_long() const
 {
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
     return m_id == CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID;
 #else
     return false;
@@ -961,7 +961,7 @@ DataType::c_type_name_to_id(const std::string &dtype_name)
         return CONDUIT_NATIVE_INT_ID;
     else if(dtype_name == "long")
         return CONDUIT_NATIVE_LONG_ID;
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
     else if(dtype_name == "long long")
         return CONDUIT_NATIVE_LONG_LONG_ID;
 #endif
@@ -973,7 +973,7 @@ DataType::c_type_name_to_id(const std::string &dtype_name)
         return CONDUIT_NATIVE_UNSIGNED_INT_ID;
     else if(dtype_name == "unsigned long")
         return CONDUIT_NATIVE_UNSIGNED_LONG_ID;
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
     else if(dtype_name == "unsigned long long")
         return CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID;
 #endif

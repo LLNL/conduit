@@ -109,6 +109,19 @@ if(CONDUIT_HAS_LONG_DOUBLE)
 endif()
 
 #-----------------------------------------------------------------------------
+# Type Search Order
+#-----------------------------------------------------------------------------
+#  int
+#  long long
+#  long
+#  short
+#  char
+#-----------------------------------------------------------------------------
+# This order prefers long long over long for 64-bit, which appears
+# to match the C++11 standard type mapping.
+#-----------------------------------------------------------------------------
+
+#-----------------------------------------------------------------------------
 # -- int size checks --
 #-----------------------------------------------------------------------------
 if(${CONDUIT_BITSOF_INT} EQUAL 8)
@@ -214,115 +227,6 @@ elseif(${CONDUIT_BITSOF_INT} EQUAL 64)
         #
         set(CONDUIT_NATIVE_INT_TYPE          "conduit_int64")
         set(CONDUIT_NATIVE_UNSIGNED_INT_TYPE "conduit_uint64")
-    endif()
-endif()
-
-
-#------------------------------------------------------------------------------
-# -- long size checks --
-#------------------------------------------------------------------------------
-if(${CONDUIT_BITSOF_LONG} EQUAL 8)
-    ####
-    # conduit to native
-    ####
-    # make sure we haven't already mapped this type
-    if(NOT CONDUIT_INT8_TYPE)
-        set(CONDUIT_USE_LONG 1)
-        #
-        set(CONDUIT_INT8_TYPE   "conduit_long")
-        set(CONDUIT_UINT8_TYPE  "conduit_ulong")
-        #
-        set(CONDUIT_INT8_NATIVE_TYPE  "long")
-        set(CONDUIT_UINT8_NATIVE_TYPE "unsigned long")
-    endif()
-    ####
-    # native to conduit
-    ####
-    # check to see if the native type map has been made
-    if(NOT CONDUIT_NATIVE_LONG_TYPE)
-        set(CONDUIT_NATIVE_LONG_ID          ${CONDUIT_INT8_ID})
-        set(CONDUIT_NATIVE_UNSIGNED_LONG_ID ${CONDUIT_UINT8_ID})
-        #
-        set(CONDUIT_NATIVE_LONG_TYPE          "conduit_int8")
-        set(CONDUIT_NATIVE_UNSIGNED_LONG_TYPE "conduit_uint8")
-    endif()
-elseif(${CONDUIT_BITSOF_LONG} EQUAL 16)
-    ####
-    # conduit to native
-    ####
-    # make sure we haven't already mapped this type
-    if(NOT CONDUIT_INT16_TYPE)
-        set(CONDUIT_USE_LONG 1)
-        #
-        set(CONDUIT_INT16_TYPE   "conduit_long")
-        set(CONDUIT_UINT16_TYPE  "conduit_ulong")
-        #
-        set(CONDUIT_INT16_NATIVE_TYPE  "long")
-        set(CONDUIT_UINT16_NATIVE_TYPE "unsigned long")
-    endif()
-    ####
-    # native to conduit
-    ####
-    # check to see if the native type map has been made
-    if(NOT CONDUIT_NATIVE_LONG_TYPE)
-        #
-        set(CONDUIT_NATIVE_LONG_ID          ${CONDUIT_INT16_ID})
-        set(CONDUIT_NATIVE_UNSIGNED_LONG_ID ${CONDUIT_UINT16_ID})
-        #
-        set(CONDUIT_NATIVE_LONG_TYPE          "conduit_int16")
-        set(CONDUIT_NATIVE_UNSIGNED_LONG_TYPE "conduit_uint16")
-    endif()
-elseif(${CONDUIT_BITSOF_LONG} EQUAL 32)
-    ####
-    # conduit to native
-    ####
-    # make sure we haven't already mapped this type
-    if(NOT CONDUIT_INT32_TYPE)
-        set(CONDUIT_USE_LONG 1)
-        #
-        set(CONDUIT_INT32_TYPE   "conduit_long")
-        set(CONDUIT_UINT32_TYPE  "conduit_ulong")
-        #
-        set(CONDUIT_INT32_NATIVE_TYPE  "long")
-        set(CONDUIT_UINT32_NATIVE_TYPE "unsigned long")
-    endif()
-    ####
-    # native to conduit
-    ####
-    # check to see if the native type map has been made
-    if(NOT CONDUIT_NATIVE_LONG_TYPE)
-        #
-        set(CONDUIT_NATIVE_LONG_ID          ${CONDUIT_INT32_ID})
-        set(CONDUIT_NATIVE_UNSIGNED_LONG_ID ${CONDUIT_UINT32_ID})
-        #
-        set(CONDUIT_NATIVE_LONG_TYPE          "conduit_int32")
-        set(CONDUIT_NATIVE_UNSIGNED_LONG_TYPE "conduit_uint32")
-    endif()
-elseif(${CONDUIT_BITSOF_LONG} EQUAL 64)
-    ####
-    # conduit to native
-    ####
-    # make sure we haven't already mapped this type
-    if(NOT CONDUIT_INT64_TYPE)
-        set(CONDUIT_USE_LONG 1)
-        #
-        set(CONDUIT_INT64_TYPE   "conduit_long")
-        set(CONDUIT_UINT64_TYPE  "conduit_ulong")
-        #
-        set(CONDUIT_INT64_NATIVE_TYPE  "long")
-        set(CONDUIT_UINT64_NATIVE_TYPE "unsigned long")
-    endif()
-    ####
-    # native to conduit
-    ####
-    # check to see if the native type map has been made
-    if(NOT CONDUIT_NATIVE_LONG_TYPE)
-        #
-        set(CONDUIT_NATIVE_LONG_ID          ${CONDUIT_INT64_ID})
-        set(CONDUIT_NATIVE_UNSIGNED_LONG_ID ${CONDUIT_UINT64_ID})
-        #
-        set(CONDUIT_NATIVE_LONG_TYPE          "conduit_int64")
-        set(CONDUIT_NATIVE_UNSIGNED_LONG_TYPE "conduit_uint64")
     endif()
 endif()
 
@@ -440,6 +344,115 @@ if(CONDUIT_HAS_LONG_LONG)
         endif()
     endif()
 endif()
+
+#------------------------------------------------------------------------------
+# -- long size checks --
+#------------------------------------------------------------------------------
+if(${CONDUIT_BITSOF_LONG} EQUAL 8)
+    ####
+    # conduit to native
+    ####
+    # make sure we haven't already mapped this type
+    if(NOT CONDUIT_INT8_TYPE)
+        set(CONDUIT_USE_LONG 1)
+        #
+        set(CONDUIT_INT8_TYPE   "conduit_long")
+        set(CONDUIT_UINT8_TYPE  "conduit_ulong")
+        #
+        set(CONDUIT_INT8_NATIVE_TYPE  "long")
+        set(CONDUIT_UINT8_NATIVE_TYPE "unsigned long")
+    endif()
+    ####
+    # native to conduit
+    ####
+    # check to see if the native type map has been made
+    if(NOT CONDUIT_NATIVE_LONG_TYPE)
+        set(CONDUIT_NATIVE_LONG_ID          ${CONDUIT_INT8_ID})
+        set(CONDUIT_NATIVE_UNSIGNED_LONG_ID ${CONDUIT_UINT8_ID})
+        #
+        set(CONDUIT_NATIVE_LONG_TYPE          "conduit_int8")
+        set(CONDUIT_NATIVE_UNSIGNED_LONG_TYPE "conduit_uint8")
+    endif()
+elseif(${CONDUIT_BITSOF_LONG} EQUAL 16)
+    ####
+    # conduit to native
+    ####
+    # make sure we haven't already mapped this type
+    if(NOT CONDUIT_INT16_TYPE)
+        set(CONDUIT_USE_LONG 1)
+        #
+        set(CONDUIT_INT16_TYPE   "conduit_long")
+        set(CONDUIT_UINT16_TYPE  "conduit_ulong")
+        #
+        set(CONDUIT_INT16_NATIVE_TYPE  "long")
+        set(CONDUIT_UINT16_NATIVE_TYPE "unsigned long")
+    endif()
+    ####
+    # native to conduit
+    ####
+    # check to see if the native type map has been made
+    if(NOT CONDUIT_NATIVE_LONG_TYPE)
+        #
+        set(CONDUIT_NATIVE_LONG_ID          ${CONDUIT_INT16_ID})
+        set(CONDUIT_NATIVE_UNSIGNED_LONG_ID ${CONDUIT_UINT16_ID})
+        #
+        set(CONDUIT_NATIVE_LONG_TYPE          "conduit_int16")
+        set(CONDUIT_NATIVE_UNSIGNED_LONG_TYPE "conduit_uint16")
+    endif()
+elseif(${CONDUIT_BITSOF_LONG} EQUAL 32)
+    ####
+    # conduit to native
+    ####
+    # make sure we haven't already mapped this type
+    if(NOT CONDUIT_INT32_TYPE)
+        set(CONDUIT_USE_LONG 1)
+        #
+        set(CONDUIT_INT32_TYPE   "conduit_long")
+        set(CONDUIT_UINT32_TYPE  "conduit_ulong")
+        #
+        set(CONDUIT_INT32_NATIVE_TYPE  "long")
+        set(CONDUIT_UINT32_NATIVE_TYPE "unsigned long")
+    endif()
+    ####
+    # native to conduit
+    ####
+    # check to see if the native type map has been made
+    if(NOT CONDUIT_NATIVE_LONG_TYPE)
+        #
+        set(CONDUIT_NATIVE_LONG_ID          ${CONDUIT_INT32_ID})
+        set(CONDUIT_NATIVE_UNSIGNED_LONG_ID ${CONDUIT_UINT32_ID})
+        #
+        set(CONDUIT_NATIVE_LONG_TYPE          "conduit_int32")
+        set(CONDUIT_NATIVE_UNSIGNED_LONG_TYPE "conduit_uint32")
+    endif()
+elseif(${CONDUIT_BITSOF_LONG} EQUAL 64)
+    ####
+    # conduit to native
+    ####
+    # make sure we haven't already mapped this type
+    if(NOT CONDUIT_INT64_TYPE)
+        set(CONDUIT_USE_LONG 1)
+        #
+        set(CONDUIT_INT64_TYPE   "conduit_long")
+        set(CONDUIT_UINT64_TYPE  "conduit_ulong")
+        #
+        set(CONDUIT_INT64_NATIVE_TYPE  "long")
+        set(CONDUIT_UINT64_NATIVE_TYPE "unsigned long")
+    endif()
+    ####
+    # native to conduit
+    ####
+    # check to see if the native type map has been made
+    if(NOT CONDUIT_NATIVE_LONG_TYPE)
+        #
+        set(CONDUIT_NATIVE_LONG_ID          ${CONDUIT_INT64_ID})
+        set(CONDUIT_NATIVE_UNSIGNED_LONG_ID ${CONDUIT_UINT64_ID})
+        #
+        set(CONDUIT_NATIVE_LONG_TYPE          "conduit_int64")
+        set(CONDUIT_NATIVE_UNSIGNED_LONG_TYPE "conduit_uint64")
+    endif()
+endif()
+
 
 #-----------------------------------------------------------------------------
 # -- short size checks --

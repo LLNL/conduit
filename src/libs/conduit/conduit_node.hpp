@@ -2771,15 +2771,28 @@ public:
     int              to_int()   const;
     long             to_long()  const;
 
+#ifdef CONDUIT_HAS_LONG_LONG
+    long long        to_long_long()  const;
+#endif
+
     /// convert to c unsigned integer types
     unsigned char    to_unsigned_char()  const;
     unsigned short   to_unsigned_short() const;
     unsigned int     to_unsigned_int()   const;
     unsigned long    to_unsigned_long()  const;
 
+#ifdef CONDUIT_HAS_LONG_LONG
+    unsigned long long to_unsigned_long_long()  const;
+#endif
+
     /// convert to c floating point types
     float            to_float() const;
     double           to_double() const;
+
+#ifdef CONDUIT_USE_LONG_DOUBLE
+    long double      to_long_double() const;
+#endif
+
 
 //-----------------------------------------------------------------------------
 // -- array conversion methods -- 
@@ -2840,7 +2853,7 @@ public:
             operator short()       const;
             operator int()         const;
             operator long()        const;
-            #ifdef CONDUIT_USE_LONG_LONG
+            #ifdef CONDUIT_HAS_LONG_LONG
                 operator long long() const;
             #endif
 
@@ -2850,7 +2863,7 @@ public:
             operator unsigned short()  const;
             operator unsigned int()    const;
             operator unsigned long()   const;
-            #ifdef CONDUIT_USE_LONG_LONG
+            #ifdef CONDUIT_HAS_LONG_LONG
                 operator unsigned long long() const;
             #endif
             
@@ -2872,7 +2885,7 @@ public:
             operator short*()       const;
             operator int*()         const;
             operator long*()        const;
-            #ifdef CONDUIT_USE_LONG_LONG
+            #ifdef CONDUIT_HAS_LONG_LONG
                 operator long long *() const;
             #endif
 
@@ -2881,7 +2894,7 @@ public:
             operator unsigned short*() const;
             operator unsigned int*()   const;
             operator unsigned long*()  const;
-            #ifdef CONDUIT_USE_LONG_LONG
+            #ifdef CONDUIT_HAS_LONG_LONG
                 operator unsigned long long *() const;
             #endif
 
@@ -2900,7 +2913,7 @@ public:
             operator short_array() const;
             operator int_array()   const;
             operator long_array()  const;
-            #ifdef CONDUIT_USE_LONG_LONG
+            #ifdef CONDUIT_HAS_LONG_LONG
                 operator long_long_array() const;
             #endif
             
@@ -2909,7 +2922,7 @@ public:
             operator unsigned_short_array() const;
             operator unsigned_int_array()   const;
             operator unsigned_long_array()  const;
-            #ifdef CONDUIT_USE_LONG_LONG
+            #ifdef CONDUIT_HAS_LONG_LONG
                 operator unsigned_long_long_array() const;
             #endif
 
@@ -2952,7 +2965,7 @@ public:
             operator short()       const;
             operator int()         const;
             operator long()        const;
-            #ifdef CONDUIT_USE_LONG_LONG
+            #ifdef CONDUIT_HAS_LONG_LONG
                 operator long long() const;
             #endif
 
@@ -2962,7 +2975,7 @@ public:
             operator unsigned short()  const;
             operator unsigned int()    const;
             operator unsigned long()   const;
-            #ifdef CONDUIT_USE_LONG_LONG
+            #ifdef CONDUIT_HAS_LONG_LONG
                 operator unsigned long long() const;
             #endif
             
@@ -2984,7 +2997,7 @@ public:
             operator const short*()       const;
             operator const int*()         const;
             operator const long*()        const;
-            #ifdef CONDUIT_USE_LONG_LONG
+            #ifdef CONDUIT_HAS_LONG_LONG
                 operator const long long *() const;
             #endif
 
@@ -2993,7 +3006,7 @@ public:
             operator const unsigned short*() const;
             operator const unsigned int*()   const;
             operator const unsigned long*()  const;
-            #ifdef CONDUIT_USE_LONG_LONG
+            #ifdef CONDUIT_HAS_LONG_LONG
                 operator const unsigned long long *() const;
             #endif
 
@@ -3012,7 +3025,7 @@ public:
             operator const short_array() const;
             operator const int_array()   const;
             operator const long_array()  const;
-            #ifdef CONDUIT_USE_LONG_LONG
+            #ifdef CONDUIT_HAS_LONG_LONG
                 operator const long_long_array() const;
             #endif
             
@@ -3021,7 +3034,7 @@ public:
             operator const unsigned_short_array() const;
             operator const unsigned_int_array()   const;
             operator const unsigned_long_array()  const;
-            #ifdef CONDUIT_USE_LONG_LONG
+            #ifdef CONDUIT_HAS_LONG_LONG
                 operator const unsigned_long_long_array() const;
             #endif
 
@@ -3471,6 +3484,10 @@ public:
     int            as_int()   const;
     long           as_long()  const;
 
+#ifdef CONDUIT_HAS_LONG_LONG
+    long long      as_long_long() const;
+#endif
+
     // unsigned integer scalars
     unsigned char    as_unsigned_char()  const;
     unsigned short   as_unsigned_short() const;
@@ -3478,9 +3495,17 @@ public:
     unsigned int     as_unsigned_int()   const;
     unsigned long    as_unsigned_long()  const;
 
+#ifdef CONDUIT_HAS_LONG_LONG
+    unsigned long long  as_unsigned_long_long() const;
+#endif
+
     // floating point scalars
     float            as_float() const;
     double           as_double() const;
+
+#ifdef CONDUIT_USE_LONG_DOUBLE
+    long double      as_long_double() const;
+#endif
 
     // signed integers via pointers
     char            *as_char_ptr();
@@ -3488,15 +3513,27 @@ public:
     int             *as_int_ptr();
     long            *as_long_ptr();
 
+#ifdef CONDUIT_HAS_LONG_LONG
+    long long       *as_long_long_ptr();
+#endif
+
     // unsigned integers via pointers
     unsigned char   *as_unsigned_char_ptr();
     unsigned short  *as_unsigned_short_ptr();
     unsigned int    *as_unsigned_int_ptr();
     unsigned long   *as_unsigned_long_ptr();
 
+#ifdef CONDUIT_HAS_LONG_LONG
+    unsigned long long *as_unsigned_long_long_ptr();
+#endif
+
     // floating point via pointers
     float           *as_float_ptr();
     double          *as_double_ptr();
+
+#ifdef CONDUIT_USE_LONG_DOUBLE
+    long double         *as_long_double_ptr();
+#endif
 
     // signed integers via pointers (const variants)
     const char       *as_char_ptr()  const;
@@ -3504,15 +3541,27 @@ public:
     const int        *as_int_ptr()   const;
     const long       *as_long_ptr()  const;
 
+#ifdef CONDUIT_HAS_LONG_LONG
+    const long long  *as_long_long_ptr() const;
+#endif
+
     // unsigned integers via pointers (const variants)
     const unsigned char   *as_unsigned_char_ptr()  const;
     const unsigned short  *as_unsigned_short_ptr() const;
     const unsigned int    *as_unsigned_int_ptr()   const;
     const unsigned long   *as_unsigned_long_ptr()  const;
 
+#ifdef CONDUIT_HAS_LONG_LONG
+    const unsigned long long *as_unsigned_long_long_ptr() const;
+#endif
+
     // floating point via pointers (const variants)
     const float           *as_float_ptr()  const;
+
     const double          *as_double_ptr() const;
+#ifdef CONDUIT_USE_LONG_DOUBLE
+    const long double     *as_long_double_ptr() const;
+#endif
 
     // signed integer array types via conduit::DataArray
     char_array       as_char_array();
@@ -3520,15 +3569,27 @@ public:
     int_array        as_int_array();
     long_array       as_long_array();
 
+#ifdef CONDUIT_HAS_LONG_LONG
+    long_long_array  as_long_long_array();
+#endif
+
     // unsigned integer array types via conduit::DataArray
     unsigned_char_array    as_unsigned_char_array();
     unsigned_short_array   as_unsigned_short_array();
     unsigned_int_array     as_unsigned_int_array();
     unsigned_long_array    as_unsigned_long_array();
 
+#ifdef CONDUIT_HAS_LONG_LONG
+    unsigned_long_long_array  as_unsigned_long_long_array();
+#endif
+
     // floating point array types via conduit::DataArray
     float_array     as_float_array();
     double_array    as_double_array();
+
+#ifdef CONDUIT_USE_LONG_DOUBLE
+    long_double_array as_long_double_array();
+#endif
 
     // signed integer array types via conduit::DataArray (const variants)
     const char_array       as_char_array()  const;
@@ -3536,15 +3597,29 @@ public:
     const int_array        as_int_array()   const;
     const long_array       as_long_array()  const;
 
+#ifdef CONDUIT_HAS_LONG_LONG
+    const long_long_array  as_long_long_array() const;
+#endif
+
+
     // unsigned integer array types via conduit::DataArray (const variants)
     const unsigned_char_array    as_unsigned_char_array()  const;
     const unsigned_short_array   as_unsigned_short_array() const;
     const unsigned_int_array     as_unsigned_int_array()   const;
     const unsigned_long_array    as_unsigned_long_array()  const;
 
+#ifdef CONDUIT_HAS_LONG_LONG
+    const unsigned_long_long_array  as_unsigned_long_long_array() const;
+#endif
+
     // floating point array value via conduit::DataArray (const variants)
     const float_array     as_float_array()  const;
     const double_array    as_double_array() const;
+
+#ifdef CONDUIT_USE_LONG_DOUBLE
+    const long_double_array  as_long_double_array() const;
+#endif
+
 
 //-----------------------------------------------------------------------------
 ///@}
@@ -3609,110 +3684,7 @@ private:
 // interface is in the Node::Value() class, where it is needed for casting magic
 // to work for uint64, etc types.
 //-----------------------------------------------------------------------------
-    ///
-    /// These methods allow you to access a leaf as known type
-    /// (used in Node::Value())
-    
-     // signed integer scalars
-    #ifdef CONDUIT_USE_LONG_LONG
-    long long      as_long_long() const;
-    #endif
 
-    // unsigned integer scalars
-    #ifdef CONDUIT_USE_LONG_LONG
-    unsigned long long  as_unsigned_long_long() const;
-    #endif
-
-    // floating point scalars
-    #ifdef CONDUIT_USE_LONG_DOUBLE
-    long double      as_long_double() const;
-    #endif
-
-    // signed integers via pointers
-    #ifdef CONDUIT_USE_LONG_LONG
-    long long       *as_long_long_ptr();
-    #endif
-
-    // unsigned integers via pointers
-    #ifdef CONDUIT_USE_LONG_LONG
-    unsigned long long        *as_unsigned_long_long_ptr();
-    #endif
-
-
-    // floating point via pointers
-    #ifdef CONDUIT_USE_LONG_DOUBLE
-    long double         *as_long_double_ptr();
-    const long double   *as_long_double_ptr() const;
-    #endif
-
-    // signed integers via pointers (const variants)
-    #ifdef CONDUIT_USE_LONG_LONG
-    const long long  *as_long_long_ptr() const;
-    #endif
-
-    // unsigned integers via pointers (const variants)
-    #ifdef CONDUIT_USE_LONG_LONG
-    const unsigned long long  *as_unsigned_long_long_ptr() const;
-    #endif
-
-
-    // floating point via pointers (const variants)
-    #ifdef CONDUIT_USE_LONG_DOUBLE
-    const long double     *as_long_double_ptr() const;
-    #endif
-
-
-    // signed integer array types via conduit::DataArray
-    #ifdef CONDUIT_USE_LONG_LONG
-    long_long_array  as_long_long_array();
-    #endif
-
-    // unsigned integer array types via conduit::DataArray
-    #ifdef CONDUIT_USE_LONG_LONG
-    unsigned_long_long_array  as_unsigned_long_long_array();
-    #endif
-    
-
-    // floating point array types via conduit::DataArray
-    #ifdef CONDUIT_USE_LONG_DOUBLE
-    long_double_array  as_long_double_array();
-    #endif
-
-    // signed integer array types via conduit::DataArray (const variants)
-    #ifdef CONDUIT_USE_LONG_LONG
-    const long_long_array  as_long_long_array() const;
-    #endif
-
-    // unsigned integer array types via conduit::DataArray (const variants)
-    #ifdef CONDUIT_USE_LONG_LONG
-    const unsigned_long_long_array  as_unsigned_long_long_array() const;
-    #endif
-
-    // floating point array value via conduit::DataArray (const variants)
-    #ifdef CONDUIT_USE_LONG_DOUBLE
-    const long_double_array  as_long_double_array() const;
-    #endif
-
-    ///
-    /// These methods allow you to coerce a leaf type to another type.
-    /// (used in Node::Value())
-    
-    /// scalar coercion
-    /// convert to c signed integer types
-    #ifdef CONDUIT_USE_LONG_LONG
-    long long        to_long_long()  const;
-    #endif
-
-    /// convert to c unsigned integer types
-    #ifdef CONDUIT_USE_LONG_LONG
-    unsigned long long to_unsigned_long_long()  const;
-    #endif
-
-    
-    /// convert to c floating point types
-    #ifdef CONDUIT_USE_LONG_DOUBLE
-    long double      to_long_double() const;
-    #endif
 
 //-----------------------------------------------------------------------------
 //

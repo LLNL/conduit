@@ -7726,7 +7726,7 @@ Node::to_long() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 long long
 Node::to_long_long() const
@@ -7895,7 +7895,7 @@ Node::to_unsigned_long() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 unsigned long long
 Node::to_unsigned_long_long() const
@@ -9587,7 +9587,7 @@ Node::Value::operator long() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::Value::operator long long() const
 {
@@ -9636,7 +9636,7 @@ Node::Value::operator unsigned long() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::Value::operator unsigned long long() const
 {
@@ -9715,7 +9715,7 @@ Node::Value::operator long*() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::Value::operator long long*() const
 {
@@ -9750,7 +9750,7 @@ Node::Value::operator unsigned long*() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::Value::operator unsigned long long*() const
 {
@@ -9814,7 +9814,7 @@ Node::Value::operator long_array() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::Value::operator long_long_array() const
 {
@@ -9849,7 +9849,7 @@ Node::Value::operator unsigned_long_array() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::Value::operator unsigned_long_long_array() const
 {
@@ -9965,7 +9965,7 @@ Node::ConstValue::operator long() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::ConstValue::operator long long() const
 {
@@ -10014,7 +10014,7 @@ Node::ConstValue::operator unsigned long() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::ConstValue::operator unsigned long long() const
 {
@@ -10093,7 +10093,7 @@ Node::ConstValue::operator const long*() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::ConstValue::operator const long long*() const
 {
@@ -10128,7 +10128,7 @@ Node::ConstValue::operator const unsigned long*() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::ConstValue::operator const unsigned long long*() const
 {
@@ -10192,7 +10192,7 @@ Node::ConstValue::operator const long_array() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::ConstValue::operator const long_long_array() const
 {
@@ -10227,7 +10227,7 @@ Node::ConstValue::operator const unsigned_long_array() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::ConstValue::operator const unsigned_long_long_array() const
 {
@@ -11929,7 +11929,7 @@ Node::as_long()  const
 
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 long long
 Node::as_long_long()  const
@@ -11993,7 +11993,7 @@ Node::as_unsigned_long() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 unsigned long long
 Node::as_unsigned_long_long() const
@@ -12099,7 +12099,7 @@ Node::as_long_ptr()
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 long long *
@@ -12164,7 +12164,7 @@ Node::as_unsigned_long_ptr()
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
@@ -12287,7 +12287,7 @@ Node::as_long_ptr() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 const long long *
@@ -12353,7 +12353,7 @@ Node::as_unsigned_long_ptr() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
@@ -12466,7 +12466,7 @@ Node::as_long_array()
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 long_long_array
@@ -12532,7 +12532,7 @@ Node::as_unsigned_long_array()
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 unsigned_long_long_array
@@ -12642,7 +12642,7 @@ Node::as_long_array() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 const long_long_array
 Node::as_long_long_array() const
@@ -12707,7 +12707,7 @@ Node::as_unsigned_long_array() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 const unsigned_long_long_array

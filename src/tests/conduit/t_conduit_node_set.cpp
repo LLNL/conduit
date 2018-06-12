@@ -2213,11 +2213,19 @@ TEST(conduit_node_set, set_cstyle_uint_array)
     unsigned short  ushort_av[6] = {2,4,8,16,32,64};
     unsigned int    uint_av[6]   = {2,4,8,16,32,64};
     unsigned long   ulong_av[6]  = {2,4,8,16,32,64};
+
+#if defined CONDUIT_HAS_LONG_LONG
+    unsigned long long   ulonglong_av[6]  = {2,4,8,16,32,64};    
+#endif
     
     unsigned_char_array  uchar_av_a(uchar_av,DataType::c_unsigned_char(6));
     unsigned_short_array ushort_av_a(ushort_av,DataType::c_unsigned_short(6));
     unsigned_int_array   uint_av_a(uint_av,DataType::c_unsigned_int(6));
     unsigned_long_array  ulong_av_a(ulong_av,DataType::c_unsigned_long(6));
+    
+#if defined CONDUIT_HAS_LONG_LONG
+    unsigned_long_long_array  ulonglong_av_a(ulong_av,DataType::c_unsigned_long_long(6));
+#endif 
     
     Node n;
     // unsigned char
@@ -2230,8 +2238,13 @@ TEST(conduit_node_set, set_cstyle_uint_array)
         // set(...) semantics imply a copy -- mem addys should differ
         EXPECT_NE(&uchar_ptr[i],&uchar_av[i]);
     }
+
     EXPECT_EQ(uchar_ptr[5],64);
-    
+
+    // also check access via value()
+    unsigned char *uchar_ptr_2 = n.value();
+    EXPECT_EQ(uchar_ptr,uchar_ptr_2);
+
     // unsigned short
     n.set(ushort_av_a);
     n.schema().print();
@@ -2242,9 +2255,14 @@ TEST(conduit_node_set, set_cstyle_uint_array)
         // set(...) semantics imply a copy -- mem addys should differ
         EXPECT_NE(&ushort_ptr[i],&ushort_av[i]);
     }
+
     EXPECT_EQ(ushort_ptr[5],64);
     
-    // unsigned int    
+    // also check access via value()
+    unsigned short *ushort_ptr_2 = n.value();
+    EXPECT_EQ(ushort_ptr,ushort_ptr_2);
+    
+    // unsigned int
     n.set(uint_av_a);
     n.schema().print();
     unsigned int *uint_ptr = n.as_unsigned_int_ptr();
@@ -2254,7 +2272,12 @@ TEST(conduit_node_set, set_cstyle_uint_array)
         // set(...) semantics imply a copy -- mem addys should differ
         EXPECT_NE(&uint_ptr[i],&uint_av[i]);
     }
+
     EXPECT_EQ(uint_ptr[5],64);
+
+    // also check access via value()
+    unsigned int *uint_ptr_2 = n.value();
+    EXPECT_EQ(uint_ptr,uint_ptr_2);
     
     // unsigned long
     n.set(ulong_av_a);
@@ -2266,7 +2289,32 @@ TEST(conduit_node_set, set_cstyle_uint_array)
         // set(...) semantics imply a copy -- mem addys should differ
         EXPECT_NE(&ulong_ptr[i],&ulong_av_a[i]);
     }
+
     EXPECT_EQ(ulong_ptr[5],64);
+
+    // also check access via value()
+    unsigned long *ulong_ptr_2 = n.value();
+    EXPECT_EQ(ulong_ptr,ulong_ptr_2);
+
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // unsigned long long
+    n.set(ulonglong_av_a);
+    n.schema().print();
+    unsigned long long *ulonglong_ptr = n.as_unsigned_long_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(ulonglong_ptr[i],ulonglong_av_a[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&ulonglong_ptr[i],&ulonglong_av_a[i]);
+    }
+
+    EXPECT_EQ(ulonglong_ptr[5],64);
+
+    // also check access via value()
+    unsigned long long *ulonglong_ptr_2 = n.value();
+    EXPECT_EQ(ulonglong_ptr,ulonglong_ptr_2);
+#endif
 
 }
 
@@ -2277,11 +2325,18 @@ TEST(conduit_node_set, set_cstyle_int_array)
     short  short_av[6] = {-2,-4,-8,-16,-32,-64};
     int    int_av[6]   = {-2,-4,-8,-16,-32,-64};
     long   long_av[6]  = {-2,-4,-8,-16,-32,-64};
+#ifdef CONDUIT_HAS_LONG_LONG
+    long long longlong_av[6]  = {-2,-4,-8,-16,-32,-64};
+#endif
     
     char_array  char_av_a(char_av,DataType::c_char(6));
     short_array short_av_a(short_av,DataType::c_short(6));
     int_array   int_av_a(int_av,DataType::c_int(6));
     long_array  long_av_a(long_av,DataType::c_long(6));
+    
+#ifdef CONDUIT_HAS_LONG_LONG
+    long_long_array  longlong_av_a(longlong_av,DataType::c_long_long(6));
+#endif
     
     Node n;
     // char
@@ -2294,7 +2349,12 @@ TEST(conduit_node_set, set_cstyle_int_array)
         // set(...) semantics imply a copy -- mem addys should differ
         EXPECT_NE(&char_ptr[i],&char_av[i]);
     }
+
     EXPECT_EQ(char_ptr[5],char(-64));
+
+    // also check access via value()
+    char *char_ptr_2 =  n.value();
+    EXPECT_EQ(char_ptr,char_ptr_2);
 
     // short 
     n.set(short_av_a);
@@ -2306,7 +2366,12 @@ TEST(conduit_node_set, set_cstyle_int_array)
         // set(...) semantics imply a copy -- mem addys should differ
         EXPECT_NE(&short_ptr[i],&short_av[i]);
     }
+
     EXPECT_EQ(short_ptr[5],-64);
+
+    // also check access via value()
+    short *short_ptr_2 = n.value();
+    EXPECT_EQ(short_ptr,short_ptr_2);
 
     // int
     n.set(int_av_a);
@@ -2318,7 +2383,12 @@ TEST(conduit_node_set, set_cstyle_int_array)
         // set(...) semantics imply a copy -- mem addys should differ
         EXPECT_NE(&int_ptr[i],&int_av[i]);
     }
+
     EXPECT_EQ(int_ptr[5],-64);
+
+    // also check access via value()
+    int *int_ptr_2 = n.value();
+    EXPECT_EQ(int_ptr,int_ptr_2);
 
     // long
     n.set(long_av_a);
@@ -2330,8 +2400,33 @@ TEST(conduit_node_set, set_cstyle_int_array)
         // set(...) semantics imply a copy -- mem addys should differ
         EXPECT_NE(&long_ptr[i],&long_av[i]);
     }
-    EXPECT_EQ(long_ptr[5],-64);
 
+    EXPECT_EQ(long_ptr[5],-64);
+   
+    // also check access via value()
+    long *long_ptr_2 = n.value();
+    EXPECT_EQ(long_ptr,long_ptr_2);
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // long long
+    n.set(longlong_av_a);
+    n.schema().print();
+    long long *longlong_ptr = n.as_long_long_ptr();
+    
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(longlong_ptr[i],longlong_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&longlong_ptr[i],&longlong_av[i]);
+    }
+
+    EXPECT_EQ(longlong_ptr[5],-64);
+
+    // also check access via value()
+    long long *longlong_ptr_2 = n.value();
+    EXPECT_EQ(longlong_ptr,longlong_ptr_2);
+
+#endif
 }
 
 
@@ -2340,6 +2435,10 @@ TEST(conduit_node_set, set_cstyle_float_ptr)
 {
     float   fav[4] = {-0.8f, -1.6f, -3.2f, -6.4f};
     double  dav[4] = {-0.8, -1.6, -3.2, -6.4};
+
+#ifdef CONDUIT_USE_LONG_DOUBLE
+    long double  ldav[4] = {-0.8, -1.6, -3.2, -6.4};
+#endif
 
     Node n;
     if(sizeof(float) == 4)
@@ -2386,8 +2485,12 @@ TEST(conduit_node_set, set_cstyle_float_ptr)
         // set(...) semantics imply a copy -- mem addys should differ
         EXPECT_NE(&f_ptr[i],&fav[i]); 
     }
+
     EXPECT_NEAR(f_ptr[3],-6.4,0.001);
 
+    // also check access via value()
+    float *f_ptr_2 = n.value();
+    EXPECT_EQ(f_ptr,f_ptr_2);
     
     // double
     n.set(dav,4);
@@ -2399,7 +2502,33 @@ TEST(conduit_node_set, set_cstyle_float_ptr)
         // set(...) semantics imply a copy -- mem addys should differ
         EXPECT_NE(&d_ptr[i],&dav[i]);
     }
+
     EXPECT_NEAR(d_ptr[3],-6.4,0.001);
+
+    // also check access via value()
+    double *d_ptr_2 = n.value();
+    EXPECT_EQ(d_ptr,d_ptr_2);
+
+
+#ifdef CONDIT_USE_LONG_DOUBLE
+
+    // long_double
+    n.set(ldav,4);
+    n.schema().print();
+    long double *ld_ptr = n.as_long_double_ptr();
+    for(index_t i=0;i<4;i++)
+    {
+        EXPECT_NEAR(ld_ptr[i],ldav[i],0.001);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&ld_ptr[i],&ldav[i]);
+    }
+    EXPECT_NEAR(ld_ptr[3],-6.4,0.001);
+    
+    // also check access via value()
+    long double *ld_ptr_2 = n.value();
+    EXPECT_EQ(ld_ptr,ld_ptr_2);
+
+#endif
 }
 
 //-----------------------------------------------------------------------------

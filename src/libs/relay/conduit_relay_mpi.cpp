@@ -141,7 +141,7 @@ conduit_dtype_to_mpi_dtype(const DataType &dt)
     {
         res = MPI_LONG;
     }
-    #if defined(CONDUIT_USE_LONG_LONG)
+    #if defined(CONDUIT_HAS_LONG_LONG)
     else if( dt_id == CONDUIT_NATIVE_LONG_LONG_ID)
     {
         res = MPI_LONG_LONG;
@@ -164,7 +164,7 @@ conduit_dtype_to_mpi_dtype(const DataType &dt)
     {
         res = MPI_UNSIGNED_LONG;
     }
-    #if defined(CONDUIT_USE_LONG_LONG)
+    #if defined(CONDUIT_HAS_LONG_LONG)
     else if( dt_id == CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID)
     {
         res = MPI_UNSIGNED_LONG_LONG;
@@ -223,7 +223,7 @@ mpi_dtype_to_conduit_dtype_id(MPI_Datatype dt)
     {
         res = CONDUIT_NATIVE_LONG_ID; 
     }
-    #if defined(CONDUIT_USE_LONG_LONG)
+    #if defined(CONDUIT_HAS_LONG_LONG)
     else if(dt == MPI_LONG_LONG)
     {
         res = CONDUIT_NATIVE_LONG_LONG_ID; 
@@ -250,7 +250,7 @@ mpi_dtype_to_conduit_dtype_id(MPI_Datatype dt)
     {
         res = CONDUIT_NATIVE_UNSIGNED_LONG_ID; 
     }
-    #if defined(CONDUIT_USE_LONG_LONG)
+    #if defined(CONDUIT_HAS_LONG_LONG)
     else if(dt == MPI_UNSIGNED_LONG_LONG)
     {
         res = CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID; 
