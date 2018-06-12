@@ -1128,6 +1128,9 @@ mesh::coordset::uniform::verify(const Node &coordset,
     bool res = true;
     info.reset();
 
+    res &= verify_enum_field(protocol, coordset, info, "type",
+        std::vector<std::string>(1, "uniform"));
+
     res &= verify_object_field(protocol, coordset, info, "dims") &&
            mesh::logical_dims::verify(coordset["dims"], info["dims"]);
 
@@ -1158,6 +1161,9 @@ mesh::coordset::rectilinear::verify(const Node &coordset,
     const std::string protocol = "mesh::coordset::rectilinear";
     bool res = true;
     info.reset();
+
+    res &= verify_enum_field(protocol, coordset, info, "type",
+        std::vector<std::string>(1, "rectilinear"));
 
     if(!verify_object_field(protocol, coordset, info, "values", true))
     {
@@ -1193,6 +1199,9 @@ mesh::coordset::_explicit::verify(const Node &coordset,
     const std::string protocol = "mesh::coordset::explicit";
     bool res = true;
     info.reset();
+
+    res &= verify_enum_field(protocol, coordset, info, "type",
+        std::vector<std::string>(1, "explicit"));
 
     res &= verify_mcarray_field(protocol, coordset, info, "values");
 
@@ -1355,7 +1364,7 @@ mesh::coordset::to_explicit(const conduit::Node &coordset,
             index_t dim_lens[3], coords_len = 1;
             for(index_t i = 0; i < csys_dims; i++)
             {
-                const conduit::Node &dim = coordset["values"][logical_axes[i]];
+                const conduit::Node &dim = coordset["values"][csys_axes[i]];
                 coords_len *= (dim_lens[i] = dim.dtype().number_of_elements());
             }
 
@@ -1399,7 +1408,7 @@ mesh::coordset::to_explicit(const conduit::Node &coordset,
             index_t coords_len = 1;
             for(index_t i = 0; i < csys_dims; i++)
             {
-                coords_len *= coordset["dims"][logical_axes[i]].as_int();
+                coords_len *= coordset["dims"][logical_axes[i]].to_int();
             }
 
             for(index_t i = 0; i < csys_dims; i++)
@@ -1567,8 +1576,6 @@ mesh::topology::verify(const Node &topo,
     bool res = true;
     info.reset();
 
-    res &= verify_string_field(protocol, topo, info, "coordset");
-
     if(!(verify_field_exists(protocol, topo, info, "type") &&
          mesh::topology::type::verify(topo["type"], info["type"])))
     {
@@ -1729,14 +1736,23 @@ mesh::topology::to_unstructured(const conduit::Node &/*topo*/,
 
 //-----------------------------------------------------------------------------
 bool
-mesh::topology::points::verify(const Node & /*topo*/,
+mesh::topology::points::verify(const Node & topo,
                                Node &info)
 {
+    const std::string protocol = "mesh::topology::points";
+    bool res = true;
     info.reset();
+
+    res &= verify_string_field(protocol, topo, info, "coordset");
+
+    res &= verify_enum_field(protocol, topo, info, "type",
+        std::vector<std::string>(1, "points"));
+
     // if needed in the future, can be used to verify optional info for 
     // implicit 'points' topology
-    bool res = true;
+
     log::validation(info,res);
+
     return res;
 }
 
@@ -1746,14 +1762,23 @@ mesh::topology::points::verify(const Node & /*topo*/,
 
 //-----------------------------------------------------------------------------
 bool
-mesh::topology::uniform::verify(const Node & /*topo*/,
+mesh::topology::uniform::verify(const Node & topo,
                                 Node &info)
 {
+    const std::string protocol = "mesh::topology::uniform";
+    bool res = true;
     info.reset();
+
+    res &= verify_string_field(protocol, topo, info, "coordset");
+
+    res &= verify_enum_field(protocol, topo, info, "type",
+        std::vector<std::string>(1, "uniform"));
+
     // future: will be used to verify optional info from "elements"
     // child of a uniform topology
-    bool res = true;
+
     log::validation(info,res);
+
     return res;
 }
 
@@ -1763,14 +1788,23 @@ mesh::topology::uniform::verify(const Node & /*topo*/,
 
 //-----------------------------------------------------------------------------
 bool
-mesh::topology::rectilinear::verify(const Node &/*topo*/,
+mesh::topology::rectilinear::verify(const Node &topo,
                                     Node &info)
 {
+    const std::string protocol = "mesh::topology::rectilinear";
+    bool res = true;
     info.reset();
+
+    res &= verify_string_field(protocol, topo, info, "coordset");
+
+    res &= verify_enum_field(protocol, topo, info, "type",
+        std::vector<std::string>(1, "rectilinear"));
+
     // future: will be used to verify optional info from "elements"
     // child of a rectilinear topology
-    bool res = true;
+
     log::validation(info,res);
+
     return res;
 }
 
@@ -1782,6 +1816,11 @@ mesh::topology::structured::verify(const Node &topo,
     const std::string protocol = "mesh::topology::structured";
     bool res = true;
     info.reset();
+
+    res &= verify_string_field(protocol, topo, info, "coordset");
+
+    res &= verify_enum_field(protocol, topo, info, "type",
+        std::vector<std::string>(1, "structured"));
 
     if(!verify_object_field(protocol, topo, info, "elements"))
     {
@@ -1816,6 +1855,11 @@ mesh::topology::unstructured::verify(const Node &topo,
     const std::string protocol = "mesh::topology::unstructured";
     bool res = true;
     info.reset();
+
+    res &= verify_string_field(protocol, topo, info, "coordset");
+
+    res &= verify_enum_field(protocol, topo, info, "type",
+        std::vector<std::string>(1, "unstructured"));
 
     if(!verify_object_field(protocol, topo, info, "elements"))
     {
