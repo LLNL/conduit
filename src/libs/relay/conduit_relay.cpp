@@ -146,10 +146,10 @@ about(Node &n)
 
     // ADIOS aware
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
-    io_protos["conduit_adios"] = "enabled";
+    io_protos["adios"] = "enabled";
     io::adios_options(n["io/options/adios"]);
 #else
-    io_protos["conduit_adios"] = "disabled";
+    io_protos["adios"] = "disabled";
 #endif
 
 }

@@ -134,9 +134,9 @@ identify_protocol(const std::string &path,
         io_type = "conduit_base64_json";
     }
     else if(file_name_ext == "bp" ||
-            file_name_ext == "conduit_adios")
+            file_name_ext == "adios")
     {
-        io_type = "conduit_adios";
+        io_type = "adios";
     }
 
     // default to conduit_bin
@@ -236,7 +236,7 @@ save(const Node &node,
                       "Failed to save conduit mesh node to path " << path);
 #endif
     }
-    else if( protocol == "conduit_adios")
+    else if( protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         adios_set_options(options);
@@ -312,7 +312,7 @@ save_merged(const Node &node,
                       "Failed to save conduit mesh node to path " << path);
 #endif
     }
-    else if( protocol == "conduit_adios")
+    else if( protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         adios_set_options(options);
@@ -368,7 +368,7 @@ load(const std::string &path,
         CONDUIT_ERROR("the conduit_relay conduit_silo_mesh protocol does not "
                       "support \"load\"");
     }
-    else if( protocol == "conduit_adios")
+    else if( protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         node.reset();
@@ -431,7 +431,7 @@ load_merged(const std::string &path,
         CONDUIT_ERROR("the relay conduit_silo_mesh protocol does not "
                       "support \"load\"");
     }
-    else if( protocol == "conduit_adios")
+    else if( protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         Node n;
