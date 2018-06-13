@@ -45,7 +45,7 @@
 # Find rapidjson headers and lib.
 # This module defines RAPIDJSON_INCLUDE_DIR, directory containing headers
 
-set(RAPIDJSON_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/thirdparty_builtin/rapidjson/include)
+set(RAPIDJSON_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/thirdparty_builtin/rapidjson/include)
 
 if (RAPIDJSON_INCLUDE_DIR)
   set(RAPIDJSON_FOUND TRUE)
