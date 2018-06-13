@@ -90,9 +90,11 @@ if(WIN32 AND BUILD_SHARED_LIBS)
     set(CONDUIT_WINDOWS_DLL_EXPORTS TRUE)
 endif()
 
-
-if( NOT (BLT_CXX_STD STREQUAL "c++98") )
+if( BLT_CXX_STD STREQUAL "c++98" )
+    message(STATUS "C++11 support disabled")
+else()
     set(CONDUIT_USE_CXX11 1)
+    message(STATUS "C++11 support enabled (CONDUIT_USE_CXX11 == 1)")
 endif()
 
 ################################

@@ -55,6 +55,45 @@
 #include "conduit_utils.hpp"
 #include "conduit_schema.hpp"
 
+#ifdef CONDUIT_USE_CXX11
+//-----------------------------------------------------------------------------
+// Sanity checks of conduit types vs C++11 Types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Checked here to avoid header dep of C++11 in client code
+//-----------------------------------------------------------------------------
+#include <cstdint>
+#include <type_traits>
+
+// signed integers
+static_assert(std::is_same<conduit_int8, std::int8_t>::value,
+              "error: conduit_int8 != std::int8_t");
+
+static_assert(std::is_same<conduit_int16, std::int16_t>::value,
+              "error: conduit_int16 != std::int16_t");
+
+static_assert(std::is_same<conduit_int32, std::int32_t>::value,
+              "error: conduit_int32 != std::int32_t");
+
+static_assert(std::is_same<conduit_int64, std::int64_t>::value,
+              "error: conduit_int64 != std::int64_t");
+
+// unsigned integers
+static_assert(std::is_same<conduit_uint8, std::uint8_t>::value,
+              "error: conduit_uint8 != std::uint8_t");
+
+static_assert(std::is_same<conduit_uint16, std::uint16_t>::value,
+              "error: conduit_uint16 != std::uint16_t");
+
+static_assert(std::is_same<conduit_uint32, std::uint32_t>::value,
+              "error: conduit_uint32 != std::uint32_t");
+
+static_assert(std::is_same<conduit_uint64, std::uint64_t>::value,
+              "error: conduit_uint64 != std::uint64_t");
+
+#endif
+
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
