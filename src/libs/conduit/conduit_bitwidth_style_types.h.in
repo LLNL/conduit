@@ -329,7 +329,7 @@ static_assert(std::is_same<conduit_int32, std::int32_t>::value,
               "error: conduit_int32 != std::int32_t");
 
 static_assert(std::is_same<conduit_int64, std::int64_t>::value,
-              "error: conduit_int32 != std::int64_t");
+              "error: conduit_int64 != std::int64_t");
 
 // unsigned integers
 static_assert(std::is_same<conduit_uint8, std::uint8_t>::value,

@@ -358,6 +358,11 @@ public:
         void set(unsigned long data);
     #endif
 
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+        void set(long long data);
+        void set(unsigned long long data);
+#endif
+
     #ifndef CONDUIT_USE_FLOAT
         void set(float data);
     #endif
@@ -426,6 +431,11 @@ public:
         void set(const long_array &data);
         void set(const unsigned_long_array &data);
     #endif
+
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+        void set(const long_long_array &data);
+        void set(const unsigned_long_long_array &data);
+#endif
 
     #ifndef CONDUIT_USE_FLOAT
         void set(const float_array &data);
@@ -516,6 +526,11 @@ public:
         void set(const std::vector<long> &data);
         void set(const std::vector<unsigned long> &data);
     #endif
+
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+        void set(const std::vector<long long> &data);
+        void set(const std::vector<unsigned long long> &data);
+#endif
 
     #ifndef CONDUIT_USE_FLOAT
         void set(const std::vector<float> &data);
@@ -754,6 +769,22 @@ public:
                  index_t endianness = Endianness::DEFAULT_ID);
     #endif
 
+    #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+        void set(const long long *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_LONG_LONG),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG_LONG),
+                 index_t endianness = Endianness::DEFAULT_ID);
+
+        void set(const unsigned long long *data,
+                 index_t num_elements = 1,
+                 index_t offset = 0,
+                 index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG_LONG),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG_LONG),
+                 index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
     #ifndef CONDUIT_USE_FLOAT
         void set(const float *data,
                  index_t num_elements = 1,
@@ -904,7 +935,11 @@ public:
         void set_path(const std::string &path, long data);
         void set_path(const std::string &path, unsigned long data);
     #endif
-
+    #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+        void set_path(const std::string &path, long long data);
+        void set_path(const std::string &path, unsigned long long data);
+    #endif
+        
     #ifndef CONDUIT_USE_FLOAT
         void set_path(const std::string &path, float data);
     #endif
@@ -1016,6 +1051,15 @@ public:
                       
         void set_path(const std::string &path,
                       const unsigned_long_array &data);
+    #endif
+
+    #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+        void set_path(const std::string &path,
+                      const long_long_array &data);
+                      
+        void set_path(const std::string &path,
+                      const unsigned_long_long_array &data);
+
     #endif
 
     #ifndef CONDUIT_USE_FLOAT
@@ -1150,6 +1194,14 @@ public:
 
         void set_path(const std::string &path, 
                       const std::vector<unsigned long> &data);
+    #endif
+
+    #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+        void set_path(const std::string &path, 
+                      const std::vector<long long> &data);
+
+        void set_path(const std::string &path, 
+                      const std::vector<unsigned long long> &data);
     #endif
 
     #ifndef CONDUIT_USE_FLOAT
@@ -1416,6 +1468,25 @@ public:
                       index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
                       index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
                       index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
+    #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+        void set_path(const std::string &path,
+                      const long long *data,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(CONDUIT_NATIVE_LONG_LONG),
+                      index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG_LONG),
+                      index_t endianness = Endianness::DEFAULT_ID);
+
+        void set_path(const std::string &path,
+                      const unsigned long long *data,
+                      index_t num_elements = 1,
+                      index_t offset = 0,
+                      index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG_LONG),
+                      index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG_LONG),
+                      index_t endianness = Endianness::DEFAULT_ID);
+
     #endif
 
     #ifndef CONDUIT_USE_FLOAT
@@ -1705,6 +1776,22 @@ public:
                           index_t endianness = Endianness::DEFAULT_ID);
     #endif
 
+    #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+        void set_external(long long *data,
+                          index_t num_elements = 1,
+                          index_t offset = 0,
+                          index_t stride = sizeof(CONDUIT_NATIVE_LONG_LONG),
+                          index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG_LONG),
+                          index_t endianness = Endianness::DEFAULT_ID);
+
+        void set_external(unsigned long long *data,
+                          index_t num_elements = 1,
+                          index_t offset = 0,
+                          index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG_LONG),
+                          index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG_LONG),
+                          index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+
     #ifndef CONDUIT_USE_FLOAT
         void set_external(float *data,
                           index_t num_elements = 1,
@@ -1797,6 +1884,11 @@ public:
         void set_external(const unsigned_long_array &data);
     #endif
 
+    #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+        void set_external(const long_long_array &data);
+        void set_external(const unsigned_long_long_array &data);
+    #endif
+
     #ifndef CONDUIT_USE_FLOAT
         void set_external(const float_array &data);
     #endif
@@ -1884,6 +1976,11 @@ public:
         void set_external(const std::vector<unsigned long> &data);
     #endif
 
+    #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+        void set_external(const std::vector<long long> &data);
+        void set_external(const std::vector<unsigned long long> &data);
+    #endif
+        
     #ifndef CONDUIT_USE_FLOAT
         void set_external(const std::vector<float> &data);
     #endif
@@ -2197,7 +2294,25 @@ public:
                                index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
                                index_t endianness = Endianness::DEFAULT_ID);
     #endif
+   
+    #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+        void set_path_external(const std::string &path,
+                               long long *data,
+                               index_t num_elements = 1,
+                               index_t offset = 0,
+                               index_t stride = sizeof(CONDUIT_NATIVE_LONG_LONG),
+                               index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG_LONG),
+                               index_t endianness = Endianness::DEFAULT_ID);
 
+        void set_path_external(const std::string &path,
+                               unsigned long long *data,
+                               index_t num_elements = 1,
+                               index_t offset = 0,
+                               index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG_LONG),
+                               index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG_LONG),
+                               index_t endianness = Endianness::DEFAULT_ID);
+    #endif
+  
     #ifndef CONDUIT_USE_FLOAT
         void set_path_external(const std::string &path,
                                float *data,
@@ -2334,6 +2449,14 @@ public:
                                const unsigned_long_array &data);
     #endif
 
+    #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+        void set_path_external(const std::string &path,
+                               const long_long_array &data);
+                      
+        void set_path_external(const std::string &path,
+                               const unsigned_long_long_array &data);
+    #endif
+
     #ifndef CONDUIT_USE_FLOAT
         void set_path_external(const std::string &path,
                                const float_array &data);
@@ -2466,6 +2589,14 @@ public:
                                const std::vector<unsigned long> &data);
     #endif
 
+    #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+        void set_path_external(const std::string &path, 
+                               const std::vector<long long> &data);
+
+        void set_path_external(const std::string &path, 
+                               const std::vector<unsigned long long> &data);
+    #endif
+
     #ifndef CONDUIT_USE_FLOAT
         void set_path_external(const std::string &path, 
                                const std::vector<float> &data);
@@ -2521,7 +2652,7 @@ public:
     Node &operator=(uint64 data);
     
     // floating point scalar types
-    Node &operator=(float32 data);    
+    Node &operator=(float32 data);
     Node &operator=(float64 data);
 
 
@@ -2547,6 +2678,11 @@ public:
     #ifndef CONDUIT_USE_LONG
         Node &operator=(long data);
         Node &operator=(unsigned long data);
+    #endif
+
+    #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+        Node &operator=(long long data);
+        Node &operator=(unsigned long long data);
     #endif
 
     #ifndef CONDUIT_USE_FLOAT
@@ -2597,6 +2733,11 @@ public:
 #ifndef CONDUIT_USE_LONG
     Node &operator=(const long_array &data);
     Node &operator=(const unsigned_long_array &data);
+#endif
+
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+    Node &operator=(const long_long_array &data);
+    Node &operator=(const unsigned_long_long_array &data);
 #endif
 
 #ifndef CONDUIT_USE_FLOAT
@@ -2650,6 +2791,11 @@ public:
 #ifndef CONDUIT_USE_LONG
     Node &operator=(const std::vector<long> &data);
     Node &operator=(const std::vector<unsigned long> &data); 
+#endif
+
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+    Node &operator=(const std::vector<long long> &data);
+    Node &operator=(const std::vector<unsigned long long> &data); 
 #endif
 
 #ifndef CONDUIT_USE_FLOAT
