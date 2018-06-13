@@ -55,6 +55,45 @@
 #include "conduit_utils.hpp"
 #include "conduit_schema.hpp"
 
+#ifdef CONDUIT_USE_CXX11
+//-----------------------------------------------------------------------------
+// Sanity checks of conduit types vs C++11 Types
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Checked here to avoid header dep of C++11 in client code
+//-----------------------------------------------------------------------------
+#include <cstdint>
+#include <type_traits>
+
+// signed integers
+static_assert(std::is_same<conduit_int8, std::int8_t>::value,
+              "error: conduit_int8 != std::int8_t");
+
+static_assert(std::is_same<conduit_int16, std::int16_t>::value,
+              "error: conduit_int16 != std::int16_t");
+
+static_assert(std::is_same<conduit_int32, std::int32_t>::value,
+              "error: conduit_int32 != std::int32_t");
+
+static_assert(std::is_same<conduit_int64, std::int64_t>::value,
+              "error: conduit_int64 != std::int64_t");
+
+// unsigned integers
+static_assert(std::is_same<conduit_uint8, std::uint8_t>::value,
+              "error: conduit_uint8 != std::uint8_t");
+
+static_assert(std::is_same<conduit_uint16, std::uint16_t>::value,
+              "error: conduit_uint16 != std::uint16_t");
+
+static_assert(std::is_same<conduit_uint32, std::uint32_t>::value,
+              "error: conduit_uint32 != std::uint32_t");
+
+static_assert(std::is_same<conduit_uint64, std::uint64_t>::value,
+              "error: conduit_uint64 != std::uint64_t");
+
+#endif
+
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
@@ -263,7 +302,7 @@ DataType::c_long(index_t num_elements,
                     num_elements,offset,stride,element_bytes,endianness);
 }
 
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 DataType
 DataType::c_long_long(index_t num_elements,
@@ -326,7 +365,7 @@ DataType::c_unsigned_long(index_t num_elements,
                     num_elements,offset,stride,element_bytes,endianness);
 }
 
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 DataType
 DataType::c_unsigned_long_long(index_t num_elements,
@@ -751,7 +790,7 @@ DataType::is_long() const
 bool
 DataType::is_long_long() const
 {
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
     return m_id == CONDUIT_NATIVE_LONG_LONG_ID;
 #else
     return false;
@@ -791,7 +830,7 @@ DataType::is_unsigned_long() const
 bool
 DataType::is_unsigned_long_long() const
 {
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
     return m_id == CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID;
 #else
     return false;
@@ -961,7 +1000,7 @@ DataType::c_type_name_to_id(const std::string &dtype_name)
         return CONDUIT_NATIVE_INT_ID;
     else if(dtype_name == "long")
         return CONDUIT_NATIVE_LONG_ID;
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
     else if(dtype_name == "long long")
         return CONDUIT_NATIVE_LONG_LONG_ID;
 #endif
@@ -973,7 +1012,7 @@ DataType::c_type_name_to_id(const std::string &dtype_name)
         return CONDUIT_NATIVE_UNSIGNED_INT_ID;
     else if(dtype_name == "unsigned long")
         return CONDUIT_NATIVE_UNSIGNED_LONG_ID;
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
     else if(dtype_name == "unsigned long long")
         return CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID;
 #endif

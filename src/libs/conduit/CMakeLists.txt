@@ -49,7 +49,7 @@
 
 ENABLE_WARNINGS()
 
-include("cmake/BitwidthChecks.cmake")
+include("cmake/BitwidthMapping.cmake")
 
 
 convert_to_native_escaped_file_path(${CMAKE_INSTALL_PREFIX}

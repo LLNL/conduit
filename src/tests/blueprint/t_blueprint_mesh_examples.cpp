@@ -59,7 +59,7 @@ using namespace conduit;
 
 index_t OUTPUT_NUM_AXIS_POINTS = 5;
 
-std::string PROTOCOL_VER = "0.4.0";
+std::string PROTOCOL_VER = CONDUIT_VERSION;
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, mesh_2d)

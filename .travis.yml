@@ -71,6 +71,7 @@ env:
       ENABLE_DOCS=OFF
       PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
+      BLT_CXX_STD=c++11
     # mpi and docs on, shared libs, python 2.7
     - BUILD_SHARED_LIBS=OFF
       ENABLE_COVERAGE=OFF
@@ -78,6 +79,7 @@ env:
       ENABLE_DOCS=OFF
       PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
+      BLT_CXX_STD=c++11
     # mpi and docs on, shared libs, python 3.6
     - BUILD_SHARED_LIBS=ON
       ENABLE_COVERAGE=OFF
@@ -85,6 +87,7 @@ env:
       ENABLE_DOCS=OFF
       PYTHON_VERSION=3.6.3
       CMAKE_VERSION=3.9.4
+      BLT_CXX_STD=c++11
     # mpi and docs on, static libs, python 3.6
     - BUILD_SHARED_LIBS=OFF
       ENABLE_COVERAGE=OFF
@@ -92,6 +95,7 @@ env:
       ENABLE_DOCS=OFF
       PYTHON_VERSION=3.6.3
       CMAKE_VERSION=3.9.4
+      BLT_CXX_STD=c++11
 addons:
   apt:
     sources:
@@ -141,6 +145,8 @@ script:
   - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_COVERAGE=${ENABLE_COVERAGE}"
   # enable mpi if selected
   - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_MPI=${ENABLE_MPI}"
+  # set c++ std
+  - CMAKE_OPTS="${CMAKE_OPTS} -DBLT_CXX_STD=${BLT_CXX_STD}"
   # install path
   - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR}/travis-debug-install"
   # make sure cmake is in our path

@@ -236,7 +236,7 @@ public:
                            index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG),
                            index_t endianness = Endianness::DEFAULT_ID);
 
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
     static DataType c_long_long(index_t num_elements=1,
                                 index_t offset = 0,
                                 index_t stride = sizeof(CONDUIT_NATIVE_LONG_LONG),
@@ -269,7 +269,7 @@ public:
                                     index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
                                     index_t endianness = Endianness::DEFAULT_ID);
 
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
     static DataType c_unsigned_long_long(index_t num_elements=1,
                                          index_t offset = 0,
                                          index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG_LONG),

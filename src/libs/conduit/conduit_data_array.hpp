@@ -262,7 +262,7 @@ typedef DataArray<signed char>  char_array;
 typedef DataArray<short>        short_array;
 typedef DataArray<int>          int_array;
 typedef DataArray<long>         long_array;
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 typedef DataArray<long long>    long_long_array;
 #endif
 
@@ -272,7 +272,7 @@ typedef DataArray<unsigned char>   unsigned_char_array;
 typedef DataArray<unsigned short>  unsigned_short_array;
 typedef DataArray<unsigned int>    unsigned_int_array;
 typedef DataArray<unsigned long>   unsigned_long_array;
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 typedef DataArray<unsigned long long>  unsigned_long_long_array;
 #endif
 
