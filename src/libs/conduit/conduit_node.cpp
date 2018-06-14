@@ -11045,6 +11045,13 @@ Node::number_of_children() const
 
 //---------------------------------------------------------------------------//
 std::string 
+Node::name() const
+{
+    return m_schema->name();
+}
+
+//---------------------------------------------------------------------------//
+std::string 
 Node::path() const
 {
     return m_schema->path();

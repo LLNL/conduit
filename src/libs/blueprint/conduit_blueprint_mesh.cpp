@@ -485,6 +485,42 @@ std::vector<std::string> identify_coordset_axes(const Node &coordset)
 }
 
 //-----------------------------------------------------------------------------
+bool find_reference_node(const Node &node, const std::string &ref_name, Node &ref)
+{
+    bool res = false;
+    ref.reset();
+
+    // NOTE: This segment of code is necessary to transform "topology" into
+    // "topologies" while keeping all other dependency names (e.g. "coordset")
+    // simply plural by just appending an "s" character.
+    const std::string ref_section = (ref_name[ref_name.length()-1] != 'y') ?
+        ref_name + "s" : ref_name.substr(0, ref_name.length()-1) + "ies";
+
+    if(node.has_child(ref_name))
+    {
+        const std::string &ref_value = node.fetch(ref_name).as_string();
+
+        const Node *traverse_node = node.parent();
+        while(traverse_node != NULL)
+        {
+            if(traverse_node->has_child(ref_section))
+            {
+                const Node &ref_parent = traverse_node->fetch(ref_section);
+                if(ref_parent.has_child(ref_name))
+                {
+                    ref.set_external(ref_parent[ref_name]);
+                    res = true;
+                }
+                break;
+            }
+            traverse_node = traverse_node->parent();
+        }
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
 // -- end internal helper functions --
 //-----------------------------------------------------------------------------
 
@@ -1252,24 +1288,14 @@ bool
 mesh::coordset::uniform::transform(const conduit::Node &coordset,
                                    conduit::Node &dest)
 {
-    bool res = true;
+    bool res = false;
     dest.reset();
 
     Node info;
-    if(!mesh::coordset::verify(coordset, info))
+    if(mesh::coordset::uniform::verify(coordset, info))
     {
-        res = false; // can only transform a valid input coordset
-    }
-    else
-    {
-        if(!mesh::coordset::uniform::verify(coordset, info))
-        {
-            res = false; // can only do uniform -> uniform
-        }
-        else
-        {
-            dest.set_external(coordset);
-        }
+        dest.set_external(coordset);
+        res = true;
     }
 
     return res;
@@ -1281,54 +1307,44 @@ bool
 mesh::coordset::rectilinear::transform(const conduit::Node &coordset,
                                        conduit::Node &dest)
 {
-    bool res = true;
+    bool res = false;
     dest.reset();
 
     Node info;
-    if(!mesh::coordset::verify(coordset, info))
+    if(mesh::coordset::rectilinear::verify(coordset, info))
     {
-        res = false; // can only transform a valid input coordset
+        dest.set_external(coordset);
+        res = true;
     }
-    else
+    else if(mesh::coordset::uniform::verify(coordset, info))
     {
-        bool is_uniform = mesh::coordset::uniform::verify(coordset, info);
-        bool is_rectilinear = mesh::coordset::rectilinear::verify(coordset, info);
-        if(!is_uniform && !is_rectilinear)
-        {
-            res = false; // can only do uniform/rectilinear -> rectilinear
-        }
-        else if(is_rectilinear)
-        {
-            dest.set_external(coordset);
-        }
-        else if(is_uniform)
-        {
-            dest["type"].set("rectilinear");
+        dest["type"].set("rectilinear");
 
-            std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
-            for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
+        std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
+        for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
+        {
+            const std::string& csys_axis = csys_axes[i];
+            const std::string& logical_axis = logical_axes[i];
+
+            // TODO(JRC): Figure out whether or not the data type from the
+            // source node values should be inherited in the destination node.
+            float64 dim_origin = coordset.has_child("origin") ?
+                coordset["origin"][csys_axis].value() : 0.0;
+            float64 dim_spacing = coordset.has_child("spacing") ?
+                coordset["spacing"]["d"+csys_axis].value() : 1.0;
+            index_t dim_len = coordset["dims"][logical_axis].value();
+
+            Node &dst_cvals_node = dest["values"][csys_axis];
+            dst_cvals_node.set(DataType::float64(dim_len));
+
+            float64_array dst_cvals = dst_cvals_node.as_float64_array();
+            for(index_t d = 0; d < dim_len; d++)
             {
-                const std::string& csys_axis = csys_axes[i];
-                const std::string& logical_axis = logical_axes[i];
-
-                // TODO(JRC): Figure out whether or not the data type from the
-                // source node values should be inherited in the destination node.
-                float64 dim_origin = coordset.has_child("origin") ?
-                    coordset["origin"][csys_axis].value() : 0.0;
-                float64 dim_scaling = coordset.has_child("spacing") ?
-                    coordset["spacing"]["d"+csys_axis].value() : 1.0;
-                index_t dim_len = coordset["dims"][logical_axis].value();
-
-                Node &dst_cvals_node = dest["values"][csys_axis];
-                dst_cvals_node.set(DataType::float64(dim_len));
-
-                float64_array dst_cvals = dst_cvals_node.as_float64_array();
-                for(index_t d = 0; d < dim_len; d++)
-                {
-                    dst_cvals[d] = dim_origin + d * dim_scaling;
-                }
+                dst_cvals[d] = dim_origin + d * dim_spacing;
             }
         }
+
+        res = true;
     }
 
     return res;
@@ -1340,15 +1356,11 @@ bool
 mesh::coordset::_explicit::transform(const conduit::Node &coordset,
                                      conduit::Node &dest)
 {
-    bool res = true;
+    bool res = false;
     dest.reset();
 
     Node info;
-    if(!mesh::coordset::verify(coordset, info))
-    {
-        res = false; // can only transform a valid input coordset
-    }
-    else
+    if(mesh::coordset::verify(coordset, info))
     {
         std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
         index_t csys_dims = csys_axes.size();
@@ -1356,6 +1368,7 @@ mesh::coordset::_explicit::transform(const conduit::Node &coordset,
         if(mesh::coordset::_explicit::verify(coordset, info))
         {
             dest.set_external(coordset);
+            res = true;
         }
         else if(mesh::coordset::rectilinear::verify(coordset, info))
         {
@@ -1401,8 +1414,10 @@ mesh::coordset::_explicit::transform(const conduit::Node &coordset,
                     }
                 }
             }
+
+            res = true;
         }
-        else // if(mesh::coordset::uniform::verify(src_topo, info))
+        else if(mesh::coordset::uniform::verify(coordset, info))
         {
             dest["type"].set("explicit");
 
@@ -1446,6 +1461,8 @@ mesh::coordset::_explicit::transform(const conduit::Node &coordset,
                     }
                 }
             }
+
+            res = true;
         }
     }
 
@@ -1652,30 +1669,32 @@ mesh::topology::verify(const Node &topo,
 bool
 mesh::topology::transform(const std::string &protocol,
                           const Node &topo,
-                          Node &dest)
+                          Node &dest,
+                          Node &cdest)
 {
     bool res = false;
     dest.reset();
+    cdest.reset();
 
     if(protocol == "points")
     {
-        res = topology::points::transform(topo,dest);
+        res = topology::points::transform(topo,dest,cdest);
     }
     else if(protocol == "uniform")
     {
-        res = topology::uniform::transform(topo,dest);
+        res = topology::uniform::transform(topo,dest,cdest);
     }
     else if(protocol == "rectilinear")
     {
-        res = topology::rectilinear::transform(topo,dest);
+        res = topology::rectilinear::transform(topo,dest,cdest);
     }
     else if(protocol == "structured")
     {
-        res = topology::structured::transform(topo,dest);
+        res = topology::structured::transform(topo,dest,cdest);
     }
     else if(protocol == "unstrctured")
     {
-        res = topology::unstructured::transform(topo,dest);
+        res = topology::unstructured::transform(topo,dest,cdest);
     }
 
     return res;
@@ -1711,26 +1730,22 @@ mesh::topology::points::verify(const Node & topo,
 //-------------------------------------------------------------------------
 bool
 mesh::topology::points::transform(const conduit::Node &topo,
-                                  conduit::Node &dest)
+                                  conduit::Node &dest,
+                                  conduit::Node &cdest)
 {
-    bool res = true;
+    bool res = false;
     dest.reset();
+    cdest.reset();
 
-    Node info;
-    if(!mesh::topology::verify(topo, info))
+    Node info, coordset;
+    if(mesh::topology::points::verify(topo, info) &&
+        find_reference_node(topo, "coordset", coordset) &&
+        mesh::coordset::verify(topo, info))
     {
-        res = false; // can only transform a valid input topology
-    }
-    else
-    {
-        if(!mesh::topology::points::verify(topo, info))
-        {
-            res = false; // can only do points -> points
-        }
-        else
-        {
-            dest.set_external(topo);
-        }
+        cdest.set_external(coordset);
+        dest.set(topo);
+        dest["coordset"].set(cdest.name());
+        res = true;
     }
 
     return res;
@@ -1766,26 +1781,22 @@ mesh::topology::uniform::verify(const Node & topo,
 //-------------------------------------------------------------------------
 bool
 mesh::topology::uniform::transform(const conduit::Node &topo,
-                                   conduit::Node &dest)
+                                   conduit::Node &dest,
+                                  conduit::Node &cdest)
 {
-    bool res = true;
+    bool res = false;
     dest.reset();
+    cdest.reset();
 
-    Node info;
-    if(!mesh::topology::verify(topo, info))
+    Node info, coordset;
+    if(mesh::topology::uniform::verify(topo, info) &&
+        find_reference_node(topo, "coordset", coordset) &&
+        mesh::coordset::uniform::verify(topo, info))
     {
-        res = false; // can only transform a valid input topology
-    }
-    else
-    {
-        if(!mesh::topology::uniform::verify(topo, info))
-        {
-            res = false; // can only do uniform -> uniform
-        }
-        else
-        {
-            dest.set_external(topo);
-        }
+        cdest.set_external(coordset);
+        dest.set(topo);
+        dest["coordset"].set(cdest.name());
+        res = true;
     }
 
     return res;
@@ -1820,79 +1831,39 @@ mesh::topology::rectilinear::verify(const Node &topo,
 
 //-------------------------------------------------------------------------
 bool
-mesh::topology::rectilinear::transform(const conduit::Node &/*topo*/,
-                                       conduit::Node &dest)
+mesh::topology::rectilinear::transform(const conduit::Node &topo,
+                                       conduit::Node &dest,
+                                       conduit::Node &cdest)
 {
-    // TODO(JRC)
-
-    /*
-            Node &dst_topo = dest["topologies"][topo_name];
-            Node &dst_coords = dest["coordsets"][cset_name];
-
-            dst_topo.set(src_topo);
-            dst_topo["coordset"].set(cset_name);
-            dst_topo["type"].set("rectilinear");
-
-            if(is_rectilinear)
-            {
-                dst_coords.set_external(src_coords);
-            }
-            else
-            {
-            }
-        }
-    */
-    bool res = true;
+    bool res = false;
     dest.reset();
+    cdest.reset();
 
-    /*
-    Node info;
-    if(!mesh::topology::verify(topo, info))
+    Node info, coordset;
+    if(mesh::topology::verify(topo, info) &&
+        find_reference_node(topo, "coordset", coordset) &&
+        mesh::coordset::verify(topo, info))
     {
-        res = false; // can only transform a valid input coordset
-    }
-    else
-    {
-        bool is_uniform = mesh::topology::uniform::verify(topo, info);
-        bool is_rectilinear = mesh::topology::rectilinear::verify(topo, info);
-        if(!is_uniform && !is_rectilinear)
+        if(mesh::topology::rectilinear::verify(topo, info) &&
+            mesh::coordset::rectilinear::verify(coordset, info))
         {
-            res = false; // can only do uniform/rectilinear -> rectilinear
+            cdest.set_external(coordset);
+            dest.set(topo);
+            dest["coordset"].set(cdest.name());
+            res = true;
         }
-        else if(is_rectilinear)
+        else if(mesh::topology::uniform::verify(topo, info) &&
+            mesh::coordset::uniform::verify(coordset, info))
         {
-            dest.set_external(coordset);
-        }
-        else if(is_uniform)
-        {
-            dest["type"].set("rectilinear");
-
-            std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
-            for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
+            if(mesh::coordset::rectilinear::transform(coordset, cdest))
             {
-                const std::string& csys_axis = csys_axes[i];
-                const std::string& logical_axis = logical_axes[i];
-
-                // TODO(JRC): Figure out whether or not the data type from the
-                // source node values should be inherited in the destination node.
-                float64 dim_origin = coordset.has_child("origin") ?
-                    coordset["origin"][csys_axis].value() : 0.0;
-                float64 dim_scaling = coordset.has_child("spacing") ?
-                    coordset["spacing"]["d"+csys_axis].value() : 1.0;
-                index_t dim_len = coordset["dims"][logical_axis].value();
-
-                Node &dst_cvals_node = dest["values"][csys_axis];
-                dst_cvals_node.set(DataType::float64(dim_len));
-
-                float64_array dst_cvals = dst_cvals_node.as_float64_array();
-                for(index_t d = 0; d < dim_len; d++)
-                {
-                    dst_cvals[d] = dim_origin + d * dim_scaling;
-                }
+                dest.set(topo);
+                dest["type"].set("rectilinear");
+                dest["coordset"].set(cdest.name());
+                res = true;
             }
         }
     }
-    */
 
     return res;
 }
@@ -1943,13 +1914,42 @@ mesh::topology::structured::verify(const Node &topo,
 
 //-------------------------------------------------------------------------
 bool
-mesh::topology::structured::transform(const conduit::Node &/*topo*/,
-                                      conduit::Node &dest)
+mesh::topology::structured::transform(const conduit::Node &topo,
+                                      conduit::Node &dest,
+                                      conduit::Node &cdest)
 {
-    bool res = true;
+    bool res = false;
     dest.reset();
+    cdest.reset();
 
-    // TODO(JRC)
+    Node info, coordset;
+    if(mesh::topology::verify(topo, info) &&
+        find_reference_node(topo, "coordset", coordset) &&
+        mesh::coordset::verify(topo, info))
+    {
+        if(mesh::topology::structured::verify(topo, info) &&
+            mesh::coordset::_explicit::verify(coordset, info))
+        {
+            cdest.set_external(coordset);
+            dest.set(topo);
+            dest["coordset"].set(cdest.name());
+            res = true;
+        }
+        else if((mesh::topology::rectilinear::verify(topo, info) &&
+            mesh::coordset::rectilinear::verify(coordset, info)) ||
+            (mesh::topology::uniform::verify(topo, info) &&
+            mesh::coordset::uniform::verify(coordset, info)))
+        {
+            if(mesh::coordset::_explicit::transform(coordset, cdest))
+            {
+                dest.set(topo);
+                dest["type"].set("rectilinear");
+                dest["coordset"].set(cdest.name());
+                // TODO(JRC): Construct the "dims" array?
+                res = true;
+            }
+        }
+    }
 
     return res;
 }
@@ -2034,34 +2034,43 @@ mesh::topology::unstructured::verify(const Node &topo,
 //-------------------------------------------------------------------------
 bool
 mesh::topology::unstructured::transform(const conduit::Node &/*topo*/,
-                                        conduit::Node &dest)
+                                        conduit::Node &dest,
+                                        conduit::Node &cdest)
 {
     bool res = true;
     dest.reset();
+    cdest.reset();
 
     // TODO(JRC)
 
     /*
-        Node &dst_topo = dest["topologies"][topo_name];
-        Node &dst_coords = dest["coordsets"][cset_name];
-
-        dst_topo["coordset"].set(cset_name);
-        dst_topo["type"].set("unstructured");
-
-        std::vector<std::string> csys_axes = identify_coordset_axes(src_coords);
-        index_t csys_dims = csys_axes.size();
-        dst_topo["elements/shape"].set((csys_dims == 2) ? "quad" : "hex");
-
-        if(mesh::coordset::_explicit::verify(coordset, info))
+    Node info, coordset;
+    if(mesh::topology::verify(topo, info) &&
+        find_reference_node(topo, "coordset", coordset) &&
+        mesh::coordset::verify(topo, info))
+    {
+        if(mesh::topology::unstructured::verify(topo, info) &&
+            mesh::coordset::_explicit::verify(coordset, info))
         {
-            dest.set_external(coordset);
+            cdest.set_external(coordset);
+            dest.set(topo);
+            dest["coordset"].set(cdest.name());
+            res = true;
         }
-        else if(mesh::coordset::rectilinear::verify(coordset, info))
+        else if((mesh::topology::rectilinear::verify(topo, info) &&
+            mesh::coordset::rectilinear::verify(coordset, info)) ||
+            (mesh::topology::uniform::verify(topo, info) &&
+            mesh::coordset::uniform::verify(coordset, info)))
         {
-            // TODO(JRC)
+            if(mesh::coordset::_explicit::transform(coordset, cdest))
+            {
+                dest.set(topo);
+                dest["type"].set("rectilinear");
+                dest["coordset"].set(cdest.name());
+                res = true;
+            }
         }
-        else // if(mesh::coordset::uniform::verify(src_topo, info))
-        {
+    }
     */
 
     return res;

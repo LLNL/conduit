@@ -75,7 +75,8 @@ static const std::string TOPO_TYPE_LIST[5] = {"points", "uniform", "rectilinear"
 static const std::vector<std::string> TOPO_TYPES(TOPO_TYPE_LIST,
     TOPO_TYPE_LIST + sizeof(TOPO_TYPE_LIST) / sizeof(TOPO_TYPE_LIST[0]));
 
-typedef bool (*XformFun)(const Node&, Node&);
+typedef bool (*XformCoordsFun)(const Node&, Node&);
+typedef bool (*XformTopoFun)(const Node&, Node&, Node&);
 typedef bool (*VerifyFun)(const Node&, Node&);
 
 /// Testing Helpers ///
@@ -114,29 +115,29 @@ bool transform_coordset_explicit_protocol(const Node &n, Node &m)
     return blueprint::mesh::coordset::transform("explicit",n,m);
 }
 
-bool transform_topology_points_protocol(const Node &n, Node &m)
+bool transform_topology_points_protocol(const Node &n, Node &m, Node &o)
 {
-    return blueprint::mesh::topology::transform("points",n,m);
+    return blueprint::mesh::topology::transform("points",n,m,o);
 }
 
-bool transform_topology_uniform_protocol(const Node &n, Node &m)
+bool transform_topology_uniform_protocol(const Node &n, Node &m, Node &o)
 {
-    return blueprint::mesh::topology::transform("uniform",n,m);
+    return blueprint::mesh::topology::transform("uniform",n,m,o);
 }
 
-bool transform_topology_rectilinear_protocol(const Node &n, Node &m)
+bool transform_topology_rectilinear_protocol(const Node &n, Node &m, Node &o)
 {
-    return blueprint::mesh::topology::transform("rectilinear",n,m);
+    return blueprint::mesh::topology::transform("rectilinear",n,m,o);
 }
 
-bool transform_topology_structured_protocol(const Node &n, Node &m)
+bool transform_topology_structured_protocol(const Node &n, Node &m, Node &o)
 {
-    return blueprint::mesh::topology::transform("structured",n,m);
+    return blueprint::mesh::topology::transform("structured",n,m,o);
 }
 
-bool transform_topology_unstructured_protocol(const Node &n, Node &m)
+bool transform_topology_unstructured_protocol(const Node &n, Node &m, Node &o)
 {
-    return blueprint::mesh::topology::transform("unstructured",n,m);
+    return blueprint::mesh::topology::transform("unstructured",n,m,o);
 }
 
 /// Transform Tests ///
@@ -144,11 +145,11 @@ bool transform_topology_unstructured_protocol(const Node &n, Node &m)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_xform, coordset_xforms)
 {
-    XformFun xform_direct_funs[] = {
+    XformCoordsFun xform_direct_funs[] = {
         blueprint::mesh::coordset::uniform::transform,
         blueprint::mesh::coordset::rectilinear::transform,
         blueprint::mesh::coordset::_explicit::transform};
-    XformFun xform_protocol_funs[] = {
+    XformCoordsFun xform_protocol_funs[] = {
         transform_coordset_uniform_protocol,
         transform_coordset_rectilinear_protocol,
         transform_coordset_explicit_protocol};
@@ -160,7 +161,7 @@ TEST(conduit_blueprint_mesh_xform, coordset_xforms)
 
     for(index_t fi = 0; fi < 2; fi++)
     {
-        XformFun *xform_funs = (fi == 0) ?
+        XformCoordsFun *xform_funs = (fi == 0) ?
             &xform_direct_funs[0] : &xform_protocol_funs[0];
 
         for(index_t xi = 0; xi < COORD_TYPES.size(); xi++)
@@ -181,7 +182,7 @@ TEST(conduit_blueprint_mesh_xform, coordset_xforms)
                 blueprint::mesh::examples::braid(jcoordset_braid,2,3,4,jmesh);
                 conduit::Node &jcoordset = jmesh["coordsets"].child(0);
 
-                XformFun to_new_coordset = xform_funs[xj];
+                XformCoordsFun to_new_coordset = xform_funs[xj];
                 VerifyFun verify_new_coordset = verify_funs[xj];
 
                 conduit::Node xcoordset, info;
@@ -198,13 +199,13 @@ TEST(conduit_blueprint_mesh_xform, coordset_xforms)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_xform, topology_xforms)
 {
-    XformFun xform_direct_funs[] = {
+    XformTopoFun xform_direct_funs[] = {
         blueprint::mesh::topology::points::transform,
         blueprint::mesh::topology::uniform::transform,
         blueprint::mesh::topology::rectilinear::transform,
         blueprint::mesh::topology::structured::transform,
         blueprint::mesh::topology::unstructured::transform};
-    XformFun xform_protocol_funs[] = {
+    XformTopoFun xform_protocol_funs[] = {
         transform_topology_points_protocol,
         transform_topology_uniform_protocol,
         transform_topology_rectilinear_protocol,
@@ -220,7 +221,7 @@ TEST(conduit_blueprint_mesh_xform, topology_xforms)
 
     for(index_t fi = 0; fi < 2; fi++)
     {
-        XformFun *xform_funs = (fi == 0) ?
+        XformTopoFun *xform_funs = (fi == 0) ?
             &xform_direct_funs[0] : &xform_protocol_funs[0];
 
         for(index_t xi = 0; xi < TOPO_TYPES.size(); xi++)
@@ -242,7 +243,7 @@ TEST(conduit_blueprint_mesh_xform, topology_xforms)
                 blueprint::mesh::examples::braid(jcoordset_braid,2,3,4,jmesh);
                 conduit::Node &jcoordset = jmesh["coordsets"].child(0);
 
-                XformFun to_new_coordset = xform_coordset_funs[xj];
+                XformTopoFun to_new_coordset = xform_coordset_funs[xj];
                 VerifyFun verify_new_coordset = verify_coordset_funs[xj];
 
                 conduit::Node xcoordset, info;

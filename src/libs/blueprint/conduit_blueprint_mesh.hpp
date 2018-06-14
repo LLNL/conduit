@@ -263,7 +263,8 @@ namespace topology
     //-----------------------------------------------------------------------------
     bool CONDUIT_BLUEPRINT_API transform(const std::string &protocol,
                                          const conduit::Node &n,
-                                         conduit::Node &dest);
+                                         conduit::Node &dest,
+                                         conduit::Node &cdest);
 
     //-------------------------------------------------------------------------
     // blueprint::mesh::topology::points protocol interface
@@ -276,7 +277,8 @@ namespace topology
 
         //---------------------------------------------------------------------
         bool CONDUIT_BLUEPRINT_API transform(const conduit::Node &n,
-                                             conduit::Node &dest);
+                                             conduit::Node &dest,
+                                             conduit::Node &cdest);
     }
 
     //-------------------------------------------------------------------------
@@ -290,7 +292,8 @@ namespace topology
 
         //---------------------------------------------------------------------
         bool CONDUIT_BLUEPRINT_API transform(const conduit::Node &n,
-                                             conduit::Node &dest);
+                                             conduit::Node &dest,
+                                             conduit::Node &cdest);
     }
 
     //-------------------------------------------------------------------------
@@ -304,7 +307,8 @@ namespace topology
 
         //---------------------------------------------------------------------
         bool CONDUIT_BLUEPRINT_API transform(const conduit::Node &n,
-                                             conduit::Node &dest);
+                                             conduit::Node &dest,
+                                             conduit::Node &cdest);
     }
 
     //-------------------------------------------------------------------------
@@ -318,7 +322,8 @@ namespace topology
 
         //---------------------------------------------------------------------
         bool CONDUIT_BLUEPRINT_API transform(const conduit::Node &n,
-                                             conduit::Node &dest);
+                                             conduit::Node &dest,
+                                             conduit::Node &cdest);
     }
 
     //-------------------------------------------------------------------------
@@ -332,7 +337,8 @@ namespace topology
 
         //---------------------------------------------------------------------
         bool CONDUIT_BLUEPRINT_API transform(const conduit::Node &n,
-                                             conduit::Node &dest);
+                                             conduit::Node &dest,
+                                             conduit::Node &cdest);
     }
 
     //-------------------------------------------------------------------------

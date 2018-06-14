@@ -276,6 +276,7 @@ public:
     /// the const variant uses the "fetch_child" method
     const Schema     &operator[](const std::string &path) const;
     
+    std::string       name() const;
     std::string       path() const;
     
     bool              has_child(const std::string &name) const;

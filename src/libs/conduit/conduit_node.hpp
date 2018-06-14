@@ -3291,6 +3291,9 @@ public:
     /// returns the number of children (list and object interfaces)
     index_t number_of_children() const;
 
+    /// returns a string with the path of this node
+    /// relative to its immediate parent
+    std::string name() const;
     /// returns a string with the path of this node up
     /// the tree, following the parent chain
     std::string path() const;
