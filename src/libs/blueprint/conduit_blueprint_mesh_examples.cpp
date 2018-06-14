@@ -61,6 +61,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <algorithm>
 #include <cassert>
 #include <map>
 #include <set>
