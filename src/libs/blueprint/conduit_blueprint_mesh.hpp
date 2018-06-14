@@ -148,17 +148,10 @@ namespace coordset
     bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                       conduit::Node &info);
 
-    //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API to_uniform(const conduit::Node &n,
-                                          conduit::Node &dest);
-
-    //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API to_rectilinear(const conduit::Node &n,
-                                              conduit::Node &dest);
-
-    //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API to_explicit(const conduit::Node &n,
-                                           conduit::Node &dest);
+    //-----------------------------------------------------------------------------
+    bool CONDUIT_BLUEPRINT_API transform(const std::string &protocol,
+                                         const conduit::Node &n,
+                                         conduit::Node &dest);
 
     //-------------------------------------------------------------------------
     // blueprint::mesh::coordset::uniform protocol interface
@@ -168,6 +161,10 @@ namespace coordset
         //---------------------------------------------------------------------
         bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                           conduit::Node &info);
+
+        //---------------------------------------------------------------------
+        bool CONDUIT_BLUEPRINT_API transform(const conduit::Node &n,
+                                             conduit::Node &dest);
 
         //---------------------------------------------------------------------
         // blueprint::mesh::coordset::uniform::origin protocol interface
@@ -199,6 +196,10 @@ namespace coordset
         //---------------------------------------------------------------------
         bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                           conduit::Node &info);
+
+        //---------------------------------------------------------------------
+        bool CONDUIT_BLUEPRINT_API transform(const conduit::Node &n,
+                                             conduit::Node &dest);
     }
 
     //-------------------------------------------------------------------------
@@ -209,6 +210,10 @@ namespace coordset
         //---------------------------------------------------------------------
         bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                           conduit::Node &info);
+
+        //---------------------------------------------------------------------
+        bool CONDUIT_BLUEPRINT_API transform(const conduit::Node &n,
+                                             conduit::Node &dest);
     }
 
     //-------------------------------------------------------------------------
@@ -255,25 +260,10 @@ namespace topology
     bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                       conduit::Node &info);
 
-    //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API to_points(const conduit::Node &n,
+    //-----------------------------------------------------------------------------
+    bool CONDUIT_BLUEPRINT_API transform(const std::string &protocol,
+                                         const conduit::Node &n,
                                          conduit::Node &dest);
-
-    //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API to_uniform(const conduit::Node &n,
-                                          conduit::Node &dest);
-
-    //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API to_rectilinear(const conduit::Node &n,
-                                              conduit::Node &dest);
-
-    //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API to_structured(const conduit::Node &n,
-                                             conduit::Node &dest);
-
-    //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API to_unstructured(const conduit::Node &n,
-                                               conduit::Node &dest);
 
     //-------------------------------------------------------------------------
     // blueprint::mesh::topology::points protocol interface
@@ -283,6 +273,10 @@ namespace topology
         //---------------------------------------------------------------------
         bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                           conduit::Node &info);
+
+        //---------------------------------------------------------------------
+        bool CONDUIT_BLUEPRINT_API transform(const conduit::Node &n,
+                                             conduit::Node &dest);
     }
 
     //-------------------------------------------------------------------------
@@ -293,6 +287,10 @@ namespace topology
         //---------------------------------------------------------------------
         bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                           conduit::Node &info);
+
+        //---------------------------------------------------------------------
+        bool CONDUIT_BLUEPRINT_API transform(const conduit::Node &n,
+                                             conduit::Node &dest);
     }
 
     //-------------------------------------------------------------------------
@@ -303,6 +301,10 @@ namespace topology
         //---------------------------------------------------------------------
         bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                           conduit::Node &info);
+
+        //---------------------------------------------------------------------
+        bool CONDUIT_BLUEPRINT_API transform(const conduit::Node &n,
+                                             conduit::Node &dest);
     }
 
     //-------------------------------------------------------------------------
@@ -313,6 +315,10 @@ namespace topology
         //---------------------------------------------------------------------
         bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                           conduit::Node &info);
+
+        //---------------------------------------------------------------------
+        bool CONDUIT_BLUEPRINT_API transform(const conduit::Node &n,
+                                             conduit::Node &dest);
     }
 
     //-------------------------------------------------------------------------
@@ -323,6 +329,10 @@ namespace topology
         //---------------------------------------------------------------------
         bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                           conduit::Node &info);
+
+        //---------------------------------------------------------------------
+        bool CONDUIT_BLUEPRINT_API transform(const conduit::Node &n,
+                                             conduit::Node &dest);
     }
 
     //-------------------------------------------------------------------------
