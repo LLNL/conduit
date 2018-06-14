@@ -89,9 +89,7 @@ std::string get_braid_type(const std::string &mesh_type)
         blueprint::mesh::examples::braid(mesh_type,1,1,1,mesh);
         braid_type = mesh_type;
     }
-    // TODO(JRC): Make a more specific catch statement for Conduit-thrown
-    // errors only.
-    catch(...)
+    catch(conduit::Error &e)
     {
         braid_type = "hexs";
     }
@@ -102,7 +100,7 @@ std::string get_braid_type(const std::string &mesh_type)
 /// Coordset Transform Tests ///
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_xform, coordset_general_xforms)
+TEST(conduit_blueprint_mesh_xform, coordset_xforms)
 {
     XformFun xform_coordset_funs[] = {
         blueprint::mesh::coordset::to_uniform,
@@ -116,87 +114,38 @@ TEST(conduit_blueprint_mesh_xform, coordset_general_xforms)
 
     for(index_t xi = 0; xi < COORD_TYPES.size(); xi++)
     {
-        const std::string coordset_type = COORD_TYPES[xi];
-        const std::string coordset_braid = get_braid_type(coordset_type);
+        const std::string icoordset_type = COORD_TYPES[xi];
+        const std::string icoordset_braid = get_braid_type(icoordset_type);
 
-        conduit::Node orig_mesh;
-        blueprint::mesh::examples::braid(coordset_braid,2,3,4,orig_mesh);
-        conduit::Node &orig_coordset = orig_mesh["coordsets"].child(0);
+        conduit::Node imesh;
+        blueprint::mesh::examples::braid(icoordset_braid,2,3,4,imesh);
+        conduit::Node &icoordset = imesh["coordsets"].child(0);
 
         for(index_t xj = 0; xj < COORD_TYPES.size(); xj++)
         {
+            const std::string jcoordset_type = COORD_TYPES[xj];
+            const std::string jcoordset_braid = get_braid_type(jcoordset_type);
+
+            conduit::Node jmesh;
+            blueprint::mesh::examples::braid(jcoordset_braid,2,3,4,jmesh);
+            conduit::Node &jcoordset = jmesh["coordsets"].child(0);
+
             XformFun to_new_coordset = xform_coordset_funs[xj];
             VerifyFun verify_new_coordset = verify_coordset_funs[xj];
 
-            // TODO(JRC): Diff against coordset generated from higher level
-            // braid function for more complete testing.
-            conduit::Node xform_coordset, info;
-            EXPECT_EQ(to_new_coordset(orig_coordset, xform_coordset), xi <= xj);
-            EXPECT_EQ(verify_new_coordset(xform_coordset, info), xi <= xj);
-            EXPECT_EQ(orig_coordset.diff(xform_coordset, info), xi != xj);
+            conduit::Node xcoordset, info;
+            EXPECT_EQ(to_new_coordset(icoordset, xcoordset), xi <= xj); // upscale only
+            EXPECT_EQ(verify_new_coordset(xcoordset, info), xi <= xj);  // to_x verify
+            EXPECT_EQ(jcoordset.diff(xcoordset, info), xi >  xj);       // to_x values
+            EXPECT_EQ(icoordset.diff(xcoordset, info), xi != xj);       // same no change
         }
     }
 }
 
-/*
+
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_xform, coordset_uniform_xform)
+TEST(conduit_blueprint_mesh_xform, topology_xforms)
 {
     // verify that we can only up-promote coordinate sets
-
-
-    conduit::Node mesh, info;
-
-    blueprint::mesh::examples::braid("uniform",10,10,1,mesh);
-}
-
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_xform, coordset_to_rectilinear)
-{
     EXPECT_TRUE(false);
 }
-
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_xform, coordset_to_explicit)
-{
-    EXPECT_TRUE(false);
-}
-
-/// Topology Transform Tests ///
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_xform, topology_to_points)
-{
-    EXPECT_TRUE(false);
-}
-
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_xform, topology_to_uniform)
-{
-    EXPECT_TRUE(false);
-}
-
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_xform, topology_to_rectilinear)
-{
-    EXPECT_TRUE(false);
-}
-
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_xform, topology_to_structured)
-{
-    EXPECT_TRUE(false);
-}
-
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_xform, topology_to_unstructured)
-{
-    EXPECT_TRUE(false);
-}
-*/

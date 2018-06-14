@@ -231,15 +231,6 @@ bool verify_mesh_multi_domain_protocol(const Node &n, Node &info)
 
 void CHECK_MESH(VerifyFun verify, const Node &n, Node &info, bool expected)
 {
-    if(verify(n, info) != expected)
-    {
-        std::cout << "Broke here" << std::endl;
-        std::cout << "###################### MESH ######################" << std::endl;
-        std::cout << n.to_json() << std::endl;
-        std::cout << "###################### INFO ######################" << std::endl;
-        std::cout << info.to_json() << std::endl;
-    }
-
     EXPECT_EQ(verify(n, info), expected);
     EXPECT_TRUE(has_consistent_validity(info));
 }

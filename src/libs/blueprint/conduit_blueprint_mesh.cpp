@@ -1375,9 +1375,8 @@ mesh::coordset::to_explicit(const conduit::Node &coordset,
                 index_t dim_block_size = 1, dim_block_count = 1;
                 for(index_t j = 0; j < csys_dims; j++)
                 {
-                    index_t j_len = dim_lens[j];
-                    dim_block_size *= (j < i) ? j_len : 1;
-                    dim_block_count *= (i < j) ? j_len : 1;
+                    dim_block_size *= (j < i) ? dim_lens[j] : 1;
+                    dim_block_count *= (i < j) ? dim_lens[j] : 1;
                 }
 
                 const Node &src_cvals_node = coordset["values"][csys_axis];
@@ -1388,12 +1387,14 @@ mesh::coordset::to_explicit(const conduit::Node &coordset,
                 float64_array dst_cvals = dst_cvals_node.as_float64_array();
                 for(index_t d = 0; d < dim_lens[i]; d++)
                 {
+                    index_t doffset = d * dim_block_size;
                     for(index_t b = 0; b < dim_block_count; b++)
                     {
                         index_t boffset = b * dim_block_size * dim_lens[i];
                         for(index_t bi = 0; bi < dim_block_size; bi++)
                         {
-                            memcpy(&dst_cvals[boffset + bi],
+                            index_t ioffset = doffset + boffset + bi;
+                            memcpy(&dst_cvals[ioffset],
                                 src_cvals_node.element_ptr(d),
                                 src_cvals_node.dtype().element_bytes());
                         }
@@ -1405,22 +1406,20 @@ mesh::coordset::to_explicit(const conduit::Node &coordset,
         {
             dest["type"].set("explicit");
 
-            index_t coords_len = 1;
+            index_t dim_lens[3], coords_len = 1;
             for(index_t i = 0; i < csys_dims; i++)
             {
-                coords_len *= coordset["dims"][logical_axes[i]].to_int();
+                coords_len *= (dim_lens[i] = coordset["dims"][logical_axes[i]].value());
             }
 
             for(index_t i = 0; i < csys_dims; i++)
             {
                 const std::string& csys_axis = csys_axes[i];
-                const std::string& logical_axis = logical_axes[i];
 
                 float64 dim_origin = coordset.has_child("origin") ?
                     coordset["origin"][csys_axis].value() : 0.0;
-                float64 dim_scaling = coordset.has_child("spacing") ?
+                float64 dim_spacing = coordset.has_child("spacing") ?
                     coordset["spacing"]["d"+csys_axis].value() : 1.0;
-                index_t dim_len = coordset["dims"][logical_axis].value();
 
                 Node &dst_cvals_node = dest["values"][csys_axis];
                 dst_cvals_node.set(DataType::float64(coords_len));
@@ -1428,19 +1427,22 @@ mesh::coordset::to_explicit(const conduit::Node &coordset,
                 index_t dim_block_size = 1, dim_block_count = 1;
                 for(index_t j = 0; j < csys_dims; j++)
                 {
-                    index_t j_len = coordset["dims"][logical_axes[i]].value();
-                    dim_block_size *= (j < i) ? j_len : 1;
-                    dim_block_count *= (i < j) ? j_len : 1;
+                    dim_block_size *= (j < i) ? dim_lens[j] : 1;
+                    dim_block_count *= (i < j) ? dim_lens[j] : 1;
                 }
-                index_t dim_block_stride = dim_block_size * dim_len;
 
                 float64_array dst_cvals = dst_cvals_node.as_float64_array();
-                for(index_t b = 0; b < dim_block_count; b++)
+                for(index_t d = 0; d < dim_lens[i]; d++)
                 {
-                    index_t bstart = b * dim_block_stride;
-                    for(index_t bi = 0; bi < dim_block_size; bi++)
+                    index_t doffset = d * dim_block_size;
+                    for(index_t b = 0; b < dim_block_count; b++)
                     {
-                        dst_cvals[bstart + bi] = dim_origin + b * dim_scaling;
+                        index_t boffset = b * dim_block_size * dim_lens[i];
+                        for(index_t bi = 0; bi < dim_block_size; bi++)
+                        {
+                            index_t ioffset = doffset + boffset + bi;
+                            dst_cvals[ioffset] = dim_origin + d * dim_spacing;
+                        }
                     }
                 }
             }
