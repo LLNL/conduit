@@ -54,11 +54,13 @@
 // standard lib includes
 //-----------------------------------------------------------------------------
 #include <iostream>
+#include <algorithm>
 
 //-----------------------------------------------------------------------------
 // external lib includes
 //-----------------------------------------------------------------------------
 #include <adios.h>
+#include <adios_read.h>
 #include <adios_transform_methods.h>
 #ifndef _NOMPI
     #include <mpi.h>
@@ -90,10 +92,10 @@ namespace io
 {
 
 static bool adiosState_initialized = false;
-static int  adiosState_mpicomm = -1;
+static unsigned long adiosState_mpicomm = 0;
 
 //-----------------------------------------------------------------------------
-static void conduit_adios_initialize(int mpicomm)
+static void conduit_adios_initialize(unsigned long mpicomm)
 {
     std::cout << "conduit_adios_initialize: mpicomm=" << mpicomm << ", init'd=" << adiosState_initialized << std::endl;
     if(adiosState_initialized)
@@ -109,8 +111,14 @@ static void conduit_adios_initialize(int mpicomm)
     {
         // Initialize ADIOS.
 #ifndef _NOMPI
-        std::cout << "conduit_adios_initialize: mpicomm=" << mpicomm << std::endl;
-        adios_init_noxml(MPI_Comm_f2c(mpicomm));
+        int mpi_init = 0;
+        MPI_Initialized(&mpi_init);
+        std::cout << "mpi_init = " << mpi_init << std::endl;
+        if(mpi_init)
+            mpicomm = MPI_Comm_c2f(MPI_COMM_WORLD);
+
+        std::cout << "adios_init_noxml: mpicomm=" << mpicomm << std::endl;
+        std::cout << "adios_init_noxml = " << adios_init_noxml(MPI_Comm_f2c(mpicomm)) << std::endl;
 #else
         adios_init_noxml(0);
 #endif
@@ -205,6 +213,8 @@ join_string_vector(const std::vector<std::string> &sv, const std::string &sep)
     return s;
 }
 
+#define UNINITIALIZED_COMM 0
+
 //-----------------------------------------------------------------------------
 // Private class used to hold options that control adios i/o params.
 // 
@@ -220,7 +230,7 @@ join_string_vector(const std::vector<std::string> &sv, const std::string &sep)
 class ADIOSOptions
 {
 public:
-    int                   mpicomm;
+    unsigned long         mpicomm;
     bool                  collective;
     long                  buffer_size;
     std::string           transport;
@@ -253,8 +263,13 @@ public:
     std::string transport_options;
     std::string transform_options;
 #endif
+    ADIOS_READ_METHOD read_method;
+    std::string       read_parameters;
+    ADIOS_LOCKMODE    read_lock_mode;
+    int               read_verbose;
+    float             read_timeout;
 public:
-    ADIOSOptions() : mpicomm(0), collective(true), 
+    ADIOSOptions() : mpicomm(UNINITIALIZED_COMM), collective(true), 
         buffer_size(1024*1024), transport("POSIX"), 
         statistics_flag(adios_stat_default), transform(),
 
@@ -283,15 +298,25 @@ public:
         VAR_MERGE_io_method(MPI_AGGREGATE),
         VAR_MERGE_io_parameters(24),
         VAR_MERGE_num_aggregators(24),
-        VAR_MERGE_num_ost(672)
+        VAR_MERGE_num_ost(672),
 #else
         transport_options(),
-        transform_options()
+        transform_options(),
 #endif
+        // Read options
+        read_method(ADIOS_READ_METHOD_BP),
+        read_parameters(),
+        read_lock_mode(ADIOS_LOCKMODE_CURRENT),
+        read_verbose(0),
+        read_timeout(0.f)
     {
 std::cout << "ADIOSOptions ctor start" << std::endl;
 #ifndef _NOMPI
-        mpicomm = MPI_Comm_c2f(MPI_COMM_WORLD);
+        int mpi_init = 0;
+        MPI_Initialized(&mpi_init);
+        std::cout << "mpi_init = " << mpi_init << std::endl;
+        if(mpi_init)
+            mpicomm = MPI_Comm_c2f(MPI_COMM_WORLD);
         transport = "MPI";
 std::cout << "ADIOSOptions ctor end" << std::endl;
 #endif
@@ -301,7 +326,7 @@ std::cout << "ADIOSOptions ctor end" << std::endl;
     void set(const Node &opts)
     {
         if(opts.has_child("mpicomm"))
-            mpicomm = opts["mpicomm"].as_int();
+            mpicomm = opts["mpicomm"].as_unsigned_long();
 
         // We need to initialize if we have not done so we can call
         // valid_transport and valid_transform.
@@ -403,6 +428,46 @@ std::cout << "ADIOSOptions ctor end" << std::endl;
             transform_options = opts["transform_options"].as_string();
 #endif
 
+        // Read options
+        if(opts.has_child("read"))
+        {
+            const Node &n = opts["read"];
+            if(n.has_child("read_method"))
+            {
+                std::string s(n["read_method"].as_string());
+                if(s == "ADIOS_READ_METHOD_BP")
+                    read_method = ADIOS_READ_METHOD_BP;
+                else if(s == "ADIOS_READ_METHOD_BP_AGGREGATE")
+                    read_method = ADIOS_READ_METHOD_BP_AGGREGATE;
+                else if(s == "ADIOS_READ_METHOD_DATASPACES")
+                    read_method = ADIOS_READ_METHOD_DATASPACES;
+                else if(s == "ADIOS_READ_METHOD_DIMES")
+                    read_method = ADIOS_READ_METHOD_DIMES;
+                else if(s == "ADIOS_READ_METHOD_FLEXPATH")
+                    read_method = ADIOS_READ_METHOD_FLEXPATH;
+            }
+
+            if(n.has_child("parameters"))
+                read_parameters = n["parameters"].as_string();
+
+            if(n.has_child("lock_mode"))
+            {
+                std::string s(n["lock_mode"].as_string());
+                if(s == "ADIOS_LOCKMODE_NONE")
+                    read_lock_mode = ADIOS_LOCKMODE_NONE;
+                else if(s == "ADIOS_LOCKMODE_CURRENT")
+                    read_lock_mode = ADIOS_LOCKMODE_CURRENT;
+                else if(s == "ADIOS_LOCKMODE_ALL")
+                    read_lock_mode = ADIOS_LOCKMODE_ALL;
+            }
+
+            if(n.has_child("timeout"))
+                read_timeout = n["timeout"].as_float();
+
+            if(n.has_child("verbose"))
+                read_verbose = n["verbose"].to_value();
+        }
+
 #if 0
         Node tmp;
         about(tmp);
@@ -483,10 +548,43 @@ std::cout << "ADIOSOptions ctor end" << std::endl;
         opts["transport_options"] = transport_options;
         opts["transform_options"] = transform_options;
 #endif
+
+        //
+        // Add some read options.
+        //
+        if(read_method == ADIOS_READ_METHOD_BP)
+            opts["read/method"] = "ADIOS_READ_METHOD_BP";
+        else if(read_method == ADIOS_READ_METHOD_BP_AGGREGATE)
+            opts["read/method"] = "ADIOS_READ_METHOD_BP_AGGREGATE";
+        else if(read_method == ADIOS_READ_METHOD_DATASPACES)
+            opts["read/method"] = "ADIOS_READ_METHOD_DATASPACES";
+        else if(read_method == ADIOS_READ_METHOD_DIMES)
+            opts["read/method"] = "ADIOS_READ_METHOD_DIMES";
+        else if(read_method == ADIOS_READ_METHOD_FLEXPATH)
+            opts["read/method"] = "ADIOS_READ_METHOD_FLEXPATH";
+
+        opts["read/parameters"] = read_parameters;
+
+        if(read_lock_mode == ADIOS_LOCKMODE_NONE)
+            opts["read/lock_mode"] = "";
+        else if(read_lock_mode == ADIOS_LOCKMODE_CURRENT)
+            opts["read/lock_mode"] = "ADIOS_LOCKMODE_CURRENT";
+        else if(read_lock_mode == ADIOS_LOCKMODE_ALL)
+            opts["read/lock_mode"] = "ADIOS_LOCKMODE_ALL";
+
+        opts["read/verbose"] = read_verbose;
+        opts["read/timeout"] = read_timeout;
+//
+// NOTE: we might want to have write and read properties separate.
+//
+//      read/selection = all
+//                       0-4
+//                       0,1,2-5,7
+
         // Add in the available transports and transforms.
         std::string sep(", ");
-        opts["read_only/available_transports"] = join_string_vector(transports, sep);
-        opts["read_only/available_transforms"] = join_string_vector(transforms, sep);
+        opts["information/available_transports"] = join_string_vector(transports, sep);
+        opts["information/available_transforms"] = join_string_vector(transforms, sep);
 
 
 
@@ -641,14 +739,11 @@ static void CleanupOptions(void)
 //        not fail to initialize statically.
 static ADIOSOptions *GetOptions()
 {
-std::cout << "GetOptions: start" << std::endl;
     if(adiosState_options == NULL)
     {
-std::cout << "GetOptions: creating new options" << std::endl;
         adiosState_options = new ADIOSOptions;
         atexit(CleanupOptions);
     }
-std::cout << "GetOptions: end" << std::endl;
     return adiosState_options;
 }
 
@@ -768,12 +863,13 @@ static void define_variables(const Node &node, void *funcData)
     char dimensions[20];
     const char *global_dimensions = "";
     const char *local_offsets = "";
-    if(node.dtype().number_of_elements() > 1)
+    if(dtype != adios_string && node.dtype().number_of_elements() > 1)
         sprintf(dimensions, "%ld", node.dtype().number_of_elements());
     else
         dimensions[0] = '\0';
 
     // Define the variable.
+std::cout << "adios_define_var: " << node.path() << ", dtype=" << dtype << ", dims=" << dimensions << std::endl;
     int64_t vid = adios_define_var(state->gid, node.path().c_str(), 
                       "", dtype,
                       dimensions, global_dimensions, local_offsets);
@@ -794,6 +890,7 @@ static void define_variables(const Node &node, void *funcData)
             transform += ":";
             transform += GetOptions()->transform_options;
         }
+std::cout << "adios_set_transform " << transform << std::endl;
         if(adios_set_transform(vid, transform.c_str()) != 0)
         {
             CONDUIT_ERROR("ADIOS Error:" << adios_get_last_errmsg()); 
@@ -802,7 +899,7 @@ static void define_variables(const Node &node, void *funcData)
 
     // Store the name of the actual Conduit type as an attribute in case we 
     // need it to read.
-    if(adios_define_attribute(state->gid, "conduit_type", "", adios_string, 
+    if(adios_define_attribute(state->gid, "conduit_type", node.path().c_str(), adios_string, 
         node.dtype().name().c_str(), node.path().c_str()) < 0)
     {
         CONDUIT_ERROR("ADIOS Error:" << adios_get_last_errmsg()); 
@@ -825,11 +922,15 @@ static void write_variables(const Node &node, void *funcData)
         CONDUIT_ERROR("Unsupported Conduit to ADIOS type conversion.");
         return;
     }
-
+std::cout << "adios_write: " << node.path() << std::endl;
     // if the node is compact, we can write directly from its data ptr
     int s;
     if(node.dtype().is_compact()) 
     {
+if(dtype == adios_string)
+{
+    std::cout << "adios_write: " << node.path() << " = " << (char*)node.data_ptr() << std::endl;
+}
         s = adios_write(state->fid, node.path().c_str(), node.data_ptr());
     }
     else
@@ -855,8 +956,11 @@ static bool conduit_adios_declare_group(int64_t *gid)
     const char *time_index = "";
     // TODO: See if there is a time index in the ADIOS options?
     // TODO: Do we need to declare the group if we are just adding a time step?
-    if(adios_declare_group(gid, "conduit", time_index, 
-        GetOptions()->statistics_flag) != 0)
+std::cout << "adios_declare_group: conduit" << std::endl;
+    int retval = adios_declare_group(gid, "conduit", time_index, 
+        GetOptions()->statistics_flag);
+std::cout << "adios_declare_group: returned " << retval << std::endl;
+    if(retval != 0)
     {
         CONDUIT_ERROR("ADIOS error: " << adios_get_last_errmsg());
         return false;
@@ -865,10 +969,13 @@ static bool conduit_adios_declare_group(int64_t *gid)
     std::string transport(GetOptions()->transport);
     std::string parameters(GetOptions()->GetTransportOptions());
     const char *base_path = ""; // blank for current directory.
-    if(adios_select_method(*gid,
+std::cout << "adios_select_method: transport = "<< transport << std::endl;
+    retval = adios_select_method(*gid,
                            transport.c_str(),
                            parameters.c_str(),
-                           base_path))
+                           base_path);
+std::cout << "adios_select_method: returned "<< retval << std::endl;
+    if(retval != 0)
     {
         CONDUIT_ERROR("ADIOS error: " << adios_get_last_errmsg());
         return false;
@@ -887,6 +994,7 @@ static int conduit_adios_save(const Node &node, const std::string &path,
     //
     // Open the file
     //
+    std::cout << "adios_open: path=" << path << ", flag=" << flag << std::endl;
     if(adios_open(&state->fid, "conduit", path.c_str(), flag, comm) != 0)
     {
         CONDUIT_ERROR("ADIOS error: " << adios_get_last_errmsg());
@@ -912,6 +1020,7 @@ static int conduit_adios_save(const Node &node, const std::string &path,
     //
     // Close the file.
     //
+    std::cout << "adios_close" << std::endl;
     if(adios_close(state->fid) != 0)
     {
         CONDUIT_ERROR("ADIOS error: " << adios_get_last_errmsg());
@@ -925,6 +1034,20 @@ static int conduit_adios_save(const Node &node, const std::string &path,
 void
 adios_set_options(const Node &opts)
 {
+#ifndef _NOMPI
+    int mpi_init = 0;
+    MPI_Initialized(&mpi_init);
+    std::cout << "adios_set_options: mpi_init = " << mpi_init << std::endl;
+    if(opts.has_child("mpicomm"))
+    {
+        int mpicomm = opts["mpicomm"].as_int();
+        if(mpicomm == UNINITIALIZED_COMM && mpi_init)
+        {
+std::cout << "FORCE MPI_COMM_WORLD into mpicomm options." << std::endl;
+//            opts["mpicomm"] = (int)MPI_Comm_c2f(MPI_COMM_WORLD);
+        }
+    }
+#endif
     GetOptions()->set(opts);
 }
 
@@ -938,31 +1061,46 @@ std::cout << "adios_options: Calling GetOptions" << std::endl;
 
 //-----------------------------------------------------------------------------
 void
-adios_save(const Node &node, const std::string &path)
+conduit_adios_setup_comm(unsigned long &mpicomm, unsigned long &oldcomm)
 {
-    std::string filename(path);
-
-    //
-    // MPI Communicator, filename
-    //
 #ifdef _NOMPI
-    conduit_adios_initialize(GetOptions()->mpicomm);
+    oldcomm = mpicomm;
 #else
-    int oldComm = GetOptions()->mpicomm;
-    MPI_Comm comm;
+    if(mpicomm == UNINITIALIZED_COMM)
+    {
+std::cout << "mpicomm = UNINITIALIZED_COMM. Use comm world" << std::endl;
+        mpicomm = MPI_Comm_c2f(MPI_COMM_WORLD);
+    }
+
     if(!GetOptions()->collective)
     {
+        MPI_Comm comm;
         // Split the comm so each rank is separate since we're not 
         // running collectively. Poke the new comm into the options
         // and we'll restore it.
         int rank = 0;
-        MPI_Comm_rank(MPI_Comm_f2c(GetOptions()->mpicomm), &rank);
-        MPI_Comm_split(MPI_Comm_f2c(GetOptions()->mpicomm), rank, 0, &comm);
-        GetOptions()->mpicomm = MPI_Comm_c2f(comm);
+        MPI_Comm_rank(MPI_Comm_f2c(mpicomm), &rank);
+        MPI_Comm_split(MPI_Comm_f2c(mpicomm), rank, 0, &comm);
+        mpicomm = MPI_Comm_c2f(comm);
     }
-    else
+#endif
+}
+
+//-----------------------------------------------------------------------------
+void
+adios_save(const Node &node, const std::string &path)
+{
+    std::string filename(path);
+
+    // MPI Communicator
+    unsigned long oldcomm = GetOptions()->mpicomm;
+    conduit_adios_setup_comm(GetOptions()->mpicomm, oldcomm);
+
+    // Filename
+#ifndef _NOMPI
+    MPI_Comm comm = MPI_Comm_f2c(GetOptions()->mpicomm);
+    if(GetOptions()->collective)
     {
-        comm = MPI_Comm_f2c(GetOptions()->mpicomm);
         int rank = 0;
         MPI_Comm_rank(comm, &rank);
 
@@ -976,15 +1114,17 @@ adios_save(const Node &node, const std::string &path)
         if(rank > 0)
             filename = std::string(sbuf);
         delete [] sbuf;
+
+        std::cout << rank << ": filename=" << filename << std::endl;
     }
+#endif
 
     // Initialize ADIOS using the new comm.
     conduit_adios_initialize(GetOptions()->mpicomm);
-#endif
 
     // Set ADIOS's max buffer sized based on the options.
     adios_set_max_buffer_size(static_cast<uint64_t>(GetOptions()->buffer_size));
-
+std::cout << "buffer_size = " << GetOptions()->buffer_size << std::endl;
     adios_save_state state;
     state.fid = 0;
     state.gid = 0;
@@ -993,8 +1133,9 @@ adios_save(const Node &node, const std::string &path)
     //
     // Group
     //
-    if(conduit_adios_declare_group(&state.gid) == 0)
+    if(conduit_adios_declare_group(&state.gid))
     {
+std::cout << "created group." << std::endl;
         //
         // Define Variables
         //
@@ -1004,18 +1145,24 @@ adios_save(const Node &node, const std::string &path)
         // Save the data.
         //
 #ifndef _NOMPI
-        conduit_adios_save(node, filename, &state, "w", 0);
-#else
         conduit_adios_save(node, filename, &state, "w", comm);
+#else
+        conduit_adios_save(node, filename, &state, "w", 0);
 #endif
     }
+    else
+    {
+std::cout << "failed to create group." << std::endl;
+    }
+
+// IDEA: what about saving the number of pieces into the file (or, I suppose that ADIOS stores this already)
 
 #ifndef _NOMPI
     // If we had split the comm due to non-collective comm. Free that comm.
-    if(oldComm != GetOptions()->mpicomm)
+    if(oldcomm != GetOptions()->mpicomm)
     {
         MPI_Comm_free(&comm);
-        GetOptions()->mpicomm = oldComm;
+        GetOptions()->mpicomm = oldcomm;
     }
 #endif
 }
@@ -1027,16 +1174,255 @@ void adios_append(const Node &node, const std::string &path)
 }
 
 //-----------------------------------------------------------------------------
+bool name_matches_subtree(const std::string &name, const std::string &pattern)
+{
+    // for now.
+    return true;
+}
+
+//-----------------------------------------------------------------------------
 void adios_load(const std::string &path, Node &node)
 {
-    std::cout << "conduit::relay::io::adios_load(node, path=" << path << ")" << std::endl;
-
 // NOTE: If we're loading a dataset and we give it a path, we want to load 
 //       just this processor's piece...
 //       For reading, that's not generally true as we might want to use a serial
 //       read library to read separate domains that were all saved to the same file
 //       and we'd want control over which parts we read out.
 
+// FOR NOW
+    std::string pattern;
+
+
+    node.reset();
+
+    //
+    // MPI Communicator, filename
+    //
+    unsigned long oldcomm = GetOptions()->mpicomm;
+    conduit_adios_setup_comm(GetOptions()->mpicomm, oldcomm);
+
+    // once per program run...
+    adios_read_init_method(GetOptions()->read_method, 
+#ifdef _NOMPI
+                            0,
+#else
+                            MPI_Comm_f2c(GetOptions()->mpicomm),
+#endif
+                          GetOptions()->read_parameters.c_str()
+                          );
+
+    // Open the file for read.
+    ADIOS_FILE *afile = adios_read_open(path.c_str(), 
+                            GetOptions()->read_method,
+#ifdef _NOMPI
+                            0,
+#else
+                            MPI_Comm_f2c(GetOptions()->mpicomm),
+#endif
+                            GetOptions()->read_lock_mode,
+                            GetOptions()->read_timeout);
+    if(afile != NULL)
+    {
+        int scheduled_reads = 0;
+        std::vector<ADIOS_SELECTION *> sels;
+
+        // timestep and domain args...
+        int current_step = afile->current_step;
+        int which_block = 0;
+
+        for (int i = 0; i < afile->nvars; ++i)
+        {
+            std::string vname(afile->var_namelist[i]);
+
+            // Test that the variable is something we want to read.
+            if(!name_matches_subtree(vname, pattern))
+                continue;
+
+            ADIOS_VARINFO *v = adios_inq_var(afile, afile->var_namelist[i]);
+            if(v)
+            {
+                if(v->ndim == 0)
+                {
+// NOTE: if multiple ranks wrote out their piece, how can the data be in the v object?
+//       Do we need a selection applied here already?
+
+                    // scalar. The data value is already in the v object.
+                    if(v->type == adios_byte)
+                        node[vname] = *((int8*)v->value);
+                    else if(v->type == adios_short)
+                        node[vname] = *((int16*)v->value);
+                    else if(v->type == adios_integer)
+                        node[vname] = *((int32*)v->value);
+                    else if(v->type == adios_long)
+                        node[vname] = *((int64*)v->value);
+                    else if(v->type == adios_unsigned_byte)
+                        node[vname] = *((uint8*)v->value);
+                    else if(v->type == adios_unsigned_short)
+                        node[vname] = *((uint16*)v->value);
+                    else if(v->type == adios_unsigned_integer)
+                        node[vname] = *((uint32*)v->value);
+                    else if(v->type == adios_unsigned_long)
+                        node[vname] = *((uint64*)v->value);
+                    else if(v->type == adios_real)
+                        node[vname] = *((float32*)v->value);
+                    else if(v->type == adios_double)
+                        node[vname] = *((float64*)v->value);
+                    else if(v->type == adios_string)
+                    {
+                        std::string s;
+                        s.assign((char *)v->value);
+                        node[vname] = s;
+                    }
+                    // These cases should not happen.
+                    else if(v->type == adios_complex)
+                    {
+                        CONDUIT_ERROR("Skipping adios_complex " << vname);
+                    }
+                    else if(v->type == adios_double_complex)
+                    {
+                        CONDUIT_ERROR("Skipping adios_double_complex " << vname);
+                    }
+                    else if(v->type == adios_string_array)
+                    {
+                        CONDUIT_ERROR("Skipping adios_string_array " << vname);
+                    }
+                    else if(v->type == adios_unknown)
+                    {
+                        CONDUIT_ERROR("Skipping adios_unknown " << vname);
+                    }
+                }
+                else
+                {
+                    // We have array data. Let's allocate a buffer for 
+                    // it and schedule a read.
+
+                    adios_inq_var_blockinfo(afile,v);
+
+                    // The number of blocks in the current step.
+                    int nblocks = v->nblocks[afile->current_step];
+
+// TODO: make sure which_block is in range...
+
+                    // Select the block we want.
+                    ADIOS_SELECTION *sel = adios_selection_writeblock(which_block);
+                    sels.push_back(sel);
+
+                    // Use the dims to figure out the number of elements.
+                    uint64_t nelem = 1;
+                    for(int d = 0; d < v->ndim; ++d)
+                        nelem *= std::max(uint64_t(1), v->dims[d]);
+
+                    // Allocate memory for the array.
+                    void *vbuf = NULL;
+                    if(v->type == adios_byte)
+                    {
+                        int8 *buf = new int8[nelem];
+                        node[vname].set_int8_ptr(buf, nelem);
+                        vbuf = (void *)buf;
+                    }
+                    else if(v->type == adios_short)
+                    {
+                        int16 *buf = new int16[nelem];
+                        node[vname].set_int16_ptr(buf, nelem);
+                        vbuf = (void *)buf;
+                    }
+                    else if(v->type == adios_integer)
+                    {
+                        int32 *buf = new int32[nelem];
+                        node[vname].set_int32_ptr(buf, nelem);
+                        vbuf = (void *)buf;
+                    }
+                    else if(v->type == adios_long)
+                    {
+                        int64 *buf = new int64[nelem];
+                        node[vname].set_int64_ptr(buf, nelem);
+                        vbuf = (void *)buf;
+                    }
+                    else if(v->type == adios_unsigned_byte)
+                    {
+                        uint8 *buf = new uint8[nelem];
+                        node[vname].set_uint8_ptr(buf, nelem);
+                        vbuf = (void *)buf;
+                    }
+                    else if(v->type == adios_unsigned_short)
+                    {
+                        uint16 *buf = new uint16[nelem];
+                        node[vname].set_uint16_ptr(buf, nelem);
+                        vbuf = (void *)buf;
+                    }
+                    else if(v->type == adios_unsigned_integer)
+                    {
+                        uint32 *buf = new uint32[nelem];
+                        node[vname].set_uint32_ptr(buf, nelem);
+                        vbuf = (void *)buf;
+                    }
+                    else if(v->type == adios_unsigned_long)
+                    {
+                        uint64 *buf = new uint64[nelem];
+                        node[vname].set_uint64_ptr(buf, nelem);
+                        vbuf = (void *)buf;
+                    }
+                    else if(v->type == adios_real)
+                    {
+                        float32 *buf = new float32[nelem];
+                        node[vname].set_float32_ptr(buf, nelem);
+                        vbuf = (void *)buf;
+                    }
+                    else if(v->type == adios_double)
+                    {
+                        float64 *buf = new float64[nelem];
+                        node[vname].set_float64_ptr(buf, nelem);
+                        vbuf = (void *)buf;
+                    }
+                    else
+                    {
+                        // Other cases should not happen.
+                        CONDUIT_ERROR("Unsupported type " << v->type);
+                    }
+
+                    // Schedule the read.
+                    if(vbuf != NULL)
+                    {
+                        adios_schedule_read_byid(afile, sel, v->varid, afile->current_step, 1, vbuf);
+                        scheduled_reads++;
+                    }
+                }
+
+                adios_free_varinfo(v);
+            }           
+        }
+
+        // Perform any outstanding reads, blocking until reads are done.
+        if(scheduled_reads > 0)
+        {
+            int blocking = 1;
+            adios_perform_reads(afile, blocking);
+        }
+
+        // Free the selections.
+        for(size_t s = 0; s < sels.size(); ++s)
+            adios_selection_delete(sels[s]);
+
+        // Close the file.
+        adios_read_close(afile);
+    }
+    else
+    {
+        CONDUIT_ERROR("ADIOS Error: " << adios_get_last_errmsg());
+    }
+
+    // once per program run.
+    adios_read_finalize_method(GetOptions()->read_method);
+
+#ifndef _NOMPI
+    // If we had split the comm due to non-collective comm. Free that comm.
+    if(oldcomm != GetOptions()->mpicomm)
+    {
+        MPI_Comm comm = MPI_Comm_f2c(GetOptions()->mpicomm);
+        MPI_Comm_free(&comm);
+        GetOptions()->mpicomm = oldcomm;
+    }
+#endif
 }
 
 
