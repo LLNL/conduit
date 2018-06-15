@@ -254,7 +254,7 @@ TEST(conduit_relay_io_adios, test_scalar_types)
 }
 #endif
 
-#if 0
+#if 1
 //-----------------------------------------------------------------------------
 
 //
@@ -321,13 +321,14 @@ TEST(conduit_relay_io_adios, test_array_types)
     out["o"].set(o, sizeof(o) / sizeof(float));
     out["p"].set(p, sizeof(p) / sizeof(double));
 
-//    out["one_elem"].set_int32_ptr(c, 1);
-#if 0
+    out["one_elem"].set_int32_ptr(c, 1);
+
     // Add some variables with stride/offset.
     out["evens"].set(sequence, 5, 0, 2 * sizeof(int32));
-    out["odds"].set(sequence, 5, 1, 2 * sizeof(int32));
-    out["evens_positive"].set(sequence, 4, 2, 2 * sizeof(int32));
-#endif
+    out["odds"].set(sequence, 5, sizeof(int32), 2 * sizeof(int32));
+    out["evens_positive"].set(sequence, 4, 2*sizeof(int32), 2 * sizeof(int32));
+
+    std::cout << out.to_json() << std::endl;
 
     std::string path("test_array_types.bp");
     relay::io::save(out, path);
@@ -336,13 +337,13 @@ TEST(conduit_relay_io_adios, test_array_types)
     Node in;
     relay::io::load(path, in);
 
-//std::cout << in.to_json() << std::endl;
+    std::cout << in.to_json() << std::endl;
 
     EXPECT_EQ(compare_nodes(out, in, out), true);
 }
 #endif
 
-#if 1
+#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_adios, test_vector_types)
 {
