@@ -783,13 +783,7 @@ static ADIOS_DATATYPES conduit_dtype_to_adios_dtype(const Node &node)
     {
         if(node.dtype().is_number())
         {
-            if(node.dtype().is_integer())
-                dtype = adios_integer;
-            else if(node.dtype().is_signed_integer())
-                dtype = adios_integer;
-            else if(node.dtype().is_unsigned_integer())
-                dtype = adios_unsigned_integer;
-            else if(node.dtype().is_int8())
+            if(node.dtype().is_int8())
                 dtype = adios_byte;
             else if(node.dtype().is_int16())
                 dtype = adios_short;
@@ -1316,62 +1310,62 @@ void adios_load(const std::string &path, Node &node)
                     void *vbuf = NULL;
                     if(v->type == adios_byte)
                     {
-                        int8 *buf = new int8[nelem];
-                        node[vname].set_int8_ptr(buf, nelem);
+                        node[vname].set(DataType::int8(nelem));
+                        int8 *buf = node[vname].value();
                         vbuf = (void *)buf;
                     }
                     else if(v->type == adios_short)
                     {
-                        int16 *buf = new int16[nelem];
-                        node[vname].set_int16_ptr(buf, nelem);
+                        node[vname].set(DataType::int16(nelem));
+                        int16 *buf = node[vname].value();
                         vbuf = (void *)buf;
                     }
                     else if(v->type == adios_integer)
                     {
-                        int32 *buf = new int32[nelem];
-                        node[vname].set_int32_ptr(buf, nelem);
+                        node[vname].set(DataType::int32(nelem));
+                        int32 *buf = node[vname].value();
                         vbuf = (void *)buf;
                     }
                     else if(v->type == adios_long)
                     {
-                        int64 *buf = new int64[nelem];
-                        node[vname].set_int64_ptr(buf, nelem);
+                        node[vname].set(DataType::int64(nelem));
+                        int64 *buf = node[vname].value();
                         vbuf = (void *)buf;
                     }
                     else if(v->type == adios_unsigned_byte)
                     {
-                        uint8 *buf = new uint8[nelem];
-                        node[vname].set_uint8_ptr(buf, nelem);
+                        node[vname].set(DataType::uint8(nelem));
+                        uint8 *buf = node[vname].value();
                         vbuf = (void *)buf;
                     }
                     else if(v->type == adios_unsigned_short)
                     {
-                        uint16 *buf = new uint16[nelem];
-                        node[vname].set_uint16_ptr(buf, nelem);
+                        node[vname].set(DataType::uint16(nelem));
+                        uint16 *buf = node[vname].value();
                         vbuf = (void *)buf;
                     }
                     else if(v->type == adios_unsigned_integer)
                     {
-                        uint32 *buf = new uint32[nelem];
-                        node[vname].set_uint32_ptr(buf, nelem);
+                        node[vname].set(DataType::uint32(nelem));
+                        uint32 *buf = node[vname].value();
                         vbuf = (void *)buf;
                     }
                     else if(v->type == adios_unsigned_long)
                     {
-                        uint64 *buf = new uint64[nelem];
-                        node[vname].set_uint64_ptr(buf, nelem);
+                        node[vname].set(DataType::uint64(nelem));
+                        uint64 *buf = node[vname].value();
                         vbuf = (void *)buf;
                     }
                     else if(v->type == adios_real)
                     {
-                        float32 *buf = new float32[nelem];
-                        node[vname].set_float32_ptr(buf, nelem);
+                        node[vname].set(DataType::float32(nelem));
+                        float32 *buf = node[vname].value();
                         vbuf = (void *)buf;
                     }
                     else if(v->type == adios_double)
                     {
-                        float64 *buf = new float64[nelem];
-                        node[vname].set_float64_ptr(buf, nelem);
+                        node[vname].set(DataType::float64(nelem));
+                        float64 *buf = node[vname].value();
                         vbuf = (void *)buf;
                     }
                     else
@@ -1396,7 +1390,7 @@ void adios_load(const std::string &path, Node &node)
         if(scheduled_reads > 0)
         {
             int blocking = 1;
-            adios_perform_reads(afile, blocking);
+            int ret = adios_perform_reads(afile, blocking);
         }
 
         // Free the selections.

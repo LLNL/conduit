@@ -65,6 +65,7 @@ set(RELAY_HDF5_TESTS t_relay_io_hdf5
                      t_relay_io_hdf5_slab
                      t_relay_io_hdf5_opts)
 
+set(RELAY_ADIOS_TESTS t_relay_io_adios)
 
 ################################
 # Add our main tests
@@ -105,6 +106,15 @@ else()
     message(STATUS "Silo disabled: Skipping conduit_relay silo tests")
 endif()
 
+if(ADIOS_FOUND)
+    message(STATUS "ADIOS enabled: Adding conduit_relay ADIOS unit tests")
+    foreach(TEST ${RELAY_ADIOS_TESTS})
+        add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_relay)
+        # target_link_libraries(${TEST} ${ADIOS_LIBRARIES})
+    endforeach()
+else()
+    message(STATUS "ADIOS disabled: Skipping conduit_relay ADIOS tests")
+endif()
 
 
 if(MPI_FOUND)
