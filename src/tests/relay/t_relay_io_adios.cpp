@@ -50,6 +50,7 @@
 
 #include "conduit_relay.hpp"
 #include <iostream>
+#include <cmath>
 #include "gtest/gtest.h"
 
 #ifndef _NOMPI
@@ -192,6 +193,47 @@ compare_nodes(const conduit::Node &out_root, const Node &in_root, const Node &no
     return equal;
 }
 
+//-----------------------------------------------------------------------------
+void add_rectilinear_mesh(Node &n, float64 origin[3], float64 size[3], int dims[3])
+{
+    std::vector<float64> coords[3],radius;
+    for(int c = 0; c < 3; ++c)
+    {
+        coords[c].reserve(dims[c]);
+        for(int i = 0; i < dims[c]; ++i)
+        {
+            float64 t = float64(i) / float64(dims[c] - 1);
+            coords[c].push_back(origin[c] + t * size[c]);
+        }
+    }
+
+    radius.reserve(dims[0]*dims[1]*dims[2]);
+    for(int k = 0; k < dims[2]; ++k)
+    for(int j = 0; j < dims[1]; ++j)
+    for(int i = 0; i < dims[0]; ++i)
+    {
+        float64 x = coords[0][i];
+        float64 y = coords[1][j];
+        float64 z = coords[2][k];
+        radius.push_back(sqrt(x*x + y*y + z*z));
+    }   
+
+    n["coordsets/coords/type"] = "rectilinear";
+    n["coordsets/coords/values/x"] = coords[0];
+    n["coordsets/coords/values/y"] = coords[1];
+    n["coordsets/coords/values/z"] = coords[2];
+    n["topologies/mesh/coordset"] = "coords";
+    n["topologies/mesh/type"] = "rectilinear";
+    n["topologies/mesh/elements/origin/i0"] = origin[0];
+    n["topologies/mesh/elements/origin/j0"] = origin[1];
+    n["topologies/mesh/elements/origin/k0"] = origin[2];
+
+    n["fields/radius/association"] = "vertex";
+    n["fields/radius/type"] = "scalar";
+    n["fields/radius/topology"] = "mesh";
+    n["fields/radius/values"] = radius;
+}
+
 #if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_adios, test_scalar_types)
@@ -254,7 +296,7 @@ TEST(conduit_relay_io_adios, test_scalar_types)
 }
 #endif
 
-#if 1
+#if 0
 //-----------------------------------------------------------------------------
 
 //
@@ -395,12 +437,62 @@ Issues: When the ADIOS test cases are all run in the same program,
         What happens if I make a list?
 **/
 
+#if 1
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_adios, test_list_types)
+{
+
+    Node out;
+    std::string key("path/to/a_list");
+    out["path/to/a"] = 1;
+    // Add an empty list to the node.
+    out[key].set(DataType::list());
+    out["path/to/b"] = 2;
+    // Add some elements to the list node.
+    out[key].append().set(1.1234);
+    out[key].append().set(2.3456);
+    out[key].append().set(3.4567);
+
+    // Add another list node
+    std::string key2("/path/to/list2");
+    out[key2].set(DataType::list());
+    // Add various data types to the 2nd list.
+    out[key2].append().set(1);
+    out[key2].append().set("Hi there");
+    const float64 pi = 3.141592653589793;
+    const float64 v[] = {pi, 2*pi, 4*pi, 6*pi, 8*pi};
+    out[key2].append().set(v, 5);
+
+    // Add another list node and let's put mesh objects in it.
+    std::string key3("multiple_domains");
+    out[key3].set(DataType::list());
+    Node &domain0 = out[key3].append();
+    domain0["domain_id"] = 0;
+    float64 origin[3] = {0., 0., 0.};
+    float64 size[3]   = {3., 4., 5.};
+    int     dims[3]   = {4,5,6};
+    add_rectilinear_mesh(domain0, origin, size, dims);
+    Node &domain1 = out[key3].append();
+    domain1["domain_id"] = 1;
+    origin[0] += size[0];
+    int     dims2[3]   = {7, 9, 11};
+    add_rectilinear_mesh(domain1, origin, size, dims2);
+
+    out.print_detailed();
+    std::string path("test_list_types.bp");
+    relay::io::save(out, path);
+
+    CONDUIT_INFO("Reading " << path);
+    Node in;
+    relay::io::load(path, in);
+
+    //std::cout << in.to_json() << std::endl;
+
+    EXPECT_EQ(compare_nodes(out, in, out), true);
+}
+#endif
 
 #if 0
-TEST(conduit_relay_io_adios, test_array_types)
-{
-}
-
 TEST(conduit_relay_io_adios, test_objects)
 {
 // TODO
