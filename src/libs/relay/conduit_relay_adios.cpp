@@ -1186,9 +1186,6 @@ void adios_load(const std::string &path, Node &node)
 // FOR NOW
     std::string pattern;
 
-
-    node.reset();
-
     //
     // MPI Communicator, filename
     //
