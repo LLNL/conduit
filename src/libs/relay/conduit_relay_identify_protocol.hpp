@@ -44,17 +44,69 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay_hdf5.hpp
+/// file: conduit_relay_identify_protocol.hpp
 ///
 //-----------------------------------------------------------------------------
+#ifndef CONDUIT_RELAY_IDENTIFY_PROTOCOL_HPP
+#define CONDUIT_RELAY_IDENTIFY_PROTOCOL_HPP
+#include <string>
+#include "conduit_utils.hpp"
 
-#ifndef CONDUIT_RELAY_HDF5_HPP
-#define CONDUIT_RELAY_HDF5_HPP
+//---------------------------------------------------------------------------//
+void
+identify_protocol(const std::string &path,
+                  std::string &io_type)
+{
+    io_type = "conduit_bin";
 
-// NOTE: This file is provided for backward compatibility.
-#pragma message("The conduit_relay_hdf5.hpp header file is deprecated.")
+    std::string file_path;
+    std::string obj_base;
 
-#include "conduit_relay_io_hdf5.hpp"
+    // check for ":" split
+    conduit::utils::split_file_path(path,
+                                    std::string(":"),
+                                    file_path,
+                                    obj_base);
+
+    std::string file_name_base;
+    std::string file_name_ext;
+
+    // find file extension to auto match
+    conduit::utils::rsplit_string(file_path,
+                                  std::string("."),
+                                  file_name_ext,
+                                  file_name_base);
+
+    
+    if(file_name_ext == "hdf5" || 
+       file_name_ext == "h5")
+    {
+        io_type = "hdf5";
+    }
+    else if(file_name_ext == "silo")
+    {
+        io_type = "conduit_silo";
+    }
+    else if(file_name_ext == "json")
+    {
+        io_type = "json";
+    }
+    else if(file_name_ext == "conduit_json")
+    {
+        io_type = "conduit_json";
+    }
+    else if(file_name_ext == "conduit_base64_json")
+    {
+        io_type = "conduit_base64_json";
+    }
+    else if(file_name_ext == "bp" ||
+            file_name_ext == "adios")
+    {
+        io_type = "adios";
+    }
+
+    // default to conduit_bin
+
+}
 
 #endif
-

@@ -44,126 +44,55 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay.cpp
+/// file: conduit_relay_adios_api.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit_relay.hpp"
+#ifndef CONDUIT_RELAY_ADIOS_API_HPP
+#define CONDUIT_RELAY_ADIOS_API_HPP
 
-#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-#include "conduit_relay_io_hdf5.hpp"
+//-----------------------------------------------------------------------------
+/// Write node data to a given path
+///
+/// This methods supports a file system and adios path, joined using a ":"
+///  ex: "/path/on/file/system.adios:/path/inside/adios/file"
+/// 
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API adios_save(const Node &node,
+                                  const std::string &path
+                                  CONDUIT_ADIOS_COMMUNICATOR);
+
+//-----------------------------------------------------------------------------
+/// Write node data to a given path in an existing file.
+///
+/// This methods supports a file system and adios path, joined using a ":"
+///  ex: "/path/on/file/system.adios:/path/inside/adios/file"
+/// 
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API adios_append(const Node &node,
+                                    const std::string &path
+                                    CONDUIT_ADIOS_COMMUNICATOR);
+
+//-----------------------------------------------------------------------------
+/// Read adios data from given path into the output node 
+/// 
+/// This methods supports a file system and adios path, joined using a ":"
+///  ex: "/path/on/file/system.adios:/path/inside/adios/file"
+///
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API adios_load(const std::string &path,
+                                  Node &node
+                                  CONDUIT_ADIOS_COMMUNICATOR);
+
+//-----------------------------------------------------------------------------
+/// Pass a Node to set adios i/o options.
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API adios_set_options(const Node &opts);
+
+//-----------------------------------------------------------------------------
+/// Get a Node that contains adios i/o options.
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API adios_options(Node &opts);
+
 #endif
-#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
-#include "conduit_relay_io_adios.hpp"
-#endif
-
-//-----------------------------------------------------------------------------
-// standard lib includes
-//-----------------------------------------------------------------------------
-#include <iostream>
-
-//-----------------------------------------------------------------------------
-// -- begin conduit:: --
-//-----------------------------------------------------------------------------
-namespace conduit
-{
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::relay --
-//-----------------------------------------------------------------------------
-namespace relay
-{
-
-
-//---------------------------------------------------------------------------//
-std::string
-about()
-{
-    Node n;
-    relay::about(n);
-    return n.to_json();
-}
-
-//---------------------------------------------------------------------------//
-void
-about(Node &n)
-{
-    n.reset();
-
-    n["web"] = "enabled";
-    
-    Node conduit_about;
-    conduit::about(conduit_about);
-    
-    std::string install_prefix = conduit_about["install_prefix"].as_string();
-    std::string web_root = utils::join_file_path(install_prefix,"share");
-    web_root = utils::join_file_path(web_root,"conduit");
-    web_root = utils::join_file_path(web_root,"web_clients");
-    
-    n["web_client_root"] =  web_root;
-
-    Node &io_protos = n["io/protocols"];
-
-    // json io
-    io_protos["json"] = "enabled";
-    io_protos["conduit_json"] = "enabled";
-
-    // standard binary io
-    io_protos["conduit_bin"] = "enabled";
-
-#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-    // straight hdf5 
-    io_protos["hdf5"] = "enabled";
-    
-    io::hdf5_options(n["io/options/hdf5"]);
-#else
-    // straight hdf5 
-    io_protos["hdf5"] = "disabled";
-#endif
-    
-    // silo
-#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
-    // node is packed into two silo objects
-    io_protos["conduit_silo"] = "enabled";
-#else
-    // node is packed into two silo objects
-    io_protos["conduit_silo"] = "disabled";
-#endif
-    
-    // silo mesh aware
-#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
-    io_protos["conduit_silo_mesh"] = "enabled";
-#else
-    io_protos["conduit_silo_mesh"] = "disabled";
-#endif
-
-
-#ifdef CONDUIT_RELAY_MPI_ENABLED
-    n["mpi"] = "enabled";
-#else
-    n["mpi"] = "disabled";
-#endif
-
-    // ADIOS aware
-#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
-    io_protos["adios"] = "enabled";
-    io::adios_options(n["io/options/adios"]);
-#else
-    io_protos["adios"] = "disabled";
-#endif
-
-}
-
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::relay --
-//-----------------------------------------------------------------------------
-
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit:: --
-//-----------------------------------------------------------------------------
-
 

@@ -41,20 +41,56 @@
 // POSSIBILITY OF SUCH DAMAGE.
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+#ifndef CONDUIT_RELAY_SILO_API_HPP
+#define CONDUIT_RELAY_SILO_API_HPP
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay_hdf5.hpp
+/// file: conduit_relay_silo_api.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_RELAY_HDF5_HPP
-#define CONDUIT_RELAY_HDF5_HPP
+/// NOTE: This file is included from other headers that provide namespaces.
+///       Do not directly include this file!
 
-// NOTE: This file is provided for backward compatibility.
-#pragma message("The conduit_relay_hdf5.hpp header file is deprecated.")
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API silo_write(const Node &node,
+                                  const std::string &path);
 
-#include "conduit_relay_io_hdf5.hpp"
+void CONDUIT_RELAY_API silo_read(const std::string &path,
+                                 Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API silo_write(const  Node &node,
+                                  const std::string &file_path,
+                                  const std::string &silo_obj_path);
+
+void CONDUIT_RELAY_API silo_read(const std::string &file_path,
+                                 const std::string &silo_obj_path,
+                                 Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API silo_write(const  Node &node,
+                                  DBfile *dbfile,
+                                  const std::string &silo_obj_path);
+
+void CONDUIT_RELAY_API silo_read(DBfile *dbfile,
+                                 const std::string &silo_obj_path,
+                                 Node &node);
+
+
+//-----------------------------------------------------------------------------    
+void CONDUIT_RELAY_API silo_mesh_write(const Node &mesh,
+                                       const std::string &path);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API silo_mesh_write(const Node &mesh,
+                                       const std::string &file_path,
+                                       const std::string &silo_obj_path);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API silo_mesh_write(const Node &mesh,
+                                       DBfile *dbfile,
+                                       const std::string &silo_obj_path);
 
 #endif
-

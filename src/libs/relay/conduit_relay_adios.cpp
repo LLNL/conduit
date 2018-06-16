@@ -48,7 +48,11 @@
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit_relay_adios.hpp"
+#ifndef _NOMPI
+#include "conduit_relay_mpi_io_adios.hpp"
+#else
+#include "conduit_relay_io_adios.hpp"
+#endif
 
 //-----------------------------------------------------------------------------
 // standard lib includes
@@ -62,15 +66,11 @@
 #include <adios.h>
 #include <adios_read.h>
 #include <adios_transform_methods.h>
-#ifndef _NOMPI
-    #include <mpi.h>
-#endif
 
 //-----------------------------------------------------------------------------
 // -- conduit includes -- 
 //-----------------------------------------------------------------------------
 #include "conduit_error.hpp"
-//#include "conduit_utils.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -84,46 +84,50 @@ namespace conduit
 namespace relay
 {
 
+#ifndef _NOMPI
+//-----------------------------------------------------------------------------
+// -- begin conduit::relay::mpi --
+//-----------------------------------------------------------------------------
+namespace mpi
+{
+#endif
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::relay::io --
+// -- begin conduit::relay::<mpi>::io --
 //-----------------------------------------------------------------------------
 namespace io
 {
 
 static bool adiosState_initialized = false;
-static unsigned long adiosState_mpicomm = 0;
 
 //-----------------------------------------------------------------------------
-static void conduit_adios_initialize(unsigned long mpicomm)
+static void conduit_adios_initialize(
+#ifndef _NOMPI
+    MPI_Comm comm
+#else
+    int comm
+#endif
+    )
 {
-    std::cout << "conduit_adios_initialize: mpicomm=" << mpicomm << ", init'd=" << adiosState_initialized << std::endl;
-    if(adiosState_initialized)
-    {
-        if(adiosState_mpicomm != mpicomm)
-        {
-             // TODO: do we reinitialize using another communicator?
-             adiosState_initialized = false;
-        }
-    }
-
+    std::cout << "conduit_adios_initialize: init'd=" << adiosState_initialized << std::endl;
     if(!adiosState_initialized)
     {
-        // Initialize ADIOS.
 #ifndef _NOMPI
+        // See if MPI is initialized.
         int mpi_init = 0;
         MPI_Initialized(&mpi_init);
         std::cout << "mpi_init = " << mpi_init << std::endl;
-        if(mpi_init)
-            mpicomm = MPI_Comm_c2f(MPI_COMM_WORLD);
 
-        std::cout << "adios_init_noxml: mpicomm=" << mpicomm << std::endl;
-        std::cout << "adios_init_noxml = " << adios_init_noxml(MPI_Comm_f2c(mpicomm)) << std::endl;
+        // Initialize ADIOS.
+        int status = adios_init_noxml(comm);
+        std::cout << "adios_init_noxml = " << status << std::endl;
 #else
-        adios_init_noxml(0);
+        std::cout << "initializing serial ADIOS." << std::endl;
+        // Initialize ADIOS.
+        int status = adios_init_noxml(comm);
+        std::cout << "adios_init_noxml = " << status << std::endl;
 #endif
         adiosState_initialized = true;
-        adiosState_mpicomm = mpicomm;
     }
 }
 
@@ -230,7 +234,6 @@ join_string_vector(const std::vector<std::string> &sv, const std::string &sep)
 class ADIOSOptions
 {
 public:
-    unsigned long         mpicomm;
     bool                  collective;
     long                  buffer_size;
     std::string           transport;
@@ -269,7 +272,7 @@ public:
     int               read_verbose;
     float             read_timeout;
 public:
-    ADIOSOptions() : mpicomm(UNINITIALIZED_COMM), collective(true), 
+    ADIOSOptions() : collective(true), 
         buffer_size(1024*1024), transport("POSIX"), 
         statistics_flag(adios_stat_default), transform(),
 
@@ -315,8 +318,8 @@ std::cout << "ADIOSOptions ctor start" << std::endl;
         int mpi_init = 0;
         MPI_Initialized(&mpi_init);
         std::cout << "mpi_init = " << mpi_init << std::endl;
-        if(mpi_init)
-            mpicomm = MPI_Comm_c2f(MPI_COMM_WORLD);
+
+
         transport = "MPI";
 std::cout << "ADIOSOptions ctor end" << std::endl;
 #endif
@@ -325,12 +328,13 @@ std::cout << "ADIOSOptions ctor end" << std::endl;
     //------------------------------------------------------------------------
     void set(const Node &opts)
     {
-        if(opts.has_child("mpicomm"))
-            mpicomm = opts["mpicomm"].as_unsigned_long();
-
         // We need to initialize if we have not done so we can call
         // valid_transport and valid_transform.
-        conduit_adios_initialize(mpicomm);
+#ifndef _NOMPI
+        conduit_adios_initialize(MPI_COMM_WORLD);
+#else
+        conduit_adios_initialize(0);
+#endif
 
         if(opts.has_child("collective"))
             collective = opts["collective"].as_int() > 0;
@@ -480,7 +484,6 @@ std::cout << "ADIOSOptions ctor end" << std::endl;
     {
         opts.reset();
 
-        opts["mpicomm"] = mpicomm;
         opts["collective"] = collective ? 1 : 0;
         opts["buffer_size"] = buffer_size;
         opts["transport"] = transport;
@@ -496,7 +499,11 @@ std::cout << "ADIOSOptions ctor end" << std::endl;
 
         // We need to initialize if we have not done so we can call some
         // ADIOS introspection functions.
-        conduit_adios_initialize(mpicomm);
+#ifndef _NOMPI
+        conduit_adios_initialize(MPI_COMM_WORLD);
+#else
+        conduit_adios_initialize(0);
+#endif
 
         std::vector<std::string> transports(conduit_adios_transports()),
                                  transforms(conduit_adios_transforms());
@@ -589,9 +596,7 @@ std::cout << "ADIOSOptions ctor end" << std::endl;
 
 
 /*
-   adios/mpicomm = -1
    adios/buffer_size = 2^20
-   adios/collective = true
    adios/group_name = "conduit"  <-- do this???
    adios/statistics_flag = "adios_stat_no", adios_stat_minmax, adios_stat_default, or adios_stat_full
    adios/transport = "MPI"
@@ -980,7 +985,13 @@ std::cout << "adios_select_method: returned "<< retval << std::endl;
 
 //-----------------------------------------------------------------------------
 static int conduit_adios_save(const Node &node, const std::string &path, 
-    adios_save_state *state, const char *flag, MPI_Comm comm)
+    adios_save_state *state, const char *flag,
+#ifndef _NOMPI
+    MPI_Comm comm
+#else
+    int comm
+#endif
+    )
 {
     // NOTE: We have already done the group and variable declarations.
     // NOTE: Assume the path will be the same on all ranks in the comm.
@@ -1028,20 +1039,6 @@ static int conduit_adios_save(const Node &node, const std::string &path,
 void
 adios_set_options(const Node &opts)
 {
-#ifndef _NOMPI
-    int mpi_init = 0;
-    MPI_Initialized(&mpi_init);
-    std::cout << "adios_set_options: mpi_init = " << mpi_init << std::endl;
-    if(opts.has_child("mpicomm"))
-    {
-        int mpicomm = opts["mpicomm"].as_int();
-        if(mpicomm == UNINITIALIZED_COMM && mpi_init)
-        {
-std::cout << "FORCE MPI_COMM_WORLD into mpicomm options." << std::endl;
-//            opts["mpicomm"] = (int)MPI_Comm_c2f(MPI_COMM_WORLD);
-        }
-    }
-#endif
     GetOptions()->set(opts);
 }
 
@@ -1055,44 +1052,16 @@ std::cout << "adios_options: Calling GetOptions" << std::endl;
 
 //-----------------------------------------------------------------------------
 void
-conduit_adios_setup_comm(unsigned long &mpicomm, unsigned long &oldcomm)
-{
-#ifdef _NOMPI
-    oldcomm = mpicomm;
-#else
-    if(mpicomm == UNINITIALIZED_COMM)
-    {
-std::cout << "mpicomm = UNINITIALIZED_COMM. Use comm world" << std::endl;
-        mpicomm = MPI_Comm_c2f(MPI_COMM_WORLD);
-    }
-
-    if(!GetOptions()->collective)
-    {
-        MPI_Comm comm;
-        // Split the comm so each rank is separate since we're not 
-        // running collectively. Poke the new comm into the options
-        // and we'll restore it.
-        int rank = 0;
-        MPI_Comm_rank(MPI_Comm_f2c(mpicomm), &rank);
-        MPI_Comm_split(MPI_Comm_f2c(mpicomm), rank, 0, &comm);
-        mpicomm = MPI_Comm_c2f(comm);
-    }
+adios_save(const Node &node, const std::string &path
+#ifndef _NOMPI
+           , MPI_Comm comm
 #endif
-}
-
-//-----------------------------------------------------------------------------
-void
-adios_save(const Node &node, const std::string &path)
+          )
 {
     std::string filename(path);
 
-    // MPI Communicator
-    unsigned long oldcomm = GetOptions()->mpicomm;
-    conduit_adios_setup_comm(GetOptions()->mpicomm, oldcomm);
-
     // Filename
 #ifndef _NOMPI
-    MPI_Comm comm = MPI_Comm_f2c(GetOptions()->mpicomm);
     if(GetOptions()->collective)
     {
         int rank = 0;
@@ -1111,10 +1080,13 @@ adios_save(const Node &node, const std::string &path)
 
         std::cout << rank << ": filename=" << filename << std::endl;
     }
-#endif
 
-    // Initialize ADIOS using the new comm.
-    conduit_adios_initialize(GetOptions()->mpicomm);
+    // Initialize ADIOS.
+    conduit_adios_initialize(comm);
+#else
+    // Initialize ADIOS.
+    conduit_adios_initialize(0);
+#endif
 
     // Set ADIOS's max buffer sized based on the options.
     adios_set_max_buffer_size(static_cast<uint64_t>(GetOptions()->buffer_size));
@@ -1141,6 +1113,7 @@ std::cout << "created group." << std::endl;
 #ifndef _NOMPI
         conduit_adios_save(node, filename, &state, "w", comm);
 #else
+std::cout << "Callng serial conduit_adios_save" << std::endl;
         conduit_adios_save(node, filename, &state, "w", 0);
 #endif
     }
@@ -1148,21 +1121,14 @@ std::cout << "created group." << std::endl;
     {
 std::cout << "failed to create group." << std::endl;
     }
-
-// IDEA: what about saving the number of pieces into the file (or, I suppose that ADIOS stores this already)
-
-#ifndef _NOMPI
-    // If we had split the comm due to non-collective comm. Free that comm.
-    if(oldcomm != GetOptions()->mpicomm)
-    {
-        MPI_Comm_free(&comm);
-        GetOptions()->mpicomm = oldcomm;
-    }
-#endif
 }
 
 //-----------------------------------------------------------------------------
-void adios_append(const Node &node, const std::string &path)
+void adios_append(const Node &node, const std::string &path
+#ifndef _NOMPI
+    , MPI_Comm comm
+#endif
+                 )
 {
     std::cout << "conduit::relay::io::adios_append(node, path=" << path << ")" << std::endl;
 }
@@ -1175,7 +1141,11 @@ bool name_matches_subtree(const std::string &name, const std::string &pattern)
 }
 
 //-----------------------------------------------------------------------------
-void adios_load(const std::string &path, Node &node)
+void adios_load(const std::string &path, Node &node
+#ifndef _NOMPI
+    , MPI_Comm comm
+#endif
+               )
 {
 // NOTE: If we're loading a dataset and we give it a path, we want to load 
 //       just this processor's piece...
@@ -1186,29 +1156,23 @@ void adios_load(const std::string &path, Node &node)
 // FOR NOW
     std::string pattern;
 
-    //
-    // MPI Communicator, filename
-    //
-    unsigned long oldcomm = GetOptions()->mpicomm;
-    conduit_adios_setup_comm(GetOptions()->mpicomm, oldcomm);
-
     // once per program run...
     adios_read_init_method(GetOptions()->read_method, 
-#ifdef _NOMPI
-                            0,
+#ifndef _NOMPI
+                           comm,
 #else
-                            MPI_Comm_f2c(GetOptions()->mpicomm),
+                           0,
 #endif
-                          GetOptions()->read_parameters.c_str()
-                          );
+                           GetOptions()->read_parameters.c_str()
+                           );
 
     // Open the file for read.
     ADIOS_FILE *afile = adios_read_open(path.c_str(), 
                             GetOptions()->read_method,
-#ifdef _NOMPI
-                            0,
+#ifndef _NOMPI
+                            comm,
 #else
-                            MPI_Comm_f2c(GetOptions()->mpicomm),
+                            0,
 #endif
                             GetOptions()->read_lock_mode,
                             GetOptions()->read_timeout);
@@ -1404,23 +1368,20 @@ void adios_load(const std::string &path, Node &node)
 
     // once per program run.
     adios_read_finalize_method(GetOptions()->read_method);
+}
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::relay::<mpi>::io --
+//-----------------------------------------------------------------------------
 
 #ifndef _NOMPI
-    // If we had split the comm due to non-collective comm. Free that comm.
-    if(oldcomm != GetOptions()->mpicomm)
-    {
-        MPI_Comm comm = MPI_Comm_f2c(GetOptions()->mpicomm);
-        MPI_Comm_free(&comm);
-        GetOptions()->mpicomm = oldcomm;
-    }
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::relay::mpi --
+//-----------------------------------------------------------------------------
 #endif
-}
-
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::relay::io --
-//-----------------------------------------------------------------------------
 
 }
 //-----------------------------------------------------------------------------

@@ -48,7 +48,11 @@
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit_relay_hdf5.hpp"
+#ifndef _NOMPI
+#include "conduit_relay_mpi_io_hdf5.hpp"
+#else
+#include "conduit_relay_io_hdf5.hpp"
+#endif
 
 //-----------------------------------------------------------------------------
 // standard lib includes
@@ -117,9 +121,16 @@ namespace conduit
 namespace relay
 {
 
+#ifndef _NOMPI
+//-----------------------------------------------------------------------------
+// -- begin conduit::relay::mpi --
+//-----------------------------------------------------------------------------
+namespace relay
+{
+#endif
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::relay::io --
+// -- begin conduit::relay::<mpi>::io --
 //-----------------------------------------------------------------------------
 namespace io
 {
@@ -1879,82 +1890,6 @@ hdf5_close_file(hid_t hdf5_id)
                              "Error closing HDF5 file handle: " << hdf5_id);
 }
 
-
-//---------------------------------------------------------------------------//
-static void
-hdf5_write_internal_b(const Node &node,
-           const std::string &file_path,
-           const std::string &hdf5_path,
-           bool append)
-{
-    // open the hdf5 file for writing
-    hid_t h5_file_id;
-    if(append)
-        h5_file_id = hdf5_open_file_for_read_write(file_path);
-    else
-        h5_file_id = hdf5_create_file(file_path);
-
-    hdf5_write(node,
-               h5_file_id,
-               hdf5_path);
-
-    // close the hdf5 file
-    CONDUIT_CHECK_HDF5_ERROR(H5Fclose(h5_file_id),
-                             "Error closing HDF5 file: " << file_path);
-}
-
-//---------------------------------------------------------------------------//
-static void 
-hdf5_write_internal_a(const  Node &node,
-                      const std::string &path,
-                      bool append)
-{
-    // check for ":" split
-    std::string file_path;
-    std::string hdf5_path;
-
-    conduit::utils::split_file_path(path,
-                                    std::string(":"),
-                                    file_path,
-                                    hdf5_path);
-
-    // we will write to the root if no hdf5_path is given.
-    // this should be fine for OBJECT_T, not sure about others ...
-    if(hdf5_path.size() == 0)
-    {
-        hdf5_path = "/";
-    }
-
-    hdf5_write_internal_b(node,
-                          file_path,
-                          hdf5_path,
-                          append);
-}
-
-void 
-hdf5_write(const  Node &node,
-           const std::string &path)
-{
-    hdf5_write_internal_a(node, path, false);
-}
-
-void 
-hdf5_append(const  Node &node,
-            const std::string &path)
-{
-    hdf5_write_internal_a(node, path, true);
-}
-
-//---------------------------------------------------------------------------//
-
-void
-hdf5_write(const Node &node,
-           const std::string &file_path,
-           const std::string &hdf5_path)
-{
-    hdf5_write_internal_b(node, file_path, hdf5_path, false);
-}
-
 //---------------------------------------------------------------------------//
 void
 hdf5_write(const Node &node,
@@ -2060,6 +1995,81 @@ hdf5_write(const Node &node,
     // restore hdf5 error stack
 }
 
+//---------------------------------------------------------------------------//
+hid_t hdf5_open_file_for_read_write(const std::string &path);
+
+static void
+hdf5_write_internal_b(const Node &node,
+           const std::string &file_path,
+           const std::string &hdf5_path,
+           bool append)
+{
+    // open the hdf5 file for writing
+    hid_t h5_file_id;
+    if(append)
+        h5_file_id = hdf5_open_file_for_read_write(file_path);
+    else
+        h5_file_id = hdf5_create_file(file_path);
+
+    hdf5_write(node,
+               h5_file_id,
+               hdf5_path);
+
+    // close the hdf5 file
+    CONDUIT_CHECK_HDF5_ERROR(H5Fclose(h5_file_id),
+                             "Error closing HDF5 file: " << file_path);
+}
+//---------------------------------------------------------------------------//
+
+void
+hdf5_write(const Node &node,
+           const std::string &file_path,
+           const std::string &hdf5_path)
+{
+    hdf5_write_internal_b(node, file_path, hdf5_path, false);
+}
+
+//---------------------------------------------------------------------------//
+static void 
+hdf5_write_internal_a(const  Node &node,
+                      const std::string &path,
+                      bool append)
+{
+    // check for ":" split
+    std::string file_path;
+    std::string hdf5_path;
+
+    conduit::utils::split_file_path(path,
+                                    std::string(":"),
+                                    file_path,
+                                    hdf5_path);
+
+    // we will write to the root if no hdf5_path is given.
+    // this should be fine for OBJECT_T, not sure about others ...
+    if(hdf5_path.size() == 0)
+    {
+        hdf5_path = "/";
+    }
+
+    hdf5_write_internal_b(node,
+                          file_path,
+                          hdf5_path,
+                          append);
+}
+
+void 
+hdf5_write(const  Node &node,
+           const std::string &path)
+{
+    hdf5_write_internal_a(node, path, false);
+}
+
+void 
+hdf5_append(const  Node &node,
+            const std::string &path)
+{
+    hdf5_write_internal_a(node, path, true);
+}
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
@@ -2117,49 +2127,6 @@ hdf5_open_file_for_read_write(const std::string &file_path)
 
 //---------------------------------------------------------------------------//
 void
-hdf5_read(const std::string &path,
-          Node &node)
-{
-    // check for ":" split
-    std::string file_path;
-    std::string hdf5_path;
-    
-    conduit::utils::split_file_path(path,
-                                    std::string(":"),
-                                    file_path,
-                                    hdf5_path);
-
-    // We will read the root if no hdf5_path is given.
-    if(hdf5_path.size() == 0)
-    {
-        hdf5_path = "/";
-    }
-    
-    hdf5_read(file_path,
-              hdf5_path,
-              node);
-}
-
-
-//---------------------------------------------------------------------------//
-void
-hdf5_read(const std::string &file_path,
-          const std::string &hdf5_path,
-          Node &node)
-{
-    // open the hdf5 file for reading
-    hid_t h5_file_id = hdf5_open_file_for_read(file_path);
-
-    hdf5_read(h5_file_id,
-              hdf5_path,
-              node);
-    
-    // close the hdf5 file
-    CONDUIT_CHECK_HDF5_ERROR(H5Fclose(h5_file_id),
-                             "Error closing HDF5 file: " << file_path);
-}
-//---------------------------------------------------------------------------//
-void
 hdf5_read(hid_t hdf5_id,
           const std::string &hdf5_path,
           Node &dest)
@@ -2185,6 +2152,48 @@ hdf5_read(hid_t hdf5_id,
                              << h5_child_obj);
     
     // enable hdf5 error stack
+}
+//---------------------------------------------------------------------------//
+void
+hdf5_read(const std::string &file_path,
+          const std::string &hdf5_path,
+          Node &node)
+{
+    // open the hdf5 file for reading
+    hid_t h5_file_id = hdf5_open_file_for_read(file_path);
+
+    hdf5_read(h5_file_id,
+              hdf5_path,
+              node);
+    
+    // close the hdf5 file
+    CONDUIT_CHECK_HDF5_ERROR(H5Fclose(h5_file_id),
+                             "Error closing HDF5 file: " << file_path);
+}
+
+//---------------------------------------------------------------------------//
+void
+hdf5_read(const std::string &path,
+          Node &node)
+{
+    // check for ":" split
+    std::string file_path;
+    std::string hdf5_path;
+    
+    conduit::utils::split_file_path(path,
+                                    std::string(":"),
+                                    file_path,
+                                    hdf5_path);
+
+    // We will read the root if no hdf5_path is given.
+    if(hdf5_path.size() == 0)
+    {
+        hdf5_path = "/";
+    }
+    
+    hdf5_read(file_path,
+              hdf5_path,
+              node);
 }
 
 
@@ -2232,8 +2241,15 @@ hdf5_has_path(hid_t hdf5_id,
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::relay::io --
+// -- end conduit::relay::<mpi>::io --
 //-----------------------------------------------------------------------------
+
+#ifndef _NOMPI
+}
+//-----------------------------------------------------------------------------
+// -- begin conduit::relay::mpi --
+//-----------------------------------------------------------------------------
+#endif
 
 }
 //-----------------------------------------------------------------------------

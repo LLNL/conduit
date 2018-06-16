@@ -117,17 +117,28 @@ set(conduit_relay_c_sources
 
 
 if(HDF5_FOUND)
-    list(APPEND conduit_relay_headers conduit_relay_hdf5.hpp)
+    list(APPEND conduit_relay_headers
+         conduit_relay_hdf5.hpp 
+         conduit_relay_io_hdf5.hpp
+         conduit_relay_hdf5_api.hpp
+        )
     list(APPEND conduit_relay_sources conduit_relay_hdf5.cpp)
 endif()
 
 if(SILO_FOUND)
-    list(APPEND conduit_relay_headers conduit_relay_silo.hpp)
+    list(APPEND conduit_relay_headers 
+         conduit_relay_silo.hpp 
+         conduit_relay_io_silo.hpp
+         conduit_relay_silo_api.hpp
+        )
     list(APPEND conduit_relay_sources conduit_relay_silo.cpp)
 endif()
 
 if(ADIOS_FOUND)
-    list(APPEND conduit_relay_headers conduit_relay_adios.hpp)
+    list(APPEND conduit_relay_headers
+         conduit_relay_io_adios.hpp
+         conduit_relay_adios_api.hpp
+        )
     list(APPEND conduit_relay_sources conduit_relay_adios.cpp)
 endif()
 
@@ -183,11 +194,8 @@ if(HDF5_FOUND)
 endif()
 
 if(ADIOS_FOUND)
-    if(MPI_FOUND)
-        list(APPEND conduit_relay_deps adios adiosread mpi)
-    else()
-        list(APPEND conduit_relay_deps adios_nompi adiosread_nompi)
-    endif()
+    # Link with the serial ADIOS libraries.
+    list(APPEND conduit_relay_deps adios_nompi adiosread_nompi)
 endif()
 
 
@@ -198,6 +206,9 @@ add_compiled_library(NAME conduit_relay
                              $<TARGET_OBJECTS:conduit_civetweb>
                      DEPENDS_ON ${conduit_relay_deps}
                      HEADERS_DEST_DIR include/conduit)
+
+add_target_compile_flags(TARGET conduit_relay
+                         FLAGS -D_NOMPI)
 
 #  todo?
 if(FORTRAN_FOUND)
@@ -277,7 +288,29 @@ set(conduit_relay_mpi_headers
 #
 # Specify relay mpi sources
 #
-set(conduit_relay_mpi_sources conduit_relay_mpi.cpp)
+set(conduit_relay_mpi_sources conduit_relay_mpi.cpp conduit_relay_mpi_io.cpp)
+
+#
+# Specify the relay mpi deps
+#
+set(conduit_relay_mpi_deps conduit mpi)
+
+if(SILO_FOUND)
+    list(APPEND conduit_relay_mpi_headers conduit_relay_mpi_io_silo.hpp)
+    list(APPEND conduit_relay_mpi_sources conduit_relay_silo.cpp)
+    list(APPEND conduit_relay_mpi_deps silo)
+endif()
+if(HDF5_FOUND)
+    list(APPEND conduit_relay_mpi_headers conduit_relay_mpi_io_hdf5.hpp)
+    list(APPEND conduit_relay_mpi_sources conduit_relay_hdf5.cpp)
+    list(APPEND conduit_relay_mpi_deps hdf5)
+endif()
+if(ADIOS_FOUND)
+    list(APPEND conduit_relay_mpi_headers conduit_relay_mpi_io_adios.hpp)
+    list(APPEND conduit_relay_mpi_sources conduit_relay_adios.cpp)
+    # Link with parallel versions of ADIOS
+    list(APPEND conduit_relay_mpi_deps adios adiosread)
+endif()
 
 # include_directories(${MPI_CXX_INCLUDE_PATH})
 
@@ -288,7 +321,7 @@ add_compiled_library(NAME conduit_relay_mpi
                      EXPORT conduit
                      HEADERS ${conduit_relay_mpi_headers}
                      SOURCES ${conduit_relay_mpi_sources}
-                     DEPENDS_ON conduit mpi
+                     DEPENDS_ON ${conduit_relay_mpi_deps}
                      HEADERS_DEST_DIR include/conduit)
 
 

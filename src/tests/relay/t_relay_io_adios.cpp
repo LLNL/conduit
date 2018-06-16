@@ -53,7 +53,7 @@
 #include <cmath>
 #include "gtest/gtest.h"
 
-#ifndef _NOMPI
+#if 0//ndef _NOMPI
 #include <mpi.h>
 #endif
 
@@ -420,7 +420,7 @@ TEST(conduit_relay_io_adios, test_vector_types)
     Node in;
     relay::io::load(path, in);
 
-std::cout << in.to_json() << std::endl;
+    //std::cout << in.to_json() << std::endl;
 
     EXPECT_EQ(compare_nodes(out, in, out), true);
 }
@@ -561,6 +561,7 @@ TEST(conduit_relay_io_adios, load)
    5. 
  */
 
+#if 0
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
@@ -576,3 +577,4 @@ int main(int argc, char* argv[])
 #endif
     return result;
 }
+#endif

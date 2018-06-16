@@ -44,28 +44,30 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay_io.cpp
+/// file: conduit_relay_mpi_io.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit_relay_io.hpp"
+#include "conduit_relay_mpi_io.hpp"
 
 //-----------------------------------------------------------------------------
 // standard lib includes
 //-----------------------------------------------------------------------------
 #include <iostream>
 
+
+
 // includes for optional features
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-#include "conduit_relay_io_hdf5.hpp"
+#include "conduit_relay_mpi_io_hdf5.hpp"
 #endif
 
 #ifdef CONDUIT_RELAY_IO_SILO_ENABLED
-#include "conduit_relay_io_silo.hpp"
+#include "conduit_relay_mpi_io_silo.hpp"
 #endif
 
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
-#include "conduit_relay_io_adios.hpp"
+#include "conduit_relay_mpi_io_adios.hpp"
 #endif
 
 //-----------------------------------------------------------------------------
@@ -81,6 +83,12 @@ namespace relay
 {
 
 //-----------------------------------------------------------------------------
+// -- begin conduit::relay::mpi --
+//-----------------------------------------------------------------------------
+namespace mpi
+{
+
+//-----------------------------------------------------------------------------
 // -- begin conduit::relay::io --
 //-----------------------------------------------------------------------------
 namespace io
@@ -92,51 +100,45 @@ namespace io
 //---------------------------------------------------------------------------//
 void 
 save(const Node &node,
-     const std::string &path)
+     const std::string &path,
+     MPI_Comm comm)
 {
     std::string protocol;
     identify_protocol(path,protocol);
-    save(node,path,protocol);
+    save(node,path,protocol,comm);
 }
 
 //---------------------------------------------------------------------------//
 void 
 save_merged(const Node &node,
-            const std::string &path)
+            const std::string &path,
+            MPI_Comm comm)
 {
     std::string protocol;
     identify_protocol(path,protocol);
-    save_merged(node,path,protocol);
+    save_merged(node,path,protocol,comm);
 }
 
 //---------------------------------------------------------------------------//
 void 
 load(const std::string &path,
-     Node &node)
+     Node &node,
+     MPI_Comm comm)
 {
     std::string protocol;
     identify_protocol(path,protocol);
-    load(path,protocol,node);
+    load(path,protocol,node,comm);
 }
 
 //---------------------------------------------------------------------------//
 void 
 load_merged(const std::string &path,
-            Node &node)
+            Node &node,
+            MPI_Comm comm)
 {
     std::string protocol;
     identify_protocol(path,protocol);
-    load_merged(path,protocol,node);
-}
-
-//---------------------------------------------------------------------------//
-void 
-save(const Node &node,
-     const std::string &path,
-     const std::string &protocol)
-{
-    Node options;
-    save(node, path, protocol, options);
+    load_merged(path,protocol,node,comm);
 }
 
 //---------------------------------------------------------------------------//
@@ -144,7 +146,19 @@ void
 save(const Node &node,
      const std::string &path,
      const std::string &protocol,
-     const Node &options)
+     MPI_Comm comm)
+{
+    Node options;
+    save(node, path, protocol, options, comm);
+}
+
+//---------------------------------------------------------------------------//
+void 
+save(const Node &node,
+     const std::string &path,
+     const std::string &protocol,
+     const Node &options,
+     MPI_Comm comm)
 {
     // support conduit::Node's basic save cases
     if(protocol == "conduit_bin" ||
@@ -186,7 +200,7 @@ save(const Node &node,
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         adios_set_options(options);
-        adios_save(node,path);
+        adios_save(node,path,comm);
 #else
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                       "Failed to save conduit node to path " << path);
@@ -202,10 +216,11 @@ save(const Node &node,
 void 
 save_merged(const Node &node,
             const std::string &path,
-            const std::string &protocol)
+            const std::string &protocol,
+            MPI_Comm comm)
 {
     Node options;
-    save_merged(node, path, protocol, options);
+    save_merged(node, path, protocol, options, comm);
 }
 
 //---------------------------------------------------------------------------//
@@ -213,7 +228,8 @@ void
 save_merged(const Node &node,
             const std::string &path,
             const std::string &protocol,
-            const Node &options)
+            const Node &options,
+            MPI_Comm comm)
 {
     // support conduit::Node's basic save cases
     if(protocol == "conduit_bin" ||
@@ -262,7 +278,7 @@ save_merged(const Node &node,
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         adios_set_options(options);
-        adios_append(node,path);
+        adios_append(node,path,comm);
 #else
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                       "Failed to save conduit node to path " << path);
@@ -279,7 +295,8 @@ save_merged(const Node &node,
 void
 load(const std::string &path,
      const std::string &protocol,
-     Node &node)
+     Node &node,
+     MPI_Comm comm)
 {
 
     // support conduit::Node's basic load cases
@@ -318,7 +335,7 @@ load(const std::string &path,
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         node.reset();
-        adios_load(path,node);
+        adios_load(path,node,comm);
 #else
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                     "Failed to load conduit node from path " << path);
@@ -336,7 +353,8 @@ load(const std::string &path,
 void
 load_merged(const std::string &path,
             const std::string &protocol,
-            Node &node)
+            Node &node,
+            MPI_Comm comm)
 {
     // support conduit::Node's basic load cases
     if(protocol == "conduit_bin" ||
@@ -381,7 +399,7 @@ load_merged(const std::string &path,
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         Node n;
-        adios_load(path,n);
+        adios_load(path,n,comm);
         node.update(n);
 #else
         CONDUIT_ERROR("relay lacks ADIOS support: " << 
@@ -404,9 +422,13 @@ load_merged(const std::string &path,
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::relay --
+// -- end conduit::relay::mpi --
 //-----------------------------------------------------------------------------
 
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::relay --
+//-----------------------------------------------------------------------------
 
 }
 //-----------------------------------------------------------------------------

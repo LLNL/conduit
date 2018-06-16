@@ -44,13 +44,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay_io.hpp
+/// file: conduit_relay_adios.hpp
 ///
 //-----------------------------------------------------------------------------
 
+#ifndef CONDUIT_RELAY_ADIOS_HPP
+#define CONDUIT_RELAY_ADIOS_HPP
 
-#ifndef CONDUIT_RELAY_IO_HPP
-#define CONDUIT_RELAY_IO_HPP
+//-----------------------------------------------------------------------------
+// external lib includes
+//-----------------------------------------------------------------------------
+#include <adios.h>
 
 //-----------------------------------------------------------------------------
 // conduit lib include 
@@ -77,82 +81,10 @@ namespace relay
 namespace io
 {
 
-//-----------------------------------------------------------------------------
-void identify_protocol(const std::string &path,
-                       std::string &io_type);
+#define CONDUIT_ADIOS_COMMUNICATOR 
 
-///
-/// ``save`` works like a 'set' to the file.
-///
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const Node &node,
-                            const std::string &path);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const Node &node,
-                            const std::string &path,
-                            const std::string &protocol);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const Node &node,
-                            const std::string &path,
-                            const std::string &protocol);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const Node &node,
-                            const std::string &path,
-                            const std::string &protocol,
-                            const Node &options);
-
-///
-/// ``save_merged`` works like an update to the file.
-///
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save_merged(const Node &node,
-                                   const std::string &path);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save_merged(const Node &node,
-                                   const std::string &path,
-                                   const std::string &protocol);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save_merged(const Node &node,
-                                   const std::string &path,
-                                   const std::string &protocol,
-                                   const Node &options);
-
-
-///
-/// ``load`` works like a 'set', the node is reset and then populated
-///
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load(const std::string &path,
-                            Node &node);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load(const std::string &path,
-                            const std::string &protocol,
-                            Node &node);
-
-
-///
-/// ``load_merged`` works like an update, for the object case, entries are read
-///  into the node. If the node is already in the OBJECT_T role, children are 
-///  added
-///
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load_merged(const std::string &path,
-                                   Node &node);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load_merged(const std::string &path,
-                                   const std::string &protocol,
-                                   Node &node);
+// Functions are provided by this include file.
+#include "conduit_relay_adios_api.hpp"
 
 }
 //-----------------------------------------------------------------------------
@@ -163,7 +95,6 @@ void CONDUIT_RELAY_API load_merged(const std::string &path,
 //-----------------------------------------------------------------------------
 // -- end conduit::relay --
 //-----------------------------------------------------------------------------
-
 
 }
 //-----------------------------------------------------------------------------

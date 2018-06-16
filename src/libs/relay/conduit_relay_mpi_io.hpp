@@ -44,13 +44,13 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay_io.hpp
+/// file: conduit_relay_mpi_io.hpp
 ///
 //-----------------------------------------------------------------------------
 
 
-#ifndef CONDUIT_RELAY_IO_HPP
-#define CONDUIT_RELAY_IO_HPP
+#ifndef CONDUIT_RELAY_MPI_IO_HPP
+#define CONDUIT_RELAY_MPI_IO_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib include 
@@ -58,6 +58,8 @@
 #include "conduit.hpp"
 #include "conduit_relay_exports.h"
 #include "conduit_relay_config.h"
+
+#include <mpi.h>
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -72,14 +74,16 @@ namespace relay
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::relay::io --
+// -- begin conduit::relay::mpi --
 //-----------------------------------------------------------------------------
-namespace io
+namespace mpi
 {
 
 //-----------------------------------------------------------------------------
-void identify_protocol(const std::string &path,
-                       std::string &io_type);
+// -- begin conduit::relay::mpi::io --
+//-----------------------------------------------------------------------------
+namespace io
+{
 
 ///
 /// ``save`` works like a 'set' to the file.
@@ -87,23 +91,27 @@ void identify_protocol(const std::string &path,
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API save(const Node &node,
-                            const std::string &path);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const Node &node,
                             const std::string &path,
-                            const std::string &protocol);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const Node &node,
-                            const std::string &path,
-                            const std::string &protocol);
+                            MPI_Comm comm);
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API save(const Node &node,
                             const std::string &path,
                             const std::string &protocol,
-                            const Node &options);
+                            MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save(const Node &node,
+                            const std::string &path,
+                            const std::string &protocol,
+                            MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save(const Node &node,
+                            const std::string &path,
+                            const std::string &protocol,
+                            const Node &options,
+                            MPI_Comm comm);
 
 ///
 /// ``save_merged`` works like an update to the file.
@@ -111,18 +119,21 @@ void CONDUIT_RELAY_API save(const Node &node,
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API save_merged(const Node &node,
-                                   const std::string &path);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save_merged(const Node &node,
                                    const std::string &path,
-                                   const std::string &protocol);
+                                   MPI_Comm comm);
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API save_merged(const Node &node,
                                    const std::string &path,
                                    const std::string &protocol,
-                                   const Node &options);
+                                   MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save_merged(const Node &node,
+                                   const std::string &path,
+                                   const std::string &protocol,
+                                   const Node &options,
+                                   MPI_Comm comm);
 
 
 ///
@@ -131,12 +142,14 @@ void CONDUIT_RELAY_API save_merged(const Node &node,
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API load(const std::string &path,
-                            Node &node);
+                            Node &node,
+                            MPI_Comm comm);
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API load(const std::string &path,
                             const std::string &protocol,
-                            Node &node);
+                            Node &node,
+                            MPI_Comm comm);
 
 
 ///
@@ -147,23 +160,32 @@ void CONDUIT_RELAY_API load(const std::string &path,
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API load_merged(const std::string &path,
-                                   Node &node);
+                                   Node &node,
+                                   MPI_Comm comm);
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API load_merged(const std::string &path,
                                    const std::string &protocol,
-                                   Node &node);
+                                   Node &node,
+                                   MPI_Comm comm);
 
 }
+
 //-----------------------------------------------------------------------------
-// -- end conduit::relay::io --
+// -- end conduit::relay::mpi::io --
 //-----------------------------------------------------------------------------
 
 }
+
+//-----------------------------------------------------------------------------
+// -- end conduit::relay::mpi --
+//-----------------------------------------------------------------------------
+
+}
+
 //-----------------------------------------------------------------------------
 // -- end conduit::relay --
 //-----------------------------------------------------------------------------
-
 
 }
 //-----------------------------------------------------------------------------

@@ -49,7 +49,7 @@
 //-----------------------------------------------------------------------------
 
 #include "conduit_relay.hpp"
-#include "conduit_relay_hdf5.hpp"
+#include "conduit_relay_io_hdf5.hpp"
 #include "hdf5.h"
 #include <iostream>
 #include "gtest/gtest.h"
