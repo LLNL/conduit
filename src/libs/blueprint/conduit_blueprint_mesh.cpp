@@ -485,7 +485,7 @@ std::vector<std::string> identify_coordset_axes(const Node &coordset)
 }
 
 //-----------------------------------------------------------------------------
-bool find_reference_node(const Node &node, const std::string &ref_name, Node &ref)
+bool find_reference_node(const Node &node, const std::string &ref_key, Node &ref)
 {
     bool res = false;
     ref.reset();
@@ -493,12 +493,12 @@ bool find_reference_node(const Node &node, const std::string &ref_name, Node &re
     // NOTE: This segment of code is necessary to transform "topology" into
     // "topologies" while keeping all other dependency names (e.g. "coordset")
     // simply plural by just appending an "s" character.
-    const std::string ref_section = (ref_name[ref_name.length()-1] != 'y') ?
-        ref_name + "s" : ref_name.substr(0, ref_name.length()-1) + "ies";
+    const std::string ref_section = (ref_key[ref_key.length()-1] != 'y') ?
+        ref_key + "s" : ref_key.substr(0, ref_key.length()-1) + "ies";
 
-    if(node.has_child(ref_name))
+    if(node.has_child(ref_key))
     {
-        const std::string &ref_value = node.fetch(ref_name).as_string();
+        const std::string &ref_value = node.fetch(ref_key).as_string();
 
         const Node *traverse_node = node.parent();
         while(traverse_node != NULL)
@@ -506,9 +506,9 @@ bool find_reference_node(const Node &node, const std::string &ref_name, Node &re
             if(traverse_node->has_child(ref_section))
             {
                 const Node &ref_parent = traverse_node->fetch(ref_section);
-                if(ref_parent.has_child(ref_name))
+                if(ref_parent.has_child(ref_value))
                 {
-                    ref.set_external(ref_parent[ref_name]);
+                    ref.set_external(ref_parent[ref_value]);
                     res = true;
                 }
                 break;
@@ -1740,7 +1740,7 @@ mesh::topology::points::transform(const conduit::Node &topo,
     Node info, coordset;
     if(mesh::topology::points::verify(topo, info) &&
         find_reference_node(topo, "coordset", coordset) &&
-        mesh::coordset::verify(topo, info))
+        mesh::coordset::verify(coordset, info))
     {
         cdest.set_external(coordset);
         dest.set(topo);
@@ -1791,7 +1791,7 @@ mesh::topology::uniform::transform(const conduit::Node &topo,
     Node info, coordset;
     if(mesh::topology::uniform::verify(topo, info) &&
         find_reference_node(topo, "coordset", coordset) &&
-        mesh::coordset::uniform::verify(topo, info))
+        mesh::coordset::uniform::verify(coordset, info))
     {
         cdest.set_external(coordset);
         dest.set(topo);
@@ -1842,7 +1842,7 @@ mesh::topology::rectilinear::transform(const conduit::Node &topo,
     Node info, coordset;
     if(mesh::topology::verify(topo, info) &&
         find_reference_node(topo, "coordset", coordset) &&
-        mesh::coordset::verify(topo, info))
+        mesh::coordset::verify(coordset, info))
     {
         if(mesh::topology::rectilinear::verify(topo, info) &&
             mesh::coordset::rectilinear::verify(coordset, info))
@@ -1925,7 +1925,7 @@ mesh::topology::structured::transform(const conduit::Node &topo,
     Node info, coordset;
     if(mesh::topology::verify(topo, info) &&
         find_reference_node(topo, "coordset", coordset) &&
-        mesh::coordset::verify(topo, info))
+        mesh::coordset::verify(coordset, info))
     {
         if(mesh::topology::structured::verify(topo, info) &&
             mesh::coordset::_explicit::verify(coordset, info))
@@ -1942,10 +1942,38 @@ mesh::topology::structured::transform(const conduit::Node &topo,
         {
             if(mesh::coordset::_explicit::transform(coordset, cdest))
             {
-                dest.set(topo);
-                dest["type"].set("rectilinear");
+                dest["type"].set("structured");
                 dest["coordset"].set(cdest.name());
-                // TODO(JRC): Construct the "dims" array?
+                if(topo.has_child("origin"))
+                {
+                    dest["origin"].set(topo["origin"]);
+                }
+
+                if(mesh::coordset::uniform::verify(coordset, info))
+                {
+                    dest["elements/dims"].set(coordset["dims"]);
+                }
+                else
+                {
+                    std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
+                    for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
+                    {
+                        const std::string& csys_axis = csys_axes[i];
+                        const std::string& logical_axis = logical_axes[i];
+                        dest["elements/dims"][logical_axis].set(
+                            coordset["values"][csys_axis].dtype().number_of_elements());
+                    }
+                }
+
+                // NOTE: The number of elements in the topology is one less
+                // along each dimension than the number of points.
+                conduit::NodeIterator dims_it = dest["elements/dims"].children();
+                while(dims_it.has_next())
+                {
+                    conduit::Node &dim_node = dims_it.next();
+                    dim_node.set(dim_node.to_int64() - 1);
+                }
+
                 res = true;
             }
         }
@@ -2047,7 +2075,7 @@ mesh::topology::unstructured::transform(const conduit::Node &/*topo*/,
     Node info, coordset;
     if(mesh::topology::verify(topo, info) &&
         find_reference_node(topo, "coordset", coordset) &&
-        mesh::coordset::verify(topo, info))
+        mesh::coordset::verify(coordset, info))
     {
         if(mesh::topology::unstructured::verify(topo, info) &&
             mesh::coordset::_explicit::verify(coordset, info))
