@@ -48,9 +48,13 @@
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef _NOMPI
+#ifdef USE_MPI
 #include "conduit_relay_mpi_io_adios.hpp"
 #else
+  // Force serial ADIOS using _NOMPI
+  #ifndef _NOMPI
+  #define _NOMPI
+  #endif
 #include "conduit_relay_io_adios.hpp"
 #endif
 
@@ -84,7 +88,7 @@ namespace conduit
 namespace relay
 {
 
-#ifndef _NOMPI
+#ifdef USE_MPI
 //-----------------------------------------------------------------------------
 // -- begin conduit::relay::mpi --
 //-----------------------------------------------------------------------------
@@ -102,7 +106,7 @@ static bool adiosState_initialized = false;
 
 //-----------------------------------------------------------------------------
 static void conduit_adios_initialize(
-#ifndef _NOMPI
+#ifdef USE_MPI
     MPI_Comm comm
 #else
     int comm
@@ -112,7 +116,7 @@ static void conduit_adios_initialize(
     std::cout << "conduit_adios_initialize: init'd=" << adiosState_initialized << std::endl;
     if(!adiosState_initialized)
     {
-#ifndef _NOMPI
+#ifdef USE_MPI
         // See if MPI is initialized.
         int mpi_init = 0;
         MPI_Initialized(&mpi_init);
@@ -234,7 +238,6 @@ join_string_vector(const std::vector<std::string> &sv, const std::string &sep)
 class ADIOSOptions
 {
 public:
-    bool                  collective;
     long                  buffer_size;
     std::string           transport;
     ADIOS_STATISTICS_FLAG statistics_flag;
@@ -272,7 +275,7 @@ public:
     int               read_verbose;
     float             read_timeout;
 public:
-    ADIOSOptions() : collective(true), 
+    ADIOSOptions() :  
         buffer_size(1024*1024), transport("POSIX"), 
         statistics_flag(adios_stat_default), transform(),
 
@@ -314,7 +317,7 @@ public:
         read_timeout(0.f)
     {
 std::cout << "ADIOSOptions ctor start" << std::endl;
-#ifndef _NOMPI
+#ifdef USE_MPI
         int mpi_init = 0;
         MPI_Initialized(&mpi_init);
         std::cout << "mpi_init = " << mpi_init << std::endl;
@@ -330,14 +333,11 @@ std::cout << "ADIOSOptions ctor end" << std::endl;
     {
         // We need to initialize if we have not done so we can call
         // valid_transport and valid_transform.
-#ifndef _NOMPI
+#ifdef USE_MPI
         conduit_adios_initialize(MPI_COMM_WORLD);
 #else
         conduit_adios_initialize(0);
 #endif
-
-        if(opts.has_child("collective"))
-            collective = opts["collective"].as_int() > 0;
 
         if(opts.has_child("buffer_size"))
             buffer_size = opts["buffer_size"].as_long();
@@ -484,7 +484,6 @@ std::cout << "ADIOSOptions ctor end" << std::endl;
     {
         opts.reset();
 
-        opts["collective"] = collective ? 1 : 0;
         opts["buffer_size"] = buffer_size;
         opts["transport"] = transport;
         if(statistics_flag == adios_stat_no)
@@ -499,7 +498,7 @@ std::cout << "ADIOSOptions ctor end" << std::endl;
 
         // We need to initialize if we have not done so we can call some
         // ADIOS introspection functions.
-#ifndef _NOMPI
+#ifdef USE_MPI
         conduit_adios_initialize(MPI_COMM_WORLD);
 #else
         conduit_adios_initialize(0);
@@ -926,10 +925,6 @@ std::cout << "adios_write: " << node.path() << std::endl;
     int s;
     if(node.dtype().is_compact()) 
     {
-if(dtype == adios_string)
-{
-    std::cout << "adios_write: " << node.path() << " = " << (char*)node.data_ptr() << std::endl;
-}
         s = adios_write(state->fid, node.path().c_str(), node.data_ptr());
     }
     else
@@ -986,7 +981,7 @@ std::cout << "adios_select_method: returned "<< retval << std::endl;
 //-----------------------------------------------------------------------------
 static int conduit_adios_save(const Node &node, const std::string &path, 
     adios_save_state *state, const char *flag,
-#ifndef _NOMPI
+#ifdef USE_MPI
     MPI_Comm comm
 #else
     int comm
@@ -1053,33 +1048,27 @@ std::cout << "adios_options: Calling GetOptions" << std::endl;
 //-----------------------------------------------------------------------------
 void
 adios_save(const Node &node, const std::string &path
-#ifndef _NOMPI
-           , MPI_Comm comm
-#endif
-          )
+   CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
+   )
 {
     std::string filename(path);
 
-    // Filename
-#ifndef _NOMPI
-    if(GetOptions()->collective)
-    {
-        int rank = 0;
-        MPI_Comm_rank(comm, &rank);
+#ifdef USE_MPI
+    int rank = 0;
+    MPI_Comm_rank(comm, &rank);
 
-        // Bcast the filename so we know it will be the same on all ranks.
-        int len = path.size()+1;
-        MPI_Bcast(&len, 1, MPI_INT, 0, comm);
-        char *sbuf = new char[len];
-        if(rank == 0)
-            strcpy(sbuf, path.c_str());
-        MPI_Bcast(sbuf, len, MPI_CHAR, 0, comm);
-        if(rank > 0)
-            filename = std::string(sbuf);
-        delete [] sbuf;
+    // Bcast the filename so we know it will be the same on all ranks.
+    int len = path.size()+1;
+    MPI_Bcast(&len, 1, MPI_INT, 0, comm);
+    char *sbuf = new char[len];
+    if(rank == 0)
+        strcpy(sbuf, path.c_str());
+    MPI_Bcast(sbuf, len, MPI_CHAR, 0, comm);
+    if(rank > 0)
+        filename = std::string(sbuf);
+    delete [] sbuf;
 
-        std::cout << rank << ": filename=" << filename << std::endl;
-    }
+    std::cout << rank << ": filename=" << filename << std::endl;
 
     // Initialize ADIOS.
     conduit_adios_initialize(comm);
@@ -1110,7 +1099,7 @@ std::cout << "created group." << std::endl;
         //
         // Save the data.
         //
-#ifndef _NOMPI
+#ifdef USE_MPI
         conduit_adios_save(node, filename, &state, "w", comm);
 #else
 std::cout << "Callng serial conduit_adios_save" << std::endl;
@@ -1121,14 +1110,19 @@ std::cout << "Callng serial conduit_adios_save" << std::endl;
     {
 std::cout << "failed to create group." << std::endl;
     }
+
+    // Delete the variable definitions from the group so we can define them
+    // again the next time around. Free the group too.
+std::cout << "adios_delete_vardefs" << std::endl;
+    adios_delete_vardefs(state.gid);
+std::cout << "adios_free_group" << std::endl;
+    adios_free_group(state.gid);
 }
 
 //-----------------------------------------------------------------------------
 void adios_append(const Node &node, const std::string &path
-#ifndef _NOMPI
-    , MPI_Comm comm
-#endif
-                 )
+   CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
+   )
 {
     std::cout << "conduit::relay::io::adios_append(node, path=" << path << ")" << std::endl;
 }
@@ -1141,11 +1135,9 @@ bool name_matches_subtree(const std::string &name, const std::string &pattern)
 }
 
 //-----------------------------------------------------------------------------
-void adios_load(const std::string &path, Node &node
-#ifndef _NOMPI
-    , MPI_Comm comm
-#endif
-               )
+void adios_load(const std::string &path, Node &node, int time_step, int domain
+   CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
+   )
 {
 // NOTE: If we're loading a dataset and we give it a path, we want to load 
 //       just this processor's piece...
@@ -1156,20 +1148,27 @@ void adios_load(const std::string &path, Node &node
 // FOR NOW
     std::string pattern;
 
+int rank = 0;
+#ifdef USE_MPI
+    MPI_Comm_rank(comm, &rank);
+#endif
+    std::cout << rank << ": adios_read_init_method()" << std::endl;
+
     // once per program run...
     adios_read_init_method(GetOptions()->read_method, 
-#ifndef _NOMPI
+#ifdef USE_MPI
                            comm,
 #else
                            0,
 #endif
                            GetOptions()->read_parameters.c_str()
                            );
+    std::cout << rank << ": adios_read_open(" << path << ")" << std::endl;
 
     // Open the file for read.
     ADIOS_FILE *afile = adios_read_open(path.c_str(), 
                             GetOptions()->read_method,
-#ifndef _NOMPI
+#ifdef USE_MPI
                             comm,
 #else
                             0,
@@ -1182,8 +1181,7 @@ void adios_load(const std::string &path, Node &node
         std::vector<ADIOS_SELECTION *> sels;
 
         // timestep and domain args...
-        int current_step = afile->current_step;
-        int which_block = 0;
+        int ts = (time_step == -1) ? afile->current_step : time_step;
 
         for (int i = 0; i < afile->nvars; ++i)
         {
@@ -1196,10 +1194,19 @@ void adios_load(const std::string &path, Node &node
             ADIOS_VARINFO *v = adios_inq_var(afile, afile->var_namelist[i]);
             if(v)
             {
+#if 0
                 if(v->ndim == 0)
                 {
 // NOTE: if multiple ranks wrote out their piece, how can the data be in the v object?
 //       Do we need a selection applied here already?
+
+
+                    adios_inq_var_blockinfo(afile,v);
+
+                    // The number of blocks in the current step.
+                    int nblocks = v->nblocks[ts];
+
+std::cout << "scalar " << vname << " has " << nblocks << " blocks" << std::endl;
 
                     // scalar. The data value is already in the v object.
                     if(v->type == adios_byte)
@@ -1224,9 +1231,13 @@ void adios_load(const std::string &path, Node &node
                         node[vname] = *((float64*)v->value);
                     else if(v->type == adios_string)
                     {
+#if 0
                         std::string s;
                         s.assign((char *)v->value);
                         node[vname] = s;
+#else
+                        node[vname] = std::string((const char *)v->value);
+#endif
                     }
                     // These cases should not happen.
                     else if(v->type == adios_complex)
@@ -1245,29 +1256,100 @@ void adios_load(const std::string &path, Node &node
                     {
                         CONDUIT_ERROR("Skipping adios_unknown " << vname);
                     }
+#if 1
+                    const Node &n = node[vname];
+                    std::cout << rank << ": " << vname <<" = " << n.to_json() << std::endl;
+#endif
                 }
                 else
                 {
+#endif
                     // We have array data. Let's allocate a buffer for 
                     // it and schedule a read.
 
                     adios_inq_var_blockinfo(afile,v);
 
                     // The number of blocks in the current step.
-                    int nblocks = v->nblocks[afile->current_step];
+                    int nblocks = v->nblocks[ts];
 
 // TODO: make sure which_block is in range...
+    std::cout << rank << ": adios_selection_writeblock(" << domain
+              << ")  (nblocks=" << nblocks << ")" << std::endl;
+
+#if 1
+if(rank == 1)
+{
+    std::cout << "vname=" << vname << std::endl << "{" << std::endl;
+    std::cout << "   type = " << v->type << std::endl;
+    std::cout << "   ndim = " << v->ndim << std::endl;
+    std::cout << "   dims = {";
+    for(int q = 0; q < v->ndim; ++q)
+        std::cout << "," << v->dims[q];
+    std::cout << "}" << std::endl;
+    std::cout << "   nsteps = " << v->nsteps << std::endl;
+    std::cout << "   global = " << v->global << std::endl;
+    std::cout << "   nblocks = {";
+    for(int q = 0; q < v->nsteps; ++q)
+        std::cout << "," << v->nblocks[q];
+    std::cout << "}" << std::endl;
+
+    std::cout << "   blockinfo = {" << std::endl;
+    for(int bi = 0; bi < v->sum_nblocks; ++bi)
+    {
+        std::cout << "       {" << std::endl;
+
+        std::cout << "           start={";
+        for(int q = 0; q < v->ndim; ++q)
+            std::cout << "," << v->blockinfo[bi].start[q];
+        std::cout << "}" << std::endl;
+
+        std::cout << "           count={";
+        for(int q = 0; q < v->ndim; ++q)
+            std::cout << "," << v->blockinfo[bi].count[q];
+        std::cout << "}" << std::endl;
+
+        std::cout << "           process_id=" << v->blockinfo[bi].process_id << std::endl;
+        std::cout << "           time_index=" << v->blockinfo[bi].time_index << std::endl;
+        std::cout << "       }," << std::endl;
+    }
+    std::cout << "   }" << std::endl;
+
+    std::cout << "}" << std::endl;
+}
+#endif
+
 
                     // Select the block we want.
-                    ADIOS_SELECTION *sel = adios_selection_writeblock(which_block);
+                    ADIOS_SELECTION *sel = adios_selection_writeblock(domain);
                     sels.push_back(sel);
 
+#if 0
                     // Use the dims to figure out the number of elements.
                     uint64_t nelem = 1;
                     for(int d = 0; d < v->ndim; ++d)
                         nelem *= std::max(uint64_t(1), v->dims[d]);
+#else
+                    // We can't rely on the v->dims being good for anything but the first
+                    // MPI rank, at least the way we're writing the data. Compute the
+                    // number of elements from the blockinfo so we can properly size the
+                    // destination array.
 
-                    // Allocate memory for the array.
+                    // NOTE: can we assume these will be in process order?
+                    int ts1 = ts + 1;
+                    uint64_t nelem = 1;
+                    for(int bi = 0; bi < v->sum_nblocks; ++bi)
+                    {
+                        if(v->blockinfo[bi].time_index == ts1 &&
+                           v->blockinfo[bi].process_id == domain)
+                        {
+                            nelem = v->blockinfo[bi].count[0];
+                            break;
+                        }
+                    }
+#endif
+std::cout << rank << ": " << vname << " nelem=" << nelem << std::endl;
+
+                    // Allocate memory for the variable.
                     void *vbuf = NULL;
                     if(v->type == adios_byte)
                     {
@@ -1329,6 +1411,19 @@ void adios_load(const std::string &path, Node &node
                         float64 *buf = node[vname].value();
                         vbuf = (void *)buf;
                     }
+                    else if(v->type == adios_string)
+                    {
+std::cout << rank << ": adios_string: nelem=" << nelem << std::endl;
+
+int slen = strlen((char *)v->value);
+nelem = slen;
+std::cout << rank << ": adios_string: slen=" << slen << " str=" << ((char *)v->value) << std::endl;
+
+                        char *buf = new char[nelem + 1];
+                        memset(buf, 0, (nelem+1)*sizeof(char));
+                        node[vname].set(buf);
+                        vbuf = (void *)buf;
+                    }
                     else
                     {
                         // Other cases should not happen.
@@ -1338,25 +1433,35 @@ void adios_load(const std::string &path, Node &node
                     // Schedule the read.
                     if(vbuf != NULL)
                     {
-                        adios_schedule_read_byid(afile, sel, v->varid, afile->current_step, 1, vbuf);
+    std::cout << rank << ": adios_schedule_read_byid(" << vname << ")" << std::endl;
+                        adios_schedule_read_byid(afile, sel, v->varid, ts, 1, vbuf);
                         scheduled_reads++;
                     }
+#if 0
                 }
+#endif
 
                 adios_free_varinfo(v);
             }           
         }
+#ifdef USE_MPI
+MPI_Barrier(comm);
+#endif
 
         // Perform any outstanding reads, blocking until reads are done.
         if(scheduled_reads > 0)
         {
+    std::cout << rank << ": adios_perform_reads()" << std::endl;
             int blocking = 1;
             int ret = adios_perform_reads(afile, blocking);
         }
-
+#if 0
         // Free the selections.
         for(size_t s = 0; s < sels.size(); ++s)
             adios_selection_delete(sels[s]);
+#endif
+
+    std::cout << rank << ": adios_read_close()" << std::endl;
 
         // Close the file.
         adios_read_close(afile);
@@ -1365,18 +1470,35 @@ void adios_load(const std::string &path, Node &node
     {
         CONDUIT_ERROR("ADIOS Error: " << adios_get_last_errmsg());
     }
+    std::cout << rank << ": adios_read_finalize_method()" << std::endl;
 
     // once per program run.
     adios_read_finalize_method(GetOptions()->read_method);
 }
 
+//-----------------------------------------------------------------------------
+void adios_load(const std::string &path, Node &node
+   CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
+   )
+{
+    int time_step = -1; // use current time step.
+#ifdef USE_MPI
+    // Read the rank'th domain if there is one.
+    int domain = 0;
+    MPI_Comm_rank(comm, &domain);
+    adios_load(path, node, time_step, domain, comm);
+#else
+    int domain = 0;     // use first domain.
+    adios_load(path, node, time_step, domain);
+#endif
+}
 
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::relay::<mpi>::io --
 //-----------------------------------------------------------------------------
 
-#ifndef _NOMPI
+#ifdef USE_MPI
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::relay::mpi --

@@ -48,7 +48,7 @@
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef _NOMPI
+#ifdef USE_MPI
 #include "conduit_relay_mpi_io_silo.hpp"
 #else
 #include "conduit_relay_io_silo.hpp"
@@ -94,7 +94,7 @@ namespace conduit
 namespace relay
 {
 
-#ifndef _NOMPI
+#ifdef USE_MPI
 //-----------------------------------------------------------------------------
 // -- begin conduit::relay::mpi --
 //-----------------------------------------------------------------------------
@@ -1428,7 +1428,7 @@ void silo_mesh_write(const Node &node,
 // -- end conduit::relay::<mpi>::io --
 //-----------------------------------------------------------------------------
 
-#ifndef _NOMPI
+#ifdef USE_MPI
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::relay::mpi --

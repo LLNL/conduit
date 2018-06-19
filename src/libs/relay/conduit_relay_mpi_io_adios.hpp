@@ -54,7 +54,6 @@
 //-----------------------------------------------------------------------------
 // external lib includes
 //-----------------------------------------------------------------------------
-#include <adios.h>
 #include <mpi.h>
 
 //-----------------------------------------------------------------------------
@@ -88,7 +87,8 @@ namespace mpi
 namespace io
 {
 
-#define CONDUIT_ADIOS_COMMUNICATOR ,MPI_Comm comm
+// Define an argument macro that adds the communicator argument.
+#define CONDUIT_RELAY_COMMUNICATOR_ARG(ARG) ,ARG
 
 // Functions are provided by this include file.
 #include "conduit_relay_adios_api.hpp"

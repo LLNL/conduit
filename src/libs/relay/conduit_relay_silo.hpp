@@ -52,7 +52,8 @@
 #define CONDUIT_RELAY_SILO_HPP
 
 // NOTE: This file is provided for backwards compatibility.
-#pragma message("The conduit_relay_silo.hpp header file is deprecated.")
+#pragma message("The conduit_relay_silo.hpp header file is deprecated. "
+                "Include conduit_relay_io_silo.hpp instead.")
 
 #include "conduit_relay_io_silo.hpp"
 

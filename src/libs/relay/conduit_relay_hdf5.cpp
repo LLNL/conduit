@@ -48,7 +48,7 @@
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef _NOMPI
+#ifdef USE_MPI
 #include "conduit_relay_mpi_io_hdf5.hpp"
 #else
 #include "conduit_relay_io_hdf5.hpp"
@@ -121,11 +121,11 @@ namespace conduit
 namespace relay
 {
 
-#ifndef _NOMPI
+#ifdef USE_MPI
 //-----------------------------------------------------------------------------
 // -- begin conduit::relay::mpi --
 //-----------------------------------------------------------------------------
-namespace relay
+namespace mpi
 {
 #endif
 
@@ -2244,7 +2244,7 @@ hdf5_has_path(hid_t hdf5_id,
 // -- end conduit::relay::<mpi>::io --
 //-----------------------------------------------------------------------------
 
-#ifndef _NOMPI
+#ifdef USE_MPI
 }
 //-----------------------------------------------------------------------------
 // -- begin conduit::relay::mpi --

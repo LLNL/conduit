@@ -52,11 +52,6 @@
 #define CONDUIT_RELAY_ADIOS_HPP
 
 //-----------------------------------------------------------------------------
-// external lib includes
-//-----------------------------------------------------------------------------
-#include <adios.h>
-
-//-----------------------------------------------------------------------------
 // conduit lib include 
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
@@ -81,7 +76,8 @@ namespace relay
 namespace io
 {
 
-#define CONDUIT_ADIOS_COMMUNICATOR 
+// Define an argument macro that does not add the communicator argument.
+#define CONDUIT_RELAY_COMMUNICATOR_ARG(ARG) 
 
 // Functions are provided by this include file.
 #include "conduit_relay_adios_api.hpp"

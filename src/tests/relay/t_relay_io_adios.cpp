@@ -49,190 +49,66 @@
 //-----------------------------------------------------------------------------
 
 #include "conduit_relay.hpp"
+#include "conduit_error.hpp"
 #include <iostream>
 #include <cmath>
 #include "gtest/gtest.h"
 
-#if 0//ndef _NOMPI
-#include <mpi.h>
-#endif
-
 using namespace conduit;
 
-//-----------------------------------------------------------------------------
-template <typename T>
-bool
-compare_arrays(const T *a, const T *b, int len)
-{
-    if(a == NULL || b == NULL)
-        return false;
-    for(int i = 0; i < len; ++i)
-    {
-        if(a[i] != b[i])
-        {
-//std::cout << "a[" << i << "]=" << (long)a[i] << ", b[" << i << "]=" << (long)b[i] << std::endl;
-            return false;
-        }
-    }
-    return true;
-}
+// Include some utility functions
+#include "adios_test_utils.hpp"
 
+#if 1
 //-----------------------------------------------------------------------------
-bool
-compare_nodes(const conduit::Node &out_root, const Node &in_root, const Node &node)
+TEST(conduit_relay_io_adios, test_options_contain_adios)
 {
-    bool equal = false;
-
-    if(node.number_of_children() == 0)
+    int has_adios_protocol = 0;
+    int has_adios_options = 0;
+    Node opts;
+    relay::about(opts);
+    if(opts.has_child("io"))
     {
-        if(in_root.has_path(node.path()))
+        const Node &io = opts["io"];
+        if(io.has_child("protocols"))
         {
-            const Node &in_node = in_root[node.path()];
-            // Check that types were preserved.
-            if(node.dtype().name() == in_node.dtype().name())
+            const Node &protocols = io["protocols"];
+            if(protocols.has_child("adios"))
             {
-                if(node.dtype().number_of_elements() ==
-                   in_node.dtype().number_of_elements())
-                {
-                    if(node.dtype().number_of_elements() > 1 && !node.dtype().is_string())
-                    {
-                        int n = node.dtype().number_of_elements();
-                        // arrays
-                        if(node.dtype().is_int8())
-                            equal = compare_arrays(node.as_int8_ptr(), in_node.as_int8_ptr(), n);
-                        else if(node.dtype().is_int16())
-                            equal = compare_arrays(node.as_int16_ptr(), in_node.as_int16_ptr(), n);
-                        else if(node.dtype().is_int32())
-                            equal = compare_arrays(node.as_int32_ptr(), in_node.as_int32_ptr(), n);
-                        else if(node.dtype().is_int64())
-                            equal = compare_arrays(node.as_int64_ptr(), in_node.as_int64_ptr(), n);
-                        else if(node.dtype().is_uint8())
-                            equal = compare_arrays(node.as_uint8_ptr(), in_node.as_uint8_ptr(), n);
-                        else if(node.dtype().is_uint16())
-                            equal = compare_arrays(node.as_uint16_ptr(), in_node.as_uint16_ptr(), n);
-                        else if(node.dtype().is_uint32())
-                            equal = compare_arrays(node.as_uint32_ptr(), in_node.as_uint32_ptr(), n);
-                        else if(node.dtype().is_uint64())
-                            equal = compare_arrays(node.as_uint64_ptr(), in_node.as_uint64_ptr(), n);
-                        else if(node.dtype().is_float32())
-                            equal = compare_arrays(node.as_float32_ptr(), in_node.as_float32_ptr(), n);
-                        else if(node.dtype().is_float64())
-                            equal = compare_arrays(node.as_float64_ptr(), in_node.as_float64_ptr(), n);
-                        else
-                        {
-                            CONDUIT_INFO(node.path() << " unsupported array type: "
-                                         << node.dtype().name());
-                        }
-                    }
-                    else
-                    {
-                        // scalars
-                        if(node.dtype().is_int8())
-                            equal = (node.as_int8() == in_node.as_int8());
-                        else if(node.dtype().is_int16())
-                            equal = (node.as_int16() == in_node.as_int16());
-                        else if(node.dtype().is_int32())
-                            equal = (node.as_int32() == in_node.as_int32());
-                        else if(node.dtype().is_int64())
-                            equal = (node.as_int64() == in_node.as_int64());
-                        else if(node.dtype().is_uint8())
-                            equal = (node.as_uint8() == in_node.as_uint8());
-                        else if(node.dtype().is_uint16())
-                            equal = (node.as_uint16() == in_node.as_uint16());
-                        else if(node.dtype().is_uint32())
-                            equal = (node.as_uint32() == in_node.as_uint32());
-                        else if(node.dtype().is_uint64())
-                            equal = (node.as_uint64() == in_node.as_uint64());
-                        else if(node.dtype().is_float32())
-                            equal = (node.as_float32() == in_node.as_float32());
-                        else if(node.dtype().is_float64())
-                            equal = (node.as_float64() == in_node.as_float64());
-                        else if(node.dtype().is_string())
-                            equal = (node.as_string() == in_node.as_string());
-                        else
-                        {
-                            CONDUIT_INFO(node.path() << " unsupported type: "
-                                         << node.dtype().name());
-                        }
-                    }
-                }
-                else
-                {
-                    CONDUIT_INFO(node.path() << " differing number_of_elements: "
-                                 << node.dtype().number_of_elements() << " != "
-                                 << in_node.dtype().number_of_elements());
-                }
-//                if(equal)
-//                    std::cout << node.path() << " is equal" << std::endl;
-            }
-            else
-            {
-                CONDUIT_INFO(node.path() << " types not equal ("
-                             << node.dtype().name() << "!=" 
-                             << in_node.dtype().name() << ")");
+                if(protocols["adios"].as_string() == std::string("enabled"))
+                    has_adios_protocol = 1;
             }
         }
-        else
-        {
-            CONDUIT_INFO(node.path() << " not found.");
-        }
-    }
-    else
-    {
-        equal = true;
-        for(conduit::index_t i = 0; i < node.number_of_children(); ++i)
-        {
-            if(!compare_nodes(out_root, in_root, node.child(i)))
-            {
-                equal = false;
-                break;
-            }
-        }
-    }
 
-    return equal;
+        if(io.has_child("options"))
+        {
+            const Node &options = io["options"];
+            has_adios_options = options.has_child("adios") ? 1 : 0;
+        }
+    }
+    EXPECT_EQ(has_adios_protocol + has_adios_options, 2);
 }
+#endif
 
+#if 1
 //-----------------------------------------------------------------------------
-void add_rectilinear_mesh(Node &n, float64 origin[3], float64 size[3], int dims[3])
+TEST(conduit_relay_io_adios, test_read_badfile)
 {
-    std::vector<float64> coords[3],radius;
-    for(int c = 0; c < 3; ++c)
+    int caught_error = 0;
+    std::string path("does_not_exist.bp");
+    try
     {
-        coords[c].reserve(dims[c]);
-        for(int i = 0; i < dims[c]; ++i)
-        {
-            float64 t = float64(i) / float64(dims[c] - 1);
-            coords[c].push_back(origin[c] + t * size[c]);
-        }
+        Node in;
+        relay::io::load(path, in);
+    }
+    catch(conduit::Error)
+    {
+        caught_error = 1;
     }
 
-    radius.reserve(dims[0]*dims[1]*dims[2]);
-    for(int k = 0; k < dims[2]; ++k)
-    for(int j = 0; j < dims[1]; ++j)
-    for(int i = 0; i < dims[0]; ++i)
-    {
-        float64 x = coords[0][i];
-        float64 y = coords[1][j];
-        float64 z = coords[2][k];
-        radius.push_back(sqrt(x*x + y*y + z*z));
-    }   
-
-    n["coordsets/coords/type"] = "rectilinear";
-    n["coordsets/coords/values/x"] = coords[0];
-    n["coordsets/coords/values/y"] = coords[1];
-    n["coordsets/coords/values/z"] = coords[2];
-    n["topologies/mesh/coordset"] = "coords";
-    n["topologies/mesh/type"] = "rectilinear";
-    n["topologies/mesh/elements/origin/i0"] = origin[0];
-    n["topologies/mesh/elements/origin/j0"] = origin[1];
-    n["topologies/mesh/elements/origin/k0"] = origin[2];
-
-    n["fields/radius/association"] = "vertex";
-    n["fields/radius/type"] = "scalar";
-    n["fields/radius/topology"] = "mesh";
-    n["fields/radius/values"] = radius;
+    EXPECT_EQ(caught_error, 1);
 }
+#endif
 
 #if 0
 //-----------------------------------------------------------------------------
@@ -437,7 +313,7 @@ Issues: When the ADIOS test cases are all run in the same program,
         What happens if I make a list?
 **/
 
-#if 1
+#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_adios, test_list_types)
 {
@@ -493,27 +369,6 @@ TEST(conduit_relay_io_adios, test_list_types)
 #endif
 
 #if 0
-TEST(conduit_relay_io_adios, test_objects)
-{
-// TODO
-}
-
-TEST(conduit_relay_io_adios_parallel_save_blueprint_uniform, save)
-{
-    // TODO: make up a hierarchical object that looks like a blueprint object.
-    // Have different data on each rank.
-
-    //std::cout << relay::about() << std::endl;
-}
-
-TEST(conduit_relay_io_adios_save_collective, save_mcarray_and_strided_data)
-{
-// TODO: Make multi component arrays of various types. Make sure they save out right.
-//       Make sure that the data match when we read back in.
-
-    //std::cout << relay::about() << std::endl;
-}
-
 TEST(conduit_relay_io_adios_save_collective, save)
 {
     //std::cout << relay::about() << std::endl;
@@ -560,21 +415,3 @@ TEST(conduit_relay_io_adios, load)
    4. Reading just a few pieces of data from the overall SIF file.
    5. 
  */
-
-#if 0
-//-----------------------------------------------------------------------------
-int main(int argc, char* argv[])
-{
-    int result = 0;
-
-    ::testing::InitGoogleTest(&argc, argv);
-#ifndef _NOMPI
-    MPI_Init(&argc, &argv);
-#endif
-    result = RUN_ALL_TESTS();
-#ifndef _NOMPI
-    MPI_Finalize();
-#endif
-    return result;
-}
-#endif

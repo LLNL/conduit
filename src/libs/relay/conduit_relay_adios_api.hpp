@@ -60,7 +60,7 @@
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API adios_save(const Node &node,
                                   const std::string &path
-                                  CONDUIT_ADIOS_COMMUNICATOR);
+                                  CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
 
 //-----------------------------------------------------------------------------
 /// Write node data to a given path in an existing file.
@@ -71,7 +71,7 @@ void CONDUIT_RELAY_API adios_save(const Node &node,
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API adios_append(const Node &node,
                                     const std::string &path
-                                    CONDUIT_ADIOS_COMMUNICATOR);
+                                    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
 
 //-----------------------------------------------------------------------------
 /// Read adios data from given path into the output node 
@@ -82,7 +82,21 @@ void CONDUIT_RELAY_API adios_append(const Node &node,
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API adios_load(const std::string &path,
                                   Node &node
-                                  CONDUIT_ADIOS_COMMUNICATOR);
+                                  CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
+
+//-----------------------------------------------------------------------------
+/// Read a given time step and domain of adios data from given path into the
+//  output node.
+/// 
+/// This methods supports a file system and adios path, joined using a ":"
+///  ex: "/path/on/file/system.adios:/path/inside/adios/file"
+///
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API adios_load(const std::string &path,
+                                  Node &node,
+                                  int time_step,
+                                  int domain
+                                  CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
 
 //-----------------------------------------------------------------------------
 /// Pass a Node to set adios i/o options.
