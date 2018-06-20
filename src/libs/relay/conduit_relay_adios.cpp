@@ -428,7 +428,7 @@ public:
     ADIOSOptions() :
         // Write options
         buffer_size(1024*1024), transport("POSIX"), 
-        statistics_flag(adios_stat_default), transform(),
+        statistics_flag(adios_stat_no), transform(),
         transport_options(),
         transform_options(),
 
@@ -463,7 +463,7 @@ public:
             const Node &n = opts["write"];
 
             if(n.has_child("buffer_size"))
-                buffer_size = opts["buffer_size"].as_long();
+                buffer_size = n["buffer_size"].as_long();
 
             if(n.has_child("transport"))
             {
@@ -481,8 +481,11 @@ public:
             if(n.has_child("transform"))
             {
                 std::string s(n["transform"].as_string());
-                if(string_vector_contains(available_transforms(), s))
+                if(s == "" || 
+                   string_vector_contains(available_transforms(), s))
+                {
                     transform = s;
+                }
             }
 
             if(n.has_child("transport_options"))
@@ -577,8 +580,14 @@ public:
         std::string sep(", ");
         std::vector<std::string> transports(available_transports()),
                                  transforms(available_transforms());
-        opts["information/available_transports"] = join_string_vector(transports, sep);
-        opts["information/available_transforms"] = join_string_vector(transforms, sep);
+        std::string key_transport("information/available_transports");
+        opts[key_transport].set(DataType::list());
+        for(size_t i = 0; i < transports.size(); ++i)
+            opts[key_transport].append().set(transports[i]);
+        std::string key_transform("information/available_transforms");
+        opts[key_transform].set(DataType::list());
+        for(size_t i = 0; i < transforms.size(); ++i)
+            opts[key_transform].append().set(transforms[i]);
     }
 };
 
@@ -773,10 +782,14 @@ static void define_variables(const Node &node, void *funcData,
         std::vector<std::string> transform, tmp;
         if(options()->transform == "zfp")
         {
-            // The zfp transform complained about passing multiple options at once.
-            internals::split_string(tmp, options()->transform_options, ',');
-            for(size_t i = 0; i < tmp.size(); i++)
-                transform.push_back(options()->transform + ":" + tmp[i]);
+            // Only allow zfp on floating point variables.
+            if(dtype == adios_real || dtype == adios_double)
+            {
+                // The zfp transform complained about passing multiple options at once.
+                internals::split_string(tmp, options()->transform_options, ',');
+                for(size_t i = 0; i < tmp.size(); i++)
+                    transform.push_back(options()->transform + ":" + tmp[i]);
+            }
         }
         else
         {

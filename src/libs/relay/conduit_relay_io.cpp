@@ -185,8 +185,13 @@ save(const Node &node,
     else if( protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+        Node save_options;
+        adios_options(save_options);
         adios_set_options(options);
+
         adios_save(node,path);
+
+        adios_set_options(save_options);
 #else
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                       "Failed to save conduit node to path " << path);
@@ -261,8 +266,13 @@ save_merged(const Node &node,
     else if( protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+        Node save_options;
+        adios_options(save_options);
         adios_set_options(options);
+
         adios_append(node,path);
+
+        adios_set_options(save_options);
 #else
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                       "Failed to save conduit node to path " << path);
@@ -281,6 +291,7 @@ load(const std::string &path,
      const std::string &protocol,
      int timestep,
      int domain,
+     Node &options,
      Node &node)
 {
 
@@ -319,8 +330,14 @@ load(const std::string &path,
     else if( protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+        Node load_options;
+        adios_options(load_options);
+        adios_set_options(options);
+
         node.reset();
         adios_load(path,timestep,domain,node);
+
+        adios_set_options(load_options);
 #else
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                     "Failed to load conduit node from path " << path);
@@ -337,9 +354,32 @@ load(const std::string &path,
 void
 load(const std::string &path,
      const std::string &protocol,
+     int timestep,
+     int domain,
      Node &node)
 {
-    load(path, protocol, 0, 0, node);
+    Node options;
+    load(path, protocol, timestep, domain, options, node);
+}
+
+//---------------------------------------------------------------------------//
+void
+load(const std::string &path,
+     const std::string &protocol,
+     Node &node)
+{
+    Node options;
+    load(path, protocol, 0, 0, options, node);
+}
+
+//---------------------------------------------------------------------------//
+void
+load(const std::string &path,
+     const std::string &protocol,
+     Node &options,
+     Node &node)
+{
+    load(path, protocol, 0, 0, options, node);
 }
 
 //---------------------------------------------------------------------------//

@@ -385,7 +385,29 @@ TEST(conduit_relay_io_adios, test_opts_transforms)
     //std::cout << "compressed_file_size = " << compressed_file_size << std::endl;
     EXPECT_EQ(compressed_file_size < compressed_size_guess, true);
 }
+
+TEST(conduit_relay_io_adios, test_load_merged)
+{
+    // Write a file.
+    Node out;
+    out["a"] = 1;
+    out["b"] = 2.3456;
+    out["c"] = std::vector<int>(10, 0);
+
+    std::string path("test_load_merged.bp");
+    relay::io::save(out, path);
+
+    Node in;
+    std::string key("pre-existing"), value("This key already exists.");
+    in[key] = value;
+    relay::io::load_merged(path, in);
+
+    // Now add the same key to out so we can compare.
+    out[key] = value;
+    EXPECT_EQ(compare_nodes(out, in, out), true);
+}
 #endif
+
 
 #if 0
 TEST(conduit_relay_io_adios, test_append)
