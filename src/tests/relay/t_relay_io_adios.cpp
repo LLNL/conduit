@@ -232,8 +232,7 @@ TEST(conduit_relay_io_adios, test_array_types)
     out["odds"].set(sequence, 5, sizeof(int32), 2 * sizeof(int32));
     out["evens_positive"].set(sequence, 4, 2*sizeof(int32), 2 * sizeof(int32));
 
-    std::cout << out.to_json() << std::endl;
-
+    //std::cout << out.to_json() << std::endl;
     std::string path("test_array_types.bp");
     relay::io::save(out, path);
 
@@ -241,7 +240,7 @@ TEST(conduit_relay_io_adios, test_array_types)
     Node in;
     relay::io::load(path, in);
 
-    std::cout << in.to_json() << std::endl;
+    //std::cout << in.to_json() << std::endl;
 
     EXPECT_EQ(compare_nodes(out, in, out), true);
 }

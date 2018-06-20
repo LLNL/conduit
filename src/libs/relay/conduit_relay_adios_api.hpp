@@ -93,9 +93,9 @@ void CONDUIT_RELAY_API adios_load(const std::string &path,
 ///
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API adios_load(const std::string &path,
-                                  Node &node,
                                   int time_step,
-                                  int domain
+                                  int domain,
+                                  Node &node
                                   CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
 
 //-----------------------------------------------------------------------------

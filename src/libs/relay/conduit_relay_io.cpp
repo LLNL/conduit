@@ -279,6 +279,8 @@ save_merged(const Node &node,
 void
 load(const std::string &path,
      const std::string &protocol,
+     int timestep,
+     int domain,
      Node &node)
 {
 
@@ -318,7 +320,7 @@ load(const std::string &path,
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         node.reset();
-        adios_load(path,node);
+        adios_load(path,timestep,domain,node);
 #else
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                     "Failed to load conduit node from path " << path);
@@ -329,7 +331,15 @@ load(const std::string &path,
         CONDUIT_ERROR("unknown conduit_relay protocol: " << protocol);
         
     }
+}
 
+//---------------------------------------------------------------------------//
+void
+load(const std::string &path,
+     const std::string &protocol,
+     Node &node)
+{
+    load(path, protocol, 0, 0, node);
 }
 
 //---------------------------------------------------------------------------//

@@ -138,6 +138,12 @@ void CONDUIT_RELAY_API load(const std::string &path,
                             const std::string &protocol,
                             Node &node);
 
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load(const std::string &path,
+                            const std::string &protocol,
+                            int timestep,
+                            int domain,
+                            Node &node);
 
 ///
 /// ``load_merged`` works like an update, for the object case, entries are read

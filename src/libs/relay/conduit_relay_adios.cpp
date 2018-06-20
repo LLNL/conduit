@@ -79,17 +79,6 @@
 using std::cout;
 using std::endl;
 
-// NOTE: We can save strings to ADIOS as adios_string if they are scalars.
-//       However, when we write adios_string in parallel, it seems as though
-//       we get multiple chunks of data stored in the file but accessing the
-//       strings beyond the first chunk seems problematic. So, we have trouble
-//       reading the string contributions from later ranks. A workaround is to
-//       save the data as adios_byte since that produces an array we can access
-//       as intended. We use the conduit_type attribute that we put on each
-//       variable as a hint to indicate that while the data are adios_byte,
-//       we should reconstitute them as a string.
-#define CONDUIT_ADIOS_STRING_AS_BYTE_ARRAY
-
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
@@ -193,6 +182,7 @@ void print_varinfo(std::ostream &os, ADIOS_FILE *afile, ADIOS_VARINFO *v)
     os << "}" << endl;
 }
 
+//-----------------------------------------------------------------------------
 std::string
 read_method_to_string(ADIOS_READ_METHOD m)
 {
@@ -210,6 +200,7 @@ read_method_to_string(ADIOS_READ_METHOD m)
     return s;
 }
 
+//-----------------------------------------------------------------------------
 ADIOS_READ_METHOD
 string_to_read_method(const std::string &s)
 {
@@ -227,6 +218,7 @@ string_to_read_method(const std::string &s)
     return m;
 }
 
+//-----------------------------------------------------------------------------
 std::string
 lock_mode_to_string(ADIOS_LOCKMODE m)
 {
@@ -240,6 +232,7 @@ lock_mode_to_string(ADIOS_LOCKMODE m)
     return s;
 }
 
+//-----------------------------------------------------------------------------
 ADIOS_LOCKMODE
 string_to_lock_mode(const std::string &s)
 {
@@ -253,6 +246,7 @@ string_to_lock_mode(const std::string &s)
     return m;
 }
 
+//-----------------------------------------------------------------------------
 std::string
 statistics_flag_to_string(ADIOS_STATISTICS_FLAG f)
 {
@@ -268,6 +262,7 @@ statistics_flag_to_string(ADIOS_STATISTICS_FLAG f)
     return s;
 }
 
+//-----------------------------------------------------------------------------
 ADIOS_STATISTICS_FLAG
 string_to_statistics_flag(const std::string &s)
 {
@@ -283,6 +278,7 @@ string_to_statistics_flag(const std::string &s)
     return f;
 }
 
+//-----------------------------------------------------------------------------
 void
 split_string(std::vector<std::string> &sv, const std::string &s, char sep)
 {
@@ -312,15 +308,10 @@ split_string(std::vector<std::string> &sv, const std::string &s, char sep)
     }
 }
 
-} // namespace
 //-----------------------------------------------------------------------------
-// -- end conduit::relay::<mpi>::io::internals --
-//-----------------------------------------------------------------------------
+static bool adios_initialized = false;
 
-static bool adiosState_initialized = false;
-
-//-----------------------------------------------------------------------------
-static void conduit_adios_initialize(
+static void initialize(
 #ifdef USE_MPI
     MPI_Comm comm
 #else
@@ -328,50 +319,30 @@ static void conduit_adios_initialize(
 #endif
     )
 {
-    cout << "conduit_adios_initialize: init'd=" << adiosState_initialized << endl;
-    if(!adiosState_initialized)
+    //cout << "initialize: init'd=" << adios_initialized << endl;
+    if(!adios_initialized)
     {
 #ifdef USE_MPI
         // See if MPI is initialized.
         int mpi_init = 0;
         MPI_Initialized(&mpi_init);
-        cout << "mpi_init = " << mpi_init << endl;
+        //cout << "mpi_init = " << mpi_init << endl;
 
         // Initialize ADIOS.
         int status = adios_init_noxml(comm);
-        cout << "adios_init_noxml = " << status << endl;
+        //cout << "adios_init_noxml = " << status << endl;
 #else
-        cout << "initializing serial ADIOS." << endl;
+        //cout << "initializing serial ADIOS." << endl;
         // Initialize ADIOS.
         int status = adios_init_noxml(comm);
-        cout << "adios_init_noxml = " << status << endl;
+        //cout << "adios_init_noxml = " << status << endl;
 #endif
-        adiosState_initialized = true;
+        adios_initialized = true;
     }
 }
 
 //-----------------------------------------------------------------------------
-static bool valid_transport(const std::string &name)
-{
-    bool valid = false;
-    ADIOS_AVAILABLE_WRITE_METHODS *wm = adios_available_write_methods();
-    if(wm)
-    {
-        for (int i=0; i<wm->nmethods; i++)
-        {
-            if(strcmp(name.c_str(), wm->name[i]) == 0)
-            {
-                valid = true;
-                break;
-            }
-        }
-        adios_available_write_methods_free(wm); 
-    }
-    return valid;
-}
-
-//-----------------------------------------------------------------------------
-static std::vector<std::string> conduit_adios_transports()
+static std::vector<std::string> available_transports()
 {
     std::vector<std::string> v;
     ADIOS_AVAILABLE_WRITE_METHODS *wm = adios_available_write_methods();
@@ -385,33 +356,16 @@ static std::vector<std::string> conduit_adios_transports()
 }
 
 //-----------------------------------------------------------------------------
-static bool valid_transform(const std::string &name)
-{
-    bool valid = false;
-#if 0 // Crashing
-    ADIOS_AVAILABLE_TRANSFORM_METHODS * t = adios_available_transform_methods();
-    if(t)
-    {
-        for (int i=0; i<t->ntransforms; i++)
-        {
-            if(strcmp(name.c_str(), t->name[i]) == 0)
-            {
-                valid = true;
-                break;
-            }
-        }
-        adios_available_transform_methods_free(t); 
-    }
-#endif
-    return valid;
-}
-
-//-----------------------------------------------------------------------------
-static std::vector<std::string> conduit_adios_transforms()
+static std::vector<std::string> available_transforms()
 {
     std::vector<std::string> v;
-#if 0 // Crashing
-    ADIOS_AVAILABLE_TRANSFORM_METHODS * t = adios_available_transform_methods();
+#if 1
+    // Workaround
+    v.push_back("identity");
+    v.push_back("zfp");
+#else
+    // Crashing
+    ADIOS_AVAILABLE_TRANSFORM_METHODS *t = adios_available_transform_methods();
     if(t)
     {
         for (int i=0; i<t->ntransforms; i++)
@@ -436,7 +390,12 @@ join_string_vector(const std::vector<std::string> &sv, const std::string &sep)
     return s;
 }
 
-#define UNINITIALIZED_COMM 0
+//-----------------------------------------------------------------------------
+static bool
+string_vector_contains(const std::vector<std::string> &sv, const std::string &s)
+{
+    return std::find(sv.begin(), sv.end(), s) != sv.end();
+}
 
 //-----------------------------------------------------------------------------
 // Private class used to hold options that control adios i/o params.
@@ -466,7 +425,8 @@ public:
     int               read_verbose;
     float             read_timeout;
 public:
-    ADIOSOptions() :  
+    ADIOSOptions() :
+        // Write options
         buffer_size(1024*1024), transport("POSIX"), 
         statistics_flag(adios_stat_default), transform(),
         transport_options(),
@@ -479,33 +439,27 @@ public:
         read_verbose(0),
         read_timeout(0.f)
     {
-cout << "ADIOSOptions ctor start" << endl;
 #ifdef USE_MPI
         int mpi_init = 0;
         MPI_Initialized(&mpi_init);
-        cout << "mpi_init = " << mpi_init << endl;
-
-
         transport = "MPI";
-cout << "ADIOSOptions ctor end" << endl;
 #endif
     }
     
     //------------------------------------------------------------------------
     void set(const Node &opts)
     {
-        // We need to initialize if we have not done so we can call
-        // valid_transport and valid_transform.
+        // We need to initialize if we have not done so we can call some
+        // ADIOS introspection functions.
 #ifdef USE_MPI
-        conduit_adios_initialize(MPI_COMM_WORLD);
+        initialize(MPI_COMM_WORLD);
 #else
-        conduit_adios_initialize(0);
+        initialize(0);
 #endif
 
         // Write options
         if(opts.has_child("write"))
         {
-cout << "options set write" << endl;
             const Node &n = opts["write"];
 
             if(n.has_child("buffer_size"))
@@ -514,7 +468,7 @@ cout << "options set write" << endl;
             if(n.has_child("transport"))
             {
                 std::string s(n["transport"].as_string());
-                if(valid_transport(s))
+                if(string_vector_contains(available_transports(), s))
                     transport = s;
             }
 
@@ -527,22 +481,15 @@ cout << "options set write" << endl;
             if(n.has_child("transform"))
             {
                 std::string s(n["transform"].as_string());
-transform = s;
-
-cout << "transform = " << transform << endl;
-
-//                if(valid_transform(s))
-//                    transform = s;
+                if(string_vector_contains(available_transforms(), s))
+                    transform = s;
             }
 
             if(n.has_child("transport_options"))
                 transport_options = n["transport_options"].as_string();
 
             if(n.has_child("transform_options"))
-{
                 transform_options = n["transform_options"].as_string();
-cout << "transform_options = " << transform_options << endl;
-}
         }
 
         // Read options
@@ -584,9 +531,9 @@ cout << "transform_options = " << transform_options << endl;
         // We need to initialize if we have not done so we can call some
         // ADIOS introspection functions.
 #ifdef USE_MPI
-        conduit_adios_initialize(MPI_COMM_WORLD);
+        initialize(MPI_COMM_WORLD);
 #else
-        conduit_adios_initialize(0);
+        initialize(0);
 #endif
 
         opts.reset();
@@ -625,95 +572,20 @@ cout << "transform_options = " << transform_options << endl;
 
         opts["read/verbose"] = read_verbose;
         opts["read/timeout"] = read_timeout;
-//
-// NOTE: we might want to have write and read properties separate.
-//
-//      read/selection = all
-//                       0-4
-//                       0,1,2-5,7
 
         // Add in the available transports and transforms.
         std::string sep(", ");
-        std::vector<std::string> transports(conduit_adios_transports()),
-                                 transforms(conduit_adios_transforms());
+        std::vector<std::string> transports(available_transports()),
+                                 transforms(available_transforms());
         opts["information/available_transports"] = join_string_vector(transports, sep);
         opts["information/available_transforms"] = join_string_vector(transforms, sep);
-
-/*
-   adios/buffer_size = 2^20
-   adios/group_name = "conduit"  <-- do this???
-   adios/statistics_flag = "adios_stat_no", adios_stat_minmax, adios_stat_default, or adios_stat_full
-   adios/transport = "MPI"
-
-
-   adios/transports/POSIX/local_fs = 0
-   adios/transports/MPI/verbose = 3
-   adios/transports/MPI_LUSTRE/stripe_count=16
-   adios/transports/MPI_LUSTRE/stripe_size=4194304
-   adios/transports/MPI_LUSTRE/block_size=4194304
-
-   adios/transports/MPI_AGGREGATE/num_aggregators = 24  // compute from lustre or ADIOS?
-   adios/transports/mpi_aggregate/num_ost = 672
-   adios/transports/mpi_aggregate/have_metadata_file = 0
-   adios/transports/mpi_aggregate/striping = 0
-   adios/transports/mpi_aggregate/stripe_count = 1
-   adios/transports/mpi_aggregate/stripe_size = ?  // needs a good default
-   adios/transports/MPI_AGGREGATE/random_offset = 1
-   adios/transports/MPI_AGGREGATE/local_fs = 0
-
-   adios/transports/VAR_MERGE/chunk_size = 22097152
-   adios/transports/VAR_MERGE/io_method=MPI_AGGREGATE
-   adios/transports/VAR_MERGE/io_parameters=24
-   adios/transports/VAR_MERGE/num_aggregators=24
-   adios/transports/VAR_MERGE/num_ost=672
-   adios/transports/PHDF5/ ... are there transforms to enable?
-
-   adios/transform = "zlib"
-
-   adios/transforms/zlib/level = 5
-
-   adios/transforms/lz4/threshold = 4096
-   adios/transforms/lz4/level = 9
-
-   adios/transforms/blosc/threshold = 4096
-   adios/transforms/blosc/shuffle = "bit"  (no, bit, byte)
-   adios/transforms/blosc/level = 1        [1,9]
-   adios/transforms/blosc/threads = 4      [1,#]
-   adios/transforms/blosc/compressor = "zstd"  (zlib, lz4, lz4hc, snappy, zstd, blosclz, memcpy)
-
-   adios/transforms/zfp/rate = 0.25
-   adios/transforms/zfp/precision = 16
-   adios/transforms/zfp/accuracy = 0.0001
-
-   adios/transforms/sz/absolute = 0.0001
-   adios/transforms/sz/relative = 0.0001
-   adios/transforms/sz/init = sz.config
-
-   adios/read_only/available_transports = "MPI, MPI_LUSTRE, ..."
-   adios/read_only/available_transforms = "zlib, lz4, blosc, ..."
-   adios/read_only/version = "1.11.0"
-
-*/
-
-// TODO: transports can take parameters. See MPI_AMR. Look into this more.
-// method="MPI_LUSTRE"> stripe_count=16,stripe_size=4194304,block_size=4194304
-
-// TODO: expose a "time_index" so the user can pass a time step.
-
-//       This would let the ADIOS library compute statistics that might be useful.
-//       Q: How to send them to Conduit logs???
-// TODO: "statistics_flag" = "adios_stat_no";
-//                           adios_stat_minmax, adios_stat_default, or adios_stat_full
     }
 };
-
-// TODO: When MACSio initializes its plugins, it uses a static initialization and I've
-//       observed that the transport std::string is not necessarily always initialized...
-//       Maybe we need to allocate this on demand in an accessor function.
 
 // default adios i/o settings
 static ADIOSOptions *adiosState_options = NULL;
 
+//-----------------------------------------------------------------------------
 // @brief Clean up the options at exit.
 static void CleanupOptions(void)
 {
@@ -724,10 +596,11 @@ static void CleanupOptions(void)
     }
 }
 
+//-----------------------------------------------------------------------------
 // @brief Access the ADIOS save options, creating them first if needed. 
 //        We create them on the heap to make sure that the object does
 //        not fail to initialize statically.
-static ADIOSOptions *GetOptions()
+static ADIOSOptions *options()
 {
     if(adiosState_options == NULL)
     {
@@ -778,6 +651,7 @@ struct adios_save_state
     uint64_t gSize;
 };
 
+//-----------------------------------------------------------------------------
 static ADIOS_DATATYPES conduit_dtype_to_adios_dtype(const Node &node)
 {
     ADIOS_DATATYPES dtype = adios_unknown;
@@ -833,11 +707,9 @@ static ADIOS_DATATYPES conduit_dtype_to_adios_dtype(const Node &node)
         else if(node.dtype().is_string() || 
                 node.dtype().is_char8_str())
         {
-#ifdef CONDUIT_ADIOS_STRING_AS_BYTE_ARRAY
+            // NOTE: store as byte arrays since adios_string is really
+            //       just for attributes and some scalars.
             dtype = adios_byte;
-#else
-            dtype = adios_string;
-#endif
         }
     }
 
@@ -847,9 +719,9 @@ static ADIOS_DATATYPES conduit_dtype_to_adios_dtype(const Node &node)
 //-----------------------------------------------------------------------------
 static void define_variables(const Node &node, void *funcData,
 #ifdef USE_MPI
-    MPI_Comm comm
+    MPI_Comm 
 #else
-    int comm
+    int 
 #endif
     )
 {
@@ -895,21 +767,21 @@ static void define_variables(const Node &node, void *funcData,
 
     // If we wanted a data transform in the options, add that now.
     const int transform_threshold = 1;
-    if(!GetOptions()->transform.empty() &&
+    if(!options()->transform.empty() &&
        node.dtype().number_of_elements() > transform_threshold)
     {
         std::vector<std::string> transform, tmp;
-        if(GetOptions()->transform == "zfp")
+        if(options()->transform == "zfp")
         {
             // The zfp transform complained about passing multiple options at once.
-            internals::split_string(tmp, GetOptions()->transform_options, ',');
+            internals::split_string(tmp, options()->transform_options, ',');
             for(size_t i = 0; i < tmp.size(); i++)
-                transform.push_back(GetOptions()->transform + ":" + tmp[i]);
+                transform.push_back(options()->transform + ":" + tmp[i]);
         }
         else
         {
-            transform.push_back(GetOptions()->transform + ":" + 
-                                GetOptions()->transform_options);
+            transform.push_back(options()->transform + ":" + 
+                                options()->transform_options);
         }
 
         for(size_t i = 0; i < transform.size(); ++i)
@@ -981,15 +853,15 @@ static void write_variables(const Node &node, void *funcData,
 }
 
 //-----------------------------------------------------------------------------
-static bool conduit_adios_declare_group(int64_t *gid, 
+static bool declare_group(int64_t *gid, 
     const std::string &groupName, const std::string &timeIndex)
 {
     DEBUG_PRINT_RANK("adios_declare_group(&gid, \""
         << groupName << "\", \"" << timeIndex << "\", "
-        << internals::statistics_flag_to_string(GetOptions()->statistics_flag)
+        << internals::statistics_flag_to_string(options()->statistics_flag)
         << ")")
     int retval = adios_declare_group(gid, groupName.c_str(), timeIndex.c_str(), 
-        GetOptions()->statistics_flag);
+        options()->statistics_flag);
     if(retval != 0)
     {
         CONDUIT_ERROR("ADIOS error: " << adios_get_last_errmsg());
@@ -998,12 +870,12 @@ static bool conduit_adios_declare_group(int64_t *gid,
 
     const char *base_path = ""; // blank for current directory.
     DEBUG_PRINT_RANK("adios_select_method(gid, \"" 
-        << GetOptions()->transport << "\", "
-        << "\"" << GetOptions()->transport_options << "\", "
+        << options()->transport << "\", "
+        << "\"" << options()->transport_options << "\", "
         << "\"" << base_path << "\")")
     retval = adios_select_method(*gid,
-                 GetOptions()->transport.c_str(),
-                 GetOptions()->transport_options.c_str(),
+                 options()->transport.c_str(),
+                 options()->transport_options.c_str(),
                  base_path);
     if(retval != 0)
     {
@@ -1015,7 +887,7 @@ static bool conduit_adios_declare_group(int64_t *gid,
 }
 
 //-----------------------------------------------------------------------------
-static int conduit_adios_save(const Node &node, const std::string &path, 
+static int save(const Node &node, const std::string &path, 
     adios_save_state *state, const char *flag,
 #ifdef USE_MPI
     MPI_Comm comm
@@ -1069,17 +941,49 @@ static int conduit_adios_save(const Node &node, const std::string &path,
 }
 
 //-----------------------------------------------------------------------------
+bool name_matches_subtree(const std::string &name, const std::string &pattern)
+{
+    // for now.
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+void read_conduit_type_attribute(ADIOS_FILE *afile,
+    ADIOS_VARINFO *v, std::string &conduit_type)
+{
+    for(int q = 0; q < v->nattrs; ++q)
+    {
+        if(strstr(afile->attr_namelist[v->attr_ids[q]], "conduit_type") != NULL)
+        {
+            ADIOS_DATATYPES atype;
+            int asize = 0;
+            void *aptr = NULL;
+            adios_get_attr_byid(afile, v->attr_ids[q], &atype, &asize, &aptr);
+            if(atype == adios_string)
+                conduit_type = std::string((const char *)aptr);
+            free(aptr);
+            break;
+        }
+    }
+}
+
+} // namespace
+//-----------------------------------------------------------------------------
+// -- end conduit::relay::<mpi>::io::internals --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 void
 adios_set_options(const Node &opts)
 {
-    GetOptions()->set(opts);
+    internals::options()->set(opts);
 }
 
 //-----------------------------------------------------------------------------
 void
 adios_options(Node &opts)
 {
-    GetOptions()->about(opts);
+    internals::options()->about(opts);
 }
 
 //-----------------------------------------------------------------------------
@@ -1106,33 +1010,33 @@ adios_save(const Node &node, const std::string &path
     delete [] sbuf;
 
     // Initialize ADIOS.
-    conduit_adios_initialize(comm);
+    internals::initialize(comm);
 #else
     // Initialize ADIOS.
-    conduit_adios_initialize(0);
+    internals::initialize(0);
 #endif
 
     // Set ADIOS's max buffer sized based on the options.
     DEBUG_PRINT_RANK("adios_set_max_buffer_size("
-                     << GetOptions()->buffer_size << ")")
-    adios_set_max_buffer_size(static_cast<uint64_t>(GetOptions()->buffer_size));
+                     << internals::options()->buffer_size << ")")
+    adios_set_max_buffer_size(static_cast<uint64_t>(internals::options()->buffer_size));
 
     //
     // Group
     //
     std::string groupName("conduit"), timeIndex;
-    adios_save_state state;
-    if(conduit_adios_declare_group(&state.gid, groupName, timeIndex))
+    internals::adios_save_state state;
+    if(internals::declare_group(&state.gid, groupName, timeIndex))
     {
         //
         // Define variables and save the data.
         //
 #ifdef USE_MPI
-        iterate_conduit_node(node, define_variables, &state, comm);
-        conduit_adios_save(node, filename, &state, "w", comm);
+        internals::iterate_conduit_node(node, internals::define_variables, &state, comm);
+        internals::save(node, filename, &state, "w", comm);
 #else
-        iterate_conduit_node(node, define_variables, &state, 0);
-        conduit_adios_save(node, filename, &state, "w", 0);
+        internals::iterate_conduit_node(node, internals::define_variables, &state, 0);
+        internals::save(node, filename, &state, "w", 0);
 #endif
     }
     else
@@ -1157,34 +1061,7 @@ void adios_append(const Node &node, const std::string &path
 }
 
 //-----------------------------------------------------------------------------
-bool name_matches_subtree(const std::string &name, const std::string &pattern)
-{
-    // for now.
-    return true;
-}
-
-//-----------------------------------------------------------------------------
-void conduit_adios_read_conduit_type_attribute(ADIOS_FILE *afile,
-    ADIOS_VARINFO *v, std::string &conduit_type)
-{
-    for(int q = 0; q < v->nattrs; ++q)
-    {
-        if(strstr(afile->attr_namelist[v->attr_ids[q]], "conduit_type") != NULL)
-        {
-            ADIOS_DATATYPES atype;
-            int asize = 0;
-            void *aptr = NULL;
-            adios_get_attr_byid(afile, v->attr_ids[q], &atype, &asize, &aptr);
-            if(atype == adios_string)
-                conduit_type = std::string((const char *)aptr);
-            free(aptr);
-            break;
-        }
-    }
-}
-
-//-----------------------------------------------------------------------------
-void adios_load(const std::string &path, Node &node, int time_step, int domain
+void adios_load(const std::string &path, int time_step, int domain, Node &node
    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
    )
 {
@@ -1204,30 +1081,30 @@ void adios_load(const std::string &path, Node &node, int time_step, int domain
 
     // once per program run...
     DEBUG_PRINT_RANK("adios_read_init_method()");
-    adios_read_init_method(GetOptions()->read_method, 
+    adios_read_init_method(internals::options()->read_method, 
 #ifdef USE_MPI
                            comm,
 #else
                            0,
 #endif
-                           GetOptions()->read_parameters.c_str()
+                           internals::options()->read_parameters.c_str()
                            );
 
     // Open the file for read.
     DEBUG_PRINT_RANK("adios_read_open(\"" << path << "\","
-        << internals::read_method_to_string(GetOptions()->read_method) << ", "
+        << internals::read_method_to_string(internals::options()->read_method) << ", "
         << "comm, "
-        << internals::lock_mode_to_string(GetOptions()->read_lock_mode) << ", "
-        << GetOptions()->read_timeout << ")")
+        << internals::lock_mode_to_string(internals::options()->read_lock_mode) << ", "
+        << internals::options()->read_timeout << ")")
     ADIOS_FILE *afile = adios_read_open(path.c_str(), 
-                            GetOptions()->read_method,
+                            internals::options()->read_method,
 #ifdef USE_MPI
                             comm,
 #else
                             0,
 #endif
-                            GetOptions()->read_lock_mode,
-                            GetOptions()->read_timeout);
+                            internals::options()->read_lock_mode,
+                            internals::options()->read_timeout);
     if(afile != NULL)
     {
         int scheduled_reads = 0;
@@ -1241,7 +1118,7 @@ void adios_load(const std::string &path, Node &node, int time_step, int domain
                 continue;
 
             // Test that the variable is something we want to read.
-            if(!name_matches_subtree(vname, pattern))
+            if(!internals::name_matches_subtree(vname, pattern))
                 continue;
 
             DEBUG_PRINT_RANK("adios_inq_var(afile, \""
@@ -1314,7 +1191,7 @@ void adios_load(const std::string &path, Node &node, int time_step, int domain
                     if(v->type == adios_byte)
                     {
                         std::string conduit_type;
-                        conduit_adios_read_conduit_type_attribute(afile, 
+                        internals::read_conduit_type_attribute(afile, 
                             v, conduit_type);
                         if(!conduit_type.empty() &&
                            conduit_type == "char8_str")
@@ -1442,9 +1319,9 @@ void adios_load(const std::string &path, Node &node, int time_step, int domain
 
     // once per program run.
     DEBUG_PRINT_RANK("adios_read_finalize_method("
-        << internals::read_method_to_string(GetOptions()->read_method)
+        << internals::read_method_to_string(internals::options()->read_method)
         << ")")
-    adios_read_finalize_method(GetOptions()->read_method);
+    adios_read_finalize_method(internals::options()->read_method);
 }
 
 //-----------------------------------------------------------------------------
@@ -1457,9 +1334,9 @@ void adios_load(const std::string &path, Node &node
 #ifdef USE_MPI
     // Read the rank'th domain if there is one.
     MPI_Comm_rank(comm, &domain);
-    adios_load(path, node, time_step, domain, comm);
+    adios_load(path, time_step, domain, node, comm);
 #else
-    adios_load(path, node, time_step, domain);
+    adios_load(path, time_step, domain, node);
 #endif
 }
 

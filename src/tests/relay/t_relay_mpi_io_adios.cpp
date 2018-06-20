@@ -251,6 +251,17 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_mesh)
     // Have rank 1 read rank 0's mesh.
 }
 #endif
+#if 0
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_mpi_io_adios, test_write_from_subset_of_ranks)
+{
+    // Split the communicator.
+
+    // Write on rank 0 only
+
+    // Read on rank 0 only
+}
+#endif
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

@@ -151,6 +151,14 @@ void CONDUIT_RELAY_API load(const std::string &path,
                             Node &node,
                             MPI_Comm comm);
 
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load(const std::string &path,
+                            const std::string &protocol,
+                            int time_step,
+                            int domain,
+                            Node &node,
+                            MPI_Comm comm);
+
 
 ///
 /// ``load_merged`` works like an update, for the object case, entries are read

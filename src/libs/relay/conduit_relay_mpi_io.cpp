@@ -346,7 +346,65 @@ load(const std::string &path,
         CONDUIT_ERROR("unknown conduit_relay protocol: " << protocol);
         
     }
+}
 
+//---------------------------------------------------------------------------//
+void
+load(const std::string &path,
+     const std::string &protocol,
+     int timestep,
+     int domain,
+     Node &node,
+     MPI_Comm comm)
+{
+
+    // support conduit::Node's basic load cases
+    if(protocol == "conduit_bin" ||
+       protocol == "json" || 
+       protocol == "conduit_json" ||
+       protocol == "conduit_base64_json" )
+    {
+        node.load(path,protocol);
+    }
+    else if( protocol == "hdf5")
+    {
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+        node.reset();
+        hdf5_read(path,node);
+#else
+        CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
+                      "Failed to load conduit node from path " << path);
+#endif
+    }
+    else if( protocol == "conduit_silo")
+    {
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
+        silo_read(path,node);
+#else
+        CONDUIT_ERROR("conduit_relay lacks Silo support: " << 
+                    "Failed to load conduit node from path " << path);
+#endif
+    }
+    else if(protocol == "conduit_silo_mesh")
+    {
+        CONDUIT_ERROR("the conduit_relay conduit_silo_mesh protocol does not "
+                      "support \"load\"");
+    }
+    else if( protocol == "adios")
+    {
+#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+        node.reset();
+        adios_load(path,timestep,domain,node,comm);
+#else
+        CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
+                    "Failed to load conduit node from path " << path);
+#endif
+    }
+    else
+    {
+        CONDUIT_ERROR("unknown conduit_relay protocol: " << protocol);
+        
+    }
 }
 
 //---------------------------------------------------------------------------//
