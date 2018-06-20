@@ -89,9 +89,7 @@ TEST(conduit_relay_io_adios, test_options_contain_adios)
     }
     EXPECT_EQ(has_adios_protocol + has_adios_options, 2);
 }
-#endif
 
-#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_adios, test_read_badfile)
 {
@@ -109,9 +107,7 @@ TEST(conduit_relay_io_adios, test_read_badfile)
 
     EXPECT_EQ(caught_error, 1);
 }
-#endif
 
-#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_adios, test_scalar_types)
 {
@@ -171,17 +167,6 @@ TEST(conduit_relay_io_adios, test_scalar_types)
 
     EXPECT_EQ(compare_nodes(out, in, out), true);
 }
-#endif
-
-#if 1
-//-----------------------------------------------------------------------------
-
-//
-// NOTE: when we run this test after the scalar test, we get a runtime error in ADIOS.
-//       I wonder whether we have to init/finalize to clear out the group definition...
-//
-//       when I bpls the file, it contains a-p as scalars so it's like the previous
-//       scalar definition of "conduit" is in effect.
 
 TEST(conduit_relay_io_adios, test_array_types)
 {
@@ -260,9 +245,7 @@ TEST(conduit_relay_io_adios, test_array_types)
 
     EXPECT_EQ(compare_nodes(out, in, out), true);
 }
-#endif
 
-#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_adios, test_vector_types)
 {
@@ -301,20 +284,7 @@ TEST(conduit_relay_io_adios, test_vector_types)
 
     EXPECT_EQ(compare_nodes(out, in, out), true);
 }
-#endif
 
-/**
-Issues: When the ADIOS test cases are all run in the same program,
-        it seems like the definition of the ADIOS group might be an issue.
-        Or, maybe it's just the problem I have with reading the data.
-
-        There are various vector and int8_array set methods on Conduit.
-        Am I saving that stuff out right.
-
-        What happens if I make a list?
-**/
-
-#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_adios, test_list_types)
 {
@@ -355,7 +325,6 @@ TEST(conduit_relay_io_adios, test_list_types)
     int     dims2[3]   = {7, 9, 11};
     add_rectilinear_mesh(domain1, origin, size, dims2);
 
-    out.print_detailed();
     std::string path("test_list_types.bp");
     relay::io::save(out, path);
 
@@ -367,9 +336,8 @@ TEST(conduit_relay_io_adios, test_list_types)
 
     EXPECT_EQ(compare_nodes(out, in, out), true);
 }
-#endif
 
-#if 1
+//-----------------------------------------------------------------------------
 TEST(conduit_relay_io_adios, test_opts_transforms)
 {
     std::vector<float> a(1000), b(20000);
@@ -417,10 +385,7 @@ TEST(conduit_relay_io_adios, test_opts_transforms)
         compressed_file_size = static_cast<size_t>(buf.st_size);
     //std::cout << "compressed_file_size = " << compressed_file_size << std::endl;
     EXPECT_EQ(compressed_file_size < compressed_size_guess, true);
-
-    //std::cout << relay::about() << std::endl;
 }
-
 #endif
 
 #if 0

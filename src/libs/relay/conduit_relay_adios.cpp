@@ -123,10 +123,10 @@ namespace internals
 {
 
 static int rank = 0;
-static int size = 0;
+static int size = 1;
 
-#define DEBUG_PRINT_RANK(OSSEXPR) if(internals::rank == 0) { cout << OSSEXPR << endl; }
-//#define DEBUG_PRINT_RANK(OSSEXPR) 
+//#define DEBUG_PRINT_RANK(OSSEXPR) if(internals::rank == 0) { cout << OSSEXPR << endl; }
+#define DEBUG_PRINT_RANK(OSSEXPR) 
 
 //-----------------------------------------------------------------------------
 void print_varinfo(std::ostream &os, ADIOS_FILE *afile, ADIOS_VARINFO *v)
@@ -739,7 +739,7 @@ static ADIOSOptions *GetOptions()
 
 //-----------------------------------------------------------------------------
 static void iterate_conduit_node(const conduit::Node &node,
-    void (*func)(const conduit::Node &,
+    void (*func)(const Node &,
                  void *,
 #ifdef USE_MPI
                  MPI_Comm
@@ -844,6 +844,7 @@ static ADIOS_DATATYPES conduit_dtype_to_adios_dtype(const Node &node)
     return dtype;
 }
 
+//-----------------------------------------------------------------------------
 static void define_variables(const Node &node, void *funcData,
 #ifdef USE_MPI
     MPI_Comm comm
@@ -862,18 +863,14 @@ static void define_variables(const Node &node, void *funcData,
         return;
     }
 
-    // NOTE: If I knew I had a Conduit tree that described a Blueprint uniform mesh
-    //       or rectilinear mesh then I might be able to put more sensible things
-    //       in for this since we'd know that the data are simple array chunks.
-    //       Can't make that assumption for a general Conduit tree.
-#if 1
     // Dimensions
-    char offset[10], global[10], local[10];
+    char offset[20], global[20], local[20];
+    memset(offset, 0, sizeof(char) * 20);
+    memset(global, 0, sizeof(char) * 20);
+    memset(local,  0, sizeof(char) * 20);
     if(node.dtype().number_of_elements() > 1)
     {
         sprintf(local, "%ld", node.dtype().number_of_elements());
-        global[0] = '\0';
-        offset[0] = '\0';
     }
     else
     {
@@ -890,26 +887,6 @@ static void define_variables(const Node &node, void *funcData,
     int64_t vid = adios_define_var(state->gid, node.path().c_str(), 
                       "", dtype,
                       local, global, offset);
-#else
-    // Dimensions
-    char dimensions[20];
-    const char *global_dimensions = "";
-    const char *local_offsets = "";
-    if(dtype != adios_string && node.dtype().number_of_elements() > 1)
-        sprintf(dimensions, "%ld", node.dtype().number_of_elements());
-    else
-        dimensions[0] = '\0';
-
-    // Define the variable.
-    DEBUG_PRINT_RANK("adios_define_var(gid, \"" << node.path()
-                     << "\", \"\", " << adios_type_to_string(dtype)
-                     << ", \"" << dimensions << "\""
-                     << ", \"" << global_dimensions << "\""
-                     << ", \"" << local_offsets << "\")")
-    int64_t vid = adios_define_var(state->gid, node.path().c_str(), 
-                      "", dtype,
-                      dimensions, global_dimensions, local_offsets);
-#endif
     if(vid < 0)
     {
         CONDUIT_ERROR("ADIOS Error:" << adios_get_last_errmsg()); 
@@ -946,8 +923,7 @@ static void define_variables(const Node &node, void *funcData,
         }
     }
 
-    // Store the name of the actual Conduit type as an attribute in case we 
-    // need it to read.
+    // Store the name of the actual Conduit type as an attribute.
     DEBUG_PRINT_RANK("adios_define_attribute(gid, \"conduit_type\", \""
                      << node.path() << "\", adios_string, "
                      << "\"" << node.dtype().name() << "\", \""
@@ -1140,15 +1116,12 @@ adios_save(const Node &node, const std::string &path
     DEBUG_PRINT_RANK("adios_set_max_buffer_size("
                      << GetOptions()->buffer_size << ")")
     adios_set_max_buffer_size(static_cast<uint64_t>(GetOptions()->buffer_size));
-    adios_save_state state;
-    state.fid = 0;
-    state.gid = 0;
-    state.gSize = 0;
 
     //
     // Group
     //
     std::string groupName("conduit"), timeIndex;
+    adios_save_state state;
     if(conduit_adios_declare_group(&state.gid, groupName, timeIndex))
     {
         //
@@ -1226,6 +1199,7 @@ void adios_load(const std::string &path, Node &node, int time_step, int domain
 
 #ifdef USE_MPI
     MPI_Comm_rank(comm, &internals::rank);
+    MPI_Comm_size(comm, &internals::size);
 #endif
 
     // once per program run...
@@ -1258,10 +1232,6 @@ void adios_load(const std::string &path, Node &node, int time_step, int domain
     {
         int scheduled_reads = 0;
         std::vector<ADIOS_SELECTION *> sels;
-
-        // timestep and domain args...
-        int ts = (time_step == -1) ? afile->current_step : time_step;
-
         for (int i = 0; i < afile->nvars; ++i)
         {
             std::string vname(afile->var_namelist[i]);
@@ -1279,125 +1249,70 @@ void adios_load(const std::string &path, Node &node, int time_step, int domain
             ADIOS_VARINFO *v = adios_inq_var(afile, afile->var_namelist[i]);
             if(v)
             {
-#if 0
-                if(v->ndim == 0)
-                {
-// NOTE: if multiple ranks wrote out their piece, how can the data be in the v object?
-//       Do we need a selection applied here already?
+                // We have array data. Let's allocate a buffer for 
+                // it and schedule a read.
+                DEBUG_PRINT_RANK("adios_inq_var_blockinfo(afile, v)")
+                adios_inq_var_blockinfo(afile,v);
 
-                    // scalar. The data value is already in the v object.
-                    if(v->type == adios_byte)
-                        node[vname] = *((int8*)v->value);
-                    else if(v->type == adios_short)
-                        node[vname] = *((int16*)v->value);
-                    else if(v->type == adios_integer)
-                        node[vname] = *((int32*)v->value);
-                    else if(v->type == adios_long)
-                        node[vname] = *((int64*)v->value);
-                    else if(v->type == adios_unsigned_byte)
-                        node[vname] = *((uint8*)v->value);
-                    else if(v->type == adios_unsigned_short)
-                        node[vname] = *((uint16*)v->value);
-                    else if(v->type == adios_unsigned_integer)
-                        node[vname] = *((uint32*)v->value);
-                    else if(v->type == adios_unsigned_long)
-                        node[vname] = *((uint64*)v->value);
-                    else if(v->type == adios_real)
-                        node[vname] = *((float32*)v->value);
-                    else if(v->type == adios_double)
-                        node[vname] = *((float64*)v->value);
-                    else if(v->type == adios_string)
-                    {
+                // Check time step validity.
+                int ts = 0;
+                if(time_step == -1)
+                    ts = afile->current_step;
+                else if(time_step < v->nsteps)
+                    ts = time_step;
+
+                // The number of blocks in the current time step.
+                // Make sure that the requested domain is in range.
+                int nblocks = v->nblocks[ts];
+
 #if 0
-                        std::string s;
-                        s.assign((char *)v->value);
-                        node[vname] = s;
-#else
-                        node[vname] = std::string((const char *)v->value);
-#endif
-                    }
-                    // These cases should not happen.
-                    else if(v->type == adios_complex)
-                    {
-                        CONDUIT_ERROR("Skipping adios_complex " << vname);
-                    }
-                    else if(v->type == adios_double_complex)
-                    {
-                        CONDUIT_ERROR("Skipping adios_double_complex " << vname);
-                    }
-                    else if(v->type == adios_string_array)
-                    {
-                        CONDUIT_ERROR("Skipping adios_string_array " << vname);
-                    }
-                    else if(v->type == adios_unknown)
-                    {
-                        CONDUIT_ERROR("Skipping adios_unknown " << vname);
-                    }
-#if 1
-                    const Node &n = node[vname];
-                    cout << rank << ": " << vname <<" = " << n.to_json() << endl;
-#endif
+                // Print variable information.
+                if(internals::rank == 0)
+                {
+                    cout << "Reading process_id=" << domain << " time_index=" << (ts+1) << endl;
+                    internals::print_varinfo(cout, afile, v);
                 }
-                else
+#endif
+
+                // Locate the block for the given time step and domain.
+                // If that block is not present, skip the variable as it
+                // was probably written on a subset of ranks.
+                uint64_t nelem = 1;
+                int ts1 = ts + 1;
+                bool block_found = false;
+                for(int bi = 0; bi < v->sum_nblocks; ++bi)
                 {
-#endif
-                    // We have array data. Let's allocate a buffer for 
-                    // it and schedule a read.
-                    DEBUG_PRINT_RANK("adios_inq_var_blockinfo(afile, v)")
-                    adios_inq_var_blockinfo(afile,v);
-
-                    // The number of blocks in the current step. Make sure that
-                    // the domain is in range.
-                    int nblocks = v->nblocks[ts];
-                    int dom = domain;
-                    if(domain < 0)
-                        domain = 0;
-                    if(domain > nblocks-1)
-                        domain = nblocks-1;
-
-#if 1
-if(internals::rank == 0)
-   internals::print_varinfo(cout, afile, v);
-#endif
-
-
-                    // Select the block we want.
-                    DEBUG_PRINT_RANK("adios_selection_writeblock(" << dom << ")")
-                    ADIOS_SELECTION *sel = adios_selection_writeblock(dom);
-                    sels.push_back(sel);
-
-                    // Use the dims to figure out the number of elements.
-                    uint64_t nelem = 1;
-                    if(v->sum_nblocks == 1)
+                    // NOTE: The check for process_id and domain can sometimes
+                    //       not be quite right if a variable does not exist
+                    //       over all ranks when written in parallel.
+                    if(v->blockinfo[bi].time_index == ts1 &&
+                       v->blockinfo[bi].process_id == domain)
                     {
-                        for(int d = 0; d < v->ndim; ++d)
-                            nelem *= std::max(uint64_t(1), v->dims[d]);
-                    }
-                    else
-                    {
-                        // We can't rely on the v->dims being good for anything 
-                        // but the first MPI rank, at least the way we're writing
-                        // the data. Compute the number of elements from the
-                        // blockinfo so we can properly size the destination array.
-
-                        // NOTE: can we assume these will be in process order?
-                        int ts1 = ts + 1;
-                        for(int bi = 0; bi < v->sum_nblocks; ++bi)
+                        nelem = v->blockinfo[bi].count[0];
+                        if(nelem == 0)
                         {
-                            if(v->blockinfo[bi].time_index == ts1 &&
-                               v->blockinfo[bi].process_id == domain)
-                            {
-                                nelem = v->blockinfo[bi].count[0];
-                                break;
-                            }
+                            // The count is 0 so we probably have a scalar.
+                            //  Use the v->dims instead.
+                            nelem = 1;
+                            for(int d = 0; d < v->ndim; ++d)
+                                nelem *= std::max(uint64_t(1), v->dims[d]);
                         }
+                        block_found = true;
+                        break;
                     }
+                }
+
+                if(block_found)
+                {
+                    // Select the block we want.
+                    DEBUG_PRINT_RANK("adios_selection_writeblock(" << domain << ")")
+                    ADIOS_SELECTION *sel = adios_selection_writeblock(domain);
+                    sels.push_back(sel);
 
                     // Allocate memory for the variable.
                     void *vbuf = NULL;
                     if(v->type == adios_byte)
                     {
-#ifdef CONDUIT_ADIOS_STRING_AS_BYTE_ARRAY
                         std::string conduit_type;
                         conduit_adios_read_conduit_type_attribute(afile, 
                             v, conduit_type);
@@ -1413,20 +1328,13 @@ if(internals::rank == 0)
                             size_t n_minus_nullterm = nelem - 1;
                             node[vname].set(std::string(n_minus_nullterm, ' '));
                             vbuf = (void *)node[vname].data_ptr();
-
-//cout << "buf = " << (void*)buf << endl;
-//cout << "data_ptr = " << (void*)node[vname].data_ptr() << endl;
-
                         }
                         else
                         {
-#endif
                             node[vname].set(DataType::int8(nelem));
                             int8 *buf = node[vname].value();
                             vbuf = (void *)buf;
-#ifdef CONDUIT_ADIOS_STRING_AS_BYTE_ARRAY
                         }
-#endif
                     }
                     else if(v->type == adios_short)
                     {
@@ -1482,18 +1390,6 @@ if(internals::rank == 0)
                         float64 *buf = node[vname].value();
                         vbuf = (void *)buf;
                     }
-#if 0
-// We are not using adios_string for storing std::string
-                    else if(v->type == adios_string)
-                    {
-cout << rank << ": adios_string: nelem=" << nelem << endl;
-                        //int slen = strlen((char *)v->value); // BAD
-                        //nelem = slen;
-                        size_t n_minus_nullterm = nelem - 1;
-                        node[vname].set(std::string(n_minus_nullterm, ' '));
-                        vbuf = (void *)node[vname].data_ptr();
-                    }
-#endif
                     else
                     {
                         // Other cases should not happen.
@@ -1508,16 +1404,19 @@ cout << rank << ": adios_string: nelem=" << nelem << endl;
                         adios_schedule_read_byid(afile, sel, v->varid, ts, 1, vbuf);
                         scheduled_reads++;
                     }
+                } // block_found
 #if 0
+                else
+                {
+                    // We could not find the desired block.
+                    cout << "No block for " << vname << " process_id=" << domain
+                         << " time_index=" << (ts+1) << endl;
+                    internals::print_varinfo(cout, afile, v);
                 }
 #endif
-
                 adios_free_varinfo(v);
             }           
         }
-//#ifdef USE_MPI
-//MPI_Barrier(comm);
-//#endif
 
         // Perform any outstanding reads, blocking until reads are done.
         if(scheduled_reads > 0)

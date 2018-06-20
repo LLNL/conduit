@@ -138,12 +138,11 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_rank_values)
     }
     */
     // Make sure the data that was read back in is the same as the written data.
-    int compare_nodes_local  = compare_nodes(out, in, out);
-    EXPECT_EQ(compare_nodes_local, 1);
+    EXPECT_EQ(compare_nodes(out, in, out), true);
 }
 #endif
 
-#if 0
+#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_mpi_io_adios, test_mpi_mesh)
 {
@@ -160,7 +159,7 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_mesh)
     int     dims[3]   = {4,5,6};
     // shift domains to the right.
     origin[0] = csize[0] * rank;
-#if 0
+#if 1
     // Increase domain resolution based on rank.
     dims[0] = dims[0] * (rank+1);
     dims[1] = dims[1] * (rank+1);
@@ -168,35 +167,75 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_mesh)
 #endif
     add_rectilinear_mesh(out, origin, csize, dims);
 
-    out.print_detailed();
     std::string path("test_mpi_mesh.bp");
     relay::mpi::io::save(out, path, MPI_COMM_WORLD);
 #if 0
     // Check that there are size domains in the file.
-    EXPECT_EQ(relay::mpi::io::number_of_domains(path, MPI_COMM_WORLD), size);
+    int ts = 0;
+    EXPECT_EQ(relay::mpi::io::number_of_domains(path, ts, MPI_COMM_WORLD), size);
 #endif
     // Each MPI rank should read its local piece and that should be the same as
     // the local data that was written.
     CONDUIT_INFO("Reading domain " << rank << "/" << size << " for " << path);
     Node in;
-/*
-    Node selection;
-    selection["domain_id"] = rank;
-    selection["type"] = "select_by_domain_id";
-*/
     relay::mpi::io::load(path, in, MPI_COMM_WORLD);
-    int compare_nodes_local  = compare_nodes(out, in, out);
 
-if(rank == 1)
-{
-    std::cout << out.to_json() << std::endl;
-    std::cout << in.to_json() << std::endl;
+    /*if(rank == 1)
+    {
+        out.print_detailed();
+        in.print_detailed();
+    }*/
+
+    EXPECT_EQ(compare_nodes(out, in, out), true);
 }
+#endif
 
-//    int compare_nodes_global = 0;
-//    MPI_Allreduce(&compare_nodes_local, &compare_nodes_global, 1, MPI_INT,
-//        MPI_SUM, MPI_COMM_WORLD);
-    EXPECT_EQ(compare_nodes_local, 1);
+#if 0
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_mpi_io_adios, test_mpi_different_trees)
+{
+    // NOTE: Conduit+ADIOS can kind of deal with the case where the tree is
+    //       a little different on each rank. The ADIOS file will contain
+    //       the right data. The issue we have when not all ranks write the
+    //       same data is that we can't 100% reliably assign it back to the
+    //       same rank that wrote it because ADIOS stores a "process_id" of
+    //       the writing process. That number is more like an index of the 
+    //       rank within the communicator that had the data rather than a
+    //       global rank.
+
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    Node out;
+    out["a/b"] = 5;
+    out["a/pi"] = std::vector<double>(5, M_PI);
+    out["a/rank"] = std::vector<int>(10, rank);
+    char key[10];
+    sprintf(key, "rank%d/message", rank);
+    std::ostringstream oss;
+    oss << "Rank " << rank << " likes ADIOS";
+    for(int i = 0; i < rank+1; ++i)
+        oss << " very";
+    oss << " much.";
+    out[key] = oss.str();
+    if(rank == 0)
+        out["extra"] = "stuff";
+
+    std::string path("test_mpi_different_trees.bp");
+    relay::mpi::io::save(out, path, MPI_COMM_WORLD);
+
+    Node in;
+    CONDUIT_INFO("Reading domain " << rank << "/" << size << " for " << path);
+    relay::mpi::io::load(path, in, MPI_COMM_WORLD);
+    bool compare_nodes_local = compare_nodes(out, in, out);
+    if(rank == 1)
+    {
+        out.print_detailed();
+        in.print_detailed();
+        std::cout << "compare_nodes_local = " << compare_nodes_local << std::endl;
+    }
+    EXPECT_EQ(compare_nodes_local, true);
 }
 #endif
 
@@ -224,4 +263,3 @@ int main(int argc, char* argv[])
     MPI_Finalize();
     return result;
 }
-
