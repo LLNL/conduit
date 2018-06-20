@@ -104,7 +104,6 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_rank_values)
     }
 
     Node out;
-#if 0
     out["a"] = a;
     out["b"] = b;
     out["c"] = c;
@@ -115,16 +114,14 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_rank_values)
     out["h"] = h;
     out["i"] = i;
     out["j"] = j;
-#endif
     out["k"] = k;
-    //out["l"].set(l, (rank==0) ? 3 : 6);
-#if 0
+    out["l"].set(l, (rank==0) ? 3 : 6);
     out["m"].set(m, 3);
     out["n"].set(n, 3);
     out["o"].set(o, 3);
     out["p"].set(p, 3);
     out["q"].set(q, 3);
-#endif
+
     // Save out data from each rank to a single file. Each of the variables
     // in a node will have multiple pieces, contributions from each rank.
     std::string path("test_mpi_rank_values.bp");
@@ -133,11 +130,13 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_rank_values)
     // Have each rank read its part of the data back in.
     Node in;
     relay::mpi::io::load(path, in, MPI_COMM_WORLD);
-if(rank == 1)
-{
-    std::cout << out.to_json() << std::endl;
-    std::cout << in.to_json() << std::endl;
-}
+    /*
+    if(rank == 0)
+    {
+        std::cout << out.to_json() << std::endl;
+        std::cout << in.to_json() << std::endl;
+    }
+    */
     // Make sure the data that was read back in is the same as the written data.
     int compare_nodes_local  = compare_nodes(out, in, out);
     EXPECT_EQ(compare_nodes_local, 1);
@@ -198,6 +197,19 @@ if(rank == 1)
 //    MPI_Allreduce(&compare_nodes_local, &compare_nodes_global, 1, MPI_INT,
 //        MPI_SUM, MPI_COMM_WORLD);
     EXPECT_EQ(compare_nodes_local, 1);
+}
+#endif
+
+#if 0
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_mpi_io_adios, test_mpi_mesh)
+{
+    // Write a 2 domain mesh in parallel
+
+    // split the comm into 2 parts.
+
+    // Have rank 0 read rank 1's mesh.
+    // Have rank 1 read rank 0's mesh.
 }
 #endif
 

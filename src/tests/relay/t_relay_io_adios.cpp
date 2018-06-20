@@ -53,6 +53,7 @@
 #include <iostream>
 #include <cmath>
 #include "gtest/gtest.h"
+#include <sys/stat.h>
 
 using namespace conduit;
 
@@ -110,7 +111,7 @@ TEST(conduit_relay_io_adios, test_read_badfile)
 }
 #endif
 
-#if 0
+#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_adios, test_scalar_types)
 {
@@ -172,7 +173,7 @@ TEST(conduit_relay_io_adios, test_scalar_types)
 }
 #endif
 
-#if 0
+#if 1
 //-----------------------------------------------------------------------------
 
 //
@@ -261,7 +262,7 @@ TEST(conduit_relay_io_adios, test_array_types)
 }
 #endif
 
-#if 0
+#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_adios, test_vector_types)
 {
@@ -313,7 +314,7 @@ Issues: When the ADIOS test cases are all run in the same program,
         What happens if I make a list?
 **/
 
-#if 0
+#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_adios, test_list_types)
 {
@@ -368,43 +369,75 @@ TEST(conduit_relay_io_adios, test_list_types)
 }
 #endif
 
+#if 1
+TEST(conduit_relay_io_adios, test_opts_transforms)
+{
+    std::vector<float> a(1000), b(20000);
+    for(size_t i = 0; i < a.size(); ++i)
+    {
+        float t = float(i) / float(a.size()-1);
+        float angle = M_PI * 10.;
+        a[i] = sin(angle);
+    }
+    for(size_t i = 0; i < b.size(); ++i)
+    {
+        float t = float(i) / float(b.size()-1);
+        float angle = M_PI * 10.;
+        b[i] = sin(angle);
+    }
+
+    Node out;
+    out["sine/low"] = a;
+    out["sine/high"] = b;
+    out["sine/low.size"] = a.size();
+    out["sine/high.size"] = b.size();
+
+    std::string path("test_opts_transforms.bp");
+    std::string protocol("adios");
+    Node opts;
+    opts["write/transform"] = "zfp";
+    opts["write/transform_options"] = "rate=0.25";
+    relay::io::save(out, path, protocol, opts);
+
+    CONDUIT_INFO("Reading " << path);
+    Node in;
+    relay::io::load(path, in);
+
+    // Compare floats with some tolerance.
+    bool exact = false;
+    float tolerance = 0.0001;
+    EXPECT_EQ(compare_nodes(out, in, out, exact, tolerance), true);
+
+    // Check the file size and make sure it got compressed.
+    size_t rough_uncompressed_size = (a.size() + b.size()) * sizeof(float);
+    size_t compressed_size_guess = rough_uncompressed_size / 4;
+    size_t compressed_file_size = rough_uncompressed_size;
+    struct stat buf;
+    if(stat(path.c_str(), &buf) == 0)
+        compressed_file_size = static_cast<size_t>(buf.st_size);
+    //std::cout << "compressed_file_size = " << compressed_file_size << std::endl;
+    EXPECT_EQ(compressed_file_size < compressed_size_guess, true);
+
+    //std::cout << relay::about() << std::endl;
+}
+
+#endif
+
 #if 0
-TEST(conduit_relay_io_adios_save_collective, save)
+TEST(conduit_relay_io_adios, test_append)
 {
-    //std::cout << relay::about() << std::endl;
+    // Write a file.
+
+    // Open and append to it. (Make a new group and write?)
+
+    // what happens if keys overlap? Take the one from the latest group?
 }
+#endif
 
-TEST(conduit_relay_io_adios, opts_collective)
+#if 0
+TEST(conduit_relay_io_adios, test_time_series)
 {
-// TODO: Use options to select transforms that compress the data.
-
-    //std::cout << relay::about() << std::endl;
-}
-
-TEST(conduit_relay_io_adios, opts_non_collective)
-{
-// TODO: Use options to select transforms that compress the data.
-
-    //std::cout << relay::about() << std::endl;
-}
-
-TEST(conduit_relay_io_adios, opts_transports)
-{
-// TODO: Use options to select transports. POSIX, hdf5, etc.
-
-    //std::cout << relay::about() << std::endl;
-}
-
-TEST(conduit_relay_io_adios, opts_transforms)
-{
-// TODO: Use options to select transforms that compress the data.
-
-    //std::cout << relay::about() << std::endl;
-}
-
-TEST(conduit_relay_io_adios, load)
-{
-    //std::cout << relay::about() << std::endl;
+    // Write a time series
 }
 #endif
 

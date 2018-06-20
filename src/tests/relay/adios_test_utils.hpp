@@ -72,8 +72,30 @@ compare_arrays(const T *a, const T *b, int len)
 }
 
 //-----------------------------------------------------------------------------
+template <typename T>
 bool
-compare_nodes(const conduit::Node &out_root, const Node &in_root, const Node &node)
+compare_arrays_tol(const T *a, const T *b, int len, T tolerance)
+{
+    if(a == NULL || b == NULL)
+        return false;
+    for(int i = 0; i < len; ++i)
+    {
+        T delta = a[i] - b[i];
+        if(delta < 0)
+            delta = -delta;
+        if(delta > tolerance)
+        {
+//std::cout << "a[" << i << "]=" << (long)a[i] << ", b[" << i << "]=" << (long)b[i] << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+bool
+compare_nodes(const conduit::Node &out_root, const Node &in_root, const Node &node,
+    bool exact = true, double tolerance = 0.)
 {
     bool equal = false;
 
@@ -109,9 +131,19 @@ compare_nodes(const conduit::Node &out_root, const Node &in_root, const Node &no
                         else if(node.dtype().is_uint64())
                             equal = compare_arrays(node.as_uint64_ptr(), in_node.as_uint64_ptr(), n);
                         else if(node.dtype().is_float32())
-                            equal = compare_arrays(node.as_float32_ptr(), in_node.as_float32_ptr(), n);
+                        {
+                            if(exact)
+                                equal = compare_arrays(node.as_float32_ptr(), in_node.as_float32_ptr(), n);
+                            else
+                                equal = compare_arrays_tol(node.as_float32_ptr(), in_node.as_float32_ptr(), n, (float32)tolerance);
+                        }
                         else if(node.dtype().is_float64())
-                            equal = compare_arrays(node.as_float64_ptr(), in_node.as_float64_ptr(), n);
+                        {
+                            if(exact)
+                                equal = compare_arrays(node.as_float64_ptr(), in_node.as_float64_ptr(), n);
+                            else
+                                equal = compare_arrays_tol(node.as_float64_ptr(), in_node.as_float64_ptr(), n, (float64)tolerance);
+                        }
                         else
                         {
                             CONDUIT_INFO(node.path() << " unsupported array type: "
@@ -176,7 +208,7 @@ compare_nodes(const conduit::Node &out_root, const Node &in_root, const Node &no
         equal = true;
         for(conduit::index_t i = 0; i < node.number_of_children(); ++i)
         {
-            if(!compare_nodes(out_root, in_root, node.child(i)))
+            if(!compare_nodes(out_root, in_root, node.child(i), exact, tolerance))
             {
                 equal = false;
                 break;
