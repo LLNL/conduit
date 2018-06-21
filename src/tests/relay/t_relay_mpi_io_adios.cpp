@@ -60,6 +60,23 @@ using namespace conduit;
 // Include some utility functions
 #include "adios_test_utils.hpp"
 
+//-----------------------------------------------------------------------------
+void
+create_rectilinear_mesh_domain(Node &out, int rank)
+{
+    out["domain_id"] = rank;
+    float64 origin[3] = {0., 0., 0.};
+    float64 csize[3]   = {3., 4., 5.};
+    int     dims[3]   = {4,5,6};
+    // shift domains to the right.
+    origin[0] = csize[0] * rank;
+    // Increase domain resolution based on rank.
+    dims[0] = dims[0] * (rank+1);
+    dims[1] = dims[1] * (rank+1);
+    dims[2] = dims[2] * (rank+1);
+    add_rectilinear_mesh(out, origin, csize, dims);
+}
+
 #if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_mpi_io_adios, test_mpi_rank_values)
@@ -140,9 +157,7 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_rank_values)
     // Make sure the data that was read back in is the same as the written data.
     EXPECT_EQ(compare_nodes(out, in, out), true);
 }
-#endif
 
-#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_mpi_io_adios, test_mpi_mesh)
 {
@@ -153,19 +168,7 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_mesh)
     // We write a single mesh from each rank. The resulting file will have
     // multiple pieces.
     Node out;
-    out["domain_id"] = rank;
-    float64 origin[3] = {0., 0., 0.};
-    float64 csize[3]   = {3., 4., 5.};
-    int     dims[3]   = {4,5,6};
-    // shift domains to the right.
-    origin[0] = csize[0] * rank;
-#if 1
-    // Increase domain resolution based on rank.
-    dims[0] = dims[0] * (rank+1);
-    dims[1] = dims[1] * (rank+1);
-    dims[2] = dims[2] * (rank+1);
-#endif
-    add_rectilinear_mesh(out, origin, csize, dims);
+    create_rectilinear_mesh_domain(out, rank);
 
     std::string path("test_mpi_mesh.bp");
     relay::mpi::io::save(out, path, MPI_COMM_WORLD);
@@ -187,6 +190,79 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_mesh)
     }*/
 
     EXPECT_EQ(compare_nodes(out, in, out), true);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_mpi_io_adios, test_read_specific_domain)
+{
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    // Write a domain for this rank.
+    Node domain;
+    create_rectilinear_mesh_domain(domain, rank);
+    std::string path("test_read_specific_domain.bp"), protocol("adios");
+    relay::mpi::io::save(domain, path, MPI_COMM_WORLD);
+
+    // rdom is the domain index of the "next" rank. We'll read that domain.
+    int timestep = 0;
+    int rdom = (rank + 1) % size;
+    Node rdomain_from_file, rdomain_we_computed;
+    relay::mpi::io::load(path, protocol, timestep, rdom, 
+                         rdomain_from_file, MPI_COMM_WORLD);
+    create_rectilinear_mesh_domain(rdomain_we_computed, rdom);
+
+    // Compare the node we read vs the one we computed for the
+    bool compare_nodes_local = compare_nodes(rdomain_we_computed,
+                                             rdomain_from_file,
+                                             rdomain_we_computed);
+    /*if(rank == 1)
+    {
+        std::cout << "rdomain_we_computed=" << rdomain_we_computed.to_json() << std::endl;
+        std::cout << "rdomain_from_file=" << rdomain_from_file.to_json() << std::endl;
+        std::cout << rank << ": compare_nodes_local = " << compare_nodes_local << std::endl;
+    }*/
+    EXPECT_EQ(compare_nodes_local, true);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_mpi_io_adios, test_separate_ranks)
+{
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    std::ostringstream oss;
+    oss << "test_separate_ranks_" << rank << ".bp";
+    std::string path(oss.str());
+
+    // Split the communicator into size pieces
+    MPI_Comm split;
+    MPI_Comm_split(MPI_COMM_WORLD, rank, 0, &split);
+
+    int srank, ssize;
+    MPI_Comm_rank(split, &srank);
+    MPI_Comm_size(split, &ssize);
+    EXPECT_EQ(srank, 0);
+    EXPECT_EQ(ssize, 1);
+
+    // Use the split communicator to write/read separate files.
+    Node out;
+    create_rectilinear_mesh_domain(out, rank); // use global rank on purpose here
+    relay::mpi::io::save(out, path, split);
+
+    Node in;
+    CONDUIT_INFO("Reading domain " << srank << "/" << ssize << " for " << path);
+    relay::mpi::io::load(path, in, split);
+    bool compare_nodes_local = compare_nodes(out, in, out);
+    /*if(rank == 1)
+    {
+        std::cout << "out=" << out.to_json() << std::endl;
+        std::cout << "in=" << in.to_json() << std::endl;
+        std::cout << rank << ": compare_nodes_local = " << compare_nodes_local << std::endl;
+    }*/
+    EXPECT_EQ(compare_nodes_local, true);
+
+    MPI_Comm_free(&split);
 }
 #endif
 
@@ -236,30 +312,6 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_different_trees)
         std::cout << "compare_nodes_local = " << compare_nodes_local << std::endl;
     }
     EXPECT_EQ(compare_nodes_local, true);
-}
-#endif
-
-#if 0
-//-----------------------------------------------------------------------------
-TEST(conduit_relay_mpi_io_adios, test_mpi_mesh)
-{
-    // Write a 2 domain mesh in parallel
-
-    // split the comm into 2 parts.
-
-    // Have rank 0 read rank 1's mesh.
-    // Have rank 1 read rank 0's mesh.
-}
-#endif
-#if 0
-//-----------------------------------------------------------------------------
-TEST(conduit_relay_mpi_io_adios, test_write_from_subset_of_ranks)
-{
-    // Split the communicator.
-
-    // Write on rank 0 only
-
-    // Read on rank 0 only
 }
 #endif
 
