@@ -63,6 +63,9 @@
 //-----------------------------------------------------------------------------
 #include <iostream>
 #include <algorithm>
+#ifdef MAKE_SEPARATE_GROUPS
+#include <sys/time.h>
+#endif
 
 //-----------------------------------------------------------------------------
 // external lib includes
@@ -250,7 +253,7 @@ string_to_lock_mode(const std::string &s)
 std::string
 statistics_flag_to_string(ADIOS_STATISTICS_FLAG f)
 {
-    std::string s("adios_stat_default");
+    std::string s("adios_stat_no");
     if(f == adios_stat_default)
         s = "adios_stat_default";
     else if(f == adios_stat_no)
@@ -266,7 +269,7 @@ statistics_flag_to_string(ADIOS_STATISTICS_FLAG f)
 ADIOS_STATISTICS_FLAG
 string_to_statistics_flag(const std::string &s)
 {
-    ADIOS_STATISTICS_FLAG f = adios_stat_default;
+    ADIOS_STATISTICS_FLAG f = adios_stat_no;
     if(s == "adios_stat_default")
         f = adios_stat_default;
     else if(s == "adios_stat_no")
@@ -276,6 +279,31 @@ string_to_statistics_flag(const std::string &s)
     else if(s == "adios_stat_full")
         f = adios_stat_full;
     return f;
+}
+
+//-----------------------------------------------------------------------------
+#ifdef MAKE_SEPARATE_GROUPS
+static unsigned long
+current_time_stamp()
+{
+    // Get the current time of day.
+    timeval t;
+    gettimeofday(&t, 0);
+    // Convert to microseconds since epoch.
+    return t.tv_sec * 1000000 + t.tv_usec;
+}
+#endif
+
+//-----------------------------------------------------------------------------
+static void
+create_group_name(char name[32])
+{
+#ifdef MAKE_SEPARATE_GROUPS
+    unsigned long t = current_time_stamp();
+    sprintf(name, "conduit%020ld", t);
+#else
+    strcpy(name, "conduit");
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -653,11 +681,13 @@ struct adios_save_state
 {
     adios_save_state() : fid(0), gid(0), gSize(0)
     {
+        memset(groupName, 0, 32 * sizeof(char));
     }
 
     int64_t  fid;
     int64_t  gid;
     uint64_t gSize;
+    char     groupName[32];
 };
 
 //-----------------------------------------------------------------------------
@@ -909,15 +939,12 @@ static int save(const Node &node, const std::string &path,
 #endif
     )
 {
-    // NOTE: We have already done the group and variable declarations.
-    // NOTE: Assume the path will be the same on all ranks in the comm.
-
     //
     // Open the file
     //
-    DEBUG_PRINT_RANK("adios_open(&fid, \"conduit\", \"" << path << "\", "
+    DEBUG_PRINT_RANK("adios_open(&fid, \"" << state->groupName << "\", \"" << path << "\", "
                      << "\"" << flag << "\", comm)")
-    if(adios_open(&state->fid, "conduit", path.c_str(), flag, comm) != 0)
+    if(adios_open(&state->fid, state->groupName, path.c_str(), flag, comm) != 0)
     {
         CONDUIT_ERROR("ADIOS error: " << adios_get_last_errmsg());
         return -1;
@@ -932,9 +959,6 @@ static int save(const Node &node, const std::string &path,
         return -2;
     }
 
-    // Q: Do we need to store some schema in the file to make ADIOS->Conduit 
-    //    reconstruction easier?
-
     //
     // Write Variables
     //
@@ -946,11 +970,85 @@ static int save(const Node &node, const std::string &path,
     DEBUG_PRINT_RANK("adios_close(fid)")
     if(adios_close(state->fid) != 0)
     {
-        CONDUIT_ERROR("ADIOS error: " << adios_get_last_errmsg());
+//        CONDUIT_ERROR("ADIOS error: " << adios_get_last_errmsg());
         return -3;
     }
 
     return 0;
+}
+
+//-----------------------------------------------------------------------------
+static void
+save(const Node &node, const std::string &path, const char *flag,
+#ifdef USE_MPI
+    MPI_Comm comm
+#else
+    int comm
+#endif
+    )
+{
+    std::string filename(path);
+
+#ifdef USE_MPI
+    MPI_Comm_rank(comm, &internals::rank);
+    MPI_Comm_size(comm, &internals::size);
+
+    // Bcast the filename so we know it will be the same on all ranks.
+    int len = path.size()+1;
+    MPI_Bcast(&len, 1, MPI_INT, 0, comm);
+    char *sbuf = new char[len];
+    if(internals::rank == 0)
+        strcpy(sbuf, path.c_str());
+    MPI_Bcast(sbuf, len, MPI_CHAR, 0, comm);
+    if(rank > 0)
+        filename = std::string(sbuf);
+    delete [] sbuf;
+
+    // Initialize ADIOS.
+    initialize(comm);
+#else
+    // Initialize ADIOS.
+    initialize(0);
+#endif
+
+    // Set ADIOS's max buffer sized based on the options.
+    DEBUG_PRINT_RANK("adios_set_max_buffer_size("
+                     << options()->buffer_size << ")")
+    adios_set_max_buffer_size(static_cast<uint64_t>(options()->buffer_size));
+
+    //
+    // Group
+    //
+    adios_save_state state;
+    create_group_name(state.groupName);
+#if defined(USE_MPI) && defined(MAKE_SEPARATE_GROUPS)
+    MPI_Bcast(state.groupName, 32, MPI_CHAR, 0, comm);
+#endif
+    std::string timeIndex;
+    if(declare_group(&state.gid, state.groupName, timeIndex))
+    {
+        //
+        // Define variables and save the data.
+        //
+#ifdef USE_MPI
+        iterate_conduit_node(node, define_variables, &state, comm);
+        save(node, filename, &state, flag, comm);
+#else
+        iterate_conduit_node(node, define_variables, &state, 0);
+        save(node, filename, &state, flag, 0);
+#endif
+    }
+    else
+    {
+        CONDUIT_ERROR("ADIOS Error: failed to create group.");
+    }
+
+    // Delete the variable definitions from the group so we can define them
+    // again the next time around. Free the group too.
+    DEBUG_PRINT_RANK("adios_delete_vardefs(gid)")
+    adios_delete_vardefs(state.gid);
+    DEBUG_PRINT_RANK("adios_free_group(gid)")
+    adios_free_group(state.gid);
 }
 
 //-----------------------------------------------------------------------------
@@ -1002,67 +1100,14 @@ adios_options(Node &opts)
 //-----------------------------------------------------------------------------
 void
 adios_save(const Node &node, const std::string &path
-   CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
-   )
+    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
+    )
 {
-    std::string filename(path);
-
 #ifdef USE_MPI
-    MPI_Comm_rank(comm, &internals::rank);
-    MPI_Comm_size(comm, &internals::size);
-
-    // Bcast the filename so we know it will be the same on all ranks.
-    int len = path.size()+1;
-    MPI_Bcast(&len, 1, MPI_INT, 0, comm);
-    char *sbuf = new char[len];
-    if(internals::rank == 0)
-        strcpy(sbuf, path.c_str());
-    MPI_Bcast(sbuf, len, MPI_CHAR, 0, comm);
-    if(internals::rank > 0)
-        filename = std::string(sbuf);
-    delete [] sbuf;
-
-    // Initialize ADIOS.
-    internals::initialize(comm);
+    internals::save(node, path, "w", comm);
 #else
-    // Initialize ADIOS.
-    internals::initialize(0);
+    internals::save(node, path, "w", 0);
 #endif
-
-    // Set ADIOS's max buffer sized based on the options.
-    DEBUG_PRINT_RANK("adios_set_max_buffer_size("
-                     << internals::options()->buffer_size << ")")
-    adios_set_max_buffer_size(static_cast<uint64_t>(internals::options()->buffer_size));
-
-    //
-    // Group
-    //
-    std::string groupName("conduit"), timeIndex;
-    internals::adios_save_state state;
-    if(internals::declare_group(&state.gid, groupName, timeIndex))
-    {
-        //
-        // Define variables and save the data.
-        //
-#ifdef USE_MPI
-        internals::iterate_conduit_node(node, internals::define_variables, &state, comm);
-        internals::save(node, filename, &state, "w", comm);
-#else
-        internals::iterate_conduit_node(node, internals::define_variables, &state, 0);
-        internals::save(node, filename, &state, "w", 0);
-#endif
-    }
-    else
-    {
-        CONDUIT_ERROR("ADIOS Error: failed to create group.");
-    }
-
-    // Delete the variable definitions from the group so we can define them
-    // again the next time around. Free the group too.
-    DEBUG_PRINT_RANK("adios_delete_vardefs(gid)")
-    adios_delete_vardefs(state.gid);
-    DEBUG_PRINT_RANK("adios_free_group(gid)")
-    adios_free_group(state.gid);
 }
 
 //-----------------------------------------------------------------------------
@@ -1070,8 +1115,16 @@ void adios_append(const Node &node, const std::string &path
    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
    )
 {
-    cout << "conduit::relay::io::adios_append(node, path=" << path << ")" << endl;
+    // NOTE: we use "u" to update the file so the time step is not incremented.
+#ifdef USE_MPI
+    internals::save(node, path, "u", comm);
+#else
+    internals::save(node, path, "u", 0);
+#endif
+
 }
+
+//int adios_get_grouplist (ADIOS_FILE  *fp, char ***group_namelist);
 
 //-----------------------------------------------------------------------------
 void adios_load(const std::string &path, int time_step, int domain, Node &node
@@ -1109,6 +1162,7 @@ void adios_load(const std::string &path, int time_step, int domain, Node &node
         << "comm, "
         << internals::lock_mode_to_string(internals::options()->read_lock_mode) << ", "
         << internals::options()->read_timeout << ")")
+
     ADIOS_FILE *afile = adios_read_open(path.c_str(), 
                             internals::options()->read_method,
 #ifdef USE_MPI
@@ -1122,6 +1176,7 @@ void adios_load(const std::string &path, int time_step, int domain, Node &node
     {
         int scheduled_reads = 0;
         std::vector<ADIOS_SELECTION *> sels;
+
         for (int i = 0; i < afile->nvars; ++i)
         {
             std::string vname(afile->var_namelist[i]);
@@ -1166,11 +1221,15 @@ void adios_load(const std::string &path, int time_step, int domain, Node &node
 
                 // Locate the block for the given time step and domain.
                 // If that block is not present, skip the variable as it
-                // was probably written on a subset of ranks.
+                // was probably written on a subset of ranks. We iterate
+                // backwards in case a save_merged has caused an overwrite
+                // that is not really another block.
                 uint64_t nelem = 1;
                 int ts1 = ts + 1;
                 bool block_found = false;
-                for(int bi = 0; bi < v->sum_nblocks; ++bi)
+                int read_dom = domain;
+                for(int bi = v->sum_nblocks-1; bi >= 0; bi--)
+                //for(int bi = 0; bi < v->sum_nblocks; ++bi)
                 {
                     // NOTE: The check for process_id and domain can sometimes
                     //       not be quite right if a variable does not exist
@@ -1188,6 +1247,7 @@ void adios_load(const std::string &path, int time_step, int domain, Node &node
                                 nelem *= std::max(uint64_t(1), v->dims[d]);
                         }
                         block_found = true;
+                        read_dom = bi;
                         break;
                     }
                 }
@@ -1195,8 +1255,8 @@ void adios_load(const std::string &path, int time_step, int domain, Node &node
                 if(block_found)
                 {
                     // Select the block we want.
-                    DEBUG_PRINT_RANK("adios_selection_writeblock(" << domain << ")")
-                    ADIOS_SELECTION *sel = adios_selection_writeblock(domain);
+                    DEBUG_PRINT_RANK("adios_selection_writeblock(" << read_dom << ")")
+                    ADIOS_SELECTION *sel = adios_selection_writeblock(read_dom);
                     sels.push_back(sel);
 
                     // Allocate memory for the variable.

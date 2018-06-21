@@ -60,7 +60,6 @@ using namespace conduit;
 // Include some utility functions
 #include "adios_test_utils.hpp"
 
-#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_adios, test_options_contain_adios)
 {
@@ -406,19 +405,58 @@ TEST(conduit_relay_io_adios, test_load_merged)
     out[key] = value;
     EXPECT_EQ(compare_nodes(out, in, out), true);
 }
-#endif
 
-
-#if 0
-TEST(conduit_relay_io_adios, test_append)
+TEST(conduit_relay_io_adios, test_save_merged)
 {
     // Write a file.
+    Node out;
+    out["a"] = 1;
+    out["b"] = 2.3456;
+    out["c"] = std::vector<int>(10, 0);
 
-    // Open and append to it. (Make a new group and write?)
+    // Write a file.
+    std::string path("test_save_merged.bp");
+    relay::io::save(out, path);
 
-    // what happens if keys overlap? Take the one from the latest group?
-}
+    Node extra;
+    extra["d"] = 3.14159;
+    extra["e"] = "This is an extra field.";
+    extra["f"] = std::vector<double>(10, 1.2345678);
+
+    // Append to the file.
+    relay::io::save_merged(extra, path);
+
+    // Load the file.
+    Node in;
+    relay::io::load(path, in);
+
+    // Add the extra things to out so we can compare out,in.
+    out["d"] = extra["d"];
+    out["e"] = extra["e"];
+    out["f"] = extra["f"];
+#if 0
+    std::cout << "extra=" << extra.to_json() << std::endl;
+    std::cout << "out=" << out.to_json() << std::endl;
+    std::cout << "in=" << in.to_json() << std::endl;
 #endif
+    EXPECT_EQ(compare_nodes(out, in, out), true);
+
+    // Make a node that overwrites one of the keys.
+    Node overwrite;
+    overwrite["d"] = 9.87654321;
+
+    // Append to the file.
+    relay::io::save_merged(overwrite, path);
+    Node in2;
+    relay::io::load(path, in2);
+
+    out["d"] = overwrite["d"];
+#if 0
+    std::cout << "out=" << out.to_json() << std::endl;
+    std::cout << "in2=" << in2.to_json() << std::endl;
+#endif
+    EXPECT_EQ(compare_nodes(out, in2, out), true);
+}
 
 #if 0
 TEST(conduit_relay_io_adios, test_time_series)

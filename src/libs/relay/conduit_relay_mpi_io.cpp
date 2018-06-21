@@ -345,14 +345,14 @@ load(const std::string &path,
     else if( protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
-        Node save_options;
-        adios_options(save_options);
+        Node load_options;
+        adios_options(load_options);
         adios_set_options(options);
 
         node.reset();
         adios_load(path,node,comm);
 
-        adios_set_options(save_options);
+        adios_set_options(load_options);
 #else
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                     "Failed to load conduit node from path " << path);
@@ -422,14 +422,14 @@ load(const std::string &path,
     else if( protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
-        Node save_options;
-        adios_options(save_options);
+        Node load_options;
+        adios_options(load_options);
         adios_set_options(options);
 
         node.reset();
         adios_load(path,timestep,domain,node,comm);
 
-        adios_set_options(save_options);
+        adios_set_options(load_options);
 #else
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                     "Failed to load conduit node from path " << path);
