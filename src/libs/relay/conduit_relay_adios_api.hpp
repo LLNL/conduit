@@ -69,9 +69,9 @@ void CONDUIT_RELAY_API adios_save(const Node &node,
 ///  ex: "/path/on/file/system.adios:/path/inside/adios/file"
 /// 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API adios_append(const Node &node,
-                                    const std::string &path
-                                    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
+void CONDUIT_RELAY_API adios_save_merged(const Node &node,
+                                         const std::string &path
+                                         CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
 
 //-----------------------------------------------------------------------------
 /// Read adios data from given path into the output node 

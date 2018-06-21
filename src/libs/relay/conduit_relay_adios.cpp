@@ -1111,7 +1111,7 @@ adios_save(const Node &node, const std::string &path
 }
 
 //-----------------------------------------------------------------------------
-void adios_append(const Node &node, const std::string &path
+void adios_save_merged(const Node &node, const std::string &path
    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
    )
 {
@@ -1123,8 +1123,6 @@ void adios_append(const Node &node, const std::string &path
 #endif
 
 }
-
-//int adios_get_grouplist (ADIOS_FILE  *fp, char ***group_namelist);
 
 //-----------------------------------------------------------------------------
 void adios_load(const std::string &path, int time_step, int domain, Node &node

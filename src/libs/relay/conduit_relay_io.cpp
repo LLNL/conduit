@@ -270,7 +270,7 @@ save_merged(const Node &node,
         adios_options(save_options);
         adios_set_options(options);
 
-        adios_append(node,path);
+        adios_save_merged(node,path);
 
         adios_set_options(save_options);
 #else
