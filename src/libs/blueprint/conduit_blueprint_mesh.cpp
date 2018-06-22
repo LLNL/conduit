@@ -51,6 +51,7 @@
 //-----------------------------------------------------------------------------
 // std lib includes
 //-----------------------------------------------------------------------------
+#include <cmath>
 #include <cstring>
 
 //-----------------------------------------------------------------------------
@@ -519,6 +520,43 @@ bool find_reference_node(const Node &node, const std::string &ref_key, Node &ref
     }
 
     return res;
+}
+
+//-----------------------------------------------------------------------------
+void grid_ijk_to_id(const index_t *ijk,
+                    const index_t *dims,
+                    index_t &grid_id)
+{
+    grid_id = 0;
+    for(index_t d = 0; d < 3; d++)
+    {
+        index_t doffset = ijk[d];
+        for(index_t dd = 0; dd < d; dd++)
+        {
+            doffset *= dims[dd];
+        }
+
+        grid_id += doffset;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void grid_id_to_ijk(const index_t id,
+                    const index_t *dims,
+                    index_t *grid_ijk)
+{
+    index_t dremain = id;
+    for(index_t d = 3; d-- > 0;)
+    {
+        index_t dstride = 1;
+        for(index_t dd = 0; dd < d; dd++)
+        {
+            dstride *= dims[dd];
+        }
+
+        grid_ijk[d] = dremain / dstride;
+        dremain = dremain % dstride;
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -2062,7 +2100,7 @@ mesh::topology::unstructured::verify(const Node &topo,
 
 //-------------------------------------------------------------------------
 bool
-mesh::topology::unstructured::transform(const conduit::Node &/*topo*/,
+mesh::topology::unstructured::transform(const conduit::Node &topo,
                                         conduit::Node &dest,
                                         conduit::Node &cdest)
 {
@@ -2070,7 +2108,6 @@ mesh::topology::unstructured::transform(const conduit::Node &/*topo*/,
     dest.reset();
     cdest.reset();
 
-    /*
     Node info, coordset;
     if(mesh::topology::verify(topo, info) &&
         find_reference_node(topo, "coordset", coordset) &&
@@ -2095,47 +2132,82 @@ mesh::topology::unstructured::transform(const conduit::Node &/*topo*/,
             {
                 dest["type"].set("unstructured");
                 dest["coordset"].set(cdest.name());
+                if(topo.has_child("origin"))
+                {
+                    dest["origin"].set(topo["origin"]);
+                }
 
                 std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
                 dest["elements/shape"].set(
                     (csys_axes.size() == 1) ? "line" : (
                     (csys_axes.size() == 2) ? "quad" : (
-                    (csys_axes.size() == 2) ? "hex"  : "")));
+                    (csys_axes.size() == 3) ? "hex"  : "")));
 
-                // TODO(JRC): fill in "elements/connectivity" based on dimension
-                // and point data
-                dest["elements/connectivity"].set("todo");
-
-                if(mesh::coordset::uniform::verify(coordset, info))
+                index_t edims_axes[3] = {1, 1, 1};
+                if(mesh::topology::uniform::verify(topo, info))
                 {
-                    dest["elements/dims"].set(coordset["dims"]);
-                }
-                else
-                {
-                    std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
+                    const conduit::Node &dim_node = coordset["dims"];
                     for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
                     {
-                        const std::string& csys_axis = csys_axes[i];
-                        const std::string& logical_axis = logical_axes[i];
-                        dest["elements/dims"][logical_axis].set(
-                            coordset["values"][csys_axis].dtype().number_of_elements());
+                        edims_axes[i] = dim_node[logical_axes[i]].to_int() - 1;
+                    }
+                }
+                else if(mesh::topology::rectilinear::verify(topo, info))
+                {
+                    const conduit::Node &dim_node = coordset["values"];
+                    for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
+                    {
+                        edims_axes[i] =
+                            dim_node[csys_axes[i]].dtype().number_of_elements();
+                    }
+                }
+                else // if(mesh::topology::structured::verify(topo, info))
+                {
+                    const conduit::Node &dim_node = topo["elements/dims"];
+                    for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
+                    {
+                        edims_axes[i] = dim_node[logical_axes[i]].to_int();
                     }
                 }
 
-                // NOTE: The number of elements in the topology is one less
-                // along each dimension than the number of points.
-                conduit::NodeIterator dims_it = dest["elements/dims"].children();
-                while(dims_it.has_next())
+                index_t vdims_axes[3] = {1, 1, 1}, num_elems = 1;
+                for(index_t d = 0; d < 3; d++)
                 {
-                    conduit::Node &dim_node = dims_it.next();
-                    dim_node.set(dim_node.to_int64() - 1);
+                    num_elems *= edims_axes[d];
+                    vdims_axes[d] = edims_axes[d] + 1;
+                }
+                index_t indices_per_elem = pow(2, csys_axes.size());
+
+                conduit::Node &conn_node = dest["elements/connectivity"];
+                conn_node.set(DataType::uint64(num_elems * indices_per_elem));
+
+                uint64_array dst_cvals = conn_node.as_uint64_array();
+                index_t curr_elem[3], curr_vert[3];
+                for(index_t e = 0; e < num_elems; e++)
+                {
+                    grid_id_to_ijk(e, &edims_axes[0], &curr_elem[0]);
+
+                    // NOTE(JRC): In order to get all adjacent vertices for the
+                    // element, we use the bitwise interpretation of each index
+                    // per element to inform the direction (e.g. 5, which is
+                    // 101 bitwise, means (z+1, y+0, x+1)).
+                    for(index_t i = 0, v = 0; i < indices_per_elem; i++)
+                    {
+                        memcpy(&curr_vert[0], &curr_elem[0], 3 * sizeof(index_t));
+                        for(index_t d = 0; d < (index_t)csys_axes.size(); d++)
+                        {
+                            curr_vert[d] += (i & (index_t)pow(2, d)) >> d;
+                        }
+                        grid_ijk_to_id(&curr_vert[0], &vdims_axes[0], v);
+
+                        dst_cvals[e * indices_per_elem + i] = v;
+                    }
                 }
 
                 res = true;
             }
         }
     }
-    */
 
     return res;
 }
