@@ -13009,24 +13009,23 @@ Node::init(const DataType& dtype)
 {
     if(this->dtype().compatible(dtype))
         return;
-    
-    if(m_data != NULL)
+
+    if(m_data != NULL ||
+       this->dtype().id() == DataType::OBJECT_ID ||
+       this->dtype().id() == DataType::LIST_ID)
     {
         release();
     }
 
     index_t dt_id = dtype.id();
-    if(dt_id == DataType::OBJECT_ID ||
-       dt_id == DataType::LIST_ID)
-    {
-        m_children.clear();
-    }
-    else if(dt_id != DataType::EMPTY_ID)
+    if(dt_id != DataType::OBJECT_ID &&
+       dt_id != DataType::LIST_ID &&
+       dt_id != DataType::EMPTY_ID)
     {
         allocate(dtype);
     }
-    
-    m_schema->set(dtype); 
+
+    m_schema->set(dtype);
 }
 
 

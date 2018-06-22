@@ -1013,7 +1013,7 @@ TEST(conduit_blueprint_mesh_verify, nestset_general)
         window_template_slim["domain_type"].set("child");
         window_template_slim["ratio"].set(logical_template);
 
-        window_template_full = window_template_slim;
+        window_template_full.set(window_template_slim);
         window_template_full["origin"].set(logical_template);
         window_template_full["dims"].set(logical_template);
     }
