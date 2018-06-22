@@ -216,7 +216,7 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_mesh)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_relay_mpi_io_adios, test_read_specific_domain)
+TEST(conduit_relay_mpi_io_adios, test_mpi_read_specific_domain)
 {
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -225,7 +225,7 @@ TEST(conduit_relay_mpi_io_adios, test_read_specific_domain)
     // Write a domain for this rank.
     Node domain;
     create_rectilinear_mesh_domain(domain, rank);
-    std::string path("test_read_specific_domain.bp"), protocol("adios");
+    std::string path("test_mpi_read_specific_domain.bp"), protocol("adios");
     relay::mpi::io::save(domain, path, MPI_COMM_WORLD);
 
     // rdom is the domain index of the "next" rank. We'll read that domain.
@@ -250,12 +250,12 @@ TEST(conduit_relay_mpi_io_adios, test_read_specific_domain)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_relay_mpi_io_adios, test_separate_ranks)
+TEST(conduit_relay_mpi_io_adios, test_mpi_separate_ranks)
 {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     std::ostringstream oss;
-    oss << "test_separate_ranks_" << rank << ".bp";
+    oss << "test_mpi_separate_ranks_" << rank << ".bp";
     std::string path(oss.str());
 
     // Split the communicator into size pieces
@@ -288,7 +288,7 @@ TEST(conduit_relay_mpi_io_adios, test_separate_ranks)
     MPI_Comm_free(&split);
 }
 
-TEST(conduit_relay_mpi_io_adios, test_load_subtree)
+TEST(conduit_relay_mpi_io_adios, test_mpi_load_subtree)
 {
     const char *abc_keys[] = {"a/b/c/d","a/b/c/dog"};
     const char *a_keys[] = {"a/b/cat",
@@ -308,7 +308,7 @@ TEST(conduit_relay_mpi_io_adios, test_load_subtree)
     add_keys_to_node(out, a_keys, 3, index);
     add_keys_to_node(out, aa_keys, 1, index);
     add_keys_to_node(out, b_keys, 3, index);
-    std::string path("test_load_subtree.bp");
+    std::string path("test_mpi_load_subtree.bp");
     relay::mpi::io::save(out, path, MPI_COMM_WORLD);
     //mpi_print_node(out, "out", MPI_COMM_WORLD);
 
@@ -335,6 +335,48 @@ TEST(conduit_relay_mpi_io_adios, test_load_subtree)
     relay::mpi::io::load(path_ab0, in0, MPI_COMM_WORLD);
     //mpi_print_node(in0, "in0", MPI_COMM_WORLD);
     EXPECT_EQ(compare_nodes(out0, in0, out0), true);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_mpi_io_adios, test_mpi_write_serial_read_parallel)
+{
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    
+    std::string path("test_mpi_write_serial_read_parallel.bp");
+    Node *out = new Node[size];
+    for(int dom = 0; dom < size; ++dom)
+        create_rectilinear_mesh_domain(out[dom], dom);
+
+    // Split the communicator into size pieces
+    MPI_Comm split;
+    MPI_Comm_split(MPI_COMM_WORLD, rank, 0, &split);
+
+    // Write the data serially on rank 0 using the split comm.
+    if(rank == 0)
+    {
+        for(int dom = 0; dom < size; ++dom)
+        {
+            if(dom == 0)
+                relay::mpi::io::save(out[dom], path, split);
+            else
+                relay::mpi::io::save_merged(out[dom], path, split);
+        }
+    }
+
+    // Wait for the file to be ready.
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    // Now, read the rank'th domain on this rank, using the parallel API
+    Node in;
+    relay::mpi::io::load(path, in, MPI_COMM_WORLD);
+    //mpi_print_node(in, "in", MPI_COMM_WORLD);
+
+    EXPECT_EQ(compare_nodes(out[rank], in, out[rank]), true);
+    delete [] out;
+    MPI_Comm_free(&split);
 }
 #endif
 
