@@ -61,6 +61,24 @@ using namespace conduit;
 #include "adios_test_utils.hpp"
 
 //-----------------------------------------------------------------------------
+void
+add_keys_to_node(Node &out, const char * const *keys, int n, int &index)
+{
+    for(int i = 0; i < n; ++i)
+        out[keys[i]] = index++;
+}
+
+//-----------------------------------------------------------------------------
+void
+copy_node_keys(Node &dest, const Node &src, const char *const *keys, int n)
+{
+    for(int i = 0; i < n; ++i)
+    {
+        dest[keys[i]] = src[keys[i]];
+    }
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_relay_io_adios, test_options_contain_adios)
 {
     int has_adios_protocol = 0;
@@ -441,6 +459,9 @@ TEST(conduit_relay_io_adios, test_save_merged)
 #endif
     EXPECT_EQ(compare_nodes(out, in, out), true);
 
+#if 0
+// NOTE: I broke this behavior to allow for save/save_merged 
+//       working to serially add domains.
     // Make a node that overwrites one of the keys.
     Node overwrite;
     overwrite["d"] = 9.87654321;
@@ -456,6 +477,113 @@ TEST(conduit_relay_io_adios, test_save_merged)
     std::cout << "in2=" << in2.to_json() << std::endl;
 #endif
     EXPECT_EQ(compare_nodes(out, in2, out), true);
+#endif
+}
+
+TEST(conduit_relay_io_adios, test_load_subtree)
+{
+    const char *abc_keys[] = {"a/b/c/d","a/b/c/dog"};
+    const char *a_keys[] = {"a/b/cat",
+                            "a/b/carnivores/cat",
+                            "a/b/carnivores/dinosaur"};
+    const char *aa_keys[] = {"a/a/bull"};
+    const char *b_keys[] = {"b/c/d/e", "binary", "blue"};
+
+    // Make a node we can save.
+    int index = 0;
+    Node out;
+    add_keys_to_node(out, abc_keys, 2, index);
+    add_keys_to_node(out, a_keys, 3, index);
+    add_keys_to_node(out, aa_keys, 1, index);
+    add_keys_to_node(out, b_keys, 3, index);
+    std::string path("test_load_subtree.bp");
+    //std::cout << "out=" << out.to_json() << std::endl;
+    relay::io::save(out, path);
+
+    // Try reading nodes with subpath a/b/c
+    Node in1;
+    std::string path1(path + ":a/b/c");
+    relay::io::load(path1, in1);
+    Node abc;
+    copy_node_keys(abc, out, abc_keys, 2);
+    //std::cout << "in1=" << in1.to_json() << std::endl;
+    EXPECT_EQ(compare_nodes(abc, in1, abc), true);
+
+    // Try reading nodes with subpath a/b
+    Node in2;
+    std::string path2(path + ":a/b");
+    relay::io::load(path2, in2);
+    Node ab;
+    copy_node_keys(ab, out, abc_keys, 2);
+    copy_node_keys(ab, out, a_keys, 3);
+    //std::cout << "in2=" << in2.to_json() << std::endl;
+    EXPECT_EQ(compare_nodes(ab, in2, ab), true);
+
+    // Try reading nodes with subpath a
+    Node in3;
+    std::string path3(path + ":a");
+    relay::io::load(path3, in3);
+    Node a;
+    copy_node_keys(a, out, abc_keys, 2);
+    copy_node_keys(a, out, a_keys, 3);
+    copy_node_keys(a, out, aa_keys, 1);
+    //std::cout << "in3=" << in3.to_json() << std::endl;
+    EXPECT_EQ(compare_nodes(a, in3, a), true);
+
+    // Try reading nodes with subpath b
+    Node in4;
+    std::string path4(path + ":b");
+    relay::io::load(path4, in4);
+    Node b;
+    copy_node_keys(b, out, b_keys, 1); //1 since binary and blue won't match.
+    //std::cout << "in4=" << in4.to_json() << std::endl;
+    EXPECT_EQ(compare_nodes(b, in4, b), true);
+}
+
+TEST(conduit_relay_io_adios, test_save_merged_series)
+{
+    int dims[] = {3, 4};
+    double x[] = {0., 1., 2.};
+    double y[] = {0., 1., 2., 3.};
+    int dims2[] = {5, 7};
+    double x2[] = {0.,0.5, 1., 1.5, 2.};
+    double y2[] = {0.,0.5, 1., 1.5, 2., 2.5, 3.};
+
+    // Write data sequentially to the same file.
+    std::string path("test_save_merged_series.bp");
+    Node out[4];
+    for(int dom = 0; dom < 4; ++dom)
+    {
+        Node &n = out[dom];
+        n["mesh/domain"] = dom;
+        // Vary the size of the domains.
+        if(dom % 2 == 0)
+        {
+            n["mesh/x"].set(x, dims[0]);
+            n["mesh/y"].set(y, dims[1]);
+        }
+        else
+        {
+            n["mesh/x"].set(x2, dims2[0]);
+            n["mesh/y"].set(y2, dims2[1]);
+        }
+        if(dom == 0)
+            relay::io::save(n, path);
+        else
+            relay::io::save_merged(n, path);
+    }
+
+    // Read back one domain at a time.
+    for(int dom = 0; dom < 4; ++dom)
+    {
+        std::ostringstream oss;
+        oss << path << ":" << dom;
+        Node in;
+        std::cout << "Loading path " << oss.str() << std::endl;
+        relay::io::load(oss.str(), in);
+        //std::cout << "domain " << dom << " in=" << in.to_json() << std::endl;
+        EXPECT_EQ(compare_nodes(in, out[dom], in), true);
+    }
 }
 
 #if 0

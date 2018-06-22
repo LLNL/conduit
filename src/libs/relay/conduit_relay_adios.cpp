@@ -63,6 +63,7 @@
 //-----------------------------------------------------------------------------
 #include <iostream>
 #include <algorithm>
+#include <cstdio>
 #ifdef MAKE_SEPARATE_GROUPS
 #include <sys/time.h>
 #endif
@@ -423,6 +424,85 @@ static bool
 string_vector_contains(const std::vector<std::string> &sv, const std::string &s)
 {
     return std::find(sv.begin(), sv.end(), s) != sv.end();
+}
+
+//-----------------------------------------------------------------------------
+bool is_integer(const std::string &s, int &ivalue)
+{
+    return sscanf(s.c_str(), "%d", &ivalue) == 1;
+}
+
+//-----------------------------------------------------------------------------
+bool is_positive_integer(const std::string &s, int &ivalue)
+{
+    bool ret = is_integer(s, ivalue);
+    return ret && ivalue >= 0;
+}
+
+//-----------------------------------------------------------------------------
+void
+splitpath(const std::string &path, std::string &filename,
+    int &time_step, int &domain, std::vector<std::string> &subpaths)
+{
+    std::vector<std::string> tok;
+    split_string(tok, path, ':');
+
+    if(tok.empty())
+        filename = path; // Would have had to be an empty string.
+    else if(tok.size() == 1)
+        filename = path;
+    else if(tok.size() == 2)
+    {
+        filename = tok[0];
+        int ivalue = 0;
+        if(is_positive_integer(tok[1], ivalue))
+        {
+            // filename:domain
+            domain = ivalue;
+        }
+        else
+        {
+            // filename:subpaths
+            subpaths.push_back(tok[1]);
+        }
+    }
+    else if(tok.size() >= 3)
+    {
+        filename = tok[0];
+        int ivalue1 = 0, ivalue2 = 0;
+        bool arg1 = is_positive_integer(tok[1], ivalue1);
+        bool arg2 = is_positive_integer(tok[2], ivalue2);
+        if(arg1 && arg2)
+        {
+            // filename:timestep:domain
+            time_step = ivalue1;
+            domain    = ivalue2;
+        }
+        else if(arg1 && !arg2)
+        {
+            // filename:domain:subpaths
+            domain = ivalue1;
+            subpaths.push_back(tok[2]);
+        }
+        else if(!arg1 && arg2)
+        {
+            // filename:<non-int>:int
+            // Assume these are just numeric subpaths for now.
+            // We could test for tok[1] == "current" to denote time...
+            subpaths.push_back(tok[1]);
+            subpaths.push_back(tok[2]);
+        }
+        else // !arg1 && !arg2
+        {
+            // filename:subpath:subpath
+            subpaths.push_back(tok[1]);
+            subpaths.push_back(tok[2]);
+        }
+
+        // Save the remaining tokens as subpaths
+        for(size_t i = 3; i < tok.size(); ++i)
+            subpaths.push_back(tok[i]);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -1052,10 +1132,48 @@ save(const Node &node, const std::string &path, const char *flag,
 }
 
 //-----------------------------------------------------------------------------
-bool name_matches_subtree(const std::string &name, const std::string &pattern)
+bool name_matches_subpaths(const std::string &name, 
+    const std::vector<std::string> &subpaths)
 {
-    // for now.
-    return true;
+    bool match = false;
+    if(subpaths.empty())
+        match = true;
+    else
+    {
+        for(size_t i = 0; i < subpaths.size(); ++i)
+        {
+            size_t lsubpath = subpaths[i].size();
+            if(strncmp(name.c_str(), subpaths[i].c_str(), lsubpath) == 0)
+            {
+                // We have a match so far.
+                size_t lname = name.size();
+                if(lname == lsubpath)
+                {
+                    // name:    a/b/c
+                    // subpath: a/b/c
+                    match = true;
+                    break;
+                }
+                else if(lname < lsubpath)
+                {
+                    // name:    a/b/c
+                    // subpath: a/b/cat
+                    match = false;
+                }
+                else if(lname > lsubpath)
+                {
+                    // name:   a/b/cat, a/b/c/d
+                    // subpath a/b/c
+                    if(name[lsubpath] == '/')
+                    {
+                        match = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    return match;
 }
 
 //-----------------------------------------------------------------------------
@@ -1078,54 +1196,12 @@ void read_conduit_type_attribute(ADIOS_FILE *afile,
     }
 }
 
-} // namespace
 //-----------------------------------------------------------------------------
-// -- end conduit::relay::<mpi>::io::internals --
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-void
-adios_set_options(const Node &opts)
-{
-    internals::options()->set(opts);
-}
-
-//-----------------------------------------------------------------------------
-void
-adios_options(Node &opts)
-{
-    internals::options()->about(opts);
-}
-
-//-----------------------------------------------------------------------------
-void
-adios_save(const Node &node, const std::string &path
-    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
-    )
-{
-#ifdef USE_MPI
-    internals::save(node, path, "w", comm);
-#else
-    internals::save(node, path, "w", 0);
-#endif
-}
-
-//-----------------------------------------------------------------------------
-void adios_save_merged(const Node &node, const std::string &path
-   CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
-   )
-{
-    // NOTE: we use "u" to update the file so the time step is not incremented.
-#ifdef USE_MPI
-    internals::save(node, path, "u", comm);
-#else
-    internals::save(node, path, "u", 0);
-#endif
-
-}
-
-//-----------------------------------------------------------------------------
-void adios_load(const std::string &path, int time_step, int domain, Node &node
+void load(const std::string &filename,
+   int time_step,
+   int domain, 
+   const std::vector<std::string> &subpaths,
+   Node &node
    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
    )
 {
@@ -1134,9 +1210,6 @@ void adios_load(const std::string &path, int time_step, int domain, Node &node
 //       For reading, that's not generally true as we might want to use a serial
 //       read library to read separate domains that were all saved to the same file
 //       and we'd want control over which parts we read out.
-
-// FOR NOW
-    std::string pattern;
 
 #ifdef USE_MPI
     MPI_Comm_rank(comm, &internals::rank);
@@ -1161,7 +1234,7 @@ void adios_load(const std::string &path, int time_step, int domain, Node &node
         << internals::lock_mode_to_string(internals::options()->read_lock_mode) << ", "
         << internals::options()->read_timeout << ")")
 
-    ADIOS_FILE *afile = adios_read_open(path.c_str(), 
+    ADIOS_FILE *afile = adios_read_open(filename.c_str(), 
                             internals::options()->read_method,
 #ifdef USE_MPI
                             comm,
@@ -1184,7 +1257,7 @@ void adios_load(const std::string &path, int time_step, int domain, Node &node
                 continue;
 
             // Test that the variable is something we want to read.
-            if(!internals::name_matches_subtree(vname, pattern))
+            if(!internals::name_matches_subpaths(vname, subpaths))
                 continue;
 
             DEBUG_PRINT_RANK("adios_inq_var(afile, \""
@@ -1217,15 +1290,66 @@ void adios_load(const std::string &path, int time_step, int domain, Node &node
                 }
 #endif
 
+                // ADIOS time steps start at 1.
+                int ts1 = ts + 1;
+
+#define LOOK_FOR_SERIALLY_ADDED_DATA
+#ifdef LOOK_FOR_SERIALLY_ADDED_DATA
+                // See if the blocks for the current time step are all processid_0
+                // which says they were added serially using save(), save_merged().
+                bool is_serial = true;
+                for(int bi = 0; bi < v->sum_nblocks; ++bi)
+                {
+                    if(v->blockinfo[bi].time_index == ts1 &&
+                       v->blockinfo[bi].process_id != 0)
+                    {
+                        is_serial = false;
+                        break;
+                    }
+                }
+
+#endif
+
                 // Locate the block for the given time step and domain.
                 // If that block is not present, skip the variable as it
                 // was probably written on a subset of ranks. We iterate
                 // backwards in case a save_merged has caused an overwrite
                 // that is not really another block.
                 uint64_t nelem = 1;
-                int ts1 = ts + 1;
                 bool block_found = false;
                 int read_dom = domain;
+#ifdef LOOK_FOR_SERIALLY_ADDED_DATA
+                if(is_serial)
+                {
+                    // Now that we know the block appear to be added serially,
+                    // let's use the domain'th block for the time step.
+                    int count = 0;
+                    for(int bi = 0; bi < v->sum_nblocks; ++bi)
+                    {
+                        if(v->blockinfo[bi].time_index == ts1)
+                        {
+                            if(count++ == domain)
+                            {
+                                nelem = v->blockinfo[bi].count[0];
+                                if(nelem == 0)
+                                {
+                                    // The count is 0 so we probably have a scalar.
+                                    //  Use the v->dims instead.
+                                    nelem = 1;
+                                    for(int d = 0; d < v->ndim; ++d)
+                                        nelem *= std::max(uint64_t(1), v->dims[d]);
+                                }
+                                block_found = true;
+                                read_dom = bi;
+//cout << "Found domain " << domain << " at bi=" << bi << endl;
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+#endif
                 for(int bi = v->sum_nblocks-1; bi >= 0; bi--)
                 //for(int bi = 0; bi < v->sum_nblocks; ++bi)
                 {
@@ -1249,7 +1373,9 @@ void adios_load(const std::string &path, int time_step, int domain, Node &node
                         break;
                     }
                 }
-
+#ifdef LOOK_FOR_SERIALLY_ADDED_DATA
+                }
+#endif
                 if(block_found)
                 {
                     // Select the block we want.
@@ -1395,8 +1521,80 @@ void adios_load(const std::string &path, int time_step, int domain, Node &node
     adios_read_finalize_method(internals::options()->read_method);
 }
 
+} // namespace
 //-----------------------------------------------------------------------------
-void adios_load(const std::string &path, Node &node
+// -- end conduit::relay::<mpi>::io::internals --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void
+adios_set_options(const Node &opts)
+{
+    internals::options()->set(opts);
+}
+
+//-----------------------------------------------------------------------------
+void
+adios_options(Node &opts)
+{
+    internals::options()->about(opts);
+}
+
+//-----------------------------------------------------------------------------
+void
+adios_save(const Node &node, const std::string &path
+    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
+    )
+{
+#ifdef USE_MPI
+    internals::save(node, path, "w", comm);
+#else
+    internals::save(node, path, "w", 0);
+#endif
+}
+
+//-----------------------------------------------------------------------------
+void adios_save_merged(const Node &node, const std::string &path
+   CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
+   )
+{
+    // NOTE: we use "u" to update the file so the time step is not incremented.
+#ifdef USE_MPI
+    internals::save(node, path, "u", comm);
+#else
+    internals::save(node, path, "u", 0);
+#endif
+
+}
+
+//-----------------------------------------------------------------------------
+void
+adios_load(const std::string &path,
+   int time_step,
+   int domain, 
+   Node &node
+   CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
+   )
+{
+    int ts = time_step;
+    int dom = domain;
+    std::string filename;
+
+    // Split the incoming path in case it includes other information.
+    // This may override some arguments such as timestep, domain.
+    std::vector<std::string> subpaths;
+    internals::splitpath(path, filename, time_step, domain, subpaths);
+
+#ifdef USE_MPI
+    internals::load(filename, time_step, domain, subpaths, node, comm);
+#else
+    internals::load(filename, time_step, domain, subpaths, node);
+#endif
+}
+
+//-----------------------------------------------------------------------------
+void
+adios_load(const std::string &path, Node &node
    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
    )
 {
@@ -1405,9 +1603,28 @@ void adios_load(const std::string &path, Node &node
 #ifdef USE_MPI
     // Read the rank'th domain if there is one.
     MPI_Comm_rank(comm, &domain);
-    adios_load(path, time_step, domain, node, comm);
+#endif
+
+    // Split the incoming path in case it includes other information.
+    // This may override the timestep and domain.
+    std::string filename;
+    std::vector<std::string> subpaths;
+    internals::splitpath(path, filename, time_step, domain, subpaths);
+
+#ifdef USE_MPI
+    internals::load(filename, time_step, domain, subpaths, node, comm);
 #else
-    adios_load(path, time_step, domain, node);
+
+    cout << "adios_load: filename=" << filename
+         << ", time_step=" << time_step
+         << ", domain=" << domain
+         << ", subpaths={";
+    for(size_t i = 0; i < subpaths.size(); i++)
+        cout << ", " << subpaths[i];
+    cout << "}" << endl;
+
+
+    internals::load(filename, time_step, domain, subpaths, node);
 #endif
 }
 
