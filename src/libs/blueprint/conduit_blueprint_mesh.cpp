@@ -424,24 +424,35 @@ std::string identify_coords_coordsys(const Node &coords)
     {
         coordsys = "cartesian";
     }
+    else if(axes.has_child("i") || axes.has_child("j") || axes.has_child("k"))
+    {
+        coordsys = "logical";
+    }
     return coordsys;
 }
 
 //-----------------------------------------------------------------------------
 const Node& identify_coordset_coords(const Node &coordset)
 {
-    std::string coords_path = "unknown";
-    if(coordset["type"].as_string() != "uniform")
+    std::string coords_path = "";
+    if(coordset["type"].as_string() == "uniform")
+    {
+        if(coordset.has_child("origin"))
+        {
+            coords_path = "origin";
+        }
+        else if(coordset.has_child("spacing"))
+        {
+            coords_path = "spacing";
+        }
+        else
+        {
+            coords_path = "dims";
+        }
+    }
+    else
     {
         coords_path = "values";
-    }
-    else if(coordset.has_child("spacing"))
-    {
-        coords_path = "spacing";
-    }
-    else if(coordset.has_child("origin"))
-    {
-        coords_path = "origin";
     }
     return coordset[coords_path];
 }
@@ -449,24 +460,14 @@ const Node& identify_coordset_coords(const Node &coordset)
 //-----------------------------------------------------------------------------
 std::vector<std::string> identify_coordset_axes(const Node &coordset)
 {
+    // TODO(JRC): This whole set of coordinate system identification functions
+    // could be revised to allow different combinations of axes to be specified
+    // (e.g. (x, z), or even something like (z)).
     const Node &coords = identify_coordset_coords(coordset);
     const std::string coordset_coordsys = identify_coords_coordsys(coords);
 
-    // NOTE: The dimension of the "dims" child is taken for uniform coordinate
-    // sets because its guaranteed to exist unlike the coords children "origin"
-    // and "spacing".
-    index_t coordset_len = 1;
-    if(coordset["type"].as_string() != "uniform")
-    {
-        coordset_len = coords.number_of_children();
-    }
-    else
-    {
-        coordset_len = coordset["dims"].number_of_children();
-    }
-
     std::vector<std::string> coordset_axes;
-    if(coordset_coordsys == "cartesian")
+    if(coordset_coordsys == "cartesian" || coordset_coordsys == "logical")
     {
         coordset_axes = conduit::blueprint::mesh::cartesian_axes;
     }
@@ -481,7 +482,7 @@ std::vector<std::string> identify_coordset_axes(const Node &coordset)
 
     return std::vector<std::string>(
         coordset_axes.begin(),
-        coordset_axes.begin() + coordset_len);
+        coordset_axes.begin() + coords.number_of_children());
 }
 
 //-----------------------------------------------------------------------------
@@ -2065,11 +2066,9 @@ mesh::topology::unstructured::transform(const conduit::Node &/*topo*/,
                                         conduit::Node &dest,
                                         conduit::Node &cdest)
 {
-    bool res = true;
+    bool res = false;
     dest.reset();
     cdest.reset();
-
-    // TODO(JRC)
 
     /*
     Node info, coordset;
@@ -2085,16 +2084,53 @@ mesh::topology::unstructured::transform(const conduit::Node &/*topo*/,
             dest["coordset"].set(cdest.name());
             res = true;
         }
-        else if((mesh::topology::rectilinear::verify(topo, info) &&
+        else if((mesh::topology::structured::verify(topo, info) &&
+            mesh::coordset::_explicit::verify(coordset, info)) ||
+            (mesh::topology::rectilinear::verify(topo, info) &&
             mesh::coordset::rectilinear::verify(coordset, info)) ||
             (mesh::topology::uniform::verify(topo, info) &&
             mesh::coordset::uniform::verify(coordset, info)))
         {
             if(mesh::coordset::_explicit::transform(coordset, cdest))
             {
-                dest.set(topo);
-                dest["type"].set("rectilinear");
+                dest["type"].set("unstructured");
                 dest["coordset"].set(cdest.name());
+
+                std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
+                dest["elements/shape"].set(
+                    (csys_axes.size() == 1) ? "line" : (
+                    (csys_axes.size() == 2) ? "quad" : (
+                    (csys_axes.size() == 2) ? "hex"  : "")));
+
+                // TODO(JRC): fill in "elements/connectivity" based on dimension
+                // and point data
+                dest["elements/connectivity"].set("todo");
+
+                if(mesh::coordset::uniform::verify(coordset, info))
+                {
+                    dest["elements/dims"].set(coordset["dims"]);
+                }
+                else
+                {
+                    std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
+                    for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
+                    {
+                        const std::string& csys_axis = csys_axes[i];
+                        const std::string& logical_axis = logical_axes[i];
+                        dest["elements/dims"][logical_axis].set(
+                            coordset["values"][csys_axis].dtype().number_of_elements());
+                    }
+                }
+
+                // NOTE: The number of elements in the topology is one less
+                // along each dimension than the number of points.
+                conduit::NodeIterator dims_it = dest["elements/dims"].children();
+                while(dims_it.has_next())
+                {
+                    conduit::Node &dim_node = dims_it.next();
+                    dim_node.set(dim_node.to_int64() - 1);
+                }
+
                 res = true;
             }
         }
