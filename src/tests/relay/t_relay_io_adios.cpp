@@ -61,24 +61,6 @@ using namespace conduit;
 #include "adios_test_utils.hpp"
 
 //-----------------------------------------------------------------------------
-void
-add_keys_to_node(Node &out, const char * const *keys, int n, int &index)
-{
-    for(int i = 0; i < n; ++i)
-        out[keys[i]] = index++;
-}
-
-//-----------------------------------------------------------------------------
-void
-copy_node_keys(Node &dest, const Node &src, const char *const *keys, int n)
-{
-    for(int i = 0; i < n; ++i)
-    {
-        dest[keys[i]] = src[keys[i]];
-    }
-}
-
-//-----------------------------------------------------------------------------
 TEST(conduit_relay_io_adios, test_options_contain_adios)
 {
     int has_adios_protocol = 0;

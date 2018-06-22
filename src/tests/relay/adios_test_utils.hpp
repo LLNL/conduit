@@ -260,4 +260,22 @@ void add_rectilinear_mesh(Node &n, float64 origin[3], float64 size[3], int dims[
     n["fields/radius/values"] = radius;
 }
 
+//-----------------------------------------------------------------------------
+void
+add_keys_to_node(Node &out, const char * const *keys, int n, int &index)
+{
+    for(int i = 0; i < n; ++i)
+        out[keys[i]] = index++;
+}
+
+//-----------------------------------------------------------------------------
+void
+copy_node_keys(Node &dest, const Node &src, const char *const *keys, int n)
+{
+    for(int i = 0; i < n; ++i)
+    {
+        dest[keys[i]] = src[keys[i]];
+    }
+}
+
 #endif

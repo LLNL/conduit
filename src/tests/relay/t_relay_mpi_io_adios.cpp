@@ -77,6 +77,30 @@ create_rectilinear_mesh_domain(Node &out, int rank)
     add_rectilinear_mesh(out, origin, csize, dims);
 }
 
+//-----------------------------------------------------------------------------
+void
+mpi_print_node(const Node &node, const std::string &name, MPI_Comm comm)
+{
+    static int tag = 12345;
+    int rank, size, msg;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+    if(rank == 0)
+    {
+        std::cout << rank << ": " << name << " = " << node.to_json() << std::endl;
+        MPI_Send(&rank, 1, MPI_INT, rank+1, tag, comm);
+    }
+    else
+    {
+        MPI_Status status;
+        MPI_Recv(&msg, 1, MPI_INT, rank-1, tag, comm, &status);
+        std::cout << rank << ": " << name << " = " << node.to_json() << std::endl;
+        if(rank < size-1)
+            MPI_Send(&rank, 1, MPI_INT, rank+1, tag, comm);
+    }
+    tag++;
+}
+
 #if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_mpi_io_adios, test_mpi_rank_values)
@@ -262,6 +286,55 @@ TEST(conduit_relay_mpi_io_adios, test_separate_ranks)
     EXPECT_EQ(compare_nodes_local, true);
 
     MPI_Comm_free(&split);
+}
+
+TEST(conduit_relay_mpi_io_adios, test_load_subtree)
+{
+    const char *abc_keys[] = {"a/b/c/d","a/b/c/dog"};
+    const char *a_keys[] = {"a/b/cat",
+                            "a/b/carnivores/cat",
+                            "a/b/carnivores/dinosaur"};
+    const char *aa_keys[] = {"a/a/bull"};
+    const char *b_keys[] = {"b/c/d/e", "binary", "blue"};
+
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    // Make a node we can save.
+    int index = rank * 100;
+    Node out;
+    add_keys_to_node(out, abc_keys, 2, index);
+    add_keys_to_node(out, a_keys, 3, index);
+    add_keys_to_node(out, aa_keys, 1, index);
+    add_keys_to_node(out, b_keys, 3, index);
+    std::string path("test_load_subtree.bp");
+    relay::mpi::io::save(out, path, MPI_COMM_WORLD);
+    //mpi_print_node(out, "out", MPI_COMM_WORLD);
+
+    // Try reading nodes with subpath a/b for the same domain
+    // we wrote on this rank.
+    Node in;
+    std::string path_ab(path + ":a/b");
+    relay::mpi::io::load(path_ab, in, MPI_COMM_WORLD);
+    Node ab;
+    copy_node_keys(ab, out, abc_keys, 2);
+    copy_node_keys(ab, out, a_keys, 3);
+    //mpi_print_node(in, "in", MPI_COMM_WORLD);
+    EXPECT_EQ(compare_nodes(ab, in, ab), true);
+
+    // Make what rank 0 would have written for a/b.
+    int index0 = 0;
+    Node out0;
+    add_keys_to_node(out0, abc_keys, 2, index0);
+    add_keys_to_node(out0, a_keys, 3, index0);
+
+    // Read the data that rank 0 wrote for a/b.
+    Node in0;
+    std::string path_ab0(path + ":0:a/b");
+    relay::mpi::io::load(path_ab0, in0, MPI_COMM_WORLD);
+    //mpi_print_node(in0, "in0", MPI_COMM_WORLD);
+    EXPECT_EQ(compare_nodes(out0, in0, out0), true);
 }
 #endif
 
