@@ -108,5 +108,10 @@ void CONDUIT_RELAY_API adios_set_options(const Node &opts);
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API adios_options(Node &opts);
 
+//-----------------------------------------------------------------------------
+/// Get a number of domains.
+//-----------------------------------------------------------------------------
+int  CONDUIT_RELAY_API adios_query_number_of_domains(const std::string &path
+                           CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
 #endif
 

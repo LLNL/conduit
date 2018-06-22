@@ -172,11 +172,10 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_mesh)
 
     std::string path("test_mpi_mesh.bp");
     relay::mpi::io::save(out, path, MPI_COMM_WORLD);
-#if 0
+
     // Check that there are size domains in the file.
-    int ts = 0;
-    EXPECT_EQ(relay::mpi::io::number_of_domains(path, ts, MPI_COMM_WORLD), size);
-#endif
+    EXPECT_EQ(relay::mpi::io::query_number_of_domains(path, MPI_COMM_WORLD), size);
+
     // Each MPI rank should read its local piece and that should be the same as
     // the local data that was written.
     CONDUIT_INFO("Reading domain " << rank << "/" << size << " for " << path);

@@ -446,6 +446,24 @@ load_merged(const std::string &path,
 
 }
 
+//---------------------------------------------------------------------------//
+int
+query_number_of_domains(const std::string &path)
+{
+    int ndoms = 1;
+    std::string protocol;
+    identify_protocol(path,protocol);
+
+    if(protocol == "adios")
+    {
+#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+        ndoms = adios_query_number_of_domains(path);
+#endif
+    }
+
+    return ndoms;
+}
+
 
 }
 //-----------------------------------------------------------------------------

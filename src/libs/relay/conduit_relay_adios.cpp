@@ -83,6 +83,8 @@
 using std::cout;
 using std::endl;
 
+#define CURRENT_TIME_STEP -1
+
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
@@ -442,7 +444,8 @@ bool is_positive_integer(const std::string &s, int &ivalue)
 //-----------------------------------------------------------------------------
 void
 splitpath(const std::string &path, std::string &filename,
-    int &time_step, int &domain, std::vector<std::string> &subpaths)
+    int &time_step, int &domain, std::vector<std::string> &subpaths, 
+    bool prefer_time = false)
 {
     std::vector<std::string> tok;
     split_string(tok, path, ':');
@@ -455,10 +458,18 @@ splitpath(const std::string &path, std::string &filename,
     {
         filename = tok[0];
         int ivalue = 0;
-        if(is_positive_integer(tok[1], ivalue))
+        if(is_integer(tok[1], ivalue))
         {
-            // filename:domain
-            domain = ivalue;
+            if(prefer_time)
+            {
+                // filename:timestep
+                time_step = ivalue;
+            }
+            else
+            {
+                // filename:domain
+                domain = ivalue;
+            }
         }
         else
         {
@@ -470,7 +481,7 @@ splitpath(const std::string &path, std::string &filename,
     {
         filename = tok[0];
         int ivalue1 = 0, ivalue2 = 0;
-        bool arg1 = is_positive_integer(tok[1], ivalue1);
+        bool arg1 = is_integer(tok[1], ivalue1);
         bool arg2 = is_positive_integer(tok[2], ivalue2);
         if(arg1 && arg2)
         {
@@ -1272,7 +1283,7 @@ void load(const std::string &filename,
 
                 // Check time step validity.
                 int ts = 0;
-                if(time_step == -1)
+                if(time_step == CURRENT_TIME_STEP)
                     ts = afile->current_step;
                 else if(time_step < v->nsteps)
                     ts = time_step;
@@ -1521,6 +1532,102 @@ void load(const std::string &filename,
     adios_read_finalize_method(internals::options()->read_method);
 }
 
+//-----------------------------------------------------------------------------
+int
+query_number_of_domains(const std::string &filename, int time_step, 
+    const std::vector<std::string> &subpaths
+    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
+   )
+{
+    int ndoms = 1;
+
+#ifdef USE_MPI
+    MPI_Comm_rank(comm, &internals::rank);
+    MPI_Comm_size(comm, &internals::size);
+#endif
+
+    // once per program run...
+    DEBUG_PRINT_RANK("adios_read_init_method()");
+    adios_read_init_method(internals::options()->read_method, 
+#ifdef USE_MPI
+                           comm,
+#else
+                           0,
+#endif
+                           internals::options()->read_parameters.c_str()
+                           );
+
+    // Open the file for read.
+    DEBUG_PRINT_RANK("adios_read_open(\"" << path << "\","
+        << internals::read_method_to_string(internals::options()->read_method) << ", "
+        << "comm, "
+        << internals::lock_mode_to_string(internals::options()->read_lock_mode) << ", "
+        << internals::options()->read_timeout << ")")
+
+    ADIOS_FILE *afile = adios_read_open(filename.c_str(), 
+                            internals::options()->read_method,
+#ifdef USE_MPI
+                            comm,
+#else
+                            0,
+#endif
+                            internals::options()->read_lock_mode,
+                            internals::options()->read_timeout);
+    if(afile != NULL)
+    {
+        for (int i = 0; i < afile->nvars; ++i)
+        {
+            std::string vname(afile->var_namelist[i]);
+
+            // Skip ADIOS statistics variables.
+            if(strncmp(afile->var_namelist[i], "/__adios__", 10) == 0)
+                continue;
+
+            // Test that the variable is something we want to read.
+            if(!internals::name_matches_subpaths(vname, subpaths))
+                continue;
+
+            DEBUG_PRINT_RANK("adios_inq_var(afile, \""
+                << afile->var_namelist[i] << "\")")
+            ADIOS_VARINFO *v = adios_inq_var(afile, afile->var_namelist[i]);
+            if(v)
+            {
+                DEBUG_PRINT_RANK("adios_inq_var_blockinfo(afile, v)")
+                adios_inq_var_blockinfo(afile,v);
+
+                // This determines which nblocks we'll look at.
+                int ts = time_step;
+                if(time_step == CURRENT_TIME_STEP)
+                    ts = afile->current_step;
+                else if(time_step >= v->nsteps)
+                    ts = v->nsteps-1;
+
+                // Let's look at the nblocks for the current time step.
+                ndoms = std::max(ndoms, v->nblocks[ts]);
+     
+                adios_free_varinfo(v);
+            }
+        }
+
+        // Close the file.
+        DEBUG_PRINT_RANK("adios_read_close(afile)")
+        adios_read_close(afile);
+    }
+    else
+    {
+        CONDUIT_ERROR("ADIOS Error: " << adios_get_last_errmsg());
+    }
+
+    // once per program run.
+    DEBUG_PRINT_RANK("adios_read_finalize_method("
+        << internals::read_method_to_string(internals::options()->read_method)
+        << ")")
+    adios_read_finalize_method(internals::options()->read_method);
+
+    return ndoms;
+}
+
+
 } // namespace
 //-----------------------------------------------------------------------------
 // -- end conduit::relay::<mpi>::io::internals --
@@ -1583,12 +1690,12 @@ adios_load(const std::string &path,
     // Split the incoming path in case it includes other information.
     // This may override some arguments such as timestep, domain.
     std::vector<std::string> subpaths;
-    internals::splitpath(path, filename, time_step, domain, subpaths);
+    internals::splitpath(path, filename, ts, dom, subpaths);
 
 #ifdef USE_MPI
-    internals::load(filename, time_step, domain, subpaths, node, comm);
+    internals::load(filename, ts, dom, subpaths, node, comm);
 #else
-    internals::load(filename, time_step, domain, subpaths, node);
+    internals::load(filename, ts, dom, subpaths, node);
 #endif
 }
 
@@ -1625,6 +1732,27 @@ adios_load(const std::string &path, Node &node
 
 
     internals::load(filename, time_step, domain, subpaths, node);
+#endif
+}
+
+//-----------------------------------------------------------------------------
+int
+adios_query_number_of_domains(const std::string &path
+    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
+   )
+{
+    // Split the incoming path in case it includes other information.
+    // This may override the timestep and domain.
+    int domain = 0;
+    int time_step = CURRENT_TIME_STEP;
+    std::string filename;
+    std::vector<std::string> subpaths;
+    internals::splitpath(path, filename, time_step, domain, subpaths, true);
+
+#ifdef USE_MPI
+    return internals::query_number_of_domains(filename, time_step, subpaths, comm);
+#else
+    return internals::query_number_of_domains(filename, time_step, subpaths);
 #endif
 }
 

@@ -174,6 +174,13 @@ void CONDUIT_RELAY_API load_merged(const std::string &path,
                                    const std::string &protocol,
                                    Node &node);
 
+///
+/// ``query_number_of_domains`` return the number of domains.
+///
+//-----------------------------------------------------------------------------
+int CONDUIT_RELAY_API query_number_of_domains(const std::string &path);
+
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::relay::io --

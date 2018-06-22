@@ -594,6 +594,10 @@ TEST(conduit_relay_io_adios, test_save_merged_series)
         //std::cout << "domain " << dom << " in=" << in.to_json() << std::endl;
         EXPECT_EQ(compare_nodes(in, out[dom], in), true);
     }
+
+    // Test the number of domains.
+    int ndoms = relay::io::query_number_of_domains(path);
+    EXPECT_EQ(ndoms, 4);
 }
 
 #if 0
