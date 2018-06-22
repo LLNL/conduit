@@ -538,6 +538,16 @@ TEST(conduit_relay_io_adios, test_load_subtree)
     copy_node_keys(b, out, b_keys, 1); //1 since binary and blue won't match.
     //std::cout << "in4=" << in4.to_json() << std::endl;
     EXPECT_EQ(compare_nodes(b, in4, b), true);
+
+    // Try reading nodes with subpath a/b/c:b
+    Node in5;
+    std::string path5(path + ":a/b/c:b");
+    relay::io::load(path5, in5);
+    Node abcb;
+    copy_node_keys(abcb, out, abc_keys, 2);
+    copy_node_keys(abcb, out, b_keys, 1); //1 since binary and blue won't match.
+    //std::cout << "in5=" << in5.to_json() << std::endl;
+    EXPECT_EQ(compare_nodes(abcb, in5, abcb), true);
 }
 
 TEST(conduit_relay_io_adios, test_save_merged_series)
