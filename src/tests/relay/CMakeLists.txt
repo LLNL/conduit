@@ -66,7 +66,7 @@ set(RELAY_HDF5_TESTS t_relay_io_hdf5
                      t_relay_io_hdf5_opts)
 
 set(RELAY_ADIOS_TESTS t_relay_io_adios)
-set(RELAY_MPI_ADIOS_TESTS t_relay_mpi_io_adios)
+set(RELAY_MPI_ADIOS_TESTS t_relay_mpi_io_c t_relay_mpi_io_adios)
 
 ################################
 # Add our main tests
@@ -118,7 +118,7 @@ if(ADIOS_FOUND)
         message(STATUS "MPI enabled: Adding conduit_relay_mpi_adios unit tests")
         foreach(TEST ${RELAY_MPI_ADIOS_TESTS})
             # this uses 2 procs
-            add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON conduit conduit_relay_mpi) 
+            add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON conduit conduit_relay_mpi_io) 
         endforeach()
     endif()
 else()

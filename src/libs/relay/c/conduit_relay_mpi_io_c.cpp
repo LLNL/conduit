@@ -44,13 +44,13 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay_c.cpp
+/// file: conduit_relay_mpi_io_c.cpp
 ///
 //-----------------------------------------------------------------------------
-#include "conduit_relay.h"
+#include "conduit_relay_mpi_io.h"
 
 #include "conduit.hpp"
-#include "conduit_relay.hpp"
+#include "conduit_relay_mpi_io.hpp"
 #include "conduit_cpp_to_c.hpp"
 
 //-----------------------------------------------------------------------------
@@ -63,118 +63,127 @@ using namespace conduit;
 
 //-----------------------------------------------------------------------------
 void
-conduit_relay_io_save(conduit_node *cnode, const char *path)
+conduit_relay_mpi_io_save(conduit_node *cnode, const char *path, MPI_Fint comm)
 {
     Node *n = cpp_node(cnode);
-    relay::io::save(*n, std::string(path));
+    relay::mpi::io::save(*n, std::string(path), MPI_Comm_f2c(comm));
 }
 
 //-----------------------------------------------------------------------------
 void
-conduit_relay_io_save2(conduit_node *cnode,
-    const char *path, const char *protocol)
+conduit_relay_mpi_io_save2(conduit_node *cnode,
+    const char *path, const char *protocol, MPI_Fint comm)
 {
     Node *n = cpp_node(cnode);
-    relay::io::save(*n, std::string(path), std::string(protocol));
+    relay::mpi::io::save(*n, std::string(path), std::string(protocol),
+                         MPI_Comm_f2c(comm));
 }
 
 //-----------------------------------------------------------------------------
 void
-conduit_relay_io_save3(conduit_node *cnode,
-    const char *path, const char *protocol, conduit_node *copt)
+conduit_relay_mpi_io_save3(conduit_node *cnode,
+    const char *path, const char *protocol, conduit_node *copt, MPI_Fint comm)
 {
     Node *n = cpp_node(cnode);
     Node *opt = cpp_node(copt);
     if(opt != NULL)
-        relay::io::save(*n, std::string(path), std::string(protocol), *opt);
+        relay::mpi::io::save(*n, std::string(path), std::string(protocol), *opt,
+            MPI_Comm_f2c(comm));
     else
-        relay::io::save(*n, std::string(path), std::string(protocol));
+        relay::mpi::io::save(*n, std::string(path), std::string(protocol),
+            MPI_Comm_f2c(comm));
 }
 
 //-----------------------------------------------------------------------------
 void
-conduit_relay_io_save_merged(conduit_node *cnode, const char *path)
+conduit_relay_mpi_io_save_merged(conduit_node *cnode, const char *path,
+    MPI_Fint comm)
 {
     Node *n = cpp_node(cnode);
-    relay::io::save_merged(*n, std::string(path));
+    relay::mpi::io::save_merged(*n, std::string(path), MPI_Comm_f2c(comm));
 }
 
 //-----------------------------------------------------------------------------
 void
-conduit_relay_io_save_merged2(conduit_node *cnode,
-    const char *path, const char *protocol)
+conduit_relay_mpi_io_save_merged2(conduit_node *cnode,
+    const char *path, const char *protocol, MPI_Fint comm)
 {
     Node *n = cpp_node(cnode);
-    relay::io::save_merged(*n, std::string(path), std::string(protocol));
+    relay::mpi::io::save_merged(*n, std::string(path), std::string(protocol),
+        MPI_Comm_f2c(comm));
 }
 
 //-----------------------------------------------------------------------------
 void
-conduit_relay_io_save_merged3(conduit_node *cnode,
-    const char *path, const char *protocol, conduit_node *copt)
+conduit_relay_mpi_io_save_merged3(conduit_node *cnode,
+    const char *path, const char *protocol, conduit_node *copt, MPI_Fint comm)
 {
     Node *n = cpp_node(cnode);
     Node *opt = cpp_node(copt);
     if(opt != NULL)
-        relay::io::save_merged(*n, std::string(path), std::string(protocol), *opt);
+        relay::mpi::io::save_merged(*n, std::string(path), std::string(protocol),
+            *opt, MPI_Comm_f2c(comm));
     else
-        relay::io::save_merged(*n, std::string(path), std::string(protocol));
+        relay::mpi::io::save_merged(*n, std::string(path), std::string(protocol),
+            MPI_Comm_f2c(comm));
 }
 
 //-----------------------------------------------------------------------------
 void
-conduit_relay_io_load(const char *path, conduit_node *cnode)
+conduit_relay_mpi_io_load(const char *path, conduit_node *cnode, MPI_Fint comm)
 {
     Node *n = cpp_node(cnode);
-    relay::io::load(std::string(path), *n);
+    relay::mpi::io::load(std::string(path), *n, MPI_Comm_f2c(comm));
 }
 
 //-----------------------------------------------------------------------------
 void
-conduit_relay_io_load2(const char *path,
-    const char *protocol, conduit_node *cnode)
+conduit_relay_mpi_io_load2(const char *path,
+    const char *protocol, conduit_node *cnode, MPI_Fint comm)
 {
     Node *n = cpp_node(cnode);
-    relay::io::load(std::string(path), std::string(protocol), *n);
+    relay::mpi::io::load(std::string(path), std::string(protocol), *n,
+        MPI_Comm_f2c(comm));
 }
-
 //-----------------------------------------------------------------------------
 void
-conduit_relay_io_load3(const char *path, const char *protocol, 
-    conduit_node *coptions, conduit_node *cnode)
-{
-    Node *n = cpp_node(cnode);
-    Node *opt = cpp_node(coptions);
-    relay::io::load(std::string(path), std::string(protocol),
-        *opt, *n);
-}
-
-//-----------------------------------------------------------------------------
-void
-conduit_relay_io_load4(const char *path, const char *protocol,
-    int time_step, int domain, conduit_node *cnode)
-{
-    Node *n = cpp_node(cnode);
-    relay::io::load(std::string(path), std::string(protocol),
-        time_step, domain, *n);
-}
-
-//-----------------------------------------------------------------------------
-void
-conduit_relay_io_load5(const char *path, const char *protocol,
-    int time_step, int domain, conduit_node *coptions, conduit_node *cnode)
+conduit_relay_mpi_io_load3(const char *path, const char *protocol, 
+    conduit_node *coptions, conduit_node *cnode, MPI_Fint comm)
 {
     Node *n = cpp_node(cnode);
     Node *opt = cpp_node(coptions);
-    relay::io::load(std::string(path), std::string(protocol),
-        time_step, domain, *opt, *n);
+    relay::mpi::io::load(std::string(path), std::string(protocol),
+        *opt, *n, MPI_Comm_f2c(comm));
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_relay_mpi_io_load4(const char *path, const char *protocol,
+    int time_step, int domain, conduit_node *cnode, MPI_Fint comm)
+{
+    Node *n = cpp_node(cnode);
+    relay::mpi::io::load(std::string(path), std::string(protocol),
+        time_step, domain, *n, MPI_Comm_f2c(comm));
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_relay_mpi_io_load5(const char *path, const char *protocol,
+    int time_step, int domain, conduit_node *coptions, conduit_node *cnode,
+    MPI_Fint comm)
+{
+    Node *n = cpp_node(cnode);
+    Node *opt = cpp_node(coptions);
+    relay::mpi::io::load(std::string(path), std::string(protocol),
+        time_step, domain, *opt, *n, MPI_Comm_f2c(comm));
 }
 
 //-----------------------------------------------------------------------------
 int
-conduit_relay_io_query_number_of_domains(const char *path)
+conduit_relay_mpi_io_query_number_of_domains(const char *path, MPI_Fint comm)
 {
-    return relay::io::query_number_of_domains(std::string(path));
+    return relay::mpi::io::query_number_of_domains(std::string(path),
+                                                   MPI_Comm_f2c(comm));
 }
 
 }

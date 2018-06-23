@@ -50,6 +50,9 @@
 
 #ifndef ADIOS_TEST_UTILS_HPP
 #define ADIOS_TEST_UTILS_HPP
+#include <cmath>
+
+#include "conduit_node.hpp"
 
 // Some utility functions for ADIOS tests.
 
@@ -135,14 +138,14 @@ compare_nodes(const conduit::Node &out_root, const Node &in_root, const Node &no
                             if(exact)
                                 equal = compare_arrays(node.as_float32_ptr(), in_node.as_float32_ptr(), n);
                             else
-                                equal = compare_arrays_tol(node.as_float32_ptr(), in_node.as_float32_ptr(), n, (float32)tolerance);
+                                equal = compare_arrays_tol(node.as_float32_ptr(), in_node.as_float32_ptr(), n, (conduit::float32)tolerance);
                         }
                         else if(node.dtype().is_float64())
                         {
                             if(exact)
                                 equal = compare_arrays(node.as_float64_ptr(), in_node.as_float64_ptr(), n);
                             else
-                                equal = compare_arrays_tol(node.as_float64_ptr(), in_node.as_float64_ptr(), n, (float64)tolerance);
+                                equal = compare_arrays_tol(node.as_float64_ptr(), in_node.as_float64_ptr(), n, (conduit::float64)tolerance);
                         }
                         else
                         {
@@ -220,15 +223,15 @@ compare_nodes(const conduit::Node &out_root, const Node &in_root, const Node &no
 }
 
 //-----------------------------------------------------------------------------
-void add_rectilinear_mesh(Node &n, float64 origin[3], float64 size[3], int dims[3])
+void add_rectilinear_mesh(Node &n, conduit::float64 origin[3], conduit::float64 size[3], int dims[3])
 {
-    std::vector<float64> coords[3],radius;
+    std::vector<conduit::float64> coords[3],radius;
     for(int c = 0; c < 3; ++c)
     {
         coords[c].reserve(dims[c]);
         for(int i = 0; i < dims[c]; ++i)
         {
-            float64 t = float64(i) / float64(dims[c] - 1);
+            conduit::float64 t = conduit::float64(i) / conduit::float64(dims[c] - 1);
             coords[c].push_back(origin[c] + t * size[c]);
         }
     }
@@ -238,9 +241,9 @@ void add_rectilinear_mesh(Node &n, float64 origin[3], float64 size[3], int dims[
     for(int j = 0; j < dims[1]; ++j)
     for(int i = 0; i < dims[0]; ++i)
     {
-        float64 x = coords[0][i];
-        float64 y = coords[1][j];
-        float64 z = coords[2][k];
+        conduit::float64 x = coords[0][i];
+        conduit::float64 y = coords[1][j];
+        conduit::float64 z = coords[2][k];
         radius.push_back(sqrt(x*x + y*y + z*z));
     }   
 

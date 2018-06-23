@@ -44,154 +44,133 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay_io.hpp
+/// file: conduit_relay_mpi_io.h
 ///
 //-----------------------------------------------------------------------------
 
+#ifndef CONDUIT_RELAY_MPI_IO_H
+#define CONDUIT_RELAY_MPI_IO_H
 
-#ifndef CONDUIT_RELAY_IO_HPP
-#define CONDUIT_RELAY_IO_HPP
+#include <mpi.h>
 
 //-----------------------------------------------------------------------------
 // conduit lib include 
 //-----------------------------------------------------------------------------
-#include "conduit.hpp"
+#include "conduit.h"
 #include "conduit_relay_exports.h"
 #include "conduit_relay_config.h"
 
 //-----------------------------------------------------------------------------
-// -- begin conduit:: --
+// -- begin extern C
 //-----------------------------------------------------------------------------
-namespace conduit
-{
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::relay --
+// -- conduit_relay io c interface  --
 //-----------------------------------------------------------------------------
-namespace relay
-{
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::relay::io --
-//-----------------------------------------------------------------------------
-namespace io
-{
-
-//-----------------------------------------------------------------------------
-void identify_protocol(const std::string &path,
-                       std::string &io_type);
 
 ///
 /// ``save`` works like a 'set' to the file.
 ///
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const Node &node,
-                            const std::string &path);
+void CONDUIT_RELAY_API conduit_relay_mpi_io_save(conduit_node *cnode,
+                                                 const char *path,
+                                                 MPI_Fint comm);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const Node &node,
-                            const std::string &path,
-                            const std::string &protocol);
+void CONDUIT_RELAY_API conduit_relay_mpi_io_save2(conduit_node *cnode,
+                                                  const char *path,
+                                                  const char *protocol,
+                                                  MPI_Fint comm);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const Node &node,
-                            const std::string &path,
-                            const std::string &protocol,
-                            const Node &options);
+void CONDUIT_RELAY_API conduit_relay_mpi_io_save3(conduit_node *cnode,
+                                                  const char *path,
+                                                  const char *protocol,
+                                                  conduit_node *copt,
+                                                  MPI_Fint comm);
 
 ///
 /// ``save_merged`` works like an update to the file.
 ///
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save_merged(const Node &node,
-                                   const std::string &path);
+void CONDUIT_RELAY_API conduit_relay_mpi_io_save_merged(conduit_node *cnode,
+                                                        const char *path,
+                                                        MPI_Fint comm);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save_merged(const Node &node,
-                                   const std::string &path,
-                                   const std::string &protocol);
+void CONDUIT_RELAY_API conduit_relay_mpi_io_save_merged2(conduit_node *cnode,
+                                                         const char *path,
+                                                         const char *protocol,
+                                                         MPI_Fint comm);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save_merged(const Node &node,
-                                   const std::string &path,
-                                   const std::string &protocol,
-                                   const Node &options);
-
+void CONDUIT_RELAY_API conduit_relay_mpi_io_save_merged3(conduit_node *cnode,
+                                                         const char *path,
+                                                         const char *protocol,
+                                                         conduit_node *copt,
+                                                         MPI_Fint comm);
 
 ///
 /// ``load`` works like a 'set', the node is reset and then populated
 ///
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load(const std::string &path,
-                            Node &node);
+void CONDUIT_RELAY_API conduit_relay_mpi_io_load(const char *path,
+                                                 conduit_node *cnode,
+                                                 MPI_Fint comm);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load(const std::string &path,
-                            const std::string &protocol,
-                            Node &node);
+void CONDUIT_RELAY_API conduit_relay_mpi_io_load2(const char *path,
+                                                  const char *protocol,
+                                                  conduit_node *cnode,
+                                                  MPI_Fint comm);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load(const std::string &path,
-                            const std::string &protocol,
-                            Node &options,
-                            Node &node);
+void CONDUIT_RELAY_API conduit_relay_mpi_io_load3(const char *path,
+                                                  const char *protocol,
+                                                  conduit_node *options,
+                                                  conduit_node *node,
+                                                  MPI_Fint comm);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load(const std::string &path,
-                            const std::string &protocol,
-                            int timestep,
-                            int domain,
-                            Node &node);
+void CONDUIT_RELAY_API conduit_relay_mpi_io_load4(const char *path,
+                                                  const char *protocol,
+                                                  int time_step,
+                                                  int domain,
+                                                  conduit_node *node,
+                                                  MPI_Fint comm);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load(const std::string &path,
-                            const std::string &protocol,
-                            int timestep,
-                            int domain,
-                            Node &options,
-                            Node &node);
-
-///
-/// ``load_merged`` works like an update, for the object case, entries are read
-///  into the node. If the node is already in the OBJECT_T role, children are 
-///  added
-///
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load_merged(const std::string &path,
-                                   Node &node);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load_merged(const std::string &path,
-                                   const std::string &protocol,
-                                   Node &node);
+void CONDUIT_RELAY_API conduit_relay_mpi_io_load5(const char *path,
+                                                  const char *protocol,
+                                                  int time_step,
+                                                  int domain,
+                                                  conduit_node *options,
+                                                  conduit_node *node,
+                                                  MPI_Fint comm);
 
 ///
 /// ``query_number_of_domains`` return the number of domains.
 ///
 //-----------------------------------------------------------------------------
-int CONDUIT_RELAY_API query_number_of_domains(const std::string &path);
+int CONDUIT_RELAY_API conduit_relay_mpi_io_query_number_of_domains(
+                                                  const char *path,
+                                                  MPI_Fint comm);
 
-
+#ifdef __cplusplus
 }
-//-----------------------------------------------------------------------------
-// -- end conduit::relay::io --
-//-----------------------------------------------------------------------------
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::relay --
-//-----------------------------------------------------------------------------
-
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit:: --
-//-----------------------------------------------------------------------------
-
-
 #endif
+//-----------------------------------------------------------------------------
+// -- end extern C
+//-----------------------------------------------------------------------------
 
+
+//-----------------------------------------------------------------------------
+// -- end header guard ifdef
+//-----------------------------------------------------------------------------
+#endif

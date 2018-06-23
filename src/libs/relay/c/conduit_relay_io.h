@@ -113,6 +113,27 @@ void CONDUIT_RELAY_API conduit_relay_io_load2(const char *path,
                                               const char *protocol,
                                               conduit_node *cnode);
 
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API conduit_relay_io_load3(const char *path,
+                                              const char *protocol,
+                                              conduit_node *coptions,
+                                              conduit_node *cnode);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API conduit_relay_io_load4(const char *path,
+                                              const char *protocol,
+                                              int time_step,
+                                              int domain,
+                                              conduit_node *cnode);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API conduit_relay_io_load5(const char *path,
+                                              const char *protocol,
+                                              int time_step,
+                                              int domain,
+                                              conduit_node *coptions,
+                                              conduit_node *cnode);
+
 #ifdef __cplusplus
 }
 #endif
