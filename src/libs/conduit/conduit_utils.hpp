@@ -55,6 +55,7 @@
 // -- standard lib includes -- 
 //-----------------------------------------------------------------------------
 #include <string>
+#include <vector>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -272,6 +273,10 @@ namespace utils
                                   const std::string &sep,
                                   std::string &curr,
                                   std::string &next);
+
+    void CONDUIT_API split_string(const std::string &str,
+                                  char sep,
+                                  std::vector<std::string> &sv);
 
     void CONDUIT_API rsplit_string(const std::string &str,
                                    const std::string &sep,

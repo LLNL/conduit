@@ -247,6 +247,36 @@ split_string(const std::string &str,
 }
 
 //-----------------------------------------------------------------------------
+void
+split_string(const std::string &str, char sep, std::vector<std::string> &sv)
+{
+    if(!str.empty())
+    {
+        const char *start = str.c_str();
+        const char *c     = str.c_str();
+        while(*c != '\0')
+        {
+            if(*c == sep)
+            {
+                size_t len = c - start;
+                if(len > 0)
+                    sv.push_back(std::string(start, len));
+                c++;
+                start = c;
+            }
+            else
+                c++;
+        }
+        if(*start != '\0')
+        {
+            size_t len = c - start;
+            if(len > 0)
+                sv.push_back(std::string(start, len));
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
 void     
 rsplit_string(const std::string &str,
               const std::string &sep,

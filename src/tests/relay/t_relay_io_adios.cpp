@@ -336,6 +336,30 @@ TEST(conduit_relay_io_adios, test_list_types)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_relay_io_adios, test_save_path)
+{
+    Node out;
+    out["a"] = 1;
+    out["b"] = 2;
+    out["c/d"] = 4;
+    out["c/e"] = 8;
+
+    // Test writing/reading using a path.
+    std::string key("powers/of/two");
+    std::string path(std::string("test_save_path.bp") + std::string(":") + key);
+    relay::io::save(out, path);
+    //std::cout << out.to_json() << std::endl;
+
+    CONDUIT_INFO("Reading " << path);
+    Node in;
+    relay::io::load(path, in);
+    //std::cout << in.to_json() << std::endl;
+    //std::cout << in[key].to_json() << std::endl;
+
+    EXPECT_EQ(compare_nodes(out, in[key], out), true);
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_relay_io_adios, test_opts_transforms)
 {
     std::vector<float> a(1000), b(20000);

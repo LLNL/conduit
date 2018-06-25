@@ -310,36 +310,6 @@ create_group_name(char name[32])
 }
 
 //-----------------------------------------------------------------------------
-void
-split_string(std::vector<std::string> &sv, const std::string &s, char sep)
-{
-    if(!s.empty())
-    {
-        const char *start = s.c_str();
-        const char *c     = s.c_str();
-        while(*c != '\0')
-        {
-            if(*c == sep)
-            {
-                size_t len = c - start;
-                if(len > 0)
-                    sv.push_back(std::string(start, len));
-                c++;
-                start = c;
-            }
-            else
-                c++;
-        }
-        if(*start != '\0')
-        {
-            size_t len = c - start;
-            if(len > 0)
-                sv.push_back(std::string(start, len));
-        }
-    }
-}
-
-//-----------------------------------------------------------------------------
 static bool adios_initialized = false;
 
 static void initialize(
@@ -448,7 +418,7 @@ splitpath(const std::string &path, std::string &filename,
     bool prefer_time = false)
 {
     std::vector<std::string> tok;
-    split_string(tok, path, ':');
+    conduit::utils::split_string(path, ':', tok);
 
     if(tok.empty())
         filename = path; // Would have had to be an empty string.
@@ -770,7 +740,7 @@ static void iterate_conduit_node(const conduit::Node &node,
 //-----------------------------------------------------------------------------
 struct adios_save_state
 {
-    adios_save_state() : fid(0), gid(0), gSize(0)
+    adios_save_state() : fid(0), gid(0), gSize(0), adios_path()
     {
         memset(groupName, 0, 32 * sizeof(char));
     }
@@ -778,7 +748,8 @@ struct adios_save_state
     int64_t  fid;
     int64_t  gid;
     uint64_t gSize;
-    char     groupName[32];
+    char        groupName[32];
+    std::string adios_path;
 };
 
 //-----------------------------------------------------------------------------
@@ -865,6 +836,9 @@ static void define_variables(const Node &node, void *funcData,
         return;
     }
 
+    // Prepend a path if necessary.
+    std::string adios_var(conduit::utils::join_path(state->adios_path, node.path()));
+
     // Dimensions
     char offset[20], global[20], local[20];
     memset(offset, 0, sizeof(char) * 20);
@@ -880,13 +854,13 @@ static void define_variables(const Node &node, void *funcData,
         sprintf(global, "%d", internals::size);
         sprintf(local,  "%d", 1);   
     }
-    DEBUG_PRINT_RANK("adios_define_var(gid, \"" << node.path()
+    DEBUG_PRINT_RANK("adios_define_var(gid, \"" << adios_var
                      << "\", \"\", " << adios_type_to_string(dtype)
                      << ", \"" << local << "\""
                      << ", \"" << global << "\""
                      << ", \"" << offset << "\")")
 
-    int64_t vid = adios_define_var(state->gid, node.path().c_str(), 
+    int64_t vid = adios_define_var(state->gid, adios_var.c_str(), 
                       "", dtype,
                       local, global, offset);
     if(vid < 0)
@@ -907,7 +881,7 @@ static void define_variables(const Node &node, void *funcData,
             if(dtype == adios_real || dtype == adios_double)
             {
                 // The zfp transform complained about passing multiple options at once.
-                internals::split_string(tmp, options()->transform_options, ',');
+                conduit::utils::split_string(options()->transform_options, ',', tmp);
                 for(size_t i = 0; i < tmp.size(); i++)
                     transform.push_back(options()->transform + ":" + tmp[i]);
             }
@@ -931,11 +905,11 @@ static void define_variables(const Node &node, void *funcData,
 
     // Store the name of the actual Conduit type as an attribute.
     DEBUG_PRINT_RANK("adios_define_attribute(gid, \"conduit_type\", \""
-                     << node.path() << "\", adios_string, "
+                     << adios_var << "\", adios_string, "
                      << "\"" << node.dtype().name() << "\", \""
-                     << node.path() << "\")")
-    if(adios_define_attribute(state->gid, "conduit_type", node.path().c_str(),
-        adios_string, node.dtype().name().c_str(), node.path().c_str()) < 0)
+                     << adios_var << "\")")
+    if(adios_define_attribute(state->gid, "conduit_type", adios_var.c_str(),
+        adios_string, node.dtype().name().c_str(), adios_var.c_str()) < 0)
     {
         CONDUIT_ERROR("ADIOS Error:" << adios_get_last_errmsg()); 
         return;
@@ -966,18 +940,21 @@ static void write_variables(const Node &node, void *funcData,
     DEBUG_PRINT_RANK("adios_write(file, \"" << node.path()
                      << "\", node.data_ptr())")
 
+    // Prepend a path if necessary.
+    std::string adios_var(conduit::utils::join_path(state->adios_path, node.path()));
+
     // if the node is compact, we can write directly from its data ptr
     int s;
     if(node.dtype().is_compact()) 
     {
-        s = adios_write(state->fid, node.path().c_str(), node.data_ptr());
+        s = adios_write(state->fid, adios_var.c_str(), node.data_ptr());
     }
     else
     {
         // otherwise, we need to compact our data first
         Node n;
         node.compact_to(n);
-        s = adios_write(state->fid, node.path().c_str(), n.data_ptr());
+        s = adios_write(state->fid, adios_var.c_str(), n.data_ptr());
     }
 
     if(s != 0)
@@ -1078,7 +1055,14 @@ save(const Node &node, const std::string &path, const char *flag,
 #endif
     )
 {
-    std::string filename(path);
+    adios_save_state state;
+    std::string file_path(path);
+
+    // check for ":" split  
+    conduit::utils::split_file_path(path,
+                                    std::string(":"),
+                                    file_path,
+                                    state.adios_path);
 
 #ifdef USE_MPI
     MPI_Comm_rank(comm, &internals::rank);
@@ -1092,7 +1076,7 @@ save(const Node &node, const std::string &path, const char *flag,
         strcpy(sbuf, path.c_str());
     MPI_Bcast(sbuf, len, MPI_CHAR, 0, comm);
     if(rank > 0)
-        filename = std::string(sbuf);
+        file_path = std::string(sbuf);
     delete [] sbuf;
 
     // Initialize ADIOS.
@@ -1110,7 +1094,6 @@ save(const Node &node, const std::string &path, const char *flag,
     //
     // Group
     //
-    adios_save_state state;
     create_group_name(state.groupName);
 #if defined(USE_MPI) && defined(MAKE_SEPARATE_GROUPS)
     MPI_Bcast(state.groupName, 32, MPI_CHAR, 0, comm);
@@ -1123,10 +1106,10 @@ save(const Node &node, const std::string &path, const char *flag,
         //
 #ifdef USE_MPI
         iterate_conduit_node(node, define_variables, &state, comm);
-        save(node, filename, &state, flag, comm);
+        save(node, file_path, &state, flag, comm);
 #else
         iterate_conduit_node(node, define_variables, &state, 0);
-        save(node, filename, &state, flag, 0);
+        save(node, file_path, &state, flag, 0);
 #endif
     }
     else
@@ -1722,6 +1705,8 @@ adios_load(const std::string &path, Node &node
     internals::load(filename, time_step, domain, subpaths, node, comm);
 #else
 
+#if 0
+    // Test split.
     cout << "adios_load: filename=" << filename
          << ", time_step=" << time_step
          << ", domain=" << domain
@@ -1729,7 +1714,7 @@ adios_load(const std::string &path, Node &node
     for(size_t i = 0; i < subpaths.size(); i++)
         cout << ", " << subpaths[i];
     cout << "}" << endl;
-
+#endif
 
     internals::load(filename, time_step, domain, subpaths, node);
 #endif
