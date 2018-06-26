@@ -1651,21 +1651,6 @@ void adios_add_time_step(const Node &node, const std::string &path
                                     std::string(":"),
                                     file_path,
                                     adios_path);
-#if 0
-    // HACK: store a number of time steps for the file so we can pass a
-    //       different time index when declaring the group.
-    static std::map<std::string, int> tsmap;
-    if(tsmap.find(file_path) == tsmap.end())
-        tsmap[file_path] = 1;
-    else
-        tsmap[file_path]++;
-    std::ostringstream oss;
-    oss << tsmap[file_path];
-    std::string timeIndex(oss.str());
-    cout << "adios_add_time_step: timeIndex=" << timeIndex << endl;
-#else
-    // TODO: Determine the time index from the file.
-#endif
 
     // NOTE: we use "a" to update the file to the next time step.
 #ifdef USE_MPI
