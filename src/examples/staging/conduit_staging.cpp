@@ -52,6 +52,10 @@
 #include <conduit_utils.hpp>
 #include <iostream>
 
+#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+#include <conduit_relay_mpi_io_adios.hpp>
+#endif
+
 #ifndef _WIN32
 #include <unistd.h>
 #endif
@@ -64,7 +68,10 @@ using std::endl;
 //-----------------------------------------------------------------------------
 bool streaming_transport(const std::string &transport)
 {
-    return (transport == "DATASPACES" || transport == "DIMES" || transport == "FLEXPATH");
+    return (transport == "DATASPACES" ||
+            transport == "DIMES" || 
+            transport == "FLEXPATH" ||
+            transport == "ICEE");
 }
 
 //-----------------------------------------------------------------------------
@@ -87,8 +94,10 @@ producer(const Node &config, int nts, MPI_Comm comm)
     const Node &options = config[selected_options];
 
     if(rank == 0)
+    {
+        cout << prefix << "Options: " << options.to_json() << endl;
         cout << prefix << "Starting." << endl;
-
+    }
     // Remove the file if it exists.
     conduit::utils::remove_file(path);
 
@@ -272,6 +281,12 @@ int main(int argc, char* argv[])
     }
     else
     {
+#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+        Node opts;
+        conduit::relay::mpi::io::adios_options(opts);
+        if(rank == 0)
+            cout << "Default ADIOS options = " << opts.to_json() << endl;
+#endif
         try
         {
             // Read the config file.

@@ -2,7 +2,7 @@
     "path" : "staging.bp",
     "protocol" : "adios",
     "outpath" : "output_%02d_%04d.json",
-    "selected_options" : "staging_options",
+    "selected_options" : "bp_options",
     "bp_options" : {
         "write" : {
            "transport" : "MPI"
@@ -14,12 +14,23 @@
            "verbose" : 1
         }
     },
-    "staging_options" : {
+    "dataspaces_staging_options" : {
         "write" : {
            "transport" : "DATASPACES"
         },
         "read" : {
            "read_method" : "ADIOS_READ_METHOD_DATASPACES",
+           "lock_mode" : "ADIOS_LOCKMODE_CURRENT",
+           "timeout" : -1.0,
+           "verbose" : 1
+        }
+    },
+    "flexpath_staging_options" : {
+        "write" : {
+           "transport" : "FLEXPATH"
+        },
+        "read" : {
+           "read_method" : "ADIOS_READ_METHOD_FLEXPATH",
            "lock_mode" : "ADIOS_LOCKMODE_CURRENT",
            "timeout" : -1.0,
            "verbose" : 1

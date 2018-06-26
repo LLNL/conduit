@@ -203,6 +203,8 @@ read_method_to_string(ADIOS_READ_METHOD m)
         s = "ADIOS_READ_METHOD_DIMES";
     else if(m == ADIOS_READ_METHOD_FLEXPATH)
         s = "ADIOS_READ_METHOD_FLEXPATH";
+    else if(m == ADIOS_READ_METHOD_ICEE)
+        s = "ADIOS_READ_METHOD_ICEE";
     return s;
 }
 
@@ -221,6 +223,8 @@ string_to_read_method(const std::string &s)
         m = ADIOS_READ_METHOD_DIMES;
     else if(s == "ADIOS_READ_METHOD_FLEXPATH")
         m = ADIOS_READ_METHOD_FLEXPATH;
+    else if(s == "ADIOS_READ_METHOD_ICEE")
+        m = ADIOS_READ_METHOD_ICEE;
     return m;
 }
 
