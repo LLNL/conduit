@@ -285,6 +285,24 @@ string_to_statistics_flag(const std::string &s)
 }
 
 //-----------------------------------------------------------------------------
+bool
+streamIsFileBased(ADIOS_READ_METHOD method)
+{
+    switch(method)
+    {
+    case ADIOS_READ_METHOD_BP:
+    case ADIOS_READ_METHOD_BP_AGGREGATE:
+        return true;
+    case ADIOS_READ_METHOD_DATASPACES:
+    case ADIOS_READ_METHOD_DIMES:
+    case ADIOS_READ_METHOD_FLEXPATH:
+    case ADIOS_READ_METHOD_ICEE:
+        return false;
+    }
+    return false;
+}
+
+//-----------------------------------------------------------------------------
 #ifdef MAKE_SEPARATE_GROUPS
 static unsigned long
 current_time_stamp()
@@ -527,9 +545,9 @@ public:
         // Read options
         read_method(ADIOS_READ_METHOD_BP),
         read_parameters(),
-        read_lock_mode(ADIOS_LOCKMODE_NONE), //ADIOS_LOCKMODE_CURRENT
+        read_lock_mode(ADIOS_LOCKMODE_ALL), //ADIOS_LOCKMODE_CURRENT would be for streams.
         read_verbose(0),
-        read_timeout(0.f)
+        read_timeout(-1.f) // block by default
     {
 #ifdef USE_MPI
         int mpi_init = 0;
@@ -607,7 +625,7 @@ public:
             }
 
             if(n.has_child("timeout"))
-                read_timeout = n["timeout"].as_float();
+                read_timeout = n["timeout"].to_value();
 
             if(n.has_child("verbose"))
                 read_verbose = n["verbose"].to_value();
@@ -1218,7 +1236,11 @@ open_file_and_process(adios_load_state *state,
 #endif
 
     // once per program run...
-    DEBUG_PRINT_RANK("adios_read_init_method()");
+    DEBUG_PRINT_RANK("adios_read_init_method(" 
+       << internals::read_method_to_string(internals::options()->read_method)
+       << ", comm, \""
+       << internals::options()->read_parameters
+       << "\")");
     adios_read_init_method(internals::options()->read_method, 
 #ifdef USE_MPI
                            comm,
@@ -1229,36 +1251,41 @@ open_file_and_process(adios_load_state *state,
                            );
 
     // Open the file for read.
-    DEBUG_PRINT_RANK("adios_read_open(\"" << state->filename << "\","
-        << internals::read_method_to_string(internals::options()->read_method) << ", "
-        << "comm, "
-        << internals::lock_mode_to_string(internals::options()->read_lock_mode) << ", "
-        << internals::options()->read_timeout << ")")
+    ADIOS_FILE *afile = NULL;
 
-#if 0
-    // NOTE: This read function does not permit access to all of the blocks 
-    //       in the file. This function may be needed to use staging though.
-    ADIOS_FILE *afile = adios_read_open(state->filename.c_str(), 
-                            internals::options()->read_method,
+    if(streamIsFileBased(internals::options()->read_method))
+    {
+        // NOTE: This read function seems to have much better behavior in
+        //       providing access to time steps.
+        afile = adios_read_open_file(state->filename.c_str(), 
+                    internals::options()->read_method,
 #ifdef USE_MPI
-                            comm,
+                    comm
 #else
-                            0,
+                    0
 #endif
-                            internals::options()->read_lock_mode,
-                            internals::options()->read_timeout);
-#else
-    // NOTE: Use the file open version of the function to open ADIOS files.
-    //       This function seems to have much better behavior.
-    ADIOS_FILE *afile = adios_read_open_file(state->filename.c_str(), 
-                            ADIOS_READ_METHOD_BP,
+                    );
+    }
+    else
+    {
+        // NOTE: use adios_read_open to open the stream.
+        DEBUG_PRINT_RANK("adios_read_open(\"" << state->filename << "\","
+            << internals::read_method_to_string(internals::options()->read_method) << ", "
+            << "comm, "
+            << internals::lock_mode_to_string(internals::options()->read_lock_mode) << ", "
+            << internals::options()->read_timeout << ")")
+
+        afile = adios_read_open(state->filename.c_str(), 
+                    internals::options()->read_method,
 #ifdef USE_MPI
-                            comm
+                    comm,
 #else
-                            0
+                    0,
 #endif
-                            );
-#endif
+                    internals::options()->read_lock_mode,
+                    internals::options()->read_timeout);
+    }
+
     if(afile != NULL)
     {
         // Now that the file is open, do something with it.

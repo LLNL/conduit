@@ -122,6 +122,11 @@ void CONDUIT_RELAY_API conduit_relay_mpi_io_add_time_step(conduit_node *cnode,
                                                           const char *path,
                                                           MPI_Fint comm);
 
+void CONDUIT_RELAY_API conduit_relay_mpi_io_add_time_step2(conduit_node *cnode,
+                                                           const char *path,
+                                                           conduit_node *coptions,
+                                                           MPI_Fint comm);
+
 ///
 /// ``load`` works like a 'set', the node is reset and then populated
 ///

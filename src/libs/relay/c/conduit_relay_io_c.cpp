@@ -130,6 +130,15 @@ void conduit_relay_mpi_io_add_time_step(conduit_node *cnode,
 }
 
 //-----------------------------------------------------------------------------
+void conduit_relay_mpi_io_add_time_step2(conduit_node *cnode,
+    const char *path, conduit_node *coptions)
+{
+    Node *n = cpp_node(cnode);
+    Node *opt = cpp_node(coptions);
+    relay::io::add_time_step(*n, std::string(path), *opt);
+}
+
+//-----------------------------------------------------------------------------
 void
 conduit_relay_io_load(const char *path, conduit_node *cnode)
 {

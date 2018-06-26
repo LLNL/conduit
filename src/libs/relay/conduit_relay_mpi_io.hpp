@@ -136,6 +136,11 @@ void CONDUIT_RELAY_API add_time_step(const Node &node,
                                      const std::string &path,
                                      MPI_Comm comm);
 
+void CONDUIT_RELAY_API add_time_step(const Node &node,
+                                     const std::string &path,
+                                     const Node &options,
+                                     MPI_Comm comm);
+
 ///
 /// ``load`` works like a 'set', the node is reset and then populated
 ///
@@ -154,7 +159,7 @@ void CONDUIT_RELAY_API load(const std::string &path,
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API load(const std::string &path,
                             const std::string &protocol,
-                            Node &options,
+                            const Node &options,
                             Node &node,
                             MPI_Comm comm);
 
@@ -171,7 +176,7 @@ void CONDUIT_RELAY_API load(const std::string &path,
                             const std::string &protocol,
                             int time_step,
                             int domain,
-                            Node &options,
+                            const Node &options,
                             Node &node,
                             MPI_Comm comm);
 

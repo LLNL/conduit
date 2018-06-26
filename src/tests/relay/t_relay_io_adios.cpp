@@ -59,7 +59,7 @@ using namespace conduit;
 
 // Include some utility functions
 #include "adios_test_utils.hpp"
-
+#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_adios, test_options_contain_adios)
 {
@@ -605,7 +605,7 @@ TEST(conduit_relay_io_adios, test_save_merged_series)
     int ndoms = relay::io::query_number_of_domains(path);
     EXPECT_EQ(ndoms, 4);
 }
-
+#endif
 TEST(conduit_relay_io_adios, test_time_series)
 {
     std::string path("test_time_series.bp"), protocol("adios");

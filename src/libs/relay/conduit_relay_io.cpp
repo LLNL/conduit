@@ -112,14 +112,21 @@ save_merged(const Node &node,
 //---------------------------------------------------------------------------//
 void
 add_time_step(const Node &node,
-              const std::string &path)
+              const std::string &path,
+              const Node &options)
 {
     std::string protocol;
     identify_protocol(path,protocol);
     if(protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+        Node save_options;
+        adios_options(save_options);
+        adios_set_options(options);
+
         adios_add_time_step(node, path);
+
+        adios_set_options(save_options);
 #endif
     }
     else
@@ -131,6 +138,15 @@ add_time_step(const Node &node,
         //              that can make the next filename in a time series 
         //              and call save(node,generatedpath)
     }
+}
+
+//---------------------------------------------------------------------------//
+void
+add_time_step(const Node &node,
+              const std::string &path)
+{
+    Node options;
+    add_time_step(node, path, options);
 }
 
 //---------------------------------------------------------------------------//
@@ -315,7 +331,7 @@ load(const std::string &path,
      const std::string &protocol,
      int timestep,
      int domain,
-     Node &options,
+     const Node &options,
      Node &node)
 {
 
@@ -400,7 +416,7 @@ load(const std::string &path,
 void
 load(const std::string &path,
      const std::string &protocol,
-     Node &options,
+     const Node &options,
      Node &node)
 {
     load(path, protocol, 0, 0, options, node);

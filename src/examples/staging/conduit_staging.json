@@ -1,0 +1,28 @@
+{
+    "path" : "staging.bp",
+    "protocol" : "adios",
+    "outpath" : "output_%02d_%04d.json",
+    "selected_options" : "bp_options",
+    "bp_options" : {
+        "write" : {
+           "transport" : "MPI"
+        },
+        "read" : {
+           "read_method" : "ADIOS_READ_METHOD_BP",
+           "lock_mode" : "ADIOS_LOCKMODE_ALL",
+           "timeout" : -1.0,
+           "verbose" : 1
+        }
+    },
+    "staging_options" : {
+        "write" : {
+           "transport" : "MPI"
+        },
+        "read" : {
+           "read_method" : "ADIOS_READ_METHOD_DATASPACES",
+           "lock_mode" : "ADIOS_LOCKMODE_CURRENT",
+           "timeout" : -1.0,
+           "verbose" : 1
+        }
+    }
+}

@@ -137,6 +137,15 @@ void conduit_relay_mpi_io_add_time_step(conduit_node *cnode,
 }
 
 //-----------------------------------------------------------------------------
+void conduit_relay_mpi_io_add_time_step2(conduit_node *cnode,
+    const char *path, conduit_node *coptions, MPI_Fint comm)
+{
+    Node *n = cpp_node(cnode);
+    Node *opt = cpp_node(coptions);
+    relay::mpi::io::add_time_step(*n, std::string(path), *opt, MPI_Comm_f2c(comm));
+}
+
+//-----------------------------------------------------------------------------
 void
 conduit_relay_mpi_io_load(const char *path, conduit_node *cnode, MPI_Fint comm)
 {
