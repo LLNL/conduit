@@ -145,7 +145,7 @@ TEST(conduit_relay_mpi_io_c, test_mpi_io_c_save_and_load)
     conduit_node_destroy(in);
 }
 
-TEST(conduit_relay_io_adios, test_mpi_io_c_time_series)
+TEST(conduit_relay_mpi_io_c, test_mpi_io_c_time_series)
 {
     int rank, size;
     const char *path = "test_mpi_io_c_time_series.bp";
