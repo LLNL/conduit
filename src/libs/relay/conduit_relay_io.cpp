@@ -110,6 +110,30 @@ save_merged(const Node &node,
 }
 
 //---------------------------------------------------------------------------//
+void
+add_time_step(const Node &node,
+              const std::string &path)
+{
+    std::string protocol;
+    identify_protocol(path,protocol);
+    if(protocol == "adios")
+    {
+#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+        adios_add_time_step(node, path);
+#endif
+    }
+    else
+    {
+        CONDUIT_ERROR("add_time_step is not currently supported for protocol "
+                      << protocol);
+
+        // Future idea: make path be some type of filename generator object
+        //              that can make the next filename in a time series 
+        //              and call save(node,generatedpath)
+    }
+}
+
+//---------------------------------------------------------------------------//
 void 
 load(const std::string &path,
      Node &node)
@@ -444,6 +468,24 @@ load_merged(const std::string &path,
         
     }
 
+}
+
+//---------------------------------------------------------------------------//
+int
+query_number_of_time_steps(const std::string &path)
+{
+    int ndoms = 1;
+    std::string protocol;
+    identify_protocol(path,protocol);
+
+    if(protocol == "adios")
+    {
+#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+        ndoms = adios_query_number_of_time_steps(path);
+#endif
+    }
+
+    return ndoms;
 }
 
 //---------------------------------------------------------------------------//

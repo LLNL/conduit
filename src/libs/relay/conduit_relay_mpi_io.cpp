@@ -300,6 +300,30 @@ save_merged(const Node &node,
     }
 }
 
+//---------------------------------------------------------------------------//
+void
+add_time_step(const Node &node,
+              const std::string &path,
+              MPI_Comm comm)
+{
+    std::string protocol;
+    identify_protocol(path,protocol);
+    if(protocol == "adios")
+    {
+#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+        adios_add_time_step(node, path, comm);
+#endif
+    }
+    else
+    {
+        CONDUIT_ERROR("add_time_step is not currently supported for protocol "
+                      << protocol);
+
+        // Future idea: make path be some type of filename generator object
+        //              that can make the next filename in a time series 
+        //              and call save(node,generatedpath)
+    }
+}
 
 //---------------------------------------------------------------------------//
 void
@@ -521,6 +545,24 @@ load_merged(const std::string &path,
 }
 
 //-----------------------------------------------------------------------------
+int query_number_of_time_steps(const std::string &path, MPI_Comm comm)
+{
+    int ndoms = 1;
+    std::string protocol;
+    identify_protocol(path,protocol);
+
+    if(protocol == "adios")
+    {
+#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+        // TODO: see if we can do this on comm's rank 0 and bcast.
+        ndoms = adios_query_number_of_time_steps(path, comm);
+#endif
+    }
+
+    return ndoms;
+}
+
+//-----------------------------------------------------------------------------
 int query_number_of_domains(const std::string &path, MPI_Comm comm)
 {
     int ndoms = 1;
@@ -530,6 +572,7 @@ int query_number_of_domains(const std::string &path, MPI_Comm comm)
     if(protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+        // TODO: see if we can do this on comm's rank 0 and bcast.
         ndoms = adios_query_number_of_domains(path, comm);
 #endif
     }

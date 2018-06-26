@@ -122,6 +122,14 @@ conduit_relay_io_save_merged3(conduit_node *cnode,
 }
 
 //-----------------------------------------------------------------------------
+void conduit_relay_mpi_io_add_time_step(conduit_node *cnode,
+    const char *path)
+{
+    Node *n = cpp_node(cnode);
+    relay::io::add_time_step(*n, std::string(path));
+}
+
+//-----------------------------------------------------------------------------
 void
 conduit_relay_io_load(const char *path, conduit_node *cnode)
 {
@@ -168,6 +176,13 @@ conduit_relay_io_load5(const char *path, const char *protocol,
     Node *opt = cpp_node(coptions);
     relay::io::load(std::string(path), std::string(protocol),
         time_step, domain, *opt, *n);
+}
+
+//-----------------------------------------------------------------------------
+int
+conduit_relay_io_query_number_of_time_steps(const char *path)
+{
+    return relay::io::query_number_of_time_steps(std::string(path));
 }
 
 //-----------------------------------------------------------------------------

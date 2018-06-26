@@ -606,17 +606,56 @@ TEST(conduit_relay_io_adios, test_save_merged_series)
     EXPECT_EQ(ndoms, 4);
 }
 
-#if 0
 TEST(conduit_relay_io_adios, test_time_series)
 {
-    // Write a time series
-}
-#endif
+    std::string path("test_time_series.bp"), protocol("adios");
 
-/* Other test ideas:
-   1. time varying data
-   2. something that looks like a staging loop
-   3. querying how many pieces of data there are
-   4. Reading just a few pieces of data from the overall SIF file.
-   5. 
- */
+    // Remove the file if it exists.
+    conduit::utils::remove_file(path);
+
+    // Write multiple time steps to the same file.
+    int nts = 5;
+    Node *out = new Node[nts];
+    for(int ts = 0; ts < nts; ++ts)
+    {
+        Node &n = out[ts];
+        int idx = ts*10;
+        n["a"] = idx + 1;
+        n["b"] = idx + 2;
+        n["c/d"] = idx + 3;
+        n["c/e"] = idx + 4;
+        n["f"] = 3.14159f * float(ts);
+
+        //std::cout << "time step " << ts << " out=" << n.to_json() << std::endl;
+        relay::io::add_time_step(n, path);
+
+        // Make sure the file has the new time step.
+        int qnts = relay::io::query_number_of_time_steps(path);
+        EXPECT_EQ(qnts, ts+1);
+    }
+
+    // Read back data for each time step.
+    for(int ts = 0; ts < nts; ++ts)
+    {
+        Node in;
+        int domain = 0;
+        relay::io::load(path, protocol, ts, domain, in);
+        EXPECT_EQ(compare_nodes(in, out[ts], in), true);
+    }
+
+    // Try reading back by encoding the time step in a path.
+    for(int ts = 0; ts < nts; ++ts)
+    {
+        std::ostringstream oss;
+        int domain = 0;
+        oss << path << ":" << ts << ":" << domain;
+        std::string timestep_path(oss.str());
+
+        Node in;
+        relay::io::load(timestep_path, in);
+        //std::cout << "path=" << timestep_path << " in=" << in.to_json() << std::endl;
+        EXPECT_EQ(compare_nodes(in, out[ts], in), true);
+    }
+
+    delete [] out;
+}

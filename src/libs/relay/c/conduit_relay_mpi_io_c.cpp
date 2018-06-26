@@ -129,6 +129,14 @@ conduit_relay_mpi_io_save_merged3(conduit_node *cnode,
 }
 
 //-----------------------------------------------------------------------------
+void conduit_relay_mpi_io_add_time_step(conduit_node *cnode,
+    const char *path, MPI_Fint comm)
+{
+    Node *n = cpp_node(cnode);
+    relay::mpi::io::add_time_step(*n, std::string(path), MPI_Comm_f2c(comm));
+}
+
+//-----------------------------------------------------------------------------
 void
 conduit_relay_mpi_io_load(const char *path, conduit_node *cnode, MPI_Fint comm)
 {
@@ -184,6 +192,14 @@ conduit_relay_mpi_io_query_number_of_domains(const char *path, MPI_Fint comm)
 {
     return relay::mpi::io::query_number_of_domains(std::string(path),
                                                    MPI_Comm_f2c(comm));
+}
+
+//-----------------------------------------------------------------------------
+int
+conduit_relay_mpi_io_query_number_of_time_steps(const char *path, MPI_Fint comm)
+{
+    return relay::mpi::io::query_number_of_time_steps(std::string(path),
+                                                      MPI_Comm_f2c(comm));
 }
 
 }

@@ -101,7 +101,6 @@ mpi_print_node(const Node &node, const std::string &name, MPI_Comm comm)
     tag++;
 }
 
-#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_mpi_io_adios, test_mpi_rank_values)
 {
@@ -344,7 +343,6 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_write_serial_read_parallel)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    
     std::string path("test_mpi_write_serial_read_parallel.bp");
     Node *out = new Node[size];
     for(int dom = 0; dom < size; ++dom)
@@ -378,7 +376,55 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_write_serial_read_parallel)
     delete [] out;
     MPI_Comm_free(&split);
 }
-#endif
+
+TEST(conduit_relay_io_adios, test_mpi_time_series)
+{
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    std::string path("test_mpi_time_series.bp"), protocol("adios");
+
+    // Remove the file if it exists.
+    conduit::utils::remove_file(path);
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    // Write multiple time steps to the same file.
+    int nts = 5;
+    Node *out = new Node[nts];
+    for(int ts = 0; ts < nts; ++ts)
+    {
+        Node &n = out[ts];
+        int idx = ts*100 + rank*10;
+        n["a"] = idx + 1;
+        n["b"] = idx + 2;
+        n["c/d"] = idx + 3;
+        n["c/e"] = idx + 4;
+        n["f"] = 3.14159f * float(ts);
+
+        /*std::ostringstream oss;
+        oss << "ts" << ts;
+        mpi_print_node(n, oss.str(), MPI_COMM_WORLD);*/
+        relay::mpi::io::add_time_step(n, path, MPI_COMM_WORLD);
+
+        // Make sure the file has the new time step.
+        int qnts = relay::mpi::io::query_number_of_time_steps(path, MPI_COMM_WORLD);
+        EXPECT_EQ(qnts, ts+1);
+    }
+
+    // Let each rank read back its time steps.
+    for(int ts = 0; ts < nts; ++ts)
+    {
+        Node in;
+        relay::mpi::io::load(path, protocol, ts, rank, in, MPI_COMM_WORLD);
+        /*std::ostringstream oss;
+        oss << "ts" << ts;
+        mpi_print_node(in, oss.str(), MPI_COMM_WORLD);*/
+        EXPECT_EQ(compare_nodes(in, out[ts], in), true);
+    }
+
+    delete [] out;
+}
 
 #if 0
 //-----------------------------------------------------------------------------

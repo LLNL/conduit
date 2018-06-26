@@ -145,6 +145,52 @@ TEST(conduit_relay_mpi_io_c, test_mpi_io_c_save_and_load)
     conduit_node_destroy(in);
 }
 
+TEST(conduit_relay_io_adios, test_mpi_io_c_time_series)
+{
+    int rank, size;
+    const char *path = "test_mpi_io_c_time_series.bp";
+    const char *protocol = "adios";
+    int i, ts, nts = 5;
+    conduit_node **out = (conduit_node **)malloc(nts * sizeof(conduit_node *));
+
+    // Write multiple time steps to the same file.
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    for(ts = 0; ts < nts; ++ts)
+    {
+        int idx = ts*100 + rank*10;
+        out[ts] = conduit_node_create();
+        conduit_node_set_int(conduit_node_fetch(out[ts], "a"), idx + 1);
+        conduit_node_set_int(conduit_node_fetch(out[ts], "b"), idx + 2);
+        conduit_node_set_int(conduit_node_fetch(out[ts], "c/d"), idx + 3);
+        conduit_node_set_int(conduit_node_fetch(out[ts], "c/e"), idx + 4);
+        conduit_node_set_float(conduit_node_fetch(out[ts], "f"), 3.14159f * (float)ts);
+
+        if(ts == 0)
+            conduit_relay_mpi_io_save(out[ts], path, MPI_Comm_c2f(MPI_COMM_WORLD));
+        else
+            conduit_relay_mpi_io_add_time_step(out[ts], path, MPI_Comm_c2f(MPI_COMM_WORLD));
+
+        // Make sure the file has the new time step.
+        int qnts = conduit_relay_mpi_io_query_number_of_time_steps(path, MPI_COMM_WORLD);
+        EXPECT_EQ(qnts, ts+1);
+    }
+
+    // Let each rank read back its time steps.
+    for(int ts = 0; ts < nts; ++ts)
+    {
+        conduit_node *in = conduit_node_create();
+        conduit_relay_mpi_io_load4(path, protocol, ts, rank, in, MPI_Comm_c2f(MPI_COMM_WORLD));
+
+        EXPECT_EQ(compare_nodes_c(in, out[ts]), 1);
+        conduit_node_destroy(in);
+    }
+
+    for(i = 0; i < nts; ++i)
+        conduit_node_destroy(out[i]);
+    free(out);
+}
+
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {

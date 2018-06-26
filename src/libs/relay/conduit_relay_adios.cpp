@@ -378,6 +378,7 @@ static std::vector<std::string> available_transforms()
 }
 
 //-----------------------------------------------------------------------------
+#if 0
 static std::string 
 join_string_vector(const std::vector<std::string> &sv, const std::string &sep)
 {
@@ -390,6 +391,7 @@ join_string_vector(const std::vector<std::string> &sv, const std::string &sep)
     }
     return s;
 }
+#endif
 
 //-----------------------------------------------------------------------------
 static bool
@@ -412,6 +414,7 @@ bool is_positive_integer(const std::string &s, int &ivalue)
 }
 
 //-----------------------------------------------------------------------------
+// NOTE: Move to conduit::utils?
 void
 splitpath(const std::string &path, std::string &filename,
     int &time_step, int &domain, std::vector<std::string> &subpaths, 
@@ -524,7 +527,7 @@ public:
         // Read options
         read_method(ADIOS_READ_METHOD_BP),
         read_parameters(),
-        read_lock_mode(ADIOS_LOCKMODE_CURRENT),
+        read_lock_mode(ADIOS_LOCKMODE_NONE), //ADIOS_LOCKMODE_CURRENT
         read_verbose(0),
         read_timeout(0.f)
     {
@@ -971,6 +974,7 @@ static bool declare_group(int64_t *gid,
         << groupName << "\", \"" << timeIndex << "\", "
         << internals::statistics_flag_to_string(options()->statistics_flag)
         << ")")
+
     int retval = adios_declare_group(gid, groupName.c_str(), timeIndex.c_str(), 
         options()->statistics_flag);
     if(retval != 0)
@@ -1047,12 +1051,8 @@ static int save(const Node &node, const std::string &path,
 
 //-----------------------------------------------------------------------------
 static void
-save(const Node &node, const std::string &path, const char *flag,
-#ifdef USE_MPI
-    MPI_Comm comm
-#else
-    int comm
-#endif
+save(const Node &node, const std::string &path, const char *flag
+    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
     )
 {
     adios_save_state state;
@@ -1191,20 +1191,27 @@ void read_conduit_type_attribute(ADIOS_FILE *afile,
 }
 
 //-----------------------------------------------------------------------------
-void load(const std::string &filename,
-   int time_step,
-   int domain, 
-   const std::vector<std::string> &subpaths,
-   Node &node
-   CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
-   )
+struct adios_load_state
 {
-// NOTE: If we're loading a dataset and we give it a path, we want to load 
-//       just this processor's piece...
-//       For reading, that's not generally true as we might want to use a serial
-//       read library to read separate domains that were all saved to the same file
-//       and we'd want control over which parts we read out.
+   adios_load_state() : filename(), time_step(CURRENT_TIME_STEP), domain(0),
+       subpaths()
+   {
+   }
 
+   std::string              filename;
+   int                      time_step;
+   int                      domain; 
+   std::vector<std::string> subpaths;
+};
+
+//-----------------------------------------------------------------------------
+void
+open_file_and_process(adios_load_state *state,
+    void (*cb)(adios_load_state *, ADIOS_FILE *, void *),
+    void *cbdata
+    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
+    )
+{
 #ifdef USE_MPI
     MPI_Comm_rank(comm, &internals::rank);
     MPI_Comm_size(comm, &internals::size);
@@ -1222,13 +1229,16 @@ void load(const std::string &filename,
                            );
 
     // Open the file for read.
-    DEBUG_PRINT_RANK("adios_read_open(\"" << path << "\","
+    DEBUG_PRINT_RANK("adios_read_open(\"" << state->filename << "\","
         << internals::read_method_to_string(internals::options()->read_method) << ", "
         << "comm, "
         << internals::lock_mode_to_string(internals::options()->read_lock_mode) << ", "
         << internals::options()->read_timeout << ")")
 
-    ADIOS_FILE *afile = adios_read_open(filename.c_str(), 
+#if 0
+    // NOTE: This read function does not permit access to all of the blocks 
+    //       in the file. This function may be needed to use staging though.
+    ADIOS_FILE *afile = adios_read_open(state->filename.c_str(), 
                             internals::options()->read_method,
 #ifdef USE_MPI
                             comm,
@@ -1237,267 +1247,22 @@ void load(const std::string &filename,
 #endif
                             internals::options()->read_lock_mode,
                             internals::options()->read_timeout);
+#else
+    // NOTE: Use the file open version of the function to open ADIOS files.
+    //       This function seems to have much better behavior.
+    ADIOS_FILE *afile = adios_read_open_file(state->filename.c_str(), 
+                            ADIOS_READ_METHOD_BP,
+#ifdef USE_MPI
+                            comm
+#else
+                            0
+#endif
+                            );
+#endif
     if(afile != NULL)
     {
-        int scheduled_reads = 0;
-        std::vector<ADIOS_SELECTION *> sels;
-
-        for (int i = 0; i < afile->nvars; ++i)
-        {
-            std::string vname(afile->var_namelist[i]);
-
-            // Skip ADIOS statistics variables.
-            if(strncmp(afile->var_namelist[i], "/__adios__", 10) == 0)
-                continue;
-
-            // Test that the variable is something we want to read.
-            if(!internals::name_matches_subpaths(vname, subpaths))
-                continue;
-
-            DEBUG_PRINT_RANK("adios_inq_var(afile, \""
-                << afile->var_namelist[i] << "\")")
-            ADIOS_VARINFO *v = adios_inq_var(afile, afile->var_namelist[i]);
-            if(v)
-            {
-                // We have array data. Let's allocate a buffer for 
-                // it and schedule a read.
-                DEBUG_PRINT_RANK("adios_inq_var_blockinfo(afile, v)")
-                adios_inq_var_blockinfo(afile,v);
-
-                // Check time step validity.
-                int ts = 0;
-                if(time_step == CURRENT_TIME_STEP)
-                    ts = afile->current_step;
-                else if(time_step < v->nsteps)
-                    ts = time_step;
-
-                // The number of blocks in the current time step.
-                // Make sure that the requested domain is in range.
-                int nblocks = v->nblocks[ts];
-
-#if 0
-                // Print variable information.
-                if(internals::rank == 0)
-                {
-                    cout << "Reading process_id=" << domain << " time_index=" << (ts+1) << endl;
-                    internals::print_varinfo(cout, afile, v);
-                }
-#endif
-
-                // ADIOS time steps start at 1.
-                int ts1 = ts + 1;
-
-#define LOOK_FOR_SERIALLY_ADDED_DATA
-#ifdef LOOK_FOR_SERIALLY_ADDED_DATA
-                // See if the blocks for the current time step are all processid_0
-                // which says they were added serially using save(), save_merged().
-                bool is_serial = true;
-                for(int bi = 0; bi < v->sum_nblocks; ++bi)
-                {
-                    if(v->blockinfo[bi].time_index == ts1 &&
-                       v->blockinfo[bi].process_id != 0)
-                    {
-                        is_serial = false;
-                        break;
-                    }
-                }
-
-#endif
-
-                // Locate the block for the given time step and domain.
-                // If that block is not present, skip the variable as it
-                // was probably written on a subset of ranks. We iterate
-                // backwards in case a save_merged has caused an overwrite
-                // that is not really another block.
-                uint64_t nelem = 1;
-                bool block_found = false;
-                int read_dom = domain;
-#ifdef LOOK_FOR_SERIALLY_ADDED_DATA
-                if(is_serial)
-                {
-                    // Now that we know the block appear to be added serially,
-                    // let's use the domain'th block for the time step.
-                    int count = 0;
-                    for(int bi = 0; bi < v->sum_nblocks; ++bi)
-                    {
-                        if(v->blockinfo[bi].time_index == ts1)
-                        {
-                            if(count++ == domain)
-                            {
-                                nelem = v->blockinfo[bi].count[0];
-                                if(nelem == 0)
-                                {
-                                    // The count is 0 so we probably have a scalar.
-                                    //  Use the v->dims instead.
-                                    nelem = 1;
-                                    for(int d = 0; d < v->ndim; ++d)
-                                        nelem *= std::max(uint64_t(1), v->dims[d]);
-                                }
-                                block_found = true;
-                                read_dom = bi;
-//cout << "Found domain " << domain << " at bi=" << bi << endl;
-                                break;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-#endif
-                for(int bi = v->sum_nblocks-1; bi >= 0; bi--)
-                //for(int bi = 0; bi < v->sum_nblocks; ++bi)
-                {
-                    // NOTE: The check for process_id and domain can sometimes
-                    //       not be quite right if a variable does not exist
-                    //       over all ranks when written in parallel.
-                    if(v->blockinfo[bi].time_index == ts1 &&
-                       v->blockinfo[bi].process_id == domain)
-                    {
-                        nelem = v->blockinfo[bi].count[0];
-                        if(nelem == 0)
-                        {
-                            // The count is 0 so we probably have a scalar.
-                            //  Use the v->dims instead.
-                            nelem = 1;
-                            for(int d = 0; d < v->ndim; ++d)
-                                nelem *= std::max(uint64_t(1), v->dims[d]);
-                        }
-                        block_found = true;
-                        read_dom = bi;
-                        break;
-                    }
-                }
-#ifdef LOOK_FOR_SERIALLY_ADDED_DATA
-                }
-#endif
-                if(block_found)
-                {
-                    // Select the block we want.
-                    DEBUG_PRINT_RANK("adios_selection_writeblock(" << read_dom << ")")
-                    ADIOS_SELECTION *sel = adios_selection_writeblock(read_dom);
-                    sels.push_back(sel);
-
-                    // Allocate memory for the variable.
-                    void *vbuf = NULL;
-                    if(v->type == adios_byte)
-                    {
-                        std::string conduit_type;
-                        internals::read_conduit_type_attribute(afile, 
-                            v, conduit_type);
-                        if(!conduit_type.empty() &&
-                           conduit_type == "char8_str")
-                        {
-                            // Treat the byte array as a string.
-                            // NOTE: when the data were saved, a '\0' terminator
-                            //       was saved with the string. Decrement nelem
-                            //       by 1 since the string will add space for
-                            //       the terminator. This way the string sizes
-                            //       are right.
-                            size_t n_minus_nullterm = nelem - 1;
-                            node[vname].set(std::string(n_minus_nullterm, ' '));
-                            vbuf = (void *)node[vname].data_ptr();
-                        }
-                        else
-                        {
-                            node[vname].set(DataType::int8(nelem));
-                            int8 *buf = node[vname].value();
-                            vbuf = (void *)buf;
-                        }
-                    }
-                    else if(v->type == adios_short)
-                    {
-                        node[vname].set(DataType::int16(nelem));
-                        int16 *buf = node[vname].value();
-                        vbuf = (void *)buf;
-                    }
-                    else if(v->type == adios_integer)
-                    {
-                        node[vname].set(DataType::int32(nelem));
-                        int32 *buf = node[vname].value();
-                        vbuf = (void *)buf;
-                    }
-                    else if(v->type == adios_long)
-                    {
-                        node[vname].set(DataType::int64(nelem));
-                        int64 *buf = node[vname].value();
-                        vbuf = (void *)buf;
-                    }
-                    else if(v->type == adios_unsigned_byte)
-                    {
-                        node[vname].set(DataType::uint8(nelem));
-                        uint8 *buf = node[vname].value();
-                        vbuf = (void *)buf;
-                    }
-                    else if(v->type == adios_unsigned_short)
-                    {
-                        node[vname].set(DataType::uint16(nelem));
-                        uint16 *buf = node[vname].value();
-                        vbuf = (void *)buf;
-                    }
-                    else if(v->type == adios_unsigned_integer)
-                    {
-                        node[vname].set(DataType::uint32(nelem));
-                        uint32 *buf = node[vname].value();
-                        vbuf = (void *)buf;
-                    }
-                    else if(v->type == adios_unsigned_long)
-                    {
-                        node[vname].set(DataType::uint64(nelem));
-                        uint64 *buf = node[vname].value();
-                        vbuf = (void *)buf;
-                    }
-                    else if(v->type == adios_real)
-                    {
-                        node[vname].set(DataType::float32(nelem));
-                        float32 *buf = node[vname].value();
-                        vbuf = (void *)buf;
-                    }
-                    else if(v->type == adios_double)
-                    {
-                        node[vname].set(DataType::float64(nelem));
-                        float64 *buf = node[vname].value();
-                        vbuf = (void *)buf;
-                    }
-                    else
-                    {
-                        // Other cases should not happen.
-                        CONDUIT_ERROR("Unsupported type " << v->type);
-                    }
-
-                    // Schedule the read.
-                    if(vbuf != NULL)
-                    {
-                        DEBUG_PRINT_RANK("adios_schedule_read_byid(afile, sel, "
-                            << v->varid << ", " << ts << ", 1, vbuf)")
-                        adios_schedule_read_byid(afile, sel, v->varid, ts, 1, vbuf);
-                        scheduled_reads++;
-                    }
-                } // block_found
-#if 0
-                else
-                {
-                    // We could not find the desired block.
-                    cout << "No block for " << vname << " process_id=" << domain
-                         << " time_index=" << (ts+1) << endl;
-                    internals::print_varinfo(cout, afile, v);
-                }
-#endif
-                adios_free_varinfo(v);
-            }           
-        }
-
-        // Perform any outstanding reads, blocking until reads are done.
-        if(scheduled_reads > 0)
-        {
-            int blocking = 1;
-            DEBUG_PRINT_RANK("adios_perform_reads(afile, " << blocking << ")")
-            adios_perform_reads(afile, blocking);
-        }
-#if 0
-        // Free the selections.
-        for(size_t s = 0; s < sels.size(); ++s)
-            adios_selection_delete(sels[s]);
-#endif
+        // Now that the file is open, do something with it.
+        (*cb)(state, afile, cbdata);
 
         // Close the file.
         DEBUG_PRINT_RANK("adios_read_close(afile)")
@@ -1512,102 +1277,322 @@ void load(const std::string &filename,
     DEBUG_PRINT_RANK("adios_read_finalize_method("
         << internals::read_method_to_string(internals::options()->read_method)
         << ")")
-    adios_read_finalize_method(internals::options()->read_method);
+//    adios_read_finalize_method(internals::options()->read_method);
 }
 
 //-----------------------------------------------------------------------------
-int
-query_number_of_domains(const std::string &filename, int time_step, 
-    const std::vector<std::string> &subpaths
+// Callback for load()
+static void
+load_node(adios_load_state *state, ADIOS_FILE *afile, void *cbdata)
+{
+    // Convert cbdata back to Node * and get a reference.
+    Node *node_ptr = (Node *)cbdata;
+    Node &node = *node_ptr;
+
+    int scheduled_reads = 0;
+    std::vector<ADIOS_SELECTION *> sels;
+
+    for (int i = 0; i < afile->nvars; ++i)
+    {
+        std::string vname(afile->var_namelist[i]);
+
+        // Skip ADIOS statistics variables.
+        if(strncmp(afile->var_namelist[i], "/__adios__", 10) == 0)
+            continue;
+
+        // Test that the variable is something we want to read.
+        if(!internals::name_matches_subpaths(vname, state->subpaths))
+            continue;
+
+        DEBUG_PRINT_RANK("adios_inq_var(afile, \""
+            << afile->var_namelist[i] << "\")")
+        ADIOS_VARINFO *v = adios_inq_var(afile, afile->var_namelist[i]);
+        if(v)
+        {
+            // We have array data. Let's allocate a buffer for 
+            // it and schedule a read.
+            DEBUG_PRINT_RANK("adios_inq_var_blockinfo(afile, v)")
+            adios_inq_var_blockinfo(afile,v);
+
+            // Check time step validity.
+            int ts = state->time_step;
+            if(state->time_step == CURRENT_TIME_STEP)
+                ts = afile->current_step;
+//            else if(state->time_step < v->nsteps)
+//                ts = state->time_step;
+
+#if 0
+            // Print variable information.
+            if(internals::rank == 0)
+            {
+                cout << "Reading process_id=" << state->domain << " time_index=" << (ts+1) << endl;
+                internals::print_varinfo(cout, afile, v);
+            }
+#endif
+
+            // ADIOS time steps start at 1.
+            int ts1 = ts + 1;
+//cout << "state->time_step = " << state->time_step << ", v->nsteps=" << v->nsteps
+//     << ", ts=" << ts << ", ts1 = " << ts1 << endl;
+
+            // The blocks for the current time step start at biOffset,
+            // which is the sum of the preceding block counts.
+            int biOffset = 0;
+            for(int ti = 0; ti < ts; ++ti)
+                biOffset += v->nblocks[ti];
+
+            // There will be v->nblocks[ts] blocks for the current
+            // time step starting at biOffset. We can make sure that
+            // it's for the right time step. The blocks we ask for
+            // in the read call take the time step and the local block
+            // number in that time step. So, read_dom will be
+            // 0..nblocks[ts]-1.
+            bool block_found = false;
+            uint64_t nelem = 1;
+            int read_dom = state->domain;
+            if(v->blockinfo[biOffset + state->domain].time_index == ts1)
+            {
+                nelem = v->blockinfo[biOffset + state->domain].count[0];
+                if(nelem == 0)
+                {
+                    // The count is 0 so we probably have a scalar.
+                    //  Use the v->dims instead.
+                    nelem = 1;
+                    for(int d = 0; d < v->ndim; ++d)
+                        nelem *= std::max(uint64_t(1), v->dims[d]);
+                }
+                block_found = true;                    
+            }
+
+            if(block_found)
+            {
+                // Select the block we want. This number is local to the 
+                // current time step.
+                DEBUG_PRINT_RANK("adios_selection_writeblock(" << read_dom << ")")
+                ADIOS_SELECTION *sel = adios_selection_writeblock(read_dom);
+                sels.push_back(sel);
+
+                // Allocate memory for the variable.
+                void *vbuf = NULL;
+                if(v->type == adios_byte)
+                {
+                    std::string conduit_type;
+                    internals::read_conduit_type_attribute(afile, 
+                        v, conduit_type);
+                    if(!conduit_type.empty() &&
+                       conduit_type == "char8_str")
+                    {
+                        // Treat the byte array as a string.
+                        // NOTE: when the data were saved, a '\0' terminator
+                        //       was saved with the string. Decrement nelem
+                        //       by 1 since the string will add space for
+                        //       the terminator. This way the string sizes
+                        //       are right.
+                        size_t n_minus_nullterm = nelem - 1;
+                        node[vname].set(std::string(n_minus_nullterm, ' '));
+                        vbuf = (void *)node[vname].data_ptr();
+                    }
+                    else
+                    {
+                        node[vname].set(DataType::int8(nelem));
+                        int8 *buf = node[vname].value();
+                        vbuf = (void *)buf;
+                    }
+                }
+                else if(v->type == adios_short)
+                {
+                    node[vname].set(DataType::int16(nelem));
+                    int16 *buf = node[vname].value();
+                    vbuf = (void *)buf;
+                }
+                else if(v->type == adios_integer)
+                {
+                    node[vname].set(DataType::int32(nelem));
+                    int32 *buf = node[vname].value();
+                    vbuf = (void *)buf;
+                }
+                else if(v->type == adios_long)
+                {
+                    node[vname].set(DataType::int64(nelem));
+                    int64 *buf = node[vname].value();
+                    vbuf = (void *)buf;
+                }
+                else if(v->type == adios_unsigned_byte)
+                {
+                    node[vname].set(DataType::uint8(nelem));
+                    uint8 *buf = node[vname].value();
+                    vbuf = (void *)buf;
+                }
+                else if(v->type == adios_unsigned_short)
+                {
+                    node[vname].set(DataType::uint16(nelem));
+                    uint16 *buf = node[vname].value();
+                    vbuf = (void *)buf;
+                }
+                else if(v->type == adios_unsigned_integer)
+                {
+                    node[vname].set(DataType::uint32(nelem));
+                    uint32 *buf = node[vname].value();
+                    vbuf = (void *)buf;
+                }
+                else if(v->type == adios_unsigned_long)
+                {
+                    node[vname].set(DataType::uint64(nelem));
+                    uint64 *buf = node[vname].value();
+                    vbuf = (void *)buf;
+                }
+                else if(v->type == adios_real)
+                {
+                    node[vname].set(DataType::float32(nelem));
+                    float32 *buf = node[vname].value();
+                    vbuf = (void *)buf;
+                }
+                else if(v->type == adios_double)
+                {
+                    node[vname].set(DataType::float64(nelem));
+                    float64 *buf = node[vname].value();
+                    vbuf = (void *)buf;
+                }
+                else
+                {
+                    // Other cases should not happen.
+                    CONDUIT_ERROR("Unsupported type " << v->type);
+                }
+
+                // Schedule the read. NOTE that the time step passed here will
+                // cooperate with the block selection to get the right block
+                // for the right time step.
+                if(vbuf != NULL)
+                {
+                    DEBUG_PRINT_RANK("adios_schedule_read_byid(afile, sel, "
+                        << v->varid << ", " << ts << ", 1, vbuf)")
+                    adios_schedule_read_byid(afile, sel, v->varid, ts, 1, vbuf);
+                    scheduled_reads++;
+                }
+            } // block_found
+#if 0
+            else
+            {
+                // We could not find the desired block.
+                cout << "No block for " << vname << " process_id=" << state->domain
+                     << " time_index=" << (ts+1) << endl;
+                internals::print_varinfo(cout, afile, v);
+            }
+#endif
+            adios_free_varinfo(v);
+        }           
+    }
+
+    // Perform any outstanding reads, blocking until reads are done.
+    if(scheduled_reads > 0)
+    {
+        int blocking = 1;
+        DEBUG_PRINT_RANK("adios_perform_reads(afile, " << blocking << ")")
+        adios_perform_reads(afile, blocking);
+    }
+#if 0
+    // Free the selections. (TODO: see if this still crashes ADIOS)
+    for(size_t s = 0; s < sels.size(); ++s)
+        adios_selection_delete(sels[s]);
+#endif
+}
+
+//-----------------------------------------------------------------------------
+static void
+load(adios_load_state *state, Node *node
+    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
+    )
+{
+    open_file_and_process(state, load_node, node
+#ifdef USE_MPI
+        ,comm
+#endif
+        );
+}
+
+//-----------------------------------------------------------------------------
+// Callback for query_number_of_domains()
+static void
+find_max_domains(adios_load_state *state, ADIOS_FILE *afile, void *cbdata)
+{
+    int *ndoms = (int *)cbdata;
+
+    for (int i = 0; i < afile->nvars; ++i)
+    {
+        std::string vname(afile->var_namelist[i]);
+
+        // Skip ADIOS statistics variables.
+        if(strncmp(afile->var_namelist[i], "/__adios__", 10) == 0)
+            continue;
+
+        // Test that the variable is something we want to read.
+        if(!internals::name_matches_subpaths(vname, state->subpaths))
+            continue;
+        DEBUG_PRINT_RANK("adios_inq_var(afile, \""
+            << afile->var_namelist[i] << "\")")
+
+        ADIOS_VARINFO *v = adios_inq_var(afile, afile->var_namelist[i]);
+        if(v)
+        {
+            DEBUG_PRINT_RANK("adios_inq_var_blockinfo(afile, v)")
+            adios_inq_var_blockinfo(afile,v);
+
+             // This determines which nblocks we'll look at.
+            int ts = state->time_step;
+            if(state->time_step == CURRENT_TIME_STEP)
+                ts = afile->current_step;
+            else if(state->time_step >= v->nsteps)
+                ts = v->nsteps-1;
+
+            // Let's look at the nblocks for the current time step.
+            *ndoms = std::max(*ndoms, v->nblocks[ts]);
+     
+            adios_free_varinfo(v);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+static int
+query_number_of_domains(adios_load_state *state
     CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
    )
-{
-    int ndoms = 1;
-
+{ 
+    int ndoms = 0;
+    open_file_and_process(state, find_max_domains, &ndoms
 #ifdef USE_MPI
-    MPI_Comm_rank(comm, &internals::rank);
-    MPI_Comm_size(comm, &internals::size);
+        ,comm
 #endif
-
-    // once per program run...
-    DEBUG_PRINT_RANK("adios_read_init_method()");
-    adios_read_init_method(internals::options()->read_method, 
-#ifdef USE_MPI
-                           comm,
-#else
-                           0,
-#endif
-                           internals::options()->read_parameters.c_str()
-                           );
-
-    // Open the file for read.
-    DEBUG_PRINT_RANK("adios_read_open(\"" << path << "\","
-        << internals::read_method_to_string(internals::options()->read_method) << ", "
-        << "comm, "
-        << internals::lock_mode_to_string(internals::options()->read_lock_mode) << ", "
-        << internals::options()->read_timeout << ")")
-
-    ADIOS_FILE *afile = adios_read_open(filename.c_str(), 
-                            internals::options()->read_method,
-#ifdef USE_MPI
-                            comm,
-#else
-                            0,
-#endif
-                            internals::options()->read_lock_mode,
-                            internals::options()->read_timeout);
-    if(afile != NULL)
-    {
-        for (int i = 0; i < afile->nvars; ++i)
-        {
-            std::string vname(afile->var_namelist[i]);
-
-            // Skip ADIOS statistics variables.
-            if(strncmp(afile->var_namelist[i], "/__adios__", 10) == 0)
-                continue;
-
-            // Test that the variable is something we want to read.
-            if(!internals::name_matches_subpaths(vname, subpaths))
-                continue;
-
-            DEBUG_PRINT_RANK("adios_inq_var(afile, \""
-                << afile->var_namelist[i] << "\")")
-            ADIOS_VARINFO *v = adios_inq_var(afile, afile->var_namelist[i]);
-            if(v)
-            {
-                DEBUG_PRINT_RANK("adios_inq_var_blockinfo(afile, v)")
-                adios_inq_var_blockinfo(afile,v);
-
-                // This determines which nblocks we'll look at.
-                int ts = time_step;
-                if(time_step == CURRENT_TIME_STEP)
-                    ts = afile->current_step;
-                else if(time_step >= v->nsteps)
-                    ts = v->nsteps-1;
-
-                // Let's look at the nblocks for the current time step.
-                ndoms = std::max(ndoms, v->nblocks[ts]);
-     
-                adios_free_varinfo(v);
-            }
-        }
-
-        // Close the file.
-        DEBUG_PRINT_RANK("adios_read_close(afile)")
-        adios_read_close(afile);
-    }
-    else
-    {
-        CONDUIT_ERROR("ADIOS Error: " << adios_get_last_errmsg());
-    }
-
-    // once per program run.
-    DEBUG_PRINT_RANK("adios_read_finalize_method("
-        << internals::read_method_to_string(internals::options()->read_method)
-        << ")")
-    adios_read_finalize_method(internals::options()->read_method);
+        );
 
     return ndoms;
+}
+
+//-----------------------------------------------------------------------------
+// Callback for query_number_of_time_steps()
+static void
+find_num_timesteps(adios_load_state *, ADIOS_FILE *afile, void *cbdata)
+{
+    int *ntimesteps = (int *)cbdata;
+    // last_step is the index of the time. To get the number of time steps, add 1.
+    *ntimesteps = afile->last_step + 1;
+}
+
+
+//-----------------------------------------------------------------------------
+static int
+query_number_of_time_steps(adios_load_state *state
+    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
+   )
+{ 
+    int ntimesteps = 0;
+    open_file_and_process(state, find_num_timesteps, &ntimesteps
+#ifdef USE_MPI
+        ,comm
+#endif
+        );
+
+    return ntimesteps;
 }
 
 
@@ -1639,7 +1624,7 @@ adios_save(const Node &node, const std::string &path
 #ifdef USE_MPI
     internals::save(node, path, "w", comm);
 #else
-    internals::save(node, path, "w", 0);
+    internals::save(node, path, "w");
 #endif
 }
 
@@ -1652,9 +1637,42 @@ void adios_save_merged(const Node &node, const std::string &path
 #ifdef USE_MPI
     internals::save(node, path, "u", comm);
 #else
-    internals::save(node, path, "u", 0);
+    internals::save(node, path, "u");
+#endif
+}
+
+//-----------------------------------------------------------------------------
+void adios_add_time_step(const Node &node, const std::string &path
+    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm))
+{
+    // check for ":" split  
+    std::string file_path, adios_path;
+    conduit::utils::split_file_path(path,
+                                    std::string(":"),
+                                    file_path,
+                                    adios_path);
+#if 0
+    // HACK: store a number of time steps for the file so we can pass a
+    //       different time index when declaring the group.
+    static std::map<std::string, int> tsmap;
+    if(tsmap.find(file_path) == tsmap.end())
+        tsmap[file_path] = 1;
+    else
+        tsmap[file_path]++;
+    std::ostringstream oss;
+    oss << tsmap[file_path];
+    std::string timeIndex(oss.str());
+    cout << "adios_add_time_step: timeIndex=" << timeIndex << endl;
+#else
+    // TODO: Determine the time index from the file.
 #endif
 
+    // NOTE: we use "a" to update the file to the next time step.
+#ifdef USE_MPI
+    internals::save(node, path, "a", comm);
+#else
+    internals::save(node, path, "a");
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1666,19 +1684,18 @@ adios_load(const std::string &path,
    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
    )
 {
-    int ts = time_step;
-    int dom = domain;
-    std::string filename;
+    internals::adios_load_state state;
+    state.time_step = time_step; // Force specific timestep/domain.
+    state.domain = domain;
 
     // Split the incoming path in case it includes other information.
-    // This may override some arguments such as timestep, domain.
-    std::vector<std::string> subpaths;
-    internals::splitpath(path, filename, ts, dom, subpaths);
+    // This may override the timestep and domain.
+    internals::splitpath(path, state.filename, state.time_step, state.domain, state.subpaths);
 
 #ifdef USE_MPI
-    internals::load(filename, ts, dom, subpaths, node, comm);
+    internals::load(&state, &node, comm);
 #else
-    internals::load(filename, ts, dom, subpaths, node);
+    internals::load(&state, &node);
 #endif
 }
 
@@ -1688,35 +1705,42 @@ adios_load(const std::string &path, Node &node
    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
    )
 {
-    int domain = 0;     // use first domain
-    int time_step = -1; // use current time step.
+    internals::adios_load_state state;
 #ifdef USE_MPI
     // Read the rank'th domain if there is one.
-    MPI_Comm_rank(comm, &domain);
+    MPI_Comm_rank(comm, &state.domain);
 #endif
 
     // Split the incoming path in case it includes other information.
     // This may override the timestep and domain.
-    std::string filename;
-    std::vector<std::string> subpaths;
-    internals::splitpath(path, filename, time_step, domain, subpaths);
+    internals::splitpath(path, state.filename, state.time_step, state.domain, state.subpaths);
 
 #ifdef USE_MPI
-    internals::load(filename, time_step, domain, subpaths, node, comm);
+    internals::load(&state, &node, comm);
 #else
-
-#if 0
-    // Test split.
-    cout << "adios_load: filename=" << filename
-         << ", time_step=" << time_step
-         << ", domain=" << domain
-         << ", subpaths={";
-    for(size_t i = 0; i < subpaths.size(); i++)
-        cout << ", " << subpaths[i];
-    cout << "}" << endl;
+    internals::load(&state, &node);
 #endif
+}
 
-    internals::load(filename, time_step, domain, subpaths, node);
+//-----------------------------------------------------------------------------
+int
+adios_query_number_of_time_steps(const std::string &path
+    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
+   )
+{
+    internals::adios_load_state state;
+    std::string tmp;
+
+    // check for ":" split  
+    conduit::utils::split_file_path(path,
+                                    std::string(":"),
+                                    state.filename,
+                                    tmp);
+
+#ifdef USE_MPI
+    return internals::query_number_of_time_steps(&state, comm);
+#else
+    return internals::query_number_of_time_steps(&state);
 #endif
 }
 
@@ -1726,18 +1750,16 @@ adios_query_number_of_domains(const std::string &path
     CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
    )
 {
+    internals::adios_load_state state;
+
     // Split the incoming path in case it includes other information.
     // This may override the timestep and domain.
-    int domain = 0;
-    int time_step = CURRENT_TIME_STEP;
-    std::string filename;
-    std::vector<std::string> subpaths;
-    internals::splitpath(path, filename, time_step, domain, subpaths, true);
+    internals::splitpath(path, state.filename, state.time_step, state.domain, state.subpaths);
 
 #ifdef USE_MPI
-    return internals::query_number_of_domains(filename, time_step, subpaths, comm);
+    return internals::query_number_of_domains(&state, comm);
 #else
-    return internals::query_number_of_domains(filename, time_step, subpaths);
+    return internals::query_number_of_domains(&state);
 #endif
 }
 

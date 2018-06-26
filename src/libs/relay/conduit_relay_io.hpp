@@ -121,6 +121,12 @@ void CONDUIT_RELAY_API save_merged(const Node &node,
 
 
 ///
+/// ``add_time_step`` adds a new time step of data to the file.
+///
+void CONDUIT_RELAY_API add_time_step(const Node &node,
+                                     const std::string &path);
+
+///
 /// ``load`` works like a 'set', the node is reset and then populated
 ///
 
@@ -170,11 +176,16 @@ void CONDUIT_RELAY_API load_merged(const std::string &path,
                                    Node &node);
 
 ///
+/// ``query_number_of_time_steps`` return the number of time steps.
+///
+//-----------------------------------------------------------------------------
+int CONDUIT_RELAY_API query_number_of_time_steps(const std::string &path);
+
+///
 /// ``query_number_of_domains`` return the number of domains.
 ///
 //-----------------------------------------------------------------------------
 int CONDUIT_RELAY_API query_number_of_domains(const std::string &path);
-
 
 }
 //-----------------------------------------------------------------------------

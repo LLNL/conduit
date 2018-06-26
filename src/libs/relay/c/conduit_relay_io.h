@@ -101,6 +101,12 @@ void CONDUIT_RELAY_API conduit_relay_io_save_merged3(conduit_node *cnode,
                                                      conduit_node *copt);
 
 ///
+/// ``add_time_step`` adds a new time step of data to the file.
+///
+void CONDUIT_RELAY_API conduit_relay_io_add_time_step(conduit_node *cnode,
+                                                      const char *path);
+
+///
 /// ``load`` works like a 'set', the node is reset and then populated
 ///
 
@@ -133,6 +139,20 @@ void CONDUIT_RELAY_API conduit_relay_io_load5(const char *path,
                                               int domain,
                                               conduit_node *coptions,
                                               conduit_node *cnode);
+
+///
+/// ``query_number_of_domains`` return the number of time steps.
+///
+//-----------------------------------------------------------------------------
+int CONDUIT_RELAY_API conduit_relayio_query_number_of_time_steps(
+                                              const char *path);
+
+///
+/// ``query_number_of_domains`` return the number of domains.
+///
+//-----------------------------------------------------------------------------
+int CONDUIT_RELAY_API conduit_relay_io_query_number_of_domains(
+                                              const char *path);
 
 #ifdef __cplusplus
 }
