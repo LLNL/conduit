@@ -2,7 +2,7 @@
     "path" : "staging.bp",
     "protocol" : "adios",
     "outpath" : "output_%02d_%04d.json",
-    "selected_options" : "bp_options",
+    "selected_options" : "staging_options",
     "bp_options" : {
         "write" : {
            "transport" : "MPI"
@@ -16,7 +16,7 @@
     },
     "staging_options" : {
         "write" : {
-           "transport" : "MPI"
+           "transport" : "DATASPACES"
         },
         "read" : {
            "read_method" : "ADIOS_READ_METHOD_DATASPACES",

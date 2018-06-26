@@ -62,9 +62,22 @@ using std::cout;
 using std::endl;
 
 //-----------------------------------------------------------------------------
+bool streaming_transport(const std::string &transport)
+{
+    return (transport == "DATASPACES" || transport == "DIMES" || transport == "FLEXPATH");
+}
+
+//-----------------------------------------------------------------------------
+std::string write_verb(const std::string &transport)
+{
+    return streaming_transport(transport) ? "staging" : "writing";
+}
+
+//-----------------------------------------------------------------------------
 int 
 producer(const Node &config, int nts, MPI_Comm comm)
 {
+    const char *prefix = "producer: ";
     int rank, size;
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
@@ -74,7 +87,7 @@ producer(const Node &config, int nts, MPI_Comm comm)
     const Node &options = config[selected_options];
 
     if(rank == 0)
-        cout << "Starting producer." << endl;
+        cout << prefix << "Starting." << endl;
 
     // Remove the file if it exists.
     conduit::utils::remove_file(path);
@@ -89,9 +102,18 @@ producer(const Node &config, int nts, MPI_Comm comm)
         out["c/d"] = idx + 3;
         out["c/e"] = idx + 4;
         out["f"] = 3.14159f * float(ts);
-
+        if(rank == 0)
+            cout << prefix << "Before add_time_step" << endl;
         // Add a new time step to the output file.
         conduit::relay::mpi::io::add_time_step(out, path, options, comm);
+
+        // Show some progress
+        if(rank == 0)
+        {
+            cout << prefix
+                 << write_verb(options["write/transport"].as_string())
+                 << " time step " << ts << endl;
+        }
     }
 
     return 0;
@@ -101,12 +123,13 @@ producer(const Node &config, int nts, MPI_Comm comm)
 int
 consumer(const Node &config, int nts, MPI_Comm comm)
 {
+    const char *prefix = "consumer: ";
     int rank, size;
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
 
     if(rank == 0)
-        cout << "Starting consumer." << endl;
+        cout << prefix << "Starting." << endl;
 
     char outpath[1024];
     std::string path(config["path"].as_string());
@@ -123,15 +146,31 @@ consumer(const Node &config, int nts, MPI_Comm comm)
         // same number of ranks.
         int domain = rank;
 
+        if(rank == 0)
+            cout << prefix << "reading time step " << ts << endl;
+
         // Read in a domain of the current time step.
         Node in;
-        std::ostringstream tspath;
-        tspath << path << ":" << ts << ":" << domain;
-        conduit::relay::mpi::io::load(tspath.str(), protocol, options, in, comm);
+
+        if(streaming_transport(options["write/transport"].as_string()))
+        {
+            // Read "current" time step from the stream.
+            conduit::relay::mpi::io::load(path, protocol, options, in, comm);
+        }
+        else
+        {
+            // Read a specific time step from the file.
+            std::ostringstream tspath;
+            tspath << path << ":" << ts << ":" << domain;
+            conduit::relay::mpi::io::load(tspath.str(), protocol, options, in, comm);
+        }
 
         // Make an output filename and save.
         sprintf(outpath, format.c_str(), ts, domain);
         conduit::relay::mpi::io::save(in, outpath, MPI_COMM_WORLD);
+
+        if(rank == 0)
+            cout << prefix << "writing time step " << ts << endl;
     }
 
     return 0;
@@ -263,7 +302,7 @@ int main(int argc, char* argv[])
                 // If we're using BP files then delay a little until the 
                 // producer is done. Streaming blocks until data are 
                 // available.
-                sleep(5);
+                sleep(10);
 #endif
                 retval = consumer(config, nts, comm);
             }

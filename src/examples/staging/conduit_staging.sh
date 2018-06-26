@@ -21,7 +21,8 @@ function start_dataspaces
 
     # Start DataSpaces server.
     echo "Starting DataSpaces server..."
-    mpirun -np $PRODUCER_NP $DATASPACES_DIR/bin/dataspaces_server -s $NP -c $TOTAL_NP & #>& server.log
+    echo "mpirun -np $PRODUCER_NP $DATASPACES_DIR/bin/dataspaces_server -s $PRODUCER_NP -c $TOTAL_NP"
+    mpirun -np $PRODUCER_NP $DATASPACES_DIR/bin/dataspaces_server -s $PRODUCER_NP -c $TOTAL_NP &
 
     # Wait for the server to start up.
     while [ ! -f conf ]; do
@@ -31,8 +32,12 @@ function start_dataspaces
     # Read the server conf file.
     while read line; do
         echo "${line}"
-        export set "${line}"
+        export ${line}
     done  < conf
+
+    echo "Environment:"
+    env | grep P2TNID
+    env | grep P2TPID
     echo "DataSpaces has started."
 }
 
@@ -40,7 +45,8 @@ function start_dataspaces
 rm -f server.log srv.lck dataspaces.conf conf output*.json
 
 # Start DataSpaces server (a function so it is easier to comment out)
-#start_dataspaces
+start_dataspaces
 
 # Start the staging program that produces and consumes the data.
+echo "mpirun -np $TOTAL_NP ./conduit_staging --split $PRODUCER_NP:$CONSUMER_NP --nts $NTS"
 mpirun -np $TOTAL_NP ./conduit_staging --split $PRODUCER_NP:$CONSUMER_NP --nts $NTS
