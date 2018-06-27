@@ -64,6 +64,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cstdio>
+#include <cstring>
 #ifdef MAKE_SEPARATE_GROUPS
 #include <sys/time.h>
 #endif
