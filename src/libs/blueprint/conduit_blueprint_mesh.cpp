@@ -51,6 +51,7 @@
 //-----------------------------------------------------------------------------
 // std lib includes
 //-----------------------------------------------------------------------------
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 
@@ -1731,7 +1732,7 @@ mesh::topology::transform(const std::string &protocol,
     {
         res = topology::structured::transform(topo,dest,cdest);
     }
-    else if(protocol == "unstrctured")
+    else if(protocol == "unstructured")
     {
         res = topology::unstructured::transform(topo,dest,cdest);
     }
@@ -2158,7 +2159,7 @@ mesh::topology::unstructured::transform(const conduit::Node &topo,
                     for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
                     {
                         edims_axes[i] =
-                            dim_node[csys_axes[i]].dtype().number_of_elements();
+                            dim_node[csys_axes[i]].dtype().number_of_elements() - 1;
                     }
                 }
                 else // if(mesh::topology::structured::verify(topo, info))
@@ -2179,9 +2180,9 @@ mesh::topology::unstructured::transform(const conduit::Node &topo,
                 index_t indices_per_elem = pow(2, csys_axes.size());
 
                 conduit::Node &conn_node = dest["elements/connectivity"];
-                conn_node.set(DataType::uint64(num_elems * indices_per_elem));
+                conn_node.set(DataType::int32(num_elems * indices_per_elem));
 
-                uint64_array dst_cvals = conn_node.as_uint64_array();
+                int32_array dst_cvals = conn_node.as_int32_array();
                 index_t curr_elem[3], curr_vert[3];
                 for(index_t e = 0; e < num_elems; e++)
                 {
@@ -2201,6 +2202,16 @@ mesh::topology::unstructured::transform(const conduit::Node &topo,
                         grid_ijk_to_id(&curr_vert[0], &vdims_axes[0], v);
 
                         dst_cvals[e * indices_per_elem + i] = v;
+                    }
+
+                    // TODO(JRC): This loop inverts quads/hexes to conform to
+                    // the default Blueprint ordering. Once the ordering transforms
+                    // are introduced, this code should be removed and replaced
+                    // with initializing the ordering label value.
+                    for(index_t p = 2; p < indices_per_elem; p += 4)
+                    {
+                        std::swap(dst_cvals[e * indices_per_elem + p],
+                                  dst_cvals[e * indices_per_elem + p + 1]);
                     }
                 }
 
