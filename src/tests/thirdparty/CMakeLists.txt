@@ -104,6 +104,12 @@ else()
     message(STATUS "Silo disabled: Skipping related tests")
 endif()
 
+if(ADIOS_FOUND)
+    message(STATUS "ADIOS enabled: Adding related unit tests")
+        add_cpp_test(TEST t_adios_smoke DEPENDS_ON adios_nompi)
+else()
+    message(STATUS "ADIOS disabled: Skipping related tests")
+endif()
 
 if(FORTRAN_FOUND)
     message(STATUS "Fortran enabled: Adding related unit tests")
