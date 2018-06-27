@@ -134,6 +134,9 @@ def parse_args():
     opts = vars(opts)
     if not opts["spack_config_dir"] is None:
         opts["spack_config_dir"] = os.path.abspath(opts["spack_config_dir"])
+        if not os.path.isdir(opts["spack_config_dir"]):
+            print "[ERROR: invalid spack config dir: %s ]" % opts["spack_config_dir"]
+            sys.exit(-1)
     return opts, extras
 
 
@@ -370,6 +373,11 @@ def main():
     # twist spack's arms 
     cfg_dir = uberenv_spack_config_dir(opts, uberenv_path)
     patch_spack(dest_spack, uberenv_path, cfg_dir, pkgs)
+
+    # show the spec for what will be built
+    spec_cmd = "spack/bin/spack spec " + uberenv_pkg_name + opts["spec"]
+    res = sexe(spec_cmd, echo=True)
+
 
     ##########################################################
     # we now have an instance of spack configured how we 
