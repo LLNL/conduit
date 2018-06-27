@@ -377,7 +377,8 @@ def main():
         clone_cmd ="git "
         if opts["ignore_ssl_errors"]:
             clone_cmd +="-c http.sslVerify=false "
-        clone_cmd += "clone -b develop https://github.com/spack/spack.git"
+        #clone_cmd += "clone -b develop https://github.com/spack/spack.git"        # BJW: TEMPORARY
+        clone_cmd += "clone -b develop https://github.com/BradWhitlock/spack.git"  # BJW: TEMPORARY
         sexe(clone_cmd, echo=True)
         if "spack_develop_commit" in project_opts:
             sha1 = project_opts["spack_develop_commit"]
