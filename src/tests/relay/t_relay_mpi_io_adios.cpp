@@ -426,7 +426,6 @@ TEST(conduit_relay_io_adios, test_mpi_time_series)
     delete [] out;
 }
 
-#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_mpi_io_adios, test_mpi_different_trees)
 {
@@ -444,36 +443,48 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_different_trees)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     Node out;
-    out["a/b"] = 5;
-    out["a/pi"] = std::vector<double>(5, M_PI);
-    out["a/rank"] = std::vector<int>(10, rank);
-    char key[10];
-    sprintf(key, "rank%d/message", rank);
+    out["a"] = 1;
+    out["b"] = std::vector<double>(5, M_PI);
+    out["c"] = std::vector<int>(10, rank);
     std::ostringstream oss;
     oss << "Rank " << rank << " likes ADIOS";
     for(int i = 0; i < rank+1; ++i)
         oss << " very";
     oss << " much.";
-    out[key] = oss.str();
+    out["message"] = oss.str();
     if(rank == 0)
-        out["extra"] = "stuff";
+    {
+        // We can add extra stuff to rank 0's output okay.
+        out["diagnostics/date"] = "today";
+        out["diagnostics/history/data"] = std::vector<double>(5, 1.2345);
+        out["diagnostics/history/n"] = 5;
+        out["diagnostics/timers/start"] = 0;
+        out["diagnostics/timers/end"] = 99;
+    }
+#if 0
+    else
+    {
+        // TO FIX:
+        // We cannot add extra stuff to non-rank 0's output okay and 
+        // read it back to the right rank. If we add this now, the
+        // node would end up in the readback data for domain 0, which
+        // is not right since domain 1 contained the data.
+        out["non-rank-0/rank"] = rank;
+    }
+#endif
 
     std::string path("test_mpi_different_trees.bp");
     relay::mpi::io::save(out, path, MPI_COMM_WORLD);
+    //mpi_print_node(out, "out", MPI_COMM_WORLD);
 
     Node in;
     CONDUIT_INFO("Reading domain " << rank << "/" << size << " for " << path);
     relay::mpi::io::load(path, in, MPI_COMM_WORLD);
     bool compare_nodes_local = compare_nodes(out, in, out);
-    if(rank == 1)
-    {
-        out.print_detailed();
-        in.print_detailed();
-        std::cout << "compare_nodes_local = " << compare_nodes_local << std::endl;
-    }
+    //mpi_print_node(in, "in", MPI_COMM_WORLD);
+    //std::cout << "compare_nodes_local = " << compare_nodes_local << std::endl;
     EXPECT_EQ(compare_nodes_local, true);
 }
-#endif
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
