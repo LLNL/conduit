@@ -81,6 +81,12 @@ namespace io
 void identify_protocol(const std::string &path,
                        std::string &io_type);
 
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API initialize();
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API finalize();
+
 ///
 /// ``save`` works like a 'set' to the file.
 ///
@@ -123,9 +129,11 @@ void CONDUIT_RELAY_API save_merged(const Node &node,
 ///
 /// ``add_time_step`` adds a new time step of data to the file.
 ///
+//-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API add_time_step(const Node &node,
                                      const std::string &path);
 
+//-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API add_time_step(const Node &node,
                                      const std::string &path,
                                      const Node &options);

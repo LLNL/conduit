@@ -88,6 +88,7 @@ namespace io
 {
 
 // Define an argument macro that adds the communicator argument.
+#define CONDUIT_RELAY_COMMUNICATOR_ARG0(ARG) ARG
 #define CONDUIT_RELAY_COMMUNICATOR_ARG(ARG) ,ARG
 
 // Functions are provided by this include file.

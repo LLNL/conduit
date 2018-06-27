@@ -71,6 +71,12 @@ extern "C" {
 // -- conduit_relay io c interface  --
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API conduit_relay_mpi_io_initialize(MPI_Fint comm);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API conduit_relay_mpi_io_finalize(MPI_Fint comm);
+
 ///
 /// ``save`` works like a 'set' to the file.
 ///

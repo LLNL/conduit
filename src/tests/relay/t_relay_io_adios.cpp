@@ -659,3 +659,16 @@ TEST(conduit_relay_io_adios, test_time_series)
 
     delete [] out;
 }
+
+//-----------------------------------------------------------------------------
+int main(int argc, char* argv[])
+{
+    int result = 0;
+
+    ::testing::InitGoogleTest(&argc, argv);
+    conduit::relay::io::initialize();
+    result = RUN_ALL_TESTS();
+    conduit::relay::io::finalize();
+
+    return result;
+}

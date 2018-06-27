@@ -332,39 +332,6 @@ create_group_name(char name[32])
 }
 
 //-----------------------------------------------------------------------------
-static bool adios_initialized = false;
-
-static void initialize(
-#ifdef USE_MPI
-    MPI_Comm comm
-#else
-    int comm
-#endif
-    )
-{
-    //cout << "initialize: init'd=" << adios_initialized << endl;
-    if(!adios_initialized)
-    {
-#ifdef USE_MPI
-        // See if MPI is initialized.
-        int mpi_init = 0;
-        MPI_Initialized(&mpi_init);
-        //cout << "mpi_init = " << mpi_init << endl;
-
-        // Initialize ADIOS.
-        int status = adios_init_noxml(comm);
-        //cout << "adios_init_noxml = " << status << endl;
-#else
-        //cout << "initializing serial ADIOS." << endl;
-        // Initialize ADIOS.
-        int status = adios_init_noxml(comm);
-        //cout << "adios_init_noxml = " << status << endl;
-#endif
-        adios_initialized = true;
-    }
-}
-
-//-----------------------------------------------------------------------------
 static std::vector<std::string> available_transports()
 {
     std::vector<std::string> v;
@@ -398,22 +365,6 @@ static std::vector<std::string> available_transforms()
 #endif
     return v;
 }
-
-//-----------------------------------------------------------------------------
-#if 0
-static std::string 
-join_string_vector(const std::vector<std::string> &sv, const std::string &sep)
-{
-    std::string s;
-    for(size_t i=0; i<sv.size(); i++)
-    {
-        if(i > 0)
-            s = s + sep;
-        s = s + std::string(sv[i]);
-    }
-    return s;
-}
-#endif
 
 //-----------------------------------------------------------------------------
 static bool
@@ -554,8 +505,6 @@ public:
         read_timeout(-1.f) // block by default
     {
 #ifdef USE_MPI
-        int mpi_init = 0;
-        MPI_Initialized(&mpi_init);
         transport = "MPI";
 #endif
     }
@@ -563,14 +512,6 @@ public:
     //------------------------------------------------------------------------
     void set(const Node &opts)
     {
-        // We need to initialize if we have not done so we can call some
-        // ADIOS introspection functions.
-#ifdef USE_MPI
-        initialize(MPI_COMM_WORLD);
-#else
-        initialize(0);
-#endif
-
         // Write options
         if(opts.has_child("write"))
         {
@@ -634,25 +575,11 @@ public:
             if(n.has_child("verbose"))
                 read_verbose = n["verbose"].to_value();
         }
-
-#if 0
-        Node tmp;
-        about(tmp);
-        cout << "ADIOS options: " << tmp.to_json() << endl;
-#endif
     }
 
     //------------------------------------------------------------------------
     void about(Node &opts)
     {
-        // We need to initialize if we have not done so we can call some
-        // ADIOS introspection functions.
-#ifdef USE_MPI
-        initialize(MPI_COMM_WORLD);
-#else
-        initialize(0);
-#endif
-
         opts.reset();
 
         // Write options.
@@ -710,7 +637,7 @@ static ADIOSOptions *adiosState_options = NULL;
 
 //-----------------------------------------------------------------------------
 // @brief Clean up the options at exit.
-static void CleanupOptions(void)
+static void cleanup_options(void)
 {
     if(adiosState_options != NULL)
     {
@@ -728,9 +655,78 @@ static ADIOSOptions *options()
     if(adiosState_options == NULL)
     {
         adiosState_options = new ADIOSOptions;
-        atexit(CleanupOptions);
+        atexit(cleanup_options);
     }
     return adiosState_options;
+}
+
+//-----------------------------------------------------------------------------
+static bool adios_initialized = false;
+#define MAX_READ_METHODS 15
+static int read_methods_initialized[MAX_READ_METHODS];
+
+static void initialize(
+    CONDUIT_RELAY_COMMUNICATOR_ARG0(MPI_Comm comm)
+    )
+{
+    //cout << "initialize: init'd=" << adios_initialized << endl;
+    if(!adios_initialized)
+    {
+        // Mark that we have not initialized any read methods. Read methods
+        // are not initialized until we use them.
+        memset(read_methods_initialized, 0, sizeof(int)*MAX_READ_METHODS);
+
+#ifdef USE_MPI
+        // See if MPI is initialized.
+        //int mi = 0;
+        //MPI_Initialized(&mpi_init);
+        //cout << "initializing parallel ADIOS: mpi_init = " << mi << endl;
+
+        // Initialize ADIOS.
+        adios_init_noxml(comm);
+#else
+        //cout << "initializing serial ADIOS." << endl;
+        // Initialize ADIOS.
+        adios_init_noxml(0);
+#endif
+        adios_initialized = true;
+    }
+}
+
+//-----------------------------------------------------------------------------
+static void mark_read_method_initialized(ADIOS_READ_METHOD m)
+{
+    read_methods_initialized[static_cast<int>(m)] = 1;
+}
+
+//-----------------------------------------------------------------------------
+static void finalize_read_methods()
+{
+    for(int i = 0; i < MAX_READ_METHODS; ++i)
+    {
+        if(read_methods_initialized[i])
+        {
+            // cout << "adios_read_finalize_method("
+            //      << static_cast<ADIOS_READ_METHOD>(i)<< ")" << endl;
+            adios_read_finalize_method(static_cast<ADIOS_READ_METHOD>(i));
+            read_methods_initialized[i] = 0;
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+static void finalize(
+    CONDUIT_RELAY_COMMUNICATOR_ARG0(MPI_Comm comm)
+    )
+{
+    cleanup_options();
+    finalize_read_methods();
+    // cout << "adios_finalize()" << endl;
+#ifdef USE_MPI
+    adios_finalize(comm);
+#else
+    adios_finalize(0);
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1105,7 +1101,7 @@ save(const Node &node, const std::string &path, const char *flag
     initialize(comm);
 #else
     // Initialize ADIOS.
-    initialize(0);
+    initialize();
 #endif
 
     // Set ADIOS's max buffer sized based on the options.
@@ -1239,30 +1235,32 @@ open_file_and_process(adios_load_state *state,
     MPI_Comm_size(comm, &internals::size);
 #endif
 
-    // once per program run...
+    // Initialize the read method.
     DEBUG_PRINT_RANK("adios_read_init_method(" 
        << internals::read_method_to_string(internals::options()->read_method)
        << ", comm, \""
        << internals::options()->read_parameters
        << "\")");
-    adios_read_init_method(internals::options()->read_method, 
+    adios_read_init_method(options()->read_method, 
 #ifdef USE_MPI
                            comm,
 #else
                            0,
 #endif
-                           internals::options()->read_parameters.c_str()
+                           options()->read_parameters.c_str()
                            );
+    // Mark that we've initialized the read method.
+    mark_read_method_initialized(options()->read_method);
 
     // Open the file for read.
     ADIOS_FILE *afile = NULL;
 
-    if(streamIsFileBased(internals::options()->read_method))
+    if(streamIsFileBased(options()->read_method))
     {
         // NOTE: This read function seems to have much better behavior in
         //       providing access to time steps.
         afile = adios_read_open_file(state->filename.c_str(), 
-                    internals::options()->read_method,
+                    options()->read_method,
 #ifdef USE_MPI
                     comm
 #else
@@ -1274,20 +1272,20 @@ open_file_and_process(adios_load_state *state,
     {
         // NOTE: use adios_read_open to open the stream.
         DEBUG_PRINT_RANK("adios_read_open(\"" << state->filename << "\","
-            << internals::read_method_to_string(internals::options()->read_method) << ", "
+            << internals::read_method_to_string(options()->read_method) << ", "
             << "comm, "
-            << internals::lock_mode_to_string(internals::options()->read_lock_mode) << ", "
-            << internals::options()->read_timeout << ")")
+            << internals::lock_mode_to_string(options()->read_lock_mode) << ", "
+            << options()->read_timeout << ")")
 
         afile = adios_read_open(state->filename.c_str(), 
-                    internals::options()->read_method,
+                    options()->read_method,
 #ifdef USE_MPI
                     comm,
 #else
                     0,
 #endif
-                    internals::options()->read_lock_mode,
-                    internals::options()->read_timeout);
+                    options()->read_lock_mode,
+                    options()->read_timeout);
     }
 
     if(afile != NULL)
@@ -1303,12 +1301,6 @@ open_file_and_process(adios_load_state *state,
     {
         CONDUIT_ERROR("ADIOS Error: " << adios_get_last_errmsg());
     }
-
-    // once per program run.
-    DEBUG_PRINT_RANK("adios_read_finalize_method("
-        << internals::read_method_to_string(internals::options()->read_method)
-        << ")")
-//    adios_read_finalize_method(internals::options()->read_method);
 }
 
 //-----------------------------------------------------------------------------
@@ -1362,7 +1354,7 @@ load_node(adios_load_state *state, ADIOS_FILE *afile, void *cbdata)
 #endif
 
             // ADIOS time steps start at 1.
-            int ts1 = ts + 1;
+            uint32_t ts1 = static_cast<uint32_t>(ts) + 1;
 //cout << "state->time_step = " << state->time_step << ", v->nsteps=" << v->nsteps
 //     << ", ts=" << ts << ", ts1 = " << ts1 << endl;
 
@@ -1634,16 +1626,56 @@ query_number_of_time_steps(adios_load_state *state
 
 //-----------------------------------------------------------------------------
 void
-adios_set_options(const Node &opts)
+adios_set_options(const Node &opts
+    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
+    )
 {
+#ifdef USE_MPI
+    internals::initialize(comm);
+#else
+    internals::initialize();
+#endif
     internals::options()->set(opts);
 }
 
 //-----------------------------------------------------------------------------
 void
-adios_options(Node &opts)
+adios_options(Node &opts
+    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
+    )
 {
+#ifdef USE_MPI
+    internals::initialize(comm);
+#else
+    internals::initialize();
+#endif
     internals::options()->about(opts);
+}
+
+//-----------------------------------------------------------------------------
+void
+adios_initialize_library(
+    CONDUIT_RELAY_COMMUNICATOR_ARG0(MPI_Comm comm)
+    )
+{
+#ifdef USE_MPI
+    internals::initialize(comm);
+#else
+    internals::initialize();
+#endif
+}
+
+//-----------------------------------------------------------------------------
+void
+adios_finalize_library(
+    CONDUIT_RELAY_COMMUNICATOR_ARG0(MPI_Comm comm)
+    )
+{
+#ifdef USE_MPI
+    internals::finalize(comm);
+#else
+    internals::finalize();
+#endif
 }
 
 //-----------------------------------------------------------------------------

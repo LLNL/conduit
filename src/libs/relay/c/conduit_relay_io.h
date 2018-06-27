@@ -62,6 +62,12 @@ extern "C" {
 // -- conduit_relay io c interface  --
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API conduit_relay_io_initialize(void);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API conduit_relay_io_finalize(void);
+
 ///
 /// ``save`` works like a 'set' to the file.
 ///

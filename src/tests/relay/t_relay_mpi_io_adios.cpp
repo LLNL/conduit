@@ -493,7 +493,9 @@ int main(int argc, char* argv[])
 
     ::testing::InitGoogleTest(&argc, argv);
     MPI_Init(&argc, &argv);
+    conduit::relay::mpi::io::initialize(MPI_COMM_WORLD);
     result = RUN_ALL_TESTS();
+    conduit::relay::mpi::io::finalize(MPI_COMM_WORLD);
     MPI_Finalize();
     return result;
 }

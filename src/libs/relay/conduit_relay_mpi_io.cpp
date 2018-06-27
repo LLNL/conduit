@@ -98,6 +98,24 @@ namespace io
 #include "conduit_relay_identify_protocol.hpp"
 
 //---------------------------------------------------------------------------//
+void
+initialize(MPI_Comm comm)
+{
+#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+    adios_initialize_library(comm);
+#endif
+}
+
+//---------------------------------------------------------------------------//
+void
+finalize(MPI_Comm comm)
+{
+#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+    adios_finalize_library(comm);
+#endif
+}
+
+//---------------------------------------------------------------------------//
 void 
 save(const Node &node,
      const std::string &path,
@@ -200,12 +218,12 @@ save(const Node &node,
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         Node save_options;
-        adios_options(save_options);
+        adios_options(save_options, comm);
 
-        adios_set_options(options);
+        adios_set_options(options, comm);
         adios_save(node,path,comm);
 
-        adios_set_options(save_options);
+        adios_set_options(save_options, comm);
 #else
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                       "Failed to save conduit node to path " << path);
@@ -283,12 +301,12 @@ save_merged(const Node &node,
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         Node save_options;
-        adios_options(save_options);
+        adios_options(save_options, comm);
 
-        adios_set_options(options);
+        adios_set_options(options, comm);
         adios_save_merged(node,path,comm);
 
-        adios_set_options(save_options);
+        adios_set_options(save_options, comm);
 #else
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                       "Failed to save conduit node to path " << path);
@@ -313,12 +331,12 @@ add_time_step(const Node &node,
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         Node save_options;
-        adios_options(save_options);
-        adios_set_options(options);
+        adios_options(save_options, comm);
+        adios_set_options(options, comm);
 
         adios_add_time_step(node, path, comm);
 
-        adios_set_options(save_options);
+        adios_set_options(save_options, comm);
 #endif
     }
     else
@@ -387,13 +405,13 @@ load(const std::string &path,
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         Node load_options;
-        adios_options(load_options);
-        adios_set_options(options);
+        adios_options(load_options, comm);
+        adios_set_options(options, comm);
 
         node.reset();
         adios_load(path,node,comm);
 
-        adios_set_options(load_options);
+        adios_set_options(load_options, comm);
 #else
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                     "Failed to load conduit node from path " << path);
@@ -464,13 +482,13 @@ load(const std::string &path,
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         Node load_options;
-        adios_options(load_options);
-        adios_set_options(options);
+        adios_options(load_options, comm);
+        adios_set_options(options, comm);
 
         node.reset();
         adios_load(path,timestep,domain,node,comm);
 
-        adios_set_options(load_options);
+        adios_set_options(load_options, comm);
 #else
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                     "Failed to load conduit node from path " << path);

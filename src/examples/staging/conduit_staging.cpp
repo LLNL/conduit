@@ -281,9 +281,11 @@ int main(int argc, char* argv[])
     }
     else
     {
+        conduit::relay::mpi::io::initialize(MPI_COMM_WORLD);
+
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         Node opts;
-        conduit::relay::mpi::io::adios_options(opts);
+        conduit::relay::mpi::io::adios_options(opts, MPI_COMM_WORLD);
         if(rank == 0)
             cout << "Default ADIOS options = " << opts.to_json() << endl;
 #endif
@@ -329,6 +331,8 @@ int main(int argc, char* argv[])
             cout << "Failed to read config file " << configfile << endl;
             retval = -2;
         }
+
+        conduit::relay::mpi::io::finalize(MPI_COMM_WORLD);
     }
 
     MPI_Finalize();

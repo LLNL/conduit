@@ -85,6 +85,12 @@ namespace mpi
 namespace io
 {
 
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API initialize(MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API finalize(MPI_Comm comm);
+
 ///
 /// ``save`` works like a 'set' to the file.
 ///

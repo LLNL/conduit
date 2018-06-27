@@ -52,6 +52,14 @@
 #define CONDUIT_RELAY_ADIOS_API_HPP
 
 //-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API adios_initialize_library(
+                           CONDUIT_RELAY_COMMUNICATOR_ARG0(MPI_Comm comm));
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API adios_finalize_library(
+                           CONDUIT_RELAY_COMMUNICATOR_ARG0(MPI_Comm comm));
+
+//-----------------------------------------------------------------------------
 /// Write node data to a given path
 ///
 /// This methods supports a file system and adios path, joined using a ":"
@@ -112,12 +120,14 @@ void CONDUIT_RELAY_API adios_load(const std::string &path,
 //-----------------------------------------------------------------------------
 /// Pass a Node to set adios i/o options.
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API adios_set_options(const Node &opts);
+void CONDUIT_RELAY_API adios_set_options(const Node &opts
+                                         CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
 
 //-----------------------------------------------------------------------------
 /// Get a Node that contains adios i/o options.
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API adios_options(Node &opts);
+void CONDUIT_RELAY_API adios_options(Node &opts
+                                     CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
 
 //-----------------------------------------------------------------------------
 /// Get a number of time steps.

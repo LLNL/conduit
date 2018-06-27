@@ -85,6 +85,9 @@ about()
 }
 
 //---------------------------------------------------------------------------//
+// NOTE: This function may belong in conduit_relay_io and conduit_relay_mpi_io
+//       so the different versions of the library can query the io
+//       protocol options.
 void
 about(Node &n)
 {

@@ -90,6 +90,24 @@ namespace io
 #include "conduit_relay_identify_protocol.hpp"
 
 //---------------------------------------------------------------------------//
+void
+initialize()
+{
+#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+    adios_initialize_library();
+#endif
+}
+
+//---------------------------------------------------------------------------//
+void
+finalize()
+{
+#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+    adios_finalize_library();
+#endif
+}
+
+//---------------------------------------------------------------------------//
 void 
 save(const Node &node,
      const std::string &path)

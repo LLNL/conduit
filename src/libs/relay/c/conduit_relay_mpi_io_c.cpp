@@ -63,6 +63,20 @@ using namespace conduit;
 
 //-----------------------------------------------------------------------------
 void
+conduit_relay_mpi_io_initialize(MPI_Fint comm)
+{
+    relay::mpi::io::initialize(MPI_Comm_f2c(comm));
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_relay_mpi_io_finalize(MPI_Fint comm)
+{
+    relay::mpi::io::finalize(MPI_Comm_f2c(comm));
+}
+
+//-----------------------------------------------------------------------------
+void
 conduit_relay_mpi_io_save(conduit_node *cnode, const char *path, MPI_Fint comm)
 {
     Node *n = cpp_node(cnode);
