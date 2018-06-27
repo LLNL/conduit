@@ -723,7 +723,9 @@ static void finalize(
     finalize_read_methods();
     // cout << "adios_finalize()" << endl;
 #ifdef USE_MPI
-    adios_finalize(comm);
+    int rank = 0;
+    MPI_Comm_rank(comm, &rank);
+    adios_finalize(rank);
 #else
     adios_finalize(0);
 #endif
