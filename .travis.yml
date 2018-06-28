@@ -101,7 +101,7 @@ env:
       ENABLE_ADIOS=ON
       PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
-      NP_ARGS="--np 2"
+      NP_ARGS="--np 4"
 addons:
   apt:
     sources:
