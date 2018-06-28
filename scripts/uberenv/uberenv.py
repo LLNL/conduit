@@ -126,7 +126,7 @@ def parse_args():
                       help="Ignore SSL Errors")
 
     # Simple flag to select number of processors to build packages.
-    parser.add_option("-np",
+    parser.add_option("--np",
                       dest="np",
                       default="1",
                       help="number of processors")
