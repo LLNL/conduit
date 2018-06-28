@@ -347,14 +347,20 @@ def main():
 
     if opts.has_key("np"):
         if opts["np"] != "1":
-            config_yaml = pjoin(os.getenv("HOME"), ".spack", "config.yaml")
+            sdir = pjoin(os.getenv("HOME"), ".spack")
             try:
-                f = open(config_yaml, "wt")
-                f.write("config:\n  build_jobs: %s\n" % opts["np"])
-                f.close()
-                print "Created ", config_yaml
+                os.mkdir(sdir)
+                print "Created %s directory." % sdir
+                config_yaml = pjoin(sdir, "config.yaml")
+                try:              
+                    f = open(config_yaml, "wt")
+                    f.write("config:\n  build_jobs: %s\n" % opts["np"])
+                    f.close()
+                    print "Created ", config_yaml
+                except:
+                    print "ERROR creating ", config_yaml
             except:
-                print "ERROR creating ", config_yaml
+                print "ERROR creating", sdir
 
     project_opts  = load_json_file(opts["project_json"])
     print project_opts
