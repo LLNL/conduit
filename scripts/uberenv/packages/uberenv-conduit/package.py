@@ -62,13 +62,6 @@ class UberenvConduit(Conduit):
         url      = "file://" + dummy_tar_path
         return url
 
-    def cmake_args(self):
-        # Spack is going to run cmake with these arguments. We don't want this to
-        # result in a build or a failure. So, just run cmake --version and see if
-        # that gets us farther.
-        print "UberenvConduit.cmake_args"
-        return ["--version"]
-
     def install(self, spec, prefix):
         """
         Create a host config for use in conduit
