@@ -55,6 +55,12 @@ class UberenvConduit(Conduit):
     depends_on("adios+mpi+hdf5", when="+adios+mpi")
     depends_on("adios~mpi+hdf5", when="+adios~mpi")
 
+    def cmake_args(self):
+        args = super(UberenvConduit, self).cmake_args()
+        args = args[:-1] + ["."]
+        print "UberenvConduit.cmake_args returned ", args
+        return args
+
     def url_for_version(self, version):
         dummy_tar_path =  os.path.abspath(pjoin(os.path.split(__file__)[0]))
         dummy_tar_path = pjoin(dummy_tar_path,"uberenv-conduit.tar.gz")
