@@ -660,6 +660,31 @@ TEST(conduit_relay_io_adios, test_time_series)
     delete [] out;
 }
 
+TEST(conduit_relay_io_adios, test_node_path)
+{
+    std::string path("test_node_path.bp");
+
+    Node all;
+    all["extra/level/data/a"] = int32(0);
+    all["extra/level/data/b"] = std::vector<int>(10, 1);
+    all["extra/level/data/c"] = std::vector<int>(20, 2);
+    all["extra/levels"] = int32(1); // So we test s vs / in comparison
+    //std::cout << "all=" << all.to_json() << std::endl;
+
+    // Write out a subtree that has parent nodes.
+    const Node &data = all["extra/level"];
+    //std::cout << "data=" << data.to_json() << std::endl;
+    relay::io::save(data, path);
+
+    // Make sure that when we read it back in, we get the same thing and
+    // not data that has the parent nodes prepended.
+    Node in;
+    relay::io::load(path, in);
+    //std::cout << "in=" << in.to_json() << std::endl;
+    EXPECT_EQ(compare_nodes(in, data, in), true);
+}
+
+
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {

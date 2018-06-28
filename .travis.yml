@@ -141,8 +141,12 @@ script:
   - export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}~openssl~ncurses"
   - export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"
   - echo $SPACK_SPEC
+  # Output something every 10 minutes or Travis kills the job
+  - while sleep 540; do echo "=====[ $SECONDS seconds still running ]====="; done &
   # build deps using uberenv
-  - travis_wait python scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}" ${NP_ARGS}
+  - python scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}" ${NP_ARGS}
+  # Killing background sleep loop
+  - kill %1
   # todo:
   #- export SPACK_PYTHON_BIN_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/python*/bin`
   #- pip install cpp-coveralls
@@ -187,6 +191,7 @@ after_success:
 notifications:
   email:
     recipients:
-      - cyrush@llnl.gov
+      #- cyrush@llnl.gov
+      - bjw@ilight.com
     on_success: always
     on_failure: always

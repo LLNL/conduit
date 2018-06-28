@@ -618,6 +618,12 @@ public:
         opts["read/verbose"] = read_verbose;
         opts["read/timeout"] = read_timeout;
 
+#if 0
+// NOTE: This is meant to provide an informative list of the available
+//       transports. Something about it is not playing nicely with MACSio.
+//       It's either the use of a list or maybe strings point to these
+//       local string vectors...?
+
         // Add in the available transports and transforms.
         std::string sep(", ");
         std::vector<std::string> transports(available_transports()),
@@ -630,6 +636,7 @@ public:
         opts[key_transform].set(DataType::list());
         for(size_t i = 0; i < transforms.size(); ++i)
             opts[key_transform].append().set(transforms[i]);
+#endif
     }
 };
 
@@ -733,8 +740,11 @@ static void finalize(
 }
 
 //-----------------------------------------------------------------------------
-static void iterate_conduit_node(const conduit::Node &node,
+static void iterate_conduit_node_internal(
+    const conduit::Node &node,
+    std::string::size_type offset,
     void (*func)(const Node &,
+                 const std::string &,
                  void *,
 #ifdef USE_MPI
                  MPI_Comm
@@ -750,15 +760,50 @@ static void iterate_conduit_node(const conduit::Node &node,
 #endif
     )
 {
+    // NOTE: we have to build up the path of the node ourselves in case we
+    //       were passed a node that has parents that we're not saving.
     if(node.number_of_children() == 0)
     {
-        func(node, funcData, comm);
+        if(offset != std::string::npos)
+            func(node, std::string(node.path().c_str() + offset), funcData, comm);
+        else
+            func(node, node.path(), funcData, comm);
     }
     else
     {
         for(conduit::index_t i = 0; i < node.number_of_children(); ++i)
-            iterate_conduit_node(node.child(i), func, funcData, comm);
+        {
+            iterate_conduit_node_internal(node.child(i), offset, func, funcData, comm);
+        }
     }  
+}
+
+//-----------------------------------------------------------------------------
+static void iterate_conduit_node(
+    const conduit::Node &node,
+    void (*func)(const Node &,
+                 const std::string &,
+                 void *,
+#ifdef USE_MPI
+                 MPI_Comm
+#else
+                 int
+#endif
+                ),
+    void *funcData,
+#ifdef USE_MPI
+    MPI_Comm comm
+#else
+    int comm
+#endif
+    )
+{
+    // We're saving everthing under the current node so we want to exclude
+    // everything that has the current node's path + "/"
+    std::string::size_type offset = 0;
+    if(!node.path().empty())
+        offset = node.path().size() + 1;
+    iterate_conduit_node_internal(node, offset, func, funcData, comm);
 }
 
 //-----------------------------------------------------------------------------
@@ -842,7 +887,9 @@ static ADIOS_DATATYPES conduit_dtype_to_adios_dtype(const Node &node)
 }
 
 //-----------------------------------------------------------------------------
-static void define_variables(const Node &node, void *funcData,
+static void define_variables(const Node &node, 
+    const std::string &node_path,
+    void *funcData,
 #ifdef USE_MPI
     MPI_Comm 
 #else
@@ -861,7 +908,7 @@ static void define_variables(const Node &node, void *funcData,
     }
 
     // Prepend a path if necessary.
-    std::string adios_var(conduit::utils::join_path(state->adios_path, node.path()));
+    std::string adios_var(conduit::utils::join_path(state->adios_path, node_path));
 
     // Dimensions
     char offset[20], global[20], local[20];
@@ -944,7 +991,9 @@ static void define_variables(const Node &node, void *funcData,
 }
 
 //-----------------------------------------------------------------------------
-static void write_variables(const Node &node, void *funcData,
+static void write_variables(const Node &node, 
+    const std::string &node_path,
+    void *funcData,
 #ifdef USE_MPI
     MPI_Comm
 #else
@@ -961,11 +1010,11 @@ static void write_variables(const Node &node, void *funcData,
         CONDUIT_ERROR("Unsupported Conduit to ADIOS type conversion.");
         return;
     }
-    DEBUG_PRINT_RANK("adios_write(file, \"" << node.path()
+    DEBUG_PRINT_RANK("adios_write(file, \"" << node_path
                      << "\", node.data_ptr())")
 
     // Prepend a path if necessary.
-    std::string adios_var(conduit::utils::join_path(state->adios_path, node.path()));
+    std::string adios_var(conduit::utils::join_path(state->adios_path, node_path));
 
     // if the node is compact, we can write directly from its data ptr
     int s;
