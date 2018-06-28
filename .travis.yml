@@ -103,7 +103,7 @@ env:
       ENABLE_MPI=ON
       ENABLE_DOCS=OFF
       ENABLE_ADIOS=ON
-      ENABLE_PYTHON=OFF # Take away the numpy/openblas dependency
+      ENABLE_PYTHON=OFF
       PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
 addons:
