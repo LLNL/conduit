@@ -57,7 +57,7 @@ class UberenvConduit(Conduit):
 
     def cmake_args(self):
         args = super(UberenvConduit, self).cmake_args()
-        args = args[:-1] + ["."]
+        args = args[:-1] + ["src"]
         print "UberenvConduit.cmake_args returned ", args
         return args
 
