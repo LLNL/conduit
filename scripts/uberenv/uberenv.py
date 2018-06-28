@@ -125,6 +125,12 @@ def parse_args():
                       default=False,
                       help="Ignore SSL Errors")
 
+    # Simple flag to select number of processors to build packages.
+    parser.add_option("-np",
+                      dest="np",
+                      default="1",
+                      help="number of processors")
+
     ###############
     # parse args
     ###############
@@ -338,7 +344,18 @@ def main():
     """ 
     # parse args from command line
     opts, extras = parse_args()
-    
+
+    if opts.has_key("np"):
+        if opts["np"] != "1":
+            config_yaml = pjoin(os.getenv("HOME"), ".spack", "config.yaml")
+            try:
+                f = open(config_yaml, "wt")
+                f.write("config:\n  build_jobs: %s\n" % opts["np"])
+                f.close()
+                print "Created ", config_yaml
+            except:
+                print "ERROR creating ", config_yaml
+
     project_opts  = load_json_file(opts["project_json"])
     print project_opts
     uberenv_pkg_name = project_opts["uberenv_package_name"]

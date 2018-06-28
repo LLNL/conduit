@@ -339,6 +339,11 @@ if(MPI_FOUND)
 set(conduit_relay_mpi_io_sources conduit_relay_mpi_io.cpp)
 
 #
+# Specify relay mpi io headers
+#
+set(conduit_relay_mpi_io_headers conduit_relay_mpi_io.hpp)
+
+#
 # Specify the relay mpi io deps
 #
 set(conduit_relay_mpi_io_deps conduit mpi)

@@ -93,7 +93,7 @@ env:
       ENABLE_DOCS=OFF
       PYTHON_VERSION=3.6.3
       CMAKE_VERSION=3.9.4
-    # mpi on, docs off, static libs, python 2.7, adios on
+    # mpi on, docs off, static libs, python 2.7, adios on (-np 2)
     - BUILD_SHARED_LIBS=OFF
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
@@ -101,6 +101,7 @@ env:
       ENABLE_ADIOS=ON
       PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
+      NP_ARGS="-np 2"
 addons:
   apt:
     sources:
@@ -134,7 +135,7 @@ script:
   - export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"
   - echo $SPACK_SPEC
   # build deps using uberenv
-  - python scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}"
+  - python scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}" ${NP_ARGS}
   # todo:
   #- export SPACK_PYTHON_BIN_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/python*/bin`
   #- pip install cpp-coveralls

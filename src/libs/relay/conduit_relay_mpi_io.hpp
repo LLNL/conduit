@@ -86,6 +86,14 @@ namespace io
 {
 
 //-----------------------------------------------------------------------------
+/// The about methods construct human readable info about how relay io was
+/// configured.
+//-----------------------------------------------------------------------------
+std::string CONDUIT_RELAY_API about(MPI_Comm comm);
+void        CONDUIT_RELAY_API about(conduit::Node &res, bool reset, MPI_Comm comm);
+void        CONDUIT_RELAY_API about(conduit::Node &res, MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API initialize(MPI_Comm comm);
 
 //-----------------------------------------------------------------------------

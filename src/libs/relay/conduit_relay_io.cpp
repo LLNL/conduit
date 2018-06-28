@@ -90,6 +90,72 @@ namespace io
 #include "conduit_relay_identify_protocol.hpp"
 
 //---------------------------------------------------------------------------//
+std::string
+about()
+{
+    Node n;
+    io::about(n);
+    return n.to_json();
+}
+
+//---------------------------------------------------------------------------//
+void
+about(Node &n, bool reset)
+{
+    if(reset)
+        n.reset();
+    Node &io_protos = n["io/protocols"];
+
+    // json io
+    io_protos["json"] = "enabled";
+    io_protos["conduit_json"] = "enabled";
+
+    // standard binary io
+    io_protos["conduit_bin"] = "enabled";
+
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+    // straight hdf5 
+    io_protos["hdf5"] = "enabled";
+    
+    hdf5_options(n["io/options/hdf5"]);
+#else
+    // straight hdf5 
+    io_protos["hdf5"] = "disabled";
+#endif
+    
+    // silo
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
+    // node is packed into two silo objects
+    io_protos["conduit_silo"] = "enabled";
+#else
+    // node is packed into two silo objects
+    io_protos["conduit_silo"] = "disabled";
+#endif
+    
+    // silo mesh aware
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
+    io_protos["conduit_silo_mesh"] = "enabled";
+#else
+    io_protos["conduit_silo_mesh"] = "disabled";
+#endif
+
+    // ADIOS aware
+#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+    io_protos["adios"] = "enabled";
+    adios_options(n["io/options/adios"]);
+#else
+    io_protos["adios"] = "disabled";
+#endif
+}
+
+//---------------------------------------------------------------------------//
+void
+about(Node &n)
+{
+    io::about(n, true);
+}
+
+//---------------------------------------------------------------------------//
 void
 initialize()
 {

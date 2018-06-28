@@ -63,6 +63,14 @@ using namespace conduit;
 
 //-----------------------------------------------------------------------------
 void
+conduit_relay_io_about(conduit_node *cnode)
+{
+    Node *n = cpp_node(cnode);
+    relay::io::about(*n);
+}
+
+//-----------------------------------------------------------------------------
+void
 conduit_relay_io_initialize(void)
 {
     relay::io::initialize();

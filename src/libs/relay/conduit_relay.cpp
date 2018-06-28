@@ -49,13 +49,7 @@
 //-----------------------------------------------------------------------------
 
 #include "conduit_relay.hpp"
-
-#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-#include "conduit_relay_io_hdf5.hpp"
-#endif
-#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
-#include "conduit_relay_io_adios.hpp"
-#endif
+#include "conduit_relay_io.hpp"
 
 //-----------------------------------------------------------------------------
 // standard lib includes
@@ -105,56 +99,18 @@ about(Node &n)
     
     n["web_client_root"] =  web_root;
 
-    Node &io_protos = n["io/protocols"];
-
-    // json io
-    io_protos["json"] = "enabled";
-    io_protos["conduit_json"] = "enabled";
-
-    // standard binary io
-    io_protos["conduit_bin"] = "enabled";
-
-#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-    // straight hdf5 
-    io_protos["hdf5"] = "enabled";
-    
-    io::hdf5_options(n["io/options/hdf5"]);
-#else
-    // straight hdf5 
-    io_protos["hdf5"] = "disabled";
-#endif
-    
-    // silo
-#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
-    // node is packed into two silo objects
-    io_protos["conduit_silo"] = "enabled";
-#else
-    // node is packed into two silo objects
-    io_protos["conduit_silo"] = "disabled";
-#endif
-    
-    // silo mesh aware
-#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
-    io_protos["conduit_silo_mesh"] = "enabled";
-#else
-    io_protos["conduit_silo_mesh"] = "disabled";
-#endif
-
+    // Add the relay io information. We do this so relay::about for the serial
+    // case continues to contain IO information. In the future, serial relay
+    // should probably be split into relay and relay::io libraries. We already
+    // have relay::mpi::io for parallel IO libraries. Splitting serial relay
+    // would make it symmetric.
+    relay::io::about(n, false);
 
 #ifdef CONDUIT_RELAY_MPI_ENABLED
     n["mpi"] = "enabled";
 #else
     n["mpi"] = "disabled";
 #endif
-
-    // ADIOS aware
-#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
-    io_protos["adios"] = "enabled";
-    io::adios_options(n["io/options/adios"]);
-#else
-    io_protos["adios"] = "disabled";
-#endif
-
 }
 
 

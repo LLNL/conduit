@@ -78,6 +78,14 @@ namespace io
 {
 
 //-----------------------------------------------------------------------------
+/// The about methods construct human readable info about how relay io was
+/// configured.
+//-----------------------------------------------------------------------------
+std::string CONDUIT_RELAY_API about();
+void        CONDUIT_RELAY_API about(conduit::Node &res, bool reset);
+void        CONDUIT_RELAY_API about(conduit::Node &res);
+
+//-----------------------------------------------------------------------------
 void identify_protocol(const std::string &path,
                        std::string &io_type);
 
