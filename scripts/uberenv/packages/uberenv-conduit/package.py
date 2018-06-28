@@ -38,8 +38,7 @@ class UberenvConduit(Conduit):
     scientific data in C++, C, Fortran, and Python. It is used for data
     coupling between packages in-core, serialization, and I/O tasks."""
 
-    version('0.0.0', '8d378ef62dedc2df5db447b029b71200',preferred=True)
-
+    version('0.0.0', 'c8b277080a00041cfc4f64619e31f6d6',preferred=True)
     # default to building docs when using uberenv
     variant("doc",
             default=True,

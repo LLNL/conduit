@@ -199,8 +199,8 @@ script:
   - export HOST_CONFIG=`ls ${TRAVIS_BUILD_DIR}/uberenv_libs/*.cmake`
   # configure with cmake using host-config
   - cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ${TRAVIS_BUILD_DIR}/src
-  - cat /home/travis/build/BradWhitlock/conduit/travis-debug-build/CMakeFiles/CMakeError.log
-  - cat /home/travis/build/BradWhitlock/conduit/travis-debug-build/CMakeFiles/CMakeOutput.log
+  - echo "Printing CMakeError.log"
+  - tail -n200 /home/travis/build/BradWhitlock/conduit/travis-debug-build/CMakeFiles/CMakeError.log
   # build, test, and install
   - make
   - env CTEST_OUTPUT_ON_FAILURE=1 make test
