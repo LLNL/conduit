@@ -53,6 +53,7 @@ class UberenvConduit(Conduit):
     # Try some basic ADIOS configurations. NOTE: these are more extensively
     # covered in the Conduit Spack base class. These seem necessary here too.
     depends_on("adios+mpi", when="+adios+mpi")
+    depends_on("adios~mpi", when="+adios~mpi")
 
     def url_for_version(self, version):
         dummy_tar_path =  os.path.abspath(pjoin(os.path.split(__file__)[0]))
