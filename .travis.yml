@@ -70,6 +70,7 @@ env:
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
       ENABLE_DOCS=OFF
+      ENABLE_PYTHON=ON
       PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
     # mpi on, docs off, static libs, python 2.7, adios off
@@ -77,6 +78,7 @@ env:
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
       ENABLE_DOCS=OFF
+      ENABLE_PYTHON=ON
       PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
     # mpi on, docs off, shared libs, python 3.6, adios off
@@ -84,6 +86,7 @@ env:
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
       ENABLE_DOCS=OFF
+      ENABLE_PYTHON=ON
       PYTHON_VERSION=3.6.3
       CMAKE_VERSION=3.9.4
     # mpi on, docs off, static libs, python 3.6, adios off
@@ -91,17 +94,18 @@ env:
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
       ENABLE_DOCS=OFF
+      ENABLE_PYTHON=ON
       PYTHON_VERSION=3.6.3
       CMAKE_VERSION=3.9.4
-    # mpi on, docs off, static libs, python 2.7, adios on (-np 2)
+    # mpi on, docs off, static libs, no python, adios on
     - BUILD_SHARED_LIBS=OFF
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
       ENABLE_DOCS=OFF
       ENABLE_ADIOS=ON
+      ENABLE_PYTHON=OFF # Take away the numpy/openblas dependency
       PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
-      NP_ARGS="--np 4"
 addons:
   apt:
     sources:
@@ -125,11 +129,14 @@ script:
   - echo $TRAVIS_BUILD_DIR 
   # setup spack spec based on our travis options
   # note: mpi takes quite a while to build, so we use binary pkgs 
-  - export SPACK_SPEC="%gcc@4.8+cmake+python~mpi"
+  # note: try turning off Python in some cases.
+  - if [ $ENABLE_PYTHON = 'ON' ]; then export SPACK_SPEC="%gcc@4.8+cmake+python~mpi"; fi
+  - if [ $ENABLE_PYTHON = 'OFF' ]; then export SPACK_SPEC="%gcc@4.8+cmake~python~mpi"; fi
   # variants
   - if [ $ENABLE_DOCS = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+doc"; fi
   - if [ $ENABLE_DOCS = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~doc"; fi
   - if [ $ENABLE_ADIOS = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+adios"; fi
+  - if [ $ENABLE_ADIOS = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~adios"; fi
   # versions and package selections (disable default options to speedup build)
   - export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}~openssl~ncurses"
   - export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"
