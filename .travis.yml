@@ -70,6 +70,7 @@ env:
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
       ENABLE_DOCS=OFF
+      ENABLE_ADIOS=OFF
       ENABLE_PYTHON=ON
       PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
@@ -79,6 +80,7 @@ env:
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
       ENABLE_DOCS=OFF
+      ENABLE_ADIOS=OFF
       ENABLE_PYTHON=ON
       PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
@@ -88,6 +90,7 @@ env:
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
       ENABLE_DOCS=OFF
+      ENABLE_ADIOS=OFF
       ENABLE_PYTHON=ON
       PYTHON_VERSION=3.6.3
       CMAKE_VERSION=3.9.4
@@ -97,17 +100,18 @@ env:
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
       ENABLE_DOCS=OFF
+      ENABLE_ADIOS=OFF
       ENABLE_PYTHON=ON
       PYTHON_VERSION=3.6.3
       CMAKE_VERSION=3.9.4
       BLT_CXX_STD=c++11
-    # mpi on, docs off, static libs, no python, adios on
+    # mpi on, docs off, static libs, python 2.7, adios on
     - BUILD_SHARED_LIBS=OFF
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
       ENABLE_DOCS=OFF
       ENABLE_ADIOS=ON
-      ENABLE_PYTHON=OFF
+      ENABLE_PYTHON=ON
       PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
       BLT_CXX_STD=c++11
@@ -182,8 +186,7 @@ script:
   # set c++ std
   - CMAKE_OPTS="${CMAKE_OPTS} -DBLT_CXX_STD=${BLT_CXX_STD}"
   # enable ADIOS if selected
-  - if [ $ENABLE_ADIOS = 'ON' ]; then ADIOS_DIR="`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/adios*/`"; fi
-  - if [ $ENABLE_ADIOS = 'ON' ]; then CMAKE_OPTS="${CMAKE_OPTS} -DADIOS_DIR=${ADIOS_DIR}"; fi
+  - if [ $ENABLE_ADIOS = 'ON' ]; then CMAKE_OPTS="${CMAKE_OPTS} -DADIOS_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/adios*/`"; fi
   # install path
   - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR}/travis-debug-install"
   # make sure cmake is in our path

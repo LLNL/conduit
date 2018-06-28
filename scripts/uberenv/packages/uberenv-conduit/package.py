@@ -52,8 +52,9 @@ class UberenvConduit(Conduit):
 
     # Try some basic ADIOS configurations. NOTE: these are more extensively
     # covered in the Conduit Spack base class. These seem necessary here too.
-    depends_on("adios+mpi", when="+adios+mpi")
-    depends_on("adios~mpi", when="+adios~mpi")
+    # note: Conduit always depends on hdf5 by default.
+    depends_on("adios+mpi+hdf5", when="+adios+mpi")
+    depends_on("adios~mpi+hdf5", when="+adios~mpi")
 
     def url_for_version(self, version):
         dummy_tar_path =  os.path.abspath(pjoin(os.path.split(__file__)[0]))
@@ -61,10 +62,18 @@ class UberenvConduit(Conduit):
         url      = "file://" + dummy_tar_path
         return url
 
+    def cmake_args(self):
+        # Spack is going to run cmake with these arguments. We don't want this to
+        # result in a build or a failure. So, just run cmake --version and see if
+        # that gets us farther.
+        print "UberenvConduit.cmake_args"
+        return ["--version"]
+
     def install(self, spec, prefix):
         """
         Create a host config for use in conduit
         """
+        print "UberenvConduit.install"
         with working_dir('spack-build', create=True):
             host_cfg_fname = self.create_host_config(spec, prefix)
             # place a copy in the spack install dir for the uberenv-conduit package 
