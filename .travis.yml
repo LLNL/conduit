@@ -142,7 +142,7 @@ script:
   - export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"
   - echo $SPACK_SPEC
   # build deps using uberenv
-  - python scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}" ${NP_ARGS}
+  - travis_wait python scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}" ${NP_ARGS}
   # todo:
   #- export SPACK_PYTHON_BIN_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/python*/bin`
   #- pip install cpp-coveralls
