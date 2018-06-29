@@ -52,6 +52,7 @@
 #include <conduit_utils.hpp>
 #include <iostream>
 #include <cstdlib>
+#include <cstring>
 
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
 #include <conduit_relay_mpi_io_adios.hpp>

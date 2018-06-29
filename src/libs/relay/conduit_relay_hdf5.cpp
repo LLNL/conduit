@@ -49,9 +49,24 @@
 //-----------------------------------------------------------------------------
 
 #ifdef USE_MPI
-#include "conduit_relay_mpi_io_hdf5.hpp"
+  // BLT's SetupMPI defines this macro globally. That is not desirable when
+  // also building a serial library. We defined _NOMPI (per ADIOS convention)
+  // in relay's CMakeLists.txt when we are building the serial relay library.
+  // This files is conditionally compiled and part of both serial and parallel
+  // relay libraries. If serial, we need to turn off USE_MPI if we find _NOMPI
+  // to get the namespace definition right for serial vs parallel.
+  #ifdef _NOMPI
+    #undef USE_MPI
+    #include "conduit_relay_io_hdf5.hpp"
+  #else
+    #include "conduit_relay_mpi_io_hdf5.hpp"
+  #endif
 #else
-#include "conduit_relay_io_hdf5.hpp"
+  // Force serial ADIOS using _NOMPI
+  #ifndef _NOMPI
+  #define _NOMPI
+  #endif
+  #include "conduit_relay_io_hdf5.hpp"
 #endif
 
 //-----------------------------------------------------------------------------
