@@ -409,9 +409,17 @@ def main():
         if res != 0:
             return res
         if "spack_activate" in project_opts:
-            for pkg_name in project_opts["spack_activate"]:
-              activate_cmd = "spack/bin/spack activate " + pkg_name
-              sexe(activate_cmd, echo=True)   
+            pkg_names = project_opts["spack_activate"].keys()
+            for pkg_name in pkg_names:
+              pkg_spec_requirements = project_opts["spack_activate"][pkg_name]
+              failed=False
+              for req in pkg_spec_requirements:
+                  if req not in opts["spec"]:
+                      failed=True
+                      break
+              if not failed:
+                  activate_cmd = "spack/bin/spack activate " + pkg_name
+                  sexe(activate_cmd, echo=True)   
         return res
 
 if __name__ == "__main__":
