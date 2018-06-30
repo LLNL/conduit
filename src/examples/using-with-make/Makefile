@@ -65,5 +65,5 @@ main:
 	$(CXX) $(INC_FLAGS) example.cpp $(LINK_FLAGS) -o example
 
 with_adios:
-	$(CXX) $(INC_FLAGS) example.cpp $(LINK_FLAGS) -o example -L$(ADIOS_DIR)/lib/ -ladios_nompi -ladiosread_nompi -lz -lrt
+	$(CXX) $(INC_FLAGS) example.cpp $(LINK_FLAGS) -o example -L$(ADIOS_DIR)/lib/ -L$(ZFP_DIR) -L$(LZ4_DIR) -L$(BLOSC_DIR) -L$(SZ_DIR) -ladios_nompi -ladiosread_nompi -lzfp -llz4 -lblosc -lSZ -lz -lrt
 
