@@ -64,4 +64,6 @@ LINK_FLAGS=-L$(CONDUIT_DIR)/lib/ -lconduit -lconduit_relay -lconduit_blueprint -
 main:
 	$(CXX) $(INC_FLAGS) example.cpp $(LINK_FLAGS) -o example
 
+with_adios:
+	$(CXX) $(INC_FLAGS) example.cpp $(LINK_FLAGS) -o example -L$(ADIOS_DIR)/lib/ -ladios_nompi -ladiosread_nompi -lrt
 
