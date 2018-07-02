@@ -529,7 +529,7 @@ DataType find_widest_type(const Node &node,
             for(index_t t = 0; t < (index_t)widest_types.size(); t++)
             {
                 DataType &widest_type = widest_types[t];
-                if(curr_type.expandable(widest_type))
+                if(curr_type.convertible(widest_type))
                 {
                     widest_type.set(curr_type);
                 }

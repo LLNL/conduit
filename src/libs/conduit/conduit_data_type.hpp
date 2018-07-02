@@ -398,7 +398,7 @@ public:
     index_t     spanned_bytes() const;
 
     bool        is_compact() const;
-    bool        expandable(const DataType& type) const;
+    bool        convertible(const DataType& type) const;
     bool        compatible(const DataType& type) const;
     bool        equals(const DataType& type) const;
 

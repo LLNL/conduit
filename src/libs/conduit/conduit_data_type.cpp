@@ -554,12 +554,8 @@ DataType::spanned_bytes() const
 
 //---------------------------------------------------------------------------//
 bool
-DataType::expandable(const DataType& dtype) const
+DataType::convertible(const DataType& dtype) const
 {
-    // TODO(JRC): Figure out a better name for this function, which
-    // returns true iff the given data type is used to represent the
-    // same thing as the instance type (e.g. int8 and int64).
-
     return ( (group() == dtype.group()) &&
              (m_ele_bytes >= dtype.m_ele_bytes) &&
              (m_num_ele >= dtype.m_num_ele) );
