@@ -9513,6 +9513,147 @@ Node::to_double_array(Node &res) const
 
 }
 
+//---------------------------------------------------------------------------//
+void
+Node::to_data_type(index_t dtype_id, Node &res) const
+{
+    switch(dtype_id)
+    {
+        /* ints */
+        case DataType::INT8_ID:
+        {
+            if(this->dtype().number_of_elements() == 1)
+            {
+                res.set(this->to_int8());
+            }
+            else
+            {
+                this->to_int8_array(res);
+            }
+            break;
+        }
+        case DataType::INT16_ID: 
+        {
+            if(this->dtype().number_of_elements() == 1)
+            {
+                res.set(this->to_int16());
+            }
+            else
+            {
+                this->to_int16_array(res);
+            }
+            break;
+        }
+        case DataType::INT32_ID:
+        {
+            if(this->dtype().number_of_elements() == 1)
+            {
+                res.set(this->to_int32());
+            }
+            else
+            {
+                this->to_int32_array(res);
+            }
+            break;
+        }
+        case DataType::INT64_ID:
+        {
+            if(this->dtype().number_of_elements() == 1)
+            {
+                res.set(this->to_int64());
+            }
+            else
+            {
+                this->to_int64_array(res);
+            }
+            break;
+        }
+
+        /* uints */
+        case DataType::UINT8_ID:
+        {
+            if(this->dtype().number_of_elements() == 1)
+            {
+                res.set(this->to_uint8());
+            }
+            else
+            {
+                this->to_uint8_array(res);
+            }
+            break;
+        }
+        case DataType::UINT16_ID:
+        {
+            if(this->dtype().number_of_elements() == 1)
+            {
+                res.set(this->to_uint16());
+            }
+            else
+            {
+                this->to_uint16_array(res);
+            }
+            break;
+        }
+        case DataType::UINT32_ID:
+        {
+            if(this->dtype().number_of_elements() == 1)
+            {
+                res.set(this->to_uint32());
+            }
+            else
+            {
+                this->to_uint32_array(res);
+            }
+            break;
+        }
+        case DataType::UINT64_ID:
+        {
+            if(this->dtype().number_of_elements() == 1)
+            {
+                res.set(this->to_uint64());
+            }
+            else
+            {
+                this->to_uint64_array(res);
+            }
+            break;
+        }
+
+        /* floats */
+        case DataType::FLOAT32_ID:
+        {
+            if(this->dtype().number_of_elements() == 1)
+            {
+                res.set(this->to_float32());
+            }
+            else
+            {
+                this->to_float32_array(res);
+            }
+            break;
+        }
+        case DataType::FLOAT64_ID:
+        {
+            if(this->dtype().number_of_elements() == 1)
+            {
+                res.set(this->to_float64());
+            }
+            else
+            {
+                this->to_float64_array(res);
+            }
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert to non-numeric type "
+                        << DataType::id_to_name(dtype_id) <<
+                        " from type " << dtype().name());
+        }
+    }
+}
+
 //-----------------------------------------------------------------------------
 // -- Value Helper class ---
 //-----------------------------------------------------------------------------

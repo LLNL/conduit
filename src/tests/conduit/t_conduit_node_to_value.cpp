@@ -420,6 +420,92 @@ TEST(conduit_node_to_value, float64_to_scalar)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_node_to_value, data_type_to_scalar)
+{
+    const DataType::TypeID leaf_tids[10] = {
+        DataType::INT8_ID, DataType::INT16_ID, DataType::INT32_ID, DataType::INT64_ID,
+        DataType::UINT8_ID, DataType::UINT16_ID, DataType::UINT32_ID, DataType::UINT64_ID,
+        DataType::FLOAT32_ID, DataType::FLOAT64_ID
+    };
+
+    for(index_t ti = 0; ti < 10; ti++)
+    {
+        Node base_node;
+        const DataType::TypeID base_tid = leaf_tids[ti];
+        {
+            Node temp;
+            temp.set(127);
+            temp.to_data_type(base_tid, base_node);
+        }
+
+        for(index_t tj = 0; tj < 10; tj++)
+        {
+            Node to_node;
+            const DataType::TypeID to_tid = leaf_tids[tj];
+            base_node.to_data_type(to_tid, to_node);
+
+            EXPECT_EQ(to_node.dtype().id(), to_tid);
+            switch(to_tid)
+            {
+                /// ints ///
+                case DataType::INT8_ID:
+                {
+                    EXPECT_EQ(to_node.as_int8(),127);
+                    break;
+                }
+                case DataType::INT16_ID:
+                {
+                    EXPECT_EQ(to_node.as_int16(),127);
+                    break;
+                }
+                case DataType::INT32_ID:
+                {
+                    EXPECT_EQ(to_node.as_int32(),127);
+                    break;
+                }
+                case DataType::INT64_ID:
+                {
+                    EXPECT_EQ(to_node.as_int64(),127);
+                    break;
+                }
+                /// uints ///
+                case DataType::UINT8_ID:
+                {
+                    EXPECT_EQ(to_node.as_uint8(),127);
+                    break;
+                }
+                case DataType::UINT16_ID:
+                {
+                    EXPECT_EQ(to_node.as_uint16(),127);
+                    break;
+                }
+                case DataType::UINT32_ID:
+                {
+                    EXPECT_EQ(to_node.as_uint32(),127);
+                    break;
+                }
+                case DataType::UINT64_ID:
+                {
+                    EXPECT_EQ(to_node.as_uint64(),127);
+                    break;
+                }
+                /// floats ///
+                case DataType::FLOAT32_ID:
+                {
+                    EXPECT_NEAR(to_node.as_float32(),127.0,1e-4);
+                    break;
+                }
+                case DataType::FLOAT64_ID:
+                {
+                    EXPECT_NEAR(to_node.as_float64(),127.0,1e-4);
+                    break;
+                }
+            }
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
 // check default values from as_zzz, by avoiding exceptions on warn
 //----------------------------------------------------------------------------- 
 

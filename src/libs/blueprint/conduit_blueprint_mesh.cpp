@@ -87,15 +87,11 @@ namespace conduit { namespace blueprint { namespace mesh {
     static const std::vector<std::string> coord_systems(coord_system_list,
         coord_system_list + sizeof(coord_system_list) / sizeof(coord_system_list[0]));
 
-    static const std::string topo_type_list[5] = {"points",
-                                                  "uniform",
-                                                  "rectilinear",
-                                                  "structured",
-                                                  "unstructured"};
-
+    static const std::string topo_type_list[5] = {"points", "uniform",
+        "rectilinear", "structured", "unstructured"};
     static const std::vector<std::string> topo_types(topo_type_list,
         topo_type_list + sizeof(topo_type_list) / sizeof(topo_type_list[0]));
-        
+
     static const std::string topo_shape_list[6] = {"point", "line", "tri", "quad", "tet", "hex"};
     static const std::vector<std::string> topo_shapes(topo_shape_list,
         topo_shape_list + sizeof(topo_shape_list) / sizeof(topo_shape_list[0]));
@@ -119,6 +115,20 @@ namespace conduit { namespace blueprint { namespace mesh {
     static const std::string logical_axis_list[3] = {"i", "j", "k"};
     static const std::vector<std::string> logical_axes(logical_axis_list,
         logical_axis_list + sizeof(logical_axis_list) / sizeof(logical_axis_list[0]));
+
+    static const DataType default_int_type(DataType::INT32_ID, 1);
+    static const DataType default_uint_type(DataType::UINT32_ID, 1);
+    static const DataType default_float_type(DataType::FLOAT64_ID, 1);
+
+    static const DataType default_int_type_list[2] = {default_int_type, default_uint_type};
+    static const std::vector<DataType> default_int_types(default_int_type_list,
+        default_int_type_list + sizeof(default_int_type_list) / sizeof(default_int_type_list[0]));
+
+    static const DataType default_number_type_list[3] = {default_float_type,
+        default_int_type, default_uint_type};
+    static const std::vector<DataType> default_number_types(default_number_type_list,
+        default_number_type_list + sizeof(default_number_type_list) /
+        sizeof(default_number_type_list[0]));
 } } }
 
 //-----------------------------------------------------------------------------
@@ -485,6 +495,67 @@ std::vector<std::string> identify_coordset_axes(const Node &coordset)
     return std::vector<std::string>(
         coordset_axes.begin(),
         coordset_axes.begin() + coords.number_of_children());
+}
+
+//-----------------------------------------------------------------------------
+DataType find_widest_type(const Node &node,
+                          const std::vector<std::string> &paths,
+                          const std::vector<DataType> &defaults)
+{
+    std::vector<DataType> widest_types;
+    for(index_t t = 0; t < (index_t)defaults.size(); t++)
+    {
+        widest_types.push_back(DataType(defaults[t].id(), 1));
+    }
+
+    Node info;
+    for(index_t p = 0; p < (index_t)paths.size(); p++)
+    {
+        const std::string &curr_path = paths[p];
+        if(node.has_path(curr_path))
+        {
+            const Node &curr_node = node.fetch(curr_path);
+
+            DataType curr_type;
+            if(conduit::blueprint::mcarray::verify(curr_node, info))
+            {
+                curr_type.set(find_widest_type(curr_node, curr_node.child_names(), defaults));
+            }
+            else
+            {
+                curr_type.set(DataType(curr_node.dtype().id(), 1));
+            }
+
+            for(index_t t = 0; t < (index_t)widest_types.size(); t++)
+            {
+                DataType &widest_type = widest_types[t];
+                if(curr_type.expandable(widest_type))
+                {
+                    widest_type.set(curr_type);
+                }
+            }
+        }
+    }
+
+    DataType widest_type(widest_types[0]);
+    for(index_t t = 1; t < (index_t)widest_types.size(); t++)
+    {
+        if(widest_type.element_bytes() < widest_types[t].element_bytes())
+        {
+            widest_type.set(widest_types[t]);
+        }
+    }
+
+    return widest_type;
+}
+
+//-----------------------------------------------------------------------------
+DataType find_widest_type(const Node &node,
+                          const std::vector<std::string> &paths,
+                          const DataType &default_type)
+{
+    std::vector<DataType> defaults(1, default_type);
+    return find_widest_type(node, paths, defaults);
 }
 
 //-----------------------------------------------------------------------------
@@ -1358,6 +1429,14 @@ mesh::coordset::rectilinear::transform(const conduit::Node &coordset,
     }
     else if(mesh::coordset::uniform::verify(coordset, info))
     {
+        DataType float_type;
+        {
+            std::vector<std::string> float_paths;
+            float_paths.push_back("origin");
+            float_paths.push_back("spacing");
+            float_type.set(find_widest_type(coordset, float_paths, default_float_type));
+        }
+
         dest["type"].set("rectilinear");
 
         std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
@@ -1366,8 +1445,6 @@ mesh::coordset::rectilinear::transform(const conduit::Node &coordset,
             const std::string& csys_axis = csys_axes[i];
             const std::string& logical_axis = logical_axes[i];
 
-            // TODO(JRC): Figure out whether or not the data type from the
-            // source node values should be inherited in the destination node.
             float64 dim_origin = coordset.has_child("origin") ?
                 coordset["origin"][csys_axis].value() : 0.0;
             float64 dim_spacing = coordset.has_child("spacing") ?
@@ -1375,12 +1452,14 @@ mesh::coordset::rectilinear::transform(const conduit::Node &coordset,
             index_t dim_len = coordset["dims"][logical_axis].value();
 
             Node &dst_cvals_node = dest["values"][csys_axis];
-            dst_cvals_node.set(DataType::float64(dim_len));
+            dst_cvals_node.set(DataType(float_type.id(), dim_len));
 
-            float64_array dst_cvals = dst_cvals_node.as_float64_array();
+            Node src_cval_node, dst_cval_node;
             for(index_t d = 0; d < dim_len; d++)
             {
-                dst_cvals[d] = dim_origin + d * dim_spacing;
+                src_cval_node.set(dim_origin + d * dim_spacing);
+                dst_cval_node.set_external(float_type, dst_cvals_node.element_ptr(d));
+                src_cval_node.to_data_type(float_type.id(), dst_cval_node);
             }
         }
 
@@ -1402,91 +1481,69 @@ mesh::coordset::_explicit::transform(const conduit::Node &coordset,
     Node info;
     if(mesh::coordset::verify(coordset, info))
     {
-        std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
-        index_t csys_dims = csys_axes.size();
+        bool is_base_explicit = mesh::coordset::_explicit::verify(coordset, info);
+        bool is_base_rectilinear = mesh::coordset::rectilinear::verify(coordset, info);
+        bool is_base_uniform = mesh::coordset::uniform::verify(coordset, info);
 
-        if(mesh::coordset::_explicit::verify(coordset, info))
+        if(is_base_explicit)
         {
             dest.set_external(coordset);
             res = true;
         }
-        else if(mesh::coordset::rectilinear::verify(coordset, info))
+        else if(is_base_rectilinear || is_base_uniform)
         {
+            std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
+
+            DataType float_type;
+            if(is_base_rectilinear)
+            {
+                std::vector<std::string> float_paths(1, "values");
+                float_type.set(find_widest_type(coordset, float_paths, default_float_type));
+            }
+            else // if(is_base_uniform)
+            {
+                std::vector<std::string> float_paths;
+                float_paths.push_back("origin");
+                float_paths.push_back("spacing");
+                float_type.set(find_widest_type(coordset, float_paths, default_float_type));
+            }
+
             dest["type"].set("explicit");
 
             index_t dim_lens[3], coords_len = 1;
-            for(index_t i = 0; i < csys_dims; i++)
+            for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
             {
-                const conduit::Node &dim = coordset["values"][csys_axes[i]];
-                coords_len *= (dim_lens[i] = dim.dtype().number_of_elements());
+                coords_len *= (dim_lens[i] = is_base_rectilinear ?
+                    coordset["values"][csys_axes[i]].dtype().number_of_elements() :
+                    coordset["dims"][logical_axes[i]].value());
             }
 
-            for(index_t i = 0; i < csys_dims; i++)
+            for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
             {
                 const std::string& csys_axis = csys_axes[i];
 
-                index_t dim_block_size = 1, dim_block_count = 1;
-                for(index_t j = 0; j < csys_dims; j++)
-                {
-                    dim_block_size *= (j < i) ? dim_lens[j] : 1;
-                    dim_block_count *= (i < j) ? dim_lens[j] : 1;
-                }
-
-                const Node &src_cvals_node = coordset["values"][csys_axis];
-                Node &dst_cvals_node = dest["values"][csys_axis];
-                dst_cvals_node.set(
-                    DataType(src_cvals_node.dtype().id(), coords_len));
-
-                float64_array dst_cvals = dst_cvals_node.as_float64_array();
-                for(index_t d = 0; d < dim_lens[i]; d++)
-                {
-                    index_t doffset = d * dim_block_size;
-                    for(index_t b = 0; b < dim_block_count; b++)
-                    {
-                        index_t boffset = b * dim_block_size * dim_lens[i];
-                        for(index_t bi = 0; bi < dim_block_size; bi++)
-                        {
-                            index_t ioffset = doffset + boffset + bi;
-                            memcpy(&dst_cvals[ioffset],
-                                src_cvals_node.element_ptr(d),
-                                src_cvals_node.dtype().element_bytes());
-                        }
-                    }
-                }
-            }
-
-            res = true;
-        }
-        else if(mesh::coordset::uniform::verify(coordset, info))
-        {
-            dest["type"].set("explicit");
-
-            index_t dim_lens[3], coords_len = 1;
-            for(index_t i = 0; i < csys_dims; i++)
-            {
-                coords_len *= (dim_lens[i] = coordset["dims"][logical_axes[i]].value());
-            }
-
-            for(index_t i = 0; i < csys_dims; i++)
-            {
-                const std::string& csys_axis = csys_axes[i];
-
+                // NOTE: The following values are specific to the
+                // rectilinear transform case.
+                const Node &src_cvals_node = coordset.has_child("values") ?
+                    coordset["values"][csys_axis] : info;
+                // NOTE: The following values are specific to the
+                // uniform transform case.
                 float64 dim_origin = coordset.has_child("origin") ?
                     coordset["origin"][csys_axis].value() : 0.0;
                 float64 dim_spacing = coordset.has_child("spacing") ?
                     coordset["spacing"]["d"+csys_axis].value() : 1.0;
 
-                Node &dst_cvals_node = dest["values"][csys_axis];
-                dst_cvals_node.set(DataType::float64(coords_len));
-
                 index_t dim_block_size = 1, dim_block_count = 1;
-                for(index_t j = 0; j < csys_dims; j++)
+                for(index_t j = 0; j < (index_t)csys_axes.size(); j++)
                 {
                     dim_block_size *= (j < i) ? dim_lens[j] : 1;
                     dim_block_count *= (i < j) ? dim_lens[j] : 1;
                 }
 
-                float64_array dst_cvals = dst_cvals_node.as_float64_array();
+                Node &dst_cvals_node = dest["values"][csys_axis];
+                dst_cvals_node.set(DataType(float_type.id(), coords_len));
+
+                Node src_cval_node, dst_cval_node;
                 for(index_t d = 0; d < dim_lens[i]; d++)
                 {
                     index_t doffset = d * dim_block_size;
@@ -1496,7 +1553,21 @@ mesh::coordset::_explicit::transform(const conduit::Node &coordset,
                         for(index_t bi = 0; bi < dim_block_size; bi++)
                         {
                             index_t ioffset = doffset + boffset + bi;
-                            dst_cvals[ioffset] = dim_origin + d * dim_spacing;
+                            dst_cval_node.set_external(float_type,
+                                dst_cvals_node.element_ptr(ioffset));
+
+                            if(is_base_rectilinear)
+                            {
+                                src_cval_node.set_external(
+                                    DataType(src_cvals_node.dtype().id(), 1),
+                                    (void*)src_cvals_node.element_ptr(d));
+                            }
+                            else // if(is_base_uniform)
+                            {
+                                src_cval_node.set(dim_origin + d * dim_spacing);
+                            }
+
+                            src_cval_node.to_data_type(float_type.id(), dst_cval_node);
                         }
                     }
                 }
@@ -1982,6 +2053,16 @@ mesh::topology::structured::transform(const conduit::Node &topo,
         {
             if(mesh::coordset::_explicit::transform(coordset, cdest))
             {
+                std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
+
+                // TODO(JRC): In this case, should we reach back into the coordset
+                // and use its types to inform those of the topology?
+                DataType int_type;
+                {
+                    std::vector<std::string> int_paths(1, "origin");
+                    int_type.set(find_widest_type(topo, int_paths, default_int_types));
+                }
+
                 dest["type"].set("structured");
                 dest["coordset"].set(cdest.name());
                 if(topo.has_child("origin"))
@@ -1989,29 +2070,18 @@ mesh::topology::structured::transform(const conduit::Node &topo,
                     dest["origin"].set(topo["origin"]);
                 }
 
-                if(mesh::coordset::uniform::verify(coordset, info))
+                for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
                 {
-                    dest["elements/dims"].set(coordset["dims"]);
-                }
-                else
-                {
-                    std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
-                    for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
-                    {
-                        const std::string& csys_axis = csys_axes[i];
-                        const std::string& logical_axis = logical_axes[i];
-                        dest["elements/dims"][logical_axis].set(
-                            coordset["values"][csys_axis].dtype().number_of_elements());
-                    }
-                }
+                    Node src_dlen_node;
+                    src_dlen_node.set(mesh::topology::uniform::verify(topo, info) ?
+                        coordset["dims"][logical_axes[i]].value() :
+                        coordset["values"][csys_axes[i]].dtype().number_of_elements());
+                    // NOTE: The number of elements in the topology is one less
+                    // than the number of points along each dimension.
+                    src_dlen_node.set(src_dlen_node.to_int64() - 1);
 
-                // NOTE: The number of elements in the topology is one less
-                // along each dimension than the number of points.
-                conduit::NodeIterator dims_it = dest["elements/dims"].children();
-                while(dims_it.has_next())
-                {
-                    conduit::Node &dim_node = dims_it.next();
-                    dim_node.set(dim_node.to_int64() - 1);
+                    Node &dst_dlen_node = dest["elements/dims"][logical_axes[i]];
+                    src_dlen_node.to_data_type(int_type.id(), dst_dlen_node);
                 }
 
                 res = true;
@@ -2131,6 +2201,22 @@ mesh::topology::unstructured::transform(const conduit::Node &topo,
         {
             if(mesh::coordset::_explicit::transform(coordset, cdest))
             {
+                // TODO(JRC): In this case, should we reach back into the coordset
+                // and use its types to inform those of the topology?
+                DataType int_type;
+                if(mesh::topology::structured::verify(topo, info))
+                {
+                    std::vector<std::string> int_paths;
+                    int_paths.push_back("elements/dims");
+                    int_paths.push_back("elements/origin");
+                    int_type.set(find_widest_type(topo, int_paths, default_int_types));
+                }
+                else
+                {
+                    std::vector<std::string> int_paths(1, "origin");
+                    int_type.set(find_widest_type(topo, int_paths, default_int_types));
+                }
+
                 dest["type"].set("unstructured");
                 dest["coordset"].set(cdest.name());
                 if(topo.has_child("origin"))
@@ -2180,9 +2266,9 @@ mesh::topology::unstructured::transform(const conduit::Node &topo,
                 index_t indices_per_elem = pow(2, csys_axes.size());
 
                 conduit::Node &conn_node = dest["elements/connectivity"];
-                conn_node.set(DataType::int32(num_elems * indices_per_elem));
+                conn_node.set(DataType(int_type.id(), num_elems * indices_per_elem));
 
-                int32_array dst_cvals = conn_node.as_int32_array();
+                Node src_idx_node, dst_idx_node;
                 index_t curr_elem[3], curr_vert[3];
                 for(index_t e = 0; e < num_elems; e++)
                 {
@@ -2201,7 +2287,10 @@ mesh::topology::unstructured::transform(const conduit::Node &topo,
                         }
                         grid_ijk_to_id(&curr_vert[0], &vdims_axes[0], v);
 
-                        dst_cvals[e * indices_per_elem + i] = v;
+                        src_idx_node.set(v);
+                        dst_idx_node.set_external(int_type,
+                            conn_node.element_ptr(e * indices_per_elem + i));
+                        src_idx_node.to_data_type(int_type.id(), dst_idx_node);
                     }
 
                     // TODO(JRC): This loop inverts quads/hexes to conform to
@@ -2210,8 +2299,17 @@ mesh::topology::unstructured::transform(const conduit::Node &topo,
                     // with initializing the ordering label value.
                     for(index_t p = 2; p < indices_per_elem; p += 4)
                     {
-                        std::swap(dst_cvals[e * indices_per_elem + p],
-                                  dst_cvals[e * indices_per_elem + p + 1]);
+                        index_t p1 = e * indices_per_elem + p;
+                        index_t p2 = e * indices_per_elem + p + 1;
+
+                        Node t1, t2, t3;
+                        t1.set(int_type, conn_node.element_ptr(p1));
+                        t2.set(int_type, conn_node.element_ptr(p2));
+
+                        t3.set_external(int_type, conn_node.element_ptr(p1));
+                        t2.to_data_type(int_type.id(), t3);
+                        t3.set_external(int_type, conn_node.element_ptr(p2));
+                        t1.to_data_type(int_type.id(), t3);
                     }
                 }
 

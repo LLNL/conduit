@@ -178,6 +178,13 @@ TEST(conduit_blueprint_mesh_xform, coordset_xforms)
                 const std::string jcoordset_type = COORD_TYPES[xj];
                 const std::string jcoordset_braid = get_braid_type(jcoordset_type);
 
+                // NOTE: The following lines are for debugging purposes only.
+                if(fi == 0)
+                {
+                    std::cout << "Testing coordset " << icoordset_type << " -> " <<
+                        jcoordset_type << "..." << std::endl;
+                }
+
                 conduit::Node jmesh;
                 blueprint::mesh::examples::braid(jcoordset_braid,2,3,4,jmesh);
                 conduit::Node &jcoordset = jmesh["coordsets"].child(0);
@@ -246,6 +253,13 @@ TEST(conduit_blueprint_mesh_xform, topology_xforms)
             {
                 const std::string jtopology_type = TOPO_TYPES[xj];
                 const std::string jtopology_braid = get_braid_type(jtopology_type);
+
+                // NOTE: The following lines are for debugging purposes only.
+                if(fi == 0)
+                {
+                    std::cout << "Testing topology " << itopology_type << " -> " <<
+                        jtopology_type << "..." << std::endl;
+                }
 
                 conduit::Node jmesh;
                 blueprint::mesh::examples::braid(jtopology_braid,2,3,4,jmesh);

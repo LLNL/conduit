@@ -55,7 +55,6 @@ set(BASIC_TESTS t_conduit_smoke
                 t_conduit_datatype_tests
                 t_conduit_node
                 t_conduit_node_parent
-                t_conduit_node_convert
                 t_conduit_node_compare
                 t_conduit_serialize
                 t_conduit_array
@@ -65,6 +64,7 @@ set(BASIC_TESTS t_conduit_smoke
                 t_conduit_node_paths
                 t_conduit_node_set
                 t_conduit_node_to_value
+                t_conduit_node_to_array
                 t_conduit_to_string
                 t_conduit_json
                 t_conduit_json_sanitize
