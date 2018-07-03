@@ -75,8 +75,8 @@ static const std::string TOPO_TYPE_LIST[5] = {"points", "uniform", "rectilinear"
 static const std::vector<std::string> TOPO_TYPES(TOPO_TYPE_LIST,
     TOPO_TYPE_LIST + sizeof(TOPO_TYPE_LIST) / sizeof(TOPO_TYPE_LIST[0]));
 
-typedef bool (*XformCoordsFun)(const Node&, Node&);
-typedef bool (*XformTopoFun)(const Node&, Node&, Node&);
+typedef void (*XformCoordsFun)(const Node&, Node&);
+typedef void (*XformTopoFun)(const Node&, Node&, Node&);
 typedef bool (*VerifyFun)(const Node&, Node&);
 
 /// Testing Helpers ///
@@ -98,106 +98,51 @@ std::string get_braid_type(const std::string &mesh_type)
     return braid_type;
 }
 
-/// Wrapper Functions ///
-
-bool transform_coordset_uniform_protocol(const Node &n, Node &m)
-{
-    return blueprint::mesh::coordset::transform("uniform",n,m);
-}
-
-bool transform_coordset_rectilinear_protocol(const Node &n, Node &m)
-{
-    return blueprint::mesh::coordset::transform("rectilinear",n,m);
-}
-
-bool transform_coordset_explicit_protocol(const Node &n, Node &m)
-{
-    return blueprint::mesh::coordset::transform("explicit",n,m);
-}
-
-bool transform_topology_points_protocol(const Node &n, Node &m, Node &o)
-{
-    return blueprint::mesh::topology::transform("points",n,m,o);
-}
-
-bool transform_topology_uniform_protocol(const Node &n, Node &m, Node &o)
-{
-    return blueprint::mesh::topology::transform("uniform",n,m,o);
-}
-
-bool transform_topology_rectilinear_protocol(const Node &n, Node &m, Node &o)
-{
-    return blueprint::mesh::topology::transform("rectilinear",n,m,o);
-}
-
-bool transform_topology_structured_protocol(const Node &n, Node &m, Node &o)
-{
-    return blueprint::mesh::topology::transform("structured",n,m,o);
-}
-
-bool transform_topology_unstructured_protocol(const Node &n, Node &m, Node &o)
-{
-    return blueprint::mesh::topology::transform("unstructured",n,m,o);
-}
-
 /// Transform Tests ///
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_xform, coordset_xforms)
 {
-    XformCoordsFun xform_direct_funs[] = {
-        blueprint::mesh::coordset::uniform::transform,
-        blueprint::mesh::coordset::rectilinear::transform,
-        blueprint::mesh::coordset::_explicit::transform};
-    XformCoordsFun xform_protocol_funs[] = {
-        transform_coordset_uniform_protocol,
-        transform_coordset_rectilinear_protocol,
-        transform_coordset_explicit_protocol};
+    XformCoordsFun xform_funs[3][3] = {
+        {NULL, blueprint::mesh::coordset::uniform::to_rectilinear, blueprint::mesh::coordset::uniform::to_explicit},
+        {NULL, NULL, blueprint::mesh::coordset::rectilinear::to_explicit},
+        {NULL, NULL, NULL}};
 
-    VerifyFun verify_funs[] = {
+    VerifyFun verify_funs[3] = {
         blueprint::mesh::coordset::uniform::verify,
         blueprint::mesh::coordset::rectilinear::verify,
         blueprint::mesh::coordset::_explicit::verify};
 
-    for(index_t fi = 0; fi < 2; fi++)
+    for(index_t xi = 0; xi < COORD_TYPES.size(); xi++)
     {
-        XformCoordsFun *xform_funs = (fi == 0) ?
-            &xform_direct_funs[0] : &xform_protocol_funs[0];
+        const std::string icoordset_type = COORD_TYPES[xi];
+        const std::string icoordset_braid = get_braid_type(icoordset_type);
 
-        for(index_t xi = 0; xi < COORD_TYPES.size(); xi++)
+        conduit::Node imesh;
+        blueprint::mesh::examples::braid(icoordset_braid,2,3,4,imesh);
+        const conduit::Node &icoordset = imesh["coordsets"].child(0);
+
+        for(index_t xj = xi + 1; xj < COORD_TYPES.size(); xj++)
         {
-            const std::string icoordset_type = COORD_TYPES[xi];
-            const std::string icoordset_braid = get_braid_type(icoordset_type);
+            const std::string jcoordset_type = COORD_TYPES[xj];
+            const std::string jcoordset_braid = get_braid_type(jcoordset_type);
 
-            conduit::Node imesh;
-            blueprint::mesh::examples::braid(icoordset_braid,2,3,4,imesh);
-            const conduit::Node &icoordset = imesh["coordsets"].child(0);
+            // NOTE: The following lines are for debugging purposes only.
+            std::cout << "Testing coordset " << icoordset_type << " -> " <<
+                jcoordset_type << "..." << std::endl;
 
-            for(index_t xj = 0; xj < COORD_TYPES.size(); xj++)
-            {
-                const std::string jcoordset_type = COORD_TYPES[xj];
-                const std::string jcoordset_braid = get_braid_type(jcoordset_type);
+            conduit::Node jmesh;
+            blueprint::mesh::examples::braid(jcoordset_braid,2,3,4,jmesh);
+            conduit::Node &jcoordset = jmesh["coordsets"].child(0);
 
-                // NOTE: The following lines are for debugging purposes only.
-                if(fi == 0)
-                {
-                    std::cout << "Testing coordset " << icoordset_type << " -> " <<
-                        jcoordset_type << "..." << std::endl;
-                }
+            XformCoordsFun to_new_coordset = xform_funs[xi][xj];
+            VerifyFun verify_new_coordset = verify_funs[xj];
 
-                conduit::Node jmesh;
-                blueprint::mesh::examples::braid(jcoordset_braid,2,3,4,jmesh);
-                conduit::Node &jcoordset = jmesh["coordsets"].child(0);
+            conduit::Node xcoordset, info;
+            to_new_coordset(icoordset, xcoordset);
 
-                XformCoordsFun to_new_coordset = xform_funs[xj];
-                VerifyFun verify_new_coordset = verify_funs[xj];
-
-                conduit::Node xcoordset, info;
-                EXPECT_EQ(to_new_coordset(icoordset, xcoordset), xi <= xj); // upscale only
-                EXPECT_EQ(verify_new_coordset(xcoordset, info), xi <= xj);  // to_x verify
-                EXPECT_EQ(jcoordset.diff(xcoordset, info), xi >  xj);       // to_x values
-                EXPECT_EQ(icoordset.diff(xcoordset, info), xi != xj);       // same no change
-            }
+            EXPECT_TRUE(verify_new_coordset(xcoordset, info));
+            EXPECT_FALSE(jcoordset.diff(xcoordset, info));
         }
     }
 }
@@ -206,19 +151,12 @@ TEST(conduit_blueprint_mesh_xform, coordset_xforms)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_xform, topology_xforms)
 {
-    XformTopoFun xform_direct_funs[] = {
-        blueprint::mesh::topology::points::transform,
-        blueprint::mesh::topology::uniform::transform,
-        blueprint::mesh::topology::rectilinear::transform,
-        blueprint::mesh::topology::structured::transform,
-        blueprint::mesh::topology::unstructured::transform};
-    XformTopoFun xform_protocol_funs[] = {
-        transform_topology_points_protocol,
-        transform_topology_uniform_protocol,
-        transform_topology_rectilinear_protocol,
-        transform_topology_structured_protocol,
-        transform_topology_unstructured_protocol};
-
+    XformTopoFun xform_funs[5][5] = {
+        {NULL, NULL, NULL, NULL, NULL},
+        {NULL, NULL, blueprint::mesh::topology::uniform::to_rectilinear, blueprint::mesh::topology::uniform::to_structured, blueprint::mesh::topology::uniform::to_unstructured},
+        {NULL, NULL, NULL, blueprint::mesh::topology::rectilinear::to_structured, blueprint::mesh::topology::rectilinear::to_unstructured},
+        {NULL, NULL, NULL, NULL, blueprint::mesh::topology::structured::to_unstructured},
+        {NULL, NULL, NULL, NULL, NULL}};
     VerifyFun verify_topology_funs[] = {
         blueprint::mesh::topology::points::verify,
         blueprint::mesh::topology::uniform::verify,
@@ -232,84 +170,56 @@ TEST(conduit_blueprint_mesh_xform, topology_xforms)
         blueprint::mesh::coordset::_explicit::verify,
         blueprint::mesh::coordset::_explicit::verify};
 
-    for(index_t fi = 0; fi < 2; fi++)
+    // NOTE(JRC): We skip the "points" topology during this general check
+    // because its rules are peculiar and specific.
+    for(index_t xi = 1; xi < TOPO_TYPES.size(); xi++)
     {
-        XformTopoFun *xform_funs = (fi == 0) ?
-            &xform_direct_funs[0] : &xform_protocol_funs[0];
+        const std::string itopology_type = TOPO_TYPES[xi];
+        const std::string itopology_braid = get_braid_type(itopology_type);
 
-        // NOTE(JRC): We skip the "points" topology during this general check
-        // because its rules are peculiar and specific.
-        for(index_t xi = 1; xi < TOPO_TYPES.size(); xi++)
+        conduit::Node imesh;
+        blueprint::mesh::examples::braid(itopology_braid,2,3,4,imesh);
+        const conduit::Node &itopology = imesh["topologies"].child(0);
+        const conduit::Node &icoordset = imesh["coordsets"].child(0);
+
+        for(index_t xj = xi + 1; xj < TOPO_TYPES.size(); xj++)
         {
-            const std::string itopology_type = TOPO_TYPES[xi];
-            const std::string itopology_braid = get_braid_type(itopology_type);
+            const std::string jtopology_type = TOPO_TYPES[xj];
+            const std::string jtopology_braid = get_braid_type(jtopology_type);
 
-            conduit::Node imesh;
-            blueprint::mesh::examples::braid(itopology_braid,2,3,4,imesh);
-            const conduit::Node &itopology = imesh["topologies"].child(0);
-            const conduit::Node &icoordset = imesh["coordsets"].child(0);
+            // NOTE: The following lines are for debugging purposes only.
+            std::cout << "Testing topology " << itopology_type << " -> " <<
+                jtopology_type << "..." << std::endl;
 
-            for(index_t xj = 1; xj < TOPO_TYPES.size(); xj++)
-            {
-                const std::string jtopology_type = TOPO_TYPES[xj];
-                const std::string jtopology_braid = get_braid_type(jtopology_type);
+            conduit::Node jmesh;
+            blueprint::mesh::examples::braid(jtopology_braid,2,3,4,jmesh);
+            conduit::Node &jtopology = jmesh["topologies"].child(0);
+            conduit::Node &jcoordset = jmesh["coordsets"].child(0);
 
-                // NOTE: The following lines are for debugging purposes only.
-                if(fi == 0)
-                {
-                    std::cout << "Testing topology " << itopology_type << " -> " <<
-                        jtopology_type << "..." << std::endl;
-                }
+            XformTopoFun to_new_topology = xform_funs[xi][xj];
+            VerifyFun verify_new_topology = verify_topology_funs[xj];
+            VerifyFun verify_new_coordset = verify_coordset_funs[xj];
 
-                conduit::Node jmesh;
-                blueprint::mesh::examples::braid(jtopology_braid,2,3,4,jmesh);
-                conduit::Node &jtopology = jmesh["topologies"].child(0);
-                conduit::Node &jcoordset = jmesh["coordsets"].child(0);
+            conduit::Node info;
+            conduit::Node &xtopology = imesh["topologies/test"];
+            conduit::Node &xcoordset = imesh["coordsets/test"];
+            to_new_topology(itopology, xtopology, xcoordset);
 
-                XformTopoFun to_new_topology = xform_funs[xj];
-                VerifyFun verify_new_topology = verify_topology_funs[xj];
-                VerifyFun verify_new_coordset = verify_coordset_funs[xj];
+            EXPECT_TRUE(verify_new_topology(xtopology, info));
+            EXPECT_TRUE(verify_new_coordset(xcoordset, info));
+            EXPECT_EQ(xtopology["coordset"].as_string(), xcoordset.name());
 
-                conduit::Node info;
-                conduit::Node &xtopology = imesh["topologies/test"];
-                conduit::Node &xcoordset = imesh["coordsets/test"];
+            // NOTE(JRC): This is necessary because the 'coordset' value
+            // will be different from the transform topology since it
+            // will always create a unique personal one and reference it.
+            conduit::Node dxtopology = xtopology;
+            dxtopology["coordset"].set(itopology["coordset"].as_string());
 
-                // transform should only allow transfers to more explicit topologies
-                EXPECT_EQ(to_new_topology(itopology, xtopology, xcoordset), xi <= xj);
-                // output in valid cases should always pass verify tests
-                EXPECT_EQ(verify_new_topology(xtopology, info), xi <= xj);
-                EXPECT_EQ(verify_new_coordset(xcoordset, info), xi <= xj);
+            EXPECT_FALSE(jtopology.diff(dxtopology, info));
+            EXPECT_FALSE(jcoordset.diff(xcoordset, info));
 
-                // for valid transforms, the transformed topology should point
-                // to the transformed coordset
-                if(verify_new_topology(xtopology, info))
-                {
-                    EXPECT_EQ(xtopology["coordset"].as_string(), xcoordset.name());
-                }
-
-                {
-                    // NOTE(JRC): This is necessary because the 'coordset' value
-                    // will be different from the transform topology since it
-                    // will always create a unique personal one and reference it.
-                    conduit::Node dxtopology = xtopology;
-                    dxtopology["coordset"].set(itopology["coordset"].as_string());
-
-                    // differences are only expected when a transform couldn't be done
-                    EXPECT_EQ(jtopology.diff(dxtopology, info), xi >  xj);
-                    EXPECT_EQ(jcoordset.diff(xcoordset, info), xi >  xj);
-                    // for identity transforms, the result should match the input
-                    EXPECT_EQ(itopology.diff(dxtopology, info), xi != xj);
-                    // NOTE(JRC): This condition is really confusing due to the
-                    // nature of the structured => unstructured case. In this case,
-                    // the coordinate set remains the same while the topology
-                    // changes, which is different from all other cases.
-                    EXPECT_EQ(icoordset.diff(xcoordset, info), xi != xj && (
-                        xi >= xj || icoordset["type"].as_string() != jcoordset["type"].as_string()));
-                }
-
-                imesh["topologies"].remove("test");
-                imesh["coordsets"].remove("test");
-            }
+            imesh["topologies"].remove("test");
+            imesh["coordsets"].remove("test");
         }
     }
 }
