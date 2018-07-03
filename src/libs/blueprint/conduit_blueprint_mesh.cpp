@@ -529,7 +529,14 @@ DataType find_widest_type(const Node &node,
             for(index_t t = 0; t < (index_t)widest_types.size(); t++)
             {
                 DataType &widest_type = widest_types[t];
-                if(curr_type.convertible(widest_type))
+
+                bool are_types_equivalent =
+                    (curr_type.is_float() && widest_type.is_float()) ||
+                    (curr_type.is_signed_integer() && widest_type.is_signed_integer()) ||
+                    (curr_type.is_unsigned_integer() && widest_type.is_unsigned_integer()) ||
+                    (curr_type.is_string() && widest_type.is_string());
+                if(are_types_equivalent &&
+                    (widest_type.element_bytes() >= curr_type.element_bytes()))
                 {
                     widest_type.set(curr_type);
                 }

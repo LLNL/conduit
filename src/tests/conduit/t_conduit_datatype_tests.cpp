@@ -58,7 +58,7 @@ using namespace conduit;
 
 //-----------------------------------------------------------------------------
 typedef bool (*DTypeCompareFun)(const DataType&, const DataType&);
-bool dtypes_convertible(const DataType &base, const DataType &ref) { return base.convertible(ref); }
+bool dtypes_convertible(const DataType &base, const DataType &ref) { return false; /*base.convertible(ref);*/ }
 bool dtypes_compatible(const DataType &base, const DataType &ref) { return base.compatible(ref); }
 bool dtypes_equal(const DataType &base, const DataType &ref) { return base.equals(ref); }
 
@@ -551,7 +551,10 @@ TEST(dtype_tests,dtype_comparison_checks)
         DataType::FLOAT32_ID, DataType::FLOAT32_ID, // Ignored; for testing purposes
         DataType::FLOAT32_ID, DataType::FLOAT64_ID};
 
-    for(index_t fi = 0; fi < 3; fi++)
+    // TODO(JRC): Either revert the start index back to 0 here once the
+    // "convertible" concept is modified and adopted or update this file
+    // to remove traces of this concept should it be rejected.
+    for(index_t fi = 1; fi < 3; fi++)
     {
         DTypeCompareFun dtype_compare = COMPARE_FUNS[fi];
         bool is_expand_compatible = fi == 0;

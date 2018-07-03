@@ -554,15 +554,6 @@ DataType::spanned_bytes() const
 
 //---------------------------------------------------------------------------//
 bool
-DataType::convertible(const DataType& dtype) const
-{
-    return ( (group() == dtype.group()) &&
-             (m_ele_bytes >= dtype.m_ele_bytes) &&
-             (m_num_ele >= dtype.m_num_ele) );
-}
-
-//---------------------------------------------------------------------------//
-bool
 DataType::compatible(const DataType& dtype) const
 {
     return ( (m_id == dtype.m_id ) &&
@@ -952,41 +943,6 @@ DataType::id_to_name(index_t dtype_id)
     else if(dtype_id == CHAR8_STR_ID) return "char8_str";
     // default to empty
     return "empty";
-}
-
-
-//---------------------------------------------------------------------------//
-std::string 
-DataType::id_to_group(index_t dtype_id)
-{
-    /// empty types
-    if(dtype_id      == EMPTY_ID)   return "empty";
-
-    /// container types
-    else if(dtype_id == OBJECT_ID)  return "container";
-    else if(dtype_id == LIST_ID)    return "container";
-
-    /// signed integer types
-    else if(dtype_id == INT8_ID)    return "int";
-    else if(dtype_id == INT16_ID)   return "int";
-    else if(dtype_id == INT32_ID)   return "int";
-    else if(dtype_id == INT64_ID)   return "int";
-
-    /// unsigned integer types
-    else if(dtype_id == UINT8_ID)   return "uint";
-    else if(dtype_id == UINT16_ID)  return "uint";
-    else if(dtype_id == UINT32_ID)  return "uint";
-    else if(dtype_id == UINT64_ID)  return "uint";
-
-    /// floating point types
-    else if(dtype_id == FLOAT32_ID) return "float";
-    else if(dtype_id == FLOAT64_ID) return "float";
-
-    /// string types
-    else if(dtype_id == CHAR8_STR_ID) return "char_str";
-
-    // default to empty
-    else return "empty";
 }
 
 //-----------------------------------------------------------------------------
