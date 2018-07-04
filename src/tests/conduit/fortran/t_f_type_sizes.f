@@ -96,43 +96,43 @@ contains
         check_c    = SIZEOF(test_int_1)
         print *,"[SIZEOF] C_SIGNED_CHAR   = ", check_kind
         print *,"[SIZEOF] integer(kind=1) = ",check_c
-        print *,""
+        print *," "
    
         check_kind = SIZEOF(test_short)
         check_c    = SIZEOF(test_int_2)
         print *,"[SIZEOF] C_SHORT         = ", check_kind
         print *,"[SIZEOF] integer(kind=2) = ",check_c
-        print *,""
+        print *," "
 
         check_kind = SIZEOF(test_int)
         check_c    = SIZEOF(test_int_4)
         print *,"[SIZEOF] C_INT           = ", check_kind
         print *,"[SIZEOF] integer(kind=4) = ",check_c
-        print *,""
+        print *," "
 
         check_kind = SIZEOF(test_long)
         check_c    = SIZEOF(test_int_8)
         print *,"[SIZEOF] C_LONG          = ", check_kind
         print *,"[SIZEOF] integer(kind=8) = ",check_c
-        print *,""
+        print *," "
 
         check_kind = SIZEOF(test_long_long)
         check_c    = SIZEOF(test_int_8)
         print *,"[SIZEOF] C_LONG_LONG     = ", check_kind
         print *,"[SIZEOF] integer(kind=8) = ",check_c
-        print *,""
+        print *," "
 
         check_kind = SIZEOF(test_float)
         check_c    = SIZEOF(test_re_4)
         print *,"[SIZEOF] C_FLOAT         = ", check_kind
         print *,"[SIZEOF] real(kind=4)    = ",check_c
-        print *,""
+        print *," "
 
         check_kind = SIZEOF(test_double)
         check_c    = SIZEOF(test_re_8)
         print *,"[SIZEOF] C_DOUBLE        = ", check_kind
         print *,"[SIZEOF] real(kind=8)    = ",check_c
-        print *,""
+        print *," "
 
         
     end subroutine t_type_sizes

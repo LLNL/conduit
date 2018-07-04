@@ -95,7 +95,7 @@ contains
         call conduit_node_print(info)
         call assert_true( conduit_blueprint_mesh_verify_sub_protocol("coordset",ntopo,info) .eqv. .false.)
         
-        call conduit_blueprint_mesh_generate_index(n,"",1_8,nindex)
+        call conduit_blueprint_mesh_generate_index(n," ",1_8,nindex)
         call assert_true( conduit_blueprint_mesh_verify_sub_protocol("index",nindex,info) .eqv. .true.)
         
 

@@ -56,9 +56,6 @@ or :ref:`uberenv <building_with_uberenv>`, which leverages Spack. We also provid
 :ref:`Docker example <building_with_docker>` that leverages Spack.
 
 
-
-
-
 Getting Started
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -82,6 +79,9 @@ If you cloned without ``--recursive``, you can checkout this submodule using:
 
 
 Configure a build:
+
+Conduit uses CMake for its build system. These instructions assume ``cmake`` is in your path. 
+We recommend CMake 3.9.x or newer, for more details see :ref:`Supported CMake Versions <supported_cmake>`.
 
 ``config-build.sh`` is a simple wrapper for the cmake call to configure conduit. 
 This creates a new out-of-source build directory ``build-debug`` and a directory for the install ``install-debug``.
@@ -230,15 +230,16 @@ Uberenv Options for Building Third Party Dependencies
 
 ``uberenv.py`` has a few options that allow you to control how dependencies are built:
 
- ================== ==================================== ======================================
-  Option             Description                          Default
- ================== ==================================== ======================================
-  --prefix           Destination directory                ``uberenv_libs``
-  --spec             Spack spec                           linux: **%gcc**
-                                                          osx: **%clang**
-  --compilers-yaml   Spack compilers settings file        ``scripts/uberenv/compilers.yaml``
-  -k                 Ignore SSL Errors                    **False**
- ================== ==================================== ======================================
+ ==================== ==================================== ================================================
+  Option               Description                          Default
+ ==================== ==================================== ================================================
+  --prefix             Destination directory                ``uberenv_libs``
+  --spec               Spack spec                           linux: **%gcc**
+                                                            osx: **%clang**
+  --spack-config-dir   Folder with Spack settings files     linux: (empty)
+                                                            osx: ``scripts/uberenv/spack_configs/darwin/``
+  -k                   Ignore SSL Errors                    **False**
+ ==================== ==================================== ================================================
 
 The ``-k`` option exists for sites where SSL certificate interception undermines fetching
 from github and https hosted source tarballs. When enabled, ``uberenv.py`` clones spack using:
@@ -255,8 +256,7 @@ Default invocation on Linux:
 .. code:: bash
 
     python scripts/uberenv/uberenv.py --prefix uberenv_libs \
-                                      --spec %gcc \
-                                      --compilers-yaml scripts/uberenv/compilers.yaml
+                                      --spec %gcc 
 
 Default invocation on OSX:
 
@@ -264,16 +264,18 @@ Default invocation on OSX:
 
     python scripts/uberenv/uberenv.py --prefix uberenv_libs \
                                       --spec %clang \
-                                      --compilers-yaml scripts/uberenv/compilers.yaml
+                                      --spack-config-dir scripts/uberenv/spack_configs/darwin/
 
 For details on Spack's spec syntax, see the `Spack Specs & dependencies <http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies>`_ documentation.
 
  
-You can edit ``scripts/uberenv/compilers.yaml`` or use the **--compilers-yaml** option to change the compiler settings
+You can edit ``scripts/uberenv/compilers.yaml`` or use the **--spack-config-dir** option to change compiler settings and external packages
 used by Spack. See the `Spack Compiler Configuration <http://spack.readthedocs.io/en/latest/getting_started.html#manual-compiler-configuration>`_
+and `Spack System Packages
+<http://spack.readthedocs.io/en/latest/getting_started.html#system-packages>`_
 documentation for details.
 
-For OSX, the defaults in ``compilers.yaml`` are X-Code's clang and gfortran from https://gcc.gnu.org/wiki/GFortranBinaries#MacOS. 
+For OSX, the defaults in ``spack_configs/darwin/compilers.yaml`` are X-Code's clang and gfortran from https://gcc.gnu.org/wiki/GFortranBinaries#MacOS. 
 
 .. note::
     The bootstrapping process ignores ``~/.spack/compilers.yaml`` to avoid conflicts
@@ -335,10 +337,11 @@ You can specify specific versions of a dependency using ``^``. For Example, to b
   spack install conduit+python ^python@3
 
 
+.. _supported_cmake:
 
 Supported CMake Versions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-We recommend CMake 3.9. We test building Conduit with CMake 3.3.1, 3.8.1 and 3.9.4. Other versions of CMake may work, however CMake 3.4.x to 3.7.x have specific issues with finding and using HDF5 and Python.
+We recommend CMake 3.9. We test building Conduit with CMake 3.3.1, 3.8.1 and 3.9.4. Other versions of CMake may work, however CMake 3.4.x to 3.7.x have specific issues with finding and using HDF5 and Python and C++11 support.
 
 
 

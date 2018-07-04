@@ -71,6 +71,33 @@ class Test_Blueprint_Mesh(unittest.TestCase):
         self.assertTrue(blueprint.verify("mesh/index",n_idx,info))
         self.assertTrue(blueprint.mesh.verify(protocol="index",node=n_idx,info=info))
 
+    def test_julia_and_verify(self):
+        n = Node()
+        info = Node()
+        self.assertFalse(blueprint.verify("mesh",n,info))
+        self.assertFalse(blueprint.mesh.verify(n,info))
+        blueprint.mesh.examples.julia(200,200,
+                                      -2.0, 2.0,
+                                      -2.0, 2.0,
+                                      0.285, 0.01,
+                                      n);
+        self.assertTrue(blueprint.mesh.verify(n,info))
+        n_idx = Node()
+        blueprint.mesh.generate_index(n,"",1,n_idx)
+        self.assertTrue(blueprint.verify("mesh/index",n_idx,info))
+        self.assertTrue(blueprint.mesh.verify(protocol="index",node=n_idx,info=info))
+
+    def test_spiral_and_verify(self):
+        n = Node()
+        info = Node()
+        self.assertFalse(blueprint.verify("mesh",n,info))
+        self.assertFalse(blueprint.mesh.verify(n,info))
+        blueprint.mesh.examples.spiral(4,n);
+        self.assertTrue(blueprint.mesh.verify(n["domain_000000"],info))
+        n_idx = Node()
+        blueprint.mesh.generate_index(n["domain_000000"],"",4,n_idx)
+        self.assertTrue(blueprint.verify("mesh/index",n_idx,info))
+        self.assertTrue(blueprint.mesh.verify(protocol="index",node=n_idx,info=info))
 
 if __name__ == '__main__':
     unittest.main()

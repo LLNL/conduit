@@ -236,6 +236,14 @@ public:
                            index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG),
                            index_t endianness = Endianness::DEFAULT_ID);
 
+#ifdef CONDUIT_HAS_LONG_LONG
+    static DataType c_long_long(index_t num_elements=1,
+                                index_t offset = 0,
+                                index_t stride = sizeof(CONDUIT_NATIVE_LONG_LONG),
+                                index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG_LONG),
+                                index_t endianness = Endianness::DEFAULT_ID);
+#endif
+
     /// unsigned integer arrays
     static DataType c_unsigned_char(index_t num_elements=1,
                                     index_t offset = 0,
@@ -261,6 +269,14 @@ public:
                                     index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
                                     index_t endianness = Endianness::DEFAULT_ID);
 
+#ifdef CONDUIT_HAS_LONG_LONG
+    static DataType c_unsigned_long_long(index_t num_elements=1,
+                                         index_t offset = 0,
+                                         index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG_LONG),
+                                         index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG_LONG),
+                                         index_t endianness = Endianness::DEFAULT_ID);
+#endif
+
     /// floating point arrays
     static DataType c_float(index_t num_elements=1,
                             index_t offset = 0,
@@ -273,6 +289,15 @@ public:
                              index_t stride = sizeof(CONDUIT_NATIVE_DOUBLE),
                              index_t element_bytes=sizeof(CONDUIT_NATIVE_DOUBLE),
                              index_t endianness = Endianness::DEFAULT_ID);
+
+#ifdef CONDUIT_USE_LONG_DOUBLE
+    static DataType c_long_double(index_t num_elements=1,
+                             index_t offset = 0,
+                             index_t stride = sizeof(CONDUIT_NATIVE_LONG_DOUBLE),
+                             index_t element_bytes=sizeof(CONDUIT_NATIVE_LONG_DOUBLE),
+                             index_t endianness = Endianness::DEFAULT_ID);
+#endif
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::DataType C Native Leaf Constructor Helpers 
@@ -356,7 +381,6 @@ public:
     index_t     id()    const { return m_id;}
     std::string name()  const { return id_to_name(m_id);}
 
-    
     index_t     number_of_elements()  const { return m_num_ele;}
     index_t     offset()              const { return m_offset;}
     index_t     stride()              const { return m_stride;}
@@ -374,7 +398,6 @@ public:
     bool        is_compact() const;
     bool        compatible(const DataType& type) const;
     bool        equals(const DataType& type) const;
-
 
     bool        is_empty()            const;
     bool        is_object()           const;
@@ -404,15 +427,25 @@ public:
     bool        is_short()            const;
     bool        is_int()              const;
     bool        is_long()             const;
-    
+    /// note: is_long_long() always returns false if conduit is not
+    /// using long long to fill its support for bitwidth style types
+    bool        is_long_long()      const;
+
     bool        is_unsigned_char()    const;
     bool        is_unsigned_short()   const;
     bool        is_unsigned_int()     const;
     bool        is_unsigned_long()    const;
+    /// note: is_unsigned_long_long() always returns false if conduit is not
+    /// using long long to fill its support for bitwidth style types
+    bool        is_unsigned_long_long() const;
+
 
     bool        is_float()            const;
     bool        is_double()           const;
-    
+    /// note: is_long_double() always returns false if conduit is not using 
+    /// long double to fill its support for bitwidth style types
+    bool        is_long_double()      const;
+
     bool        is_string()           const;
     bool        is_char8_str()        const;
 

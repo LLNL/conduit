@@ -59,6 +59,8 @@ using namespace conduit;
 
 index_t OUTPUT_NUM_AXIS_POINTS = 5;
 
+std::string PROTOCOL_VER = CONDUIT_VERSION;
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, mesh_2d)
 {
@@ -128,6 +130,14 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
                                      npts_y,
                                      npts_z,
                                      dsets["points"]);
+    
+    
+    blueprint::mesh::examples::braid("points_implicit",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["points_implicit"]);
+    
     
     NodeConstIterator itr = dsets.children();
 
@@ -203,7 +213,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
 
     // save json
     root["protocol/name"] = "json";
-    root["protocol/version"] = "0.3.1";
+    root["protocol/version"] = PROTOCOL_VER;
     
     root["number_of_files"] = 1;
     root["number_of_trees"] = 1;
@@ -221,7 +231,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
     if(hdf5_enabled)
     {
         root["protocol/name"] = "conduit_hdf5";
-        root["protocol/version"] = "0.3.1";
+        root["protocol/version"] = PROTOCOL_VER;
         
         root["number_of_files"] = 1;
         root["number_of_trees"] = 1;
@@ -275,6 +285,12 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
                                      npts_y,
                                      npts_z,
                                      dsets["points"]);
+
+    blueprint::mesh::examples::braid("points_implicit",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["points_implicit"]);
 
     blueprint::mesh::examples::braid("lines",
                                      npts_x,
@@ -371,7 +387,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
     
     // save json
     root["protocol/name"] = "json";
-    root["protocol/version"] = "0.3.1";
+    root["protocol/version"] = PROTOCOL_VER;
     
     root["number_of_files"] = 1;
     root["number_of_trees"] = 1;
@@ -401,6 +417,74 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
     }
     
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, julia)
+{
+    Node res;
+    blueprint::mesh::examples::julia(500,   500, // nx, ny
+                                     -2.0,  2.0, // x range
+                                     -2.0,  2.0, // y range
+                                     0.285, 0.01, // c value
+                                     res["julia"]);
+    Node info;
+    EXPECT_TRUE(blueprint::mesh::verify(res["julia"],info));
+    CONDUIT_INFO(info.to_json());
+
+    blueprint::mesh::generate_index(res["julia"],
+                                    "julia",
+                                    1,
+                                    res["blueprint_index/julia"]);
+    
+    // save json
+    res["protocol/name"] = "json";
+    res["protocol/version"] = PROTOCOL_VER;
+    
+    res["number_of_files"] = 1;
+    res["number_of_trees"] = 1;
+    res["file_pattern"] = "julia_example.blueprint_root";
+    res["tree_pattern"] = "";
+    
+    CONDUIT_INFO("Creating ")
+    CONDUIT_INFO("Creating: julia_example.blueprint_root")
+    relay::io::save(res,"julia_example.blueprint_root","json");
+
+}
+
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, spiral)
+{
+    int ndoms = 10;
+    Node res;
+    blueprint::mesh::examples::spiral(ndoms,res["spiral"]);
+    Node info;
+    EXPECT_TRUE(blueprint::mesh::verify(res["spiral/domain_000000"],info));
+    CONDUIT_INFO(info.to_json());
+
+    blueprint::mesh::generate_index(res["spiral/domain_000000"],
+                                    "",
+                                    ndoms,
+                                    res["blueprint_index/spiral"]);
+    
+    // save json
+    res["protocol/name"] = "json";
+    res["protocol/version"] = PROTOCOL_VER;
+    
+    res["number_of_files"] = 1;
+    res["number_of_trees"] = ndoms;
+    res["file_pattern"] = "spiral_example.blueprint_root";
+    res["tree_pattern"] = "spiral/domain_%06d";
+    
+    CONDUIT_INFO("Creating ")
+    CONDUIT_INFO("Creating: spiral_example.blueprint_root")
+    relay::io::save(res,"spiral_example.blueprint_root","json");
+
+}
+
+
 
 
 //-----------------------------------------------------------------------------

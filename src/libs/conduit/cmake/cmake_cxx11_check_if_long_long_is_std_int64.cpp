@@ -44,95 +44,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_node_convert.cpp
+/// file: cmake_cxx11_check_if_long_long_is_std_int64.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit.hpp"
+#include <cstdint>
+#include <type_traits>
 
-#include <iostream>
-#include "gtest/gtest.h"
-#include "rapidjson/document.h"
-using namespace conduit;
+static_assert(std::is_same<long long, std::int64_t>::value,
+              "error: long long != std::int64_t");
 
-//-----------------------------------------------------------------------------
-TEST(conduit_node_convert, to_arrays)
+int main()
 {
-    uint8 data_vals[] = {1,2,3,4,5,6,7,8};
-    
-    Node n;
-    n.set(data_vals,8);
-
-    n.schema().print();
-    
-    Node nconv;
-    
-    // signed bw-style
-    n.to_int8_array(nconv);
-    nconv.print();
-
-    n.to_int16_array(nconv);
-    nconv.print();
-
-    n.to_int32_array(nconv);
-    nconv.print();
-    
-    n.to_int64_array(nconv);
-    nconv.print();
-
-    // unsigned bw-style
-    n.to_uint8_array(nconv);
-    nconv.print();
-
-    n.to_uint16_array(nconv);
-    nconv.print();
-
-    n.to_uint32_array(nconv);
-    nconv.print();
-    
-    n.to_uint64_array(nconv);
-    nconv.print();
-    
-    // float bw-style
-    n.to_float32_array(nconv);
-    nconv.print();
-    
-    n.to_float64_array(nconv);
-    nconv.print();
-
-    // signed native c
-    n.to_char_array(nconv);
-    nconv.print();
-
-    n.to_short_array(nconv);
-    nconv.print();
-
-    n.to_int_array(nconv);
-    nconv.print();
-    
-    n.to_long_array(nconv);
-    nconv.print();
-
-    // unsigned native c
-    n.to_unsigned_char_array(nconv);
-    nconv.print();
-
-    n.to_unsigned_short_array(nconv);
-    nconv.print();
-
-    n.to_unsigned_int_array(nconv);
-    nconv.print();
-    
-    n.to_unsigned_long_array(nconv);
-    nconv.print();
-
-    // float native c
-    n.to_float_array(nconv);
-    nconv.print();
-    
-    n.to_double_array(nconv);
-    nconv.print();
-
-
+    return 0;
 }
-

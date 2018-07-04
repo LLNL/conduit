@@ -71,6 +71,7 @@ env:
       ENABLE_DOCS=OFF
       PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
+      BLT_CXX_STD=c++11
     # mpi and docs on, shared libs, python 2.7
     - BUILD_SHARED_LIBS=OFF
       ENABLE_COVERAGE=OFF
@@ -78,6 +79,7 @@ env:
       ENABLE_DOCS=OFF
       PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
+      BLT_CXX_STD=c++11
     # mpi and docs on, shared libs, python 3.6
     - BUILD_SHARED_LIBS=ON
       ENABLE_COVERAGE=OFF
@@ -85,6 +87,7 @@ env:
       ENABLE_DOCS=OFF
       PYTHON_VERSION=3.6.3
       CMAKE_VERSION=3.9.4
+      BLT_CXX_STD=c++11
     # mpi and docs on, static libs, python 3.6
     - BUILD_SHARED_LIBS=OFF
       ENABLE_COVERAGE=OFF
@@ -92,6 +95,7 @@ env:
       ENABLE_DOCS=OFF
       PYTHON_VERSION=3.6.3
       CMAKE_VERSION=3.9.4
+      BLT_CXX_STD=c++11
 addons:
   apt:
     sources:
@@ -102,8 +106,16 @@ addons:
        - g++-4.8
        - gfortran-4.8
        - openmpi-bin
-       - openmpi-doc
        - libopenmpi-dev
+       - libncurses-dev
+       - libssl-dev
+       - libopenblas-dev
+       - zlib1g-dev
+       - libgdbm-dev
+       - libreadline-dev
+       - libsqlite3-dev
+       - libbz2-dev
+
 script:
   - which g++
   - g++ --version
@@ -114,17 +126,19 @@ script:
   - cd $TRAVIS_BUILD_DIR
   - echo $TRAVIS_BUILD_DIR 
   # setup spack spec based on our travis options
-  # note: mpi takes quite a while to build, so we use binary pkgs 
-  - export SPACK_SPEC="%gcc@4.8+cmake+python~mpi"
+  - export SPACK_SPEC="%gcc@4.8+cmake+python"
+  - export SPACK_SPEC="%gcc@4.8+cmake+python"
   # variants
   - if [ $ENABLE_DOCS = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+doc"; fi
   - if [ $ENABLE_DOCS = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~doc"; fi
-  # versions and package selections (disable default options to speedup build)
-  - export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}~openssl~ncurses"
+  - if [ $ENABLE_MPI = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+mpi"; fi
+  - if [ $ENABLE_MPI = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mpi"; fi
+  # versions and package selections
+  - export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
   - export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"
   - echo $SPACK_SPEC
   # build deps using uberenv
-  - python scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}"
+  - python scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/travis/
   # todo:
   #- export SPACK_PYTHON_BIN_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/python*/bin`
   #- pip install cpp-coveralls
@@ -141,6 +155,8 @@ script:
   - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_COVERAGE=${ENABLE_COVERAGE}"
   # enable mpi if selected
   - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_MPI=${ENABLE_MPI}"
+  # set c++ std
+  - CMAKE_OPTS="${CMAKE_OPTS} -DBLT_CXX_STD=${BLT_CXX_STD}"
   # install path
   - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR}/travis-debug-install"
   # make sure cmake is in our path

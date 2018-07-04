@@ -979,12 +979,12 @@ braid_structured(index_t npts_x,
   
     res["topologies/mesh/type"] = "structured";
     res["topologies/mesh/coordset"] = "coords";
-    res["topologies/mesh/elements/dims/i"] = nele_x;
-    res["topologies/mesh/elements/dims/j"] = nele_y;
+    res["topologies/mesh/elements/dims/i"] = (int32)nele_x;
+    res["topologies/mesh/elements/dims/j"] = (int32)nele_y;
     
     if(nele_z > 0)
     {
-        res["topologies/mesh/elements/dims/k"] = nele_z; 
+        res["topologies/mesh/elements/dims/k"] = (int32)nele_z; 
     }
 
     Node &fields = res["fields"];
@@ -1033,6 +1033,44 @@ braid_points_explicit(index_t npts_x,
     {
         conn[i] = i;
     }
+
+    Node &fields = res["fields"];
+    
+    braid_init_example_point_scalar_field(npts_x,
+                                          npts_y,
+                                          npts_z,
+                                          fields["braid"]);
+    
+    braid_init_example_element_scalar_field(npts_x,
+                                            npts_y, 
+                                            npts_z,
+                                            fields["radial"]);
+
+    braid_init_example_point_vector_field(npts_x,
+                                          npts_y,
+                                          npts_z,
+                                          fields["vel"]);
+
+}
+
+
+//---------------------------------------------------------------------------//
+void
+braid_points_implicit(index_t npts_x,
+                      index_t npts_y,
+                      index_t npts_z,
+                      Node &res)
+{
+    res.reset();
+    
+    braid_init_example_state(res);
+    braid_init_explicit_coordset(npts_x,
+                                 npts_y,
+                                 npts_z,
+                                 res["coordsets/coords"]);
+    
+    res["topologies/mesh/type"] = "points";
+    res["topologies/mesh/coordset"] = "coords";
 
     Node &fields = res["fields"];
     
@@ -2060,6 +2098,10 @@ braid(const std::string &mesh_type,
     {
         braid_points_explicit(npts_x,npts_y,npts_z,res);
     }
+    else if(mesh_type == "points_implicit")
+    {
+        braid_points_implicit(npts_x,npts_y,npts_z,res);
+    }
     else
     {
         CONDUIT_ERROR("unknown mesh_type = " << mesh_type);
@@ -2157,6 +2199,246 @@ misc(const std::string &mesh_type,
         CONDUIT_ERROR("unknown mesh_type = " << mesh_type);
     }
 }
+
+//---------------------------------------------------------------------------//
+void julia_fill_values(index_t nx,
+                       index_t ny,
+                       float64 x_min,
+                       float64 x_max,
+                       float64 y_min,
+                       float64 y_max,
+                       float64 c_re,
+                       float64 c_im,
+                       int32_array &out)
+{
+    index_t idx = 0;
+    for(index_t j = 0; j < ny; j++)
+    {
+        for(index_t i = 0; i < nx; i++)
+        {
+            float64 zx = float64(i) / float64(nx-1);
+            float64 zy = float64(j) / float64(ny-1);
+            
+            zx = x_min + (x_max - x_min) * zx;
+            zy = y_min + (y_max - y_min) * zy;
+
+            int32 iter = 0;
+            int32 max_iter = 1000;
+            
+            while( (zx * zx) + (zy * zy ) < 4.0 && iter < max_iter)
+            {
+                float64 x_temp = zx*zx - zy*zy;
+                zy = 2*zx*zy  + c_im;
+                zx = x_temp    + c_re;
+                iter++;
+            }
+            if(iter == max_iter)
+            {
+                out[idx] = 0;
+            }
+            else
+            {
+                out[idx] = iter;
+            }
+    
+            idx++;
+        }
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void julia(index_t nx,
+           index_t ny,
+           float64 x_min,
+           float64 x_max,
+           float64 y_min,
+           float64 y_max,
+           float64 c_re,
+           float64 c_im,
+           Node &res)
+{
+    res.reset();
+    // create a rectilinear coordset 
+    res["coordsets/coords/type"] = "rectilinear";
+    res["coordsets/coords/values/x"] = DataType::float64(nx+1);
+    res["coordsets/coords/values/y"] = DataType::float64(ny+1);
+    
+    float64_array x_coords = res["coordsets/coords/values/x"].value();
+    float64_array y_coords = res["coordsets/coords/values/y"].value(); 
+    
+    float64 dx = (x_max - x_min) / float64(nx);
+    float64 dy = (y_max - y_min) / float64(ny);
+
+    float64 vx = x_min;
+    for(index_t i =0; i< nx+1; i++)
+    {
+        x_coords[i] = vx;
+        vx+=dx;
+    }
+    
+    float64 vy = x_min;
+    for(index_t i =0; i< ny+1; i++)
+    {
+        y_coords[i] = vy;
+        vy+=dy;
+    }
+    
+    // create the topology
+    
+    res["topologies/topo/type"] = "rectilinear";
+    res["topologies/topo/coordset"] = "coords";
+    
+    
+    // create the fields
+
+    res["fields/iters/association"] = "element";
+    res["fields/iters/topology"] = "topo";
+    res["fields/iters/values"] = DataType::int32(nx * ny);
+    
+    int32_array out = res["fields/iters/values"].value();
+    
+    julia_fill_values(nx,ny,
+                      x_min, x_max,
+                      y_min, y_max,
+                      c_re, c_im,
+                      out);
+}
+
+//---------------------------------------------------------------------------//
+void spiral(index_t ndoms,
+            Node &res)
+{
+    res.reset();
+    
+    int f_2 = 1;
+    int f_1 = 1;
+    int f = 1;
+    
+    float64 x = 0.0;
+    float64 y = 0.0;
+
+    float64 loc_xo = x + f;
+    float64 loc_yo = y + f;
+
+    int rot_case = 0;
+
+    for(int d=0; d < ndoms; d++)
+    {
+        // create the current domain
+        std::ostringstream oss;
+        oss << "domain_" << std::setw(6) << std::setfill('0') << d;
+        std::string domain_name = oss.str();
+
+        Node &dom = res[domain_name];
+
+        // create a rectilinear coordset 
+        dom["coordsets/coords/type"] = "rectilinear";
+        dom["coordsets/coords/values/x"] = DataType::float64(f+1);
+        dom["coordsets/coords/values/y"] = DataType::float64(f+1);
+    
+        float64_array x_coords = dom["coordsets/coords/values/x"].value();
+        float64_array y_coords = dom["coordsets/coords/values/y"].value(); 
+
+        float64 xv = x;
+        float64 yv = y;
+
+        for(int i=0; i < f+1; i++)
+        {
+            x_coords[i] = xv;
+            y_coords[i] = yv;
+            xv+=1;
+            yv+=1;
+        }
+
+        // create the topology
+        dom["topologies/topo/type"] = "rectilinear";
+        dom["topologies/topo/coordset"] = "coords";
+        // todo, add topo logical origin
+    
+    
+        // create the fields
+        dom["fields/dist/association"] = "vertex";
+        dom["fields/dist/topology"] = "topo";
+        dom["fields/dist/values"] = DataType::float64((f+1) * (f+1));
+    
+        float64_array dist_vals = dom["fields/dist/values"].value();
+
+        index_t idx = 0;
+        // fill the scalar with approx dist to spiral 
+        yv = y;
+
+        for(int j=0; j < f+1; j++)
+        {
+            xv = x;
+            for(int i=0; i < f+1; i++)
+            {
+                float64 l_x = xv - loc_xo;
+                float64 l_y = yv - loc_yo;
+                dist_vals[idx] = sqrt( l_x * l_x + l_y * l_y) - f;
+                xv+=1;
+                idx++;
+            }
+            yv+=1;
+        }
+    
+        // setup for next domain using one of 4 rotation cases 
+        switch(rot_case)
+        {
+            case 0:
+            {
+                x += f;
+                // next loc orig == top left
+                loc_xo = x;
+                if (f <= 1)
+                    loc_yo = y + f;
+                else
+                    loc_yo = y + f + f_1;
+                break;
+            }
+            case 1:
+            {
+                y += f;
+                x -= f_1;
+                // next loc orig == bottom left
+                loc_xo = x;
+                loc_yo = y;
+                break;
+            }
+            case 2:
+            {
+                x -= (f + f_1);
+                y -= f_1;
+                // next loc orig == bottom right
+                loc_xo = x + (f + f_1);
+                loc_yo = y;
+                break;
+            }
+            case 3:
+            {
+                y -= (f + f_1);
+                // next loc orig == top right
+                loc_xo = x + (f + f_1);
+                loc_yo = y + (f + f_1);
+                break;
+            }
+        }
+        // update the rotate case
+        rot_case =  (rot_case +1) % 4;
+            
+        // calc next fib #
+        // domain id is one less than the fib #
+        if( (d+1) > 1)
+        {
+            int f_prev = f;
+            f = f + f_1;
+            f_2 = f_1;
+            f_1 = f_prev;
+        }
+    }
+}
+
+
 
 
 

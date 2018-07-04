@@ -844,6 +844,24 @@ Node::set(unsigned long data)
 #endif // end use long check
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+//-----------------------------------------------------------------------------
+void
+Node::set(long long data)
+{
+    set((CONDUIT_NATIVE_LONG_LONG)data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(unsigned long long data)
+{
+    set((CONDUIT_NATIVE_UNSIGNED_LONG_LONG)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long long check
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_FLOAT
@@ -1125,6 +1143,26 @@ Node::set(const unsigned_long_array &data)
 #endif // end use long check
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+//-----------------------------------------------------------------------------
+void
+Node::set(const long_long_array &data)
+{
+    init(DataType::c_long_long(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const unsigned_long_long_array &data)
+{
+    init(DataType::c_unsigned_long_long(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long long check
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_FLOAT
@@ -1416,7 +1454,7 @@ void
 Node::set(const std::vector<unsigned char> &data)
 {
     init(DataType::c_unsigned_char(data.size()));
-    memcpy(m_data,&data[0],sizeof(char)*data.size());
+    memcpy(m_data,&data[0],sizeof(unsigned char)*data.size());
 }
 //-----------------------------------------------------------------------------
 #endif // end use char check
@@ -1429,7 +1467,7 @@ void
 Node::set(const std::vector<short> &data)
 {
     init(DataType::c_short(data.size()));
-    memcpy(m_data,&data[0],sizeof(char)*data.size());
+    memcpy(m_data,&data[0],sizeof(short)*data.size());
 }
 
 //-----------------------------------------------------------------------------
@@ -1437,7 +1475,7 @@ void
 Node::set(const std::vector<unsigned short> &data)
 {
     init(DataType::c_unsigned_short(data.size()));
-    memcpy(m_data,&data[0],sizeof(char)*data.size());
+    memcpy(m_data,&data[0],sizeof(unsigned short)*data.size());
 }
 //-----------------------------------------------------------------------------
 #endif // end use short check
@@ -1450,7 +1488,7 @@ void
 Node::set(const std::vector<int> &data)
 {
     init(DataType::c_int(data.size()));
-    memcpy(m_data,&data[0],sizeof(char)*data.size());
+    memcpy(m_data,&data[0],sizeof(int)*data.size());
 }
 
 //-----------------------------------------------------------------------------
@@ -1458,7 +1496,7 @@ void
 Node::set(const std::vector<unsigned int> &data)
 {
     init(DataType::c_unsigned_int(data.size()));
-    memcpy(m_data,&data[0],sizeof(char)*data.size());
+    memcpy(m_data,&data[0],sizeof(unsigned int)*data.size());
 }
 //-----------------------------------------------------------------------------
 #endif // end use int check
@@ -1471,7 +1509,7 @@ void
 Node::set(const std::vector<long> &data)
 {
     init(DataType::c_long(data.size()));
-    memcpy(m_data,&data[0],sizeof(char)*data.size());
+    memcpy(m_data,&data[0],sizeof(long)*data.size());
 }
 
 //-----------------------------------------------------------------------------
@@ -1479,12 +1517,32 @@ void
 Node::set(const std::vector<unsigned long> &data)
 {
     init(DataType::c_unsigned_long(data.size()));
-    memcpy(m_data,&data[0],sizeof(char)*data.size());
+    memcpy(m_data,&data[0],sizeof(unsigned long)*data.size());
 }
 //-----------------------------------------------------------------------------
 #endif // end use long check
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::vector<long long> &data)
+{
+    init(DataType::c_long_long(data.size()));
+    memcpy(m_data,&data[0],sizeof(long long)*data.size());
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::vector<unsigned long long> &data)
+{
+    init(DataType::c_unsigned_long_long(data.size()));
+    memcpy(m_data,&data[0],sizeof(unsigned long long)*data.size());
+}
+//-----------------------------------------------------------------------------
+#endif // end use long long check
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_FLOAT
@@ -1493,7 +1551,7 @@ void
 Node::set(const std::vector<float> &data)
 {
     init(DataType::c_float(data.size()));
-    memcpy(m_data,&data[0],sizeof(char)*data.size());
+    memcpy(m_data,&data[0],sizeof(float)*data.size());
 }
 //-----------------------------------------------------------------------------
 #endif // end use float check
@@ -1506,7 +1564,7 @@ void
 Node::set(const std::vector<double> &data)
 {
     init(DataType::c_double(data.size()));
-    memcpy(m_data,&data[0],sizeof(char)*data.size());
+    memcpy(m_data,&data[0],sizeof(double)*data.size());
 }
 //-----------------------------------------------------------------------------
 #endif // end use double check
@@ -1964,6 +2022,43 @@ Node::set(const unsigned long *data,
 #endif // end use long check
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+//-----------------------------------------------------------------------------
+void
+Node::set(const long long *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
+{
+    set(long_array(data,DataType::c_long_long(num_elements,
+                                              offset,
+                                              stride,
+                                              element_bytes,
+                                              endianness)));
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const unsigned long long *data,
+          index_t num_elements,
+          index_t offset,
+          index_t stride,
+          index_t element_bytes,
+          index_t endianness)
+{
+    set(unsigned_long_long_array(data,
+                                 DataType::c_unsigned_long_long(num_elements,
+                                                                offset,
+                                                                stride,
+                                                                element_bytes,
+                                                                endianness)));
+}
+//-----------------------------------------------------------------------------
+#endif // end use long long check
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_FLOAT
@@ -2367,6 +2462,24 @@ Node::set_path(const std::string &path, unsigned long data)
 #endif // end use long check
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, long long data)
+{
+    set_path(path,(CONDUIT_NATIVE_LONG_LONG)data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, unsigned long long data)
+{
+    set_path(path,(CONDUIT_NATIVE_UNSIGNED_LONG_LONG)data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long long check
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_FLOAT
@@ -2657,6 +2770,26 @@ Node::set_path(const std::string &path,
 #endif // end use long check
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const long_long_array &data)
+{
+    fetch(path).set(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const unsigned_long_long_array &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long long check
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_FLOAT
@@ -2979,6 +3112,26 @@ Node::set_path(const std::string &path,
 #endif // end use long check
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<long long> &data)
+{
+    fetch(path).set(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<unsigned long long> &data)
+{
+    fetch(path).set(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long long check
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_FLOAT
@@ -3558,6 +3711,46 @@ Node::set_path(const std::string &path,
 #endif // end use long check
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const long long *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const unsigned long long *data,
+               index_t num_elements,
+               index_t offset,
+               index_t stride,
+               index_t element_bytes,
+               index_t endianness)
+{
+    fetch(path).set(data,
+                    num_elements,
+                    offset,
+                    stride,
+                    element_bytes,
+                    endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long long check
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_FLOAT
@@ -4216,6 +4409,47 @@ Node::set_external(unsigned long *data,
 
 
 //-----------------------------------------------------------------------------
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+//-----------------------------------------------------------------------------
+void
+Node::set_external(long long *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_long_long(num_elements,
+                                        offset,
+                                        stride,
+                                        element_bytes,
+                                        endianness));
+    m_data  = data;
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(unsigned long long *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    release();
+    m_schema->set(DataType::c_unsigned_long_long(num_elements,
+                                                 offset,
+                                                 stride,
+                                                 element_bytes,
+                                                 endianness));
+    m_data  = data;
+}
+//-----------------------------------------------------------------------------
+#endif // end use long long check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_FLOAT
 //-----------------------------------------------------------------------------
 void
@@ -4555,6 +4789,28 @@ Node::set_external(const unsigned_long_array &data)
 #endif // end use long check
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const long_long_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const unsigned_long_long_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+//-----------------------------------------------------------------------------
+#endif // end use long long check
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_FLOAT
@@ -4891,6 +5147,33 @@ Node::set_external(const std::vector<unsigned long> &data)
 }
 //-----------------------------------------------------------------------------
 #endif // end use long check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<long long> &data)
+{
+    release();
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_long_long(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<unsigned long long> &data)
+{
+    release();
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_unsigned_long_long(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
+}
+//-----------------------------------------------------------------------------
+#endif // end use long long check
 //-----------------------------------------------------------------------------
 
 
@@ -5556,6 +5839,46 @@ Node::set_path_external(const std::string &path,
 #endif // end use long check
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        long long *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        unsigned long long *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_external(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long long check
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_FLOAT
@@ -5872,6 +6195,27 @@ Node::set_path_external(const std::string &path,
 
 
 //-----------------------------------------------------------------------------
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const long_long_array &data)
+{
+    fetch(path).set_external(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const unsigned_long_long_array &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long long check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_FLOAT
 //-----------------------------------------------------------------------------
 void
@@ -6177,6 +6521,26 @@ Node::set_path_external(const std::string &path,
 #endif // end use long check
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<long long> &data)
+{
+    fetch(path).set_external(data);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<unsigned long long> &data)
+{
+    fetch(path).set_external(data);
+}
+//-----------------------------------------------------------------------------
+#endif // end use long long check
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_FLOAT
@@ -6435,6 +6799,26 @@ Node::operator=(unsigned long data)
 #endif // end use long check
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(long long data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(unsigned long long data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use long long check
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_FLOAT
@@ -6666,6 +7050,26 @@ Node::operator=(const unsigned_long_array &data)
 #endif // end use long check
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const long_long_array &data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const unsigned_long_long_array &data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use long long check
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_FLOAT
@@ -6874,6 +7278,27 @@ Node::operator=(const std::vector<unsigned long> &data)
 }
 //-----------------------------------------------------------------------------
 #endif // end use long check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::vector<long long> &data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::vector<unsigned long long> &data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use long long check
 //-----------------------------------------------------------------------------
 
 
@@ -7726,7 +8151,7 @@ Node::to_long() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 long long
 Node::to_long_long() const
@@ -7895,7 +8320,7 @@ Node::to_unsigned_long() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 unsigned long long
 Node::to_unsigned_long_long() const
@@ -9513,6 +9938,76 @@ Node::to_double_array(Node &res) const
 
 }
 
+//---------------------------------------------------------------------------//
+void
+Node::to_data_type(index_t dtype_id, Node &res) const
+{
+    // NOTE: Only the array conversions are used here since they work on single
+    // values as if they were arrays containing one element.
+    switch(dtype_id)
+    {
+        /* ints */
+        case DataType::INT8_ID:
+        {
+            this->to_int8_array(res);
+            break;
+        }
+        case DataType::INT16_ID: 
+        {
+            this->to_int16_array(res);
+            break;
+        }
+        case DataType::INT32_ID:
+        {
+            this->to_int32_array(res);
+            break;
+        }
+        case DataType::INT64_ID:
+        {
+            this->to_int64_array(res);
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_ID:
+        {
+            this->to_uint8_array(res);
+            break;
+        }
+        case DataType::UINT16_ID:
+        {
+            this->to_uint16_array(res);
+            break;
+        }
+        case DataType::UINT32_ID:
+        {
+            this->to_uint32_array(res);
+            break;
+        }
+        case DataType::UINT64_ID:
+        {
+            this->to_uint64_array(res);
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_ID:
+        {
+            this->to_float32_array(res);
+            break;
+        }
+        case DataType::FLOAT64_ID:
+        {
+            this->to_float64_array(res);
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert to non-numeric type "
+                        << DataType::id_to_name(dtype_id) <<
+                        " from type " << dtype().name());
+        }
+    }
+}
 
 //-----------------------------------------------------------------------------
 // -- Value Helper class ---
@@ -9588,7 +10083,7 @@ Node::Value::operator long() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::Value::operator long long() const
 {
@@ -9637,7 +10132,7 @@ Node::Value::operator unsigned long() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::Value::operator unsigned long long() const
 {
@@ -9716,7 +10211,7 @@ Node::Value::operator long*() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::Value::operator long long*() const
 {
@@ -9751,7 +10246,7 @@ Node::Value::operator unsigned long*() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::Value::operator unsigned long long*() const
 {
@@ -9815,7 +10310,7 @@ Node::Value::operator long_array() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::Value::operator long_long_array() const
 {
@@ -9850,7 +10345,7 @@ Node::Value::operator unsigned_long_array() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::Value::operator unsigned_long_long_array() const
 {
@@ -9966,7 +10461,7 @@ Node::ConstValue::operator long() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::ConstValue::operator long long() const
 {
@@ -10015,7 +10510,7 @@ Node::ConstValue::operator unsigned long() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::ConstValue::operator unsigned long long() const
 {
@@ -10094,7 +10589,7 @@ Node::ConstValue::operator const long*() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::ConstValue::operator const long long*() const
 {
@@ -10129,7 +10624,7 @@ Node::ConstValue::operator const unsigned long*() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::ConstValue::operator const unsigned long long*() const
 {
@@ -10193,7 +10688,7 @@ Node::ConstValue::operator const long_array() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::ConstValue::operator const long_long_array() const
 {
@@ -10228,7 +10723,7 @@ Node::ConstValue::operator const unsigned_long_array() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 Node::ConstValue::operator const unsigned_long_long_array() const
 {
@@ -11042,6 +11537,13 @@ index_t
 Node::number_of_children() const 
 {
     return m_schema->number_of_children();
+}
+
+//---------------------------------------------------------------------------//
+std::string 
+Node::name() const
+{
+    return m_schema->name();
 }
 
 //---------------------------------------------------------------------------//
@@ -11930,7 +12432,7 @@ Node::as_long()  const
 
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 long long
 Node::as_long_long()  const
@@ -11994,7 +12496,7 @@ Node::as_unsigned_long() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 unsigned long long
 Node::as_unsigned_long_long() const
@@ -12100,7 +12602,7 @@ Node::as_long_ptr()
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 long long *
@@ -12165,7 +12667,7 @@ Node::as_unsigned_long_ptr()
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
@@ -12288,7 +12790,7 @@ Node::as_long_ptr() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 const long long *
@@ -12354,7 +12856,7 @@ Node::as_unsigned_long_ptr() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
@@ -12467,7 +12969,7 @@ Node::as_long_array()
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 long_long_array
@@ -12533,7 +13035,7 @@ Node::as_unsigned_long_array()
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 unsigned_long_long_array
@@ -12643,7 +13145,7 @@ Node::as_long_array() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 const long_long_array
 Node::as_long_long_array() const
@@ -12708,7 +13210,7 @@ Node::as_unsigned_long_array() const
 }
 
 //---------------------------------------------------------------------------//
-#ifdef CONDUIT_USE_LONG_LONG
+#ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 const unsigned_long_long_array
