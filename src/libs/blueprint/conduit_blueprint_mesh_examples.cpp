@@ -106,9 +106,8 @@ const float64 PI_VALUE = 3.14159265359;
 //---------------------------------------------------------------------------//
 struct point
 {
-    point(float64 px = 0.0, float64 py = 0.0, float64 pz = 0.0) : x(px), y(py), z(pz)
-    {
-    };
+    point(float64 px = 0.0, float64 py = 0.0, float64 pz = 0.0) : x(px), y(py), z(pz) {};
+    point(float64* ps) : x(ps[0]), y(ps[1]), z(ps[2]) {};
 
     bool operator<(const point& other) const
     {
@@ -513,14 +512,13 @@ void braid_init_example_adjset(Node &mesh)
     typedef std::map<std::set<index_t>, std::vector<std::vector<index_t> > > group_idx_map;
 
     const std::string dim_names[3] = {"x", "y", "z"};
-    const bool mesh_3d = mesh.child(0)["coordsets/coords/values"].has_child("z");
-    const index_t dim_count = mesh_3d ? 3 : 2;
+    const index_t dim_count = blueprint::mesh::coordset::dims(
+        mesh.child(0).fetch("coordsets").child(0));
 
     // From mesh data, create a map from domain combination tuple to point list.
     // These domain combination tuples represent groups and the point lists contain
     // the points that lie on the shared boundary between these domains.
     point_doms_map mesh_point_doms_map;
-
     conduit::NodeConstIterator doms_it = mesh.children();
     while(doms_it.has_next())
     {
@@ -537,17 +535,16 @@ void braid_init_example_adjset(Node &mesh)
 
         for(index_t i = 0; i < dom_dim_coords[0].number_of_elements(); i++)
         {
-            point coord(dom_dim_coords[0][i], dom_dim_coords[1][i]);
-            if(mesh_3d)
+            float64 cvals[3] = {0.0, 0.0, 0.0};
+            for(index_t d = 0; d < dim_count; d++)
             {
-                coord.z = dom_dim_coords[2][i];
+                cvals[d] = dom_dim_coords[d][i];
             }
-            mesh_point_doms_map[coord][dom_id] = i;
+            mesh_point_doms_map[point(&cvals[0])][dom_id] = i;
         }
     }
 
     group_idx_map groups_map;
-
     point_doms_map::const_iterator pm_itr;
     for(pm_itr = mesh_point_doms_map.begin();
         pm_itr != mesh_point_doms_map.end(); ++pm_itr)
@@ -623,17 +620,15 @@ void braid_init_example_adjset(Node &mesh)
 //---------------------------------------------------------------------------//
 void braid_init_example_nestset(Node &mesh)
 {
-    // TODO(JRC): Implement this function using transforms to different spaces
-    // to transform uniform/rectilinear grids into unstructured grids.
     typedef std::map<point, index_t> point_id_map;
     typedef std::pair<index_t, index_t> window;
 
-    // NOTE(JRC): This function currently assumes that the given mesh contains
-    // exclusively domains created with "braid_rectilinear"
+    // TODO(JRC): Extend this function to support input domains with cylindrical
+    // and spherical coordinates as well.
     const std::string cartesian_dims[3] = {"x", "y", "z"};
     const std::string logical_dims[3] = {"i", "j", "k"};
-    const bool mesh_3d = mesh.child(0)["coordsets/coords/values"].has_child("z");
-    const index_t dim_count = mesh_3d ? 3 : 2;
+    const index_t dim_count = blueprint::mesh::coordset::dims(
+        mesh.child(0).fetch("coordsets").child(0));
 
     // initialize data to easily index domains by id/level //
 
@@ -664,34 +659,41 @@ void braid_init_example_nestset(Node &mesh)
             const conduit::Node &dom_node = doms_it.next();
             const index_t dom_id = dom_node["state/domain_id"].to_uint64();
             const index_t level_id = dom_node["state/level_id"].to_uint64();
-            const conduit::Node &dom_coords = dom_node["coordsets/coords/values"];
+            const conduit::Node &dom_coordset = dom_node["coordsets"].child(0);
+
+            conduit::Node dom_coordset_explicit;
+            if(dom_coordset["type"].as_string() == "uniform")
+            {
+                blueprint::mesh::coordset::uniform::to_explicit(
+                    dom_coordset, dom_coordset_explicit);
+            }
+            else if(dom_coordset["type"].as_string() == "rectilinear")
+            {
+                blueprint::mesh::coordset::rectilinear::to_explicit(
+                    dom_coordset, dom_coordset_explicit);
+            }
+            else
+            {
+                dom_coordset_explicit.set_external(dom_coordset);
+            }
+            const index_t num_points = dom_coordset_explicit["values"].
+                child(0).dtype().number_of_elements();
 
             point_id_map &dom_point_map = mesh_point_maps[dom_id];
             {
-                std::vector<point> dom_points(1);
-                for(index_t d = 0; d < dim_count; d++)
+                for(index_t i = 0; i < num_points; i++)
                 {
-                    index_t dim_offset = d * (sizeof(float64) / sizeof(uint8));
-
-                    std::vector<point> prev_dom_points = dom_points;
-                    dom_points.clear();
-
-                    float64_array dim_coords = dom_coords[cartesian_dims[d]].as_float64_array();
-                    for(index_t i = 0; i < dim_coords.number_of_elements(); i++)
+                    float64 dom_point_vals[3] = {0.0, 0.0, 0.0};
+                    for(index_t d = 0; d < dim_count; d++)
                     {
-                        for(index_t p = 0; p < (index_t)prev_dom_points.size(); p++)
-                        {
-                            point new_point = prev_dom_points[p];
-                            memcpy((uint8*)&new_point + dim_offset, &dim_coords[i],
-                                sizeof(float64));
-                            dom_points.push_back(new_point);
-                        }
+                        conduit::Node &dim_coords =
+                            dom_coordset_explicit["values"][cartesian_dims[d]];
+                        conduit::Node dim_cval(
+                            conduit::DataType(dim_coords.dtype().id(), 1),
+                            dim_coords.element_ptr(i), true);
+                        dom_point_vals[d] = dim_cval.to_float64();
                     }
-                }
-
-                for(index_t i = 0; i < (index_t)dom_points.size(); i++)
-                {
-                    dom_point_map[dom_points[i]] = i;
+                    dom_point_map[point(&dom_point_vals[0])] = i;
                 }
             }
 
@@ -732,7 +734,6 @@ void braid_init_example_nestset(Node &mesh)
                         else if(lo_pt_itr->first < hi_pt_itr->first)
                         {
                             ++lo_pt_itr;
-
                         }
                         else
                         {

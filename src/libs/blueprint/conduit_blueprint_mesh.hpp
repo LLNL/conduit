@@ -149,6 +149,9 @@ namespace coordset
                                       conduit::Node &info);
 
     //-------------------------------------------------------------------------
+    index_t CONDUIT_BLUEPRINT_API dims(const conduit::Node &n);
+
+    //-------------------------------------------------------------------------
     // blueprint::mesh::coordset::uniform protocol interface
     //-------------------------------------------------------------------------
     namespace uniform

@@ -1842,6 +1842,15 @@ mesh::coordset::verify(const Node &coordset,
 }
 
 
+//-----------------------------------------------------------------------------
+index_t
+mesh::coordset::dims(const Node &coordset)
+{
+    std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
+    return (index_t)csys_axes.size();
+}
+
+
 //-------------------------------------------------------------------------
 void
 mesh::coordset::uniform::to_rectilinear(const conduit::Node &coordset,
