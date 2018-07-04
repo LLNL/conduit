@@ -117,3 +117,10 @@ TEST(conduit_docs, blueprint_example_2)
     CONDUIT_INFO("blueprint_example_2");
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_docs, blueprint_example_3)
+{
+    Node n, info;
+    conduit::blueprint::mesh::examples::gradient("quads",2,2,0,n);
+    n.print();
+}
