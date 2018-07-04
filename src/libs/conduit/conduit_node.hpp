@@ -2980,6 +2980,15 @@ public:
     void    to_double_array(Node &res) const;
 
 //-----------------------------------------------------------------------------
+// -- dynamic conversion methods -- 
+// 
+/// These methods convert any data to a given type.
+/// The result is stored in the passed node.
+//-----------------------------------------------------------------------------
+
+    void    to_data_type(index_t dtype_id, Node &res) const;
+
+//-----------------------------------------------------------------------------
 // -- Node::Value Helper class --
 //
 // This class allows us to support casting return semantics.
@@ -3450,6 +3459,9 @@ public:
     /// returns the number of children (list and object interfaces)
     index_t number_of_children() const;
 
+    /// returns a string with the path of this node
+    /// relative to its immediate parent
+    std::string name() const;
     /// returns a string with the path of this node up
     /// the tree, following the parent chain
     std::string path() const;

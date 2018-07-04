@@ -53,9 +53,14 @@
 #include <iostream>
 #include "gtest/gtest.h"
 
-
 using namespace conduit;
 
+
+//-----------------------------------------------------------------------------
+typedef bool (*DTypeCompareFun)(const DataType&, const DataType&);
+bool dtypes_convertible(const DataType &base, const DataType &ref) { return false; /*base.convertible(ref);*/ }
+bool dtypes_compatible(const DataType &base, const DataType &ref) { return base.compatible(ref); }
+bool dtypes_equal(const DataType &base, const DataType &ref) { return base.equals(ref); }
 
 //-----------------------------------------------------------------------------
 void print_dt(const DataType &dtype)
@@ -540,6 +545,67 @@ TEST(dtype_tests,dtype_endianness_checks)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(dtype_tests,dtype_comparison_checks)
+{
+    const DTypeCompareFun COMPARE_FUNS[3] = {
+        dtypes_convertible, dtypes_compatible, dtypes_equal};
 
+    const int INT_TYPE_IDS[4] = {
+        DataType::INT8_ID, DataType::INT16_ID,
+        DataType::INT32_ID, DataType::INT64_ID};
+    const int UINT_TYPE_IDS[4] = {
+        DataType::UINT8_ID, DataType::UINT16_ID,
+        DataType::UINT32_ID, DataType::UINT64_ID};
+    const int FLOAT_TYPE_IDS[4] = {
+        DataType::FLOAT32_ID, DataType::FLOAT32_ID, // Ignored; for testing purposes
+        DataType::FLOAT32_ID, DataType::FLOAT64_ID};
 
+    // TODO(JRC): Either revert the start index back to 0 here once the
+    // "convertible" concept is modified and adopted or update this file
+    // to remove traces of this concept should it be rejected.
+    for(index_t fi = 1; fi < 3; fi++)
+    {
+        DTypeCompareFun dtype_compare = COMPARE_FUNS[fi];
+        bool is_expand_compatible = fi == 0;
+        bool is_list_compatible = fi != 2;
 
+        for(index_t gi = 0; gi < 3; gi++)
+        {
+            const int* XINT_TYPE_IDS =
+                (gi == 0) ? &INT_TYPE_IDS[0] : (
+                (gi == 1) ? &UINT_TYPE_IDS[0] :
+                &FLOAT_TYPE_IDS[0]);
+            const int* XINT_OTHER_TYPE_IDS =
+                (gi == 0) ? &UINT_TYPE_IDS[0] :
+                &INT_TYPE_IDS[0];
+
+            for(index_t ti = (gi != 2) ? 0 : 2; ti < 4; ti++)
+            {
+                DataType itype_base(XINT_TYPE_IDS[ti], 1);
+                EXPECT_EQ(dtype_compare(itype_base, itype_base), true);
+
+                DataType itype_list(XINT_TYPE_IDS[ti], 5);
+                EXPECT_EQ(dtype_compare(itype_list, itype_base), is_list_compatible);
+                EXPECT_EQ(dtype_compare(itype_base, itype_list), false);
+
+                DataType itype_long(XINT_TYPE_IDS[ti], 1, 0,
+                    2*itype_base.element_bytes(), 2*itype_base.element_bytes(),
+                    itype_base.endianness());
+                EXPECT_EQ(dtype_compare(itype_long, itype_base), is_expand_compatible);
+                EXPECT_EQ(dtype_compare(itype_base, itype_long), false);
+
+                for(index_t tj = ti + 1; tj < 4; tj++)
+                {
+                    DataType jtype_base(XINT_TYPE_IDS[tj], 1);
+                    EXPECT_EQ(dtype_compare(jtype_base, itype_base), is_expand_compatible);
+                    EXPECT_EQ(dtype_compare(itype_base, jtype_base), false);
+                }
+
+                DataType itype_other(XINT_OTHER_TYPE_IDS[ti], 1);
+                EXPECT_EQ(dtype_compare(itype_base, itype_other), false);
+                EXPECT_EQ(dtype_compare(itype_other, itype_base), false);
+            }
+        }
+    }
+}
