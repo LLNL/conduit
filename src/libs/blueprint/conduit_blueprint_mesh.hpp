@@ -333,11 +333,6 @@ namespace topology
         //---------------------------------------------------------------------
         bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                           conduit::Node &info);
-
-        //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API transform(const conduit::Node &n,
-                                             conduit::Node &dest,
-                                             conduit::Node &cdest);
     }
 
     //-------------------------------------------------------------------------
