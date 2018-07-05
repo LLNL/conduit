@@ -129,11 +129,12 @@ TEST(conduit_docs, blueprint_demo_gradient_uniform)
 {
     // start demo code
 
-    // create container node and debug node
-    Node mesh, info;
-
+    // create container node
+    Node mesh;
     // generate simple uniform 2d 'gradient' mesh
     conduit::blueprint::mesh::examples::gradient("uniform", 3, 3, 0, mesh);
+    // print out results
+    mesh.print();
 
     // start demo string
 
@@ -184,6 +185,7 @@ TEST(conduit_docs, blueprint_demo_gradient_uniform)
 
     // start test code
 
+    Node info;
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
 
     Node wide_mesh, ref_mesh;
@@ -200,11 +202,12 @@ TEST(conduit_docs, blueprint_demo_gradient_rectilinear)
 {
     // start demo code
 
-    // create container node and debug node
-    Node mesh, info;
-
+    // create container node
+    Node mesh;
     // generate simple rectilinear 2d 'gradient' mesh
     conduit::blueprint::mesh::examples::gradient("rectilinear", 3, 3, 0, mesh);
+    // print out results
+    mesh.print();
 
     // start demo string
 
@@ -245,6 +248,7 @@ TEST(conduit_docs, blueprint_demo_gradient_rectilinear)
 
     // start test code
 
+    Node info;
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
 
     Node wide_mesh, ref_mesh;
@@ -261,11 +265,12 @@ TEST(conduit_docs, blueprint_demo_gradient_structured)
 {
     // start demo code
 
-    // create container node and debug node
-    Node mesh, info;
-
+    // create container node
+    Node mesh;
     // generate simple structured 2d 'gradient' mesh
     conduit::blueprint::mesh::examples::gradient("structured", 3, 3, 1, mesh);
+    // print out results
+    mesh.print();
 
     // start demo string
 
@@ -314,6 +319,7 @@ TEST(conduit_docs, blueprint_demo_gradient_structured)
 
     // start test code
 
+    Node info;
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
 
     Node wide_mesh, ref_mesh;
@@ -330,11 +336,12 @@ TEST(conduit_docs, blueprint_demo_gradient_tris)
 {
     // start demo code
 
-    // create container node and debug node
-    Node mesh, info;
-
-    // generate simple uniform 2d 'gradient' mesh
+    // create container node
+    Node mesh;
+    // generate simple explicit tri-based 2d 'gradient' mesh
     conduit::blueprint::mesh::examples::gradient("tris", 3, 3, 0, mesh);
+    // print out results
+    mesh.print();
 
     // start demo string
 
@@ -380,6 +387,7 @@ TEST(conduit_docs, blueprint_demo_gradient_tris)
 
     // start test code
 
+    Node info;
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
 
     Node wide_mesh, ref_mesh;
@@ -396,11 +404,12 @@ TEST(conduit_docs, blueprint_demo_gradient_quads)
 {
     // start demo code
 
-    // create container node and debug node
-    Node mesh, info;
-
-    // generate simple uniform 2d 'gradient' mesh
+    // create container node
+    Node mesh;
+    // generate simple explicit quad-based 2d 'gradient' mesh
     conduit::blueprint::mesh::examples::gradient("quads", 3, 3, 0, mesh);
+    // print out results
+    mesh.print();
 
     // start demo string
 
@@ -446,6 +455,7 @@ TEST(conduit_docs, blueprint_demo_gradient_quads)
 
     // start test code
 
+    Node info;
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
 
     Node wide_mesh, ref_mesh;
@@ -462,11 +472,12 @@ TEST(conduit_docs, blueprint_demo_gradient_tets)
 {
     // start demo code
 
-    // create container node and debug node
-    Node mesh, info;
-
-    // generate simple uniform 2d 'gradient' mesh
+    // create container node
+    Node mesh;
+    // generate simple explicit tri-based 3d 'gradient' mesh
     conduit::blueprint::mesh::examples::gradient("tets", 3, 3, 3, mesh);
+    // print out results
+    mesh.print();
 
     // start demo string
 
@@ -513,6 +524,7 @@ TEST(conduit_docs, blueprint_demo_gradient_tets)
 
     // start test code
 
+    Node info;
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
 
     Node wide_mesh, ref_mesh;
@@ -529,11 +541,12 @@ TEST(conduit_docs, blueprint_demo_gradient_hexs)
 {
     // start demo code
 
-    // create container node and debug node
-    Node mesh, info;
-
-    // generate simple uniform 2d 'gradient' mesh
+    // create container node
+    Node mesh;
+    // generate simple explicit quad-based 3d 'gradient' mesh
     conduit::blueprint::mesh::examples::gradient("hexs", 3, 3, 3, mesh);
+    // print out results
+    mesh.print();
 
     // start demo string
 
@@ -580,6 +593,7 @@ TEST(conduit_docs, blueprint_demo_gradient_hexs)
 
     // start test code
 
+    Node info;
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
 
     Node wide_mesh, ref_mesh;

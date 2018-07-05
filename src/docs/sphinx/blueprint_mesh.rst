@@ -446,14 +446,14 @@ Uniform
 * **Call**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 132-136
+   :lines: 132-137
    :language: cpp
    :dedent: 4
 
 * **Schema**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 141-182
+   :lines: 142-183
    :language: cpp
    :dedent: 4
 
@@ -471,14 +471,14 @@ Rectilinear
 * **Call**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 203-207
+   :lines: 205-210
    :language: cpp
    :dedent: 4
 
 * **Schema**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 212-243
+   :lines: 215-246
    :language: cpp
    :dedent: 4
 
@@ -496,14 +496,14 @@ Structured
 * **Call**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 264-268
+   :lines: 268-273
    :language: cpp
    :dedent: 4
 
 * **Schema**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 273-312
+   :lines: 278-317
    :language: cpp
    :dedent: 4
 
@@ -521,14 +521,14 @@ Tris
 * **Call**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 333-337
+   :lines: 339-344
    :language: cpp
    :dedent: 4
 
 * **Schema**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 342-378
+   :lines: 349-385
    :language: cpp
    :dedent: 4
 
@@ -546,14 +546,14 @@ Quads
 * **Call**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 399-403
+   :lines: 407-412
    :language: cpp
    :dedent: 4
 
 * **Schema**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 408-444
+   :lines: 417-453
    :language: cpp
    :dedent: 4
 
@@ -571,14 +571,14 @@ Tets
 * **Call**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 465-469
+   :lines: 475-480
    :language: cpp
    :dedent: 4
 
 * **Schema**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 474-511
+   :lines: 485-522
    :language: cpp
    :dedent: 4
 
@@ -596,14 +596,14 @@ Hexs
 * **Call**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 532-536
+   :lines: 544-549
    :language: cpp
    :dedent: 4
 
 * **Schema**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 541-578
+   :lines: 554-591
    :language: cpp
    :dedent: 4
 
