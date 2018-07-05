@@ -65,6 +65,43 @@ void convert_schema_to_mesh(const std::string &schema, conduit::Node &mesh)
     gen.walk(mesh);
 }
 
+void expand_mesh_data(const conduit::Node &mesh, conduit::Node &emesh)
+{
+    // TODO(JRC): Add support for list types (isn't currently necessary
+    // since they don't appear anywhere in a normal Blueprint schema).
+    if(mesh.dtype().id() == DataType::OBJECT_ID ||
+        mesh.dtype().id() == DataType::LIST_ID)
+    {
+        conduit::NodeConstIterator child_it = mesh.children();
+        while(child_it.has_next())
+        {
+            const conduit::Node &child = child_it.next();
+            const std::string child_name = child_it.name();
+            conduit::Node &echild = emesh[child_name];
+            expand_mesh_data(child, echild);
+        }
+    }
+    else // is leaf node
+    {
+        if(mesh.dtype().is_signed_integer())
+        {
+            mesh.to_int64_array(emesh);
+        }
+        else if(mesh.dtype().is_unsigned_integer())
+        {
+            mesh.to_uint64_array(emesh);
+        }
+        else if(mesh.dtype().is_floating_point())
+        {
+            mesh.to_float64_array(emesh);
+        }
+        else
+        {
+            emesh.set(mesh);
+        }
+    }
+}
+
 void save_mesh(const conduit::Node &mesh, const std::string &mesh_name)
 {
     Node mesh_ctrl, mesh_root;
@@ -149,12 +186,13 @@ TEST(conduit_docs, blueprint_demo_gradient_uniform)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
 
-    Node ref_mesh;
+    Node wide_mesh, ref_mesh;
     convert_schema_to_mesh(mesh_schema, ref_mesh);
-    EXPECT_FALSE(mesh.diff(ref_mesh, info));
+    expand_mesh_data(mesh, wide_mesh);
+    EXPECT_FALSE(wide_mesh.diff(ref_mesh, info));
 
-    save_mesh(mesh, "gradient_uniform");
-    // TODO(JRC): Expect that the proper files exist.
+    // TODO(JRC): Output and validate the saved files.
+    // save_mesh(mesh, "gradient_uniform");
 }
 
 //-----------------------------------------------------------------------------
@@ -209,12 +247,13 @@ TEST(conduit_docs, blueprint_demo_gradient_rectilinear)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
 
-    Node ref_mesh;
+    Node wide_mesh, ref_mesh;
     convert_schema_to_mesh(mesh_schema, ref_mesh);
-    EXPECT_FALSE(mesh.diff(ref_mesh, info));
+    expand_mesh_data(mesh, wide_mesh);
+    EXPECT_FALSE(wide_mesh.diff(ref_mesh, info));
 
-    save_mesh(mesh, "gradient_rectilinear");
     // TODO(JRC): Expect that the proper files exist.
+    // save_mesh(mesh, "gradient_rectilinear");
 }
 
 //-----------------------------------------------------------------------------
@@ -277,12 +316,13 @@ TEST(conduit_docs, blueprint_demo_gradient_structured)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
 
-    Node ref_mesh;
+    Node wide_mesh, ref_mesh;
     convert_schema_to_mesh(mesh_schema, ref_mesh);
-    EXPECT_FALSE(mesh.diff(ref_mesh, info));
+    expand_mesh_data(mesh, wide_mesh);
+    EXPECT_FALSE(wide_mesh.diff(ref_mesh, info));
 
-    save_mesh(mesh, "gradient_structured");
     // TODO(JRC): Expect that the proper files exist.
+    // save_mesh(mesh, "gradient_structured");
 }
 
 //-----------------------------------------------------------------------------
@@ -342,12 +382,13 @@ TEST(conduit_docs, blueprint_demo_gradient_tris)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
 
-    Node ref_mesh;
+    Node wide_mesh, ref_mesh;
     convert_schema_to_mesh(mesh_schema, ref_mesh);
-    // EXPECT_FALSE(mesh.diff(ref_mesh, info)); // FIXME(JRC): Type error (int32 vs int64 for connectivitiy)
+    expand_mesh_data(mesh, wide_mesh);
+    EXPECT_FALSE(wide_mesh.diff(ref_mesh, info));
 
-    save_mesh(mesh, "gradient_tris");
     // TODO(JRC): Expect that the proper files exist.
+    // save_mesh(mesh, "gradient_tris");
 }
 
 //-----------------------------------------------------------------------------
@@ -407,12 +448,13 @@ TEST(conduit_docs, blueprint_demo_gradient_quads)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
 
-    Node ref_mesh;
+    Node wide_mesh, ref_mesh;
     convert_schema_to_mesh(mesh_schema, ref_mesh);
-    // EXPECT_FALSE(mesh.diff(ref_mesh, info)); // FIXME(JRC): Type error (int32 vs int64 for connectivitiy)
+    expand_mesh_data(mesh, wide_mesh);
+    EXPECT_FALSE(wide_mesh.diff(ref_mesh, info));
 
-    save_mesh(mesh, "gradient_quads");
     // TODO(JRC): Expect that the proper files exist.
+    // save_mesh(mesh, "gradient_quads");
 }
 
 //-----------------------------------------------------------------------------
@@ -473,12 +515,13 @@ TEST(conduit_docs, blueprint_demo_gradient_tets)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
 
-    Node ref_mesh;
+    Node wide_mesh, ref_mesh;
     convert_schema_to_mesh(mesh_schema, ref_mesh);
-    // EXPECT_FALSE(mesh.diff(ref_mesh, info)); // FIXME(JRC): Type error (int32 vs int64 for connectivitiy)
+    expand_mesh_data(mesh, wide_mesh);
+    EXPECT_FALSE(wide_mesh.diff(ref_mesh, info));
 
-    save_mesh(mesh, "gradient_tets");
     // TODO(JRC): Expect that the proper files exist.
+    // save_mesh(mesh, "gradient_tets");
 }
 
 //-----------------------------------------------------------------------------
@@ -539,10 +582,11 @@ TEST(conduit_docs, blueprint_demo_gradient_hexs)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
 
-    Node ref_mesh;
+    Node wide_mesh, ref_mesh;
     convert_schema_to_mesh(mesh_schema, ref_mesh);
-    // EXPECT_FALSE(mesh.diff(ref_mesh, info)); // FIXME(JRC): Type error (int32 vs int64 for connectivitiy)
+    expand_mesh_data(mesh, wide_mesh);
+    EXPECT_FALSE(wide_mesh.diff(ref_mesh, info));
 
-    save_mesh(mesh, "gradient_hexs");
     // TODO(JRC): Expect that the proper files exist.
+    // save_mesh(mesh, "gradient_hexs");
 }
