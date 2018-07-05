@@ -392,9 +392,228 @@ To conform, the ``state`` entry must be an *Object* and can have the following o
 Examples
 ~~~~~~~~~~~~~~~~~~~~~
 
-In C++, the ``conduit::blueprint::mesh::examples`` namespace and in Python the `conduit.blueprint.mesh.examples` module provide
-functions that generate example mesh blueprint data. For details on how to write these data sets to files, see the unit tests that exercise these examples in ``src/tests/blueprint/t_blueprint_mesh_examples.cpp``. This section outlines ``braid``, ``sprial``, and ``julia`` examples.
+The C++ ``conduit::blueprint::mesh::examples`` namespace and the Python `conduit.blueprint.mesh.examples` module provide
+functions that generate example mesh blueprint data. For details on how to write these data sets to files, see the unit
+tests that exercise these examples in ``src/tests/blueprint/t_blueprint_mesh_examples.cpp``. This section outlines the
+examples that demonstrate the most commonly used mesh schemas.
 
+gradient
++++++++++
+
+The simplest of the mesh examples, ``gradient()``, generates an homogenous example mesh with a configurable element
+representation/type (see the ``mesh_type`` table below) spanned by a single scalar field that contains a unique
+identifier for each mesh element. The function that needs to be called to generate an example of this type has the
+following signature:
+
+.. code:: cpp
+
+    conduit::blueprint::mesh::examples::gradient(const std::string &mesh_type, // element type/dimensionality
+                                                 index_t nx,                   // number of grid points along x
+                                                 index_t ny,                   // number of grid points along y
+                                                 index_t nz,                   // number of grid points along z (3d only)
+                                                 Node &res);                   // result container
+
+
+
+The element representation, type, and dimensionality are all configured through the ``mesh_type`` argument. The
+supported values for this parameter and their corresponding effects are outlined in the table below:
+
++---------------+--------------------+-------------------+-------------------+------------------+
+| **Mesh Type** | **Dimensionality** | **Coordset Type** | **Topology Type** | **Element Type** |
++---------------+--------------------+-------------------+-------------------+------------------+
+| uniform       | 2d/3d              | implicit          | implicit          | quad/hex         |
++---------------+--------------------+-------------------+-------------------+------------------+
+|rectilinear    | 2d/3d              | implicit          | implicit          | quad/hex         |
++---------------+--------------------+-------------------+-------------------+------------------+
+|structured     | 2d/3d              | explicit          | implicit          | quad/hex         |
++---------------+--------------------+-------------------+-------------------+------------------+
+|tris           | 2d                 | explicit          | explicit          | tri              |
++---------------+--------------------+-------------------+-------------------+------------------+
+|quads          | 2d                 | explicit          | explicit          | quad             |
++---------------+--------------------+-------------------+-------------------+------------------+
+|tets           | 3d                 | explicit          | explicit          | tet              |
++---------------+--------------------+-------------------+-------------------+------------------+
+|hexs           | 3d                 | explicit          | explicit          | hex              |
++---------------+--------------------+-------------------+-------------------+------------------+
+
+The remainder of this section demonstrates each of the different ``gradient()`` mesh types, outlining
+each type with a simple example that (1) presents the generating call, (2) shows the results of the
+call in Blueprint schema form, and (3) displays the corresponding graphical rendering of this schema.
+
+Uniform
+====================================
+
+* **Call**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 96-99
+   :language: cpp
+   :dedent: 4
+
+* **Schema**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 104-145
+   :language: cpp
+   :dedent: 4
+
+* **Visual**
+
+.. figure:: gradient_hex_2d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of ``gradient`` (element type 'uniform')
+
+Rectilinear
+====================================
+
+* **Call**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 165-169
+   :language: cpp
+   :dedent: 4
+
+* **Schema**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 174-205
+   :language: cpp
+   :dedent: 4
+
+* **Visual**
+
+.. figure:: gradient_hex_2d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of ``gradient`` (element type 'rectilinear')
+
+Structured
+====================================
+
+* **Call**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 225-229
+   :language: cpp
+   :dedent: 4
+
+* **Schema**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 234-273
+   :language: cpp
+   :dedent: 4
+
+* **Visual**
+
+.. figure:: gradient_hex_2d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of ``gradient`` (element type 'structured')
+
+Tris
+====================================
+
+* **Call**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 293-297
+   :language: cpp
+   :dedent: 4
+
+* **Schema**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 302-338
+   :language: cpp
+   :dedent: 4
+
+* **Visual**
+
+.. figure:: gradient_tet_2d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of ``gradient`` (element type 'tris')
+
+Quads
+====================================
+
+* **Call**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 358-362
+   :language: cpp
+   :dedent: 4
+
+* **Schema**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 367-403
+   :language: cpp
+   :dedent: 4
+
+* **Visual**
+
+.. figure:: gradient_hex_2d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of ``gradient`` (element type 'quads')
+
+Tets
+====================================
+
+* **Call**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 423-427
+   :language: cpp
+   :dedent: 4
+
+* **Schema**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 432-469
+   :language: cpp
+   :dedent: 4
+
+* **Visual**
+
+.. figure:: gradient_tet_3d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of ``gradient`` (element type 'tets')
+
+Hexs
+====================================
+
+* **Call**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 489-493
+   :language: cpp
+   :dedent: 4
+
+* **Schema**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 498-535
+   :language: cpp
+   :dedent: 4
+
+* **Visual**
+
+.. figure:: gradient_hex_3d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of ``gradient`` (element type 'hexs')
 
 braid
 ++++++

@@ -139,7 +139,7 @@ void gradient_init_example_element_scalar_field(index_t nele_x,
     res["values"].set(DataType::float64(nele*prims_per_ele));
 
     float64 *vals = res["values"].value();
-    for(index_t i = 0; i < nele; i++)
+    for(index_t i = 0; i < nele*prims_per_ele; i++)
     {
         vals[i] = i + 0.0;
     }
@@ -465,7 +465,12 @@ braid_init_explicit_coordset(index_t npts_x,
 {
     coords["type"] = "explicit";
     
-    index_t npts = npts_x * npts_y * npts_z;
+    index_t npts = npts_x * npts_y;
+
+    if(npts_z > 1)
+    {
+        npts *= npts_z;
+    }
 
     // also support interleaved
     Node &coord_vals = coords["values"];
@@ -1831,11 +1836,11 @@ gradient(const std::string &mesh_type,
     }
 
     braid(mesh_type, npts_x, npts_y, npts_z, res);
+    res.remove("fields");
+    res.remove("state");
 
-    Node &fields = res["fields"];
-    fields.reset();
-    gradient_init_example_element_scalar_field(npts_x, npts_y, npts_z,
-        fields["field"], mesh_types_subelems_per_elem[mesh_type_index]);
+    gradient_init_example_element_scalar_field(npts_x-1, npts_y-1, npts_z-1,
+        res["fields/field"], mesh_types_subelems_per_elem[mesh_type_index]);
 }
 
 
