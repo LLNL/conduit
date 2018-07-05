@@ -82,12 +82,12 @@ namespace mesh
 namespace examples
 {
     /// Generates a uniform grid with a scalar field that assigns a unique,
-    /// monotonically increasing value to each element/vertex.
-    void CONDUIT_BLUEPRINT_API gradient(const std::string &mesh_type,
-                                        conduit::index_t nx,
-                                        conduit::index_t ny,
-                                        conduit::index_t nz,
-                                        conduit::Node &res);
+    /// monotonically increasing value to each element.
+    void CONDUIT_BLUEPRINT_API basic(const std::string &mesh_type,
+                                     conduit::index_t nx,
+                                     conduit::index_t ny,
+                                     conduit::index_t nz,
+                                     conduit::Node &res);
 
     /// Generates a braid-like example mesh that covers elements defined in a
     /// rectilinear grid. The sub-element type (e.g. triangles, quads,

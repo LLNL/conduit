@@ -120,11 +120,11 @@ struct point
 
 
 //---------------------------------------------------------------------------//
-void gradient_init_example_element_scalar_field(index_t nele_x,
-                                                index_t nele_y,
-                                                index_t nele_z,
-                                                Node &res,
-                                                index_t prims_per_ele=1)
+void basic_init_example_element_scalar_field(index_t nele_x,
+                                             index_t nele_y,
+                                             index_t nele_z,
+                                             Node &res,
+                                             index_t prims_per_ele=1)
 {
     index_t nele = nele_x*nele_y;
 
@@ -1807,13 +1807,13 @@ braid_hexs_and_tets(index_t npts_x,
 
 //---------------------------------------------------------------------------//
 void
-gradient(const std::string &mesh_type,
-         index_t npts_x, // number of points in x
-         index_t npts_y, // number of points in y
-         index_t npts_z, // number of points in z
-         Node &res)
+basic(const std::string &mesh_type,
+      index_t npts_x, // number of points in x
+      index_t npts_y, // number of points in y
+      index_t npts_z, // number of points in z
+      Node &res)
 {
-    // NOTE(JRC): The gradient mesh example only supports simple, homogenous
+    // NOTE(JRC): The basic mesh example only supports simple, homogenous
     // element types that can be spanned by zone-centered fields.
     const std::string mesh_types[7] = {
         "uniform", "rectilinear", "structured",
@@ -1839,7 +1839,7 @@ gradient(const std::string &mesh_type,
     res.remove("fields");
     res.remove("state");
 
-    gradient_init_example_element_scalar_field(npts_x-1, npts_y-1, npts_z-1,
+    basic_init_example_element_scalar_field(npts_x-1, npts_y-1, npts_z-1,
         res["fields/field"], mesh_types_subelems_per_elem[mesh_type_index]);
 }
 

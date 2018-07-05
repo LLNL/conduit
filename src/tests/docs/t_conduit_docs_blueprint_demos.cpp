@@ -65,7 +65,11 @@ void convert_schema_to_mesh(const std::string &schema, conduit::Node &mesh)
     gen.walk(mesh);
 }
 
-void expand_mesh_data(const conduit::Node &mesh, conduit::Node &emesh)
+// NOTE(JRC): This function is necessary since the Blueprint examples produce
+// results with arbitrary data types (e.g. int32, uint32) while JSON-read values
+// always use the biggest available data types (e.g. int64, float64), so the
+// mesh data needs to be expanded so there aren't false positive diff errors.
+void make_mesh_json_compatible(const conduit::Node &mesh, conduit::Node &emesh)
 {
     // TODO(JRC): Add support for list types (isn't currently necessary
     // since they don't appear anywhere in a normal Blueprint schema).
@@ -78,7 +82,7 @@ void expand_mesh_data(const conduit::Node &mesh, conduit::Node &emesh)
             const conduit::Node &child = child_it.next();
             const std::string child_name = child_it.name();
             conduit::Node &echild = emesh[child_name];
-            expand_mesh_data(child, echild);
+            make_mesh_json_compatible(child, echild);
         }
     }
     else // is leaf node
@@ -125,14 +129,14 @@ void save_mesh(const conduit::Node &mesh, const std::string &mesh_name)
 /// Test Functions ///
 
 //-----------------------------------------------------------------------------
-TEST(conduit_docs, blueprint_demo_gradient_uniform)
+TEST(conduit_docs, blueprint_demo_basic_uniform)
 {
     // start demo code
 
     // create container node
     Node mesh;
-    // generate simple uniform 2d 'gradient' mesh
-    conduit::blueprint::mesh::examples::gradient("uniform", 3, 3, 0, mesh);
+    // generate simple uniform 2d 'basic' mesh
+    conduit::blueprint::mesh::examples::basic("uniform", 3, 3, 0, mesh);
     // print out results
     mesh.print();
 
@@ -190,22 +194,22 @@ TEST(conduit_docs, blueprint_demo_gradient_uniform)
 
     Node wide_mesh, ref_mesh;
     convert_schema_to_mesh(mesh_schema, ref_mesh);
-    expand_mesh_data(mesh, wide_mesh);
+    make_mesh_json_compatible(mesh, wide_mesh);
     EXPECT_FALSE(wide_mesh.diff(ref_mesh, info));
 
     // TODO(JRC): Output and validate the saved files.
-    // save_mesh(mesh, "gradient_uniform");
+    // save_mesh(mesh, "basic_uniform");
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_docs, blueprint_demo_gradient_rectilinear)
+TEST(conduit_docs, blueprint_demo_basic_rectilinear)
 {
     // start demo code
 
     // create container node
     Node mesh;
-    // generate simple rectilinear 2d 'gradient' mesh
-    conduit::blueprint::mesh::examples::gradient("rectilinear", 3, 3, 0, mesh);
+    // generate simple rectilinear 2d 'basic' mesh
+    conduit::blueprint::mesh::examples::basic("rectilinear", 3, 3, 0, mesh);
     // print out results
     mesh.print();
 
@@ -253,22 +257,22 @@ TEST(conduit_docs, blueprint_demo_gradient_rectilinear)
 
     Node wide_mesh, ref_mesh;
     convert_schema_to_mesh(mesh_schema, ref_mesh);
-    expand_mesh_data(mesh, wide_mesh);
+    make_mesh_json_compatible(mesh, wide_mesh);
     EXPECT_FALSE(wide_mesh.diff(ref_mesh, info));
 
     // TODO(JRC): Expect that the proper files exist.
-    // save_mesh(mesh, "gradient_rectilinear");
+    // save_mesh(mesh, "basic_rectilinear");
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_docs, blueprint_demo_gradient_structured)
+TEST(conduit_docs, blueprint_demo_basic_structured)
 {
     // start demo code
 
     // create container node
     Node mesh;
-    // generate simple structured 2d 'gradient' mesh
-    conduit::blueprint::mesh::examples::gradient("structured", 3, 3, 1, mesh);
+    // generate simple structured 2d 'basic' mesh
+    conduit::blueprint::mesh::examples::basic("structured", 3, 3, 1, mesh);
     // print out results
     mesh.print();
 
@@ -324,22 +328,22 @@ TEST(conduit_docs, blueprint_demo_gradient_structured)
 
     Node wide_mesh, ref_mesh;
     convert_schema_to_mesh(mesh_schema, ref_mesh);
-    expand_mesh_data(mesh, wide_mesh);
+    make_mesh_json_compatible(mesh, wide_mesh);
     EXPECT_FALSE(wide_mesh.diff(ref_mesh, info));
 
     // TODO(JRC): Expect that the proper files exist.
-    // save_mesh(mesh, "gradient_structured");
+    // save_mesh(mesh, "basic_structured");
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_docs, blueprint_demo_gradient_tris)
+TEST(conduit_docs, blueprint_demo_basic_tris)
 {
     // start demo code
 
     // create container node
     Node mesh;
-    // generate simple explicit tri-based 2d 'gradient' mesh
-    conduit::blueprint::mesh::examples::gradient("tris", 3, 3, 0, mesh);
+    // generate simple explicit tri-based 2d 'basic' mesh
+    conduit::blueprint::mesh::examples::basic("tris", 3, 3, 0, mesh);
     // print out results
     mesh.print();
 
@@ -392,22 +396,22 @@ TEST(conduit_docs, blueprint_demo_gradient_tris)
 
     Node wide_mesh, ref_mesh;
     convert_schema_to_mesh(mesh_schema, ref_mesh);
-    expand_mesh_data(mesh, wide_mesh);
+    make_mesh_json_compatible(mesh, wide_mesh);
     EXPECT_FALSE(wide_mesh.diff(ref_mesh, info));
 
     // TODO(JRC): Expect that the proper files exist.
-    // save_mesh(mesh, "gradient_tris");
+    // save_mesh(mesh, "basic_tris");
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_docs, blueprint_demo_gradient_quads)
+TEST(conduit_docs, blueprint_demo_basic_quads)
 {
     // start demo code
 
     // create container node
     Node mesh;
-    // generate simple explicit quad-based 2d 'gradient' mesh
-    conduit::blueprint::mesh::examples::gradient("quads", 3, 3, 0, mesh);
+    // generate simple explicit quad-based 2d 'basic' mesh
+    conduit::blueprint::mesh::examples::basic("quads", 3, 3, 0, mesh);
     // print out results
     mesh.print();
 
@@ -460,22 +464,22 @@ TEST(conduit_docs, blueprint_demo_gradient_quads)
 
     Node wide_mesh, ref_mesh;
     convert_schema_to_mesh(mesh_schema, ref_mesh);
-    expand_mesh_data(mesh, wide_mesh);
+    make_mesh_json_compatible(mesh, wide_mesh);
     EXPECT_FALSE(wide_mesh.diff(ref_mesh, info));
 
     // TODO(JRC): Expect that the proper files exist.
-    // save_mesh(mesh, "gradient_quads");
+    // save_mesh(mesh, "basic_quads");
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_docs, blueprint_demo_gradient_tets)
+TEST(conduit_docs, blueprint_demo_basic_tets)
 {
     // start demo code
 
     // create container node
     Node mesh;
-    // generate simple explicit tri-based 3d 'gradient' mesh
-    conduit::blueprint::mesh::examples::gradient("tets", 3, 3, 3, mesh);
+    // generate simple explicit tri-based 3d 'basic' mesh
+    conduit::blueprint::mesh::examples::basic("tets", 3, 3, 3, mesh);
     // print out results
     mesh.print();
 
@@ -529,22 +533,22 @@ TEST(conduit_docs, blueprint_demo_gradient_tets)
 
     Node wide_mesh, ref_mesh;
     convert_schema_to_mesh(mesh_schema, ref_mesh);
-    expand_mesh_data(mesh, wide_mesh);
+    make_mesh_json_compatible(mesh, wide_mesh);
     EXPECT_FALSE(wide_mesh.diff(ref_mesh, info));
 
     // TODO(JRC): Expect that the proper files exist.
-    // save_mesh(mesh, "gradient_tets");
+    // save_mesh(mesh, "basic_tets");
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_docs, blueprint_demo_gradient_hexs)
+TEST(conduit_docs, blueprint_demo_basic_hexs)
 {
     // start demo code
 
     // create container node
     Node mesh;
-    // generate simple explicit quad-based 3d 'gradient' mesh
-    conduit::blueprint::mesh::examples::gradient("hexs", 3, 3, 3, mesh);
+    // generate simple explicit quad-based 3d 'basic' mesh
+    conduit::blueprint::mesh::examples::basic("hexs", 3, 3, 3, mesh);
     // print out results
     mesh.print();
 
@@ -598,9 +602,9 @@ TEST(conduit_docs, blueprint_demo_gradient_hexs)
 
     Node wide_mesh, ref_mesh;
     convert_schema_to_mesh(mesh_schema, ref_mesh);
-    expand_mesh_data(mesh, wide_mesh);
+    make_mesh_json_compatible(mesh, wide_mesh);
     EXPECT_FALSE(wide_mesh.diff(ref_mesh, info));
 
     // TODO(JRC): Expect that the proper files exist.
-    // save_mesh(mesh, "gradient_hexs");
+    // save_mesh(mesh, "basic_hexs");
 }
