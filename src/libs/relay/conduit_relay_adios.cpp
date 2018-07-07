@@ -76,9 +76,9 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
-#ifdef MAKE_SEPARATE_GROUPS
+//#ifdef MAKE_SEPARATE_GROUPS
 #include <sys/time.h>
-#endif
+//#endif
 
 //-----------------------------------------------------------------------------
 // external lib includes
@@ -91,11 +91,47 @@
 // -- conduit includes -- 
 //-----------------------------------------------------------------------------
 #include "conduit_error.hpp"
+#include "conduit_utils.hpp"
 
 using std::cout;
 using std::endl;
 
 #define CURRENT_TIME_STEP -1
+#define DOMAIN_MAP_PREFIX ".dm."
+// the length of "1222333444:"
+#define DOMAIN_MAP_PREFIXLEN 11
+
+// This macro turns on disparate tree support where we prepend a hash value
+// onto 
+// FOR NOW TURN OFF
+//#define DISPARATE_TREE_SUPPORT
+
+/*
+In adding DISPARATE_TREE_SUPPORT I have come across a problem. The problem is
+whether save_merged() should add new domains or whether it should simply add
+missing nodes to existing domains.
+
+The default behavior without DISPARATE_TREE_SUPPORT is to add missing nodes 
+to existing domains. The problem is that it does not record the domain ids
+for which we're adding data.
+
+In my new support, I have made it so that I add a .dm.xxx variable that
+contains the hash for the Conduit node and the block to which it corresponds.
+The hash is prepended onto the variable names so we we know that all ranks
+with like hashes will go together and their domains will be stored together.
+Then, when reading, we get the domain'th tuple for these values and read the
+data for the right domain by making the right variable name.
+
+To support adding new fields to existing data, I made the code add a .dm.xxxx
+variable where xxxx is the current time since the epoch. When I read the data
+back, I'm looking for a specific domain. The problem is when I have this
+behavior, each save_merged results in a new .dm.xxxx variable in the file
+so when I ask for the domain'th value, which won't exist.
+
+So, for domains, we cannot keep making .dm.xxxx have different values for xxxx.
+
+*/
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -132,7 +168,7 @@ namespace internals
 static int rank = 0;
 static int size = 1;
 
-//#define DEBUG_PRINT_RANK(OSSEXPR) if(internals::rank == 0) { cout << OSSEXPR << endl; }
+//#define DEBUG_PRINT_RANK(OSSEXPR) if(internals::rank == 1) { cout << OSSEXPR << endl; }
 #define DEBUG_PRINT_RANK(OSSEXPR) 
 
 //-----------------------------------------------------------------------------
@@ -319,7 +355,7 @@ streamIsFileBased(ADIOS_READ_METHOD method)
 }
 
 //-----------------------------------------------------------------------------
-#ifdef MAKE_SEPARATE_GROUPS
+//#ifdef MAKE_SEPARATE_GROUPS
 static unsigned long
 current_time_stamp()
 {
@@ -329,7 +365,7 @@ current_time_stamp()
     // Convert to microseconds since epoch.
     return t.tv_sec * 1000000 + t.tv_usec;
 }
-#endif
+//#endif
 
 //-----------------------------------------------------------------------------
 static void
@@ -340,6 +376,18 @@ create_group_name(char name[32])
     sprintf(name, "conduit%020ld", t);
 #else
     strcpy(name, "conduit");
+#endif
+}
+
+//-----------------------------------------------------------------------------
+static void
+create_domain_map_name(char name[32])
+{
+#if 1
+    strcpy(name, DOMAIN_MAP_PREFIX);
+#else
+    unsigned long t = current_time_stamp();
+    sprintf(name, DOMAIN_MAP_PREFIX "%020ld", t);
 #endif
 }
 
@@ -684,6 +732,10 @@ static bool adios_initialized = false;
 #define MAX_READ_METHODS 15
 static int read_methods_initialized[MAX_READ_METHODS];
 
+#ifdef DISPARATE_TREE_SUPPORT
+static std::map<std::string, int> adios_file_num_domains;
+#endif
+
 static void initialize(
     CONDUIT_RELAY_COMMUNICATOR_ARG0(MPI_Comm comm)
     )
@@ -747,6 +799,9 @@ static void finalize(
     adios_finalize(rank);
 #else
     adios_finalize(0);
+#endif
+#ifdef DISPARATE_TREE_SUPPORT
+    adios_file_num_domains.clear();
 #endif
 }
 
@@ -1021,13 +1076,13 @@ static void write_variables(const Node &node,
         CONDUIT_ERROR("Unsupported Conduit to ADIOS type conversion.");
         return;
     }
-    DEBUG_PRINT_RANK("adios_write(file, \"" << node_path
-                     << "\", node.data_ptr())")
 
     // Prepend a path if necessary.
     std::string adios_var(conduit::utils::join_path(state->adios_path, node_path));
 
     // if the node is compact, we can write directly from its data ptr
+    DEBUG_PRINT_RANK("adios_write(file, \"" << adios_var
+                     << "\", node.data_ptr())")
     int s;
     if(node.dtype().is_compact()) 
     {
@@ -1083,51 +1138,18 @@ static bool declare_group(int64_t *gid,
 }
 
 //-----------------------------------------------------------------------------
-static int save(const Node &node, const std::string &path, 
-    adios_save_state *state, const char *flag,
+static void hash_tree(const Node &node, 
+    const std::string &node_path,
+    void *funcData,
 #ifdef USE_MPI
-    MPI_Comm comm
+    MPI_Comm
 #else
-    int comm
+    int
 #endif
     )
 {
-    //
-    // Open the file
-    //
-    DEBUG_PRINT_RANK("adios_open(&fid, \"" << state->groupName << "\", \"" << path << "\", "
-                     << "\"" << flag << "\", comm)")
-    if(adios_open(&state->fid, state->groupName, path.c_str(), flag, comm) != 0)
-    {
-        CONDUIT_ERROR("ADIOS error: " << adios_get_last_errmsg());
-        return -1;
-    }
-
-    // This is an optional call that lets ADIOS size its output buffers.
-    uint64_t total_size = 0;
-    DEBUG_PRINT_RANK("adios_group_size(fid, " << state->gSize << ", &total)")
-    if(adios_group_size(state->fid, state->gSize, &total_size) != 0)
-    {
-        CONDUIT_ERROR("ADIOS error: " << adios_get_last_errmsg());
-        return -2;
-    }
-
-    //
-    // Write Variables
-    //
-    iterate_conduit_node(node, write_variables, state, comm);
-
-    //
-    // Close the file.
-    //
-    DEBUG_PRINT_RANK("adios_close(fid)")
-    if(adios_close(state->fid) != 0)
-    {
-//        CONDUIT_ERROR("ADIOS error: " << adios_get_last_errmsg());
-        return -3;
-    }
-
-    return 0;
+    unsigned int *h = (unsigned int *)funcData;
+    *h = conduit::utils::hash(node_path, *h);
 }
 
 //-----------------------------------------------------------------------------
@@ -1172,6 +1194,78 @@ save(const Node &node, const std::string &path, const char *flag
                      << options()->buffer_size << ")")
     adios_set_max_buffer_size(static_cast<uint64_t>(options()->buffer_size));
 
+#ifdef DISPARATE_TREE_SUPPORT
+// NOTE: We have to increment this_node_rank by the number of domains that 
+//       are already in the file if we are updating the file to add new
+//       data to it. If we do not then our mapping will keep saying
+//       that our new domain that we're adding points to block 0.
+//       that's no good. It points to another reason to NOT use
+//       save_merged to add domains to the file.
+//       We do not want to have to open the file beforehand to query the
+//       size of the .dm. variable! That would suck!
+
+    // If we're writing a new file or appending a new time step then
+    // clear the keys associated with file_path.
+    if(strcmp(flag, "w") == 0 || strcmp(flag, "a") == 0)
+        adios_file_num_domains.clear(); // FIXME
+
+    // Iterate over all of the nodes in the tree and make a hash of
+    // all of the node paths in there.
+    unsigned int nodehash = 0;
+    int total_hashcount;
+    int this_node_rank = internals::rank;
+#ifdef USE_MPI
+    iterate_conduit_node(node, hash_tree, &nodehash, comm);
+    unsigned int reduced_nodehash = 0;
+    MPI_Allreduce(&nodehash, &reduced_nodehash, 1, 
+                  MPI_UNSIGNED, MPI_BAND, comm);
+    if(nodehash != reduced_nodehash)
+    {
+        // We have different node hashes across ranks. So, we need to determine
+        // the rank of this process in the group of ranks that has this 
+        // nodehash value. We could split the comm to determine this but that
+        // color parameter is "int" and not "unsigned int".
+        unsigned int *allnodehashes = new unsigned int[internals::size];
+        MPI_Allgather(&nodehash, 1, MPI_UNSIGNED,
+                      allnodehashes, 1, MPI_UNSIGNED,
+                      comm);
+        // Count the ranks that have this nodehash
+        total_hashcount = 0;
+        for(int i = 0; i < internals::size; ++i)
+        {
+            if(allnodehashes[i] == nodehash)
+                ++total_hashcount;
+        }
+        // Count the number of occurances of nodehash before this rank to
+        // get a rank.
+        this_node_rank = 0;
+        for(int i = 0; i < internals::rank; ++i)
+        {
+            if(allnodehashes[i] == nodehash)
+                ++this_node_rank;
+        }
+        delete [] allnodehashes;
+    }
+    else
+    {
+        total_hashcount = internals::size;
+    }
+#else
+    // Compute the hash.
+    iterate_conduit_node(node, hash_tree, &nodehash, 0);
+    total_hashcount = 1;
+#endif
+
+    // Offset the this_node_rank by the computed domain offset
+    std::ostringstream key;
+    key << file_path << ":" << nodehash;
+    if(adios_file_num_domains.find(key.str()) == adios_file_num_domains.end())
+        adios_file_num_domains[key.str()] = 0;
+    int domain_offset = adios_file_num_domains[key.str()];
+    adios_file_num_domains[key.str()] += total_hashcount;
+    this_node_rank += domain_offset;
+#endif
+
     //
     // Group
     //
@@ -1183,15 +1277,88 @@ save(const Node &node, const std::string &path, const char *flag
     if(declare_group(&state.gid, state.groupName, timeIndex))
     {
         //
-        // Define variables and save the data.
+        // Define variables.
         //
+#ifdef DISPARATE_TREE_SUPPORT
+        char domain_map_name[32];
+        create_domain_map_name(domain_map_name);
+#ifdef USE_MPI
+        MPI_Bcast(domain_map_name, 32, MPI_CHAR, 0, comm);
+#endif
+        // Define a domainmap variable.
+        unsigned int dm[2] = {0,0};
+        dm[0] = nodehash;
+        dm[1] = this_node_rank;
+        DEBUG_PRINT_RANK("adios_define_var(gid, \"" << domain_map_name 
+            << "\", \"\", adios_unsigned_integer, \"2\", \"\", \"\")")
+        adios_define_var(state.gid, domain_map_name,
+                         "", adios_unsigned_integer,
+                         "2", ""/*global*/, ""/*offset*/);
+        state.gSize += 2 * sizeof(unsigned int);
+
+        // We'll prepend the nodehash onto the rest of the variables
+        // that we declare.
+        char nhprefix[12];
+        sprintf(nhprefix, "%010u", nodehash);
+        state.adios_path = conduit::utils::join_path(std::string(nhprefix), state.adios_path);
+#endif
 #ifdef USE_MPI
         iterate_conduit_node(node, define_variables, &state, comm);
-        save(node, file_path, &state, flag, comm);
 #else
         iterate_conduit_node(node, define_variables, &state, 0);
-        save(node, file_path, &state, flag, 0);
 #endif
+
+        //
+        // Open the file
+        //
+        DEBUG_PRINT_RANK("adios_open(&fid, \"" << state.groupName 
+            << "\", \"" << path << "\", "
+            << "\"" << flag << "\", comm)")
+        if(adios_open(&state.fid, state.groupName, file_path.c_str(), flag
+#ifdef USE_MPI
+                      , comm
+#else
+                      , 0
+#endif
+                      ) == 0)
+        {
+            // This is an optional call that lets ADIOS size its output buffers.
+            uint64_t total_size = 0;
+            DEBUG_PRINT_RANK("adios_group_size(fid, " << state.gSize << ", &total)")
+            if(adios_group_size(state.fid, state.gSize, &total_size) == 0)
+            {
+                //
+                // Write Variables
+                //
+#ifdef DISPARATE_TREE_SUPPORT
+                // Write the domainmap variable.
+                DEBUG_PRINT_RANK("adios_write(fid, \"" << domain_map_name << "\", dm)")
+                adios_write(state.fid, domain_map_name, dm);
+#endif
+#ifdef USE_MPI
+                iterate_conduit_node(node, write_variables, &state, comm);
+#else
+                iterate_conduit_node(node, write_variables, &state, 0);
+#endif
+            }
+            else
+            {
+                CONDUIT_ERROR("ADIOS error: " << adios_get_last_errmsg());
+            }
+
+            //
+            // Close the file.
+            //
+            DEBUG_PRINT_RANK("adios_close(fid)")
+            if(adios_close(state.fid) != 0)
+            {
+//                CONDUIT_ERROR("ADIOS error: " << adios_get_last_errmsg());
+            }
+        }
+        else
+        {
+            CONDUIT_ERROR("ADIOS error: " << adios_get_last_errmsg());
+        }
     }
     else
     {
@@ -1378,9 +1545,91 @@ load_node(adios_load_state *state, ADIOS_FILE *afile, void *cbdata)
     int scheduled_reads = 0;
     std::vector<ADIOS_SELECTION *> sels;
 
+#ifdef DISPARATE_TREE_SUPPORT
+    std::vector<std::string>  dmprefixes;
+    std::vector<unsigned int> dmblocks;
+if(internals::rank == 1)
+    utils::sleep(4);
+    // We want state->domain for the domain to read in.
     for (int i = 0; i < afile->nvars; ++i)
     {
+        // Only consider the domain map variables since their length
+        // indicates a number of domains.
+        if(strncmp(afile->var_namelist[i], DOMAIN_MAP_PREFIX, 4) != 0)
+            continue;
+
+//cout << "domain map var: " << afile->var_namelist[i] << endl;
+
+        // We want to read the state->domain'th block of .dm. so 
+        // know which block we want to read.
+        ADIOS_VARINFO *v = adios_inq_var(afile, afile->var_namelist[i]);
+        if(v)
+        {
+            adios_inq_var_blockinfo(afile,v);
+
+//if(internals::rank == 0)
+//            internals::print_varinfo(cout, afile, v);
+
+            // Check time step validity.
+            int ts = state->time_step;
+            if(state->time_step == CURRENT_TIME_STEP)
+                ts = afile->current_step;
+
+cout << internals::rank << ": Try to read block " << state->domain << " of " << afile->var_namelist[i] << endl;
+            if(state->domain < v->nblocks[ts])
+            {
+                ADIOS_SELECTION *sel = adios_selection_writeblock(state->domain);
+                sels.push_back(sel);
+
+                unsigned int dm[2] = {0,0};
+                adios_schedule_read_byid(afile, sel, v->varid, ts, 1, dm);
+                adios_free_varinfo(v);
+                int blocking = 1;
+                adios_perform_reads(afile, blocking);
+
+cout << internals::rank << ": domain " << state->domain << " corresponds to group=" << dm[0] << ", block=" << dm[1] << " in " << afile->var_namelist[i] << endl;
+
+                char prefix[32];
+                sprintf(prefix, "%010u", dm[0]);
+                dmprefixes.push_back(prefix);
+                dmblocks.push_back(dm[1]);
+cout << internals::rank << ": prefix = " << prefix << ", block=" << dm[1] << endl;
+            }
+            else
+            {
+                cout << "Asked for out of bounds domain in " << afile->var_namelist[i] << endl;
+            }
+        }
+    }
+#endif
+
+    for (int i = 0; i < afile->nvars; ++i)
+    {
+#ifdef DISPARATE_TREE_SUPPORT
+        // Skip the domain map variables.
+        if(strncmp(afile->var_namelist[i], DOMAIN_MAP_PREFIX, 4) == 0)
+            continue;
+
+        // See if the variable has a prefix for the domains we want.
+        bool has_prefix = false;
+        int search_domain = 0;
+        std::string vname;
+        for(size_t j = 0; j < dmprefixes.size(); ++j)
+        {
+            if(strncmp(afile->var_namelist[i], dmprefixes[j].c_str(), dmprefixes[j].size()) == 0)
+            {
+                vname = std::string(afile->var_namelist[i] + dmprefixes[j].size() + 1);
+                search_domain = dmblocks[j];
+                has_prefix = true;
+                break;
+            }
+        }
+        if(!has_prefix)
+            continue;
+#else
+        int search_domain = state->domain;
         std::string vname(afile->var_namelist[i]);
+#endif
 
         // Skip ADIOS statistics variables.
         if(strncmp(afile->var_namelist[i], "/__adios__", 10) == 0)
@@ -1409,9 +1658,9 @@ load_node(adios_load_state *state, ADIOS_FILE *afile, void *cbdata)
 
 #if 0
             // Print variable information.
-            if(internals::rank == 0)
+            if(internals::rank == 1)
             {
-                cout << "Reading process_id=" << state->domain << " time_index=" << (ts+1) << endl;
+                cout << "Reading process_id=" << search_domain << " time_index=" << (ts+1) << endl;
                 internals::print_varinfo(cout, afile, v);
             }
 #endif
@@ -1435,10 +1684,10 @@ load_node(adios_load_state *state, ADIOS_FILE *afile, void *cbdata)
             // 0..nblocks[ts]-1.
             bool block_found = false;
             uint64_t nelem = 1;
-            int read_dom = state->domain;
-            if(v->blockinfo[biOffset + state->domain].time_index == ts1)
+            int read_dom = search_domain;
+            if(v->blockinfo[biOffset + search_domain].time_index == ts1)
             {
-                nelem = v->blockinfo[biOffset + state->domain].count[0];
+                nelem = v->blockinfo[biOffset + search_domain].count[0];
                 if(nelem == 0)
                 {
                     // The count is 0 so we probably have a scalar.
@@ -1465,6 +1714,10 @@ load_node(adios_load_state *state, ADIOS_FILE *afile, void *cbdata)
                     std::string conduit_type;
                     internals::read_conduit_type_attribute(afile, 
                         v, conduit_type);
+#ifdef DISPARATE_TREE_SUPPORT
+cout << "HACK: forcing adios_byte type to be interpreted as string because ADIOS attribute is not located." << endl;
+conduit_type = "char8_str";
+#endif
                     if(!conduit_type.empty() &&
                        conduit_type == "char8_str")
                     {
@@ -1607,6 +1860,12 @@ find_max_domains(adios_load_state *state, ADIOS_FILE *afile, void *cbdata)
     {
         std::string vname(afile->var_namelist[i]);
 
+#ifdef DISPARATE_TREE_SUPPORT
+        // Only consider the domain map variables since their length
+        // indicates a number of domains.
+        if(strncmp(afile->var_namelist[i], DOMAIN_MAP_PREFIX, 4) != 0)
+            continue;
+#else
         // Skip ADIOS statistics variables.
         if(strncmp(afile->var_namelist[i], "/__adios__", 10) == 0)
             continue;
@@ -1614,9 +1873,9 @@ find_max_domains(adios_load_state *state, ADIOS_FILE *afile, void *cbdata)
         // Test that the variable is something we want to read.
         if(!internals::name_matches_subpaths(vname, state->subpaths))
             continue;
+#endif
         DEBUG_PRINT_RANK("adios_inq_var(afile, \""
             << afile->var_namelist[i] << "\")")
-
         ADIOS_VARINFO *v = adios_inq_var(afile, afile->var_namelist[i]);
         if(v)
         {
