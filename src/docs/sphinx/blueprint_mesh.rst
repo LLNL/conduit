@@ -447,7 +447,7 @@ Uniform
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 136-141
+   :lines: 138-143
    :language: cpp
    :dedent: 4
 
@@ -472,14 +472,14 @@ Rectilinear
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 209-214
+   :lines: 197-201
    :language: cpp
    :dedent: 4
 
 * **Result**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 219-250
+   :lines: 204-235
    :language: cpp
    :dedent: 4
 
@@ -497,14 +497,14 @@ Structured
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 272-277
+   :lines: 244-249
    :language: cpp
    :dedent: 4
 
 * **Result**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 282-321
+   :lines: 252-291
    :language: cpp
    :dedent: 4
 
@@ -522,14 +522,14 @@ Tris
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 343-348
+   :lines: 300-305
    :language: cpp
    :dedent: 4
 
 * **Result**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 353-389
+   :lines: 308-344
    :language: cpp
    :dedent: 4
 
@@ -547,14 +547,14 @@ Quads
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 411-416
+   :lines: 353-358
    :language: cpp
    :dedent: 4
 
 * **Result**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 421-457
+   :lines: 361-397
    :language: cpp
    :dedent: 4
 
@@ -572,14 +572,14 @@ Tets
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 479-484
+   :lines: 406-411
    :language: cpp
    :dedent: 4
 
 * **Result**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 489-526
+   :lines: 414-451
    :language: cpp
    :dedent: 4
 
@@ -597,14 +597,14 @@ Hexs
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 548-553
+   :lines: 460-465
    :language: cpp
    :dedent: 4
 
 * **Result**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 558-595
+   :lines: 468-505
    :language: cpp
    :dedent: 4
 
@@ -755,25 +755,39 @@ and/or the Mesh Blueprint library.
 Outputting Meshes for Visualization
 ====================================
 
-Suppose that you have an arbitrary Blueprint mesh ``m`` that you want to output from your code and
-visualize using a visualization tool (e.g. `VisIt <https://wci.llnl.gov/simulation/computer-codes/visit>`_).
-To accomplish this, you need to perform three tasks:
+Suppose that you have an arbitrary Blueprint mesh that you want to output from a running code and
+subsequently visualize using a visualization tool (e.g. `VisIt <https://wci.llnl.gov/simulation/computer-codes/visit>`_).
+Provided that your mesh is sufficiently simple (see the note at the end of this section for details),
+you can output your mesh using one of the following ``conduit::relay`` library functions:
 
-1. Create a mesh control node that houses your source mesh and assigns it an appropos identifier.
-2. Generate a mesh index node that stores metadata regarding the mesh and the control file.
-3. Output both of these nodes to a file format that's compatible with your visualization tool.
+.. code:: cpp
 
-If you're building Conduit with HDF5 support enabled, this whole procedure can be accomplished with
-the following function:
+    // saves the given mesh to disk at the given path (using the extension
+    // suffix in the path to inform the output data protocol)
+    conduit::relay::io_blueprint::save(const conduit::Node &mesh,
+                                       const std::string &path);
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 109-127
-   :language: cpp
-   :dedent: 0
+    // saves the given mesh to disk at the given path with the given explicit
+    // output data protocol (e.g. "json", "hdf5")
+    conduit::relay::io_blueprint::save(const conduit::Node &mesh,
+                                       const std::string &path,
+                                       const std::string &protocol);
 
-In order to open an output mesh in `VisIt <https://wci.llnl.gov/simulation/computer-codes/visit>`_,
-you must open the root file (which is named ``[mesh-name].blueprint_root_hdf5`` if you're using
-the function above).
+It's important to note that both of these functions will output two data files when called:
+a raw data file (saved to the given ``path``) and an index file (saved to ``path`` with the
+extension substituted for ``.blueprint_root``). Both of these files need to exist on disk for a
+visualization tool to properly render their contents. In order to visualize these contents
+with `VisIt <https://wci.llnl.gov/simulation/computer-codes/visit>`_, you must open the
+index file.
+
+.. note::
+   This functionality is still in a preliminary stage and thus lacks a lot of key features.
+   The most crucial of these limitations are the limited number of supported output protocols
+   (only ``json`` and ``hdf5`` are currently implemented) and the suboptimal handling of
+   multi-domain meshes (each domain is output as a separate sub-mesh, making full-mesh
+   rendering a pain for large geometries). With these constraints in mind, we recommend
+   that users exercise this functionality sparingly and only for simple cases until
+   more extensions and robustness improvements are developed and integrated into Conduit.
 
 .. Properties and Transforms
 .. ---------------------------

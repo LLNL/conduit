@@ -58,18 +58,11 @@ using namespace conduit;
 
 /// Helper Functions ///
 
-void convert_schema_to_mesh(const std::string &schema, conduit::Node &mesh)
-{
-    mesh.reset();
-    conduit::Generator gen(schema, "json", NULL);
-    gen.walk(mesh);
-}
-
 // NOTE(JRC): This function is necessary since the Blueprint examples produce
 // results with arbitrary data types (e.g. int32, uint32) while JSON-read values
 // always use the biggest available data types (e.g. int64, float64), so the
 // mesh data needs to be expanded so there aren't false positive diff errors.
-void make_mesh_json_compatible(const conduit::Node &mesh, conduit::Node &emesh)
+void make_mesh_json_compatible(const Node &mesh, Node &emesh)
 {
     // TODO(JRC): Add support for list types (isn't currently necessary
     // since they don't appear anywhere in a normal Blueprint schema).
@@ -106,24 +99,35 @@ void make_mesh_json_compatible(const conduit::Node &mesh, conduit::Node &emesh)
     }
 }
 
-void save_mesh(const conduit::Node &mesh, const std::string &mesh_name)
+void validate_basic_example(const std::string &name,
+                            const Node &mesh,
+                            const std::string &ref_str)
 {
-    Node mesh_ctrl, mesh_root;
-    Node &mesh_index = mesh_root["blueprint_index"];
+    CONDUIT_INFO("Testing Basic Example '" << name << "'");
+
+    Node info;
+    EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
+    if(info["valid"].as_string() != "true")
     {
-        mesh_ctrl[mesh_name].set_external(mesh);
-        blueprint::mesh::generate_index(mesh, mesh_name, 1, mesh_index[mesh_name]);
-
-        mesh_root["protocol/name"] = "conduit_hdf5";
-        mesh_root["protocol/version"] = CONDUIT_VERSION;
-        mesh_root["number_of_files"] = 1;
-        mesh_root["number_of_trees"] = 1;
-        mesh_root["file_pattern"] = mesh_name + ".hdf5";
-        mesh_root["tree_pattern"] = "";
-
-        relay::io::save(mesh_root,mesh_name + ".blueprint_root_hdf5","hdf5");
-        relay::io::save(mesh_ctrl,mesh_name + ".hdf5","hdf5");
+        CONDUIT_INFO(info.to_json());
     }
+
+    Node ref_mesh;
+    {
+        conduit::Generator gen(ref_str, "json", NULL);
+        gen.walk(ref_mesh);
+    }
+
+    Node compat_mesh;
+    make_mesh_json_compatible(mesh, compat_mesh);
+    EXPECT_FALSE(compat_mesh.diff(ref_mesh, info));
+    if(info["valid"].as_string() != "true")
+    {
+        CONDUIT_INFO(info.to_json());
+    }
+
+    conduit::relay::io_blueprint::save(mesh, "basic_"+name+".json");
+    // conduit::relay::io_blueprint::save(mesh, "basic_"+name+"_hdf5.hdf5");
 }
 
 /// Test Functions ///
@@ -131,8 +135,6 @@ void save_mesh(const conduit::Node &mesh, const std::string &mesh_name)
 //-----------------------------------------------------------------------------
 TEST(conduit_docs, blueprint_demo_basic_uniform)
 {
-    // start demo code
-
     // create container node
     Node mesh;
     // generate simple uniform 2d 'basic' mesh
@@ -140,9 +142,7 @@ TEST(conduit_docs, blueprint_demo_basic_uniform)
     // print out results
     mesh.print();
 
-    // start demo string
-
-    const std::string mesh_schema = R"(
+    const std::string mesh_json = R"(
     {
       "coordsets": 
       {
@@ -187,25 +187,12 @@ TEST(conduit_docs, blueprint_demo_basic_uniform)
     }
     )";
 
-    // start test code
-
-    Node info;
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
-
-    Node wide_mesh, ref_mesh;
-    convert_schema_to_mesh(mesh_schema, ref_mesh);
-    make_mesh_json_compatible(mesh, wide_mesh);
-    EXPECT_FALSE(wide_mesh.diff(ref_mesh, info));
-
-    // TODO(JRC): Output and validate the saved files.
-    // save_mesh(mesh, "basic_uniform");
+    validate_basic_example("uniform",mesh,mesh_json);
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_docs, blueprint_demo_basic_rectilinear)
 {
-    // start demo code
-
     // create container node
     Node mesh;
     // generate simple rectilinear 2d 'basic' mesh
@@ -213,9 +200,7 @@ TEST(conduit_docs, blueprint_demo_basic_rectilinear)
     // print out results
     mesh.print();
 
-    // start demo string
-
-    const std::string mesh_schema = R"(
+    const std::string mesh_json = R"(
     {
       "coordsets": 
       {
@@ -250,25 +235,12 @@ TEST(conduit_docs, blueprint_demo_basic_rectilinear)
     }
     )";
 
-    // start test code
-
-    Node info;
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
-
-    Node wide_mesh, ref_mesh;
-    convert_schema_to_mesh(mesh_schema, ref_mesh);
-    make_mesh_json_compatible(mesh, wide_mesh);
-    EXPECT_FALSE(wide_mesh.diff(ref_mesh, info));
-
-    // TODO(JRC): Expect that the proper files exist.
-    // save_mesh(mesh, "basic_rectilinear");
+    validate_basic_example("rectilinear",mesh,mesh_json);
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_docs, blueprint_demo_basic_structured)
 {
-    // start demo code
-
     // create container node
     Node mesh;
     // generate simple structured 2d 'basic' mesh
@@ -276,9 +248,7 @@ TEST(conduit_docs, blueprint_demo_basic_structured)
     // print out results
     mesh.print();
 
-    // start demo string
-
-    const std::string mesh_schema = R"(
+    const std::string mesh_json = R"(
     {
       "coordsets": 
       {
@@ -321,25 +291,12 @@ TEST(conduit_docs, blueprint_demo_basic_structured)
     }
     )";
 
-    // start test code
-
-    Node info;
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
-
-    Node wide_mesh, ref_mesh;
-    convert_schema_to_mesh(mesh_schema, ref_mesh);
-    make_mesh_json_compatible(mesh, wide_mesh);
-    EXPECT_FALSE(wide_mesh.diff(ref_mesh, info));
-
-    // TODO(JRC): Expect that the proper files exist.
-    // save_mesh(mesh, "basic_structured");
+    validate_basic_example("structured",mesh,mesh_json);
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_docs, blueprint_demo_basic_tris)
 {
-    // start demo code
-
     // create container node
     Node mesh;
     // generate simple explicit tri-based 2d 'basic' mesh
@@ -347,9 +304,7 @@ TEST(conduit_docs, blueprint_demo_basic_tris)
     // print out results
     mesh.print();
 
-    // start demo string
-
-    const std::string mesh_schema = R"(
+    const std::string mesh_json = R"(
     {
       "coordsets": 
       {
@@ -389,25 +344,12 @@ TEST(conduit_docs, blueprint_demo_basic_tris)
     }
     )";
 
-    // start test code
-
-    Node info;
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
-
-    Node wide_mesh, ref_mesh;
-    convert_schema_to_mesh(mesh_schema, ref_mesh);
-    make_mesh_json_compatible(mesh, wide_mesh);
-    EXPECT_FALSE(wide_mesh.diff(ref_mesh, info));
-
-    // TODO(JRC): Expect that the proper files exist.
-    // save_mesh(mesh, "basic_tris");
+    validate_basic_example("tris",mesh,mesh_json);
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_docs, blueprint_demo_basic_quads)
 {
-    // start demo code
-
     // create container node
     Node mesh;
     // generate simple explicit quad-based 2d 'basic' mesh
@@ -415,9 +357,7 @@ TEST(conduit_docs, blueprint_demo_basic_quads)
     // print out results
     mesh.print();
 
-    // start demo string
-
-    const std::string mesh_schema = R"(
+    const std::string mesh_json = R"(
     {
       "coordsets": 
       {
@@ -457,25 +397,12 @@ TEST(conduit_docs, blueprint_demo_basic_quads)
     }
     )";
 
-    // start test code
-
-    Node info;
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
-
-    Node wide_mesh, ref_mesh;
-    convert_schema_to_mesh(mesh_schema, ref_mesh);
-    make_mesh_json_compatible(mesh, wide_mesh);
-    EXPECT_FALSE(wide_mesh.diff(ref_mesh, info));
-
-    // TODO(JRC): Expect that the proper files exist.
-    // save_mesh(mesh, "basic_quads");
+    validate_basic_example("quads",mesh,mesh_json);
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_docs, blueprint_demo_basic_tets)
 {
-    // start demo code
-
     // create container node
     Node mesh;
     // generate simple explicit tri-based 3d 'basic' mesh
@@ -483,9 +410,7 @@ TEST(conduit_docs, blueprint_demo_basic_tets)
     // print out results
     mesh.print();
 
-    // start demo string
-
-    const std::string mesh_schema = R"(
+    const std::string mesh_json = R"(
     {
       "coordsets": 
       {
@@ -526,25 +451,12 @@ TEST(conduit_docs, blueprint_demo_basic_tets)
     }
     )";
 
-    // start test code
-
-    Node info;
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
-
-    Node wide_mesh, ref_mesh;
-    convert_schema_to_mesh(mesh_schema, ref_mesh);
-    make_mesh_json_compatible(mesh, wide_mesh);
-    EXPECT_FALSE(wide_mesh.diff(ref_mesh, info));
-
-    // TODO(JRC): Expect that the proper files exist.
-    // save_mesh(mesh, "basic_tets");
+    validate_basic_example("tets",mesh,mesh_json);
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_docs, blueprint_demo_basic_hexs)
 {
-    // start demo code
-
     // create container node
     Node mesh;
     // generate simple explicit quad-based 3d 'basic' mesh
@@ -552,9 +464,7 @@ TEST(conduit_docs, blueprint_demo_basic_hexs)
     // print out results
     mesh.print();
 
-    // start demo string
-
-    const std::string mesh_schema = R"(
+    const std::string mesh_json = R"(
     {
       "coordsets": 
       {
@@ -595,16 +505,5 @@ TEST(conduit_docs, blueprint_demo_basic_hexs)
     }
     )";
 
-    // start test code
-
-    Node info;
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
-
-    Node wide_mesh, ref_mesh;
-    convert_schema_to_mesh(mesh_schema, ref_mesh);
-    make_mesh_json_compatible(mesh, wide_mesh);
-    EXPECT_FALSE(wide_mesh.diff(ref_mesh, info));
-
-    // TODO(JRC): Expect that the proper files exist.
-    // save_mesh(mesh, "basic_hexs");
+    validate_basic_example("hexs",mesh,mesh_json);
 }

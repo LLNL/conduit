@@ -90,11 +90,6 @@ void CONDUIT_RELAY_API save(const Node &node,
                             const std::string &path,
                             const std::string &protocol);
 
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const Node &node,
-                            const std::string &path,
-                            const std::string &protocol);
-
 ///
 /// ``save_merged`` works like an update to the file.
 ///
