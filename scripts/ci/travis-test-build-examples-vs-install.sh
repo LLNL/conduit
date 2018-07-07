@@ -67,9 +67,18 @@ make
 ##########################################
 # find spack installed HDF5_DIR
 export HDF5_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/hdf5*`
-# find spack installed ADIOS_DIR
-export ADIOS_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/adios*`
 cd ${TRAVIS_BUILD_DIR}/travis-debug-install/examples/using-with-make
-env CXX=${COMPILER_CXX} CONDUIT_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install HDF5_DIR=${HDF5_DIR} ADIOS_DIR=${ADIOS_DIR} make
-env LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/travis-debug-install/lib/:${HDF5_DIR}/lib:${ADIOS_DIR}/lib ./example
+if [ "${ENABLE_ADIOS}" == "ON" ]; then
+    # find spack installed ADIOS_DIR
+    export ADIOS_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/adios*`
+    export ZFP_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/zfp*`
+    export LZ4_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/lz4*`
+    export BLOSC_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/c-blosc*`
+    export SZ_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/sz*`
+    env CXX=${COMPILER_CXX} CONDUIT_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install HDF5_DIR=${HDF5_DIR} ADIOS_DIR=${ADIOS_DIR} ZFP_DIR=${ZFP_DIR} LZ4_DIR=${LZ4_DIR} BLOSC_DIR=${BLOSC_DIR} SZ_DIR=${SZ_DIR} make with_adios
+    env LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/travis-debug-install/lib/:${HDF5_DIR}/lib:${ADIOS_DIR}/lib:${ZFP_DIR}/lib:${LZ4_DIR}/lib:${BLOSC_DIR}/lib:${SZ_DIR}/lib ./example
+else
+    env CXX=${COMPILER_CXX} CONDUIT_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install HDF5_DIR=${HDF5_DIR} make
+    env LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/travis-debug-install/lib/:${HDF5_DIR}/lib ./example
+fi
 

@@ -51,15 +51,17 @@ class UberenvConduit(Conduit):
 
     # Try some basic ADIOS configurations. NOTE: these are more extensively
     # covered in the Conduit Spack base class. These seem necessary here too.
-    # note: Conduit always depends on hdf5 by default.
-    depends_on("adios+mpi+hdf5", when="+adios+mpi")
-    depends_on("adios~mpi+hdf5", when="+adios~mpi")
+    # note: Conduit always depends on hdf5 by default. We have a problem with
+    # HDF5. The serial parts of Conduit *cannot* use a parallel version. We
+    # must therefore build ADIOS without HDF5 since it cannot use a serial
+    # version. This should make it possible for Conduit+ADIOS to have
+    # serial HDF5 for relay while still having a parallel ADIOS for relay::mpi::io.
+    depends_on("adios+mpi~hdf5", when="+adios+mpi")
+    depends_on("adios~mpi~hdf5", when="+adios~mpi")
 
     def cmake_args(self):
         args = super(UberenvConduit, self).cmake_args()
-        args = args[:-1] + ["src"]
-        print "UberenvConduit.cmake_args returned ", args
-        return args
+        return []
 
     def url_for_version(self, version):
         dummy_tar_path =  os.path.abspath(pjoin(os.path.split(__file__)[0]))

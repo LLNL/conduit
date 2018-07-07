@@ -147,7 +147,6 @@ script:
   - echo $TRAVIS_BUILD_DIR 
   # setup spack spec based on our travis options
   - export SPACK_SPEC="%gcc@4.8+cmake"
-  - export SPACK_SPEC="%gcc@4.8+cmake"
   # variants
   - if [ $ENABLE_DOCS = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+doc"; fi
   - if [ $ENABLE_DOCS = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~doc"; fi
@@ -155,8 +154,6 @@ script:
   - if [ $ENABLE_MPI = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mpi"; fi
   - if [ $ENABLE_PYTHON = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+python"; fi
   - if [ $ENABLE_PYTHON = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~python"; fi
-  - if [ $ENABLE_ADIOS = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+adios"; fi
-  - if [ $ENABLE_ADIOS = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~adios"; fi
   # versions and package selections (disable default options to speedup build)
   - export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
   - export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"
@@ -165,6 +162,14 @@ script:
   - while sleep 540; do echo "=====[ $SECONDS seconds still running ]====="; done &
   # build deps using uberenv
   - python scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/travis/
+  # Build ADIOS separately since it can't seem to combine successfully with uberenv-conduit.
+  - ADIOS_SPEC="%gcc@4.8~hdf5"
+  - if [ $ENABLE_MPI = 'ON' ]; then export ADIOS_SPEC="${ADIOS_SPEC}+mpi"; fi
+  - if [ $ENABLE_MPI = 'OFF' ]; then export ADIOS_SPEC="${ADIOS_SPEC}~mpi"; fi
+  - if [ $ENABLE_ADIOS = 'ON' ]; then export ADIOS_SPEC="${ADIOS_SPEC} ^python@${PYTHON_VERSION}"; fi
+  - if [ $ENABLE_ADIOS = 'ON' ]; then echo "Building ADIOS separately using spack."; fi
+  - if [ $ENABLE_ADIOS = 'ON' ]; then ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/bin/spack spec adios ${ADIOS_SPEC}; fi
+  - if [ $ENABLE_ADIOS = 'ON' ]; then ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/bin/spack install adios ${ADIOS_SPEC}; fi
   # Killing background sleep loop
   - kill %1
   # todo:
@@ -190,7 +195,7 @@ script:
   # install path
   - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR}/travis-debug-install"
   # make sure cmake is in our path
-  - export CMAKE_BIN_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+  - export CMAKE_BIN_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin | head -n1`
   - export PATH=${CMAKE_BIN_DIR}:$PATH
   - echo $PATH
   - which cmake

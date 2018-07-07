@@ -172,7 +172,8 @@ TEST(conduit_relay_mpi_io_c, test_mpi_io_c_time_series)
             conduit_relay_mpi_io_add_time_step(out[ts], path, MPI_Comm_c2f(MPI_COMM_WORLD));
 
         // Make sure the file has the new time step.
-        int qnts = conduit_relay_mpi_io_query_number_of_time_steps(path, MPI_COMM_WORLD);
+        int qnts = conduit_relay_mpi_io_query_number_of_time_steps(path, 
+                       MPI_Comm_c2f(MPI_COMM_WORLD));
         EXPECT_EQ(qnts, ts+1);
     }
 
