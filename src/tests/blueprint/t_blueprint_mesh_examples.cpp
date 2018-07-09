@@ -152,10 +152,10 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
     dsets.remove("quads_and_tris_offsets");
     dsets.remove("points_implicit");
 
-    relay::io_blueprint::save(dsets, "braid_2d_examples_json.json");
+    relay::io_blueprint::save(dsets, "braid_2d_examples.blueprint_root");
     if(hdf5_enabled)
     {
-        relay::io_blueprint::save(dsets, "braid_2d_examples_hdf5.hdf5");
+        relay::io_blueprint::save(dsets, "braid_2d_examples.blueprint_root_hdf5");
     }
     if(silo_enabled)
     {
@@ -271,10 +271,10 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
     dsets.remove("hexs_and_tets");
     dsets.remove("points_implicit");
 
-    relay::io_blueprint::save(dsets, "braid_3d_examples_json.json");
+    relay::io_blueprint::save(dsets, "braid_3d_examples.blueprint_root");
     if(hdf5_enabled)
     {
-        relay::io_blueprint::save(dsets, "braid_3d_examples_hdf5.hdf5");
+        relay::io_blueprint::save(dsets, "braid_3d_examples.blueprint_root_hdf5");
     }
     if(silo_enabled)
     {
@@ -319,7 +319,7 @@ TEST(conduit_blueprint_mesh_examples, julia)
     EXPECT_TRUE(blueprint::mesh::verify(res,info));
     CONDUIT_INFO(info.to_json());
 
-    relay::io_blueprint::save(res, "julia_example.json");
+    relay::io_blueprint::save(res, "julia_example.blueprint_root");
 }
 
 

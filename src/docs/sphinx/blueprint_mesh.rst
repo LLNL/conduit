@@ -773,12 +773,15 @@ you can output your mesh using one of the following ``conduit::relay`` library f
                                        const std::string &path,
                                        const std::string &protocol);
 
-It's important to note that both of these functions will output two data files when called:
-a raw data file (saved to the given ``path``) and an index file (saved to ``path`` with the
-extension substituted for ``.blueprint_root``). Both of these files need to exist on disk for a
-visualization tool to properly render their contents. In order to visualize these contents
-with `VisIt <https://wci.llnl.gov/simulation/computer-codes/visit>`_, you must open the
-index file.
+It's important to note that both of these functions expect the given path to have
+a valid extension to properly output results. The valid extensions for these
+functions are as follows:
+
+- ``.blueprint_root`` (JSON Extension)
+- ``.blueprint_root_hdf5`` (HDF5 Extension)
+
+Files output from these functions can be opened and subsequently visualized
+directly using `VisIt <https://wci.llnl.gov/simulation/computer-codes/visit>`_.
 
 .. note::
    This functionality is still in a preliminary stage and thus lacks a lot of key features.

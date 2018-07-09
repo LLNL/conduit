@@ -72,63 +72,47 @@ namespace relay
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::relay::io_blueprint --
+// -- begin conduit::relay::io --
 //-----------------------------------------------------------------------------
 namespace io_blueprint
 {
 
-// TODO(JRC): This functionality was copied directly from "conduit::relay::io"
-// to prevent exposing it to users. It should potentially be abstracted and made
-// available in some form of "conduit::relay" utility header ultimately.
 //---------------------------------------------------------------------------//
-void
-identify_protocol(const std::string &path,
-                  std::string &io_type)
+std::string
+identify_protocol(const std::string &path)
 {
-    io_type = "conduit_bin";
-
-    std::string file_path;
-    std::string obj_base;
-
-    // check for ":" split
+    std::string file_path, obj_base;
     conduit::utils::split_file_path(path,
                                     std::string(":"),
                                     file_path,
                                     obj_base);
 
-    std::string file_name_base;
-    std::string file_name_ext;
-
-    // find file extension to auto match
+    std::string file_name_base, file_name_ext;
     conduit::utils::rsplit_string(file_path,
                                   std::string("."),
                                   file_name_ext,
                                   file_name_base);
 
-
-    if(file_name_ext == "hdf5" ||
-       file_name_ext == "h5")
+    std::string io_type = "bin";
+    if(file_name_ext.find("blueprint_root") == 0)
     {
-        io_type = "hdf5";
-    }
-    else if(file_name_ext == "silo")
-    {
-        io_type = "conduit_silo";
-    }
-    else if(file_name_ext == "json")
-    {
-        io_type = "json";
-    }
-    else if(file_name_ext == "conduit_json")
-    {
-        io_type = "conduit_json";
-    }
-    else if(file_name_ext == "conduit_base64_json")
-    {
-        io_type = "conduit_base64_json";
+        std::string file_name_true_ext = file_name_ext.substr(
+            std::string("blueprint_root").length(), file_name_ext.length());
+        if(file_name_true_ext == "")
+        {
+            io_type = "json";
+        }
+        else if(file_name_true_ext == "_hdf5" || file_name_true_ext == "_h5")
+        {
+            io_type = "hdf5";
+        }
+        else if(file_name_true_ext == "_silo")
+        {
+            io_type = "silo";
+        }
     }
 
-    // default to conduit_bin
+    return io_type;
 }
 
 //---------------------------------------------------------------------------//
@@ -136,9 +120,7 @@ void
 save(const Node &mesh,
      const std::string &path)
 {
-    std::string protocol;
-    identify_protocol(path,protocol);
-    save(mesh,path,protocol);
+    save(mesh,path,identify_protocol(path));
 }
 
 //---------------------------------------------------------------------------//
@@ -150,7 +132,8 @@ save(const Node &mesh,
     Node info;
     if(protocol != "json" && protocol != "hdf5")
     {
-        CONDUIT_ERROR("Blueprint I/O doesn't support '" << protocol << "' outputs: " <<
+        CONDUIT_ERROR("Blueprint I/O doesn't support '" << protocol << "' outputs; "
+                      "output type must be 'blueprint_root' (JSON) or 'blueprint_root_hdf5' (HDF5): " <<
                       "Failed to save mesh to path " << path);
     }
     if(!blueprint::mesh::verify(mesh, info))
@@ -162,20 +145,19 @@ save(const Node &mesh,
     // NOTE(JRC): The code below is used in lieu of `blueprint::mesh::to_multi_domain`
     // because the official Blueprint function produces results that are incompatible
     // with HDF5 outputs (because they include Conduit lists instead of dictionaries).
-    Node mmesh;
+    Node index;
     if(blueprint::mesh::is_multi_domain(mesh))
     {
-        mmesh.set_external(mesh);
+        index["data"].set_external(mesh);
     }
     else
     {
-        mmesh["mesh"].set_external(mesh);
+        index["data/mesh"].set_external(mesh);
     }
 
-    Node mindex;
-    Node &bpindex = mindex["blueprint_index"];
+    Node &bpindex = index["blueprint_index"];
     {
-        NodeConstIterator domain_iter = mmesh.children();
+        NodeConstIterator domain_iter = index["data"].children();
         while(domain_iter.has_next())
         {
             const Node &domain = domain_iter.next();
@@ -208,21 +190,15 @@ save(const Node &mesh,
     }
     else
     {
-        std::string path_base, path_ext;
-        conduit::utils::rsplit_string(path,std::string("."),path_ext,path_base);
-        std::string index_path = path_base + std::string(".blueprint_root");
-        std::string data_path = path_base + std::string(".") + path_ext;
+        index["protocol/name"].set(protocol);
+        index["protocol/version"].set(CONDUIT_VERSION);
 
-        mindex["protocol/name"].set(protocol);
-        mindex["protocol/version"].set(CONDUIT_VERSION);
+        index["number_of_files"].set(1);
+        index["number_of_trees"].set(1);
+        index["file_pattern"].set(path);
+        index["tree_pattern"].set((protocol == "hdf5") ? "data/" : "data");
 
-        mindex["number_of_files"].set(1);
-        mindex["number_of_trees"].set(1);
-        mindex["file_pattern"].set(data_path);
-        mindex["tree_pattern"].set((protocol == "hdf5") ? "/" : "");
-
-        relay::io::save(mindex,index_path,protocol);
-        relay::io::save(mmesh,data_path);
+        relay::io::save(index,path,protocol);
     }
 }
 

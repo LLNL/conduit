@@ -126,8 +126,8 @@ void validate_basic_example(const std::string &name,
         CONDUIT_INFO(info.to_json());
     }
 
-    conduit::relay::io_blueprint::save(mesh, "basic_"+name+".json");
-    // conduit::relay::io_blueprint::save(mesh, "basic_"+name+"_hdf5.hdf5");
+    conduit::relay::io_blueprint::save(mesh, "basic_"+name+".blueprint_root");
+    // conduit::relay::io_blueprint::save(mesh, "basic_"+name+".blueprint_root_hdf5");
 }
 
 /// Test Functions ///
