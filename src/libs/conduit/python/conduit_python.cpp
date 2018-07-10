@@ -4542,6 +4542,10 @@ PyConduit_Node_Set_From_Python(Node &node,
     {
         node = *((PyConduit_Node*)value)->node;
     }
+    else if (PyConduit_DataType_Check(value))
+    {
+        node = ((PyConduit_DataType*)value)->dtype;
+    }
     else if (PyConduit_Schema_Check(value))
     {
         node = *((PyConduit_Schema*)value)->schema;

@@ -101,25 +101,15 @@ ratio_perc(int64 part, int64 whole)
 {
     return 100.0 * ((float64)part) / ((float64)whole);
 }
-
-//-----------------------------------------------------------------------------
-int64
-check_file_size(const std::string &fname)
-{
-    // Note: if we are using conduit_bin, there will alos 
-    std::ifstream ifs(fname, std::ifstream::ate | std::ifstream::binary);
-    return (int64) ifs.tellg();
-}
-
 //-----------------------------------------------------------------------------
 int64
 check_output_size(const std::string &fname)
 {
-    int64 res = check_file_size(fname);
+    int64 res = utils::file_size(fname);
     // Note: if we are using conduit_bin, there will also a schema file
     if(utils::is_file(fname + "_json"))
     {
-        res += check_file_size(fname + "_json");
+        res += utils::file_size(fname + "_json");
     }
     return res;
 }
