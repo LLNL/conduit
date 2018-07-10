@@ -176,12 +176,31 @@ load_merged(const std::string &path,
 }
 
 
+
 //---------------------------------------------------------------------------//
 void 
 save(const Node &node,
      const std::string &path,
      const std::string &protocol)
 {
+    Node opts;
+    save(node,path,protocol,opts);
+}
+
+//---------------------------------------------------------------------------//
+void 
+save(const Node &node,
+     const std::string &path,
+     const std::string &protocol_,
+     const Node &options)
+{
+    std::string protocol = protocol_;
+    // allow empty protocol to be used for auto detect
+    if(protocol.empty())
+    {
+        identify_protocol(path,protocol);
+    }
+    
     // support conduit::Node's basic save cases
     if(protocol == "conduit_bin" ||
        protocol == "json" || 
@@ -194,7 +213,20 @@ save(const Node &node,
     else if( protocol == "hdf5")
     {
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+        // hdf5 is the only protocol that currently takes "options"
+        Node prev_opts;
+        if(options.has_child("hdf5"))
+        {
+            hdf5_options(prev_opts);
+            hdf5_set_options(options["hdf5"]);
+        }
+
         hdf5_write(node,path);
+
+        if(!prev_opts.dtype().is_empty())
+        {
+            hdf5_set_options(prev_opts);
+        }
 #else
         CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
                       "Failed to save conduit node to path " << path);
@@ -230,6 +262,24 @@ save_merged(const Node &node,
             const std::string &path,
             const std::string &protocol)
 {
+    Node opts;
+    save_merged(node,path,protocol,opts);
+}
+
+//---------------------------------------------------------------------------//
+void 
+save_merged(const Node &node,
+            const std::string &path,
+            const std::string &protocol_,
+            const Node &options)
+{
+    std::string protocol = protocol_;
+    // allow empty protocol to be used for auto detect
+    if(protocol.empty())
+    {
+        identify_protocol(path,protocol);
+    }
+    
     // support conduit::Node's basic save cases
     if(protocol == "conduit_bin" ||
        protocol == "json" || 
@@ -244,7 +294,20 @@ save_merged(const Node &node,
     else if( protocol == "hdf5")
     {
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+        // hdf5 is the only protocol that currently takes "options"
+        Node prev_opts;
+        if(options.has_child("hdf5"))
+        {
+            hdf5_options(prev_opts);
+            hdf5_set_options(options["hdf5"]);
+        }
+        
         hdf5_write(node,path);
+        
+        if(!prev_opts.dtype().is_empty())
+        {
+            hdf5_set_options(prev_opts);
+        }
 #else
         CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
                       "Failed to save conduit node to path " << path);
