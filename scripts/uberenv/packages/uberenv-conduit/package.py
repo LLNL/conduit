@@ -38,16 +38,30 @@ class UberenvConduit(Conduit):
     scientific data in C++, C, Fortran, and Python. It is used for data
     coupling between packages in-core, serialization, and I/O tasks."""
 
-    version('0.0.0', '8d378ef62dedc2df5db447b029b71200',preferred=True)
-
+    version('0.0.0', 'c8b277080a00041cfc4f64619e31f6d6',preferred=True)
     # default to building docs when using uberenv
     variant("doc",
             default=True,
             description="Build deps needed to create Conduit's Docs")
+    variant("adios", default=False, description="Build Conduit ADIOS support")
 
     # stick with cmake 3.8 or 3.9 until we use MPIEXEC_EXECUTABLE for 3.10+
     # in upstream spack package
     depends_on("cmake@3.8.2:3.9.999", when="+cmake")
+
+    # Try some basic ADIOS configurations. NOTE: these are more extensively
+    # covered in the Conduit Spack base class. These seem necessary here too.
+    # note: Conduit always depends on hdf5 by default. We have a problem with
+    # HDF5. The serial parts of Conduit *cannot* use a parallel version. We
+    # must therefore build ADIOS without HDF5 since it cannot use a serial
+    # version. This should make it possible for Conduit+ADIOS to have
+    # serial HDF5 for relay while still having a parallel ADIOS for relay::mpi::io.
+    depends_on("adios+mpi~hdf5", when="+adios+mpi")
+    depends_on("adios~mpi~hdf5", when="+adios~mpi")
+
+    def cmake_args(self):
+        args = super(UberenvConduit, self).cmake_args()
+        return []
 
     def url_for_version(self, version):
         dummy_tar_path =  os.path.abspath(pjoin(os.path.split(__file__)[0]))
@@ -59,6 +73,7 @@ class UberenvConduit(Conduit):
         """
         Create a host config for use in conduit
         """
+        print "UberenvConduit.install"
         with working_dir('spack-build', create=True):
             host_cfg_fname = self.create_host_config(spec, prefix)
             # place a copy in the spack install dir for the uberenv-conduit package 

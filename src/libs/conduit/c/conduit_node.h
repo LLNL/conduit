@@ -58,6 +58,7 @@
 #include "conduit_bitwidth_style_types.h"
 #include "conduit_endianness_types.h"
 #include "conduit_exports.h"
+#include "conduit_datatype.h"
 
 //-----------------------------------------------------------------------------
 // -- begin extern C
@@ -106,7 +107,8 @@ CONDUIT_API conduit_index_t conduit_node_number_of_elements(conduit_node *cnode)
 // TODO:  for Node::path() in c, thecaller must free the result, 
 // before we expose this, we need to understand the implications of this in 
 // fortran
-// CONDUIT_API char *conduit_node_path(const conduit_node *cnode);
+// NOTE: the fortran version could pass in the buffer to contain the path.
+CONDUIT_API char *conduit_node_path(const conduit_node *cnode);
 
 //-----------------------------------------------------------------------------
 CONDUIT_API int conduit_node_has_child(const conduit_node *cnode, 
@@ -155,7 +157,7 @@ CONDUIT_API int conduit_node_compatible(const conduit_node *cnode,
                                         const conduit_node *cother);
 
 CONDUIT_API void conduit_node_info(const conduit_node *cnode,
-                                   const conduit_node *cnres);
+                                    conduit_node *cnres);
 //-----------------------------------------------------------------------------
 CONDUIT_API void conduit_node_print(conduit_node *cnode);
 CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
@@ -172,8 +174,8 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
 // -- set for generic types --
 //-----------------------------------------------------------------------------
     //-------------------------------------------------------------------------
-    CONDUIT_API void conduit_set_node(conduit_node *cnode,
-                                      conduit_node *data);
+    CONDUIT_API void conduit_node_set_node(conduit_node *cnode,
+                                           conduit_node *data);
 
     // TODO: These req c-interfaces for datatype, schema, etc
     //void set_dtype(const DataType &dtype);
@@ -185,9 +187,9 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
 // -- set_path for generic types --
 //-----------------------------------------------------------------------------
     //-------------------------------------------------------------------------
-    CONDUIT_API void conduit_set_path_node(conduit_node *cnode,
-                                           const char* path,
-                                           conduit_node *data);
+    CONDUIT_API void conduit_node_set_path_node(conduit_node *cnode,
+                                                const char* path,
+                                                conduit_node *data);
 
     // TODO: These req c-interfaces for datatype, schema, etc
     // //-------------------------------------------------------------------------
@@ -229,9 +231,9 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
 //-----------------------------------------------------------------------------
 
     //-------------------------------------------------------------------------
-    CONDUIT_API void set_path_external_node(conduit_node *cnode,
-                                            const char *path,
-                                            conduit_node *data);
+    CONDUIT_API void conduit_node_set_path_external_node(conduit_node *cnode,
+                                                         const char *path,
+                                                         conduit_node *data);
 
     // TODO: These req c-interfaces for datatype, schema, etc
     // //-------------------------------------------------------------------------
@@ -1890,6 +1892,11 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
                                                               const char *path);
     CONDUIT_API double  *conduit_node_fetch_path_as_double_ptr(conduit_node *cnode,
                                                               const char *path);
+
+    //-------------------------------------------------------------------------
+    // Get the dtype for the node.
+    //-------------------------------------------------------------------------
+    CONDUIT_API const conduit_datatype *conduit_node_dtype(const conduit_node *cnode);
 
 #ifdef __cplusplus
 }

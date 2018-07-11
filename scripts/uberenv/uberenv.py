@@ -361,7 +361,8 @@ def main():
         clone_cmd ="git "
         if opts["ignore_ssl_errors"]:
             clone_cmd +="-c http.sslVerify=false "
-        clone_cmd += "clone -b develop https://github.com/spack/spack.git"
+        #clone_cmd += "clone -b develop https://github.com/spack/spack.git"        # BJW: TEMPORARY
+        clone_cmd += "clone -b develop https://github.com/BradWhitlock/spack.git"  # BJW: TEMPORARY
         sexe(clone_cmd, echo=True)
         if "spack_develop_commit" in project_opts:
             sha1 = project_opts["spack_develop_commit"]
@@ -408,9 +409,17 @@ def main():
         if res != 0:
             return res
         if "spack_activate" in project_opts:
-            for pkg_name in project_opts["spack_activate"]:
-              activate_cmd = "spack/bin/spack activate " + pkg_name
-              sexe(activate_cmd, echo=True)   
+            pkg_names = project_opts["spack_activate"].keys()
+            for pkg_name in pkg_names:
+              pkg_spec_requirements = project_opts["spack_activate"][pkg_name]
+              failed=False
+              for req in pkg_spec_requirements:
+                  if req not in opts["spec"]:
+                      failed=True
+                      break
+              if not failed:
+                  activate_cmd = "spack/bin/spack activate " + pkg_name
+                  sexe(activate_cmd, echo=True)   
         return res
 
 if __name__ == "__main__":

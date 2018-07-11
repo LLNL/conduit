@@ -52,6 +52,25 @@ https://github.com/LLNL/conduit/releases
 
 .. note:: As of v0.3.0, Conduit uses `BLT <https://github.com/LLNL/blt>`__ as its core CMake build system. We leverage BLT as a git submodule, however github does not include submodule contents in its automatically created source tarballs. To avoid confusion, starting with v0.3.0 we will provide our own source tarballs that include BLT. 
 
+v0.3.x
+-----------------
+Highlights
++++++++++++++
+
+* **Relay**
+ 
+ * Added Relay ADIOS support, enabling data to save using the ADIOS library.
+ * A relay::mpi::io library was created that mirrors the API in relay::io, except 
+   that all functions take an MPI communicator. The functions are implemented in
+   parallel for the ADIOS protocol. For other protocols, they will behave the same
+   as the serial functions in relay::io. For the ADIOS protocol, the save() and
+   save_merged() functions operate collectively within a communicator to enable
+   multiple MPI ranks to save data to a single file as separate "domains".
+ * The relay::mpi::io library adds an add_time_step() function that lets the caller
+   append data collectively to an existing file.
+ * The relay library adds functions to query the number of time steps and the 
+   number of domains in a file.
+ 
 v0.3.1
 -----------------
 

@@ -80,6 +80,7 @@ CONDUIT_RELAY_API void conduit_relay_about(conduit_node *cnode);
 // -- end extern C
 //-----------------------------------------------------------------------------
 
+#include  "conduit_relay_io.h"
 
 //-----------------------------------------------------------------------------
 // -- end header guard ifdef

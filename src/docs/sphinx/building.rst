@@ -140,6 +140,12 @@ The Conduit Python module will build for both Python 2 and Python 3. To select a
  
  * **HDF5_DIR** - Path to a HDF5 install. (Silo support depends on HDF5) 
 
+* **ADIOS_DIR** - Path to an ADIOS install *(optional)*. 
+
+ Controls if ADIOS I/O support is built into *conduit_relay*. When used, the following CMake variables must also be set:
+ 
+ * **HDF5_DIR** - Path to a HDF5 install. (ADIOS support depends on HDF5) 
+
 
 * **BLT_SOURCE_DIR** - Path to BLT.  *(default = "blt")*
 
@@ -318,6 +324,7 @@ The Conduit Spack package provides several `variants <http://spack.readthedocs.i
   **mpi**             Enable Conduit MPI support           ON (+mpi)
   **hdf5**            Enable Conduit HDF5 support          ON (+hdf5)
   **silo**            Enable Conduit Silo support          ON (+silo)
+  **adios**           Enable Conduit ADIOS support         OFF (+adios)
   **doc**             Build Conduit's Documentation        OFF (+docs)
  ================== ==================================== ======================================
 
