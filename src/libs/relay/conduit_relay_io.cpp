@@ -287,8 +287,12 @@ save_merged(const Node &node,
        protocol == "conduit_base64_json" )
     {
         Node n;
-        n.load(path,protocol);
-        n.update(node);
+        // support case where the path is initially empty
+        if(utils::is_file(path))
+        {
+            n.load(path,protocol);
+            n.update(node);
+        }
         n.save(path,protocol);
     }
     else if( protocol == "hdf5")
@@ -345,10 +349,16 @@ save_merged(const Node &node,
 //---------------------------------------------------------------------------//
 void
 load(const std::string &path,
-     const std::string &protocol,
+     const std::string &protocol_,
      Node &node)
 {
-
+    std::string protocol = protocol_;
+    // allow empty protocol to be used for auto detect
+    if(protocol.empty())
+    {
+        identify_protocol(path,protocol);
+    }
+    
     // support conduit::Node's basic load cases
     if(protocol == "conduit_bin" ||
        protocol == "json" || 
@@ -392,9 +402,16 @@ load(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 load_merged(const std::string &path,
-            const std::string &protocol,
+            const std::string &protocol_,
             Node &node)
 {
+    std::string protocol = protocol_;
+    // allow empty protocol to be used for auto detect
+    if(protocol.empty())
+    {
+        identify_protocol(path,protocol);
+    }
+    
     // support conduit::Node's basic load cases
     if(protocol == "conduit_bin" ||
        protocol == "json" || 
