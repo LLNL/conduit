@@ -353,7 +353,7 @@ def main():
         print "[info: destination '%s' already exists]"  % dest_dir
     if os.path.isdir(dest_spack):
         print "[info: destination '%s' already exists]"  % dest_spack
-    # compilers_yaml = uberenv_compilers_yaml_file(opts)
+
     if not os.path.isdir(dest_spack):
         print "[info: cloning spack develop branch from github]"
         os.chdir(dest_dir)
@@ -361,12 +361,17 @@ def main():
         clone_cmd ="git "
         if opts["ignore_ssl_errors"]:
             clone_cmd +="-c http.sslVerify=false "
-        #clone_cmd += "clone -b develop https://github.com/spack/spack.git"        # BJW: TEMPORARY
-        clone_cmd += "clone -b develop https://github.com/BradWhitlock/spack.git"  # BJW: TEMPORARY
+        spack_url = "https://github.com/spack/spack.git"
+        spack_branch = "develop"
+        if "spack_url" in project_opts:
+            spack_url = project_opts["spack_url"]
+        if "spack_branch" in project_opts:
+            spack_branch = project_opts["spack_branch"]
+        clone_cmd +=  "clone -b %s %s" % (spack_branch,spack_url)
         sexe(clone_cmd, echo=True)
-        if "spack_develop_commit" in project_opts:
-            sha1 = project_opts["spack_develop_commit"]
-            print "[info: using spack develop %s]" % sha1
+        if "spack_commit" in project_opts:
+            sha1 = project_opts["spack_commit"]
+            print "[info: using spack commit %s]" % sha1
             os.chdir(pjoin(dest_dir,"spack"))
             sexe("git reset --hard %s" % sha1)
 
