@@ -704,6 +704,11 @@ template class DataArray<long>;
 template class DataArray<unsigned long>;
 #endif
 
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+template class DataArray<long long>;
+template class DataArray<unsigned long long>;
+#endif
+
 #ifndef CONDUIT_USE_FLOAT
 template class DataArray<float>;
 #endif
@@ -711,8 +716,6 @@ template class DataArray<float>;
 #ifndef CONDUIT_USE_DOUBLE
 template class DataArray<double>;
 #endif
-
-
 
 }
 //-----------------------------------------------------------------------------

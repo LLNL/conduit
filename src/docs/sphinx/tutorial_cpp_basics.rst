@@ -164,6 +164,8 @@ Supported Bitwidth Style Types:
 Conduit provides these types by constructing a mapping for the current platform the from the following types:
  - char, short, int, long, long long, float, double, long double
 
+When C++11 support is enabled, Conduit's bitwidth style types will match the C++11 standard bitwidth types defined in ``<cstdint>``.
+
 
 Compatible Schemas
 --------------------------------

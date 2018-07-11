@@ -44,42 +44,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_config.h
+/// file: cmake_cxx11_check_if_long_long_is_std_int64.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_CONFIG_H
-#define CONDUIT_CONFIG_H
+#include <cstdint>
+#include <type_traits>
 
-//-----------------------------------------------------------------------------
-//
-// #define platform check helpers
-//
-//-----------------------------------------------------------------------------
+static_assert(std::is_same<long long, std::int64_t>::value,
+              "error: long long != std::int64_t");
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
-#define CONDUIT_PLATFORM_WINDOWS
-#elif  defined(__APPLE__)
-#define CONDUIT_PLATFORM_APPLE
-#else
-#define CONDUIT_PLATFORM_UNIX
-#endif
-
-#cmakedefine CONDUIT_INSTALL_PREFIX "${CONDUIT_INSTALL_PREFIX}"
-
-#define CONDUIT_VERSION "@PROJECT_VERSION@"
-
-#cmakedefine CONDUIT_GIT_SHA1 "${CONDUIT_GIT_SHA1}"
-
-#define CONDUIT_SYSTEM_TYPE "@CMAKE_SYSTEM@"
-
-#define CONDUIT_CPP_COMPILER "@CMAKE_CXX_COMPILER@"
-
-#cmakedefine CONDUIT_FORTRAN_COMPILER "${CONDUIT_FORTRAN_COMPILER}"
-
-#cmakedefine CONDUIT_USE_CXX11 ${CONDUIT_USE_CXX11}
-
-#endif
-
-
-
+int main()
+{
+    return 0;
+}

@@ -155,6 +155,14 @@ TEST(dtype_tests, c_types_value_print)
     EXPECT_TRUE(dt.is_long());
     print_dt(dt);
 
+#ifdef CONDUIT_HAS_LONG_LONG
+    dt = DataType::c_long_long();
+    EXPECT_TRUE(dt.is_long_long());
+    print_dt(dt);
+#else
+    EXPECT_FALSE(dt.is_long_long());
+#endif
+
     // unsigned ints
     dt = DataType::c_unsigned_char();
     EXPECT_TRUE(dt.is_unsigned_char());
@@ -172,6 +180,14 @@ TEST(dtype_tests, c_types_value_print)
     EXPECT_TRUE(dt.is_unsigned_long());
     print_dt(dt);
 
+#ifdef CONDUIT_HAS_LONG_LONG
+    dt = DataType::c_unsigned_long_long();
+    EXPECT_TRUE(dt.is_unsigned_long_long());
+    print_dt(dt);
+#else
+    EXPECT_FALSE(dt.is_unsigned_long_long());
+#endif
+
     // floats
     dt = DataType::c_float();
     EXPECT_TRUE(dt.is_float());
@@ -180,6 +196,15 @@ TEST(dtype_tests, c_types_value_print)
     dt = DataType::c_double();
     EXPECT_TRUE(dt.is_double());
     print_dt(dt);
+    
+#ifdef CONDUIT_USE_LONG_DOUBLE
+        dt = DataType::c_long_double();
+        EXPECT_TRUE(dt.is_long_double());
+        print_dt(dt);
+#else
+        // if we aren't using long double, this will always return false
+        EXPECT_FALSE(dt.is_long_double());
+#endif
 }
 
 
@@ -439,6 +464,11 @@ TEST(dtype_tests,dtype_id_from_c_type_names)
     EXPECT_EQ(CONDUIT_NATIVE_INT_ID,   DataType::c_type_name_to_id("int"));
     EXPECT_EQ(CONDUIT_NATIVE_LONG_ID,  DataType::c_type_name_to_id("long"));
 
+#if CONDUIT_HAS_LONG_LONG
+    EXPECT_EQ(CONDUIT_NATIVE_LONG_LONG_ID,
+              DataType::c_type_name_to_id("long long"));
+#endif
+
     EXPECT_EQ(CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
               DataType::c_type_name_to_id("unsigned char"));
 
@@ -450,6 +480,11 @@ TEST(dtype_tests,dtype_id_from_c_type_names)
 
     EXPECT_EQ(CONDUIT_NATIVE_UNSIGNED_LONG_ID,
               DataType::c_type_name_to_id("unsigned long"));
+
+#if CONDUIT_HAS_LONG_LONG
+    EXPECT_EQ(CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
+              DataType::c_type_name_to_id("unsigned long long"));
+#endif
 
     EXPECT_EQ(CONDUIT_NATIVE_FLOAT_ID, DataType::c_type_name_to_id("float"));
     EXPECT_EQ(CONDUIT_NATIVE_DOUBLE_ID,DataType::c_type_name_to_id("double"));

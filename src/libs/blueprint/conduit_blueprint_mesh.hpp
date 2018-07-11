@@ -244,6 +244,16 @@ namespace topology
                                       conduit::Node &info);
 
     //-------------------------------------------------------------------------
+    // blueprint::mesh::topology::points protocol interface
+    //-------------------------------------------------------------------------
+    namespace points
+    {
+        //---------------------------------------------------------------------
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+                                          conduit::Node &info);
+    }
+
+    //-------------------------------------------------------------------------
     // blueprint::mesh::topology::uniform protocol interface
     //-------------------------------------------------------------------------
     namespace uniform

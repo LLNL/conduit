@@ -46,8 +46,7 @@ cmake_minimum_required(VERSION 3.0)
 ################################
 # cmake policy selections
 ################################
-# avoid default mac osx rpath settings for cmake 3.0
-cmake_policy(SET CMP0042 OLD)
+
 # cmake var deref policy
 if(POLICY CMP0054)
   cmake_policy(SET CMP0054 OLD)
@@ -81,16 +80,6 @@ if(ENABLE_FORTRAN)
     enable_language(Fortran)
 endif()
 
-################################
-# Set BLT Options
-################################
-# BLT defaults to C++11, but we aren't currently using C++11 features,
-# so we use BLT_CXX_STD to specific c++98 so we don't have issues with 
-# older compilers. 
-set(BLT_CXX_STD "c++98" CACHE STRING "")
-
-# forward conduit's build shared libs option to blt
-set(ENABLE_SHARED_LIBS ${BUILD_SHARED_LIBS} CACHE BOOL "")
 # don't use BLT's all warnings feature
 set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "")
 

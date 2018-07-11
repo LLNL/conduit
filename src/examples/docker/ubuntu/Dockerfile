@@ -42,7 +42,7 @@
 # 
 ###############################################################################
 
-FROM ubuntu:latest
+FROM ubuntu:trusty
 MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
 
 # fetch build env
