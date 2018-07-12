@@ -83,6 +83,7 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_relay_exports.h.in"
 set(conduit_relay_headers
     conduit_relay.hpp
     conduit_relay_io.hpp
+    conduit_relay_io_blueprint.hpp
     conduit_relay_web.hpp
     conduit_relay_web_node_viewer_server.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_exports.h
@@ -100,6 +101,7 @@ set(conduit_relay_c_headers
 set(conduit_relay_sources
     conduit_relay.cpp
     conduit_relay_io.cpp
+    conduit_relay_io_blueprint.cpp
     conduit_relay_web.cpp
     conduit_relay_web_node_viewer_server.cpp)
 
@@ -146,7 +148,7 @@ set(conduit_relay_fortran_sources
 # target_link_libraries(conduit_relay PUBLIC conduit)
 
 
-set(conduit_relay_deps conduit)
+set(conduit_relay_deps conduit conduit_blueprint)
 
 if(UNIX AND NOT APPLE)
     # we need these for civetweb on linux, we may need similar libs

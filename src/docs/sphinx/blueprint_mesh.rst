@@ -392,9 +392,229 @@ To conform, the ``state`` entry must be an *Object* and can have the following o
 Examples
 ~~~~~~~~~~~~~~~~~~~~~
 
-In C++, the ``conduit::blueprint::mesh::examples`` namespace and in Python the `conduit.blueprint.mesh.examples` module provide
-functions that generate example mesh blueprint data. For details on how to write these data sets to files, see the unit tests that exercise these examples in ``src/tests/blueprint/t_blueprint_mesh_examples.cpp``. This section outlines ``braid``, ``sprial``, and ``julia`` examples.
+The C++ ``conduit::blueprint::mesh::examples`` namespace and the Python ``conduit.blueprint.mesh.examples`` module provide
+functions that generate example Mesh Blueprint data. For details on how to write these data sets to files, see the unit
+tests that exercise these examples in ``src/tests/blueprint/t_blueprint_mesh_examples.cpp`` and the
+`mesh output <Outputting Meshes for Visualization_>`_ example below. This section outlines the examples that demonstrate
+the most commonly used mesh schemas.
 
+basic
++++++++++
+
+The simplest of the mesh examples, ``basic()``, generates an homogenous example mesh with a configurable element
+representation/type (see the ``mesh_type`` table below) spanned by a single scalar field that contains a unique
+identifier for each mesh element. The function that needs to be called to generate an example of this type has the
+following signature:
+
+.. code:: cpp
+
+    conduit::blueprint::mesh::examples::basic(const std::string &mesh_type, // element type/dimensionality
+                                              index_t nx,                   // number of grid points along x
+                                              index_t ny,                   // number of grid points along y
+                                              index_t nz,                   // number of grid points along z (3d only)
+                                              Node &res);                   // result container
+
+
+
+The element representation, type, and dimensionality are all configured through the ``mesh_type`` argument. The
+supported values for this parameter and their corresponding effects are outlined in the table below:
+
++--------------------------------+--------------------+-------------------+-------------------+------------------+
+| **Mesh Type**                  | **Dimensionality** | **Coordset Type** | **Topology Type** | **Element Type** |
++--------------------------------+--------------------+-------------------+-------------------+------------------+
+| `uniform <Uniform_>`_          | 2d/3d              | implicit          | implicit          | quad/hex         |
++--------------------------------+--------------------+-------------------+-------------------+------------------+
+| `rectilinear <Rectilinear_>`_  | 2d/3d              | implicit          | implicit          | quad/hex         |
++--------------------------------+--------------------+-------------------+-------------------+------------------+
+| `structured <Structured_>`_    | 2d/3d              | explicit          | implicit          | quad/hex         |
++--------------------------------+--------------------+-------------------+-------------------+------------------+
+| `tris <Tris_>`_                | 2d                 | explicit          | explicit          | tri              |
++--------------------------------+--------------------+-------------------+-------------------+------------------+
+| `quads <Quads_>`_              | 2d                 | explicit          | explicit          | quad             |
++--------------------------------+--------------------+-------------------+-------------------+------------------+
+| `tets <Tets_>`_                | 3d                 | explicit          | explicit          | tet              |
++--------------------------------+--------------------+-------------------+-------------------+------------------+
+| `hexs <Hexs_>`_                | 3d                 | explicit          | explicit          | hex              |
++--------------------------------+--------------------+-------------------+-------------------+------------------+
+
+The remainder of this section demonstrates each of the different ``basic()`` mesh types, outlining
+each type with a simple example that (1) presents the generating call, (2) shows the results of the
+call in Blueprint schema form, and (3) displays the corresponding graphical rendering of this schema.
+
+Uniform
+====================================
+
+* **Usage Example**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 138-143
+   :language: cpp
+   :dedent: 4
+
+* **Result**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 146-187
+   :language: cpp
+   :dedent: 4
+
+* **Visual**
+
+.. figure:: basic_hex_2d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of ``basic`` (element type 'uniform')
+
+Rectilinear
+====================================
+
+* **Usage Example**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 197-201
+   :language: cpp
+   :dedent: 4
+
+* **Result**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 204-235
+   :language: cpp
+   :dedent: 4
+
+* **Visual**
+
+.. figure:: basic_hex_2d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of ``basic`` (element type 'rectilinear')
+
+Structured
+====================================
+
+* **Usage Example**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 244-249
+   :language: cpp
+   :dedent: 4
+
+* **Result**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 252-291
+   :language: cpp
+   :dedent: 4
+
+* **Visual**
+
+.. figure:: basic_hex_2d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of ``basic`` (element type 'structured')
+
+Tris
+====================================
+
+* **Usage Example**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 300-305
+   :language: cpp
+   :dedent: 4
+
+* **Result**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 308-344
+   :language: cpp
+   :dedent: 4
+
+* **Visual**
+
+.. figure:: basic_tet_2d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of ``basic`` (element type 'tris')
+
+Quads
+====================================
+
+* **Usage Example**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 353-358
+   :language: cpp
+   :dedent: 4
+
+* **Result**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 361-397
+   :language: cpp
+   :dedent: 4
+
+* **Visual**
+
+.. figure:: basic_hex_2d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of ``basic`` (element type 'quads')
+
+Tets
+====================================
+
+* **Usage Example**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 406-411
+   :language: cpp
+   :dedent: 4
+
+* **Result**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 414-451
+   :language: cpp
+   :dedent: 4
+
+* **Visual**
+
+.. figure:: basic_tet_3d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of ``basic`` (element type 'tets')
+
+Hexs
+====================================
+
+* **Usage Example**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 460-465
+   :language: cpp
+   :dedent: 4
+
+* **Result**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 468-505
+   :language: cpp
+   :dedent: 4
+
+* **Visual**
+
+.. figure:: basic_hex_3d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of ``basic`` (element type 'hexs')
 
 braid
 ++++++
@@ -426,29 +646,29 @@ Here is a list of valid strings for the ``mesh_type`` argument:
 | uniform       | 2d or 3d uniform grid                         |
 |               | (implicit coords, implicit topology)          |
 +---------------+-----------------------------------------------+
-|rectilinear    | 2d or 3d rectilinear grid                     |
+| rectilinear   | 2d or 3d rectilinear grid                     |
 |               | (implicit coords, implicit topology)          |
 +---------------+-----------------------------------------------+
-|structured     | 2d or 3d structured grid                      |
+| structured    | 2d or 3d structured grid                      |
 |               | (explicit coords, implicit topology)          |
 +---------------+-----------------------------------------------+
-|point          | 2d or 3d unstructured mesh of point elements  |
+| point         | 2d or 3d unstructured mesh of point elements  |
 |               | (explicit coords, explicit topology)          |
 +---------------+-----------------------------------------------+
-|lines          | 2d or 3d unstructured mesh of line elements   |
+| lines         | 2d or 3d unstructured mesh of line elements   |
 |               | (explicit coords, explicit topology)          |
 +---------------+-----------------------------------------------+
-|tris           | 2d unstructured mesh of triangle elements     |
+| tris          | 2d unstructured mesh of triangle elements     |
 |               | (explicit coords, explicit topology)          |
 +---------------+-----------------------------------------------+
-|quads          | 2d unstructured mesh of quadrilateral elements|
+| quads         | 2d unstructured mesh of quadrilateral elements|
 |               | (explicit coords, explicit topology)          |
 +---------------+-----------------------------------------------+
-|tets           | 3d unstructured mesh of tetrahedral elements  |
+| tets          | 3d unstructured mesh of tetrahedral elements  |
 |               | (explicit coords, explicit topology)          |
 +---------------+-----------------------------------------------+
-|hexs           | 3d unstructured mesh of hexahedral elements   |
-|               | (explicit coords, explicit topology)          | 
+| hexs          | 3d unstructured mesh of hexahedral elements   |
+|               | (explicit coords, explicit topology)          |
 +---------------+-----------------------------------------------+
 
 ``nx``, ``ny``, ``nz`` specify the number of elements in the x, y, and z directions.
@@ -523,6 +743,54 @@ for each point tested or zero if not found in the set.
 ``c_re``, ``c_im`` specify real and complex parts of the constant used.
 
 The resulting data is placed the Node ``res``, which is passed in via reference.
+
+miscellaneous
+++++++++++++++
+
+This section doesn't overview any specific example in the ``conduit::blueprint::mesh::examples`` namespace,
+but rather provides a few additional code samples to help with various common tasks. Each subsection covers
+a specific task and presents how it can be accomplished using a function or set of functions in Conduit
+and/or the Mesh Blueprint library.
+
+Outputting Meshes for Visualization
+====================================
+
+Suppose that you have an arbitrary Blueprint mesh that you want to output from a running code and
+subsequently visualize using a visualization tool (e.g. `VisIt <https://wci.llnl.gov/simulation/computer-codes/visit>`_).
+Provided that your mesh is sufficiently simple (see the note at the end of this section for details),
+you can output your mesh using one of the following ``conduit::relay`` library functions:
+
+.. code:: cpp
+
+    // saves the given mesh to disk at the given path (using the extension
+    // suffix in the path to inform the output data protocol)
+    conduit::relay::io_blueprint::save(const conduit::Node &mesh,
+                                       const std::string &path);
+
+    // saves the given mesh to disk at the given path with the given explicit
+    // output data protocol (e.g. "json", "hdf5")
+    conduit::relay::io_blueprint::save(const conduit::Node &mesh,
+                                       const std::string &path,
+                                       const std::string &protocol);
+
+It's important to note that both of these functions expect the given path to have
+a valid extension to properly output results. The valid extensions for these
+functions are as follows:
+
+- ``.blueprint_root`` (JSON Extension)
+- ``.blueprint_root_hdf5`` (HDF5 Extension)
+
+Files output from these functions can be opened and subsequently visualized
+directly using `VisIt <https://wci.llnl.gov/simulation/computer-codes/visit>`_.
+
+.. note::
+   This functionality is still in a preliminary stage and thus lacks a lot of key features.
+   The most crucial of these limitations are the limited number of supported output protocols
+   (only ``json`` and ``hdf5`` are currently implemented) and the suboptimal handling of
+   multi-domain meshes (each domain is output as a separate sub-mesh, making full-mesh
+   rendering a pain for large geometries). With these constraints in mind, we recommend
+   that users exercise this functionality sparingly and only for simple cases until
+   more extensions and robustness improvements are developed and integrated into Conduit.
 
 .. Properties and Transforms
 .. ---------------------------
