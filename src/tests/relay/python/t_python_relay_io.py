@@ -49,10 +49,12 @@
 
 
 import sys
+import os
 import unittest
 
 from numpy import *
 from conduit import Node
+from conduit import DataType
 
 import conduit
 import conduit.relay as relay
@@ -123,6 +125,29 @@ class Test_Relay_IO(unittest.TestCase):
             self.assertTrue(n_load['a'] == a_val)
             self.assertTrue(n_load['b'] == b_val)
             self.assertTrue(n_load['c'] == c_val)
+   
+    def test_hdf5_generic_save_opts(self):
+        # only run if we have hdf5
+        if not relay.about()["io/protocols/hdf5"] == "enabled":
+            return
+        # 5k float64 zeros, will compress well, but below default 
+        # thresh
+        n = Node()
+        opts = Node()
+        opts["hdf5/chunking/threshold"]  = 2000
+        opts["hdf5/chunking/chunk_size"] = 2000
+        # hdf5 requires object at top level ... 
+        n['value'].set(DataType.float64(5000))
+        tout_std = "tout_python_relay_io_hdf5_generic_std.hdf5"
+        tout_cmp = "tout_python_relay_io_hdf5_generic_cmp.hdf5"
+        relay.io.save(n,tout_std);
+        relay.io.save(n,tout_cmp,options=opts);
+        tout_std_fs  = os.path.getsize(tout_std);
+        tout_std_cmp = os.path.getsize(tout_cmp);
+        self.assertTrue(os.path.isfile(tout_std))
+        self.assertTrue(os.path.isfile(tout_cmp))
+        print("fs compare: std = ", tout_std_fs, " cmp = ", tout_std_cmp)
+        self.assertTrue(tout_std_cmp < tout_std_fs)
 
 
 if __name__ == '__main__':

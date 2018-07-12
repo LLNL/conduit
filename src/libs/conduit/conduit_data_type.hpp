@@ -381,7 +381,6 @@ public:
     index_t     id()    const { return m_id;}
     std::string name()  const { return id_to_name(m_id);}
 
-    
     index_t     number_of_elements()  const { return m_num_ele;}
     index_t     offset()              const { return m_offset;}
     index_t     stride()              const { return m_stride;}
@@ -399,7 +398,6 @@ public:
     bool        is_compact() const;
     bool        compatible(const DataType& type) const;
     bool        equals(const DataType& type) const;
-
 
     bool        is_empty()            const;
     bool        is_object()           const;
@@ -444,11 +442,10 @@ public:
 
     bool        is_float()            const;
     bool        is_double()           const;
-
     /// note: is_long_double() always returns false if conduit is not using 
     /// long double to fill its support for bitwidth style types
     bool        is_long_double()      const;
-    
+
     bool        is_string()           const;
     bool        is_char8_str()        const;
 

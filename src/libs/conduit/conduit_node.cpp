@@ -1454,7 +1454,7 @@ void
 Node::set(const std::vector<unsigned char> &data)
 {
     init(DataType::c_unsigned_char(data.size()));
-    memcpy(m_data,&data[0],sizeof(char)*data.size());
+    memcpy(m_data,&data[0],sizeof(unsigned char)*data.size());
 }
 //-----------------------------------------------------------------------------
 #endif // end use char check
@@ -1467,7 +1467,7 @@ void
 Node::set(const std::vector<short> &data)
 {
     init(DataType::c_short(data.size()));
-    memcpy(m_data,&data[0],sizeof(char)*data.size());
+    memcpy(m_data,&data[0],sizeof(short)*data.size());
 }
 
 //-----------------------------------------------------------------------------
@@ -1475,7 +1475,7 @@ void
 Node::set(const std::vector<unsigned short> &data)
 {
     init(DataType::c_unsigned_short(data.size()));
-    memcpy(m_data,&data[0],sizeof(char)*data.size());
+    memcpy(m_data,&data[0],sizeof(unsigned short)*data.size());
 }
 //-----------------------------------------------------------------------------
 #endif // end use short check
@@ -1488,7 +1488,7 @@ void
 Node::set(const std::vector<int> &data)
 {
     init(DataType::c_int(data.size()));
-    memcpy(m_data,&data[0],sizeof(char)*data.size());
+    memcpy(m_data,&data[0],sizeof(int)*data.size());
 }
 
 //-----------------------------------------------------------------------------
@@ -1496,7 +1496,7 @@ void
 Node::set(const std::vector<unsigned int> &data)
 {
     init(DataType::c_unsigned_int(data.size()));
-    memcpy(m_data,&data[0],sizeof(char)*data.size());
+    memcpy(m_data,&data[0],sizeof(unsigned int)*data.size());
 }
 //-----------------------------------------------------------------------------
 #endif // end use int check
@@ -1509,7 +1509,7 @@ void
 Node::set(const std::vector<long> &data)
 {
     init(DataType::c_long(data.size()));
-    memcpy(m_data,&data[0],sizeof(char)*data.size());
+    memcpy(m_data,&data[0],sizeof(long)*data.size());
 }
 
 //-----------------------------------------------------------------------------
@@ -1517,7 +1517,7 @@ void
 Node::set(const std::vector<unsigned long> &data)
 {
     init(DataType::c_unsigned_long(data.size()));
-    memcpy(m_data,&data[0],sizeof(char)*data.size());
+    memcpy(m_data,&data[0],sizeof(unsigned long)*data.size());
 }
 //-----------------------------------------------------------------------------
 #endif // end use long check
@@ -1530,7 +1530,7 @@ void
 Node::set(const std::vector<long long> &data)
 {
     init(DataType::c_long_long(data.size()));
-    memcpy(m_data,&data[0],sizeof(char)*data.size());
+    memcpy(m_data,&data[0],sizeof(long long)*data.size());
 }
 
 //-----------------------------------------------------------------------------
@@ -1538,7 +1538,7 @@ void
 Node::set(const std::vector<unsigned long long> &data)
 {
     init(DataType::c_unsigned_long_long(data.size()));
-    memcpy(m_data,&data[0],sizeof(char)*data.size());
+    memcpy(m_data,&data[0],sizeof(unsigned long long)*data.size());
 }
 //-----------------------------------------------------------------------------
 #endif // end use long long check
@@ -1551,7 +1551,7 @@ void
 Node::set(const std::vector<float> &data)
 {
     init(DataType::c_float(data.size()));
-    memcpy(m_data,&data[0],sizeof(char)*data.size());
+    memcpy(m_data,&data[0],sizeof(float)*data.size());
 }
 //-----------------------------------------------------------------------------
 #endif // end use float check
@@ -1564,7 +1564,7 @@ void
 Node::set(const std::vector<double> &data)
 {
     init(DataType::c_double(data.size()));
-    memcpy(m_data,&data[0],sizeof(char)*data.size());
+    memcpy(m_data,&data[0],sizeof(double)*data.size());
 }
 //-----------------------------------------------------------------------------
 #endif // end use double check
@@ -9938,6 +9938,77 @@ Node::to_double_array(Node &res) const
 
 }
 
+//---------------------------------------------------------------------------//
+void
+Node::to_data_type(index_t dtype_id, Node &res) const
+{
+    // NOTE: Only the array conversions are used here since they work on single
+    // values as if they were arrays containing one element.
+    switch(dtype_id)
+    {
+        /* ints */
+        case DataType::INT8_ID:
+        {
+            this->to_int8_array(res);
+            break;
+        }
+        case DataType::INT16_ID: 
+        {
+            this->to_int16_array(res);
+            break;
+        }
+        case DataType::INT32_ID:
+        {
+            this->to_int32_array(res);
+            break;
+        }
+        case DataType::INT64_ID:
+        {
+            this->to_int64_array(res);
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_ID:
+        {
+            this->to_uint8_array(res);
+            break;
+        }
+        case DataType::UINT16_ID:
+        {
+            this->to_uint16_array(res);
+            break;
+        }
+        case DataType::UINT32_ID:
+        {
+            this->to_uint32_array(res);
+            break;
+        }
+        case DataType::UINT64_ID:
+        {
+            this->to_uint64_array(res);
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_ID:
+        {
+            this->to_float32_array(res);
+            break;
+        }
+        case DataType::FLOAT64_ID:
+        {
+            this->to_float64_array(res);
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert to non-numeric type "
+                        << DataType::id_to_name(dtype_id) <<
+                        " from type " << dtype().name());
+        }
+    }
+}
+
 //-----------------------------------------------------------------------------
 // -- Value Helper class ---
 //-----------------------------------------------------------------------------
@@ -11466,6 +11537,13 @@ index_t
 Node::number_of_children() const 
 {
     return m_schema->number_of_children();
+}
+
+//---------------------------------------------------------------------------//
+std::string 
+Node::name() const
+{
+    return m_schema->name();
 }
 
 //---------------------------------------------------------------------------//

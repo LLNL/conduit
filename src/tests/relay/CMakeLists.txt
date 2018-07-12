@@ -51,6 +51,7 @@
 ################################
 set(RELAY_TESTS t_relay_smoke
                 t_relay_io_basic
+                t_relay_io_file_sizes
                 t_relay_node_viewer
                 t_relay_websocket)
 

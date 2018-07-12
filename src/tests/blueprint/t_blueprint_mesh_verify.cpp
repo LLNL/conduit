@@ -293,6 +293,9 @@ TEST(conduit_blueprint_mesh_verify, coordset_uniform)
     Node n, info;
     CHECK_MESH(verify_uniform_coordset,n,info,false);
 
+    n["type"].set("uniform");
+    CHECK_MESH(verify_uniform_coordset,n,info,false);
+
     n["dims"]["i"].set(1);
     n["dims"]["j"].set(2);
     CHECK_MESH(verify_uniform_coordset,n,info,true);
@@ -325,6 +328,9 @@ TEST(conduit_blueprint_mesh_verify, coordset_uniform)
     CHECK_MESH(verify_uniform_coordset,n,info,false);
     n["spacing"]["dz"].set(0.3);
     CHECK_MESH(verify_uniform_coordset,n,info,true);
+
+    n["type"].set("rectilinear");
+    CHECK_MESH(verify_uniform_coordset,n,info,false);
 }
 
 
@@ -337,6 +343,9 @@ TEST(conduit_blueprint_mesh_verify, coordset_rectilinear)
     CHECK_MESH(verify_rectilinear_coordset,n,info,false);
 
     n["values"].set("test");
+    CHECK_MESH(verify_rectilinear_coordset,n,info,false);
+
+    n["type"].set("rectilinear");
     CHECK_MESH(verify_rectilinear_coordset,n,info,false);
 
     for(size_t ci = 0; ci < 3; ci++)
@@ -368,6 +377,9 @@ TEST(conduit_blueprint_mesh_verify, coordset_rectilinear)
         }
     }
 
+    n["type"].set("uniform");
+    CHECK_MESH(verify_rectilinear_coordset,n,info,false);
+
 
     // FIXME: The logical coordinate system shouldn't be an accepted value
     // for the rectilinear verify function.
@@ -393,6 +405,9 @@ TEST(conduit_blueprint_mesh_verify, coordset_explicit)
     n["values"].set("test");
     CHECK_MESH(verify_explicit_coordset,n,info,false);
 
+    n["type"].set("explicit");
+    CHECK_MESH(verify_explicit_coordset,n,info,false);
+
     for(size_t ci = 0; ci < 3; ci++)
     {
         const std::vector<std::string>& coord_coordsys = COORDINATE_COORDSYSS[ci];
@@ -404,6 +419,9 @@ TEST(conduit_blueprint_mesh_verify, coordset_explicit)
             CHECK_MESH(verify_explicit_coordset,n,info,true);
         }
     }
+
+    n["type"].set("uniform");
+    CHECK_MESH(verify_explicit_coordset,n,info,false);
 
     // FIXME: The logical coordinate system shouldn't be an accepted value
     // for the explicit verify function.
@@ -524,32 +542,71 @@ TEST(conduit_blueprint_mesh_verify, coordset_general)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, topology_points)
 {
-    // FIXME: Implement once 'mesh::topology::points::verify' is implemented.
     VerifyFun verify_points_topology = blueprint::mesh::topology::points::verify;
     Node n, info;
 
+    CHECK_MESH(verify_points_topology,n,info,false);
+
+    n["coordset"].set("coords");
+    n["type"].set("points");
     CHECK_MESH(verify_points_topology,n,info,true);
+
+    n["coordset"].set(1);
+    CHECK_MESH(verify_points_topology,n,info,false);
+
+    n["coordset"].set("coords");
+    n["type"].set(1);
+    CHECK_MESH(verify_points_topology,n,info,false);
+
+    n["type"].set("uniform");
+    CHECK_MESH(verify_points_topology,n,info,false);
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, topology_uniform)
 {
-    // FIXME: Implement once 'mesh::topology::uniform::verify' is implemented.
     VerifyFun verify_uniform_topology = blueprint::mesh::topology::uniform::verify;
     Node n, info;
 
+    CHECK_MESH(verify_uniform_topology,n,info,false);
+
+    n["coordset"].set("coords");
+    n["type"].set("uniform");
     CHECK_MESH(verify_uniform_topology,n,info,true);
+
+    n["coordset"].set(1);
+    CHECK_MESH(verify_uniform_topology,n,info,false);
+
+    n["coordset"].set("coords");
+    n["type"].set(1);
+    CHECK_MESH(verify_uniform_topology,n,info,false);
+
+    n["type"].set("points");
+    CHECK_MESH(verify_uniform_topology,n,info,false);
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, topology_rectilinear)
 {
-    // FIXME: Implement once 'mesh::topology::rectilinear::verify' is implemented.
     VerifyFun verify_rectilinear_topology = blueprint::mesh::topology::rectilinear::verify;
     Node n, info;
 
+    CHECK_MESH(verify_rectilinear_topology,n,info,false);
+
+    n["coordset"].set("coords");
+    n["type"].set("rectilinear");
     CHECK_MESH(verify_rectilinear_topology,n,info,true);
+
+    n["coordset"].set(1);
+    CHECK_MESH(verify_rectilinear_topology,n,info,false);
+
+    n["coordset"].set("coords");
+    n["type"].set(1);
+    CHECK_MESH(verify_rectilinear_topology,n,info,false);
+
+    n["type"].set("points");
+    CHECK_MESH(verify_rectilinear_topology,n,info,false);
 }
 
 
@@ -559,6 +616,10 @@ TEST(conduit_blueprint_mesh_verify, topology_structured)
     VerifyFun verify_structured_topology = blueprint::mesh::topology::structured::verify;
 
     Node n, info;
+    CHECK_MESH(verify_structured_topology,n,info,false);
+
+    n["coordset"].set("coords");
+    n["type"].set("structured");
     CHECK_MESH(verify_structured_topology,n,info,false);
 
     n["elements"].set(0);
@@ -580,6 +641,9 @@ TEST(conduit_blueprint_mesh_verify, topology_structured)
 
     n["elements"]["dims"]["k"].set(25);
     CHECK_MESH(verify_structured_topology,n,info,true);
+
+    n["type"].set("unstructured");
+    CHECK_MESH(verify_structured_topology,n,info,false);
 }
 
 
@@ -589,6 +653,10 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
     VerifyFun verify_unstructured_topology = blueprint::mesh::topology::unstructured::verify;
 
     Node n, info;
+    CHECK_MESH(verify_unstructured_topology,n,info,false);
+
+    n["coordset"].set("coords");
+    n["type"].set("unstructured");
     CHECK_MESH(verify_unstructured_topology,n,info,false);
 
     n["elements"].set(0);
@@ -610,6 +678,11 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
         n["elements"]["connectivity"].set(DataType::int32(1));
         CHECK_MESH(verify_unstructured_topology,n,info,true);
         n["elements"]["connectivity"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["type"].set("structured");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["type"].set("unstructured");
         CHECK_MESH(verify_unstructured_topology,n,info,true);
     }
 
@@ -635,6 +708,9 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
         n["elements"]["c"]["shape"].set("tri");
         n["elements"]["c"]["connectivity"].set(DataType::int32(5));
         CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["type"].set("structured");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
     }
 
     { // Multiple Shape Topology Stream Tests //

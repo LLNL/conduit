@@ -176,14 +176,22 @@ PyRelay_io_save(PyObject *, //self
     PyObject   *py_node  = NULL;
     const char *path     = NULL;
     const char *protocol = NULL;
+    PyObject   *py_opts  = NULL;
     
-    static const char *kwlist[] = {"node","path","protocol", NULL};
+    static const char *kwlist[] = {"node",
+                                   "path",
+                                   "protocol",
+                                   "options",
+                                   NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
-                                     "Os|s",
+                                     "Os|sO",
                                      const_cast<char**>(kwlist),
-                                     &py_node, &path, &protocol))
+                                     &py_node,
+                                     &path,
+                                     &protocol,
+                                     &py_opts))
     {
         return (NULL);
     }
@@ -199,16 +207,37 @@ PyRelay_io_save(PyObject *, //self
         }
     }
     
-    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+    // default opts is an empty node which is ignored
+    Node opts;
+    Node *opts_ptr = &opts;
+    if(py_opts != NULL)
+    {
+        if(!PyConduit_Node_Check(py_node))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "relay::save 'options' argument must be a "
+                            "Conduit::Node");
+            return NULL;
+        }
+        
+        opts_ptr = PyConduit_Node_Get_Node_Ptr(py_opts);
+    }
     
+    
+    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+    std::string protocol_str("");
+    
+    // default protocol string is empty which auto detects
     if(protocol != NULL)
     {
-        relay::io::save(node, std::string(path),std::string(protocol));
+        protocol_str = std::string(protocol);
     }
-    else
-    {
-        relay::io::save(node,std::string(path));
-    }
+    
+    relay::io::save(node,
+                    std::string(path),
+                    protocol_str,
+                    *opts_ptr);
+
 
     Py_RETURN_NONE;
 }

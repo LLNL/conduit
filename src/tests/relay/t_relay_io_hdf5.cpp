@@ -795,3 +795,44 @@ TEST(conduit_relay_io_hdf5, hdf5_create_open_methods)
 
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, conduit_hdf5_save_generic_options)
+{
+    // 5k zeros, should compress well, but under default
+    // threshold size
+    
+    Node n;
+    n["value"] = DataType::float64(5000); 
+    
+    Node opts;
+    opts["hdf5/chunking/threshold"]  = 2000;
+    opts["hdf5/chunking/chunk_size"] = 2000;
+    
+    std::string tout_std = "tout_hdf5_save_generic_default_options.hdf5";
+    std::string tout_cmp = "tout_hdf5_save_generic_test_options.hdf5";
+
+    if(utils::is_file(tout_std))
+    {
+        utils::remove_file(tout_std);
+    }
+
+    if(utils::is_file(tout_cmp))
+    {
+        utils::remove_file(tout_cmp);
+    }
+
+    io::save(n,tout_std, "hdf5");
+    io::save(n,tout_cmp, "hdf5", opts);
+
+    EXPECT_TRUE(utils::is_file(tout_std));
+    EXPECT_TRUE(utils::is_file(tout_cmp));
+    
+    int64 tout_std_fs = utils::file_size(tout_std);
+    int64 tout_cmp_fs = utils::file_size(tout_cmp);
+    CONDUIT_INFO("fs test: std = " 
+                 << tout_std_fs 
+                 << ", cmp =" 
+                 << tout_cmp_fs);
+    EXPECT_TRUE(tout_cmp_fs < tout_std_fs);
+}

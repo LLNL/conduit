@@ -747,12 +747,12 @@ braid_structured(index_t npts_x,
   
     res["topologies/mesh/type"] = "structured";
     res["topologies/mesh/coordset"] = "coords";
-    res["topologies/mesh/elements/dims/i"] = nele_x;
-    res["topologies/mesh/elements/dims/j"] = nele_y;
+    res["topologies/mesh/elements/dims/i"] = (int32)nele_x;
+    res["topologies/mesh/elements/dims/j"] = (int32)nele_y;
     
     if(nele_z > 0)
     {
-        res["topologies/mesh/elements/dims/k"] = nele_z; 
+        res["topologies/mesh/elements/dims/k"] = (int32)nele_z; 
     }
 
     Node &fields = res["fields"];
