@@ -136,9 +136,14 @@ class Test_Relay_IO(unittest.TestCase):
        n['a'] = a_val
        n['b'] = b_val
        n['c'] = c_val
-       tout = "tout_python_relay_io_save_merged.conduit_bin";
+       tout = "tout_python_relay_io_load_merged.conduit_bin";
        
-       relay.io.save_merged(n,tout);
+       if os.path.isfile(tout):
+           os.remove(tout)
+       if os.path.isfile(tout + "_json"):
+           os.remove(tout + "_json")
+
+       relay.io.save(n,tout);
        self.assertTrue(os.path.isfile(tout))
        n_load = Node();
        n_load['d'] = d_val
@@ -161,8 +166,15 @@ class Test_Relay_IO(unittest.TestCase):
        n['c'] = c_val
        tout = "tout_python_relay_io_save_merged.conduit_bin";
        
+       if os.path.isfile(tout):
+           os.remove(tout)
+       if os.path.isfile(tout + "_json"):
+           os.remove(tout + "_json")
+       
        relay.io.save_merged(n,tout);
        self.assertTrue(os.path.isfile(tout))
+       self.assertTrue(os.path.isfile(tout + "_json"))
+
        n2 = Node();
        n2['d'] = d_val
        relay.io.save_merged(n2,tout);
