@@ -168,7 +168,7 @@ namespace internals
 static int rank = 0;
 static int size = 1;
 
-//#define DEBUG_PRINT_RANK(OSSEXPR) if(internals::rank == 1) { cout << OSSEXPR << endl; }
+//#define DEBUG_PRINT_RANK(OSSEXPR) if(internals::rank == 0) { cout << OSSEXPR << endl; }
 #define DEBUG_PRINT_RANK(OSSEXPR) 
 
 //-----------------------------------------------------------------------------
@@ -1548,8 +1548,7 @@ load_node(adios_load_state *state, ADIOS_FILE *afile, void *cbdata)
 #ifdef DISPARATE_TREE_SUPPORT
     std::vector<std::string>  dmprefixes;
     std::vector<unsigned int> dmblocks;
-if(internals::rank == 1)
-    utils::sleep(4);
+
     // We want state->domain for the domain to read in.
     for (int i = 0; i < afile->nvars; ++i)
     {
@@ -1563,6 +1562,11 @@ if(internals::rank == 1)
         // We want to read the state->domain'th block of .dm. so 
         // know which block we want to read.
         ADIOS_VARINFO *v = adios_inq_var(afile, afile->var_namelist[i]);
+
+
+// use gdims and do bounding box selection to get the element that I want. Works for
+// scalars.
+
         if(v)
         {
             adios_inq_var_blockinfo(afile,v);
@@ -1658,23 +1662,31 @@ cout << internals::rank << ": prefix = " << prefix << ", block=" << dm[1] << end
 
 #if 0
             // Print variable information.
-            if(internals::rank == 1)
+            if(internals::rank == 0)
             {
-                cout << "Reading process_id=" << search_domain << " time_index=" << (ts+1) << endl;
+                cout << "Reading domain=" << search_domain << ", ts=" << ts << endl;
                 internals::print_varinfo(cout, afile, v);
             }
 #endif
 
             // ADIOS time steps start at 1.
             uint32_t ts1 = static_cast<uint32_t>(ts) + 1;
-//cout << "state->time_step = " << state->time_step << ", v->nsteps=" << v->nsteps
-//     << ", ts=" << ts << ", ts1 = " << ts1 << endl;
+            bool streaming = !streamIsFileBased(options()->read_method);
 
-            // The blocks for the current time step start at biOffset,
-            // which is the sum of the preceding block counts.
             int biOffset = 0;
-            for(int ti = 0; ti < ts; ++ti)
-                biOffset += v->nblocks[ti];
+            if(streaming)
+            {
+                // For streaming, force read of time step 0, the current time step.
+                ts = 0;
+                //ts1 = 1;
+            }
+            else
+            {
+                // The blocks for the current time step start at biOffset,
+                // which is the sum of the preceding block counts.
+                for(int ti = 0; ti < ts; ++ti)
+                    biOffset += v->nblocks[ti];
+            }
 
             // There will be v->nblocks[ts] blocks for the current
             // time step starting at biOffset. We can make sure that
@@ -1685,9 +1697,39 @@ cout << internals::rank << ": prefix = " << prefix << ", block=" << dm[1] << end
             bool block_found = false;
             uint64_t nelem = 1;
             int read_dom = search_domain;
-            if(v->blockinfo[biOffset + search_domain].time_index == ts1)
+            if(read_dom >= v->nblocks[ts])
             {
-                nelem = v->blockinfo[biOffset + search_domain].count[0];
+                if(internals::rank == 0)
+                {
+                    cout << "CAPPING read_com at " << 0 << endl;
+                }
+                read_dom = 0;
+            }
+
+// NOTE: Norbert suggests not using the var block info as transports may reorganize
+//       data into global arrays. It would be safer to read an element out of the
+//       data using a bounding box selection (read a 1 element array slice). The
+//       DATASPACES transport reassembles data from multiple rank "local" arrays
+//       into bigger chunks.
+//
+//       For variable-sized array data, store an array of offsets into the whole data
+//       array that is being saved. Burlen takes an approach like this for SENSEI.
+//       Saving offsets could mean all-gathering the sizes to each rank, which would
+//       be challenging for write since we don't know which ranks have what variables.
+//       We could define/write a size var for array variables though. Then save the 
+//       size in ADIOS. For reading, the size array would have to be read [0,rank-1]
+//       and then offsets computed from it to make the bounding box selection.
+
+
+DEBUG_PRINT_RANK(
+        "state->time_step = " << state->time_step << ", v->nsteps=" << v->nsteps
+            << ", ts=" << ts << ", ts1 = " << ts1 << endl
+            << "biOffset=" << biOffset << ", read_dom=" <<read_dom);
+
+            if(streaming ||
+               v->blockinfo[biOffset + read_dom].time_index == ts1)
+            {
+                nelem = v->blockinfo[biOffset + read_dom].count[0];
                 if(nelem == 0)
                 {
                     // The count is 0 so we probably have a scalar.
@@ -1810,7 +1852,7 @@ conduit_type = "char8_str";
                 }
             } // block_found
 #if 0
-            else
+            else if(internals::rank == 0)
             {
                 // We could not find the desired block.
                 cout << "No block for " << vname << " process_id=" << state->domain
