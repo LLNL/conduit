@@ -450,6 +450,26 @@ TEST(conduit_mpi_test, send_recv_using_schema)
     EXPECT_EQ(vals[0], 1);
     EXPECT_EQ(vals[1], 0);
     EXPECT_EQ(vals[2], 10.7);
+    
+    
+    n.reset();
+    
+    if(rank == 0)
+    {
+        n["value/a"] = 1;
+        n["value/b"] = 2;
+        
+        mpi::send_using_schema(n,1,0,MPI_COMM_WORLD);
+    }
+    else
+    {
+        mpi::recv_using_schema(n,0,0,MPI_COMM_WORLD);
+    }
+    int val_a = n["value/a"].to_int();
+    int val_b = n["value/b"].to_int();
+    
+    EXPECT_EQ(val_a, 1);
+    EXPECT_EQ(val_b, 2);
 }
 
 
@@ -960,6 +980,38 @@ TEST(conduit_mpi_test, bcast_using_schema)
                      << "rank: " << rank << " res = "
                      << n.to_json());
     }
+    
+    
+    for(int root = 0; root < com_size; root++)
+    {
+        Node n;
+
+        if(rank == root)
+        {
+            n["value/a"] = 1;
+            n["value/b"] = 2;
+        }
+        else
+        {
+            n["value/a"] = -1;
+            n["value/b"] = -1;
+        }
+
+        mpi::broadcast_using_schema(n,root,MPI_COMM_WORLD);
+
+        int val_a = n["value/a"].to_int();
+        int val_b = n["value/b"].to_int();
+        
+
+        EXPECT_EQ(val_a, 1);
+        EXPECT_EQ(val_b, 2);
+    
+        CONDUIT_INFO("Bcast from root = " 
+                     << root  << "\n"
+                     << "rank: " << rank << " res = "
+                     << n.to_json());
+    }
+    
     
 }
 
