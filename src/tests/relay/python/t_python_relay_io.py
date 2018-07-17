@@ -211,6 +211,19 @@ class Test_Relay_IO(unittest.TestCase):
         print("fs compare: std = ", tout_std_fs, " cmp = ", tout_std_cmp)
         self.assertTrue(tout_std_cmp < tout_std_fs)
 
+    def test_io_errors(self):
+        n = Node()
+        with self.assertRaises(IOError):
+            relay.io.load(n,"pile_of_garbage.conduit_bin");
+        with self.assertRaises(IOError):
+            relay.io.load_merged(n,"another_pile_of_garbage.conduit_bin");
+        with self.assertRaises(IOError):
+            relay.io.save(n,"/bad/bad/bad/cant_write_here.conduit_bin");
+        with self.assertRaises(IOError):
+            relay.io.save_merged(n,"/bad/bad/bad/cant_write_here_either.conduit_bin");
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
