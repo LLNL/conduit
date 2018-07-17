@@ -218,9 +218,9 @@ class Test_Relay_IO(unittest.TestCase):
         with self.assertRaises(IOError):
             relay.io.load_merged(n,"another_pile_of_garbage.conduit_bin");
         with self.assertRaises(IOError):
-            relay.io.save(n,"/cant_write_here.conduit_bin");
+            relay.io.save(n,"/bad/bad/bad/cant_write_here.conduit_bin");
         with self.assertRaises(IOError):
-            relay.io.save_merged(n,"/cant_write_here_either.conduit_bin");
+            relay.io.save_merged(n,"/bad/bad/bad/cant_write_here_either.conduit_bin");
 
 
 
