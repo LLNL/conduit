@@ -234,11 +234,20 @@ PyRelay_io_save(PyObject *, //self
         protocol_str = std::string(protocol);
     }
     
-    relay::io::save(node,
-                    std::string(path),
-                    protocol_str,
-                    *opts_ptr);
-
+    try
+    {
+    
+        relay::io::save(node,
+                        std::string(path),
+                        protocol_str,
+                        *opts_ptr);
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
 
     Py_RETURN_NONE;
 }
@@ -311,11 +320,19 @@ PyRelay_io_save_merged(PyObject *, //self
         protocol_str = std::string(protocol);
     }
     
-    relay::io::save_merged(node,
-                           std::string(path),
-                           protocol_str,
-                           *opts_ptr);
-
+    try
+    {
+        relay::io::save_merged(node,
+                               std::string(path),
+                               protocol_str,
+                               *opts_ptr);
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
 
     Py_RETURN_NONE;
 }
@@ -364,9 +381,18 @@ PyRelay_io_load(PyObject *, //self
     }
     
     
-    relay::io::load(std::string(path),
-                    protocol_str,
-                    node);
+    try
+    {
+        relay::io::load(std::string(path),
+                        protocol_str,
+                        node);
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
     
     Py_RETURN_NONE;
 }
@@ -417,11 +443,19 @@ PyRelay_io_load_merged(PyObject *, //self
         protocol_str = std::string(protocol);
     }
     
-    
-    relay::io::load_merged(std::string(path),
-                           protocol_str,
-                           node);
-    
+    try
+    {
+        relay::io::load_merged(std::string(path),
+                               protocol_str,
+                               node);
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
+
     Py_RETURN_NONE;
 }
 //---------------------------------------------------------------------------//
