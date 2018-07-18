@@ -39,7 +39,7 @@ packages:
 # cmake
   cmake:
     paths:
-      cmake@3.9.2: /usr/tcetmp/packages/cmake/cmake-3.9.2/bin/cmake
+      cmake@3.9.2: /usr/tcetmp/packages/cmake/cmake-3.9.2/
     buildable: False
 # LLNL blueos CUDA
   cuda:
