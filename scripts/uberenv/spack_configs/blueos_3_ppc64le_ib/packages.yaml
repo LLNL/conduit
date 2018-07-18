@@ -36,6 +36,11 @@ packages:
       szip: [libszip, libaec]
       tbb: [intel-tbb]
       jpeg: [libjpeg-turbo, libjpeg]
+# cmake
+  cmake:
+    paths:
+      cmake@3.9.2: /usr/tcetmp/packages/cmake/cmake-3.9.2/bin/cmake
+    buildable: False
 # LLNL blueos CUDA
   cuda:
     paths:
