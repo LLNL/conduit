@@ -431,7 +431,7 @@ def main():
                         break
                 if activate:
                     activate_cmd = "spack/bin/spack activate " + pkg_name
-                sexe(activate_cmd, echo=True)   
+                    sexe(activate_cmd, echo=True)
         return res
 
 if __name__ == "__main__":
