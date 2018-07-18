@@ -2839,10 +2839,10 @@ TEST(conduit_node_set, set_cstyle_int_array)
 //-----------------------------------------------------------------------------
 TEST(conduit_node_set, set_cstyle_int_vec)
 {
-    char   char_av[6]  = {-2,-4,-8,-16,-32,-64};
-    short  short_av[6] = {-2,-4,-8,-16,-32,-64};
-    int    int_av[6]   = {-2,-4,-8,-16,-32,-64};
-    long   long_av[6]  = {-2,-4,-8,-16,-32,-64};
+    signed char char_av[6]  = {-2,-4,-8,-16,-32,-64};
+    short       short_av[6] = {-2,-4,-8,-16,-32,-64};
+    int         int_av[6]   = {-2,-4,-8,-16,-32,-64};
+    long        long_av[6]  = {-2,-4,-8,-16,-32,-64};
 #ifdef CONDUIT_HAS_LONG_LONG
     long long longlong_av[6]  = {-2,-4,-8,-16,-32,-64};
 #endif
@@ -2873,7 +2873,7 @@ TEST(conduit_node_set, set_cstyle_int_vec)
         EXPECT_NE(&char_ptr[i],&char_v[i]);
     }
 
-    EXPECT_EQ(char_ptr[5],char(-64));
+    EXPECT_EQ(char_ptr[5],(signed char)(-64));
 
     // also check access via value()
     signed char *char_ptr_2 =   (signed char*)n.value();
@@ -2966,7 +2966,7 @@ TEST(conduit_node_set, set_cstyle_int_vec)
         EXPECT_EQ(&char_ptr[i],&char_v[i]);
     }
 
-    EXPECT_EQ(char_ptr[5],char(-64));
+    EXPECT_EQ(char_ptr[5],(signed char)(-64));
 
     // also check access via value()
     char_ptr_2 =  n.value();
@@ -3988,10 +3988,10 @@ TEST(conduit_node_set, set_path_cstyle_int_array)
 //-----------------------------------------------------------------------------
 TEST(conduit_node_set, set_path_cstyle_int_vec)
 {
-    signed char   char_av[6]  = {-2,-4,-8,-16,-32,-64};
-    short  short_av[6] = {-2,-4,-8,-16,-32,-64};
-    int    int_av[6]   = {-2,-4,-8,-16,-32,-64};
-    long   long_av[6]  = {-2,-4,-8,-16,-32,-64};
+    signed char  char_av[6]  = {-2,-4,-8,-16,-32,-64};
+    short        short_av[6] = {-2,-4,-8,-16,-32,-64};
+    int          int_av[6]   = {-2,-4,-8,-16,-32,-64};
+    long         long_av[6]  = {-2,-4,-8,-16,-32,-64};
 
 #ifdef CONDUIT_HAS_LONG_LONG
     long long longlong_av[6]  = {-2,-4,-8,-16,-32,-64};
@@ -4023,7 +4023,7 @@ TEST(conduit_node_set, set_path_cstyle_int_vec)
         EXPECT_NE(&char_ptr[i],&char_v[i]);
     }
 
-    EXPECT_EQ(char_ptr[5],char(-64));
+    EXPECT_EQ(char_ptr[5],(signed char)(-64));
 
     // also check access via value()
     signed char *char_ptr_2 =  n["c"].value();
@@ -4116,7 +4116,7 @@ TEST(conduit_node_set, set_path_cstyle_int_vec)
         EXPECT_EQ(&char_ptr[i],&char_v[i]);
     }
 
-    EXPECT_EQ(char_ptr[5],char(-64));
+    EXPECT_EQ(char_ptr[5],(signed char)(-64));
 
     // also check access via value()
     char_ptr_2 =  n["c"].value();
