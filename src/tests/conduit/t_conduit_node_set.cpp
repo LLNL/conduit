@@ -2629,12 +2629,12 @@ TEST(conduit_node_set, set_cstyle_uint_vec)
 //-----------------------------------------------------------------------------
 TEST(conduit_node_set, set_cstyle_int_array)
 {
-    char   char_av[6]  = {-2,-4,-8,-16,-32,-64};
-    short  short_av[6] = {-2,-4,-8,-16,-32,-64};
-    int    int_av[6]   = {-2,-4,-8,-16,-32,-64};
-    long   long_av[6]  = {-2,-4,-8,-16,-32,-64};
+    signed char char_av[6]  = {-2,-4,-8,-16,-32,-64};
+    short       short_av[6] = {-2,-4,-8,-16,-32,-64};
+    int         int_av[6]   = {-2,-4,-8,-16,-32,-64};
+    long        long_av[6]  = {-2,-4,-8,-16,-32,-64};
 #ifdef CONDUIT_HAS_LONG_LONG
-    long long longlong_av[6]  = {-2,-4,-8,-16,-32,-64};
+    long long   longlong_av[6]  = {-2,-4,-8,-16,-32,-64};
 #endif
     
     char_array  char_av_a(char_av,DataType::c_char(6));
@@ -2655,7 +2655,7 @@ TEST(conduit_node_set, set_cstyle_int_array)
     // char
     n.set(char_av_a);
     n.schema().print();
-    char *char_ptr = n.as_char_ptr();
+    signed char *char_ptr = (signed char*) n.as_char_ptr();
     for(index_t i=0;i<6;i++)
     {
         EXPECT_EQ(char_ptr[i],char_av[i]);
@@ -2663,10 +2663,10 @@ TEST(conduit_node_set, set_cstyle_int_array)
         EXPECT_NE(&char_ptr[i],&char_av[i]);
     }
 
-    EXPECT_EQ(char_ptr[5],char(-64));
+    EXPECT_EQ(char_ptr[5],(signed char)(-64));
 
     // also check access via value()
-    char *char_ptr_2 =  n.value();
+    signed char *char_ptr_2 =  n.value();
     EXPECT_EQ(char_ptr,char_ptr_2);
 
     // short 
@@ -2748,7 +2748,7 @@ TEST(conduit_node_set, set_cstyle_int_array)
     // char
     n.set_external(char_av_a);
     n.schema().print();
-    char_ptr = n.as_char_ptr();
+    char_ptr = (signed char*) n.as_char_ptr();
     for(index_t i=0;i<6;i++)
     {
         EXPECT_EQ(char_ptr[i],char_av[i]);
@@ -2756,7 +2756,7 @@ TEST(conduit_node_set, set_cstyle_int_array)
         EXPECT_EQ(&char_ptr[i],&char_av[i]);
     }
 
-    EXPECT_EQ(char_ptr[5],char(-64));
+    EXPECT_EQ(char_ptr[5],(signed char)(-64));
 
     // also check access via value()
     char_ptr_2 =  n.value();
@@ -3777,12 +3777,12 @@ TEST(conduit_node_set, set_path_cstyle_uint_vec)
 //-----------------------------------------------------------------------------
 TEST(conduit_node_set, set_path_cstyle_int_array)
 {
-    char   char_av[6]  = {-2,-4,-8,-16,-32,-64};
-    short  short_av[6] = {-2,-4,-8,-16,-32,-64};
-    int    int_av[6]   = {-2,-4,-8,-16,-32,-64};
-    long   long_av[6]  = {-2,-4,-8,-16,-32,-64};
+    signed char char_av[6]  = {-2,-4,-8,-16,-32,-64};
+    short       short_av[6] = {-2,-4,-8,-16,-32,-64};
+    int         int_av[6]   = {-2,-4,-8,-16,-32,-64};
+    long        long_av[6]  = {-2,-4,-8,-16,-32,-64};
 #ifdef CONDUIT_HAS_LONG_LONG
-    long long longlong_av[6]  = {-2,-4,-8,-16,-32,-64};
+    long long   longlong_av[6]  = {-2,-4,-8,-16,-32,-64};
 #endif
     
     char_array  char_av_a(char_av,DataType::c_char(6));
@@ -3803,7 +3803,7 @@ TEST(conduit_node_set, set_path_cstyle_int_array)
     // char
     n.set_path("c",char_av_a);
     n["c"].schema().print();
-    char *char_ptr = n["c"].as_char_ptr();
+    signed char *char_ptr = (signed char*) n["c"].as_char_ptr();
     for(index_t i=0;i<6;i++)
     {
         EXPECT_EQ(char_ptr[i],char_av[i]);
@@ -3811,10 +3811,10 @@ TEST(conduit_node_set, set_path_cstyle_int_array)
         EXPECT_NE(&char_ptr[i],&char_av[i]);
     }
 
-    EXPECT_EQ(char_ptr[5],char(-64));
+    EXPECT_EQ(char_ptr[5],(signed char)(-64));
 
     // also check access via value()
-    char *char_ptr_2 =  n["c"].value();
+    signed char *char_ptr_2 =  n["c"].value();
     EXPECT_EQ(char_ptr,char_ptr_2);
 
     // short 
@@ -3896,7 +3896,7 @@ TEST(conduit_node_set, set_path_cstyle_int_array)
     // char
     n.set_path_external("c",char_av_a);
     n["c"].schema().print();
-    char_ptr = n["c"].as_char_ptr();
+    char_ptr = (signed char*) n["c"].as_char_ptr();
     for(index_t i=0;i<6;i++)
     {
         EXPECT_EQ(char_ptr[i],char_av[i]);
@@ -3904,7 +3904,7 @@ TEST(conduit_node_set, set_path_cstyle_int_array)
         EXPECT_EQ(&char_ptr[i],&char_av[i]);
     }
 
-    EXPECT_EQ(char_ptr[5],char(-64));
+    EXPECT_EQ(char_ptr[5],(signed char)(-64));
 
     // also check access via value()
     char_ptr_2 =  n["c"].value();
