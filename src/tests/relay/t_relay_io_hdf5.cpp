@@ -836,3 +836,79 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_save_generic_options)
                  << tout_cmp_fs);
     EXPECT_TRUE(tout_cmp_fs < tout_std_fs);
 }
+
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, conduit_hdf5_group_list_children)
+{
+    Node n;
+    
+    n["path/sub1/a"];
+    n["path/sub1/b"];
+    n["path/sub1/c"];
+    
+    n["path/sub2/d"];
+    n["path/sub2/e"];
+    n["path/sub2/f"];
+    
+    std::string tout = "tout_hdf5_grp_chld_names.hdf5";
+
+    if(utils::is_file(tout))
+    {
+        utils::remove_file(tout);
+    }
+    
+    io::save(n,tout, "hdf5");
+
+    EXPECT_TRUE(utils::is_file(tout));
+
+    hid_t h5_file_id = io::hdf5_open_file_for_read(tout);
+    std::vector<std::string> cnames;
+    
+    io::hdf5_group_list_child_names(h5_file_id,"/",cnames);
+    
+    EXPECT_EQ(cnames.size(),1);
+    EXPECT_EQ(cnames[0],"path");
+
+    io::hdf5_group_list_child_names(h5_file_id,"path",cnames);
+
+    EXPECT_EQ(cnames.size(),2);
+    EXPECT_EQ(cnames[0],"sub1");
+    EXPECT_EQ(cnames[1],"sub2");
+
+    
+    io::hdf5_group_list_child_names(h5_file_id,"path/sub1",cnames);
+    
+    EXPECT_EQ(cnames.size(),3);
+    EXPECT_EQ(cnames[0],"a");
+    EXPECT_EQ(cnames[1],"b");
+    EXPECT_EQ(cnames[2],"c");
+  
+    io::hdf5_group_list_child_names(h5_file_id,"path/sub2",cnames);
+        
+    EXPECT_EQ(cnames.size(),3);
+    EXPECT_EQ(cnames[0],"d");
+    EXPECT_EQ(cnames[1],"e");
+    EXPECT_EQ(cnames[2],"f");
+
+    // check leaf, which has no children
+    // this doesn't throw an error, but it creates an empty list
+    io::hdf5_group_list_child_names(h5_file_id,"path/sub1/a",cnames);
+    EXPECT_EQ(cnames.size(),0);
+
+    // totally bogus paths will trigger an error
+    EXPECT_THROW(io::hdf5_group_list_child_names(h5_file_id,"this/isnt/right",cnames),Error);
+    
+    // empty string won't work in this case
+    EXPECT_THROW(io::hdf5_group_list_child_names(h5_file_id,"",cnames),Error);
+   
+    
+    
+    
+}
+
+
+
+
+

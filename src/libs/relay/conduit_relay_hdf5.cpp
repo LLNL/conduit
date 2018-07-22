@@ -2194,6 +2194,120 @@ hdf5_has_path(hid_t hdf5_id,
     // enable hdf5 error stack
 }
 
+//---------------------------------------------------------------------------//
+void hdf5_group_list_child_names(hid_t hdf5_id,
+                                 const std::string &hdf5_path,
+                                 std::vector<std::string> &res)
+{
+    res.clear();
+    // first, hdf5_id + path must be a group in order to have children
+
+    H5O_info_t h5_info_buf;
+
+    // Get type of the object
+    herr_t h5_status = H5Oget_info_by_name(hdf5_id,
+                                           hdf5_path.c_str(),
+                                           &h5_info_buf,
+                                           H5P_DEFAULT);
+
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_status,
+                                           "",
+                                           "Error fetching HDF5 Object info: "
+                                           << " parent: " << hdf5_id 
+                                           << " path:"    << hdf5_path) ;
+
+    if( h5_info_buf.type != H5O_TYPE_GROUP )
+    {    
+        //  not a group, child names will be empty
+        // we could also choose to throw an error in the future 
+        return;
+    }
+
+    // we have a group    
+    // we don't care about links in this case, we want
+    // the child names regardless, so we don't have to use H5Literate
+    //
+    // we can use H5Lget_name_by_idx, as demoed in 
+    // https://support.hdfgroup.org/ftp/HDF5/examples/examples-by-api/hdf5-examples/1_10/C/H5G/h5ex_g_corder.c
+    // 
+    
+
+    hid_t h5_group_id = H5Gopen(hdf5_id,
+                                hdf5_path.c_str(),
+                                H5P_DEFAULT);
+    
+    CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(h5_group_id,
+                                           "",
+                                           "Error opening HDF5 "
+                                           << "Group: " 
+                                           << " parent: "
+                                           << hdf5_id 
+                                           << " path:"
+                                           << hdf5_path);
+    
+    // get group info so we can find the # of children
+    H5G_info_t  h5_group_info;
+    h5_status = H5Gget_info(h5_group_id, &h5_group_info);
+
+    // buffer for child names, if the names are bigger than this
+    // buffer can hold, we will fall back to a malloc
+    char name_buff[512];
+    
+    for (hsize_t i=0; i < h5_group_info.nlinks; i++)
+    {
+        char *name_buff_ptr = name_buff;
+        char *name_buff_tmp = NULL;
+        // Get size of name,
+        int name_size = H5Lget_name_by_idx(h5_group_id, ".",
+                                           H5_INDEX_CRT_ORDER,
+                                           H5_ITER_INC,
+                                           i,
+                                           NULL,
+                                           0,
+                                           H5P_DEFAULT);
+
+        if(name_size <= 0)
+        {
+
+            CONDUIT_HDF5_ERROR(hdf5_path,
+                               "Failed to fetch group child name at index " << i);
+            // error, not valid
+        }
+        // now that we know the name exists, add 1 for null terminator.
+        name_size++;
+
+        if(name_size > 512)
+        {
+            // we dont have room with our built in buffer
+            // fall back to malloc
+            name_buff_tmp = (char*)malloc(sizeof(char)*name_size);
+            name_buff_ptr = name_buff_tmp;
+        }
+        
+        name_size = H5Lget_name_by_idx(h5_group_id, ".",
+                                       H5_INDEX_CRT_ORDER,
+                                       H5_ITER_INC,
+                                       i,
+                                       name_buff_ptr,
+                                       name_size,
+                                       H5P_DEFAULT);
+        
+        res.push_back(std::string(name_buff_ptr));
+
+        if(name_buff_tmp)
+        {
+            free(name_buff_tmp);
+            name_buff_tmp = NULL;
+        }
+   }
+   
+   CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Gclose(h5_group_id),
+                                          "",
+                                          "Failed to close HDF5 Group " 
+                                          << h5_group_id);
+   
+}
+
 
 
 }
