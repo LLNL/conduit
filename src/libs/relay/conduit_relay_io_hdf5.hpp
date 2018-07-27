@@ -81,7 +81,7 @@ namespace relay
 namespace io
 {
 
-#include "conduit_relay_hdf5_api.hpp"
+#include "conduit_relay_io_hdf5_api.hpp"
 
 }
 //-----------------------------------------------------------------------------

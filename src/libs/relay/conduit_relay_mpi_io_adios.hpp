@@ -87,12 +87,12 @@ namespace mpi
 namespace io
 {
 
-// Define an argument macro that adds the communicator argument.
+// Define argument macros that add a communicator argument.
 #define CONDUIT_RELAY_COMMUNICATOR_ARG0(ARG) ARG
 #define CONDUIT_RELAY_COMMUNICATOR_ARG(ARG) ,ARG
 
 // Functions are provided by this include file.
-#include "conduit_relay_adios_api.hpp"
+#include "conduit_relay_io_adios_api.hpp"
 
 }
 //-----------------------------------------------------------------------------

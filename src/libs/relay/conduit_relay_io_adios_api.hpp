@@ -44,12 +44,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay_adios_api.hpp
+/// file: conduit_relay_io_adios_api.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_RELAY_ADIOS_API_HPP
-#define CONDUIT_RELAY_ADIOS_API_HPP
+#ifndef CONDUIT_RELAY_IO_ADIOS_API_HPP
+#define CONDUIT_RELAY_IO_ADIOS_API_HPP
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API adios_initialize_library(

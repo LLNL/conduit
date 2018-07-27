@@ -120,26 +120,26 @@ if(HDF5_FOUND)
     list(APPEND conduit_relay_headers
          conduit_relay_hdf5.hpp 
          conduit_relay_io_hdf5.hpp
-         conduit_relay_hdf5_api.hpp
+         conduit_relay_io_hdf5_api.hpp
         )
-    list(APPEND conduit_relay_sources conduit_relay_hdf5.cpp)
+    list(APPEND conduit_relay_sources conduit_relay_io_hdf5.cpp)
 endif()
 
 if(SILO_FOUND)
     list(APPEND conduit_relay_headers 
          conduit_relay_silo.hpp 
          conduit_relay_io_silo.hpp
-         conduit_relay_silo_api.hpp
+         conduit_relay_io_silo_api.hpp
         )
-    list(APPEND conduit_relay_sources conduit_relay_silo.cpp)
+    list(APPEND conduit_relay_sources conduit_relay_io_silo.cpp)
 endif()
 
 if(ADIOS_FOUND)
     list(APPEND conduit_relay_headers
          conduit_relay_io_adios.hpp
-         conduit_relay_adios_api.hpp
+         conduit_relay_io_adios_api.hpp
         )
-    list(APPEND conduit_relay_sources conduit_relay_adios.cpp)
+    list(APPEND conduit_relay_sources conduit_relay_io_adios.cpp)
 endif()
 
 ################################
@@ -201,9 +201,6 @@ add_compiled_library(NAME conduit_relay
                              $<TARGET_OBJECTS:conduit_civetweb>
                      DEPENDS_ON ${conduit_relay_deps}
                      HEADERS_DEST_DIR include/conduit)
-
-add_target_compile_flags(TARGET conduit_relay
-                         FLAGS -D_NOMPI)
 
 if(FORTRAN_FOUND)
     set_target_properties(conduit_relay
@@ -349,17 +346,17 @@ set(conduit_relay_mpi_io_c_sources
 
 if(SILO_FOUND)
     list(APPEND conduit_relay_mpi_io_headers conduit_relay_mpi_io_silo.hpp)
-    list(APPEND conduit_relay_mpi_io_sources conduit_relay_silo.cpp)
+    list(APPEND conduit_relay_mpi_io_sources conduit_relay_io_silo.cpp)
     list(APPEND conduit_relay_mpi_io_deps silo)
 endif()
 if(HDF5_FOUND)
     list(APPEND conduit_relay_mpi_io_headers conduit_relay_mpi_io_hdf5.hpp)
-    list(APPEND conduit_relay_mpi_io_sources conduit_relay_hdf5.cpp)
+    list(APPEND conduit_relay_mpi_io_sources conduit_relay_io_hdf5.cpp)
     list(APPEND conduit_relay_mpi_io_deps hdf5)
 endif()
 if(ADIOS_FOUND)
     list(APPEND conduit_relay_mpi_io_headers conduit_relay_mpi_io_adios.hpp)
-    list(APPEND conduit_relay_mpi_io_sources conduit_relay_adios.cpp)
+    list(APPEND conduit_relay_mpi_io_sources conduit_relay_io_adios.cpp)
     # Link with parallel versions of ADIOS
     list(APPEND conduit_relay_mpi_io_deps adios_mpi)
 endif()
@@ -373,5 +370,8 @@ add_compiled_library(NAME conduit_relay_mpi_io
                      SOURCES ${conduit_relay_mpi_io_sources} ${conduit_relay_mpi_io_c_sources}
                      DEPENDS_ON ${conduit_relay_mpi_io_deps}
                      HEADERS_DEST_DIR include/conduit)
+
+blt_add_target_compile_flags(TO conduit_relay_mpi_io FLAGS "-DCONDUIT_RELAY_IO_MPI_ENABLED")
+
 
 endif() # end if MPI_FOUND

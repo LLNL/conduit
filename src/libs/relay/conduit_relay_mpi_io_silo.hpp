@@ -88,7 +88,7 @@ namespace io
 {
 
 // Functions are provided by this include file.
-#include "conduit_relay_silo_api.hpp"
+#include "conduit_relay_io_silo_api.hpp"
 
 }
 //-----------------------------------------------------------------------------

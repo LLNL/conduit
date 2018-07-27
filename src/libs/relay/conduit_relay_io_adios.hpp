@@ -44,12 +44,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay_adios.hpp
+/// file: conduit_relay_io_adios.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_RELAY_ADIOS_HPP
-#define CONDUIT_RELAY_ADIOS_HPP
+#ifndef CONDUIT_RELAY_IO_ADIOS_HPP
+#define CONDUIT_RELAY_IO_ADIOS_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib include 
@@ -80,8 +80,11 @@ namespace io
 #define CONDUIT_RELAY_COMMUNICATOR_ARG0(ARG) 
 #define CONDUIT_RELAY_COMMUNICATOR_ARG(ARG) 
 
+// for non-mpi adios we need to define _NOMPI
+#define _NOMPI
+
 // Functions are provided by this include file.
-#include "conduit_relay_adios_api.hpp"
+#include "conduit_relay_io_adios_api.hpp"
 
 }
 //-----------------------------------------------------------------------------

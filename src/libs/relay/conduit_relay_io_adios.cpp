@@ -44,29 +44,13 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay_adios.cpp
+/// file: conduit_relay_io_adios.cpp
 ///
 //-----------------------------------------------------------------------------
-
-#ifdef USE_MPI
-  // BLT's SetupMPI defines this macro globally. That is not desirable when
-  // also building a serial library. We defined _NOMPI (per ADIOS convention)
-  // in relay's CMakeLists.txt when we are building the serial relay library.
-  // This files is conditionally compiled and part of both serial and parallel
-  // relay libraries. If serial, we need to turn off USE_MPI if we find _NOMPI
-  // to get the namespace definition right for serial vs parallel.
-  #ifdef _NOMPI
-    #undef USE_MPI
-    #include "conduit_relay_io_adios.hpp"
-  #else
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     #include "conduit_relay_mpi_io_adios.hpp"
-  #endif
 #else
-  // Force serial ADIOS using _NOMPI
-  #ifndef _NOMPI
-  #define _NOMPI
-  #endif
-  #include "conduit_relay_io_adios.hpp"
+    #include "conduit_relay_io_adios.hpp"
 #endif
 
 //-----------------------------------------------------------------------------
