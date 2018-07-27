@@ -42,6 +42,13 @@
 // 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+
+//-----------------------------------------------------------------------------
+///
+/// file: conduit_relay_io_ls_exe.cpp
+///
+//-----------------------------------------------------------------------------
+
 #include <conduit_relay.hpp>
 #include <iostream>
 
@@ -68,7 +75,7 @@ main(int argc, char *argv[])
         {
             try
             {
-                int nts = relay::io::query_number_of_time_steps(argv[i]);
+                int nts  = relay::io::query_number_of_time_steps(argv[i]);
                 int ndom = relay::io::query_number_of_domains(argv[i]);
 
                 cout << argv[i] << ":" << endl;

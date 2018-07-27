@@ -48,7 +48,6 @@
 #
 ###############################################################################
 
-add_subdirectory(conduitls)
 add_subdirectory(staging)
 
 # install using and python examples

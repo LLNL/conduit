@@ -228,13 +228,24 @@ blt_add_executable(
     DEPENDS_ON  conduit_relay
     OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-#add_executable(conduit_relay_node_viewer conduit_relay_web_node_viewer_exe.cpp)
-#target_link_libraries(conduit_relay_node_viewer conduit_relay)
-
 # add install target
 install(TARGETS conduit_relay_node_viewer
         RUNTIME DESTINATION bin)
 
+
+###################################
+# add conduit_relay_io_ls xe
+###################################
+blt_add_executable(
+    NAME        conduit_relay_io_ls
+    SOURCES     conduit_relay_io_ls_exe.cpp
+    DEPENDS_ON  conduit_relay
+    OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
+
+# add install target
+install(TARGETS conduit_relay_io_ls
+        RUNTIME DESTINATION bin)
 
 ##############################################################
 # install files needed for the relay web node viewer client
