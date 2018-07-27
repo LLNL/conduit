@@ -129,7 +129,7 @@ namespace conduit
 namespace relay
 {
 
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
 //-----------------------------------------------------------------------------
 // -- begin conduit::relay::mpi --
 //-----------------------------------------------------------------------------
@@ -548,7 +548,7 @@ public:
         read_verbose(0),
         read_timeout(-1.f) // block by default
     {
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
         transport = "MPI";
 #endif
     }
@@ -731,7 +731,7 @@ static void initialize(
         // are not initialized until we use them.
         memset(read_methods_initialized, 0, sizeof(int)*MAX_READ_METHODS);
 
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
         // See if MPI is initialized.
         //int mi = 0;
         //MPI_Initialized(&mpi_init);
@@ -777,7 +777,7 @@ static void finalize(
     cleanup_options();
     finalize_read_methods();
     // cout << "adios_finalize()" << endl;
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     int rank = 0;
     MPI_Comm_rank(comm, &rank);
     adios_finalize(rank);
@@ -796,14 +796,14 @@ static void iterate_conduit_node_internal(
     void (*func)(const Node &,
                  const std::string &,
                  void *,
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
                  MPI_Comm
 #else
                  int
 #endif
                 ),
     void *funcData,
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     MPI_Comm comm
 #else
     int comm
@@ -834,14 +834,14 @@ static void iterate_conduit_node(
     void (*func)(const Node &,
                  const std::string &,
                  void *,
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
                  MPI_Comm
 #else
                  int
 #endif
                 ),
     void *funcData,
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     MPI_Comm comm
 #else
     int comm
@@ -940,7 +940,7 @@ static ADIOS_DATATYPES conduit_dtype_to_adios_dtype(const Node &node)
 static void define_variables(const Node &node, 
     const std::string &node_path,
     void *funcData,
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     MPI_Comm 
 #else
     int 
@@ -1044,7 +1044,7 @@ static void define_variables(const Node &node,
 static void write_variables(const Node &node, 
     const std::string &node_path,
     void *funcData,
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     MPI_Comm
 #else
     int
@@ -1125,7 +1125,7 @@ static bool declare_group(int64_t *gid,
 static void hash_tree(const Node &node, 
     const std::string &node_path,
     void *funcData,
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     MPI_Comm
 #else
     int
@@ -1151,7 +1151,7 @@ save(const Node &node, const std::string &path, const char *flag
                                     file_path,
                                     state.adios_path);
 
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     MPI_Comm_rank(comm, &internals::rank);
     MPI_Comm_size(comm, &internals::size);
 
@@ -1198,7 +1198,7 @@ save(const Node &node, const std::string &path, const char *flag
     unsigned int nodehash = 0;
     int total_hashcount;
     int this_node_rank = internals::rank;
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     iterate_conduit_node(node, hash_tree, &nodehash, comm);
     unsigned int reduced_nodehash = 0;
     MPI_Allreduce(&nodehash, &reduced_nodehash, 1, 
@@ -1254,7 +1254,7 @@ save(const Node &node, const std::string &path, const char *flag
     // Group
     //
     create_group_name(state.groupName);
-#if defined(USE_MPI) && defined(MAKE_SEPARATE_GROUPS)
+#if defined(CONDUIT_RELAY_IO_MPI_ENABLED) && defined(MAKE_SEPARATE_GROUPS)
     MPI_Bcast(state.groupName, 32, MPI_CHAR, 0, comm);
 #endif
     std::string timeIndex;
@@ -1266,7 +1266,7 @@ save(const Node &node, const std::string &path, const char *flag
 #ifdef DISPARATE_TREE_SUPPORT
         char domain_map_name[32];
         create_domain_map_name(domain_map_name);
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
         MPI_Bcast(domain_map_name, 32, MPI_CHAR, 0, comm);
 #endif
         // Define a domainmap variable.
@@ -1286,7 +1286,7 @@ save(const Node &node, const std::string &path, const char *flag
         sprintf(nhprefix, "%010u", nodehash);
         state.adios_path = conduit::utils::join_path(std::string(nhprefix), state.adios_path);
 #endif
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
         iterate_conduit_node(node, define_variables, &state, comm);
 #else
         iterate_conduit_node(node, define_variables, &state, 0);
@@ -1299,7 +1299,7 @@ save(const Node &node, const std::string &path, const char *flag
             << "\", \"" << path << "\", "
             << "\"" << flag << "\", comm)")
         if(adios_open(&state.fid, state.groupName, file_path.c_str(), flag
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
                       , comm
 #else
                       , 0
@@ -1319,7 +1319,7 @@ save(const Node &node, const std::string &path, const char *flag
                 DEBUG_PRINT_RANK("adios_write(fid, \"" << domain_map_name << "\", dm)")
                 adios_write(state.fid, domain_map_name, dm);
 #endif
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
                 iterate_conduit_node(node, write_variables, &state, comm);
 #else
                 iterate_conduit_node(node, write_variables, &state, 0);
@@ -1444,7 +1444,7 @@ open_file_and_process(adios_load_state *state,
     CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
     )
 {
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     MPI_Comm_rank(comm, &internals::rank);
     MPI_Comm_size(comm, &internals::size);
 #endif
@@ -1456,7 +1456,7 @@ open_file_and_process(adios_load_state *state,
        << internals::options()->read_parameters
        << "\")");
     adios_read_init_method(options()->read_method, 
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
                            comm,
 #else
                            0,
@@ -1475,7 +1475,7 @@ open_file_and_process(adios_load_state *state,
         //       providing access to time steps.
         afile = adios_read_open_file(state->filename.c_str(), 
                     options()->read_method,
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
                     comm
 #else
                     0
@@ -1493,7 +1493,7 @@ open_file_and_process(adios_load_state *state,
 
         afile = adios_read_open(state->filename.c_str(), 
                     options()->read_method,
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
                     comm,
 #else
                     0,
@@ -1827,7 +1827,7 @@ load(adios_load_state *state, Node *node
     )
 {
     open_file_and_process(state, load_node, node
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
         ,comm
 #endif
         );
@@ -1889,7 +1889,7 @@ query_number_of_domains(adios_load_state *state
 { 
     int ndoms = 0;
     open_file_and_process(state, find_max_domains, &ndoms
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
         ,comm
 #endif
         );
@@ -1916,7 +1916,7 @@ query_number_of_time_steps(adios_load_state *state
 { 
     int ntimesteps = 0;
     open_file_and_process(state, find_num_timesteps, &ntimesteps
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
         ,comm
 #endif
         );
@@ -1936,7 +1936,7 @@ adios_set_options(const Node &opts
     CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
     )
 {
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     internals::initialize(comm);
 #else
     internals::initialize();
@@ -1950,7 +1950,7 @@ adios_options(Node &opts
     CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
     )
 {
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     internals::initialize(comm);
 #else
     internals::initialize();
@@ -1964,7 +1964,7 @@ adios_initialize_library(
     CONDUIT_RELAY_COMMUNICATOR_ARG0(MPI_Comm comm)
     )
 {
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     internals::initialize(comm);
 #else
     internals::initialize();
@@ -1977,7 +1977,7 @@ adios_finalize_library(
     CONDUIT_RELAY_COMMUNICATOR_ARG0(MPI_Comm comm)
     )
 {
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     internals::finalize(comm);
 #else
     internals::finalize();
@@ -1990,7 +1990,7 @@ adios_save(const Node &node, const std::string &path
     CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
     )
 {
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     internals::save(node, path, "w", comm);
 #else
     internals::save(node, path, "w");
@@ -2003,7 +2003,7 @@ void adios_save_merged(const Node &node, const std::string &path
    )
 {
     // NOTE: we use "u" to update the file so the time step is not incremented.
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     internals::save(node, path, "u", comm);
 #else
     internals::save(node, path, "u");
@@ -2022,7 +2022,7 @@ void adios_add_time_step(const Node &node, const std::string &path
                                     adios_path);
 
     // NOTE: we use "a" to update the file to the next time step.
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     internals::save(node, path, "a", comm);
 #else
     internals::save(node, path, "a");
@@ -2046,7 +2046,7 @@ adios_load(const std::string &path,
     // This may override the timestep and domain.
     internals::splitpath(path, state.filename, state.time_step, state.domain, state.subpaths);
 
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     internals::load(&state, &node, comm);
 #else
     internals::load(&state, &node);
@@ -2060,7 +2060,7 @@ adios_load(const std::string &path, Node &node
    )
 {
     internals::adios_load_state state;
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     // Read the rank'th domain if there is one.
     MPI_Comm_rank(comm, &state.domain);
 #endif
@@ -2069,7 +2069,7 @@ adios_load(const std::string &path, Node &node
     // This may override the timestep and domain.
     internals::splitpath(path, state.filename, state.time_step, state.domain, state.subpaths);
 
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     internals::load(&state, &node, comm);
 #else
     internals::load(&state, &node);
@@ -2091,7 +2091,7 @@ adios_query_number_of_time_steps(const std::string &path
                                     state.filename,
                                     tmp);
 
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     return internals::query_number_of_time_steps(&state, comm);
 #else
     return internals::query_number_of_time_steps(&state);
@@ -2110,7 +2110,7 @@ adios_query_number_of_domains(const std::string &path
     // This may override the timestep and domain.
     internals::splitpath(path, state.filename, state.time_step, state.domain, state.subpaths);
 
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     return internals::query_number_of_domains(&state, comm);
 #else
     return internals::query_number_of_domains(&state);
@@ -2122,7 +2122,7 @@ adios_query_number_of_domains(const std::string &path
 // -- end conduit::relay::<mpi>::io --
 //-----------------------------------------------------------------------------
 
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::relay::mpi --

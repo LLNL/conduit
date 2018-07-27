@@ -87,6 +87,7 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_relay_exports.h.in"
 set(conduit_relay_headers
     conduit_relay.hpp
     conduit_relay_io.hpp
+    conduit_relay_io_identify_protocol.hpp
     conduit_relay_web.hpp
     conduit_relay_web_node_viewer_server.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_exports.h
@@ -105,6 +106,7 @@ set(conduit_relay_c_headers
 set(conduit_relay_sources
     conduit_relay.cpp
     conduit_relay_io.cpp
+    conduit_relay_io_identify_protocol.cpp
     conduit_relay_web.cpp
     conduit_relay_web_node_viewer_server.cpp)
 
@@ -307,7 +309,6 @@ add_compiled_library(NAME conduit_relay_mpi
                      DEPENDS_ON ${conduit_relay_mpi_deps}
                      HEADERS_DEST_DIR include/conduit)
 
-endif() # end if MPI_FOUND
 
 ################################################################
 # If we have mpi, add the conduit relay mpi io library
@@ -317,11 +318,11 @@ endif() # end if MPI_FOUND
 # relay+relay_mpi.
 ################################################################
 
-if(MPI_FOUND)
 #
 # Specify relay mpi io sources
 #
-set(conduit_relay_mpi_io_sources conduit_relay_mpi_io.cpp)
+set(conduit_relay_mpi_io_sources conduit_relay_mpi_io.cpp
+                                 conduit_relay_io_identify_protocol.cpp)
 
 #
 # Specify relay mpi io headers

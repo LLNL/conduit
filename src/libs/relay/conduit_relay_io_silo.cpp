@@ -94,7 +94,7 @@ namespace conduit
 namespace relay
 {
 
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
 //-----------------------------------------------------------------------------
 // -- begin conduit::relay::mpi --
 //-----------------------------------------------------------------------------
@@ -1428,7 +1428,7 @@ void silo_mesh_write(const Node &node,
 // -- end conduit::relay::<mpi>::io --
 //-----------------------------------------------------------------------------
 
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::relay::mpi --

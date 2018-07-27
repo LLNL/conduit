@@ -55,7 +55,8 @@
 //-----------------------------------------------------------------------------
 #include <iostream>
 
-
+// Include a helper function for figuring out protocols.
+#include "conduit_relay_mpi_io_identify_protocol.hpp"
 
 // includes for optional features
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
@@ -93,9 +94,6 @@ namespace mpi
 //-----------------------------------------------------------------------------
 namespace io
 {
-
-// Include a helper function for figuring out protocols.
-#include "conduit_relay_identify_protocol.hpp"
 
 //---------------------------------------------------------------------------//
 std::string

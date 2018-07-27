@@ -121,7 +121,7 @@ namespace conduit
 namespace relay
 {
 
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
 //-----------------------------------------------------------------------------
 // -- begin conduit::relay::mpi --
 //-----------------------------------------------------------------------------
@@ -2244,7 +2244,7 @@ hdf5_has_path(hid_t hdf5_id,
 // -- end conduit::relay::<mpi>::io --
 //-----------------------------------------------------------------------------
 
-#ifdef USE_MPI
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
 }
 //-----------------------------------------------------------------------------
 // -- begin conduit::relay::mpi --
