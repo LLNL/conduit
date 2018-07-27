@@ -93,25 +93,22 @@ IF(ENABLE_MPI)
     FIND_ADIOS("" ADIOS_FOUND ADIOS_INC ADIOS_LIB)
     FIND_ADIOS("readonly" ADIOSREAD_FOUND ADIOSREAD_INC ADIOSREAD_LIB)
 
-    blt_register_library(NAME adios
-                         INCLUDES ${ADIOS_INC}
-                         LIBRARIES ${ADIOS_LIB} )
-    blt_register_library(NAME adiosread
-                         INCLUDES ${ADIOSREAD_INC}
-                         LIBRARIES ${ADIOSREAD_LIB} )
+    # bundle both std lib  and read only libs as 'adios_mpi'
+
+    blt_register_library(NAME adios_mpi
+                         INCLUDES ${ADIOS_INC}  ${ADIOSREAD_INC}
+                         LIBRARIES ${ADIOS_LIB} ${ADIOSREAD_LIB})
 ENDIF(ENABLE_MPI)
 
 # Find the serial ADIOS library variants that we want.
 FIND_ADIOS("sequential" ADIOS_FOUND ADIOS_SEQ_INC ADIOS_SEQ_LIB)
 FIND_ADIOS("sequential;readonly" ADIOSREAD_FOUND ADIOSREAD_SEQ_INC ADIOSREAD_SEQ_LIB)
 
+# bundle both seq and seq read only libs as 'adios_nompi'
 blt_register_library(NAME adios_nompi
-                     INCLUDES ${ADIOS_SEQ_INC}
-                     LIBRARIES ${ADIOS_SEQ_LIB} )
+                     INCLUDES ${ADIOS_SEQ_INC} ${ADIOSREAD_SEQ_INC}
+                     LIBRARIES ${ADIOS_SEQ_LIB} ${ADIOSREAD_SEQ_LIB})
 
-blt_register_library(NAME adiosread_nompi
-                     INCLUDES ${ADIOSREAD_SEQ_INC}
-                     LIBRARIES ${ADIOSREAD_SEQ_LIB} )
 
 # Print out some results.
 MESSAGE(STATUS "  ADIOS_INC=${ADIOS_INC}")

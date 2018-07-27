@@ -165,15 +165,11 @@ set(conduit_relay_fortran_sources
 #
 # Link with conduit
 #
-# target_link_libraries(conduit_relay PUBLIC conduit)
-
-
 set(conduit_relay_deps conduit)
 
 if(UNIX AND NOT APPLE)
     # we need these for civetweb on linux, we may need similar libs
     # on windows (OSX appears ok without them)
-    #target_link_libraries(conduit_relay PUBLIC dl rt ${CMAKE_THREAD_LIBS_INIT})
     list(APPEND conduit_relay_deps dl rt ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
@@ -182,12 +178,10 @@ endif()
 #
 if(SILO_FOUND)
     list(APPEND conduit_relay_deps silo)
-    #target_link_libraries(conduit_relay PUBLIC ${SILO_LIBRARIES})
 endif()
 
 if(HDF5_FOUND)
     list(APPEND conduit_relay_deps hdf5)
-    #target_link_libraries(conduit_relay PUBLIC ${HDF5_LIBRARIES})
     if(HDF5_IS_PARALLEL AND MPI_FOUND)
         list(APPEND conduit_relay_deps mpi)
     endif()
@@ -195,14 +189,15 @@ endif()
 
 if(ADIOS_FOUND)
     # Link with the serial ADIOS libraries.
-    list(APPEND conduit_relay_deps adios_nompi adiosread_nompi)
+    list(APPEND conduit_relay_deps adios_nompi)
 endif()
 
 
 add_compiled_library(NAME conduit_relay
                      EXPORT conduit
                      HEADERS ${conduit_relay_headers} ${conduit_relay_c_headers}
-                     SOURCES ${conduit_relay_sources} ${conduit_relay_c_sources} ${conduit_relay_fortran_sources}
+                     SOURCES ${conduit_relay_sources} ${conduit_relay_c_sources}
+                             ${conduit_relay_fortran_sources}
                              $<TARGET_OBJECTS:conduit_civetweb>
                      DEPENDS_ON ${conduit_relay_deps}
                      HEADERS_DEST_DIR include/conduit)
@@ -210,7 +205,6 @@ add_compiled_library(NAME conduit_relay
 add_target_compile_flags(TARGET conduit_relay
                          FLAGS -D_NOMPI)
 
-#  todo?
 if(FORTRAN_FOUND)
     set_target_properties(conduit_relay
                           PROPERTIES Fortran_FORMAT "FREE")
@@ -306,8 +300,6 @@ set(conduit_relay_mpi_sources conduit_relay_mpi.cpp)
 #
 set(conduit_relay_mpi_deps conduit mpi)
 
-# include_directories(${MPI_CXX_INCLUDE_PATH})
-
 #
 # setup conduit relay mpi lib
 #
@@ -317,21 +309,6 @@ add_compiled_library(NAME conduit_relay_mpi
                      SOURCES ${conduit_relay_mpi_sources}
                      DEPENDS_ON ${conduit_relay_mpi_deps}
                      HEADERS_DEST_DIR include/conduit)
-#
-# add compile and link flags necessary to use mpi
-# #
-# add_target_compile_flags(TARGET conduit_relay_mpi
-#                          FLAGS ${MPI_CXX_COMPILE_FLAGS})
-#
-# add_target_link_flags(TARGET conduit_relay_mpi
-#                       FLAGS ${MPI_CXX_LINK_FLAGS})
-#
-#
-# #
-# # Link with conduit and MPI
-# #
-# target_link_libraries(conduit_relay_mpi conduit ${MPI_CXX_LIBRARIES})
-
 
 endif() # end if MPI_FOUND
 
@@ -384,7 +361,7 @@ if(ADIOS_FOUND)
     list(APPEND conduit_relay_mpi_io_headers conduit_relay_mpi_io_adios.hpp)
     list(APPEND conduit_relay_mpi_io_sources conduit_relay_adios.cpp)
     # Link with parallel versions of ADIOS
-    list(APPEND conduit_relay_mpi_io_deps adios adiosread)
+    list(APPEND conduit_relay_mpi_io_deps adios_mpi)
 endif()
 
 #
