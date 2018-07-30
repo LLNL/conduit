@@ -131,17 +131,35 @@ hid_t hdf5_create_file(const std::string &file_path);
 void hdf5_close_file(hid_t hdf5_id);
 
 //-----------------------------------------------------------------------------
-/// Write node data to a given path
+/// Save node data to a given path.
+///
+/// Save Semantics: Existing file will be overwritten
+/// /// Calls hdf5_write(node,path,false);
+///
 ///
 /// This methods supports a file system and hdf5 path, joined using a ":"
 ///  ex: "/path/on/file/system.hdf5:/path/inside/hdf5/file"
 /// 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API hdf5_write(const Node &node,
-                                  const std::string &path);
+void CONDUIT_RELAY_API hdf5_save(const Node &node,
+                                 const std::string &path);
 
 //-----------------------------------------------------------------------------
-/// Write node data to a given path in an existing file.
+/// Save node data to given file system path and internal hdf5 path
+///
+/// Save Semantics: Existing file will be overwritten
+/// Calls hdf5_write(node,file_path,hdf5_path,false);
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API hdf5_save(const Node &node,
+                                 const std::string &file_path,
+                                 const std::string &hdf5_path);
+
+//-----------------------------------------------------------------------------
+/// Write node data to a given path.
+///
+/// Append Semantics: Append to existing file
+/// Calls hdf5_write(node,path,true);
+///
 ///
 /// This methods supports a file system and hdf5 path, joined using a ":"
 ///  ex: "/path/on/file/system.hdf5:/path/inside/hdf5/file"
@@ -152,10 +170,33 @@ void CONDUIT_RELAY_API hdf5_append(const Node &node,
 
 //-----------------------------------------------------------------------------
 /// Write node data to given file system path and internal hdf5 path
+///
+/// Append Semantics: Append to existing file
+/// Calls hdf5_write(node,file_path,hdf5_path,true);
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API hdf5_append(const Node &node,
+                                   const std::string &file_path,
+                                   const std::string &hdf5_path);
+
+
+//-----------------------------------------------------------------------------
+/// Write node data to a given path in an existing file.
+///
+/// This methods supports a file system and hdf5 path, joined using a ":"
+///  ex: "/path/on/file/system.hdf5:/path/inside/hdf5/file"
+/// 
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API hdf5_write(const Node &node,
+                                  const std::string &path,
+                                  bool append=false);
+
+//-----------------------------------------------------------------------------
+/// Write node data to given file system path and internal hdf5 path
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API hdf5_write(const Node &node,
                                   const std::string &file_path,
-                                  const std::string &hdf5_path);
+                                  const std::string &hdf5_path,
+                                  bool append=false);
 
 //-----------------------------------------------------------------------------
 /// Write node data to the hdf5_path relative to group represented  by 

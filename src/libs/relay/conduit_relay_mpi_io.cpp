@@ -254,7 +254,7 @@ save(const Node &node,
     {
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
         hdf5_set_options(options);
-        hdf5_write(node,path);
+        hdf5_save(node,path);
 #else
         CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
                       "Failed to save conduit node to path " << path);
@@ -333,7 +333,7 @@ save_merged(const Node &node,
     {
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
         hdf5_set_options(options);
-        hdf5_append(node,path);
+        hdf5_write(node,path);
 #else
         CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
                       "Failed to save conduit node to path " << path);

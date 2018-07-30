@@ -755,6 +755,77 @@ TEST(conduit_relay_io_hdf5, hdf5_path_exists)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, hdf5_create_append_methods)
+{    
+    std::string test_file_name = "tout_hdf5_open_append.hdf5";
+    if(utils::is_file(test_file_name))
+    {
+        utils::remove_file(test_file_name);
+    }
+
+
+    Node n;
+    n["a/b/c/d"] = 10;
+    
+    io::hdf5_write(n,test_file_name,true);
+    
+    n.reset();
+    n["a/b/c/e"] = 20;
+    
+    io::hdf5_write(n,test_file_name,true);
+    
+    
+    Node n_load;
+    io::hdf5_read(test_file_name,n_load);
+    
+    EXPECT_TRUE(n_load.has_path("a"));
+    EXPECT_TRUE(n_load.has_path("a/b"));
+    EXPECT_TRUE(n_load.has_path("a/b/c"));
+    EXPECT_TRUE(n_load.has_path("a/b/c/d"));
+    EXPECT_TRUE(n_load.has_path("a/b/c/e"));
+    
+    EXPECT_EQ(n_load["a/b/c/d"].to_int32(),10);
+    EXPECT_EQ(n_load["a/b/c/e"].to_int32(),20);
+    
+    
+    io::hdf5_write(n,test_file_name,false);
+    
+    n_load.reset();
+    io::hdf5_read(test_file_name,n_load);
+    
+    EXPECT_FALSE(n_load.has_path("a/b/c/d"));
+    EXPECT_EQ(n_load["a/b/c/e"].to_int32(),20);
+    
+    n.reset();
+    n["a/b/c/d"] = 10;
+    io::hdf5_save(n,test_file_name);
+    
+    n_load.reset();
+    io::hdf5_read(test_file_name,n_load);
+    
+    EXPECT_FALSE(n_load.has_path("a/b/c/e"));
+    EXPECT_EQ(n_load["a/b/c/d"].to_int32(),10);
+    
+    n.reset();
+    n["a/b/c/e"] = 20;
+    
+    io::hdf5_write(n,test_file_name,true);
+    
+    n.reset();
+    n["a/b/c/e"] = 20;
+    
+    io::hdf5_append(n,test_file_name);
+    n_load.reset();
+    io::hdf5_read(test_file_name,n_load);
+
+    EXPECT_TRUE(n_load.has_path("a/b/c/d"));    
+    EXPECT_TRUE(n_load.has_path("a/b/c/e"));
+    EXPECT_EQ(n_load["a/b/c/d"].to_int32(),10);
+    EXPECT_EQ(n_load["a/b/c/e"].to_int32(),20);    
+    
+}
+
 
 
 //-----------------------------------------------------------------------------

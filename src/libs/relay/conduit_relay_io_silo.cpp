@@ -399,27 +399,37 @@ silo_write_field(DBfile *dbfile,
 
         DataType dtype = n_var["values"].dtype();
 
-        if( dtype.is_float() || dtype.is_float32() )
+        if( dtype.is_float() )
         {
             vals_type = DB_FLOAT;
             vals_ptr = (void*)n_values.as_float_ptr();
         }
-        else  if( dtype.is_double() || dtype.is_float64() )
+        else if( dtype.is_double() )
         {
             vals_type = DB_DOUBLE;
             vals_ptr = (void*)n_values.as_double_ptr();
         }
-        else  if( dtype.is_int() || dtype.is_int32() )
+        else if( dtype.is_int() )
         {
             vals_type = DB_INT;
             vals_ptr = (void*)n_values.as_int_ptr();
         }
-        else  if( dtype.is_char() || dtype.is_int8() )
+        else if( dtype.is_long() )
+        {
+            vals_type = DB_LONG;
+            vals_ptr = (void*)n_values.as_long_ptr();
+        }
+        else if( dtype.is_long_long() )
+        {
+            vals_type = DB_LONG_LONG;
+            vals_ptr = (void*)n_values.as_long_long_ptr();
+        }
+        else if( dtype.is_char() )
         {
             vals_type = DB_CHAR;
             vals_ptr = (void*)n_values.as_char_ptr();
         }
-        else  if( dtype.is_short() || dtype.is_int16() )
+        else if( dtype.is_short() )
         {
             vals_type = DB_SHORT;
             vals_ptr = (void*)n_values.as_short_ptr();
