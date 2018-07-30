@@ -144,20 +144,20 @@ conduit_relay_io_save_merged3(conduit_node *cnode,
 }
 
 //-----------------------------------------------------------------------------
-void conduit_relay_mpi_io_add_time_step(conduit_node *cnode,
+void conduit_relay_mpi_io_add_step(conduit_node *cnode,
     const char *path)
 {
     Node *n = cpp_node(cnode);
-    relay::io::add_time_step(*n, std::string(path));
+    relay::io::add_step(*n, std::string(path));
 }
 
 //-----------------------------------------------------------------------------
-void conduit_relay_mpi_io_add_time_step2(conduit_node *cnode,
+void conduit_relay_mpi_io_add_step2(conduit_node *cnode,
     const char *path, conduit_node *coptions)
 {
     Node *n = cpp_node(cnode);
     Node *opt = cpp_node(coptions);
-    relay::io::add_time_step(*n, std::string(path), *opt);
+    relay::io::add_step(*n, std::string(path), *opt);
 }
 
 //-----------------------------------------------------------------------------
@@ -190,30 +190,44 @@ conduit_relay_io_load3(const char *path, const char *protocol,
 
 //-----------------------------------------------------------------------------
 void
-conduit_relay_io_load4(const char *path, const char *protocol,
-    int time_step, int domain, conduit_node *cnode)
+conduit_relay_io_load4(const char *path,
+                       const char *protocol,
+                       int step,
+                       int domain,
+                       conduit_node *cnode)
 {
     Node *n = cpp_node(cnode);
-    relay::io::load(std::string(path), std::string(protocol),
-        time_step, domain, *n);
+    relay::io::load(std::string(path),
+                    std::string(protocol),
+                    step,
+                    domain,
+                    *n);
 }
 
 //-----------------------------------------------------------------------------
 void
-conduit_relay_io_load5(const char *path, const char *protocol,
-    int time_step, int domain, conduit_node *coptions, conduit_node *cnode)
+conduit_relay_io_load5(const char *path,
+                       const char *protocol,
+                       int step,
+                       int domain,
+                       conduit_node *coptions,
+                       conduit_node *cnode)
 {
     Node *n = cpp_node(cnode);
     Node *opt = cpp_node(coptions);
-    relay::io::load(std::string(path), std::string(protocol),
-        time_step, domain, *opt, *n);
+    relay::io::load(std::string(path),
+                    std::string(protocol),
+                    step,
+                    domain,
+                    *opt,
+                    *n);
 }
 
 //-----------------------------------------------------------------------------
 int
-conduit_relay_io_query_number_of_time_steps(const char *path)
+conduit_relay_io_query_number_of_steps(const char *path)
 {
-    return relay::io::query_number_of_time_steps(std::string(path));
+    return relay::io::query_number_of_steps(std::string(path));
 }
 
 //-----------------------------------------------------------------------------

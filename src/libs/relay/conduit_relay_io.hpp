@@ -135,16 +135,16 @@ void CONDUIT_RELAY_API save_merged(const Node &node,
 
 
 ///
-/// ``add_time_step`` adds a new time step of data to the file.
+/// ``add_step`` adds a new time step of data to the file.
 ///
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API add_time_step(const Node &node,
-                                     const std::string &path);
+void CONDUIT_RELAY_API add_step(const Node &node,
+                                const std::string &path);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API add_time_step(const Node &node,
-                                     const std::string &path,
-                                     const Node &options);
+void CONDUIT_RELAY_API add_step(const Node &node,
+                                const std::string &path,
+                                const Node &options);
 
 ///
 /// ``load`` works like a 'set', the node is reset and then populated
@@ -168,14 +168,14 @@ void CONDUIT_RELAY_API load(const std::string &path,
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API load(const std::string &path,
                             const std::string &protocol,
-                            int timestep,
+                            int step,
                             int domain,
                             Node &node);
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API load(const std::string &path,
                             const std::string &protocol,
-                            int timestep,
+                            int step,
                             int domain,
                             const Node &options,
                             Node &node);
@@ -196,10 +196,10 @@ void CONDUIT_RELAY_API load_merged(const std::string &path,
                                    Node &node);
 
 ///
-/// ``query_number_of_time_steps`` return the number of time steps.
+/// ``query_number_of_steps`` return the number of steps.
 ///
 //-----------------------------------------------------------------------------
-int CONDUIT_RELAY_API query_number_of_time_steps(const std::string &path);
+int CONDUIT_RELAY_API query_number_of_steps(const std::string &path);
 
 ///
 /// ``query_number_of_domains`` return the number of domains.

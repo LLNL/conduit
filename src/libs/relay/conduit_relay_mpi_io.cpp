@@ -384,10 +384,10 @@ save_merged(const Node &node,
 
 //---------------------------------------------------------------------------//
 void
-add_time_step(const Node &node,
-              const std::string &path,
-              const Node &options,
-              MPI_Comm comm)
+add_step(const Node &node,
+         const std::string &path,
+         const Node &options,
+         MPI_Comm comm)
 {
     std::string protocol;
     identify_protocol(path,protocol);
@@ -398,14 +398,14 @@ add_time_step(const Node &node,
         adios_options(save_options, comm);
         adios_set_options(options, comm);
 
-        adios_add_time_step(node, path, comm);
+        adios_add_step(node, path, comm);
 
         adios_set_options(save_options, comm);
 #endif
     }
     else
     {
-        CONDUIT_ERROR("add_time_step is not currently supported for protocol "
+        CONDUIT_ERROR("add_step is not currently supported for protocol "
                       << protocol);
 
         // Future idea: make path be some type of filename generator object
@@ -416,12 +416,12 @@ add_time_step(const Node &node,
 
 //---------------------------------------------------------------------------//
 void
-add_time_step(const Node &node,
-              const std::string &path,
-              MPI_Comm comm)
+add_step(const Node &node,
+         const std::string &path,
+         MPI_Comm comm)
 {
     Node options;
-    add_time_step(node, path, options, comm);
+    add_step(node, path, options, comm);
 }
 
 //---------------------------------------------------------------------------//
@@ -503,7 +503,7 @@ load(const std::string &path,
 void
 load(const std::string &path,
      const std::string &protocol,
-     int timestep,
+     int step,
      int domain,
      const Node &options,
      Node &node,
@@ -550,7 +550,7 @@ load(const std::string &path,
         adios_set_options(options, comm);
 
         node.reset();
-        adios_load(path,timestep,domain,node,comm);
+        adios_load(path,step,domain,node,comm);
 
         adios_set_options(load_options, comm);
 #else
@@ -569,13 +569,13 @@ load(const std::string &path,
 void
 load(const std::string &path,
      const std::string &protocol,
-     int timestep,
+     int step,
      int domain,
      Node &node,
      MPI_Comm comm)
 {
     Node options;
-    load(path, protocol, timestep, domain, options, node, comm);
+    load(path, protocol, step, domain, options, node, comm);
 }
 
 //---------------------------------------------------------------------------//
@@ -644,7 +644,7 @@ load_merged(const std::string &path,
 }
 
 //-----------------------------------------------------------------------------
-int query_number_of_time_steps(const std::string &path, MPI_Comm comm)
+int query_number_of_steps(const std::string &path, MPI_Comm comm)
 {
     int ndoms = 1;
     std::string protocol;
@@ -654,7 +654,7 @@ int query_number_of_time_steps(const std::string &path, MPI_Comm comm)
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         // TODO: see if we can do this on comm's rank 0 and bcast.
-        ndoms = adios_query_number_of_time_steps(path, comm);
+        ndoms = adios_query_number_of_steps(path, comm);
 #endif
     }
 

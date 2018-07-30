@@ -627,14 +627,14 @@ TEST(conduit_relay_io_adios, test_time_series)
         n["f"] = 3.14159f * float(ts);
 
         //std::cout << "time step " << ts << " out=" << n.to_json() << std::endl;
-        relay::io::add_time_step(n, path);
+        relay::io::add_step(n, path);
 
-        // Make sure the file has the new time step.
-        int qnts = relay::io::query_number_of_time_steps(path);
+        // Make sure the file has the new step.
+        int qnts = relay::io::query_number_of_steps(path);
         EXPECT_EQ(qnts, ts+1);
     }
 
-    // Read back data for each time step.
+    // Read back data for each step.
     for(int ts = 0; ts < nts; ++ts)
     {
         Node in;
@@ -643,7 +643,7 @@ TEST(conduit_relay_io_adios, test_time_series)
         EXPECT_EQ(compare_nodes(in, out[ts], in), true);
     }
 
-    // Try reading back by encoding the time step in a path.
+    // Try reading back by encoding the step in a path.
     for(int ts = 0; ts < nts; ++ts)
     {
         std::ostringstream oss;

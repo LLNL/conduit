@@ -126,16 +126,16 @@ void CONDUIT_RELAY_API conduit_relay_mpi_io_save_merged3(conduit_node *cnode,
                                                          MPI_Fint comm);
 
 ///
-/// ``add_time_step`` adds a new time step of data to the file.
+/// ``add_step`` adds a new step of data to the file.
 ///
-void CONDUIT_RELAY_API conduit_relay_mpi_io_add_time_step(conduit_node *cnode,
-                                                          const char *path,
-                                                          MPI_Fint comm);
+void CONDUIT_RELAY_API conduit_relay_mpi_io_add_step(conduit_node *cnode,
+                                                     const char *path,
+                                                     MPI_Fint comm);
 
-void CONDUIT_RELAY_API conduit_relay_mpi_io_add_time_step2(conduit_node *cnode,
-                                                           const char *path,
-                                                           conduit_node *coptions,
-                                                           MPI_Fint comm);
+void CONDUIT_RELAY_API conduit_relay_mpi_io_add_step2(conduit_node *cnode,
+                                                      const char *path,
+                                                      conduit_node *coptions,
+                                                      MPI_Fint comm);
 
 ///
 /// ``load`` works like a 'set', the node is reset and then populated
@@ -180,7 +180,7 @@ void CONDUIT_RELAY_API conduit_relay_mpi_io_load5(const char *path,
 /// ``query_number_of_domains`` return the number of time steps.
 ///
 //-----------------------------------------------------------------------------
-int CONDUIT_RELAY_API conduit_relay_mpi_io_query_number_of_time_steps(
+int CONDUIT_RELAY_API conduit_relay_mpi_io_query_number_of_steps(
                                                   const char *path,
                                                   MPI_Fint comm);
 

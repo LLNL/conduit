@@ -169,15 +169,15 @@ TEST(conduit_relay_mpi_io_c, test_mpi_io_c_time_series)
         if(ts == 0)
             conduit_relay_mpi_io_save(out[ts], path, MPI_Comm_c2f(MPI_COMM_WORLD));
         else
-            conduit_relay_mpi_io_add_time_step(out[ts], path, MPI_Comm_c2f(MPI_COMM_WORLD));
+            conduit_relay_mpi_io_add_step(out[ts], path, MPI_Comm_c2f(MPI_COMM_WORLD));
 
-        // Make sure the file has the new time step.
-        int qnts = conduit_relay_mpi_io_query_number_of_time_steps(path, 
+        // Make sure the file has the new  step.
+        int qnts = conduit_relay_mpi_io_query_number_of_steps(path, 
                        MPI_Comm_c2f(MPI_COMM_WORLD));
         EXPECT_EQ(qnts, ts+1);
     }
 
-    // Let each rank read back its time steps.
+    // Let each rank read back its  steps.
     for(int ts = 0; ts < nts; ++ts)
     {
         conduit_node *in = conduit_node_create();

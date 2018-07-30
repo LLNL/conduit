@@ -114,9 +114,9 @@ producer(const Node &config, int nts, MPI_Comm comm)
         out["c/e"] = idx + 4;
         out["f"] = 3.14159f * float(ts);
         if(rank == 0)
-            cout << prefix << "Before add_time_step" << endl;
+            cout << prefix << "Before add_step" << endl;
         // Add a new time step to the output file.
-        conduit::relay::mpi::io::add_time_step(out, path, options, comm);
+        conduit::relay::mpi::io::add_step(out, path, options, comm);
 
         // Show some progress
         if(rank == 0)

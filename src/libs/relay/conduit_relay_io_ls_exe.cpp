@@ -65,7 +65,7 @@ main(int argc, char *argv[])
     if(argc < 2)
     {
         std::cerr << "Usage: " << argv[0] << " path [path2 ...]" << std::endl;
-        std::cerr << "\tThis program prints the number of time steps and "
+        std::cerr << "\tThis program prints the number of steps and "
                      "domains in a file." << endl;
         retval = -1;
     }
@@ -75,11 +75,11 @@ main(int argc, char *argv[])
         {
             try
             {
-                int nts  = relay::io::query_number_of_time_steps(argv[i]);
+                int nts  = relay::io::query_number_of_steps(argv[i]);
                 int ndom = relay::io::query_number_of_domains(argv[i]);
 
                 cout << argv[i] << ":" << endl;
-                cout << "\tnumber of time steps = " << nts << endl;
+                cout << "\tnumber of steps = " << nts << endl;
                 cout << "\tnumber of domains = " << ndom << endl;
 
                 // TODO: print the node names.

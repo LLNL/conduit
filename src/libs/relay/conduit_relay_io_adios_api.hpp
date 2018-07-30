@@ -82,15 +82,15 @@ void CONDUIT_RELAY_API adios_save_merged(const Node &node,
                                           CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
 
 //-----------------------------------------------------------------------------
-/// Add a time step of node data to an existing file.
+/// Add a step of node data to an existing file.
 ///
 /// This methods supports a file system and adios path, joined using a ":"
 ///  ex: "/path/on/file/system.adios:/path/inside/adios/file"
 /// 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API adios_add_time_step(const Node &node,
-                                           const std::string &path
-                                           CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
+void CONDUIT_RELAY_API adios_add_step(const Node &node,
+                                      const std::string &path
+                                      CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
 
 //-----------------------------------------------------------------------------
 /// Read adios data from given path into the output node 
@@ -104,7 +104,7 @@ void CONDUIT_RELAY_API adios_load(const std::string &path,
                                   CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
 
 //-----------------------------------------------------------------------------
-/// Read a given time step and domain of adios data from given path into the
+/// Read a given step and domain of adios data from given path into the
 //  output node.
 /// 
 /// This methods supports a file system and adios path, joined using a ":"
@@ -112,7 +112,7 @@ void CONDUIT_RELAY_API adios_load(const std::string &path,
 ///
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API adios_load(const std::string &path,
-                                  int time_step,
+                                  int step,
                                   int domain,
                                   Node &node
                                   CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
@@ -130,9 +130,9 @@ void CONDUIT_RELAY_API adios_options(Node &opts
                                      CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
 
 //-----------------------------------------------------------------------------
-/// Get a number of time steps.
+/// Get a number of steps.
 //-----------------------------------------------------------------------------
-int  CONDUIT_RELAY_API adios_query_number_of_time_steps(const std::string &path
+int  CONDUIT_RELAY_API adios_query_number_of_steps(const std::string &path
                            CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
 
 //-----------------------------------------------------------------------------

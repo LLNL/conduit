@@ -110,12 +110,12 @@ void CONDUIT_RELAY_API conduit_relay_io_save_merged3(conduit_node *cnode,
                                                      conduit_node *copt);
 
 ///
-/// ``add_time_step`` adds a new time step of data to the file.
+/// ``add_step`` adds a new time step of data to the file.
 ///
-void CONDUIT_RELAY_API conduit_relay_io_add_time_step(conduit_node *cnode,
-                                                      const char *path);
+void CONDUIT_RELAY_API conduit_relay_io_add_step(conduit_node *cnode,
+                                                 const char *path);
 
-void CONDUIT_RELAY_API conduit_relay_io_add_time_step2(conduit_node *cnode,
+void CONDUIT_RELAY_API conduit_relay_io_add_step2(conduit_node *cnode,
                                                        const char *path,
                                                        conduit_node *coptions);
 
@@ -141,14 +141,14 @@ void CONDUIT_RELAY_API conduit_relay_io_load3(const char *path,
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API conduit_relay_io_load4(const char *path,
                                               const char *protocol,
-                                              int time_step,
+                                              int step,
                                               int domain,
                                               conduit_node *cnode);
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API conduit_relay_io_load5(const char *path,
                                               const char *protocol,
-                                              int time_step,
+                                              int step,
                                               int domain,
                                               conduit_node *coptions,
                                               conduit_node *cnode);
@@ -157,7 +157,7 @@ void CONDUIT_RELAY_API conduit_relay_io_load5(const char *path,
 /// ``query_number_of_domains`` return the number of time steps.
 ///
 //-----------------------------------------------------------------------------
-int CONDUIT_RELAY_API conduit_relayio_query_number_of_time_steps(
+int CONDUIT_RELAY_API conduit_relayio_query_number_of_steps(
                                               const char *path);
 
 ///

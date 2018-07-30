@@ -197,9 +197,9 @@ save_merged(const Node &node,
 
 //---------------------------------------------------------------------------//
 void
-add_time_step(const Node &node,
-              const std::string &path,
-              const Node &options)
+add_step(const Node &node,
+         const std::string &path,
+         const Node &options)
 {
     std::string protocol;
     identify_protocol(path,protocol);
@@ -210,14 +210,14 @@ add_time_step(const Node &node,
         adios_options(save_options);
         adios_set_options(options);
 
-        adios_add_time_step(node, path);
+        adios_add_step(node, path);
 
         adios_set_options(save_options);
 #endif
     }
     else
     {
-        CONDUIT_ERROR("add_time_step is not currently supported for protocol "
+        CONDUIT_ERROR("add_step is not currently supported for protocol "
                       << protocol);
 
         // Future idea: make path be some type of filename generator object
@@ -228,11 +228,11 @@ add_time_step(const Node &node,
 
 //---------------------------------------------------------------------------//
 void
-add_time_step(const Node &node,
+add_step(const Node &node,
               const std::string &path)
 {
     Node options;
-    add_time_step(node, path, options);
+    add_step(node, path, options);
 }
 
 //---------------------------------------------------------------------------//
@@ -415,7 +415,7 @@ save_merged(const Node &node,
 void
 load(const std::string &path,
      const std::string &protocol,
-     int timestep,
+     int step,
      int domain,
      const Node &options,
      Node &node)
@@ -461,7 +461,7 @@ load(const std::string &path,
         adios_set_options(options);
 
         node.reset();
-        adios_load(path,timestep,domain,node);
+        adios_load(path,step,domain,node);
 
         adios_set_options(load_options);
 #else
@@ -480,12 +480,12 @@ load(const std::string &path,
 void
 load(const std::string &path,
      const std::string &protocol,
-     int timestep,
+     int step,
      int domain,
      Node &node)
 {
     Node options;
-    load(path, protocol, timestep, domain, options, node);
+    load(path, protocol, step, domain, options, node);
 }
 
 //---------------------------------------------------------------------------//
@@ -574,7 +574,7 @@ load_merged(const std::string &path,
 
 //---------------------------------------------------------------------------//
 int
-query_number_of_time_steps(const std::string &path)
+query_number_of_steps(const std::string &path)
 {
     int ndoms = 1;
     std::string protocol;
@@ -583,7 +583,7 @@ query_number_of_time_steps(const std::string &path)
     if(protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
-        ndoms = adios_query_number_of_time_steps(path);
+        ndoms = adios_query_number_of_steps(path);
 #endif
     }
 

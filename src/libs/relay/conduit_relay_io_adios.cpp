@@ -1188,7 +1188,7 @@ save(const Node &node, const std::string &path, const char *flag
 //       We do not want to have to open the file beforehand to query the
 //       size of the .dm. variable! That would suck!
 
-    // If we're writing a new file or appending a new time step then
+    // If we're writing a new file or appending a new step then
     // clear the keys associated with file_path.
     if(strcmp(flag, "w") == 0 || strcmp(flag, "a") == 0)
         adios_file_num_domains.clear(); // FIXME
@@ -2011,7 +2011,7 @@ void adios_save_merged(const Node &node, const std::string &path
 }
 
 //-----------------------------------------------------------------------------
-void adios_add_time_step(const Node &node, const std::string &path
+void adios_add_step(const Node &node, const std::string &path
     CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm))
 {
     // check for ":" split  
@@ -2021,7 +2021,7 @@ void adios_add_time_step(const Node &node, const std::string &path
                                     file_path,
                                     adios_path);
 
-    // NOTE: we use "a" to update the file to the next time step.
+    // NOTE: we use "a" to update the file to the next step.
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     internals::save(node, path, "a", comm);
 #else
@@ -2032,14 +2032,14 @@ void adios_add_time_step(const Node &node, const std::string &path
 //-----------------------------------------------------------------------------
 void
 adios_load(const std::string &path,
-   int time_step,
+   int step,
    int domain, 
    Node &node
    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
    )
 {
     internals::adios_load_state state;
-    state.time_step = time_step; // Force specific timestep/domain.
+    state.time_step = step; // Force specific step/domain.
     state.domain = domain;
 
     // Split the incoming path in case it includes other information.
@@ -2078,7 +2078,7 @@ adios_load(const std::string &path, Node &node
 
 //-----------------------------------------------------------------------------
 int
-adios_query_number_of_time_steps(const std::string &path
+adios_query_number_of_steps(const std::string &path
     CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
    )
 {

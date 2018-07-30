@@ -405,10 +405,10 @@ TEST(conduit_relay_io_adios, test_mpi_time_series)
         /*std::ostringstream oss;
         oss << "ts" << ts;
         mpi_print_node(n, oss.str(), MPI_COMM_WORLD);*/
-        relay::mpi::io::add_time_step(n, path, MPI_COMM_WORLD);
+        relay::mpi::io::add_step(n, path, MPI_COMM_WORLD);
 
         // Make sure the file has the new time step.
-        int qnts = relay::mpi::io::query_number_of_time_steps(path, MPI_COMM_WORLD);
+        int qnts = relay::mpi::io::query_number_of_steps(path, MPI_COMM_WORLD);
         EXPECT_EQ(qnts, ts+1);
     }
 
