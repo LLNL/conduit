@@ -42,7 +42,7 @@
 # 
 ###############################################################################
 """
- file: python_relay_io.py
+ file: t_python_relay_io.py
  description: Unit tests for the conduit relay io python module interface.
 
 """
