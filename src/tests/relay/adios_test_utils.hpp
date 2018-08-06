@@ -97,10 +97,15 @@ compare_arrays_tol(const T *a, const T *b, int len, T tolerance)
 
 //-----------------------------------------------------------------------------
 bool
-compare_nodes(const conduit::Node &out_root, const Node &in_root, const Node &node,
-    bool exact = true, double tolerance = 0.)
+compare_nodes(const conduit::Node &out_root,
+              const Node &in_root,
+              const Node &node,
+              bool exact = true,
+              double tolerance = 0.)
 {
     bool equal = false;
+
+
 
     if(node.number_of_children() == 0)
     {
@@ -197,7 +202,7 @@ compare_nodes(const conduit::Node &out_root, const Node &in_root, const Node &no
             else
             {
                 CONDUIT_INFO(node.path() << " types not equal ("
-                             << node.dtype().name() << "!=" 
+                             << node.dtype().name() << "!="
                              << in_node.dtype().name() << ")");
             }
         }

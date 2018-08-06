@@ -178,7 +178,10 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_rank_values)
     }
     */
     // Make sure the data that was read back in is the same as the written data.
-    EXPECT_EQ(compare_nodes(out, in, out), true);
+
+    Node n_info;
+    // make sure there is no diff (diff res == FALSE)
+    EXPECT_FALSE(out.diff(in,n_info,0.0));
 }
 
 //-----------------------------------------------------------------------------
@@ -211,7 +214,9 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_mesh)
         in.print_detailed();
     }*/
 
-    EXPECT_EQ(compare_nodes(out, in, out), true);
+    Node n_info;
+    // make sure there is no diff (diff res == FALSE)
+    EXPECT_FALSE(out.diff(in,n_info,0.0));
 }
 
 //-----------------------------------------------------------------------------
@@ -235,17 +240,10 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_read_specific_domain)
                          rdomain_from_file, MPI_COMM_WORLD);
     create_rectilinear_mesh_domain(rdomain_we_computed, rdom);
 
-    // Compare the node we read vs the one we computed for the
-    bool compare_nodes_local = compare_nodes(rdomain_we_computed,
-                                             rdomain_from_file,
-                                             rdomain_we_computed);
-    /*if(rank == 1)
-    {
-        std::cout << "rdomain_we_computed=" << rdomain_we_computed.to_json() << std::endl;
-        std::cout << "rdomain_from_file=" << rdomain_from_file.to_json() << std::endl;
-        std::cout << rank << ": compare_nodes_local = " << compare_nodes_local << std::endl;
-    }*/
-    EXPECT_EQ(compare_nodes_local, true);
+
+    Node n_info;
+    // make sure there is no diff (diff res == FALSE)
+    EXPECT_FALSE(rdomain_we_computed.diff(rdomain_from_file,n_info,0.0));
 }
 
 //-----------------------------------------------------------------------------
@@ -275,14 +273,18 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_separate_ranks)
     Node in;
     CONDUIT_INFO("Reading domain " << srank << "/" << ssize << " for " << path);
     relay::mpi::io::load(path, in, split);
-    bool compare_nodes_local = compare_nodes(out, in, out);
+    
+    
+
+    Node n_info;
+    // make sure there is no diff (diff res == FALSE)
+    EXPECT_FALSE(out.diff(in,n_info,0.0));
     /*if(rank == 1)
     {
         std::cout << "out=" << out.to_json() << std::endl;
         std::cout << "in=" << in.to_json() << std::endl;
         std::cout << rank << ": compare_nodes_local = " << compare_nodes_local << std::endl;
     }*/
-    EXPECT_EQ(compare_nodes_local, true);
 
     MPI_Comm_free(&split);
 }
@@ -319,8 +321,12 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_load_subtree)
     Node ab;
     copy_node_keys(ab, out, abc_keys, 2);
     copy_node_keys(ab, out, a_keys, 3);
+    
+    Node n_info;
+    
     //mpi_print_node(in, "in", MPI_COMM_WORLD);
-    EXPECT_EQ(compare_nodes(ab, in, ab), true);
+    // EXPECT_EQ(compare_nodes(ab, in, ab), true);
+    EXPECT_FALSE(ab.diff(in,n_info,0.0));
 
     // Make what rank 0 would have written for a/b.
     int index0 = 0;
@@ -333,7 +339,9 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_load_subtree)
     std::string path_ab0(path + ":0:a/b");
     relay::mpi::io::load(path_ab0, in0, MPI_COMM_WORLD);
     //mpi_print_node(in0, "in0", MPI_COMM_WORLD);
-    EXPECT_EQ(compare_nodes(out0, in0, out0), true);
+    // EXPECT_EQ(compare_nodes(out0, in0, out0), true);
+    // make sure there is no diff (diff res == FALSE)
+    EXPECT_FALSE(out0.diff(in0,n_info,0.0));
 }
 
 //-----------------------------------------------------------------------------
@@ -372,7 +380,11 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_write_serial_read_parallel)
     relay::mpi::io::load(path, in, MPI_COMM_WORLD);
     //mpi_print_node(in, "in", MPI_COMM_WORLD);
 
-    EXPECT_EQ(compare_nodes(out[rank], in, out[rank]), true);
+    Node n_info;
+    
+    //mpi_print_node(in, "in", MPI_COMM_WORLD);
+    EXPECT_FALSE(out[rank].diff(in,n_info,0.0));
+    // EXPECT_EQ(compare_nodes(out[rank], in, out[rank]), true);
     delete [] out;
     MPI_Comm_free(&split);
 }
@@ -420,7 +432,9 @@ TEST(conduit_relay_io_adios, test_mpi_time_series)
         /*std::ostringstream oss;
         oss << "ts" << ts;
         mpi_print_node(in, oss.str(), MPI_COMM_WORLD);*/
-        EXPECT_EQ(compare_nodes(in, out[ts], in), true);
+        Node n_info;
+        EXPECT_FALSE(in.diff(out[ts],n_info,0.0));
+        //EXPECT_EQ(compare_nodes(in, out[ts], in), true);
     }
 
     delete [] out;
@@ -480,10 +494,14 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_different_trees)
     Node in;
     CONDUIT_INFO("Reading domain " << rank << "/" << size << " for " << path);
     relay::mpi::io::load(path, in, MPI_COMM_WORLD);
-    bool compare_nodes_local = compare_nodes(out, in, out);
-    //mpi_print_node(in, "in", MPI_COMM_WORLD);
-    //std::cout << "compare_nodes_local = " << compare_nodes_local << std::endl;
-    EXPECT_EQ(compare_nodes_local, true);
+    
+    Node n_info;
+    EXPECT_FALSE(out.diff(in,n_info,0.0));
+    
+    // bool compare_nodes_local = compare_nodes(out, in, out);
+    // //mpi_print_node(in, "in", MPI_COMM_WORLD);
+    // //std::cout << "compare_nodes_local = " << compare_nodes_local << std::endl;
+    // EXPECT_EQ(compare_nodes_local, true);
 }
 
 //-----------------------------------------------------------------------------

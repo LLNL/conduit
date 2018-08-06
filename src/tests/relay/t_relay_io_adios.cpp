@@ -163,8 +163,9 @@ TEST(conduit_relay_io_adios, test_scalar_types)
     CONDUIT_INFO("Reading " << path);
     Node in;
     relay::io::load(path, in);
-
-    EXPECT_EQ(compare_nodes(out, in, out), true);
+    Node n_info;
+    EXPECT_FALSE(out.diff(in,n_info,0.0));
+    //EXPECT_EQ(compare_nodes(out, in, out), true);
 }
 
 TEST(conduit_relay_io_adios, test_array_types)
@@ -240,8 +241,9 @@ TEST(conduit_relay_io_adios, test_array_types)
     relay::io::load(path, in);
 
     //std::cout << in.to_json() << std::endl;
-
-    EXPECT_EQ(compare_nodes(out, in, out), true);
+    Node n_info;
+    EXPECT_FALSE(out.diff(in,n_info,0.0));
+    //EXPECT_EQ(compare_nodes(out, in, out), true);
 }
 
 //-----------------------------------------------------------------------------
@@ -279,8 +281,9 @@ TEST(conduit_relay_io_adios, test_vector_types)
     relay::io::load(path, in);
 
     //std::cout << in.to_json() << std::endl;
-
-    EXPECT_EQ(compare_nodes(out, in, out), true);
+    Node n_info;
+    EXPECT_FALSE(out.diff(in,n_info,0.0));
+    //EXPECT_EQ(compare_nodes(out, in, out), true);
 }
 
 //-----------------------------------------------------------------------------
@@ -331,7 +334,11 @@ TEST(conduit_relay_io_adios, test_list_types)
     relay::io::load(path, in);
 
     //std::cout << in.to_json() << std::endl;
-
+    Node n_info;
+    // TODO: THIS CASES FAILS STD DIFF, I think b/c list
+    // eles come back as objects
+    //EXPECT_FALSE(out.diff(in,n_info,0.0));
+    // n_info.print();
     EXPECT_EQ(compare_nodes(out, in, out), true);
 }
 
@@ -355,8 +362,9 @@ TEST(conduit_relay_io_adios, test_save_path)
     relay::io::load(path, in);
     //std::cout << in.to_json() << std::endl;
     //std::cout << in[key].to_json() << std::endl;
-
-    EXPECT_EQ(compare_nodes(out, in[key], out), true);
+    Node n_info;
+    EXPECT_FALSE(out.diff(in[key],n_info,0.0));
+    //EXPECT_EQ(compare_nodes(out, in[key], out), true);
 }
 
 //-----------------------------------------------------------------------------
@@ -394,9 +402,11 @@ TEST(conduit_relay_io_adios, test_opts_transforms)
     relay::io::load(path, in);
 
     // Compare floats with some tolerance.
-    bool exact = false;
+    //bool exact = false;
     float tolerance = 0.0001;
-    EXPECT_EQ(compare_nodes(out, in, out, exact, tolerance), true);
+    Node n_info;
+    EXPECT_FALSE(out.diff(in,n_info,tolerance));
+    //EXPECT_EQ(compare_nodes(out, in, out, exact, tolerance), true);
 
     // Check the file size and make sure it got compressed.
     size_t rough_uncompressed_size = (a.size() + b.size()) * sizeof(float);
@@ -427,7 +437,9 @@ TEST(conduit_relay_io_adios, test_load_merged)
 
     // Now add the same key to out so we can compare.
     out[key] = value;
-    EXPECT_EQ(compare_nodes(out, in, out), true);
+    Node n_info;
+    EXPECT_FALSE(out.diff(in,n_info,0.0));
+    //EXPECT_EQ(compare_nodes(out, in, out), true);
 }
 
 TEST(conduit_relay_io_adios, test_save_merged)
@@ -463,7 +475,9 @@ TEST(conduit_relay_io_adios, test_save_merged)
     std::cout << "out=" << out.to_json() << std::endl;
     std::cout << "in=" << in.to_json() << std::endl;
 #endif
-    EXPECT_EQ(compare_nodes(out, in, out), true);
+    Node n_info;
+    EXPECT_FALSE(out.diff(in,n_info,0.0));
+    //EXPECT_EQ(compare_nodes(out, in, out), true);
 
 #if 0
 // NOTE: I broke this behavior to allow for save/save_merged 
@@ -513,7 +527,10 @@ TEST(conduit_relay_io_adios, test_load_subtree)
     Node abc;
     copy_node_keys(abc, out, abc_keys, 2);
     //std::cout << "in1=" << in1.to_json() << std::endl;
-    EXPECT_EQ(compare_nodes(abc, in1, abc), true);
+    
+    Node n_info;
+    EXPECT_FALSE(abc.diff(in1,n_info,0.0));
+    //EXPECT_EQ(compare_nodes(abc, in1, abc), true);
 
     // Try reading nodes with subpath a/b
     Node in2;
@@ -523,7 +540,8 @@ TEST(conduit_relay_io_adios, test_load_subtree)
     copy_node_keys(ab, out, abc_keys, 2);
     copy_node_keys(ab, out, a_keys, 3);
     //std::cout << "in2=" << in2.to_json() << std::endl;
-    EXPECT_EQ(compare_nodes(ab, in2, ab), true);
+    EXPECT_FALSE(ab.diff(in2,n_info,0.0));
+    //EXPECT_EQ(compare_nodes(ab, in2, ab), true);
 
     // Try reading nodes with subpath a
     Node in3;
@@ -534,7 +552,8 @@ TEST(conduit_relay_io_adios, test_load_subtree)
     copy_node_keys(a, out, a_keys, 3);
     copy_node_keys(a, out, aa_keys, 1);
     //std::cout << "in3=" << in3.to_json() << std::endl;
-    EXPECT_EQ(compare_nodes(a, in3, a), true);
+    EXPECT_FALSE(a.diff(in3,n_info,0.0));
+    //EXPECT_EQ(compare_nodes(a, in3, a), true);
 
     // Try reading nodes with subpath b
     Node in4;
@@ -543,7 +562,8 @@ TEST(conduit_relay_io_adios, test_load_subtree)
     Node b;
     copy_node_keys(b, out, b_keys, 1); //1 since binary and blue won't match.
     //std::cout << "in4=" << in4.to_json() << std::endl;
-    EXPECT_EQ(compare_nodes(b, in4, b), true);
+    EXPECT_FALSE(b.diff(in4,n_info,0.0));
+    //EXPECT_EQ(compare_nodes(b, in4, b), true);
 
     // Try reading nodes with subpath a/b/c:b
     Node in5;
@@ -553,7 +573,8 @@ TEST(conduit_relay_io_adios, test_load_subtree)
     copy_node_keys(abcb, out, abc_keys, 2);
     copy_node_keys(abcb, out, b_keys, 1); //1 since binary and blue won't match.
     //std::cout << "in5=" << in5.to_json() << std::endl;
-    EXPECT_EQ(compare_nodes(abcb, in5, abcb), true);
+    EXPECT_FALSE(abcb.diff(in5,n_info,0.0));
+    //EXPECT_EQ(compare_nodes(abcb, in5, abcb), true);
 }
 
 TEST(conduit_relay_io_adios, test_save_merged_series)
@@ -598,7 +619,9 @@ TEST(conduit_relay_io_adios, test_save_merged_series)
         std::cout << "Loading path " << oss.str() << std::endl;
         relay::io::load(oss.str(), in);
         //std::cout << "domain " << dom << " in=" << in.to_json() << std::endl;
-        EXPECT_EQ(compare_nodes(in, out[dom], in), true);
+        Node n_info;
+        EXPECT_FALSE(in.diff(out[dom],n_info,0.0));
+        //EXPECT_EQ(compare_nodes(in, out[dom], in), true);
     }
 
     // Test the number of domains.
@@ -640,7 +663,9 @@ TEST(conduit_relay_io_adios, test_time_series)
         Node in;
         int domain = 0;
         relay::io::load(path, protocol, ts, domain, in);
-        EXPECT_EQ(compare_nodes(in, out[ts], in), true);
+        Node n_info;
+        EXPECT_FALSE(in.diff(out[ts],n_info,0.0));
+        //EXPECT_EQ(compare_nodes(in, out[ts], in), true);
     }
 
     // Try reading back by encoding the step in a path.
@@ -654,7 +679,9 @@ TEST(conduit_relay_io_adios, test_time_series)
         Node in;
         relay::io::load(timestep_path, in);
         //std::cout << "path=" << timestep_path << " in=" << in.to_json() << std::endl;
-        EXPECT_EQ(compare_nodes(in, out[ts], in), true);
+        Node n_info;
+        EXPECT_FALSE(in.diff(out[ts],n_info,0.0));
+        //EXPECT_EQ(compare_nodes(in, out[ts], in), true);
     }
 
     delete [] out;
@@ -681,7 +708,9 @@ TEST(conduit_relay_io_adios, test_node_path)
     Node in;
     relay::io::load(path, in);
     //std::cout << "in=" << in.to_json() << std::endl;
-    EXPECT_EQ(compare_nodes(in, data, in), true);
+    Node n_info;
+    EXPECT_FALSE(in.diff(data,n_info,0.0));
+    // EXPECT_EQ(compare_nodes(in, data, in), true);
 }
 
 
