@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_relay_mpi_io_c.cpp
+/// file: t_c_relay_mpi_io.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -72,6 +72,7 @@ compare_nodes_c(conduit_node *out, conduit_node *in)
     //return compare_nodes(*cpp_out, *cpp_in, *cpp_out) ? 1 : 0;
 }
 
+//-----------------------------------------------------------------------------
 TEST(conduit_relay_mpi_io_c, test_mpi_io_c_save_and_load)
 {
     int ii, rank, size;
@@ -147,6 +148,7 @@ TEST(conduit_relay_mpi_io_c, test_mpi_io_c_save_and_load)
     conduit_node_destroy(in);
 }
 
+//-----------------------------------------------------------------------------
 TEST(conduit_relay_mpi_io_c, test_mpi_io_c_time_series)
 {
     int rank, size;
