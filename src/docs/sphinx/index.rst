@@ -142,6 +142,7 @@ Contributors
 - Kenny Weiss (LLNL)
 - Matt Larsen (LLNL)
 - Todd Gamblin (LLNL)
+- Brad Whitlock (Intelligent Light)
 - George Aspesi (Harvey Mudd)
 - Justin Bai (Harvey Mudd)
 - Rupert Deese (Harvey Mudd)
