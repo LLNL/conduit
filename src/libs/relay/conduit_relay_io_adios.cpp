@@ -881,29 +881,9 @@ static ADIOS_DATATYPES conduit_dtype_to_adios_dtype(const Node &node)
     {
         if(node.dtype().is_number())
         {
-            if(node.dtype().is_int8())
-                dtype = adios_byte;
-            else if(node.dtype().is_int16())
-                dtype = adios_short;
-            else if(node.dtype().is_int32())
-                dtype = adios_integer;
-            else if(node.dtype().is_int64())
-                dtype = adios_long;
-            else if(node.dtype().is_uint8())
-                dtype = adios_unsigned_byte;
-            else if(node.dtype().is_uint16())
-                dtype = adios_unsigned_short;
-            else if(node.dtype().is_uint32())
-                dtype = adios_unsigned_integer;
-            else if(node.dtype().is_uint64())
-                dtype = adios_unsigned_long;
-            else if(node.dtype().is_float32())
-                dtype = adios_real;
-            else if(node.dtype().is_float64())
-                dtype = adios_double;
-//            else if(node.dtype().is_index_t()) // Conduit does not implement
-//                dtype = adios_unsigned_long; // ???
-            else if(node.dtype().is_char())
+            // since adios uses c style types, use those
+            // conduit will mapp to the correct bw style types
+            if(node.dtype().is_char())
                 dtype = adios_byte;
             else if(node.dtype().is_short())
                 dtype = adios_short;
@@ -923,6 +903,8 @@ static ADIOS_DATATYPES conduit_dtype_to_adios_dtype(const Node &node)
                 dtype = adios_real;
             else if(node.dtype().is_double())
                 dtype = adios_double;
+//            else if(node.dtype().is_index_t()) // Conduit does not implement
+//                dtype = adios_unsigned_long; // ???
         }
         else if(node.dtype().is_string() || 
                 node.dtype().is_char8_str())
@@ -1717,65 +1699,66 @@ conduit_type = "char8_str";
                     }
                     else
                     {
-                        node[vname].set(DataType::int8(nelem));
-                        int8 *buf = node[vname].value();
+                        node[vname].set(DataType::c_char(nelem));
+                        char *buf = node[vname].value();
                         vbuf = (void *)buf;
                     }
                 }
                 else if(v->type == adios_short)
                 {
-                    node[vname].set(DataType::int16(nelem));
-                    int16 *buf = node[vname].value();
+                    node[vname].set(DataType::c_short(nelem));
+                    short *buf = node[vname].value();
                     vbuf = (void *)buf;
                 }
                 else if(v->type == adios_integer)
                 {
-                    node[vname].set(DataType::int32(nelem));
-                    int32 *buf = node[vname].value();
+                    node[vname].set(DataType::c_int(nelem));
+                    int *buf = node[vname].value();
                     vbuf = (void *)buf;
                 }
                 else if(v->type == adios_long)
                 {
-                    node[vname].set(DataType::int64(nelem));
-                    int64 *buf = node[vname].value();
+                    node[vname].set(DataType::c_long(nelem));
+                    long *buf = node[vname].value();
                     vbuf = (void *)buf;
                 }
                 else if(v->type == adios_unsigned_byte)
                 {
-                    node[vname].set(DataType::uint8(nelem));
-                    uint8 *buf = node[vname].value();
+                    node[vname].set(DataType::c_unsigned_char(nelem));
+                    unsigned char *buf = node[vname].value();
                     vbuf = (void *)buf;
                 }
                 else if(v->type == adios_unsigned_short)
                 {
-                    node[vname].set(DataType::uint16(nelem));
-                    uint16 *buf = node[vname].value();
+                    node[vname].set(DataType::c_unsigned_short(nelem));
+                    unsigned short *buf = node[vname].value();
                     vbuf = (void *)buf;
                 }
                 else if(v->type == adios_unsigned_integer)
                 {
-                    node[vname].set(DataType::uint32(nelem));
-                    uint32 *buf = node[vname].value();
+                    node[vname].set(DataType::c_unsigned_int(nelem));
+                    unsigned int *buf = node[vname].value();
                     vbuf = (void *)buf;
                 }
                 else if(v->type == adios_unsigned_long)
                 {
-                    node[vname].set(DataType::uint64(nelem));
-                    uint64 *buf = node[vname].value();
+                    node[vname].set(DataType::c_unsigned_long(nelem));
+                    unsigned long *buf = node[vname].value();
                     vbuf = (void *)buf;
                 }
                 else if(v->type == adios_real)
                 {
-                    node[vname].set(DataType::float32(nelem));
-                    float32 *buf = node[vname].value();
+                    node[vname].set(DataType::c_float(nelem));
+                    float *buf = node[vname].value();
                     vbuf = (void *)buf;
                 }
                 else if(v->type == adios_double)
                 {
-                    node[vname].set(DataType::float64(nelem));
-                    float64 *buf = node[vname].value();
+                    node[vname].set(DataType::c_double(nelem));
+                    double *buf = node[vname].value();
                     vbuf = (void *)buf;
                 }
+                // TODO:: LONG LONG 
                 else
                 {
                     // Other cases should not happen.
