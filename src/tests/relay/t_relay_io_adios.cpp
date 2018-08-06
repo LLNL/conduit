@@ -66,26 +66,23 @@ TEST(conduit_relay_io_adios, test_options_contain_adios)
     int has_adios_protocol = 0;
     int has_adios_options = 0;
     Node opts;
-    relay::about(opts);
-    if(opts.has_child("io"))
+    relay::io::about(opts);
+    if(opts.has_child("protocols"))
     {
-        const Node &io = opts["io"];
-        if(io.has_child("protocols"))
+        const Node &protocols = opts["protocols"];
+        if(protocols.has_child("adios"))
         {
-            const Node &protocols = io["protocols"];
-            if(protocols.has_child("adios"))
-            {
-                if(protocols["adios"].as_string() == std::string("enabled"))
-                    has_adios_protocol = 1;
-            }
-        }
-
-        if(io.has_child("options"))
-        {
-            const Node &options = io["options"];
-            has_adios_options = options.has_child("adios") ? 1 : 0;
+            if(protocols["adios"].as_string() == std::string("enabled"))
+                has_adios_protocol = 1;
         }
     }
+
+    if(opts.has_child("options"))
+    {
+        const Node &options = opts["options"];
+        has_adios_options = options.has_child("adios") ? 1 : 0;
+    }
+
     EXPECT_EQ(has_adios_protocol + has_adios_options, 2);
 }
 

@@ -79,9 +79,6 @@ about()
 }
 
 //---------------------------------------------------------------------------//
-// NOTE: This function may belong in conduit_relay_io and conduit_relay_mpi_io
-//       so the different versions of the library can query the io
-//       protocol options.
 void
 about(Node &n)
 {
@@ -98,13 +95,6 @@ about(Node &n)
     web_root = utils::join_file_path(web_root,"web_clients");
     
     n["web_client_root"] =  web_root;
-
-    // Add the relay io information. We do this so relay::about for the serial
-    // case continues to contain IO information. In the future, serial relay
-    // should probably be split into relay and relay::io libraries. We already
-    // have relay::mpi::io for parallel IO libraries. Splitting serial relay
-    // would make it symmetric.
-    relay::io::about(n, false);
 
 #ifdef CONDUIT_RELAY_MPI_ENABLED
     n["mpi"] = "enabled";

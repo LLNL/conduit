@@ -98,7 +98,7 @@ class Test_Relay_IO(unittest.TestCase):
                   "conduit_base64_json"]
         
         # only test hdf5 if relay was built with hdf5 support
-        if relay.about()["io/protocols/hdf5"] == "enabled":
+        if relay.io.about()["protocols/hdf5"] == "enabled":
             protos.append("hdf5")
         
         for proto in protos:
@@ -112,7 +112,7 @@ class Test_Relay_IO(unittest.TestCase):
             self.assertTrue(n_load['b'] == b_val)
             self.assertTrue(n_load['c'] == c_val)
         # only test silo if relay was built with hdf5 support
-        if relay.about()["io/protocols/conduit_silo"] == "enabled":
+        if relay.io.about()["protocols/conduit_silo"] == "enabled":
             # silo needs a subpath
             print("testing protocol: silo")
             ftest = "tout_python_relay_io_save_load_proto.silo:obj"

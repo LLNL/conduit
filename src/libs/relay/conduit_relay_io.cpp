@@ -102,11 +102,10 @@ about()
 
 //---------------------------------------------------------------------------//
 void
-about(Node &n, bool reset)
+about(Node &n)
 {
-    if(reset)
-        n.reset();
-    Node &io_protos = n["io/protocols"];
+    n.reset();
+    Node &io_protos = n["protocols"];
 
     // json io
     io_protos["json"] = "enabled";
@@ -119,7 +118,7 @@ about(Node &n, bool reset)
     // straight hdf5 
     io_protos["hdf5"] = "enabled";
     
-    hdf5_options(n["io/options/hdf5"]);
+    hdf5_options(n["options/hdf5"]);
 #else
     // straight hdf5 
     io_protos["hdf5"] = "disabled";
@@ -144,17 +143,10 @@ about(Node &n, bool reset)
     // ADIOS aware
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
     io_protos["adios"] = "enabled";
-    adios_options(n["io/options/adios"]);
+    adios_options(n["options/adios"]);
 #else
     io_protos["adios"] = "disabled";
 #endif
-}
-
-//---------------------------------------------------------------------------//
-void
-about(Node &n)
-{
-    io::about(n, true);
 }
 
 //---------------------------------------------------------------------------//

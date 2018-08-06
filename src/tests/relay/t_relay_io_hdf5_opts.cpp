@@ -114,7 +114,7 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_synth)
     CONDUIT_INFO("options:" << opts.to_json());
     
     Node rl_about;
-    relay::about(rl_about);
+    relay::about(rl_about["io"]);
     CONDUIT_INFO("hdf5 options:" << rl_about["io/options/hdf5"].to_json());
     
     int num_obj =  opts["data/num_objects"].to_value();

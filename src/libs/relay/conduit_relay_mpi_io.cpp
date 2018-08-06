@@ -106,10 +106,9 @@ about(MPI_Comm comm)
 
 //---------------------------------------------------------------------------//
 void
-about(Node &n, bool reset, MPI_Comm comm)
+about(Node &n, MPI_Comm comm)
 {
-    if(reset)
-        n.reset();
+    n.reset();
     Node &io_protos = n["io/protocols"];
 
     // json io
@@ -154,12 +153,6 @@ about(Node &n, bool reset, MPI_Comm comm)
 #endif
 }
 
-//---------------------------------------------------------------------------//
-void
-about(Node &n, MPI_Comm comm)
-{
-    io::about(n, true, comm);
-}
 
 //---------------------------------------------------------------------------//
 void

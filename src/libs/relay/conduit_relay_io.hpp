@@ -82,7 +82,6 @@ namespace io
 /// configured.
 //-----------------------------------------------------------------------------
 std::string CONDUIT_RELAY_API about();
-void        CONDUIT_RELAY_API about(conduit::Node &res, bool reset);
 void        CONDUIT_RELAY_API about(conduit::Node &res);
 
 //-----------------------------------------------------------------------------
