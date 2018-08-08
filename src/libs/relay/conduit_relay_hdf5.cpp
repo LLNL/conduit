@@ -1798,14 +1798,33 @@ create_hdf5_file_access_plist()
                              "Failed to create H5P_FILE_ACCESS "
                              << " property list");
     
+    unsigned int major_num=0;
+    unsigned int minor_num=0;
+    unsigned int release_num=0;
     
-    herr_t h5_status = H5Pset_libver_bounds(h5_fa_props,
-                                            H5F_LIBVER_LATEST,
-                                            H5F_LIBVER_LATEST);
-
+    herr_t h5_status = H5get_libversion(&major_num, &minor_num,&release_num);
+    
     CONDUIT_CHECK_HDF5_ERROR(h5_status,
-                             "Failed to set libver options for "
-                             << "property list " << h5_fa_props);
+                             "Failed to fetch HDF5 library version info ");
+
+    // most of our use cases are still using 1.8.
+    // to allow hdf5 1.8 readers to read from hdf5 1.10 writers,
+    // we want to pin to hdf5 1.8 features for now. 
+    // There isn't a way to select 1.8, 
+    // https://forum.hdfgroup.org/t/seconding-the-request-for-h5pset-libver-bounds-1-8-x-file-compat-option/4056
+    // so only enable H5F_LIBVER_LATEST if we are using hdf5 1.8
+
+    if(major_num == 1 && minor_num == 8)
+    {
+        herr_t h5_status = H5Pset_libver_bounds(h5_fa_props,
+                                                H5F_LIBVER_LATEST,
+                                                H5F_LIBVER_LATEST);
+
+        CONDUIT_CHECK_HDF5_ERROR(h5_status,
+                                 "Failed to set libver options for "
+                                 << "property list " << h5_fa_props);
+
+    }
     return h5_fa_props;
 }
 
