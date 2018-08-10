@@ -94,6 +94,7 @@ producer(const Node &config, int nts, MPI_Comm comm)
     std::string path(config["path"].as_string());
     std::string selected_options(config["selected_options"].as_string());
     const Node &options = config[selected_options];
+    bool streaming = streaming_transport(options["write/transport"].as_string());
 
     if(rank == 0)
     {
@@ -113,6 +114,7 @@ producer(const Node &config, int nts, MPI_Comm comm)
         out["c/d"] = idx + 3;
         out["c/e"] = idx + 4;
         out["f"] = 3.14159f * float(ts);
+
         if(rank == 0)
             cout << prefix << "Before add_step" << endl;
         // Add a new time step to the output file.
@@ -125,6 +127,13 @@ producer(const Node &config, int nts, MPI_Comm comm)
                  << write_verb(options["write/transport"].as_string())
                  << " time step " << ts << endl;
         }
+
+        if(!streaming)
+        {
+             MPI_Barrier(MPI_COMM_WORLD);
+        }
+
+        //conduit::utils::sleep(1);
     }
 
     return 0;
@@ -148,10 +157,18 @@ consumer(const Node &config, int nts, MPI_Comm comm)
     std::string format(config["outpath"].as_string());
     std::string selected_options(config["selected_options"].as_string());
     const Node &options = config[selected_options];
+    bool streaming = streaming_transport(options["write/transport"].as_string());
 
     // Read from the producer and save out.
     for(int ts = 0; ts < nts; ++ts)
     {
+        if(!streaming)
+        {
+             if(rank == 0)
+                  cout << prefix << "Wait for timestep..." << endl;
+             MPI_Barrier(MPI_COMM_WORLD);
+        }
+
         // TODO: query the number of domains, distribute among ranks,
         // read each domain. For now, assume producer and consumer have 
         // same number of ranks.
@@ -163,7 +180,7 @@ consumer(const Node &config, int nts, MPI_Comm comm)
         // Read in a domain of the current time step.
         Node in;
 
-        if(streaming_transport(options["write/transport"].as_string()))
+        if(streaming)
         {
             // Read "current" time step from the stream.
             conduit::relay::mpi::io::load(path, protocol, options, in, comm);
@@ -201,6 +218,7 @@ int main(int argc, char* argv[])
     int nts = 10;
     int p = 1;
     int c = 1;
+    bool isProducer = true;
     bool split = false;
     for(int i = 1; i < argc; ++i)
     {
@@ -242,6 +260,10 @@ int main(int argc, char* argv[])
             }
             ++i;
         }
+        else if(strcmp(argv[i], "--producer") == 0)
+            isProducer = true;
+        else if(strcmp(argv[i], "--consumer") == 0)
+            isProducer = false;
         else if(strcmp(argv[i], "--help") == 0 ||
                 strcmp(argv[i], "-h") == 0)
         {
@@ -283,50 +305,45 @@ int main(int argc, char* argv[])
     }
     else
     {
-        conduit::relay::mpi::io::initialize(MPI_COMM_WORLD);
+        // Split (or dup) the communicator
+        MPI_Comm comm;
+        if(split)
+        {
+            isProducer = rank < p;
+            MPI_Comm_split(MPI_COMM_WORLD, rank < p, 0, &comm);
+        }
+        else
+        {
+            p = size / 2;
+            MPI_Comm_dup(MPI_COMM_WORLD, &comm);
+        }
 
-#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
-        Node opts;
-        conduit::relay::mpi::io::adios_options(opts, MPI_COMM_WORLD);
-        if(rank == 0)
-            cout << "Default ADIOS options = " << opts.to_json() << endl;
-#endif
         try
         {
+            conduit::relay::mpi::io::initialize(comm);
+
+#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+            Node opts;
+            conduit::relay::mpi::io::adios_options(opts, comm);
+            if(rank == 0)
+                cout << "Default ADIOS options = " << opts.to_json() << endl;
+#endif
             // Read the config file.
             Node config;
-            conduit::relay::mpi::io::load(configfile, config, MPI_COMM_WORLD);
+            conduit::relay::mpi::io::load(configfile, config, comm);
             if(rank == 0)
             {
                 cout << "config = " << config.to_json() << endl;
             }
 
-            // Split (or dup) the communicator
-            MPI_Comm comm;
-            if(split)
-                MPI_Comm_split(MPI_COMM_WORLD, rank < p, 0, &comm);
-            else
-            {
-                p = size / 2;
-                MPI_Comm_dup(MPI_COMM_WORLD, &comm);
-            }
-
-            if(rank < p)
+            if(isProducer)
             {
                 retval = producer(config, nts, comm);
             }
             else
             {
-#ifndef _WIN32
-                // If we're using BP files then delay a little until the 
-                // producer is done. Streaming blocks until data are 
-                // available.
-                sleep(10);
-#endif
                 retval = consumer(config, nts, comm);
             }
-
-            MPI_Comm_free(&comm);
         }
         catch(...)
         {
@@ -334,7 +351,11 @@ int main(int argc, char* argv[])
             retval = -2;
         }
 
-        conduit::relay::mpi::io::finalize(MPI_COMM_WORLD);
+        // Wait for *all* ranks to complete
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        conduit::relay::mpi::io::finalize(comm);
+        MPI_Comm_free(&comm);
     }
 
     MPI_Finalize();

@@ -289,6 +289,7 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_separate_ranks)
     MPI_Comm_free(&split);
 }
 
+//-----------------------------------------------------------------------------
 TEST(conduit_relay_mpi_io_adios, test_mpi_load_subtree)
 {
     const char *abc_keys[] = {"a/b/c/d","a/b/c/dog"};
@@ -389,6 +390,7 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_write_serial_read_parallel)
     MPI_Comm_free(&split);
 }
 
+//-----------------------------------------------------------------------------
 TEST(conduit_relay_io_adios, test_mpi_time_series)
 {
     int rank, size;
@@ -441,17 +443,63 @@ TEST(conduit_relay_io_adios, test_mpi_time_series)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_relay_mpi_io_adios, test_mpi_different_trees)
+TEST(conduit_relay_mpi_io_adios, test_mpi_mesh_add_field)
 {
-    // NOTE: Conduit+ADIOS can kind of deal with the case where the tree is
-    //       a little different on each rank. The ADIOS file will contain
-    //       the right data. The issue we have when not all ranks write the
-    //       same data is that we can't 100% reliably assign it back to the
-    //       same rank that wrote it because ADIOS stores a "process_id" of
-    //       the writing process. That number is more like an index of the 
-    //       rank within the communicator that had the data rather than a
-    //       global rank.
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
 
+    // We write a single mesh from each rank. The resulting file will have
+    // multiple pieces.
+    Node out;
+    create_rectilinear_mesh_domain(out, rank);
+
+    std::string path("test_mpi_mesh_add_field.bp");
+    relay::mpi::io::save(out, path, MPI_COMM_WORLD);
+
+    // Make a new field. (NOTE it doesn't match the mesh size -- no matter)
+    std::vector<conduit::int32> index;
+    int dims[3] = {3, 4, rank + 5};
+    index.reserve(dims[0]*dims[1]*dims[2]);
+    for(int k = 0; k < dims[2]; ++k)
+    for(int j = 0; j < dims[1]; ++j)
+    for(int i = 0; i < dims[0]; ++i)
+    {
+        index.push_back(k*dims[0]*dims[1] + j*dims[0] + i);
+    }   
+
+    // Add the new field to the file. save_merged with matching tree.
+    Node fn;
+    fn["fields/index/association"] = "vertex";
+    fn["fields/index/type"] = "scalar";
+    fn["fields/index/topology"] = "mesh";
+    fn["fields/index/values"] = index;
+    relay::mpi::io::save_merged(fn, path, MPI_COMM_WORLD);
+
+    // Each MPI rank should read its local piece and that should be the same as
+    // the local data that was written.
+    CONDUIT_INFO("Reading domain " << rank << "/" << size << " for " << path);
+    Node in;
+    relay::mpi::io::load(path, in, MPI_COMM_WORLD);
+
+    // Store some extra things in out so we can compare in/out.
+    out["fields/index/association"] = fn["fields/index/association"];
+    out["fields/index/type"]        = fn["fields/index/type"];
+    out["fields/index/topology"]    = fn["fields/index/topology"];
+    out["fields/index/values"]      = fn["fields/index/values"];
+
+    /*if(rank == 1)
+    {
+        out.print_detailed();
+        in.print_detailed();
+    }*/
+
+    EXPECT_EQ(compare_nodes(out, in, out), true);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_mpi_io_adios, test_mpi_different_trees_rank0)
+{
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -475,17 +523,56 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_different_trees)
         out["diagnostics/timers/start"] = 0;
         out["diagnostics/timers/end"] = 99;
     }
-#if 0
+
+    std::string path("test_mpi_different_trees_rank0.bp");
+    relay::mpi::io::save(out, path, MPI_COMM_WORLD);
+    //mpi_print_node(out, "out", MPI_COMM_WORLD);
+
+    Node in;
+    CONDUIT_INFO("Reading domain " << rank << "/" << size << " for " << path);
+    relay::mpi::io::load(path, in, MPI_COMM_WORLD);
+    bool compare_nodes_local = compare_nodes(out, in, out);
+    //mpi_print_node(in, "in", MPI_COMM_WORLD);
+    //std::cout << "compare_nodes_local = " << compare_nodes_local << std::endl;
+    EXPECT_EQ(compare_nodes_local, true);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_mpi_io_adios, test_mpi_different_trees)
+{
+    // Test that we can output data with different trees and get that data
+    // back the right way.
+
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    Node out;
+    out["writer"] = rank;
+    out["pi"] = std::vector<double>(5, M_PI);
+    out["rank"] = std::vector<int>(10, rank);
+    std::ostringstream oss;
+    oss << "Rank " << rank << " likes ADIOS";
+    for(int i = 0; i < rank+1; ++i)
+        oss << " very";
+    oss << " much.";
+    out["message"] = oss.str();
+    if(rank == 0)
+    {
+        // Add extra stuff to rank 0
+        out["diagnostics/date"] = "today";
+        out["diagnostics/history/data"] = std::vector<double>(5, 1.2345);
+        out["diagnostics/history/n"] = 5;
+        out["diagnostics/timers/start"] = 0;
+        out["diagnostics/timers/end"] = 99;
+    }
     else
     {
-        // TO FIX:
-        // We cannot add extra stuff to non-rank 0's output okay and 
-        // read it back to the right rank. If we add this now, the
-        // node would end up in the readback data for domain 0, which
-        // is not right since domain 1 contained the data.
-        out["non-rank-0/rank"] = rank;
+        // Add other stuff to other ranks
+        out["timer/rank"] = rank;
+        out["timer/t"] = 1.2345;
+        out["timer/name"] = "the important timer"; // test strings
     }
-#endif
 
     std::string path("test_mpi_different_trees.bp");
     relay::mpi::io::save(out, path, MPI_COMM_WORLD);
@@ -502,6 +589,56 @@ TEST(conduit_relay_mpi_io_adios, test_mpi_different_trees)
     // //mpi_print_node(in, "in", MPI_COMM_WORLD);
     // //std::cout << "compare_nodes_local = " << compare_nodes_local << std::endl;
     // EXPECT_EQ(compare_nodes_local, true);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_mpi_io_adios, test_mpi_different_trees_save_merged)
+{
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    // Make a tree with different keys on the MPI ranks.
+    Node out;
+    out["rank"] = rank;
+    out["size"] = size;
+    if(rank == 0)
+        out["favorite/number"] = 13;
+    else
+        out["favorite/food"] = "tacos";
+    std::string path("test_mpi_different_trees_save_merged.bp");
+    //mpi_print_node(out, "out", MPI_COMM_WORLD);
+    relay::mpi::io::save(out, path, MPI_COMM_WORLD);
+
+    // Make a new tree with different keys on the MPI ranks.
+    Node extra;
+    extra["favorite/car"] = ((rank == 0) ? "Corvette" : "Camaro");
+    if(rank == 0)
+    {
+        extra["zip"] = 94550;
+        extra["city"] = "Livermore";
+    }
+    else
+        extra["temperature"] = 98.6;
+    //mpi_print_node(extra, "extra", MPI_COMM_WORLD);
+    relay::mpi::io::save_merged(extra, path, MPI_COMM_WORLD);
+
+    CONDUIT_INFO("Reading domain " << rank << "/" << size << " for " << path);
+    Node in;
+    relay::mpi::io::load(path, in, MPI_COMM_WORLD);
+    //mpi_print_node(in, "in", MPI_COMM_WORLD);
+
+    // Add some stuff to out so we can compare vs in.
+    out["favorite/car"] = in["favorite/car"];
+    if(rank == 0)
+    {
+        out["zip"] = in["zip"];
+        out["city"] = in["city"];
+    }
+    else
+        out["temperature"] = in["temperature"];
+
+    EXPECT_EQ(compare_nodes(out, in, out), true);
 }
 
 //-----------------------------------------------------------------------------

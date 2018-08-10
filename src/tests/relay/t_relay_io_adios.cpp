@@ -156,10 +156,11 @@ TEST(conduit_relay_io_adios, test_scalar_types)
 
     std::string path("test_scalar_types.bp");
     relay::io::save(out, path);
-
+    //std::cout << "out=" << out.to_json() << std::endl;
     CONDUIT_INFO("Reading " << path);
     Node in;
     relay::io::load(path, in);
+    
     Node n_info;
     EXPECT_FALSE(out.diff(in,n_info,0.0));
     //EXPECT_EQ(compare_nodes(out, in, out), true);
@@ -472,29 +473,10 @@ TEST(conduit_relay_io_adios, test_save_merged)
     std::cout << "out=" << out.to_json() << std::endl;
     std::cout << "in=" << in.to_json() << std::endl;
 #endif
+
     Node n_info;
     EXPECT_FALSE(out.diff(in,n_info,0.0));
     //EXPECT_EQ(compare_nodes(out, in, out), true);
-
-#if 0
-// NOTE: I broke this behavior to allow for save/save_merged 
-//       working to serially add domains.
-    // Make a node that overwrites one of the keys.
-    Node overwrite;
-    overwrite["d"] = 9.87654321;
-
-    // Append to the file.
-    relay::io::save_merged(overwrite, path);
-    Node in2;
-    relay::io::load(path, in2);
-
-    out["d"] = overwrite["d"];
-#if 0
-    std::cout << "out=" << out.to_json() << std::endl;
-    std::cout << "in2=" << in2.to_json() << std::endl;
-#endif
-    EXPECT_EQ(compare_nodes(out, in2, out), true);
-#endif
 }
 
 TEST(conduit_relay_io_adios, test_load_subtree)
@@ -709,7 +691,6 @@ TEST(conduit_relay_io_adios, test_node_path)
     EXPECT_FALSE(in.diff(data,n_info,0.0));
     // EXPECT_EQ(compare_nodes(in, data, in), true);
 }
-
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

@@ -47,6 +47,7 @@
 /// file: conduit_relay_io_adios.cpp
 ///
 //-----------------------------------------------------------------------------
+
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     #include "conduit_relay_mpi_io_adios.hpp"
 #else
@@ -58,11 +59,12 @@
 //-----------------------------------------------------------------------------
 #include <iostream>
 #include <algorithm>
+#include <map>
 #include <cstdio>
 #include <cstring>
-//#ifdef MAKE_SEPARATE_GROUPS
+#ifdef MAKE_SEPARATE_GROUPS
 #include <sys/time.h>
-//#endif
+#endif
 
 //-----------------------------------------------------------------------------
 // external lib includes
@@ -81,41 +83,31 @@ using std::cout;
 using std::endl;
 
 #define CURRENT_TIME_STEP -1
-#define DOMAIN_MAP_PREFIX ".dm."
-// the length of "1222333444:"
-#define DOMAIN_MAP_PREFIXLEN 11
 
-// This macro turns on disparate tree support where we prepend a hash value
-// onto 
-// FOR NOW TURN OFF
-//#define DISPARATE_TREE_SUPPORT
+// The DISPARATE_TREE_SUPPORT macro turns on disparate tree support where we
+// prepend a hash value of the Conduit tree to the start of variables. If the
+// node hashes are not all the same across MPI ranks then we switch into this
+// behavior. We write a domain map variable ".dm." that stores the node hash
+// for each domain and this lets us determine which variable to read for a 
+// given domain in case trees are different across MPI processors. This lets
+// us read back data onto the appropriate domain since ADIOS 1.x destroys 
+// that information.
+#define DISPARATE_TREE_SUPPORT
 
-/*
-In adding DISPARATE_TREE_SUPPORT I have come across a problem. The problem is
-whether save_merged() should add new domains or whether it should simply add
-missing nodes to existing domains.
+#define DOMAIN_MAP_PREFIX    ".dm."
+#define DOMAIN_MAP_PREFIXLEN 4
+#define NODEHASH_PREFIX_LEN 11
+// "1222333444/"
+#define NWRITERS_VAR ".nw."
 
-The default behavior without DISPARATE_TREE_SUPPORT is to add missing nodes 
-to existing domains. The problem is that it does not record the domain ids
-for which we're adding data.
+// The ENCODE_TYPE_IN_PATH macro causes the code to prepend a type code to
+// the start of the variable name. We do this since variables declared on 
+// non-rank 0 processes cannot successfully define attributes in ADIOS 1.x
+#define ENCODE_TYPE_IN_PATH
 
-In my new support, I have made it so that I add a .dm.xxx variable that
-contains the hash for the Conduit node and the block to which it corresponds.
-The hash is prepended onto the variable names so we we know that all ranks
-with like hashes will go together and their domains will be stored together.
-Then, when reading, we get the domain'th tuple for these values and read the
-data for the right domain by making the right variable name.
-
-To support adding new fields to existing data, I made the code add a .dm.xxxx
-variable where xxxx is the current time since the epoch. When I read the data
-back, I'm looking for a specific domain. The problem is when I have this
-behavior, each save_merged results in a new .dm.xxxx variable in the file
-so when I ask for the domain'th value, which won't exist.
-
-So, for domains, we cannot keep making .dm.xxxx have different values for xxxx.
-
-*/
-
+// This is the variable we store in the file if we're encoding types so we
+// can check for this name and assume that we're encoding type names.
+#define ENCODE_TYPE_VAR ".et."
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -152,7 +144,7 @@ namespace internals
 static int rank = 0;
 static int size = 1;
 
-//#define DEBUG_PRINT_RANK(OSSEXPR) if(internals::rank == 1) { cout << OSSEXPR << endl; }
+//#define DEBUG_PRINT_RANK(OSSEXPR) if(internals::rank == 0) { cout << OSSEXPR << endl; }
 #define DEBUG_PRINT_RANK(OSSEXPR) 
 
 //-----------------------------------------------------------------------------
@@ -339,7 +331,7 @@ streamIsFileBased(ADIOS_READ_METHOD method)
 }
 
 //-----------------------------------------------------------------------------
-//#ifdef MAKE_SEPARATE_GROUPS
+#ifdef MAKE_SEPARATE_GROUPS
 static unsigned long
 current_time_stamp()
 {
@@ -349,7 +341,7 @@ current_time_stamp()
     // Convert to microseconds since epoch.
     return t.tv_sec * 1000000 + t.tv_usec;
 }
-//#endif
+#endif
 
 //-----------------------------------------------------------------------------
 static void
@@ -364,6 +356,7 @@ create_group_name(char name[32])
 }
 
 //-----------------------------------------------------------------------------
+
 static void
 create_domain_map_name(char name[32])
 {
@@ -527,6 +520,7 @@ public:
     std::string           transform;
     std::string transport_options;
     std::string transform_options;
+    int                   enable_nodehash;
 
     ADIOS_READ_METHOD read_method;
     std::string       read_parameters;
@@ -540,6 +534,7 @@ public:
         statistics_flag(adios_stat_no), transform(),
         transport_options(),
         transform_options(),
+        enable_nodehash(1),
 
         // Read options
         read_method(ADIOS_READ_METHOD_BP),
@@ -552,7 +547,7 @@ public:
         transport = "MPI";
 #endif
     }
-    
+
     //------------------------------------------------------------------------
     void set(const Node &opts)
     {
@@ -592,6 +587,9 @@ public:
 
             if(n.has_child("transform_options"))
                 transform_options = n["transform_options"].as_string();
+
+            if(n.has_child("enable_nodehash"))
+                read_verbose = n["enable_nodehash"].to_value();
         }
 
         // Read options
@@ -634,6 +632,7 @@ public:
         opts["write/transform_options"] = transform_options;
         opts["write/statistics_flag"] = 
             internals::statistics_flag_to_string(statistics_flag);
+        opts["write/enable_nodehash"] = enable_nodehash;
 
         //
         // Add some read options.
@@ -716,10 +715,6 @@ static bool adios_initialized = false;
 #define MAX_READ_METHODS 15
 static int read_methods_initialized[MAX_READ_METHODS];
 
-#ifdef DISPARATE_TREE_SUPPORT
-static std::map<std::string, int> adios_file_num_domains;
-#endif
-
 static void initialize(
     CONDUIT_RELAY_COMMUNICATOR_ARG0(MPI_Comm comm)
     )
@@ -732,15 +727,9 @@ static void initialize(
         memset(read_methods_initialized, 0, sizeof(int)*MAX_READ_METHODS);
 
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-        // See if MPI is initialized.
-        //int mi = 0;
-        //MPI_Initialized(&mpi_init);
-        //cout << "initializing parallel ADIOS: mpi_init = " << mi << endl;
-
         // Initialize ADIOS.
         adios_init_noxml(comm);
 #else
-        //cout << "initializing serial ADIOS." << endl;
         // Initialize ADIOS.
         adios_init_noxml(0);
 #endif
@@ -783,9 +772,6 @@ static void finalize(
     adios_finalize(rank);
 #else
     adios_finalize(0);
-#endif
-#ifdef DISPARATE_TREE_SUPPORT
-    adios_file_num_domains.clear();
 #endif
 }
 
@@ -872,8 +858,10 @@ struct adios_save_state
 };
 
 //-----------------------------------------------------------------------------
-static ADIOS_DATATYPES conduit_dtype_to_adios_dtype(const Node &node)
+static ADIOS_DATATYPES conduit_dtype_to_adios_dtype(const Node &node,
+    bool &isString)
 {
+    isString = false;
     ADIOS_DATATYPES dtype = adios_unknown;
     if(!node.dtype().is_empty() &&
        !node.dtype().is_object() &&
@@ -881,9 +869,29 @@ static ADIOS_DATATYPES conduit_dtype_to_adios_dtype(const Node &node)
     {
         if(node.dtype().is_number())
         {
-            // since adios uses c style types, use those
-            // conduit will mapp to the correct bw style types
-            if(node.dtype().is_char())
+            if(node.dtype().is_int8())
+                dtype = adios_byte;
+            else if(node.dtype().is_int16())
+                dtype = adios_short;
+            else if(node.dtype().is_int32())
+                dtype = adios_integer;
+            else if(node.dtype().is_int64())
+                dtype = adios_long;
+            else if(node.dtype().is_uint8())
+                dtype = adios_unsigned_byte;
+            else if(node.dtype().is_uint16())
+                dtype = adios_unsigned_short;
+            else if(node.dtype().is_uint32())
+                dtype = adios_unsigned_integer;
+            else if(node.dtype().is_uint64())
+                dtype = adios_unsigned_long;
+            else if(node.dtype().is_float32())
+                dtype = adios_real;
+            else if(node.dtype().is_float64())
+                dtype = adios_double;
+//            else if(node.dtype().is_index_t()) // Conduit does not implement
+//                dtype = adios_unsigned_long; // ???
+            else if(node.dtype().is_char())
                 dtype = adios_byte;
             else if(node.dtype().is_short())
                 dtype = adios_short;
@@ -903,8 +911,6 @@ static ADIOS_DATATYPES conduit_dtype_to_adios_dtype(const Node &node)
                 dtype = adios_real;
             else if(node.dtype().is_double())
                 dtype = adios_double;
-//            else if(node.dtype().is_index_t()) // Conduit does not implement
-//                dtype = adios_unsigned_long; // ???
         }
         else if(node.dtype().is_string() || 
                 node.dtype().is_char8_str())
@@ -912,11 +918,67 @@ static ADIOS_DATATYPES conduit_dtype_to_adios_dtype(const Node &node)
             // NOTE: store as byte arrays since adios_string is really
             //       just for attributes and some scalars.
             dtype = adios_byte;
+            isString = true;
         }
     }
 
     return dtype;
 }
+
+#ifdef ENCODE_TYPE_IN_PATH
+//-----------------------------------------------------------------------------
+static const char *
+adios_dtype_to_short_type_name(ADIOS_DATATYPES dtype)
+{
+    const char *stn;
+    switch(dtype)
+    {
+    case adios_byte:             stn = "_b"; break;
+    case adios_short:            stn = "_s"; break;
+    case adios_integer:          stn = "_i"; break;
+    case adios_long:             stn = "_l"; break;
+    case adios_unsigned_byte:    stn = "ub"; break;
+    case adios_unsigned_short:   stn = "us"; break;
+    case adios_unsigned_integer: stn = "ui"; break;
+    case adios_unsigned_long:    stn = "ul"; break;
+    case adios_real:             stn = "_r"; break;
+    case adios_double:           stn = "_d"; break;
+    case adios_string:           stn = "st"; break;
+    default:                     stn = "??"; break;
+    }
+    return stn;
+}
+
+//-----------------------------------------------------------------------------
+static ADIOS_DATATYPES
+short_type_name_to_adios_dtype(const char *stn)
+{
+    ADIOS_DATATYPES dtype = adios_unknown;
+    if(strncmp(stn, "_b", 2) == 0)
+        dtype = adios_byte;
+    else if(strncmp(stn, "_s", 2) == 0)
+        dtype = adios_short;
+    else if(strncmp(stn, "_i", 2) == 0)
+        dtype = adios_integer;
+    else if(strncmp(stn, "_l", 2) == 0)
+        dtype = adios_long;
+    else if(strncmp(stn, "ub", 2) == 0)
+        dtype = adios_unsigned_byte;
+    else if(strncmp(stn, "us", 2) == 0)
+        dtype = adios_unsigned_short;
+    else if(strncmp(stn, "ui", 2) == 0)
+        dtype = adios_unsigned_integer;
+    else if(strncmp(stn, "ul", 2) == 0)
+        dtype = adios_unsigned_long;
+    else if(strncmp(stn, "_r", 2) == 0)
+        dtype = adios_real;
+    else if(strncmp(stn, "_d", 2) == 0)
+        dtype = adios_double;
+    else if(strncmp(stn, "st", 2) == 0)
+        dtype = adios_string;
+    return dtype;
+}
+#endif
 
 //-----------------------------------------------------------------------------
 static void define_variables(const Node &node, 
@@ -932,15 +994,23 @@ static void define_variables(const Node &node,
     adios_save_state *state = (adios_save_state *)funcData;
 
     // Map Conduit types to ADIOS types.
-    ADIOS_DATATYPES dtype = conduit_dtype_to_adios_dtype(node);
+    bool isString = false;
+    ADIOS_DATATYPES dtype = conduit_dtype_to_adios_dtype(node, isString);
     if(dtype == adios_unknown)
     {
         CONDUIT_ERROR("Unsupported Conduit to ADIOS type conversion.");
         return;
     }
 
-    // Prepend a path if necessary.
+    // Prepend a path
+#ifdef ENCODE_TYPE_IN_PATH
+    std::string atc(adios_dtype_to_short_type_name(
+                    isString ? adios_string : dtype));
+    std::string path(conduit::utils::join_path(atc, state->adios_path));
+    std::string adios_var(conduit::utils::join_path(path, node_path));
+#else
     std::string adios_var(conduit::utils::join_path(state->adios_path, node_path));
+#endif
 
     // Dimensions
     char offset[20], global[20], local[20];
@@ -949,7 +1019,7 @@ static void define_variables(const Node &node,
     memset(local,  0, sizeof(char) * 20);
     if(node.dtype().number_of_elements() > 1)
     {
-        sprintf(local, "%ld", node.dtype().number_of_elements());
+        sprintf(local, "%ld", static_cast<long>(node.dtype().number_of_elements()));
     }
     else
     {
@@ -1005,7 +1075,7 @@ static void define_variables(const Node &node,
             }
         }
     }
-
+#ifndef ENCODE_TYPE_IN_PATH
     // Store the name of the actual Conduit type as an attribute.
     DEBUG_PRINT_RANK("adios_define_attribute(gid, \"conduit_type\", \""
                      << adios_var << "\", adios_string, "
@@ -1017,6 +1087,7 @@ static void define_variables(const Node &node,
         CONDUIT_ERROR("ADIOS Error:" << adios_get_last_errmsg()); 
         return;
     }
+#endif
 
     // Add the variable's var size to the total for the group.
     state->gSize += adios_expected_var_size(vid);
@@ -1036,15 +1107,23 @@ static void write_variables(const Node &node,
     adios_save_state *state = (adios_save_state *)funcData;
 
     // Map Conduit types to ADIOS types.
-    ADIOS_DATATYPES dtype = conduit_dtype_to_adios_dtype(node);
+    bool isString = false;
+    ADIOS_DATATYPES dtype = conduit_dtype_to_adios_dtype(node, isString);
     if(dtype == adios_unknown)
     {
         CONDUIT_ERROR("Unsupported Conduit to ADIOS type conversion.");
         return;
     }
 
-    // Prepend a path if necessary.
+    // Prepend a path.
+#ifdef ENCODE_TYPE_IN_PATH
+    std::string atc(adios_dtype_to_short_type_name(
+                    isString ? adios_string : dtype));
+    std::string path(conduit::utils::join_path(atc, state->adios_path));
+    std::string adios_var(conduit::utils::join_path(path, node_path));
+#else
     std::string adios_var(conduit::utils::join_path(state->adios_path, node_path));
+#endif
 
     // if the node is compact, we can write directly from its data ptr
     DEBUG_PRINT_RANK("adios_write(file, \"" << adios_var
@@ -1104,7 +1183,7 @@ static bool declare_group(int64_t *gid,
 }
 
 //-----------------------------------------------------------------------------
-static void hash_tree(const Node &node, 
+static void hash_tree(const Node &, 
     const std::string &node_path,
     void *funcData,
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
@@ -1119,8 +1198,73 @@ static void hash_tree(const Node &node,
 }
 
 //-----------------------------------------------------------------------------
+static void compute_nodehash(const Node &node, unsigned int &nodehash, 
+    int &rank_for_nodehash, int &size_for_nodehash
+    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
+    )
+{
+    // Iterate over all of the nodes in the tree and make a hash of
+    // all of the node paths in there.
+    nodehash = 0;
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    MPI_Comm_rank(comm, &internals::rank);
+    MPI_Comm_size(comm, &internals::size);
+
+    if(options()->enable_nodehash)
+    {
+        iterate_conduit_node(node, hash_tree, &nodehash, comm);
+        unsigned int reduced_nodehash = 0;
+        MPI_Allreduce(&nodehash, &reduced_nodehash, 1, 
+                      MPI_UNSIGNED, MPI_BAND, comm);
+        if(nodehash != reduced_nodehash)
+        {
+            // We have different node hashes across ranks. So, we need to determine
+            // the rank of this process in the group of ranks that has this 
+            // nodehash value.
+            unsigned int *allnodehashes = new unsigned int[internals::size];
+            MPI_Allgather(&nodehash, 1, MPI_UNSIGNED,
+                          allnodehashes, 1, MPI_UNSIGNED,
+                          comm);
+            // Count the ranks that have this nodehash
+            size_for_nodehash = 0;
+            for(int i = 0; i < internals::size; ++i)
+            {
+                if(allnodehashes[i] == nodehash)
+                    ++size_for_nodehash;
+            }
+            // Count the number of occurances of nodehash before this rank to
+            // get a rank.
+            rank_for_nodehash = 0;
+            for(int i = 0; i < internals::rank; ++i)
+            {
+                if(allnodehashes[i] == nodehash)
+                    ++rank_for_nodehash;
+            }
+            delete [] allnodehashes;
+        }
+        else
+        {
+            size_for_nodehash = internals::size;
+            rank_for_nodehash = internals::rank;
+        }
+    }
+    else
+    {
+        size_for_nodehash = internals::size;
+        rank_for_nodehash = internals::rank;
+    }
+#else
+    if(options()->enable_nodehash)
+        iterate_conduit_node(node, hash_tree, &nodehash, 0);
+    rank_for_nodehash = 0;
+    size_for_nodehash = 1;
+#endif
+}
+
+//-----------------------------------------------------------------------------
 static void
-save(const Node &node, const std::string &path, const char *flag
+save(const Node &node, const std::string &path, const char *flag,
+    unsigned int nodehash, int nodehash_rank, int nodehash_size
     CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
     )
 {
@@ -1151,6 +1295,8 @@ save(const Node &node, const std::string &path, const char *flag
     // Initialize ADIOS.
     initialize(comm);
 #else
+    int comm = 0;
+
     // Initialize ADIOS.
     initialize();
 #endif
@@ -1159,78 +1305,6 @@ save(const Node &node, const std::string &path, const char *flag
     DEBUG_PRINT_RANK("adios_set_max_buffer_size("
                      << options()->buffer_size << ")")
     adios_set_max_buffer_size(static_cast<uint64_t>(options()->buffer_size));
-
-#ifdef DISPARATE_TREE_SUPPORT
-// NOTE: We have to increment this_node_rank by the number of domains that 
-//       are already in the file if we are updating the file to add new
-//       data to it. If we do not then our mapping will keep saying
-//       that our new domain that we're adding points to block 0.
-//       that's no good. It points to another reason to NOT use
-//       save_merged to add domains to the file.
-//       We do not want to have to open the file beforehand to query the
-//       size of the .dm. variable! That would suck!
-
-    // If we're writing a new file or appending a new step then
-    // clear the keys associated with file_path.
-    if(strcmp(flag, "w") == 0 || strcmp(flag, "a") == 0)
-        adios_file_num_domains.clear(); // FIXME
-
-    // Iterate over all of the nodes in the tree and make a hash of
-    // all of the node paths in there.
-    unsigned int nodehash = 0;
-    int total_hashcount;
-    int this_node_rank = internals::rank;
-#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    iterate_conduit_node(node, hash_tree, &nodehash, comm);
-    unsigned int reduced_nodehash = 0;
-    MPI_Allreduce(&nodehash, &reduced_nodehash, 1, 
-                  MPI_UNSIGNED, MPI_BAND, comm);
-    if(nodehash != reduced_nodehash)
-    {
-        // We have different node hashes across ranks. So, we need to determine
-        // the rank of this process in the group of ranks that has this 
-        // nodehash value. We could split the comm to determine this but that
-        // color parameter is "int" and not "unsigned int".
-        unsigned int *allnodehashes = new unsigned int[internals::size];
-        MPI_Allgather(&nodehash, 1, MPI_UNSIGNED,
-                      allnodehashes, 1, MPI_UNSIGNED,
-                      comm);
-        // Count the ranks that have this nodehash
-        total_hashcount = 0;
-        for(int i = 0; i < internals::size; ++i)
-        {
-            if(allnodehashes[i] == nodehash)
-                ++total_hashcount;
-        }
-        // Count the number of occurances of nodehash before this rank to
-        // get a rank.
-        this_node_rank = 0;
-        for(int i = 0; i < internals::rank; ++i)
-        {
-            if(allnodehashes[i] == nodehash)
-                ++this_node_rank;
-        }
-        delete [] allnodehashes;
-    }
-    else
-    {
-        total_hashcount = internals::size;
-    }
-#else
-    // Compute the hash.
-    iterate_conduit_node(node, hash_tree, &nodehash, 0);
-    total_hashcount = 1;
-#endif
-
-    // Offset the this_node_rank by the computed domain offset
-    std::ostringstream key;
-    key << file_path << ":" << nodehash;
-    if(adios_file_num_domains.find(key.str()) == adios_file_num_domains.end())
-        adios_file_num_domains[key.str()] = 0;
-    int domain_offset = adios_file_num_domains[key.str()];
-    adios_file_num_domains[key.str()] += total_hashcount;
-    this_node_rank += domain_offset;
-#endif
 
     //
     // Group
@@ -1242,37 +1316,55 @@ save(const Node &node, const std::string &path, const char *flag
     std::string timeIndex;
     if(declare_group(&state.gid, state.groupName, timeIndex))
     {
+#ifdef DISPARATE_TREE_SUPPORT
+        //
+        // Define nodehash variable (if enabled and relevant)
+        //
+        char domain_map_name[32];
+        unsigned int dm[2] = {0,0};
+        bool write_domain_map = options()->enable_nodehash &&
+                                nodehash_size != internals::size; // >1 hashes
+        if(write_domain_map)
+        {
+            create_domain_map_name(domain_map_name);
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+            MPI_Bcast(domain_map_name, 32, MPI_CHAR, 0, comm);
+#endif
+            // Define a domainmap variable.
+            dm[0] = nodehash;
+            dm[1] = nodehash_rank;
+            DEBUG_PRINT_RANK("adios_define_var(gid, \"" << domain_map_name 
+                << "\", \"\", adios_unsigned_integer, \"2\", \"\", \"\")")
+            adios_define_var(state.gid, domain_map_name,
+                             "", adios_unsigned_integer,
+                             "2", ""/*global*/, ""/*offset*/);
+            state.gSize += 2 * sizeof(unsigned int);
+
+            // Save the number of writers.
+            adios_define_var(state.gid, NWRITERS_VAR,
+                         "", adios_integer,
+                         "", "", "");
+            state.gSize += sizeof(int);
+
+            // We'll prepend the nodehash onto the rest of the variables
+            // that we declare.
+            char nhprefix[12];
+            sprintf(nhprefix, "%010u", nodehash);
+            state.adios_path = conduit::utils::join_path(std::string(nhprefix), state.adios_path);
+        }
+#endif
+#ifdef ENCODE_TYPE_IN_PATH
+        // Define a scalar that indicates we're encoding types in the path.
+        adios_define_var(state.gid, ENCODE_TYPE_VAR,
+                         "", adios_integer,
+                         "", "", "");
+        state.gSize += sizeof(int);
+#endif
+
         //
         // Define variables.
         //
-#ifdef DISPARATE_TREE_SUPPORT
-        char domain_map_name[32];
-        create_domain_map_name(domain_map_name);
-#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-        MPI_Bcast(domain_map_name, 32, MPI_CHAR, 0, comm);
-#endif
-        // Define a domainmap variable.
-        unsigned int dm[2] = {0,0};
-        dm[0] = nodehash;
-        dm[1] = this_node_rank;
-        DEBUG_PRINT_RANK("adios_define_var(gid, \"" << domain_map_name 
-            << "\", \"\", adios_unsigned_integer, \"2\", \"\", \"\")")
-        adios_define_var(state.gid, domain_map_name,
-                         "", adios_unsigned_integer,
-                         "2", ""/*global*/, ""/*offset*/);
-        state.gSize += 2 * sizeof(unsigned int);
-
-        // We'll prepend the nodehash onto the rest of the variables
-        // that we declare.
-        char nhprefix[12];
-        sprintf(nhprefix, "%010u", nodehash);
-        state.adios_path = conduit::utils::join_path(std::string(nhprefix), state.adios_path);
-#endif
-#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
         iterate_conduit_node(node, define_variables, &state, comm);
-#else
-        iterate_conduit_node(node, define_variables, &state, 0);
-#endif
 
         //
         // Open the file
@@ -1280,32 +1372,35 @@ save(const Node &node, const std::string &path, const char *flag
         DEBUG_PRINT_RANK("adios_open(&fid, \"" << state.groupName 
             << "\", \"" << path << "\", "
             << "\"" << flag << "\", comm)")
-        if(adios_open(&state.fid, state.groupName, file_path.c_str(), flag
-#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-                      , comm
-#else
-                      , 0
-#endif
-                      ) == 0)
+        if(adios_open(&state.fid, state.groupName, file_path.c_str(), 
+                      flag, comm) == 0)
         {
             // This is an optional call that lets ADIOS size its output buffers.
             uint64_t total_size = 0;
             DEBUG_PRINT_RANK("adios_group_size(fid, " << state.gSize << ", &total)")
             if(adios_group_size(state.fid, state.gSize, &total_size) == 0)
             {
+#ifdef DISPARATE_TREE_SUPPORT
+                if(write_domain_map)
+                {
+                    // Write the domainmap variable.
+                    DEBUG_PRINT_RANK("adios_write(fid, \"" << domain_map_name << "\", dm)")
+                    adios_write(state.fid, domain_map_name, dm);
+
+                    // Write the number of writers.
+                    DEBUG_PRINT_RANK("adios_write(fid, \"" << NWRITERS_VAR << "\", size)")
+                    adios_write(state.fid, NWRITERS_VAR, &internals::size);
+                }
+#endif
+#ifdef ENCODE_TYPE_IN_PATH
+                int etflag = 1;
+                DEBUG_PRINT_RANK("adios_write(fid, \"" << ENCODE_TYPE_VAR << "\", etflag)")
+                adios_write(state.fid, ENCODE_TYPE_VAR, &etflag);
+#endif
                 //
                 // Write Variables
                 //
-#ifdef DISPARATE_TREE_SUPPORT
-                // Write the domainmap variable.
-                DEBUG_PRINT_RANK("adios_write(fid, \"" << domain_map_name << "\", dm)")
-                adios_write(state.fid, domain_map_name, dm);
-#endif
-#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
                 iterate_conduit_node(node, write_variables, &state, comm);
-#else
-                iterate_conduit_node(node, write_variables, &state, 0);
-#endif
             }
             else
             {
@@ -1429,6 +1524,8 @@ open_file_and_process(adios_load_state *state,
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     MPI_Comm_rank(comm, &internals::rank);
     MPI_Comm_size(comm, &internals::size);
+#else
+    int comm = 0;
 #endif
 
     // Initialize the read method.
@@ -1438,11 +1535,7 @@ open_file_and_process(adios_load_state *state,
        << internals::options()->read_parameters
        << "\")");
     adios_read_init_method(options()->read_method, 
-#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
                            comm,
-#else
-                           0,
-#endif
                            options()->read_parameters.c_str()
                            );
     // Mark that we've initialized the read method.
@@ -1457,12 +1550,7 @@ open_file_and_process(adios_load_state *state,
         //       providing access to time steps.
         afile = adios_read_open_file(state->filename.c_str(), 
                     options()->read_method,
-#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-                    comm
-#else
-                    0
-#endif
-                    );
+                    comm);
     }
     else
     {
@@ -1475,11 +1563,7 @@ open_file_and_process(adios_load_state *state,
 
         afile = adios_read_open(state->filename.c_str(), 
                     options()->read_method,
-#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
                     comm,
-#else
-                    0,
-#endif
                     options()->read_lock_mode,
                     options()->read_timeout);
     }
@@ -1500,6 +1584,117 @@ open_file_and_process(adios_load_state *state,
 }
 
 //-----------------------------------------------------------------------------
+#ifdef ENCODE_TYPE_IN_PATH
+bool encode_type_found(ADIOS_FILE *afile)
+{
+    for (int i = 0; i < afile->nvars; ++i)
+    {
+        if(strcmp(afile->var_namelist[i], ENCODE_TYPE_VAR) == 0)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+#endif
+
+#ifdef DISPARATE_TREE_SUPPORT
+//-----------------------------------------------------------------------------
+bool domain_map_found(ADIOS_FILE *afile)
+{
+    for (int i = 0; i < afile->nvars; ++i)
+    {
+        if(strncmp(afile->var_namelist[i], 
+                   DOMAIN_MAP_PREFIX, DOMAIN_MAP_PREFIXLEN) == 0)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+//-----------------------------------------------------------------------------
+bool nwriters_found(ADIOS_FILE *afile)
+{
+    for (int i = 0; i < afile->nvars; ++i)
+    {
+        if(strcmp(afile->var_namelist[i], NWRITERS_VAR) == 0)
+            return true;
+    }
+    return false;
+}
+
+//-----------------------------------------------------------------------------
+static void
+load_domain_map(ADIOS_FILE *afile, int ts, int domain,
+    std::vector<std::string>  &dmprefixes,
+    std::vector<unsigned int> &dmblocks
+    )
+{
+    std::map<unsigned int, unsigned int> dmap;
+
+    // Determine the number of writers in the file.
+    int nwriters_in_file = 1; // initial guess
+    if(nwriters_found(afile))
+    {
+        ADIOS_VARINFO *v = adios_inq_var(afile, NWRITERS_VAR);
+        if(v)
+        {
+            nwriters_in_file = *((int *)v->value);
+            adios_free_varinfo(v);
+        }
+    }
+
+    if(domain_map_found(afile))
+    {
+        // Get the size of .dm. We will assume that if there are more than size
+        // pieces that we have multiple parts that we want to combine if they
+        // have different node hashes.
+        ADIOS_VARINFO *v = adios_inq_var(afile, DOMAIN_MAP_PREFIX);
+        if(v)
+        {
+            adios_inq_var_blockinfo(afile,v);
+
+            // Check time step validity.
+            if(ts == CURRENT_TIME_STEP)
+                ts = afile->current_step;
+
+            // ASSUMPTION: We assume that each save_merged() was the same nprocs.
+            int nblocks = v->nblocks[ts];
+            int varid = v->varid;
+            for(int d = domain; d < nblocks; d += nwriters_in_file)
+            {
+                ADIOS_SELECTION *sel = adios_selection_writeblock(d);
+
+                unsigned int dm[2] = {0,0};
+                adios_schedule_read_byid(afile, sel, varid, ts, 1, dm);
+                int blocking = 1;
+                adios_perform_reads(afile, blocking);
+
+                // Ensure that we're only putting different node hashes/blocks into dmap.
+                if(dmap.find(dm[0]) == dmap.end())
+                {
+                    dmap[dm[0]] = dm[1];
+                }
+            }
+
+            adios_free_varinfo(v);
+        }
+
+        // Check if there are any duplicate node hashes.
+        for(std::map<unsigned int, unsigned int>::const_iterator it = dmap.begin();
+            it != dmap.end(); ++it)
+        {
+            char prefix[32];
+            sprintf(prefix, "%010u", it->first);
+            dmprefixes.push_back(prefix);
+            dmblocks.push_back(it->second);
+        }
+    }
+}
+#endif
+
+//-----------------------------------------------------------------------------
 // Callback for load()
 static void
 load_node(adios_load_state *state, ADIOS_FILE *afile, void *cbdata)
@@ -1514,100 +1709,77 @@ load_node(adios_load_state *state, ADIOS_FILE *afile, void *cbdata)
 #ifdef DISPARATE_TREE_SUPPORT
     std::vector<std::string>  dmprefixes;
     std::vector<unsigned int> dmblocks;
-if(internals::rank == 1)
-    utils::sleep(4);
-    // We want state->domain for the domain to read in.
-    for (int i = 0; i < afile->nvars; ++i)
-    {
-        // Only consider the domain map variables since their length
-        // indicates a number of domains.
-        if(strncmp(afile->var_namelist[i], DOMAIN_MAP_PREFIX, 4) != 0)
-            continue;
-
-//cout << "domain map var: " << afile->var_namelist[i] << endl;
-
-        // We want to read the state->domain'th block of .dm. so 
-        // know which block we want to read.
-        ADIOS_VARINFO *v = adios_inq_var(afile, afile->var_namelist[i]);
-        if(v)
-        {
-            adios_inq_var_blockinfo(afile,v);
-
-//if(internals::rank == 0)
-//            internals::print_varinfo(cout, afile, v);
-
-            // Check time step validity.
-            int ts = state->time_step;
-            if(state->time_step == CURRENT_TIME_STEP)
-                ts = afile->current_step;
-
-cout << internals::rank << ": Try to read block " << state->domain << " of " << afile->var_namelist[i] << endl;
-            if(state->domain < v->nblocks[ts])
-            {
-                ADIOS_SELECTION *sel = adios_selection_writeblock(state->domain);
-                sels.push_back(sel);
-
-                unsigned int dm[2] = {0,0};
-                adios_schedule_read_byid(afile, sel, v->varid, ts, 1, dm);
-                adios_free_varinfo(v);
-                int blocking = 1;
-                adios_perform_reads(afile, blocking);
-
-cout << internals::rank << ": domain " << state->domain << " corresponds to group=" << dm[0] << ", block=" << dm[1] << " in " << afile->var_namelist[i] << endl;
-
-                char prefix[32];
-                sprintf(prefix, "%010u", dm[0]);
-                dmprefixes.push_back(prefix);
-                dmblocks.push_back(dm[1]);
-cout << internals::rank << ": prefix = " << prefix << ", block=" << dm[1] << endl;
-            }
-            else
-            {
-                cout << "Asked for out of bounds domain in " << afile->var_namelist[i] << endl;
-            }
-        }
-    }
+    load_domain_map(afile, state->time_step, state->domain, dmprefixes, dmblocks);
+#endif
+    int skip = 0;
+#ifdef ENCODE_TYPE_IN_PATH
+    if(encode_type_found(afile))
+        skip += 3;
 #endif
 
     for (int i = 0; i < afile->nvars; ++i)
     {
-#ifdef DISPARATE_TREE_SUPPORT
-        // Skip the domain map variables.
-        if(strncmp(afile->var_namelist[i], DOMAIN_MAP_PREFIX, 4) == 0)
-            continue;
-
-        // See if the variable has a prefix for the domains we want.
-        bool has_prefix = false;
-        int search_domain = 0;
-        std::string vname;
-        for(size_t j = 0; j < dmprefixes.size(); ++j)
-        {
-            if(strncmp(afile->var_namelist[i], dmprefixes[j].c_str(), dmprefixes[j].size()) == 0)
-            {
-                vname = std::string(afile->var_namelist[i] + dmprefixes[j].size() + 1);
-                search_domain = dmblocks[j];
-                has_prefix = true;
-                break;
-            }
-        }
-        if(!has_prefix)
-            continue;
-#else
-        int search_domain = state->domain;
-        std::string vname(afile->var_namelist[i]);
-#endif
+        const char *var_original  = afile->var_namelist[i];
+        // The file may encode type in the first few chars e.g.: "_r/"
+        const char *var_no_prefix = afile->var_namelist[i] + skip;
 
         // Skip ADIOS statistics variables.
-        if(strncmp(afile->var_namelist[i], "/__adios__", 10) == 0)
+        if(strncmp(var_original, "/__adios__", 10) == 0)
             continue;
+
+#ifdef ENCODE_TYPE_IN_PATH
+        // Skip the encode types var.
+        if(strcmp(var_original, ENCODE_TYPE_VAR) == 0)
+            continue;
+#endif
+#ifdef DISPARATE_TREE_SUPPORT
+        // Skip the domain map variables.
+        if(strncmp(var_original, DOMAIN_MAP_PREFIX, DOMAIN_MAP_PREFIXLEN) == 0)
+            continue;
+        // Skip the num writer variable.
+        if(strcmp(var_original, NWRITERS_VAR) == 0)
+            continue;
+
+        int search_domain = 0;
+        std::string vname;
+        if(dmprefixes.empty())
+        {
+            // The file did not contain domain map information so the trees
+            // must have been the same.
+            search_domain = state->domain;
+            vname = std::string(var_no_prefix);
+        }
+        else
+        {
+            // The file has domain maps. See if the variable has a prefix
+            // for the domain we want.
+            bool has_prefix = false;
+            for(size_t j = 0; j < dmprefixes.size(); ++j)
+            {
+                if(strncmp(var_no_prefix, 
+                    dmprefixes[j].c_str(), dmprefixes[j].size()) == 0)
+                {
+                    vname = std::string(var_no_prefix + dmprefixes[j].size() + 1);
+                    search_domain = dmblocks[j];
+                    has_prefix = true;
+                    break;
+                }
+            }
+            if(!has_prefix)
+                continue;
+        }
+#else
+        int search_domain = state->domain;
+        vname = std::string(var_original);
+#endif
 
         // Test that the variable is something we want to read.
         if(!internals::name_matches_subpaths(vname, state->subpaths))
             continue;
 
         DEBUG_PRINT_RANK("adios_inq_var(afile, \""
-            << afile->var_namelist[i] << "\")")
-        ADIOS_VARINFO *v = adios_inq_var(afile, afile->var_namelist[i]);
+            << var_original << "\")")
+        ADIOS_VARINFO *v = adios_inq_var(afile, var_original);
         if(v)
         {
             // We have array data. Let's allocate a buffer for 
@@ -1619,28 +1791,33 @@ cout << internals::rank << ": prefix = " << prefix << ", block=" << dm[1] << end
             int ts = state->time_step;
             if(state->time_step == CURRENT_TIME_STEP)
                 ts = afile->current_step;
-//            else if(state->time_step < v->nsteps)
-//                ts = state->time_step;
 
 #if 0
             // Print variable information.
-            if(internals::rank == 1)
+            if(internals::rank == 0)
             {
-                cout << "Reading process_id=" << search_domain << " time_index=" << (ts+1) << endl;
+                cout << "Reading domain=" << search_domain << ", ts=" << ts << endl;
                 internals::print_varinfo(cout, afile, v);
             }
 #endif
 
             // ADIOS time steps start at 1.
             uint32_t ts1 = static_cast<uint32_t>(ts) + 1;
-//cout << "state->time_step = " << state->time_step << ", v->nsteps=" << v->nsteps
-//     << ", ts=" << ts << ", ts1 = " << ts1 << endl;
+            bool streaming = !streamIsFileBased(options()->read_method);
 
-            // The blocks for the current time step start at biOffset,
-            // which is the sum of the preceding block counts.
             int biOffset = 0;
-            for(int ti = 0; ti < ts; ++ti)
-                biOffset += v->nblocks[ti];
+            if(streaming)
+            {
+                // For streaming, force read of time step 0, the current time step.
+                ts = 0;
+            }
+            else
+            {
+                // The blocks for the current time step start at biOffset,
+                // which is the sum of the preceding block counts.
+                for(int ti = 0; ti < ts; ++ti)
+                    biOffset += v->nblocks[ti];
+            }
 
             // There will be v->nblocks[ts] blocks for the current
             // time step starting at biOffset. We can make sure that
@@ -1651,9 +1828,36 @@ cout << internals::rank << ": prefix = " << prefix << ", block=" << dm[1] << end
             bool block_found = false;
             uint64_t nelem = 1;
             int read_dom = search_domain;
-            if(v->blockinfo[biOffset + search_domain].time_index == ts1)
+            if(read_dom >= v->nblocks[ts])
             {
-                nelem = v->blockinfo[biOffset + search_domain].count[0];
+                DEBUG_PRINT_RANK("CAPPING read_com at 0");
+                read_dom = 0;
+            }
+
+// NOTE: Norbert suggests not using the var block info as transports may reorganize
+//       data into global arrays. It would be safer to read an element out of the
+//       data using a bounding box selection (read a 1 element array slice). The
+//       DATASPACES transport reassembles data from multiple rank "local" arrays
+//       into bigger chunks.
+//
+//       For variable-sized array data, store an array of offsets into the whole data
+//       array that is being saved. Burlen takes an approach like this for SENSEI.
+//       Saving offsets could mean all-gathering the sizes to each rank, which would
+//       be challenging for write since we don't know which ranks have what variables.
+//       We could define/write a size var for array variables though. Then save the 
+//       size in ADIOS. For reading, the size array would have to be read [0,rank-1]
+//       and then offsets computed from it to make the bounding box selection.
+
+
+            DEBUG_PRINT_RANK("state->time_step = " << state->time_step
+                << ", v->nsteps=" << v->nsteps
+                << ", ts=" << ts << ", ts1 = " << ts1 << endl
+                << "biOffset=" << biOffset << ", read_dom=" <<read_dom);
+
+            if(streaming ||
+               v->blockinfo[biOffset + read_dom].time_index == ts1)
+            {
+                nelem = v->blockinfo[biOffset + read_dom].count[0];
                 if(nelem == 0)
                 {
                     // The count is 0 so we probably have a scalar.
@@ -1677,15 +1881,19 @@ cout << internals::rank << ": prefix = " << prefix << ", block=" << dm[1] << end
                 void *vbuf = NULL;
                 if(v->type == adios_byte)
                 {
+                    // Determine if the adios_byte was really an adios_string.
+                    bool isString = false;
+#ifdef ENCODE_TYPE_IN_PATH
+                    isString = short_type_name_to_adios_dtype(var_original) ==
+                               adios_string;
+#else
                     std::string conduit_type;
                     internals::read_conduit_type_attribute(afile, 
                         v, conduit_type);
-#ifdef DISPARATE_TREE_SUPPORT
-cout << "HACK: forcing adios_byte type to be interpreted as string because ADIOS attribute is not located." << endl;
-conduit_type = "char8_str";
+                    isString = conduit_type == "char8_str";
 #endif
-                    if(!conduit_type.empty() &&
-                       conduit_type == "char8_str")
+
+                    if(isString)
                     {
                         // Treat the byte array as a string.
                         // NOTE: when the data were saved, a '\0' terminator
@@ -1699,66 +1907,65 @@ conduit_type = "char8_str";
                     }
                     else
                     {
-                        node[vname].set(DataType::c_char(nelem));
-                        char *buf = node[vname].value();
+                        node[vname].set(DataType::int8(nelem));
+                        int8 *buf = node[vname].value();
                         vbuf = (void *)buf;
                     }
                 }
                 else if(v->type == adios_short)
                 {
-                    node[vname].set(DataType::c_short(nelem));
-                    short *buf = node[vname].value();
+                    node[vname].set(DataType::int16(nelem));
+                    int16 *buf = node[vname].value();
                     vbuf = (void *)buf;
                 }
                 else if(v->type == adios_integer)
                 {
-                    node[vname].set(DataType::c_int(nelem));
-                    int *buf = node[vname].value();
+                    node[vname].set(DataType::int32(nelem));
+                    int32 *buf = node[vname].value();
                     vbuf = (void *)buf;
                 }
                 else if(v->type == adios_long)
                 {
-                    node[vname].set(DataType::c_long(nelem));
-                    long *buf = node[vname].value();
+                    node[vname].set(DataType::int64(nelem));
+                    int64 *buf = node[vname].value();
                     vbuf = (void *)buf;
                 }
                 else if(v->type == adios_unsigned_byte)
                 {
-                    node[vname].set(DataType::c_unsigned_char(nelem));
-                    unsigned char *buf = node[vname].value();
+                    node[vname].set(DataType::uint8(nelem));
+                    uint8 *buf = node[vname].value();
                     vbuf = (void *)buf;
                 }
                 else if(v->type == adios_unsigned_short)
                 {
-                    node[vname].set(DataType::c_unsigned_short(nelem));
-                    unsigned short *buf = node[vname].value();
+                    node[vname].set(DataType::uint16(nelem));
+                    uint16 *buf = node[vname].value();
                     vbuf = (void *)buf;
                 }
                 else if(v->type == adios_unsigned_integer)
                 {
-                    node[vname].set(DataType::c_unsigned_int(nelem));
-                    unsigned int *buf = node[vname].value();
+                    node[vname].set(DataType::uint32(nelem));
+                    uint32 *buf = node[vname].value();
                     vbuf = (void *)buf;
                 }
                 else if(v->type == adios_unsigned_long)
                 {
-                    node[vname].set(DataType::c_unsigned_long(nelem));
-                    unsigned long *buf = node[vname].value();
+                    node[vname].set(DataType::uint64(nelem));
+                    uint64 *buf = node[vname].value();
                     vbuf = (void *)buf;
                 }
                 else if(v->type == adios_real)
                 {
-                    node[vname].set(DataType::c_float(nelem));
-                    float *buf = node[vname].value();
+                    node[vname].set(DataType::float32(nelem));
+                    float32 *buf = node[vname].value();
                     vbuf = (void *)buf;
                 }
                 else if(v->type == adios_double)
                 {
-                    node[vname].set(DataType::c_double(nelem));
-                    double *buf = node[vname].value();
+                    node[vname].set(DataType::float64(nelem));
+                    float64 *buf = node[vname].value();
                     vbuf = (void *)buf;
                 }
-                // TODO:: LONG LONG 
                 else
                 {
                     // Other cases should not happen.
@@ -1777,7 +1984,7 @@ conduit_type = "char8_str";
                 }
             } // block_found
 #if 0
-            else
+            else if(internals::rank == 0)
             {
                 // We could not find the desired block.
                 cout << "No block for " << vname << " process_id=" << state->domain
@@ -1822,29 +2029,59 @@ static void
 find_max_domains(adios_load_state *state, ADIOS_FILE *afile, void *cbdata)
 {
     int *ndoms = (int *)cbdata;
+    ADIOS_VARINFO *v;
+
+    // Determine if there are prefixes to skip on the variables.
+    int skip = 0;
+#ifdef ENCODE_TYPE_IN_PATH
+    if(encode_type_found(afile))
+        skip += 3;
+#endif
+#ifdef DISPARATE_TREE_SUPPORT
+    bool dm_found = domain_map_found(afile);
+    skip += (dm_found ? NODEHASH_PREFIX_LEN : 0);
+#endif
+
+    // Attempt to get the number of writers.
+    int nwriters_in_file = 1; // initial guess.
+    if(nwriters_found(afile))
+    {
+        if((v = adios_inq_var(afile, NWRITERS_VAR)) != NULL)
+        {
+            nwriters_in_file = *((int*)v->value);
+            adios_free_varinfo(v);
+        }
+    }
 
     for (int i = 0; i < afile->nvars; ++i)
     {
-        std::string vname(afile->var_namelist[i]);
-
-#ifdef DISPARATE_TREE_SUPPORT
-        // Only consider the domain map variables since their length
-        // indicates a number of domains.
-        if(strncmp(afile->var_namelist[i], DOMAIN_MAP_PREFIX, 4) != 0)
-            continue;
-#else
         // Skip ADIOS statistics variables.
         if(strncmp(afile->var_namelist[i], "/__adios__", 10) == 0)
             continue;
-
+#ifdef ENCODE_TYPE_IN_PATH
+        // Skip the encode type in path flag.
+        if(strcmp(afile->var_namelist[i], ENCODE_TYPE_VAR) == 0)
+            continue;
+#endif
+#ifdef DISPARATE_TREE_SUPPORT
+        // If the domain map is present, only consider domain map variables
+        // since their length indicates a number of domains.
+        if(dm_found)
+        {
+           bool notdm = strncmp(afile->var_namelist[i], 
+                                DOMAIN_MAP_PREFIX, DOMAIN_MAP_PREFIXLEN) != 0;
+           if(notdm)
+               continue;
+        }
+#else
+        std::string vname(afile->var_namelist[i] + skip);
         // Test that the variable is something we want to read.
         if(!internals::name_matches_subpaths(vname, state->subpaths))
             continue;
 #endif
         DEBUG_PRINT_RANK("adios_inq_var(afile, \""
             << afile->var_namelist[i] << "\")")
-        ADIOS_VARINFO *v = adios_inq_var(afile, afile->var_namelist[i]);
-        if(v)
+        if((v = adios_inq_var(afile, afile->var_namelist[i])) != NULL)
         {
             DEBUG_PRINT_RANK("adios_inq_var_blockinfo(afile, v)")
             adios_inq_var_blockinfo(afile,v);
@@ -1857,7 +2094,7 @@ find_max_domains(adios_load_state *state, ADIOS_FILE *afile, void *cbdata)
                 ts = v->nsteps-1;
 
             // Let's look at the nblocks for the current time step.
-            *ndoms = std::max(*ndoms, v->nblocks[ts]);
+            *ndoms = std::max(*ndoms, v->nblocks[ts] / nwriters_in_file);
      
             adios_free_varinfo(v);
         }
@@ -1893,7 +2130,7 @@ find_num_timesteps(adios_load_state *, ADIOS_FILE *afile, void *cbdata)
 
 //-----------------------------------------------------------------------------
 static int
-query_number_of_time_steps(adios_load_state *state
+query_number_of_steps(adios_load_state *state
     CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
    )
 { 
@@ -1973,10 +2210,14 @@ adios_save(const Node &node, const std::string &path
     CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
     )
 {
+    unsigned int nodehash = 0;
+    int nodehash_rank = 0, nodehash_size = 1;
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    internals::save(node, path, "w", comm);
+    internals::compute_nodehash(node, nodehash, nodehash_rank, nodehash_size, comm);
+    internals::save(node, path, "w", nodehash, nodehash_rank, nodehash_size, comm);
 #else
-    internals::save(node, path, "w");
+    internals::compute_nodehash(node, nodehash, nodehash_rank, nodehash_size);
+    internals::save(node, path, "w", nodehash, nodehash_rank, nodehash_size);
 #endif
 }
 
@@ -1985,15 +2226,30 @@ void adios_save_merged(const Node &node, const std::string &path
    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
    )
 {
+    // save_merged() is not allowed for streaming.
+    if(!internals::streamIsFileBased(internals::options()->read_method))
+    {
+        CONDUIT_ERROR("save_merged() is not allowed for streaming.");
+        return;
+    }
+
+    unsigned int nodehash = 0;
+    int nodehash_rank = 0, nodehash_size = 1;
+
     // NOTE: we use "u" to update the file so the time step is not incremented.
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    internals::save(node, path, "u", comm);
+    internals::compute_nodehash(node, nodehash, nodehash_rank, nodehash_size, comm);
+    // TODO: read the number of domains in the file for this node hash (if hashing
+    //       is present in the file) and adjust the nodehash_rank by that number.
+    internals::save(node, path, "u", nodehash, nodehash_rank, nodehash_size, comm);
 #else
-    internals::save(node, path, "u");
+    internals::compute_nodehash(node, nodehash, nodehash_rank, nodehash_size);
+    // TODO: read the number of domains in the file for this node hash (if hashing
+    //       is present in the file) and adjust the nodehash_rank by that number.
+    internals::save(node, path, "u", nodehash, nodehash_rank, nodehash_size);
 #endif
 }
 
-//-----------------------------------------------------------------------------
 void adios_add_step(const Node &node, const std::string &path
     CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm))
 {
@@ -2004,25 +2260,30 @@ void adios_add_step(const Node &node, const std::string &path
                                     file_path,
                                     adios_path);
 
-    // NOTE: we use "a" to update the file to the next step.
+    unsigned int nodehash = 0;
+    int nodehash_rank = 0, nodehash_size = 1;
+
+    // NOTE: we use "a" to update the file to the next time step.
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    internals::save(node, path, "a", comm);
+    internals::compute_nodehash(node, nodehash, nodehash_rank, nodehash_size, comm);
+    internals::save(node, path, "a", nodehash, nodehash_rank, nodehash_size, comm);
 #else
-    internals::save(node, path, "a");
+    internals::compute_nodehash(node, nodehash, nodehash_rank, nodehash_size);
+    internals::save(node, path, "a", nodehash, nodehash_rank, nodehash_size);
 #endif
 }
 
 //-----------------------------------------------------------------------------
 void
 adios_load(const std::string &path,
-   int step,
+   int time_step,
    int domain, 
    Node &node
    CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm)
    )
 {
     internals::adios_load_state state;
-    state.time_step = step; // Force specific step/domain.
+    state.time_step = time_step; // Force specific timestep/domain.
     state.domain = domain;
 
     // Split the incoming path in case it includes other information.
@@ -2075,9 +2336,9 @@ adios_query_number_of_steps(const std::string &path
                                     tmp);
 
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    return internals::query_number_of_time_steps(&state, comm);
+    return internals::query_number_of_steps(&state, comm);
 #else
-    return internals::query_number_of_time_steps(&state);
+    return internals::query_number_of_steps(&state);
 #endif
 }
 

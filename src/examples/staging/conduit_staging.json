@@ -21,7 +21,8 @@
         "read" : {
            "read_method" : "ADIOS_READ_METHOD_DATASPACES",
            "lock_mode" : "ADIOS_LOCKMODE_CURRENT",
-           "timeout" : -1.0,
+           "parameters" : "logfile=foo.log",
+           "timeout" : 1.0,
            "verbose" : 1
         }
     },
