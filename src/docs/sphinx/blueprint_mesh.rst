@@ -42,9 +42,19 @@
 .. # 
 .. ############################################################################
 
+.. _mesh_blueprint:
+
 ===================
 mesh
 ===================
+
+This section provides details about the Mesh Blueprint. Lots of them.
+We don't have a Mesh Blueprint tutorial yet, if you are looking to wrap your mind 
+around the basic mechanics of describing a mesh, you may want to start by reviewing
+the :ref:`detailed_uniform_example`
+and exploring the other :ref:`examples` included in the blueprint library. 
+
+
 
 Protocol
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -388,6 +398,7 @@ To conform, the ``state`` entry must be an *Object* and can have the following o
    * state/cycle: (number)
    * state/domain_id: (integer)
 
+.. _examples:
 
 Examples
 ~~~~~~~~~~~~~~~~~~~~~
@@ -784,14 +795,27 @@ Files output from these functions can be opened and subsequently visualized
 directly using `VisIt <https://wci.llnl.gov/simulation/computer-codes/visit>`_.
 
 .. note::
-   This functionality is still in a preliminary stage and thus lacks a lot of key features.
-   The most crucial of these limitations are the limited number of supported output protocols
-   (only ``json`` and ``hdf5`` are currently implemented) and the suboptimal handling of
-   multi-domain meshes (each domain is output as a separate sub-mesh, making full-mesh
-   rendering a pain for large geometries). With these constraints in mind, we recommend
-   that users exercise this functionality sparingly and only for simple cases until
-   more extensions and robustness improvements are developed and integrated into Conduit.
+   This automatic index generation and save functionality is under development. 
+   It handles most basic cases, but only supports ``json`` and ``hdf5`` output
+   protocols and has limited multi-domain support. We are working on API changes
+   and a more robust capability for future versions of Conduit.
 
+.. _detailed_uniform_example:
+
+Detailed Uniform Example
+====================================
+
+This snippet provides a complete C++ example that demonstrates:
+
+  * Describing a uniform mesh in a Conduit tree
+  * Verifying the tree conforms to the Mesh Blueprint
+  * Saving the result to a JSON file that VisIt can open
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 515-574
+   :language: cpp
+   :dedent: 4
+   
 .. Properties and Transforms
 .. ---------------------------
 
