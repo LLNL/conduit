@@ -60,17 +60,6 @@ using namespace conduit;
 #include "../adios_test_utils.hpp"
 
 
-int
-compare_nodes_c(conduit_node *out, conduit_node *in)
-{
-    /* Use C++ to compare the nodes. */
-    conduit::Node *cpp_out = conduit::cpp_node(out);
-    conduit::Node *cpp_in = conduit::cpp_node(in);
-    conduit::Node n_info;
-    return (cpp_out->diff(*cpp_in,n_info) == false);
-    //return compare_nodes(*cpp_out, *cpp_in, *cpp_out) ? 1 : 0;
-}
-
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_c, test_io_c_save_and_load)
 {
@@ -87,7 +76,7 @@ TEST(conduit_relay_io_c, test_io_c_save_and_load)
     conduit_uint64  j[] = {8,9,10,11,12};
     const char *k = "ADIOS";
     const char *path = "test_io_c_save_and_load.bp";
-    conduit_node *out, *in;
+    conduit_node *out, *in, *info;
 
     /* Use the C API to make a node and save to ADIOS. */
     out = conduit_node_create();
@@ -119,11 +108,14 @@ TEST(conduit_relay_io_c, test_io_c_save_and_load)
     /* Read the data back in. */
     in = conduit_node_create();
     conduit_relay_io_load(path, NULL, NULL, in);
-    EXPECT_EQ(compare_nodes_c(out, in), 1);
+    info = conduit_node_create();
+    
+    EXPECT_EQ(conduit_node_diff(out, in, info,0.0), 1);
 
     /* Cleanup */
     conduit_node_destroy(out);
     conduit_node_destroy(in);
+    conduit_node_destroy(info);
 }
 
 //-----------------------------------------------------------------------------
@@ -154,6 +146,8 @@ TEST(conduit_relay_io_c, test_mpi_io_c_time_series)
         int qnts = conduit_relay_io_query_number_of_steps(path);
         EXPECT_EQ(qnts, ts+1);
     }
+    
+    conduit_node *info = conduit_node_create();
 
     // read back all steps.
     for(int ts = 0; ts < nts; ++ts)
@@ -161,9 +155,11 @@ TEST(conduit_relay_io_c, test_mpi_io_c_time_series)
         conduit_node *in = conduit_node_create();
         conduit_relay_io_load_step_and_domain(path, protocol, ts, 0, NULL, in);
 
-        EXPECT_EQ(compare_nodes_c(in, out[ts]), 1);
+        EXPECT_EQ(conduit_node_diff(in, out[ts], info, 0.0), 1);
         conduit_node_destroy(in);
     }
+    
+    conduit_node_destroy(info);
 
     for(i = 0; i < nts; ++i)
         conduit_node_destroy(out[i]);

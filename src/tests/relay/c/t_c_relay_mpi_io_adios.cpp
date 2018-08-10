@@ -61,17 +61,6 @@ using namespace conduit;
 
 #include <mpi.h>
 
-int
-compare_nodes_c(conduit_node *out, conduit_node *in)
-{
-    /* Use C++ to compare the nodes. */
-    conduit::Node *cpp_out = conduit::cpp_node(out);
-    conduit::Node *cpp_in = conduit::cpp_node(in);
-    conduit::Node n_info;
-    return (cpp_out->diff(*cpp_in,n_info) == false);
-    //return compare_nodes(*cpp_out, *cpp_in, *cpp_out) ? 1 : 0;
-}
-
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_mpi_io_c, test_mpi_io_c_save_and_load)
 {
@@ -92,7 +81,7 @@ TEST(conduit_relay_mpi_io_c, test_mpi_io_c_save_and_load)
     conduit_uint64  j[] = {8,9,10,11,12};
     const char *k = "ADIOS";
     const char *path = "test_mpi_io_c_save_and_load.bp";
-    conduit_node *out, *in;
+    conduit_node *out, *in, *info;
 
     for(ii = 0; ii < 5; ++ii)
     {
@@ -141,11 +130,15 @@ TEST(conduit_relay_mpi_io_c, test_mpi_io_c_save_and_load)
     in = conduit_node_create();
     conduit_relay_mpi_io_load(path, NULL, NULL, in, MPI_Comm_c2f(MPI_COMM_WORLD));
     /*if(rank == 0) conduit_node_print(in);*/
-    EXPECT_EQ(compare_nodes_c(out, in), 1);
+    
+    info = conduit_node_create();
+    EXPECT_EQ(conduit_node_diff(out, in, info, 0.0), 1);
 
     /* Cleanup */
     conduit_node_destroy(out);
     conduit_node_destroy(in);
+    conduit_node_destroy(info);
+    
 }
 
 //-----------------------------------------------------------------------------
@@ -181,15 +174,17 @@ TEST(conduit_relay_mpi_io_c, test_mpi_io_c_time_series)
         EXPECT_EQ(qnts, ts+1);
     }
 
+    conduit_node *info = conduit_node_create();
     // Let each rank read back its  steps.
     for(int ts = 0; ts < nts; ++ts)
     {
         conduit_node *in = conduit_node_create();
         conduit_relay_mpi_io_load_step_and_domain(path, protocol, ts, rank, NULL, in, MPI_Comm_c2f(MPI_COMM_WORLD));
 
-        EXPECT_EQ(compare_nodes_c(in, out[ts]), 1);
+        EXPECT_EQ(conduit_node_diff(in, out[ts],info,0.0), 1);
         conduit_node_destroy(in);
     }
+    conduit_node_destroy(info);
 
     for(i = 0; i < nts; ++i)
         conduit_node_destroy(out[i]);
