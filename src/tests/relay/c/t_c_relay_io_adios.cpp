@@ -44,11 +44,11 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_c_relay_mpi_io_adios.cpp
+/// file: t_c_relay_io_adios.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit_relay_mpi_io.h"
+#include "conduit_relay_io.h"
 #include "conduit_error.hpp"
 #include "conduit_cpp_to_c.hpp"
 #include "gtest/gtest.h"
@@ -57,9 +57,8 @@ using namespace conduit;
 
 // Include some utility functions
 #include "conduit.hpp"
-#include "adios_test_utils.hpp"
+#include "../adios_test_utils.hpp"
 
-#include <mpi.h>
 
 int
 compare_nodes_c(conduit_node *out, conduit_node *in)
@@ -73,12 +72,8 @@ compare_nodes_c(conduit_node *out, conduit_node *in)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_relay_mpi_io_c, test_mpi_io_c_save_and_load)
+TEST(conduit_relay_io_c, test_io_c_save_and_load)
 {
-    int ii, rank, size;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-
     const float64 pi = 3.141592653589793;
     conduit_int8    a[] = {1,2,3,4,5};
     conduit_int16   b[] = {2,3,4,5,6};
@@ -91,23 +86,8 @@ TEST(conduit_relay_mpi_io_c, test_mpi_io_c_save_and_load)
     conduit_uint32  i[] = {7,8,9,10,11};
     conduit_uint64  j[] = {8,9,10,11,12};
     const char *k = "ADIOS";
-    const char *path = "test_mpi_io_c_save_and_load.bp";
+    const char *path = "test_io_c_save_and_load.bp";
     conduit_node *out, *in;
-
-    for(ii = 0; ii < 5; ++ii)
-    {
-        a[ii] += (conduit_int8)rank;
-        b[ii] += (conduit_int16)rank;
-        c[ii] += (conduit_int32)rank;
-        d[ii] += (conduit_int64)rank;
-        e[ii] += (conduit_float32)rank;
-        f[ii] += (conduit_float64)rank;
-        g[ii] += (conduit_uint8)rank;
-        h[ii] += (conduit_uint16)rank;
-        i[ii] += (conduit_uint32)rank;
-        j[ii] += (conduit_uint64)rank;
-    }
-
 
     /* Use the C API to make a node and save to ADIOS. */
     out = conduit_node_create();
@@ -133,14 +113,12 @@ TEST(conduit_relay_mpi_io_c, test_mpi_io_c_save_and_load)
         sizeof(j) / sizeof(conduit_uint64));
     conduit_node_set_char8_str(conduit_node_fetch(out, "k"), k);
 
-    /* Save the node in parallel */
-    /*if(rank == 0) conduit_node_print(out);*/
-    conduit_relay_mpi_io_save(out, path, NULL, NULL, MPI_Comm_c2f(MPI_COMM_WORLD));
+    /* Save the node */
+    conduit_relay_io_save(out, path, NULL, NULL);
 
     /* Read the data back in. */
     in = conduit_node_create();
-    conduit_relay_mpi_io_load(path, NULL, NULL, in, MPI_Comm_c2f(MPI_COMM_WORLD));
-    /*if(rank == 0) conduit_node_print(in);*/
+    conduit_relay_io_load(path, NULL, NULL, in);
     EXPECT_EQ(compare_nodes_c(out, in), 1);
 
     /* Cleanup */
@@ -149,20 +127,17 @@ TEST(conduit_relay_mpi_io_c, test_mpi_io_c_save_and_load)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_relay_mpi_io_c, test_mpi_io_c_time_series)
+TEST(conduit_relay_io_c, test_mpi_io_c_time_series)
 {
-    int rank, size;
-    const char *path = "test_mpi_io_c_time_series.bp";
+    const char *path = "test_io_c_time_series.bp";
     const char *protocol = "adios";
     int i, ts, nts = 5;
     conduit_node **out = (conduit_node **)malloc(nts * sizeof(conduit_node *));
 
     // Write multiple time steps to the same file.
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
     for(ts = 0; ts < nts; ++ts)
     {
-        int idx = ts*100 + rank*10;
+        int idx = ts*100;
         out[ts] = conduit_node_create();
         conduit_node_set_int(conduit_node_fetch(out[ts], "a"), idx + 1);
         conduit_node_set_int(conduit_node_fetch(out[ts], "b"), idx + 2);
@@ -171,21 +146,20 @@ TEST(conduit_relay_mpi_io_c, test_mpi_io_c_time_series)
         conduit_node_set_float(conduit_node_fetch(out[ts], "f"), 3.14159f * (float)ts);
 
         if(ts == 0)
-            conduit_relay_mpi_io_save(out[ts], path, NULL, NULL, MPI_Comm_c2f(MPI_COMM_WORLD));
+            conduit_relay_io_save(out[ts], path, NULL, NULL);
         else
-            conduit_relay_mpi_io_add_step(out[ts], path,NULL, NULL, MPI_Comm_c2f(MPI_COMM_WORLD));
+            conduit_relay_io_add_step(out[ts], path, NULL, NULL);
 
         // Make sure the file has the new  step.
-        int qnts = conduit_relay_mpi_io_query_number_of_steps(path, 
-                       MPI_Comm_c2f(MPI_COMM_WORLD));
+        int qnts = conduit_relay_io_query_number_of_steps(path);
         EXPECT_EQ(qnts, ts+1);
     }
 
-    // Let each rank read back its  steps.
+    // read back all steps.
     for(int ts = 0; ts < nts; ++ts)
     {
         conduit_node *in = conduit_node_create();
-        conduit_relay_mpi_io_load_step_and_domain(path, protocol, ts, rank, NULL, in, MPI_Comm_c2f(MPI_COMM_WORLD));
+        conduit_relay_io_load_step_and_domain(path, protocol, ts, 0, NULL, in);
 
         EXPECT_EQ(compare_nodes_c(in, out[ts]), 1);
         conduit_node_destroy(in);
@@ -194,18 +168,4 @@ TEST(conduit_relay_mpi_io_c, test_mpi_io_c_time_series)
     for(i = 0; i < nts; ++i)
         conduit_node_destroy(out[i]);
     free(out);
-}
-
-//-----------------------------------------------------------------------------
-int main(int argc, char* argv[])
-{
-    int result = 0;
-
-    ::testing::InitGoogleTest(&argc, argv);
-    MPI_Init(&argc, &argv);
-    conduit_relay_mpi_io_initialize(MPI_Comm_c2f(MPI_COMM_WORLD));
-    result = RUN_ALL_TESTS();
-    conduit_relay_mpi_io_finalize(MPI_Comm_c2f(MPI_COMM_WORLD));
-    MPI_Finalize();
-    return result;
 }

@@ -65,8 +65,8 @@ set(RELAY_HDF5_TESTS t_relay_io_hdf5
                      t_relay_io_hdf5_slab
                      t_relay_io_hdf5_opts)
 
-set(RELAY_ADIOS_TESTS t_relay_io_adios t_c_relay_io_adios)
-set(RELAY_MPI_ADIOS_TESTS t_relay_mpi_io_adios t_c_relay_mpi_io_adios)
+set(RELAY_ADIOS_TESTS t_relay_io_adios)
+set(RELAY_MPI_ADIOS_TESTS t_relay_mpi_io_adios)
 
 ################################
 # Add our main tests
@@ -106,22 +106,15 @@ else()
 endif()
 
 if(ADIOS_FOUND)
-    set(serial_adios_deps    conduit conduit_relay)
-    set(parallel_adios_deps  conduit conduit_relay_mpi_io) 
-    if(UNIX AND NOT APPLE)
-        list(APPEND serial_adios_deps   rt ${CMAKE_THREAD_LIBS_INIT})
-        list(APPEND parallel_adios_deps rt ${CMAKE_THREAD_LIBS_INIT})
-    endif()
-
     message(STATUS "ADIOS enabled: Adding conduit_relay ADIOS unit tests")
     foreach(TEST ${RELAY_ADIOS_TESTS})
-        add_cpp_test(TEST ${TEST} DEPENDS_ON ${serial_adios_deps})
+        add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_relay)
     endforeach()
 
     if(MPI_FOUND)
         message(STATUS "MPI enabled: Adding conduit_relay_mpi_adios unit tests")
         foreach(TEST ${RELAY_MPI_ADIOS_TESTS})
-            add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON ${parallel_adios_deps}) 
+            add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON conduit conduit_relay_mpi_io) 
         endforeach()
     endif()
 else()

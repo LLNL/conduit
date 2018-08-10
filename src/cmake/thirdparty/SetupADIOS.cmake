@@ -93,21 +93,36 @@ IF(ENABLE_MPI)
     FIND_ADIOS("" ADIOS_FOUND ADIOS_INC ADIOS_LIB)
     FIND_ADIOS("readonly" ADIOSREAD_FOUND ADIOSREAD_INC ADIOSREAD_LIB)
 
-    # bundle both std lib  and read only libs as 'adios_mpi'
+    set(adios_mpi_includes ${ADIOS_INC}  ${ADIOSREAD_INC})
+    set(adios_mpi_libs ${ADIOS_LIB} ${ADIOSREAD_LIB})
 
+    # on linux we need to link threading libs as well
+    if(UNIX AND NOT APPLE)
+        list(APPEND adios_mpi_libs rt ${CMAKE_THREAD_LIBS_INIT})
+    endif()
+
+    # bundle both std lib  and read only libs as 'adios_mpi'
     blt_register_library(NAME adios_mpi
-                         INCLUDES ${ADIOS_INC}  ${ADIOSREAD_INC}
-                         LIBRARIES ${ADIOS_LIB} ${ADIOSREAD_LIB})
+                         INCLUDES ${adios_mpi_includes}
+                         LIBRARIES ${adios_mpi_libs})
 ENDIF(ENABLE_MPI)
 
 # Find the serial ADIOS library variants that we want.
 FIND_ADIOS("sequential" ADIOS_FOUND ADIOS_SEQ_INC ADIOS_SEQ_LIB)
 FIND_ADIOS("sequential;readonly" ADIOSREAD_FOUND ADIOSREAD_SEQ_INC ADIOSREAD_SEQ_LIB)
 
+set(adios_nompi_includes ${ADIOS_SEQ_INC} ${ADIOSREAD_SEQ_INC})
+set(adios_nompi_libs  ${ADIOS_SEQ_LIB} ${ADIOSREAD_SEQ_LIB})
+
+# on linux we need to link threading libs as well
+if(UNIX AND NOT APPLE)
+    list(APPEND adios_nompi_libs rt ${CMAKE_THREAD_LIBS_INIT})
+endif()
+
 # bundle both seq and seq read only libs as 'adios_nompi'
 blt_register_library(NAME adios_nompi
-                     INCLUDES ${ADIOS_SEQ_INC} ${ADIOSREAD_SEQ_INC}
-                     LIBRARIES ${ADIOS_SEQ_LIB} ${ADIOSREAD_SEQ_LIB})
+                     INCLUDES  ${adios_nompi_includes}
+                     LIBRARIES ${adios_nompi_libs})
 
 
 # Print out some results.
