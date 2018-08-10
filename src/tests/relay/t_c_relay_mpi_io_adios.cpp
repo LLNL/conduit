@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_c_relay_mpi_io.cpp
+/// file: t_c_relay_mpi_io_adios.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -135,11 +135,11 @@ TEST(conduit_relay_mpi_io_c, test_mpi_io_c_save_and_load)
 
     /* Save the node in parallel */
     /*if(rank == 0) conduit_node_print(out);*/
-    conduit_relay_mpi_io_save(out, path, MPI_Comm_c2f(MPI_COMM_WORLD));
+    conduit_relay_mpi_io_save(out, path, NULL, NULL, MPI_Comm_c2f(MPI_COMM_WORLD));
 
     /* Read the data back in. */
     in = conduit_node_create();
-    conduit_relay_mpi_io_load(path, in, MPI_Comm_c2f(MPI_COMM_WORLD));
+    conduit_relay_mpi_io_load(path, NULL, NULL, in, MPI_Comm_c2f(MPI_COMM_WORLD));
     /*if(rank == 0) conduit_node_print(in);*/
     EXPECT_EQ(compare_nodes_c(out, in), 1);
 
@@ -171,9 +171,9 @@ TEST(conduit_relay_mpi_io_c, test_mpi_io_c_time_series)
         conduit_node_set_float(conduit_node_fetch(out[ts], "f"), 3.14159f * (float)ts);
 
         if(ts == 0)
-            conduit_relay_mpi_io_save(out[ts], path, MPI_Comm_c2f(MPI_COMM_WORLD));
+            conduit_relay_mpi_io_save(out[ts], path, NULL, NULL, MPI_Comm_c2f(MPI_COMM_WORLD));
         else
-            conduit_relay_mpi_io_add_step(out[ts], path, MPI_Comm_c2f(MPI_COMM_WORLD));
+            conduit_relay_mpi_io_add_step(out[ts], path,NULL, NULL, MPI_Comm_c2f(MPI_COMM_WORLD));
 
         // Make sure the file has the new  step.
         int qnts = conduit_relay_mpi_io_query_number_of_steps(path, 
@@ -185,7 +185,7 @@ TEST(conduit_relay_mpi_io_c, test_mpi_io_c_time_series)
     for(int ts = 0; ts < nts; ++ts)
     {
         conduit_node *in = conduit_node_create();
-        conduit_relay_mpi_io_load4(path, protocol, ts, rank, in, MPI_Comm_c2f(MPI_COMM_WORLD));
+        conduit_relay_mpi_io_load_step_and_domain(path, protocol, ts, rank, NULL, in, MPI_Comm_c2f(MPI_COMM_WORLD));
 
         EXPECT_EQ(compare_nodes_c(in, out[ts]), 1);
         conduit_node_destroy(in);

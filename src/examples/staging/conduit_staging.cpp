@@ -116,7 +116,7 @@ producer(const Node &config, int nts, MPI_Comm comm)
         if(rank == 0)
             cout << prefix << "Before add_step" << endl;
         // Add a new time step to the output file.
-        conduit::relay::mpi::io::add_step(out, path, options, comm);
+        conduit::relay::mpi::io::add_step(out, path, "adios", options, comm);
 
         // Show some progress
         if(rank == 0)

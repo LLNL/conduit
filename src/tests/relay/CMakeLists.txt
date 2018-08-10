@@ -65,7 +65,7 @@ set(RELAY_HDF5_TESTS t_relay_io_hdf5
                      t_relay_io_hdf5_slab
                      t_relay_io_hdf5_opts)
 
-set(RELAY_ADIOS_TESTS t_relay_io_adios)
+set(RELAY_ADIOS_TESTS t_relay_io_adios t_c_relay_io_adios)
 set(RELAY_MPI_ADIOS_TESTS t_relay_mpi_io_adios t_c_relay_mpi_io_adios)
 
 ################################

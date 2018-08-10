@@ -246,8 +246,19 @@ save(const Node &node,
     else if( protocol == "hdf5")
     {
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-        hdf5_set_options(options);
+        Node prev_options;
+        if(!options.dtype().is_empty())
+        {
+            hdf5_options(prev_options);
+            hdf5_set_options(options);
+        }
+
         hdf5_save(node,path);
+        
+        if(!options.dtype().is_empty())
+        {
+            hdf5_set_options(prev_options);
+        }
 #else
         CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
                       "Failed to save conduit node to path " << path);
@@ -274,13 +285,19 @@ save(const Node &node,
     else if( protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
-        Node save_options;
-        adios_options(save_options, comm);
-
-        adios_set_options(options, comm);
+        Node prev_options;
+        if(!options.dtype().is_empty())
+        {
+            adios_options(prev_options, comm);
+            adios_set_options(options, comm);
+        }
+        
         adios_save(node,path,comm);
 
-        adios_set_options(save_options, comm);
+        if(!options.dtype().is_empty())
+        {
+            adios_set_options(prev_options, comm);
+        }
 #else
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                       "Failed to save conduit node to path " << path);
@@ -325,8 +342,22 @@ save_merged(const Node &node,
     else if( protocol == "hdf5")
     {
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-        hdf5_set_options(options);
+        
+        Node prev_options;
+        if(!options.dtype().is_empty())
+        {
+            hdf5_options(prev_options);
+            hdf5_set_options(options);
+        }
+        
         hdf5_write(node,path);
+        
+        if(!options.dtype().is_empty())
+        {
+            hdf5_set_options(prev_options);
+        }
+        
+        
 #else
         CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
                       "Failed to save conduit node to path " << path);
@@ -357,13 +388,19 @@ save_merged(const Node &node,
     else if( protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
-        Node save_options;
-        adios_options(save_options, comm);
-
-        adios_set_options(options, comm);
+        Node prev_options;
+        if(!options.dtype().is_empty())
+        {
+            adios_options(prev_options, comm);
+            adios_set_options(options, comm);
+        }
+        
         adios_save_merged(node,path,comm);
-
-        adios_set_options(save_options, comm);
+        
+        if(!options.dtype().is_empty())
+        {
+            adios_set_options(prev_options, comm);
+        }
 #else
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                       "Failed to save conduit node to path " << path);
@@ -379,21 +416,49 @@ save_merged(const Node &node,
 void
 add_step(const Node &node,
          const std::string &path,
-         const Node &options,
          MPI_Comm comm)
 {
     std::string protocol;
     identify_protocol(path,protocol);
+    add_step(node, path, protocol, comm);
+}
+
+//---------------------------------------------------------------------------//
+void
+add_step(const Node &node,
+         const std::string &path,
+         const std::string &protocol,
+         MPI_Comm comm)
+{
+    Node options;
+    add_step(node, path, protocol, options, comm);
+}
+
+
+//---------------------------------------------------------------------------//
+void
+add_step(const Node &node,
+         const std::string &path,
+         const std::string &protocol,
+         const Node &options,
+         MPI_Comm comm)
+{
     if(protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
-        Node save_options;
-        adios_options(save_options, comm);
-        adios_set_options(options, comm);
-
+        Node prev_options;
+        if(!options.dtype().is_empty())
+        {
+            adios_options(prev_options, comm);
+            adios_set_options(options, comm);
+        }
+        
         adios_add_step(node, path, comm);
-
-        adios_set_options(save_options, comm);
+        
+        if(!options.dtype().is_empty())
+        {
+            adios_set_options(prev_options, comm);
+        }
 #endif
     }
     else
@@ -408,14 +473,7 @@ add_step(const Node &node,
 }
 
 //---------------------------------------------------------------------------//
-void
-add_step(const Node &node,
-         const std::string &path,
-         MPI_Comm comm)
-{
-    Node options;
-    add_step(node, path, options, comm);
-}
+
 
 //---------------------------------------------------------------------------//
 void
@@ -438,7 +496,19 @@ load(const std::string &path,
     {
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
         node.reset();
+        Node prev_options;
+        if(!options.dtype().is_empty())
+        {
+            hdf5_options(prev_options);
+            hdf5_set_options(options);
+        }
+        
         hdf5_read(path,node);
+        
+        if(!options.dtype().is_empty())
+        {
+            hdf5_set_options(prev_options);
+        }
 #else
         CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
                       "Failed to load conduit node from path " << path);
@@ -461,14 +531,20 @@ load(const std::string &path,
     else if( protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
-        Node load_options;
-        adios_options(load_options, comm);
-        adios_set_options(options, comm);
+        Node prev_options;
+        if(!options.dtype().is_empty())
+        {
+            adios_options(prev_options, comm);
+            adios_set_options(options, comm);
+        }
 
         node.reset();
         adios_load(path,node,comm);
-
-        adios_set_options(load_options, comm);
+        
+        if(!options.dtype().is_empty())
+        {
+            adios_set_options(prev_options, comm);
+        }
 #else
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                     "Failed to load conduit node from path " << path);
@@ -538,14 +614,21 @@ load(const std::string &path,
     else if( protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
-        Node load_options;
-        adios_options(load_options, comm);
-        adios_set_options(options, comm);
+        
+        Node prev_options;
+        if(!options.dtype().is_empty())
+        {
+            adios_options(prev_options, comm);
+            adios_set_options(options, comm);
+        }
 
         node.reset();
         adios_load(path,step,domain,node,comm);
-
-        adios_set_options(load_options, comm);
+        
+        if(!options.dtype().is_empty())
+        {
+            adios_set_options(prev_options, comm);
+        }
 #else
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                     "Failed to load conduit node from path " << path);

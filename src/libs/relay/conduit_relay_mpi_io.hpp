@@ -151,6 +151,12 @@ void CONDUIT_RELAY_API add_step(const Node &node,
 
 void CONDUIT_RELAY_API add_step(const Node &node,
                                 const std::string &path,
+                                const std::string &protocol,
+                                MPI_Comm comm);
+
+void CONDUIT_RELAY_API add_step(const Node &node,
+                                const std::string &path,
+                                const std::string &protocol,
                                 const Node &options,
                                 MPI_Comm comm);
 

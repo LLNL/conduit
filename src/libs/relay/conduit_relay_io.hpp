@@ -143,6 +143,13 @@ void CONDUIT_RELAY_API add_step(const Node &node,
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API add_step(const Node &node,
                                 const std::string &path,
+                                const std::string &protocol);
+
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API add_step(const Node &node,
+                                const std::string &path,
+                                const std::string &protocol,
                                 const Node &options);
 
 ///
