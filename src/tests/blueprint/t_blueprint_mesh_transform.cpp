@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_blueprint_mesh_xform.cpp
+/// file: t_blueprint_mesh_transform.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -101,7 +101,7 @@ std::string get_braid_type(const std::string &mesh_type)
 /// Transform Tests ///
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_xform, coordset_xforms)
+TEST(conduit_blueprint_mesh_transform, coordset_transforms)
 {
     XformCoordsFun xform_funs[3][3] = {
         {NULL, blueprint::mesh::coordset::uniform::to_rectilinear, blueprint::mesh::coordset::uniform::to_explicit},
@@ -149,7 +149,7 @@ TEST(conduit_blueprint_mesh_xform, coordset_xforms)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_xform, topology_xforms)
+TEST(conduit_blueprint_mesh_transform, topology_transforms)
 {
     XformTopoFun xform_funs[5][5] = {
         {NULL, NULL, NULL, NULL, NULL},
@@ -222,4 +222,125 @@ TEST(conduit_blueprint_mesh_xform, topology_xforms)
             imesh["coordsets"].remove("test");
         }
     }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_transform, to_polygonal_2d)
+{
+    const std::string TOPO_2D_TYPE_LIST[3] = {"lines", "tris", "quads"};
+    const index_t TOPO_2D_TYPE_INDICES[3]  = {      2,      3,       4};
+
+    for(index_t ti = 0; ti < 3; ti++)
+    {
+        const std::string &topo_type = TOPO_2D_TYPE_LIST[ti];
+        const index_t &topo_indices = TOPO_2D_TYPE_INDICES[ti];
+
+        conduit::Node topo_mesh;
+        blueprint::mesh::examples::braid(topo_type,3,3,3,topo_mesh);
+        const conduit::Node &topo_node = topo_mesh["topologies"].child(0);
+
+        conduit::Node topo_poly;
+        blueprint::mesh::topology::unstructured::to_polygonal(topo_node, topo_poly);
+
+        conduit::Node info;
+
+        { // Verify Non-Elements Components //
+            conduit::Node topo_noelem, poly_noelem;
+            topo_noelem.set_external(topo_node);
+            topo_noelem.remove("elements");
+            poly_noelem.set_external(topo_poly);
+            poly_noelem.remove("elements");
+            ASSERT_FALSE(topo_noelem.diff(poly_noelem, info));
+        }
+
+        { // Verify Element Components //
+            ASSERT_EQ(topo_poly["elements/shape"].as_string(), "polygonal");
+
+            const conduit::Node &topo_conn = topo_node["elements/connectivity"];
+            conduit::Node &poly_conn = topo_poly["elements/connectivity"];
+            ASSERT_EQ(poly_conn.dtype().id(), topo_conn.dtype().id());
+
+            const index_t topo_len = topo_conn.dtype().number_of_elements();
+            const index_t poly_len = poly_conn.dtype().number_of_elements();
+            const index_t topo_elems = topo_len / topo_indices;
+            ASSERT_EQ(poly_len, topo_elems + topo_len);
+
+            conduit::Node topo_conn_array, poly_conn_array;
+            topo_conn.to_int64_array(topo_conn_array);
+            poly_conn.to_int64_array(poly_conn_array);
+            const conduit::int64_array topo_data = topo_conn_array.as_int64_array();
+            const conduit::int64_array poly_data = poly_conn_array.as_int64_array();
+            for(index_t ep = 0, et = 0; ep < poly_len; ep += topo_indices + 1, et += topo_indices)
+            {
+                ASSERT_EQ(poly_data[ep], topo_indices);
+                for(index_t i = 0; i < topo_indices; i++)
+                {
+                    ASSERT_EQ(poly_data[ep + i + 1], topo_data[et + i]);
+                }
+            }
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_transform, to_polygonal_3d)
+{
+    /*
+    const std::string TOPO_3D_TYPE_LIST[2]     = {"tets", "hexs"};
+    const index_t TOPO_3D_TYPE_FACES[2]        = {     4,      6};
+    const index_t TOPO_3D_TYPE_FACE_INDICES[2] = {     3,      4};
+
+    for(index_t ti = 0; ti < 2; ti++)
+    {
+        const std::string &topo_type = TOPO_3D_TYPE_LIST[ti];
+        const index_t &topo_indices = TOPO_3D_TYPE_INDICES[ti];
+
+        conduit::Node topo_mesh;
+        blueprint::mesh::examples::braid(topo_type,3,3,3,topo_mesh);
+        const conduit::Node &topo_node = topo_mesh["topologies"].child(0);
+
+        conduit::Node topo_poly;
+        blueprint::mesh::topology::unstructured::to_polygonal(topo_node, topo_poly);
+
+        conduit::Node info;
+
+        { // Verify Non-Elements Components //
+            conduit::Node topo_noelem, poly_noelem;
+            topo_noelem.set_external(topo_node);
+            topo_noelem.remove("elements");
+            poly_noelem.set_external(topo_poly);
+            poly_noelem.remove("elements");
+            ASSERT_FALSE(topo_noelem.diff(poly_noelem, info));
+        }
+
+        { // Verify Element Components //
+            ASSERT_EQ(topo_poly["elements/shape"].as_string(), "polyhedral");
+
+            const conduit::Node &topo_conn = topo_node["elements/connectivity"];
+            conduit::Node &poly_conn = topo_poly["elements/connectivity"];
+            ASSERT_EQ(poly_conn.dtype().id(), topo_conn.dtype().id());
+
+            const index_t topo_len = topo_conn.dtype().number_of_elements();
+            const index_t poly_len = poly_conn.dtype().number_of_elements();
+            const index_t topo_elems = topo_len / topo_indices;
+            ASSERT_EQ(poly_len, topo_elems + topo_len);
+
+            conduit::Node topo_conn_array, poly_conn_array;
+            topo_conn.to_int64_array(topo_conn_array);
+            poly_conn.to_int64_array(poly_conn_array);
+            const conduit::int64_array topo_data = topo_conn_array.as_int64_array();
+            const conduit::int64_array poly_data = poly_conn_array.as_int64_array();
+            for(index_t ep = 0, et = 0; ep < poly_len; ep += topo_indices + 1, et += topo_indices)
+            {
+                ASSERT_EQ(poly_data[ep], topo_indices);
+                for(index_t i = 0; i < topo_indices; i++)
+                {
+                    ASSERT_EQ(poly_data[ep + i + 1], topo_data[et + i]);
+                }
+            }
+        }
+    }
+    */
 }
