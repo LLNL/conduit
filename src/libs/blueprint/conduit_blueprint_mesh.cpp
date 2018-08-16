@@ -99,13 +99,34 @@ namespace conduit { namespace blueprint { namespace mesh {
 
     static const index_t topo_shape_index_count_list[8] = {1, 2,
         3, 4, 4, 8, -1, -1};
-    static const std::vector<index_t> topo_shape_index_counts(topo_shape_index_count_list,
-        topo_shape_index_count_list + sizeof(topo_shape_index_count_list) / sizeof(topo_shape_index_count_list[0]));
+    static const std::vector<index_t> topo_shape_index_counts(
+        topo_shape_index_count_list, topo_shape_index_count_list +
+        sizeof(topo_shape_index_count_list) / sizeof(topo_shape_index_count_list[0]));
 
     static const index_t topo_shape_face_count_list[8] = {0, 0,
         1, 1, 4, 6, -1, -1};
-    static const std::vector<index_t> topo_shape_face_counts(topo_shape_face_count_list,
-        topo_shape_face_count_list + sizeof(topo_shape_face_count_list) / sizeof(topo_shape_face_count_list[0]));
+    static const std::vector<index_t> topo_shape_face_counts(
+        topo_shape_face_count_list, topo_shape_face_count_list +
+        sizeof(topo_shape_face_count_list) / sizeof(topo_shape_face_count_list[0]));
+
+    static const index_t topo_shape_face_index_count_list[8] = {1, 2,
+        3, 4, 3, 4, -1, -1};
+    static const std::vector<index_t> topo_shape_face_index_counts(
+        topo_shape_face_index_count_list, topo_shape_face_index_count_list +
+        sizeof(topo_shape_face_index_count_list) / sizeof(topo_shape_face_index_count_list[0]));
+
+    static const index_t topo_tet_face_arrangements[4][3] = {
+        {0, 2, 1}, {0, 1, 3},
+        {0, 3, 2}, {1, 2, 3}};
+    static const index_t topo_hex_face_arrangements[6][4] = {
+        {0, 2, 1, 3}, {0, 1, 4, 5}, {1, 3, 5, 7},
+        {0, 4, 2, 6}, {2, 6, 3, 7}, {4, 5, 6, 7}};
+
+    static const index_t* topo_shape_face_arrangement_list[8] = {NULL, NULL,
+        NULL, NULL, &topo_tet_face_arrangements[0][0], &topo_hex_face_arrangements[0][0], NULL, NULL};
+    static const std::vector<const index_t*> topo_shape_face_arrangements(
+        topo_shape_face_arrangement_list, topo_shape_face_arrangement_list +
+        sizeof(topo_shape_face_arrangement_list) / sizeof(topo_shape_face_arrangement_list[0]));
 
     static const std::string coordinate_axis_list[7] = {"x", "y", "z", "r", "z", "theta", "phi"};
     static const std::vector<std::string> coordinate_axes(coordinate_axis_list,
@@ -2335,18 +2356,22 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
     }
 
     const std::string topo_shape_type = topo["elements/shape"].as_string();
-    index_t topo_shape_indices, topo_shape_faces;
+    index_t topo_shape_indices, topo_shape_faces, topo_shape_findices;
+    index_t* topo_shape_farrange;
     for(index_t i = 0; i < (index_t)topo_shapes.size(); i++)
     {
         if(topo_shapes[i] == topo_shape_type)
         {
             topo_shape_indices = topo_shape_index_counts[i];
             topo_shape_faces = topo_shape_face_counts[i];
+            topo_shape_findices = topo_shape_face_index_counts[i];
+            topo_shape_farrange =
+                const_cast<index_t*>(topo_shape_face_arrangements[i]);
         }
     }
 
     // polygonal topology case
-    if(topo_shape_indices <= 0)
+    if(topo_shape_faces < 0)
     {
         dest.set(topo);
     }
@@ -2358,83 +2383,46 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
         const index_t topo_indices = topo_conn.dtype().number_of_elements();
         const index_t topo_elems = topo_indices / topo_shape_indices;
 
+        // NOTE(JRC): Elements without faces (e.g. lines) are given 1 degenerate
+        // face when creating polygons to make subsequent offset math work properly.
+        topo_shape_faces = std::max(topo_shape_faces, (index_t)1);
+        const bool is_topo_3d = topo_shape_faces > 1;
+
         Node topo_templ;
         topo_templ.set_external(topo);
         topo_templ.remove("elements");
         dest.set(topo_templ);
 
-        // 1/2d nonpolygonal case
-        if(topo_shape_faces <= 1)
+        dest["elements/shape"].set(is_topo_3d ? "polyhedral" : "polygonal");
+
+        std::vector<int64> poly_conn_data(topo_elems *
+            (is_topo_3d + topo_shape_faces * (1 + topo_shape_findices)));
+        for(index_t e = 0; e < topo_elems; e++)
         {
-            dest["elements/shape"].set("polygonal");
+            const index_t ebase = topo_shape_indices * e;
+            const index_t epoly = (is_topo_3d + topo_shape_faces *
+                (1 + topo_shape_findices)) * e;
 
-            std::vector<int64> poly_conn_data(topo_elems + topo_indices);
-            for(index_t e = 0; e < topo_elems; e++)
+            poly_conn_data[epoly] = topo_shape_faces;
+            for(index_t f = 0; f < topo_shape_faces; f++)
             {
-                const index_t ebase = topo_shape_indices * e;
-                const index_t epoly = (1 + topo_shape_indices) * e;
-
-                poly_conn_data[epoly] = topo_shape_indices;
-                for(index_t i = 0; i < topo_shape_indices; i++)
+                const index_t epoly_foff = epoly + (is_topo_3d +
+                    f * (1 + topo_shape_findices));
+                poly_conn_data[epoly_foff] = topo_shape_findices;
+                for(index_t fi = 0; fi < topo_shape_findices; fi++)
                 {
+                    const index_t ebase_ioff = ebase + (is_topo_3d ?
+                        topo_shape_farrange[f * topo_shape_findices + fi] : fi);
                     const Node index_node(topo_dtype,
-                        const_cast<void*>(topo_conn.element_ptr(ebase + i)), true);
-                    poly_conn_data[epoly + i + 1] = index_node.to_int64();
+                        const_cast<void*>(topo_conn.element_ptr(ebase_ioff)), true);
+                    poly_conn_data[epoly_foff + 1 + fi] = index_node.to_int64();
                 }
             }
-
-            Node poly_conn;
-            poly_conn.set_external(poly_conn_data);
-            poly_conn.to_data_type(int_type.id(), dest["elements/connectivity"]);
         }
-        // 3d nonpolygonal case
-        else // if(topo_shape_faces > 1)
-        {
-            dest["elements/shape"].set("polyhedral");
 
-            // TODO(JRC): Figure out a better way to encode these combinations
-            // so that this code can be more generic.
-            // TODO(JRC): Figure out the most proper order/orientation for all
-            // of these polygonal elements (currently all RHR outward facing
-            // normals).
-            const index_t tet_face_arrangements[4][3] = {
-                {0, 2, 1}, {0, 1, 3},
-                {0, 3, 2}, {1, 2, 3}};
-            const index_t hex_face_arrangements[6][4] = {
-                {0, 2, 1, 3}, {0, 1, 4, 5}, {1, 3, 5, 7},
-                {0, 4, 2, 6}, {2, 6, 3, 7}, {4, 5, 6, 7}};
-
-            const index_t topo_shape_face_indices = (topo_shape_type == "tet") ?
-                3 : 4;
-            const index_t *topo_face_arrangement = (topo_shape_type == "tet") ?
-                &tet_face_arrangements[0][0] : &hex_face_arrangements[0][0];
-
-            std::vector<int64> poly_conn_data(topo_elems *
-                (1 + topo_shape_faces * (1 + topo_shape_face_indices)));
-            for(index_t e = 0; e < topo_elems; e++)
-            {
-                const index_t ebase = topo_shape_indices * e;
-                const index_t epoly = (1 + topo_shape_faces * (1 + topo_shape_face_indices)) * e;
-
-                poly_conn_data[epoly] = topo_shape_faces;
-                for(index_t f = 0; f < topo_shape_faces; f++)
-                {
-                    const index_t epoly_foff = f * (1 + topo_shape_face_indices);
-                    poly_conn_data[epoly + 1 + epoly_foff] = topo_shape_face_indices;
-                    for(index_t fi = 0; fi < topo_shape_face_indices; fi++)
-                    {
-                        const index_t ebase_fioff = topo_face_arrangement[f * topo_shape_face_indices + fi];
-                        const Node index_node(topo_dtype,
-                            const_cast<void*>(topo_conn.element_ptr(ebase + ebase_fioff)), true);
-                        poly_conn_data[epoly + 1 + epoly_foff + 1 + fi] = index_node.to_int64();
-                    }
-                }
-            }
-
-            Node poly_conn;
-            poly_conn.set_external(poly_conn_data);
-            poly_conn.to_data_type(int_type.id(), dest["elements/connectivity"]);
-        }
+        Node poly_conn;
+        poly_conn.set_external(poly_conn_data);
+        poly_conn.to_data_type(int_type.id(), dest["elements/connectivity"]);
     }
 }
 

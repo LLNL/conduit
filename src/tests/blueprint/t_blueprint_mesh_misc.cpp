@@ -63,26 +63,38 @@ using namespace conduit::utils;
 
 /// Testing Constants ///
 
-static const std::string ELEM_TYPE_LIST[4] = {"tris", "quads", "tets", "hexs"};
-static const index_t ELEM_TYPE_DIMS[4]     = {     2,       2,      3,      3};
-static const index_t ELEM_TYPE_SUBELEMS[4] = {     2,       1,      6,      1};
-static const index_t ELEM_TYPE_FACES[4]    = {     1,       1,      4,      6};
-static const index_t ELEM_TYPE_INDICES[4]  = {     3,       4,      4,      8};
+static const std::string ELEM_TYPE_LIST[4]      = {"tris", "quads", "tets", "hexs"};
+static const index_t ELEM_TYPE_SUBELEMS[4]      = {     2,       1,      6,      1};
+static const index_t ELEM_TYPE_INDICES[4]       = {     3,       4,      4,      8};
+static const index_t ELEM_TYPE_FACES[4]         = {     1,       1,      4,      6};
+static const index_t ELEM_TYPE_FACE_INDICES[4]  = {     3,       4,      3,      4};
 
 /// Test Cases ///
+
+// TODO(JRC): Consider combining the following two test cases in order to remove
+// code duplication (though at the cost of test granularity).
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_offsets, generate_offsets_nonpoly)
 {
+    const index_t MESH_DIMS[3] = {3, 3, 3};
+
     for(index_t ti = 0; ti < 4; ti++)
     {
         const std::string &elem_type = ELEM_TYPE_LIST[ti];
-        const index_t &elem_dims = ELEM_TYPE_DIMS[ti];
         const index_t &elem_subelems = ELEM_TYPE_SUBELEMS[ti];
         const index_t &elem_indices = ELEM_TYPE_INDICES[ti];
+        const bool is_elem_3d = ELEM_TYPE_FACES[ti] > 1;
+        const index_t mesh_elems = (MESH_DIMS[0] - 1) * (MESH_DIMS[1] - 1) *
+            (is_elem_3d ? (MESH_DIMS[2] - 1) : 1);
+
+        // NOTE: The following lines are for debugging purposes only.
+        std::cout << "Testing nonpolygonal offets for type '" <<
+            elem_type << "'..." << std::endl;
 
         Node nonpoly_node;
-        blueprint::mesh::examples::braid(elem_type,3,3,3,nonpoly_node);
+        blueprint::mesh::examples::braid(
+            elem_type,MESH_DIMS[0],MESH_DIMS[1],MESH_DIMS[2],nonpoly_node);
         Node &nonpoly_topo = nonpoly_node["topologies"].child(0);
 
         Node nonpoly_offsets;
@@ -92,7 +104,7 @@ TEST(conduit_blueprint_mesh_offsets, generate_offsets_nonpoly)
         EXPECT_EQ(nonpoly_offsets.dtype().id(),
             nonpoly_topo["elements/connectivity"].dtype().id());
         EXPECT_EQ(nonpoly_offsets.dtype().number_of_elements(),
-            std::pow(2, elem_dims) * elem_subelems);
+             mesh_elems * elem_subelems);
 
         Node nonpoly_offsets_int64;
         nonpoly_offsets.to_int64_array(nonpoly_offsets_int64);
@@ -107,17 +119,25 @@ TEST(conduit_blueprint_mesh_offsets, generate_offsets_nonpoly)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_offsets, generate_offsets_poly)
 {
+    const index_t MESH_DIMS[3] = {3, 3, 3};
+
     for(index_t ti = 0; ti < 4; ti++)
     {
         const std::string &elem_type = ELEM_TYPE_LIST[ti];
-        const index_t &elem_dims = ELEM_TYPE_DIMS[ti];
         const index_t &elem_subelems = ELEM_TYPE_SUBELEMS[ti];
         const index_t &elem_faces = ELEM_TYPE_FACES[ti];
-        const index_t &elem_indices = ELEM_TYPE_INDICES[ti];
-        const index_t &elem_face_indices = (elem_dims == 3) ? ELEM_TYPE_INDICES[ti - 2] : 0;
+        const index_t &elem_face_indices = ELEM_TYPE_FACE_INDICES[ti];
+        const bool is_elem_3d = ELEM_TYPE_FACES[ti] > 1;
+        const index_t mesh_elems = (MESH_DIMS[0] - 1) * (MESH_DIMS[1] - 1) *
+            (is_elem_3d ? (MESH_DIMS[2] - 1) : 1);
+
+        // NOTE: The following lines are for debugging purposes only.
+        std::cout << "Testing polygonal offets for type '" <<
+            elem_type << "'..." << std::endl;
 
         Node nonpoly_node;
-        blueprint::mesh::examples::braid(elem_type,3,3,3,nonpoly_node);
+        blueprint::mesh::examples::braid(
+            elem_type,MESH_DIMS[0],MESH_DIMS[1],MESH_DIMS[2],nonpoly_node);
         Node &nonpoly_topo = nonpoly_node["topologies"].child(0);
 
         Node poly_topo, poly_offsets;
@@ -127,16 +147,15 @@ TEST(conduit_blueprint_mesh_offsets, generate_offsets_poly)
         EXPECT_EQ(poly_offsets.dtype().id(),
             poly_topo["elements/connectivity"].dtype().id());
         EXPECT_EQ(poly_offsets.dtype().number_of_elements(),
-            std::pow(2, elem_dims) * elem_subelems);
+            mesh_elems * elem_subelems);
 
         Node poly_offsets_int64;
         poly_offsets.to_int64_array(poly_offsets_int64);
         int64_array poly_offset_data = poly_offsets_int64.as_int64_array();
         for(index_t oi = 0; oi < poly_offsets.dtype().number_of_elements(); oi++)
         {
-            ASSERT_EQ(poly_offset_data[oi], (elem_dims == 2) ?
-                oi * (1 + elem_indices) :
-                oi * (1 + elem_faces * (1 + elem_face_indices)));
+            ASSERT_EQ(poly_offset_data[oi],
+                oi * (is_elem_3d + elem_faces * (1 + elem_face_indices)));
         }
     }
 }
