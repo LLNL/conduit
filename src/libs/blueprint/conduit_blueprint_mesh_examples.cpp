@@ -70,6 +70,7 @@
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "conduit_blueprint_mesh_examples.hpp"
+#include "conduit_blueprint_mesh.hpp"
 
 
 //-----------------------------------------------------------------------------
@@ -2087,32 +2088,55 @@ basic(const std::string &mesh_type,
 {
     // NOTE(JRC): The basic mesh example only supports simple, homogenous
     // element types that can be spanned by zone-centered fields.
-    const std::string mesh_types[7] = {
+    const std::string mesh_types[] = {
         "uniform", "rectilinear", "structured",
-        "tris", "quads", "tets", "hexs"};
-    const index_t mesh_types_subelems_per_elem[7] = {
+        "tris", "quads", "polygons",
+        "tets", "hexs", "polyhedrons"};
+    const bool mesh_type_is_poly[] = {
+        false, false, false,
+        false, false, true,
+        false, false, true};
+    const index_t mesh_types_subelems_per_elem[] = {
         1, 1, 1,
-        2, 1, 6, 1};
+        2, 1, 1,
+        6, 1, 1};
 
-    index_t mesh_type_index = -1;
-    for(index_t i = 0; i < 7; i++)
+    const index_t num_mesh_types = sizeof(mesh_types) / sizeof(std::string);
+
+    index_t mesh_type_index = -1, mesh_type_subelems = -1;
+    bool mesh_type_poly = false;
+    for(index_t i = 0; i < num_mesh_types; i++)
     {
         if(mesh_type == mesh_types[i])
         {
             mesh_type_index = i;
+            mesh_type_poly = mesh_type_is_poly[i];
+            mesh_type_subelems = mesh_types_subelems_per_elem[i];
         }
     }
-    if(mesh_type_index < 0 || mesh_type_index >= 7)
+    if(mesh_type_index < 0 || mesh_type_index >= num_mesh_types)
     {
         CONDUIT_ERROR("unknown mesh_type = " << mesh_type);
     }
 
-    braid(mesh_type, npts_x, npts_y, npts_z, res);
+    braid(mesh_type_poly ? mesh_types[mesh_type_index-1] : mesh_type,
+        npts_x, npts_y, npts_z, res);
     res.remove("fields");
     res.remove("state");
 
+    if(mesh_type_poly)
+    {
+        Node &nonpoly_topo = res["topologies"].child(0);
+        std::string topo_name = nonpoly_topo.name();
+
+        Node poly_topo;
+        blueprint::mesh::topology::unstructured::to_polygonal(nonpoly_topo, poly_topo);
+
+        res["topologies"][topo_name].set(poly_topo);
+    }
+
     basic_init_example_element_scalar_field(npts_x-1, npts_y-1, npts_z-1,
-        res["fields/field"], mesh_types_subelems_per_elem[mesh_type_index]);
+        res["fields/field"], mesh_type_subelems);
 }
 
 

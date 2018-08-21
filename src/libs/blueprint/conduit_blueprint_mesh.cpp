@@ -2293,6 +2293,12 @@ mesh::topology::unstructured::verify(const Node &topo,
             elems_res &= verify_field_exists(protocol, topo_elems, info_elems, "shape") &&
                    mesh::topology::shape::verify(topo_elems["shape"], info_elems["shape"]);
             elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "connectivity");
+            // optional: shape topologies can have an "offsets" array to index
+            // individual elements; this list must be an integer array
+            if(elems_res && topo_elems.has_child("offsets"))
+            {
+                elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "offsets");
+            }
         }
         // shape stream case
         else if(topo_elems.has_child("element_types"))
