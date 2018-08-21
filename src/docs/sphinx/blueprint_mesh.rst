@@ -394,7 +394,7 @@ follow these rules:
       conduit::Node topology = mesh["topologies/poly_topo"];
       topology["coordset"] = "coords";
       topology["type"] = "unstructured";
-      topology["elements/shape"] = "polygonal";
+      topology["elements/shape"] = "polyhedral";
       topology["elements/connectivity"].set_int64_ptr(&poly_data[0], 44);
 
 
