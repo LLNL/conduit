@@ -65,6 +65,7 @@
 #include <cassert>
 #include <map>
 #include <set>
+#include <vector>
 
 //-----------------------------------------------------------------------------
 // conduit includes
@@ -2080,6 +2081,35 @@ braid_hexs_and_tets(index_t npts_x,
 
 //---------------------------------------------------------------------------//
 void
+braid_to_poly(Node &res)
+{
+    const index_t topo_count = res["topologies"].number_of_children();
+    std::vector<Node> poly_topos(topo_count);
+    std::vector<std::string> topo_names(topo_count);
+
+    conduit::NodeConstIterator topos_it = res["topologies"].children();
+    while(topos_it.has_next())
+    {
+        const conduit::Node &topo_node = topos_it.next();
+        const std::string topo_name = topos_it.name();
+        const index_t topo_index = topos_it.index();
+
+        conduit::Node &poly_node = poly_topos[topo_index];
+        blueprint::mesh::topology::unstructured::to_polygonal(topo_node, poly_node);
+        blueprint::mesh::topology::unstructured::generate_offsets(poly_node, poly_node["elements/offsets"]);
+        topo_names[topo_index] = topo_name;
+    }
+
+    res["topologies"].reset();
+    for(index_t ti = 0; ti < topo_count; ti++)
+    {
+        res["topologies"][topo_names[ti]].set(poly_topos[ti]);
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void
 basic(const std::string &mesh_type,
       index_t npts_x, // number of points in x
       index_t npts_y, // number of points in y
@@ -2092,10 +2122,10 @@ basic(const std::string &mesh_type,
         "uniform", "rectilinear", "structured",
         "tris", "quads", "polygons",
         "tets", "hexs", "polyhedrons"};
-    const bool mesh_type_is_poly[] = {
-        false, false, false,
-        false, false, true,
-        false, false, true};
+    const std::string braid_types[] = {
+        "uniform", "rectilinear", "structured",
+        "tris", "quads", "quads_poly",
+        "tets", "hexs", "hexs_poly"};
     const index_t mesh_types_subelems_per_elem[] = {
         1, 1, 1,
         2, 1, 1,
@@ -2103,15 +2133,12 @@ basic(const std::string &mesh_type,
 
     const index_t num_mesh_types = sizeof(mesh_types) / sizeof(std::string);
 
-    index_t mesh_type_index = -1, mesh_type_subelems = -1;
-    bool mesh_type_poly = false;
+    index_t mesh_type_index = -1;
     for(index_t i = 0; i < num_mesh_types; i++)
     {
         if(mesh_type == mesh_types[i])
         {
             mesh_type_index = i;
-            mesh_type_poly = mesh_type_is_poly[i];
-            mesh_type_subelems = mesh_types_subelems_per_elem[i];
         }
     }
     if(mesh_type_index < 0 || mesh_type_index >= num_mesh_types)
@@ -2119,24 +2146,20 @@ basic(const std::string &mesh_type,
         CONDUIT_ERROR("unknown mesh_type = " << mesh_type);
     }
 
-    braid(mesh_type_poly ? mesh_types[mesh_type_index-1] : mesh_type,
-        npts_x, npts_y, npts_z, res);
+    braid(braid_types[mesh_type_index], npts_x, npts_y, npts_z, res);
     res.remove("fields");
     res.remove("state");
 
-    if(mesh_type_poly)
+    // TODO(JRC): Consider removing this code if the extra complexity of having
+    // the "offsets" array in the basic examples is decided to be a non-issue.
+    Node &topo = res["topologies"].child(0);
+    if(topo.has_child("elements") && topo["elements"].has_child("offsets"))
     {
-        Node &nonpoly_topo = res["topologies"].child(0);
-        std::string topo_name = nonpoly_topo.name();
-
-        Node poly_topo;
-        blueprint::mesh::topology::unstructured::to_polygonal(nonpoly_topo, poly_topo);
-
-        res["topologies"][topo_name].set(poly_topo);
+        topo["elements"].remove("offsets");
     }
 
     basic_init_example_element_scalar_field(npts_x-1, npts_y-1, npts_z-1,
-        res["fields/field"], mesh_type_subelems);
+        res["fields/field"], mesh_types_subelems_per_elem[mesh_type_index]);
 }
 
 
@@ -2176,6 +2199,11 @@ braid(const std::string &mesh_type,
     {
         braid_quads(npts_x,npts_y,res);
     }
+    else if(mesh_type == "quads_poly")
+    {
+        braid_quads(npts_x,npts_y,res);
+        braid_to_poly(res);
+    }
     else if(mesh_type == "quads_and_tris")
     {
         braid_quads_and_tris(npts_x,npts_y,res);
@@ -2191,6 +2219,11 @@ braid(const std::string &mesh_type,
     else if(mesh_type == "hexs")
     {
         braid_hexs(npts_x,npts_y,npts_z,res);
+    }
+    else if(mesh_type == "hexs_poly")
+    {
+        braid_hexs(npts_x,npts_y,npts_z,res);
+        braid_to_poly(res);
     }
     else if(mesh_type == "hexs_and_tets")
     {
