@@ -363,7 +363,7 @@ TEST(conduit_blueprint_mesh_examples, polytess)
 
     Node info;
     EXPECT_TRUE(blueprint::mesh::verify(res,info));
-    CONDUIT_INFO(res.to_json());
+    CONDUIT_INFO(info.to_json());
 
     relay::io_blueprint::save(res, "polytess_example.blueprint_root");
 }

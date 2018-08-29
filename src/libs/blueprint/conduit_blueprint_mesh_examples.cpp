@@ -2485,6 +2485,42 @@ void spiral(index_t ndoms,
 
 
 //---------------------------------------------------------------------------//
+point
+polytess_calc_polygon_center(const std::vector<index_t> polygon,
+                             std::map< point, index_t > &/*point_map*/,
+                             std::map< index_t, point > &point_rmap)
+{
+    point polygon_center(0.0, 0.0);
+
+    for(index_t pi = 0; pi < (index_t)polygon.size(); pi++)
+    {
+        const point &polygon_point = point_rmap[polygon[pi]];
+        polygon_center.x += polygon_point.x;
+        polygon_center.y += polygon_point.y;
+    }
+
+    polygon_center.x /= (index_t)polygon.size();
+    polygon_center.y /= (index_t)polygon.size();
+
+    return polygon_center;
+}
+
+
+//---------------------------------------------------------------------------//
+point
+polytess_displace_point(const point &start_point,
+                        index_t displace_dir,
+                        float64 displace_mag)
+{
+    const bool is_dir_x = displace_dir % 2 == 0;
+    const bool is_dir_pos = displace_dir > 1;
+    return point(
+        start_point.x + (is_dir_pos ? 1 : -1) * (is_dir_x ? 1.0 : 0.0) * displace_mag,
+        start_point.y + (is_dir_pos ? 1 : -1) * (is_dir_x ? 0.0 : 1.0) * displace_mag);
+}
+
+
+//---------------------------------------------------------------------------//
 std::vector<point>
 polytess_make_polygon(point poly_center,
                       float64 side_length,
@@ -2506,6 +2542,47 @@ polytess_make_polygon(point poly_center,
 }
 
 
+//---------------------------------------------------------------------------//
+bool
+polytess_add_polygon(const std::vector<point> &polygon_points,
+                     const index_t polygon_level,
+                     std::map< point, index_t > &point_map,
+                     std::map< index_t, point > &point_rmap,
+                     std::vector< std::vector<index_t> > &polygons,
+                     std::vector< index_t > &levels)
+{
+    std::vector<index_t> polygon_indices(polygon_points.size());
+
+    bool is_polygon_duplicate = true;
+    for(index_t pi = 0; pi < (index_t)polygon_points.size(); pi++)
+    {
+        const point &polygon_point = polygon_points[pi];
+        index_t &point_index = polygon_indices[pi];
+
+        if(point_map.find(polygon_point) != point_map.end())
+        {
+            point_index = point_map.find(polygon_point)->second;
+        }
+        else
+        {
+            point_index = point_map.size();
+            point_map[polygon_point] = point_index;
+            point_rmap[point_index] = polygon_point;
+            is_polygon_duplicate = false;
+        }
+    }
+
+    if(!is_polygon_duplicate)
+    {
+        polygons.push_back(polygon_indices);
+        levels.push_back(polygon_level);
+    }
+
+    return !is_polygon_duplicate;
+}
+
+
+//---------------------------------------------------------------------------//
 void polytess_recursive(index_t nlevels,
                         std::map< point, index_t > &point_map,
                         std::map< index_t, point > &point_rmap,
@@ -2514,129 +2591,48 @@ void polytess_recursive(index_t nlevels,
 {
     const float64 side_length = 1.0;
     const float64 octogon_to_center = side_length / (2.0 * tan(PI_VALUE / 8.0));
+    const float64 adj_poly_distance = octogon_to_center + (side_length / 2.0);
 
     // base case
     if(nlevels <= 1)
     {
         std::vector<point> center_polygon_points = polytess_make_polygon(
             point(0.0, 0.0), side_length, 8);
-
-        std::vector<index_t> center_polygon_indices;
-        for(index_t p = 0; p < (index_t)center_polygon_points.size(); p++)
-        {
-            point_map[center_polygon_points[p]] = p;
-            point_rmap[p] = center_polygon_points[p];
-            center_polygon_indices.push_back(p);
-        }
-
-        polygons.push_back(center_polygon_indices);
-        levels.push_back(1);
+        polytess_add_polygon(center_polygon_points, nlevels,
+            point_map, point_rmap, polygons, levels);
     }
     // recursive case
     else // if(nlevels > 1)
     {
         polytess_recursive(nlevels - 1, point_map, point_rmap, polygons, levels);
 
-        std::vector< std::vector<index_t> > new_squares;
-        std::vector< index_t > new_square_dirs;
-        for(index_t o = polygons.size() - 1;
-            o >= 0 && polygons[o].size() == 8 && levels[o] == nlevels - 1; o--)
+        for(index_t o = polygons.size() - 1; o >= 0 && levels[o] == nlevels - 1; o--)
         {
+            if(polygons[o].size() != 8) { continue; }
+
             const std::vector<index_t> &octogon = polygons[o];
+            const point octogon_center = polytess_calc_polygon_center(octogon, point_map, point_rmap);
             for(index_t d = 0; d < 4; d++)
             {
-                const size_t dir_initial_npoints = point_map.size();
-
-                const index_t side_start_index = (7 + 2 * d) % 8;
-                const index_t side_end_index = (side_start_index + 1) % 8;
-                const point side_start_point = point_rmap[octogon[side_start_index]];
-                const point side_end_point = point_rmap[octogon[side_end_index]];
-                const point side_midpoint(
-                    (side_start_point.x + side_end_point.x) / 2.0,
-                    (side_start_point.y + side_end_point.y) / 2.0);
-
-                const bool is_dir_x = d % 2 == 0, is_dir_pos = d > 1;
-                const point dir_square_center(
-                    side_midpoint.x + (is_dir_pos ? 1 : -1) * (is_dir_x ? 1.0 : 0.0) * (side_length / 2.0),
-                    side_midpoint.y + (is_dir_pos ? 1 : -1) * (is_dir_x ? 0.0 : 1.0) * (side_length / 2.0));
+                const point dir_square_center = polytess_displace_point(
+                    octogon_center, d, adj_poly_distance);
 
                 std::vector<point> dir_square_points = polytess_make_polygon(
                     dir_square_center, side_length, 4);
-                std::vector<index_t> dir_square_indices;
-                for(index_t p = 0; p < (index_t)dir_square_points.size(); p++)
-                {
-                    index_t point_index;
-                    if(point_map.find(dir_square_points[p]) != point_map.end())
-                    {
-                        point_index = point_map.find(dir_square_points[p])->second;
-                    }
-                    else
-                    {
-                        point_index = point_map.size();
-                        point_map[dir_square_points[p]] = point_index;
-                        point_rmap[point_index] = dir_square_points[p];
-                    }
-                    dir_square_indices.push_back(point_index);
-                }
 
-                if(point_map.size() != dir_initial_npoints)
+                if(polytess_add_polygon(dir_square_points, nlevels,
+                    point_map, point_rmap, polygons, levels))
                 {
-                    new_squares.push_back(dir_square_indices);
-                    new_square_dirs.push_back(d);
+                    const point square_octogon_center = polytess_displace_point(
+                        dir_square_center, (d + 1) % 4, adj_poly_distance);
+
+                    std::vector<point> square_octogon_points = polytess_make_polygon(
+                        square_octogon_center, side_length, 8);
+
+                    polytess_add_polygon(square_octogon_points, nlevels,
+                        point_map, point_rmap, polygons, levels);
                 }
             }
-        }
-
-        std::vector< std::vector<index_t> > new_octogons;
-        for(index_t s = 0; s < (index_t)new_squares.size(); s++)
-        {
-            const std::vector<index_t> &square = new_squares[s];
-            const index_t octogon_dir = (new_square_dirs[s] + 1) % 4;
-
-            const index_t side_start_index = (3 + octogon_dir) % 4;
-            const index_t side_end_index = (side_start_index + 1) % 4;
-            const point side_start_point = point_rmap[square[side_start_index]];
-            const point side_end_point = point_rmap[square[side_end_index]];
-            const point side_midpoint(
-                (side_start_point.x + side_end_point.x) / 2.0,
-                (side_start_point.y + side_end_point.y) / 2.0);
-
-            const bool is_dir_x = octogon_dir % 2 == 0, is_dir_pos = octogon_dir > 1;
-            const point octogon_center(
-                side_midpoint.x + (is_dir_pos ? 1 : -1) * (is_dir_x ? 1.0 : 0.0) * octogon_to_center,
-                side_midpoint.y + (is_dir_pos ? 1 : -1) * (is_dir_x ? 0.0 : 1.0) * octogon_to_center);
-
-            std::vector<point> octogon_points = polytess_make_polygon(
-                octogon_center, side_length, 8);
-            std::vector<index_t> octogon_indices;
-            for(index_t p = 0; p < (index_t)octogon_points.size(); p++)
-            {
-                index_t point_index;
-                if(point_map.find(octogon_points[p]) != point_map.end())
-                {
-                    point_index = point_map.find(octogon_points[p])->second;
-                }
-                else
-                {
-                    point_index = point_map.size();
-                    point_map[octogon_points[p]] = point_index;
-                    point_rmap[point_index] = octogon_points[p];
-                }
-                octogon_indices.push_back(point_index);
-            }
-
-            new_octogons.push_back(octogon_indices);
-        }
-
-        for(index_t s = 0; s < (index_t)new_squares.size(); s++)
-        {
-            polygons.push_back(new_squares[s]);
-            levels.push_back(nlevels);
-        }
-        for(index_t o = 0; o < (index_t)new_octogons.size(); o++)
-        {
-            polygons.push_back(new_octogons[o]);
-            levels.push_back(nlevels);
         }
     }
 }
