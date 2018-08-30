@@ -918,6 +918,34 @@ for each point tested or zero if not found in the set.
 
 The resulting data is placed the Node ``res``, which is passed in via reference.
 
+polytess
+++++++++++
+
+.. figure:: polytess_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of the polytess example ``level`` field.
+
+The ``polytess()`` function generates a polygonal tesselation in the 2D
+plane comprised of octogons and squares (known formally as a `two-color
+truncated square tiling <https://en.wikipedia.org/wiki/Truncated_square_tiling>`_).
+
+The scalar element-centered field ``level`` defined in the result mesh associates each element with its
+topological distance from the center of the tesselation.
+
+.. code:: cpp
+
+    conduit::blueprint::mesh::examples::polytess(index_t nlevels,
+                                                 Node &res);
+
+
+``nlevels`` specifies the number of tesselation levels/layers to generate. If this value is specified
+as 1 or less, only the central tesselation level (i.e. the octogon in the center of the geometry) will
+be generated in the result.
+
+The resulting data is placed the Node ``res``, which is passed in via reference.
+
 miscellaneous
 ++++++++++++++
 
