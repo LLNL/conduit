@@ -151,6 +151,11 @@ if(ADIOS_FOUND)
     list(APPEND conduit_relay_sources conduit_relay_io_adios.cpp)
 endif()
 
+if(ZFP_FOUND)
+    list(APPEND conduit_relay_headers conduit_relay_zfp.hpp)
+    list(APPEND conduit_relay_sources conduit_relay_zfp.cpp)
+endif()
+
 ################################
 # Add fortran interface if 
 # fortran support was selected
@@ -201,6 +206,10 @@ endif()
 if(ADIOS_FOUND)
     # Link with the serial ADIOS libraries.
     list(APPEND conduit_relay_deps adios_nompi)
+endif()
+
+if(ZFP_FOUND)
+    list(APPEND conduit_relay_deps zfp)
 endif()
 
 
