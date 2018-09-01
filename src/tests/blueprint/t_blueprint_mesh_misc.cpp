@@ -159,3 +159,21 @@ TEST(conduit_blueprint_mesh_offsets, generate_offsets_poly)
         }
     }
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_offsets, generate_sides_nonpoly)
+{
+    const index_t MESH_DIMS[3] = {2, 2, 2};
+
+    Node mesh;
+    blueprint::mesh::examples::basic("quads",MESH_DIMS[0],MESH_DIMS[1],MESH_DIMS[2],mesh);
+    Node &mesh_topo = mesh["topologies"].child(0);
+
+    Node side_mesh;
+    Node &side_cset = side_mesh["coordsets/sides"];
+    Node &side_topo = side_mesh["topologies/sides"];
+    Node &side_field = side_mesh["fields/sides"];
+    blueprint::mesh::topology::unstructured::generate_sides(mesh_topo, side_topo, side_cset, side_field);
+
+    std::cout << side_mesh.to_json() << std::endl;
+}

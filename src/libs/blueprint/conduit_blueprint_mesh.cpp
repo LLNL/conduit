@@ -2348,6 +2348,17 @@ mesh::topology::unstructured::verify(const Node &topo,
 }
 
 //-----------------------------------------------------------------------------
+bool
+mesh::topology::unstructured::is_manifold(const Node &/*topo*/,
+                                          Node &info)
+{
+    bool res = true;
+    info.reset();
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
 void
 mesh::topology::unstructured::to_polygonal(const Node &topo,
                                            Node &dest)
@@ -2430,6 +2441,123 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
         poly_conn.set_external(poly_conn_data);
         poly_conn.to_data_type(int_type.id(), dest["elements/connectivity"]);
     }
+}
+
+//-----------------------------------------------------------------------------
+void
+mesh::topology::unstructured::generate_corners(const Node &/*topo*/,
+                                               Node &dest,
+                                               Node &cdest,
+                                               Node &fdest)
+{
+    // TODO(JRC): Implement this function after a general definition for sides
+    // is constructed to handle arbitrary polygons/polyhedra.
+
+    dest.reset();
+    cdest.reset();
+    fdest.reset();
+}
+
+//-----------------------------------------------------------------------------
+void
+mesh::topology::unstructured::generate_sides(const Node &topo,
+                                             Node &dest,
+                                             Node &cdest,
+                                             Node &fdest)
+{
+    // TODO(JRC): This function needs to be adapted in order to be able to handle
+    // 3D topology inputs when it comes to generating "side" elements.
+
+    dest.reset();
+    cdest.reset();
+    fdest.reset();
+
+    // Retrieve Relevent Coordinate/Topology Metadata //
+
+    Node coordset;
+    find_reference_node(topo, "coordset", coordset);
+
+    Node topo_offsets;
+    if(topo.has_path("elements/offsets"))
+    {
+        topo_offsets.set_external(topo["elements/offsets"]);
+    }
+    else
+    {
+        mesh::topology::unstructured::generate_offsets(topo, topo_offsets);
+    }
+
+    DataType int_type(find_widest_type(topo,
+        std::vector<std::string>(1, "elements/connectivity"),
+        blueprint::mesh::default_int_types));
+    DataType float_type(find_widest_type(coordset["values"],
+        identify_coordset_axes(coordset),
+        blueprint::mesh::default_float_type));
+
+    const std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
+    const size_t topo_num_coords = coordset["values"][csys_axes[0]].dtype().number_of_elements();
+    const size_t topo_num_elems = topo_offsets.dtype().number_of_elements();
+
+    const size_t sides_num_coords = topo_num_coords + topo_num_elems;
+    size_t sides_num_elems_acc = 0;
+    {
+        // TODO(JRC): This is incredibly inefficient and should be optimized
+        // so that these expensive transform operations don't need to be performed
+        // for the sake of uniformity of input.
+        Node poly_topo;
+        mesh::topology::unstructured::to_polygonal(topo, poly_topo);
+
+        Node &poly_conn = poly_topo["elements/connectivity"];
+        Node &poly_offsets = poly_topo["elements/offsets"];
+        mesh::topology::unstructured::generate_offsets(poly_topo, poly_offsets);
+
+        DataType offset_dtype(poly_offsets.dtype().id(), 1);
+        DataType conn_dtype(poly_conn.dtype().id(), 1);
+
+        Node data_node;
+        for(index_t ei = 0; ei < (index_t)topo_num_elems; ei++)
+        {
+            data_node.set_external(offset_dtype, poly_offsets.element_ptr(ei));
+            data_node.set_external(conn_dtype, poly_conn.element_ptr(data_node.to_int64()));
+            sides_num_elems_acc += data_node.to_int64();
+        }
+    }
+    const size_t sides_num_elems = sides_num_elems_acc;
+
+    // Allocate Data Templates for Outputs //
+
+    dest["type"].set("unstructured");
+    dest["coordset"].set(cdest.name());
+    dest["elements/shape"].set("tris");
+    dest["elements/connectivity"].set(DataType(int_type.id(), 3 * sides_num_elems));
+
+    cdest["type"].set("explicit");
+    for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
+    {
+        cdest["values"][csys_axes[ai]].set(DataType(float_type.id(), sides_num_coords));
+    }
+
+    fdest["association"].set("element");
+    fdest["topology"].set(dest.name());
+    fdest["volume_dependent"].set("false");
+    fdest["values"].set(DataType(int_type.id(), sides_num_elems));
+
+    // Compute New Coordinates by Finding Elements Centers //
+
+    for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
+    {
+        Node &src_axis = coordset["values"][csys_axes[ai]];
+        Node &dst_axis = cdest["values"][csys_axes[ai]];
+
+        Node dst_data(DataType(dst_axis.dtype().id(), topo_num_coords),
+            dst_axis.data_ptr(), true);
+        src_axis.to_data_type(dst_axis.dtype().id(), dst_data);
+    }
+
+    // Compute New Element Topologies //
+
+    // TODO(JRC): Whatever this iteration looks like, it will probably be set up
+    // well to fill in the mapping field.
 }
 
 //-----------------------------------------------------------------------------

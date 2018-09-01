@@ -337,9 +337,25 @@ namespace topology
         bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                           conduit::Node &info);
 
+        //---------------------------------------------------------------------
+        bool CONDUIT_BLUEPRINT_API is_manifold(const conduit::Node &n,
+                                               conduit::Node &info);
+
         //-------------------------------------------------------------------------
         void CONDUIT_BLUEPRINT_API to_polygonal(const conduit::Node &n,
                                                 conduit::Node &dest);
+
+        //---------------------------------------------------------------------
+        void CONDUIT_BLUEPRINT_API generate_corners(const conduit::Node &n,
+                                                    conduit::Node &dest,
+                                                    conduit::Node &cdest,
+                                                    conduit::Node &fdest);
+
+        //---------------------------------------------------------------------
+        void CONDUIT_BLUEPRINT_API generate_sides(const conduit::Node &n,
+                                                  conduit::Node &dest,
+                                                  conduit::Node &cdest,
+                                                  conduit::Node &fdest);
 
         //-------------------------------------------------------------------------
         void CONDUIT_BLUEPRINT_API generate_offsets(const conduit::Node &n,
