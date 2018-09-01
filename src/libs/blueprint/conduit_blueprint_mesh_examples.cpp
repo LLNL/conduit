@@ -2700,12 +2700,12 @@ void polytess(index_t nlevels,
     field["topology"].set("topo");
     field["association"].set("element");
     field["volume_dependent"].set("false");
-    field["values"].set(DataType::float64(polygons.size()));
+    field["values"].set(DataType::uint32(polygons.size()));
 
-    float64_array level_array = field["values"].value();
+    uint32_array level_array = field["values"].value();
     for(index_t pi = 0; pi < (index_t)polygons.size(); pi++)
     {
-        level_array[pi] = levels[pi] + 0.0;
+        level_array[pi] = levels[pi];
     }
 }
 
