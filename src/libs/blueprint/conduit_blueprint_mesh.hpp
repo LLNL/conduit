@@ -341,6 +341,10 @@ namespace topology
         void CONDUIT_BLUEPRINT_API to_polygonal(const conduit::Node &n,
                                                 conduit::Node &dest);
 
+        //-------------------------------------------------------------------------
+        void CONDUIT_BLUEPRINT_API to_edge(const conduit::Node &n,
+                                           conduit::Node &dest);
+
         //---------------------------------------------------------------------
         void CONDUIT_BLUEPRINT_API generate_sides(const conduit::Node &n,
                                                   conduit::Node &dest,
@@ -352,6 +356,9 @@ namespace topology
                                                     conduit::Node &dest,
                                                     conduit::Node &cdest,
                                                     conduit::Node &fdest);
+
+        //-------------------------------------------------------------------------
+        // void CONDUIT_BLUEPRINT_API generate_offsets(const conduit::Node &n);
 
         //-------------------------------------------------------------------------
         void CONDUIT_BLUEPRINT_API generate_offsets(const conduit::Node &n,
