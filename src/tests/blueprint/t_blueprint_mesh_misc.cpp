@@ -160,42 +160,42 @@ TEST(conduit_blueprint_mesh_offsets, generate_offsets_poly)
     }
 }
 
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_offsets, generate_sides_nonpoly)
-{
-    const index_t MESH_DIMS[3] = {2,2,2};
-    // const index_t MESH_DIMS[3] = {3, 3, 3};
-
-    Node mesh;
-    // blueprint::mesh::examples::basic("quads",MESH_DIMS[0],MESH_DIMS[1],MESH_DIMS[2],mesh);
-    blueprint::mesh::examples::polytess(5, mesh);
-    Node &mesh_topo = mesh["topologies"].child(0);
-
-    std::cout << mesh_topo.to_json() << std::endl;
-
-    Node side_mesh;
-    Node &side_cset = side_mesh["coordsets/sides"];
-    Node &side_topo = side_mesh["topologies/sides"];
-    Node &side_field = side_mesh["fields/sides"];
-    blueprint::mesh::topology::unstructured::generate_sides(mesh_topo, side_topo, side_cset, side_field);
-
-    std::cout << side_mesh.to_json() << std::endl;
-    relay::io_blueprint::save(side_mesh, "side_example.blueprint_root");
-}
-
 // //-----------------------------------------------------------------------------
-// TEST(conduit_blueprint_mesh_offsets, generate_edges_nonpoly)
+// TEST(conduit_blueprint_mesh_offsets, generate_sides_nonpoly)
+// {
+//     // const index_t MESH_DIMS[3] = {3, 3, 3};
+// 
+//     Node mesh;
+//     // blueprint::mesh::examples::basic("quads",MESH_DIMS[0],MESH_DIMS[1],MESH_DIMS[2],mesh);
+//     blueprint::mesh::examples::polytess(10, mesh);
+//     Node &mesh_topo = mesh["topologies"].child(0);
+// 
+//     Node side_mesh;
+//     Node &side_cset = side_mesh["coordsets/sides"];
+//     Node &side_topo = side_mesh["topologies/sides"];
+//     Node &side_field = side_mesh["fields/sides"];
+//     blueprint::mesh::topology::unstructured::generate_sides(mesh_topo, side_topo, side_cset, side_field);
+// 
+//     std::cout << side_mesh.to_json() << std::endl;
+//     relay::io_blueprint::save(side_mesh, "side_example.blueprint_root");
+// }
+// 
+// //-----------------------------------------------------------------------------
+// TEST(conduit_blueprint_mesh_offsets, generate_corners_nonpoly)
 // {
 //     const index_t MESH_DIMS[3] = {3, 3, 3};
 // 
 //     Node mesh;
-//     blueprint::mesh::examples::basic("quads",MESH_DIMS[0],MESH_DIMS[1],MESH_DIMS[2],mesh);
-//     // blueprint::mesh::examples::polytess(3, mesh);
+//     // blueprint::mesh::examples::basic("quads",MESH_DIMS[0],MESH_DIMS[1],MESH_DIMS[2],mesh);
+//     blueprint::mesh::examples::polytess(3, mesh);
 //     Node &mesh_topo = mesh["topologies"].child(0);
 // 
-//     Node &edge_topo = mesh["topologies"]["edges"];
-//     blueprint::mesh::topology::unstructured::generate_edges(mesh_topo, true, edge_topo);
+//     Node corner_mesh;
+//     Node &corner_cset = corner_mesh["coordsets/corners"];
+//     Node &corner_topo = corner_mesh["topologies/corners"];
+//     Node &corner_field = corner_mesh["fields/corners"];
+//     blueprint::mesh::topology::unstructured::generate_corners(mesh_topo, corner_topo, corner_cset, corner_field);
 // 
-//     std::cout << mesh.to_json() << std::endl;
-//     relay::io_blueprint::save(mesh, "edge_example.blueprint_root");
+//     std::cout << corner_mesh.to_json() << std::endl;
+//     relay::io_blueprint::save(corner_mesh, "corner_example.blueprint_root");
 // }

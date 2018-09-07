@@ -1186,8 +1186,81 @@ convert_topology_to_unstructured(const std::string &base_type,
 }
 
 //-------------------------------------------------------------------------
+index_t
+calculate_shared_coord(const conduit::Node &edge_topo,
+                       const index_t edge0,
+                       const index_t edge1)
+{
+    Node edge_offsets; get_topology_offsets(edge_topo, edge_offsets);
+    const Node &edge_conn = edge_topo["elements/connectivity"];
+
+    Node misc_data, edge_data;
+    int64 edge0_raw[2] = {-1, -1}, edge1_raw[2] = {-1, -1};
+
+    int64 edges[2] = {edge0, edge1};
+    int64 *edge_raws[2] = {&edge0_raw[0], &edge1_raw[0]};
+    for(index_t e = 0; e < 2; e++)
+    {
+        misc_data.set_external(DataType(edge_offsets.dtype().id(), 1),
+            edge_offsets.element_ptr(edges[e]));
+        misc_data.set_external(DataType(edge_conn.dtype().id(), 2),
+            const_cast<void*>(edge_conn.element_ptr(misc_data.to_int64())));
+        edge_data.set_external(DataType::int64(2), edge_raws[e]);
+        misc_data.to_data_type(edge_data.dtype().id(), edge_data);
+    }
+
+    index_t shared_index = -1;
+    for(index_t edge0_index = 0; edge0_index < 2; edge0_index++)
+    {
+        for(index_t edge1_index = 0; edge1_index < 2; edge1_index++)
+        {
+            if(edge0_raw[edge0_index] == edge1_raw[edge1_index])
+            {
+                shared_index = edge0_raw[edge0_index];
+            }
+        }
+    }
+
+    return shared_index;
+}
+
+//-------------------------------------------------------------------------
+void
+calculate_ordered_edges(const conduit::Node &edge_topo,
+                        const std::set<index_t> &elem_edges,
+                        std::vector<index_t> &ordered_edges)
+{
+    // TODO(JRC): This is pretty inefficient and should be replaced with an
+    // alterantive solution if possible.
+    ordered_edges = std::vector<index_t>(elem_edges.begin(), elem_edges.end());
+
+    for(index_t bei = 0; bei < (index_t)ordered_edges.size() - 1; bei++)
+    {
+        index_t base_edge_index = ordered_edges[bei];
+        for(index_t cei = bei + 1; cei < (index_t)ordered_edges.size(); cei++)
+        {
+            index_t check_edge_index = ordered_edges[cei];
+            index_t shared_coord_index = calculate_shared_coord(edge_topo,
+                base_edge_index, check_edge_index);
+            if(shared_coord_index >= 0)
+            {
+                std::swap(ordered_edges[cei], ordered_edges[bei + 1]);
+                continue;
+            }
+        }
+    }
+}
+
+// NOTE(JRC): The following two functions need to be passed the coordinate set
+// and can't use 'find_reference_node' because these internal functions aren't
+// guaranteed to be passed nodes that exist in the context of an existing mesh
+// tree ('generate_corners' has a good example wherein an in-situ edge topology
+// is used to contruct an in-situ centroid topology).
+
+//-------------------------------------------------------------------------
 void
 calculate_unstructured_centroids(const conduit::Node &topo,
+                                 const conduit::Node &coordset,
                                  conduit::Node &dest,
                                  conduit::Node &cdest,
                                  std::map<index_t, index_t> &topo_to_dest,
@@ -1196,9 +1269,6 @@ calculate_unstructured_centroids(const conduit::Node &topo,
     // NOTE(JRC): This is a stand-in implementation for the method
     // 'mesh::topology::unstructured::generate_centroids' that exists because there
     // is currently no good way in Blueprint to create mappings with sparse data.
-
-    Node coordset;
-    find_reference_node(topo, "coordset", coordset);
     const std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
 
     Node topo_offsets;
@@ -1304,6 +1374,7 @@ calculate_unstructured_centroids(const conduit::Node &topo,
 //-------------------------------------------------------------------------
 void
 calculate_unstructured_edges(const conduit::Node &topo,
+                             const conduit::Node &coordset,
                              bool make_unique,
                              conduit::Node &dest,
                              std::map< index_t, std::set<index_t> > &topo_to_dest,
@@ -1312,9 +1383,6 @@ calculate_unstructured_edges(const conduit::Node &topo,
     // NOTE(JRC): This is a stand-in implementation for the method
     // 'mesh::topology::unstructured::generate_edges' that exists because there
     // is currently no good way in Blueprint to create mappings with sparse data.
-
-    Node coordset;
-    find_reference_node(topo, "coordset", coordset);
     const std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
 
     Node topo_offsets;
@@ -2787,8 +2855,12 @@ mesh::topology::unstructured::generate_centroids(const Node &topo,
 {
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_centroids".
+    Node coordset;
+    find_reference_node(topo, "coordset", coordset);
+
     std::map< index_t, index_t > topo_to_dest, dest_to_topo;
-    calculate_unstructured_centroids(topo, dest, cdest, topo_to_dest, dest_to_topo);
+    calculate_unstructured_centroids(topo, coordset, dest, cdest,
+        topo_to_dest, dest_to_topo);
 }
 
 //-----------------------------------------------------------------------------
@@ -2799,8 +2871,12 @@ mesh::topology::unstructured::generate_edges(const Node &topo,
 {
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_edges".
+    Node coordset;
+    find_reference_node(topo, "coordset", coordset);
+
     std::map< index_t, std::set<index_t> > topo_to_dest, dest_to_topo;
-    calculate_unstructured_edges(topo, make_unique, dest, topo_to_dest, dest_to_topo);
+    calculate_unstructured_edges(topo, coordset, make_unique, dest,
+        topo_to_dest, dest_to_topo);
 }
 
 //-----------------------------------------------------------------------------
@@ -2815,7 +2891,7 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
     Node coordset;
     find_reference_node(topo, "coordset", coordset);
     const std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
-    const size_t topo_num_coords = get_coordset_length("explicit", coordset);
+    const index_t topo_num_coords = get_coordset_length("explicit", coordset);
 
     // TODO(JRC): This function needs to be adapted in order to be able to handle
     // 3D topology inputs when it comes to generating "side" elements.
@@ -2827,16 +2903,16 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 
     Node topo_offsets;
     get_topology_offsets(topo, topo_offsets);
-    const size_t topo_num_elems = topo_offsets.dtype().number_of_elements();
+    const index_t topo_num_elems = topo_offsets.dtype().number_of_elements();
 
     Node cent_coordset, cent_topo;
     std::map< index_t, index_t > elemid_to_centid, centid_to_elemid;
-    calculate_unstructured_centroids(topo, cent_topo, cent_coordset,
+    calculate_unstructured_centroids(topo, coordset, cent_topo, cent_coordset,
         elemid_to_centid, centid_to_elemid);
 
     Node edge_topo;
     std::map< index_t, std::set<index_t> > elemid_to_edgeids, edgeid_to_elemids;
-    calculate_unstructured_edges(topo, false, edge_topo,
+    calculate_unstructured_edges(topo, coordset, false, edge_topo,
         elemid_to_edgeids, edgeid_to_elemids);
 
     // Discover Data Types //
@@ -2859,8 +2935,8 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 
     // Allocate Data Templates for Outputs //
 
-    const size_t sides_num_coords = topo_num_coords + topo_num_elems;
-    const size_t sides_num_elems = get_topology_length("unstructured", edge_topo);
+    const index_t sides_num_coords = topo_num_coords + topo_num_elems;
+    const index_t sides_num_elems = get_topology_length("unstructured", edge_topo);
 
     dest.reset();
     dest["type"].set("unstructured");
@@ -2883,25 +2959,31 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 
     // Populate Data Arrays w/ Calculated Coordinates //
 
+    const Node *cset_nodes[] = {&coordset, &cent_coordset};
+    const index_t cset_lengths[] = {topo_num_coords, topo_num_elems};
+    const index_t cset_count = sizeof(cset_nodes) / sizeof(cset_nodes[0]);
+
     for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
     {
         Node dst_data;
         Node &dst_axis = cdest["values"][csys_axes[ai]];
 
-        Node &src_axis = coordset["values"][csys_axes[ai]];
-        dst_data.set_external(DataType(float_dtype.id(), topo_num_coords),
-            dst_axis.element_ptr(0));
-        src_axis.to_data_type(float_dtype.id(), dst_data);
+        for(index_t ci = 0, coffset = 0; ci < cset_count; ci++)
+        {
+            const Node &cset_axis = (*cset_nodes[ci])["values"][csys_axes[ai]];
+            const index_t cset_length = cset_lengths[ci];
 
-        Node &cent_axis = cent_coordset["values"][csys_axes[ai]];
-        dst_data.set_external(DataType(float_dtype.id(), topo_num_elems),
-            dst_axis.element_ptr(topo_num_coords));
-        cent_axis.to_data_type(float_dtype.id(), dst_data);
+            dst_data.set_external(DataType(float_dtype.id(), cset_length),
+                dst_axis.element_ptr(coffset));
+            cset_axis.to_data_type(float_dtype.id(), dst_data);
+
+            coffset += cset_length;
+        }
     }
 
     // Compute New Elements/Fields for Side Topology //
 
-    int64 elem_index = 0;
+    int64 elem_index = 0, side_index = 0;
     int64 edge_data_raw[2] = {-1, -1}, tri_data_raw[3] = {-1, -1, -1};
 
     Node misc_data;
@@ -2911,7 +2993,7 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 
     Node &dest_conn = dest["elements/connectivity"];
     Node &dest_field = fdest["values"];
-    for(index_t side_index = 0; elem_index < (int64)topo_num_elems; elem_index++)
+    for(; elem_index < (int64)topo_num_elems; elem_index++)
     {
         index_t cent_index = topo_num_coords + elemid_to_centid[elem_index];
 
@@ -2941,17 +3023,171 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 
 //-----------------------------------------------------------------------------
 void
-mesh::topology::unstructured::generate_corners(const Node &/*topo*/,
+mesh::topology::unstructured::generate_corners(const Node &topo,
                                                Node &dest,
                                                Node &cdest,
                                                Node &fdest)
 {
-    // TODO(JRC): Implement this function after a general definition for sides
-    // is constructed to handle arbitrary polygons/polyhedra.
+    // Retrieve Relevent Coordinate/Topology Metadata //
+
+    Node coordset;
+    find_reference_node(topo, "coordset", coordset);
+    const std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
+    const index_t topo_num_coords = get_coordset_length("explicit", coordset);
+
+    // TODO(JRC): This function needs to be adapted in order to be able to handle
+    // 3D topology inputs when it comes to generating "side" elements.
+    if(csys_axes.size() != 2)
+    {
+        CONDUIT_ERROR("Failed to generate side mesh for input; " <<
+            csys_axes.size() << "D meshes are not yet supported.");
+    }
+
+    Node topo_offsets;
+    get_topology_offsets(topo, topo_offsets);
+    const index_t topo_num_elems = topo_offsets.dtype().number_of_elements();
+
+    Node cent_coordset, cent_topo;
+    std::map< index_t, index_t > elemid_to_centid, centid_to_elemid;
+    calculate_unstructured_centroids(topo, coordset, cent_topo, cent_coordset,
+        elemid_to_centid, centid_to_elemid);
+    blueprint::mesh::topology::unstructured::generate_offsets(cent_topo,
+        cent_topo["elements/offsets"]);
+
+    Node edge_topo;
+    std::map< index_t, std::set<index_t> > elemid_to_edgeids, edgeid_to_elemids;
+    calculate_unstructured_edges(topo, coordset, false, edge_topo,
+        elemid_to_edgeids, edgeid_to_elemids);
+    const index_t topo_num_total_edges = get_topology_length("unstructured", edge_topo);
+    calculate_unstructured_edges(topo, coordset, true, edge_topo,
+        elemid_to_edgeids, edgeid_to_elemids);
+    const index_t topo_num_unique_edges = get_topology_length("unstructured", edge_topo);
+    blueprint::mesh::topology::unstructured::generate_offsets(edge_topo,
+        edge_topo["elements/offsets"]);
+
+    Node ecent_coordset, ecent_topo;
+    std::map< index_t, index_t > edgeid_to_ecentid, ecentid_to_edgeid;
+    calculate_unstructured_centroids(edge_topo, coordset, ecent_topo, ecent_coordset,
+        edgeid_to_ecentid, ecentid_to_edgeid);
+    blueprint::mesh::topology::unstructured::generate_offsets(ecent_topo,
+        ecent_topo["elements/offsets"]);
+
+    // Discover Data Types //
+
+    DataType int_dtype, float_dtype;
+    {
+        std::vector<const Node*> src_nodes;
+        src_nodes.push_back(&topo);
+        src_nodes.push_back(&coordset);
+        int_dtype = find_widest_dtype(src_nodes, blueprint::mesh::default_int_dtypes);
+        float_dtype = find_widest_dtype(src_nodes, blueprint::mesh::default_float_dtype);
+    }
+
+    const Node &topo_conn_const = topo["elements/connectivity"];
+    Node topo_conn; topo_conn.set_external(topo_conn_const);
+    Node &edge_conn = edge_topo["elements/connectivity"];
+    const DataType conn_dtype(topo_conn.dtype().id(), 1);
+    const DataType offset_dtype(topo_offsets.dtype().id(), 1);
+    const DataType edge_dtype(edge_conn.dtype().id(), 2);
+
+    // Allocate Data Templates for Outputs //
+
+    const index_t corners_num_coords = topo_num_coords + topo_num_unique_edges + topo_num_elems;
+    const index_t corners_num_elems = topo_num_total_edges;
 
     dest.reset();
+    dest["type"].set("unstructured");
+    dest["coordset"].set(cdest.name());
+    dest["elements/shape"].set("quad");
+    dest["elements/connectivity"].set(DataType(int_dtype.id(), 4 * corners_num_elems));
+
     cdest.reset();
+    cdest["type"].set("explicit");
+    for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
+    {
+        cdest["values"][csys_axes[ai]].set(DataType(float_dtype.id(), corners_num_coords));
+    }
+
     fdest.reset();
+    fdest["association"].set("element");
+    fdest["topology"].set(dest.name());
+    fdest["volume_dependent"].set("false");
+    fdest["values"].set(DataType(int_dtype.id(), corners_num_elems));
+
+    // Populate Data Arrays w/ Calculated Coordinates //
+
+    const Node *cset_nodes[] = {&coordset, &ecent_coordset, &cent_coordset};
+    const index_t cset_lengths[] = {topo_num_coords, topo_num_unique_edges, topo_num_elems};
+    index_t cset_offsets[] = {-1, -1, -1};
+    const index_t cset_count = sizeof(cset_nodes) / sizeof(cset_nodes[0]);
+
+    for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
+    {
+        Node dst_data;
+        Node &dst_axis = cdest["values"][csys_axes[ai]];
+
+        for(index_t ci = 0, coffset = 0; ci < cset_count; ci++)
+        {
+            const Node &cset_axis = (*cset_nodes[ci])["values"][csys_axes[ai]];
+            const index_t cset_length = cset_lengths[ci];
+            cset_offsets[ci] = coffset;
+
+            dst_data.set_external(DataType(float_dtype.id(), cset_length),
+                dst_axis.element_ptr(coffset));
+            cset_axis.to_data_type(float_dtype.id(), dst_data);
+
+            coffset += cset_length;
+        }
+    }
+
+    // Compute New Elements/Fields for Corner Topology //
+
+    int64 elem_index = 0, corner_index = 0;
+    int64 edge_data_raw[2] = {-1, -1}, quad_data_raw[4] = {-1, -1, -1};
+
+    Node misc_data;
+    Node elem_data(DataType::int64(1), &elem_index, true);
+    Node edge_data(DataType::int64(2), &edge_data_raw[0], true);
+    Node quad_data(DataType::int64(3), &quad_data_raw[0], true);
+
+    Node &dest_conn = dest["elements/connectivity"];
+    Node &dest_field = fdest["values"];
+    for(; elem_index < (int64)topo_num_elems; elem_index++)
+    {
+        index_t cent_id = elemid_to_centid[elem_index];
+
+        // TODO(JRC): This solution really won't work for 3D; cascading centroids
+        // will be required for each dimension (cell, face, edge).
+        std::vector<index_t> elem_edge_ids;
+        calculate_ordered_edges(edge_topo, elemid_to_edgeids[elem_index], elem_edge_ids);
+        for(index_t curr_edge_index = 0;
+            curr_edge_index < (index_t)elem_edge_ids.size();
+            curr_edge_index++, corner_index++)
+        {
+            index_t next_edge_index = (curr_edge_index + 1) % elem_edge_ids.size();
+
+            index_t curr_edge_id = elem_edge_ids[curr_edge_index];
+            index_t next_edge_id = elem_edge_ids[next_edge_index];
+
+            index_t curr_ecent_id = edgeid_to_ecentid[curr_edge_id];
+            index_t next_ecent_id = edgeid_to_ecentid[next_edge_id];
+
+            index_t corner_id = calculate_shared_coord(edge_topo, curr_edge_id, next_edge_id);
+
+            quad_data_raw[0] = cset_offsets[1] + curr_ecent_id;
+            quad_data_raw[1] = cset_offsets[0] + corner_id;
+            quad_data_raw[2] = cset_offsets[1] + next_ecent_id;
+            quad_data_raw[3] = cset_offsets[2] + cent_id;
+
+            misc_data.set_external(DataType(int_dtype.id(), 4),
+                dest_conn.element_ptr(4 * corner_index));
+            quad_data.to_data_type(int_dtype.id(), misc_data);
+
+            misc_data.set_external(int_dtype,
+                dest_field.element_ptr(corner_index));
+            elem_data.to_data_type(int_dtype.id(), misc_data);
+        }
+    }
 }
 
 //-----------------------------------------------------------------------------
