@@ -48,12 +48,26 @@
 ///
 //-----------------------------------------------------------------------------
 
+#if !defined(CONDUIT_PLATFORM_WINDOWS)
+//
+// mmap interface not available on windows
+// 
+#include <sys/mman.h>
+#include <unistd.h>
+#else
+#define NOMINMAX
+#undef min
+#undef max
+#include "Windows.h"
+#endif
+
 //-----------------------------------------------------------------------------
 // std lib includes
 //-----------------------------------------------------------------------------
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <set>
 
 //-----------------------------------------------------------------------------
 // conduit includes
@@ -170,6 +184,42 @@ namespace conduit { namespace blueprint { namespace mesh {
 //-----------------------------------------------------------------------------
 // -- begin internal helper functions --
 //-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+struct ShapeType
+{
+    ShapeType(const conduit::Node &topology) :
+        type(""), id(-1), indices(-1), faces(-1), findices(-1), farrange(NULL),
+        is_poly(false), is_polyhedral(false)
+    {
+        if(topology["type"].as_string() == "unstructured" &&
+            topology["elements"].has_child("shape"))
+        {
+            type = topology["elements/shape"].as_string();
+            for(index_t i = 0; i < (index_t)blueprint::mesh::topo_shapes.size(); i++)
+            {
+                if(type == blueprint::mesh::topo_shapes[i])
+                {
+                    id = i;
+                    indices = blueprint::mesh::topo_shape_index_counts[i];
+                    faces = blueprint::mesh::topo_shape_face_counts[i];
+                    findices = blueprint::mesh::topo_shape_face_index_counts[i];
+                    farrange = const_cast<index_t*>(
+                        blueprint::mesh::topo_shape_face_arrangements[i]);
+
+                    is_poly = indices < 0;
+                    is_polyhedral = type == "polyhedral";
+                }
+            }
+        }
+
+    };
+
+    std::string type;
+    index_t id, indices, faces, findices, *farrange;
+    bool is_poly, is_polyhedral;
+};
+
 
 //-----------------------------------------------------------------------------
 bool verify_field_exists(const std::string &protocol,
@@ -693,6 +743,36 @@ void grid_id_to_ijk(const index_t id,
     }
 }
 
+//-----------------------------------------------------------------------------
+index_t get_coordset_length(const std::string &type,
+                            const Node &coordset)
+{
+    index_t coordset_length = 1;
+
+    const std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
+    const std::vector<std::string> &logical_axes = blueprint::mesh::logical_axes;
+    for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
+    {
+        if(type == "uniform")
+        {
+            coordset_length *=
+                coordset["dims"][logical_axes[i]].to_int64();
+        }
+        else if(type == "rectilinear")
+        {
+            coordset_length *=
+                coordset["values"][csys_axes[i]].dtype().number_of_elements();
+        }
+        else // if(type == "explicit")
+        {
+            coordset_length =
+                coordset["values"][csys_axes[i]].dtype().number_of_elements();
+        }
+    }
+
+    return coordset_length;
+}
+
 //-------------------------------------------------------------------------
 void
 convert_coordset_to_rectilinear(const std::string &/*base_type*/,
@@ -811,6 +891,88 @@ convert_coordset_to_explicit(const std::string &base_type,
             }
         }
     }
+}
+
+//-----------------------------------------------------------------------------
+// void get_offset_topology(const Node &topology,
+//                          Node &otopology)
+// {
+//     // NOTE(JRC): Unfortunately, this method doesn't work for caching the offsets
+//     // array because the given topology doesn't have the same tree context as the
+//     // original, which causes procedures like 'find_reference_node' to fail.
+//     otopology.reset();
+//     otopology.set_external(topology);
+//
+//     if(topology.has_child("elements") && !topology["elements"].has_child("offsets"))
+//     {
+//         Node &offsets = otopology["elements/offsets"];
+//         blueprint::mesh::topology::unstructured::generate_offsets(otopology, offsets);
+//     }
+// }
+
+//-----------------------------------------------------------------------------
+void get_topology_offsets(const Node &topology,
+                          Node &offsets)
+{
+    // TODO(JRC): This solution suffers from performance issues when multiple
+    // calls in a trace need the offset array and it isn't provided by the original
+    // caller (e.g. generate_sides() will make generate offsets, and so will its
+    // callee methods generate_centroids() and generate_edges()). This issue should
+    // be fixed if possible (or at least made more obnoxious to callers).
+
+    offsets.reset();
+
+    if(topology.has_child("type") && topology["type"].as_string() == "unstructured")
+    {
+        if(topology["elements"].has_child("offsets"))
+        {
+            offsets.set_external(topology["elements/offsets"]);
+        }
+        else
+        {
+            blueprint::mesh::topology::unstructured::generate_offsets(topology, offsets);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+index_t get_topology_length(const std::string &type,
+                            const Node &topology)
+{
+    index_t topology_length = 1;
+
+    if(type == "uniform" || type == "rectilinear")
+    {
+        Node coordset;
+        find_reference_node(topology, "coordset", coordset);
+
+        const std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
+        const std::vector<std::string> &logical_axes = blueprint::mesh::logical_axes;
+        for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
+        {
+            topology_length *= ((type == "uniform") ?
+                coordset["dims"][logical_axes[i]].to_int64() :
+                coordset["values"][csys_axes[i]].dtype().number_of_elements()) - 1;
+        }
+    }
+    else if(type == "structured")
+    {
+        const Node &dims = topology["elements/dims"];
+
+        const std::vector<std::string> &logical_axes = blueprint::mesh::logical_axes;
+        for(index_t i = 0; i < (index_t)dims.number_of_children(); i++)
+        {
+            topology_length *= dims[logical_axes[i]].to_int64();
+        }
+    }
+    else // if(type == "unstructured")
+    {
+        Node topo_offsets;
+        get_topology_offsets(topology, topo_offsets);
+        topology_length = topo_offsets.dtype().number_of_elements();
+    }
+
+    return topology_length;
 }
 
 // TODO(JRC): For all of the following topology conversion functions, it's
@@ -1021,6 +1183,243 @@ convert_topology_to_unstructured(const std::string &base_type,
             t1.to_data_type(int_dtype.id(), t3);
         }
     }
+}
+
+//-------------------------------------------------------------------------
+void
+calculate_unstructured_centroids(const conduit::Node &topo,
+                                 conduit::Node &dest,
+                                 conduit::Node &cdest,
+                                 std::map<index_t, index_t> &topo_to_dest,
+                                 std::map<index_t, index_t> &dest_to_topo)
+{
+    // NOTE(JRC): This is a stand-in implementation for the method
+    // 'mesh::topology::unstructured::generate_centroids' that exists because there
+    // is currently no good way in Blueprint to create mappings with sparse data.
+
+    Node coordset;
+    find_reference_node(topo, "coordset", coordset);
+    const std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
+
+    Node topo_offsets;
+    get_topology_offsets(topo, topo_offsets);
+    const index_t topo_num_elems = topo_offsets.dtype().number_of_elements();
+
+    const ShapeType topo_shape(topo);
+
+    // Discover Data Types //
+
+    DataType int_dtype, float_dtype;
+    {
+        std::vector<const Node*> src_nodes;
+        src_nodes.push_back(&topo);
+        src_nodes.push_back(&coordset);
+        int_dtype = find_widest_dtype(src_nodes, blueprint::mesh::default_int_dtypes);
+        float_dtype = find_widest_dtype(src_nodes, blueprint::mesh::default_float_dtype);
+    }
+
+    const Node &topo_conn_const = topo["elements/connectivity"];
+    Node topo_conn; topo_conn.set_external(topo_conn_const);
+    const DataType conn_dtype(topo_conn.dtype().id(), 1);
+    const DataType offset_dtype(topo_offsets.dtype().id(), 1);
+
+    // Allocate Data Templates for Outputs //
+
+    topo_to_dest.clear();
+    dest_to_topo.clear();
+
+    dest.reset();
+    dest["type"].set("unstructured");
+    dest["coordset"].set(cdest.name());
+    dest["elements/shape"].set("point");
+    dest["elements/connectivity"].set(DataType(int_dtype.id(), topo_num_elems));
+
+    cdest.reset();
+    cdest["type"].set("explicit");
+    for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
+    {
+        cdest["values"][csys_axes[ai]].set(DataType(float_dtype.id(), topo_num_elems));
+    }
+
+    // Compute Data for Centroid Topology //
+
+    Node data_node;
+    for(index_t ei = 0; ei < topo_num_elems; ei++)
+    {
+        data_node.set_external(offset_dtype, topo_offsets.element_ptr(ei));
+        const index_t eoffset = data_node.to_int64();
+        data_node.set_external(conn_dtype, topo_conn.element_ptr(eoffset));
+        const index_t elem_num_faces = topo_shape.is_polyhedral ?
+            data_node.to_int64() : 1;
+
+        std::set<index_t> elem_coord_indices;
+        for(index_t fi = 0, foffset = eoffset + topo_shape.is_polyhedral;
+            fi < elem_num_faces; fi++)
+        {
+            data_node.set_external(conn_dtype, topo_conn.element_ptr(foffset));
+            const index_t face_num_coords = topo_shape.is_poly ?
+                data_node.to_int64() : topo_shape.indices;
+            foffset += topo_shape.is_poly;
+
+            for(index_t ci = 0; ci < face_num_coords; ci++)
+            {
+                data_node.set_external(conn_dtype, topo_conn.element_ptr(foffset + ci));
+                elem_coord_indices.insert(data_node.to_int64());
+            }
+            foffset += face_num_coords;
+        }
+
+        float64 ecentroid[3] = {0.0, 0.0, 0.0};
+        for(std::set<index_t>::iterator elem_cindices_it = elem_coord_indices.begin();
+            elem_cindices_it != elem_coord_indices.end(); ++elem_cindices_it)
+        {
+            index_t ci = *elem_cindices_it;
+            for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
+            {
+                const Node &axis_data = coordset["values"][csys_axes[ai]];
+                data_node.set_external(DataType(axis_data.dtype().id(), 1),
+                    const_cast<void*>(axis_data.element_ptr(ci)));
+                ecentroid[ai] += data_node.to_float64() / elem_coord_indices.size();
+            }
+        }
+
+        int64 ei_value = static_cast<int64>(ei);
+        Node ei_data(DataType::int64(), &ei_value, true);
+        data_node.set_external(int_dtype, dest["elements/connectivity"].element_ptr(ei));
+        ei_data.to_data_type(int_dtype.id(), data_node);
+
+        for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
+        {
+            data_node.set_external(float_dtype,
+                cdest["values"][csys_axes[ai]].element_ptr(ei));
+            Node center_data(DataType::float64(), &ecentroid[ai], true);
+            center_data.to_data_type(float_dtype.id(), data_node);
+        }
+
+        topo_to_dest[ei] = ei;
+        dest_to_topo[ei] = ei;
+    }
+}
+
+//-------------------------------------------------------------------------
+void
+calculate_unstructured_edges(const conduit::Node &topo,
+                             bool make_unique,
+                             conduit::Node &dest,
+                             std::map< index_t, std::set<index_t> > &topo_to_dest,
+                             std::map< index_t, std::set<index_t> > &dest_to_topo)
+{
+    // NOTE(JRC): This is a stand-in implementation for the method
+    // 'mesh::topology::unstructured::generate_edges' that exists because there
+    // is currently no good way in Blueprint to create mappings with sparse data.
+
+    Node coordset;
+    find_reference_node(topo, "coordset", coordset);
+    const std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
+
+    Node topo_offsets;
+    get_topology_offsets(topo, topo_offsets);
+    const index_t topo_num_elems = topo_offsets.dtype().number_of_elements();
+
+    const ShapeType topo_shape(topo);
+    const bool is_topo_face_implicit = topo_shape.farrange != NULL;
+
+    // Discover Data Types //
+
+    const Node &topo_conn_const = topo["elements/connectivity"];
+    Node topo_conn; topo_conn.set_external(topo_conn_const);
+    const DataType conn_dtype(topo_conn.dtype().id(), 1);
+    const DataType offset_dtype(topo_offsets.dtype().id(), 1);
+    const DataType int_dtype = find_widest_dtype(topo, blueprint::mesh::default_int_dtypes);
+
+    // Allocate Data Templates for Outputs //
+
+    topo_to_dest.clear();
+    dest_to_topo.clear();
+
+    dest.reset();
+    dest["type"].set("unstructured");
+    dest["coordset"].set(topo["coordset"].as_string());
+    dest["elements/shape"].set("line");
+
+    int64 *edge_buffer = new int64[2 * topo_conn.dtype().number_of_elements()];
+
+    // Compute Data for Edge Topology //
+
+    Node data_node;
+
+    std::map< std::pair<int64, int64>, index_t > edge_map;
+    index_t edge_index = 0;
+    for(index_t ei = 0; ei < topo_num_elems; ei++)
+    {
+        data_node.set_external(offset_dtype, topo_offsets.element_ptr(ei));
+        const index_t eoffset = data_node.to_int64();
+        data_node.set_external(conn_dtype, topo_conn.element_ptr(eoffset));
+        const index_t elem_num_faces = (
+            topo_shape.is_polyhedral ? data_node.to_int64() : (
+            is_topo_face_implicit ? topo_shape.faces : 1));
+
+        for(index_t fi = 0, foffset = eoffset + topo_shape.is_polyhedral;
+            fi < elem_num_faces; fi++)
+        {
+            data_node.set_external(conn_dtype, topo_conn.element_ptr(foffset));
+            const index_t face_num_coords = (
+                topo_shape.is_poly ? data_node.to_int64() : (
+                is_topo_face_implicit ? topo_shape.findices : topo_shape.indices));
+            foffset += topo_shape.is_poly;
+
+            for(index_t ci = 0; ci < face_num_coords; ci++)
+            {
+                index_t cj = (ci + 1) % face_num_coords;
+
+                index_t cioffset = !is_topo_face_implicit ? ci :
+                    topo_shape.farrange[fi * face_num_coords + ci];
+                index_t cjoffset = !is_topo_face_implicit ? cj :
+                    topo_shape.farrange[fi * face_num_coords + cj];
+
+                data_node.set_external(conn_dtype,
+                    topo_conn.element_ptr(foffset + cioffset));
+                int64 icoord = data_node.to_int64();
+                data_node.set_external(conn_dtype,
+                    topo_conn.element_ptr(foffset + cjoffset));
+                int64 jcoord = data_node.to_int64();
+
+                std::pair<int64, int64> edge(
+                    std::min(icoord, jcoord),
+                    std::max(icoord, jcoord));
+                std::map< std::pair<int64, int64>, index_t >::iterator edge_it =
+                    edge_map.find(edge);
+                bool edge_exists = edge_it != edge_map.end();
+
+                if(!make_unique || !edge_exists)
+                {
+                    edge_buffer[edge_index++] = icoord;
+                    edge_buffer[edge_index++] = jcoord;
+                }
+                if(!edge_exists)
+                {
+                    // NOTE(JRC): The ID for each edge is set to be the index
+                    // of the edge within an offsets array. This is chosen b/c
+                    // indexing is a challenge when including non-unique edges.
+                    edge_map[edge] = (edge_index - 2) / 2;
+                }
+
+                index_t edge_id = edge_map.find(edge)->second;
+                topo_to_dest[ei].insert(edge_id);
+                dest_to_topo[edge_id].insert(ei);
+            }
+            foffset += !is_topo_face_implicit ? face_num_coords : 0;
+        }
+    }
+
+    // Store Edge Pair Data //
+
+    Node &dest_conn = dest["elements/connectivity"];
+    Node temp_conn(DataType::int64(edge_index), edge_buffer, true);
+    dest_conn.set(DataType(int_dtype.id(), edge_index));
+    temp_conn.to_data_type(int_dtype.id(), dest_conn);
+
+    delete [] edge_buffer;
 }
 
 //-----------------------------------------------------------------------------
@@ -2320,40 +2719,27 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
 {
     dest.reset();
 
-    DataType int_dtype = find_widest_dtype(topo, blueprint::mesh::default_int_dtypes);
-
-    const std::string topo_shape_type = topo["elements/shape"].as_string();
-    index_t topo_shape_indices, topo_shape_faces, topo_shape_findices;
-    index_t* topo_shape_farrange;
-    for(index_t i = 0; i < (index_t)topo_shapes.size(); i++)
-    {
-        if(topo_shapes[i] == topo_shape_type)
-        {
-            topo_shape_indices = topo_shape_index_counts[i];
-            topo_shape_faces = topo_shape_face_counts[i];
-            topo_shape_findices = topo_shape_face_index_counts[i];
-            topo_shape_farrange =
-                const_cast<index_t*>(topo_shape_face_arrangements[i]);
-        }
-    }
+    ShapeType topo_shape(topo);
+    const DataType int_dtype = find_widest_dtype(topo, blueprint::mesh::default_int_dtypes);
 
     // polygonal topology case
-    if(topo_shape_faces < 0)
+    if(topo_shape.faces < 0)
     {
         dest.set(topo);
     }
     // nonpolygonal topology case
     else
     {
-        const Node &topo_conn = topo["elements/connectivity"];
+        const Node &topo_conn_const = topo["elements/connectivity"];
+        Node topo_conn; topo_conn.set_external(topo_conn_const);
         const DataType topo_dtype(topo_conn.dtype().id(), 1);
         const index_t topo_indices = topo_conn.dtype().number_of_elements();
-        const index_t topo_elems = topo_indices / topo_shape_indices;
+        const index_t topo_elems = topo_indices / topo_shape.indices;
 
         // NOTE(JRC): Elements without faces (e.g. lines) are given 1 degenerate
         // face when creating polygons to make subsequent offset math work properly.
-        topo_shape_faces = std::max(topo_shape_faces, (index_t)1);
-        const bool is_topo_3d = topo_shape_faces > 1;
+        topo_shape.faces = std::max(topo_shape.faces, (index_t)1);
+        const bool is_topo_3d = topo_shape.faces > 1;
 
         Node topo_templ;
         topo_templ.set_external(topo);
@@ -2363,23 +2749,23 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
         dest["elements/shape"].set(is_topo_3d ? "polyhedral" : "polygonal");
 
         std::vector<int64> poly_conn_data(topo_elems *
-            (is_topo_3d + topo_shape_faces * (1 + topo_shape_findices)));
+            (is_topo_3d + topo_shape.faces * (1 + topo_shape.findices)));
         for(index_t e = 0; e < topo_elems; e++)
         {
-            const index_t ebase = topo_shape_indices * e;
-            const index_t epoly = (is_topo_3d + topo_shape_faces *
-                (1 + topo_shape_findices)) * e;
+            const index_t ebase = topo_shape.indices * e;
+            const index_t epoly = (is_topo_3d + topo_shape.faces *
+                (1 + topo_shape.findices)) * e;
 
-            poly_conn_data[epoly] = topo_shape_faces;
-            for(index_t f = 0; f < topo_shape_faces; f++)
+            poly_conn_data[epoly] = topo_shape.faces;
+            for(index_t f = 0; f < topo_shape.faces; f++)
             {
                 const index_t epoly_foff = epoly + (is_topo_3d +
-                    f * (1 + topo_shape_findices));
-                poly_conn_data[epoly_foff] = topo_shape_findices;
-                for(index_t fi = 0; fi < topo_shape_findices; fi++)
+                    f * (1 + topo_shape.findices));
+                poly_conn_data[epoly_foff] = topo_shape.findices;
+                for(index_t fi = 0; fi < topo_shape.findices; fi++)
                 {
                     const index_t ebase_ioff = ebase + (is_topo_3d ?
-                        topo_shape_farrange[f * topo_shape_findices + fi] : fi);
+                        topo_shape.farrange[f * topo_shape.findices + fi] : fi);
                     const Node index_node(topo_dtype,
                         const_cast<void*>(topo_conn.element_ptr(ebase_ioff)), true);
                     poly_conn_data[epoly_foff + 1 + fi] = index_node.to_int64();
@@ -2395,31 +2781,26 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
 
 //-----------------------------------------------------------------------------
 void
-mesh::topology::unstructured::to_edge(const Node &topo,
-                                      Node &dest)
+mesh::topology::unstructured::generate_centroids(const Node &topo,
+                                                 Node &dest,
+                                                 Node &cdest)
 {
     // TODO(JRC): Revise this function so that it works on every base topology
-    // type and then move it to "mesh::topology::{uniform|...|unstructured}::to_edge".
-    // TODO(JRC): Determine whether or not a version of this function that
-    // excludes duplicate edges is necessary.
-    // TODO(JRC): Consider extending this function to output a map node that
-    // maps edges to their source elements in the given topology.
+    // type and then move it to "mesh::topology::{uniform|...}::generate_centroids".
+    std::map< index_t, index_t > topo_to_dest, dest_to_topo;
+    calculate_unstructured_centroids(topo, dest, cdest, topo_to_dest, dest_to_topo);
+}
 
-    dest.reset();
-
-    // TODO(JRC): This is incredibly inefficient and should be optimized
-    // so that these expensive transform operations don't need to be performed
-    // for the sake of uniformity of input.
-    Node poly_topo;
-    mesh::topology::unstructured::to_polygonal(topo, poly_topo);
-    Node &poly_offsets = poly_topo["elements/offsets"];
-    mesh::topology::unstructured::generate_offsets(poly_topo, poly_offsets);
-    Node &poly_conn = poly_topo["elements/connectivity"];
-
-    // TODO(JRC): For each individual edge detected in the polygonal topology,
-    // add that edge to a new topology 'dest'.
-
-    
+//-----------------------------------------------------------------------------
+void
+mesh::topology::unstructured::generate_edges(const Node &topo,
+                                             bool make_unique,
+                                             Node &dest)
+{
+    // TODO(JRC): Revise this function so that it works on every base topology
+    // type and then move it to "mesh::topology::{uniform|...}::generate_edges".
+    std::map< index_t, std::set<index_t> > topo_to_dest, dest_to_topo;
+    calculate_unstructured_edges(topo, make_unique, dest, topo_to_dest, dest_to_topo);
 }
 
 //-----------------------------------------------------------------------------
@@ -2429,164 +2810,131 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
                                              Node &cdest,
                                              Node &fdest)
 {
-    dest.reset();
-    cdest.reset();
-    fdest.reset();
-
     // Retrieve Relevent Coordinate/Topology Metadata //
 
     Node coordset;
     find_reference_node(topo, "coordset", coordset);
+    const std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
+    const size_t topo_num_coords = get_coordset_length("explicit", coordset);
 
     // TODO(JRC): This function needs to be adapted in order to be able to handle
     // 3D topology inputs when it comes to generating "side" elements.
-    const std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
     if(csys_axes.size() != 2)
     {
         CONDUIT_ERROR("Failed to generate side mesh for input; " <<
             csys_axes.size() << "D meshes are not yet supported.");
     }
 
+    Node topo_offsets;
+    get_topology_offsets(topo, topo_offsets);
+    const size_t topo_num_elems = topo_offsets.dtype().number_of_elements();
+
+    Node cent_coordset, cent_topo;
+    std::map< index_t, index_t > elemid_to_centid, centid_to_elemid;
+    calculate_unstructured_centroids(topo, cent_topo, cent_coordset,
+        elemid_to_centid, centid_to_elemid);
+
+    Node edge_topo;
+    std::map< index_t, std::set<index_t> > elemid_to_edgeids, edgeid_to_elemids;
+    calculate_unstructured_edges(topo, false, edge_topo,
+        elemid_to_edgeids, edgeid_to_elemids);
+
+    // Discover Data Types //
+
     DataType int_dtype, float_dtype;
     {
         std::vector<const Node*> src_nodes;
         src_nodes.push_back(&topo);
         src_nodes.push_back(&coordset);
-
         int_dtype = find_widest_dtype(src_nodes, blueprint::mesh::default_int_dtypes);
         float_dtype = find_widest_dtype(src_nodes, blueprint::mesh::default_float_dtype);
     }
 
-    // TODO(JRC): Abstract out the following functionality from this method:
-    // - coordset_length(coordset) -> int
-    // - topology_length(topology) -> int
-    // - to_edge_topology(topology, out_topology) -> void
-    // - create_coordset? (for uniform and rectilinear values)
-    //   - allocate_coordset?
-    // - get_topology_offset(topology, int) -> int
-    // - get_elemtent_degree(topology, int) -> int
-    // - average_points(list of indices, point list) -> point value (float64[3])
-
-    // TODO(JRC): This is incredibly inefficient and should be optimized
-    // so that these expensive transform operations don't need to be performed
-    // for the sake of uniformity of input.
-    Node poly_topo;
-    mesh::topology::unstructured::to_polygonal(topo, poly_topo);
-    Node &poly_conn = poly_topo["elements/connectivity"];
-    Node &poly_offsets = poly_topo["elements/offsets"];
-    mesh::topology::unstructured::generate_offsets(poly_topo, poly_offsets);
-
-    const DataType offset_dtype(poly_offsets.dtype().id(), 1);
-    const DataType conn_dtype(poly_conn.dtype().id(), 1);
-
-    const size_t topo_num_coords = coordset["values"].child(0).dtype().number_of_elements();
-    const size_t topo_num_elems = poly_offsets.dtype().number_of_elements();
-
-    const size_t sides_num_coords = topo_num_coords + topo_num_elems;
-    size_t sides_num_elems_acc = 0;
-    {
-        Node data_node;
-        for(index_t ei = 0; ei < (index_t)topo_num_elems; ei++)
-        {
-            data_node.set_external(offset_dtype, poly_offsets.element_ptr(ei));
-            data_node.set_external(conn_dtype, poly_conn.element_ptr(data_node.to_int64()));
-            sides_num_elems_acc += data_node.to_int64();
-        }
-    }
-    const size_t sides_num_elems = sides_num_elems_acc;
+    const Node &topo_conn_const = topo["elements/connectivity"];
+    Node topo_conn; topo_conn.set_external(topo_conn_const);
+    Node &edge_conn = edge_topo["elements/connectivity"];
+    const DataType conn_dtype(topo_conn.dtype().id(), 1);
+    const DataType offset_dtype(topo_offsets.dtype().id(), 1);
+    const DataType edge_dtype(edge_conn.dtype().id(), 2);
 
     // Allocate Data Templates for Outputs //
 
+    const size_t sides_num_coords = topo_num_coords + topo_num_elems;
+    const size_t sides_num_elems = get_topology_length("unstructured", edge_topo);
+
+    dest.reset();
     dest["type"].set("unstructured");
     dest["coordset"].set(cdest.name());
     dest["elements/shape"].set("tri");
     dest["elements/connectivity"].set(DataType(int_dtype.id(), 3 * sides_num_elems));
 
+    cdest.reset();
     cdest["type"].set("explicit");
     for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
     {
         cdest["values"][csys_axes[ai]].set(DataType(float_dtype.id(), sides_num_coords));
     }
 
+    fdest.reset();
     fdest["association"].set("element");
     fdest["topology"].set(dest.name());
     fdest["volume_dependent"].set("false");
     fdest["values"].set(DataType(int_dtype.id(), sides_num_elems));
 
-    // Fill in Existing Coordinate Data //
+    // Populate Data Arrays w/ Calculated Coordinates //
 
     for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
     {
-        Node &src_axis = coordset["values"][csys_axes[ai]];
+        Node dst_data;
         Node &dst_axis = cdest["values"][csys_axes[ai]];
 
-        Node dst_data(DataType(dst_axis.dtype().id(), topo_num_coords),
-            dst_axis.data_ptr(), true);
-        src_axis.to_data_type(dst_axis.dtype().id(), dst_data);
+        Node &src_axis = coordset["values"][csys_axes[ai]];
+        dst_data.set_external(DataType(float_dtype.id(), topo_num_coords),
+            dst_axis.element_ptr(0));
+        src_axis.to_data_type(float_dtype.id(), dst_data);
+
+        Node &cent_axis = cent_coordset["values"][csys_axes[ai]];
+        dst_data.set_external(DataType(float_dtype.id(), topo_num_elems),
+            dst_axis.element_ptr(topo_num_coords));
+        cent_axis.to_data_type(float_dtype.id(), dst_data);
     }
 
-    // Compute New Coordinates/Elements/Fields for Side Topology //
+    // Compute New Elements/Fields for Side Topology //
 
-    for(index_t ei = 0, esi = 0; ei < (index_t)topo_num_elems; ei++)
+    int64 elem_index = 0;
+    int64 edge_data_raw[2] = {-1, -1}, tri_data_raw[3] = {-1, -1, -1};
+
+    Node misc_data;
+    Node elem_data(DataType::int64(1), &elem_index, true);
+    Node edge_data(DataType::int64(2), &edge_data_raw[0], true);
+    Node tri_data(DataType::int64(3), &tri_data_raw[0], true);
+
+    Node &dest_conn = dest["elements/connectivity"];
+    Node &dest_field = fdest["values"];
+    for(index_t side_index = 0; elem_index < (int64)topo_num_elems; elem_index++)
     {
-        Node data_node;
+        index_t cent_index = topo_num_coords + elemid_to_centid[elem_index];
 
-        data_node.set_external(offset_dtype, poly_offsets.element_ptr(ei));
-        const index_t eoffset = (index_t)data_node.to_int64();
-        data_node.set_external(conn_dtype, poly_conn.element_ptr(eoffset));
-        const index_t edegree = (index_t)data_node.to_int64();
-
-        const index_t ci_center = topo_num_coords + ei;
-        float64 coord_center[3] = {0.0, 0.0, 0.0};
-        for(index_t pi = 0; pi < edegree; pi++)
+        const std::set<index_t> &elem_edge_ids = elemid_to_edgeids[elem_index];
+        for(std::set<index_t>::const_iterator edges_it = elem_edge_ids.begin();
+            edges_it != elem_edge_ids.end(); ++edges_it, ++side_index)
         {
-            data_node.set_external(conn_dtype, poly_conn.element_ptr(eoffset + pi + 1));
-            index_t ci = (index_t)data_node.to_int64();
+            index_t edge_index = *edges_it;
+            misc_data.set_external(edge_dtype,
+                edge_conn.element_ptr(2 * edge_index));
+            misc_data.to_data_type(edge_data.dtype().id(), edge_data);
 
-            for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
-            {
-                Node &axis_data = coordset["values"][csys_axes[ai]];
-                data_node.set_external(DataType(axis_data.dtype().id(), 1),
-                    axis_data.element_ptr(ci));
-                coord_center[ai] += data_node.to_float64() / edegree;
-            }
-        }
-        for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
-        {
-            Node &axis_data = cdest["values"][csys_axes[ai]];
-            data_node.set_external(float_dtype, axis_data.element_ptr(ci_center));
+            tri_data_raw[0] = edge_data_raw[0];
+            tri_data_raw[1] = edge_data_raw[1];
+            tri_data_raw[2] = cent_index;
 
-            Node center_data(DataType::float64(), &coord_center[ai], true);
-            center_data.to_data_type(float_dtype.id(), data_node);
-        }
+            misc_data.set_external(DataType(int_dtype.id(), 3),
+                dest_conn.element_ptr(3 * side_index));
+            tri_data.to_data_type(int_dtype.id(), misc_data);
 
-        for(index_t pi_curr = 0; pi_curr < edegree; pi_curr++, esi++)
-        {
-            index_t pi_next = (pi_curr + 1) % edegree;
-
-            data_node.set_external(conn_dtype,
-                poly_conn.element_ptr(eoffset + pi_curr + 1));
-            index_t ci_curr = (index_t)data_node.to_int64();
-            data_node.set_external(conn_dtype,
-                poly_conn.element_ptr(eoffset + pi_next + 1));
-            index_t ci_next = (index_t)data_node.to_int64();
-
-            for(index_t tri = 0; tri < 3; tri++)
-            {
-                int64 ci_tri = static_cast<int64>(
-                    (tri == 0) ? ci_curr : (
-                    (tri == 1) ? ci_next : (
-                    (tri == 2) ? ci_center : -1)));
-                Node index_data(DataType::int64(), &ci_tri, true);
-                data_node.set_external(int_dtype,
-                    dest["elements/connectivity"].element_ptr(3 * esi + tri));
-                index_data.to_data_type(int_dtype.id(), data_node);
-            }
-
-            int64 ei_int64 = static_cast<int64>(ei);
-            Node field_data(DataType::int64(), &ei_int64, true);
-            data_node.set_external(int_dtype, fdest["values"].element_ptr(esi));
-            field_data.to_data_type(int_dtype.id(), data_node);
+            misc_data.set_external(int_dtype,
+                dest_field.element_ptr(side_index));
+            elem_data.to_data_type(int_dtype.id(), misc_data);
         }
     }
 }
@@ -2613,36 +2961,27 @@ mesh::topology::unstructured::generate_offsets(const Node &topo,
 {
     dest.reset();
 
-    DataType int_dtype = find_widest_dtype(topo, blueprint::mesh::default_int_dtypes);
+    const ShapeType topo_shape(topo);
+    const DataType int_dtype = find_widest_dtype(topo, blueprint::mesh::default_int_dtypes);
 
     const Node &topo_conn = topo["elements/connectivity"];
     const DataType topo_dtype(topo_conn.dtype().id(), 1, 0, 0,
         topo_conn.dtype().element_bytes(), topo_conn.dtype().endianness());
 
-    const std::string topo_shape_type = topo["elements/shape"].as_string();
-    index_t topo_shape_indices;
-    for(index_t i = 0; i < (index_t)topo_shapes.size(); i++)
-    {
-        if(topo_shapes[i] == topo_shape_type)
-        {
-            topo_shape_indices = topo_shape_index_counts[i];
-        }
-    }
-
-    if(topo_shape_indices > 0)
+    if(topo_shape.indices > 0)
     {
         const index_t topo_shapes =
-            topo_conn.dtype().number_of_elements() / topo_shape_indices;
+            topo_conn.dtype().number_of_elements() / topo_shape.indices;
 
         Node shape_node(DataType::int64(topo_shapes));
         int64_array shape_array = shape_node.as_int64_array();
         for(index_t s = 0; s < topo_shapes; s++)
         {
-            shape_array[s] = s * topo_shape_indices;
+            shape_array[s] = s * topo_shape.indices;
         }
         shape_node.to_data_type(int_dtype.id(), dest);
     }
-    else if(topo_shape_type == "polygonal")
+    else if(topo_shape.type == "polygonal")
     {
         std::vector<int64> shape_array;
         index_t s = 0;
@@ -2658,7 +2997,7 @@ mesh::topology::unstructured::generate_offsets(const Node &topo,
         shape_node.set_external(shape_array);
         shape_node.to_data_type(int_dtype.id(), dest);
     }
-    else if(topo_shape_type == "polyhedral")
+    else if(topo_shape.type == "polyhedral")
     {
         std::vector<int64> shape_array;
         index_t s = 0;

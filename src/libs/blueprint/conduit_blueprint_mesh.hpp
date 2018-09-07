@@ -342,8 +342,14 @@ namespace topology
                                                 conduit::Node &dest);
 
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API to_edge(const conduit::Node &n,
-                                           conduit::Node &dest);
+        void CONDUIT_BLUEPRINT_API generate_centroids(const conduit::Node &n,
+                                                      conduit::Node &dest,
+                                                      conduit::Node &cdest);
+
+        //-------------------------------------------------------------------------
+        void CONDUIT_BLUEPRINT_API generate_edges(const conduit::Node &n,
+                                                  bool make_unique,
+                                                  conduit::Node &dest);
 
         //---------------------------------------------------------------------
         void CONDUIT_BLUEPRINT_API generate_sides(const conduit::Node &n,
@@ -356,9 +362,6 @@ namespace topology
                                                     conduit::Node &dest,
                                                     conduit::Node &cdest,
                                                     conduit::Node &fdest);
-
-        //-------------------------------------------------------------------------
-        // void CONDUIT_BLUEPRINT_API generate_offsets(const conduit::Node &n);
 
         //-------------------------------------------------------------------------
         void CONDUIT_BLUEPRINT_API generate_offsets(const conduit::Node &n,
