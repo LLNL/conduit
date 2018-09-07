@@ -48,13 +48,7 @@
 ///
 //-----------------------------------------------------------------------------
 
-#if !defined(CONDUIT_PLATFORM_WINDOWS)
-//
-// mmap interface not available on windows
-// 
-#include <sys/mman.h>
-#include <unistd.h>
-#else
+#if defined(CONDUIT_PLATFORM_WINDOWS)
 #define NOMINMAX
 #undef min
 #undef max
