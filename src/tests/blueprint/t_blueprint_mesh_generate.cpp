@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_blueprint_mesh_misc.cpp
+/// file: t_blueprint_mesh_generate.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -71,13 +71,11 @@ static const index_t ELEM_TYPE_FACE_INDICES[4]  = {     3,       4,      3,     
 
 /// Test Cases ///
 
-// TODO(JRC): Consider combining the following two test cases in order to remove
-// code duplication (though at the cost of test granularity).
-
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_offsets, generate_offsets_nonpoly)
+TEST(conduit_blueprint_generate_unstructured, generate_offsets_nonpoly)
 {
-    const index_t MESH_DIMS[3] = {3, 3, 3};
+    const index_t MPDIMS[3] = {3, 3, 3};
+    const index_t MEDIMS[3] = {MPDIMS[0]-1, MPDIMS[1]-1, MPDIMS[2]-1};
 
     for(index_t ti = 0; ti < 4; ti++)
     {
@@ -85,16 +83,16 @@ TEST(conduit_blueprint_mesh_offsets, generate_offsets_nonpoly)
         const index_t &elem_subelems = ELEM_TYPE_SUBELEMS[ti];
         const index_t &elem_indices = ELEM_TYPE_INDICES[ti];
         const bool is_elem_3d = ELEM_TYPE_FACES[ti] > 1;
-        const index_t mesh_elems = (MESH_DIMS[0] - 1) * (MESH_DIMS[1] - 1) *
-            (is_elem_3d ? (MESH_DIMS[2] - 1) : 1);
+        const index_t mesh_elems =
+            MEDIMS[0] * MEDIMS[1] * (is_elem_3d ? MEDIMS[2] : 1) * elem_subelems;
 
         // NOTE: The following lines are for debugging purposes only.
-        std::cout << "Testing nonpolygonal offets for type '" <<
+        std::cout << "Testing offset generation for nonpolygonal type '" <<
             elem_type << "'..." << std::endl;
 
         Node nonpoly_node;
         blueprint::mesh::examples::braid(
-            elem_type,MESH_DIMS[0],MESH_DIMS[1],MESH_DIMS[2],nonpoly_node);
+            elem_type,MPDIMS[0],MPDIMS[1],MPDIMS[2],nonpoly_node);
         Node &nonpoly_topo = nonpoly_node["topologies"].child(0);
 
         Node nonpoly_offsets;
@@ -103,8 +101,7 @@ TEST(conduit_blueprint_mesh_offsets, generate_offsets_nonpoly)
 
         EXPECT_EQ(nonpoly_offsets.dtype().id(),
             nonpoly_topo["elements/connectivity"].dtype().id());
-        EXPECT_EQ(nonpoly_offsets.dtype().number_of_elements(),
-             mesh_elems * elem_subelems);
+        EXPECT_EQ(nonpoly_offsets.dtype().number_of_elements(), mesh_elems);
 
         Node nonpoly_offsets_int64;
         nonpoly_offsets.to_int64_array(nonpoly_offsets_int64);
@@ -117,9 +114,10 @@ TEST(conduit_blueprint_mesh_offsets, generate_offsets_nonpoly)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_offsets, generate_offsets_poly)
+TEST(conduit_blueprint_generate_unstructured, generate_offsets_poly)
 {
-    const index_t MESH_DIMS[3] = {3, 3, 3};
+    const index_t MPDIMS[3] = {3, 3, 3};
+    const index_t MEDIMS[3] = {MPDIMS[0]-1, MPDIMS[1]-1, MPDIMS[2]-1};
 
     for(index_t ti = 0; ti < 4; ti++)
     {
@@ -128,16 +126,16 @@ TEST(conduit_blueprint_mesh_offsets, generate_offsets_poly)
         const index_t &elem_faces = ELEM_TYPE_FACES[ti];
         const index_t &elem_face_indices = ELEM_TYPE_FACE_INDICES[ti];
         const bool is_elem_3d = ELEM_TYPE_FACES[ti] > 1;
-        const index_t mesh_elems = (MESH_DIMS[0] - 1) * (MESH_DIMS[1] - 1) *
-            (is_elem_3d ? (MESH_DIMS[2] - 1) : 1);
+        const index_t mesh_elems =
+            MEDIMS[0] * MEDIMS[1] * (is_elem_3d ? MEDIMS[2] : 1) * elem_subelems;
 
         // NOTE: The following lines are for debugging purposes only.
-        std::cout << "Testing polygonal offets for type '" <<
+        std::cout << "Testing offset generation for polygonal type '" <<
             elem_type << "'..." << std::endl;
 
         Node nonpoly_node;
         blueprint::mesh::examples::braid(
-            elem_type,MESH_DIMS[0],MESH_DIMS[1],MESH_DIMS[2],nonpoly_node);
+            elem_type,MPDIMS[0],MPDIMS[1],MPDIMS[2],nonpoly_node);
         Node &nonpoly_topo = nonpoly_node["topologies"].child(0);
 
         Node poly_topo, poly_offsets;
@@ -146,8 +144,7 @@ TEST(conduit_blueprint_mesh_offsets, generate_offsets_poly)
 
         EXPECT_EQ(poly_offsets.dtype().id(),
             poly_topo["elements/connectivity"].dtype().id());
-        EXPECT_EQ(poly_offsets.dtype().number_of_elements(),
-            mesh_elems * elem_subelems);
+        EXPECT_EQ(poly_offsets.dtype().number_of_elements(), mesh_elems);
 
         Node poly_offsets_int64;
         poly_offsets.to_int64_array(poly_offsets_int64);
@@ -160,42 +157,106 @@ TEST(conduit_blueprint_mesh_offsets, generate_offsets_poly)
     }
 }
 
-// //-----------------------------------------------------------------------------
-// TEST(conduit_blueprint_mesh_offsets, generate_sides_nonpoly)
-// {
-//     // const index_t MESH_DIMS[3] = {3, 3, 3};
-// 
-//     Node mesh;
-//     // blueprint::mesh::examples::basic("quads",MESH_DIMS[0],MESH_DIMS[1],MESH_DIMS[2],mesh);
-//     blueprint::mesh::examples::polytess(10, mesh);
-//     Node &mesh_topo = mesh["topologies"].child(0);
-// 
-//     Node side_mesh;
-//     Node &side_cset = side_mesh["coordsets/sides"];
-//     Node &side_topo = side_mesh["topologies/sides"];
-//     Node &side_field = side_mesh["fields/sides"];
-//     blueprint::mesh::topology::unstructured::generate_sides(mesh_topo, side_topo, side_cset, side_field);
-// 
-//     std::cout << side_mesh.to_json() << std::endl;
-//     relay::io_blueprint::save(side_mesh, "side_example.blueprint_root");
-// }
-// 
-// //-----------------------------------------------------------------------------
-// TEST(conduit_blueprint_mesh_offsets, generate_corners_nonpoly)
-// {
-//     const index_t MESH_DIMS[3] = {3, 3, 3};
-// 
-//     Node mesh;
-//     // blueprint::mesh::examples::basic("quads",MESH_DIMS[0],MESH_DIMS[1],MESH_DIMS[2],mesh);
-//     blueprint::mesh::examples::polytess(3, mesh);
-//     Node &mesh_topo = mesh["topologies"].child(0);
-// 
-//     Node corner_mesh;
-//     Node &corner_cset = corner_mesh["coordsets/corners"];
-//     Node &corner_topo = corner_mesh["topologies/corners"];
-//     Node &corner_field = corner_mesh["fields/corners"];
-//     blueprint::mesh::topology::unstructured::generate_corners(mesh_topo, corner_topo, corner_cset, corner_field);
-// 
-//     std::cout << corner_mesh.to_json() << std::endl;
-//     relay::io_blueprint::save(corner_mesh, "corner_example.blueprint_root");
-// }
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_centroids)
+{
+    const index_t MPDIMS[3] = {3, 3, 3};
+    const index_t MEDIMS[3] = {MPDIMS[0]-1, MPDIMS[1]-1, MPDIMS[2]-1};
+
+    const std::string CENTROID_COORDSET_NAME = "ccords";
+    const std::string CENTROID_TOPOLOGY_NAME = "ctopo";
+
+    for(index_t ti = 0; ti < 4; ti++)
+    {
+        const std::string &elem_type = ELEM_TYPE_LIST[ti];
+        const index_t &elem_subelems = ELEM_TYPE_SUBELEMS[ti];
+        const bool is_mesh_3d = ELEM_TYPE_FACES[ti] > 1;
+        const index_t mesh_elems =
+            MEDIMS[0] * MEDIMS[1] * (is_mesh_3d ? MEDIMS[2] : 1) * elem_subelems;
+
+        // NOTE: The following lines are for debugging purposes only.
+        std::cout << "Testing centroid generation for type '" <<
+            elem_type << "'..." << std::endl;
+
+        Node mesh, info;
+        blueprint::mesh::examples::braid(elem_type,MPDIMS[0],MPDIMS[1],MPDIMS[2],mesh);
+        Node &coords = mesh["coordsets"].child(0);
+        Node &topo = mesh["topologies"].child(0);
+
+        Node &poly_topo = mesh["topologies"]["poly_" + topo.name()];
+        blueprint::mesh::topology::unstructured::to_polygonal(topo, poly_topo);
+
+        Node *mesh_topos[] = {&topo, &poly_topo};
+        for(index_t mi = 0; mi < 2; mi++)
+        {
+            Node &mesh_topo = *mesh_topos[mi];
+
+            // TODO(JRC): test for both structured topology meshes and explicit
+            // topology (e.g. polygonal/polyhedral) meshes
+
+            Node cent_mesh;
+            Node& cent_coords = cent_mesh["coordsets"][CENTROID_COORDSET_NAME];
+            Node& cent_topo = cent_mesh["topologies"][CENTROID_TOPOLOGY_NAME];
+            blueprint::mesh::topology::unstructured::generate_centroids(
+                mesh_topo, cent_topo, cent_coords);
+
+            EXPECT_TRUE(blueprint::mesh::coordset::_explicit::verify(cent_coords, info));
+            EXPECT_TRUE(blueprint::mesh::topology::unstructured::verify(cent_topo, info));
+
+            // Verify Correctness of Coordset //
+
+            const std::vector<std::string> coord_axes = coords["values"].child_names();
+            for(index_t ci = 0; ci < (index_t)coord_axes.size(); ci++)
+            {
+                const std::string &coord_axis = coord_axes[ci];
+                EXPECT_TRUE(cent_coords["values"].has_child(coord_axis));
+
+                EXPECT_EQ(cent_coords["values"][coord_axis].dtype().id(),
+                    coords["values"][coord_axis].dtype().id());
+                EXPECT_EQ(cent_coords["values"][coord_axis].dtype().number_of_elements(),
+                    mesh_elems);
+            }
+
+            // Verify Correctness of Topology //
+
+            EXPECT_EQ(cent_topo["coordset"].as_string(), CENTROID_COORDSET_NAME);
+            EXPECT_EQ(cent_topo["elements/connectivity"].dtype().id(),
+                mesh_topo["elements/connectivity"].dtype().id());
+            EXPECT_EQ(cent_topo["elements/connectivity"].dtype().number_of_elements(),
+                mesh_elems);
+
+            // TODO(JRC): Extend this test case to validate that each centroid is
+            // contained within the convex hull of its source element.
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_edges)
+{
+    // TODO(JRC): Implement this function.
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_sides_2d)
+{
+    // TODO(JRC): Implement this function.
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_sides_3d)
+{
+    // TODO(JRC): Implement this function.
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_corners_2d)
+{
+    // TODO(JRC): Implement this function.
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_corners_3d)
+{
+    // TODO(JRC): Implement this function.
+}
