@@ -194,6 +194,11 @@ bool verify_adjset_protocol(const Node &n, Node &info)
     return blueprint::mesh::verify("adjset",n,info);
 }
 
+bool verify_nestset_protocol(const Node &n, Node &info)
+{
+    return blueprint::mesh::verify("nestset",n,info);
+}
+
 bool verify_index_protocol(const Node &n, Node &info)
 {
     return blueprint::mesh::verify("index",n,info);
@@ -222,6 +227,11 @@ bool verify_field_index_protocol(const Node &n, Node &info)
 bool verify_adjset_index_protocol(const Node &n, Node &info)
 {
     return blueprint::mesh::verify("adjset/index",n,info);
+}
+
+bool verify_nestset_index_protocol(const Node &n, Node &info)
+{
+    return blueprint::mesh::verify("nestset/index",n,info);
 }
 
 bool verify_mesh_multi_domain_protocol(const Node &n, Node &info)
@@ -1042,6 +1052,149 @@ TEST(conduit_blueprint_mesh_verify, adjset_general)
     }
 }
 
+/// Mesh Domain Nesting (AMR) Tests ///
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, nestset_types)
+{
+    VerifyFun verify_nestset = blueprint::mesh::nestset::verify;
+
+    Node n, info;
+
+    const std::string nestset_types[] = {"parent", "child"};
+    for(index_t ti = 0; ti < 2; ti++)
+    {
+        n.reset();
+        blueprint::mesh::examples::misc("nestsets",5,5,1,n);
+        Node& nestset_node = n.child(0)["nestsets/mesh_nest"];
+        Node& window_node = nestset_node["windows"].child(0);
+        CHECK_MESH(verify_nestset,nestset_node,info,true);
+
+        window_node["domain_type"].set(0);
+        CHECK_MESH(verify_nestset,nestset_node,info,false);
+
+        window_node["domain_type"].set("ancestor");
+        CHECK_MESH(verify_nestset,nestset_node,info,false);
+
+        window_node["domain_type"].set(nestset_types[ti]);
+        CHECK_MESH(verify_nestset,nestset_node,info,true);
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, nestset_general)
+{
+    VerifyFun verify_nestset_funs[] = {
+        blueprint::mesh::nestset::verify,
+        verify_nestset_protocol};
+    const std::string nestset_logical_fields[3] = {"ratio", "origin", "dims"};
+
+    Node logical_template, window_template_slim, window_template_full;
+    {
+        logical_template["i"].set(DataType::int32(1));
+        logical_template["j"].set(DataType::int32(1));
+
+        window_template_slim["domain_id"].set(DataType::int32(1));
+        window_template_slim["domain_type"].set("child");
+        window_template_slim["ratio"].set(logical_template);
+
+        window_template_full.set(window_template_slim);
+        window_template_full["origin"].set(logical_template);
+        window_template_full["dims"].set(logical_template);
+    }
+
+    for(index_t fi = 0; fi < 2; fi++)
+    {
+        VerifyFun verify_nestset = verify_nestset_funs[fi];
+
+        Node mesh, info;
+        CHECK_MESH(verify_nestset,mesh,info,false);
+
+        blueprint::mesh::examples::misc("nestsets",5,5,1,mesh);
+        Node& n = mesh.child(0)["nestsets"].child(0);
+        CHECK_MESH(verify_nestset,n,info,true);
+
+        { // Topology Field Tests //
+            n.remove("topology");
+            CHECK_MESH(verify_nestset,n,info,false);
+            n["topology"].set(10);
+            CHECK_MESH(verify_nestset,n,info,false);
+            n["topology"].set("mesh");
+            CHECK_MESH(verify_nestset,n,info,true);
+        }
+
+        { // Windows Field Tests //
+            Node windows = n["windows"];
+
+            n.remove("windows");
+            CHECK_MESH(verify_nestset,n,info,false);
+            n["windows"].set("windows");
+            CHECK_MESH(verify_nestset,n,info,false);
+            n["windows"].set(DataType::float64(10));
+            CHECK_MESH(verify_nestset,n,info,false);
+
+            n["windows"].reset();
+            n["windows"]["w1"].set("Hello, ");
+            CHECK_MESH(verify_nestset,n,info,false);
+            n["windows"]["w2"].set("World!");
+            CHECK_MESH(verify_nestset,n,info,false);
+
+            n["windows"].reset();
+            n["windows"]["w1"].set(window_template_slim);
+            CHECK_MESH(verify_nestset,n,info,true);
+            n["windows"]["w1"]["domain_id"].set(DataType::float32(1));
+            CHECK_MESH(verify_nestset,n,info,false);
+
+            n["windows"].reset();
+            n["windows"]["w1"].set(window_template_slim);
+            CHECK_MESH(verify_nestset,n,info,true);
+            n["windows"]["w1"]["domain_type"].set(0);
+            CHECK_MESH(verify_nestset,n,info,false);
+            n["windows"]["w1"]["domain_type"].set("ancestor");
+            CHECK_MESH(verify_nestset,n,info,false);
+
+            for(index_t fi = 0; fi < 3; fi++)
+            {
+                const std::string& logical_field = nestset_logical_fields[fi];
+
+                n["windows"].reset();
+                n["windows"]["w1"].set(window_template_full);
+                CHECK_MESH(verify_nestset,n,info,true);
+                n["windows"]["w1"][logical_field].set(0);
+                CHECK_MESH(verify_nestset,n,info,false);
+                n["windows"]["w1"][logical_field].reset();
+                n["windows"]["w1"][logical_field]["i"].set(DataType::int32(1));
+                CHECK_MESH(verify_nestset,n,info,false);
+                n["windows"]["w1"][logical_field]["j"].set(DataType::int32(1));
+                CHECK_MESH(verify_nestset,n,info,true);
+            }
+
+            n["windows"].reset();
+            n["windows"]["w1"].set(window_template_full);
+            CHECK_MESH(verify_nestset,n,info,true);
+            n["windows"]["w2"].set(window_template_slim);
+            CHECK_MESH(verify_nestset,n,info,true);
+            n["windows"]["w3"].set(window_template_full);
+            CHECK_MESH(verify_nestset,n,info,true);
+
+            n["windows"].reset();
+            n["windows"].set(windows);
+            CHECK_MESH(verify_nestset,n,info,true);
+        }
+
+        { // Association Field Tests //
+            n.remove("association");
+            CHECK_MESH(verify_nestset,n,info,false);
+
+            n["association"].set("zone");
+            CHECK_MESH(verify_nestset,n,info,false);
+            n["association"].set("element");
+            CHECK_MESH(verify_nestset,n,info,true);
+        }
+    }
+}
+
 /// Mesh Index Tests ///
 
 //-----------------------------------------------------------------------------
@@ -1379,6 +1532,74 @@ TEST(conduit_blueprint_mesh_verify, index_adjset)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, index_nestset)
+{
+    VerifyFun verify_nestset_index_funs[] = {
+        blueprint::mesh::nestset::index::verify,
+        verify_nestset_index_protocol};
+
+    for(index_t fi = 0; fi < 2; fi++)
+    {
+        VerifyFun verify_nestset_index = verify_nestset_index_funs[fi];
+
+        Node mesh, index, info;
+        CHECK_MESH(verify_nestset_index,mesh,info,false);
+
+        blueprint::mesh::examples::misc("nestsets",5,5,1,mesh);
+        blueprint::mesh::generate_index(mesh["domain0"],"quads",1,index);
+        Node& aindex = index["nestsets"].child(0);
+        CHECK_MESH(verify_nestset_index,aindex,info,true);
+
+        { // Topology Field Tests //
+            Node topo = aindex["topology"];
+            aindex.remove("topology");
+
+            CHECK_MESH(verify_nestset_index,aindex,info,false);
+            aindex["topology"].set(0);
+            CHECK_MESH(verify_nestset_index,aindex,info,false);
+
+            aindex["topology"].set("path");
+            CHECK_MESH(verify_nestset_index,aindex,info,true);
+
+            aindex["topology"].reset();
+            aindex["topology"].set(topo);
+            CHECK_MESH(verify_nestset_index,aindex,info,true);
+        }
+
+        { // Path Field Tests //
+            Node path = aindex["path"];
+            aindex.remove("path");
+
+            CHECK_MESH(verify_nestset_index,aindex,info,false);
+            aindex["path"].set(0);
+            CHECK_MESH(verify_nestset_index,aindex,info,false);
+
+            aindex["path"].set("path");
+            CHECK_MESH(verify_nestset_index,aindex,info,true);
+
+            aindex["path"].reset();
+            aindex["path"].set(path);
+            CHECK_MESH(verify_nestset_index,aindex,info,true);
+        }
+
+        { // Association Field Tests //
+            Node assoc = aindex["association"];
+            aindex.remove("association");
+
+            aindex["association"].set("zone");
+            CHECK_MESH(verify_nestset_index,aindex,info,false);
+            aindex["association"].set("vertex");
+            CHECK_MESH(verify_nestset_index,aindex,info,true);
+
+            aindex["association"].reset();
+            aindex["association"].set(assoc);
+            CHECK_MESH(verify_nestset_index,aindex,info,true);
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, index_general)
 {
     VerifyFun verify_index_funs[] = {
@@ -1562,6 +1783,45 @@ TEST(conduit_blueprint_mesh_verify, index_general)
             // re-added once it's included in the test Blueprint mesh.
             index["adjsets"].reset();
             index.remove("adjsets");
+            CHECK_MESH(verify_index,index,info,true);
+        }
+
+        { // Nestsets Field Tests //
+            info.reset();
+            Node nestsets = index["nestsets"];
+            index.remove("nestsets");
+            CHECK_MESH(verify_index,index,info,true);
+
+            index["nestsets"].set("nestset");
+            CHECK_MESH(verify_index,index,info,false);
+
+            index["nestsets"].reset();
+            index["nestsets"]["nestset1"].set("nestset1");
+            index["nestsets"]["nestset1"].set("nestset2");
+            CHECK_MESH(verify_index,index,info,false);
+
+            index["nestsets"].reset();
+            index["nestsets"]["nestset"]["topology"].set("mesh");
+            index["nestsets"]["nestset"]["association"].set("vertex");
+            index["nestsets"]["nestset"]["path"].set(0);
+            CHECK_MESH(verify_index,index,info,false);
+            index["nestsets"]["nestset"]["path"].set("quads/nestsets/nestset");
+            CHECK_MESH(verify_index,index,info,true);
+
+            index["nestsets"]["nestset"]["topology"].set("nonexistent");
+            CHECK_MESH(verify_index,index,info,false);
+            index["nestsets"]["nestset"]["topology"].set("mesh");
+            CHECK_MESH(verify_index,index,info,true);
+
+            index["nestsets"]["nestset"]["association"].set("nonexistent");
+            CHECK_MESH(verify_index,index,info,false);
+            index["nestsets"]["nestset"]["association"].set("element");
+            CHECK_MESH(verify_index,index,info,true);
+
+            // TODO(JRC): Change this code so that the "nestsets" section is
+            // re-added once it's included in the test Blueprint mesh.
+            index["nestsets"].reset();
+            index.remove("nestsets");
             CHECK_MESH(verify_index,index,info,true);
         }
     }
