@@ -67,15 +67,54 @@
 #include "gtest/gtest.h"
 
 using namespace conduit;
+using namespace conduit::blueprint;
 using namespace conduit::utils;
 
 /// Testing Constants ///
 
 static const std::string ELEM_TYPE_LIST[4]      = {"tris", "quads", "tets", "hexs"};
+static const index_t ELEM_TYPE_DIMS[4]          = {     2,       2,      3,      3};
 static const index_t ELEM_TYPE_SUBELEMS[4]      = {     2,       1,      6,      1};
 static const index_t ELEM_TYPE_INDICES[4]       = {     3,       4,      4,      8};
+static const index_t ELEM_TYPE_EDGES[4]         = {     1,       0,     -1,      0};
 static const index_t ELEM_TYPE_FACES[4]         = {     1,       1,      4,      6};
 static const index_t ELEM_TYPE_FACE_INDICES[4]  = {     3,       4,      3,      4};
+
+/// Testing Helpers ///
+
+index_t calc_mesh_elems(index_t type, const index_t *npts, bool super = false)
+{
+    index_t num_elems = 1;
+
+    for(index_t di = 0; di < ELEM_TYPE_DIMS[type]; di++)
+    {
+        num_elems *= (npts[di] - 1);
+    }
+
+    return (super ? 1 : ELEM_TYPE_SUBELEMS[type]) * num_elems;
+}
+
+index_t calc_mesh_edges(index_t type, const index_t *npts, bool unique)
+{
+    index_t num_elems = calc_mesh_elems(type, npts, true);
+
+    index_t num_edges = 0, num_int_edges = 0;
+    for(index_t di = 0; di < ELEM_TYPE_DIMS[type]; di++)
+    {
+        index_t dim_num_edges = npts[di] - 1;
+        index_t dim_num_int_edges = npts[di] - 1;
+        for(index_t dj = 0; dj < ELEM_TYPE_DIMS[type]; dj++)
+        {
+            dim_num_edges *= (di != dj) ? npts[dj] : 1;
+            dim_num_int_edges *= (di != dj) ? npts[dj] - 2 : 1;
+        }
+        num_edges += dim_num_edges;
+        num_int_edges += dim_num_int_edges;
+    }
+
+    return num_edges + (ELEM_TYPE_EDGES[type] * num_elems) + !unique * (
+        num_int_edges + (ELEM_TYPE_EDGES[type] * num_elems));
+}
 
 /// Test Cases ///
 
@@ -83,32 +122,26 @@ static const index_t ELEM_TYPE_FACE_INDICES[4]  = {     3,       4,      3,     
 TEST(conduit_blueprint_generate_unstructured, generate_offsets_nonpoly)
 {
     const index_t MPDIMS[3] = {3, 3, 3};
-    const index_t MEDIMS[3] = {MPDIMS[0]-1, MPDIMS[1]-1, MPDIMS[2]-1};
 
     for(index_t ti = 0; ti < 4; ti++)
     {
         const std::string &elem_type = ELEM_TYPE_LIST[ti];
-        const index_t &elem_subelems = ELEM_TYPE_SUBELEMS[ti];
         const index_t &elem_indices = ELEM_TYPE_INDICES[ti];
-        const bool is_elem_3d = ELEM_TYPE_FACES[ti] > 1;
-        const index_t mesh_elems = elem_subelems *
-            MEDIMS[0] * MEDIMS[1] * (is_elem_3d ? MEDIMS[2] : 1);
+        const index_t mesh_elems = calc_mesh_elems(ti, &MPDIMS[0]);
 
         // NOTE: The following lines are for debugging purposes only.
         std::cout << "Testing offset generation for nonpolygonal type '" <<
             elem_type << "'..." << std::endl;
 
         Node nonpoly_node;
-        blueprint::mesh::examples::braid(
-            elem_type,MPDIMS[0],MPDIMS[1],MPDIMS[2],nonpoly_node);
+        mesh::examples::braid(elem_type,MPDIMS[0],MPDIMS[1],MPDIMS[2],nonpoly_node);
         Node &nonpoly_topo = nonpoly_node["topologies"].child(0);
+        Node &nonpoly_conn = nonpoly_topo["elements/connectivity"];
 
         Node nonpoly_offsets;
-        blueprint::mesh::topology::unstructured::generate_offsets(
-            nonpoly_topo, nonpoly_offsets);
+        mesh::topology::unstructured::generate_offsets(nonpoly_topo, nonpoly_offsets);
 
-        EXPECT_EQ(nonpoly_offsets.dtype().id(),
-            nonpoly_topo["elements/connectivity"].dtype().id());
+        EXPECT_EQ(nonpoly_offsets.dtype().id(), nonpoly_conn.dtype().id());
         EXPECT_EQ(nonpoly_offsets.dtype().number_of_elements(), mesh_elems);
 
         Node nonpoly_offsets_int64;
@@ -125,33 +158,29 @@ TEST(conduit_blueprint_generate_unstructured, generate_offsets_nonpoly)
 TEST(conduit_blueprint_generate_unstructured, generate_offsets_poly)
 {
     const index_t MPDIMS[3] = {3, 3, 3};
-    const index_t MEDIMS[3] = {MPDIMS[0]-1, MPDIMS[1]-1, MPDIMS[2]-1};
 
     for(index_t ti = 0; ti < 4; ti++)
     {
         const std::string &elem_type = ELEM_TYPE_LIST[ti];
-        const index_t &elem_subelems = ELEM_TYPE_SUBELEMS[ti];
         const index_t &elem_faces = ELEM_TYPE_FACES[ti];
         const index_t &elem_face_indices = ELEM_TYPE_FACE_INDICES[ti];
-        const bool is_elem_3d = ELEM_TYPE_FACES[ti] > 1;
-        const index_t mesh_elems = elem_subelems *
-            MEDIMS[0] * MEDIMS[1] * (is_elem_3d ? MEDIMS[2] : 1);
+        const index_t mesh_elems = calc_mesh_elems(ti, &MPDIMS[0]);
+        const bool is_elem_3d = ELEM_TYPE_DIMS[ti] == 3;
 
         // NOTE: The following lines are for debugging purposes only.
         std::cout << "Testing offset generation for polygonal type '" <<
             elem_type << "'..." << std::endl;
 
         Node nonpoly_node;
-        blueprint::mesh::examples::braid(
-            elem_type,MPDIMS[0],MPDIMS[1],MPDIMS[2],nonpoly_node);
+        mesh::examples::braid(elem_type,MPDIMS[0],MPDIMS[1],MPDIMS[2],nonpoly_node);
         Node &nonpoly_topo = nonpoly_node["topologies"].child(0);
 
         Node poly_topo, poly_offsets;
-        blueprint::mesh::topology::unstructured::to_polygonal(nonpoly_topo, poly_topo);
-        blueprint::mesh::topology::unstructured::generate_offsets(poly_topo, poly_offsets);
+        mesh::topology::unstructured::to_polygonal(nonpoly_topo, poly_topo);
+        mesh::topology::unstructured::generate_offsets(poly_topo, poly_offsets);
+        Node &poly_conn = poly_topo["elements/connectivity"];
 
-        EXPECT_EQ(poly_offsets.dtype().id(),
-            poly_topo["elements/connectivity"].dtype().id());
+        EXPECT_EQ(poly_offsets.dtype().id(), poly_conn.dtype().id());
         EXPECT_EQ(poly_offsets.dtype().number_of_elements(), mesh_elems);
 
         Node poly_offsets_int64;
@@ -169,7 +198,6 @@ TEST(conduit_blueprint_generate_unstructured, generate_offsets_poly)
 TEST(conduit_blueprint_generate_unstructured, generate_centroids)
 {
     const index_t MPDIMS[3] = {3, 3, 3};
-    const index_t MEDIMS[3] = {MPDIMS[0]-1, MPDIMS[1]-1, MPDIMS[2]-1};
 
     const std::string CENTROID_COORDSET_NAME = "ccoords";
     const std::string CENTROID_TOPOLOGY_NAME = "ctopo";
@@ -177,22 +205,19 @@ TEST(conduit_blueprint_generate_unstructured, generate_centroids)
     for(index_t ti = 0; ti < 4; ti++)
     {
         const std::string &elem_type = ELEM_TYPE_LIST[ti];
-        const index_t &elem_subelems = ELEM_TYPE_SUBELEMS[ti];
-        const bool is_mesh_3d = ELEM_TYPE_FACES[ti] > 1;
-        const index_t mesh_elems = elem_subelems *
-            MEDIMS[0] * MEDIMS[1] * (is_mesh_3d ? MEDIMS[2] : 1);
+        const index_t mesh_elems = calc_mesh_elems(ti, &MPDIMS[0]);
 
         // NOTE: The following lines are for debugging purposes only.
         std::cout << "Testing centroid generation for type '" <<
             elem_type << "'..." << std::endl;
 
         Node mesh, info;
-        blueprint::mesh::examples::braid(elem_type,MPDIMS[0],MPDIMS[1],MPDIMS[2],mesh);
+        mesh::examples::braid(elem_type,MPDIMS[0],MPDIMS[1],MPDIMS[2],mesh);
         Node &coords = mesh["coordsets"].child(0);
         Node &topo = mesh["topologies"].child(0);
 
         Node &poly_topo = mesh["topologies"]["poly_" + topo.name()];
-        blueprint::mesh::topology::unstructured::to_polygonal(topo, poly_topo);
+        mesh::topology::unstructured::to_polygonal(topo, poly_topo);
 
         Node *mesh_topos[] = {&topo, &poly_topo};
         for(index_t mi = 0; mi < 2; mi++)
@@ -200,13 +225,13 @@ TEST(conduit_blueprint_generate_unstructured, generate_centroids)
             Node &mesh_topo = *mesh_topos[mi];
 
             Node cent_mesh;
-            Node& cent_coords = cent_mesh["coordsets"][CENTROID_COORDSET_NAME];
-            Node& cent_topo = cent_mesh["topologies"][CENTROID_TOPOLOGY_NAME];
-            blueprint::mesh::topology::unstructured::generate_centroids(
+            Node &cent_coords = cent_mesh["coordsets"][CENTROID_COORDSET_NAME];
+            Node &cent_topo = cent_mesh["topologies"][CENTROID_TOPOLOGY_NAME];
+            mesh::topology::unstructured::generate_centroids(
                 mesh_topo, cent_topo, cent_coords);
 
-            EXPECT_TRUE(blueprint::mesh::coordset::_explicit::verify(cent_coords, info));
-            EXPECT_TRUE(blueprint::mesh::topology::unstructured::verify(cent_topo, info));
+            EXPECT_TRUE(mesh::coordset::_explicit::verify(cent_coords, info));
+            EXPECT_TRUE(mesh::topology::unstructured::verify(cent_topo, info));
 
             // Verify Correctness of Coordset //
 
@@ -239,14 +264,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_centroids)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_edges)
 {
-    // NOTE: This variable describes the number of internal edges contained
-    // within each superelement of the base mesh. "tets" are given a salient
-    // value in order to indicate the the overlap scheme is too complicated
-    // and should be skipped.
-    const index_t ELEM_TYPE_EDGES[4] = {1, 0, -1, 0};
-
     const index_t MPDIMS[3] = {2, 2, 2};
-    const index_t MEDIMS[3] = {MPDIMS[0]-1, MPDIMS[1]-1, MPDIMS[2]-1};
 
     const std::string UNIQUE_TOPOLOGY_NAME = "etopo_unique";
     const std::string TOTAL_TOPOLOGY_NAME = "etopo_total";
@@ -254,49 +272,32 @@ TEST(conduit_blueprint_generate_unstructured, generate_edges)
     for(index_t ti = 0; ti < 4; ti++)
     {
         const std::string &elem_type = ELEM_TYPE_LIST[ti];
-        const index_t &elem_subedges = ELEM_TYPE_EDGES[ti];
-        const bool is_mesh_3d = ELEM_TYPE_FACES[ti] > 1;
-        const index_t mesh_dims = is_mesh_3d ? 3 : 2;
-        const index_t mesh_elems = MEDIMS[0] * MEDIMS[1] * (is_mesh_3d ? MEDIMS[2] : 1);
-
-        index_t mesh_edges_acc = 0, mesh_int_edges_acc = 0;
-        for(index_t di = 0; di < mesh_dims; di++)
-        {
-            index_t dim_num_edges = MPDIMS[di] - 1;
-            index_t dim_num_int_edges = MPDIMS[di] - 1;
-            for(index_t dj = 0; dj < mesh_dims; dj++)
-            {
-                dim_num_edges *= (di != dj) ? MPDIMS[dj] : 1;
-                dim_num_int_edges *= (di != dj) ? MPDIMS[dj] - 2 : 1;
-            }
-            mesh_edges_acc += dim_num_edges;
-            mesh_int_edges_acc += dim_num_int_edges;
-        }
-        const index_t mesh_num_unique_edges = mesh_edges_acc + (mesh_elems * elem_subedges);
-        const index_t mesh_num_total_edges = mesh_num_unique_edges +
-            mesh_int_edges_acc + (mesh_elems * elem_subedges);
+        const index_t mesh_unique_edges = calc_mesh_edges(ti, &MPDIMS[0], true);
+        const index_t mesh_total_edges = calc_mesh_edges(ti, &MPDIMS[0], false);
+        const bool is_mesh_3d = ELEM_TYPE_DIMS[ti] == 3;
+        const bool is_mesh_edgeworthy = ELEM_TYPE_EDGES[ti] != -1;
 
         // NOTE: Skip values indicated to have an invalid subedge scheme.
-        if(elem_subedges < 0) { continue; }
+        if(!is_mesh_edgeworthy) { continue; }
 
         // NOTE: The following lines are for debugging purposes only.
         std::cout << "Testing edge mesh generation for type '" <<
             elem_type << "'..." << std::endl;
 
         Node mesh, info;
-        blueprint::mesh::examples::braid(elem_type,MPDIMS[0],MPDIMS[1],MPDIMS[2],mesh);
+        mesh::examples::braid(elem_type,MPDIMS[0],MPDIMS[1],MPDIMS[2],mesh);
         Node &coords = mesh["coordsets"].child(0);
         Node &topo = mesh["topologies"].child(0);
 
         Node &poly_topo = mesh["topologies"]["poly_" + topo.name()];
-        blueprint::mesh::topology::unstructured::to_polygonal(topo, poly_topo);
+        mesh::topology::unstructured::to_polygonal(topo, poly_topo);
 
         Node *mesh_topos[] = {&topo, &poly_topo};
         for(index_t mi = 0; mi < 2; mi++)
         {
             // NOTE: The following lines are for debugging purposes only.
-            std::cout << "  " << std::string((mi == 0) ? "implicit" : "explicit") <<
-                " source topology..." << std::endl;
+            std::string topo_type((mi == 0) ? "implicit" : "explicit");
+            std::cout << "  " << topo_type << " source topology..." << std::endl;
 
             Node &mesh_topo = *mesh_topos[mi];
             Node &mesh_conn = mesh_topo["elements/connectivity"];
@@ -306,17 +307,17 @@ TEST(conduit_blueprint_generate_unstructured, generate_edges)
             edge_coords.set_external(coords);
 
             Node &unique_edge_topo = edge_mesh["topologies"][UNIQUE_TOPOLOGY_NAME];
-            blueprint::mesh::topology::unstructured::generate_edges(
+            mesh::topology::unstructured::generate_edges(
                 mesh_topo, true, unique_edge_topo);
 
             Node &total_edge_topo = edge_mesh["topologies"][TOTAL_TOPOLOGY_NAME];
-            blueprint::mesh::topology::unstructured::generate_edges(
+            mesh::topology::unstructured::generate_edges(
                 mesh_topo, false, total_edge_topo);
 
             // General Data/Schema Checks //
 
             Node *edge_topos[] = {&unique_edge_topo, &total_edge_topo};
-            index_t edge_topo_lengths[] = {mesh_num_unique_edges, mesh_num_total_edges};
+            index_t edge_topo_lengths[] = {mesh_unique_edges, mesh_total_edges};
             for(index_t emi = 0; emi < 2; emi++)
             {
                 // NOTE: Skip 3D mesh total edge checks because their closed forms
@@ -324,12 +325,12 @@ TEST(conduit_blueprint_generate_unstructured, generate_edges)
                 if(is_mesh_3d && emi == 1) { continue; }
 
                 // NOTE: The following lines are for debugging purposes only.
-                std::cout << "    " << std::string((emi == 0) ? "unique" : "non-unique") <<
-                    " edge topology..." << std::endl;
+                std::string edge_type((emi == 0) ? "unique" : "non-unique");
+                std::cout << "    " << edge_type << " edge topology..." << std::endl;
 
                 Node &edge_topo = *edge_topos[emi];
                 index_t topo_length = edge_topo_lengths[emi];
-                EXPECT_TRUE(blueprint::mesh::topology::unstructured::verify(edge_topo, info));
+                EXPECT_TRUE(mesh::topology::unstructured::verify(edge_topo, info));
 
                 EXPECT_EQ(edge_topo["coordset"].as_string(), coords.name());
                 EXPECT_EQ(edge_topo["elements/shape"].as_string(), "line");
