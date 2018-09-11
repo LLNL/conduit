@@ -48,11 +48,19 @@
 ///
 //-----------------------------------------------------------------------------
 
+#if defined(CONDUIT_PLATFORM_WINDOWS)
+#define NOMINMAX
+#undef min
+#undef max
+#include "Windows.h"
+#endif
+
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_relay.hpp"
 #include "conduit_log.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <vector>
 #include <string>
@@ -229,7 +237,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_centroids)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_generate_unstructured, generate_edges_unique)
+TEST(conduit_blueprint_generate_unstructured, generate_edges)
 {
     // NOTE: This variable describes the number of internal edges contained
     // within each superelement of the base mesh. "tets" are given a salient
@@ -237,34 +245,39 @@ TEST(conduit_blueprint_generate_unstructured, generate_edges_unique)
     // and should be skipped.
     const index_t ELEM_TYPE_EDGES[4] = {1, 0, -1, 0};
 
-    const index_t MPDIMS[3] = {4, 4, 4};
+    const index_t MPDIMS[3] = {2, 2, 2};
     const index_t MEDIMS[3] = {MPDIMS[0]-1, MPDIMS[1]-1, MPDIMS[2]-1};
 
-    const std::string EDGE_TOPOLOGY_NAME = "etopo";
+    const std::string UNIQUE_TOPOLOGY_NAME = "etopo_unique";
+    const std::string TOTAL_TOPOLOGY_NAME = "etopo_total";
 
     for(index_t ti = 0; ti < 4; ti++)
     {
         const std::string &elem_type = ELEM_TYPE_LIST[ti];
         const index_t &elem_subedges = ELEM_TYPE_EDGES[ti];
         const bool is_mesh_3d = ELEM_TYPE_FACES[ti] > 1;
-
-        // NOTE: Skip values indicated to have an invalid subedge scheme.
-        if(elem_subedges < 0) { continue; }
-
         const index_t mesh_dims = is_mesh_3d ? 3 : 2;
         const index_t mesh_elems = MEDIMS[0] * MEDIMS[1] * (is_mesh_3d ? MEDIMS[2] : 1);
 
-        index_t mesh_edges_acc = 0;
+        index_t mesh_edges_acc = 0, mesh_int_edges_acc = 0;
         for(index_t di = 0; di < mesh_dims; di++)
         {
             index_t dim_num_edges = MPDIMS[di] - 1;
+            index_t dim_num_int_edges = MPDIMS[di] - 1;
             for(index_t dj = 0; dj < mesh_dims; dj++)
             {
                 dim_num_edges *= (di != dj) ? MPDIMS[dj] : 1;
+                dim_num_int_edges *= (di != dj) ? MPDIMS[dj] - 2 : 1;
             }
             mesh_edges_acc += dim_num_edges;
+            mesh_int_edges_acc += dim_num_int_edges;
         }
-        const index_t mesh_edges = mesh_edges_acc + (mesh_elems * elem_subedges);
+        const index_t mesh_num_unique_edges = mesh_edges_acc + (mesh_elems * elem_subedges);
+        const index_t mesh_num_total_edges = mesh_num_unique_edges +
+            mesh_int_edges_acc + (mesh_elems * elem_subedges);
+
+        // NOTE: Skip values indicated to have an invalid subedge scheme.
+        if(elem_subedges < 0) { continue; }
 
         // NOTE: The following lines are for debugging purposes only.
         std::cout << "Testing edge mesh generation for type '" <<
@@ -281,35 +294,103 @@ TEST(conduit_blueprint_generate_unstructured, generate_edges_unique)
         Node *mesh_topos[] = {&topo, &poly_topo};
         for(index_t mi = 0; mi < 2; mi++)
         {
+            // NOTE: The following lines are for debugging purposes only.
+            std::cout << "  " << std::string((mi == 0) ? "implicit" : "explicit") <<
+                " source topology..." << std::endl;
+
             Node &mesh_topo = *mesh_topos[mi];
+            Node &mesh_conn = mesh_topo["elements/connectivity"];
 
             Node edge_mesh;
-            Node& edge_coords = edge_mesh["coordsets"][coords.name()];
-            Node& edge_topo = edge_mesh["topologies"][EDGE_TOPOLOGY_NAME];
+            Node &edge_coords = edge_mesh["coordsets"][coords.name()];
             edge_coords.set_external(coords);
+
+            Node &unique_edge_topo = edge_mesh["topologies"][UNIQUE_TOPOLOGY_NAME];
             blueprint::mesh::topology::unstructured::generate_edges(
-                mesh_topo, true, edge_topo);
+                mesh_topo, true, unique_edge_topo);
 
-            EXPECT_TRUE(blueprint::mesh::topology::unstructured::verify(edge_topo, info));
+            Node &total_edge_topo = edge_mesh["topologies"][TOTAL_TOPOLOGY_NAME];
+            blueprint::mesh::topology::unstructured::generate_edges(
+                mesh_topo, false, total_edge_topo);
 
-            EXPECT_EQ(edge_topo["coordset"].as_string(), coords.name());
-            EXPECT_EQ(edge_topo["elements/shape"].as_string(), "line");
+            // General Data/Schema Checks //
 
-            EXPECT_EQ(edge_topo["elements/connectivity"].dtype().id(),
-                mesh_topo["elements/connectivity"].dtype().id());
-            EXPECT_EQ(edge_topo["elements/connectivity"].dtype().number_of_elements() / 2,
-                mesh_edges);
+            Node *edge_topos[] = {&unique_edge_topo, &total_edge_topo};
+            index_t edge_topo_lengths[] = {mesh_num_unique_edges, mesh_num_total_edges};
+            for(index_t emi = 0; emi < 2; emi++)
+            {
+                // NOTE: Skip 3D mesh total edge checks because their closed forms
+                // for edge counts are too complicated.
+                if(is_mesh_3d && emi == 1) { continue; }
 
-            // TODO(JRC): Extend this test case to do further validation based
-            // on the individual edges in the source geometry.
+                // NOTE: The following lines are for debugging purposes only.
+                std::cout << "    " << std::string((emi == 0) ? "unique" : "non-unique") <<
+                    " edge topology..." << std::endl;
+
+                Node &edge_topo = *edge_topos[emi];
+                index_t topo_length = edge_topo_lengths[emi];
+                EXPECT_TRUE(blueprint::mesh::topology::unstructured::verify(edge_topo, info));
+
+                EXPECT_EQ(edge_topo["coordset"].as_string(), coords.name());
+                EXPECT_EQ(edge_topo["elements/shape"].as_string(), "line");
+
+                Node &edge_conn = edge_topo["elements/connectivity"];
+                EXPECT_EQ(edge_conn.dtype().id(), mesh_conn.dtype().id());
+                EXPECT_EQ(edge_conn.dtype().number_of_elements() / 2, topo_length);
+            }
+
+            // Content Consistency Checks //
+
+            // TODO(JRC): Extend this test case so that it more thoroughly checks
+            // the contents of the unique edge mesh.
+
+            std::vector< std::pair<index_t, index_t> > edge_lists[2];
+            for(index_t emi = 0; emi < 2; emi++)
+            {
+                Node &edge_topo = *edge_topos[emi];
+                Node &edge_conn = edge_topo["elements/connectivity"];
+                std::vector< std::pair<index_t, index_t> > &edge_list = edge_lists[emi];
+
+                Node edge_conn_data_node;
+                edge_conn.to_int64_array(edge_conn_data_node);
+                int64_array edge_conn_data = edge_conn_data_node.as_int64_array();
+                for(index_t i = 0; i < edge_conn_data.number_of_elements(); i += 2)
+                {
+                    edge_list.push_back(std::pair<index_t, index_t>(
+                        edge_conn_data[i+0], edge_conn_data[i+1]));
+                }
+
+                // NOTE: Required in order to perform inclusion test below.
+                std::sort(edge_list.begin(), edge_list.end());
+            }
+
+            // total edge list is a superset of the unique edge list
+            std::vector< std::pair<index_t, index_t> >
+                &unique_edges = edge_lists[0], &total_edges = edge_lists[1];
+            ASSERT_LE(unique_edges.size(), total_edges.size());
+            ASSERT_TRUE(std::includes(
+                total_edges.begin(), total_edges.end(),
+                unique_edges.begin(), unique_edges.end()));
+
+            // total edge set only contains items in unique edge set
+            std::set< std::pair<index_t, index_t> > edge_sets[2];
+            for(index_t emi = 0; emi < 2; emi++)
+            {
+                std::set< std::pair<index_t, index_t> > &edge_set = edge_sets[emi];
+                for(index_t ei = 0; ei < (index_t)edge_lists[emi].size(); ei++)
+                {
+                    std::pair<index_t, index_t> curr_edge = edge_lists[emi][ei];
+                    edge_set.insert(std::pair<index_t, index_t>(
+                        std::min(curr_edge.first, curr_edge.second),
+                        std::max(curr_edge.first, curr_edge.second)));
+                }
+            }
+
+            std::set< std::pair<index_t, index_t> >
+                &unique_edge_set = edge_sets[0], &total_edge_set = edge_sets[1];
+            ASSERT_EQ(total_edge_set, unique_edge_set);
         }
     }
-}
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_generate_unstructured, generate_edges_all)
-{
-    // TODO(JRC): Implement this function.
 }
 
 //-----------------------------------------------------------------------------
