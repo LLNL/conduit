@@ -3625,6 +3625,29 @@ PyConduit_Node_has_path(PyConduit_Node *self,
 
 //---------------------------------------------------------------------------//
 static PyObject * 
+PyConduit_Node_has_child(PyConduit_Node *self,
+                         PyObject* args)
+{
+    const char *child_name;
+
+    if (!PyArg_ParseTuple(args, "s", &child_name))
+    {
+        PyErr_SetString(PyExc_TypeError, "child_name must be a string");
+        return NULL;
+    }
+    
+    if(self->node->has_child(std::string(child_name)))
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject * 
 PyConduit_Node_child_names(PyConduit_Node *self)
 {
     /// TODO: I think there is a faster way in the Python CAPI
@@ -4248,6 +4271,11 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      METH_VARARGS, 
      "Returns if this node has the given path"},
     //-----------------------------------------------------------------------//
+    {"has_child",
+     (PyCFunction)PyConduit_Node_has_child,
+     METH_VARARGS, 
+     "Returns if this node has the given child"},
+    //-----------------------------------------------------------------------//
     {"child_names",
      (PyCFunction)PyConduit_Node_child_names,
      METH_NOARGS, 
@@ -4541,6 +4569,10 @@ PyConduit_Node_Set_From_Python(Node &node,
     if (PyConduit_Node_Check(value))
     {
         node = *((PyConduit_Node*)value)->node;
+    }
+    else if (PyConduit_DataType_Check(value))
+    {
+        node = ((PyConduit_DataType*)value)->dtype;
     }
     else if (PyConduit_Schema_Check(value))
     {

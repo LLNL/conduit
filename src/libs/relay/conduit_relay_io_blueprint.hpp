@@ -44,27 +44,24 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay.hpp
+/// file: conduit_relay_io_blueprint.hpp
 ///
 //-----------------------------------------------------------------------------
 
+// NOTE: This functionality is a placeholder for more general functionality in
+// future versions of Blueprint. That said, the functions in this header are
+// subject to change and could be moved with any future iteration of Conduit,
+// so use this header with caution!
 
-#ifndef CONDUIT_RELAY_HPP
-#define CONDUIT_RELAY_HPP
+#ifndef CONDUIT_RELAY_IO_BLUEPRINT_HPP
+#define CONDUIT_RELAY_IO_BLUEPRINT_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib include 
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-
 #include "conduit_relay_exports.h"
 #include "conduit_relay_config.h"
-
-#include "conduit_relay_io.hpp"
-#include "conduit_relay_io_blueprint.hpp"
-#include "conduit_relay_web.hpp"
-#include "conduit_relay_web_node_viewer_server.hpp"
-
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -79,11 +76,24 @@ namespace relay
 {
 
 //-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how relay was
-/// configured.
+// -- begin conduit::relay::io_blueprint --
 //-----------------------------------------------------------------------------
-std::string CONDUIT_RELAY_API about();
-void        CONDUIT_RELAY_API about(conduit::Node &res);
+namespace io_blueprint
+{
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save(const Node &mesh,
+                            const std::string &path);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save(const Node &mesh,
+                            const std::string &path,
+                            const std::string &protocol);
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::relay::io_blueprint --
+//-----------------------------------------------------------------------------
 
 }
 //-----------------------------------------------------------------------------
@@ -97,6 +107,4 @@ void        CONDUIT_RELAY_API about(conduit::Node &res);
 //-----------------------------------------------------------------------------
 
 
-
 #endif
-

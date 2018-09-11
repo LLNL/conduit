@@ -129,6 +129,33 @@ struct point
 
 
 //---------------------------------------------------------------------------//
+void basic_init_example_element_scalar_field(index_t nele_x,
+                                             index_t nele_y,
+                                             index_t nele_z,
+                                             Node &res,
+                                             index_t prims_per_ele=1)
+{
+    index_t nele = nele_x*nele_y;
+
+    if(nele_z > 0)
+    {
+        nele = nele * nele_z;
+    }
+
+    res["association"] = "element";
+    res["topology"] = "mesh";
+    res["volume_dependent"] = "false";
+    res["values"].set(DataType::float64(nele*prims_per_ele));
+
+    float64 *vals = res["values"].value();
+    for(index_t i = 0; i < nele*prims_per_ele; i++)
+    {
+        vals[i] = i + 0.0;
+    }
+}
+
+
+//---------------------------------------------------------------------------//
 void braid_init_example_state(Node &res)
 {
     res["state/time"]   = (float64)3.1415;
@@ -447,7 +474,12 @@ braid_init_explicit_coordset(index_t npts_x,
 {
     coords["type"] = "explicit";
     
-    index_t npts = npts_x * npts_y * npts_z;
+    index_t npts = npts_x * npts_y;
+
+    if(npts_z > 1)
+    {
+        npts *= npts_z;
+    }
 
     // also support interleaved
     Node &coord_vals = coords["values"];
@@ -2038,6 +2070,44 @@ braid_hexs_and_tets(index_t npts_x,
 }
 
 
+//---------------------------------------------------------------------------//
+void
+basic(const std::string &mesh_type,
+      index_t npts_x, // number of points in x
+      index_t npts_y, // number of points in y
+      index_t npts_z, // number of points in z
+      Node &res)
+{
+    // NOTE(JRC): The basic mesh example only supports simple, homogenous
+    // element types that can be spanned by zone-centered fields.
+    const std::string mesh_types[7] = {
+        "uniform", "rectilinear", "structured",
+        "tris", "quads", "tets", "hexs"};
+    const index_t mesh_types_subelems_per_elem[7] = {
+        1, 1, 1,
+        2, 1, 6, 1};
+
+    index_t mesh_type_index = -1;
+    for(index_t i = 0; i < 7; i++)
+    {
+        if(mesh_type == mesh_types[i])
+        {
+            mesh_type_index = i;
+        }
+    }
+    if(mesh_type_index < 0 || mesh_type_index >= 7)
+    {
+        CONDUIT_ERROR("unknown mesh_type = " << mesh_type);
+    }
+
+    braid(mesh_type, npts_x, npts_y, npts_z, res);
+    res.remove("fields");
+    res.remove("state");
+
+    basic_init_example_element_scalar_field(npts_x-1, npts_y-1, npts_z-1,
+        res["fields/field"], mesh_types_subelems_per_elem[mesh_type_index]);
+}
+
 
 //---------------------------------------------------------------------------//
 void
@@ -2109,97 +2179,6 @@ braid(const std::string &mesh_type,
     }
 }
 
-
-
-//---------------------------------------------------------------------------//
-void
-misc(const std::string &mesh_type,
-     index_t npts_x, // number of points in x
-     index_t npts_y, // number of points in y
-     index_t /*npts_z*/, // number of points in z
-     Node &res)
-{
-    // TODO(JRC): Improve these examples so that they use different example
-    // geometry than is used in the "braid" examples.
-    if(mesh_type == "matsets")
-    {
-        braid_quads(npts_x,npts_y,res);
-        braid_init_example_matset(npts_x-1,npts_y-1,0,res["matsets/mesh"]);
-    }
-    else if(mesh_type == "adjsets")
-    {
-        for(index_t j = 0; j < 2; j++)
-        {
-            for(index_t i = 0; i < 2; i++)
-            {
-                const index_t domain_id = j * 2 + i;
-
-                std::ostringstream oss;
-                oss << "domain" << domain_id;
-                const std::string domain_name = oss.str();
-
-                Node &domain_node = res[domain_name];
-                braid_quads(npts_x,npts_y,domain_node);
-                domain_node["state/domain_id"].set(domain_id);
-
-                Node &domain_coords = domain_node["coordsets/coords/values"];
-                float64_array domain_coords_x = domain_coords["x"].as_float64_array();
-                for(index_t x = 0; x < domain_coords_x.number_of_elements(); x++)
-                {
-                    domain_coords_x[x] += i * 20.0;
-                }
-                float64_array domain_coords_y = domain_coords["y"].as_float64_array();
-                for(index_t y = 0; y < domain_coords_y.number_of_elements(); y++)
-                {
-                    domain_coords_y[y] += j * 20.0;
-                }
-            }
-        }
-
-        braid_init_example_adjset(res);
-    }
-    else if(mesh_type == "nestsets")
-    {
-        braid_rectilinear(npts_x,npts_y,1,res["domain0"]);
-        res["domain0/state/domain_id"].set(0);
-        res["domain0/state/level_id"].set(0);
-
-        for(index_t j = 0; j < 2; j++)
-        {
-            for(index_t i = 0; i < 2; i++)
-            {
-                const index_t domain_id = j * 2 + i + 1;
-
-                std::ostringstream oss;
-                oss << "domain" << domain_id;
-                const std::string domain_name = oss.str();
-
-                Node &domain_node = res[domain_name];
-                braid_rectilinear(npts_x,npts_y,1,domain_node);
-                domain_node["state/domain_id"].set(domain_id);
-                domain_node["state/level_id"].set(1);
-
-                Node &domain_coords = domain_node["coordsets/coords/values"];
-                float64_array domain_coords_x = domain_coords["x"].as_float64_array();
-                for(index_t x = 0; x < domain_coords_x.number_of_elements(); x++)
-                {
-                    domain_coords_x[x] = ( domain_coords_x[x] / 2.0 ) - 5.0 + i * 10.0;
-                }
-                float64_array domain_coords_y = domain_coords["y"].as_float64_array();
-                for(index_t y = 0; y < domain_coords_y.number_of_elements(); y++)
-                {
-                    domain_coords_y[y] = ( domain_coords_y[y] / 2.0 ) - 5.0 + j * 10.0;
-                }
-            }
-        }
-
-        braid_init_example_nestset(res);
-    }
-    else
-    {
-        CONDUIT_ERROR("unknown mesh_type = " << mesh_type);
-    }
-}
 
 //---------------------------------------------------------------------------//
 void julia_fill_values(index_t nx,
@@ -2305,6 +2284,7 @@ void julia(index_t nx,
                       c_re, c_im,
                       out);
 }
+
 
 //---------------------------------------------------------------------------//
 void spiral(index_t ndoms,
@@ -2440,8 +2420,95 @@ void spiral(index_t ndoms,
 }
 
 
+//---------------------------------------------------------------------------//
+void
+misc(const std::string &mesh_type,
+     index_t npts_x, // number of points in x
+     index_t npts_y, // number of points in y
+     index_t /*npts_z*/, // number of points in z
+     Node &res)
+{
+    // TODO(JRC): Improve these examples so that they use different example
+    // geometry than is used in the "braid" examples.
+    if(mesh_type == "matsets")
+    {
+        braid_quads(npts_x,npts_y,res);
+        braid_init_example_matset(npts_x-1,npts_y-1,0,res["matsets/mesh"]);
+    }
+    else if(mesh_type == "adjsets")
+    {
+        for(index_t j = 0; j < 2; j++)
+        {
+            for(index_t i = 0; i < 2; i++)
+            {
+                const index_t domain_id = j * 2 + i;
 
+                std::ostringstream oss;
+                oss << "domain" << domain_id;
+                const std::string domain_name = oss.str();
 
+                Node &domain_node = res[domain_name];
+                braid_quads(npts_x,npts_y,domain_node);
+                domain_node["state/domain_id"].set(domain_id);
+
+                Node &domain_coords = domain_node["coordsets/coords/values"];
+                float64_array domain_coords_x = domain_coords["x"].as_float64_array();
+                for(index_t x = 0; x < domain_coords_x.number_of_elements(); x++)
+                {
+                    domain_coords_x[x] += i * 20.0;
+                }
+                float64_array domain_coords_y = domain_coords["y"].as_float64_array();
+                for(index_t y = 0; y < domain_coords_y.number_of_elements(); y++)
+                {
+                    domain_coords_y[y] += j * 20.0;
+                }
+            }
+        }
+
+        braid_init_example_adjset(res);
+    }
+    else if(mesh_type == "nestsets")
+    {
+        braid_rectilinear(npts_x,npts_y,1,res["domain0"]);
+        res["domain0/state/domain_id"].set(0);
+        res["domain0/state/level_id"].set(0);
+
+        for(index_t j = 0; j < 2; j++)
+        {
+            for(index_t i = 0; i < 2; i++)
+            {
+                const index_t domain_id = j * 2 + i + 1;
+
+                std::ostringstream oss;
+                oss << "domain" << domain_id;
+                const std::string domain_name = oss.str();
+
+                Node &domain_node = res[domain_name];
+                braid_rectilinear(npts_x,npts_y,1,domain_node);
+                domain_node["state/domain_id"].set(domain_id);
+                domain_node["state/level_id"].set(1);
+
+                Node &domain_coords = domain_node["coordsets/coords/values"];
+                float64_array domain_coords_x = domain_coords["x"].as_float64_array();
+                for(index_t x = 0; x < domain_coords_x.number_of_elements(); x++)
+                {
+                    domain_coords_x[x] = ( domain_coords_x[x] / 2.0 ) - 5.0 + i * 10.0;
+                }
+                float64_array domain_coords_y = domain_coords["y"].as_float64_array();
+                for(index_t y = 0; y < domain_coords_y.number_of_elements(); y++)
+                {
+                    domain_coords_y[y] = ( domain_coords_y[y] / 2.0 ) - 5.0 + j * 10.0;
+                }
+            }
+        }
+
+        braid_init_example_nestset(res);
+    }
+    else
+    {
+        CONDUIT_ERROR("unknown mesh_type = " << mesh_type);
+    }
+}
 
 //-----------------------------------------------------------------------------
 }
