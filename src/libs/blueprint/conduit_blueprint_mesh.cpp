@@ -123,12 +123,17 @@ namespace conduit { namespace blueprint { namespace mesh {
         topo_shape_face_index_count_list, topo_shape_face_index_count_list +
         sizeof(topo_shape_face_index_count_list) / sizeof(topo_shape_face_index_count_list[0]));
 
+    // TODO(JRC): These orientations currently assume the default Conduit-Blueprit
+    // windings are used for the input geometry, which happens to be the case
+    // for all example geometry but cannot be assumed for all inputs. In order
+    // for these arrangements to be used generally, the winding feature needs to
+    // be implemented and used to perform index space transforms.
     static const index_t topo_tet_face_arrangements[4][3] = {
         {0, 2, 1}, {0, 1, 3},
         {0, 3, 2}, {1, 2, 3}};
     static const index_t topo_hex_face_arrangements[6][4] = {
-        {0, 2, 1, 3}, {0, 1, 4, 5}, {1, 3, 5, 7},
-        {0, 4, 2, 6}, {2, 6, 3, 7}, {4, 5, 6, 7}};
+        {0, 1, 2, 3}, {0, 1, 5, 4}, {1, 2, 6, 5},
+        {2, 3, 7, 6}, {3, 0, 4, 7}, {4, 5, 6, 7}};
 
     static const index_t* topo_shape_face_arrangement_list[8] = {NULL, NULL,
         NULL, NULL, &topo_tet_face_arrangements[0][0], &topo_hex_face_arrangements[0][0], NULL, NULL};
@@ -1404,7 +1409,12 @@ calculate_unstructured_edges(const conduit::Node &topo,
     dest["coordset"].set(topo["coordset"].as_string());
     dest["elements/shape"].set("line");
 
-    int64 *edge_buffer = new int64[2 * topo_conn.dtype().number_of_elements()];
+    // NOTE(JRC): Use an upper bound approximation for edge count since knowing
+    // the exact count is impossible without processing values in topology.
+    const index_t topo_num_edges_approx = topo_shape.is_poly ?
+        2 * topo_conn.dtype().number_of_elements() :
+        2 * topo_num_elems * topo_shape.faces * topo_shape.findices;
+    int64 *edge_buffer = new int64[topo_num_edges_approx];
 
     // Compute Data for Edge Topology //
 
