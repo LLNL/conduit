@@ -353,6 +353,41 @@ TEST(conduit_blueprint_mesh_examples, spiral)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, 2d_braid_zero_z_check)
+{
+    Node mesh, info;
+    // these checks make sure braid generates valid fields even when
+    // # of z pointers == 0
+    int npts_x = 5;
+    int npts_y = 5;
+    int npts_z = 0;
+
+    std::vector<std::string> braid_type_strings;
+    braid_type_strings.push_back("points");
+    braid_type_strings.push_back("points_implicit");
+    braid_type_strings.push_back("lines");
+    braid_type_strings.push_back("rectilinear");
+    braid_type_strings.push_back("structured");
+    braid_type_strings.push_back("tris");
+    braid_type_strings.push_back("quads");
+    
+    for(index_t i = 0; i < braid_type_strings.size(); i++)
+    {
+        mesh.reset();
+        blueprint::mesh::examples::braid(braid_type_strings[i],
+                                          npts_x,
+                                          npts_y,
+                                          npts_z,
+                                          mesh);
+        // make the braid vertex-assoced field has with more than zero entries
+        EXPECT_GT(mesh["fields/braid/values"].dtype().number_of_elements(),0);
+        mesh.print();
+    }
+}
+
+
+
 
 
 //-----------------------------------------------------------------------------

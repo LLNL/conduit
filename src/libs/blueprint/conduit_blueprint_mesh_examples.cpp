@@ -169,6 +169,12 @@ void braid_init_example_point_scalar_field(index_t npts_x,
                                            index_t npts_z,
                                            Node &res)
 {
+
+    if(npts_z < 1) 
+    {
+        npts_z = 1;
+    }
+
     index_t npts = npts_x * npts_y * npts_z;
     
     res["association"] = "vertex";
@@ -930,6 +936,7 @@ braid_uniform(index_t npts_x,
     res["topologies/mesh/coordset"] = "coords"; 
     
     Node &fields = res["fields"];
+
 
     braid_init_example_point_scalar_field(npts_x,
                                           npts_y,
