@@ -229,6 +229,9 @@ TEST(conduit_blueprint_mesh_transform, topology_transforms)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
 {
+    // TODO(JRC): Refactor this code once 'ShapeType' and 'ShapeCascade' are
+    // exposed internally via a utilities header.
+
     const std::string TOPO_TYPE_LIST[5]      = {"lines", "tris", "quads","tets","hexs"};
     const index_t TOPO_TYPE_INDICES[5]       = {      2,      3,       4,     4,     8};
     const index_t TOPO_TYPE_FACES[5]         = {      1,      1,       1,     4,     6};

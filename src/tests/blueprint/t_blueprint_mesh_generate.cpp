@@ -266,7 +266,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_centroids)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_edges)
 {
-    const index_t MPDIMS[3] = {2, 2, 2};
+    const index_t MPDIMS[3] = {3, 3, 3};
 
     const std::string UNIQUE_TOPOLOGY_NAME = "etopo_unique";
     const std::string TOTAL_TOPOLOGY_NAME = "etopo_total";

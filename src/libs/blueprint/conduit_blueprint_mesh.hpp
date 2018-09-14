@@ -347,7 +347,17 @@ namespace topology
                                                       conduit::Node &cdest);
 
         //-------------------------------------------------------------------------
+        void CONDUIT_BLUEPRINT_API generate_vertices(const conduit::Node &n,
+                                                     bool make_unique,
+                                                     conduit::Node &dest);
+
+        //-------------------------------------------------------------------------
         void CONDUIT_BLUEPRINT_API generate_edges(const conduit::Node &n,
+                                                  bool make_unique,
+                                                  conduit::Node &dest);
+
+        //-------------------------------------------------------------------------
+        void CONDUIT_BLUEPRINT_API generate_faces(const conduit::Node &n,
                                                   bool make_unique,
                                                   conduit::Node &dest);
 
