@@ -112,9 +112,31 @@ index_t calc_mesh_edges(index_t type, const index_t *npts, bool unique = true)
         num_int_edges += dim_num_int_edges;
     }
 
-    return num_edges + (ELEM_TYPE_EDGES[type] * num_elems) + !unique * (
-        num_int_edges + (ELEM_TYPE_EDGES[type] * num_elems));
+    // NOTE: In 3D, each per-elem edge has 2 faces and (consequently) 2 extra
+    // total number of edges.
+    // TODO(JRC): Fix this so that this works natively with edge generation tests.
+    return /*(ELEM_TYPE_DIMS[type] == 3 ? 2 : 1)*/1 *
+        (num_edges + (ELEM_TYPE_EDGES[type] * num_elems) + !unique * (
+        num_int_edges + (ELEM_TYPE_EDGES[type] * num_elems)));
 }
+
+index_t calc_mesh_faces(index_t type, const index_t *npts)
+{
+    index_t num_faces= 0;
+
+    for(index_t di = 0; di < ELEM_TYPE_DIMS[type]; di++)
+    {
+        index_t dim_num_faces = npts[di];
+        for(index_t dj = 0; dj < ELEM_TYPE_DIMS[type]; dj++)
+        {
+            dim_num_faces *= (di != dj) ? npts[dj] - 1 : 1;
+        }
+        num_faces+= dim_num_faces;
+    }
+
+    return (ELEM_TYPE_DIMS[type] == 3) ? num_faces : 0;
+}
+
 
 /// Test Cases ///
 
@@ -277,9 +299,9 @@ TEST(conduit_blueprint_generate_unstructured, generate_edges)
         const index_t mesh_unique_edges = calc_mesh_edges(ti, &MPDIMS[0], true);
         const index_t mesh_total_edges = calc_mesh_edges(ti, &MPDIMS[0], false);
         const bool is_mesh_3d = ELEM_TYPE_DIMS[ti] == 3;
-        const bool is_mesh_edgeworthy = ELEM_TYPE_EDGES[ti] != -1;
 
         // NOTE: Skip values indicated to have an invalid subedge scheme.
+        const bool is_mesh_edgeworthy = ELEM_TYPE_EDGES[ti] != -1;
         if(!is_mesh_edgeworthy) { continue; }
 
         // NOTE: The following lines are for debugging purposes only.
@@ -397,20 +419,36 @@ TEST(conduit_blueprint_generate_unstructured, generate_edges)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_generate_unstructured, generate_sides_2d)
+TEST(conduit_blueprint_generate_unstructured, generate_sides)
 {
-    const index_t MPDIMS[3] = {4, 4, 4};
+    const index_t MPDIMS[3] = {3, 3, 3};
 
     const std::string SIDE_COORDSET_NAME = "scoords";
     const std::string SIDE_TOPOLOGY_NAME = "stopo";
     const std::string SIDE_FIELD_NAME = "sfield";
 
-    for(index_t ti = 0; ti < 2; ti++)
+    // TODO(JRC): The mesh looks correct for 3D side generation, but the checks
+    // are wrong because 'mesh_total_edges' is calculated improperly in 3D.
+    // This needs to be fixed before mainline integration.
+    for(index_t ti = 0; ti < 2/*4*/; ti++)
     {
         const std::string &elem_type = ELEM_TYPE_LIST[ti];
-        const index_t &elem_degree = ELEM_TYPE_FACE_INDICES[ti];
+        const bool is_mesh_3d = ELEM_TYPE_DIMS[ti] == 3;
         const index_t mesh_elems = calc_mesh_elems(ti, &MPDIMS[0]);
         const index_t mesh_total_edges = calc_mesh_edges(ti, &MPDIMS[0], false);
+        // NOTE: This value is 0 for 2D meshes; faces are 3D entities.
+        const index_t mesh_unique_faces = calc_mesh_faces(ti, &MPDIMS[0]);
+
+        const index_t si = is_mesh_3d ? 2 : 0;
+        const std::string elem_side_type =
+            ELEM_TYPE_LIST[si].substr(0, ELEM_TYPE_LIST[si].size() - 1);
+        const index_t elem_side_degree = ELEM_TYPE_INDICES[si];
+        // NOTE: This is an equivalent substitute for |E|*|F| for a single elem.
+        const index_t elem_sides = ELEM_TYPE_FACES[ti] * ELEM_TYPE_FACE_INDICES[ti];
+
+        // NOTE: Skip values indicated to have an invalid subedge scheme.
+        const bool is_mesh_edgeworthy = ELEM_TYPE_EDGES[ti] != -1;
+        if(!is_mesh_edgeworthy) { continue; }
 
         // NOTE: The following lines are for debugging purposes only.
         std::cout << "Testing side generation for type '" <<
@@ -453,7 +491,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2d)
 
                 EXPECT_EQ(side_axis.dtype().id(), mesh_axis.dtype().id());
                 EXPECT_EQ(side_axis.dtype().number_of_elements(),
-                    mesh_axis.dtype().number_of_elements() + mesh_elems);
+                    mesh_axis.dtype().number_of_elements() + mesh_elems +
+                    mesh_unique_faces);
             }
 
             // Verify Correctness of Topology //
@@ -462,9 +501,13 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2d)
             Node &side_conn = side_topo["elements/connectivity"];
 
             EXPECT_EQ(side_topo["coordset"].as_string(), SIDE_COORDSET_NAME);
-            EXPECT_EQ(side_topo["elements/shape"].as_string(), "tri");
+            EXPECT_EQ(side_topo["elements/shape"].as_string(), elem_side_type);
             EXPECT_EQ(side_conn.dtype().id(), mesh_conn.dtype().id());
-            EXPECT_EQ(side_conn.dtype().number_of_elements() / 3, mesh_total_edges);
+            EXPECT_EQ(side_conn.dtype().number_of_elements() / elem_side_degree,
+                mesh_total_edges);
+
+            // TODO(JRC): Augment this test case to verify that all of the given
+            // elements have the expected area/volume.
 
             // Verify Correctness of Map Field //
 
@@ -479,9 +522,9 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2d)
                 std::vector<int64> side_expected_array(mesh_total_edges);
                 for(index_t si = 0; si < side_expected_array.size();)
                 {
-                    for(index_t ssi = 0; ssi < elem_degree; si++, ssi++)
+                    for(index_t esi = 0; esi < elem_sides; si++, esi++)
                     {
-                        side_expected_array[si] = si / elem_degree;
+                        side_expected_array[si] = si / elem_sides;
                     }
                 }
                 int64_array side_expected_data(&side_expected_array[0],
@@ -494,13 +537,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2d)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_generate_unstructured, generate_sides_3d)
-{
-    // TODO(JRC): Implement this function.
-}
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_generate_unstructured, generate_corners_2d)
+TEST(conduit_blueprint_generate_unstructured, generate_corners)
 {
     // TODO(JRC): This method is extraordinarily similar to its 'sides'
     // analogue and the two should have their functionality abstracted
@@ -599,10 +636,4 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners_2d)
             }
         }
     }
-}
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_generate_unstructured, generate_corners_3d)
-{
-    // TODO(JRC): Implement this function.
 }
