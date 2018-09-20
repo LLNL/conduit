@@ -342,24 +342,21 @@ namespace topology
                                                 conduit::Node &dest);
 
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API generate_centroids(const conduit::Node &n,
-                                                      conduit::Node &dest,
-                                                      conduit::Node &cdest);
+        void CONDUIT_BLUEPRINT_API generate_points(const conduit::Node &n,
+                                                   conduit::Node &dest);
 
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API generate_vertices(const conduit::Node &n,
-                                                     bool make_unique,
-                                                     conduit::Node &dest);
-
-        //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API generate_edges(const conduit::Node &n,
-                                                  bool make_unique,
+        void CONDUIT_BLUEPRINT_API generate_lines(const conduit::Node &n,
                                                   conduit::Node &dest);
 
         //-------------------------------------------------------------------------
         void CONDUIT_BLUEPRINT_API generate_faces(const conduit::Node &n,
-                                                  bool make_unique,
                                                   conduit::Node &dest);
+
+        //-------------------------------------------------------------------------
+        void CONDUIT_BLUEPRINT_API generate_centroids(const conduit::Node &n,
+                                                      conduit::Node &dest,
+                                                      conduit::Node &cdest);
 
         //---------------------------------------------------------------------
         void CONDUIT_BLUEPRINT_API generate_sides(const conduit::Node &n,
