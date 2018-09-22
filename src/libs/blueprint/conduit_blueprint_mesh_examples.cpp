@@ -2121,7 +2121,7 @@ basic(const std::string &mesh_type,
     const std::string mesh_types[] = {
         "uniform", "rectilinear", "structured",
         "tris", "quads", "polygons",
-        "tets", "hexs", "polyhedrons"};
+        "tets", "hexs", "polyhedra"};
     const std::string braid_types[] = {
         "uniform", "rectilinear", "structured",
         "tris", "quads", "quads_poly",

@@ -562,12 +562,12 @@ TEST(conduit_docs, blueprint_demo_basic_polygons)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_docs, blueprint_demo_basic_polyhedrons)
+TEST(conduit_docs, blueprint_demo_basic_polyhedra)
 {
     // create container node
     Node mesh;
     // generate simple explicit poly-based 3d 'basic' mesh
-    conduit::blueprint::mesh::examples::basic("polyhedrons", 3, 3, 3, mesh);
+    conduit::blueprint::mesh::examples::basic("polyhedra", 3, 3, 3, mesh);
     // print out results
     mesh.print();
 
@@ -612,7 +612,7 @@ TEST(conduit_docs, blueprint_demo_basic_polyhedrons)
     }
     )";
 
-    validate_basic_example("polyhedrons",mesh,mesh_json);
+    validate_basic_example("polyhedra",mesh,mesh_json);
 }
 
 //-----------------------------------------------------------------------------

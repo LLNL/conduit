@@ -557,7 +557,7 @@ supported values for this parameter and their corresponding effects are outlined
 +--------------------------------+--------------------+-------------------+-------------------+------------------+
 | `hexs <Hexs_>`_                | 3d                 | explicit          | explicit          | hex              |
 +--------------------------------+--------------------+-------------------+-------------------+------------------+
-| `polyhedrons <Polyhedrons_>`_  | 3d                 | explicit          | explicit          | polyhedron       |
+| `polyhedra <Polyhedra_>`_      | 3d                 | explicit          | explicit          | polyhedron       |
 +--------------------------------+--------------------+-------------------+-------------------+------------------+
 
 The remainder of this section demonstrates each of the different ``basic()`` mesh types, outlining
@@ -587,7 +587,7 @@ Uniform
     :width: 400px
     :align: center
 
-    Pseudocolor plot of ``basic`` (element type 'uniform')
+    Pseudocolor plot of ``basic`` (mesh type 'uniform')
 
 Rectilinear
 ====================================
@@ -612,7 +612,7 @@ Rectilinear
     :width: 400px
     :align: center
 
-    Pseudocolor plot of ``basic`` (element type 'rectilinear')
+    Pseudocolor plot of ``basic`` (mesh type 'rectilinear')
 
 Structured
 ====================================
@@ -637,7 +637,7 @@ Structured
     :width: 400px
     :align: center
 
-    Pseudocolor plot of ``basic`` (element type 'structured')
+    Pseudocolor plot of ``basic`` (mesh type 'structured')
 
 Tris
 ====================================
@@ -662,7 +662,7 @@ Tris
     :width: 400px
     :align: center
 
-    Pseudocolor plot of ``basic`` (element type 'tris')
+    Pseudocolor plot of ``basic`` (mesh type 'tris')
 
 Quads
 ====================================
@@ -687,7 +687,7 @@ Quads
     :width: 400px
     :align: center
 
-    Pseudocolor plot of ``basic`` (element type 'quads')
+    Pseudocolor plot of ``basic`` (mesh type 'quads')
 
 Polygons
 ====================================
@@ -712,7 +712,7 @@ Polygons
     :width: 400px
     :align: center
 
-    Pseudocolor plot of ``basic`` (element type 'polygons')
+    Pseudocolor plot of ``basic`` (mesh type 'polygons')
 
 Tets
 ====================================
@@ -737,7 +737,7 @@ Tets
     :width: 400px
     :align: center
 
-    Pseudocolor plot of ``basic`` (element type 'tets')
+    Pseudocolor plot of ``basic`` (mesh type 'tets')
 
 Hexs
 ====================================
@@ -762,9 +762,9 @@ Hexs
     :width: 400px
     :align: center
 
-    Pseudocolor plot of ``basic`` (element type 'hexs')
+    Pseudocolor plot of ``basic`` (mesh type 'hexs')
 
-Polyhedrons
+Polyhedra
 ====================================
 
 * **Usage Example**
@@ -787,7 +787,7 @@ Polyhedrons
     :width: 400px
     :align: center
 
-    Pseudocolor plot of ``basic`` (element type 'polyhedrons')
+    Pseudocolor plot of ``basic`` (mesh type 'polyhedra')
 
 
 braid
