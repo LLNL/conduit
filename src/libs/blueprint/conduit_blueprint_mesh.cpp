@@ -323,6 +323,61 @@ struct ShapeCascade
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+// - begin internal potpourri functions -
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void grid_ijk_to_id(const index_t *ijk,
+                    const index_t *dims,
+                    index_t &grid_id)
+{
+    grid_id = 0;
+    for(index_t d = 0; d < 3; d++)
+    {
+        index_t doffset = ijk[d];
+        for(index_t dd = 0; dd < d; dd++)
+        {
+            doffset *= dims[dd];
+        }
+
+        grid_id += doffset;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void grid_id_to_ijk(const index_t id,
+                    const index_t *dims,
+                    index_t *grid_ijk)
+{
+    index_t dremain = id;
+    for(index_t d = 3; d-- > 0;)
+    {
+        index_t dstride = 1;
+        for(index_t dd = 0; dd < d; dd++)
+        {
+            dstride *= dims[dd];
+        }
+
+        grid_ijk[d] = dremain / dstride;
+        dremain = dremain % dstride;
+    }
+}
+
+//-----------------------------------------------------------------------------
+std::vector<index_t> intersect_sets(const std::set<index_t> &s1,
+                                    const std::set<index_t> &s2)
+{
+    std::vector<index_t> si(std::max(s1.size(), s2.size()));
+    std::vector<index_t>::iterator si_end = std::set_intersection(
+        s1.begin(), s1.end(), s2.begin(), s2.end(), si.begin());
+    return std::vector<index_t>(si.begin(), si_end);
+}
+
+//-----------------------------------------------------------------------------
+// - end internal potpourri functions -
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 // - begin internal helper functions -
 //-----------------------------------------------------------------------------
 
@@ -812,84 +867,6 @@ bool find_reference_node(const Node &node, const std::string &ref_key, Node &ref
 }
 
 //-----------------------------------------------------------------------------
-void grid_coord_to_id(const std::vector<index_t> &grid_coord,
-                      const std::vector<index_t> &grid_dims,
-                      index_t &grid_id)
-{
-    grid_id = 0;
-    for(index_t d = 0; d < (index_t)grid_dims.size(); d++)
-    {
-        index_t doffset = grid_coord[d];
-        for(index_t dd = 0; dd < d; dd++)
-        {
-            doffset *= grid_dims[dd];
-        }
-
-        grid_id += doffset;
-    }
-}
-
-//-----------------------------------------------------------------------------
-void grid_id_to_coord(const index_t grid_id,
-                      const std::vector<index_t> &grid_dims,
-                      std::vector<index_t> &grid_coord)
-{
-    grid_coord.resize(grid_dims.size());
-
-    index_t dremain = grid_id;
-    for(index_t d = (index_t)grid_dims.size(); d-- > 0;)
-    {
-        index_t dstride = 1;
-        for(index_t dd = 0; dd < d; dd++)
-        {
-            dstride *= grid_dims[dd];
-        }
-
-        grid_coord[d] = dremain / dstride;
-        dremain = dremain % dstride;
-    }
-}
-
-// TODO(JRC): Fold the following two functions into the above two functions.
-
-//-----------------------------------------------------------------------------
-void grid_ijk_to_id(const index_t *ijk,
-                    const index_t *dims,
-                    index_t &grid_id)
-{
-    grid_id = 0;
-    for(index_t d = 0; d < 3; d++)
-    {
-        index_t doffset = ijk[d];
-        for(index_t dd = 0; dd < d; dd++)
-        {
-            doffset *= dims[dd];
-        }
-
-        grid_id += doffset;
-    }
-}
-
-//-----------------------------------------------------------------------------
-void grid_id_to_ijk(const index_t id,
-                    const index_t *dims,
-                    index_t *grid_ijk)
-{
-    index_t dremain = id;
-    for(index_t d = 3; d-- > 0;)
-    {
-        index_t dstride = 1;
-        for(index_t dd = 0; dd < d; dd++)
-        {
-            dstride *= dims[dd];
-        }
-
-        grid_ijk[d] = dremain / dstride;
-        dremain = dremain % dstride;
-    }
-}
-
-//-----------------------------------------------------------------------------
 index_t get_coordset_length(const std::string &type,
                             const Node &coordset)
 {
@@ -1001,72 +978,6 @@ index_t get_topology_length(const std::string &type,
     return topology_length;
 }
 
-//-------------------------------------------------------------------------
-index_t
-calculate_shared_coord(const conduit::Node &edge_topo,
-                       const index_t edge0,
-                       const index_t edge1)
-{
-    Node edge_offsets; get_topology_offsets(edge_topo, edge_offsets);
-    const Node &edge_conn = edge_topo["elements/connectivity"];
-
-    Node misc_data, edge_data;
-    int64 edge0_raw[2] = {-1, -1}, edge1_raw[2] = {-1, -1};
-
-    int64 edges[2] = {edge0, edge1};
-    int64 *edge_raws[2] = {&edge0_raw[0], &edge1_raw[0]};
-    for(index_t e = 0; e < 2; e++)
-    {
-        misc_data.set_external(DataType(edge_offsets.dtype().id(), 1),
-            edge_offsets.element_ptr(edges[e]));
-        misc_data.set_external(DataType(edge_conn.dtype().id(), 2),
-            const_cast<void*>(edge_conn.element_ptr(misc_data.to_int64())));
-        edge_data.set_external(DataType::int64(2), edge_raws[e]);
-        misc_data.to_data_type(edge_data.dtype().id(), edge_data);
-    }
-
-    index_t shared_index = -1;
-    for(index_t edge0_index = 0; edge0_index < 2; edge0_index++)
-    {
-        for(index_t edge1_index = 0; edge1_index < 2; edge1_index++)
-        {
-            if(edge0_raw[edge0_index] == edge1_raw[edge1_index])
-            {
-                shared_index = edge0_raw[edge0_index];
-            }
-        }
-    }
-
-    return shared_index;
-}
-
-//-------------------------------------------------------------------------
-void
-calculate_ordered_edges(const conduit::Node &edge_topo,
-                        const std::set<index_t> &elem_edges,
-                        std::vector<index_t> &ordered_edges)
-{
-    // TODO(JRC): This is pretty inefficient and should be replaced with an
-    // alterantive solution if possible.
-    ordered_edges = std::vector<index_t>(elem_edges.begin(), elem_edges.end());
-
-    for(index_t bei = 0; bei < (index_t)ordered_edges.size() - 1; bei++)
-    {
-        index_t base_edge_index = ordered_edges[bei];
-        for(index_t cei = bei + 1; cei < (index_t)ordered_edges.size(); cei++)
-        {
-            index_t check_edge_index = ordered_edges[cei];
-            index_t shared_coord_index = calculate_shared_coord(edge_topo,
-                base_edge_index, check_edge_index);
-            if(shared_coord_index >= 0)
-            {
-                std::swap(ordered_edges[cei], ordered_edges[bei + 1]);
-                continue;
-            }
-        }
-    }
-}
-
 //-----------------------------------------------------------------------------
 // - end internal data function helpers -
 //-----------------------------------------------------------------------------
@@ -1078,12 +989,15 @@ calculate_ordered_edges(const conduit::Node &edge_topo,
 //---------------------------------------------------------------------------//
 struct TopologyMetadata
 {
+    // NOTE(JRC): This type current only works at forming associations within
+    // an unstructured topology's hierarchy.
     TopologyMetadata(const conduit::Node &topology, const conduit::Node &coordset) :
         topo(&topology), cset(&coordset), topo_cascade(topology), topo_shape(topology)
     {
         Node topo_offsets;
         get_topology_offsets(topology, topo_offsets);
         const index_t topo_num_elems = topo_offsets.dtype().number_of_elements();
+        const index_t topo_num_coords = get_coordset_length("unstructured", coordset);
 
         // Discover Data Types //
 
@@ -1112,27 +1026,48 @@ struct TopologyMetadata
         std::vector< std::vector<int64> > dim_buffers(topo_shape.dim + 1);
         std::vector< int64 > dim_offsets(topo_shape.dim + 1);
 
-        // Compute Data for Edge Topology //
+        // Prepare Initial Values for Processing //
 
-        std::vector< std::vector<int64> > entity_index_bag(topo_num_elems);
-        std::vector< index_t > entity_dim_bag(topo_num_elems, topo_shape.dim);
-        std::vector< std::vector<int64> > entity_parent_bag(topo_num_elems);
+        // NOTE(JRC): We start with processing the points of the topology followed
+        // by the top-level elements in order to ensure that order is preserved
+        // relative to the original topology for these elements.
+        const index_t bag_num_elems = topo_num_coords + topo_num_elems;
+        std::vector< std::vector<int64> > entity_index_bag(bag_num_elems);
+        std::vector< index_t > entity_dim_bag(bag_num_elems, -1);
+        std::vector< std::vector<int64> > entity_parent_bag(bag_num_elems);
+
+        for(index_t pi = 0; pi < topo_num_coords; pi++)
+        {
+            index_t bi = pi;
+            entity_index_bag[bi].push_back(bi);
+            entity_dim_bag[bi] = 0;
+        }
 
         Node elem_node, data_node;
         for(index_t ei = 0; ei < topo_num_elems; ei++)
         {
+            index_t bi = topo_num_coords + ei;
+
             data_node.reset();
             get_entity_data(ei, topo_shape.dim, data_node);
 
             // NOTE: The index set is reversed since the use of DFS for the
             // search below guarantee that this ordering replicates the
             // original topology's ordering.
-            std::vector<int64> &elem_indices = entity_index_bag[topo_num_elems - ei - 1];
+            std::vector<int64> &elem_indices = entity_index_bag[bi];
             elem_indices.resize(data_node.dtype().number_of_elements());
             elem_node.set_external(DataType::int64(elem_indices.size()),
                 &elem_indices[0]);
             data_node.to_int64_array(elem_node);
+
+            entity_dim_bag[bi] = topo_shape.dim;
         }
+
+        // TODO(JRC): This is really inefficient, but it makes the process a
+        // lot more legible.
+        std::reverse(entity_index_bag.begin(), entity_index_bag.end());
+        std::reverse(entity_dim_bag.begin(), entity_dim_bag.end());
+        std::reverse(entity_parent_bag.begin(), entity_parent_bag.end());
 
         while(!entity_index_bag.empty())
         {
@@ -1178,8 +1113,12 @@ struct TopologyMetadata
 
             if(dim_entity_map.find(entity) == dim_entity_map.end())
             {
+                index_t entity_id = dim_offset;
                 dim_buffer.insert(dim_buffer.end(), entity_indices.begin(), entity_indices.end());
                 dim_entity_map[entity] = dim_offset++;
+
+                dim_assocs[entity_dim][entity_id].resize(topo_shape.dim + 1);
+                dim_assocs[entity_dim][entity_id][entity_dim].insert(entity_id);
             }
 
             // NOTE(JRC): The ID for each entity is set to be the index
@@ -1308,31 +1247,23 @@ struct TopologyMetadata
         return topo_length;
     }
 
-    index_t get_embed_length(index_t entity_dim, index_t embed_dim, index_t entity_id=-1) const
+    index_t get_embed_length(index_t entity_dim, index_t embed_dim, bool unique = false) const
     {
         // NOTE: The default version of 'get_embed_length' gets the total number of
         // embeddings for each entity at the top level to the embedding level. The
         // parameterized version just fetches the number of embeddings for one
         // specific entity at the top level.
 
-        index_t embed_length = 0;
-
         std::vector<index_t> entity_index_bag;
         std::vector<index_t> entity_dim_bag;
-        if(entity_id >= 0)
+        for(index_t ei = 0; ei < this->get_length(entity_dim); ei++)
         {
-            entity_index_bag.push_back(entity_id);
+            entity_index_bag.push_back(ei);
             entity_dim_bag.push_back(entity_dim);
         }
-        else
-        {
-            for(index_t ei = 0; ei < this->get_length(entity_dim); ei++)
-            {
-                entity_index_bag.push_back(ei);
-                entity_dim_bag.push_back(entity_dim);
-            }
-        }
 
+        std::set<index_t> embed_set;
+        index_t embed_length = 0;
         while(!entity_index_bag.empty())
         {
             index_t entity_index = entity_index_bag.back();
@@ -1342,7 +1273,12 @@ struct TopologyMetadata
 
             if(entity_dim == embed_dim)
             {
-                embed_length++;
+                bool embed_exists = embed_set.find(entity_index) == embed_set.end();
+                if(!unique || !embed_exists)
+                {
+                    embed_length++;
+                }
+                embed_set.insert(entity_index);
             }
             else
             {
@@ -1358,14 +1294,6 @@ struct TopologyMetadata
         }
 
         return embed_length;
-    }
-
-    bool is_embedded(index_t parent_id, index_t parent_dim,
-                     index_t child_id, index_t child_dim) const
-    {
-        const std::set<index_t> &pc_set = get_entity_assocs(
-            parent_id, parent_dim, child_dim);
-        return pc_set.find(child_id) != pc_set.end();
     }
 
     std::string to_json() const
@@ -3286,7 +3214,7 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 
     const ShapeCascade topo_cascade(topo);
     const ShapeType topo_shape = topo_cascade.get_shape();
-    const ShapeType edge_shape = topo_cascade.get_shape(1);
+    const ShapeType line_shape = topo_cascade.get_shape(1);
     const ShapeType side_shape(topo_shape.dim == 3 ? "tet" : "tri");
     if(topo_shape.dim < 2)
     {
@@ -3302,9 +3230,9 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
     std::vector<conduit::Node> dim_cent_coords(topo_shape.dim + 1);
     for(index_t di = 0; di <= topo_shape.dim; di++)
     {
-        // NOTE: No centroids are generate for the edges of the geometry
+        // NOTE: No centroids are generate for the lines of the geometry
         // because they aren't included in the final sides topology.
-        if(di == edge_shape.dim) { continue; }
+        if(di == line_shape.dim) { continue; }
 
         calculate_unstructured_centroids(
             topo_data.dim_topos[di], coordset,
@@ -3326,11 +3254,10 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 
     const index_t topo_num_elems = topo_data.get_length(topo_shape.dim);
     const index_t sides_num_coords =
-        topo_data.get_length() - topo_data.get_length(edge_shape.dim);
+        topo_data.get_length() - topo_data.get_length(line_shape.dim);
     const index_t sides_num_elems =
-        topo_data.get_embed_length(topo_shape.dim, edge_shape.dim);
-    const index_t sides_dim_span = topo_shape.dim - edge_shape.dim;
-    const index_t sides_elem_degree = sides_dim_span + 2;
+        topo_data.get_embed_length(topo_shape.dim, line_shape.dim);
+    const index_t sides_elem_degree = (topo_shape.dim - line_shape.dim) + 2;
 
     dest.reset();
     dest["type"].set("unstructured");
@@ -3386,12 +3313,12 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 
     int64 elem_index = 0, side_index = 0;
 
-    std::vector<int64> edge_data_raw(2);
+    std::vector<int64> line_data_raw(2);
     std::vector<int64> side_data_raw(sides_elem_degree);
 
     Node misc_data;
-    Node elem_data(DataType::int64(1), &elem_index, true);
-    Node edge_data(DataType::int64(2), &edge_data_raw[0], true);
+    Node elem_index_data(DataType::int64(1), &elem_index, true);
+    Node line_data(DataType::int64(2), &line_data_raw[0], true);
     Node side_data(DataType::int64(sides_elem_degree), &side_data_raw[0], true);
 
     Node &dest_conn = dest["elements/connectivity"];
@@ -3411,10 +3338,10 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
             std::vector<index_t> embed_parents = elem_eparent_stack.back();
             elem_eparent_stack.pop_back();
 
-            if(embed_dim == edge_shape.dim)
+            if(embed_dim == line_shape.dim)
             {
-                topo_data.get_entity_data(embed_index, embed_dim, edge_data);
-                memcpy(&side_data_raw[0], &edge_data_raw[0], 2 * sizeof(int64));
+                topo_data.get_entity_data(embed_index, embed_dim, line_data);
+                memcpy(&side_data_raw[0], &line_data_raw[0], 2 * sizeof(int64));
 
                 for(index_t pi = 0; pi < (index_t)embed_parents.size(); pi++)
                 {
@@ -3428,7 +3355,7 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
                 side_data.to_data_type(int_dtype.id(), misc_data);
 
                 misc_data.set_external(int_dtype, dest_field.element_ptr(side_index));
-                elem_data.to_data_type(int_dtype.id(), misc_data);
+                elem_index_data.to_data_type(int_dtype.id(), misc_data);
 
                 side_index++;
             }
@@ -3457,396 +3384,200 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
                                                Node &cdest,
                                                Node &fdest)
 {
-    // // Retrieve Relevent Coordinate/Topology Metadata //
-
-    // Node coordset;
-    // find_reference_node(topo, "coordset", coordset);
-    // const std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
-
-    // // TODO(JRC): Somehow, this code is reordering the original points array,
-    // // which is causing the results to come out inverted. The index set for
-    // // the original mesh needs to be preserved in order to this all to work
-    // // out properly.
-
-    // const ShapeCascade topo_cascade(topo);
-    // const ShapeType topo_shape = topo_cascade.get_shape();
-    // const ShapeType point_shape = topo_cascade.get_shape(0);
-    // const ShapeType corner_shape(topo_shape.dim == 3 ? "polyhedron" : "polygon");
-    // if(topo_shape.dim < 2)
-    // {
-    //     CONDUIT_ERROR("Failed to generate corner mesh for input; " <<
-    //         "input tology must be topologically 2D or 3D.");
-    // }
-
-    // Node topo_offsets;
-    // get_topology_offsets(topo, topo_offsets);
-    // const index_t topo_num_elems = topo_offsets.dtype().number_of_elements();
-
-    // // Extract Derived Coordinate/Topology Data //
-
-    // typedef std::map< index_t, std::set<index_t> > ElemEntityMap;
-    // std::vector<conduit::Node> dim_entity_topos(topo_shape.dim + 1);
-    // std::vector<ElemEntityMap> dim_elem_to_entities(topo_shape.dim + 1);
-    // std::vector<ElemEntityMap> dim_entity_to_elems(topo_shape.dim + 1);
-    // for(index_t di = 0; di <= topo_shape.dim; di++)
-    // {
-    //     extract_unstructured_entities(topo, coordset, di, true,
-    //         dim_entity_topos[di], dim_elem_to_entities[di], dim_entity_to_elems[di]);
-
-    //     Node &dim_topo = dim_entity_topos[di];
-    //     get_topology_offsets(dim_topo, dim_topo["elements/offsets"]);
-    // }
-
-    // // TODO(JRC): May need to hack some code together for the following loop
-    // // in order to properly associate the coordsets with the topologies in a
-    // // mesh hierarchy (needed for internal consistency maybe).
-
-    // typedef std::map< index_t, index_t > ElemCoordMap;
-    // std::vector<conduit::Node> dim_cent_topos(topo_shape.dim + 1);
-    // std::vector<conduit::Node> dim_cent_coords(topo_shape.dim + 1);
-    // std::vector<ElemCoordMap> dim_elem_to_cent(topo_shape.dim + 1);
-    // std::vector<ElemCoordMap> dim_cent_to_elem(topo_shape.dim + 1);
-    // for(index_t di = 0; di <= topo_shape.dim; di++)
-    // {
-    //     calculate_unstructured_centroids(
-    //         dim_entity_topos[di], coordset,
-    //         dim_cent_topos[di], dim_cent_coords[di],
-    //         dim_elem_to_cent[di], dim_cent_to_elem[di]);
-    // }
-
-    // // Discover Data Types //
-
-    // DataType int_dtype, float_dtype;
-    // {
-    //     std::vector<const Node*> src_nodes;
-    //     src_nodes.push_back(&topo);
-    //     src_nodes.push_back(&coordset);
-    //     int_dtype = find_widest_dtype(src_nodes, blueprint::mesh::default_int_dtypes);
-    //     float_dtype = find_widest_dtype(src_nodes, blueprint::mesh::default_float_dtype);
-    // }
-
-    // const Node &topo_conn_const = topo["elements/connectivity"];
-    // Node topo_conn; topo_conn.set_external(topo_conn_const);
-    // const DataType conn_dtype(topo_conn.dtype().id(), 1);
-    // const DataType offset_dtype(topo_offsets.dtype().id(), 1);
-
-    // // Allocate Data Templates for Outputs //
-
-    // index_t corners_num_coords_acc = 0, corners_num_elems_acc = 0;
-    // {
-    //     for(index_t di = 0; di <= topo_shape.dim; di++)
-    //     {
-    //         corners_num_coords_acc +=
-    //             get_topology_length("unstructured", dim_cent_topos[di]);
-    //     }
-
-    //     // TODO(JRC): I'm not exactly sure that the following calculation
-    //     // accurately computes the number of corners in 2D.
-    //     // TODO(JRC): Determine if there is any better way to calculate this
-    //     // value (i.e. a means without quite so much computation).
-    //     Node all_point_topo; ElemEntityMap elem_to_point, point_to_elem;
-    //     extract_unstructured_entities(topo, coordset, point_shape.dim, false,
-    //         all_point_topo, elem_to_point, point_to_elem);
-    //     corners_num_elems_acc = get_topology_length("unstructured", all_point);
-    // }
-    // const index_t corners_num_coords = corners_num_coords_acc;
-    // // TODO(JRC): Figure out how this value can be computed exactly and efficiently.
-    // const index_t corners_num_elems = corners_num_elems_acc;
-    // // TODO(JRC): Figure out how an approximate value can be calculated.
-    // const index_t corners_num_indices_approx = 1000000;
-
-    // dest.reset();
-    // dest["type"].set("unstructured");
-    // dest["coordset"].set(cdest.name());
-    // dest["elements/shape"].set(corner_shape.type);
-    // dest["elements/connectivity"].set(DataType(int_dtype.id(),
-    //     corners_num_indices_approx));
-
-    // cdest.reset();
-    // cdest["type"].set("explicit");
-    // for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
-    // {
-    //     cdest["values"][csys_axes[ai]].set(DataType(float_dtype.id(),
-    //         corners_num_coords));
-    // }
-
-    // fdest.reset();
-    // fdest["association"].set("element");
-    // fdest["topology"].set(dest.name());
-    // fdest["volume_dependent"].set("false");
-    // fdest["values"].set(DataType(int_dtype.id(), corners_num_elems));
-
-    // // Populate Data Arrays w/ Calculated Coordinates //
-
-    // std::vector<index_t> dim_coord_offsets(topo_shape.dim + 1);
-    // for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
-    // {
-    //     Node dst_data;
-    //     Node &dst_axis = cdest["values"][csys_axes[ai]];
-
-    //     for(index_t di = 0, doffset = 0; di <= topo_shape.dim; di++)
-    //     {
-    //         dim_coord_offsets[di] = doffset;
-
-    //         // NOTE: The centroid ordering for the positions is different
-    //         // from the base ordering, which messes up all subsequent indexing.
-    //         // We must use the coordinate set associated with the base topology.
-    //         const Node &cset = (di != 0) ? dim_cent_coords[di] : coordset;
-    //         const Node &cset_axis = cset["values"][csys_axes[ai]];
-    //         index_t cset_length = cset_axis.dtype().number_of_elements();
-
-    //         dst_data.set_external(DataType(float_dtype.id(), cset_length),
-    //             dst_axis.element_ptr(doffset));
-    //         cset_axis.to_data_type(float_dtype.id(), dst_data);
-    //         doffset += cset_length;
-    //     }
-    // }
-
-    // // Compute New Elements/Fields for corner Topology //
-
-    // int64 elem_index = 0, corner_index = 0;
-
-    // std::vector<int64> edge_data_raw(2);
-    // std::vector<int64> dent_data_raw;
-    // std::vector<int64> corner_data_raw(corners_elem_degree);
-
-    // Node misc_data;
-    // Node elem_data(DataType::int64(1), &elem_index, true);
-    // Node edge_data(DataType::int64(2), &edge_data_raw[0], true);
-    // Node corner_data(DataType::int64(corners_elem_degree), &corner_data_raw[0], true);
-
-    // Node &dest_conn = dest["elements/connectivity"];
-    // Node &dest_field = fdest["values"];
-    // for(; elem_index < (int64)topo_num_elems; elem_index++)
-    // {
-    //     const std::set<index_t> &elem_edge_ids =
-    //         dim_elem_to_entities[edge_shape.dim][elem_index];
-    //     for(std::set<index_t>::const_iterator edges_it = elem_edge_ids.begin();
-    //         edges_it != elem_edge_ids.end(); ++edges_it)
-    //     {
-    //         index_t edge_index = *edges_it;
-    //         misc_data.set_external(edge_dtype,
-    //             edge_conn.element_ptr(2 * edge_index));
-    //         misc_data.to_data_type(edge_data.dtype().id(), edge_data);
-
-    //         std::vector< std::vector<index_t> > edge_dent_lists(corners_dim_span);
-    //         std::vector<index_t> edge_dent_lens(corners_dim_span);
-    //         index_t edge_dent_combos = 1;
-    //         for(index_t di = edge_shape.dim + 1; di <= topo_shape.dim; di++)
-    //         {
-    //             index_t li = di - (edge_shape.dim + 1);
-    //             const Node &dim_topo = dim_entity_topos[di];
-    //             std::vector<index_t> &edge_dent_list = edge_dent_lists[li];
-
-    //             const std::set<index_t> &elem_dent_ids =
-    //                 dim_elem_to_entities[di][elem_index];
-    //             for(std::set<index_t>::const_iterator dents_it = elem_dent_ids.begin();
-    //                 dents_it != elem_dent_ids.end(); ++dents_it)
-    //             {
-    //                 index_t dent_index = *dents_it;
-    //                 get_unstructured_element(dim_topo, dent_index, dent_data_raw);
-    //                 if(contains_unstructured_entity(dim_topo, coordset,
-    //                     di, edge_shape.dim, dent_data_raw, edge_data_raw))
-    //                 {
-    //                     edge_dent_list.push_back(dent_index);
-    //                 }
-    //             }
-
-    //             edge_dent_lens[li] = edge_dent_list.size();
-    //             edge_dent_combos *= edge_dent_list.size();
-    //         }
-
-    //         corner_data_raw[0] = edge_data_raw[0];
-    //         corner_data_raw[1] = edge_data_raw[1];
-    //         for(index_t ci = 0; ci < (index_t)edge_dent_combos; ci++, corner_index++)
-    //         {
-    //             std::vector<index_t> dcoords;
-    //             grid_id_to_coord(ci, edge_dent_lens, dcoords);
-    //             for(index_t di = edge_shape.dim + 1; di <= topo_shape.dim; di++)
-    //             {
-    //                 index_t li = di - (edge_shape.dim + 1);
-    //                 index_t dent_index = edge_dent_lists[li][dcoords[li]];
-    //                 corner_data_raw[li + 2] = dim_coord_offsets[di] + dent_index;
-    //             }
-
-    //             misc_data.set_external(DataType(int_dtype.id(), corners_elem_degree),
-    //                 dest_conn.element_ptr(corners_elem_degree * corner_index));
-    //             corner_data.to_data_type(int_dtype.id(), misc_data);
-
-    //             misc_data.set_external(int_dtype,
-    //                 dest_field.element_ptr(corner_index));
-    //             elem_data.to_data_type(int_dtype.id(), misc_data);
-    //         }
-    //     }
-    // }
-
-    ////////////////////////////////////////////////////////////////////////////
-    //                                                                        //
-    //                      MIDDLE POINT GO BACK PLEASE                       //
-    //                                                                        //
-    ////////////////////////////////////////////////////////////////////////////
-
-    // TODO(JRC): This method is extraordinarily similar to its 'sides'
-    // analogue and the two should have their functionality abstracted
-    // and shared it at all possible.
-
     // Retrieve Relevent Coordinate/Topology Metadata //
 
-    // Node coordset;
-    // find_reference_node(topo, "coordset", coordset);
-    // const std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
-    // const index_t topo_num_coords = get_coordset_length("explicit", coordset);
+    Node coordset;
+    find_reference_node(topo, "coordset", coordset);
+    const std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
 
-    // // TODO(JRC): This function needs to be adapted in order to be able to handle
-    // // 3D topology inputs when it comes to generating "side" elements.
-    // if(csys_axes.size() != 2)
-    // {
-    //     CONDUIT_ERROR("Failed to generate side mesh for input; " <<
-    //         csys_axes.size() << "D meshes are not yet supported.");
-    // }
+    const ShapeCascade topo_cascade(topo);
+    const ShapeType topo_shape = topo_cascade.get_shape();
+    const bool is_topo_3d = topo_shape.dim == 3;
+    const ShapeType point_shape = topo_cascade.get_shape(0);
+    const ShapeType line_shape = topo_cascade.get_shape(1);
+    const ShapeType face_shape = topo_cascade.get_shape(2);
+    const ShapeType corner_shape(topo_shape.dim == 3 ? "polyhedral" : "polygonal");
+    if(topo_shape.dim < 2)
+    {
+        CONDUIT_ERROR("Failed to generate corner mesh for input; " <<
+            "input tology must be topologically 2D or 3D.");
+    }
 
-    // Node topo_offsets;
-    // get_topology_offsets(topo, topo_offsets);
-    // const index_t topo_num_elems = topo_offsets.dtype().number_of_elements();
+    // Extract Derived Coordinate/Topology Data //
 
-    // Node cent_coordset, cent_topo;
-    // calculate_unstructured_centroids(topo, coordset, cent_topo, cent_coordset);
-    // blueprint::mesh::topology::unstructured::generate_offsets(cent_topo,
-    //     cent_topo["elements/offsets"]);
+    const TopologyMetadata topo_data(topo, coordset);
+    const index_t topo_num_elems = topo_data.get_length(topo_shape.dim);
 
-    // Node edge_topo;
-    // std::map< index_t, std::set<index_t> > elemid_to_edgeids, edgeid_to_elemids;
-    // extract_unstructured_entities(topo, coordset, 1, false, edge_topo,
-    //     elemid_to_edgeids, edgeid_to_elemids);
-    // const index_t topo_num_total_edges = get_topology_length("unstructured", edge_topo);
-    // extract_unstructured_entities(topo, coordset, 1, true, edge_topo,
-    //     elemid_to_edgeids, edgeid_to_elemids);
-    // const index_t topo_num_unique_edges = get_topology_length("unstructured", edge_topo);
-    // blueprint::mesh::topology::unstructured::generate_offsets(edge_topo,
-    //     edge_topo["elements/offsets"]);
+    std::vector<conduit::Node> dim_cent_topos(topo_shape.dim + 1);
+    std::vector<conduit::Node> dim_cent_coords(topo_shape.dim + 1);
+    for(index_t di = 0; di <= topo_shape.dim; di++)
+    {
+        calculate_unstructured_centroids(
+            topo_data.dim_topos[di], coordset,
+            dim_cent_topos[di], dim_cent_coords[di]);
+    }
 
-    // Node ecent_coordset, ecent_topo;
-    // std::map< index_t, index_t > edgeid_to_ecentid, ecentid_to_edgeid;
-    // calculate_unstructured_centroids(edge_topo, coordset, ecent_topo, ecent_coordset,
-    //     edgeid_to_ecentid, ecentid_to_edgeid);
-    // blueprint::mesh::topology::unstructured::generate_offsets(ecent_topo,
-    //     ecent_topo["elements/offsets"]);
+    // Discover Data Types //
 
-    // // Discover Data Types //
+    DataType int_dtype, float_dtype;
+    {
+        std::vector<const Node*> src_nodes;
+        src_nodes.push_back(&topo);
+        src_nodes.push_back(&coordset);
+        int_dtype = find_widest_dtype(src_nodes, blueprint::mesh::default_int_dtypes);
+        float_dtype = find_widest_dtype(src_nodes, blueprint::mesh::default_float_dtype);
+    }
 
-    // DataType int_dtype, float_dtype;
-    // {
-    //     std::vector<const Node*> src_nodes;
-    //     src_nodes.push_back(&topo);
-    //     src_nodes.push_back(&coordset);
-    //     int_dtype = find_widest_dtype(src_nodes, blueprint::mesh::default_int_dtypes);
-    //     float_dtype = find_widest_dtype(src_nodes, blueprint::mesh::default_float_dtype);
-    // }
+    // Allocate Data Templates for Outputs //
 
-    // const Node &topo_conn_const = topo["elements/connectivity"];
-    // Node topo_conn; topo_conn.set_external(topo_conn_const);
-    // Node &edge_conn = edge_topo["elements/connectivity"];
-    // const DataType conn_dtype(topo_conn.dtype().id(), 1);
-    // const DataType edge_dtype(edge_conn.dtype().id(), 2);
+    const index_t corners_num_coords = topo_data.get_length();
+    const index_t corners_face_degree = 4;
 
-    // // Allocate Data Templates for Outputs //
+    dest.reset();
+    dest["type"].set("unstructured");
+    dest["coordset"].set(cdest.name());
+    dest["elements/shape"].set(corner_shape.type);
+    // TODO(JRC): I wasn't able to find a good way to compute the connectivity
+    // length a priori because of the possibility of polygonal 3D inputs, but
+    // having this information would improve the performance of the method.
+    // dest["elements/connectivity"].set(DataType(int_dtype.id(), ???);
 
-    // const index_t corners_num_coords = topo_num_coords + topo_num_unique_edges + topo_num_elems;
-    // const index_t corners_num_elems = topo_num_total_edges;
+    cdest.reset();
+    cdest["type"].set("explicit");
+    for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
+    {
+        cdest["values"][csys_axes[ai]].set(DataType(float_dtype.id(),
+            corners_num_coords));
+    }
 
-    // dest.reset();
-    // dest["type"].set("unstructured");
-    // dest["coordset"].set(cdest.name());
-    // dest["elements/shape"].set("quad");
-    // dest["elements/connectivity"].set(DataType(int_dtype.id(), 4 * corners_num_elems));
+    fdest.reset();
+    fdest["association"].set("element");
+    fdest["topology"].set(dest.name());
+    fdest["volume_dependent"].set("false");
 
-    // cdest.reset();
-    // cdest["type"].set("explicit");
-    // for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
-    // {
-    //     cdest["values"][csys_axes[ai]].set(DataType(float_dtype.id(), corners_num_coords));
-    // }
+    // Populate Data Arrays w/ Calculated Coordinates //
 
-    // fdest.reset();
-    // fdest["association"].set("element");
-    // fdest["topology"].set(dest.name());
-    // fdest["volume_dependent"].set("false");
-    // fdest["values"].set(DataType(int_dtype.id(), corners_num_elems));
+    std::vector<index_t> dim_coord_offsets(topo_shape.dim + 1);
+    for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
+    {
+        Node dst_data;
+        Node &dst_axis = cdest["values"][csys_axes[ai]];
 
-    // // Populate Data Arrays w/ Calculated Coordinates //
+        for(index_t di = 0, doffset = 0; di <= topo_shape.dim; di++)
+        {
+            dim_coord_offsets[di] = doffset;
 
-    // const Node *cset_nodes[] = {&coordset, &ecent_coordset, &cent_coordset};
-    // const index_t cset_lengths[] = {topo_num_coords, topo_num_unique_edges, topo_num_elems};
-    // index_t cset_offsets[] = {-1, -1, -1};
-    // const index_t cset_count = sizeof(cset_nodes) / sizeof(cset_nodes[0]);
+            // NOTE: The centroid ordering for the positions is different
+            // from the base ordering, which messes up all subsequent indexing.
+            // We must use the coordinate set associated with the base topology.
+            const Node &cset = (di != 0) ? dim_cent_coords[di] : coordset;
+            const Node &cset_axis = cset["values"][csys_axes[ai]];
+            index_t cset_length = cset_axis.dtype().number_of_elements();
 
-    // for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
-    // {
-    //     Node dst_data;
-    //     Node &dst_axis = cdest["values"][csys_axes[ai]];
+            dst_data.set_external(DataType(float_dtype.id(), cset_length),
+                dst_axis.element_ptr(doffset));
+            cset_axis.to_data_type(float_dtype.id(), dst_data);
+            doffset += cset_length;
+        }
+    }
 
-    //     for(index_t ci = 0, coffset = 0; ci < cset_count; ci++)
-    //     {
-    //         const Node &cset_axis = (*cset_nodes[ci])["values"][csys_axes[ai]];
-    //         const index_t cset_length = cset_lengths[ci];
-    //         cset_offsets[ci] = coffset;
+    // Compute New Elements/Fields for corner Topology //
 
-    //         dst_data.set_external(DataType(float_dtype.id(), cset_length),
-    //             dst_axis.element_ptr(coffset));
-    //         cset_axis.to_data_type(float_dtype.id(), dst_data);
+    std::vector<int64> conn_data_raw;
+    std::vector<int64> field_data_raw;
 
-    //         coffset += cset_length;
-    //     }
-    // }
+    Node misc_data;
+    for(index_t elem_index = 0; elem_index < (int64)topo_num_elems; elem_index++)
+    {
+        const std::set<index_t> &elem_lines = topo_data.get_entity_assocs(
+            elem_index, topo_shape.dim, line_shape.dim);
+        const std::set<index_t> &elem_faces = topo_data.get_entity_assocs(
+            elem_index, topo_shape.dim, face_shape.dim);
 
-    // // Compute New Elements/Fields for Corner Topology //
+        const std::set<index_t> &elem_points = topo_data.get_entity_assocs(
+            elem_index, topo_shape.dim, point_shape.dim);
+        for(std::set<index_t>::const_iterator points_it = elem_points.begin();
+            points_it != elem_points.end(); ++points_it)
+        {
+            index_t point_index = *points_it;
+            const std::set<index_t> &point_lines = topo_data.get_entity_assocs(
+                point_index, point_shape.dim, line_shape.dim);
 
-    // int64 elem_index = 0, corner_index = 0;
-    // int64 edge_data_raw[2] = {-1, -1}, quad_data_raw[4] = {-1, -1, -1};
+            std::vector<index_t> elem_point_lines = intersect_sets(
+                elem_lines, point_lines);
 
-    // Node misc_data;
-    // Node elem_data(DataType::int64(1), &elem_index, true);
-    // Node edge_data(DataType::int64(2), &edge_data_raw[0], true);
-    // Node quad_data(DataType::int64(3), &quad_data_raw[0], true);
+            std::vector<index_t> corner_entities(2 * elem_point_lines.size());
+            corner_entities[0] = elem_point_lines[0];
+            for(index_t bei = 0; bei < (index_t)elem_point_lines.size(); bei++)
+            {
+                index_t base_edge_index = elem_point_lines[bei];
+                const std::set<index_t> &base_faces = topo_data.get_entity_assocs(
+                    base_edge_index, line_shape.dim, face_shape.dim);
+                for(index_t dei = 1; dei == 1 || bei + dei < (index_t)elem_point_lines.size(); dei++)
+                {
+                    index_t cei = bei + dei;
+                    index_t check_edge_index = elem_point_lines[cei % elem_point_lines.size()];
+                    const std::set<index_t> &check_faces = topo_data.get_entity_assocs(
+                        check_edge_index, line_shape.dim, face_shape.dim);
 
-    // Node &dest_conn = dest["elements/connectivity"];
-    // Node &dest_field = fdest["values"];
-    // for(; elem_index < (int64)topo_num_elems; elem_index++)
-    // {
-    //     index_t cent_id = elem_index;
+                    std::vector<index_t> edge_shared_faces = intersect_sets(
+                        base_faces, check_faces);
+                    std::vector<index_t> edge_shared_elem_faces = intersect_sets(
+                        elem_faces, std::set<index_t>(edge_shared_faces.begin(),
+                        edge_shared_faces.end()));
+                    if(!edge_shared_elem_faces.empty())
+                    {
+                        corner_entities[2 * (bei + 1) - 1] = edge_shared_elem_faces[0];
+                        if(cei < (index_t)elem_point_lines.size())
+                        {
+                            corner_entities[2 * (bei + 1) - 0] = elem_point_lines[cei];
+                            std::swap(elem_point_lines[cei], elem_point_lines[bei + 1]);
+                        }
+                    }
+                }
+            }
 
-    //     // TODO(JRC): This solution really won't work for 3D; cascading centroids
-    //     // will be required for each dimension (cell, face, edge).
-    //     std::vector<index_t> elem_edge_ids;
-    //     calculate_ordered_edges(edge_topo, elemid_to_edgeids[elem_index], elem_edge_ids);
-    //     for(index_t curr_edge_index = 0;
-    //         curr_edge_index < (index_t)elem_edge_ids.size();
-    //         curr_edge_index++, corner_index++)
-    //     {
-    //         index_t next_edge_index = (curr_edge_index + 1) % elem_edge_ids.size();
+            index_t corner_face_count = 1;
+            if(is_topo_3d)
+            {
+                corner_face_count = corner_entities.size();
+                conn_data_raw.push_back(corner_entities.size());
+            }
 
-    //         index_t curr_edge_id = elem_edge_ids[curr_edge_index];
-    //         index_t next_edge_id = elem_edge_ids[next_edge_index];
+            for(index_t bfi = 0; bfi < corner_face_count; bfi++)
+            {
+                conn_data_raw.push_back(corners_face_degree);
+                for(index_t fi = 0; fi < corners_face_degree - 1; fi++)
+                {
+                    index_t fei = ((bfi + fi) % corner_entities.size());
+                    index_t corner_face_index = corner_entities[fei];
+                    index_t corner_index_dim = (fei % 2 == 0) ?
+                        line_shape.dim : face_shape.dim;
+                    conn_data_raw.push_back(
+                        dim_coord_offsets[corner_index_dim] + corner_face_index);
+                }
 
-    //         index_t curr_ecent_id = edgeid_to_ecentid[curr_edge_id];
-    //         index_t next_ecent_id = edgeid_to_ecentid[next_edge_id];
+                index_t corner_cap_index = ((bfi % 2) == 0) ?
+                    dim_coord_offsets[point_shape.dim] + point_index :
+                    dim_coord_offsets[topo_shape.dim] + elem_index;
+                conn_data_raw.push_back(corner_cap_index);
 
-    //         index_t corner_id = calculate_shared_coord(edge_topo, curr_edge_id, next_edge_id);
+                field_data_raw.push_back(elem_index);
+            }
+        }
+    }
 
-    //         quad_data_raw[0] = cset_offsets[1] + curr_ecent_id;
-    //         quad_data_raw[1] = cset_offsets[0] + corner_id;
-    //         quad_data_raw[2] = cset_offsets[1] + next_ecent_id;
-    //         quad_data_raw[3] = cset_offsets[2] + cent_id;
+    Node &dest_conn = dest["elements/connectivity"];
+    Node &dest_field = fdest["values"];
+    {
+        Node conn_data;
+        conn_data.set_external(DataType::int64(conn_data_raw.size()), &conn_data_raw[0]);
+        conn_data.to_data_type(int_dtype.id(), dest_conn);
 
-    //         misc_data.set_external(DataType(int_dtype.id(), 4),
-    //             dest_conn.element_ptr(4 * corner_index));
-    //         quad_data.to_data_type(int_dtype.id(), misc_data);
-
-    //         misc_data.set_external(int_dtype,
-    //             dest_field.element_ptr(corner_index));
-    //         elem_data.to_data_type(int_dtype.id(), misc_data);
-    //     }
-    // }
+        Node field_data;
+        field_data.set_external(DataType::int64(field_data_raw.size()), &field_data_raw[0]);
+        field_data.to_data_type(int_dtype.id(), dest_field);
+    }
 }
 
 //-----------------------------------------------------------------------------

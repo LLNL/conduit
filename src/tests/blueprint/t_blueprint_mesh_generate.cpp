@@ -291,7 +291,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_centroids)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_lines)
 {
-    const index_t MPDIMS[3] = {3, 3, 3};
+    const index_t MPDIMS[3] = {4, 4, 4};
 
     const std::string LINE_TOPOLOGY_NAME = "ltopo";
 
@@ -356,7 +356,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_lines)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides)
 {
-    const index_t MPDIMS[3] = {3, 3, 3};
+    const index_t MPDIMS[3] = {4, 4, 4};
 
     const std::string SIDE_COORDSET_NAME = "scoords";
     const std::string SIDE_TOPOLOGY_NAME = "stopo";
@@ -431,7 +431,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
                 EXPECT_EQ(side_axis.dtype().id(), mesh_axis.dtype().id());
                 EXPECT_EQ(side_axis.dtype().number_of_elements(),
                     mesh_axis.dtype().number_of_elements() + mesh_elems +
-                    (is_mesh_3d ? mesh_faces : 0));
+                    is_mesh_3d  * mesh_faces);
             }
 
             // Verify Correctness of Topology //
@@ -475,100 +475,105 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
     }
 }
 
-// //-----------------------------------------------------------------------------
-// TEST(conduit_blueprint_generate_unstructured, generate_corners)
-// {
-//     const index_t MPDIMS[3] = {4, 4, 4};
-// 
-//     const std::string CORNER_COORDSET_NAME = "ccoords";
-//     const std::string CORNER_TOPOLOGY_NAME = "ctopo";
-//     const std::string CORNER_FIELD_NAME = "cfield";
-// 
-//     for(index_t ti = 0; ti < 2; ti++)
-//     {
-//         const std::string &elem_type = ELEM_TYPE_LIST[ti];
-//         const index_t &elem_degree = ELEM_TYPE_FACE_INDICES[ti];
-//         const index_t mesh_elems = calc_mesh_elems(ti, &MPDIMS[0]);
-//         const index_t mesh_unique_lines = calc_mesh_lines(ti, &MPDIMS[0], true);
-//         const index_t mesh_total_lines = calc_mesh_lines(ti, &MPDIMS[0], false);
-// 
-//         // NOTE: The following lines are for debugging purposes only.
-//         std::cout << "Testing corner generation for type '" <<
-//             elem_type << "'..." << std::endl;
-// 
-//         Node mesh, info;
-//         mesh::examples::braid(elem_type,MPDIMS[0],MPDIMS[1],MPDIMS[2],mesh);
-//         Node &coords = mesh["coordsets"].child(0);
-//         Node &topo = mesh["topologies"].child(0);
-// 
-//         Node &poly_topo = mesh["topologies"]["poly_" + topo.name()];
-//         mesh::topology::unstructured::to_polygonal(topo, poly_topo);
-// 
-//         Node *mesh_topos[] = {&topo, &poly_topo};
-//         for(index_t mi = 0; mi < 2; mi++)
-//         {
-//             Node &mesh_topo = *mesh_topos[mi];
-// 
-//             Node corner_mesh;
-//             Node &corner_coords = corner_mesh["coordsets"][CORNER_COORDSET_NAME];
-//             Node &corner_topo = corner_mesh["topologies"][CORNER_TOPOLOGY_NAME];
-//             Node &corner_field = corner_mesh["fields"][CORNER_FIELD_NAME];
-//             mesh::topology::unstructured::generate_corners(
-//                 mesh_topo, corner_topo, corner_coords, corner_field);
-// 
-//             EXPECT_TRUE(mesh::coordset::_explicit::verify(corner_coords, info));
-//             EXPECT_TRUE(mesh::topology::unstructured::verify(corner_topo, info));
-//             EXPECT_TRUE(mesh::field::verify(corner_field, info));
-// 
-//             // Verify Correctness of Coordset //
-// 
-//             const std::vector<std::string> coord_axes = coords["values"].child_names();
-//             for(index_t ci = 0; ci < (index_t)coord_axes.size(); ci++)
-//             {
-//                 const std::string &coord_axis = coord_axes[ci];
-//                 EXPECT_TRUE(corner_coords["values"].has_child(coord_axis));
-// 
-//                 Node &mesh_axis = coords["values"][coord_axis];
-//                 Node &corner_axis = corner_coords["values"][coord_axis];
-// 
-//                 EXPECT_EQ(corner_axis.dtype().id(), mesh_axis.dtype().id());
-//                 EXPECT_EQ(corner_axis.dtype().number_of_elements(),
-//                     mesh_axis.dtype().number_of_elements() + mesh_elems + mesh_unique_lines);
-//             }
-// 
-//             // Verify Correctness of Topology //
-// 
-//             Node &mesh_conn = mesh_topo["elements/connectivity"];
-//             Node &corner_conn = corner_topo["elements/connectivity"];
-// 
-//             EXPECT_EQ(corner_topo["coordset"].as_string(), CORNER_COORDSET_NAME);
-//             EXPECT_EQ(corner_topo["elements/shape"].as_string(), "quad");
-//             EXPECT_EQ(corner_conn.dtype().id(), mesh_conn.dtype().id());
-//             EXPECT_EQ(corner_conn.dtype().number_of_elements() / 4, mesh_total_lines);
-// 
-//             // Verify Correctness of Map Field //
-// 
-//             EXPECT_EQ(corner_field["association"].as_string(), "element");
-//             EXPECT_EQ(corner_field["values"].dtype().number_of_elements(), mesh_total_lines);
-// 
-//             { // Validate Contents of Map Field //
-//                 Node corner_field_int64;
-//                 corner_field["values"].to_int64_array(corner_field_int64);
-//                 int64_array corner_field_data = corner_field_int64.as_int64_array();
-// 
-//                 std::vector<int64> corner_expected_array(mesh_total_lines);
-//                 for(index_t si = 0; si < corner_expected_array.size();)
-//                 {
-//                     for(index_t ssi = 0; ssi < elem_degree; si++, ssi++)
-//                     {
-//                         corner_expected_array[si] = si / elem_degree;
-//                     }
-//                 }
-//                 int64_array corner_expected_data(&corner_expected_array[0],
-//                     DataType::int64(mesh_total_lines));
-// 
-//                 EXPECT_FALSE(corner_field_data.diff(corner_expected_data, info));
-//             }
-//         }
-//     }
-// }
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_corners)
+{
+    const index_t MPDIMS[3] = {4, 4, 4};
+
+    const std::string CORNER_COORDSET_NAME = "ccoords";
+    const std::string CORNER_TOPOLOGY_NAME = "ctopo";
+    const std::string CORNER_FIELD_NAME = "cfield";
+
+    for(index_t ti = 0; ti < 4; ti++)
+    {
+        const std::string &elem_type = ELEM_TYPE_LIST[ti];
+        const bool is_mesh_3d = ELEM_TYPE_DIMS[ti] == 3;
+        const index_t mesh_lines = calc_mesh_lines(ti, &MPDIMS[0], true);
+        const index_t mesh_faces = calc_mesh_faces(ti, &MPDIMS[0], true);
+        const index_t mesh_elems = calc_mesh_elems(ti, &MPDIMS[0]);
+
+        const index_t &elem_degree = ELEM_TYPE_FACE_INDICES[ti];
+        const std::string elem_corner_type = is_mesh_3d ?
+            "polyhedral" : "polygonal";
+
+        // NOTE: Skip values indicated to have an invalid subline scheme.
+        const bool is_mesh_lineworthy = ELEM_TYPE_LINES[ti] != -1;
+        if(!is_mesh_lineworthy) { continue; }
+
+        // NOTE: The following lines are for debugging purposes only.
+        std::cout << "Testing corner generation for type '" <<
+            elem_type << "'..." << std::endl;
+
+        Node mesh, info;
+        mesh::examples::braid(elem_type,MPDIMS[0],MPDIMS[1],MPDIMS[2],mesh);
+        Node &coords = mesh["coordsets"].child(0);
+        Node &topo = mesh["topologies"].child(0);
+
+        Node &poly_topo = mesh["topologies"]["poly_" + topo.name()];
+        mesh::topology::unstructured::to_polygonal(topo, poly_topo);
+
+        Node *mesh_topos[] = {&topo, &poly_topo};
+        for(index_t mi = 0; mi < 2; mi++)
+        {
+            Node &mesh_topo = *mesh_topos[mi];
+
+            Node corner_mesh;
+            Node &corner_coords = corner_mesh["coordsets"][CORNER_COORDSET_NAME];
+            Node &corner_topo = corner_mesh["topologies"][CORNER_TOPOLOGY_NAME];
+            Node &corner_field = corner_mesh["fields"][CORNER_FIELD_NAME];
+            mesh::topology::unstructured::generate_corners(
+                mesh_topo, corner_topo, corner_coords, corner_field);
+
+            // Verify Correctness of Coordset //
+
+            const std::vector<std::string> coord_axes = coords["values"].child_names();
+            for(index_t ci = 0; ci < (index_t)coord_axes.size(); ci++)
+            {
+                const std::string &coord_axis = coord_axes[ci];
+                EXPECT_TRUE(corner_coords["values"].has_child(coord_axis));
+
+                Node &mesh_axis = coords["values"][coord_axis];
+                Node &corner_axis = corner_coords["values"][coord_axis];
+
+                EXPECT_EQ(corner_axis.dtype().id(), mesh_axis.dtype().id());
+                EXPECT_EQ(corner_axis.dtype().number_of_elements(),
+                    mesh_axis.dtype().number_of_elements() + mesh_lines +
+                    is_mesh_3d * mesh_faces + mesh_elems);
+            }
+
+            // // Verify Correctness of Topology //
+
+            Node &mesh_conn = mesh_topo["elements/connectivity"];
+            Node &corner_conn = corner_topo["elements/connectivity"];
+
+            EXPECT_EQ(corner_topo["coordset"].as_string(), CORNER_COORDSET_NAME);
+            EXPECT_EQ(corner_topo["elements/shape"].as_string(), elem_corner_type);
+            EXPECT_EQ(corner_conn.dtype().id(), mesh_conn.dtype().id());
+            // EXPECT_EQ(corner_conn.dtype().number_of_elements() / 4, mesh_total_lines);
+
+            // Verify Correctness of Map Field //
+
+            // EXPECT_EQ(corner_field["association"].as_string(), "element");
+            // EXPECT_EQ(corner_field["values"].dtype().number_of_elements(), mesh_total_lines);
+
+            // { // Validate Contents of Map Field //
+            //     Node corner_field_int64;
+            //     corner_field["values"].to_int64_array(corner_field_int64);
+            //     int64_array corner_field_data = corner_field_int64.as_int64_array();
+
+            //     std::vector<int64> corner_expected_array(mesh_total_lines);
+            //     for(index_t si = 0; si < corner_expected_array.size();)
+            //     {
+            //         for(index_t ssi = 0; ssi < elem_degree; si++, ssi++)
+            //         {
+            //             corner_expected_array[si] = si / elem_degree;
+            //         }
+            //     }
+            //     int64_array corner_expected_data(&corner_expected_array[0],
+            //         DataType::int64(mesh_total_lines));
+
+            //     EXPECT_FALSE(corner_field_data.diff(corner_expected_data, info));
+            // }
+        }
+    }
+}
