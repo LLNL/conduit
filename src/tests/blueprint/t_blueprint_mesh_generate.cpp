@@ -368,18 +368,13 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
         const bool is_mesh_3d = ELEM_TYPE_DIMS[ti] == 3;
         const index_t mesh_elems = calc_mesh_elems(ti, &MPDIMS[0]);
         const index_t mesh_faces = calc_mesh_faces(ti, &MPDIMS[0], true);
-        const index_t mesh_total_lines = calc_mesh_lines(ti, &MPDIMS[0], false);
-        const index_t mesh_total_faces = calc_mesh_faces(ti, &MPDIMS[0], false);
-        // TODO(JRC): Think of a more generic formulation for this value.
-        const index_t mesh_sides = (is_mesh_3d ?
-            mesh_total_faces * ELEM_TYPE_FACE_INDICES[ti] : mesh_total_lines);
 
         const index_t si = is_mesh_3d ? 2 : 0;
         const std::string elem_side_type =
             ELEM_TYPE_LIST[si].substr(0, ELEM_TYPE_LIST[si].size() - 1);
-        const index_t elem_side_degree = ELEM_TYPE_INDICES[si];
-        // NOTE: This is an equivalent substitute for |E|*|F| for a single elem.
-        const index_t elem_sides = ELEM_TYPE_FACES[ti] * ELEM_TYPE_FACE_INDICES[ti];
+        const index_t sides_per_elem =
+            ELEM_TYPE_FACES[ti] * ELEM_TYPE_FACE_INDICES[ti];
+        const index_t mesh_sides = mesh_elems * sides_per_elem;
 
         // NOTE: Skip values indicated to have an invalid subline scheme.
         const bool is_mesh_lineworthy = ELEM_TYPE_LINES[ti] != -1;
@@ -439,11 +434,13 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
             Node &mesh_conn = mesh_topo["elements/connectivity"];
             Node &side_conn = side_topo["elements/connectivity"];
 
+            Node &side_off = side_topo["elements/offsets"];
+            mesh::topology::unstructured::generate_offsets(side_topo, side_off);
+
             EXPECT_EQ(side_topo["coordset"].as_string(), SIDE_COORDSET_NAME);
             EXPECT_EQ(side_topo["elements/shape"].as_string(), elem_side_type);
             EXPECT_EQ(side_conn.dtype().id(), mesh_conn.dtype().id());
-            EXPECT_EQ(side_conn.dtype().number_of_elements() / elem_side_degree,
-                mesh_sides);
+            EXPECT_EQ(side_off.dtype().number_of_elements(), mesh_sides);
 
             // TODO(JRC): Augment this test case to verify that all of the given
             // elements have the expected area/volume.
@@ -461,9 +458,9 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
                 std::vector<int64> side_expected_array(mesh_sides);
                 for(index_t si = 0; si < side_expected_array.size();)
                 {
-                    for(index_t esi = 0; esi < elem_sides; si++, esi++)
+                    for(index_t esi = 0; esi < sides_per_elem; si++, esi++)
                     {
-                        side_expected_array[si] = si / elem_sides;
+                        side_expected_array[si] = si / sides_per_elem;
                     }
                 }
                 int64_array side_expected_data(&side_expected_array[0],
@@ -492,9 +489,10 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
         const index_t mesh_faces = calc_mesh_faces(ti, &MPDIMS[0], true);
         const index_t mesh_elems = calc_mesh_elems(ti, &MPDIMS[0]);
 
-        const index_t &elem_degree = ELEM_TYPE_FACE_INDICES[ti];
         const std::string elem_corner_type = is_mesh_3d ?
             "polyhedral" : "polygonal";
+        const index_t corners_per_elem = ELEM_TYPE_INDICES[ti];
+        const index_t mesh_corners = corners_per_elem * mesh_elems;
 
         // NOTE: Skip values indicated to have an invalid subline scheme.
         const bool is_mesh_lineworthy = ELEM_TYPE_LINES[ti] != -1;
@@ -515,6 +513,10 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
         Node *mesh_topos[] = {&topo, &poly_topo};
         for(index_t mi = 0; mi < 2; mi++)
         {
+            // NOTE: The following lines are for debugging purposes only.
+            std::string topo_type((mi == 0) ? "implicit" : "explicit");
+            std::cout << "  " << topo_type << " source topology..." << std::endl;
+
             Node &mesh_topo = *mesh_topos[mi];
 
             Node corner_mesh;
@@ -546,34 +548,37 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
             Node &mesh_conn = mesh_topo["elements/connectivity"];
             Node &corner_conn = corner_topo["elements/connectivity"];
 
+            Node &corner_off = corner_topo["elements/offsets"];
+            mesh::topology::unstructured::generate_offsets(corner_topo, corner_off);
+
             EXPECT_EQ(corner_topo["coordset"].as_string(), CORNER_COORDSET_NAME);
             EXPECT_EQ(corner_topo["elements/shape"].as_string(), elem_corner_type);
             EXPECT_EQ(corner_conn.dtype().id(), mesh_conn.dtype().id());
-            // EXPECT_EQ(corner_conn.dtype().number_of_elements() / 4, mesh_total_lines);
+            EXPECT_EQ(corner_off.dtype().number_of_elements(), mesh_corners);
 
             // Verify Correctness of Map Field //
 
-            // EXPECT_EQ(corner_field["association"].as_string(), "element");
-            // EXPECT_EQ(corner_field["values"].dtype().number_of_elements(), mesh_total_lines);
+            EXPECT_EQ(corner_field["association"].as_string(), "element");
+            EXPECT_EQ(corner_field["values"].dtype().number_of_elements(), mesh_corners);
 
-            // { // Validate Contents of Map Field //
-            //     Node corner_field_int64;
-            //     corner_field["values"].to_int64_array(corner_field_int64);
-            //     int64_array corner_field_data = corner_field_int64.as_int64_array();
+            { // Validate Contents of Map Field //
+                Node corner_field_int64;
+                corner_field["values"].to_int64_array(corner_field_int64);
+                int64_array corner_field_data = corner_field_int64.as_int64_array();
 
-            //     std::vector<int64> corner_expected_array(mesh_total_lines);
-            //     for(index_t si = 0; si < corner_expected_array.size();)
-            //     {
-            //         for(index_t ssi = 0; ssi < elem_degree; si++, ssi++)
-            //         {
-            //             corner_expected_array[si] = si / elem_degree;
-            //         }
-            //     }
-            //     int64_array corner_expected_data(&corner_expected_array[0],
-            //         DataType::int64(mesh_total_lines));
+                std::vector<int64> corner_expected_array(mesh_corners);
+                for(index_t si = 0; si < corner_expected_array.size();)
+                {
+                    for(index_t ssi = 0; ssi < corners_per_elem; si++, ssi++)
+                    {
+                        corner_expected_array[si] = si / corners_per_elem;
+                    }
+                }
+                int64_array corner_expected_data(&corner_expected_array[0],
+                    DataType::int64(corner_expected_array.size()));
 
-            //     EXPECT_FALSE(corner_field_data.diff(corner_expected_data, info));
-            // }
+                EXPECT_FALSE(corner_field_data.diff(corner_expected_data, info));
+            }
         }
     }
 }

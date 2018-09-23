@@ -3561,9 +3561,9 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
                     dim_coord_offsets[point_shape.dim] + point_index :
                     dim_coord_offsets[topo_shape.dim] + elem_index;
                 conn_data_raw.push_back(corner_cap_index);
-
-                field_data_raw.push_back(elem_index);
             }
+
+            field_data_raw.push_back(elem_index);
         }
     }
 
