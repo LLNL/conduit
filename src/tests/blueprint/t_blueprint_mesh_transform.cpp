@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_blueprint_mesh_xform.cpp
+/// file: t_blueprint_mesh_transform.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -54,6 +54,7 @@
 #include "conduit_log.hpp"
 
 #include <algorithm>
+#include <set>
 #include <vector>
 #include <string>
 #include "gtest/gtest.h"
@@ -101,7 +102,7 @@ std::string get_braid_type(const std::string &mesh_type)
 /// Transform Tests ///
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_xform, coordset_xforms)
+TEST(conduit_blueprint_mesh_transform, coordset_transforms)
 {
     XformCoordsFun xform_funs[3][3] = {
         {NULL, blueprint::mesh::coordset::uniform::to_rectilinear, blueprint::mesh::coordset::uniform::to_explicit},
@@ -149,7 +150,7 @@ TEST(conduit_blueprint_mesh_xform, coordset_xforms)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_xform, topology_xforms)
+TEST(conduit_blueprint_mesh_transform, topology_transforms)
 {
     XformTopoFun xform_funs[5][5] = {
         {NULL, NULL, NULL, NULL, NULL},
@@ -220,6 +221,97 @@ TEST(conduit_blueprint_mesh_xform, topology_xforms)
 
             imesh["topologies"].remove("test");
             imesh["coordsets"].remove("test");
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
+{
+    const std::string TOPO_TYPE_LIST[5]      = {"lines", "tris", "quads","tets","hexs"};
+    const index_t TOPO_TYPE_INDICES[5]       = {      2,      3,       4,     4,     8};
+    const index_t TOPO_TYPE_FACES[5]         = {      1,      1,       1,     4,     6};
+    const index_t TOPO_TYPE_FACE_INDICES[5]  = {      2,      3,       4,     3,     4};
+
+    const index_t MESH_DIMS[3] = {3, 3, 3};
+
+    for(index_t ti = 0; ti < 5; ti++)
+    {
+        const std::string &topo_type = TOPO_TYPE_LIST[ti];
+        const index_t &topo_indices = TOPO_TYPE_INDICES[ti];
+        const index_t &topo_faces = TOPO_TYPE_FACES[ti];
+        const index_t &topo_findices = TOPO_TYPE_FACE_INDICES[ti];
+        const bool is_topo_3d = TOPO_TYPE_FACES[ti] > 1;
+
+        // NOTE: The following lines are for debugging purposes only.
+        std::cout << "Testing topology type '" << topo_type << "' -> " <<
+            "polygonal..." << std::endl;
+
+        conduit::Node topo_mesh;
+        blueprint::mesh::examples::braid(topo_type,
+            MESH_DIMS[0],MESH_DIMS[1],MESH_DIMS[2],topo_mesh);
+        const conduit::Node &topo_node = topo_mesh["topologies"].child(0);
+
+        conduit::Node topo_poly;
+        blueprint::mesh::topology::unstructured::to_polygonal(topo_node, topo_poly);
+
+        conduit::Node info;
+
+        { // Verify Non-Elements Components //
+            conduit::Node topo_noelem, poly_noelem;
+            topo_noelem.set_external(topo_node);
+            topo_noelem.remove("elements");
+            poly_noelem.set_external(topo_poly);
+            poly_noelem.remove("elements");
+            ASSERT_FALSE(topo_noelem.diff(poly_noelem, info));
+        }
+
+        { // Verify Element Components //
+            ASSERT_EQ(topo_poly["elements/shape"].as_string(),
+                is_topo_3d ? "polyhedral" : "polygonal");
+
+            const conduit::Node &topo_conn = topo_node["elements/connectivity"];
+            conduit::Node &poly_conn = topo_poly["elements/connectivity"];
+            ASSERT_EQ(poly_conn.dtype().id(), topo_conn.dtype().id());
+
+            const index_t topo_len = topo_conn.dtype().number_of_elements();
+            const index_t poly_len = poly_conn.dtype().number_of_elements();
+            const index_t topo_elems = topo_len / topo_indices;
+            const index_t poly_stride = poly_len / topo_elems;
+
+            ASSERT_EQ(poly_stride, (is_topo_3d + topo_faces * (1 + topo_findices)));
+            ASSERT_EQ(poly_len % topo_elems, 0);
+
+            conduit::Node topo_conn_array, poly_conn_array;
+            topo_conn.to_int64_array(topo_conn_array);
+            poly_conn.to_int64_array(poly_conn_array);
+            const conduit::int64_array topo_data = topo_conn_array.as_int64_array();
+            const conduit::int64_array poly_data = poly_conn_array.as_int64_array();
+            for(index_t ep = 0, et = 0; ep < poly_len;
+                ep += poly_stride, et += topo_indices)
+            {
+                ASSERT_EQ(poly_data[ep], is_topo_3d ? topo_faces : topo_findices);
+
+                for(index_t efo = ep + is_topo_3d; efo < ep + poly_stride;
+                    efo += 1 + topo_findices)
+                {
+                    ASSERT_EQ(poly_data[efo], topo_findices);
+
+                    const std::set<index_t> topo_index_set(
+                        &topo_data[et],
+                        &topo_data[et + topo_indices]);
+                    const std::set<index_t> poly_index_set(
+                        &poly_data[efo + 1],
+                        &poly_data[efo + 1 + topo_findices]);
+                    // set of face indices is completely unique (no duplicates)
+                    ASSERT_EQ(poly_index_set.size(), topo_findices);
+                    // all polygonal face indices can be found in the base element
+                    ASSERT_TRUE(std::includes(
+                        topo_index_set.begin(), topo_index_set.end(),
+                        poly_index_set.begin(), poly_index_set.end()));
+                }
+            }
         }
     }
 }

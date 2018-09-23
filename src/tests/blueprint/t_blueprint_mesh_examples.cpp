@@ -354,6 +354,22 @@ TEST(conduit_blueprint_mesh_examples, spiral)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, polytess)
+{
+    const index_t nlevels = 3;
+    Node res;
+    blueprint::mesh::examples::polytess(nlevels,
+                                        res);
+
+    Node info;
+    EXPECT_TRUE(blueprint::mesh::verify(res,info));
+    CONDUIT_INFO(info.to_json());
+
+    relay::io_blueprint::save(res, "polytess_example.blueprint_root");
+}
+
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, 2d_braid_zero_z_check)
 {
     Node mesh, info;
@@ -385,9 +401,6 @@ TEST(conduit_blueprint_mesh_examples, 2d_braid_zero_z_check)
         mesh.print();
     }
 }
-
-
-
 
 
 //-----------------------------------------------------------------------------

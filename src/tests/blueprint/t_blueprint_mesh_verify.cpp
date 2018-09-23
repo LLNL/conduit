@@ -674,7 +674,7 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
 
     { // Single Shape Topology Tests //
         n["elements"].reset();
-        n["elements"]["shape"].set("polygon");
+        n["elements"]["shape"].set("undefined");
         CHECK_MESH(verify_unstructured_topology,n,info,false);
 
         n["elements"]["shape"].set("quad");
@@ -688,6 +688,13 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
         n["elements"]["connectivity"].set(DataType::int32(1));
         CHECK_MESH(verify_unstructured_topology,n,info,true);
         n["elements"]["connectivity"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["elements"]["offsets"].set(DataType::float64(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["offsets"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+        n["elements"].remove("offsets");
         CHECK_MESH(verify_unstructured_topology,n,info,true);
 
         n["type"].set("structured");
@@ -706,7 +713,7 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
         n["elements"]["a"]["connectivity"].set(DataType::int32(5));
         CHECK_MESH(verify_unstructured_topology,n,info,true);
 
-        n["elements"]["b"]["shape"].set("polygon");
+        n["elements"]["b"]["shape"].set("undefined");
         CHECK_MESH(verify_unstructured_topology,n,info,false);
         n["elements"]["b"]["shape"].set("quad");
         CHECK_MESH(verify_unstructured_topology,n,info,false);
@@ -717,6 +724,7 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
 
         n["elements"]["c"]["shape"].set("tri");
         n["elements"]["c"]["connectivity"].set(DataType::int32(5));
+        n["elements"]["c"]["offsets"].set(DataType::int32(5));
         CHECK_MESH(verify_unstructured_topology,n,info,true);
 
         n["type"].set("structured");
@@ -736,9 +744,13 @@ TEST(conduit_blueprint_mesh_verify, topology_types)
 
     Node n, info;
 
-    const std::string topology_types[] = {"points", "uniform", "rectilinear", "structured", "unstructured"};
-    const std::string topology_fids[] = {"points_implicit", "uniform", "rectilinear", "structured", "quads"};
-    for(index_t ti = 0; ti < 5; ti++)
+    const std::string topology_types[] = {
+        "points", "uniform", "rectilinear", "structured", "unstructured"};
+    const std::string topology_fids[] = {
+        "points_implicit", "uniform", "rectilinear", "structured", "quads"};
+    const index_t topo_type_count = sizeof(topology_types) / sizeof(std::string);
+
+    for(index_t ti = 0; ti < topo_type_count; ti++)
     {
         n.reset();
         blueprint::mesh::examples::braid(topology_fids[ti],10,10,1,n);
@@ -769,9 +781,17 @@ TEST(conduit_blueprint_mesh_verify, topology_shape)
 
     Node n, info;
 
-    const std::string topology_shapes[] = {"point", "line", "tri", "quad", "tet", "hex"};
-    const std::string topology_fids[] = {"points", "lines", "tris", "quads", "tets", "hexs"};
-    for(index_t ti = 0; ti < 6; ti++)
+    const std::string topology_shapes[] = {
+        "point", "line",
+        "tri", "quad", "polygonal",
+        "tet", "hex", "polyhedral"};
+    const std::string topology_fids[] = {
+        "points", "lines",
+        "tris", "quads", "quads_poly",
+        "tets", "hexs", "hexs_poly"};
+    const index_t topo_shape_count = sizeof(topology_shapes) / sizeof(std::string);
+
+    for(index_t ti = 0; ti < topo_shape_count; ti++)
     {
         n.reset();
         blueprint::mesh::examples::braid(topology_fids[ti],10,10,1,n);

@@ -508,6 +508,112 @@ TEST(conduit_docs, blueprint_demo_basic_hexs)
     validate_basic_example("hexs",mesh,mesh_json);
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_docs, blueprint_demo_basic_polygons)
+{
+    // create container node
+    Node mesh;
+    // generate simple explicit poly-based 2d 'basic' mesh
+    conduit::blueprint::mesh::examples::basic("polygons", 3, 3, 0, mesh);
+    // print out results
+    mesh.print();
+
+    const std::string mesh_json = R"(
+    {
+      "coordsets": 
+      {
+        "coords": 
+        {
+          "type": "explicit",
+          "values": 
+          {
+            "x": [-10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0],
+            "y": [-10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0]
+          }
+        }
+      },
+      "topologies": 
+      {
+        "mesh": 
+        {
+          "type": "unstructured",
+          "coordset": "coords",
+          "elements": 
+          {
+            "shape": "polygonal",
+            "connectivity": [4, 0, 3, 4, 1, 4, 1, 4, 5, 2, 4, 3, 6, 7, 4, 4, 4, 7, 8, 5]
+          }
+        }
+      },
+      "fields": 
+      {
+        "field": 
+        {
+          "association": "element",
+          "topology": "mesh",
+          "volume_dependent": "false",
+          "values": [0.0, 1.0, 2.0, 3.0]
+        }
+      }
+    }
+    )";
+
+    validate_basic_example("polygons",mesh,mesh_json);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_docs, blueprint_demo_basic_polyhedra)
+{
+    // create container node
+    Node mesh;
+    // generate simple explicit poly-based 3d 'basic' mesh
+    conduit::blueprint::mesh::examples::basic("polyhedra", 3, 3, 3, mesh);
+    // print out results
+    mesh.print();
+
+    const std::string mesh_json = R"(
+    {
+      "coordsets": 
+      {
+        "coords": 
+        {
+          "type": "explicit",
+          "values": 
+          {
+            "x": [-10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0],
+            "y": [-10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0],
+            "z": [-10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0]
+          }
+        }
+      },
+      "topologies": 
+      {
+        "mesh": 
+        {
+          "type": "unstructured",
+          "coordset": "coords",
+          "elements": 
+          {
+            "shape": "polyhedral",
+            "connectivity": [6, 4, 0, 4, 1, 3, 4, 0, 1, 9, 10, 4, 1, 3, 10, 12, 4, 0, 9, 4, 13, 4, 4, 13, 3, 12, 4, 9, 10, 13, 12, 6, 4, 1, 5, 2, 4, 4, 1, 2, 10, 11, 4, 2, 4, 11, 13, 4, 1, 10, 5, 14, 4, 5, 14, 4, 13, 4, 10, 11, 14, 13, 6, 4, 3, 7, 4, 6, 4, 3, 4, 12, 13, 4, 4, 6, 13, 15, 4, 3, 12, 7, 16, 4, 7, 16, 6, 15, 4, 12, 13, 16, 15, 6, 4, 4, 8, 5, 7, 4, 4, 5, 13, 14, 4, 5, 7, 14, 16, 4, 4, 13, 8, 17, 4, 8, 17, 7, 16, 4, 13, 14, 17, 16, 6, 4, 9, 13, 10, 12, 4, 9, 10, 18, 19, 4, 10, 12, 19, 21, 4, 9, 18, 13, 22, 4, 13, 22, 12, 21, 4, 18, 19, 22, 21, 6, 4, 10, 14, 11, 13, 4, 10, 11, 19, 20, 4, 11, 13, 20, 22, 4, 10, 19, 14, 23, 4, 14, 23, 13, 22, 4, 19, 20, 23, 22, 6, 4, 12, 16, 13, 15, 4, 12, 13, 21, 22, 4, 13, 15, 22, 24, 4, 12, 21, 16, 25, 4, 16, 25, 15, 24, 4, 21, 22, 25, 24, 6, 4, 13, 17, 14, 16, 4, 13, 14, 22, 23, 4, 14, 16, 23, 25, 4, 13, 22, 17, 26, 4, 17, 26, 16, 25, 4, 22, 23, 26, 25]
+          }
+        }
+      },
+      "fields": 
+      {
+        "field": 
+        {
+          "association": "element",
+          "topology": "mesh",
+          "volume_dependent": "false",
+          "values": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
+        }
+      }
+    }
+    )";
+
+    validate_basic_example("polyhedra",mesh,mesh_json);
+}
 
 //-----------------------------------------------------------------------------
 TEST(conduit_docs, blueprint_demo_basic_uniform_detailed)
@@ -573,4 +679,3 @@ TEST(conduit_docs, blueprint_demo_basic_uniform_detailed)
     // save our mesh to a json that can be read by VisIt
     conduit::relay::io_blueprint::save(mesh, "basic_detailed_uniform.blueprint_root");
 }
-
