@@ -194,6 +194,12 @@ float64 calc_vec_mag(const float64 *u)
 
 void calc_inversion_field(index_t type, const Node &topo, const Node &coords, Node &dest)
 {
+    // NOTE(JRC): This function isn't currently in use because it introduced too
+    // much of a performance burden for even small input topology sizes (e.g.
+    // ~30 elements). Should this performance be improvable via better entity
+    // composition/association or otherwise, then inversion checks should be
+    // reintroduced to the code.
+
     // NOTE(JRC): This function assumes the existence of an offsets field in
     // the source topology, which is true for all callees in this test suite.
     // TODO(JRC): The performance of this method would be greatly enhanced if a
@@ -740,37 +746,23 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
             EXPECT_EQ(side_conn.dtype().id(), mesh_conn.dtype().id());
             EXPECT_EQ(side_off.dtype().number_of_elements(), mesh_sides);
 
-            { // Validate Correctness of Element Integrity //
-                Node side_invs;
-                calc_inversion_field(ti, side_topo, side_coords, side_invs);
-                {
-                    Node side_inv_int64;
-                    side_invs["values"].to_int64_array(side_inv_int64);
-                    int64_array side_inv_data = side_inv_int64.as_int64_array();
+            // Validate Correctness of Element Integrity //
 
-                    std::vector<int64> side_inv_expected_vector(mesh_sides, 0);
-                    int64_array side_inv_expected(&side_inv_expected_vector[0],
-                        DataType::int64(mesh_sides));
+            if(!is_mesh_3d)
+            {
+                Node side_vols;
+                calc_volume_field(ti, side_topo, side_coords, side_vols);
 
-                    EXPECT_FALSE(side_inv_data.diff(side_inv_expected, info));
-                }
+                Node side_vol_float64;
+                side_vols["values"].to_float64_array(side_vol_float64);
+                float64_array side_vol_data = side_vol_float64.as_float64_array();
 
-                if(!is_mesh_3d)
-                {
-                    Node side_vols;
-                    calc_volume_field(ti, side_topo, side_coords, side_vols);
-                    {
-                        Node side_vol_float64;
-                        side_vols["values"].to_float64_array(side_vol_float64);
-                        float64_array side_vol_data = side_vol_float64.as_float64_array();
+                std::vector<float64> side_vol_expected_vector(mesh_sides,
+                    mesh_sides_volume);
+                float64_array side_vol_expected(&side_vol_expected_vector[0],
+                    DataType::float64(mesh_sides));
 
-                        std::vector<float64> side_vol_expected_vector(mesh_sides, mesh_sides_volume);
-                        float64_array side_vol_expected(&side_vol_expected_vector[0],
-                            DataType::float64(mesh_sides));
-
-                        EXPECT_FALSE(side_vol_data.diff(side_vol_expected, info));
-                    }
-                }
+                EXPECT_FALSE(side_vol_data.diff(side_vol_expected, info));
             }
 
             // Verify Correctness of Map Field //
@@ -873,7 +865,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
                     is_mesh_3d * mesh_faces + mesh_elems);
             }
 
-            // // Verify Correctness of Topology //
+            // Verify Correctness of Topology //
 
             Node &mesh_conn = mesh_topo["elements/connectivity"];
             Node &corner_conn = corner_topo["elements/connectivity"];
@@ -886,37 +878,23 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
             EXPECT_EQ(corner_conn.dtype().id(), mesh_conn.dtype().id());
             EXPECT_EQ(corner_off.dtype().number_of_elements(), mesh_corners);
 
-            { // Validate Correctness of Element Integrity //
-                Node corner_invs;
-                calc_inversion_field(ti, corner_topo, corner_coords, corner_invs);
-                {
-                    Node corner_inv_int64;
-                    corner_invs["values"].to_int64_array(corner_inv_int64);
-                    int64_array corner_inv_data = corner_inv_int64.as_int64_array();
+            // Validate Correctness of Element Integrity //
 
-                    std::vector<int64> corner_inv_expected_vector(mesh_corners, 0);
-                    int64_array corner_inv_expected(&corner_inv_expected_vector[0],
-                        DataType::int64(mesh_corners));
+            if(!is_mesh_3d)
+            {
+                Node corner_vols;
+                calc_volume_field(ti, corner_topo, corner_coords, corner_vols);
 
-                    EXPECT_FALSE(corner_inv_data.diff(corner_inv_expected, info));
-                }
+                Node corner_vol_float64;
+                corner_vols["values"].to_float64_array(corner_vol_float64);
+                float64_array corner_vol_data = corner_vol_float64.as_float64_array();
 
-                if(!is_mesh_3d)
-                {
-                    Node corner_vols;
-                    calc_volume_field(ti, corner_topo, corner_coords, corner_vols);
-                    {
-                        Node corner_vol_float64;
-                        corner_vols["values"].to_float64_array(corner_vol_float64);
-                        float64_array corner_vol_data = corner_vol_float64.as_float64_array();
+                std::vector<float64> corner_vol_expected_vector(mesh_corners,
+                    mesh_corners_volume);
+                float64_array corner_vol_expected(&corner_vol_expected_vector[0],
+                    DataType::float64(mesh_corners));
 
-                        std::vector<float64> corner_vol_expected_vector(mesh_corners, mesh_corners_volume);
-                        float64_array corner_vol_expected(&corner_vol_expected_vector[0],
-                            DataType::float64(mesh_corners));
-
-                        EXPECT_FALSE(corner_vol_data.diff(corner_vol_expected, info));
-                    }
-                }
+                EXPECT_FALSE(corner_vol_data.diff(corner_vol_expected, info));
             }
 
             // Verify Correctness of Map Field //
