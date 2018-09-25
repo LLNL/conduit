@@ -136,6 +136,302 @@ index_t calc_mesh_faces(index_t type, const index_t *npts, bool unique = true)
     return num_faces + !unique * num_int_faces;
 }
 
+float64 calc_mesh_elem_volume(index_t type, const index_t *npts)
+{
+    // NOTE(JRC): This is explicitly given in the definition of the 'braid'
+    // example generation function.
+    const float64 dim_length = 20.0;
+
+    float64 elem_volume = 1.0;
+    for(index_t di = 0; di < ELEM_TYPE_DIMS[type]; di++)
+    {
+        elem_volume *= dim_length / (npts[di] - 1.0);
+    }
+    elem_volume /= ELEM_TYPE_SUBELEMS[type];
+
+    return elem_volume;
+}
+
+// TODO(JRC): The fact that there isn't a standard C++ library for simple
+// linear algebra operations and that this is the ~20th time I've had to
+// write such operations makes me sad indeed.
+
+bool fuzzy_eq(float64 f1, float64 f2, float64 epsilon = CONDUIT_EPSILON)
+{
+    return std::abs(f1 - f2) <= epsilon;
+}
+
+bool fuzzy_le(float64 f1, float64 f2, float64 epsilon = CONDUIT_EPSILON)
+{
+    return f1 < f2 || fuzzy_eq(f1, f2, epsilon);
+}
+
+void calc_vec_add(const float64 *u, const float64* v, float64 *r)
+{
+    r[0] = u[0] + v[0];
+    r[1] = u[1] + v[1];
+    r[2] = u[2] + v[2];
+}
+
+void calc_vec_sub(const float64 *u, const float64* v, float64 *r)
+{
+    r[0] = u[0] - v[0];
+    r[1] = u[1] - v[1];
+    r[2] = u[2] - v[2];
+}
+
+void calc_vec_cross(const float64 *u, const float64 *v, float64 *r)
+{
+    r[0] = u[1] * v[2] - u[2] * v[1];
+    r[1] = u[2] * v[0] - u[0] * v[2];
+    r[2] = u[0] * v[1] - u[1] * v[0];
+}
+
+float64 calc_vec_mag(const float64 *u)
+{
+    return std::sqrt(u[0] * u[0] + u[1] * u[1] + u[2] * u[2]);
+}
+
+void calc_inversion_field(index_t type, const Node &topo, const Node &coords, Node &dest)
+{
+    // NOTE(JRC): This function assumes the existence of an offsets field in
+    // the source topology, which is true for all callees in this test suite.
+    // TODO(JRC): The performance of this method would be greatly enhanced if a
+    // sparse data table was given by "generate_lines" that indicated the relations
+    // between source entities and the resulting lines (and vice versa).
+    // TODO(JRC): If the type is 3D, then this field isn't absolutely correct about
+    // the number of inversions because line-plane intersections aren't calculated.
+    const index_t elem_npts[] = {2, 2, 2};
+    const std::string elem_axes[] = {"x", "y", "z"};
+
+    const Node &topo_conn = topo["elements/connectivity"];
+    const Node &topo_off = topo["elements/offsets"];
+    const DataType conn_dtype(topo_conn.dtype().id(), 1);
+    const DataType off_dtype(topo_off.dtype().id(), 1);
+    const index_t topo_num_elems = topo_off.dtype().number_of_elements();
+
+    Node data_node;
+
+    std::vector< std::vector< std::set<index_t> > > elem_lines(topo_num_elems);
+    {
+        Node elem_mesh;
+        Node &elem_coords = elem_mesh["coordsets"][coords.name()];
+        Node &elem_topo = elem_mesh["topologies"][coords.name()];
+        elem_coords.set_external(coords);
+
+        Node line_mesh;
+        Node &line_coords = line_mesh["coordsets"][coords.name()];
+        Node &line_topo = line_mesh["topologies"][topo.name()];
+        line_coords.set_external(coords);
+
+        Node elem_topo_templ;
+        elem_topo_templ.set_external(topo);
+        elem_topo_templ.remove("elements/connectivity");
+        elem_topo_templ.remove("elements/offsets");
+
+        int64 line_data_raw[2] = {-1, -1};
+        Node line_data(DataType::int64(2), &line_data_raw[0], true);
+
+        elem_topo.set(elem_topo_templ);
+        Node &elem_conn = elem_topo["elements/connectivity"];
+        for(index_t ei = 0; ei < topo_num_elems; ei++)
+        {
+            // TODO(JRC): This code was lifted directly from the private structure
+            // 'conduit_blueprint_mesh.cpp:TopologyMetadata'. Ultimately, it would
+            // be better if these two pieces of functionality were integrated.
+            data_node.set_external(off_dtype, (void*)topo_off.element_ptr(ei));
+            index_t elem_start_index = data_node.to_int64();
+            data_node.set_external(off_dtype, (void*)topo_off.element_ptr(ei+1));
+            index_t elem_end_index = (ei < topo_num_elems - 1) ?
+                data_node.to_int64() : topo_conn.dtype().number_of_elements();
+
+            index_t elem_size = elem_end_index - elem_start_index;
+            data_node.set_external(DataType(conn_dtype.id(), elem_size),
+                (void*)topo_conn.element_ptr(elem_start_index));
+            data_node.to_data_type(DataType::int64(1).id(), elem_conn);
+
+            mesh::topology::unstructured::generate_lines(elem_topo, line_topo);
+
+            Node &line_conn = line_topo["elements/connectivity"];
+            for(index_t li = 0; li < line_conn.dtype().number_of_elements(); li += 2)
+            {
+                data_node.set_external(DataType(line_conn.dtype().id(), 2),
+                    (void*)line_conn.element_ptr(li));
+                data_node.to_data_type(line_data.dtype().id(), line_data);
+
+                std::set<index_t> curr_line;
+                curr_line.insert((index_t)line_data_raw[0]);
+                curr_line.insert((index_t)line_data_raw[1]);
+                elem_lines[ei].push_back(curr_line);
+            }
+        }
+    }
+
+    dest.reset();
+    dest["association"].set("element");
+    dest["volume_dependent"].set("false");
+    dest["topology"].set(topo.name());
+    dest["values"].set(DataType::int32(topo_num_elems));
+
+    int32_array dest_vals = dest["values"].as_int32_array();
+    for(index_t ei = 0; ei < topo_num_elems; ei++)
+    {
+        const std::set< std::set<index_t> > elem_lineset(
+            elem_lines[ei].begin(), elem_lines[ei].end());
+
+        dest_vals[ei] = 0 - (elem_lines[ei].size() != elem_lineset.size());
+        for(std::set< std::set<index_t> >::iterator iline_it = elem_lineset.begin();
+            iline_it != elem_lineset.end() && dest_vals[ei] == 0; ++iline_it)
+        {
+            const std::set<index_t> &iline = *iline_it;
+            for(std::set< std::set<index_t> >::iterator jline_it = elem_lineset.begin();
+                jline_it != elem_lineset.end() && dest_vals[ei] == 0; ++jline_it)
+            {
+                const std::set<index_t> &jline = *jline_it;
+
+                std::vector<index_t> ij_shared_points(2);
+                std::vector<index_t>::iterator ij_shared_end = std::set_intersection(
+                    iline.begin(), iline.end(), jline.begin(), jline.end(),
+                    ij_shared_points.begin());
+
+                // If there are no shared endpoints between the two input edges, then
+                // we test for intersections.
+                if(ij_shared_points.begin() == ij_shared_end)
+                {
+                    // Extract Coordinate Data //
+                    index_t line_indices[2][2] = {{-1, -1}, {-1, -1}};
+                    float64 line_starts[2][3] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
+                    float64 line_ends[2][3] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
+                    float64 line_vecs[2][3] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
+                    for(index_t li = 0; li < 2; li++)
+                    {
+                        const std::set<index_t> &curr_line = (li == 0) ? iline : jline;
+                        index_t *curr_indices = &line_indices[li][0];
+                        float64 *curr_start = &line_starts[li][0];
+                        float64 *curr_end = &line_ends[li][0];
+                        float64 *curr_vec = &line_vecs[li][0];
+
+                        curr_indices[0] = *(curr_line.begin());
+                        curr_indices[1] = *(++curr_line.begin());
+
+                        for(index_t di = 0; di < ELEM_TYPE_DIMS[type]; di++)
+                        {
+                            const Node &axis_coords = coords["values"][elem_axes[di]];
+                            const DataType axis_dtype(axis_coords.dtype().id(), 1);
+
+                            Node axis_data;
+                            for(index_t ei = 0; ei < 2; ei++)
+                            {
+                                float64 *curr_point = (ei == 0) ? curr_start : curr_end;
+                                axis_data.set_external(axis_dtype,
+                                    (void*)axis_coords.element_ptr(curr_indices[ei]));
+                                curr_point[di] = axis_data.to_float64();
+                            }
+
+                            curr_vec[di] = curr_end[di] - curr_start[di];
+                        }
+                    }
+
+                    // Calculate Line Intersection //
+                    float64 i2j_vec[3] = {0.0, 0.0, 0.0};
+                    calc_vec_sub(&line_starts[1][0], &line_starts[0][0], &i2j_vec[0]);
+
+                    float64 ixj_vec[3] = {0.0, 0.0, 0.0};
+                    calc_vec_cross(&line_vecs[0][0], &line_vecs[1][0], &ixj_vec[0]);
+                    float64 ixj_mag = calc_vec_mag(&i2j_vec[0]);
+                    float64 i2jxi_vec[3] = {0.0, 0.0, 0.0};
+                    calc_vec_cross(&i2j_vec[0], &line_vecs[0][0], &i2jxi_vec[0]);
+                    float64 i2jxi_mag = calc_vec_mag(&i2jxi_vec[0]);
+                    float64 i2jxj_vec[3] = {0.0, 0.0, 0.0};
+                    calc_vec_cross(&i2j_vec[0], &line_vecs[1][0], &i2jxj_vec[0]);
+                    float64 i2jxj_mag = calc_vec_mag(&i2jxj_vec[0]);
+
+                    // NOTE: Evaluations based on algebraic derivations here:
+                    // https://stackoverflow.com/a/565282
+                    if(fuzzy_eq(ixj_mag, 0.0)) // parallel case
+                    {
+                        // colinear if true; parallel adjoint if false
+                        dest_vals[ei] += fuzzy_eq(i2jxi_mag, 0.0);
+                    }
+                    else // non-parallel case
+                    {
+                        float64 iparam = i2jxj_mag / ixj_mag;
+                        float64 jparam = i2jxi_mag / ixj_mag;
+
+                        // intersect if line-line intersection exists in line
+                        // segment parameter space of [0.0, 1.0] for both lines
+                        dest_vals[ei] +=
+                            (fuzzy_le(0.0, iparam) && fuzzy_le(iparam, 1.0)) &&
+                            (fuzzy_le(0.0, jparam) && fuzzy_le(jparam, 1.0));
+                    }
+                }
+            }
+        }
+    }
+}
+
+void calc_volume_field(index_t type, const Node &topo, const Node &coords, Node &dest)
+{
+    // NOTE(JRC): This function assumes the existence of an offsets field in
+    // the source topology, which is true for all callees in this test suite.
+    // TODO(JRC): This currently is only capable of calculating the hypervolume
+    // of 2D topologies.
+    const std::string elem_axes[] = {"x", "y", "z"};
+
+    const Node &topo_conn = topo["elements/connectivity"];
+    const Node &topo_off = topo["elements/offsets"];
+    const DataType conn_dtype(topo_conn.dtype().id(), 1);
+    const DataType off_dtype(topo_off.dtype().id(), 1);
+    const bool topo_is_poly = topo["elements/shape"].as_string() == "polygonal";
+    const index_t topo_num_elems = topo_off.dtype().number_of_elements();
+
+    dest.reset();
+    dest["association"].set("element");
+    dest["volume_dependent"].set("false");
+    dest["topology"].set(topo.name());
+    dest["values"].set(DataType::float64(topo_num_elems));
+
+    Node data_node;
+
+    float64_array dest_vals = dest["values"].as_float64_array();
+    for(index_t ei = 0; ei < topo_num_elems; ei++)
+    {
+        data_node.set_external(off_dtype, (void*)topo_off.element_ptr(ei));
+        index_t elem_start_index = data_node.to_int64() + topo_is_poly;
+        data_node.set_external(off_dtype, (void*)topo_off.element_ptr(ei+1));
+        index_t elem_end_index = (ei < topo_num_elems - 1) ?
+            data_node.to_int64() : topo_conn.dtype().number_of_elements();
+        index_t elem_size = elem_end_index - elem_start_index;
+
+        // NOTE(JRC): The polygonal volume calculation in this function is derived
+        // from the "Shoelace Formula" (see: https://en.wikipedia.org/wiki/Shoelace_formula).
+        dest_vals[ei] = 0.0;
+        for(index_t eci = 0; eci < elem_size; eci++)
+        {
+            float64 coord_vals[2][2] = {{0.0, 0.0}, {0.0, 0.0}};
+            for(index_t cdi = 0; cdi < 2; cdi++)
+            {
+                index_t ci = ((eci + cdi) % elem_size) + elem_start_index;
+                data_node.set_external(conn_dtype, (void*)topo_conn.element_ptr(ci));
+                index_t icoord = data_node.to_int64();
+
+                float64 *cvals = &coord_vals[cdi][0];
+                for(index_t di = 0; di < 2; di++)
+                {
+                    const Node &axis_coords = coords["values"][elem_axes[di]];
+                    data_node.set_external(DataType(axis_coords.dtype().id(), 1),
+                        (void*)axis_coords.element_ptr(icoord));
+                    cvals[di] = data_node.to_float64();
+                }
+            }
+
+            dest_vals[ei] += coord_vals[0][0] * coord_vals[1][1];
+            dest_vals[ei] -= coord_vals[0][1] * coord_vals[1][0];
+        }
+        dest_vals[ei] = std::abs(dest_vals[ei] / 2.0);
+    }
+}
+
 
 /// Test Cases ///
 
@@ -375,6 +671,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
         const index_t sides_per_elem =
             ELEM_TYPE_FACES[ti] * ELEM_TYPE_FACE_INDICES[ti];
         const index_t mesh_sides = mesh_elems * sides_per_elem;
+        const float64 mesh_sides_volume =
+            calc_mesh_elem_volume(ti, &MPDIMS[0]) / sides_per_elem;
 
         // NOTE: Skip values indicated to have an invalid subline scheme.
         const bool is_mesh_lineworthy = ELEM_TYPE_LINES[ti] != -1;
@@ -442,8 +740,38 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
             EXPECT_EQ(side_conn.dtype().id(), mesh_conn.dtype().id());
             EXPECT_EQ(side_off.dtype().number_of_elements(), mesh_sides);
 
-            // TODO(JRC): Augment this test case to verify that all of the given
-            // elements have the expected area/volume.
+            { // Validate Correctness of Element Integrity //
+                Node side_invs;
+                calc_inversion_field(ti, side_topo, side_coords, side_invs);
+                {
+                    Node side_inv_int64;
+                    side_invs["values"].to_int64_array(side_inv_int64);
+                    int64_array side_inv_data = side_inv_int64.as_int64_array();
+
+                    std::vector<int64> side_inv_expected_vector(mesh_sides, 0);
+                    int64_array side_inv_expected(&side_inv_expected_vector[0],
+                        DataType::int64(mesh_sides));
+
+                    EXPECT_FALSE(side_inv_data.diff(side_inv_expected, info));
+                }
+
+                if(!is_mesh_3d)
+                {
+                    Node side_vols;
+                    calc_volume_field(ti, side_topo, side_coords, side_vols);
+                    {
+                        Node side_vol_float64;
+                        side_vols["values"].to_float64_array(side_vol_float64);
+                        float64_array side_vol_data = side_vol_float64.as_float64_array();
+
+                        std::vector<float64> side_vol_expected_vector(mesh_sides, mesh_sides_volume);
+                        float64_array side_vol_expected(&side_vol_expected_vector[0],
+                            DataType::float64(mesh_sides));
+
+                        EXPECT_FALSE(side_vol_data.diff(side_vol_expected, info));
+                    }
+                }
+            }
 
             // Verify Correctness of Map Field //
 
@@ -493,6 +821,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
             "polyhedral" : "polygonal";
         const index_t corners_per_elem = ELEM_TYPE_INDICES[ti];
         const index_t mesh_corners = corners_per_elem * mesh_elems;
+        const float64 mesh_corners_volume =
+            calc_mesh_elem_volume(ti, &MPDIMS[0]) / corners_per_elem;
 
         // NOTE: Skip values indicated to have an invalid subline scheme.
         const bool is_mesh_lineworthy = ELEM_TYPE_LINES[ti] != -1;
@@ -555,6 +885,39 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
             EXPECT_EQ(corner_topo["elements/shape"].as_string(), elem_corner_type);
             EXPECT_EQ(corner_conn.dtype().id(), mesh_conn.dtype().id());
             EXPECT_EQ(corner_off.dtype().number_of_elements(), mesh_corners);
+
+            { // Validate Correctness of Element Integrity //
+                Node corner_invs;
+                calc_inversion_field(ti, corner_topo, corner_coords, corner_invs);
+                {
+                    Node corner_inv_int64;
+                    corner_invs["values"].to_int64_array(corner_inv_int64);
+                    int64_array corner_inv_data = corner_inv_int64.as_int64_array();
+
+                    std::vector<int64> corner_inv_expected_vector(mesh_corners, 0);
+                    int64_array corner_inv_expected(&corner_inv_expected_vector[0],
+                        DataType::int64(mesh_corners));
+
+                    EXPECT_FALSE(corner_inv_data.diff(corner_inv_expected, info));
+                }
+
+                if(!is_mesh_3d)
+                {
+                    Node corner_vols;
+                    calc_volume_field(ti, corner_topo, corner_coords, corner_vols);
+                    {
+                        Node corner_vol_float64;
+                        corner_vols["values"].to_float64_array(corner_vol_float64);
+                        float64_array corner_vol_data = corner_vol_float64.as_float64_array();
+
+                        std::vector<float64> corner_vol_expected_vector(mesh_corners, mesh_corners_volume);
+                        float64_array corner_vol_expected(&corner_vol_expected_vector[0],
+                            DataType::float64(mesh_corners));
+
+                        EXPECT_FALSE(corner_vol_data.diff(corner_vol_expected, info));
+                    }
+                }
+            }
 
             // Verify Correctness of Map Field //
 
