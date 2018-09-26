@@ -72,85 +72,189 @@ using namespace conduit::utils;
 
 /// Testing Constants ///
 
-static const std::string ELEM_TYPE_LIST[4]      = {"tris", "quads", "tets", "hexs"};
-static const index_t ELEM_TYPE_DIMS[4]          = {     2,       2,      3,      3};
-static const index_t ELEM_TYPE_SUBELEMS[4]      = {     2,       1,      6,      1};
-static const index_t ELEM_TYPE_INDICES[4]       = {     3,       4,      4,      8};
-static const index_t ELEM_TYPE_LINES[4]         = {     1,       0,     -1,      0};
-static const index_t ELEM_TYPE_FACES[4]         = {     1,       1,      4,      6};
-static const index_t ELEM_TYPE_FACE_INDICES[4]  = {     3,       4,      3,      4};
+static const std::string ELEM_TYPE_LIST[]      = {"tris", "quads", "tets", "hexs"};
+static const index_t ELEM_TYPE_DIMS[]          = {     2,       2,      3,      3};
+static const index_t ELEM_TYPE_CELL_ELEMS[]    = {     2,       1,      6,      1};
+static const index_t ELEM_TYPE_CELL_LINES[]    = {     1,       0,     -1,      0};
+static const index_t ELEM_TYPE_INDICES[]       = {     3,       4,      4,      8};
+static const index_t ELEM_TYPE_FACES[]         = {     1,       1,      4,      6};
+static const index_t ELEM_TYPE_FACE_INDICES[]  = {     3,       4,      3,      4};
+static const index_t ELEM_TYPE_COUNT = sizeof(ELEM_TYPE_LIST) / sizeof(ELEM_TYPE_LIST[0]);
+
+static const std::string CSET_AXES[] = {"x", "y", "z"};
 
 /// Testing Helpers ///
 
-index_t calc_mesh_elems(index_t type, const index_t *npts, bool super = false)
+struct GridMesh
 {
-    index_t num_elems = 1;
-
-    for(index_t di = 0; di < ELEM_TYPE_DIMS[type]; di++)
+    GridMesh(index_t type, const index_t *npts, bool poly = false)
     {
-        num_elems *= (npts[di] - 1);
-    }
+        Node info;
+        mesh::examples::braid(ELEM_TYPE_LIST[type], npts[0], npts[1], npts[2], mesh);
 
-    return (super ? 1 : ELEM_TYPE_SUBELEMS[type]) * num_elems;
-}
-
-index_t calc_mesh_lines(index_t type, const index_t *npts, bool unique = true)
-{
-    index_t num_elems = calc_mesh_elems(type, npts, true);
-
-    index_t num_lines = 0, num_int_lines = 0;
-    for(index_t di = 0; di < ELEM_TYPE_DIMS[type]; di++)
-    {
-        index_t dim_num_lines = npts[di] - 1;
-        index_t dim_num_int_lines = npts[di] - 1;
-        for(index_t dj = 0; dj < ELEM_TYPE_DIMS[type]; dj++)
+        this->type = type;
+        for(index_t di = 0; di < ELEM_TYPE_DIMS[type]; di++)
         {
-            dim_num_lines *= (di != dj) ? npts[dj] : 1;
-            dim_num_int_lines *= (di != dj) ? npts[dj] - 2 : 1;
+            this->npts[di] = npts[di];
         }
-        num_lines += dim_num_lines;
-        num_int_lines += dim_num_int_lines;
-    }
-
-    return (num_lines + (ELEM_TYPE_LINES[type] * num_elems) + !unique * (
-        num_int_lines + (ELEM_TYPE_LINES[type] * num_elems)));
-}
-
-index_t calc_mesh_faces(index_t type, const index_t *npts, bool unique = true)
-{
-    index_t num_faces = 0, num_int_faces = 0;
-
-    for(index_t di = 0; di < ELEM_TYPE_DIMS[type]; di++)
-    {
-        index_t dim_num_faces = npts[di];
-        index_t dim_num_int_faces = npts[di] - 2;
-        for(index_t dj = 0; dj < ELEM_TYPE_DIMS[type]; dj++)
+        for(index_t di = ELEM_TYPE_DIMS[type]; di < 3; di++)
         {
-            dim_num_faces *= (di != dj) ? npts[dj] - 1 : 1;
-            dim_num_int_faces *= (di != dj) ? npts[dj] - 1 : 1;
+            this->npts[di] = 0;
         }
-        num_faces += dim_num_faces;
-        num_int_faces += dim_num_int_faces;
+
+        is_poly = poly;
+        if(is_poly)
+        {
+            Node &topo = mesh["topologies"].child(0);
+            const std::string topo_name = topo.name();
+
+            Node &poly_topo = mesh["topologies"]["poly_" + topo_name];
+            mesh::topology::unstructured::to_polygonal(topo, poly_topo);
+
+            mesh["topologies"].remove(topo_name);
+        }
     }
 
-    return num_faces + !unique * num_int_faces;
-}
-
-float64 calc_mesh_elem_volume(index_t type, const index_t *npts)
-{
-    // NOTE(JRC): This is explicitly given in the definition of the 'braid'
-    // example generation function.
-    const float64 dim_length = 20.0;
-
-    float64 elem_volume = 1.0;
-    for(index_t di = 0; di < ELEM_TYPE_DIMS[type]; di++)
+    index_t cells() const
     {
-        elem_volume *= dim_length / (npts[di] - 1.0);
+        index_t num_cells = 1;
+        for(index_t di = 0; di < dims(); di++)
+        {
+            num_cells *= (npts[di] - 1);
+        }
+        return num_cells;
     }
-    elem_volume /= ELEM_TYPE_SUBELEMS[type];
 
-    return elem_volume;
-}
+    index_t elems() const
+    {
+        return cells() * ELEM_TYPE_CELL_ELEMS[type];
+    }
+
+    index_t faces() const
+    {
+        index_t num_faces = 0;
+        for(index_t di = 0; di < dims(); di++)
+        {
+            index_t dim_num_faces = npts[di];
+            for(index_t dj = 0; dj < dims(); dj++)
+            {
+                dim_num_faces *= (di != dj) ? npts[dj] - 1 : 1;
+            }
+            num_faces += dim_num_faces;
+        }
+        return num_faces;
+    }
+
+    index_t lines() const
+    {
+        index_t num_lines = 0;
+        for(index_t di = 0; di < dims(); di++)
+        {
+            index_t dim_num_lines = npts[di] - 1;
+            for(index_t dj = 0; dj < dims(); dj++)
+            {
+                dim_num_lines *= (di != dj) ? npts[dj] : 1;
+            }
+            num_lines += dim_num_lines;
+        }
+        return num_lines + ELEM_TYPE_CELL_LINES[type] * cells();
+    }
+
+    float64 cell_volume() const
+    {
+        // NOTE(JRC): This is explicitly given in the definition of the 'braid'
+        // example generation function.
+        const float64 dim_length = 20.0;
+
+        float64 cell_vol = 1.0;
+        for(index_t di = 0; di < dims(); di++)
+        {
+            cell_vol *= dim_length / (npts[di] - 1.0);
+        }
+        return cell_vol;
+    }
+
+    float64 elem_volume() const
+    {
+        return cell_volume() / ELEM_TYPE_CELL_ELEMS[type];
+    }
+
+    index_t points_per_elem() const
+    {
+        return ELEM_TYPE_INDICES[type];
+    }
+
+    index_t faces_per_elem() const
+    {
+        return ELEM_TYPE_FACES[type];
+    }
+
+    index_t points_per_face() const
+    {
+        return ELEM_TYPE_FACE_INDICES[type];
+    }
+
+    index_t dims() const
+    {
+        return ELEM_TYPE_DIMS[type];
+    }
+
+    Node mesh;
+    index_t type;
+    index_t npts[3];
+    bool is_poly;
+};
+
+struct GridMeshCollection
+{
+    struct Iterator
+    {
+        Iterator() : ptr(NULL) {}
+        Iterator(const GridMesh *p) : ptr(p) {}
+
+        Iterator &operator++(int) { ptr++; return *this; }
+        Iterator  operator++() { Iterator t(ptr); ptr++; return t; }
+        Iterator operator+(size_t d) const { return Iterator(ptr + d); }
+
+        const GridMesh &operator*()  const { print_pos(); return *ptr; }
+        const GridMesh *operator->() const { print_pos(); return ptr; }
+
+        bool operator==(const Iterator &other) const { return ptr == other.ptr; }
+        bool operator!=(const Iterator &other) const { return ptr != other.ptr; }
+
+        void print_pos() const
+        {
+            std::cout << "  Testing " <<
+                std::string(ptr->is_poly ? "explicit" : "implicit") << " " <<
+                ELEM_TYPE_LIST[ptr->type] << " grid..." << std::endl;
+        }
+
+        const GridMesh *ptr;
+    };
+
+    GridMeshCollection(const index_t *npts, bool include_poly)
+    {
+        for(index_t ti = 0; ti < ELEM_TYPE_COUNT; ti++)
+        {
+            for(index_t pi = 0; pi < 1 + include_poly; pi++)
+            {
+                meshes.push_back( GridMesh(ti, npts, (bool)pi) );
+            }
+        }
+    }
+
+    Iterator begin() const
+    {
+        return Iterator(&meshes[0]);
+    }
+
+    Iterator end() const
+    {
+        return Iterator(&meshes[0] + meshes.size());
+    }
+
+    std::vector<GridMesh> meshes;
+};
 
 // TODO(JRC): The fact that there isn't a standard C++ library for simple
 // linear algebra operations and that this is the ~20th time I've had to
@@ -441,485 +545,374 @@ void calc_volume_field(index_t type, const Node &topo, const Node &coords, Node 
 
 /// Test Cases ///
 
+// TODO(JRC): Ensure that this is thread-safe by making the internal vector
+// of grids for each 'GridMesh' const-correct.
+const static index_t POINTS_3S[] = {3, 3, 3};
+const static index_t POINTS_4S[] = {4, 4, 4};
+const static GridMeshCollection SIMPLE_GRIDS(&POINTS_3S[0], true);
+const static GridMeshCollection COMPLEX_GRIDS(&POINTS_4S[0], true);
+
+typedef GridMeshCollection::Iterator GridIterator;
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_offsets_nonpoly)
 {
-    const index_t MPDIMS[3] = {3, 3, 3};
-
-    for(index_t ti = 0; ti < 4; ti++)
+    const GridMeshCollection &grids = SIMPLE_GRIDS;
+    for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
     {
-        const std::string &elem_type = ELEM_TYPE_LIST[ti];
-        const index_t &elem_indices = ELEM_TYPE_INDICES[ti];
-        const index_t mesh_elems = calc_mesh_elems(ti, &MPDIMS[0]);
+        const GridMesh &grid_mesh = *grid_it;
+        const Node &grid_topo = grid_mesh.mesh["topologies"].child(0);
+        const Node &grid_conn = grid_topo["elements/connectivity"];
 
-        // NOTE: The following lines are for debugging purposes only.
-        std::cout << "Testing offset generation for nonpolygonal type '" <<
-            elem_type << "'..." << std::endl;
+        if(grid_mesh.is_poly) { continue; }
 
-        Node nonpoly_node;
-        mesh::examples::braid(elem_type,MPDIMS[0],MPDIMS[1],MPDIMS[2],nonpoly_node);
-        Node &nonpoly_topo = nonpoly_node["topologies"].child(0);
-        Node &nonpoly_conn = nonpoly_topo["elements/connectivity"];
+        Node grid_offsets;
+        mesh::topology::unstructured::generate_offsets(grid_topo, grid_offsets);
+        const DataType offset_dtype = grid_offsets.dtype();
 
-        Node nonpoly_offsets;
-        mesh::topology::unstructured::generate_offsets(nonpoly_topo, nonpoly_offsets);
+        EXPECT_EQ(offset_dtype.id(), grid_conn.dtype().id());
+        EXPECT_EQ(offset_dtype.number_of_elements(), grid_mesh.elems());
 
-        EXPECT_EQ(nonpoly_offsets.dtype().id(), nonpoly_conn.dtype().id());
-        EXPECT_EQ(nonpoly_offsets.dtype().number_of_elements(), mesh_elems);
-
-        Node nonpoly_offsets_int64;
-        nonpoly_offsets.to_int64_array(nonpoly_offsets_int64);
-        int64_array nonpoly_offset_data = nonpoly_offsets_int64.as_int64_array();
-        for(index_t oi = 0; oi < nonpoly_offsets.dtype().number_of_elements(); oi++)
+        Node expected_offsets_int64(DataType::int64(grid_mesh.elems()));
+        int64_array expected_offsets_data = expected_offsets_int64.as_int64_array();
+        for(index_t oi = 0; oi < offset_dtype.number_of_elements(); oi++)
         {
-            EXPECT_EQ(nonpoly_offset_data[oi], oi * elem_indices);
+            expected_offsets_data[oi] = oi * grid_mesh.points_per_elem();
         }
+        Node expected_offsets;
+        expected_offsets_int64.to_data_type(offset_dtype.id(), expected_offsets);
+
+        Node info;
+        EXPECT_FALSE(grid_offsets.diff(expected_offsets, info));
     }
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_offsets_poly)
 {
-    const index_t MPDIMS[3] = {3, 3, 3};
-
-    for(index_t ti = 0; ti < 4; ti++)
+    const GridMeshCollection &grids = SIMPLE_GRIDS;
+    for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
     {
-        const std::string &elem_type = ELEM_TYPE_LIST[ti];
-        const index_t &elem_faces = ELEM_TYPE_FACES[ti];
-        const index_t &elem_face_indices = ELEM_TYPE_FACE_INDICES[ti];
-        const index_t mesh_elems = calc_mesh_elems(ti, &MPDIMS[0]);
-        const bool is_elem_3d = ELEM_TYPE_DIMS[ti] == 3;
+        const GridMesh &grid_mesh = *grid_it;
+        const Node &grid_topo = grid_mesh.mesh["topologies"].child(0);
+        const Node &grid_conn = grid_topo["elements/connectivity"];
 
-        // NOTE: The following lines are for debugging purposes only.
-        std::cout << "Testing offset generation for polygonal type '" <<
-            elem_type << "'..." << std::endl;
+        if(!grid_mesh.is_poly) { continue; }
 
-        Node nonpoly_node;
-        mesh::examples::braid(elem_type,MPDIMS[0],MPDIMS[1],MPDIMS[2],nonpoly_node);
-        Node &nonpoly_topo = nonpoly_node["topologies"].child(0);
+        Node grid_offsets;
+        mesh::topology::unstructured::generate_offsets(grid_topo, grid_offsets);
+        const DataType offset_dtype = grid_offsets.dtype();
 
-        Node poly_topo, poly_offsets;
-        mesh::topology::unstructured::to_polygonal(nonpoly_topo, poly_topo);
-        mesh::topology::unstructured::generate_offsets(poly_topo, poly_offsets);
-        Node &poly_conn = poly_topo["elements/connectivity"];
+        EXPECT_EQ(offset_dtype.id(), grid_conn.dtype().id());
+        EXPECT_EQ(offset_dtype.number_of_elements(), grid_mesh.elems());
 
-        EXPECT_EQ(poly_offsets.dtype().id(), poly_conn.dtype().id());
-        EXPECT_EQ(poly_offsets.dtype().number_of_elements(), mesh_elems);
-
-        Node poly_offsets_int64;
-        poly_offsets.to_int64_array(poly_offsets_int64);
-        int64_array poly_offset_data = poly_offsets_int64.as_int64_array();
-        for(index_t oi = 0; oi < poly_offsets.dtype().number_of_elements(); oi++)
+        Node expected_offsets_int64(DataType::int64(grid_mesh.elems()));
+        int64_array expected_offsets_data = expected_offsets_int64.as_int64_array();
+        for(index_t oi = 0; oi < offset_dtype.number_of_elements(); oi++)
         {
-            EXPECT_EQ(poly_offset_data[oi],
-                oi * (is_elem_3d + elem_faces * (1 + elem_face_indices)));
+            expected_offsets_data[oi] = oi * ((grid_mesh.dims() == 3) +
+                grid_mesh.faces_per_elem() * (1 + grid_mesh.points_per_face()));
         }
+        Node expected_offsets;
+        expected_offsets_int64.to_data_type(offset_dtype.id(), expected_offsets);
+
+        Node info;
+        EXPECT_FALSE(grid_offsets.diff(expected_offsets, info));
     }
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_centroids)
 {
-    const index_t MPDIMS[3] = {3, 3, 3};
-
     const std::string CENTROID_COORDSET_NAME = "ccoords";
     const std::string CENTROID_TOPOLOGY_NAME = "ctopo";
 
-    for(index_t ti = 0; ti < 4; ti++)
+    const GridMeshCollection &grids = SIMPLE_GRIDS;
+    for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
     {
-        const std::string &elem_type = ELEM_TYPE_LIST[ti];
-        const index_t mesh_elems = calc_mesh_elems(ti, &MPDIMS[0]);
+        const GridMesh &grid_mesh = *grid_it;
+        const Node &grid_coords = grid_mesh.mesh["coordsets"].child(0);
+        const Node &grid_topo = grid_mesh.mesh["topologies"].child(0);
 
-        // NOTE: The following lines are for debugging purposes only.
-        std::cout << "Testing centroid generation for type '" <<
-            elem_type << "'..." << std::endl;
+        Node cent_mesh;
+        Node &cent_coords = cent_mesh["coordsets"][CENTROID_COORDSET_NAME];
+        Node &cent_topo = cent_mesh["topologies"][CENTROID_TOPOLOGY_NAME];
+        mesh::topology::unstructured::generate_centroids(
+            grid_topo, cent_topo, cent_coords);
 
-        Node mesh, info;
-        mesh::examples::braid(elem_type,MPDIMS[0],MPDIMS[1],MPDIMS[2],mesh);
-        Node &coords = mesh["coordsets"].child(0);
-        Node &topo = mesh["topologies"].child(0);
+        Node info;
+        EXPECT_TRUE(mesh::coordset::_explicit::verify(cent_coords, info));
+        EXPECT_TRUE(mesh::topology::unstructured::verify(cent_topo, info));
 
-        Node &poly_topo = mesh["topologies"]["poly_" + topo.name()];
-        mesh::topology::unstructured::to_polygonal(topo, poly_topo);
+        // Verify Correctness of Coordset //
 
-        Node *mesh_topos[] = {&topo, &poly_topo};
-        for(index_t mi = 0; mi < 2; mi++)
+        for(index_t ci = 0; ci < grid_mesh.dims(); ci++)
         {
-            // NOTE: The following lines are for debugging purposes only.
-            std::string topo_type((mi == 0) ? "implicit" : "explicit");
-            std::cout << "  " << topo_type << " source topology..." << std::endl;
+            const std::string &coord_axis = CSET_AXES[ci];
+            EXPECT_TRUE(cent_coords["values"].has_child(coord_axis));
 
-            Node &mesh_topo = *mesh_topos[mi];
+            const Node &grid_axis = grid_coords["values"][coord_axis];
+            Node &cent_axis = cent_coords["values"][coord_axis];
 
-            Node cent_mesh;
-            Node &cent_coords = cent_mesh["coordsets"][CENTROID_COORDSET_NAME];
-            Node &cent_topo = cent_mesh["topologies"][CENTROID_TOPOLOGY_NAME];
-            mesh::topology::unstructured::generate_centroids(
-                mesh_topo, cent_topo, cent_coords);
-
-            EXPECT_TRUE(mesh::coordset::_explicit::verify(cent_coords, info));
-            EXPECT_TRUE(mesh::topology::unstructured::verify(cent_topo, info));
-
-            // Verify Correctness of Coordset //
-
-            const std::vector<std::string> coord_axes = coords["values"].child_names();
-            for(index_t ci = 0; ci < (index_t)coord_axes.size(); ci++)
-            {
-                const std::string &coord_axis = coord_axes[ci];
-                EXPECT_TRUE(cent_coords["values"].has_child(coord_axis));
-
-                Node &mesh_axis = coords["values"][coord_axis];
-                Node &cent_axis = cent_coords["values"][coord_axis];
-
-                EXPECT_EQ(cent_axis.dtype().id(), mesh_axis.dtype().id());
-                EXPECT_EQ(cent_axis.dtype().number_of_elements(), mesh_elems);
-            }
-
-            // Verify Correctness of Topology //
-
-            Node &mesh_conn = mesh_topo["elements/connectivity"];
-            Node &cent_conn = cent_topo["elements/connectivity"];
-
-            EXPECT_EQ(cent_topo["coordset"].as_string(), CENTROID_COORDSET_NAME);
-            EXPECT_EQ(cent_conn.dtype().id(), mesh_conn.dtype().id());
-            EXPECT_EQ(cent_conn.dtype().number_of_elements(), mesh_elems);
-
-            // TODO(JRC): Extend this test case to validate that each centroid is
-            // contained within the convex hull of its source element.
+            EXPECT_EQ(cent_axis.dtype().id(), grid_axis.dtype().id());
+            EXPECT_EQ(cent_axis.dtype().number_of_elements(), grid_mesh.elems());
         }
+
+        // Verify Correctness of Topology //
+
+        const Node &grid_conn = grid_topo["elements/connectivity"];
+        Node &cent_conn = cent_topo["elements/connectivity"];
+
+        EXPECT_EQ(cent_topo["coordset"].as_string(), CENTROID_COORDSET_NAME);
+        EXPECT_EQ(cent_conn.dtype().id(), grid_conn.dtype().id());
+        EXPECT_EQ(cent_conn.dtype().number_of_elements(), grid_mesh.elems());
+
+        // TODO(JRC): Extend this test case to validate that each centroid is
+        // contained within the convex hull of its source element.
     }
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_lines)
 {
-    const index_t MPDIMS[3] = {4, 4, 4};
-
     const std::string LINE_TOPOLOGY_NAME = "ltopo";
 
-    for(index_t ti = 0; ti < 4; ti++)
+    const GridMeshCollection &grids = COMPLEX_GRIDS;
+    for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
     {
-        const std::string &elem_type = ELEM_TYPE_LIST[ti];
-        const index_t mesh_lines = calc_mesh_lines(ti, &MPDIMS[0], true);
-        const bool is_mesh_3d = ELEM_TYPE_DIMS[ti] == 3;
+        const GridMesh &grid_mesh = *grid_it;
+        const Node &grid_coords = grid_mesh.mesh["coordsets"].child(0);
+        const Node &grid_topo = grid_mesh.mesh["topologies"].child(0);
 
-        // NOTE: Skip values indicated to have an invalid subline scheme.
-        const bool is_mesh_lineworthy = ELEM_TYPE_LINES[ti] != -1;
-        if(!is_mesh_lineworthy) { continue; }
+        // NOTE(JRC): Skip testing for tetrahedral meshes because their element
+        // interfaces are complicated and make counting too difficult.
+        if(grid_mesh.type == 2) { continue; }
 
-        // NOTE: The following lines are for debugging purposes only.
-        std::cout << "Testing line mesh generation for type '" <<
-            elem_type << "'..." << std::endl;
+        Node line_mesh;
+        Node &line_coords = line_mesh["coordsets"][grid_coords.name()];
+        line_coords.set_external(grid_coords);
 
-        Node mesh, info;
-        mesh::examples::braid(elem_type,MPDIMS[0],MPDIMS[1],MPDIMS[2],mesh);
-        Node &coords = mesh["coordsets"].child(0);
-        Node &topo = mesh["topologies"].child(0);
+        Node &line_topo = line_mesh["topologies"][LINE_TOPOLOGY_NAME];
+        mesh::topology::unstructured::generate_lines(grid_topo, line_topo);
 
-        Node &poly_topo = mesh["topologies"]["poly_" + topo.name()];
-        mesh::topology::unstructured::to_polygonal(topo, poly_topo);
+        Node info;
+        EXPECT_TRUE(mesh::topology::unstructured::verify(line_topo, info));
 
-        Node *mesh_topos[] = {&topo, &poly_topo};
-        for(index_t mi = 0; mi < 2; mi++)
-        {
-            // NOTE: The following lines are for debugging purposes only.
-            std::string topo_type((mi == 0) ? "implicit" : "explicit");
-            std::cout << "  " << topo_type << " source topology..." << std::endl;
+        // General Data/Schema Checks //
 
-            Node &mesh_topo = *mesh_topos[mi];
-            Node &mesh_conn = mesh_topo["elements/connectivity"];
+        EXPECT_EQ(line_topo["coordset"].as_string(), grid_coords.name());
+        EXPECT_EQ(line_topo["elements/shape"].as_string(), "line");
 
-            Node line_mesh;
-            Node &line_coords = line_mesh["coordsets"][coords.name()];
-            line_coords.set_external(coords);
+        const Node &grid_conn = grid_topo["elements/connectivity"];
+        Node &line_conn = line_topo["elements/connectivity"];
 
-            Node &line_topo = line_mesh["topologies"][LINE_TOPOLOGY_NAME];
-            mesh::topology::unstructured::generate_lines(mesh_topo, line_topo);
+        EXPECT_EQ(line_conn.dtype().id(), grid_conn.dtype().id());
+        EXPECT_EQ(line_conn.dtype().number_of_elements() / 2, grid_mesh.lines());
 
-            // General Data/Schema Checks //
+        // Content Consistency Checks //
 
-            EXPECT_TRUE(mesh::topology::unstructured::verify(line_topo, info));
-
-            EXPECT_EQ(line_topo["coordset"].as_string(), coords.name());
-            EXPECT_EQ(line_topo["elements/shape"].as_string(), "line");
-
-            Node &line_conn = line_topo["elements/connectivity"];
-            EXPECT_EQ(line_conn.dtype().id(), mesh_conn.dtype().id());
-            EXPECT_EQ(line_conn.dtype().number_of_elements() / 2, mesh_lines);
-
-            // Content Consistency Checks //
-
-            // TODO(JRC): Extend this test case so that it more thoroughly checks
-            // the contents of the unique line mesh.
-        }
+        // TODO(JRC): Extend this test case so that it more thoroughly checks
+        // the contents of the unique line mesh.
     }
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides)
 {
-    const index_t MPDIMS[3] = {4, 4, 4};
-
     const std::string SIDE_COORDSET_NAME = "scoords";
     const std::string SIDE_TOPOLOGY_NAME = "stopo";
     const std::string SIDE_FIELD_NAME = "sfield";
 
-    for(index_t ti = 0; ti < 4; ti++)
+    const GridMeshCollection &grids = COMPLEX_GRIDS;
+    for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
     {
-        const std::string &elem_type = ELEM_TYPE_LIST[ti];
-        const bool is_mesh_3d = ELEM_TYPE_DIMS[ti] == 3;
-        const index_t mesh_elems = calc_mesh_elems(ti, &MPDIMS[0]);
-        const index_t mesh_faces = calc_mesh_faces(ti, &MPDIMS[0], true);
+        const GridMesh &grid_mesh = *grid_it;
+        const Node &grid_coords = grid_mesh.mesh["coordsets"].child(0);
+        const Node &grid_topo = grid_mesh.mesh["topologies"].child(0);
 
-        const index_t si = is_mesh_3d ? 2 : 0;
-        const std::string elem_side_type =
-            ELEM_TYPE_LIST[si].substr(0, ELEM_TYPE_LIST[si].size() - 1);
-        const index_t sides_per_elem =
-            ELEM_TYPE_FACES[ti] * ELEM_TYPE_FACE_INDICES[ti];
-        const index_t mesh_sides = mesh_elems * sides_per_elem;
-        const float64 mesh_sides_volume =
-            calc_mesh_elem_volume(ti, &MPDIMS[0]) / sides_per_elem;
+        const index_t grid_elems = grid_mesh.elems();
+        const index_t grid_faces = grid_mesh.faces();
 
-        // NOTE: Skip values indicated to have an invalid subline scheme.
-        const bool is_mesh_lineworthy = ELEM_TYPE_LINES[ti] != -1;
-        if(!is_mesh_lineworthy) { continue; }
+        const std::string side_type = (grid_mesh.dims() == 2) ? "tri" : "tet";
+        const index_t sides_per_elem = grid_mesh.faces_per_elem() * grid_mesh.points_per_face();
+        const index_t grid_sides = grid_elems * sides_per_elem;
+        const float64 side_volume = grid_mesh.elem_volume() / sides_per_elem;
 
-        // NOTE: The following lines are for debugging purposes only.
-        std::cout << "Testing side generation for type '" <<
-            elem_type << "'..." << std::endl;
+        // NOTE(JRC): Skip testing for tetrahedral meshes because their element
+        // interfaces are complicated and make counting too difficult.
+        if(grid_mesh.type == 2) { continue; }
 
-        Node mesh, info;
-        mesh::examples::braid(elem_type,MPDIMS[0],MPDIMS[1],MPDIMS[2],mesh);
-        Node &coords = mesh["coordsets"].child(0);
-        Node &topo = mesh["topologies"].child(0);
+        Node side_mesh;
+        Node &side_coords = side_mesh["coordsets"][SIDE_COORDSET_NAME];
+        Node &side_topo = side_mesh["topologies"][SIDE_TOPOLOGY_NAME];
+        Node &side_field = side_mesh["fields"][SIDE_FIELD_NAME];
+        mesh::topology::unstructured::generate_sides(
+            grid_topo, side_topo, side_coords, side_field);
 
-        Node &poly_topo = mesh["topologies"]["poly_" + topo.name()];
-        mesh::topology::unstructured::to_polygonal(topo, poly_topo);
+        Node info;
+        EXPECT_TRUE(mesh::coordset::_explicit::verify(side_coords, info));
+        EXPECT_TRUE(mesh::topology::unstructured::verify(side_topo, info));
+        EXPECT_TRUE(mesh::field::verify(side_field, info));
 
-        Node *mesh_topos[] = {&topo, &poly_topo};
-        for(index_t mi = 0; mi < 2; mi++)
+        // Verify Correctness of Coordset //
+
+        for(index_t ci = 0; ci < grid_mesh.dims(); ci++)
         {
-            // NOTE: The following lines are for debugging purposes only.
-            std::string topo_type((mi == 0) ? "implicit" : "explicit");
-            std::cout << "  " << topo_type << " source topology..." << std::endl;
+            const std::string &coord_axis = CSET_AXES[ci];
+            EXPECT_TRUE(side_coords["values"].has_child(coord_axis));
 
-            Node &mesh_topo = *mesh_topos[mi];
+            const Node &grid_axis = grid_coords["values"][coord_axis];
+            Node &side_axis = side_coords["values"][coord_axis];
 
-            Node side_mesh;
-            Node &side_coords = side_mesh["coordsets"][SIDE_COORDSET_NAME];
-            Node &side_topo = side_mesh["topologies"][SIDE_TOPOLOGY_NAME];
-            Node &side_field = side_mesh["fields"][SIDE_FIELD_NAME];
-            mesh::topology::unstructured::generate_sides(
-                mesh_topo, side_topo, side_coords, side_field);
-
-            EXPECT_TRUE(mesh::coordset::_explicit::verify(side_coords, info));
-            EXPECT_TRUE(mesh::topology::unstructured::verify(side_topo, info));
-            EXPECT_TRUE(mesh::field::verify(side_field, info));
-
-            // Verify Correctness of Coordset //
-
-            const std::vector<std::string> coord_axes = coords["values"].child_names();
-            for(index_t ci = 0; ci < (index_t)coord_axes.size(); ci++)
-            {
-                const std::string &coord_axis = coord_axes[ci];
-                EXPECT_TRUE(side_coords["values"].has_child(coord_axis));
-
-                Node &mesh_axis = coords["values"][coord_axis];
-                Node &side_axis = side_coords["values"][coord_axis];
-
-                EXPECT_EQ(side_axis.dtype().id(), mesh_axis.dtype().id());
-                EXPECT_EQ(side_axis.dtype().number_of_elements(),
-                    mesh_axis.dtype().number_of_elements() + mesh_elems +
-                    is_mesh_3d  * mesh_faces);
-            }
-
-            // Verify Correctness of Topology //
-
-            Node &mesh_conn = mesh_topo["elements/connectivity"];
-            Node &side_conn = side_topo["elements/connectivity"];
-
-            Node &side_off = side_topo["elements/offsets"];
-            mesh::topology::unstructured::generate_offsets(side_topo, side_off);
-
-            EXPECT_EQ(side_topo["coordset"].as_string(), SIDE_COORDSET_NAME);
-            EXPECT_EQ(side_topo["elements/shape"].as_string(), elem_side_type);
-            EXPECT_EQ(side_conn.dtype().id(), mesh_conn.dtype().id());
-            EXPECT_EQ(side_off.dtype().number_of_elements(), mesh_sides);
-
-            // Validate Correctness of Element Integrity //
-
-            if(!is_mesh_3d)
-            {
-                Node side_vols;
-                calc_volume_field(ti, side_topo, side_coords, side_vols);
-
-                Node side_vol_float64;
-                side_vols["values"].to_float64_array(side_vol_float64);
-                float64_array side_vol_data = side_vol_float64.as_float64_array();
-
-                std::vector<float64> side_vol_expected_vector(mesh_sides,
-                    mesh_sides_volume);
-                float64_array side_vol_expected(&side_vol_expected_vector[0],
-                    DataType::float64(mesh_sides));
-
-                EXPECT_FALSE(side_vol_data.diff(side_vol_expected, info));
-            }
-
-            // Verify Correctness of Map Field //
-
-            EXPECT_EQ(side_field["association"].as_string(), "element");
-            EXPECT_EQ(side_field["values"].dtype().number_of_elements(), mesh_sides);
-
-            { // Validate Contents of Map Field //
-                Node side_field_int64;
-                side_field["values"].to_int64_array(side_field_int64);
-                int64_array side_field_data = side_field_int64.as_int64_array();
-
-                std::vector<int64> side_expected_array(mesh_sides);
-                for(index_t si = 0; si < side_expected_array.size();)
-                {
-                    for(index_t esi = 0; esi < sides_per_elem; si++, esi++)
-                    {
-                        side_expected_array[si] = si / sides_per_elem;
-                    }
-                }
-                int64_array side_expected_data(&side_expected_array[0],
-                    DataType::int64(mesh_sides));
-
-                EXPECT_FALSE(side_field_data.diff(side_expected_data, info));
-            }
+            EXPECT_EQ(side_axis.dtype().id(), grid_axis.dtype().id());
+            EXPECT_EQ(side_axis.dtype().number_of_elements(),
+                grid_axis.dtype().number_of_elements() +
+                grid_elems + (grid_mesh.dims() == 3) * grid_faces);
         }
+
+        // Verify Correctness of Topology //
+
+        const Node &grid_conn = grid_topo["elements/connectivity"];
+        Node &side_conn = side_topo["elements/connectivity"];
+        Node &side_off = side_topo["elements/offsets"];
+        mesh::topology::unstructured::generate_offsets(side_topo, side_off);
+
+        EXPECT_EQ(side_topo["coordset"].as_string(), SIDE_COORDSET_NAME);
+        EXPECT_EQ(side_topo["elements/shape"].as_string(), side_type);
+        EXPECT_EQ(side_conn.dtype().id(), grid_conn.dtype().id());
+        EXPECT_EQ(side_off.dtype().number_of_elements(), grid_sides);
+
+        // Validate Correctness of Element Integrity //
+
+        if(grid_mesh.dims() < 3)
+        {
+            Node side_vols;
+            calc_volume_field(grid_mesh.type, side_topo, side_coords, side_vols);
+
+            std::vector<float64> expected_vols_vec(grid_sides, side_volume);
+            Node expected_vols(DataType::float64(expected_vols_vec.size()),
+                &expected_vols_vec[0], true);
+
+            EXPECT_FALSE(side_vols["values"].diff(expected_vols, info));
+        }
+
+        // Verify Correctness of Map Field //
+
+        EXPECT_EQ(side_field["association"].as_string(), "element");
+        EXPECT_EQ(side_field["values"].dtype().number_of_elements(), grid_sides);
+
+        Node &side_fvals = side_field["values"];
+        Node expected_fvals;
+        {
+            Node expected_fvals_int64(DataType::int64(grid_sides));
+            int64_array expected_fvals_data = expected_fvals_int64.as_int64_array();
+            for(index_t si = 0; si < grid_sides; si++)
+            {
+                expected_fvals_data[si] = si / sides_per_elem;
+            }
+            expected_fvals_int64.to_data_type(side_fvals.dtype().id(), expected_fvals);
+        }
+        EXPECT_FALSE(side_fvals.diff(expected_fvals, info));
     }
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_corners)
 {
-    const index_t MPDIMS[3] = {4, 4, 4};
-
     const std::string CORNER_COORDSET_NAME = "ccoords";
     const std::string CORNER_TOPOLOGY_NAME = "ctopo";
     const std::string CORNER_FIELD_NAME = "cfield";
 
-    for(index_t ti = 0; ti < 4; ti++)
+    const GridMeshCollection &grids = COMPLEX_GRIDS;
+    for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
     {
-        const std::string &elem_type = ELEM_TYPE_LIST[ti];
-        const bool is_mesh_3d = ELEM_TYPE_DIMS[ti] == 3;
-        const index_t mesh_lines = calc_mesh_lines(ti, &MPDIMS[0], true);
-        const index_t mesh_faces = calc_mesh_faces(ti, &MPDIMS[0], true);
-        const index_t mesh_elems = calc_mesh_elems(ti, &MPDIMS[0]);
+        const GridMesh &grid_mesh = *grid_it;
+        const Node &grid_coords = grid_mesh.mesh["coordsets"].child(0);
+        const Node &grid_topo = grid_mesh.mesh["topologies"].child(0);
 
-        const std::string elem_corner_type = is_mesh_3d ?
-            "polyhedral" : "polygonal";
-        const index_t corners_per_elem = ELEM_TYPE_INDICES[ti];
-        const index_t mesh_corners = corners_per_elem * mesh_elems;
-        const float64 mesh_corners_volume =
-            calc_mesh_elem_volume(ti, &MPDIMS[0]) / corners_per_elem;
+        const index_t grid_elems = grid_mesh.elems();
+        const index_t grid_faces = grid_mesh.faces();
+        const index_t grid_lines = grid_mesh.lines();
 
-        // NOTE: Skip values indicated to have an invalid subline scheme.
-        const bool is_mesh_lineworthy = ELEM_TYPE_LINES[ti] != -1;
-        if(!is_mesh_lineworthy) { continue; }
+        const std::string corner_type = (grid_mesh.dims() == 2) ? "polygonal" : "polyhedral";
+        const index_t corners_per_elem = grid_mesh.points_per_elem();
+        const index_t grid_corners = grid_elems * corners_per_elem;
+        const float64 corner_volume = grid_mesh.elem_volume() / corners_per_elem;
 
-        // NOTE: The following lines are for debugging purposes only.
-        std::cout << "Testing corner generation for type '" <<
-            elem_type << "'..." << std::endl;
+        // NOTE(JRC): Skip testing for tetrahedral meshes because their element
+        // interfaces are complicated and make counting too difficult.
+        if(grid_mesh.type == 2) { continue; }
 
-        Node mesh, info;
-        mesh::examples::braid(elem_type,MPDIMS[0],MPDIMS[1],MPDIMS[2],mesh);
-        Node &coords = mesh["coordsets"].child(0);
-        Node &topo = mesh["topologies"].child(0);
+        Node corner_mesh;
+        Node &corner_coords = corner_mesh["coordsets"][CORNER_COORDSET_NAME];
+        Node &corner_topo = corner_mesh["topologies"][CORNER_TOPOLOGY_NAME];
+        Node &corner_field = corner_mesh["fields"][CORNER_FIELD_NAME];
+        mesh::topology::unstructured::generate_corners(
+            grid_topo, corner_topo, corner_coords, corner_field);
 
-        Node &poly_topo = mesh["topologies"]["poly_" + topo.name()];
-        mesh::topology::unstructured::to_polygonal(topo, poly_topo);
+        Node info;
+        EXPECT_TRUE(mesh::coordset::_explicit::verify(corner_coords, info));
+        EXPECT_TRUE(mesh::topology::unstructured::verify(corner_topo, info));
+        EXPECT_TRUE(mesh::field::verify(corner_field, info));
 
-        Node *mesh_topos[] = {&topo, &poly_topo};
-        for(index_t mi = 0; mi < 2; mi++)
+        // Verify Correctness of Coordset //
+
+        for(index_t ci = 0; ci < grid_mesh.dims(); ci++)
         {
-            // NOTE: The following lines are for debugging purposes only.
-            std::string topo_type((mi == 0) ? "implicit" : "explicit");
-            std::cout << "  " << topo_type << " source topology..." << std::endl;
+            const std::string &coord_axis = CSET_AXES[ci];
+            EXPECT_TRUE(corner_coords["values"].has_child(coord_axis));
 
-            Node &mesh_topo = *mesh_topos[mi];
+            const Node &grid_axis = grid_coords["values"][coord_axis];
+            Node &corner_axis = corner_coords["values"][coord_axis];
 
-            Node corner_mesh;
-            Node &corner_coords = corner_mesh["coordsets"][CORNER_COORDSET_NAME];
-            Node &corner_topo = corner_mesh["topologies"][CORNER_TOPOLOGY_NAME];
-            Node &corner_field = corner_mesh["fields"][CORNER_FIELD_NAME];
-            mesh::topology::unstructured::generate_corners(
-                mesh_topo, corner_topo, corner_coords, corner_field);
-
-            // Verify Correctness of Coordset //
-
-            const std::vector<std::string> coord_axes = coords["values"].child_names();
-            for(index_t ci = 0; ci < (index_t)coord_axes.size(); ci++)
-            {
-                const std::string &coord_axis = coord_axes[ci];
-                EXPECT_TRUE(corner_coords["values"].has_child(coord_axis));
-
-                Node &mesh_axis = coords["values"][coord_axis];
-                Node &corner_axis = corner_coords["values"][coord_axis];
-
-                EXPECT_EQ(corner_axis.dtype().id(), mesh_axis.dtype().id());
-                EXPECT_EQ(corner_axis.dtype().number_of_elements(),
-                    mesh_axis.dtype().number_of_elements() + mesh_lines +
-                    is_mesh_3d * mesh_faces + mesh_elems);
-            }
-
-            // Verify Correctness of Topology //
-
-            Node &mesh_conn = mesh_topo["elements/connectivity"];
-            Node &corner_conn = corner_topo["elements/connectivity"];
-
-            Node &corner_off = corner_topo["elements/offsets"];
-            mesh::topology::unstructured::generate_offsets(corner_topo, corner_off);
-
-            EXPECT_EQ(corner_topo["coordset"].as_string(), CORNER_COORDSET_NAME);
-            EXPECT_EQ(corner_topo["elements/shape"].as_string(), elem_corner_type);
-            EXPECT_EQ(corner_conn.dtype().id(), mesh_conn.dtype().id());
-            EXPECT_EQ(corner_off.dtype().number_of_elements(), mesh_corners);
-
-            // Validate Correctness of Element Integrity //
-
-            if(!is_mesh_3d)
-            {
-                Node corner_vols;
-                calc_volume_field(ti, corner_topo, corner_coords, corner_vols);
-
-                Node corner_vol_float64;
-                corner_vols["values"].to_float64_array(corner_vol_float64);
-                float64_array corner_vol_data = corner_vol_float64.as_float64_array();
-
-                std::vector<float64> corner_vol_expected_vector(mesh_corners,
-                    mesh_corners_volume);
-                float64_array corner_vol_expected(&corner_vol_expected_vector[0],
-                    DataType::float64(mesh_corners));
-
-                EXPECT_FALSE(corner_vol_data.diff(corner_vol_expected, info));
-            }
-
-            // Verify Correctness of Map Field //
-
-            EXPECT_EQ(corner_field["association"].as_string(), "element");
-            EXPECT_EQ(corner_field["values"].dtype().number_of_elements(), mesh_corners);
-
-            { // Validate Contents of Map Field //
-                Node corner_field_int64;
-                corner_field["values"].to_int64_array(corner_field_int64);
-                int64_array corner_field_data = corner_field_int64.as_int64_array();
-
-                std::vector<int64> corner_expected_array(mesh_corners);
-                for(index_t si = 0; si < corner_expected_array.size();)
-                {
-                    for(index_t ssi = 0; ssi < corners_per_elem; si++, ssi++)
-                    {
-                        corner_expected_array[si] = si / corners_per_elem;
-                    }
-                }
-                int64_array corner_expected_data(&corner_expected_array[0],
-                    DataType::int64(corner_expected_array.size()));
-
-                EXPECT_FALSE(corner_field_data.diff(corner_expected_data, info));
-            }
+            EXPECT_EQ(corner_axis.dtype().id(), grid_axis.dtype().id());
+            EXPECT_EQ(corner_axis.dtype().number_of_elements(),
+                grid_axis.dtype().number_of_elements() +
+                grid_elems + (grid_mesh.dims() == 3) * grid_faces + grid_lines);
         }
+
+        // Verify Correctness of Topology //
+
+        const Node &grid_conn = grid_topo["elements/connectivity"];
+        Node &corner_conn = corner_topo["elements/connectivity"];
+        Node &corner_off = corner_topo["elements/offsets"];
+        mesh::topology::unstructured::generate_offsets(corner_topo, corner_off);
+
+        EXPECT_EQ(corner_topo["coordset"].as_string(), CORNER_COORDSET_NAME);
+        EXPECT_EQ(corner_topo["elements/shape"].as_string(), corner_type);
+        EXPECT_EQ(corner_conn.dtype().id(), grid_conn.dtype().id());
+        EXPECT_EQ(corner_off.dtype().number_of_elements(), grid_corners);
+
+        // Validate Correctness of Element Integrity //
+
+        if(grid_mesh.dims() < 3)
+        {
+            Node corner_vols;
+            calc_volume_field(grid_mesh.type, corner_topo, corner_coords, corner_vols);
+
+            std::vector<float64> expected_vols_vec(grid_corners, corner_volume);
+            Node expected_vols(DataType::float64(expected_vols_vec.size()),
+                &expected_vols_vec[0], true);
+
+            EXPECT_FALSE(corner_vols["values"].diff(expected_vols, info));
+        }
+
+        // Verify Correctness of Map Field //
+
+        EXPECT_EQ(corner_field["association"].as_string(), "element");
+        EXPECT_EQ(corner_field["values"].dtype().number_of_elements(), grid_corners);
+
+        Node &corner_fvals = corner_field["values"];
+        Node expected_fvals;
+        {
+            Node expected_fvals_int64(DataType::int64(grid_corners));
+            int64_array expected_fvals_data = expected_fvals_int64.as_int64_array();
+            for(index_t si = 0; si < grid_corners; si++)
+            {
+                expected_fvals_data[si] = si / corners_per_elem;
+            }
+            expected_fvals_int64.to_data_type(corner_fvals.dtype().id(), expected_fvals);
+        }
+        EXPECT_FALSE(corner_fvals.diff(expected_fvals, info));
     }
 }
