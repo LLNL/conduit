@@ -142,7 +142,7 @@ struct GridMesh
             }
             num_faces += dim_num_faces;
         }
-        return num_faces;
+        return (dims() == 2) ? elems() : num_faces;
     }
 
     index_t lines() const
@@ -158,6 +158,16 @@ struct GridMesh
             num_lines += dim_num_lines;
         }
         return num_lines + ELEM_TYPE_CELL_LINES[type] * cells();
+    }
+
+    index_t points() const
+    {
+        index_t num_points = 1;
+        for(index_t di = 0; di < dims(); di++)
+        {
+            num_points *= npts[di];
+        }
+        return num_points;
     }
 
     float64 cell_volume() const
@@ -182,6 +192,11 @@ struct GridMesh
     index_t points_per_elem() const
     {
         return ELEM_TYPE_INDICES[type];
+    }
+
+    index_t points_per_elem_faces() const
+    {
+        return faces_per_elem() * points_per_face();
     }
 
     index_t faces_per_elem() const
@@ -232,15 +247,24 @@ struct GridMeshCollection
         const GridMesh *ptr;
     };
 
-    GridMeshCollection(const index_t *npts, bool include_poly)
+    GridMeshCollection(const index_t *npts)
     {
         for(index_t ti = 0; ti < ELEM_TYPE_COUNT; ti++)
         {
-            for(index_t pi = 0; pi < 1 + include_poly; pi++)
+            for(index_t pi = 0; pi < 2; pi++)
             {
-                meshes.push_back( GridMesh(ti, npts, (bool)pi) );
+                meshes.push_back(GridMesh(ti, npts, false));
             }
         }
+
+        // HARD DEBUG
+        // meshes.push_back(GridMesh(1, npts, false));
+
+        // SOFT DEBUG
+        // for(index_t ti = 0; ti < ELEM_TYPE_COUNT; ti++)
+        // {
+        //     meshes.push_back(GridMesh(ti, npts, false));
+        // }
     }
 
     Iterator begin() const
@@ -547,10 +571,12 @@ void calc_volume_field(index_t type, const Node &topo, const Node &coords, Node 
 
 // TODO(JRC): Ensure that this is thread-safe by making the internal vector
 // of grids for each 'GridMesh' const-correct.
+const static index_t POINTS_2S[] = {2, 2, 2};
 const static index_t POINTS_3S[] = {3, 3, 3};
 const static index_t POINTS_4S[] = {4, 4, 4};
-const static GridMeshCollection SIMPLE_GRIDS(&POINTS_3S[0], true);
-const static GridMeshCollection COMPLEX_GRIDS(&POINTS_4S[0], true);
+const static GridMeshCollection TRIVIAL_GRIDS(&POINTS_2S[0]);
+const static GridMeshCollection SIMPLE_GRIDS(&POINTS_3S[0]);
+const static GridMeshCollection COMPLEX_GRIDS(&POINTS_4S[0]);
 
 typedef GridMeshCollection::Iterator GridIterator;
 
@@ -677,6 +703,57 @@ TEST(conduit_blueprint_generate_unstructured, generate_centroids)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_points)
+{
+    const std::string POINT_TOPOLOGY_NAME = "ptopo";
+
+    const GridMeshCollection &grids = COMPLEX_GRIDS;
+    for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
+    {
+        const GridMesh &grid_mesh = *grid_it;
+        const Node &grid_coords = grid_mesh.mesh["coordsets"].child(0);
+        const Node &grid_topo = grid_mesh.mesh["topologies"].child(0);
+
+        const index_t grid_points = grid_mesh.points();
+
+        Node point_mesh;
+        Node &point_coords = point_mesh["coordsets"][grid_coords.name()];
+        point_coords.set_external(grid_coords);
+
+        Node &point_topo = point_mesh["topologies"][POINT_TOPOLOGY_NAME];
+        mesh::topology::unstructured::generate_points(grid_topo, point_topo);
+
+        Node data, info;
+        EXPECT_TRUE(mesh::topology::unstructured::verify(point_topo, info));
+
+        // General Data/Schema Checks //
+
+        EXPECT_EQ(point_topo["coordset"].as_string(), grid_coords.name());
+        EXPECT_EQ(point_topo["elements/shape"].as_string(), "point");
+
+        const Node &grid_conn = grid_topo["elements/connectivity"];
+        Node &point_conn = point_topo["elements/connectivity"];
+
+        EXPECT_EQ(point_conn.dtype().id(), grid_conn.dtype().id());
+        EXPECT_EQ(point_conn.dtype().number_of_elements(), grid_points);
+
+        // Content Consistency Checks //
+
+        std::set<index_t> point_conn_set, expected_conn_set;
+        for(index_t pi = 0; pi < grid_points; pi++)
+        {
+            data.set_external(DataType(point_conn.dtype().id(), 1),
+                point_conn.element_ptr(pi));
+            point_conn_set.insert(data.to_int64());
+
+            expected_conn_set.insert(pi);
+        }
+
+        EXPECT_EQ(point_conn_set, expected_conn_set);
+    }
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_lines)
 {
     const std::string LINE_TOPOLOGY_NAME = "ltopo";
@@ -691,7 +768,6 @@ TEST(conduit_blueprint_generate_unstructured, generate_lines)
         const GridMesh &grid_mesh = *grid_it;
         const Node &grid_coords = grid_mesh.mesh["coordsets"].child(0);
         const Node &grid_topo = grid_mesh.mesh["topologies"].child(0);
-
 
         Node line_mesh;
         Node &line_coords = line_mesh["coordsets"][grid_coords.name()];
@@ -722,6 +798,59 @@ TEST(conduit_blueprint_generate_unstructured, generate_lines)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_faces)
+{
+    const std::string FACE_TOPOLOGY_NAME = "ftopo";
+
+    const GridMeshCollection &grids = COMPLEX_GRIDS;
+    for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
+    {
+        // NOTE(JRC): Skip testing for tetrahedral meshes because their element
+        // interfaces are complicated and make counting too difficult.
+        // if(grid_it->type == 2) { continue; }
+        // TODO(JRC): Implement this test case for hexs.
+        if(grid_it->type >= 2) { continue; }
+
+        const GridMesh &grid_mesh = *grid_it;
+        const Node &grid_coords = grid_mesh.mesh["coordsets"].child(0);
+        const Node &grid_topo = grid_mesh.mesh["topologies"].child(0);
+
+        const index_t grid_faces = grid_mesh.faces();
+        const std::string face_tstr = ELEM_TYPE_LIST[
+            (grid_mesh.dims() == 2) ? grid_mesh.type : grid_mesh.type - 2];
+        const std::string face_type = face_tstr.substr(0, face_tstr.size() - 1);
+
+        Node face_mesh;
+        Node &face_coords = face_mesh["coordsets"][grid_coords.name()];
+        face_coords.set_external(grid_coords);
+
+        Node &face_topo = face_mesh["topologies"][FACE_TOPOLOGY_NAME];
+        mesh::topology::unstructured::generate_faces(grid_topo, face_topo);
+
+        Node info;
+        EXPECT_TRUE(mesh::topology::unstructured::verify(face_topo, info));
+
+        // General Data/Schema Checks //
+
+        EXPECT_EQ(face_topo["coordset"].as_string(), grid_coords.name());
+        EXPECT_EQ(face_topo["elements/shape"].as_string(), face_type);
+
+        const Node &grid_conn = grid_topo["elements/connectivity"];
+        Node &face_conn = face_topo["elements/connectivity"];
+
+        EXPECT_EQ(face_conn.dtype().id(), grid_conn.dtype().id());
+        EXPECT_EQ(
+            face_conn.dtype().number_of_elements() / grid_mesh.points_per_elem_faces(),
+            grid_mesh.faces());
+
+        // Content Consistency Checks //
+
+        // TODO(JRC): Extend this test case so that it more thoroughly checks
+        // the contents of the unique face mesh.
+    }
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides)
 {
     const std::string SIDE_COORDSET_NAME = "scoords";
@@ -743,7 +872,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
         const index_t grid_faces = grid_mesh.faces();
 
         const std::string side_type = (grid_mesh.dims() == 2) ? "tri" : "tet";
-        const index_t sides_per_elem = grid_mesh.faces_per_elem() * grid_mesh.points_per_face();
+        const index_t sides_per_elem = grid_mesh.points_per_elem_faces();
         const index_t grid_sides = grid_elems * sides_per_elem;
         const float64 side_volume = grid_mesh.elem_volume() / sides_per_elem;
 
