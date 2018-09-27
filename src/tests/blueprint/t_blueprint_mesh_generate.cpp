@@ -217,7 +217,7 @@ struct GridMeshCollection
         Iterator operator+(size_t d) const { return Iterator(ptr + d); }
 
         const GridMesh &operator*()  const { print_pos(); return *ptr; }
-        const GridMesh *operator->() const { print_pos(); return ptr; }
+        const GridMesh *operator->() const { return ptr; }
 
         bool operator==(const Iterator &other) const { return ptr == other.ptr; }
         bool operator!=(const Iterator &other) const { return ptr != other.ptr; }
@@ -560,11 +560,13 @@ TEST(conduit_blueprint_generate_unstructured, generate_offsets_nonpoly)
     const GridMeshCollection &grids = SIMPLE_GRIDS;
     for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
     {
+        // NOTE(JRC): We separate polynomial and non-polynomial topologies in
+        // testing to make attribution and problem tracing easier.
+        if(grid_it->is_poly) { continue; }
+
         const GridMesh &grid_mesh = *grid_it;
         const Node &grid_topo = grid_mesh.mesh["topologies"].child(0);
         const Node &grid_conn = grid_topo["elements/connectivity"];
-
-        if(grid_mesh.is_poly) { continue; }
 
         Node grid_offsets;
         mesh::topology::unstructured::generate_offsets(grid_topo, grid_offsets);
@@ -593,11 +595,13 @@ TEST(conduit_blueprint_generate_unstructured, generate_offsets_poly)
     const GridMeshCollection &grids = SIMPLE_GRIDS;
     for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
     {
+        // NOTE(JRC): We separate polynomial and non-polynomial topologies in
+        // testing to make attribution and problem tracing easier.
+        if(!grid_it->is_poly) { continue; }
+
         const GridMesh &grid_mesh = *grid_it;
         const Node &grid_topo = grid_mesh.mesh["topologies"].child(0);
         const Node &grid_conn = grid_topo["elements/connectivity"];
-
-        if(!grid_mesh.is_poly) { continue; }
 
         Node grid_offsets;
         mesh::topology::unstructured::generate_offsets(grid_topo, grid_offsets);
@@ -680,13 +684,14 @@ TEST(conduit_blueprint_generate_unstructured, generate_lines)
     const GridMeshCollection &grids = COMPLEX_GRIDS;
     for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
     {
+        // NOTE(JRC): Skip testing for tetrahedral meshes because their element
+        // interfaces are complicated and make counting too difficult.
+        if(grid_it->type == 2) { continue; }
+
         const GridMesh &grid_mesh = *grid_it;
         const Node &grid_coords = grid_mesh.mesh["coordsets"].child(0);
         const Node &grid_topo = grid_mesh.mesh["topologies"].child(0);
 
-        // NOTE(JRC): Skip testing for tetrahedral meshes because their element
-        // interfaces are complicated and make counting too difficult.
-        if(grid_mesh.type == 2) { continue; }
 
         Node line_mesh;
         Node &line_coords = line_mesh["coordsets"][grid_coords.name()];
@@ -726,6 +731,10 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
     const GridMeshCollection &grids = COMPLEX_GRIDS;
     for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
     {
+        // NOTE(JRC): Skip testing for tetrahedral meshes because their element
+        // interfaces are complicated and make counting too difficult.
+        if(grid_it->type == 2) { continue; }
+
         const GridMesh &grid_mesh = *grid_it;
         const Node &grid_coords = grid_mesh.mesh["coordsets"].child(0);
         const Node &grid_topo = grid_mesh.mesh["topologies"].child(0);
@@ -737,10 +746,6 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
         const index_t sides_per_elem = grid_mesh.faces_per_elem() * grid_mesh.points_per_face();
         const index_t grid_sides = grid_elems * sides_per_elem;
         const float64 side_volume = grid_mesh.elem_volume() / sides_per_elem;
-
-        // NOTE(JRC): Skip testing for tetrahedral meshes because their element
-        // interfaces are complicated and make counting too difficult.
-        if(grid_mesh.type == 2) { continue; }
 
         Node side_mesh;
         Node &side_coords = side_mesh["coordsets"][SIDE_COORDSET_NAME];
@@ -826,6 +831,10 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
     const GridMeshCollection &grids = COMPLEX_GRIDS;
     for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
     {
+        // NOTE(JRC): Skip testing for tetrahedral meshes because their element
+        // interfaces are complicated and make counting too difficult.
+        if(grid_it->type == 2) { continue; }
+
         const GridMesh &grid_mesh = *grid_it;
         const Node &grid_coords = grid_mesh.mesh["coordsets"].child(0);
         const Node &grid_topo = grid_mesh.mesh["topologies"].child(0);
@@ -838,10 +847,6 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
         const index_t corners_per_elem = grid_mesh.points_per_elem();
         const index_t grid_corners = grid_elems * corners_per_elem;
         const float64 corner_volume = grid_mesh.elem_volume() / corners_per_elem;
-
-        // NOTE(JRC): Skip testing for tetrahedral meshes because their element
-        // interfaces are complicated and make counting too difficult.
-        if(grid_mesh.type == 2) { continue; }
 
         Node corner_mesh;
         Node &corner_coords = corner_mesh["coordsets"][CORNER_COORDSET_NAME];
