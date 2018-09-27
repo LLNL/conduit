@@ -194,11 +194,6 @@ struct GridMesh
         return ELEM_TYPE_INDICES[type];
     }
 
-    index_t points_per_elem_faces() const
-    {
-        return faces_per_elem() * points_per_face();
-    }
-
     index_t faces_per_elem() const
     {
         return ELEM_TYPE_FACES[type];
@@ -253,12 +248,12 @@ struct GridMeshCollection
         {
             for(index_t pi = 0; pi < 2; pi++)
             {
-                meshes.push_back(GridMesh(ti, npts, false));
+                meshes.push_back(GridMesh(ti, npts, (bool)pi));
             }
         }
 
         // HARD DEBUG
-        // meshes.push_back(GridMesh(1, npts, false));
+        // meshes.push_back(GridMesh(3, npts, false));
 
         // SOFT DEBUG
         // for(index_t ti = 0; ti < ELEM_TYPE_COUNT; ti++)
@@ -807,9 +802,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_faces)
     {
         // NOTE(JRC): Skip testing for tetrahedral meshes because their element
         // interfaces are complicated and make counting too difficult.
-        // if(grid_it->type == 2) { continue; }
-        // TODO(JRC): Implement this test case for hexs.
-        if(grid_it->type >= 2) { continue; }
+        if(grid_it->type == 2) { continue; }
 
         const GridMesh &grid_mesh = *grid_it;
         const Node &grid_coords = grid_mesh.mesh["coordsets"].child(0);
@@ -818,7 +811,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_faces)
         const index_t grid_faces = grid_mesh.faces();
         const std::string face_tstr = ELEM_TYPE_LIST[
             (grid_mesh.dims() == 2) ? grid_mesh.type : grid_mesh.type - 2];
-        const std::string face_type = face_tstr.substr(0, face_tstr.size() - 1);
+        const std::string face_type = grid_mesh.is_poly ?
+            "polygonal" : face_tstr.substr(0, face_tstr.size() - 1);
 
         Node face_mesh;
         Node &face_coords = face_mesh["coordsets"][grid_coords.name()];
@@ -832,16 +826,15 @@ TEST(conduit_blueprint_generate_unstructured, generate_faces)
 
         // General Data/Schema Checks //
 
-        EXPECT_EQ(face_topo["coordset"].as_string(), grid_coords.name());
-        EXPECT_EQ(face_topo["elements/shape"].as_string(), face_type);
-
         const Node &grid_conn = grid_topo["elements/connectivity"];
         Node &face_conn = face_topo["elements/connectivity"];
+        Node &face_off = face_topo["elements/offsets"];
+        mesh::topology::unstructured::generate_offsets(face_topo, face_off);
 
+        EXPECT_EQ(face_topo["coordset"].as_string(), grid_coords.name());
+        EXPECT_EQ(face_topo["elements/shape"].as_string(), face_type);
         EXPECT_EQ(face_conn.dtype().id(), grid_conn.dtype().id());
-        EXPECT_EQ(
-            face_conn.dtype().number_of_elements() / grid_mesh.points_per_elem_faces(),
-            grid_mesh.faces());
+        EXPECT_EQ(face_off.dtype().number_of_elements(), grid_mesh.faces());
 
         // Content Consistency Checks //
 
@@ -872,7 +865,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
         const index_t grid_faces = grid_mesh.faces();
 
         const std::string side_type = (grid_mesh.dims() == 2) ? "tri" : "tet";
-        const index_t sides_per_elem = grid_mesh.points_per_elem_faces();
+        const index_t sides_per_elem = grid_mesh.faces_per_elem() * grid_mesh.points_per_face();
         const index_t grid_sides = grid_elems * sides_per_elem;
         const float64 side_volume = grid_mesh.elem_volume() / sides_per_elem;
 
