@@ -62,6 +62,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <map>
 #include <vector>
 #include <string>
 #include "gtest/gtest.h"
@@ -82,6 +83,10 @@ static const index_t ELEM_TYPE_FACE_INDICES[]  = {     3,       4,      3,      
 static const index_t ELEM_TYPE_COUNT = sizeof(ELEM_TYPE_LIST) / sizeof(ELEM_TYPE_LIST[0]);
 
 static const std::string CSET_AXES[] = {"x", "y", "z"};
+
+const static index_t TRIVIAL_GRID[] = {2, 2, 2};
+const static index_t SIMPLE_GRID[] = {3, 3, 3};
+const static index_t COMPLEX_GRID[] = {4, 4, 4};
 
 /// Testing Helpers ///
 
@@ -273,6 +278,31 @@ struct GridMeshCollection
     }
 
     std::vector<GridMesh> meshes;
+};
+
+struct GridDims
+{
+    GridDims(const index_t *npts)
+    {
+        for(index_t i = 0; i < 3; i++)
+        {
+            dims[i] = npts[i];
+        }
+    }
+
+    bool operator<(const GridDims &other) const
+    {
+        for(index_t i = 0; i < 3; i++)
+        {
+            if(this->dims[i] != other.dims[i])
+            {
+                return this->dims[i] < other.dims[i];
+            }
+        }
+        return false;
+    };
+
+    index_t dims[3];
 };
 
 // TODO(JRC): The fact that there isn't a standard C++ library for simple
@@ -561,24 +591,34 @@ void calc_volume_field(index_t type, const Node &topo, const Node &coords, Node 
     }
 }
 
-
 /// Test Cases ///
 
-// TODO(JRC): Ensure that this is thread-safe by making the internal vector
-// of grids for each 'GridMesh' const-correct.
-const static index_t POINTS_2S[] = {2, 2, 2};
-const static index_t POINTS_3S[] = {3, 3, 3};
-const static index_t POINTS_4S[] = {4, 4, 4};
-const static GridMeshCollection TRIVIAL_GRIDS(&POINTS_2S[0]);
-const static GridMeshCollection SIMPLE_GRIDS(&POINTS_3S[0]);
-const static GridMeshCollection COMPLEX_GRIDS(&POINTS_4S[0]);
+// NOTE(JRC): This strategy of populating a list of grid collections on demand
+// was adopted because using a suite of statically-defined presets causes a
+// "static initialization order fiasco" with the static variables in the
+// "conduit_blueprint.cpp" source file (see: https://isocpp.org/wiki/faq/ctors#static-init-order).
+// TODO(JRC): If the test suite is ever extended to support parallel testing,
+// this function needs to be wrapped in a mutex.
+const GridMeshCollection &get_test_grids(const index_t *npts)
+{
+    static std::map<GridDims, const GridMeshCollection> dims_grids_map;
+
+    GridDims dims(npts);
+    if(dims_grids_map.find(dims) == dims_grids_map.end())
+    {
+        dims_grids_map.insert(std::pair<GridDims, const GridMeshCollection>(
+            dims, GridMeshCollection(npts)));
+    }
+
+    return dims_grids_map.find(dims)->second;
+}
 
 typedef GridMeshCollection::Iterator GridIterator;
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_offsets_nonpoly)
 {
-    const GridMeshCollection &grids = SIMPLE_GRIDS;
+    const GridMeshCollection &grids = get_test_grids(SIMPLE_GRID);
     for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
     {
         // NOTE(JRC): We separate polynomial and non-polynomial topologies in
@@ -613,7 +653,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_offsets_nonpoly)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_offsets_poly)
 {
-    const GridMeshCollection &grids = SIMPLE_GRIDS;
+    const GridMeshCollection &grids = get_test_grids(SIMPLE_GRID);
     for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
     {
         // NOTE(JRC): We separate polynomial and non-polynomial topologies in
@@ -652,7 +692,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_centroids)
     const std::string CENTROID_COORDSET_NAME = "ccoords";
     const std::string CENTROID_TOPOLOGY_NAME = "ctopo";
 
-    const GridMeshCollection &grids = SIMPLE_GRIDS;
+    const GridMeshCollection &grids = get_test_grids(SIMPLE_GRID);
     for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
     {
         const GridMesh &grid_mesh = *grid_it;
@@ -702,7 +742,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_points)
 {
     const std::string POINT_TOPOLOGY_NAME = "ptopo";
 
-    const GridMeshCollection &grids = COMPLEX_GRIDS;
+    const GridMeshCollection &grids = get_test_grids(COMPLEX_GRID);
     for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
     {
         const GridMesh &grid_mesh = *grid_it;
@@ -753,7 +793,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_lines)
 {
     const std::string LINE_TOPOLOGY_NAME = "ltopo";
 
-    const GridMeshCollection &grids = COMPLEX_GRIDS;
+    const GridMeshCollection &grids = get_test_grids(COMPLEX_GRID);
     for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
     {
         // NOTE(JRC): Skip testing for tetrahedral meshes because their element
@@ -797,7 +837,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_faces)
 {
     const std::string FACE_TOPOLOGY_NAME = "ftopo";
 
-    const GridMeshCollection &grids = COMPLEX_GRIDS;
+    const GridMeshCollection &grids = get_test_grids(COMPLEX_GRID);
     for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
     {
         // NOTE(JRC): Skip testing for tetrahedral meshes because their element
@@ -850,7 +890,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
     const std::string SIDE_TOPOLOGY_NAME = "stopo";
     const std::string SIDE_FIELD_NAME = "sfield";
 
-    const GridMeshCollection &grids = COMPLEX_GRIDS;
+    const GridMeshCollection &grids = get_test_grids(COMPLEX_GRID);
     for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
     {
         // NOTE(JRC): Skip testing for tetrahedral meshes because their element
@@ -950,7 +990,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
     const std::string CORNER_TOPOLOGY_NAME = "ctopo";
     const std::string CORNER_FIELD_NAME = "cfield";
 
-    const GridMeshCollection &grids = COMPLEX_GRIDS;
+    const GridMeshCollection &grids = get_test_grids(COMPLEX_GRID);
     for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
     {
         // NOTE(JRC): Skip testing for tetrahedral meshes because their element
