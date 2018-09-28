@@ -792,56 +792,56 @@ TEST(conduit_blueprint_generate_unstructured, generate_lines)
     }
 }
 
-// //-----------------------------------------------------------------------------
-// TEST(conduit_blueprint_generate_unstructured, generate_faces)
-// {
-//     const std::string FACE_TOPOLOGY_NAME = "ftopo";
-// 
-//     const GridMeshCollection &grids = COMPLEX_GRIDS;
-//     for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
-//     {
-//         // NOTE(JRC): Skip testing for tetrahedral meshes because their element
-//         // interfaces are complicated and make counting too difficult.
-//         if(grid_it->type == 2) { continue; }
-// 
-//         const GridMesh &grid_mesh = *grid_it;
-//         const Node &grid_coords = grid_mesh.mesh["coordsets"].child(0);
-//         const Node &grid_topo = grid_mesh.mesh["topologies"].child(0);
-// 
-//         const index_t grid_faces = grid_mesh.faces();
-//         const std::string face_tstr = ELEM_TYPE_LIST[
-//             (grid_mesh.dims() == 2) ? grid_mesh.type : grid_mesh.type - 2];
-//         const std::string face_type = grid_mesh.is_poly ?
-//             "polygonal" : face_tstr.substr(0, face_tstr.size() - 1);
-// 
-//         Node face_mesh;
-//         Node &face_coords = face_mesh["coordsets"][grid_coords.name()];
-//         face_coords.set_external(grid_coords);
-// 
-//         Node &face_topo = face_mesh["topologies"][FACE_TOPOLOGY_NAME];
-//         mesh::topology::unstructured::generate_faces(grid_topo, face_topo);
-// 
-//         Node info;
-//         EXPECT_TRUE(mesh::topology::unstructured::verify(face_topo, info));
-// 
-//         // General Data/Schema Checks //
-// 
-//         const Node &grid_conn = grid_topo["elements/connectivity"];
-//         Node &face_conn = face_topo["elements/connectivity"];
-//         Node &face_off = face_topo["elements/offsets"];
-//         mesh::topology::unstructured::generate_offsets(face_topo, face_off);
-// 
-//         EXPECT_EQ(face_topo["coordset"].as_string(), grid_coords.name());
-//         EXPECT_EQ(face_topo["elements/shape"].as_string(), face_type);
-//         EXPECT_EQ(face_conn.dtype().id(), grid_conn.dtype().id());
-//         EXPECT_EQ(face_off.dtype().number_of_elements(), grid_mesh.faces());
-// 
-//         // Content Consistency Checks //
-// 
-//         // TODO(JRC): Extend this test case so that it more thoroughly checks
-//         // the contents of the unique face mesh.
-//     }
-// }
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_faces)
+{
+    const std::string FACE_TOPOLOGY_NAME = "ftopo";
+
+    const GridMeshCollection &grids = COMPLEX_GRIDS;
+    for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
+    {
+        // NOTE(JRC): Skip testing for tetrahedral meshes because their element
+        // interfaces are complicated and make counting too difficult.
+        if(grid_it->type == 2) { continue; }
+
+        const GridMesh &grid_mesh = *grid_it;
+        const Node &grid_coords = grid_mesh.mesh["coordsets"].child(0);
+        const Node &grid_topo = grid_mesh.mesh["topologies"].child(0);
+
+        const index_t grid_faces = grid_mesh.faces();
+        const std::string face_tstr = ELEM_TYPE_LIST[
+            (grid_mesh.dims() == 2) ? grid_mesh.type : grid_mesh.type - 2];
+        const std::string face_type = grid_mesh.is_poly ?
+            "polygonal" : face_tstr.substr(0, face_tstr.size() - 1);
+
+        Node face_mesh;
+        Node &face_coords = face_mesh["coordsets"][grid_coords.name()];
+        face_coords.set_external(grid_coords);
+
+        Node &face_topo = face_mesh["topologies"][FACE_TOPOLOGY_NAME];
+        mesh::topology::unstructured::generate_faces(grid_topo, face_topo);
+
+        Node info;
+        EXPECT_TRUE(mesh::topology::unstructured::verify(face_topo, info));
+
+        // General Data/Schema Checks //
+
+        const Node &grid_conn = grid_topo["elements/connectivity"];
+        Node &face_conn = face_topo["elements/connectivity"];
+        Node &face_off = face_topo["elements/offsets"];
+        mesh::topology::unstructured::generate_offsets(face_topo, face_off);
+
+        EXPECT_EQ(face_topo["coordset"].as_string(), grid_coords.name());
+        EXPECT_EQ(face_topo["elements/shape"].as_string(), face_type);
+        EXPECT_EQ(face_conn.dtype().id(), grid_conn.dtype().id());
+        EXPECT_EQ(face_off.dtype().number_of_elements(), grid_mesh.faces());
+
+        // Content Consistency Checks //
+
+        // TODO(JRC): Extend this test case so that it more thoroughly checks
+        // the contents of the unique face mesh.
+    }
+}
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides)
