@@ -484,18 +484,27 @@ Nesting Sets
 Nesting Sets are used to represent the nesting relationships between different domains in multi-domain mesh environments. Most commonly, this subset of the Blueprint specification is used for AMR (adaptive mesh refinement) meshes.
 
 Each entry in the Nesting Sets section contains an independent set of nesting relationships between domains in the described mesh.
-On an individual basis, a nesting set contains a source topology, an element association, a nesting level (0-based index), and a list of nesting windows.
-The windows for a particular nesting set describe the topological nesting pattern for a paired set of domains, which includes the ID of the partnered domain as well as the self-relative origin and dimensions of the nesting relationship.
+On an individual basis, a nesting set contains a source topology, an element association, and a list of nesting windows.
+The windows for a particular nesting set describe the topological nesting pattern for a paired set of domains, which includes the ID of the partnered domain, the type of the partnered domain (parent or child), and the self-relative origin and dimensions of the nesting relationship.
 The Blueprint schema for each entry in the ``nestsets`` section matches the following template:
 
    * nestsets/nestset/association: "vertex" | "element"
    * nestsets/nestset/topology: "topo"
-   * nestsets/nestset/level: (integer)
    * nestsets/nestset/windows/window/domain_id: (integer)
+   * nestsets/nestset/windows/window/domain_type: "parent" | "child"
    * nestsets/nestset/windows/window/ratio/{i, j, k}
    * nestsets/nestset/windows/window/origin/{i, j, k}
    * nestsets/nestset/windows/window/dims/{i, j, k}
 
+Each domain that contains a Nesting Sets section must also update its State section to include the domain's global nesting level.
+This additional requirement adds the follow constraint to the ``state`` section:
+
+   * state/level_id: (integer)
+
+.. note::
+   The Nesting Sets section currently only supports nesting specifications for
+   structured topologies. There are plans to extend this feature to support
+   unstructured topologies in future versions of Conduit.
 
 
 Adjacency Sets
