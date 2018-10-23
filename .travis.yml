@@ -110,7 +110,7 @@ env:
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
       ENABLE_DOCS=OFF
-    #  ENABLE_ADIOS=ON # until merged
+      ENABLE_ADIOS=ON
       ENABLE_PYTHON=ON
       PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
@@ -153,6 +153,8 @@ script:
   - if [ $ENABLE_MPI = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mpi"; fi
   - if [ $ENABLE_PYTHON = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+python"; fi
   - if [ $ENABLE_PYTHON = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~python"; fi
+  - if [ $ENABLE_ADIOS = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+adios"; fi
+  - if [ $ENABLE_ADIOS = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~adios"; fi
   # versions and package selections
   - export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
   - export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"
@@ -161,14 +163,6 @@ script:
   - while sleep 540; do echo "=====[ $SECONDS seconds still running ]====="; done &
   # build deps using uberenv
   - python scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/travis/
-  # Build ADIOS separately since it can't seem to combine successfully with uberenv-conduit.
-  #- ADIOS_SPEC="%gcc@4.8~hdf5"
-  #- if [ $ENABLE_MPI = 'ON' ]; then export ADIOS_SPEC="${ADIOS_SPEC}+mpi"; fi
-  #- if [ $ENABLE_MPI = 'OFF' ]; then export ADIOS_SPEC="${ADIOS_SPEC}~mpi"; fi
-  #- if [ $ENABLE_ADIOS = 'ON' ]; then export ADIOS_SPEC="${ADIOS_SPEC} ^python@${PYTHON_VERSION}"; fi
-  #- if [ $ENABLE_ADIOS = 'ON' ]; then echo "Building ADIOS separately using spack."; fi
-  #- if [ $ENABLE_ADIOS = 'ON' ]; then ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/bin/spack spec adios ${ADIOS_SPEC}; fi
-  #- if [ $ENABLE_ADIOS = 'ON' ]; then ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/bin/spack install adios ${ADIOS_SPEC}; fi
   # todo:
   #- export SPACK_PYTHON_BIN_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/python*/bin`
   #- pip install cpp-coveralls
@@ -201,8 +195,8 @@ script:
   - export HOST_CONFIG=`ls ${TRAVIS_BUILD_DIR}/uberenv_libs/*.cmake`
   # configure with cmake using host-config
   - cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ${TRAVIS_BUILD_DIR}/src
-  - echo "Printing CMakeError.log"
-  - tail -n200 /home/travis/build/BradWhitlock/conduit/travis-debug-build/CMakeFiles/CMakeError.log
+  #- echo "Printing CMakeError.log"
+  #- tail -n200 /home/travis/build/BradWhitlock/conduit/travis-debug-build/CMakeFiles/CMakeError.log
   # build, test, and install
   - make
   - env CTEST_OUTPUT_ON_FAILURE=1 make test

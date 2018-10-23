@@ -85,17 +85,6 @@ void CONDUIT_RELAY_API conduit_relay_mpi_io_finalize(MPI_Fint comm);
 /// ``save`` works like a 'set' to the file.
 ///
 
-// //-----------------------------------------------------------------------------
-// void CONDUIT_RELAY_API conduit_relay_mpi_io_save(conduit_node *cnode,
-//                                                  const char *path,
-//                                                  MPI_Fint comm);
-//
-// //-----------------------------------------------------------------------------
-// void CONDUIT_RELAY_API conduit_relay_mpi_io_save2(conduit_node *cnode,
-//                                                   const char *path,
-//                                                   const char *protocol,
-//                                                   MPI_Fint comm);
-
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API conduit_relay_mpi_io_save(conduit_node *cnode,
                                                  const char *path,
@@ -106,18 +95,7 @@ void CONDUIT_RELAY_API conduit_relay_mpi_io_save(conduit_node *cnode,
 ///
 /// ``save_merged`` works like an update to the file.
 ///
-
-// //-----------------------------------------------------------------------------
-// void CONDUIT_RELAY_API conduit_relay_mpi_io_save_merged(conduit_node *cnode,
-//                                                         const char *path,
-//                                                         MPI_Fint comm);
-//
-// //-----------------------------------------------------------------------------
-// void CONDUIT_RELAY_API conduit_relay_mpi_io_save_merged2(conduit_node *cnode,
-//                                                          const char *path,
-//                                                          const char *protocol,
-//                                                          MPI_Fint comm);
-
+                                                 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API conduit_relay_mpi_io_save_merged(conduit_node *cnode,
                                                         const char *path,
@@ -128,9 +106,6 @@ void CONDUIT_RELAY_API conduit_relay_mpi_io_save_merged(conduit_node *cnode,
 ///
 /// ``add_step`` adds a new step of data to the file.
 ///
-// void CONDUIT_RELAY_API conduit_relay_mpi_io_add_step(conduit_node *cnode,
-//                                                      const char *path,
-//                                                      MPI_Fint comm);
 
 void CONDUIT_RELAY_API conduit_relay_mpi_io_add_step(conduit_node *cnode,
                                                      const char *path,
@@ -142,17 +117,6 @@ void CONDUIT_RELAY_API conduit_relay_mpi_io_add_step(conduit_node *cnode,
 /// ``load`` works like a 'set', the node is reset and then populated
 ///
 
-// //-----------------------------------------------------------------------------
-// void CONDUIT_RELAY_API conduit_relay_mpi_io_load(const char *path,
-//                                                  conduit_node *cnode,
-//                                                  MPI_Fint comm);
-//
-// //-----------------------------------------------------------------------------
-// void CONDUIT_RELAY_API conduit_relay_mpi_io_load2(const char *path,
-//                                                   const char *protocol,
-//                                                   conduit_node *cnode,
-//                                                   MPI_Fint comm);
-
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API conduit_relay_mpi_io_load(const char *path,
                                                  const char *protocol,
@@ -160,13 +124,6 @@ void CONDUIT_RELAY_API conduit_relay_mpi_io_load(const char *path,
                                                  conduit_node *node,
                                                  MPI_Fint comm);
 
-/// /-----------------------------------------------------------------------------
-// void CONDUIT_RELAY_API conduit_relay_mpi_io_load4(const char *path,
-//                                                   const char *protocol,
-//                                                   int time_step,
-//                                                   int domain,
-//                                                   conduit_node *node,
-//                                                   MPI_Fint comm);
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API conduit_relay_mpi_io_load_step_and_domain(const char *path,

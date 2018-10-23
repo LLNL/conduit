@@ -83,23 +83,6 @@ conduit_relay_io_finalize(void)
     relay::io::finalize();
 }
 
-// //-----------------------------------------------------------------------------
-// void
-// conduit_relay_io_save(conduit_node *cnode, const char *path)
-// {
-//     Node *n = cpp_node(cnode);
-//     relay::io::save(*n, std::string(path));
-// }
-//
-// //-----------------------------------------------------------------------------
-// void
-// conduit_relay_io_save2(conduit_node *cnode,
-//     const char *path, const char *protocol)
-// {
-//     Node *n = cpp_node(cnode);
-//     relay::io::save(*n, std::string(path), std::string(protocol));
-// }
-
 //-----------------------------------------------------------------------------
 void
 conduit_relay_io_save(conduit_node *cnode,
@@ -124,23 +107,6 @@ conduit_relay_io_save(conduit_node *cnode,
     else
         relay::io::save(*n, path_str, protocol_str);
 }
-
-// //-----------------------------------------------------------------------------
-// void
-// conduit_relay_io_save_merged(conduit_node *cnode, const char *path)
-// {
-//     Node *n = cpp_node(cnode);
-//     relay::io::save_merged(*n, std::string(path));
-// }
-//
-// //-----------------------------------------------------------------------------
-// void
-// conduit_relay_io_save_merged2(conduit_node *cnode,
-//     const char *path, const char *protocol)
-// {
-//     Node *n = cpp_node(cnode);
-//     relay::io::save_merged(*n, std::string(path), std::string(protocol));
-// }
 
 //-----------------------------------------------------------------------------
 void
@@ -168,14 +134,6 @@ conduit_relay_io_save_merged(conduit_node *cnode,
         relay::io::save_merged(*n, path_str, protocol_str);
 }
 
-// //-----------------------------------------------------------------------------
-// void conduit_relay_io_add_step(conduit_node *cnode,
-//     const char *path)
-// {
-//     Node *n = cpp_node(cnode);
-//     relay::io::add_step(*n, std::string(path));
-// }
-
 //-----------------------------------------------------------------------------
 void conduit_relay_io_add_step(conduit_node *cnode,
                                    const char *path,
@@ -199,23 +157,6 @@ void conduit_relay_io_add_step(conduit_node *cnode,
     else
         relay::io::add_step(*n, path_str, protocol_str);
 }
-
-// //-----------------------------------------------------------------------------
-// void
-// conduit_relay_io_load(const char *path, conduit_node *cnode)
-// {
-//     Node *n = cpp_node(cnode);
-//     relay::io::load(std::string(path), *n);
-// }
-//
-// //-----------------------------------------------------------------------------
-// void
-// conduit_relay_io_load2(const char *path,
-//     const char *protocol, conduit_node *cnode)
-// {
-//     Node *n = cpp_node(cnode);
-//     relay::io::load(std::string(path), std::string(protocol), *n);
-// }
 
 //-----------------------------------------------------------------------------
 void
@@ -241,22 +182,6 @@ conduit_relay_io_load(const char *path,
     else
         relay::io::load(path_str, protocol_str, *n);
 }
-
-// //-----------------------------------------------------------------------------
-// void
-// conduit_relay_io_load4(const char *path,
-//                        const char *protocol,
-//                        int step,
-//                        int domain,
-//                        conduit_node *cnode)
-// {
-//     Node *n = cpp_node(cnode);
-//     relay::io::load(std::string(path),
-//                     std::string(protocol),
-//                     step,
-//                     domain,
-//                     *n);
-// }
 
 //-----------------------------------------------------------------------------
 void

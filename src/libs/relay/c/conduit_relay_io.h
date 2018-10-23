@@ -82,15 +82,6 @@ void CONDUIT_RELAY_API conduit_relay_io_finalize(void);
 /// ``save`` works like a 'set' to the file.
 ///
 
-// //-----------------------------------------------------------------------------
-// void CONDUIT_RELAY_API conduit_relay_io_save(conduit_node *cnode,
-//                                              const char *path);
-//
-// //-----------------------------------------------------------------------------
-// void CONDUIT_RELAY_API conduit_relay_io_save2(conduit_node *cnode,
-//                                               const char *path,
-//                                               const char *protocol);
-
 //-----------------------------------------------------------------------------
 // conduit_relay_io_save
 // For simpler use cases, accepts NULL for protocol and options
@@ -102,15 +93,6 @@ void CONDUIT_RELAY_API conduit_relay_io_save(conduit_node *cnode,
 ///
 /// ``save_merged`` works like an update to the file.
 ///
-
-// //-----------------------------------------------------------------------------
-// void CONDUIT_RELAY_API conduit_relay_io_save_merged(conduit_node *cnode,
-//                                                     const char *path);
-//
-// //-----------------------------------------------------------------------------
-// void CONDUIT_RELAY_API conduit_relay_io_save_merged2(conduit_node *cnode,
-//                                                      const char *path,
-//                                                      const char *protocol);
 
 //-----------------------------------------------------------------------------
 // conduit_relay_io_save_merged 
@@ -140,17 +122,6 @@ void CONDUIT_RELAY_API conduit_relay_io_add_step(conduit_node *cnode,
 /// ``load`` works like a 'set', the node is reset and then populated
 ///
 
-// //-----------------------------------------------------------------------------
-// void CONDUIT_RELAY_API conduit_relay_io_load(const char *path,
-//                                              conduit_node *cnode);
-//
-// //-----------------------------------------------------------------------------
-// // conduit_relay_io_load
-// // accept NULL for protocol and options
-// void CONDUIT_RELAY_API conduit_relay_io_load2(const char *path,
-//                                               const char *protocol,
-//                                               conduit_node *cnode);
-
 //-----------------------------------------------------------------------------
 // conduit_relay_io_load
 // For simpler use cases, accepts NULL for protocol and options
@@ -158,15 +129,6 @@ void CONDUIT_RELAY_API conduit_relay_io_load(const char *path,
                                              const char *protocol,
                                              conduit_node *coptions,
                                              conduit_node *cnode);
-
-//-----------------------------------------------------------------------------
-// conduit_relay_io_load_step_and_domain
-// accepts NULL for options and protocol
-// void CONDUIT_RELAY_API conduit_relay_io_load4(const char *path,
-//                                               const char *protocol,
-//                                               int step,
-//                                               int domain,
-//                                               conduit_node *cnode);
 
 //-----------------------------------------------------------------------------
 // conduit_relay_io_load_step_and_domain
