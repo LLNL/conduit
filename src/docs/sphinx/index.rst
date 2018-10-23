@@ -69,8 +69,10 @@ Conduit's Core API provides:
 
 Conduit is under active development and targets Linux, OSX, and Windows platforms. The C++ API underpins the other language APIs and currently has the most features. We are still filling out the C, Fortran, and Python APIs.
 
-For more background, please see :doc:`presentations`.
+Describing and sharing computational simulation meshes are very important use cases of Conduit.
+The ``Mesh Blueprint`` facilitates this. For more details, please see the :ref:`Mesh Blueprint Docs and Examples <mesh_blueprint>`.
 
+For more background on Conduit, please see :doc:`presentations`.
 
 Unique Features
 ----------------

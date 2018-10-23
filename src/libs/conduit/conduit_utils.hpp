@@ -340,6 +340,9 @@ namespace utils
      bool CONDUIT_API is_directory(const std::string &path);
 
 //-----------------------------------------------------------------------------
+     index_t CONDUIT_API file_size(const std::string &path);
+
+//-----------------------------------------------------------------------------
 /// Creates a new directory.
 /// 
 /// Does not recursively create parent directories if they do not already 

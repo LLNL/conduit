@@ -214,21 +214,30 @@ add_step(const Node &node,
 void
 add_step(const Node &node,
          const std::string &path,
-         const std::string &protocol,
+         const std::string &protocol_,
          const Node &options)
 {
+
+    std::string protocol = protocol_;
+    // allow empty protocol to be used for auto detect
+    if(protocol.empty())
+    {
+        identify_protocol(path,protocol);
+    }
+    
     if(protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         Node prev_options;
-        if(!options.dtype().is_empty())
+        if(options.has_child("adios"))
         {
             adios_options(prev_options);
-            adios_set_options(options);
+            adios_set_options(options["adios"]);
         }
-            adios_add_step(node, path);
         
-        if(!options.dtype().is_empty())
+        adios_add_step(node, path);
+        
+        if(!prev_options.dtype().is_empty())
         {
             adios_set_options(prev_options);
         }
@@ -281,9 +290,16 @@ save(const Node &node,
 void 
 save(const Node &node,
      const std::string &path,
-     const std::string &protocol,
+     const std::string &protocol_,
      const Node &options)
 {
+    std::string protocol = protocol_;
+    // allow empty protocol to be used for auto detect
+    if(protocol.empty())
+    {
+        identify_protocol(path,protocol);
+    }
+
     // support conduit::Node's basic save cases
     if(protocol == "conduit_bin" ||
        protocol == "json" || 
@@ -295,20 +311,21 @@ save(const Node &node,
     else if( protocol == "hdf5")
     {
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+        // hdf5 is the only protocol that currently takes "options"
         Node prev_options;
-        if(!options.dtype().is_empty())
+        if(options.has_child("hdf5"))
         {
             hdf5_options(prev_options);
-            hdf5_set_options(options);
+            hdf5_set_options(options["hdf5"]);
         }
-        
+
         hdf5_save(node,path);
 
-        if(!options.dtype().is_empty())
+        if(!prev_options.dtype().is_empty())
         {
             hdf5_set_options(prev_options);
         }
-        
+
 #else
         CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
                       "Failed to save conduit node to path " << path);
@@ -336,15 +353,15 @@ save(const Node &node,
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         Node prev_options;
-        if(!options.dtype().is_empty())
+        if(options.has_child("adios"))
         {
             adios_options(prev_options);
-            adios_set_options(options);
+            adios_set_options(options["adios"]);
         }
 
         adios_save(node,path);
 
-        if(!options.dtype().is_empty())
+        if(!prev_options.dtype().is_empty())
         {
             adios_set_options(prev_options);
         }
@@ -373,9 +390,16 @@ save_merged(const Node &node,
 void 
 save_merged(const Node &node,
             const std::string &path,
-            const std::string &protocol,
+            const std::string &protocol_,
             const Node &options)
 {
+    std::string protocol = protocol_;
+    // allow empty protocol to be used for auto detect
+    if(protocol.empty())
+    {
+        identify_protocol(path,protocol);
+    }
+    
     // support conduit::Node's basic save cases
     if(protocol == "conduit_bin" ||
        protocol == "json" || 
@@ -383,23 +407,28 @@ save_merged(const Node &node,
        protocol == "conduit_base64_json" )
     {
         Node n;
-        n.load(path,protocol);
+        // support case where the path is initially empty
+        if(utils::is_file(path))
+        {
+            n.load(path,protocol);
+        }
         n.update(node);
         n.save(path,protocol);
     }
     else if( protocol == "hdf5")
     {
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+        // hdf5 is the only protocol that currently takes "options"
         Node prev_options;
-        if(!options.dtype().is_empty())
+        if(options.has_child("hdf5"))
         {
             hdf5_options(prev_options);
-            hdf5_set_options(options);
+            hdf5_set_options(options["hdf5"]);
         }
         
         hdf5_append(node,path);
         
-        if(!options.dtype().is_empty())
+        if(!prev_options.dtype().is_empty())
         {
             hdf5_set_options(prev_options);
         }
@@ -412,7 +441,11 @@ save_merged(const Node &node,
     {
 #ifdef CONDUIT_RELAY_IO_SILO_ENABLED
         Node n;
-        silo_read(path,n);
+        // support case where the path is initially empty
+        if(utils::is_file(path))
+        {
+            silo_read(path,n);
+        }
         n.update(node);
         silo_write(n,path);
 #else
@@ -434,15 +467,15 @@ save_merged(const Node &node,
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         Node prev_options;
-        if(!options.dtype().is_empty())
+        if(options.has_child("adios"))
         {
             adios_options(prev_options);
-            adios_set_options(options);
+            adios_set_options(options["adios"]);
         }
 
         adios_save_merged(node,path);
 
-        if(!options.dtype().is_empty())
+        if(!prev_options.dtype().is_empty())
         {
             adios_set_options(prev_options);
         }
@@ -461,13 +494,20 @@ save_merged(const Node &node,
 //---------------------------------------------------------------------------//
 void
 load(const std::string &path,
-     const std::string &protocol,
+     const std::string &protocol_,
      int step,
      int domain,
      const Node &options,
      Node &node)
 {
-
+    node.reset();
+    std::string protocol = protocol_;
+    // allow empty protocol to be used for auto detect
+    if(protocol.empty())
+    {
+        identify_protocol(path,protocol);
+    }
+    
     // support conduit::Node's basic load cases
     if(protocol == "conduit_bin" ||
        protocol == "json" || 
@@ -479,7 +519,6 @@ load(const std::string &path,
     else if( protocol == "hdf5")
     {
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-        node.reset();
         hdf5_read(path,node);
 #else
         CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
@@ -504,16 +543,16 @@ load(const std::string &path,
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         Node prev_options;
-        if(!options.dtype().is_empty())
+        if(options.has_child("adios"))
         {
             adios_options(prev_options);
-            adios_set_options(options);
+            adios_set_options(options["adios"]);
         }
 
         node.reset();
         adios_load(path,step,domain,node);
 
-        if(!options.dtype().is_empty())
+        if(!prev_options.dtype().is_empty())
         {
             adios_set_options(prev_options);
         }
@@ -564,9 +603,16 @@ load(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 load_merged(const std::string &path,
-            const std::string &protocol,
+            const std::string &protocol_,
             Node &node)
 {
+    std::string protocol = protocol_;
+    // allow empty protocol to be used for auto detect
+    if(protocol.empty())
+    {
+        identify_protocol(path,protocol);
+    }
+    
     // support conduit::Node's basic load cases
     if(protocol == "conduit_bin" ||
        protocol == "json" || 
@@ -582,9 +628,7 @@ load_merged(const std::string &path,
     else if( protocol == "hdf5")
     {
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-        Node n;
-        hdf5_read(path,n);
-        node.update(n);
+        hdf5_read(path,node);
 #else
         CONDUIT_ERROR("relay lacks HDF5 support: " << 
                       "Failed to read conduit node from path " << path);
@@ -629,18 +673,18 @@ load_merged(const std::string &path,
 int
 query_number_of_steps(const std::string &path)
 {
-    int ndoms = 1;
+    int nsteps = 1;
     std::string protocol;
     identify_protocol(path,protocol);
 
     if(protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
-        ndoms = adios_query_number_of_steps(path);
+        nsteps = adios_query_number_of_steps(path);
 #endif
     }
 
-    return ndoms;
+    return nsteps;
 }
 
 //---------------------------------------------------------------------------//

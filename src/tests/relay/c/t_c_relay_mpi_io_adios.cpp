@@ -132,7 +132,7 @@ TEST(conduit_relay_mpi_io_c, test_mpi_io_c_save_and_load)
     /*if(rank == 0) conduit_node_print(in);*/
     
     info = conduit_node_create();
-    EXPECT_EQ(conduit_node_diff(out, in, info, 0.0), 1);
+    EXPECT_EQ(conduit_node_diff(out, in, info, 0.0), 0);
 
     /* Cleanup */
     conduit_node_destroy(out);
@@ -181,7 +181,7 @@ TEST(conduit_relay_mpi_io_c, test_mpi_io_c_time_series)
         conduit_node *in = conduit_node_create();
         conduit_relay_mpi_io_load_step_and_domain(path, protocol, ts, rank, NULL, in, MPI_Comm_c2f(MPI_COMM_WORLD));
 
-        EXPECT_EQ(conduit_node_diff(in, out[ts],info,0.0), 1);
+        EXPECT_EQ(conduit_node_diff(in, out[ts],info,0.0), 0);
         conduit_node_destroy(in);
     }
     conduit_node_destroy(info);

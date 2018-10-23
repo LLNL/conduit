@@ -110,7 +110,7 @@ TEST(conduit_relay_io_c, test_io_c_save_and_load)
     conduit_relay_io_load(path, NULL, NULL, in);
     info = conduit_node_create();
     
-    EXPECT_EQ(conduit_node_diff(out, in, info,0.0), 1);
+    EXPECT_EQ(conduit_node_diff(out, in, info,0.0), 0);
 
     /* Cleanup */
     conduit_node_destroy(out);
@@ -119,7 +119,7 @@ TEST(conduit_relay_io_c, test_io_c_save_and_load)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_relay_io_c, test_mpi_io_c_time_series)
+TEST(conduit_relay_io_c, test_io_c_time_series)
 {
     const char *path = "test_io_c_time_series.bp";
     const char *protocol = "adios";
@@ -155,7 +155,7 @@ TEST(conduit_relay_io_c, test_mpi_io_c_time_series)
         conduit_node *in = conduit_node_create();
         conduit_relay_io_load_step_and_domain(path, protocol, ts, 0, NULL, in);
 
-        EXPECT_EQ(conduit_node_diff(in, out[ts], info, 0.0), 1);
+        EXPECT_EQ(conduit_node_diff(in, out[ts], info, 0.0), 0);
         conduit_node_destroy(in);
     }
     

@@ -78,6 +78,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <fstream>
 
 
 // define proper path sep
@@ -504,6 +505,13 @@ is_file(const std::string &path)
     return res;
 }
 
+//-----------------------------------------------------------------------------
+int64
+file_size(const std::string &path)
+{
+    std::ifstream ifs(path, std::ifstream::ate | std::ifstream::binary);
+    return (int64) ifs.tellg();
+}
 
 //-----------------------------------------------------------------------------
 bool

@@ -61,6 +61,7 @@
 #include "conduit_relay_config.h"
 
 #include "conduit_relay_io.hpp"
+#include "conduit_relay_io_blueprint.hpp"
 #include "conduit_relay_web.hpp"
 #include "conduit_relay_web_node_viewer_server.hpp"
 

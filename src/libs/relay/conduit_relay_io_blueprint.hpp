@@ -44,116 +44,67 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_mesh_examples.hpp
+/// file: conduit_relay_io_blueprint.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_BLUEPRINT_MESH_EXAMPLES_HPP
-#define CONDUIT_BLUEPRINT_MESH_EXAMPLES_HPP
+// NOTE: This functionality is a placeholder for more general functionality in
+// future versions of Blueprint. That said, the functions in this header are
+// subject to change and could be moved with any future iteration of Conduit,
+// so use this header with caution!
+
+#ifndef CONDUIT_RELAY_IO_BLUEPRINT_HPP
+#define CONDUIT_RELAY_IO_BLUEPRINT_HPP
 
 //-----------------------------------------------------------------------------
-// conduit lib includes
+// conduit lib include 
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-#include "conduit_blueprint.hpp"
-#include "conduit_blueprint_exports.h"
+#include "conduit_relay_exports.h"
+#include "conduit_relay_config.h"
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::--
+// -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
 {
 
-
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint --
+// -- begin conduit::relay --
 //-----------------------------------------------------------------------------
-namespace blueprint
+namespace relay
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mesh --
+// -- begin conduit::relay::io_blueprint --
 //-----------------------------------------------------------------------------
-namespace mesh 
+namespace io_blueprint
 {
 
 //-----------------------------------------------------------------------------
-/// Methods that generate example meshes.
+void CONDUIT_RELAY_API save(const Node &mesh,
+                            const std::string &path);
+
 //-----------------------------------------------------------------------------
-namespace examples
-{
-    /// Generates a uniform grid with a scalar field that assigns a unique,
-    /// monotonically increasing value to each element.
-    void CONDUIT_BLUEPRINT_API basic(const std::string &mesh_type,
-                                     conduit::index_t nx,
-                                     conduit::index_t ny,
-                                     conduit::index_t nz,
-                                     conduit::Node &res);
+void CONDUIT_RELAY_API save(const Node &mesh,
+                            const std::string &path,
+                            const std::string &protocol);
 
-    /// Generates a braid-like example mesh that covers elements defined in a
-    /// rectilinear grid. The element type (e.g. triangles, quads, their 3D
-    /// counterparts, or a mixture) and the coordinate set/topology
-    /// types can be configured by specifying different "mesh_type" values
-    /// (see the Conduit documentation for details).
-    void CONDUIT_BLUEPRINT_API braid(const std::string &mesh_type,
-                                     conduit::index_t nx,
-                                     conduit::index_t ny,
-                                     conduit::index_t nz,
-                                     conduit::Node &res);
-
-    /// Generates a rectilinear grid with a scalar field that
-    /// visualizes the julia set (https://en.wikipedia.org/wiki/Julia_set)
-    void CONDUIT_BLUEPRINT_API julia(conduit::index_t nx,
-                                     conduit::index_t ny,
-                                     conduit::float64 x_min,
-                                     conduit::float64 x_max,
-                                     conduit::float64 y_min,
-                                     conduit::float64 y_max,
-                                     conduit::float64 c_re,
-                                     conduit::float64 c_im,
-                                     conduit::Node &res);
-
-    /// Generates a multi-domain fibonacci estimation of a golden spiral.
-    void CONDUIT_BLUEPRINT_API spiral(conduit::index_t ndomains,
-                                      conduit::Node &res);
-
-    /// Generates a tessellated heterogeneous polygonal mesh consisting of
-    /// packed octogons and rectangles.
-    void CONDUIT_BLUEPRINT_API polytess(conduit::index_t nlevels,
-                                        conduit::Node &res);
-
-    /// Generates an assortment of extra meshes that demonstrate the use of
-    /// less common concepts (e.g. adjacency sets, amr blocks, etc.).
-    void CONDUIT_BLUEPRINT_API misc(const std::string &mesh_type,
-                                    conduit::index_t nx,
-                                    conduit::index_t ny,
-                                    conduit::index_t nz,
-                                    conduit::Node &res);
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::examples --
+// -- end conduit::relay::io_blueprint --
 //-----------------------------------------------------------------------------
 
-
-//-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh --
+// -- end conduit::relay --
 //-----------------------------------------------------------------------------
 
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint --
-//-----------------------------------------------------------------------------
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit --
+// -- end conduit:: --
 //-----------------------------------------------------------------------------
 
 
-#endif 
-
-
-
+#endif

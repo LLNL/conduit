@@ -231,10 +231,17 @@ save(const Node &node,
 void 
 save(const Node &node,
      const std::string &path,
-     const std::string &protocol,
+     const std::string &protocol_,
      const Node &options,
      MPI_Comm comm)
 {
+    std::string protocol = protocol_;
+    // allow empty protocol to be used for auto detect
+    if(protocol.empty())
+    {
+        identify_protocol(path,protocol);
+    }
+    
     // support conduit::Node's basic save cases
     if(protocol == "conduit_bin" ||
        protocol == "json" || 
@@ -247,15 +254,15 @@ save(const Node &node,
     {
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
         Node prev_options;
-        if(!options.dtype().is_empty())
+        if(options.has_child("hdf5"))
         {
             hdf5_options(prev_options);
-            hdf5_set_options(options);
+            hdf5_set_options(options["hdf5"]);
         }
 
         hdf5_save(node,path);
         
-        if(!options.dtype().is_empty())
+        if(!prev_options.dtype().is_empty())
         {
             hdf5_set_options(prev_options);
         }
@@ -286,15 +293,15 @@ save(const Node &node,
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         Node prev_options;
-        if(!options.dtype().is_empty())
+        if(options.has_child("adios"))
         {
             adios_options(prev_options, comm);
-            adios_set_options(options, comm);
+            adios_set_options(options["adios"], comm);
         }
         
         adios_save(node,path,comm);
 
-        if(!options.dtype().is_empty())
+        if(!prev_options.dtype().is_empty())
         {
             adios_set_options(prev_options, comm);
         }
@@ -324,10 +331,17 @@ save_merged(const Node &node,
 void 
 save_merged(const Node &node,
             const std::string &path,
-            const std::string &protocol,
+            const std::string &protocol_,
             const Node &options,
             MPI_Comm comm)
 {
+    std::string protocol = protocol_;
+    // allow empty protocol to be used for auto detect
+    if(protocol.empty())
+    {
+        identify_protocol(path,protocol);
+    }
+    
     // support conduit::Node's basic save cases
     if(protocol == "conduit_bin" ||
        protocol == "json" || 
@@ -344,15 +358,15 @@ save_merged(const Node &node,
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
         
         Node prev_options;
-        if(!options.dtype().is_empty())
+        if(options.has_child("hdf5"))
         {
             hdf5_options(prev_options);
-            hdf5_set_options(options);
+            hdf5_set_options(options["hdf5"]);
         }
         
         hdf5_write(node,path);
         
-        if(!options.dtype().is_empty())
+        if(!prev_options.dtype().is_empty())
         {
             hdf5_set_options(prev_options);
         }
@@ -389,15 +403,15 @@ save_merged(const Node &node,
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         Node prev_options;
-        if(!options.dtype().is_empty())
+        if(options.has_child("adios"))
         {
             adios_options(prev_options, comm);
-            adios_set_options(options, comm);
+            adios_set_options(options["adios"], comm);
         }
         
         adios_save_merged(node,path,comm);
         
-        if(!options.dtype().is_empty())
+        if(!prev_options.dtype().is_empty())
         {
             adios_set_options(prev_options, comm);
         }
@@ -439,23 +453,31 @@ add_step(const Node &node,
 void
 add_step(const Node &node,
          const std::string &path,
-         const std::string &protocol,
+         const std::string &protocol_,
          const Node &options,
          MPI_Comm comm)
 {
+    std::string protocol = protocol_;
+    // allow empty protocol to be used for auto detect
+    if(protocol.empty())
+    {
+        identify_protocol(path,protocol);
+    }
+    
     if(protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+
         Node prev_options;
-        if(!options.dtype().is_empty())
+        if(options.has_child("adios"))
         {
             adios_options(prev_options, comm);
-            adios_set_options(options, comm);
+            adios_set_options(options["adios"], comm);
         }
-        
+                
         adios_add_step(node, path, comm);
         
-        if(!options.dtype().is_empty())
+        if(!prev_options.dtype().is_empty())
         {
             adios_set_options(prev_options, comm);
         }
@@ -478,12 +500,19 @@ add_step(const Node &node,
 //---------------------------------------------------------------------------//
 void
 load(const std::string &path,
-     const std::string &protocol,
+     const std::string &protocol_,
      const Node &options,
      Node &node,
      MPI_Comm comm)
 {
 
+    std::string protocol = protocol_;
+    // allow empty protocol to be used for auto detect
+    if(protocol.empty())
+    {
+        identify_protocol(path,protocol);
+    }
+    
     // support conduit::Node's basic load cases
     if(protocol == "conduit_bin" ||
        protocol == "json" || 
@@ -497,15 +526,15 @@ load(const std::string &path,
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
         node.reset();
         Node prev_options;
-        if(!options.dtype().is_empty())
+        if(options.has_child("hdf5"))
         {
             hdf5_options(prev_options);
-            hdf5_set_options(options);
+            hdf5_set_options(options["hdf5"]);
         }
         
         hdf5_read(path,node);
         
-        if(!options.dtype().is_empty())
+        if(!prev_options.dtype().is_empty())
         {
             hdf5_set_options(prev_options);
         }
@@ -532,16 +561,16 @@ load(const std::string &path,
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         Node prev_options;
-        if(!options.dtype().is_empty())
+        if(options.has_child("adios"))
         {
             adios_options(prev_options, comm);
-            adios_set_options(options, comm);
+            adios_set_options(options["adios"], comm);
         }
 
         node.reset();
         adios_load(path,node,comm);
         
-        if(!options.dtype().is_empty())
+        if(!prev_options.dtype().is_empty())
         {
             adios_set_options(prev_options, comm);
         }
@@ -571,14 +600,20 @@ load(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 load(const std::string &path,
-     const std::string &protocol,
+     const std::string &protocol_,
      int step,
      int domain,
      const Node &options,
      Node &node,
      MPI_Comm comm)
 {
-
+    std::string protocol = protocol_;
+    // allow empty protocol to be used for auto detect
+    if(protocol.empty())
+    {
+        identify_protocol(path,protocol);
+    }
+    
     // support conduit::Node's basic load cases
     if(protocol == "conduit_bin" ||
        protocol == "json" || 
@@ -616,16 +651,16 @@ load(const std::string &path,
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         
         Node prev_options;
-        if(!options.dtype().is_empty())
+        if(options.has_child("adios"))
         {
             adios_options(prev_options, comm);
-            adios_set_options(options, comm);
+            adios_set_options(options["adios"], comm);
         }
-
+        
         node.reset();
         adios_load(path,step,domain,node,comm);
         
-        if(!options.dtype().is_empty())
+        if(!prev_options.dtype().is_empty())
         {
             adios_set_options(prev_options, comm);
         }
@@ -657,10 +692,16 @@ load(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 load_merged(const std::string &path,
-            const std::string &protocol,
+            const std::string &protocol_,
             Node &node,
             MPI_Comm comm)
 {
+    std::string protocol = protocol_;
+    // allow empty protocol to be used for auto detect
+    if(protocol.empty())
+    {
+        identify_protocol(path,protocol);
+    }
     // support conduit::Node's basic load cases
     if(protocol == "conduit_bin" ||
        protocol == "json" || 
@@ -722,7 +763,7 @@ load_merged(const std::string &path,
 //-----------------------------------------------------------------------------
 int query_number_of_steps(const std::string &path, MPI_Comm comm)
 {
-    int ndoms = 1;
+    int nsteps = 1;
     std::string protocol;
     identify_protocol(path,protocol);
 
@@ -730,11 +771,11 @@ int query_number_of_steps(const std::string &path, MPI_Comm comm)
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         // TODO: see if we can do this on comm's rank 0 and bcast.
-        ndoms = adios_query_number_of_steps(path, comm);
+        nsteps = adios_query_number_of_steps(path, comm);
 #endif
     }
 
-    return ndoms;
+    return nsteps;
 }
 
 //-----------------------------------------------------------------------------

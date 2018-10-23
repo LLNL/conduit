@@ -391,8 +391,8 @@ TEST(conduit_relay_io_adios, test_opts_transforms)
     std::string path("test_opts_transforms.bp");
     std::string protocol("adios");
     Node opts;
-    opts["write/transform"] = "zfp";
-    opts["write/transform_options"] = "rate=0.25";
+    opts["adios/write/transform"] = "zfp";
+    opts["adios/write/transform_options"] = "rate=0.25";
     relay::io::save(out, path, protocol, opts);
 
     CONDUIT_INFO("Reading " << path);

@@ -281,7 +281,8 @@ send_using_schema(const Node &node, int dest, int tag, MPI_Comm comm)
 {     
     Schema s_data_compact;
     
-    if( node.is_compact() )
+    // schema will only be valid if compact and contig
+    if( node.is_compact() && node.is_contiguous())
     {
         s_data_compact = node.schema();
     }
@@ -355,8 +356,6 @@ recv_using_schema(Node &node, int src, int tag, MPI_Comm comm)
     n_buff_ptr +=8;
     // wrap the schema string
     n_msg["schema"].set_external_char8_str((char*)(n_buff_ptr));
-    
-    n_msg["schema"].print();
     // create the schema
     Schema rcv_schema;
     Generator gen(n_msg["schema"].as_char8_str());
@@ -1363,7 +1362,8 @@ broadcast_using_schema(Node &node,
         bcast_data_size = static_cast<int>(node.total_bytes_compact());
         
         if(bcast_data_ptr != NULL &&
-           node.is_compact() )
+           node.is_compact() && 
+           node.is_contiguous())
         {
             bcast_buffers["schema"] = node.schema().to_json();
         }

@@ -195,7 +195,7 @@ void conduit_relay_io_add_step(conduit_node *cnode,
         protocol_str = std::string(protocol);
 
     if(opt != NULL)
-        relay::io::add_step(*n, path_str, protocol_str,*opt);
+        relay::io::add_step(*n, path_str, protocol_str, *opt);
     else
         relay::io::add_step(*n, path_str, protocol_str);
 }
@@ -237,9 +237,9 @@ conduit_relay_io_load(const char *path,
         protocol_str = std::string(protocol);
     
     if(opt != NULL)
-        relay::io::load(path_str, std::string(protocol),*opt, *n);
+        relay::io::load(path_str, protocol_str, *opt, *n);
     else
-        relay::io::load(path_str, std::string(protocol),*n);
+        relay::io::load(path_str, protocol_str, *n);
 }
 
 // //-----------------------------------------------------------------------------

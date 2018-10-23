@@ -889,43 +889,66 @@ Schema::operator[](const std::string &path)
 
 //---------------------------------------------------------------------------//
 std::string 
+Schema::name() const
+{
+    std::string name = "";
+
+    const Schema *p = parent();
+    if(p != NULL)
+    {
+        index_t idx = 0;
+        index_t nchld = p->number_of_children();
+        for(index_t i=0; i < nchld; i++)
+        {
+            if( p->child_ptr(i) == this )
+            {
+                idx = i;
+            }
+        }
+
+        std::ostringstream oss;
+
+        // if this schema has a parent, its parent is either an object or list
+        if(p->dtype().is_object())
+        {
+            // use name
+            oss << p->child_name(idx);
+        }
+        else if(p->dtype().is_list())
+        {
+            // use order in the list
+            oss << "[" << idx << "]";
+        }
+
+        name = oss.str();
+    }
+
+    return name;
+}
+
+//---------------------------------------------------------------------------//
+std::string 
 Schema::path() const
 {
+    std::string path = "";
+
     const Schema *p = parent();
+    if(p != NULL)
+    {
+        std::ostringstream oss;
 
-    if(p == NULL)
-    {
-        return "";
-    }
-    
-    index_t idx = 0;
-    index_t nchld = p->number_of_children();
-    for(index_t i=0; i < nchld; i++)
-    {
-        if( p->child_ptr(i) == this )
+        std::string parent_path = p->path();
+        if(parent_path.size() > 0)
         {
-            idx = i;
+            oss << parent_path << "/";
         }
+
+        oss << name();
+
+        path = oss.str();
     }
 
-    std::ostringstream oss;
-    std::string parent_path = p->path();
-    if(parent_path.size() > 0)
-        oss << parent_path << "/";
-
-    // if this schema has a parent, its parent is either an object or list
-    if(p->dtype().is_object())
-    {
-        // use name
-        oss << p->child_name(idx);
-    }
-    else if(p->dtype().is_list())
-    {
-        // use order in the list
-        oss << "[" << idx << "]";
-    }
-
-    return oss.str();
+    return path;
 }
 
 //---------------------------------------------------------------------------//

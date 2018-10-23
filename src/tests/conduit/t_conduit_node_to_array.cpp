@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_node_convert.cpp
+/// file: conduit_node_to_array.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -100,7 +100,7 @@ const NodeConvertFun CONVERT_TO_FUNS[20] = {
 };
 
 //-----------------------------------------------------------------------------
-TEST(conduit_node_convert, to_arrays)
+TEST(conduit_node_to_array, static_type_to_vector)
 {
     uint8 data_vals[3] = {1,2,3};
     Node data_node;
@@ -122,5 +122,37 @@ TEST(conduit_node_convert, to_arrays)
         convert_to_uint8_array(type_node, temp_node);
         EXPECT_FALSE(memcmp(temp_node.data_ptr(), data_node.data_ptr(),
             data_node.total_bytes_allocated()));
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_to_array, dynamic_type_to_vector)
+{
+    uint8 data_vals[3] = {1,2,3};
+    Node data_node;
+    data_node.set(data_vals,3);
+
+    for(index_t ti = 0; ti < 10; ti++)
+    {
+        Node base_node;
+        const DataType::TypeID base_tid = (DataType::TypeID)CONVERT_TYPES[ti];
+        NodeConvertFun base_convert_fun = CONVERT_TO_FUNS[ti];
+        base_convert_fun(data_node, base_node);
+
+        for(index_t tj = 0; tj < 10; tj++)
+        {
+            Node to_node;
+            const DataType::TypeID to_tid = (DataType::TypeID)CONVERT_TYPES[tj];
+            base_node.to_data_type(to_tid, to_node);
+
+            EXPECT_EQ(to_node.dtype().id(), to_tid);
+            EXPECT_EQ(to_node.dtype().number_of_elements(),
+                data_node.dtype().number_of_elements());
+
+            Node temp_node;
+            convert_to_uint8_array(to_node, temp_node);
+            EXPECT_FALSE(memcmp(temp_node.data_ptr(), data_node.data_ptr(),
+                data_node.total_bytes_allocated()));
+        }
     }
 }

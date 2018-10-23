@@ -52,8 +52,7 @@
 #define CONDUIT_RELAY_HDF5_HPP
 
 // NOTE: This file is provided for backward compatibility.
-#pragma message("The conduit_relay_hdf5.hpp header file is deprecated. "
-                "Include conduit_relay_io_hdf5.hpp instead.")
+#pragma message("The conduit_relay_hdf5.hpp header file is deprecated. Include conduit_relay_io_hdf5.hpp instead.")
 
 #include "conduit_relay_io_hdf5.hpp"
 

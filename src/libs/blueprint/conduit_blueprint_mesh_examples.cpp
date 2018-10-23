@@ -48,20 +48,30 @@
 ///
 //-----------------------------------------------------------------------------
 
+#if defined(CONDUIT_PLATFORM_WINDOWS)
+#define NOMINMAX
+#undef min
+#undef max
+#include "Windows.h"
+#endif
+
 //-----------------------------------------------------------------------------
 // std lib includes
 //-----------------------------------------------------------------------------
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <algorithm>
 #include <cassert>
 #include <map>
 #include <set>
+#include <vector>
 
 //-----------------------------------------------------------------------------
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "conduit_blueprint_mesh_examples.hpp"
+#include "conduit_blueprint_mesh.hpp"
 
 
 //-----------------------------------------------------------------------------
@@ -98,9 +108,8 @@ const float64 PI_VALUE = 3.14159265359;
 //---------------------------------------------------------------------------//
 struct point
 {
-    point(float64 px, float64 py, float64 pz = 0.0) : x(px), y(py), z(pz)
-    {
-    };
+    point(float64 px = 0.0, float64 py = 0.0, float64 pz = 0.0) : x(px), y(py), z(pz) {};
+    point(float64* ps) : x(ps[0]), y(ps[1]), z(ps[2]) {};
 
     bool operator<(const point& other) const
     {
@@ -122,6 +131,33 @@ struct point
 
 
 //---------------------------------------------------------------------------//
+void basic_init_example_element_scalar_field(index_t nele_x,
+                                             index_t nele_y,
+                                             index_t nele_z,
+                                             Node &res,
+                                             index_t prims_per_ele=1)
+{
+    index_t nele = nele_x*nele_y;
+
+    if(nele_z > 0)
+    {
+        nele = nele * nele_z;
+    }
+
+    res["association"] = "element";
+    res["topology"] = "mesh";
+    res["volume_dependent"] = "false";
+    res["values"].set(DataType::float64(nele*prims_per_ele));
+
+    float64 *vals = res["values"].value();
+    for(index_t i = 0; i < nele*prims_per_ele; i++)
+    {
+        vals[i] = i + 0.0;
+    }
+}
+
+
+//---------------------------------------------------------------------------//
 void braid_init_example_state(Node &res)
 {
     res["state/time"]   = (float64)3.1415;
@@ -135,6 +171,12 @@ void braid_init_example_point_scalar_field(index_t npts_x,
                                            index_t npts_z,
                                            Node &res)
 {
+
+    if(npts_z < 1) 
+    {
+        npts_z = 1;
+    }
+
     index_t npts = npts_x * npts_y * npts_z;
     
     res["association"] = "vertex";
@@ -440,7 +482,12 @@ braid_init_explicit_coordset(index_t npts_x,
 {
     coords["type"] = "explicit";
     
-    index_t npts = npts_x * npts_y * npts_z;
+    index_t npts = npts_x * npts_y;
+
+    if(npts_z > 1)
+    {
+        npts *= npts_z;
+    }
 
     // also support interleaved
     Node &coord_vals = coords["values"];
@@ -505,14 +552,13 @@ void braid_init_example_adjset(Node &mesh)
     typedef std::map<std::set<index_t>, std::vector<std::vector<index_t> > > group_idx_map;
 
     const std::string dim_names[3] = {"x", "y", "z"};
-    const bool mesh_3d = mesh.child(0)["coordsets/coords/values"].has_child("z");
-    const index_t dim_count = mesh_3d ? 3 : 2;
+    const index_t dim_count = blueprint::mesh::coordset::dims(
+        mesh.child(0).fetch("coordsets").child(0));
 
     // From mesh data, create a map from domain combination tuple to point list.
     // These domain combination tuples represent groups and the point lists contain
     // the points that lie on the shared boundary between these domains.
     point_doms_map mesh_point_doms_map;
-
     conduit::NodeConstIterator doms_it = mesh.children();
     while(doms_it.has_next())
     {
@@ -529,17 +575,16 @@ void braid_init_example_adjset(Node &mesh)
 
         for(index_t i = 0; i < dom_dim_coords[0].number_of_elements(); i++)
         {
-            point coord(dom_dim_coords[0][i], dom_dim_coords[1][i]);
-            if(mesh_3d)
+            float64 cvals[3] = {0.0, 0.0, 0.0};
+            for(index_t d = 0; d < dim_count; d++)
             {
-                coord.z = dom_dim_coords[2][i];
+                cvals[d] = dom_dim_coords[d][i];
             }
-            mesh_point_doms_map[coord][dom_id] = i;
+            mesh_point_doms_map[point(&cvals[0])][dom_id] = i;
         }
     }
 
     group_idx_map groups_map;
-
     point_doms_map::const_iterator pm_itr;
     for(pm_itr = mesh_point_doms_map.begin();
         pm_itr != mesh_point_doms_map.end(); ++pm_itr)
@@ -613,6 +658,264 @@ void braid_init_example_adjset(Node &mesh)
 
 
 //---------------------------------------------------------------------------//
+void braid_init_example_nestset(Node &mesh)
+{
+    typedef std::map<point, index_t> point_id_map;
+    typedef std::pair<index_t, index_t> window;
+
+    // TODO(JRC): Extend this function to support input domains with cylindrical
+    // and spherical coordinates as well.
+    const std::string cartesian_dims[3] = {"x", "y", "z"};
+    const std::string logical_dims[3] = {"i", "j", "k"};
+    const index_t dim_count = blueprint::mesh::coordset::dims(
+        mesh.child(0).fetch("coordsets").child(0));
+
+    // initialize data to easily index domains by id/level //
+
+    std::map<index_t, const Node*> mesh_id_map;
+    index_t max_dom_id = 0, max_level_id = 0;
+    {
+        conduit::NodeConstIterator doms_it = mesh.children();
+        while(doms_it.has_next())
+        {
+            const conduit::Node& dom_node = doms_it.next();
+            const index_t dom_id = dom_node["state/domain_id"].to_uint64();
+            mesh_id_map[dom_id] = &dom_node;
+            max_dom_id = std::max(dom_id, max_dom_id);
+
+            const index_t dom_level = dom_node["state/level_id"].to_uint64();
+            max_level_id = std::max(dom_level, max_level_id);
+        }
+    }
+
+    // transform rectilinear input data into unstructured data //
+
+    std::vector<point_id_map> mesh_point_maps(max_dom_id + 1);
+    std::vector< std::vector<const Node*> > mesh_level_map(max_level_id + 1);
+    {
+        conduit::NodeConstIterator doms_it = mesh.children();
+        while(doms_it.has_next())
+        {
+            const conduit::Node &dom_node = doms_it.next();
+            const index_t dom_id = dom_node["state/domain_id"].to_uint64();
+            const index_t level_id = dom_node["state/level_id"].to_uint64();
+            const conduit::Node &dom_coordset = dom_node["coordsets"].child(0);
+
+            conduit::Node dom_coordset_explicit;
+            if(dom_coordset["type"].as_string() == "uniform")
+            {
+                blueprint::mesh::coordset::uniform::to_explicit(
+                    dom_coordset, dom_coordset_explicit);
+            }
+            else if(dom_coordset["type"].as_string() == "rectilinear")
+            {
+                blueprint::mesh::coordset::rectilinear::to_explicit(
+                    dom_coordset, dom_coordset_explicit);
+            }
+            else
+            {
+                dom_coordset_explicit.set_external(dom_coordset);
+            }
+            const index_t num_points = dom_coordset_explicit["values"].
+                child(0).dtype().number_of_elements();
+
+            point_id_map &dom_point_map = mesh_point_maps[dom_id];
+            {
+                for(index_t i = 0; i < num_points; i++)
+                {
+                    float64 dom_point_vals[3] = {0.0, 0.0, 0.0};
+                    for(index_t d = 0; d < dim_count; d++)
+                    {
+                        conduit::Node &dim_coords =
+                            dom_coordset_explicit["values"][cartesian_dims[d]];
+                        conduit::Node dim_cval(
+                            conduit::DataType(dim_coords.dtype().id(), 1),
+                            dim_coords.element_ptr(i), true);
+                        dom_point_vals[d] = dim_cval.to_float64();
+                    }
+                    dom_point_map[point(&dom_point_vals[0])] = i;
+                }
+            }
+
+            mesh_level_map[level_id].push_back(&dom_node);
+        }
+    }
+
+    // NOTE(JRC): 'mesh_window_maps' maps a given domain ID to all of the windows
+    // for that domain, which are returned via a map from other domain ID to
+    // the indices of the extents in the primary domain.
+    std::map< index_t, std::map<index_t, window> > mesh_window_maps;
+    {
+        for(index_t l = 0; l < (index_t)mesh_level_map.size() - 1; l++)
+        {
+            const std::vector<const Node*> &hi_nodes = mesh_level_map[l];
+            const std::vector<const Node*> &lo_nodes = mesh_level_map[l+1];
+            for(index_t hi = 0; hi < (index_t)hi_nodes.size(); hi++)
+            {
+                for(index_t lo = 0; lo < (index_t)lo_nodes.size(); lo++)
+                {
+                    const Node &hi_node = *hi_nodes[hi];
+                    const Node &lo_node = *lo_nodes[lo];
+
+                    const index_t hi_dom_id = hi_node["state/domain_id"].to_uint64();
+                    const index_t lo_dom_id = lo_node["state/domain_id"].to_uint64();
+                    const point_id_map &hi_point_map = mesh_point_maps[hi_dom_id];
+                    const point_id_map &lo_point_map = mesh_point_maps[lo_dom_id];
+
+                    std::vector<point> point_intx_list;
+                    point_id_map::const_iterator hi_pt_itr = hi_point_map.begin();
+                    point_id_map::const_iterator lo_pt_itr = lo_point_map.begin();
+                    while(hi_pt_itr != hi_point_map.end() && lo_pt_itr != lo_point_map.end())
+                    {
+                        if(hi_pt_itr->first < lo_pt_itr->first)
+                        {
+                            ++hi_pt_itr;
+                        }
+                        else if(lo_pt_itr->first < hi_pt_itr->first)
+                        {
+                            ++lo_pt_itr;
+                        }
+                        else
+                        {
+                            point_intx_list.push_back(hi_pt_itr->first);
+                            ++hi_pt_itr;
+                            ++lo_pt_itr;
+                        }
+                    }
+                    // TODO(JRC): Handle cases wherein the low mesh doesn't
+                    // have a sensible window with the high mesh.
+                    const point min_intx_point = point_intx_list.front();
+                    const point max_intx_point = point_intx_list.back();
+
+                    window &hi_window = mesh_window_maps[hi_dom_id][lo_dom_id];
+                    hi_window.first = hi_point_map.at(min_intx_point);
+                    hi_window.second = hi_point_map.at(max_intx_point);
+
+                    window &lo_window = mesh_window_maps[lo_dom_id][hi_dom_id];
+                    lo_window.first = lo_point_map.at(min_intx_point);
+                    lo_window.second = lo_point_map.at(max_intx_point);
+                }
+            }
+        }
+    }
+
+    conduit::NodeIterator doms_it = mesh.children();
+    while(doms_it.has_next())
+    {
+        conduit::Node &dom_node = doms_it.next();
+        index_t dom_id = dom_node["state/domain_id"].to_uint64();
+        index_t dom_level = dom_node["state/level_id"].to_uint64();
+
+        index_t dom_dims[3] = {0, 0, 0}; // needed for 1d to 3d xform per domain
+        {
+            const conduit::Node &dom_coords = dom_node["coordsets/coords/values"];
+            for(index_t d = 0; d < 3; d++)
+            {
+                dom_dims[d] = !dom_coords.has_child(cartesian_dims[d]) ? 1 :
+                    dom_coords[cartesian_dims[d]].dtype().number_of_elements();
+            }
+        }
+
+        conduit::Node &dom_nestset = dom_node["nestsets/mesh_nest"];
+        dom_nestset["association"].set("element");
+        dom_nestset["topology"].set("mesh");
+
+        std::map<index_t, window>::const_iterator dom_window_itr;
+        for(dom_window_itr = mesh_window_maps[dom_id].begin();
+            dom_window_itr != mesh_window_maps[dom_id].end(); ++dom_window_itr)
+        {
+            index_t odom_id = dom_window_itr->first;
+            const conduit::Node &odom_node = *mesh_id_map[odom_id];
+            index_t odom_level = odom_node["state/level_id"].to_uint64();
+
+            window window_extrema = dom_window_itr->second;
+            std::string window_name;
+            {
+                index_t min_dom_id = std::min(dom_id, odom_id);
+                index_t max_dom_id = std::max(dom_id, odom_id);
+
+                std::ostringstream oss;
+                oss << "window_" <<  min_dom_id << "_" << max_dom_id;
+                window_name = oss.str();
+            }
+
+            conduit::Node &dom_window = dom_nestset["windows"][window_name];
+            dom_window["domain_id"].set(odom_id);
+            dom_window["domain_type"].set(dom_level < odom_level ? "child" : "parent");
+
+            index_t window_extents[2][3] = {{0, 0, 0}, {0, 0, 0}};
+            for(index_t e = 0; e < 2; e++)
+            {
+                index_t window_extreme = e == 0 ? window_extrema.first : window_extrema.second;
+                index_t *window_extent = &window_extents[e][0];
+
+                index_t dim_remainder = window_extreme;
+                for(index_t d = 3; d-- > 0;)
+                {
+                    index_t dim_stride = 1;
+                    for(index_t dd = 0; dd < d; dd++)
+                    {
+                        dim_stride *= dom_dims[dd];
+                    }
+
+                    window_extent[d] = dim_remainder / dim_stride;
+                    dim_remainder = dim_remainder % dim_stride;
+                }
+            }
+
+            for(index_t d = 0; d < dim_count; d++)
+            {
+                // NOTE(JRC): These values may seem incorrect since they're relative
+                // to point space, but they actually work out to calculate the proper
+                // values because the coordinate indices for an element will always
+                // match its minimum point indices and h-l points is number of elements.
+                dom_window["origin"][logical_dims[d]].set(window_extents[0][d]);
+                dom_window["dims"][logical_dims[d]].set(
+                    window_extents[1][d] - window_extents[0][d]);
+            }
+        }
+    }
+
+    doms_it = mesh.children();
+    while(doms_it.has_next())
+    {
+        conduit::Node &dom_node = doms_it.next();
+        conduit::Node &dom_windows_node = dom_node["nestsets/mesh_nest/windows"];
+        conduit::NodeIterator windows_it = dom_windows_node.children();
+        while(windows_it.has_next())
+        {
+            conduit::Node &dom_window_node = windows_it.next();
+            const std::string dom_window_name = windows_it.name();
+            index_t odom_id = dom_window_node["domain_id"].to_uint64();
+
+            const conduit::Node &odom_node = *mesh_id_map[odom_id];
+            const conduit::Node &odom_window_node =
+                odom_node["nestsets/mesh_nest/windows"][dom_window_name];
+
+            const conduit::Node *parent_window_node, *child_window_node;
+            if(dom_window_node["domain_type"].as_string() == "child")
+            {
+                parent_window_node = &dom_window_node;
+                child_window_node = &odom_window_node;
+            }
+            else
+            {
+                parent_window_node = &odom_window_node;
+                child_window_node = &dom_window_node;
+            }
+
+            for(index_t d = 0; d < dim_count; d++)
+            {
+                dom_window_node["ratio"][logical_dims[d]].set(
+                    (*child_window_node)["dims"][logical_dims[d]].to_uint64() /
+                    (*parent_window_node)["dims"][logical_dims[d]].to_uint64());
+            }
+        }
+    }
+}
+
+
+//---------------------------------------------------------------------------//
 void
 braid_uniform(index_t npts_x,
               index_t npts_y,
@@ -635,6 +938,7 @@ braid_uniform(index_t npts_x,
     res["topologies/mesh/coordset"] = "coords"; 
     
     Node &fields = res["fields"];
+
 
     braid_init_example_point_scalar_field(npts_x,
                                           npts_y,
@@ -717,12 +1021,12 @@ braid_structured(index_t npts_x,
   
     res["topologies/mesh/type"] = "structured";
     res["topologies/mesh/coordset"] = "coords";
-    res["topologies/mesh/elements/dims/i"] = nele_x;
-    res["topologies/mesh/elements/dims/j"] = nele_y;
+    res["topologies/mesh/elements/dims/i"] = (int32)nele_x;
+    res["topologies/mesh/elements/dims/j"] = (int32)nele_y;
     
     if(nele_z > 0)
     {
-        res["topologies/mesh/elements/dims/k"] = nele_z; 
+        res["topologies/mesh/elements/dims/k"] = (int32)nele_z; 
     }
 
     Node &fields = res["fields"];
@@ -1775,6 +2079,89 @@ braid_hexs_and_tets(index_t npts_x,
 }
 
 
+//---------------------------------------------------------------------------//
+void
+braid_to_poly(Node &res)
+{
+    const index_t topo_count = res["topologies"].number_of_children();
+    std::vector<Node> poly_topos(topo_count);
+    std::vector<std::string> topo_names(topo_count);
+
+    conduit::NodeConstIterator topos_it = res["topologies"].children();
+    while(topos_it.has_next())
+    {
+        const conduit::Node &topo_node = topos_it.next();
+        const std::string topo_name = topos_it.name();
+        const index_t topo_index = topos_it.index();
+
+        conduit::Node &poly_node = poly_topos[topo_index];
+        blueprint::mesh::topology::unstructured::to_polygonal(topo_node, poly_node);
+        blueprint::mesh::topology::unstructured::generate_offsets(poly_node, poly_node["elements/offsets"]);
+        topo_names[topo_index] = topo_name;
+    }
+
+    res["topologies"].reset();
+    for(index_t ti = 0; ti < topo_count; ti++)
+    {
+        res["topologies"][topo_names[ti]].set(poly_topos[ti]);
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void
+basic(const std::string &mesh_type,
+      index_t npts_x, // number of points in x
+      index_t npts_y, // number of points in y
+      index_t npts_z, // number of points in z
+      Node &res)
+{
+    // NOTE(JRC): The basic mesh example only supports simple, homogenous
+    // element types that can be spanned by zone-centered fields.
+    const std::string mesh_types[] = {
+        "uniform", "rectilinear", "structured",
+        "tris", "quads", "polygons",
+        "tets", "hexs", "polyhedra"};
+    const std::string braid_types[] = {
+        "uniform", "rectilinear", "structured",
+        "tris", "quads", "quads_poly",
+        "tets", "hexs", "hexs_poly"};
+    const index_t mesh_types_subelems_per_elem[] = {
+        1, 1, 1,
+        2, 1, 1,
+        6, 1, 1};
+
+    const index_t num_mesh_types = sizeof(mesh_types) / sizeof(std::string);
+
+    index_t mesh_type_index = -1;
+    for(index_t i = 0; i < num_mesh_types; i++)
+    {
+        if(mesh_type == mesh_types[i])
+        {
+            mesh_type_index = i;
+        }
+    }
+    if(mesh_type_index < 0 || mesh_type_index >= num_mesh_types)
+    {
+        CONDUIT_ERROR("unknown mesh_type = " << mesh_type);
+    }
+
+    braid(braid_types[mesh_type_index], npts_x, npts_y, npts_z, res);
+    res.remove("fields");
+    res.remove("state");
+
+    // TODO(JRC): Consider removing this code if the extra complexity of having
+    // the "offsets" array in the basic examples is decided to be a non-issue.
+    Node &topo = res["topologies"].child(0);
+    if(topo.has_child("elements") && topo["elements"].has_child("offsets"))
+    {
+        topo["elements"].remove("offsets");
+    }
+
+    basic_init_example_element_scalar_field(npts_x-1, npts_y-1, npts_z-1,
+        res["fields/field"], mesh_types_subelems_per_elem[mesh_type_index]);
+}
+
 
 //---------------------------------------------------------------------------//
 void
@@ -1812,6 +2199,11 @@ braid(const std::string &mesh_type,
     {
         braid_quads(npts_x,npts_y,res);
     }
+    else if(mesh_type == "quads_poly")
+    {
+        braid_quads(npts_x,npts_y,res);
+        braid_to_poly(res);
+    }
     else if(mesh_type == "quads_and_tris")
     {
         braid_quads_and_tris(npts_x,npts_y,res);
@@ -1827,6 +2219,11 @@ braid(const std::string &mesh_type,
     else if(mesh_type == "hexs")
     {
         braid_hexs(npts_x,npts_y,npts_z,res);
+    }
+    else if(mesh_type == "hexs_poly")
+    {
+        braid_hexs(npts_x,npts_y,npts_z,res);
+        braid_to_poly(res);
     }
     else if(mesh_type == "hexs_and_tets")
     {
@@ -1846,60 +2243,6 @@ braid(const std::string &mesh_type,
     }
 }
 
-
-
-//---------------------------------------------------------------------------//
-void
-misc(const std::string &mesh_type,
-     index_t npts_x, // number of points in x
-     index_t npts_y, // number of points in y
-     index_t /*npts_z*/, // number of points in z
-     Node &res)
-{
-    // TODO(JRC): Improve these examples so that they use different example
-    // geometry than is used in the "braid" examples.
-    if(mesh_type == "matsets")
-    {
-        braid_quads(npts_x,npts_y,res);
-        braid_init_example_matset(npts_x-1,npts_y-1,0,res["matsets/mesh"]);
-    }
-    else if(mesh_type == "adjsets")
-    {
-        for(index_t j = 0; j < 2; j++)
-        {
-            for(index_t i = 0; i < 2; i++)
-            {
-                const index_t domain_id = j * 2 + i;
-                
-                std::ostringstream oss;
-                oss << "domain" << domain_id;
-                const std::string domain_name = oss.str();
-
-                Node &domain_node = res[domain_name];
-                braid_quads(npts_x,npts_y,domain_node);
-                domain_node["state/domain_id"].set(domain_id);
-
-                Node &domain_coords = domain_node["coordsets/coords/values"];
-                float64_array domain_coords_x = domain_coords["x"].as_float64_array();
-                for(index_t x = 0; x < domain_coords_x.number_of_elements(); x++)
-                {
-                    domain_coords_x[x] += i * 20.0;
-                }
-                float64_array domain_coords_y = domain_coords["y"].as_float64_array();
-                for(index_t y = 0; y < domain_coords_y.number_of_elements(); y++)
-                {
-                    domain_coords_y[y] += j * 20.0;
-                }
-            }
-        }
-
-        braid_init_example_adjset(res);
-    }
-    else
-    {
-        CONDUIT_ERROR("unknown mesh_type = " << mesh_type);
-    }
-}
 
 //---------------------------------------------------------------------------//
 void julia_fill_values(index_t nx,
@@ -2005,6 +2348,7 @@ void julia(index_t nx,
                       c_re, c_im,
                       out);
 }
+
 
 //---------------------------------------------------------------------------//
 void spiral(index_t ndoms,
@@ -2140,8 +2484,321 @@ void spiral(index_t ndoms,
 }
 
 
+//---------------------------------------------------------------------------//
+point
+polytess_calc_polygon_center(const std::vector<index_t> polygon,
+                             std::map< point, index_t > &/*point_map*/,
+                             std::map< index_t, point > &point_rmap)
+{
+    point polygon_center(0.0, 0.0);
+
+    for(index_t pi = 0; pi < (index_t)polygon.size(); pi++)
+    {
+        const point &polygon_point = point_rmap[polygon[pi]];
+        polygon_center.x += polygon_point.x;
+        polygon_center.y += polygon_point.y;
+    }
+
+    polygon_center.x /= (index_t)polygon.size();
+    polygon_center.y /= (index_t)polygon.size();
+
+    return polygon_center;
+}
 
 
+//---------------------------------------------------------------------------//
+point
+polytess_displace_point(const point &start_point,
+                        index_t displace_dir,
+                        float64 displace_mag)
+{
+    const bool is_dir_x = displace_dir % 2 == 0;
+    const bool is_dir_pos = displace_dir > 1;
+    return point(
+        start_point.x + (is_dir_pos ? 1 : -1) * (is_dir_x ? 1.0 : 0.0) * displace_mag,
+        start_point.y + (is_dir_pos ? 1 : -1) * (is_dir_x ? 0.0 : 1.0) * displace_mag);
+}
+
+
+//---------------------------------------------------------------------------//
+std::vector<point>
+polytess_make_polygon(point poly_center,
+                      float64 side_length,
+                      index_t ncorners)
+{
+    const float64 poly_radius = side_length / (2.0 * sin(PI_VALUE / ncorners));
+
+    std::vector<point> poly_points;
+    for(index_t c = 0; c < ncorners; c++)
+    {
+        point cpoint = poly_center;
+        float64 cangle = PI_VALUE + (c + 0.5) * (2.0 * PI_VALUE / ncorners);
+        cpoint.x += poly_radius * cos(cangle);
+        cpoint.y += poly_radius * sin(cangle);
+        poly_points.push_back(cpoint);
+    }
+
+    return poly_points;
+}
+
+
+//---------------------------------------------------------------------------//
+bool
+polytess_add_polygon(const std::vector<point> &polygon_points,
+                     const index_t polygon_level,
+                     std::map< point, index_t > &point_map,
+                     std::map< index_t, point > &point_rmap,
+                     std::vector< std::vector<index_t> > &polygons,
+                     std::vector< index_t > &levels)
+{
+    std::vector<index_t> polygon_indices(polygon_points.size());
+
+    bool is_polygon_duplicate = true;
+    for(index_t pi = 0; pi < (index_t)polygon_points.size(); pi++)
+    {
+        const point &polygon_point = polygon_points[pi];
+        index_t &point_index = polygon_indices[pi];
+
+        if(point_map.find(polygon_point) != point_map.end())
+        {
+            point_index = point_map.find(polygon_point)->second;
+        }
+        else
+        {
+            point_index = point_map.size();
+            point_map[polygon_point] = point_index;
+            point_rmap[point_index] = polygon_point;
+            is_polygon_duplicate = false;
+        }
+    }
+
+    if(!is_polygon_duplicate)
+    {
+        polygons.push_back(polygon_indices);
+        levels.push_back(polygon_level);
+    }
+
+    return !is_polygon_duplicate;
+}
+
+
+//---------------------------------------------------------------------------//
+void polytess_recursive(index_t nlevels,
+                        std::map< point, index_t > &point_map,
+                        std::map< index_t, point > &point_rmap,
+                        std::vector< std::vector<index_t> > &polygons,
+                        std::vector< index_t > &levels)
+{
+    const float64 side_length = 1.0;
+    const float64 octogon_to_center = side_length / (2.0 * tan(PI_VALUE / 8.0));
+    const float64 adj_poly_distance = octogon_to_center + (side_length / 2.0);
+
+    // base case
+    if(nlevels <= 1)
+    {
+        std::vector<point> center_polygon_points = polytess_make_polygon(
+            point(0.0, 0.0), side_length, 8);
+        polytess_add_polygon(center_polygon_points, nlevels,
+            point_map, point_rmap, polygons, levels);
+    }
+    // recursive case
+    else // if(nlevels > 1)
+    {
+        polytess_recursive(nlevels - 1, point_map, point_rmap, polygons, levels);
+
+        for(index_t o = polygons.size() - 1; o >= 0 && levels[o] == nlevels - 1; o--)
+        {
+            if(polygons[o].size() != 8) { continue; }
+
+            const std::vector<index_t> &octogon = polygons[o];
+            const point octogon_center = polytess_calc_polygon_center(octogon, point_map, point_rmap);
+            for(index_t d = 0; d < 4; d++)
+            {
+                const point dir_square_center = polytess_displace_point(
+                    octogon_center, d, adj_poly_distance);
+
+                std::vector<point> dir_square_points = polytess_make_polygon(
+                    dir_square_center, side_length, 4);
+
+                if(polytess_add_polygon(dir_square_points, nlevels,
+                    point_map, point_rmap, polygons, levels))
+                {
+                    const point square_octogon_center = polytess_displace_point(
+                        dir_square_center, (d + 1) % 4, adj_poly_distance);
+
+                    std::vector<point> square_octogon_points = polytess_make_polygon(
+                        square_octogon_center, side_length, 8);
+
+                    polytess_add_polygon(square_octogon_points, nlevels,
+                        point_map, point_rmap, polygons, levels);
+                }
+            }
+        }
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void polytess(index_t nlevels,
+              Node &res)
+{
+    std::map< point, index_t > point_map;
+    std::map< index_t, point > point_rmap;
+    std::vector< std::vector<index_t> > polygons;
+    std::vector< index_t > levels;
+
+    polytess_recursive(nlevels, point_map, point_rmap, polygons, levels);
+
+    index_t conn_size = polygons.size();
+    for(index_t p = 0; p < (index_t)polygons.size(); p++)
+    {
+        conn_size += polygons[p].size();
+    }
+
+    // Populate Coordinates //
+
+    Node &coordset = res["coordsets/coords"];
+    coordset["type"].set("explicit");
+    coordset["values/x"].set(DataType::float64(point_map.size()));
+    coordset["values/y"].set(DataType::float64(point_map.size()));
+
+    float64_array x_coords = coordset["values/x"].value();
+    float64_array y_coords = coordset["values/y"].value();
+    for(index_t pi = 0; pi < (index_t)point_map.size(); pi++)
+    {
+        const point &p = point_rmap[pi];
+        x_coords[pi] = p.x;
+        y_coords[pi] = p.y;
+    }
+
+    // Populate Topology //
+
+    Node &topology = res["topologies/topo"];
+    topology["coordset"].set("coords");
+    topology["type"].set("unstructured");
+    topology["elements/shape"].set("polygonal");
+    topology["elements/connectivity"].set(DataType::uint64(conn_size));
+
+    uint64_array conn_array = topology["elements/connectivity"].value();
+    for(index_t pi = 0, ci = 0; pi < (index_t)polygons.size(); pi++)
+    {
+        const std::vector<index_t> &p = polygons[pi];
+
+        conn_array[ci++] = p.size();
+        for(index_t ii = 0; ii < (index_t)p.size(); ii++)
+        {
+            conn_array[ci++] = p[ii];
+        }
+    }
+
+    blueprint::mesh::topology::unstructured::generate_offsets(
+        topology, topology["elements/offsets"]);
+
+    // Populate Field //
+
+    Node &field =  res["fields/level"];
+    field["topology"].set("topo");
+    field["association"].set("element");
+    field["volume_dependent"].set("false");
+    field["values"].set(DataType::uint32(polygons.size()));
+
+    uint32_array level_array = field["values"].value();
+    for(index_t pi = 0; pi < (index_t)polygons.size(); pi++)
+    {
+        level_array[pi] = levels[pi];
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void
+misc(const std::string &mesh_type,
+     index_t npts_x, // number of points in x
+     index_t npts_y, // number of points in y
+     index_t /*npts_z*/, // number of points in z
+     Node &res)
+{
+    // TODO(JRC): Improve these examples so that they use different example
+    // geometry than is used in the "braid" examples.
+    if(mesh_type == "matsets")
+    {
+        braid_quads(npts_x,npts_y,res);
+        braid_init_example_matset(npts_x-1,npts_y-1,0,res["matsets/mesh"]);
+    }
+    else if(mesh_type == "adjsets")
+    {
+        for(index_t j = 0; j < 2; j++)
+        {
+            for(index_t i = 0; i < 2; i++)
+            {
+                const index_t domain_id = j * 2 + i;
+
+                std::ostringstream oss;
+                oss << "domain" << domain_id;
+                const std::string domain_name = oss.str();
+
+                Node &domain_node = res[domain_name];
+                braid_quads(npts_x,npts_y,domain_node);
+                domain_node["state/domain_id"].set(domain_id);
+
+                Node &domain_coords = domain_node["coordsets/coords/values"];
+                float64_array domain_coords_x = domain_coords["x"].as_float64_array();
+                for(index_t x = 0; x < domain_coords_x.number_of_elements(); x++)
+                {
+                    domain_coords_x[x] += i * 20.0;
+                }
+                float64_array domain_coords_y = domain_coords["y"].as_float64_array();
+                for(index_t y = 0; y < domain_coords_y.number_of_elements(); y++)
+                {
+                    domain_coords_y[y] += j * 20.0;
+                }
+            }
+        }
+
+        braid_init_example_adjset(res);
+    }
+    else if(mesh_type == "nestsets")
+    {
+        braid_rectilinear(npts_x,npts_y,1,res["domain0"]);
+        res["domain0/state/domain_id"].set(0);
+        res["domain0/state/level_id"].set(0);
+
+        for(index_t j = 0; j < 2; j++)
+        {
+            for(index_t i = 0; i < 2; i++)
+            {
+                const index_t domain_id = j * 2 + i + 1;
+
+                std::ostringstream oss;
+                oss << "domain" << domain_id;
+                const std::string domain_name = oss.str();
+
+                Node &domain_node = res[domain_name];
+                braid_rectilinear(npts_x,npts_y,1,domain_node);
+                domain_node["state/domain_id"].set(domain_id);
+                domain_node["state/level_id"].set(1);
+
+                Node &domain_coords = domain_node["coordsets/coords/values"];
+                float64_array domain_coords_x = domain_coords["x"].as_float64_array();
+                for(index_t x = 0; x < domain_coords_x.number_of_elements(); x++)
+                {
+                    domain_coords_x[x] = ( domain_coords_x[x] / 2.0 ) - 5.0 + i * 10.0;
+                }
+                float64_array domain_coords_y = domain_coords["y"].as_float64_array();
+                for(index_t y = 0; y < domain_coords_y.number_of_elements(); y++)
+                {
+                    domain_coords_y[y] = ( domain_coords_y[y] / 2.0 ) - 5.0 + j * 10.0;
+                }
+            }
+        }
+
+        braid_init_example_nestset(res);
+    }
+    else
+    {
+        CONDUIT_ERROR("unknown mesh_type = " << mesh_type);
+    }
+}
 
 //-----------------------------------------------------------------------------
 }

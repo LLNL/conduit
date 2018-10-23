@@ -314,6 +314,11 @@ def setup_osx_sdk_env_vars():
     print "[setting MACOSX_DEPLOYMENT_TARGET to %s]" % env["MACOSX_DEPLOYMENT_TARGET"]
     print "[setting SDKROOT to %s]" % env[ "SDKROOT" ]
 
+def read_spack_full_spec(pkg_name,spec):
+    rv, res = sexe("spack/bin/spack spec " + pkg_name + " " + spec, ret_output=True)
+    for l in res.split("\n"):
+        if l.startswith(pkg_name) and l.count("@") > 0 and l.count("arch=") > 0:
+            return l.strip()
 def main():
     """
     clones and runs spack to setup our third_party libs and
@@ -414,17 +419,19 @@ def main():
         if res != 0:
             return res
         if "spack_activate" in project_opts:
+            # get the full spack spec for our project
+            full_spec = read_spack_full_spec(uberenv_pkg_name,opts["spec"])
             pkg_names = project_opts["spack_activate"].keys()
             for pkg_name in pkg_names:
-              pkg_spec_requirements = project_opts["spack_activate"][pkg_name]
-              failed=False
-              for req in pkg_spec_requirements:
-                  if req not in opts["spec"]:
-                      failed=True
-                      break
-              if not failed:
-                  activate_cmd = "spack/bin/spack activate " + pkg_name
-                  sexe(activate_cmd, echo=True)   
+                pkg_spec_requirements = project_opts["spack_activate"][pkg_name]
+                activate=True
+                for req in pkg_spec_requirements:
+                    if req not in full_spec:
+                        activate=False
+                        break
+                if activate:
+                    activate_cmd = "spack/bin/spack activate " + pkg_name
+                    sexe(activate_cmd, echo=True)
         return res
 
 if __name__ == "__main__":

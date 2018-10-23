@@ -55,7 +55,8 @@ set(DOCS_TESTS
     t_conduit_docs_tutorial_json
     t_conduit_docs_tutorial_ownership
     t_conduit_docs_tutorial_errors
-    t_conduit_docs_blueprint_examples)
+    t_conduit_docs_blueprint_examples
+    t_conduit_docs_blueprint_demos)
 
 set(DOCS_PYTHON_TESTS  
     t_conduit_docs_tutorial_python_basics

@@ -76,7 +76,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
     index_t npts_x = OUTPUT_NUM_AXIS_POINTS;
     index_t npts_y = OUTPUT_NUM_AXIS_POINTS;
     index_t npts_z = 1; // 2D examples ...
-    
+
     blueprint::mesh::examples::braid("uniform",
                                       npts_x,
                                       npts_y,
@@ -100,13 +100,13 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
                                      npts_y,
                                      npts_z,
                                      dsets["lines"]);
-                                     
+
     blueprint::mesh::examples::braid("tris",
                                      npts_x,
                                      npts_y,
                                      npts_z,
                                      dsets["tris"]);
-                                     
+
     blueprint::mesh::examples::braid("quads",
                                      npts_x,
                                      npts_y,
@@ -130,53 +130,41 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
                                      npts_y,
                                      npts_z,
                                      dsets["points"]);
-    
-    
+
     blueprint::mesh::examples::braid("points_implicit",
                                      npts_x,
                                      npts_y,
                                      npts_z,
                                      dsets["points_implicit"]);
-    
-    
-    NodeConstIterator itr = dsets.children();
 
-    Node root;
-    Node &bp_idx = root["blueprint_index"];
+    Node info;
+    NodeConstIterator itr = dsets.children();
     while(itr.has_next())
     {
-        Node info;
         const Node &mesh = itr.next();
-        std::string mesh_name = itr.name();
-        
         EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
         CONDUIT_INFO(info.to_json());
-        
-        // skip unsupported types
-        if( mesh_name != "quads_and_tris" &&
-            mesh_name != "quads_and_tris_offsets" )
-        {
-            CONDUIT_INFO("GEN MESH BP INDEX");        
-            blueprint::mesh::generate_index(mesh,mesh_name,1,bp_idx[mesh_name]);
-            CONDUIT_INFO(bp_idx[mesh_name].to_json());
-
-            info.reset();
-            EXPECT_TRUE(blueprint::mesh::index::verify(bp_idx[mesh_name],info));
-            CONDUIT_INFO(info.to_json());
-        }
     }
-    
-    
+
+    // TODO: Add VisIt support for rendering mixed element and implicit point
+    // meshes so they don't have to be removed before outputting mesh data.
+    dsets.remove("quads_and_tris");
+    dsets.remove("quads_and_tris_offsets");
+    dsets.remove("points_implicit");
+
+    relay::io_blueprint::save(dsets, "braid_2d_examples.blueprint_root");
+    if(hdf5_enabled)
+    {
+        relay::io_blueprint::save(dsets, "braid_2d_examples.blueprint_root_hdf5");
+    }
     if(silo_enabled)
     {
-    
-        NodeConstIterator itr = dsets.children();
-    
+        itr.to_front();
         while(itr.has_next())
         {
             const Node &mesh = itr.next();
             std::string name = itr.name();
-            CONDUIT_INFO("saving 2d example '" << name << "' to silo");
+
             // Skip output of silo mesh for mixed mesh of tris and quads for now.
             // The silo output is not yet defined and it throws an exception
             // in conduit_silo.cpp::silo_write_ucd_zonelist()
@@ -184,7 +172,6 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
             //              std::string topo_shape = shape_block->fetch("shape").as_string();
             // which does not exist for indexed_stream meshes.
             // The silo writer needs to be updated for this case.
-
             if( name == "quads_and_tris" || name == "quads_and_tris_offsets" )
             {
                 CONDUIT_INFO("\tNOTE: skipping output to SILO -- ")
@@ -196,52 +183,6 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
                             "braid_2d_" + name +  "_example.silo:mesh",
                             "conduit_silo_mesh");
         }
-    }
-    
-    
-    Node info;
-    NodeConstIterator idx_itr = root["blueprint_index"].children();
-    while(idx_itr.has_next())
-    {
-
-        const Node &chld = idx_itr.next();
-        EXPECT_TRUE(blueprint::mesh::index::verify(chld,info[idx_itr.name()]));
-    }
-
-    CONDUIT_INFO("blueprint::mesh::index verify info:");
-    CONDUIT_INFO(info.to_json());
-
-    // save json
-    root["protocol/name"] = "json";
-    root["protocol/version"] = PROTOCOL_VER;
-    
-    root["number_of_files"] = 1;
-    root["number_of_trees"] = 1;
-    root["file_pattern"] = "braid_2d_examples_json.json";
-    root["tree_pattern"] = "";
-    
-    CONDUIT_INFO("Creating ")
-    CONDUIT_INFO("Creating: braid_2d_examples_json.root")
-    relay::io::save(root,"braid_2d_examples_json.root","json");
-    CONDUIT_INFO("Creating: braid_2d_examples_json.json")
-    relay::io::save(dsets,"braid_2d_examples_json.json");
-
-
-    // save hdf5 files if enabled
-    if(hdf5_enabled)
-    {
-        root["protocol/name"] = "conduit_hdf5";
-        root["protocol/version"] = PROTOCOL_VER;
-        
-        root["number_of_files"] = 1;
-        root["number_of_trees"] = 1;
-        root["file_pattern"] = "braid_2d_examples.hdf5";
-        root["tree_pattern"] = "/";
-        
-        CONDUIT_INFO("Creating: braid_2d_examples.blueprint_root_hdf5")
-        relay::io::save(root,"braid_2d_examples.blueprint_root_hdf5","hdf5");
-        CONDUIT_INFO("Creating: braid_2d_examples.hdf5")
-        relay::io::save(dsets,"braid_2d_examples.hdf5");
     }
 }
 
@@ -261,7 +202,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
     index_t npts_x = OUTPUT_NUM_AXIS_POINTS;
     index_t npts_y = OUTPUT_NUM_AXIS_POINTS;
     index_t npts_z = OUTPUT_NUM_AXIS_POINTS; // 3D examples ...
-    
+
     blueprint::mesh::examples::braid("uniform",
                                       npts_x,
                                       npts_y,
@@ -316,44 +257,32 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
                                      npts_z,
                                      dsets["hexs_and_tets"]);
 
+    Node info;
     NodeConstIterator itr = dsets.children();
-
-    Node root;
-    Node &bp_idx = root["blueprint_index"];
     while(itr.has_next())
     {
-        Node info;
         const Node &mesh = itr.next();
-        std::string mesh_name = itr.name();
-        
         EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
         CONDUIT_INFO(info.to_json());
-        
-        // skip unsupported types
-        if( mesh_name != "hexs_and_tets")
-        {
-            CONDUIT_INFO("GEN MESH BP INDEX");
-            blueprint::mesh::generate_index(mesh,mesh_name,1,bp_idx[mesh_name]);
-            CONDUIT_INFO(bp_idx[mesh_name].to_json());
-
-            info.reset();
-            EXPECT_TRUE(blueprint::mesh::index::verify(bp_idx[mesh_name],info));
-            CONDUIT_INFO(info.to_json());
-        }
-        
     }
 
+    // TODO: Add VisIt support for rendering mixed element and implicit point
+    // meshes so they don't have to be removed before outputting mesh data.
+    dsets.remove("hexs_and_tets");
+    dsets.remove("points_implicit");
+
+    relay::io_blueprint::save(dsets, "braid_3d_examples.blueprint_root");
+    if(hdf5_enabled)
+    {
+        relay::io_blueprint::save(dsets, "braid_3d_examples.blueprint_root_hdf5");
+    }
     if(silo_enabled)
     {
-    
         itr.to_front();
-        
         while(itr.has_next())
         {
             const Node &mesh = itr.next();
-            //mesh.print();
             std::string name = itr.name();
-            CONDUIT_INFO("saving 3d example '" << name << "' to silo")
 
             // Skip output of silo mesh for mixed mesh of hexs and tets for now.
             // The silo output is not yet defined and it throws an exception
@@ -364,58 +293,16 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
             // The silo writer needs to be updated for this case.
             if(name == "hexs_and_tets")
             {
-                CONDUIT_INFO("\tskipping output to SILO -- this is not implemented yet for indexed_stream meshes.");
+                CONDUIT_INFO("\tNOTE: skipping output to SILO -- ")
+                CONDUIT_INFO("feature is unavailable for mixed element meshes")
                 continue;
             }
+
             relay::io::save(mesh,
                             "braid_3d_" + name +  "_example.silo:mesh",
                             "conduit_silo_mesh");
         }
     }
-    
-    Node info;
-    NodeConstIterator idx_itr = root["blueprint_index"].children();
-    while(idx_itr.has_next())
-    {
-
-        const Node &chld = idx_itr.next();
-        EXPECT_TRUE(blueprint::mesh::index::verify(chld,info[idx_itr.name()]));
-    }
-    
-    CONDUIT_INFO("blueprint::mesh::index verify info:");
-    CONDUIT_INFO(info.to_json());
-    
-    // save json
-    root["protocol/name"] = "json";
-    root["protocol/version"] = PROTOCOL_VER;
-    
-    root["number_of_files"] = 1;
-    root["number_of_trees"] = 1;
-    root["file_pattern"] = "braid_3d_examples_json.json";
-    root["tree_pattern"] = "";
-    
-    CONDUIT_INFO("Creating: braid_3d_examples_json.root")
-    relay::io::save(root,"braid_3d_examples_json.root","json");
-    CONDUIT_INFO("Creating: braid_3d_examples_json.json")
-    relay::io::save(dsets,"braid_3d_examples_json.json");
-    
-    // save hdf5 files if enabled
-    if(hdf5_enabled)
-    {
-        root["protocol/name"]    = "hdf5";
-        root["protocol/version"] = "0.3.1";
-        
-        root["number_of_files"] = 1;
-        root["number_of_trees"] = 1;
-        root["file_pattern"] = "braid_3d_examples.hdf5";
-        root["tree_pattern"] = "/";
-
-        CONDUIT_INFO("Creating: braid_3d_examples.blueprint_root_hdf5")
-        relay::io::save(root,"braid_3d_examples.blueprint_root_hdf5","hdf5");
-        CONDUIT_INFO("Creating: braid_3d_examples.hdf5")
-        relay::io::save(dsets,"braid_3d_examples.hdf5");
-    }
-    
 }
 
 
@@ -427,29 +314,12 @@ TEST(conduit_blueprint_mesh_examples, julia)
                                      -2.0,  2.0, // x range
                                      -2.0,  2.0, // y range
                                      0.285, 0.01, // c value
-                                     res["julia"]);
+                                     res);
     Node info;
-    EXPECT_TRUE(blueprint::mesh::verify(res["julia"],info));
+    EXPECT_TRUE(blueprint::mesh::verify(res,info));
     CONDUIT_INFO(info.to_json());
 
-    blueprint::mesh::generate_index(res["julia"],
-                                    "julia",
-                                    1,
-                                    res["blueprint_index/julia"]);
-    
-    // save json
-    res["protocol/name"] = "json";
-    res["protocol/version"] = PROTOCOL_VER;
-    
-    res["number_of_files"] = 1;
-    res["number_of_trees"] = 1;
-    res["file_pattern"] = "julia_example.blueprint_root";
-    res["tree_pattern"] = "";
-    
-    CONDUIT_INFO("Creating ")
-    CONDUIT_INFO("Creating: julia_example.blueprint_root")
-    relay::io::save(res,"julia_example.blueprint_root","json");
-
+    relay::io_blueprint::save(res, "julia_example.blueprint_root");
 }
 
 
@@ -468,23 +338,69 @@ TEST(conduit_blueprint_mesh_examples, spiral)
                                     "",
                                     ndoms,
                                     res["blueprint_index/spiral"]);
-    
+
     // save json
     res["protocol/name"] = "json";
     res["protocol/version"] = PROTOCOL_VER;
-    
+
     res["number_of_files"] = 1;
     res["number_of_trees"] = ndoms;
     res["file_pattern"] = "spiral_example.blueprint_root";
     res["tree_pattern"] = "spiral/domain_%06d";
-    
-    CONDUIT_INFO("Creating ")
+
     CONDUIT_INFO("Creating: spiral_example.blueprint_root")
     relay::io::save(res,"spiral_example.blueprint_root","json");
-
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, polytess)
+{
+    const index_t nlevels = 3;
+    Node res;
+    blueprint::mesh::examples::polytess(nlevels,
+                                        res);
+
+    Node info;
+    EXPECT_TRUE(blueprint::mesh::verify(res,info));
+    CONDUIT_INFO(info.to_json());
+
+    relay::io_blueprint::save(res, "polytess_example.blueprint_root");
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, 2d_braid_zero_z_check)
+{
+    Node mesh, info;
+    // these checks make sure braid generates valid fields even when
+    // # of z pointers == 0
+    int npts_x = 5;
+    int npts_y = 5;
+    int npts_z = 0;
+
+    std::vector<std::string> braid_type_strings;
+    braid_type_strings.push_back("points");
+    braid_type_strings.push_back("points_implicit");
+    braid_type_strings.push_back("lines");
+    braid_type_strings.push_back("rectilinear");
+    braid_type_strings.push_back("structured");
+    braid_type_strings.push_back("tris");
+    braid_type_strings.push_back("quads");
+    
+    for(index_t i = 0; i < braid_type_strings.size(); i++)
+    {
+        mesh.reset();
+        blueprint::mesh::examples::braid(braid_type_strings[i],
+                                          npts_x,
+                                          npts_y,
+                                          npts_z,
+                                          mesh);
+        // make the braid vertex-assoced field has with more than zero entries
+        EXPECT_GT(mesh["fields/braid/values"].dtype().number_of_elements(),0);
+        mesh.print();
+    }
+}
 
 
 //-----------------------------------------------------------------------------
@@ -503,4 +419,3 @@ int main(int argc, char* argv[])
     result = RUN_ALL_TESTS();
     return result;
 }
-

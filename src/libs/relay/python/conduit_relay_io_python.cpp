@@ -189,14 +189,22 @@ PyRelay_io_save(PyObject *, //self
     PyObject   *py_node  = NULL;
     const char *path     = NULL;
     const char *protocol = NULL;
+    PyObject   *py_opts  = NULL;
     
-    static const char *kwlist[] = {"node","path","protocol", NULL};
+    static const char *kwlist[] = {"node",
+                                   "path",
+                                   "protocol",
+                                   "options",
+                                   NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
-                                     "Os|s",
+                                     "Os|sO",
                                      const_cast<char**>(kwlist),
-                                     &py_node, &path, &protocol))
+                                     &py_node,
+                                     &path,
+                                     &protocol,
+                                     &py_opts))
     {
         return (NULL);
     }
@@ -207,27 +215,143 @@ PyRelay_io_save(PyObject *, //self
         {
             PyErr_SetString(PyExc_TypeError,
                             "relay::save 'node' argument must be a "
-                            "Conduit::Node");
+                            "conduit.Node instance");
             return NULL;
         }
     }
     
-    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+    // default opts is an empty node which is ignored
+    Node opts;
+    Node *opts_ptr = &opts;
+    if(py_opts != NULL)
+    {
+        if(!PyConduit_Node_Check(py_node))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "relay::save 'options' argument must be a "
+                            "conduit.Node instance");
+            return NULL;
+        }
+        
+        opts_ptr = PyConduit_Node_Get_Node_Ptr(py_opts);
+    }
     
+    
+    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+
+    // default protocol string is empty which auto detects
+    std::string protocol_str("");
+
     if(protocol != NULL)
     {
-        relay::io::save(node, std::string(path),std::string(protocol));
+        protocol_str = std::string(protocol);
     }
-    else
+    
+    try
     {
-        relay::io::save(node,std::string(path));
+    
+        relay::io::save(node,
+                        std::string(path),
+                        protocol_str,
+                        *opts_ptr);
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
     }
 
     Py_RETURN_NONE;
 }
 
 //---------------------------------------------------------------------------//
-// conduit::relay::io::save
+// conduit::relay::io::save_merged
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyRelay_io_save_merged(PyObject *, //self
+                       PyObject *args,
+                       PyObject *kwargs)
+{
+    PyObject   *py_node  = NULL;
+    const char *path     = NULL;
+    const char *protocol = NULL;
+    PyObject   *py_opts  = NULL;
+    
+    static const char *kwlist[] = {"node",
+                                   "path",
+                                   "protocol",
+                                   "options",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "Os|sO",
+                                     const_cast<char**>(kwlist),
+                                     &py_node,
+                                     &path,
+                                     &protocol,
+                                     &py_opts))
+    {
+        return (NULL);
+    }
+    
+    if(py_node != NULL)
+    {
+        if(!PyConduit_Node_Check(py_node))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "relay::save 'node' argument must be a "
+                            "conduit.Node instance");
+            return NULL;
+        }
+    }
+    
+    // default opts is an empty node which is ignored
+    Node opts;
+    Node *opts_ptr = &opts;
+    if(py_opts != NULL)
+    {
+        if(!PyConduit_Node_Check(py_node))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "relay::save_merged 'options' argument must be a "
+                            "conduit.Node instance");
+            return NULL;
+        }
+        
+        opts_ptr = PyConduit_Node_Get_Node_Ptr(py_opts);
+    }
+    
+    
+    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+
+    // default protocol string is empty which auto detects
+    std::string protocol_str("");    
+    if(protocol != NULL)
+    {
+        protocol_str = std::string(protocol);
+    }
+    
+    try
+    {
+        relay::io::save_merged(node,
+                               std::string(path),
+                               protocol_str,
+                               *opts_ptr);
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+//---------------------------------------------------------------------------//
+// conduit::relay::io::load
 //---------------------------------------------------------------------------//
 static PyObject * 
 PyRelay_io_load(PyObject *, //self
@@ -255,26 +379,98 @@ PyRelay_io_load(PyObject *, //self
         {
             PyErr_SetString(PyExc_TypeError,
                             "relay::load 'node' argument must be a "
-                            "Conduit::Node");
+                            "conduit.Node instance");
             return NULL;
         }
     }
-    
+
     Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+    // default protocol string is empty which auto detects
+    std::string protocol_str("");
     
     if(protocol != NULL)
     {
-        relay::io::load(std::string(path),std::string(protocol),node);
+        protocol_str = std::string(protocol);
     }
-    else
+    
+    
+    try
     {
-        relay::io::load(std::string(path),node);
+        relay::io::load(std::string(path),
+                        protocol_str,
+                        node);
     }
-
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
+    
     Py_RETURN_NONE;
 }
 
 
+
+
+//---------------------------------------------------------------------------//
+// conduit::relay::io::load_merged
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyRelay_io_load_merged(PyObject *, //self
+                       PyObject *args,
+                       PyObject *kwargs)
+{
+    PyObject   *py_node  = NULL;
+    const char *path     = NULL;
+    const char *protocol = NULL;
+    
+    static const char *kwlist[] = {"node","path","protocol", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "Os|s",
+                                     const_cast<char**>(kwlist),
+                                     &py_node, &path, &protocol))
+    {
+        return (NULL);
+    }
+    
+    if(py_node != NULL)
+    {
+        if(!PyConduit_Node_Check(py_node))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "relay::load 'node' argument must be a "
+                            "conduit.Node instance");
+            return NULL;
+        }
+    }
+
+    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+    // default protocol string is empty which auto detects
+    std::string protocol_str("");
+    
+    if(protocol != NULL)
+    {
+        protocol_str = std::string(protocol);
+    }
+    
+    try
+    {
+        relay::io::load_merged(std::string(path),
+                               protocol_str,
+                               node);
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
 //---------------------------------------------------------------------------//
 // Python Module Method Defs
 //---------------------------------------------------------------------------//
@@ -292,6 +488,14 @@ static PyMethodDef relay_io_python_funcs[] =
       NULL},
     {"load",
      (PyCFunction)PyRelay_io_load,
+      METH_VARARGS | METH_KEYWORDS,
+      NULL},
+    {"save_merged",
+     (PyCFunction)PyRelay_io_save_merged,
+      METH_VARARGS | METH_KEYWORDS,
+      NULL},
+    {"load_merged",
+     (PyCFunction)PyRelay_io_load_merged,
       METH_VARARGS | METH_KEYWORDS,
       NULL},
     //-----------------------------------------------------------------------//
