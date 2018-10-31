@@ -45,7 +45,7 @@
 """
  file: uberenv.py
 
- description: uses spack to install the external third party libs used by a project.
+ description: automates using spack to install a project. 
 
 """
 
@@ -83,6 +83,11 @@ def sexe(cmd,ret_output=False,echo = False):
 def parse_args():
     "Parses args from command line"
     parser = OptionParser()
+    parser.add_option("--install",
+                      action="store_true",
+                      dest="install",
+                      default=False,
+                      help="Install `package_name` instead of `uberenv_package_name`.")
     # where to install
     parser.add_option("--prefix",
                       dest="prefix",
@@ -330,8 +335,10 @@ def main():
     
     project_opts  = load_json_file(opts["project_json"])
     print project_opts
-    uberenv_pkg_name = project_opts["uberenv_package_name"]
-    
+    if opts["install"]:
+        uberenv_pkg_name = project_opts["package_name"]
+    else:
+        uberenv_pkg_name = project_opts["uberenv_package_name"]
     # setup osx deployment target
     print "[uberenv options: %s]" % str(opts)
     if "darwin" in platform.system().lower():
@@ -432,6 +439,11 @@ def main():
                 if activate:
                     activate_cmd = "spack/bin/spack activate " + pkg_name
                     sexe(activate_cmd, echo=True)
+        # note: this assumes package extends python when +python
+        # this may fail general cases
+        if opts["install"] and "+python" in full_spec:
+            activate_cmd = "spack/bin/spack activate " + uberenv_pkg_name
+            sexe(activate_cmd, echo=True)
         return res
 
 if __name__ == "__main__":
