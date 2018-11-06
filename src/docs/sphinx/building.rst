@@ -194,7 +194,7 @@ Building Conduit and Third Party Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 We use **Spack** (http://software.llnl.gov/spack) to help build Conduit's third party dependencies on OSX and Linux. Conduit builds on Windows as well, but there is no automated process to build dependencies necessary to support Conduit's optional features.
 
-``scripts/uberenv/uberenv.py`` automates fetching spack, building and installinng third party dependencies, and can optionally  install Conduit as well. 
+Uberenv (``scripts/uberenv/uberenv.py``) automates fetching spack, building and installing third party dependencies, and can optionally install Conduit as well.  To automate the full install process, Uberenv uses the Conduit Spack package along with extra settings such as Spack compiler and external third party package details for common HPC platforms.
 
 
 Building Third Party Dependencies for Development
@@ -202,7 +202,7 @@ Building Third Party Dependencies for Development
 
 .. note::
   Conduit developers use ``bootstrap-env.sh`` and ``scripts/uberenv/uberenv.py`` to setup third party libraries for Conduit development.
-  This path uses the Conduit Spack package and extra settings, including Spack compiler and external third party package details for some platforms.  For info on how to use the Conduit Spack package see :ref:`building_with_spack`.
+  For info on how to use the Conduit Spack package see :ref:`building_with_spack`.
   
 
 On OSX and Linux, you can use ``bootstrap-env.sh`` (located at the root of the conduit repo) to help setup your development environment. This script uses ``scripts/uberenv/uberenv.py``, which leverages **Spack** to build all of the external third party libraries and tools used by Conduit. Fortran support is optional and all dependencies should build without a fortran compiler. After building these libraries and tools, it writes an initial *host-config* file and adds the Spack built CMake binary to your PATH so can immediately call the ``config-build.sh`` helper script to configure a conduit build.
