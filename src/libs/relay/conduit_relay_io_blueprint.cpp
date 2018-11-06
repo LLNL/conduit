@@ -48,10 +48,15 @@
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit_relay_io_blueprint.hpp"
 #include "conduit_relay_io.hpp"
 
 #include "conduit_blueprint.hpp"
+
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    #include "conduit_relay_mpi_io_blueprint.hpp"
+#else
+    #include "conduit_relay_io_blueprint.hpp"
+#endif
 
 //-----------------------------------------------------------------------------
 // standard lib includes
@@ -71,8 +76,16 @@ namespace conduit
 namespace relay
 {
 
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
 //-----------------------------------------------------------------------------
-// -- begin conduit::relay::io --
+// -- begin conduit::relay::mpi --
+//-----------------------------------------------------------------------------
+namespace mpi
+{
+#endif
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::relay::<mpi>::blueprint --
 //-----------------------------------------------------------------------------
 namespace io_blueprint
 {
@@ -118,16 +131,22 @@ identify_protocol(const std::string &path)
 //---------------------------------------------------------------------------//
 void
 save(const Node &mesh,
-     const std::string &path)
+     const std::string &path
+     CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm))
 {
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    save(mesh,path,identify_protocol(path),comm);
+#else
     save(mesh,path,identify_protocol(path));
+#endif
 }
 
 //---------------------------------------------------------------------------//
 void
 save(const Node &mesh,
      const std::string &path,
-     const std::string &protocol)
+     const std::string &protocol
+     CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm))
 {
     Node info;
     if(protocol != "json" && protocol != "hdf5")
@@ -203,15 +222,23 @@ save(const Node &mesh,
 }
 
 }
+
+
 //-----------------------------------------------------------------------------
-// -- end conduit::relay::io_blueprint --
+// -- end conduit::relay::<mpi>::io_blueprint --
 //-----------------------------------------------------------------------------
+
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::relay::mpi --
+//-----------------------------------------------------------------------------
+#endif
 
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::relay --
 //-----------------------------------------------------------------------------
-
 
 }
 //-----------------------------------------------------------------------------
