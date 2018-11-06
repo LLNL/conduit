@@ -166,6 +166,19 @@ PyInt_AsLong(PyObject *o)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
+// conduit::relay::io::about
+//---------------------------------------------------------------------------//
+static PyObject *
+PyRelay_io_about()
+{
+    //create and return a node with the result of about
+    PyObject *py_node_res = PyConduit_Node_Python_Create();
+    Node *node = PyConduit_Node_Get_Node_Ptr(py_node_res);
+    conduit::relay::io::about(*node);
+    return (PyObject*)py_node_res;
+}
+
+//---------------------------------------------------------------------------//
 // conduit::relay::io::save
 //---------------------------------------------------------------------------//
 static PyObject * 
@@ -464,6 +477,11 @@ PyRelay_io_load_merged(PyObject *, //self
 static PyMethodDef relay_io_python_funcs[] =
 {
     //-----------------------------------------------------------------------//
+    //-----------------------------------------------------------------------//
+    {"about",
+     (PyCFunction)PyRelay_io_about,
+      METH_NOARGS,
+      NULL},
     {"save",
      (PyCFunction)PyRelay_io_save,
       METH_VARARGS | METH_KEYWORDS,

@@ -53,6 +53,7 @@
 #include "conduit_cpp_to_c.hpp"
 
 #include <stdlib.h>
+#include <string.h>
 
 //-----------------------------------------------------------------------------
 // -- begin extern C
@@ -120,6 +121,13 @@ conduit_index_t
 conduit_node_number_of_elements(conduit_node *cnode)
 {
     return cpp_node(cnode)->dtype().number_of_elements();
+}
+
+//-----------------------------------------------------------------------------
+char *
+conduit_node_path(const conduit_node *cnode)
+{
+    return strdup(cpp_node(cnode)->path().c_str());
 }
 
 //-----------------------------------------------------------------------------
@@ -233,9 +241,9 @@ conduit_node_diff_compatible(const conduit_node *cnode,
 //-----------------------------------------------------------------------------
 void
 conduit_node_info(const conduit_node *cnode,
-                  const conduit_node *cnres)
+                   conduit_node *cnres)
 {
-    cpp_node(cnode)->compatible(cpp_node_ref(cnres));
+    cpp_node(cnode)->info(cpp_node_ref(cnres));
 }
 
 //-----------------------------------------------------------------------------
@@ -268,8 +276,8 @@ conduit_node_print_detailed(conduit_node *cnode)
 // -- set for generic types --
 //-----------------------------------------------------------------------------
 void
-conduit_set_node(conduit_node *cnode,
-                 conduit_node *data)
+conduit_node_set_node(conduit_node *cnode,
+                      conduit_node *data)
 {
     cpp_node(cnode)->set_node(*cpp_node(data));
 }
@@ -279,9 +287,9 @@ conduit_set_node(conduit_node *cnode,
 // -- set path for generic types --
 //-----------------------------------------------------------------------------
 void
-conduit_set_path_node(conduit_node *cnode,
-                      const char* path,
-                      conduit_node *data)
+conduit_node_set_path_node(conduit_node *cnode,
+                           const char* path,
+                           conduit_node *data)
 {
     cpp_node(cnode)->set_path_node(path,*cpp_node(data));
 }
@@ -290,8 +298,8 @@ conduit_set_path_node(conduit_node *cnode,
 // -- set external for generic types --
 //-----------------------------------------------------------------------------
 void
-conduit_set_external_node(conduit_node *cnode,
-                          conduit_node *data)
+conduit_node_set_external_node(conduit_node *cnode,
+                               conduit_node *data)
 {
     cpp_node(cnode)->set_external_node(*cpp_node(data));
 }
@@ -301,9 +309,9 @@ conduit_set_external_node(conduit_node *cnode,
 // -- set path external for generic types --
 //-----------------------------------------------------------------------------
 void
-conduit_set_path_external_node(conduit_node *cnode,
-                               const char* path,
-                               conduit_node *data)
+conduit_node_set_path_external_node(conduit_node *cnode,
+                                    const char* path,
+                                    conduit_node *data)
 {
     cpp_node(cnode)->set_path_external_node(path,*cpp_node(data));
 }
@@ -3932,6 +3940,12 @@ conduit_node_fetch_path_as_char8_str(conduit_node *cnode,
     return cpp_node(cnode)->fetch(path).as_char8_str();
 }
 
+//-----------------------------------------------------------------------------
+const conduit_datatype *
+conduit_node_dtype(const conduit_node *cnode)
+{
+    return c_datatype(&(cpp_node(cnode)->dtype()));
+}
 
 }
 //-----------------------------------------------------------------------------
