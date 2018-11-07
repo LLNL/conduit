@@ -281,6 +281,11 @@ DataType CONDUIT_RELAY_API hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
                                                 const std::string &ref_path="");
 
 //-----------------------------------------------------------------------------
+/// Checks if the given path is a valid hdf5 file by opening it.
+//-----------------------------------------------------------------------------
+bool CONDUIT_RELAY_API is_hdf5_file(const std::string &path);
+
+//-----------------------------------------------------------------------------
 /// Returns the names of the children of the path relative to hdf5 id.
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API hdf5_group_list_child_names(hid_t hdf5_id,

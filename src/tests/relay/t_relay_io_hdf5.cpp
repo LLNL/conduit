@@ -975,8 +975,40 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_group_list_children)
     EXPECT_THROW(io::hdf5_group_list_child_names(h5_file_id,"",cnames),Error);
    
     
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, check_if_file_is_hdf5_file)
+{
+    Node n;
+    n["path/mydata"] = 20;
+    std::string tout = "tout_hdf5_check_hdf5_file.hdf5";
+
+    if(utils::is_file(tout))
+    {
+        utils::remove_file(tout);
+    }
     
+    io::save(n,tout, "hdf5");
     
+    // this should be recoged as hdf5
+    EXPECT_TRUE(io::is_hdf5_file(tout));
+
+    tout = "tout_hdf5_check_non_hdf5_file.json";
+
+    if(utils::is_file(tout))
+    {
+        utils::remove_file(tout);
+    }
+
+
+    io::save(n,tout,"json");
+    
+    // this should *not* be recoged as hdf5
+    EXPECT_FALSE(io::is_hdf5_file(tout));
+    
+    // check totally bad path
+    EXPECT_FALSE(io::is_hdf5_file("/path/to/somewhere/that/cant/exist"));
 }
 
 

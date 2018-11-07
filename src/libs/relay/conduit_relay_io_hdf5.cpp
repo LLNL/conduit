@@ -2274,6 +2274,31 @@ hdf5_has_path(hid_t hdf5_id,
     // enable hdf5 error stack
 }
 
+
+
+//---------------------------------------------------------------------------//
+bool
+is_hdf5_file(const std::string &file_path)
+{
+    // disable hdf5 error stack
+    HDF5ErrorStackSupressor supress_hdf5_errors;
+    
+    bool res = false;
+    // open the hdf5 file for read + write
+    hid_t h5_file_id = H5Fopen(file_path.c_str(),
+                               H5F_ACC_RDWR,
+                               H5P_DEFAULT);
+    
+    if( h5_file_id >= 0)
+    {
+        res = true;
+        H5Fclose(h5_file_id);
+    }
+
+    // enable hdf5 error stack
+    return res;
+}
+
 //---------------------------------------------------------------------------//
 void hdf5_group_list_child_names(hid_t hdf5_id,
                                  const std::string &hdf5_path,
