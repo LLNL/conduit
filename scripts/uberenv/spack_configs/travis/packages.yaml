@@ -23,6 +23,10 @@ packages:
     buildable: False
     paths:
       ncurses: /usr
+  perl:
+    buildable: False
+    paths:
+      perl: /usr
   pkg-confg:
     buildable: False
     paths:

@@ -65,7 +65,7 @@ std::string PROTOCOL_VER = CONDUIT_VERSION;
 TEST(conduit_blueprint_mesh_examples, mesh_2d)
 {
     Node io_protos;
-    relay::about(io_protos);
+    relay::io::about(io_protos["io"]);
 
     bool silo_enabled = io_protos["io/protocols/conduit_silo"].as_string() == "enabled";
     bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
@@ -191,7 +191,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
 TEST(conduit_blueprint_mesh_examples, mesh_3d)
 {
     Node io_protos;
-    relay::about(io_protos);
+    relay::io::about(io_protos["io"]);
 
     bool silo_enabled = io_protos["io/protocols/conduit_silo"].as_string() == "enabled";
     bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";

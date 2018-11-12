@@ -122,12 +122,12 @@ relay
    - I/O functionally beyond simple binary, memory mapped, and json-based text file I/O.
    - A light-weight web server for REST and WebSocket clients. 
    - Interfaces for MPI communication using conduit::Node instances as payloads.
- - *Optionally depends on silo, hdf5, szip and mpi*
+ - *Optionally depends on silo, hdf5, szip, adios, and mpi*
 
 blueprint
 ~~~~~~~~~~
  - Provides interfaces for common higher-level conventions and data exchange protocols (eg. describing a “mesh”) using Conduit.
- - *No optional dependancies* 
+ - *No optional dependencies* 
 
 See the :doc:`user` for more details on these libraries. 
 
@@ -144,6 +144,7 @@ Contributors
 - Kenny Weiss (LLNL)
 - Matt Larsen (LLNL)
 - Todd Gamblin (LLNL)
+- Brad Whitlock (Intelligent Light)
 - George Aspesi (Harvey Mudd)
 - Justin Bai (Harvey Mudd)
 - Rupert Deese (Harvey Mudd)

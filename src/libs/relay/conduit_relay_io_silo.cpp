@@ -44,11 +44,15 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay_silo.cpp
+/// file: conduit_relay_io_silo.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit_relay_silo.hpp"
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    #include "conduit_relay_mpi_io_silo.hpp"
+#else
+    #include "conduit_relay_io_silo.hpp"
+#endif
 
 //-----------------------------------------------------------------------------
 // standard lib includes
@@ -90,8 +94,16 @@ namespace conduit
 namespace relay
 {
 
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
 //-----------------------------------------------------------------------------
-// -- begin conduit::relay:io --
+// -- begin conduit::relay::mpi --
+//-----------------------------------------------------------------------------
+namespace mpi
+{
+#endif
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::relay::<mpi>::io --
 //-----------------------------------------------------------------------------
 namespace io
 {
@@ -315,11 +327,25 @@ silo_write_field(DBfile *dbfile,
                         << "/topology");
     }
 
-    NodeConstIterator fld_topos_itr = n_var["topology"].children();
-
-    while(fld_topos_itr.has_next())
+    std::vector<std::string> topos;
+    if(n_var["topology"].number_of_children() > 0)
     {
-        std::string topo_name = fld_topos_itr.next().as_string();
+        // NOTE: this case doesn't seem to make sense WRT the blueprint web doc.
+        NodeConstIterator fld_topos_itr = n_var["topology"].children();
+        while(fld_topos_itr.has_next())
+        {
+            std::string topo_name = fld_topos_itr.next().as_string();
+            topos.push_back(topo_name);
+        }
+    }
+    else
+    {
+        topos.push_back(n_var["topology"].as_string());
+    }
+
+    for(size_t i = 0; i < topos.size(); ++i)
+    {
+        const std::string &topo_name = topos[i];
 
         if(!n_mesh_info.has_path(topo_name))
         {
@@ -378,11 +404,35 @@ silo_write_field(DBfile *dbfile,
             vals_type = DB_FLOAT;
             vals_ptr = (void*)n_values.as_float_ptr();
         }
-        else  if( dtype.is_double() )
-
+        else if( dtype.is_double() )
         {
             vals_type = DB_DOUBLE;
             vals_ptr = (void*)n_values.as_double_ptr();
+        }
+        else if( dtype.is_int() )
+        {
+            vals_type = DB_INT;
+            vals_ptr = (void*)n_values.as_int_ptr();
+        }
+        else if( dtype.is_long() )
+        {
+            vals_type = DB_LONG;
+            vals_ptr = (void*)n_values.as_long_ptr();
+        }
+        else if( dtype.is_long_long() )
+        {
+            vals_type = DB_LONG_LONG;
+            vals_ptr = (void*)n_values.as_long_long_ptr();
+        }
+        else if( dtype.is_char() )
+        {
+            vals_type = DB_CHAR;
+            vals_ptr = (void*)n_values.as_char_ptr();
+        }
+        else if( dtype.is_short() )
+        {
+            vals_type = DB_SHORT;
+            vals_ptr = (void*)n_values.as_short_ptr();
         }
         else
         {
@@ -1189,14 +1239,17 @@ silo_mesh_write(const Node &n,
 {
     int silo_error = 0;
     char silo_prev_dir[256];
+
+    if(!silo_obj_path.empty())
+    {
+        silo_error += DBGetDir(dbfile,silo_prev_dir);
+        silo_error += DBMkDir(dbfile,silo_obj_path.c_str());
+        silo_error += DBSetDir(dbfile,silo_obj_path.c_str());
     
-    silo_error += DBGetDir(dbfile,silo_prev_dir);
-    silo_error += DBMkDir(dbfile,silo_obj_path.c_str());
-    silo_error += DBSetDir(dbfile,silo_obj_path.c_str());
-    
-    CONDUIT_CHECK_SILO_ERROR(silo_error,
-                             " failed to make silo directory:"
-                             << silo_obj_path);
+        CONDUIT_CHECK_SILO_ERROR(silo_error,
+                                 " failed to make silo directory:"
+                                 << silo_obj_path);
+    }
 
     DBoptlist *state_optlist = silo_generate_state_optlist(n);
     
@@ -1255,7 +1308,7 @@ silo_mesh_write(const Node &n,
         }
     
         const Node &n_coords = n["coordsets"][coordset_name];
-    
+
         if(topo_type == "unstructured")
         {
             silo_write_ucd_mesh(dbfile,
@@ -1299,15 +1352,6 @@ silo_mesh_write(const Node &n,
                                  n_mesh_info);
         }
     }
-    
-    
-    if(state_optlist)
-    {
-        silo_error = DBFreeOptlist(state_optlist);
-    }
-    
-    CONDUIT_CHECK_SILO_ERROR(silo_error,
-                             " freeing state optlist.");
 
     if (n.has_path("fields")) 
     {
@@ -1317,6 +1361,7 @@ silo_mesh_write(const Node &n,
         {
             const Node &n_var = itr.next();
             std::string var_name = itr.name();
+
             silo_write_field(dbfile,
                              var_name,
                              n_var,
@@ -1325,10 +1370,21 @@ silo_mesh_write(const Node &n,
         }
     }
 
-    silo_error = DBSetDir(dbfile,silo_prev_dir);
-
+    if(state_optlist)
+    {
+        silo_error = DBFreeOptlist(state_optlist);
+    }
+    
     CONDUIT_CHECK_SILO_ERROR(silo_error,
-                             " changing silo directory to previous path");
+                             " freeing state optlist.");
+
+    if(!silo_obj_path.empty())
+    {
+        silo_error = DBSetDir(dbfile,silo_prev_dir);
+
+        CONDUIT_CHECK_SILO_ERROR(silo_error,
+                                 " changing silo directory to previous path");
+    }
 }
 
 
@@ -1344,12 +1400,6 @@ silo_mesh_write(const Node &node,
                                     std::string(":"),
                                     file_path,
                                     silo_obj_base);
-
-    /// If silo_obj_base is empty, we have a problem ... 
-    if(silo_obj_base.size() == 0)
-    {
-        CONDUIT_ERROR("Invalid path for save: " << path);
-    }
 
     silo_mesh_write(node,file_path,silo_obj_base);
 }
@@ -1385,8 +1435,15 @@ void silo_mesh_write(const Node &node,
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::relay::io --
+// -- end conduit::relay::<mpi>::io --
 //-----------------------------------------------------------------------------
+
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::relay::mpi --
+//-----------------------------------------------------------------------------
+#endif
 
 }
 //-----------------------------------------------------------------------------

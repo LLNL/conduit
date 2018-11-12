@@ -141,6 +141,12 @@ Note: You can not use compiled Python modules built with Python 2 in Python 3 an
  
  * **HDF5_DIR** - Path to a HDF5 install. (Silo support depends on HDF5) 
 
+* **ADIOS_DIR** - Path to an ADIOS install *(optional)*. 
+
+ Controls if ADIOS I/O support is built into *conduit_relay*. When used, the following CMake variables must also be set:
+ 
+ * **HDF5_DIR** - Path to a HDF5 install. (ADIOS support depends on HDF5) 
+
 
 * **BLT_SOURCE_DIR** - Path to BLT.  *(default = "blt")*
 
@@ -194,7 +200,7 @@ Building Conduit and Third Party Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 We use **Spack** (http://software.llnl.gov/spack) to help build Conduit's third party dependencies on OSX and Linux. Conduit builds on Windows as well, but there is no automated process to build dependencies necessary to support Conduit's optional features.
 
-``scripts/uberenv/uberenv.py`` automates fetching spack, building and installinng third party dependencies, and can optionally  install Conduit as well. 
+Uberenv (``scripts/uberenv/uberenv.py``) automates fetching spack, building and installing third party dependencies, and can optionally install Conduit as well.  To automate the full install process, Uberenv uses the Conduit Spack package along with extra settings such as Spack compiler and external third party package details for common HPC platforms.
 
 
 Building Third Party Dependencies for Development
@@ -202,7 +208,7 @@ Building Third Party Dependencies for Development
 
 .. note::
   Conduit developers use ``bootstrap-env.sh`` and ``scripts/uberenv/uberenv.py`` to setup third party libraries for Conduit development.
-  This path uses the Conduit Spack package and extra settings, including Spack compiler and external third party package details for some platforms.  For info on how to use the Conduit Spack package see :ref:`building_with_spack`.
+  For info on how to use the Conduit Spack package see :ref:`building_with_spack`.
   
 
 On OSX and Linux, you can use ``bootstrap-env.sh`` (located at the root of the conduit repo) to help setup your development environment. This script uses ``scripts/uberenv/uberenv.py``, which leverages **Spack** to build all of the external third party libraries and tools used by Conduit. Fortran support is optional and all dependencies should build without a fortran compiler. After building these libraries and tools, it writes an initial *host-config* file and adds the Spack built CMake binary to your PATH so can immediately call the ``config-build.sh`` helper script to configure a conduit build.
@@ -324,6 +330,7 @@ The Conduit Spack package provides several `variants <http://spack.readthedocs.i
   **mpi**             Enable Conduit MPI support           ON (+mpi)
   **hdf5**            Enable Conduit HDF5 support          ON (+hdf5)
   **silo**            Enable Conduit Silo support          ON (+silo)
+  **adios**           Enable Conduit ADIOS support         OFF (+adios)
   **doc**             Build Conduit's Documentation        OFF (+docs)
  ================== ==================================== ======================================
 

@@ -55,6 +55,7 @@
 // -- standard lib includes -- 
 //-----------------------------------------------------------------------------
 #include <string>
+#include <vector>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -273,6 +274,10 @@ namespace utils
                                   std::string &curr,
                                   std::string &next);
 
+    void CONDUIT_API split_string(const std::string &str,
+                                  char sep,
+                                  std::vector<std::string> &sv);
+
     void CONDUIT_API rsplit_string(const std::string &str,
                                    const std::string &sep,
                                    std::string &curr,
@@ -430,7 +435,16 @@ namespace utils
 //-----------------------------------------------------------------------------
      void CONDUIT_API sleep(index_t milliseconds);
 
-
+//----------------------------------------------------------------------------- 
+// String hash functions
+//----------------------------------------------------------------------------- 
+     unsigned int CONDUIT_API hash(const char *k, 
+                                   unsigned int length,
+                                   unsigned int initval = 0);
+     unsigned int CONDUIT_API hash(const char *k, 
+                                   unsigned int initval = 0);
+     unsigned int CONDUIT_API hash(const std::string &k, 
+                                   unsigned int initval = 0);
 
 }
 //-----------------------------------------------------------------------------
