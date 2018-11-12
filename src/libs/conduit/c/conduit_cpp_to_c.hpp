@@ -78,6 +78,20 @@ CONDUIT_API conduit::Node &cpp_node_ref(conduit_node *cnode);
 CONDUIT_API const conduit::Node &cpp_node_ref(const conduit_node *cnode);
 
 
+//---------------------------------------------------------------------------//
+CONDUIT_API conduit::DataType *cpp_datatype(conduit_datatype *cdatatype);
+//---------------------------------------------------------------------------//
+CONDUIT_API conduit_datatype  *c_datatype(conduit::DataType  *datatype);
+
+//---------------------------------------------------------------------------//
+CONDUIT_API const conduit::DataType *cpp_datatype(const conduit_datatype *cdatatype);
+//---------------------------------------------------------------------------//
+CONDUIT_API const conduit_datatype  *c_datatype(const conduit::DataType *datatype);
+
+//---------------------------------------------------------------------------//
+CONDUIT_API conduit::DataType &cpp_datatype_ref(conduit_datatype *cdatatype);
+//---------------------------------------------------------------------------//
+CONDUIT_API const conduit::DataType &cpp_datatype_ref(const conduit_datatype *datatype);
 
 }
 //-----------------------------------------------------------------------------

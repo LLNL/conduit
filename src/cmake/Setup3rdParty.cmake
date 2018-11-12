@@ -132,3 +132,15 @@ if(SILO_DIR)
     endif()
 endif()
 
+################################
+# Setup ADIOS if available
+################################
+# Search for ADIOS.
+if(ADIOS_DIR)
+    include(cmake/thirdparty/SetupADIOS.cmake)
+    include_directories(${ADIOS_INCLUDE_DIRS})
+    # if we don't find ADIOS, throw a fatal error
+    if(NOT ADIOS_FOUND)
+        message(FATAL_ERROR "ADIOS_DIR is set, but ADIOS wasn't found.")
+    endif()
+endif()

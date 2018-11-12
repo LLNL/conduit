@@ -42,7 +42,7 @@
 # 
 ###############################################################################
 """
- file: python_relay_smoke.py
+ file: t_python_relay_smoke.py
  description: Simple unit test for the conduit relay python module interface.
 
 """

@@ -66,6 +66,8 @@ set(RELAY_HDF5_TESTS t_relay_io_hdf5
                      t_relay_io_hdf5_slab
                      t_relay_io_hdf5_opts)
 
+set(RELAY_ADIOS_TESTS t_relay_io_adios)
+set(RELAY_MPI_ADIOS_TESTS t_relay_mpi_io_adios)
 
 ################################
 # Add our main tests
@@ -89,7 +91,6 @@ add_subdirectory("c")
 if(HDF5_FOUND)
     foreach(TEST ${RELAY_HDF5_TESTS})
         add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_relay)
-        # target_link_libraries(${TEST} ${HDF5_LIBRARIES})
     endforeach()
 else()
     message(STATUS "HDF5 disabled: Skipping conduit_relay hdf5 tests")
@@ -100,18 +101,31 @@ if(SILO_FOUND)
     message(STATUS "Silo enabled: Adding conduit_relay Silo unit tests")
     foreach(TEST ${RELAY_SILO_TESTS})
         add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_relay)
-        # target_link_libraries(${TEST} ${SILO_LIBRARIES})
     endforeach()
 else()
     message(STATUS "Silo disabled: Skipping conduit_relay silo tests")
 endif()
 
+if(ADIOS_FOUND)
+    message(STATUS "ADIOS enabled: Adding conduit_relay ADIOS unit tests")
+    foreach(TEST ${RELAY_ADIOS_TESTS})
+        add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_relay)
+    endforeach()
+
+    if(MPI_FOUND)
+        message(STATUS "MPI enabled: Adding conduit_relay_mpi_adios unit tests")
+        foreach(TEST ${RELAY_MPI_ADIOS_TESTS})
+            add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON conduit conduit_relay_mpi_io) 
+        endforeach()
+    endif()
+else()
+    message(STATUS "ADIOS disabled: Skipping conduit_relay ADIOS tests")
+endif()
 
 
 if(MPI_FOUND)
     message(STATUS "MPI enabled: Adding conduit_relay_mpi unit tests")
     foreach(TEST ${RELAY_MPI_TESTS})
-        # this uses 2 procs
         add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON conduit conduit_relay_mpi) 
     endforeach()
 else()
