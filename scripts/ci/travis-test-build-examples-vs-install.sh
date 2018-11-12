@@ -67,7 +67,7 @@ make
 ##########################################
 # find spack installed HDF5_DIR
 export HDF5_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/hdf5*`
-cd ${TRAVIS_BUILD_DIR}/travis-debug-install/examples/using-with-make
+cd ${TRAVIS_BUILD_DIR}/travis-debug-install/examples/conduit/using-with-make
 if [ "${ENABLE_ADIOS}" == "ON" ]; then
     # find spack installed ADIOS_DIR
     export ADIOS_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/adios*`
