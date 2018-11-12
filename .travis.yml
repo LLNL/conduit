@@ -126,8 +126,8 @@ script:
   - cd $TRAVIS_BUILD_DIR
   - echo $TRAVIS_BUILD_DIR 
   # setup spack spec based on our travis options
-  - export SPACK_SPEC="%gcc@4.8+cmake+python"
-  - export SPACK_SPEC="%gcc@4.8+cmake+python"
+  - export SPACK_SPEC="%gcc@4.8+python"
+  - export SPACK_SPEC="%gcc@4.8+python"
   # variants
   - if [ $ENABLE_DOCS = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+doc"; fi
   - if [ $ENABLE_DOCS = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~doc"; fi
