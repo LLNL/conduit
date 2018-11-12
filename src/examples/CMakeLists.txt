@@ -50,4 +50,4 @@
 
 # install using and python examples
 install(DIRECTORY using-with-cmake using-with-make python
-        DESTINATION examples)
+        DESTINATION examples/conduit)
