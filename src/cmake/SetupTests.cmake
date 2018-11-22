@@ -160,7 +160,7 @@ macro(add_fortran_test)
     # note: OUTPUT_DIR is ignored on windows
 
     blt_add_executable( NAME ${arg_TEST}
-                        SOURCES ${arg_TEST}.f ${arg_SOURCES}
+                        SOURCES "${arg_TEST}.f90" ${arg_SOURCES}
                         OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
                         DEPENDS_ON fruit "${arg_DEPENDS_ON}")
 
