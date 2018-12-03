@@ -957,5 +957,13 @@ TEST(conduit_node, check_invalid_index_error)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, check_empty_path_fetch_error)
+{
+    conduit::Node n;
+    EXPECT_THROW(n[""],conduit::Error);
+}
+
+
 
 
