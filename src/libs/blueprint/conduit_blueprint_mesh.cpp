@@ -461,7 +461,7 @@ std::string identify_coords_coordsys(const Node &coords)
         itr.next();
         const std::string axis_name = itr.name();
 
-        if(axis_name[0] == 'd')
+        if(axis_name[0] == 'd' && axis_name.size() > 1)
         {
             axes[axis_name.substr(1, axis_name.length())];
         }
@@ -1457,8 +1457,16 @@ mesh::generate_index(const Node &mesh,
                 {
                     spacing_itr.next();
                     std::string axis_name = spacing_itr.name();
-                    // spacing names start with "d"
-                    axis_name = axis_name.substr(1);
+
+                    // if spacing names start with "d", use substr
+                    // to determine axis name
+
+                    // otherwise use spacing name directly, to avoid empty
+                    // path fetch if just 'x', etc are passed
+                    if(axis_name[0] == 'd' && axis_name.size() > 1)
+                    {
+                        axis_name = axis_name.substr(1);
+                    }
                     idx_coordset["coord_system/axes"][axis_name];
                 }
             }

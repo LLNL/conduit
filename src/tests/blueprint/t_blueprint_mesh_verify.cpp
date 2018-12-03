@@ -2111,3 +2111,24 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
         }
     }
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, mesh_bad_spacing_name)
+{
+
+    Node n_test;
+    n_test["coordsets/coords/type"]= "uniform";
+    n_test["coordsets/coords/dims/i"] = 10;
+    n_test["coordsets/coords/dims/j"] = 10;
+    n_test["coordsets/coords/dims/k"] = 10;
+    n_test["coordsets/coords/spacing/x"] = 10;
+    n_test["coordsets/coords/spacing/y"] = 10;
+    n_test["coordsets/coords/spacing/z"] = 10;
+    n_test["topologies/topo/coordset"] = "coords";
+    n_test["topologies/topo/type"] = "uniform";
+    Node info;
+    bool res = blueprint::mesh::verify(n_test,info);
+    info.print();
+    Node n_idx;
+    blueprint::mesh::generate_index(n_test,"",1,n_idx);
+}

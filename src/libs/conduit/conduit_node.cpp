@@ -11381,6 +11381,11 @@ Node::fetch(const std::string &path)
     {
         init(DataType::object());
     }
+
+    if(path.empty())
+    {
+        CONDUIT_ERROR("Cannot fetch empty path string");
+    }
     
     std::string p_curr;
     std::string p_next;
