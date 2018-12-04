@@ -1362,9 +1362,10 @@ bool mesh::verify_multi_domain(const Node &n,
         }
 
         log::info(info, protocol, "is a multi domain mesh");
-        log::validation(info,res);
     }
-
+    
+    log::validation(info,res);
+    
     return res;
 }
 
@@ -1376,17 +1377,17 @@ mesh::verify(const Node &n,
 {
     bool res = true;
     info.reset();
-
-    if(mesh::verify_multi_domain(n, info))
+    
+    // if n has the child "coordsets", we assume it is a single domain 
+    // mesh
+    if(n.has_child("coordsets"))
     {
-        res = true;
+        res = mesh::verify_single_domain(n, info);
     }
     else
     {
-        info.reset();
-        res = mesh::verify_single_domain(n, info);
+       res = mesh::verify_multi_domain(n, info);
     }
-
     return res;
 }
 
@@ -1394,8 +1395,14 @@ mesh::verify(const Node &n,
 //-------------------------------------------------------------------------
 bool mesh::is_multi_domain(const conduit::Node &n)
 {
-    Node info;
-    return mesh::verify_multi_domain(n, info);
+    // this is a blueprint property, we can assume it will be called 
+    // only when mesh verify is true. Given that - the only check
+    // we need to make is the minimal check to distinguish between 
+    // a single domain and a multi domain tree structure.
+    // checking for a child named "coordsets" mirrors the 
+    // top level verify check
+
+    return !n.has_child("coordsets");
 }
 
 

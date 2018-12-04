@@ -236,14 +236,19 @@ bool verify_nestset_index_protocol(const Node &n, Node &info)
 
 bool verify_mesh_multi_domain_protocol(const Node &n, Node &info)
 {
-    return blueprint::mesh::is_multi_domain(n);
+    // we can only call is_multi_domain if verify is true
+    return  blueprint::mesh::verify(n,info) && 
+            blueprint::mesh::is_multi_domain(n);
 }
 
-void CHECK_MESH(VerifyFun verify, const Node &n, Node &info, bool expected)
-{
-    EXPECT_EQ(verify(n, info), expected);
-    EXPECT_TRUE(has_consistent_validity(info));
-}
+
+/// Helper for mesh verify checks ///
+
+#define CHECK_MESH(verify, n, info, expected)    \
+{                                                \
+    EXPECT_EQ(verify(n, info), expected);        \
+    EXPECT_TRUE(has_consistent_validity(info));  \
+}                                                \
 
 /// Mesh Coordinate Set Tests ///
 
@@ -1853,7 +1858,9 @@ TEST(conduit_blueprint_mesh_verify, index_general)
 TEST(conduit_blueprint_mesh_verify, mesh_multi_domain)
 {
     Node mesh, info;
-    EXPECT_FALSE(blueprint::mesh::is_multi_domain(mesh));
+    // is_multi_domain can only be called if mesh verify is true
+    EXPECT_FALSE( blueprint::mesh::verify(mesh,info) && 
+                  blueprint::mesh::is_multi_domain(mesh));
 
     Node domains[2];
     blueprint::mesh::examples::braid("quads",10,10,1,domains[0]);
@@ -1875,9 +1882,11 @@ TEST(conduit_blueprint_mesh_verify, mesh_multi_domain)
         Node& domain = mesh.child(di);
         EXPECT_FALSE(blueprint::mesh::is_multi_domain(domain));
 
+        // is_multi_domain can only be called if mesh verify is true
         Node coordsets = domain["coordsets"];
         domain.remove("coordsets");
-        EXPECT_FALSE(blueprint::mesh::is_multi_domain(mesh));
+        EXPECT_FALSE( blueprint::mesh::verify(mesh,info) && 
+                      blueprint::mesh::is_multi_domain(mesh));
 
         domain["coordsets"].reset();
         domain["coordsets"].set(coordsets);
