@@ -363,16 +363,22 @@ TEST(conduit_node_set, set_bitwidth_float_ptr)
 //-----------------------------------------------------------------------------
 TEST(c_conduit_node_set, set_native_int_scalar)
 {
-    char   icv = -8;
-    short  isv = -16;
-    int    iiv = -32;
-    long   ilv = -64;
+    char        icv  = 4;
+    signed char iscv = -8;
+    short       isv  = -16;
+    int         iiv  = -32;
+    long        ilv  = -64;
 
     conduit_node *n = conduit_node_create();
     
     // char
     conduit_node_set_char(n,icv);
     EXPECT_EQ(conduit_node_as_char(n),icv);
+    conduit_node_print(n);
+    
+    // signed char
+    conduit_node_set_signed_char(n,iscv);
+    EXPECT_EQ(conduit_node_as_signed_char(n),iscv);
     conduit_node_print(n);
     
     // short
@@ -398,10 +404,10 @@ TEST(c_conduit_node_set, set_native_int_scalar)
 //-----------------------------------------------------------------------------
 TEST(c_conduit_node_set, set_native_uint_scalar)
 {
-    unsigned char   ucv = -8;
-    unsigned short  usv = -16;
-    unsigned int    uiv = -32;
-    unsigned long   ulv = -64;
+    unsigned char   ucv = 8;
+    unsigned short  usv = 16;
+    unsigned int    uiv = 32;
+    unsigned long   ulv = 64;
 
     conduit_node *n = conduit_node_create();
     
@@ -455,10 +461,11 @@ TEST(c_conduit_node_set, set_native_float_scalar)
 //-----------------------------------------------------------------------------
 TEST(c_conduit_node_set, set_native_int_ptr)
 {
-    char  icav[6] = {-2,-4,-8,-16,-32,-64};
-    short isav[6] = {-2,-4,-8,-16,-32,-64};
-    int   iiav[6] = {-2,-4,-8,-16,-32,-64};
-    long  ilav[6] = {-2,-4,-8,-16,-32,-64};
+    char  icav[6]  = {2,4,8,16,32,64};
+    signed char iscav[6] = {-2,-4,-8,-16,-32,-64};
+    short isav[6]  = {-2,-4,-8,-16,-32,-64};
+    int   iiav[6]  = {-2,-4,-8,-16,-32,-64};
+    long  ilav[6]  = {-2,-4,-8,-16,-32,-64};
         
     conduit_node *n = conduit_node_create();
     
@@ -473,7 +480,20 @@ TEST(c_conduit_node_set, set_native_int_ptr)
         // set(...) semantics imply a copy -- mem addys should differ
         EXPECT_NE(&icav_ptr[i],&icav[i]);
     }
-    EXPECT_EQ(icav_ptr[5],char(-64));
+    EXPECT_EQ(icav_ptr[5],64);
+    
+    // using signed char* interface
+    conduit_node_set_signed_char_ptr(n,iscav,6);
+    conduit_node_print(n);
+
+    signed char *iscav_ptr = conduit_node_as_signed_char_ptr(n);
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(iscav_ptr[i],iscav[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&iscav_ptr[i],&iscav[i]);
+    }
+    EXPECT_EQ(iscav_ptr[5],-64);
     
     // using short* interface
     conduit_node_set_short_ptr(n,isav,6);

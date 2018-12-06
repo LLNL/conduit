@@ -244,6 +244,39 @@ public:
                                 index_t endianness = Endianness::DEFAULT_ID);
 #endif
 
+    /// signed integer arrays
+    static DataType c_signed_char(index_t num_elements=1,
+                                  index_t offset = 0,
+                                  index_t stride = sizeof(CONDUIT_NATIVE_SIGNED_CHAR),
+                                  index_t element_bytes =  sizeof(CONDUIT_NATIVE_SIGNED_CHAR),
+                                  index_t endianness = Endianness::DEFAULT_ID);
+
+    static DataType c_signed_short(index_t num_elements=1,
+                                   index_t offset = 0,
+                                   index_t stride = sizeof(CONDUIT_NATIVE_SIGNED_SHORT),
+                                   index_t element_bytes = sizeof(CONDUIT_NATIVE_SIGNED_SHORT),
+                                   index_t endianness = Endianness::DEFAULT_ID);
+
+    static DataType c_signed_int(index_t num_elements=1,
+                                 index_t offset = 0,
+                                 index_t stride = sizeof(CONDUIT_NATIVE_SIGNED_INT),
+                                 index_t element_bytes = sizeof(CONDUIT_NATIVE_SIGNED_INT),
+                                 index_t endianness = Endianness::DEFAULT_ID);
+
+    static DataType c_signed_long(index_t num_elements=1,
+                                  index_t offset = 0,
+                                  index_t stride = sizeof(CONDUIT_NATIVE_SIGNED_LONG),
+                                  index_t element_bytes = sizeof(CONDUIT_NATIVE_SIGNED_LONG),
+                                   index_t endianness = Endianness::DEFAULT_ID);
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    static DataType c_signed_long_long(index_t num_elements=1,
+                                       index_t offset = 0,
+                                       index_t stride = sizeof(CONDUIT_NATIVE_SIGNED_LONG_LONG),
+                                       index_t element_bytes = sizeof(CONDUIT_NATIVE_SIGNED_LONG_LONG),
+                                       index_t endianness = Endianness::DEFAULT_ID);
+#endif
+
     /// unsigned integer arrays
     static DataType c_unsigned_char(index_t num_elements=1,
                                     index_t offset = 0,
@@ -423,6 +456,7 @@ public:
     bool        is_float64()          const;
     bool        is_index_t()          const;
 
+    // native c types
     bool        is_char()             const;
     bool        is_short()            const;
     bool        is_int()              const;
@@ -431,6 +465,16 @@ public:
     /// using long long to fill its support for bitwidth style types
     bool        is_long_long()      const;
 
+    // signed c types
+    bool        is_signed_char()    const;
+    bool        is_signed_short()   const;
+    bool        is_signed_int()     const;
+    bool        is_signed_long()    const;
+    /// note: is_signed_long_long() always returns false if conduit is not
+    /// using long long to fill its support for bitwidth style types
+    bool        is_signed_long_long() const;
+
+    // unsigned c types
     bool        is_unsigned_char()    const;
     bool        is_unsigned_short()   const;
     bool        is_unsigned_int()     const;
@@ -439,16 +483,18 @@ public:
     /// using long long to fill its support for bitwidth style types
     bool        is_unsigned_long_long() const;
 
-
+    // floating point c types
     bool        is_float()            const;
     bool        is_double()           const;
     /// note: is_long_double() always returns false if conduit is not using 
     /// long double to fill its support for bitwidth style types
     bool        is_long_double()      const;
 
+    // strings
     bool        is_string()           const;
     bool        is_char8_str()        const;
 
+    // endianness
     bool        is_little_endian()    const;
     bool        is_big_endian()       const;
     bool        endianness_matches_machine() const;
