@@ -357,24 +357,33 @@ TEST(conduit_node, check_value_implict_c_type_cast)
 {
     conduit::Node n;
     
-    signed char  cv = -1;
-    short sv = -2;
-    int   iv = -3;
-    long  lv = -4;
-     
+    char  cv = 1;
+    short sv = 2;
+    int   iv = 3;
+    long  lv = 4;
+
+    signed char  scv = -1;
+    signed short ssv = -2;
+    signed int   siv = -3;
+    signed long  slv = -4;
+
     unsigned char  ucv = 1;
     unsigned short usv = 2;
     unsigned int   uiv = 3;
     unsigned long  ulv = 4;
-    
+
     float  fv = 1.2f;
     double dv = 2.4;
-    
+
     n["cv"] = cv;
     n["sv"] = sv;
     n["iv"] = iv;
     n["lv"] = lv;
-    
+
+    n["scv"] = scv;
+    n["ssv"] = ssv;
+    n["siv"] = siv;
+    n["slv"] = slv;
     
     n["ucv"] = ucv;
     n["usv"] = usv;
@@ -387,7 +396,7 @@ TEST(conduit_node, check_value_implict_c_type_cast)
      
     n.print();
     
-    signed char  cv_r = n["cv"].value();
+    char  cv_r = n["cv"].value();
     short sv_r = n["sv"].value();
     int   iv_r = n["iv"].value();
     long  lv_r = n["lv"].value();
@@ -397,6 +406,16 @@ TEST(conduit_node, check_value_implict_c_type_cast)
     EXPECT_EQ(sv,sv_r);
     EXPECT_EQ(iv,iv_r);
     EXPECT_EQ(lv,lv_r);
+
+    signed char  scv_r = n["scv"].value();
+    signed short ssv_r = n["ssv"].value();
+    signed int   siv_r = n["siv"].value();
+    signed long  slv_r = n["slv"].value();
+
+    EXPECT_EQ(scv,scv_r);
+    EXPECT_EQ(ssv,ssv_r);
+    EXPECT_EQ(siv,siv_r);
+    EXPECT_EQ(slv,slv_r);
 
     unsigned char  ucv_r = n["ucv"].value();
     unsigned short usv_r = n["usv"].value();
@@ -416,16 +435,26 @@ TEST(conduit_node, check_value_implict_c_type_cast)
     EXPECT_NEAR(dv,dv_r,0.001);
     
     
-    signed char  *cv_p_r = n["cv"].value();
+    char  *cv_p_r = n["cv"].value();
     short *sv_p_r = n["sv"].value();
     int   *iv_p_r = n["iv"].value();
     long  *lv_p_r = n["lv"].value();
-    
     
     EXPECT_EQ(cv,cv_p_r[0]);
     EXPECT_EQ(sv,sv_p_r[0]);
     EXPECT_EQ(iv,iv_p_r[0]);
     EXPECT_EQ(lv,lv_p_r[0]);
+
+    signed char  *scv_p_r = n["scv"].value();
+    signed short *ssv_p_r = n["ssv"].value();
+    signed int   *siv_p_r = n["siv"].value();
+    signed long  *slv_p_r = n["slv"].value();
+
+    EXPECT_EQ(scv,scv_p_r[0]);
+    EXPECT_EQ(ssv,ssv_p_r[0]);
+    EXPECT_EQ(siv,siv_p_r[0]);
+    EXPECT_EQ(slv,slv_p_r[0]);
+
 
     unsigned char  *ucv_p_r = n["ucv"].value();
     unsigned short *usv_p_r = n["usv"].value();
@@ -450,7 +479,6 @@ TEST(conduit_node, check_value_implict_c_type_cast)
     int_array   iv_a_r = n["iv"].value();
     long_array  lv_a_r = n["lv"].value();
     
-    
     EXPECT_EQ(cv_a_r.number_of_elements(),1);
     EXPECT_EQ(sv_a_r.number_of_elements(),1);
     EXPECT_EQ(iv_a_r.number_of_elements(),1);
@@ -461,11 +489,25 @@ TEST(conduit_node, check_value_implict_c_type_cast)
     EXPECT_EQ(iv,iv_a_r[0]);
     EXPECT_EQ(lv,lv_a_r[0]);
 
+    signed_char_array  scv_a_r = n["scv"].value();
+    signed_short_array ssv_a_r = n["ssv"].value();
+    signed_int_array   siv_a_r = n["siv"].value();
+    signed_long_array  slv_a_r = n["slv"].value();
+
+    EXPECT_EQ(scv_a_r.number_of_elements(),1);
+    EXPECT_EQ(ssv_a_r.number_of_elements(),1);
+    EXPECT_EQ(siv_a_r.number_of_elements(),1);
+    EXPECT_EQ(slv_a_r.number_of_elements(),1);
+
+    EXPECT_EQ(scv,scv_a_r[0]);
+    EXPECT_EQ(ssv,ssv_a_r[0]);
+    EXPECT_EQ(siv,siv_a_r[0]);
+    EXPECT_EQ(slv,slv_a_r[0]);
+
     unsigned_char_array  ucv_a_r = n["ucv"].value();
     unsigned_short_array usv_a_r = n["usv"].value();
     unsigned_int_array   uiv_a_r = n["uiv"].value();
     unsigned_long_array  ulv_a_r = n["ulv"].value();
-
 
     EXPECT_EQ(ucv_a_r.number_of_elements(),1);
     EXPECT_EQ(usv_a_r.number_of_elements(),1);
@@ -487,7 +529,6 @@ TEST(conduit_node, check_value_implict_c_type_cast)
 
     EXPECT_NEAR(fv,fv_a_r[0],0.001);
     EXPECT_NEAR(dv,dv_a_r[0],0.001);
-
 
 }
 
