@@ -54,6 +54,16 @@
 #include "gtest/gtest.h"
 
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// bitwidth style tests
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// set and set_path tests
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 TEST(c_conduit_node_set, set_bitwidth_int_scalar)
 {
     conduit_int8    i8v = -8;
@@ -62,6 +72,10 @@ TEST(c_conduit_node_set, set_bitwidth_int_scalar)
     conduit_int64  i64v = -64;
 
     conduit_node *n = conduit_node_create();
+    
+    //------------
+    // set 
+    //------------
     
     // int8
     conduit_node_set_int8(n,i8v);
@@ -84,6 +98,32 @@ TEST(c_conduit_node_set, set_bitwidth_int_scalar)
     EXPECT_EQ(conduit_node_as_int64(n),i64v);
     conduit_node_print(n);
     
+    //------------
+    // set_path
+    //------------
+    
+    // int8
+    conduit_node_set_path_int8(n,"i8",i8v);
+    EXPECT_EQ(conduit_node_fetch_path_as_int8(n,"i8"),i8v);
+    conduit_node_print(n);
+    
+    // int16
+    conduit_node_set_path_int16(n,"i16",i16v);
+    EXPECT_EQ(conduit_node_fetch_path_as_int16(n,"i16"),i16v);
+    conduit_node_print(n);
+
+    
+    // int32
+    conduit_node_set_path_int32(n,"i32",i32v);
+    EXPECT_EQ(conduit_node_fetch_path_as_int32(n,"i32"),i32v);
+    conduit_node_print(n);
+    
+    // int64
+    conduit_node_set_path_int64(n,"i64",i64v);
+    EXPECT_EQ(conduit_node_fetch_path_as_int64(n,"i64"),i64v);
+    conduit_node_print(n);
+    
+    
     conduit_node_destroy(n);
 }
 
@@ -96,6 +136,10 @@ TEST(c_conduit_node_set, set_bitwidth_uint_scalar)
     conduit_uint64  u64v = 64;
 
     conduit_node *n = conduit_node_create();
+    
+    //------------
+    // set 
+    //------------
     
     // uint8
     conduit_node_set_uint8(n,u8v);
@@ -117,6 +161,30 @@ TEST(c_conduit_node_set, set_bitwidth_uint_scalar)
     EXPECT_EQ(conduit_node_as_uint64(n),u64v);
     conduit_node_print(n);
     
+    //------------
+    // set_path
+    //------------
+    
+    // uint8
+    conduit_node_set_path_uint8(n,"u8",u8v);
+    EXPECT_EQ(conduit_node_fetch_path_as_uint8(n,"u8"),u8v);
+    conduit_node_print(n);
+    
+    // uint16
+    conduit_node_set_path_uint16(n,"u16",u16v);
+    EXPECT_EQ(conduit_node_fetch_path_as_uint16(n,"u16"),u16v);
+    conduit_node_print(n);
+    
+    // uint32
+    conduit_node_set_path_uint32(n,"u32",u32v);
+    EXPECT_EQ(conduit_node_fetch_path_as_uint32(n,"u32"),u32v);
+    conduit_node_print(n);
+    
+    // uint64
+    conduit_node_set_path_uint64(n,"u64",u64v);
+    EXPECT_EQ(conduit_node_fetch_path_as_uint64(n,"u64"),u64v);
+    conduit_node_print(n);
+    
     conduit_node_destroy(n);
 }
 
@@ -128,6 +196,10 @@ TEST(c_conduit_node_set, set_bitwidth_float_scalar)
 
     conduit_node *n = conduit_node_create();
     
+    //------------
+    // set 
+    //------------
+    
     // float32
     conduit_node_set_float32(n,f32v);
     EXPECT_EQ(conduit_node_as_float32(n),f32v);
@@ -138,8 +210,27 @@ TEST(c_conduit_node_set, set_bitwidth_float_scalar)
     EXPECT_EQ(conduit_node_as_float64(n),f64v);
     conduit_node_print(n);
     
+    //------------
+    // set 
+    //------------
+    
+    // float32
+    conduit_node_set_path_float32(n,"f32",f32v);
+    EXPECT_EQ(conduit_node_fetch_path_as_float32(n,"f32"),f32v);
+    conduit_node_print(n);
+    
+    // float64
+    conduit_node_set_path_float64(n,"f64",f64v);
+    EXPECT_EQ(conduit_node_fetch_path_as_float64(n,"f64"),f64v);
+    conduit_node_print(n);
+    
+    
     conduit_node_destroy(n);
 }
+
+//-----------------------------------------------------------------------------
+// set and set_external tests
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 TEST(c_conduit_node_set, set_bitwidth_int_ptr)
@@ -150,6 +241,10 @@ TEST(c_conduit_node_set, set_bitwidth_int_ptr)
     conduit_int64  i64av[6] = {-2,-4,-8,-16,-32,-64};
         
     conduit_node *n = conduit_node_create();
+    
+    //--------------
+    // set
+    //--------------
     
     // using uint8* interface
     conduit_node_set_int8_ptr(n,i8av,6);
@@ -203,6 +298,62 @@ TEST(c_conduit_node_set, set_bitwidth_int_ptr)
     }
     EXPECT_EQ(i64av_ptr[5],-64);
     
+    //--------------
+    // set_external
+    //--------------
+    
+    // using uint8* interface
+    conduit_node_set_external_int8_ptr(n,i8av,6);
+    conduit_node_print(n);
+
+    i8av_ptr = conduit_node_as_int8_ptr(n);
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(i8av_ptr[i],i8av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&i8av_ptr[i],&i8av[i]);
+    }
+    EXPECT_EQ(i8av_ptr[5],-64);
+    
+    // using uint16* interface
+    conduit_node_set_external_int16_ptr(n,i16av,6);
+    conduit_node_print(n);
+    
+    i16av_ptr = conduit_node_as_int16_ptr(n);
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(i16av_ptr[i],i16av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&i16av_ptr[i],&i16av[i]);
+    }
+    EXPECT_EQ(i16av_ptr[5],-64);
+    
+    // using uint32 * interface
+    conduit_node_set_external_int32_ptr(n,i32av,6);
+    conduit_node_print(n);
+
+    i32av_ptr = conduit_node_as_int32_ptr(n);
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(i32av_ptr[i],i32av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&i32av_ptr[i],&i32av[i]);
+    }
+    EXPECT_EQ(i32av_ptr[5],-64);
+    
+    // using uint64 * interface
+    conduit_node_set_external_int64_ptr(n,i64av,6);
+    conduit_node_print(n);
+    
+    i64av_ptr = conduit_node_as_int64_ptr(n);
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(i64av_ptr[i],i64av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&i64av_ptr[i],&i64av[i]);
+    }
+    EXPECT_EQ(i64av_ptr[5],-64);
+    
     conduit_node_destroy(n);
 }
 
@@ -215,6 +366,10 @@ TEST(c_conduit_node_set, set_bitwidth_uint_ptr)
     conduit_uint64  u64av[6] = {2,4,8,16,32,64};
         
     conduit_node *n = conduit_node_create();
+    
+    //--------------
+    // set
+    //--------------
     
     // using uint8* interface
     conduit_node_set_uint8_ptr(n,u8av,6);
@@ -268,6 +423,62 @@ TEST(c_conduit_node_set, set_bitwidth_uint_ptr)
     }
     EXPECT_EQ(u64av_ptr[5],64);
 
+    //--------------
+    // set_external
+    //--------------
+
+    // using uint8* interface
+    conduit_node_set_external_uint8_ptr(n,u8av,6);
+    conduit_node_print(n);
+
+    u8av_ptr = conduit_node_as_uint8_ptr(n);
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(u8av_ptr[i],u8av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&u8av_ptr[i],&u8av[i]);
+    }
+    EXPECT_EQ(u8av_ptr[5],64);
+    
+    // using uint16* interface
+    conduit_node_set_external_uint16_ptr(n,u16av,6);
+    conduit_node_print(n);
+    
+    u16av_ptr = conduit_node_as_uint16_ptr(n);
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(u16av_ptr[i],u16av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&u16av_ptr[i],&u16av[i]);
+    }
+    EXPECT_EQ(u16av_ptr[5],64);
+    
+    // using uint32 * interface
+    conduit_node_set_external_uint32_ptr(n,u32av,6);
+    conduit_node_print(n);
+
+    u32av_ptr = conduit_node_as_uint32_ptr(n);
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(u32av_ptr[i],u32av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&u32av_ptr[i],&u32av[i]);
+    }
+    EXPECT_EQ(u32av_ptr[5],64);
+    
+    // using uint64 * interface
+    conduit_node_set_external_uint64_ptr(n,u64av,6);
+    conduit_node_print(n);
+    
+    u64av_ptr = conduit_node_as_uint64_ptr(n);
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(u64av_ptr[i],u64av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&u64av_ptr[i],&u64av[i]);
+    }
+    EXPECT_EQ(u64av_ptr[5],64);
+
     conduit_node_destroy(n);
 }
 
@@ -277,9 +488,11 @@ TEST(conduit_node_set, set_bitwidth_float_ptr)
     conduit_float32  f32av[4] = {-0.8f, -1.6f, -3.2f, -6.4f};
     conduit_float64  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
 
-
-        
     conduit_node *n = conduit_node_create();
+    
+    //--------------
+    // set
+    //--------------
     
     // float32
     conduit_node_set_float32_ptr(n,f32av,4);
@@ -293,7 +506,6 @@ TEST(conduit_node_set, set_bitwidth_float_ptr)
         EXPECT_NE(&f32av_ptr[i],&f32av[i]); 
     }
     EXPECT_NEAR(f32av_ptr[3],-6.4,0.001);
-    
     
     // float32 detailed
     conduit_node_set_float32_ptr_detailed(n,
@@ -346,9 +558,80 @@ TEST(conduit_node_set, set_bitwidth_float_ptr)
     }
     EXPECT_NEAR(f64av_ptr[3],-6.4,0.001);
 
+    //--------------
+    // set_external
+    //--------------
+
+    // float32
+    conduit_node_set_external_float32_ptr(n,f32av,4);
+    conduit_node_print(n);
+
+    f32av_ptr = conduit_node_as_float32_ptr(n);
+    for(conduit_index_t i=0;i<4;i++)
+    {
+        EXPECT_NEAR(f32av_ptr[i],f32av[i],0.001);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&f32av_ptr[i],&f32av[i]); 
+    }
+    EXPECT_NEAR(f32av_ptr[3],-6.4,0.001);
+    
+    // float32 detailed
+    conduit_node_set_external_float32_ptr_detailed(n,
+                                                   f32av,
+                                                   4,
+                                                   0,
+                                                   sizeof(conduit_float32),
+                                                   sizeof(conduit_float32),
+                                                   CONDUIT_ENDIANNESS_DEFAULT_ID);
+    conduit_node_print(n);
+
+    f32av_ptr = conduit_node_as_float32_ptr(n);
+    for(conduit_index_t i=0;i<4;i++)
+    {
+        EXPECT_NEAR(f32av_ptr[i],f32av[i],0.001);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&f32av_ptr[i],&f32av[i]); 
+    }
+    EXPECT_NEAR(f32av_ptr[3],-6.4,0.001);
+    
+    // float64
+    conduit_node_set_external_float64_ptr(n,f64av,4);
+    conduit_node_print(n);
+
+    f64av_ptr = conduit_node_as_float64_ptr(n);
+    for(conduit_index_t i=0;i<4;i++)
+    {
+        EXPECT_NEAR(f64av_ptr[i],f64av[i],0.001);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&f64av_ptr[i],&f64av[i]);
+    }
+    EXPECT_NEAR(f64av_ptr[3],-6.4,0.001);
+
+    // float64 detailed
+    conduit_node_set_external_float64_ptr_detailed(n,
+                                                   f64av,
+                                                   4,
+                                                   0,
+                                                   sizeof(conduit_float64),
+                                                   sizeof(conduit_float64),
+                                                   CONDUIT_ENDIANNESS_DEFAULT_ID);
+    conduit_node_print(n);
+
+    f64av_ptr = conduit_node_as_float64_ptr(n);
+    for(conduit_index_t i=0;i<4;i++)
+    {
+        EXPECT_NEAR(f64av_ptr[i],f64av[i],0.001);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&f64av_ptr[i],&f64av[i]);
+    }
+    EXPECT_NEAR(f64av_ptr[3],-6.4,0.001);
 
     conduit_node_destroy(n);
 }
+
+//-----------------------------------------------------------------------------
+// TODO: set_path and set_path_external tests
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -357,7 +640,7 @@ TEST(conduit_node_set, set_bitwidth_float_ptr)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// set and set_external tests
+// set and set_path tests
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -585,6 +868,10 @@ TEST(c_conduit_node_set, set_native_float_scalar)
     
     conduit_node_destroy(n);
 }
+
+//-----------------------------------------------------------------------------
+// set and set_external tests
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 TEST(c_conduit_node_set, set_native_int_ptr)

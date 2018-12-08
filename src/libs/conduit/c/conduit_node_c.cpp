@@ -1213,9 +1213,9 @@ conduit_node_set_external_int8_ptr_detailed(conduit_node *cnode,
 
 //-----------------------------------------------------------------------------
 void
-conduit_node_set_extenal_int16_ptr(conduit_node *cnode,
-                                   conduit_int16 *data,
-                                   conduit_index_t num_elements)
+conduit_node_set_external_int16_ptr(conduit_node *cnode,
+                                    conduit_int16 *data,
+                                    conduit_index_t num_elements)
 {
     cpp_node(cnode)->set_external_int16_ptr(data,num_elements);
 }
