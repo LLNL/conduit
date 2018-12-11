@@ -630,8 +630,410 @@ TEST(conduit_node_set, set_bitwidth_float_ptr)
 }
 
 //-----------------------------------------------------------------------------
-// TODO: set_path and set_path_external tests
+// set_path  and set_path_external tests
 //-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+TEST(c_conduit_node_set, set_path_bitwidth_int_ptr)
+{
+    conduit_int8    i8av[6] = {-2,-4,-8,-16,-32,-64};
+    conduit_int16  i16av[6] = {-2,-4,-8,-16,-32,-64};
+    conduit_int32  i32av[6] = {-2,-4,-8,-16,-32,-64};
+    conduit_int64  i64av[6] = {-2,-4,-8,-16,-32,-64};
+        
+    conduit_node *n = conduit_node_create();
+    
+    //--------------
+    // set
+    //--------------
+    
+    // using uint8* interface
+    conduit_node_set_path_int8_ptr(n,"i8",i8av,6);
+    conduit_node_print(n);
+
+    conduit_int8 *i8av_ptr = conduit_node_fetch_path_as_int8_ptr(n,"i8");
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(i8av_ptr[i],i8av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&i8av_ptr[i],&i8av[i]);
+    }
+    EXPECT_EQ(i8av_ptr[5],-64);
+    
+    // using uint16* interface
+    conduit_node_set_path_int16_ptr(n,"i16",i16av,6);
+    conduit_node_print(n);
+    
+    conduit_int16 *i16av_ptr = conduit_node_fetch_path_as_int16_ptr(n,"i16");
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(i16av_ptr[i],i16av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&i16av_ptr[i],&i16av[i]);
+    }
+    EXPECT_EQ(i16av_ptr[5],-64);
+    
+    // using uint32 * interface
+    conduit_node_set_path_int32_ptr(n,"i32",i32av,6);
+    conduit_node_print(n);
+
+    conduit_int32 *i32av_ptr = conduit_node_fetch_path_as_int32_ptr(n,"i32");
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(i32av_ptr[i],i32av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&i32av_ptr[i],&i32av[i]);
+    }
+    EXPECT_EQ(i32av_ptr[5],-64);
+    
+    // using uint64 * interface
+    conduit_node_set_path_int64_ptr(n,"i64",i64av,6);
+    conduit_node_print(n);
+    
+    conduit_int64 *i64av_ptr = conduit_node_fetch_path_as_int64_ptr(n,"i64");
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(i64av_ptr[i],i64av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&i64av_ptr[i],&i64av[i]);
+    }
+    EXPECT_EQ(i64av_ptr[5],-64);
+    
+    //--------------
+    // set_external
+    //--------------
+    
+    // using uint8* interface
+    conduit_node_set_path_external_int8_ptr(n,"i8",i8av,6);
+    conduit_node_print(n);
+
+    i8av_ptr = conduit_node_fetch_path_as_int8_ptr(n,"i8");
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(i8av_ptr[i],i8av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&i8av_ptr[i],&i8av[i]);
+    }
+    EXPECT_EQ(i8av_ptr[5],-64);
+    
+    // using uint16* interface
+    conduit_node_set_path_external_int16_ptr(n,"i16",i16av,6);
+    conduit_node_print(n);
+    
+    i16av_ptr = conduit_node_fetch_path_as_int16_ptr(n,"i16");
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(i16av_ptr[i],i16av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&i16av_ptr[i],&i16av[i]);
+    }
+    EXPECT_EQ(i16av_ptr[5],-64);
+    
+    // using uint32 * interface
+    conduit_node_set_path_external_int32_ptr(n,"i32",i32av,6);
+    conduit_node_print(n);
+
+    i32av_ptr = conduit_node_fetch_path_as_int32_ptr(n,"i32");
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(i32av_ptr[i],i32av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&i32av_ptr[i],&i32av[i]);
+    }
+    EXPECT_EQ(i32av_ptr[5],-64);
+    
+    // using uint64 * interface
+    conduit_node_set_path_external_int64_ptr(n,"i64",i64av,6);
+    conduit_node_print(n);
+    
+    i64av_ptr = conduit_node_fetch_path_as_int64_ptr(n,"i64");
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(i64av_ptr[i],i64av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&i64av_ptr[i],&i64av[i]);
+    }
+    EXPECT_EQ(i64av_ptr[5],-64);
+    
+    conduit_node_destroy(n);
+}
+
+//-----------------------------------------------------------------------------
+TEST(c_conduit_node_set, set_path_bitwidth_uint_ptr)
+{
+    conduit_uint8    u8av[6] = {2,4,8,16,32,64};
+    conduit_uint16  u16av[6] = {2,4,8,16,32,64};
+    conduit_uint32  u32av[6] = {2,4,8,16,32,64};
+    conduit_uint64  u64av[6] = {2,4,8,16,32,64};
+        
+    conduit_node *n = conduit_node_create();
+    
+    //--------------
+    // set
+    //--------------
+    
+    // using uint8* interface
+    conduit_node_set_path_uint8_ptr(n,"u8",u8av,6);
+    conduit_node_print(n);
+
+    conduit_uint8 *u8av_ptr = conduit_node_fetch_path_as_uint8_ptr(n,"u8");
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(u8av_ptr[i],u8av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&u8av_ptr[i],&u8av[i]);
+    }
+    EXPECT_EQ(u8av_ptr[5],64);
+    
+    // using uint16* interface
+    conduit_node_set_path_uint16_ptr(n,"u16",u16av,6);
+    conduit_node_print(n);
+    
+    conduit_uint16 *u16av_ptr = conduit_node_fetch_path_as_uint16_ptr(n,"u16");
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(u16av_ptr[i],u16av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&u16av_ptr[i],&u16av[i]);
+    }
+    EXPECT_EQ(u16av_ptr[5],64);
+    
+    // using uint32 * interface
+    conduit_node_set_path_uint32_ptr(n,"u32",u32av,6);
+    conduit_node_print(n);
+
+    conduit_uint32 *u32av_ptr = conduit_node_fetch_path_as_uint32_ptr(n,"u32");
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(u32av_ptr[i],u32av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&u32av_ptr[i],&u32av[i]);
+    }
+    EXPECT_EQ(u32av_ptr[5],64);
+    
+    // using uint64 * interface
+    conduit_node_set_path_uint64_ptr(n,"u64",u64av,6);
+    conduit_node_print(n);
+    
+    conduit_uint64 *u64av_ptr = conduit_node_fetch_path_as_uint64_ptr(n,"u64");
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(u64av_ptr[i],u64av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&u64av_ptr[i],&u64av[i]);
+    }
+    EXPECT_EQ(u64av_ptr[5],64);
+
+    //--------------
+    // set_external
+    //--------------
+
+    // using uint8* interface
+    conduit_node_set_path_external_uint8_ptr(n,"u8",u8av,6);
+    conduit_node_print(n);
+
+    u8av_ptr = conduit_node_fetch_path_as_uint8_ptr(n,"u8");
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(u8av_ptr[i],u8av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&u8av_ptr[i],&u8av[i]);
+    }
+    EXPECT_EQ(u8av_ptr[5],64);
+    
+    // using uint16* interface
+    conduit_node_set_path_external_uint16_ptr(n,"u16",u16av,6);
+    conduit_node_print(n);
+    
+    u16av_ptr = conduit_node_fetch_path_as_uint16_ptr(n,"u16");
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(u16av_ptr[i],u16av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&u16av_ptr[i],&u16av[i]);
+    }
+    EXPECT_EQ(u16av_ptr[5],64);
+    
+    // using uint32 * interface
+    conduit_node_set_path_external_uint32_ptr(n,"u32",u32av,6);
+    conduit_node_print(n);
+
+    u32av_ptr = conduit_node_fetch_path_as_uint32_ptr(n,"u32");
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(u32av_ptr[i],u32av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&u32av_ptr[i],&u32av[i]);
+    }
+    EXPECT_EQ(u32av_ptr[5],64);
+    
+    // using uint64 * interface
+    conduit_node_set_path_external_uint64_ptr(n,"u64",u64av,6);
+    conduit_node_print(n);
+    
+    u64av_ptr = conduit_node_fetch_path_as_uint64_ptr(n,"u64");
+    for(conduit_index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(u64av_ptr[i],u64av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&u64av_ptr[i],&u64av[i]);
+    }
+    EXPECT_EQ(u64av_ptr[5],64);
+
+    conduit_node_destroy(n);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_bitwidth_float_ptr)
+{
+    conduit_float32  f32av[4] = {-0.8f, -1.6f, -3.2f, -6.4f};
+    conduit_float64  f64av[4] = {-0.8, -1.6, -3.2, -6.4};
+
+    conduit_node *n = conduit_node_create();
+    
+    //--------------
+    // set
+    //--------------
+    
+    // float32
+    conduit_node_set_path_float32_ptr(n,"f32",f32av,4);
+    conduit_node_print(n);
+
+    conduit_float32 *f32av_ptr = conduit_node_fetch_path_as_float32_ptr(n,"f32");
+    for(conduit_index_t i=0;i<4;i++)
+    {
+        EXPECT_NEAR(f32av_ptr[i],f32av[i],0.001);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&f32av_ptr[i],&f32av[i]); 
+    }
+    EXPECT_NEAR(f32av_ptr[3],-6.4,0.001);
+    
+    // float32 detailed
+    conduit_node_set_path_float32_ptr_detailed(n,
+                                               "f32",
+                                               f32av,
+                                               4,
+                                               0,
+                                               sizeof(conduit_float32),
+                                               sizeof(conduit_float32),
+                                               CONDUIT_ENDIANNESS_DEFAULT_ID);
+    conduit_node_print(n);
+
+    f32av_ptr = conduit_node_fetch_path_as_float32_ptr(n,"f32");
+    for(conduit_index_t i=0;i<4;i++)
+    {
+        EXPECT_NEAR(f32av_ptr[i],f32av[i],0.001);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&f32av_ptr[i],&f32av[i]); 
+    }
+    EXPECT_NEAR(f32av_ptr[3],-6.4,0.001);
+    
+    // float64
+    conduit_node_set_path_float64_ptr(n,"f64",f64av,4);
+    conduit_node_print(n);
+
+    conduit_float64 *f64av_ptr = conduit_node_fetch_path_as_float64_ptr(n,"f64");
+    for(conduit_index_t i=0;i<4;i++)
+    {
+        EXPECT_NEAR(f64av_ptr[i],f64av[i],0.001);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&f64av_ptr[i],&f64av[i]);
+    }
+    EXPECT_NEAR(f64av_ptr[3],-6.4,0.001);
+
+    // float64 detailed
+    conduit_node_set_path_float64_ptr_detailed(n,
+                                               "f64",
+                                               f64av,
+                                               4,
+                                               0,
+                                               sizeof(conduit_float64),
+                                               sizeof(conduit_float64),
+                                               CONDUIT_ENDIANNESS_DEFAULT_ID);
+    conduit_node_print(n);
+
+    f64av_ptr = conduit_node_fetch_path_as_float64_ptr(n,"f64");
+    for(conduit_index_t i=0;i<4;i++)
+    {
+        EXPECT_NEAR(f64av_ptr[i],f64av[i],0.001);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&f64av_ptr[i],&f64av[i]);
+    }
+    EXPECT_NEAR(f64av_ptr[3],-6.4,0.001);
+
+    //--------------
+    // set_external
+    //--------------
+
+    // float32
+    conduit_node_set_path_external_float32_ptr(n,"f32",f32av,4);
+    conduit_node_print(n);
+
+    f32av_ptr = conduit_node_fetch_path_as_float32_ptr(n,"f32");
+    for(conduit_index_t i=0;i<4;i++)
+    {
+        EXPECT_NEAR(f32av_ptr[i],f32av[i],0.001);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&f32av_ptr[i],&f32av[i]); 
+    }
+    EXPECT_NEAR(f32av_ptr[3],-6.4,0.001);
+    
+    // float32 detailed
+    conduit_node_set_path_external_float32_ptr_detailed(n,
+                                                        "f32",
+                                                        f32av,
+                                                        4,
+                                                        0,
+                                                        sizeof(conduit_float32),
+                                                        sizeof(conduit_float32),
+                                                        CONDUIT_ENDIANNESS_DEFAULT_ID);
+    conduit_node_print(n);
+
+    f32av_ptr = conduit_node_fetch_path_as_float32_ptr(n,"f32");
+    for(conduit_index_t i=0;i<4;i++)
+    {
+        EXPECT_NEAR(f32av_ptr[i],f32av[i],0.001);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&f32av_ptr[i],&f32av[i]); 
+    }
+    EXPECT_NEAR(f32av_ptr[3],-6.4,0.001);
+    
+    // float64
+    conduit_node_set_path_external_float64_ptr(n,"f64",f64av,4);
+    conduit_node_print(n);
+
+    f64av_ptr = conduit_node_fetch_path_as_float64_ptr(n,"f64");
+    for(conduit_index_t i=0;i<4;i++)
+    {
+        EXPECT_NEAR(f64av_ptr[i],f64av[i],0.001);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&f64av_ptr[i],&f64av[i]);
+    }
+    EXPECT_NEAR(f64av_ptr[3],-6.4,0.001);
+
+    // float64 detailed
+    conduit_node_set_path_external_float64_ptr_detailed(n,
+                                                        "f64",
+                                                        f64av,
+                                                        4,
+                                                        0,
+                                                        sizeof(conduit_float64),
+                                                        sizeof(conduit_float64),
+                                                        CONDUIT_ENDIANNESS_DEFAULT_ID);
+    conduit_node_print(n);
+
+    f64av_ptr = conduit_node_fetch_path_as_float64_ptr(n,"f64");
+    for(conduit_index_t i=0;i<4;i++)
+    {
+        EXPECT_NEAR(f64av_ptr[i],f64av[i],0.001);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&f64av_ptr[i],&f64av[i]);
+    }
+    EXPECT_NEAR(f64av_ptr[3],-6.4,0.001);
+
+    conduit_node_destroy(n);
+}
+
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

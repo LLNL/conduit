@@ -783,7 +783,7 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
 
 
     //-------------------------------------------------------------------------
-    // set_external bitwidth unsigned signed integer pointer cases
+    // set_external bitwidth unsigned integer pointer cases
     //-------------------------------------------------------------------------
     CONDUIT_API void conduit_node_set_external_uint8_ptr(conduit_node *cnode,
                                                          conduit_uint8 *data,
@@ -869,6 +869,178 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
                                                                     conduit_index_t stride,
                                                                     conduit_index_t element_bytes,
                                                                     conduit_index_t endianness);
+
+  //-------------------------------------------------------------------------
+  // set_path_external
+  //-------------------------------------------------------------------------
+
+    //-------------------------------------------------------------------------
+    // set_path_external bitwidth signed integer pointer cases
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_int8_ptr(conduit_node *cnode,
+                                                             const char *path,
+                                                             conduit_int8 *data,
+                                                             conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_int8_ptr_detailed(conduit_node *cnode,
+                                                                      const char *path,
+                                                                      conduit_int8 *data,
+                                                                      conduit_index_t num_elements,
+                                                                      conduit_index_t offset,
+                                                                      conduit_index_t stride,
+                                                                      conduit_index_t element_bytes,
+                                                                      conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_int16_ptr(conduit_node *cnode,
+                                                              const char *path,
+                                                              conduit_int16 *data,
+                                                              conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_int16_ptr_detailed(conduit_node *cnode,
+                                                                       const char *path,
+                                                                       conduit_int16 *data,
+                                                                       conduit_index_t num_elements,
+                                                                       conduit_index_t offset,
+                                                                       conduit_index_t stride,
+                                                                       conduit_index_t element_bytes,
+                                                                       conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_int32_ptr(conduit_node *cnode,
+                                                              const char *path,
+                                                              conduit_int32 *data,
+                                                              conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_int32_ptr_detailed(conduit_node *cnode,
+                                                                       const char *path,
+                                                                       conduit_int32 *data,
+                                                                       conduit_index_t num_elements,
+                                                                       conduit_index_t offset,
+                                                                       conduit_index_t stride,
+                                                                       conduit_index_t element_bytes,
+                                                                       conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_int64_ptr(conduit_node *cnode,
+                                                              const char *path,
+                                                              conduit_int64 *data,
+                                                              conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_int64_ptr_detailed(conduit_node *cnode,
+                                                                       const char *path,
+                                                                       conduit_int64 *data,
+                                                                       conduit_index_t num_elements,
+                                                                       conduit_index_t offset,
+                                                                       conduit_index_t stride,
+                                                                       conduit_index_t element_bytes,
+                                                                       conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    // set_path_external bitwidth unsigned integer pointer cases
+    //-------------------------------------------------------------------------
+
+    CONDUIT_API void conduit_node_set_path_external_uint8_ptr(conduit_node *cnode,
+                                                              const char *path,
+                                                              conduit_uint8 *data,
+                                                              conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_uint8_ptr_detailed(conduit_node *cnode,
+                                                                       const char *path,
+                                                                       conduit_uint8 *data,
+                                                                       conduit_index_t num_elements,
+                                                                       conduit_index_t offset,
+                                                                       conduit_index_t stride,
+                                                                       conduit_index_t element_bytes,
+                                                                       conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_uint16_ptr(conduit_node *cnode,
+                                                               const char *path,
+                                                               conduit_uint16 *data,
+                                                               conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_uint16_ptr_detailed(conduit_node *cnode,
+                                                                        const char *path,
+                                                                        conduit_uint16 *data,
+                                                                        conduit_index_t num_elements,
+                                                                        conduit_index_t offset,
+                                                                        conduit_index_t stride,
+                                                                        conduit_index_t element_bytes,
+                                                                        conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_uint32_ptr(conduit_node *cnode,
+                                                               const char *path,
+                                                               conduit_uint32 *data,
+                                                               conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_uint32_ptr_detailed(conduit_node *cnode,
+                                                                        const char *path,
+                                                                        conduit_uint32 *data,
+                                                                        conduit_index_t num_elements,
+                                                                        conduit_index_t offset,
+                                                                        conduit_index_t stride,
+                                                                        conduit_index_t element_bytes,
+                                                                        conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_uint64_ptr(conduit_node *cnode,
+                                                               const char *path,
+                                                               conduit_uint64 *data,
+                                                               conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_uint64_ptr_detailed(conduit_node *cnode,
+                                                                        const char *path,
+                                                                        conduit_uint64 *data,
+                                                                        conduit_index_t num_elements,
+                                                                        conduit_index_t offset,
+                                                                        conduit_index_t stride,
+                                                                        conduit_index_t element_bytes,
+                                                                        conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    // set_path_external bitwidth floating point pointer cases
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_float32_ptr(conduit_node *cnode,
+                                                                const char *path,
+                                                                conduit_float32 *data,
+                                                                conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_float32_ptr_detailed(conduit_node *cnode,
+                                                                         const char *path,
+                                                                         conduit_float32 *data,
+                                                                         conduit_index_t num_elements,
+                                                                         conduit_index_t offset,
+                                                                         conduit_index_t stride,
+                                                                         conduit_index_t element_bytes,
+                                                                         conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_float64_ptr(conduit_node *cnode,
+                                                                const char *path,
+                                                                conduit_float64 *data,
+                                                                conduit_index_t  num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_float64_ptr_detailed(conduit_node *cnode,
+                                                                         const char *path,
+                                                                         conduit_float64 *data,
+                                                                         conduit_index_t num_elements,
+                                                                         conduit_index_t offset,
+                                                                         conduit_index_t stride,
+                                                                         conduit_index_t element_bytes,
+                                                                         conduit_index_t endianness);
+
 
 
 //-----------------------------------------------------------------------------
